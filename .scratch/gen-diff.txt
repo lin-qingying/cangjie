@@ -1,0 +1,763 @@
+diff --git a/cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/CfirTree.kt b/cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/CfirTree.kt
+index dd4b1b495..2e1bf046a 100644
+--- a/cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/CfirTree.kt
++++ b/cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/CfirTree.kt
+@@ -53,6 +53,9 @@ object CfirTree : AbstractCfirTreeBuilder() {
+         "CfirConditionalCompilationFailure",
+         exactPackage = true,
+     )
++    private val patternTreeOwnerType = type("patterns", "CfirPatternTreeOwner", kind = TypeKind.Interface)
++    private val patternTreeNodeType = type("patterns", "CfirPatternTreeNode", kind = TypeKind.Interface)
++    private val patternTypeReferencesType = type("patterns", "CfirPatternTypeReferences", kind = TypeKind.Interface)
+ 
+     /**
+      * 模块数据类型引用。
+@@ -904,10 +907,18 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
+      */
+     val patternVariable: Element by element(Declaration, name = "PatternVariable") {
+         parent(variable)
++        parent(patternTreeOwnerType)
++        patternTreeRootFieldName = "pattern"
+         +declaredSymbol(patternVariableSymbolType)
+         +FieldSets.typeParameters
+         +field("returnTypeRef", typeRef, withReplace = true, withTransform = true)
+-        +field("pattern", pattern, withTransform = true)
++        +field("pattern", pattern, withReplace = true, withTransform = true) {
++            skippedInCopy = true
++            kDoc = """
++                该 pattern 含有由本声明 owner 管理的 binding initializer 语义引用。
++                浅拷贝必须由调用方显式提供独立 pattern，避免两个 owner 竞争同一 binding。
++            """.trimIndent()
++        }
+     }
+ 
+     /**
+@@ -918,8 +929,38 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
+      */
+     val patternBindingVariable: Element by element(Declaration, name = "PatternBindingVariable") {
+         parent(variable)
++        parent(patternTreeNodeType)
+         +declaredSymbol(patternBindingVariableSymbolType)
+         +FieldSets.typeParameters
++        +field(
++            "initializer",
++            expression,
++            nullable = true,
++            withReplace = true,
++            withTransform = true,
++            isChild = false,
++        ) {
++            skippedInCopy = true
++            kDoc = """
++                仅由唯一 owning CfirPatternVariable 派生的语义 initializer，不拥有表达式子树。
++                复制 binding 时不会复制该值；它由 binding 的 patternTreeOwner 动态读取。
++            """.trimIndent()
++        }
++        +field(
++            "patternTreeOwner",
++            patternTreeOwnerType,
++            nullable = true,
++            withReplace = true,
++            isChild = false,
++        ) {
++            isOverride = true
++            replaceOverride = true
++            skippedInCopy = true
++            kDoc = """
++                唯一包含该 binding 的模式树宿主。该反向语义引用不是 CFIR 子节点。
++                只有宿主为 CfirPatternVariable 且绑定形状匹配时才派生整个 initializer。
++            """.trimIndent()
++        }
+         +field("returnTypeRef", typeRef, withReplace = true, withTransform = true)
+         +field("name", nameType)
+     }
+@@ -1300,8 +1341,13 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
+      */
+     val letPatternExpression: Element by element(Expression, name = "LetPatternExpression") {
+         parent(expression)
++        parent(patternTreeOwnerType)
++        patternTreeRootFieldName = "pattern"
+         +field("initializer", expression, withTransform = true)
+-        +field("pattern", pattern, withTransform = true)
++        +field("pattern", pattern, withReplace = true, withTransform = true) {
++            skippedInCopy = true
++            kDoc = "模式子树具有唯一 owner；浅拷贝必须由调用方显式提供独立模式树。"
++        }
+     }
+ 
+     /**
+@@ -1331,7 +1377,7 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
+      */
+     val orPattern: Element by element(Pattern, name = "OrPattern") {
+         parent(pattern)
+-        +listField("alternatives", pattern, withTransform = true)
++        +listField("alternatives", pattern, withReplace = true, withTransform = true)
+     }
+ 
+     /**
+@@ -1347,7 +1393,12 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
+      */
+     val matchBranch: Element by element(Expression, name = "MatchBranch") {
+         parent(expression)
+-        +field("pattern", pattern, withTransform = true)
++        parent(patternTreeOwnerType)
++        patternTreeRootFieldName = "pattern"
++        +field("pattern", pattern, withReplace = true, withTransform = true) {
++            skippedInCopy = true
++            kDoc = "模式子树具有唯一 owner；浅拷贝必须由调用方显式提供独立模式树。"
++        }
+         +field("guard", expression, nullable = true, withTransform = true)
+         +field("body", block, withTransform = true)
+     }
+@@ -1362,13 +1413,23 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
+      */
+     val catchPattern: Element by element(Pattern, name = "CatchPattern") {
+         parent(rootElement)
++        parent(patternTreeNodeType)
++        parent(patternTypeReferencesType)
++        +field("patternTreeOwner", patternTreeOwnerType, nullable = true, withReplace = true, isChild = false) {
++            isOverride = true
++            replaceOverride = true
++            skippedInCopy = true
++        }
+         +field("bindingName", nameType, nullable = true)
+         +field("isWildcard", booleanType)
+-        +listField("typeRefs", typeRef, withReplace = true, withTransform = true)
++        +listField("typeRefs", typeRef, withReplace = true, withTransform = true) {
++            isOverride = true
++            replaceOverride = true
++        }
+         // 整体模式类型与源码异常类型列表分开；null 表示尚未进行 catch 语义分析。
+         // wildcard 也需要此状态，不能借助可选的绑定变量判断模式是否已经检查。
+         +field("resolvedTypeRef", resolvedTypeRef, nullable = true, withReplace = true, withTransform = true)
+-        +field("bindingVariable", patternBindingVariable, nullable = true, withTransform = true)
++        +field("bindingVariable", patternBindingVariable, nullable = true, withReplace = true, withTransform = true)
+     }
+ 
+     /**
+@@ -1376,7 +1437,12 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
+      */
+     val catchClause: Element by element(Expression, name = "Catch") {
+         parent(expression)
+-        +field("pattern", catchPattern, withTransform = true)
++        parent(patternTreeOwnerType)
++        patternTreeRootFieldName = "pattern"
++        +field("pattern", catchPattern, withReplace = true, withTransform = true) {
++            skippedInCopy = true
++            kDoc = "异常模式子树具有唯一 owner；浅拷贝必须由调用方显式提供独立模式树。"
++        }
+         +field("body", block, withTransform = true)
+     }
+ 
+@@ -1388,9 +1454,19 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
+      */
+     val commandTypePattern: Element by element(Pattern, name = "CommandTypePattern") {
+         parent(rootElement)
++        parent(patternTreeNodeType)
++        parent(patternTypeReferencesType)
++        +field("patternTreeOwner", patternTreeOwnerType, nullable = true, withReplace = true, isChild = false) {
++            isOverride = true
++            replaceOverride = true
++            skippedInCopy = true
++        }
+         +field("bindingName", nameType, nullable = true)
+         +field("isWildcard", booleanType)
+-        +listField("typeRefs", typeRef, withTransform = true)
++        +listField("typeRefs", typeRef, withReplace = true, withTransform = true) {
++            isOverride = true
++            replaceOverride = true
++        }
+     }
+ 
+     /**
+@@ -1401,7 +1477,12 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
+      */
+     val handleClause: Element by element(Expression, name = "HandleClause") {
+         parent(expression)
+-        +field("commandPattern", commandTypePattern, withTransform = true)
++        parent(patternTreeOwnerType)
++        patternTreeRootFieldName = "commandPattern"
++        +field("commandPattern", commandTypePattern, withReplace = true, withTransform = true) {
++            skippedInCopy = true
++            kDoc = "command 模式子树具有唯一 owner；浅拷贝必须由调用方显式提供独立模式树。"
++        }
+         +field("body", block, withTransform = true)
+     }
+ 
+@@ -1667,6 +1748,13 @@ val forInExpression: Element by element(Expression, name = "ForInExpression") {
+      */
+     val pattern: Element by sealedElement(Pattern) {
+         parent(rootElement)
++        parent(patternTreeNodeType)
++        +field("patternTreeOwner", patternTreeOwnerType, nullable = true, withReplace = true, isChild = false) {
++            isOverride = true
++            replaceOverride = true
++            skippedInCopy = true
++            kDoc = "该 pattern 节点所属的唯一模式树宿主；反向 owner 不属于 CFIR 子树。"
++        }
+     }
+ 
+     /**
+@@ -1688,9 +1776,9 @@ val forInExpression: Element by element(Expression, name = "ForInExpression") {
+     val bindingPattern: Element by element(Pattern, name = "BindingPattern") {
+         parent(pattern)
+         +field("name", nameType)
+-        +field("typeRef", typeRef, nullable = true, withTransform = true)
+-        +field("bindingVariable", patternBindingVariable, nullable = true, withTransform = true)
+-        +field("nestedPattern", pattern, nullable = true, withTransform = true)
++        +field("typeRef", typeRef, nullable = true, withTransform = true, withReplace = true)
++        +field("bindingVariable", patternBindingVariable, nullable = true, withTransform = true, withReplace = true)
++        +field("nestedPattern", pattern, nullable = true, withTransform = true, withReplace = true)
+     }
+ 
+     /**
+@@ -1702,7 +1790,7 @@ val forInExpression: Element by element(Expression, name = "ForInExpression") {
+     val varOrEnumPattern: Element by element(Pattern, name = "VarOrEnumPattern") {
+         parent(pattern)
+         +field("name", nameType)
+-        +field("bindingVariable", patternBindingVariable, nullable = true, withTransform = true)
++        +field("bindingVariable", patternBindingVariable, nullable = true, withTransform = true, withReplace = true)
+     }
+ 
+     /**
+@@ -1710,7 +1798,7 @@ val forInExpression: Element by element(Expression, name = "ForInExpression") {
+      */
+     val tuplePattern: Element by element(Pattern, name = "TuplePattern") {
+         parent(pattern)
+-        +listField("elements", pattern, withTransform = true)
++        +listField("elements", pattern, withReplace = true, withTransform = true)
+     }
+ 
+     /**
+@@ -1719,7 +1807,7 @@ val forInExpression: Element by element(Expression, name = "ForInExpression") {
+     val enumPattern: Element by element(Pattern, name = "EnumPattern") {
+         parent(pattern)
+         +field("constructorReference", reference, withTransform = true)
+-        +listField("arguments", pattern, withTransform = true)
++        +listField("arguments", pattern, withReplace = true, withTransform = true)
+     }
+ 
+     /**
+@@ -1730,9 +1818,9 @@ val forInExpression: Element by element(Expression, name = "ForInExpression") {
+         +field("matchingKind", typePatternMatchingKindType, withReplace = true) {
+             defaultValueInBuilder = "CfirTypePatternMatchingKind.UNKNOWN"
+         }
+-        +field("typeRef", typeRef, withTransform = true)
++        +field("typeRef", typeRef, withTransform = true, withReplace = true)
+         +field("bindingName", nameType, nullable = true)
+-        +field("bindingVariable", patternBindingVariable, nullable = true, withTransform = true)
++        +field("bindingVariable", patternBindingVariable, nullable = true, withTransform = true, withReplace = true)
+     }
+ 
+     /**
+diff --git a/cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/ImplementationConfigurator.kt b/cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/ImplementationConfigurator.kt
+index 4dda3be35..abd78a277 100644
+--- a/cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/ImplementationConfigurator.kt
++++ b/cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/ImplementationConfigurator.kt
+@@ -29,6 +29,7 @@ import org.cangnova.cangjie.cfir.tree.generator.model.Element
+ import org.cangnova.cangjie.cfir.tree.generator.model.Field
+ import org.cangnova.cangjie.cfir.tree.generator.model.Implementation
+ import org.cangnova.cangjie.generators.tree.ImplementationKind
++import org.cangnova.cangjie.generators.tree.Visibility
+ import org.cangnova.cangjie.generators.tree.config.AbstractImplementationConfigurator
+ 
+ /**
+@@ -147,6 +148,182 @@ object ImplementationConfigurator : AbstractCfirTreeImplementationConfigurator()
+             configureCommonValueParameter()
+         }
+ 
++        fun AbstractImplementationConfigurator<Implementation, Element, Field>.ImplementationContext.configurePatternTreeOwner(
++            fieldName: String,
++        ) {
++            default(fieldName) {
++                customSetterVisibility = Visibility.PRIVATE
++                customSetter = """
++                    if (org.cangnova.cangjie.cfir.patterns.isPatternTreeRootRestoreInProgress()) {
++                        field = value
++                    } else {
++                        val previousValue = field
++                        val previousTree = org.cangnova.cangjie.cfir.patterns.capturePatternTree(previousValue)
++                        org.cangnova.cangjie.cfir.patterns.validatePatternTreeReplacement(this, value)
++                        field = value
++                        try {
++                            org.cangnova.cangjie.cfir.patterns.reconcilePatternTree(this, previousTree, patternTreeRoot())
++                        } catch (failure: Throwable) {
++                            field = previousValue
++                            throw failure
++                        }
++                    }
++                """.trimIndent()
++            }
++            initializationStatements(
++                "org.cangnova.cangjie.cfir.patterns.bindPatternTree(this, patternTreeRoot())",
++            )
++        }
++
++        impl(patternVariable) {
++            default("initializer") {
++                customSetterVisibility = Visibility.PRIVATE
++                customSetter = """
++                    field = value
++                """.trimIndent()
++            }
++            configurePatternTreeOwner("pattern")
++        }
++        impl(patternBindingVariable) {
++            default("initializer") {
++                value = "org.cangnova.cangjie.cfir.patterns.wholeValueInitializer(patternTreeOwner, this)"
++                withGetter = true
++                customSetterVisibility = Visibility.PRIVATE
++                customSetter = "error(\"CfirPatternBindingVariable.initializer is derived from its owner and cannot be changed.\")"
++                customTransform = "error(\"CfirPatternBindingVariable.initializer is derived from its owner and cannot be transformed independently.\")"
++            }
++            default("patternTreeOwner") {
++                value = "null"
++                customSetterVisibility = Visibility.PRIVATE
++                customSetter = """
++                    if (org.cangnova.cangjie.cfir.patterns.isPatternTreeRootRestoreInProgress()) {
++                        field = value
++                    } else {
++                        org.cangnova.cangjie.cfir.patterns.validatePatternTreeNodeOwnerChange(this, field, value)
++                        field = value
++                    }
++                """.trimIndent()
++            }
++        }
++
++        fun AbstractImplementationConfigurator<Implementation, Element, Field>.ImplementationContext.configurePatternTreeNode() {
++            default("patternTreeOwner") {
++                value = "null"
++                customSetterVisibility = Visibility.PRIVATE
++                customSetter = """
++                    if (org.cangnova.cangjie.cfir.patterns.isPatternTreeRootRestoreInProgress()) {
++                        field = value
++                    } else {
++                        org.cangnova.cangjie.cfir.patterns.validatePatternTreeNodeOwnerChange(this, field, value)
++                        field = value
++                    }
++                """.trimIndent()
++            }
++        }
++
++        fun AbstractImplementationConfigurator<Implementation, Element, Field>.ImplementationContext.configurePatternTreeChild(
++            fieldName: String,
++            listField: Boolean = false,
++        ) {
++            default(fieldName) {
++                if (listField) {
++                    // 模式节点列表只能通过生成的 replace/transform API 改写，避免调用方绕过 owner 同步。
++                    readOnlyImplementationList = true
++                }
++                customSetterVisibility = Visibility.PRIVATE
++                customSetter = """
++                    val owner = patternTreeOwner
++                    val previousTree = owner?.let { org.cangnova.cangjie.cfir.patterns.capturePatternTree(it.patternTreeRoot()) }
++                    val previousValue = field
++                    field = ${if (listField) "java.util.Collections.unmodifiableList(value.toList())" else "value"}
++                    try {
++                        if (owner != null) {
++                            org.cangnova.cangjie.cfir.patterns.reconcilePatternTree(owner, previousTree!!, owner.patternTreeRoot())
++                        } else {
++                            org.cangnova.cangjie.cfir.patterns.validateDetachedPatternTree(this)
++                        }
++                    } catch (failure: Throwable) {
++                        field = previousValue
++                        throw failure
++                    }
++                """.trimIndent()
++                customTransform = if (listField) {
++                    """
++                        val owner = patternTreeOwner
++                        val previousTree = owner?.let { org.cangnova.cangjie.cfir.patterns.capturePatternTree(it.patternTreeRoot()) }
++                        try {
++                            $fieldName = $fieldName.map { it.transform(transformer, data) }
++                        } finally {
++                            if (owner != null) {
++                                org.cangnova.cangjie.cfir.patterns.reconcilePatternTree(owner, previousTree!!, owner.patternTreeRoot())
++                            } else {
++                                org.cangnova.cangjie.cfir.patterns.validateDetachedPatternTree(this)
++                            }
++                        }
++                    """.trimIndent()
++                } else {
++                    """
++                        val owner = patternTreeOwner
++                        val previousTree = owner?.let { org.cangnova.cangjie.cfir.patterns.capturePatternTree(it.patternTreeRoot()) }
++                        try {
++                            $fieldName = $fieldName?.transform(transformer, data)
++                        } finally {
++                            if (owner != null) {
++                                org.cangnova.cangjie.cfir.patterns.reconcilePatternTree(owner, previousTree!!, owner.patternTreeRoot())
++                            } else {
++                                org.cangnova.cangjie.cfir.patterns.validateDetachedPatternTree(this)
++                            }
++                        }
++                    """.trimIndent()
++                }
++                if (listField) {
++                    val newValue = "new${fieldName.replaceFirstChar(Char::uppercaseChar)}"
++                    customReplace = """
++                        $fieldName = $newValue
++                    """.trimIndent()
++                }
++            }
++        }
++
++        impl(constPattern) { configurePatternTreeNode() }
++        impl(wildcardPattern) { configurePatternTreeNode() }
++        impl(expressionPattern) { configurePatternTreeNode() }
++        impl(catchPattern) {
++            configurePatternTreeNode()
++            configurePatternTreeChild("bindingVariable")
++        }
++        impl(commandTypePattern) { configurePatternTreeNode() }
++        impl(bindingPattern) {
++            configurePatternTreeNode()
++            configurePatternTreeChild("bindingVariable")
++            configurePatternTreeChild("nestedPattern")
++        }
++        impl(varOrEnumPattern) {
++            configurePatternTreeNode()
++            configurePatternTreeChild("bindingVariable")
++        }
++        impl(tuplePattern) {
++            configurePatternTreeNode()
++            configurePatternTreeChild("elements", listField = true)
++        }
++        impl(enumPattern) {
++            configurePatternTreeNode()
++            configurePatternTreeChild("arguments", listField = true)
++        }
++        impl(typePattern) {
++            configurePatternTreeNode()
++            configurePatternTreeChild("bindingVariable")
++        }
++        impl(orPattern) {
++            configurePatternTreeNode()
++            configurePatternTreeChild("alternatives", listField = true)
++        }
++
++        impl(letPatternExpression) { configurePatternTreeOwner("pattern") }
++        impl(matchBranch) { configurePatternTreeOwner("pattern") }
++        impl(catchClause) { configurePatternTreeOwner("pattern") }
++        impl(handleClause) { configurePatternTreeOwner("commandPattern") }
++
+ // resolvedImportDirective：委托字段给 delegate
+         impl(resolvedImportDirective) {
+             publicImplementation()
+diff --git a/cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/model/Element.kt b/cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/model/Element.kt
+index 0ae425a7a..9fa9dd9f3 100644
+--- a/cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/model/Element.kt
++++ b/cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/model/Element.kt
+@@ -57,6 +57,9 @@ class Element(name: String, override val propertyName: String, kind: Kind) : Abs
+      */
+     var _needTransformOtherChildren: Boolean = false
+ 
++    /** 该节点直接拥有的模式根字段名；非模式宿主保持为 null。 */
++    var patternTreeRootFieldName: String? = null
++
+     /**
+      * CFIR 元素始终生成 accept 方法。
+      */
+diff --git a/cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/printer/ElementPrinter.kt b/cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/printer/ElementPrinter.kt
+index 3acc300b7..df64301e7 100644
+--- a/cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/printer/ElementPrinter.kt
++++ b/cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/printer/ElementPrinter.kt
+@@ -11,6 +11,7 @@ import org.cangnova.cangjie.cfir.tree.generator.model.Field
+ import org.cangnova.cangjie.cfir.tree.generator.util.replaceFunctionDeclaration
+ import org.cangnova.cangjie.generators.tree.AbstractElementPrinter
+ import org.cangnova.cangjie.generators.tree.AbstractFieldPrinter
++import org.cangnova.cangjie.generators.tree.ImplementationKind
+ import org.cangnova.cangjie.generators.tree.TypeRefWithNullability
+ import org.cangnova.cangjie.generators.tree.TypeVariable
+ import org.cangnova.cangjie.generators.tree.printer.ImportCollectingPrinter
+@@ -47,6 +48,14 @@ internal class ElementPrinter(printer: ImportCollectingPrinter) : AbstractElemen
+     override fun ImportCollectingPrinter.printAdditionalMethods(element: Element) {
+         val kind = element.kind ?: error("Expected non-null element kind")
+         with(element) {
++            if (patternTreeRootFieldName != null) {
++                println()
++                val abstractModifier = if (kind == ImplementationKind.Interface || kind == ImplementationKind.SealedInterface) "" else "abstract "
++                println("${abstractModifier}override fun patternTreeRoot(): org.cangnova.cangjie.cfir.CfirElement")
++                println("${abstractModifier}override fun validatePatternTreeRoot(newPatternTreeRoot: org.cangnova.cangjie.cfir.CfirElement)")
++                println("${abstractModifier}override fun replacePatternTreeRoot(newPatternTreeRoot: org.cangnova.cangjie.cfir.CfirElement)")
++            }
++
+             val treeName = "CFIR"
+             printAcceptMethod(element, cfirVisitorType, hasImplementation = true, treeName = treeName)
+             printTransformMethod(
+@@ -77,7 +86,7 @@ internal class ElementPrinter(printer: ImportCollectingPrinter) : AbstractElemen
+                     .map { it.typeRef.copy(nullable = false) }
+                     .distinctBy { it.render() }
+ 
+-                val override = overriddenClasses.any { it.render() == clazzRender } && !(field.name == "source" && element in elementsWithReplaceSource)
++                val override = (field.replaceOverride || overriddenClasses.any { it.render() == clazzRender }) && !(field.name == "source" && element in elementsWithReplaceSource)
+                 field.replaceDeclaration(override, forceNullable = field.receiveNullableTypeInReplace)
+ 
+                 for (overriddenClass in overriddenClasses.filter { it.render() != clazzRender }) {
+diff --git a/cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/printer/ImplementationPrinter.kt b/cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/printer/ImplementationPrinter.kt
+index 226d53519..b7c74e56c 100644
+--- a/cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/printer/ImplementationPrinter.kt
++++ b/cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/printer/ImplementationPrinter.kt
+@@ -34,7 +34,8 @@ private class ImplementationFieldPrinter(printer: ImportCollectingPrinter) : Abs
+     /**
+      * 判断字段在实现类中是否必须生成为可变属性。
+      */
+-    override fun forceMutable(field: Field): Boolean = field.isMutable && (field !is ListField || field.isMutableOrEmptyList)
++    override fun forceMutable(field: Field): Boolean = field.isMutable &&
++            (field !is ListField || field.isMutableOrEmptyList || field.readOnlyImplementationList)
+ 
+     /**
+      * 返回实现类字段使用的实际类型。
+@@ -97,11 +98,12 @@ internal class ImplementationPrinter(
+      */
+     override fun ImportCollectingPrinter.printAdditionalMethods(implementation: Implementation) {
+         fun Field.transform() {
+-            when (this) {
+-                is SimpleField ->
++            when {
++                customTransform != null -> printlnMultiLine(customTransform!!)
++                this is SimpleField ->
+                     println("$name = ${name}${call()}transform(transformer, data)")
+ 
+-                is ListField -> {
++                this is ListField -> {
+                     addImport(transformInPlaceImport)
+                     println("${name}.transformInplace(transformer, data)")
+                 }
+@@ -112,6 +114,17 @@ internal class ImplementationPrinter(
+             val isInterface = kind == ImplementationKind.Interface || kind == ImplementationKind.SealedInterface
+             val isAbstract = kind == ImplementationKind.AbstractClass || kind == ImplementationKind.SealedClass
+ 
++            element.patternTreeRootFieldName?.let { rootFieldName ->
++                val rootField = element.allFields.single { it.name == rootFieldName }
++                val capitalizedRootFieldName = rootFieldName.replaceFirstChar(Char::uppercaseChar)
++                println()
++                println("override fun patternTreeRoot(): org.cangnova.cangjie.cfir.CfirElement = $rootFieldName")
++                println("override fun validatePatternTreeRoot(newPatternTreeRoot: org.cangnova.cangjie.cfir.CfirElement) {")
++                println("    require(newPatternTreeRoot is ${rootField.typeRef.render()}) { \"Pattern tree root has an incompatible CFIR node type.\" }")
++                println("}")
++                println("override fun replacePatternTreeRoot(newPatternTreeRoot: org.cangnova.cangjie.cfir.CfirElement) = replace$capitalizedRootFieldName(newPatternTreeRoot as ${rootField.typeRef.render()})")
++            }
++
+             val bindingCalls = element.allFields.filter {
+                 it.withBindThis && it.hasSymbolType && it !is ListField && it.name != "companionObjectSymbol"
+             }.takeIf {
+@@ -122,10 +135,21 @@ internal class ImplementationPrinter(
+             }.orEmpty()
+ 
+             val customCalls = fieldsInConstructor.filter { it.customInitializationCall != null }
+-            if (bindingCalls.isNotEmpty() || customCalls.isNotEmpty()) {
++            if (bindingCalls.isNotEmpty() || customCalls.isNotEmpty() || initializationStatements.isNotEmpty()) {
+                 println()
+                 println("init {")
+                 withIndent {
++                    val sourceField = implementation.allFields.find { it.name == "source" }
++                    val originField = implementation.allFields.find { it.name == "origin" }
++                    if (originField != null && sourceField != null && sourceField.typeRef.nullable) {
++                        println("@Suppress(\"SENSELESS_COMPARISON\")")
++                        println("require(source != null || origin != CfirDeclarationOrigin.Source) { \"\${this::class.simpleName} with Source origin was instantiated without a source element.\" }")
++                    }
++
++                    for (statement in initializationStatements) {
++                        printlnMultiLine(statement)
++                    }
++
+                     for (symbolField in bindingCalls) {
+                         println("${symbolField.name}${symbolField.call()}bind(this)")
+                     }
+@@ -135,12 +159,6 @@ internal class ImplementationPrinter(
+                         println("${customCall.name} = ${customCall.customInitializationCall}")
+                     }
+ 
+-                    val sourceField = implementation.allFields.find { it.name == "source" }
+-                    val originField = implementation.allFields.find { it.name == "origin" }
+-                    if (originField != null && sourceField != null && sourceField.typeRef.nullable) {
+-                        println("@Suppress(\"SENSELESS_COMPARISON\")")
+-                        println("require(source != null || origin != CfirDeclarationOrigin.Source) { \"\${this::class.simpleName} with Source origin was instantiated without a source element.\" }")
+-                    }
+                 }
+                 println("}")
+             }
+@@ -260,6 +278,7 @@ internal class ImplementationPrinter(
+                                 !element.needTransformOtherChildren -> field.transform()
+                                 else -> {}
+                             }
++
+                         }
+ 
+                         if (element.needTransformOtherChildren) {
+@@ -358,7 +377,9 @@ internal class ImplementationPrinter(
+                 val newValue = "new$capitalizedFieldName"
+                 generateReplace(field, forceNullable = field.receiveNullableTypeInReplace) {
+                     when {
+-                        field.implementationDefaultStrategy!!.withGetter -> {}
++                        field.customReplace != null -> printlnMultiLine(field.customReplace!!)
++                        field.implementationDefaultStrategy!!.withGetter && field.customSetter == null -> {}
++                        field.implementationDefaultStrategy!!.withGetter -> println("${field.name} = $newValue")
+                         field is ListField && !field.isMutableOrEmptyList -> {
+                             println("if (${field.name} === $newValue) return")
+                             println("${field.name}.clear()")
+diff --git a/cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/util/util.kt b/cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/util/util.kt
+index 4a6e41a31..0321d192e 100644
+--- a/cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/util/util.kt
++++ b/cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/util/util.kt
+@@ -35,6 +35,7 @@ inline fun File.writeToFileUsingSmartPrinterIfFileContentChanged(block: SmartPri
+ fun Field.getMutableType(forBuilder: Boolean = false): TypeRefWithNullability = when (this) {
+     is ListField -> when {
+         forBuilder -> StandardTypes.mutableList
++        readOnlyImplementationList -> StandardTypes.list
+         !isMutable -> StandardTypes.list
+         isMutableOrEmptyList -> type(BASE_PACKAGE, "MutableOrEmptyList", kind = TypeKind.Class, exactPackage = true)
+         else -> StandardTypes.mutableList
+diff --git a/generators/src/org/cangnova/cangjie/generators/tree/AbstractField.kt b/generators/src/org/cangnova/cangjie/generators/tree/AbstractField.kt
+index 7d890937f..acc697c91 100644
+--- a/generators/src/org/cangnova/cangjie/generators/tree/AbstractField.kt
++++ b/generators/src/org/cangnova/cangjie/generators/tree/AbstractField.kt
+@@ -140,6 +140,36 @@ abstract class AbstractField<Field : AbstractField<Field>> {
+      */
+     abstract var customSetter: String?
+ 
++    /**
++     * 字段专属的 transform 方法体。
++     *
++     * 该配置用于字段变换需要维护跨字段不变量的场景；生成器仍按常规方式声明方法，
++     * 但将默认的子节点赋值逻辑替换为此处提供的完整变换步骤。
++     */
++    open var customTransform: String? = null
++
++    /** 字段 replace 方法的自定义完整方法体。 */
++    open var customReplace: String? = null
++
++    /**
++     * 是否将字段自身类型对应的 replace 声明标记为 override。
++     *
++     * 属性可能覆盖父类型中的同名属性，但其窄化类型对应的 replace 重载未必覆盖父方法；
++     * 只有框架模型无法表示的接口契约才应显式开启此配置。
++     */
++    open var replaceOverride: Boolean = false
++
++    /** 列表字段在实现类中以只读 List 视图暴露，同时保留私有可替换状态。 */
++    open var readOnlyImplementationList: Boolean = false
++
++    /**
++     * 实现属性自定义 setter 的可见性。
++     *
++     * 默认与属性一致；当字段参与内部维护的不变量时，可将 setter 限制在实现类内，
++     * 让外部调用方只能通过生成的 replace/transform API 修改状态。
++     */
++    var customSetterVisibility: Visibility = Visibility.PUBLIC
++
+     /**
+      * @see org.cangnova.cangjie.generators.tree.detectBaseTransformerTypes
+      */
+@@ -204,6 +234,11 @@ abstract class AbstractField<Field : AbstractField<Field>> {
+         copy.isMutable = isMutable
+         copy.deprecation = deprecation
+         copy.visibility = visibility
++        copy.customSetterVisibility = customSetterVisibility
++        copy.customTransform = customTransform
++        copy.customReplace = customReplace
++        copy.replaceOverride = replaceOverride
++        copy.readOnlyImplementationList = readOnlyImplementationList
+         copy.isOverride = isOverride
+         copy.useInBaseTransformerDetection = useInBaseTransformerDetection
+         copy.overriddenFields += overriddenFields
+diff --git a/generators/src/org/cangnova/cangjie/generators/tree/AbstractFieldPrinter.kt b/generators/src/org/cangnova/cangjie/generators/tree/AbstractFieldPrinter.kt
+index 6483ad947..568b6d268 100644
+--- a/generators/src/org/cangnova/cangjie/generators/tree/AbstractFieldPrinter.kt
++++ b/generators/src/org/cangnova/cangjie/generators/tree/AbstractFieldPrinter.kt
+@@ -86,6 +86,8 @@ abstract class AbstractFieldPrinter<Field : AbstractField<*>>(
+                 initializer = when {
+                     defaultValue?.withGetter == true -> null
+                     defaultValue != null -> defaultValue.defaultValue
++                    inImplementation && field.readOnlyImplementationList && !inConstructor ->
++                        "java.util.Collections.unmodifiableList(${field.name}.toList())"
+                     !inConstructor && field.customSetter != null -> field.name
+                     else -> null
+                 },
+@@ -102,6 +104,9 @@ abstract class AbstractFieldPrinter<Field : AbstractField<*>>(
+             if (inImplementation && !inConstructor) {
+                 field.customSetter?.let {
+                     withIndent {
++                        if (field.customSetterVisibility != Visibility.PUBLIC) {
++                            print(field.customSetterVisibility.name.lowercase(), " ")
++                        }
+                         print("set(value)")
+                         printBlock {
+                             printlnMultiLine(it)
+diff --git a/generators/src/org/cangnova/cangjie/generators/tree/AbstractImplementation.kt b/generators/src/org/cangnova/cangjie/generators/tree/AbstractImplementation.kt
+index 7d9302146..f95308a63 100644
+--- a/generators/src/org/cangnova/cangjie/generators/tree/AbstractImplementation.kt
++++ b/generators/src/org/cangnova/cangjie/generators/tree/AbstractImplementation.kt
+@@ -119,6 +119,11 @@ abstract class AbstractImplementation<Implementation, Element, Field>(
+      */
+     var constructorParameterOrderOverride: List<String>? = null
+ 
++    /**
++     * 实现类构造完成后的初始化语句，由树模型 DSL 显式声明。
++     */
++    val initializationStatements: MutableList<String> = mutableListOf()
++
+     /**
+      * 判断字段是否由实现类体内默认值或自定义 setter 处理，而不是必须作为构造参数传入。
+      */
+diff --git a/generators/src/org/cangnova/cangjie/generators/tree/config/AbstractBuilderConfigurator.kt b/generators/src/org/cangnova/cangjie/generators/tree/config/AbstractBuilderConfigurator.kt
+index 28e5461de..9c86f84b7 100644
+--- a/generators/src/org/cangnova/cangjie/generators/tree/config/AbstractBuilderConfigurator.kt
++++ b/generators/src/org/cangnova/cangjie/generators/tree/config/AbstractBuilderConfigurator.kt
+@@ -286,6 +286,7 @@ abstract class AbstractBuilderConfigurator<Element, Implementation, ElementField
+          */
+         override val builder: IntermediateBuilder<ElementField, Element>
+     ) : BuilderConfigurationContext() {
++
+         inner class Fields {
+ 
+             /**
+diff --git a/generators/src/org/cangnova/cangjie/generators/tree/config/AbstractImplementationConfigurator.kt b/generators/src/org/cangnova/cangjie/generators/tree/config/AbstractImplementationConfigurator.kt
+index ccb2bab02..b7f669630 100644
+--- a/generators/src/org/cangnova/cangjie/generators/tree/config/AbstractImplementationConfigurator.kt
++++ b/generators/src/org/cangnova/cangjie/generators/tree/config/AbstractImplementationConfigurator.kt
+@@ -391,12 +391,28 @@ abstract class AbstractImplementationConfigurator<Implementation, Element, Eleme
+                     isMutable = true
+                 }
+ 
++            /** 字段 transform 方法的自定义完整方法体。 */
++            var customTransform: String? = null
++
++            /** 字段 replace 方法的自定义完整方法体。 */
++            var customReplace: String? = null
++
++            /** 列表字段在实现类中公开为只读 List 视图。 */
++            var readOnlyImplementationList: Boolean = false
++
++            /** 自定义 setter 的可见性；用于实现属性存储框架内部维护的不变量。 */
++            var customSetterVisibility: Visibility? = null
++
+             /**
+              * 将本 DSL 上下文收集到的配置写入字段模型（implementationDefaultStrategy）。
+              * 优先级：显式 value > delegate 委托 > 不写入（保持已有策略）
+              */
+             fun applyConfiguration() {
+                 field.customSetter = customSetter
++                field.customTransform = customTransform
++                field.customReplace = customReplace
++                field.readOnlyImplementationList = readOnlyImplementationList
++                customSetterVisibility?.let { field.customSetterVisibility = it }
+                 isMutable?.let { field.isMutable = it }
+ 
+                 var value = value
+@@ -428,6 +444,13 @@ abstract class AbstractImplementationConfigurator<Implementation, Element, Eleme
+     protected inner class ImplementationContext(val implementation: Implementation) :
+         FieldContainerContext<ElementField>(implementation) {
+ 
++        /**
++         * 为生成的实现类 init 块追加初始化语句。
++         */
++        fun initializationStatements(vararg statements: String) {
++            implementation.initializationStatements += statements
++        }
++
+         /** 为实现类添加 @OptIn 注解，当类内代码需要 opt-in API 时使用 */
+         fun optInToInternals() {
+             implementation.requiresOptIn = true

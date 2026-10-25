@@ -1,0 +1,104 @@
+SEVERE/ERROR entries: 163
+   21  #c.i.o.a.i.ExceptionsKt - IntelliJ IDEA #.#.# RC  Build #IU-#.#.#
+   21  #c.i.o.a.i.ExceptionsKt - JDK: #.#.#; VM: OpenJDK #-Bit Server VM; Vendor: JetBrains s.r.o.
+   21  #c.i.o.a.i.ExceptionsKt - OS: Windows #
+   21  #c.i.o.a.i.ExceptionsKt - Plugin to blame: Kubernetes version: #.#.#
+   21  #c.i.o.a.i.ExceptionsKt - Last Action: 
+    3  #c.i.o.a.i.ExceptionsKt - Unhandled exception in [Kernel@rjeslvd#pgjee#nvrh#, Rete(abortOnError=false, commands=capacity=#,data=[onReceive], reteState=kotlinx.coroutines.flow.StateFlowImpl@#e#, dbSource=ReteDbSource(rete
+    3  #org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics.LLCfirDiagnosticVisitor$Companion - The diagnostic collector has been interrupted by an exception. The result may be incomplete | at org.cangnova.cangjie.anal
+    3  #org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics.LLCfirDiagnosticVisitor$Companion - IntelliJ IDEA #.#.# RC  Build #IU-#.#.#
+    3  #org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics.LLCfirDiagnosticVisitor$Companion - JDK: #.#.#; VM: OpenJDK #-Bit Server VM; Vendor: JetBrains s.r.o.
+    3  #org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics.LLCfirDiagnosticVisitor$Companion - OS: Windows #
+    3  #org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics.LLCfirDiagnosticVisitor$Companion - Plugin to blame: CangJie version: #.#.#
+    3  #org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics.LLCfirDiagnosticVisitor$Companion - Last Action: 
+    3  #c.i.o.a.i.ExceptionsKt - Unhandled exception in [Kernel@#iin#l#o#bsb#mumr, Rete(abortOnError=false, commands=capacity=#,data=[onReceive], reteState=kotlinx.coroutines.flow.StateFlowImpl@#c#a#c#, dbSource=ReteDbSource(re
+    3  #c.i.o.a.i.ExceptionsKt - Unhandled exception in [Kernel@#k#l#kos#ornnuvchd#, Rete(abortOnError=false, commands=capacity=#,data=[onReceive], reteState=kotlinx.coroutines.flow.StateFlowImpl@#a#d#, dbSource=ReteDbSource(re
+    3  #c.i.o.a.i.ExceptionsKt - Unhandled exception in [Kernel@pg#v#hso#llbdl#aos#o, Rete(abortOnError=false, commands=capacity=#,data=[onReceive], reteState=kotlinx.coroutines.flow.StateFlowImpl@#c#f#d, dbSource=ReteDbSource(
+    3  #c.i.o.a.i.ExceptionsKt - Unhandled exception in [Kernel@gtlrqvv#id#lhlp#c#, Rete(abortOnError=false, commands=capacity=#,data=[onReceive], reteState=kotlinx.coroutines.flow.StateFlowImpl@#a#d#e#, dbSource=ReteDbSource(r
+    3  #c.i.o.a.i.ExceptionsKt - Unhandled exception in [Kernel@kliqql#u#aioelb#q, Rete(abortOnError=false, commands=capacity=#,data=[onReceive], reteState=kotlinx.coroutines.flow.StateFlowImpl@#f#d#, dbSource=ReteDbSource(rete
+    3  #c.i.o.a.i.ExceptionsKt - Unhandled exception in [Kernel@jtpdrc#cdq#knsufa#k, Rete(abortOnError=false, commands=capacity=#,data=[onReceive], reteState=kotlinx.coroutines.flow.StateFlowImpl@#a#e, dbSource=ReteDbSource(ret
+    2  #o.j.k.a.l.l.a.f.s.LLFirSessionCacheStorageInvalidator - Exception from LL FIR session invalidation! | at com.intellij.openapi.diagnostic.Logger.ensureNotControlFlow(Logger.java:#) | at com.intellij.idea.IdeaLogger.error
+    2  #o.j.k.a.l.l.a.f.s.LLFirSessionCacheStorageInvalidator - IntelliJ IDEA #.#.# RC  Build #IU-#.#.#
+    2  #o.j.k.a.l.l.a.f.s.LLFirSessionCacheStorageInvalidator - JDK: #.#.#; VM: OpenJDK #-Bit Server VM; Vendor: JetBrains s.r.o.
+    2  #o.j.k.a.l.l.a.f.s.LLFirSessionCacheStorageInvalidator - OS: Windows #
+    2  #o.j.k.a.l.l.a.f.s.LLFirSessionCacheStorageInvalidator - Plugin to blame: Kotlin version: #.#.#-IJ
+    1  #c.i.u.SlowOperations - Slow operations are prohibited on EDT. See SlowOperations.assertSlowOperationsAreAllowed javadoc. | at com.intellij.openapi.diagnostic.Logger.error(Logger.java:#) | at com.intellij.util.SlowOperat
+    1  #c.i.u.SlowOperations - IntelliJ IDEA #.#.# RC  Build #IU-#.#.#
+
+=== distinct cangjie-related severe ===
+    3  #org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics.LLCfirDiagnosticVisitor$Companion - The diagnostic collector has been interrupted by an exception. The result may be incomplete | at org.cangnova.cangjie.anal
+    3  #org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics.LLCfirDiagnosticVisitor$Companion - IntelliJ IDEA #.#.# RC  Build #IU-#.#.#
+    3  #org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics.LLCfirDiagnosticVisitor$Companion - JDK: #.#.#; VM: OpenJDK #-Bit Server VM; Vendor: JetBrains s.r.o.
+    3  #org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics.LLCfirDiagnosticVisitor$Companion - OS: Windows #
+    3  #org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics.LLCfirDiagnosticVisitor$Companion - Plugin to blame: CangJie version: #.#.#
+    3  #org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics.LLCfirDiagnosticVisitor$Companion - Last Action: 
+
+=== first 8 severe with time ===
+2026-10-21 19:04:58,634 #c.i.o.a.i.ExceptionsKt - Unhandled exception in [Kernel@rjeslvd22pgjee5nvrh8, Rete(abortOnError=false, commands=capacity=2147483647,data=[onReceive], reteState=kotlinx.coroutines.flow.StateFlowImpl@6950e31, dbSource=ReteDbSource(reteState=kotlinx.coroutines.flow.StateFlowImpl@6950e31)), DbSourceCon
+2026-10-21 19:04:58,660 #c.i.o.a.i.ExceptionsKt - IntelliJ IDEA 2025.3.1 RC  Build #IU-253.29346.50
+2026-10-21 19:04:58,660 #c.i.o.a.i.ExceptionsKt - JDK: 21.0.9; VM: OpenJDK 64-Bit Server VM; Vendor: JetBrains s.r.o.
+2026-10-21 19:04:58,660 #c.i.o.a.i.ExceptionsKt - OS: Windows 11
+2026-10-21 19:04:58,660 #c.i.o.a.i.ExceptionsKt - Unhandled exception in [Kernel@rjeslvd22pgjee5nvrh8, Rete(abortOnError=false, commands=capacity=2147483647,data=[onReceive], reteState=kotlinx.coroutines.flow.StateFlowImpl@6950e31, dbSource=ReteDbSource(reteState=kotlinx.coroutines.flow.StateFlowImpl@6950e31)), DbSourceCon
+2026-10-21 19:04:58,662 #c.i.o.a.i.ExceptionsKt - IntelliJ IDEA 2025.3.1 RC  Build #IU-253.29346.50
+2026-10-21 19:04:58,662 #c.i.o.a.i.ExceptionsKt - JDK: 21.0.9; VM: OpenJDK 64-Bit Server VM; Vendor: JetBrains s.r.o.
+2026-10-21 19:04:58,662 #c.i.o.a.i.ExceptionsKt - OS: Windows 11
+
+BLOCKED threads: 19
+ 19  com.intellij.psi.impl.source.PsiFileImpl.calcTreeElement(PsiFileImpl.java:841)
+
+--- sample ---
+
+[ApplicationImpl pooled thread 1]
+   at com.intellij.psi.impl.source.PsiFileImpl.loadTreeElement(PsiFileImpl.java:218)
+   at com.intellij.psi.impl.source.PsiFileImpl.calcTreeElement(PsiFileImpl.java:841)
+   at com.intellij.psi.impl.source.PsiFileImpl.getNode(PsiFileImpl.java:1040)
+   at org.cangnova.cangjie.psi.CjCommonFile.getFeaturesDirective(CjFile.kt:343)
+   at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile$lambda$20(PsiRawCfirBuilder.kt:379)
+   at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$$Lambda/0x0000019f246a66d8.invoke(Unknown Source)
+   at org.cangnova.cangjie.cfir.builder.Context.withPackage(RawCfirBuilderContext.kt:70)
+   at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilder.withPackageContext(AbstractRawCfirBuilder.kt:87)
+   at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile(PsiRawCfirBuilder.kt:365)
+
+[ApplicationImpl pooled thread 3]
+   at com.intellij.psi.impl.source.PsiFileImpl.loadTreeElement(PsiFileImpl.java:218)
+   at com.intellij.psi.impl.source.PsiFileImpl.calcTreeElement(PsiFileImpl.java:841)
+   at com.intellij.psi.impl.source.PsiFileImpl.getNode(PsiFileImpl.java:1040)
+   at org.cangnova.cangjie.psi.CjCommonFile.getFeaturesDirective(CjFile.kt:343)
+   at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile$lambda$20(PsiRawCfirBuilder.kt:379)
+   at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$$Lambda/0x0000019f246a66d8.invoke(Unknown Source)
+   at org.cangnova.cangjie.cfir.builder.Context.withPackage(RawCfirBuilderContext.kt:70)
+   at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilder.withPackageContext(AbstractRawCfirBuilder.kt:87)
+   at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile(PsiRawCfirBuilder.kt:365)
+
+[ApplicationImpl pooled thread 4]
+   at com.intellij.psi.impl.source.PsiFileImpl.loadTreeElement(PsiFileImpl.java:218)
+   at com.intellij.psi.impl.source.PsiFileImpl.calcTreeElement(PsiFileImpl.java:841)
+   at com.intellij.psi.impl.source.PsiFileImpl.getNode(PsiFileImpl.java:1040)
+   at org.cangnova.cangjie.psi.CjCommonFile.getFeaturesDirective(CjFile.kt:343)
+   at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile$lambda$20(PsiRawCfirBuilder.kt:379)
+   at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$$Lambda/0x0000019f246a66d8.invoke(Unknown Source)
+   at org.cangnova.cangjie.cfir.builder.Context.withPackage(RawCfirBuilderContext.kt:70)
+   at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilder.withPackageContext(AbstractRawCfirBuilder.kt:87)
+   at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile(PsiRawCfirBuilder.kt:365)
+
+=== ���� cangnova/cangjie ֡���߳��� ===
+27 / 109
+[RUNNABLE      ] ApplicationImpl pooled thread 63       -> org.cangnova.cangjie.parsing.AbstractCangJieParsing.mark(AbstractCangJieParsing.kt:239)
+[RUNNABLE      ] ApplicationImpl pooled thread 80       -> org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilderKt.macroExpressionHeadSyntax(PsiRawCfirBuilder.kt:4286)
+[RUNNABLE      ] ApplicationImpl pooled thread 82       -> org.cangnova.cangjie.cfir.builder.macro.MacroPayloadTokenizer.mergeStringLiterals(MacroPayloadTokenizer.kt:107
+[BLOCKED       ] ApplicationImpl pooled thread 1        -> org.cangnova.cangjie.psi.CjCommonFile.getFeaturesDirective(CjFile.kt:343)
+[BLOCKED       ] ApplicationImpl pooled thread 3        -> org.cangnova.cangjie.psi.CjCommonFile.getFeaturesDirective(CjFile.kt:343)
+[BLOCKED       ] ApplicationImpl pooled thread 4        -> org.cangnova.cangjie.psi.CjCommonFile.getFeaturesDirective(CjFile.kt:343)
+[BLOCKED       ] ApplicationImpl pooled thread 5        -> org.cangnova.cangjie.psi.CjCommonFile.getFeaturesDirective(CjFile.kt:343)
+[BLOCKED       ] ApplicationImpl pooled thread 6        -> org.cangnova.cangjie.psi.CjCommonFile.getFeaturesDirective(CjFile.kt:343)
+[BLOCKED       ] ApplicationImpl pooled thread 62       -> org.cangnova.cangjie.psi.CjCommonFile.getFeaturesDirective(CjFile.kt:343)
+[BLOCKED       ] ApplicationImpl pooled thread 64       -> org.cangnova.cangjie.psi.CjCommonFile.getFeaturesDirective(CjFile.kt:343)
+[BLOCKED       ] ApplicationImpl pooled thread 65       -> org.cangnova.cangjie.psi.CjCommonFile.getFeaturesDirective(CjFile.kt:343)
+[BLOCKED       ] ApplicationImpl pooled thread 67       -> org.cangnova.cangjie.psi.CjCommonFile.getFeaturesDirective(CjFile.kt:343)
+
+=== metrics open-telemetry-metrics.2026-10-22-12-43-03.csv ===
+JVM.GC.collectionTimesMs                                n=  7 min=            675 max=          87278 last=          33960
+JVM.GC.collections                                      n=  7 min=             35 max=            104 last=             35
+LowMemory.gcLoad                                        n=  7 min=              0 max=              1 last=              1
+LowMemory.gcOverloaded                                  n=  7 min=              0 max=              1 last=              1
+LowMemory.memoryDeficitScore                            n=  5 min=              1 max=              5 last=              2

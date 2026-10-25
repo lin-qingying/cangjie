@@ -1,0 +1,162 @@
+ M .idea/compiler.xml
+ M .idea/gradle.xml
+ M .idea/modules.xml
+ M .idea/workspace.xml
+ M analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/diagnostics/AbstractCfirIdeDiagnosticsCollector.kt
+ M analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/diagnostics/FileStructureElementDiagnosticsCollector.kt
+ M analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/diagnostics/LLCfirDiagnosticReporter.kt
+ M analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/sessions/LLCfirResolvableModuleSession.kt
+ M analysis/low-level-api-cfir/test/org/cangnova/cangjie/analysis/low/level/api/cfir/util/ContextCollectorTest.kt
+ M cfir/analysis-tests/REPAIR_LOG.md
+ M cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisLLTPsiTestGenerated.kt
+ M cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisLLTTestGenerated.kt
+ M cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisMacroPsiTestGenerated.kt
+ M cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisMacroTestGenerated.kt
+ M cfir/cfir-serialization/src/org/cangnova/cangjie/cfir/serialization/deserialize/CfirDeclDeserializer.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirPatternBindingVariable.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirPatternVariable.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/builder/CfirPatternBindingVariableBuilder.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/builder/CfirPatternVariableBuilder.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirAnonymousFunctionImpl.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirClassImpl.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirCodeFragmentImpl.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirConstructorImpl.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirEnumConstructorImpl.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirEnumImpl.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirErrorFunctionImpl.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirErrorNamedValueImpl.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirErrorPrimaryConstructorImpl.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirExtendImpl.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirFieldVariableImpl.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirFileImpl.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirFinalizerImpl.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirInterfaceImpl.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirInvalidDeclarationImpl.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirMacroDeclarationImpl.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirMainFunctionImpl.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirNamedFunctionImpl.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirPatternBindingVariableImpl.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirPatternVariableImpl.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirPrimaryConstructor.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirPropertyAccessorImpl.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirPropertyImpl.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirStructImpl.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirTypeAliasImpl.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirTypeParameterImpl.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirValueParameterImpl.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirCatch.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirHandleClause.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirLetPatternExpression.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirMatchBranch.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/builder/CfirCatchBuilder.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/builder/CfirLetPatternExpressionBuilder.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/builder/CfirMatchBranchBuilder.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/impl/CfirCatchImpl.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/impl/CfirHandleClauseImpl.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/impl/CfirLetPatternExpressionImpl.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/impl/CfirMatchBranchImpl.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/CfirBindingPattern.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/CfirCatchPattern.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/CfirCommandTypePattern.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/CfirConstPattern.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/CfirEnumPattern.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/CfirExpressionPattern.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/CfirOrPattern.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/CfirPattern.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/CfirTuplePattern.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/CfirTypePattern.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/CfirVarOrEnumPattern.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/CfirWildcardPattern.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/impl/CfirBindingPatternImpl.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/impl/CfirCatchPatternImpl.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/impl/CfirCommandTypePatternImpl.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/impl/CfirConstPatternImpl.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/impl/CfirEnumPatternImpl.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/impl/CfirExpressionPatternImpl.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/impl/CfirOrPatternImpl.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/impl/CfirTuplePatternImpl.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/impl/CfirTypePatternImpl.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/impl/CfirVarOrEnumPatternImpl.kt
+ M cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/impl/CfirWildcardPatternImpl.kt
+ M cfir/cfir-tree/src/org/cangnova/cangjie/cfir/patterns/CfirPatternBindingUtils.kt
+ M cfir/cfir-tree/src/org/cangnova/cangjie/cfir/patterns/CfirPatternMutableState.kt
+ M cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/CfirTree.kt
+ M cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/ImplementationConfigurator.kt
+ M cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/model/Element.kt
+ M cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/printer/ElementPrinter.kt
+ M cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/printer/ImplementationPrinter.kt
+ M cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/util/util.kt
+ M cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirConflictsDeclarationChecker.kt
+ M cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirConflictsHelpers.kt
+ M cfir/entrypoint/src/org/cangnova/cangjie/cfir/entrypoint/configuration/CfirFrontendConfigurationKeys.kt
+ M cfir/entrypoint/src/org/cangnova/cangjie/cfir/pipeline/analyse.kt
+ M cfir/providers/src/org/cangnova/cangjie/cfir/resolve/providers/macro/MacroFragmentParser.kt
+ M cfir/raw-cfir/light-tree2cfir/src/org/cangnova/cangjie/cfir/lightTree/LightTreeRawCfirDeclarationBuilder.kt
+ M cfir/raw-cfir/psi2cfir/src/org/cangnova/cangjie/cfir/builder/PsiRawCfirBuilder.kt
+ M cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/CfirResolutionSnapshot.kt
+ M cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirDeclarationsResolveTransformer.kt
+ M cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirExpressionsResolveTransformer.kt
+ M cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirPatternBindingResolution.kt
+ M cfir/resolve/test/org/cangnova/cangjie/cfir/resolve/CfirResolutionSnapshotTest.kt
+ M chir/cfir2chir/src/org/cangnova/cangjie/chir/cfir2chir/Cfir2ChirDeclarationStorage.kt
+ M chir/cfir2chir/src/org/cangnova/cangjie/chir/cfir2chir/Cfir2ChirIds.kt
+ M common/diagnostics/src/org/cangnova/cangjie/cfir/diagnostics/DiagnosticReporter.kt
+ M compiler/cli/cli-base/src/org/cangnova/cangjie/cli/common/arguments/parseCommandLineArguments.kt
+ M compiler/config/src/org/cangnova/cangjie/config/CompilerConfiguration.kt
+ M compiler/config/test/org/cangnova/cangjie/CompilerConfigurationTest.kt
+ M docs/README.md
+ M generators/src/org/cangnova/cangjie/generators/tree/AbstractField.kt
+ M generators/src/org/cangnova/cangjie/generators/tree/AbstractFieldPrinter.kt
+ M generators/src/org/cangnova/cangjie/generators/tree/AbstractImplementation.kt
+ M generators/src/org/cangnova/cangjie/generators/tree/config/AbstractBuilderConfigurator.kt
+ M generators/src/org/cangnova/cangjie/generators/tree/config/AbstractImplementationConfigurator.kt
+ M macro/macro-common/src/org/cangnova/cangjie/macro/MacroTokenKind.kt
+ M macro/macro-common/src/org/cangnova/cangjie/macro/protocol/MacroMsgCodec.kt
+ M macro/macro-process/test/org/cangnova/cangjie/macro/process/ProcessMacroExecutorTest.kt
+?? .idea/runConfigurations/Run_IDE_with_Plugin.xml
+?? .scratch/cfir_macro_validation/staticSameSignature.cj
+?? .scratch/codex_llt_interface_probe.cj
+?? .scratch/codex_llt_official_probe-results.txt
+?? .scratch/codex_llt_official_probe.cj
+?? .scratch/fsck-unreachable.txt
+?? .scratch/git-status-full.txt
+?? .scratch/lambda_diff/act1.txt
+?? .scratch/lambda_diff/act2.txt
+?? .scratch/lambda_diff/exp1.txt
+?? .scratch/lambda_diff/exp2.txt
+?? .scratch/lambda_probe/pLongRef.cj
+?? .scratch/lambda_probe/pMember.cj
+?? .scratch/lambda_probe/pNestedSolved.cj
+?? .scratch/lambda_probe/pNestedUnsolved.cj
+?? .scratch/lambda_probe/pOperator.cj
+?? .scratch/lambda_probe/pOuterInner.cj
+?? .scratch/lambda_probe/pTopNeverUsed.cj
+?? .scratch/lambda_probe/pTopSolved.cj
+?? .scratch/lambda_probe/probeAssign.cj
+?? .scratch/lambda_probe/probeNestedParam.cj
+?? .scratch/lambda_probe/probeParam.cj
+?? .scratch/main-before-strip.txt
+?? .scratch/sites/cangjie-compiler-site.tar.gz
+?? .scratch/sites/cangjie-compiler-site/
+?? .scratch/unreachable-hashes.txt
+?? .workbuddy/memory/2026-10-13.md
+?? cfir/analysis-tests/testData/llt/function/static_nonstatic_same_signature.cj
+?? cfir/analysis-tests/testData/macro/samePackageCrossFileGeneratedDeclarationConflict.cj
+?? cfir/analysis-tests/testData/macro/samePackageCrossFileGeneratedDeclarationConflict.macro.cfir.txt
+?? cfir/analysis-tests/testData/macro/sameProjectGeneratedDeclarationConflict.cj
+?? cfir/analysis-tests/testData/macro/sameProjectGeneratedDeclarationConflict.macro.cfir.txt
+?? cfir/analysis-tests/testData/macro/sameProjectMacroGeneratedParameterOverload.cj
+?? cfir/analysis-tests/testData/macro/sameProjectMacroGeneratedParameterOverload.macro.cfir.txt
+?? cfir/analysis-tests/testData/macro/sameProjectMacroGroupConflict.cj
+?? cfir/analysis-tests/testData/macro/sameProjectMacroGroupConflict.macro.cfir.txt
+?? cfir/analysis-tests/testData/macro/sameProjectMacroReturnTypeOnlyConflict.cj
+?? cfir/analysis-tests/testData/macro/sameProjectMacroReturnTypeOnlyConflict.macro.cfir.txt
+?? cfir/analysis-tests/tests/org/cangnova/cangjie/cfir/analysis/tests/CfirPatternBindingTreeOwnershipTest.kt
+?? cfir/cfir-tree/src/org/cangnova/cangjie/cfir/patterns/CfirPatternTreeOwnership.kt
+?? cfir/cfir-tree/src/org/cangnova/cangjie/cfir/patterns/CfirPatternTypeReferences.kt
+?? cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirDeclarationConflictSourceOrder.kt
+?? cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirFunctionConflictGroups.kt
+?? compiler/config/src/org/cangnova/cangjie/config/CompilerInvocationConfiguration.kt
+?? compiler/config/test/org/cangnova/cangjie/CompilerInvocationConfigurationTest.kt
+?? docs/compiler-implementation-status.md
+?? docs/probe.tmp

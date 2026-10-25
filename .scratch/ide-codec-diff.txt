@@ -1,0 +1,199 @@
+diff --git a/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/server/protocol/MacroMsgCodec.kt b/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/server/protocol/MacroMsgCodec.kt
+index b64a5bab..9c3db636 100644
+--- a/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/server/protocol/MacroMsgCodec.kt
++++ b/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/server/protocol/MacroMsgCodec.kt
+@@ -12,6 +12,8 @@ package org.cangnova.cangjie.macro.server.protocol
+ 
+ import MacroMsgFormat.*
+ import com.google.flatbuffers.FlatBufferBuilder
++import org.cangnova.cangjie.macro.TokenInfo as SharedTokenInfo
++import org.cangnova.cangjie.macro.protocol.MacroMsgCodec as SharedMacroMsgCodec
+ import java.nio.ByteBuffer
+ import java.nio.ByteOrder
+ 
+@@ -24,10 +26,10 @@ object MacroMsgCodec {
+ 
+     // MacroEvalStatus
+     /** LSPMacroServer 并行请求结束时以 EVAL 携带已完成的宏调用结果。 */
+-    const val STATUS_EVAL: UByte = 2u
+-    const val STATUS_SUCCESS: UByte = 3u
+-    const val STATUS_FAIL: UByte = 4u
+-    const val STATUS_FINISH: UByte = 6u
++    const val STATUS_EVAL: UByte = SharedMacroMsgCodec.STATUS_EVAL
++    const val STATUS_SUCCESS: UByte = SharedMacroMsgCodec.STATUS_SUCCESS
++    const val STATUS_FAIL: UByte = SharedMacroMsgCodec.STATUS_FAIL
++    const val STATUS_FINISH: UByte = SharedMacroMsgCodec.STATUS_FINISH
+ 
+     // ─── 消息构建 ─────────────────────────────────────────────────────────────
+ 
+@@ -178,6 +180,7 @@ object MacroMsgCodec {
+                     beginCol = begin?.column ?: 0,
+                     endLine = end?.line ?: 0,
+                     endCol = end?.column ?: 0,
++                    delimiterNum = tok.delimiterNum.toInt(),
+                 )
+             }
+             val diagnostics = (0 until result.diagsLength).mapNotNull { i ->
+@@ -223,50 +226,20 @@ object MacroMsgCodec {
+         val tokens: List<ParsedToken>,
+         val diagnostics: List<ParsedDiagnostic>,
+     ) {
+-        /** LSPMacroServer 的并行请求在完成后仍序列化为 EVAL；失败则返回 FAIL。 */
+-        val isSuccess: Boolean get() = status == STATUS_EVAL || status == STATUS_SUCCESS || status == STATUS_FINISH
+-        val isFailed:  Boolean get() = status == STATUS_FAIL
+-
+-        /**
+-         * 根据 token 类型启发式重建展开文本
+-         *
+-         * C++ 宏服务返回的展开 token 位置信息指向原始宏调用位置，不代表展开后的布局，
+-         * 因此无法通过位置重建空白。改用基于 token 值的启发式规则在 token 间插入空格：
+-         * - 换行 token（值含 `\n`/`\r`）直接输出 `\n`
+-         * - 定界符（括号、逗号等）前后不加空格
+-         * - 其余 token 间加空格（关键字、标识符等）
+-         */
+-        fun toExpandedText(): String {
+-            if (tokens.isEmpty()) return ""
+-            val sb = StringBuilder()
+-            var prevToken: ParsedToken? = null
+-            for (tok in tokens) {
+-                if (tok.value.contains('\n') || tok.value.contains('\r')) {
+-                    sb.append('\n')
+-                    prevToken = tok
+-                    continue
+-                }
+-                val prev = prevToken
+-                if (prev != null && needsSpaceBetween(prev, tok)) {
+-                    sb.append(' ')
+-                }
+-                sb.append(tok.value)
+-                prevToken = tok
+-            }
+-            return sb.toString()
+-        }
+-
+-        companion object {
+-            private val noSpaceAfter = setOf("(", "[", ".", "@", "#", "!")
+-            private val noSpaceBefore = setOf(")", "]", ",", ";", ".", "(")
+-
+-            private fun needsSpaceBetween(prev: ParsedToken, curr: ParsedToken): Boolean {
+-                if (prev.value.contains('\n') || prev.value.contains('\r')) return false
+-                if (prev.value in noSpaceAfter) return false
+-                if (curr.value in noSpaceBefore) return false
+-                return true
++        /** 与 CFIR 共用 CJC 成功状态白名单及单 ILLEGAL token 失败判定。 */
++        val isSuccess: Boolean get() = SharedMacroMsgCodec.isMacroResultSuccessful(status, sharedTokens())
++        val isFailed: Boolean get() = !isSuccess
++
++        /** 使用共享 CJC 宏协议格式器，避免 IDE 预览与 CFIR 输入采用不同 token 语义。 */
++        fun toExpandedText(): String = SharedMacroMsgCodec.rebuildExpandedText(sharedTokens())
++
++        private fun sharedTokens(): List<SharedTokenInfo> = tokens.map { token ->
++                SharedTokenInfo(
++                    kind = token.kind.toUByte(),
++                    value = token.value,
++                    delimiterNum = token.delimiterNum,
++                )
+             }
+-        }
+     }
+ 
+     data class ParsedToken(
+@@ -276,6 +249,7 @@ object MacroMsgCodec {
+         val beginCol: Int = 0,
+         val endLine: Int = 0,
+         val endCol: Int = 0,
++        val delimiterNum: Int = 1,
+     )
+     data class ParsedDiagnostic(val severity: Int, val message: String, val hint: String)
+ }
+diff --git a/modules/ide/macro/src/test/kotlin/org/cangnova/cangjie/macro/server/protocol/MacroMsgCodecTest.kt b/modules/ide/macro/src/test/kotlin/org/cangnova/cangjie/macro/server/protocol/MacroMsgCodecTest.kt
+index d72abf0b..3e570e4d 100644
+--- a/modules/ide/macro/src/test/kotlin/org/cangnova/cangjie/macro/server/protocol/MacroMsgCodecTest.kt
++++ b/modules/ide/macro/src/test/kotlin/org/cangnova/cangjie/macro/server/protocol/MacroMsgCodecTest.kt
+@@ -1,5 +1,11 @@
+ package org.cangnova.cangjie.macro.server.protocol
+ 
++import MacroMsgFormat.MacroMsg
++import MacroMsgFormat.MacroResult
++import MacroMsgFormat.Token
++import com.google.flatbuffers.FlatBufferBuilder
++import org.cangnova.cangjie.macro.MacroTokenKind
++import kotlin.test.assertEquals
+ import kotlin.test.Test
+ import kotlin.test.assertFalse
+ import kotlin.test.assertTrue
+@@ -37,4 +43,74 @@ class MacroMsgCodecTest {
+         assertFalse(result.isSuccess)
+         assertTrue(result.isFailed)
+     }
++
++    @Test
++    fun expansionPreviewUsesSharedCjcTokenReconstruction() {
++        val result = MacroMsgCodec.ParsedMacroResult(
++            status = MacroMsgCodec.STATUS_SUCCESS,
++            tokens = listOf(
++                MacroMsgCodec.ParsedToken(MacroTokenKind.kindOf("IDENTIFIER").toInt(), "target"),
++                MacroMsgCodec.ParsedToken(MacroTokenKind.kindOf("LPAREN").toInt(), "("),
++                MacroMsgCodec.ParsedToken(MacroTokenKind.kindOf("STRING_LITERAL").toInt(), "generated"),
++                MacroMsgCodec.ParsedToken(MacroTokenKind.kindOf("RPAREN").toInt(), ")"),
++            ),
++            diagnostics = emptyList(),
++        )
++
++        assertEquals("target(\"generated\")", result.toExpandedText())
++    }
++
++    @Test
++    fun resultTokenDelimiterSurvivesFlatBufferParsing() {
++        val parsed = MacroMsgCodec.parseMacroResult(
++            rawResult(MacroMsgCodec.ParsedToken(
++                kind = MacroTokenKind.kindOf("MULTILINE_RAW_STRING").toInt(),
++                value = "raw body",
++                delimiterNum = 2,
++            )),
++        )!!
++
++        assertEquals(2, parsed.tokens.single().delimiterNum)
++        assertEquals("##\"raw body\"##", parsed.toExpandedText())
++    }
++
++    @Test
++    fun evalWithSingleIllegalTokenIsFailure() {
++        val result = MacroMsgCodec.ParsedMacroResult(
++            status = MacroMsgCodec.STATUS_EVAL,
++            tokens = listOf(
++                MacroMsgCodec.ParsedToken(
++                    kind = MacroTokenKind.kindOf("ILLEGAL").toInt(),
++                    value = "failed expansion",
++                ),
++            ),
++            diagnostics = emptyList(),
++        )
++
++        assertFalse(result.isSuccess)
++        assertTrue(result.isFailed)
++    }
++
++    private fun rawResult(token: MacroMsgCodec.ParsedToken): ByteArray {
++        val builder = FlatBufferBuilder(256)
++        val value = builder.createString(token.value)
++        Token.startToken(builder)
++        Token.addKind(builder, token.kind.toUByte())
++        Token.addValue(builder, value)
++        Token.addDelimiterNum(builder, token.delimiterNum.toUInt())
++        val tokenOffset = Token.endToken(builder)
++        val tokenVector = MacroResult.createTksVector(builder, intArrayOf(tokenOffset))
++        val result = MacroResult.createMacroResult(
++            builder,
++            0,
++            MacroMsgCodec.STATUS_SUCCESS,
++            tokenVector,
++            0,
++            0,
++            0,
++        )
++        val message = MacroMsg.createMacroMsg(builder, MacroMsgCodec.TYPE_MACRO_RESULT, result)
++        builder.finish(message)
++        return builder.sizedByteArray()
++    }
+ }

@@ -1,0 +1,175 @@
+diff --git a/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/diagnostics/AbstractCfirIdeDiagnosticsCollector.kt b/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/diagnostics/AbstractCfirIdeDiagnosticsCollector.kt
+index 0b4f99180..5740b1b09 100644
+--- a/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/diagnostics/AbstractCfirIdeDiagnosticsCollector.kt
++++ b/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/diagnostics/AbstractCfirIdeDiagnosticsCollector.kt
+@@ -25,6 +25,7 @@ import org.cangnova.cangjie.cfir.analysis.collectors.components.AbstractDiagnost
+ import org.cangnova.cangjie.cfir.analysis.collectors.components.CfirChirArithmeticDiagnosticCollectorComponent
+ import org.cangnova.cangjie.cfir.analysis.collectors.components.ControlFlowAnalysisDiagnosticComponent
+ import org.cangnova.cangjie.cfir.analysis.collectors.components.ErrorNodeDiagnosticCollectorComponent
++import org.cangnova.cangjie.cfir.analysis.collectors.components.MacroConstructionDiagnosticCollectorComponent
+ import org.cangnova.cangjie.cfir.analysis.collectors.components.ReportCommitterDiagnosticComponent
+ import org.cangnova.cangjie.cfir.analysis.extensions.CfirAdditionalCheckersExtension
+ import org.cangnova.cangjie.cfir.analysis.extensions.additionalCheckers
+@@ -91,6 +92,9 @@ internal class LLCheckersFactory(val session: LLCfirSession) : CfirSessionCompon
+             add(DeclarationCheckersDiagnosticComponent(session, reporter, declarationCheckers))
+             add(ExpressionCheckersDiagnosticComponent(session, reporter, expressionCheckers))
+             add(TypeCheckersDiagnosticComponent(session, reporter, typeCheckers))
++            if (filter.runDefaultCheckers) {
++                add(MacroConstructionDiagnosticCollectorComponent(session, reporter))
++            }
+         }.toTypedArray()
+ 
+         // 与 regularComponents 严格同序，且必须跟着上面那条条件分支同步增减：
+@@ -102,6 +106,9 @@ internal class LLCheckersFactory(val session: LLCfirSession) : CfirSessionCompon
+             add(CfirCheckerComponentKind.DECLARATION)
+             add(CfirCheckerComponentKind.EXPRESSION)
+             add(CfirCheckerComponentKind.TYPE)
++            if (filter.runDefaultCheckers) {
++                add(CfirCheckerComponentKind.MACRO_CONSTRUCTION)
++            }
+         }.toTypedArray()
+ 
+         val postSemaComponents = if (filter.runDefaultCheckers) {
+diff --git a/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/diagnostics/FileStructureElementDiagnosticsCollector.kt b/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/diagnostics/FileStructureElementDiagnosticsCollector.kt
+index bf0ffe34e..48aeca6bc 100644
+--- a/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/diagnostics/FileStructureElementDiagnosticsCollector.kt
++++ b/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/diagnostics/FileStructureElementDiagnosticsCollector.kt
+@@ -29,6 +29,7 @@ internal fun collectForStructureElement(
+     val reporter = LLCfirDiagnosticReporter(
+         sourceMapper = { source -> session.macroExpansionRegistry?.originSourceForGeneratedSource(source) },
+     )
++    reporter.beginDiagnosticCollection()
+     val collector = LLCfirStructureElementDiagnosticsCollector(
+         session,
+         createVisitor,
+diff --git a/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/diagnostics/LLCfirDiagnosticReporter.kt b/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/diagnostics/LLCfirDiagnosticReporter.kt
+index 2c6c90c68..341bb68ea 100644
+--- a/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/diagnostics/LLCfirDiagnosticReporter.kt
++++ b/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/diagnostics/LLCfirDiagnosticReporter.kt
+@@ -84,6 +84,7 @@ internal class LLCfirDiagnosticReporter(
+         val currentElement = when (this) {
+             is CjPsiDiagnostic -> element
+             is CjDiagnosticWithSource -> element
++            is CjOffsetsOnlyDiagnostic -> element
+             else -> error("Unknown diagnostic type ${this::class.simpleName}")
+         }
+         val mappedElement = sourceMapper(currentElement)
+diff --git a/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/sessions/LLCfirResolvableModuleSession.kt b/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/sessions/LLCfirResolvableModuleSession.kt
+index bf6972eb1..72054d147 100644
+--- a/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/sessions/LLCfirResolvableModuleSession.kt
++++ b/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/sessions/LLCfirResolvableModuleSession.kt
+@@ -39,7 +39,7 @@ abstract class LLCfirResolvableModuleSession(
+         return moduleComponents.scopeSessionProvider.getScopeSession()
+     }
+ 
+-    /** 已发布的完整宏语义快照；构造尚未成功时为空。 */
++    /** 已发布的完整宏语义快照；尚未产生可记录的完整 construction 批次时为空。 */
+     val macroSemanticSnapshot: LLCfirMacroSemanticSnapshot?
+         get() = moduleComponents.macroSemanticSnapshotStore.snapshot
+ 
+@@ -47,12 +47,13 @@ abstract class LLCfirResolvableModuleSession(
+      * 基于同一 pre-macro 输入批次，在不发布的情况下预构建语义快照索引。
+      *
+      * 输入是本次构造独占的 CFIR 树，索引构建不依赖实时 PSI 查询；调用方应在后台、读写访问之外执行，
+-     * 再把返回快照交给 [publishMacroSemanticSnapshot]。
++     * 再把返回快照交给 [publishMacroSemanticSnapshot]。完整批次可以带有 typed error placeholder，
++     * 但仍必须保留每个输入源文件的顺序与身份。
+      */
+     @OptIn(CaExperimentalApi::class)
+     fun prepareMacroSemanticSnapshot(
+         pre: PreMacroRawBuildResult,
+-        result: MacroConstructionResult.Success,
++        result: MacroConstructionResult.Recordable,
+     ): LLCfirMacroSemanticSnapshot? {
+         val sourceFiles = sourceFilesFor(pre, result) ?: return null
+         if (moduleComponents.macroSemanticSnapshotStore.snapshot != null) return null
+@@ -63,6 +64,16 @@ abstract class LLCfirResolvableModuleSession(
+         )
+     }
+ 
++    /** 保留已有 Success 调用方的 JVM 方法签名，同时复用通用的完整批次路径。 */
++    @OptIn(CaExperimentalApi::class)
++    fun prepareMacroSemanticSnapshot(
++        pre: PreMacroRawBuildResult,
++        result: MacroConstructionResult.Success,
++    ): LLCfirMacroSemanticSnapshot? {
++        val recordableResult: MacroConstructionResult.Recordable = result
++        return prepareMacroSemanticSnapshot(pre, recordableResult)
++    }
++
+     /**
+      * 在 IDE 写访问屏障内切换宏语义视图，并使旧 raw CFIR 与 PSI 结构映射同时退役。
+      *
+@@ -72,7 +83,7 @@ abstract class LLCfirResolvableModuleSession(
+     @OptIn(CaExperimentalApi::class)
+     fun publishMacroSemanticSnapshot(
+         pre: PreMacroRawBuildResult,
+-        result: MacroConstructionResult.Success,
++        result: MacroConstructionResult.Recordable,
+         preparedSnapshot: LLCfirMacroSemanticSnapshot,
+     ): Boolean {
+         check(ApplicationManager.getApplication().isWriteAccessAllowed) {
+@@ -108,10 +119,21 @@ abstract class LLCfirResolvableModuleSession(
+         return published
+     }
+ 
++    /** 保留已有 Success 调用方的 JVM 方法签名，同时复用通用的完整批次路径。 */
++    @OptIn(CaExperimentalApi::class)
++    fun publishMacroSemanticSnapshot(
++        pre: PreMacroRawBuildResult,
++        result: MacroConstructionResult.Success,
++        preparedSnapshot: LLCfirMacroSemanticSnapshot,
++    ): Boolean {
++        val recordableResult: MacroConstructionResult.Recordable = result
++        return publishMacroSemanticSnapshot(pre, recordableResult, preparedSnapshot)
++    }
++
+     /** 校验构造批次和源文件身份，避免发布另一个会话或另一次展开的结果。 */
+     private fun sourceFilesFor(
+         pre: PreMacroRawBuildResult,
+-        result: MacroConstructionResult.Success,
++        result: MacroConstructionResult.Recordable,
+     ): List<CjFile>? {
+         if (pre.session !== this || result.recordableFiles.session !== this) return null
+         if (pre.constructionIdentity !== result.recordableFiles.constructionIdentity) return null
+diff --git a/analysis/low-level-api-cfir/test/org/cangnova/cangjie/analysis/low/level/api/cfir/util/ContextCollectorTest.kt b/analysis/low-level-api-cfir/test/org/cangnova/cangjie/analysis/low/level/api/cfir/util/ContextCollectorTest.kt
+index c8a18394b..6aea01c11 100644
+--- a/analysis/low-level-api-cfir/test/org/cangnova/cangjie/analysis/low/level/api/cfir/util/ContextCollectorTest.kt
++++ b/analysis/low-level-api-cfir/test/org/cangnova/cangjie/analysis/low/level/api/cfir/util/ContextCollectorTest.kt
+@@ -9,6 +9,10 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.test.getResolutionFacade
+ import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
+ import org.cangnova.cangjie.cfir.symbols.CfirPatternBindingSymbol
+ import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
++import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
++import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
++import org.cangnova.cangjie.cfir.patterns.CfirBindingPattern
++import org.cangnova.cangjie.cfir.expressions.CfirLazyExpression
+ import org.cangnova.cangjie.name.Name
+ import org.cangnova.cangjie.psi.CjBindingPattern
+ import org.cangnova.cangjie.psi.CjFile
+@@ -18,6 +22,7 @@ import org.cangnova.cangjie.psi.CjVarOrEnumPattern
+ import org.junit.jupiter.api.Assertions.assertEquals
+ import org.junit.jupiter.api.Assertions.assertFalse
+ import org.junit.jupiter.api.Assertions.assertNotSame
++import org.junit.jupiter.api.Assertions.assertSame
+ import org.junit.jupiter.api.Assertions.assertTrue
+ import org.junit.jupiter.api.Test
+ 
+@@ -67,6 +72,17 @@ class ContextCollectorTest : AbstractAnalysisApiExecutionTest(
+         val cfirFile = mainFile.getOrBuildCfirFile(mainFile.getResolutionFacadeForTest())
+ 
+         CfirLazyBodiesCalculator.calculateAllLazyExpressionsInFile(cfirFile)
++
++        val function = cfirFile.declarations.filterIsInstance<CfirNamedFunction>().single()
++        val patternVariable = function.body!!.statements.filterIsInstance<CfirPatternVariable>().single()
++        val bindingVariable = (patternVariable.pattern as CfirBindingPattern).bindingVariable!!
++        assertTrue(patternVariable.initializer != null, "The lazy initializer must be rebuilt from source PSI.")
++        assertFalse(patternVariable.initializer is CfirLazyExpression, "The initializer must no longer be a lazy placeholder.")
++        assertSame(
++            patternVariable.initializer,
++            bindingVariable.initializer,
++            "Lazy initializer reconstruction must refresh the non-owning binding initializer reference.",
++        )
+     }
+ }
+ 

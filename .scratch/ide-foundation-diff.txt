@@ -1,0 +1,352 @@
+diff --git a/modules/foundation/src/main/kotlin/org/cangnova/cangjie/task/CjBackgroundTaskQueue.kt b/modules/foundation/src/main/kotlin/org/cangnova/cangjie/task/CjBackgroundTaskQueue.kt
+index 65b3dbf5..f3d9a431 100644
+--- a/modules/foundation/src/main/kotlin/org/cangnova/cangjie/task/CjBackgroundTaskQueue.kt
++++ b/modules/foundation/src/main/kotlin/org/cangnova/cangjie/task/CjBackgroundTaskQueue.kt
+@@ -119,6 +119,9 @@ class CjBackgroundTaskQueue {
+     @Volatile
+     private var isDisposed: Boolean = false
+ 
++    /** 串行化提交顺序，不用于保护状态或覆盖任务执行和取消。 */
++    private val submissionLock = Any()
++
+     /**
+      * 释放队列资源
+      *
+@@ -126,20 +129,29 @@ class CjBackgroundTaskQueue {
+      * 调用此方法后，队列将不再可用。
+      */
+     fun dispose() {
+-        isDisposed = true
++        val (tasks, runningTasks) = synchronized(this) {
++            if (isDisposed) return
++
++            isDisposed = true
++            val pendingTasks = cancelableTasks.toList()
++            cancelableTasks.clear()
++            val synchronousTasks = synchronousTasks.toList()
++            this.synchronousTasks.clear()
++            pendingTasks to synchronousTasks
++        }
++
+         processor.clear()
+-        cancelAll()
++        tasks.forEach(BackgroundableTaskData::cancel)
++        runningTasks.forEach(SynchronousTaskData::cancel)
+     }
+ 
+-    /**
+-     * 可取消的任务列表
+-     *
+-     * 保存所有正在排队或运行的任务，用于按类型取消或全部取消。
+-     * 访问此列表必须在 `@Synchronized` 方法中进行。
+-     */
+-    // Guarded by self object monitor (@Synchronized)
++    /** 保存排队或运行中的异步任务；访问必须持有队列实例锁。 */
++    // Guarded by synchronized(this).
+     private val cancelableTasks: MutableList<BackgroundableTaskData> = mutableListOf()
+ 
++    /** 单元测试同步任务也参与类型取消与项目释放，不只记录它们的进度指示器。 */
++    private val synchronousTasks: MutableSet<SynchronousTaskData> = mutableSetOf()
++
+     /**
+      * 队列是否为空
+      *
+@@ -160,32 +172,23 @@ class CjBackgroundTaskQueue {
+      *
+      * @param taskType 要取消的任务类型
+      */
+-    @Synchronized
+     fun cancelTasks(taskType: CangJieTask.TaskType) {
+-        cancelableTasks.removeIf { data ->
+-            if (data.task is CangJieTask && taskType.canCancelOther(data.task.taskType)) {
+-                data.cancel()
+-                true
+-            } else {
+-                false
+-            }
++        val (tasksToCancel, synchronousTasksToCancel) = synchronized(this) {
++            cancelableTasks.filter { data -> isCancelableBy(taskType, data.task) } to
++                synchronousTasks.filter { data -> isCancelableBy(taskType, data.task) }
+         }
+-    }
++        tasksToCancel.forEach(BackgroundableTaskData::cancel)
++        synchronousTasksToCancel.forEach(SynchronousTaskData::cancel)
+ 
+-    /**
+-     * 取消所有任务
+-     *
+-     * 取消队列中的所有任务，包括正在等待和正在运行的任务。
+-     * 此方法在 [dispose] 时被调用。
+-     */
+-    @Synchronized
+-    private fun cancelAll() {
+-        for (task in cancelableTasks) {
+-            task.cancel()
++        synchronized(this) {
++            cancelableTasks.removeAll(tasksToCancel.toSet())
++            synchronousTasks.removeAll(synchronousTasksToCancel.toSet())
+         }
+-        cancelableTasks.clear()
+     }
+ 
++    private fun isCancelableBy(taskType: CangJieTask.TaskType, task: Task.Backgroundable): Boolean =
++        (task as? CangJieTask)?.let { taskType.canCancelOther(it.taskType) } == true
++
+     /**
+      * 在当前线程同步运行任务（仅用于单元测试）
+      *
+@@ -195,10 +198,29 @@ class CjBackgroundTaskQueue {
+      * @param task 要执行的任务
+      * @throws IllegalStateException 如果不在单元测试模式
+      */
+-    private fun runTaskInCurrentThread(task: Task.Backgroundable) {
++    private fun registerSynchronousTask(task: Task.Backgroundable): SynchronousTaskData? {
++        val synchronousTask = SynchronousTaskData(task, EmptyProgressIndicator())
++        synchronized(this) {
++            if (isDisposed) return null
++            synchronousTasks += synchronousTask
++        }
++        return synchronousTask
++    }
++
++    private fun runTaskInCurrentThread(task: Task.Backgroundable, synchronousTask: SynchronousTaskData) {
+         check(isUnitTestMode)
+         val pm = ProgressManager.getInstance() as ProgressManagerImpl
+-        pm.runProcessWithProgressInCurrentThread(task, EmptyProgressIndicator(), ModalityState.NON_MODAL)
++        try {
++            pm.runProcessWithProgressInCurrentThread(
++                task,
++                synchronousTask.indicator,
++                ModalityState.NON_MODAL,
++            )
++        } finally {
++            synchronized(this) {
++                synchronousTasks -= synchronousTask
++            }
++        }
+     }
+ 
+     /**
+@@ -218,21 +240,41 @@ class CjBackgroundTaskQueue {
+      *
+      * @param task 要执行的后台任务
+      */
+-    @Synchronized
+     fun run(task: Task.Backgroundable) {
+         if (isUnitTestMode && task is CangJieTask && task.runSyncInUnitTests) {
+-            runTaskInCurrentThread(task)
+-        } else {
+-            LOG.debug("Scheduling task $task")
+-            if (task is CangJieTask) {
++            // 同步任务可能等待 EDT；不得在持有队列状态锁时运行任务。
++            val synchronousTask = synchronized(submissionLock) {
++                if (isDisposed) return
+                 cancelTasks(task.taskType)
++                registerSynchronousTask(task)
++            } ?: return
++            runTaskInCurrentThread(task, synchronousTask)
++        } else {
++            synchronized(submissionLock) {
++                val (tasksToCancel, synchronousTasksToCancel) = synchronized(this) {
++                    if (isDisposed) return
++                    if (task is CangJieTask) {
++                        cancelableTasks.filter { data -> isCancelableBy(task.taskType, data.task) } to
++                            synchronousTasks.filter { data -> isCancelableBy(task.taskType, data.task) }
++                    } else {
++                        emptyList<BackgroundableTaskData>() to emptyList<SynchronousTaskData>()
++                    }
++                }
++                tasksToCancel.forEach(BackgroundableTaskData::cancel)
++                synchronousTasksToCancel.forEach(SynchronousTaskData::cancel)
++
++                synchronized(this) {
++                    cancelableTasks.removeAll(tasksToCancel.toSet())
++                    synchronousTasks.removeAll(synchronousTasksToCancel.toSet())
++                    if (isDisposed) return
++
++                    LOG.debug("Scheduling task $task")
++                    val data = BackgroundableTaskData(task, ::onFinish)
++                    // 非 CangJieTask 也登记，项目释放时才能统一取消。
++                    cancelableTasks += data
++                    processor.add(data)
++                }
+             }
+-            val data = BackgroundableTaskData(task, ::onFinish)
+-
+-            // Add to cancelable tasks even if the task is not [CjTaskExt] b/c it still can be canceled by [cancelAll]
+-            cancelableTasks += data
+-
+-            processor.add(data)
+         }
+     }
+ 
+@@ -243,9 +285,17 @@ class CjBackgroundTaskQueue {
+      *
+      * @param data 已完成的任务数据
+      */
+-    @Synchronized
+     private fun onFinish(data: BackgroundableTaskData) {
+-        cancelableTasks.remove(data)
++        synchronized(this) {
++            cancelableTasks.remove(data)
++        }
++    }
++
++    private class SynchronousTaskData(
++        val task: Task.Backgroundable,
++        val indicator: EmptyProgressIndicator,
++    ) {
++        fun cancel() = indicator.cancel()
+     }
+ 
+     /**
+diff --git a/modules/ide/base/build.gradle.kts b/modules/ide/base/build.gradle.kts
+index 0b86d124..d7715ad4 100644
+--- a/modules/ide/base/build.gradle.kts
++++ b/modules/ide/base/build.gradle.kts
+@@ -1,14 +1,16 @@
+ import org.jetbrains.intellij.platform.gradle.TestFrameworkType
++import org.jetbrains.intellij.platform.gradle.extensions.IntelliJPlatformDependenciesExtension
+ 
+ plugins {
+     id("cangjie.intellij-module")
+ }
+ 
+-dependencies {
+-    intellijPlatform {
++dependencies.extensions
++    .getByType(IntelliJPlatformDependenciesExtension::class.java)
++    .apply {
+         testFramework(TestFrameworkType.Platform)
++        bundledModules("com.intellij.modules.jcef")
+     }
+-}
+ 
+ dependencies {
+     implementation(project(":modules:foundation"))
+diff --git a/modules/ide/lsp/build.gradle.kts b/modules/ide/lsp/build.gradle.kts
+index 9105dcb2..6e9e1174 100644
+--- a/modules/ide/lsp/build.gradle.kts
++++ b/modules/ide/lsp/build.gradle.kts
+@@ -1,7 +1,13 @@
++import org.jetbrains.intellij.platform.gradle.extensions.IntelliJPlatformDependenciesExtension
++
+ plugins {
+     id("cangjie.intellij-module")
+ }
+ 
++dependencies.extensions
++    .getByType(IntelliJPlatformDependenciesExtension::class.java)
++    .plugin("com.redhat.devtools.lsp4ij:${providers.gradleProperty("lsp4ijPluginVersion").get()}")
++
+ dependencies {
+     implementation(project(":modules:foundation"))
+     implementation(project(":modules:domain:toolchain"))
+@@ -16,7 +22,4 @@ dependencies {
+     compileOnly(libs.cangjieAnalysisApiForIde)
+     compileOnly(libs.cangjieAnalysisApiCfirForIde)
+ 
+-    intellijPlatform {
+-        plugins("com.redhat.devtools.lsp4ij:0.19.2")
+-    }
+ }
+diff --git a/modules/ide/lsp/src/main/resources/org.cangnova.cangjie.lsp4ij.xml b/modules/ide/lsp/src/main/resources/org.cangnova.cangjie.lsp4ij.xml
+index 387d4c0d..ef3fc8b7 100644
+--- a/modules/ide/lsp/src/main/resources/org.cangnova.cangjie.lsp4ij.xml
++++ b/modules/ide/lsp/src/main/resources/org.cangnova.cangjie.lsp4ij.xml
+@@ -24,10 +24,6 @@
+ 
+ <idea-plugin>
+ 
+-    <dependencies>
+-        <plugin id="com.redhat.devtools.lsp4ij"/>
+-    </dependencies>
+-
+     <projectListeners>
+         <!-- 监听项目同步事件，在项目刷新成功后重启 LSP 服务器 -->
+         <listener
+diff --git a/modules/ide/project/build.gradle.kts b/modules/ide/project/build.gradle.kts
+index ab084b7c..706060c6 100644
+--- a/modules/ide/project/build.gradle.kts
++++ b/modules/ide/project/build.gradle.kts
+@@ -1,13 +1,15 @@
+ import org.jetbrains.intellij.platform.gradle.TestFrameworkType
++import org.jetbrains.intellij.platform.gradle.extensions.IntelliJPlatformDependenciesExtension
+ 
+ plugins {
+     id("cangjie.intellij-module")
+ }
+ 
++dependencies.extensions
++    .getByType(IntelliJPlatformDependenciesExtension::class.java)
++    .testFramework(TestFrameworkType.Platform)
++
+ dependencies {
+-    intellijPlatform {
+-        testFramework(TestFrameworkType.Platform)
+-    }
+ 
+     implementation(project(":modules:foundation"))
+     implementation(project(":modules:domain:toolchain"))
+diff --git a/modules/test-support/src/test/hostPlugin/META-INF/plugin.xml b/modules/test-support/src/test/hostPlugin/META-INF/plugin.xml
+index 0e5dce08..a26341d1 100644
+--- a/modules/test-support/src/test/hostPlugin/META-INF/plugin.xml
++++ b/modules/test-support/src/test/hostPlugin/META-INF/plugin.xml
+@@ -2,22 +2,44 @@
+     <id>org.cangnova.cangjie.testSupport</id>
+     <name>CangJie Test Support</name>
+ 
+-    <dependencies>
+-        <plugin id="com.intellij.modules.platform"/>
+-        <plugin id="com.intellij.modules.json"/>
+-        <plugin id="org.toml.lang"/>
+-        <plugin id="com.intellij.copyright"/>
+-    </dependencies>
++    <depends>com.intellij.modules.platform</depends>
++    <depends>com.intellij.modules.jcef</depends>
++    <depends>com.intellij.modules.json</depends>
++    <depends>org.toml.lang</depends>
++    <depends>com.intellij.copyright</depends>
+ 
+     <!--
+-      测试宿主沙箱里没有其它 CangJie 插件，各模块描述符位于各自 jar 根，
+-      `<module name="..."/>` 跨 jar 解析不到（平台只在宿主插件自己的 jar 内按 `META-INF/<name>.xml` 查找），
+-      因此按资源路径聚合生产描述符，与产品 `plugin.xml` 聚合方式一致。
++      这是仅供测试沙箱使用的经典插件描述符，不是产品插件的模块清单。
++      它只聚合测试需要的生产注册片段；Gradle 项目模块依赖由构建脚本管理，
++      不在经典测试宿主描述符中声明 Plugin Model v2 的类加载器依赖。
+       本 jar 只进入 test-support 自身的测试 classpath：作为 testFixtures 依赖进入 product / ide.base /
+       ide.project 的测试时，生产服务由消费者自己的插件提供，不应再聚合一遍。
+     -->
+-    <xi:include href="/org.cangnova.cangjie.foundation.xml"/>
+-    <xi:include href="/org.cangnova.cangjie.ide.base.xml"/>
+-    <xi:include href="/org.cangnova.cangjie.domain.projectModel.xml"/>
+-    <xi:include href="/org.cangnova.cangjie.domain.toolchain.xml"/>
++    <xi:include href="/META-INF/cangjie-product.xml"/>
++    <xi:include href="/META-INF/cangjie-jps.xml"/>
++    <xi:include href="/META-INF/cangjie-filetypes.xml"/>
++    <xi:include href="/META-INF/cangjie-language-shell.xml"/>
++    <xi:include href="/META-INF/cangjie-editor.xml"/>
++    <xi:include href="/META-INF/code-insight/cangjie-code-insight-refactoring.xml"/>
++    <xi:include href="/META-INF/code-insight/cangjie-code-insight-api.xml"/>
++    <xi:include href="/META-INF/code-insight/cangjie-code-insight-fixes-k2.xml"/>
++    <xi:include href="/META-INF/code-insight/cangjie-code-insight-completion.xml"/>
++    <xi:include href="/META-INF/cangjie-ide-features.xml"/>
++    <xi:include href="/META-INF/cangjie-analysis-entry.xml"/>
++    <xi:include href="/META-INF/cangjie-decompiled.xml"/>
++    <xi:include href="/META-INF/cangjie-formatter.xml"/>
++    <xi:include href="/META-INF/cangjie-actions.xml"/>
++    <xi:include href="/META-INF/cangjie-listeners.xml"/>
++    <xi:include href="/META-INF/cangjie-extensionPoints.xml"/>
++    <xi:include href="/META-INF/cangjie-toolwindow.xml"/>
++    <xi:include href="/META-INF/cangjie-notifications.xml"/>
++    <xi:include href="/META-INF/cangjie-toml.xml"/>
++    <xi:include href="/META-INF/cangjie-json.xml"/>
++    <xi:include href="/META-INF/cangjie-templates.xml"/>
++    <xi:include href="/META-INF/cangjie-icon.xml"/>
++    <xi:include href="/META-INF/cangjie-registry-key.xml"/>
++    <xi:include href="/META-INF/cangjie-copyright.xml"/>
++    <xi:include href="/META-INF/cangjie-dependency.xml"/>
++    <xi:include href="/META-INF/toolchain.xml"/>
++    <xi:include href="/META-INF/cangjie-toolchain.xml"/>
+ </idea-plugin>

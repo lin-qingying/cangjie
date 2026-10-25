@@ -1,0 +1,418 @@
+diff --git a/build-logic/build.gradle.kts b/build-logic/build.gradle.kts
+index 45c1356a..c5141acf 100644
+--- a/build-logic/build.gradle.kts
++++ b/build-logic/build.gradle.kts
+@@ -2,15 +2,22 @@ plugins {
+     `kotlin-dsl`
+ }
+ 
++// 本地验证较新 IntelliJ 平台时，让 Kotlin 编译器读取平台自身的 Kotlin metadata 版本；
++// 未显式指定时仍使用当前声明平台 253 的工具链版本。
++val kotlinGradlePluginVersion = providers.gradleProperty("kotlinGradlePluginVersion")
++    .orElse(providers.environmentVariable("KOTLIN_GRADLE_PLUGIN_VERSION"))
++    .orElse("2.2.0")
++    .get()
++
+ repositories {
+     gradlePluginPortal()
+     mavenCentral()
+ }
+ 
+ dependencies {
+-    implementation("org.jetbrains.intellij.platform:intellij-platform-gradle-plugin:2.10.5")
+-    implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:2.2.0")
+-    implementation("org.jetbrains.kotlin:kotlin-serialization:2.2.0")
++    implementation("org.jetbrains.intellij.platform:intellij-platform-gradle-plugin:2.19.0")
++    implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinGradlePluginVersion")
++    implementation("org.jetbrains.kotlin:kotlin-serialization:$kotlinGradlePluginVersion")
+     implementation("org.gradle.test-retry:org.gradle.test-retry.gradle.plugin:1.6.0")
+     implementation("com.google.protobuf:protobuf-gradle-plugin:0.9.4")
+ }
+diff --git a/build-logic/src/main/kotlin/cangjie.intellij-module.gradle.kts b/build-logic/src/main/kotlin/cangjie.intellij-module.gradle.kts
+index b62ad34b..03240a46 100644
+--- a/build-logic/src/main/kotlin/cangjie.intellij-module.gradle.kts
++++ b/build-logic/src/main/kotlin/cangjie.intellij-module.gradle.kts
+@@ -1,5 +1,5 @@
+ import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
+-import org.jetbrains.intellij.platform.gradle.extensions.intellijPlatform
++import org.jetbrains.intellij.platform.gradle.extensions.IntelliJPlatformDependenciesExtension
+ 
+ plugins {
+     id("cangjie.kotlin-module")
+@@ -9,15 +9,20 @@ plugins {
+ val ideToRunType = providers.gradleProperty("ideToRunType")
+     .orElse(providers.gradleProperty("baseIDE"))
+ val ideRunVersion = providers.gradleProperty("ideRunVersion")
++val ideLocalPath = providers.gradleProperty("ideLocalPath")
+ 
+-dependencies {
+-    intellijPlatform {
+-        // 所有 IntelliJ 模块统一绑定到同一平台基线，避免子模块各自漂移。
+-        create(IntelliJPlatformType.fromCode(ideToRunType.get()), ideRunVersion.get())
++dependencies.extensions
++    .getByType(IntelliJPlatformDependenciesExtension::class.java)
++    .apply {
++        // 子模块显式声明同一平台目标，避免 Gradle 9 在模型同步/依赖报告中跨项目解析根平台配置。
++        if (ideLocalPath.isPresent) {
++            local(ideLocalPath.get())
++        } else {
++            create(IntelliJPlatformType.fromCode(ideToRunType.get()), ideRunVersion.get())
++        }
+         bundledPlugins(
+             "org.toml.lang",
+             "com.intellij.copyright",
+-            "com.intellij.modules.json",
+         )
++        bundledModules("com.intellij.modules.json")
+     }
+-}
+diff --git a/build-logic/src/main/kotlin/cangjie.intellij-product.gradle.kts b/build-logic/src/main/kotlin/cangjie.intellij-product.gradle.kts
+index c26c9532..f9309121 100644
+--- a/build-logic/src/main/kotlin/cangjie.intellij-product.gradle.kts
++++ b/build-logic/src/main/kotlin/cangjie.intellij-product.gradle.kts
+@@ -1,18 +1,44 @@
+ import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
+ import org.jetbrains.intellij.platform.gradle.TestFrameworkType
++import org.jetbrains.intellij.platform.gradle.extensions.IntelliJPlatformDependenciesExtension
+ import org.jetbrains.intellij.platform.gradle.extensions.intellijPlatform
+-import java.io.File
++import org.jetbrains.intellij.platform.gradle.tasks.BuildPluginTask
++import org.jetbrains.intellij.platform.gradle.tasks.RunIdeTask
++import org.cangnova.build.intellij.PrepareRunIdeDumpDirectoryTask
+ 
+ plugins {
+     id("cangjie.kotlin-module")
+     id("org.jetbrains.intellij.platform")
+ }
+ 
++sourceSets {
++    main {
++        resources.srcDir("product/idea-plugin/src/main/resources")
++    }
++    test {
++        resources.srcDir("product/idea-plugin/src/test/resources")
++    }
++}
++
++kotlin {
++    sourceSets {
++        named("test") {
++            kotlin.srcDir("product/idea-plugin/src/test/kotlin")
++        }
++    }
++}
++
+ val ideToRunType = providers.gradleProperty("ideToRunType")
+     .orElse(providers.gradleProperty("baseIDE"))
+ val ideRunVersion = providers.gradleProperty("ideRunVersion")
++val ideLocalPath = providers.gradleProperty("ideLocalPath")
+ val sinceBuildProp = providers.gradleProperty("sinceBuild")
+ val untilBuildProp = providers.gradleProperty("untilBuild")
++val lsp4ijPluginVersion = providers.gradleProperty("lsp4ijPluginVersion").get()
++val devPlugins = listOf(
++    providers.gradleProperty("psiViewerPlugin"),
++    providers.gradleProperty("indexViewPlugin"),
++)
+ 
+ intellijPlatform {
+     // 253 平台在 sandbox 启动早期为 dynamic plugin 目录建立 VFS 监听时会触发 LoadingState 违规；
+@@ -20,63 +46,73 @@ intellijPlatform {
+     autoReload = false
+ 
+     pluginConfiguration {
++        id = "cn.cangnova.cangjie"
+         name = "CangJie"
++        version = provider { project.version.toString() }
++        description = provider {
++            project.layout.projectDirectory.file("product/idea-plugin/description.html")
++                .asFile.readText(Charsets.UTF_8).trim()
++        }
++        vendor {
++            name = "Lin_Qing_Ying"
++            email = "lin17624294976@outlook.com"
++            url = "https://github.com/lin-qingying"
++        }
++        ideaVersion {
++            sinceBuild.set(sinceBuildProp)
++            untilBuild.set(untilBuildProp)
++        }
+     }
+ 
+-    // 任务 14.5 的「加载/结构面」机械化核验：对最终分发制品跑 JetBrains Plugin Verifier，
+-    // 报告落在 product/idea-plugin/build/reports/pluginVerifier/（可复查记录）。
++    // 对最终分发制品运行 JetBrains Plugin Verifier，供插件兼容性核验使用。
+     // 被测平台与声明矩阵同源（ideToRunType / ideRunVersion，即 sinceBuild=253 对应的那一个），
+     // 已测平台之外的兼容性不做声明，与 PlatformMatrixDeclarationTest 的口径一致。
+     pluginVerification {
+         ides {
+-            ide(IntelliJPlatformType.fromCode(ideToRunType.get()), ideRunVersion.get())
++            create(IntelliJPlatformType.fromCode(ideToRunType.get()), ideRunVersion.get())
+         }
+     }
+ }
+ 
+-dependencies {
+-    intellijPlatform {
++val intellijPlatformDependencies = dependencies.extensions
++    .getByType(IntelliJPlatformDependenciesExtension::class.java)
++
++intellijPlatformDependencies.apply {
++    // 产品测试可以显式指向完整本地 IDEA，以便在用户实际运行的 IDE 版本上执行平台集成测试。
++    if (ideLocalPath.isPresent) {
++        local(ideLocalPath.get())
++    } else {
+         create(IntelliJPlatformType.fromCode(ideToRunType.get()), ideRunVersion.get())
+-        testFramework(TestFrameworkType.Platform)
+-        plugins("com.redhat.devtools.lsp4ij:0.19.2")
+-        // 开发调试工具插件（PsiViewer 查看 PSI 树、IndexViewer 查看索引），只在 runIde 沙箱中加载，
+-        // 打包插件分发（buildPlugin）时不携带，避免把调试工具发布给终端用户。
+-        val devPlugins = listOf(
+-            providers.gradleProperty("psiViewerPlugin"),
+-            providers.gradleProperty("indexViewPlugin"),
+-        )
+-        if (devPlugins.all { it.isPresent }) {
+-            plugins(*devPlugins.map { it.get() }.toTypedArray())
+-        }
+-        bundledPlugins(
+-            "org.toml.lang",
+-            "com.intellij.copyright",
+-            "com.intellij.modules.json",
+-        )
+     }
++    testFramework(TestFrameworkType.Platform)
++    plugin("com.redhat.devtools.lsp4ij:$lsp4ijPluginVersion")
++    // 开发调试工具插件（PsiViewer 查看 PSI 树、IndexViewer 查看索引），只在 runIde 沙箱中加载，
++    // 打包插件分发（buildPlugin）时不携带，避免把调试工具发布给终端用户。
++    if (devPlugins.all { it.isPresent }) {
++        plugins(*devPlugins.map { it.get() }.toTypedArray())
++    }
++    bundledPlugins(
++        "org.toml.lang",
++        "com.intellij.copyright",
++    )
++    bundledModules("com.intellij.modules.json", "com.intellij.modules.jcef")
+ }
+ 
+-tasks {
+-    patchPluginXml {
+-        this.sinceBuild.set(sinceBuildProp)
+-        this.untilBuild.set(untilBuildProp)
+-        pluginVersion.set(provider { project.version.toString() })
+-        pluginDescription.set(provider {
+-            project.layout.projectDirectory.file("description.html").asFile.readText()
+-        })
+-    }
++tasks.named<BuildPluginTask>("buildPlugin") {
++    archiveBaseName.set("intellij-cangjie")
++}
+ 
+-    buildPlugin {
+-        archiveBaseName.set("intellij-cangjie")
+-    }
++val prepareRunIdeDumpDirectory = tasks.register<PrepareRunIdeDumpDirectoryTask>("prepareRunIdeDumpDirectory") {
++    dumpDirectory.set(layout.buildDirectory.dir("dumpTmp"))
++}
+ 
+-    runIde {
+-        jvmArgs(getIdeJvmArgs())
+-    }
++tasks.named<RunIdeTask>("runIde") {
++    dependsOn(prepareRunIdeDumpDirectory)
++    jvmArgs(getIdeJvmArgs())
+ }
+ 
+ fun getIdeJvmArgs(): List<String> {
+-    val dumpDir = File(rootDir, "dumpTmp").also { it.mkdirs() }
++    val dumpDir = layout.buildDirectory.dir("dumpTmp").get().asFile
+     return listOf(
+         "-Xms512m",
+         "-Xmx6144m",
+diff --git a/build-logic/src/main/kotlin/cangjie.test-support.gradle.kts b/build-logic/src/main/kotlin/cangjie.test-support.gradle.kts
+index 930777e9..8577a3aa 100644
+--- a/build-logic/src/main/kotlin/cangjie.test-support.gradle.kts
++++ b/build-logic/src/main/kotlin/cangjie.test-support.gradle.kts
+@@ -1,23 +1,22 @@
+ import org.jetbrains.intellij.platform.gradle.TestFrameworkType
+-import org.jetbrains.intellij.platform.gradle.extensions.intellijPlatform
++import org.jetbrains.intellij.platform.gradle.extensions.IntelliJPlatformDependenciesExtension
++import org.gradle.api.tasks.SourceSetContainer
+ 
+ plugins {
+     id("cangjie.intellij-module")
+     `java-test-fixtures`
+ }
+ 
+-dependencies {
+-    intellijPlatform {
+-        testFramework(TestFrameworkType.Platform)
+-    }
+-}
++dependencies.extensions
++    .getByType(IntelliJPlatformDependenciesExtension::class.java)
++    .testFramework(TestFrameworkType.Platform)
+ 
+-sourceSets {
+-    main {
++extensions.getByType(SourceSetContainer::class.java).apply {
++    named("main") {
+         java.setSrcDirs(emptyList<String>())
+         resources.setSrcDirs(listOf("src/main/resources"))
+     }
+-    test {
++    named("test") {
+         java.setSrcDirs(emptyList<String>())
+         resources.setSrcDirs(emptyList<String>())
+     }
+diff --git a/build.gradle.kts b/build.gradle.kts
+index a64ab529..3fb14588 100644
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -1,4 +1,8 @@
+-import org.gradle.api.GradleException
++import org.jetbrains.intellij.platform.gradle.extensions.IntelliJPlatformDependenciesExtension
++
++plugins {
++    id("cangjie.intellij-product")
++}
+ 
+ group = "org.cangnova.cangjie"
+ version = providers.gradleProperty("pluginVersion")
+@@ -12,6 +16,74 @@ subprojects {
+     version = rootProject.version
+ }
+ 
++val intellijPlatformDependencies = dependencies.extensions
++    .getByType(IntelliJPlatformDependenciesExtension::class.java)
++val pluginModulePaths = listOf(
++    ":modules:foundation",
++    ":modules:domain:toolchain",
++    ":modules:domain:project-model",
++    ":modules:domain:package-manager",
++    ":modules:domain:telemetry",
++    ":modules:ide:ux",
++    ":modules:ide:base",
++    ":modules:ide:project",
++    ":modules:ide:run",
++    ":modules:ide:lsp",
++    ":modules:ide:debugger-api",
++    ":modules:ide:debugger-dap",
++    ":modules:ide:debugger-proto",
++    ":modules:ide:macro",
++)
++
++dependencies {
++    // 产品保持经典插件类加载器；Gradle 子模块在构建时合并进唯一宿主插件 JAR。
++    pluginModulePaths.forEach { modulePath ->
++        intellijPlatformDependencies.pluginComposedModule(implementation(project(modulePath)))
++    }
++
++    // 产品层统一声明并打包外部运行时制品。
++    // 业务模块只声明编译所需依赖，真正随插件分发的第三方与前端产物在这里收口。
++    runtimeOnly(libs.cangjieCommonForIde)
++    runtimeOnly(libs.cangjiePsiForIde)
++    runtimeOnly(libs.cangjieCodeInsightForIde)
++    runtimeOnly(libs.cangjieCodeInsightCompletionForIde)
++    runtimeOnly(libs.cangjieCodeInsightFormattingForIde)
++    runtimeOnly(libs.cangjieCodeInsightFoldingForIde)
++    runtimeOnly(libs.cangjieCodeInsightHighlightingForIde)
++    runtimeOnly(libs.cangjieCodeInsightRefactoringForIde)
++    runtimeOnly(libs.cangjieCfirForIde)
++    runtimeOnly(libs.cangjieAnalysisApiForIde)
++    runtimeOnly(libs.cangjieAnalysisApiCfirForIde)
++    runtimeOnly(libs.cangjieAnalysisApiStandaloneForIde)
++    runtimeOnly(libs.bundles.jackson)
++    runtimeOnly(libs.toml4j)
++    runtimeOnly(libs.jansi)
++    runtimeOnly(libs.vavr)
++    runtimeOnly(libs.lsp4j.debug)
++    runtimeOnly(libs.bundles.protobuf)
++    runtimeOnly("com.squareup.okio:okio:3.9.0")
++    runtimeOnly("io.github.oshai:kotlin-logging-jvm:6.0.9")
++    runtimeOnly("org.slf4j:slf4j-api:2.0.13")
++    runtimeOnly("org.slf4j:slf4j-simple:2.0.13")
++
++    testImplementation(testFixtures(project(":modules:test-support")))
++    testImplementation(libs.junit4)
++    testImplementation(kotlin("test"))
++    testImplementation(libs.cangjieCommonForIde)
++    testImplementation(libs.cangjiePsiForIde)
++    testImplementation(libs.cangjieCodeInsightForIde)
++    testImplementation(libs.cangjieCodeInsightCompletionForIde)
++    testImplementation(libs.cangjieCodeInsightFormattingForIde)
++    testImplementation(libs.cangjieCodeInsightFoldingForIde)
++    testImplementation(libs.cangjieCodeInsightHighlightingForIde)
++    testImplementation(libs.cangjieCodeInsightRefactoringForIde)
++    testImplementation(libs.cangjieCfirForIde)
++    testImplementation(libs.cangjieAnalysisApiForIde)
++    testImplementation(libs.cangjieAnalysisApiCfirForIde)
++    testImplementation(libs.cangjieAnalysisApiStandaloneForIde)
++    // 宿主插件的宏语义集成测试注入协议级 MacroExecutor，而不是调用外部 server。
++    testImplementation(libs.cangjieMacroProcess)
++}
+ 
+ 
+ 
+diff --git a/gradle.properties b/gradle.properties
+index 8aec1a71..0414ff1e 100644
+--- a/gradle.properties
++++ b/gradle.properties
+@@ -29,6 +29,7 @@ cangjieVersion=1.1.1
+ propertiesPluginEnvironmentNameProperty=platformVersion
+ platformVersion=253
+ ideRunVersion=253.29346.50
++lsp4ijPluginVersion=0.19.2
+ ideVersion=253
+ baseIDE=IU
+ ideToRunType=IU
+@@ -60,8 +61,3 @@ kotlin.stdlib.default.dependency=false
+ # Since kotlin 1.8.20, Gradle Kotlin plugin may produce OOM during compilation
+ # See https://plugins.jetbrains.com/docs/intellij/using-kotlin.html#incremental-compilation
+ # and https://youtrack.jetbrains.com/issue/KT-57757 for more details
+-
+-
+-
+-
+-platformBundledPlugins = com.intellij.modules.json
+diff --git a/gradle/libs.versions.toml b/gradle/libs.versions.toml
+index a237c12c..fe12f940 100644
+--- a/gradle/libs.versions.toml
++++ b/gradle/libs.versions.toml
+@@ -46,7 +46,6 @@ cangjie = "1.1.1"
+ kotlinpoet = "1.16.0"
+ 
+ # IntelliJ 插件版本
+-lsp4ij-plugin = "0.19.0"
+ 
+ [libraries]
+ # Kotlin 标准库和测试
+diff --git a/settings.gradle.kts b/settings.gradle.kts
+index dab73891..b0dccd02 100644
+--- a/settings.gradle.kts
++++ b/settings.gradle.kts
+@@ -29,7 +29,7 @@ pluginManagement {
+ }
+ 
+ plugins {
+-    id("org.jetbrains.intellij.platform.settings") version "2.10.5"
++    id("org.jetbrains.intellij.platform.settings") version "2.19.0"
+     id("org.gradle.toolchains.foojay-resolver-convention") version "0.5.0"
+ }
+ // 工作树通过显式路径接入上游；普通 checkout 保留相邻主仓库的默认布局。
+@@ -117,7 +117,7 @@ val resolvedGitHubPackagesToken = requireGitHubPackagesCredential(
+ )
+ 
+ dependencyResolutionManagement {
+-    repositoriesMode = RepositoriesMode.PREFER_SETTINGS
++    repositoriesMode = RepositoriesMode.FAIL_ON_PROJECT_REPOS
+ 
+     repositories {
+         // 优先解析本地发布产物，支持与主仓库联调：
+@@ -167,8 +167,6 @@ dependencyResolutionManagement {
+     }
+ }
+ 
+-include(":product:idea-plugin")
+-
+ include(":modules:foundation")
+ include(":modules:domain:toolchain")
+ include(":modules:domain:project-model")

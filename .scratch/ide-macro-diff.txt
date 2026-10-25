@@ -1,0 +1,1997 @@
+diff --git a/modules/ide/macro/build.gradle.kts b/modules/ide/macro/build.gradle.kts
+index 8b6132dd..49a6cf77 100644
+--- a/modules/ide/macro/build.gradle.kts
++++ b/modules/ide/macro/build.gradle.kts
+@@ -1,13 +1,16 @@
++import org.jetbrains.intellij.platform.gradle.TestFrameworkType
++import org.jetbrains.intellij.platform.gradle.extensions.IntelliJPlatformDependenciesExtension
++
+ plugins {
+     id("cangjie.intellij-module")
+ }
+ 
+-dependencies {
+-    intellijPlatform {
+-        testFramework(org.jetbrains.intellij.platform.gradle.TestFrameworkType.Platform)
+-        plugins("com.redhat.devtools.lsp4ij:0.19.2")
++dependencies.extensions
++    .getByType(IntelliJPlatformDependenciesExtension::class.java)
++    .apply {
++        testFramework(TestFrameworkType.Platform)
++        plugin("com.redhat.devtools.lsp4ij:${providers.gradleProperty("lsp4ijPluginVersion").get()}")
+     }
+-}
+ 
+ dependencies {
+     implementation(project(":modules:foundation"))
+diff --git a/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/analysis/CjMacroGeneratedStructureViewExtension.kt b/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/analysis/CjMacroGeneratedStructureViewExtension.kt
+index e53f1e92..0cf24a96 100644
+--- a/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/analysis/CjMacroGeneratedStructureViewExtension.kt
++++ b/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/analysis/CjMacroGeneratedStructureViewExtension.kt
+@@ -39,7 +39,7 @@ internal class CjMacroGeneratedStructureViewExtension : StructureViewExtension {
+         val snapshot = macroSnapshot(file) ?: return null
+         val declarations = when (parent) {
+             is CjFile -> snapshot.fileForSource(file)?.declarations.orEmpty()
+-            is CjClassLikeDeclaration -> snapshot.classifierForSource(parent)?.declarations.orEmpty()
++            is CjClassLikeDeclaration -> snapshot.classifiersForSource(parent).flatMap { it.declarations }
+ 
+             else -> return null
+         }
+diff --git a/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/analysis/LLCfirMacroSessionConfigurator.kt b/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/analysis/LLCfirMacroSessionConfigurator.kt
+index b9ddf62e..2dc9bbd9 100644
+--- a/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/analysis/LLCfirMacroSessionConfigurator.kt
++++ b/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/analysis/LLCfirMacroSessionConfigurator.kt
+@@ -1,15 +1,16 @@
+ package org.cangnova.cangjie.macro.analysis
+ 
+-import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
+ import com.intellij.openapi.Disposable
+ import com.intellij.openapi.application.ApplicationManager
+ import com.intellij.openapi.application.ModalityState
+ import com.intellij.openapi.application.ReadAction
++import com.intellij.openapi.application.WriteAction
+ import com.intellij.openapi.diagnostic.Logger
+ import com.intellij.openapi.progress.ProcessCanceledException
+ import com.intellij.openapi.project.Project
+ import com.intellij.openapi.roots.ProjectRootManager
+ import com.intellij.openapi.util.Disposer
++import com.intellij.openapi.vfs.VirtualFile
+ import com.intellij.psi.util.PsiModificationTracker
+ import com.intellij.util.concurrency.AppExecutorUtil
+ import org.cangnova.cangjie.ide.base.analysisApiPlatform.projectStructure.CangJieCompilerSettingsTracker
+@@ -54,6 +55,7 @@ import org.cangnova.cangjie.toolchain.api.CjProjectSdkConfig
+ import org.cangnova.cangjie.toolchain.api.CjSdk
+ import java.util.Collections
+ import java.util.IdentityHashMap
++import java.util.concurrent.atomic.AtomicBoolean
+ 
+ /**
+  * 为源码 LL-CFIR session 异步构造并发布宏语义快照。
+@@ -67,30 +69,43 @@ internal class LLCfirMacroSessionConfigurator : LLCfirSessionConfigurator {
+         val resolvableSession = session as? LLCfirResolvableModuleSession ?: return
+         if (!session.isValid || session.project.isDisposed) return
+ 
++        val taskStartedOrCancellationClaimed = AtomicBoolean()
+         val task = AppExecutorUtil.getAppExecutorService().submit {
++            if (!taskStartedOrCancellationClaimed.compareAndSet(false, true)) return@submit
+             runConstruction(resolvableSession, sourceModule)
+         }
+-        Disposer.register(session.requestDisposable(), Disposable { task.cancel(true) })
++        Disposer.register(resolvableSession.requestDisposable(), Disposable {
++            task.cancel(true)
++            if (taskStartedOrCancellationClaimed.compareAndSet(false, true)) {
++                MacroSemanticHighlightingRefreshService.getInstance(resolvableSession.project)
++                    .finishConstruction(resolvableSession)
++            }
++        })
+     }
+ 
+     private fun runConstruction(session: LLCfirResolvableModuleSession, sourceModule: CaSourceModule) {
+-        runMacroSemanticSnapshotConstructionUntilStable(
+-            shouldContinue = {
+-                session.isValid && !session.project.isDisposed && !Thread.currentThread().isInterrupted
+-            },
+-            waitForInputStabilization = {
+-                LOG.info(
+-                    "Macro semantic snapshot input changed during construction for " +
+-                        "${session.caModule.moduleDescription}; recapturing after input stabilization",
+-                )
+-                try {
+-                    Thread.sleep(INPUT_STABILIZATION_DELAY_MILLIS)
+-                } catch (interrupted: InterruptedException) {
+-                    Thread.currentThread().interrupt()
+-                }
+-            },
+-        ) {
+-            runConstructionAttempt(session, sourceModule)
++        try {
++            runMacroSemanticSnapshotConstructionUntilStable(
++                shouldContinue = {
++                    session.isValid && !session.project.isDisposed && !Thread.currentThread().isInterrupted
++                },
++                waitForInputStabilization = {
++                    LOG.info(
++                        "Macro semantic snapshot input changed during construction for " +
++                            "${session.caModule.moduleDescription}; recapturing after input stabilization",
++                    )
++                    try {
++                        Thread.sleep(INPUT_STABILIZATION_DELAY_MILLIS)
++                    } catch (interrupted: InterruptedException) {
++                        Thread.currentThread().interrupt()
++                    }
++                },
++            ) {
++                runConstructionAttempt(session, sourceModule)
++            }
++        } finally {
++            MacroSemanticHighlightingRefreshService.getInstance(session.project)
++                .finishConstruction(session)
+         }
+     }
+ 
+@@ -173,7 +188,7 @@ internal class LLCfirMacroSessionConfigurator : LLCfirSessionConfigurator {
+                 preConstructionDiagnostics = artifactPreparation.diagnostics,
+             )
+ 
+-            val successfulResult = result as? MacroConstructionResult.Success ?: run {
++            val recordableResult = result as? MacroConstructionResult.Recordable ?: run {
+                 val surfacesById = result.registry.originSurfaceById
+                 val details = result.registry.diagnostics.joinToString(separator = "; ") { diagnostic ->
+                     val surface = diagnostic.originSurfaceId?.let(surfacesById::get)
+@@ -192,34 +207,49 @@ internal class LLCfirMacroSessionConfigurator : LLCfirSessionConfigurator {
+                 )
+                 return MacroSnapshotConstructionAttempt.COMPLETED
+             }
+-            return ReadAction.compute<MacroSnapshotConstructionAttempt, RuntimeException> {
+-                if (!stableInput.isCurrent(session)) {
+-                    return@compute MacroSnapshotConstructionAttempt.INPUT_CHANGED
+-                }
+-                session.publishMacroSemanticSnapshot(pre, successfulResult).also { published ->
+-                    if (published) {
+-                        val sourcePaths = pre.files.mapNotNull { file ->
+-                            (file.sourceFileIdentity as? CjFile)?.let { sourceFile ->
+-                                sourceFile.virtualFile?.path ?: sourceFile.name
+-                            }
+-                        }
+-                        val macroSurfaces = pre.allSurfaces.joinToString { surface ->
+-                            "${surface.qualifiedName?.asString() ?: "<unresolved>"}@${surface.sourceRange?.startOffset}"
+-                        }
+-                        LOG.info(
+-                            "Published macro semantic snapshot for ${session.caModule.moduleDescription}; " +
+-                                "sourceFiles=$sourcePaths; macroSurfaces=[$macroSurfaces]; " +
+-                                "expandedFiles=${successfulResult.recordableFiles.files.size}; " +
+-                                "generatedSources=${successfulResult.registry.generatedSourceOriginById.size}; " +
+-                                "refreshing highlighting for ${pre.files.size} source files",
+-                        )
+-                        scheduleHighlightingRefresh(session, pre)
+-                    } else {
+-                        LOG.warn("Macro semantic snapshot did not match its source session for ${session.caModule.moduleDescription}")
++            if (!ReadAction.compute<Boolean, RuntimeException> { stableInput.isCurrent(session) }) {
++                return MacroSnapshotConstructionAttempt.INPUT_CHANGED
++            }
++            val preparedSnapshot = session.prepareMacroSemanticSnapshot(pre, recordableResult) ?: run {
++                LOG.warn("Macro semantic snapshot could not be prepared for ${session.caModule.moduleDescription}")
++                return MacroSnapshotConstructionAttempt.COMPLETED
++            }
++
++            // 预构建整模块索引已经结束；在 EDT 写访问屏障内等待现有分析读者退出，再原子切换语义视图与关联缓存。
++            var publishAttempt: Boolean? = null
++            ApplicationManager.getApplication().invokeAndWait(
++                Runnable {
++                    publishAttempt = WriteAction.compute<Boolean?, RuntimeException> {
++                        if (!stableInput.isCurrent(session)) return@compute null
++                        session.publishMacroSemanticSnapshot(pre, recordableResult, preparedSnapshot)
++                    }
++                },
++                ModalityState.defaultModalityState(),
++            )
++            val published = publishAttempt ?: return MacroSnapshotConstructionAttempt.INPUT_CHANGED
++
++            if (published) {
++                val sourcePaths = pre.files.mapNotNull { file ->
++                    (file.sourceFileIdentity as? CjFile)?.let { sourceFile ->
++                        sourceFile.virtualFile?.path ?: sourceFile.name
+                     }
+                 }
+-                MacroSnapshotConstructionAttempt.COMPLETED
++                val macroSurfaces = pre.allSurfaces.joinToString { surface ->
++                    "${surface.qualifiedName?.asString() ?: "<unresolved>"}@${surface.sourceRange?.startOffset}"
++                }
++                LOG.info(
++                    "Published macro semantic snapshot for ${session.caModule.moduleDescription}; " +
++                        "sourceFiles=$sourcePaths; macroSurfaces=[$macroSurfaces]; " +
++                        "constructionResult=${result::class.simpleName}; " +
++                        "expandedFiles=${recordableResult.recordableFiles.files.size}; " +
++                        "generatedSources=${recordableResult.registry.generatedSources.size}; " +
++                        "scheduling highlighting refresh for ${pre.files.size} source files",
++                )
++                scheduleHighlightingRefresh(session, pre)
++            } else {
++                LOG.warn("Macro semantic snapshot did not match its source session for ${session.caModule.moduleDescription}")
+             }
++            return MacroSnapshotConstructionAttempt.COMPLETED
+         } catch (cancelled: ProcessCanceledException) {
+             LOG.debug("Macro semantic snapshot task canceled for ${session.caModule.moduleDescription}", cancelled)
+             throw cancelled
+@@ -237,19 +267,18 @@ internal class LLCfirMacroSessionConfigurator : LLCfirSessionConfigurator {
+         }
+     }
+ 
+-    /** 快照发布发生在首轮 daemon 分析之后时，重启整组源码文件的高亮以消费同一份已发布快照。 */
++    /** 快照发布后交由项目级 daemon 协调器合并源码文件的下一轮分析请求。 */
+     private fun scheduleHighlightingRefresh(
+         session: LLCfirResolvableModuleSession,
+         pre: PreMacroRawBuildResult,
+     ) {
+-        val sourceFiles = pre.files.mapNotNull { it.sourceFileIdentity as? CjFile }
+-        if (sourceFiles.isEmpty()) return
+-
+-        ApplicationManager.getApplication().invokeLater({
+-            if (!session.isValid || session.project.isDisposed) return@invokeLater
+-            val daemonCodeAnalyzer = DaemonCodeAnalyzer.getInstance(session.project)
+-            sourceFiles.filter { it.isValid }.forEach { file -> daemonCodeAnalyzer.restart(file) }
+-        }, ModalityState.any())
++        val sourceFiles = ReadAction.compute<Set<VirtualFile>, RuntimeException> {
++            pre.files.mapNotNullTo(linkedSetOf()) { file ->
++                (file.sourceFileIdentity as? CjFile)?.virtualFile
++            }
++        }
++        MacroSemanticHighlightingRefreshService.getInstance(session.project)
++            .scheduleRefresh(session, sourceFiles)
+     }
+ 
+     @OptIn(CompilerConfiguration.Internals::class)
+diff --git a/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/analysis/MacroCallQuickFixAnnotator.kt b/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/analysis/MacroCallQuickFixAnnotator.kt
+index 7c268976..1289b5e2 100644
+--- a/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/analysis/MacroCallQuickFixAnnotator.kt
++++ b/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/analysis/MacroCallQuickFixAnnotator.kt
+@@ -40,7 +40,7 @@ class MacroCallQuickFixAnnotator : Annotator {
+         val expression = element as? CjMacroExpression ?: return
+         if (expression.hasDeclarationInput || DumbService.isDumb(expression.project)) return
+ 
+-        val reference = expression.mainReference ?: return
++        val reference = expression.referenceExpression?.mainReference ?: return
+         val declarations = reference.multiResolve(false)
+             .mapNotNull { it.element as? CjMacroDeclaration }
+             .distinct()
+diff --git a/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/analysis/MacroCallSignatureAnnotator.kt b/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/analysis/MacroCallSignatureAnnotator.kt
+index 5dac1c85..537a7e24 100644
+--- a/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/analysis/MacroCallSignatureAnnotator.kt
++++ b/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/analysis/MacroCallSignatureAnnotator.kt
+@@ -38,7 +38,7 @@ class MacroCallSignatureAnnotator : Annotator {
+         val expression = element as? CjMacroExpression ?: return
+         if (DumbService.isDumb(expression.project)) return
+ 
+-        val declarations = expression.mainReference
++        val declarations = expression.referenceExpression?.mainReference
+             ?.multiResolve(false)
+             ?.mapNotNull { it.element as? CjMacroDeclaration }
+             ?.distinct()
+diff --git a/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/analysis/MacroContextAnnotator.kt b/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/analysis/MacroContextAnnotator.kt
+index 8445fca0..760d31d4 100644
+--- a/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/analysis/MacroContextAnnotator.kt
++++ b/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/analysis/MacroContextAnnotator.kt
+@@ -46,7 +46,7 @@ class MacroContextAnnotator : Annotator {
+         if (DumbService.isDumb(expression.project)) return
+ 
+         val expectedArity = if (expression.attr == null) PLAIN_MACRO_ARITY else ATTRIBUTE_MACRO_ARITY
+-        val declarations = expression.mainReference
++        val declarations = expression.referenceExpression?.mainReference
+             ?.multiResolve(false)
+             ?.mapNotNull { it.element as? CjMacroDeclaration }
+             ?.filter { it.valueParameters.size == expectedArity }
+diff --git a/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/analysis/MacroDeclarationSignatureAnnotator.kt b/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/analysis/MacroDeclarationSignatureAnnotator.kt
+index 50c38b7e..b3d48112 100644
+--- a/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/analysis/MacroDeclarationSignatureAnnotator.kt
++++ b/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/analysis/MacroDeclarationSignatureAnnotator.kt
+@@ -19,68 +19,101 @@ package org.cangnova.cangjie.macro.analysis
+ import com.intellij.lang.annotation.AnnotationHolder
+ import com.intellij.lang.annotation.Annotator
+ import com.intellij.lang.annotation.HighlightSeverity
++import com.intellij.openapi.util.TextRange
++import com.intellij.psi.PsiComment
++import com.intellij.psi.PsiErrorElement
+ import com.intellij.psi.PsiElement
++import com.intellij.psi.PsiWhiteSpace
++import com.intellij.psi.util.PsiTreeUtil
+ import org.cangnova.cangjie.lexer.CjTokens
+ import org.cangnova.cangjie.macro.messages.CangJieMacroBundle
+ import org.cangnova.cangjie.psi.CjFile
+ import org.cangnova.cangjie.psi.CjMacroDeclaration
++import org.cangnova.cangjie.psi.CjParameter
++import org.cangnova.cangjie.psi.psiUtil.nextLeaf
+ 
+ /** 校验宏声明所在包、对外可见性以及编译器支持的 Tokens 函数签名。 */
+ class MacroDeclarationSignatureAnnotator : Annotator {
+ 
+     override fun annotate(element: PsiElement, holder: AnnotationHolder) {
+         val declaration = element as? CjMacroDeclaration ?: return
+-        val name = declaration.name ?: "<unnamed>"
++        val nameIdentifier = declaration.nameIdentifier ?: return
++        val name = declaration.name ?: return
+         val packageDirective = (declaration.containingFile as? CjFile)?.packageDirective
+ 
+         if (packageDirective?.isMacroPackage != true) {
+             report(
+                 holder,
+-                declaration.nameIdentifier ?: declaration,
++                nameIdentifier,
+                 "macro.declaration.package.required",
+                 name,
+             )
+         }
+ 
+         if (!declaration.hasModifier(CjTokens.PUBLIC_KEYWORD)) {
+-            report(
+-                holder,
+-                declaration.nameIdentifier ?: declaration,
+-                "macro.declaration.public.required",
+-                name,
+-            )
+-        }
+-
+-        val parameters = declaration.valueParameters
+-        if (parameters.size !in SUPPORTED_PARAMETER_COUNTS) {
+-            report(
+-                holder,
+-                declaration.valueParameterList ?: declaration,
+-                "macro.declaration.parameter.count",
+-                name,
+-            )
+-        }
+-
+-        for (parameter in parameters) {
+-            if (parameter.typeReference?.text != TOKENS_TYPE) {
++            declaration.node.findChildByType(CjTokens.MACRO_KEYWORD)?.psi?.let { macroKeyword ->
+                 report(
+                     holder,
+-                    parameter.typeReference ?: parameter,
+-                    "macro.declaration.parameter.type",
+-                    parameter.name ?: "?",
++                    macroKeyword,
++                    "macro.declaration.public.required",
+                     name,
+                 )
+             }
+-            if (parameter.isNamed) {
++        }
++
++        val parameters = declaration.valueParameters
++        val parameterList = declaration.valueParameterList
++        val parameterCountIsSupported = parameters.size in SUPPORTED_PARAMETER_COUNTS
++        val parameterListIsSyntacticallyBroken = parameterList?.let {
++            PsiTreeUtil.findChildOfType(it, PsiErrorElement::class.java) != null
++        } ?: true
++        val reportParameterCount = !parameterCountIsSupported &&
++            !parameterListIsSyntacticallyBroken &&
++            parameterList?.rightParenthesis != null
++        if (reportParameterCount) {
++            val countAnchor = when (parameters.size) {
++                0 -> parameterList?.rightParenthesis?.nextLeaf(::isSignificantLeaf)
++                else -> parameters.firstOrNull()?.let(::macroParameterBegin)
++            }
++            if (countAnchor != null) {
+                 report(
+                     holder,
+-                    parameter.nameIdentifier ?: parameter,
+-                    "macro.declaration.parameter.named",
++                    TextRange(countAnchor.textRange.startOffset, countAnchor.textRange.startOffset + 1),
++                    if (parameters.isEmpty()) {
++                        "macro.declaration.parameter.empty"
++                    } else {
++                        "macro.declaration.parameter.too.many"
++                    },
+                     name,
+                 )
+             }
+         }
+ 
++        if (!reportParameterCount) {
++            for (parameter in parameters) {
++                val parameterName = parameter.name ?: continue
++                val parameterType = parameter.typeReference
++                if (parameterType != null && parameterType.text != TOKENS_TYPE) {
++                    report(
++                        holder,
++                        parameterType,
++                        "macro.declaration.parameter.type",
++                        parameterName,
++                        name,
++                    )
++                }
++                if (parameter.isNamed) {
++                    val namedMarker = parameter.node.findChildByType(CjTokens.EXCL)?.psi ?: continue
++                    report(
++                        holder,
++                        namedMarker,
++                        "macro.declaration.parameter.named",
++                        name,
++                    )
++                }
++            }
++        }
++
+         val returnType = declaration.typeReference
+         if (returnType != null && returnType.text != TOKENS_TYPE) {
+             report(
+@@ -92,6 +125,23 @@ class MacroDeclarationSignatureAnnotator : Annotator {
+         }
+     }
+ 
++    /** 映射 cjc FuncParam.begin：先取最早修饰符，否则取参数名之后的首个语法 token。 */
++    private fun macroParameterBegin(parameter: CjParameter): PsiElement? {
++        val modifierList = parameter.modifierList
++        if (modifierList != null) {
++            return firstSignificantLeaf(modifierList)
++        }
++        return parameter.nameIdentifier?.nextLeaf(::isSignificantLeaf)
++    }
++
++    private fun firstSignificantLeaf(element: PsiElement): PsiElement? {
++        var leaf = element
++        while (leaf.firstChild != null) leaf = leaf.firstChild
++        return if (isSignificantLeaf(leaf)) leaf else leaf.nextLeaf(::isSignificantLeaf)
++    }
++
++    private fun isSignificantLeaf(element: PsiElement): Boolean = element !is PsiWhiteSpace && element !is PsiComment
++
+     private fun report(
+         holder: AnnotationHolder,
+         range: PsiElement,
+@@ -104,6 +154,18 @@ class MacroDeclarationSignatureAnnotator : Annotator {
+         ).range(range.textRange).create()
+     }
+ 
++    private fun report(
++        holder: AnnotationHolder,
++        range: TextRange,
++        messageKey: String,
++        vararg parameters: Any,
++    ) {
++        holder.newAnnotation(
++            HighlightSeverity.ERROR,
++            CangJieMacroBundle.message(messageKey, *parameters),
++        ).range(range).create()
++    }
++
+     private companion object {
+         const val TOKENS_TYPE = "Tokens"
+         val SUPPORTED_PARAMETER_COUNTS = 1..2
+diff --git a/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/analysis/MacroPackageConstraintAnnotator.kt b/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/analysis/MacroPackageConstraintAnnotator.kt
+index 5187f1c0..af1a561e 100644
+--- a/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/analysis/MacroPackageConstraintAnnotator.kt
++++ b/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/analysis/MacroPackageConstraintAnnotator.kt
+@@ -34,7 +34,7 @@ class MacroPackageConstraintAnnotator : Annotator {
+         val expression = element as? CjMacroExpression ?: return
+         if (expression.hasDeclarationInput || DumbService.isDumb(expression.project)) return
+ 
+-        val declarations = expression.mainReference?.multiResolve(false)
++        val declarations = expression.referenceExpression?.mainReference?.multiResolve(false)
+             .orEmpty()
+             .mapNotNull { it.element as? CjMacroDeclaration }
+             .distinct()
+diff --git a/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/references/CjMacroReferenceProvider.kt b/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/references/CjMacroReferenceProvider.kt
+index 61f6033b..df29b594 100644
+--- a/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/references/CjMacroReferenceProvider.kt
++++ b/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/references/CjMacroReferenceProvider.kt
+@@ -18,36 +18,40 @@ package org.cangnova.cangjie.macro.references
+ 
+ import com.intellij.openapi.util.TextRange
+ import com.intellij.psi.PsiElement
+-import org.cangnova.cangjie.idea.references.CjSimpleReference
++import org.cangnova.cangjie.idea.references.CjSimpleNameReference
+ import org.cangnova.cangjie.name.Name
+ import org.cangnova.cangjie.name.FqName
++import org.cangnova.cangjie.lexer.CjTokens
++import org.cangnova.cangjie.psi.CjImportAlias
+ import org.cangnova.cangjie.psi.CjImportItem
+ import org.cangnova.cangjie.psi.CjFile
+ import org.cangnova.cangjie.psi.CjMacroDeclaration
+ import org.cangnova.cangjie.psi.CjMacroExpression
++import org.cangnova.cangjie.psi.CjNameReferenceExpression
+ import org.cangnova.cangjie.psi.CjPsiUtil
+-import org.cangnova.cangjie.lexer.CjTokens
+ import org.cangnova.cangjie.references.CangJiePsiReferenceProviderContributor
+ 
+-/** 把宏表达式的 callee 接入仓颉统一引用服务。 */
+-class CjMacroReferenceProvider : CangJiePsiReferenceProviderContributor<CjMacroExpression> {
+-    override val elementClass: Class<CjMacroExpression>
+-        get() = CjMacroExpression::class.java
++/** 把宏 callee 名称 PSI 接入仓颉统一引用服务，使光标引用查找与宏语法节点对齐。 */
++class CjMacroReferenceProvider : CangJiePsiReferenceProviderContributor<CjNameReferenceExpression> {
++    override val elementClass: Class<CjNameReferenceExpression>
++        get() = CjNameReferenceExpression::class.java
+ 
+-    override val referenceProvider: CangJiePsiReferenceProviderContributor.ReferenceProvider<CjMacroExpression>
+-        get() = CangJiePsiReferenceProviderContributor.ReferenceProvider { expression ->
+-            if (expression.macroReferenceName() == null) {
++    override val referenceProvider: CangJiePsiReferenceProviderContributor.ReferenceProvider<CjNameReferenceExpression>
++        get() = CangJiePsiReferenceProviderContributor.ReferenceProvider { referenceExpression ->
++            val macroExpression = referenceExpression.macroExpressionOrNull()
++            if (macroExpression == null || referenceExpression.macroReferenceName() == null) {
+                 emptyList()
+             } else {
+-                listOf(CjMacroCallReference(expression))
++                listOf(CjMacroCallReference(referenceExpression, macroExpression))
+             }
+         }
+ }
+ 
+-/** 宏调用引用以宏表达式为宿主，范围精确覆盖 callee，解析按仓颉 macro-import 语义裁剪。 */
++/** 宏调用引用以光标实际命中的 callee 名称为宿主，并按仓颉 macro-import 语义解析。 */
+ private class CjMacroCallReference(
+-    expression: CjMacroExpression,
+-) : CjSimpleReference<CjMacroExpression>(expression) {
++    expression: CjNameReferenceExpression,
++    private val macroExpression: CjMacroExpression,
++) : CjSimpleNameReference(expression) {
+     private val macroName: String = requireNotNull(expression.macroReferenceName())
+ 
+     override val resolvesByNames: Collection<Name>
+@@ -56,25 +60,50 @@ private class CjMacroCallReference(
+             return buildSet {
+                 add(Name.identifier(macroName))
+                 targets.mapNotNullTo(this) { it.name?.let(Name::identifier) }
+-                MacroDeclarationIndex.allVisible(expression.project)
++                MacroDeclarationIndex.allVisible(macroExpression.project)
+                     .asSequence()
+                     .filter { it.declaration in targets }
+                     .mapTo(this) { Name.identifier(it.visibleFqName.shortName().asString()) }
+             }
+         }
+ 
+-    override fun getCanonicalText(): String = expression.referenceExpression?.text.orEmpty()
++    override fun getCanonicalText(): String = expression.text
+ 
+-    override fun getRangeInElement(): TextRange {
+-        val reference = requireNotNull(expression.referenceExpression)
+-        return reference.textRange.shiftRight(-expression.textRange.startOffset)
++    override fun getRangeInElement(): TextRange = TextRange(0, expression.textLength)
++
++    override fun canBeReferenceTo(candidateTarget: PsiElement): Boolean = when (candidateTarget) {
++        is CjMacroDeclaration -> true
++        is CjImportAlias -> getImportAlias()?.let { alias ->
++            alias == candidateTarget || alias.manager.areElementsEquivalent(alias, candidateTarget)
++        } == true
++        else -> false
+     }
+ 
+-    override fun canBeReferenceTo(candidateTarget: PsiElement): Boolean = candidateTarget is CjMacroDeclaration
++    override fun getImportAlias(): CjImportAlias? {
++        val targets = resolveTargetElements().filterIsInstance<CjMacroDeclaration>().toSet()
++        if (targets.isEmpty()) return null
++
++        val visibleMacros = MacroDeclarationIndex.allVisible(expression.project)
++            .filter { it.declaration in targets }
++        return macroExpression.containingCjFile.importDirectivesItem
++            .filterIsInstance<CjImportItem>()
++            .firstOrNull { item ->
++                val importedFqName = item.importedFqName ?: return@firstOrNull false
++                item.isValidImport &&
++                    !item.isAllUnder &&
++                    item.alias != null &&
++                    item.aliasName == expression.referencedName &&
++                    visibleMacros.any { visibleMacro ->
++                        visibleMacro.visibleFqName == importedFqName &&
++                            (item.organizationName == null || visibleMacro.organizationName == item.organizationName)
++                    }
++            }
++            ?.alias
++    }
+ 
+     override fun resolveTargetElements(): Collection<PsiElement> {
+-        val file = expression.containingCjFile
+-        val referenceText = expression.referenceExpression?.text?.let(::normalizeMacroReference) ?: return emptyList()
++        val file = macroExpression.containingCjFile
++        val referenceText = expression.text.let(::normalizeMacroReference)
+         val imports = file.importDirectivesItem.filterIsInstance<CjImportItem>()
+         val indexNames = buildSet {
+             add(macroName)
+@@ -165,8 +194,14 @@ private fun isImportedMacroTarget(
+ }
+ 
+ /** Qualified macro callee 的最后一个 identifier 才是宏名；NameReference 的 name 不是路径解析器。 */
+-private fun CjMacroExpression.macroReferenceName(): String? =
+-    referenceExpression?.text?.substringAfterLast('.')?.let(CjPsiUtil::unquoteIdentifier)
++private fun CjNameReferenceExpression.macroReferenceName(): String? =
++    text.substringAfterLast('.')
++        .let(CjPsiUtil::unquoteIdentifier)
++        .takeIf(String::isNotEmpty)
++
++/** 只有宏表达式直接持有的 callee PSI 才由宏引用 provider 处理。 */
++private fun CjNameReferenceExpression.macroExpressionOrNull(): CjMacroExpression? =
++    (parent as? CjMacroExpression)?.takeIf { it.referenceExpression === this }
+ 
+ private fun normalizeMacroReference(referenceText: String): String =
+     referenceText.split('.').joinToString(".", transform = CjPsiUtil::unquoteIdentifier)
+diff --git a/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/references/CompileMacroPackageIntentionAction.kt b/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/references/CompileMacroPackageIntentionAction.kt
+index 9249d17a..48bfd71b 100644
+--- a/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/references/CompileMacroPackageIntentionAction.kt
++++ b/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/references/CompileMacroPackageIntentionAction.kt
+@@ -61,7 +61,7 @@ internal class CompileMacroPackageIntentionAction private constructor(
+         val sourceFile = declaration.containingFile.virtualFile ?: return false
+         val service = MacroCompilationService.getInstance(project)
+         return expression.isValid && declaration.isValid && sourceFile.isValid &&
+-            expression.mainReference?.multiResolve(false).orEmpty().any { it.element == declaration } &&
++            expression.referenceExpression?.mainReference?.multiResolve(false).orEmpty().any { it.element == declaration } &&
+             service.isAvailable() && service.needsRecompilation(sourceFile)
+     }
+ 
+diff --git a/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/references/MacroCallQuickFixes.kt b/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/references/MacroCallQuickFixes.kt
+index 599f0fc2..bc859883 100644
+--- a/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/references/MacroCallQuickFixes.kt
++++ b/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/references/MacroCallQuickFixes.kt
+@@ -148,7 +148,7 @@ private class AddMacroPackageImportIntentionAction(
+     override fun isAvailable(project: Project, editor: Editor?, file: PsiFile?): Boolean {
+         val expression = expressionPointer.element ?: return false
+         val cjFile = expression.containingFile as? CjFile ?: return false
+-        return expression.isValid && expression.mainReference?.multiResolve(false).orEmpty()
++        return expression.isValid && expression.referenceExpression?.mainReference?.multiResolve(false).orEmpty()
+             .none { it.element is org.cangnova.cangjie.psi.CjMacroDeclaration } &&
+             !MacroImportEditor.hasEquivalentImport(cjFile, macroPackage, organizationName, macroFqName)
+     }
+@@ -183,7 +183,7 @@ private class ChangeMacroNameIntentionAction(
+         val expression = expressionPointer.element ?: return false
+         if (!expression.isValid || expression.referenceExpression !is CjSimpleNameExpression ||
+             CjMacroReferenceNames.unquote(expression.referenceExpression?.text.orEmpty()) != originalName ||
+-            expression.mainReference?.multiResolve(false).orEmpty()
++            expression.referenceExpression?.mainReference?.multiResolve(false).orEmpty()
+                 .any { it.element is org.cangnova.cangjie.psi.CjMacroDeclaration }
+         ) return false
+ 
+diff --git a/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/server/protocol/MacroMsgCodec.kt b/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/server/protocol/MacroMsgCodec.kt
+index b64a5bab..9c3db636 100644
+--- a/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/server/protocol/MacroMsgCodec.kt
++++ b/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/server/protocol/MacroMsgCodec.kt
+@@ -12,6 +12,8 @@ package org.cangnova.cangjie.macro.server.protocol
+ 
+ import MacroMsgFormat.*
+ import com.google.flatbuffers.FlatBufferBuilder
++import org.cangnova.cangjie.macro.TokenInfo as SharedTokenInfo
++import org.cangnova.cangjie.macro.protocol.MacroMsgCodec as SharedMacroMsgCodec
+ import java.nio.ByteBuffer
+ import java.nio.ByteOrder
+ 
+@@ -24,10 +26,10 @@ object MacroMsgCodec {
+ 
+     // MacroEvalStatus
+     /** LSPMacroServer 并行请求结束时以 EVAL 携带已完成的宏调用结果。 */
+-    const val STATUS_EVAL: UByte = 2u
+-    const val STATUS_SUCCESS: UByte = 3u
+-    const val STATUS_FAIL: UByte = 4u
+-    const val STATUS_FINISH: UByte = 6u
++    const val STATUS_EVAL: UByte = SharedMacroMsgCodec.STATUS_EVAL
++    const val STATUS_SUCCESS: UByte = SharedMacroMsgCodec.STATUS_SUCCESS
++    const val STATUS_FAIL: UByte = SharedMacroMsgCodec.STATUS_FAIL
++    const val STATUS_FINISH: UByte = SharedMacroMsgCodec.STATUS_FINISH
+ 
+     // ─── 消息构建 ─────────────────────────────────────────────────────────────
+ 
+@@ -178,6 +180,7 @@ object MacroMsgCodec {
+                     beginCol = begin?.column ?: 0,
+                     endLine = end?.line ?: 0,
+                     endCol = end?.column ?: 0,
++                    delimiterNum = tok.delimiterNum.toInt(),
+                 )
+             }
+             val diagnostics = (0 until result.diagsLength).mapNotNull { i ->
+@@ -223,50 +226,20 @@ object MacroMsgCodec {
+         val tokens: List<ParsedToken>,
+         val diagnostics: List<ParsedDiagnostic>,
+     ) {
+-        /** LSPMacroServer 的并行请求在完成后仍序列化为 EVAL；失败则返回 FAIL。 */
+-        val isSuccess: Boolean get() = status == STATUS_EVAL || status == STATUS_SUCCESS || status == STATUS_FINISH
+-        val isFailed:  Boolean get() = status == STATUS_FAIL
+-
+-        /**
+-         * 根据 token 类型启发式重建展开文本
+-         *
+-         * C++ 宏服务返回的展开 token 位置信息指向原始宏调用位置，不代表展开后的布局，
+-         * 因此无法通过位置重建空白。改用基于 token 值的启发式规则在 token 间插入空格：
+-         * - 换行 token（值含 `\n`/`\r`）直接输出 `\n`
+-         * - 定界符（括号、逗号等）前后不加空格
+-         * - 其余 token 间加空格（关键字、标识符等）
+-         */
+-        fun toExpandedText(): String {
+-            if (tokens.isEmpty()) return ""
+-            val sb = StringBuilder()
+-            var prevToken: ParsedToken? = null
+-            for (tok in tokens) {
+-                if (tok.value.contains('\n') || tok.value.contains('\r')) {
+-                    sb.append('\n')
+-                    prevToken = tok
+-                    continue
+-                }
+-                val prev = prevToken
+-                if (prev != null && needsSpaceBetween(prev, tok)) {
+-                    sb.append(' ')
+-                }
+-                sb.append(tok.value)
+-                prevToken = tok
+-            }
+-            return sb.toString()
+-        }
+-
+-        companion object {
+-            private val noSpaceAfter = setOf("(", "[", ".", "@", "#", "!")
+-            private val noSpaceBefore = setOf(")", "]", ",", ";", ".", "(")
+-
+-            private fun needsSpaceBetween(prev: ParsedToken, curr: ParsedToken): Boolean {
+-                if (prev.value.contains('\n') || prev.value.contains('\r')) return false
+-                if (prev.value in noSpaceAfter) return false
+-                if (curr.value in noSpaceBefore) return false
+-                return true
++        /** 与 CFIR 共用 CJC 成功状态白名单及单 ILLEGAL token 失败判定。 */
++        val isSuccess: Boolean get() = SharedMacroMsgCodec.isMacroResultSuccessful(status, sharedTokens())
++        val isFailed: Boolean get() = !isSuccess
++
++        /** 使用共享 CJC 宏协议格式器，避免 IDE 预览与 CFIR 输入采用不同 token 语义。 */
++        fun toExpandedText(): String = SharedMacroMsgCodec.rebuildExpandedText(sharedTokens())
++
++        private fun sharedTokens(): List<SharedTokenInfo> = tokens.map { token ->
++                SharedTokenInfo(
++                    kind = token.kind.toUByte(),
++                    value = token.value,
++                    delimiterNum = token.delimiterNum,
++                )
+             }
+-        }
+     }
+ 
+     data class ParsedToken(
+@@ -276,6 +249,7 @@ object MacroMsgCodec {
+         val beginCol: Int = 0,
+         val endLine: Int = 0,
+         val endCol: Int = 0,
++        val delimiterNum: Int = 1,
+     )
+     data class ParsedDiagnostic(val severity: Int, val message: String, val hint: String)
+ }
+diff --git a/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/ui/MacroExpansionPanel.kt b/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/ui/MacroExpansionPanel.kt
+index 3bec2e06..7cd88097 100644
+--- a/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/ui/MacroExpansionPanel.kt
++++ b/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/ui/MacroExpansionPanel.kt
+@@ -88,7 +88,6 @@ import java.awt.BorderLayout
+ import java.awt.Color
+ import java.awt.Dimension
+ import java.awt.Font
+-import java.awt.FlowLayout
+ import java.awt.datatransfer.StringSelection
+ import java.io.IOException
+ import javax.swing.BorderFactory
+@@ -128,7 +127,7 @@ class MacroExpansionPanel(
+ 
+     private val editor: EditorEx
+     private val contributionPath = mutableListOf<MacroExpansionDrilldownView>()
+-    private val headerPanel = JPanel(BorderLayout())
++    private val headerPanel = MacroExpansionHeader()
+     private val expansionVirtualFile: LightVirtualFile by lazy(::createExpansionVirtualFile)
+ 
+     private val currentContributionView: MacroExpansionDrilldownView
+@@ -166,7 +165,16 @@ class MacroExpansionPanel(
+ 
+         // 预览文本较短时缩小窗口；较长展开仍在有上限的编辑器区域中滚动查看。
+         val editorHeight = (currentContributionView.text.lineSequence().count() * 18 + 60).coerceIn(140, 520)
+-        preferredSize = Dimension(JBUI.scale(820), JBUI.scale((editorHeight + 150).coerceAtMost(720)))
++        preferredSize = Dimension(
++            JBUI.scale(MacroExpansionHeader.PREFERRED_WIDTH),
++            JBUI.scale(
++                (editorHeight + MacroExpansionHeader.VIEWPORT_HEIGHT + PANEL_VERTICAL_INSETS).coerceAtMost(720),
++            ),
++        )
++        minimumSize = Dimension(
++            JBUI.scale(MacroExpansionHeader.MINIMUM_WIDTH),
++            JBUI.scale(MacroExpansionHeader.VIEWPORT_HEIGHT + MINIMUM_EDITOR_HEIGHT + PANEL_VERTICAL_INSETS),
++        )
+         border = JBUI.Borders.empty(5)
+     }
+ 
+@@ -248,10 +256,9 @@ class MacroExpansionPanel(
+         val nestedContributions = currentContributionView.nestedContributions
+         if (items.isEmpty() && nestedContributions.isEmpty()) return null
+ 
+-        return JPanel().apply {
+-            layout = javax.swing.BoxLayout(this, javax.swing.BoxLayout.Y_AXIS)
++        return MacroExpansionHeader.columnPanel().apply {
+             if (items.isNotEmpty()) {
+-                add(JPanel(FlowLayout(FlowLayout.LEFT, 4, 2)).apply {
++                add(MacroExpansionHeader.wrappingRow(4, 2).apply {
+                     items.forEach { contribution ->
+                         add(JBLabel(
+                             CangJieMacroBundle.message(
+@@ -260,6 +267,7 @@ class MacroExpansionPanel(
+                                 contribution.expansionDepth + 1,
+                             )
+                         ).apply {
++                            toolTipText = contribution.macroName
+                             isOpaque = true
+                             background = contributionColor(contribution.expansionDepth)
+                             border = BorderFactory.createCompoundBorder(
+@@ -271,7 +279,7 @@ class MacroExpansionPanel(
+                 })
+             }
+             if (nestedContributions.isNotEmpty()) {
+-                add(JPanel(FlowLayout(FlowLayout.LEFT, 4, 2)).apply {
++                add(MacroExpansionHeader.wrappingRow(4, 2).apply {
+                     add(JBLabel(CangJieMacroBundle.message("macro.expansion.panel.contribution.drilldown.label")))
+                     nestedContributions.forEachIndexed { index, contribution ->
+                         add(JButton(
+@@ -326,12 +334,13 @@ class MacroExpansionPanel(
+     /** 显示当前宏来源链；点击任一上游宏名可回到该层展开文本。 */
+     private fun createContributionBreadcrumbs(): JPanel? {
+         if (contributionPath.size <= 1) return null
+-        return JPanel(FlowLayout(FlowLayout.LEFT, 4, 2)).apply {
++        return MacroExpansionHeader.wrappingRow(4, 2).apply {
+             contributionPath.forEachIndexed { index, view ->
+                 if (index > 0) add(JBLabel("›"))
+                 val label = view.macroName
+                     ?: CangJieMacroBundle.message("macro.expansion.panel.contribution.root")
+                 add(JButton(label).apply {
++                    toolTipText = label
+                     isEnabled = index != contributionPath.lastIndex
+                     addActionListener { showContributionPath(index) }
+                 })
+@@ -341,15 +350,13 @@ class MacroExpansionPanel(
+ 
+     /** 同步元信息、贡献图例与当前逐层下钻路径。 */
+     private fun refreshHeader() {
+-        headerPanel.removeAll()
+-        val content = JPanel(BorderLayout())
+-        val infoPanel = createInfoPanel()
+-        createContributionLegend()?.let { infoPanel.add(it, BorderLayout.SOUTH) }
+-        content.add(infoPanel, BorderLayout.NORTH)
+-        createContributionBreadcrumbs()?.let { content.add(it, BorderLayout.SOUTH) }
+-        headerPanel.add(content, BorderLayout.CENTER)
+-        headerPanel.revalidate()
+-        headerPanel.repaint()
++        headerPanel.setSections(
++            listOfNotNull(
++                createInfoPanel(),
++                createContributionLegend(),
++                createContributionBreadcrumbs(),
++            ),
++        )
+     }
+ 
+     private fun contributionColor(depth: Int): Color = when (depth % 5) {
+@@ -409,10 +416,7 @@ class MacroExpansionPanel(
+      * 报 0ms 会被误读成「展开飞快」。
+      */
+     private fun createInfoPanel(): JPanel {
+-        val panel = JPanel().apply {
+-            layout = javax.swing.BoxLayout(this, javax.swing.BoxLayout.Y_AXIS)
+-            alignmentX = LEFT_ALIGNMENT
+-        }
++        val panel = MacroExpansionHeader.columnPanel().apply { alignmentX = LEFT_ALIGNMENT }
+         panel.border = BorderFactory.createEmptyBorder(0, 0, 5, 0)
+ 
+         val sourceLabel = JBLabel(
+@@ -425,7 +429,9 @@ class MacroExpansionPanel(
+ 
+         val macroName = currentContributionView.macroName
+         val locationLabel = if (macroName != null) {
+-            JBLabel(CangJieMacroBundle.message("macro.expansion.panel.macro.label", macroName))
++            JBLabel(CangJieMacroBundle.message("macro.expansion.panel.macro.label", macroName)).apply {
++                toolTipText = macroName
++            }
+         } else {
+             JBLabel(
+                 CangJieMacroBundle.message(
+@@ -480,10 +486,9 @@ class MacroExpansionPanel(
+ 
+     /** 元信息和操作分行排列，避免窄弹窗中左右两组控件互相挤压或裁切。 */
+     private fun createInfoRow(vararg components: JComponent): JPanel =
+-        JPanel(FlowLayout(FlowLayout.LEFT, 6, 1)).apply {
++        MacroExpansionHeader.wrappingRow(6, 1).apply {
+             alignmentX = LEFT_ALIGNMENT
+             components.forEach(::add)
+-            maximumSize = Dimension(Int.MAX_VALUE, preferredSize.height)
+         }
+ 
+     /** 宏实现经 `println` 等写入 stdout 的编译期执行日志。 */
+@@ -688,6 +693,11 @@ class MacroExpansionPanel(
+         staleIndicator.dispose()
+         EditorFactory.getInstance().releaseEditor(editor)
+     }
++
++    private companion object {
++        const val MINIMUM_EDITOR_HEIGHT: Int = 140
++        const val PANEL_VERTICAL_INSETS: Int = 10
++    }
+ }
+ 
+ /** 以可选择、只读文本显示宏函数在编译期写入 stdout 的内容。 */
+diff --git a/modules/ide/macro/src/main/resources/META-INF/cangjie-macro.xml b/modules/ide/macro/src/main/resources/META-INF/cangjie-macro.xml
+index 22c1739f..311ec0b8 100644
+--- a/modules/ide/macro/src/main/resources/META-INF/cangjie-macro.xml
++++ b/modules/ide/macro/src/main/resources/META-INF/cangjie-macro.xml
+@@ -79,6 +79,10 @@
+         <projectService
+                 serviceImplementation="org.cangnova.cangjie.macro.service.MacroExpansionSettings"/>
+ 
++        <!-- 宏语义快照发布后的 daemon 刷新协调器 -->
++        <projectService
++                serviceImplementation="org.cangnova.cangjie.macro.analysis.MacroSemanticHighlightingRefreshService"/>
++
+         <!-- 宏展开选项 Registry Keys -->
+         <registryKey key="cangjie.macro.expansion.recursive"
+                      description="Enable recursive expansion of nested macros"
+diff --git a/modules/ide/macro/src/main/resources/messages/CangJieMacroBundle.properties b/modules/ide/macro/src/main/resources/messages/CangJieMacroBundle.properties
+index a80b3b46..30a75ac8 100644
+--- a/modules/ide/macro/src/main/resources/messages/CangJieMacroBundle.properties
++++ b/modules/ide/macro/src/main/resources/messages/CangJieMacroBundle.properties
+@@ -200,7 +200,8 @@ macro.diagnostic.aggregate.message={0} (reported at {1} macro calls)
+ macro.diagnostic.aggregate.locations=Same diagnostic occurs at: {0}
+ macro.declaration.package.required=Macro {0} must be declared in a macro package.
+ macro.declaration.public.required=Macro {0} must be public.
+-macro.declaration.parameter.count=Macro {0} must declare one or two parameters.
++macro.declaration.parameter.empty=Macro {0} must declare at least one parameter.
++macro.declaration.parameter.too.many=Macro {0} supports at most two parameters.
+ macro.declaration.parameter.type=Parameter {0} of macro {1} must have type Tokens.
+ macro.declaration.parameter.named=Macro {0} cannot use named parameters.
+ macro.declaration.return.type=Return type of macro {0} must be Tokens.
+diff --git a/modules/ide/macro/src/main/resources/messages/CangJieMacroBundle_zh_CN.properties b/modules/ide/macro/src/main/resources/messages/CangJieMacroBundle_zh_CN.properties
+index 7691a50d..0c6e1b21 100644
+--- a/modules/ide/macro/src/main/resources/messages/CangJieMacroBundle_zh_CN.properties
++++ b/modules/ide/macro/src/main/resources/messages/CangJieMacroBundle_zh_CN.properties
+@@ -190,7 +190,8 @@ macro.diagnostic.aggregate.message={0}（共出现在 {1} 处宏调用）
+ macro.diagnostic.aggregate.locations=相同诊断还出现在：{0}
+ macro.declaration.package.required=宏 {0} 必须声明在宏包中。
+ macro.declaration.public.required=宏 {0} 必须声明为 public。
+-macro.declaration.parameter.count=宏 {0} 必须声明一个或两个参数。
++macro.declaration.parameter.empty=宏 {0} 至少需要声明一个参数。
++macro.declaration.parameter.too.many=宏 {0} 最多只能声明两个参数。
+ macro.declaration.parameter.type=宏 {1} 的参数 {0} 类型必须为 Tokens。
+ macro.declaration.parameter.named=宏 {0} 不允许使用命名参数。
+ macro.declaration.return.type=宏 {0} 的返回类型必须为 Tokens。
+diff --git a/modules/ide/macro/src/test/kotlin/org/cangnova/cangjie/macro/server/protocol/MacroMsgCodecTest.kt b/modules/ide/macro/src/test/kotlin/org/cangnova/cangjie/macro/server/protocol/MacroMsgCodecTest.kt
+index d72abf0b..3e570e4d 100644
+--- a/modules/ide/macro/src/test/kotlin/org/cangnova/cangjie/macro/server/protocol/MacroMsgCodecTest.kt
++++ b/modules/ide/macro/src/test/kotlin/org/cangnova/cangjie/macro/server/protocol/MacroMsgCodecTest.kt
+@@ -1,5 +1,11 @@
+ package org.cangnova.cangjie.macro.server.protocol
+ 
++import MacroMsgFormat.MacroMsg
++import MacroMsgFormat.MacroResult
++import MacroMsgFormat.Token
++import com.google.flatbuffers.FlatBufferBuilder
++import org.cangnova.cangjie.macro.MacroTokenKind
++import kotlin.test.assertEquals
+ import kotlin.test.Test
+ import kotlin.test.assertFalse
+ import kotlin.test.assertTrue
+@@ -37,4 +43,74 @@ class MacroMsgCodecTest {
+         assertFalse(result.isSuccess)
+         assertTrue(result.isFailed)
+     }
++
++    @Test
++    fun expansionPreviewUsesSharedCjcTokenReconstruction() {
++        val result = MacroMsgCodec.ParsedMacroResult(
++            status = MacroMsgCodec.STATUS_SUCCESS,
++            tokens = listOf(
++                MacroMsgCodec.ParsedToken(MacroTokenKind.kindOf("IDENTIFIER").toInt(), "target"),
++                MacroMsgCodec.ParsedToken(MacroTokenKind.kindOf("LPAREN").toInt(), "("),
++                MacroMsgCodec.ParsedToken(MacroTokenKind.kindOf("STRING_LITERAL").toInt(), "generated"),
++                MacroMsgCodec.ParsedToken(MacroTokenKind.kindOf("RPAREN").toInt(), ")"),
++            ),
++            diagnostics = emptyList(),
++        )
++
++        assertEquals("target(\"generated\")", result.toExpandedText())
++    }
++
++    @Test
++    fun resultTokenDelimiterSurvivesFlatBufferParsing() {
++        val parsed = MacroMsgCodec.parseMacroResult(
++            rawResult(MacroMsgCodec.ParsedToken(
++                kind = MacroTokenKind.kindOf("MULTILINE_RAW_STRING").toInt(),
++                value = "raw body",
++                delimiterNum = 2,
++            )),
++        )!!
++
++        assertEquals(2, parsed.tokens.single().delimiterNum)
++        assertEquals("##\"raw body\"##", parsed.toExpandedText())
++    }
++
++    @Test
++    fun evalWithSingleIllegalTokenIsFailure() {
++        val result = MacroMsgCodec.ParsedMacroResult(
++            status = MacroMsgCodec.STATUS_EVAL,
++            tokens = listOf(
++                MacroMsgCodec.ParsedToken(
++                    kind = MacroTokenKind.kindOf("ILLEGAL").toInt(),
++                    value = "failed expansion",
++                ),
++            ),
++            diagnostics = emptyList(),
++        )
++
++        assertFalse(result.isSuccess)
++        assertTrue(result.isFailed)
++    }
++
++    private fun rawResult(token: MacroMsgCodec.ParsedToken): ByteArray {
++        val builder = FlatBufferBuilder(256)
++        val value = builder.createString(token.value)
++        Token.startToken(builder)
++        Token.addKind(builder, token.kind.toUByte())
++        Token.addValue(builder, value)
++        Token.addDelimiterNum(builder, token.delimiterNum.toUInt())
++        val tokenOffset = Token.endToken(builder)
++        val tokenVector = MacroResult.createTksVector(builder, intArrayOf(tokenOffset))
++        val result = MacroResult.createMacroResult(
++            builder,
++            0,
++            MacroMsgCodec.STATUS_SUCCESS,
++            tokenVector,
++            0,
++            0,
++            0,
++        )
++        val message = MacroMsg.createMacroMsg(builder, MacroMsgCodec.TYPE_MACRO_RESULT, result)
++        builder.finish(message)
++        return builder.sizedByteArray()
++    }
+ }
+diff --git a/product/idea-plugin/build.gradle.kts b/product/idea-plugin/build.gradle.kts
+deleted file mode 100644
+index 72986f6c..00000000
+--- a/product/idea-plugin/build.gradle.kts
++++ /dev/null
+@@ -1,71 +0,0 @@
+-import org.jetbrains.intellij.platform.gradle.TestFrameworkType
+-
+-plugins {
+-    id("cangjie.intellij-product")
+-}
+-
+-dependencies {
+-    intellijPlatform {
+-        testFramework(TestFrameworkType.Platform)
+-    }
+-}
+-
+-dependencies {
+-    implementation(project(":modules:foundation"))
+-    implementation(project(":modules:domain:toolchain"))
+-    implementation(project(":modules:domain:project-model"))
+-    implementation(project(":modules:domain:package-manager"))
+-    implementation(project(":modules:domain:telemetry"))
+-    implementation(project(":modules:ide:ux"))
+-    implementation(project(":modules:ide:base"))
+-    implementation(project(":modules:ide:project"))
+-    implementation(project(":modules:ide:run"))
+-    implementation(project(":modules:ide:lsp"))
+-    implementation(project(":modules:ide:debugger-api"))
+-    implementation(project(":modules:ide:debugger-dap"))
+-    implementation(project(":modules:ide:debugger-proto"))
+-    implementation(project(":modules:ide:macro"))
+-
+-    // 产品层统一声明并打包外部运行时制品。
+-    // 业务模块只声明编译所需依赖，真正随插件分发的第三方与前端产物在这里收口。
+-    runtimeOnly(libs.cangjieCommonForIde)
+-    runtimeOnly(libs.cangjiePsiForIde)
+-    runtimeOnly(libs.cangjieCodeInsightForIde)
+-    runtimeOnly(libs.cangjieCodeInsightCompletionForIde)
+-    runtimeOnly(libs.cangjieCodeInsightFormattingForIde)
+-    runtimeOnly(libs.cangjieCodeInsightFoldingForIde)
+-    runtimeOnly(libs.cangjieCodeInsightHighlightingForIde)
+-    runtimeOnly(libs.cangjieCodeInsightRefactoringForIde)
+-    runtimeOnly(libs.cangjieCfirForIde)
+-    runtimeOnly(libs.cangjieAnalysisApiForIde)
+-    runtimeOnly(libs.cangjieAnalysisApiCfirForIde)
+-    runtimeOnly(libs.cangjieAnalysisApiStandaloneForIde)
+-    runtimeOnly(libs.bundles.jackson)
+-    runtimeOnly(libs.toml4j)
+-    runtimeOnly(libs.jansi)
+-    runtimeOnly(libs.vavr)
+-    runtimeOnly(libs.lsp4j.debug)
+-    runtimeOnly(libs.bundles.protobuf)
+-    runtimeOnly("com.squareup.okio:okio:3.9.0")
+-    runtimeOnly("io.github.oshai:kotlin-logging-jvm:6.0.9")
+-    runtimeOnly("org.slf4j:slf4j-api:2.0.13")
+-    runtimeOnly("org.slf4j:slf4j-simple:2.0.13")
+-
+-    testImplementation(testFixtures(project(":modules:test-support")))
+-    testImplementation(libs.junit4)
+-    testImplementation(kotlin("test"))
+-    testImplementation(libs.cangjieCommonForIde)
+-    testImplementation(libs.cangjiePsiForIde)
+-    testImplementation(libs.cangjieCodeInsightForIde)
+-    testImplementation(libs.cangjieCodeInsightCompletionForIde)
+-    testImplementation(libs.cangjieCodeInsightFormattingForIde)
+-    testImplementation(libs.cangjieCodeInsightFoldingForIde)
+-    testImplementation(libs.cangjieCodeInsightHighlightingForIde)
+-    testImplementation(libs.cangjieCodeInsightRefactoringForIde)
+-    testImplementation(libs.cangjieCfirForIde)
+-    testImplementation(libs.cangjieAnalysisApiForIde)
+-    testImplementation(libs.cangjieAnalysisApiCfirForIde)
+-    testImplementation(libs.cangjieAnalysisApiStandaloneForIde)
+-    // 产品宿主的宏语义集成测试需要注入协议级 MacroExecutor，而不是调用外部 server。
+-    testImplementation(libs.cangjieMacroProcess)
+-}
+diff --git a/product/idea-plugin/description.html b/product/idea-plugin/description.html
+index 84fdd163..7af9153a 100644
+--- a/product/idea-plugin/description.html
++++ b/product/idea-plugin/description.html
+@@ -1,54 +1,17 @@
+-<!--
+-  ~ Copyright 2025 LinQingYing. and contributors.
+-  ~
+-  ~ Licensed under the Apache License, Version 2.0 (the "License");
+-  ~ you may not use this file except in compliance with the License.
+-  ~ You may obtain a copy of the License at
+-  ~
+-  ~     http://www.apache.org/licenses/LICENSE-2.0
+-  ~
+-  ~ Unless required by applicable law or agreed to in writing, software
+-  ~ distributed under the License is distributed on an "AS IS" BASIS,
+-  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-  ~ See the License for the specific language governing permissions and
+-  ~ limitations under the License.
+-  ~
+-  ~ The use of this source code is governed by the Apache License 2.0,
+-  ~ which allows users to freely use, modify, and distribute the code,
+-  ~ provided they adhere to the terms of the license.
+-  ~
+-  ~ The software is provided "as-is", and the authors are not responsible for
+-  ~ any damages or issues arising from its use.
+-  ~
+-  -->
++<p>CangJie language support for IntelliJ IDEA and other compatible IntelliJ-based IDEs.</p>
++<p>为 IntelliJ IDEA 及其他兼容的 IntelliJ 平台 IDE 提供仓颉语言支持。</p>
+ 
+-<!DOCTYPE html>
+-<html lang="en">
+-<head>
+-    <meta charset="UTF-8">
+-    <title>Intellij-cangjie</title>
+-</head>
+-<body>
+-
+-<h3>About Intellij-cangjie</h3>
+-<p>A plugin that provides comprehensive support for the CangJie language in IntelliJ IDEA.</p>
+-
+-<h4>Main Features</h4>
++<h4>Features</h4>
+ <ul>
+-    <li>CangJie language keyword highlighting</li>
+-    <li>Automatic identification of project entrances</li>
+-    <li>Quick project startup and configuration</li>
+-    <li>Code completion and syntax validation</li>
+-    <li>Project templates and scaffolding</li>
+-    <li>Integrated debugging tools</li>
+-    <li>Custom run configurations</li>
++    <li>Syntax highlighting, code completion, and diagnostics</li>
++    <li>CangJie project and CJPM integration</li>
++    <li>Run configurations, debugging, and language-server integration</li>
+ </ul>
+-
+-<div>
+-    <span><b>Disclaimer:</b> This plugin is not an official plugin!</span>
+-    <br/>
+-    <span><b>声明:</b> 该插件并非官方插件!</span>
+-</div>
+-
+-</body>
+-</html>
+\ No newline at end of file
++<h4>功能</h4>
++<ul>
++    <li>语法高亮、代码补全和诊断</li>
++    <li>仓颉项目与 CJPM 集成</li>
++    <li>运行配置、调试和语言服务器集成</li>
++</ul>
++<p>This is a community-maintained plugin and is not an official JetBrains or CangJie plugin.</p>
++<p>本插件由社区维护，并非 JetBrains 或仓颉官方插件。</p>
+diff --git a/product/idea-plugin/src/main/resources/META-INF/plugin.xml b/product/idea-plugin/src/main/resources/META-INF/plugin.xml
+index c93d45b7..0f3ea018 100644
+--- a/product/idea-plugin/src/main/resources/META-INF/plugin.xml
++++ b/product/idea-plugin/src/main/resources/META-INF/plugin.xml
+@@ -1,15 +1,11 @@
+ <idea-plugin xmlns:xi="http://www.w3.org/2001/XInclude">
+-    <id>cn.cangnova.cangjie</id>
+-    <name>CangJie</name>
+-    <vendor email="lin17624294976@outlook.com" url="https://github.com/lin-qingying">Lin_Qing_Ying</vendor>
+-
+-    <dependencies>
+-        <plugin id="com.intellij.modules.platform"/>
+-        <plugin id="com.intellij.modules.json"/>
+-        <plugin id="org.toml.lang"/>
+-        <plugin id="com.intellij.copyright"/>
+-        <plugin id="com.redhat.devtools.lsp4ij"/>
+-    </dependencies>
++    <!-- 身份、版本、描述和兼容范围由 IntelliJ Platform Gradle Plugin 写入最终描述符。 -->
++    <depends>com.intellij.modules.platform</depends>
++    <depends>com.intellij.modules.json</depends>
++    <depends>com.intellij.modules.jcef</depends>
++    <depends>org.toml.lang</depends>
++    <depends>com.intellij.copyright</depends>
++    <depends>com.redhat.devtools.lsp4ij</depends>
+ 
+     <xi:include href="/org.cangnova.cangjie.domain.toolchain.xml"/>
+     <xi:include href="/org.cangnova.cangjie.domain.projectModel.xml"/>
+diff --git a/product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/index/CangJieSymbolIndexQueryTest.kt b/product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/index/CangJieSymbolIndexQueryTest.kt
+index 2dd30611..8393ee40 100644
+--- a/product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/index/CangJieSymbolIndexQueryTest.kt
++++ b/product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/index/CangJieSymbolIndexQueryTest.kt
+@@ -34,7 +34,7 @@ import kotlin.test.assertTrue
+  *
+  * 验的是「写侧 + 读侧 + 注册」整条链：夹具把一个**未打开**的文件放进项目，然后只按前缀查索引。
+  *
+- * **为什么在产品级夹具跑**：服务的注册在 `modules/ide/base` 的 `cangjie-decompiled.xml` 里，而那条描述符链由**产品描述符** include（`/org.cangnova.cangjie.ide.base.xml`）。在 `:modules:ide:base:test` 里没有这层装配，`CaSymbolIndexQueryService` 会解析不到（实测报 "Cannot find service"），所以这条端到端用例必须在 `product:idea-plugin` 跑。
++ * **为什么在产品级夹具跑**：服务的注册在 `modules/ide/base` 的 `cangjie-decompiled.xml` 里，而那条描述符链由**产品描述符** include（`/org.cangnova.cangjie.ide.base.xml`）。在 `:modules:ide:base:test` 里没有这层装配，`CaSymbolIndexQueryService` 会解析不到（实测报 "Cannot find service"），所以这条端到端用例必须在根产品插件的测试 source set 中运行。
+  * 三条边界各有用例钉死：
+  * - **只收顶层**：嵌套类与局部函数不得出现（它们不该作为跨包候选被召回）；
+  * - **extend 内声明不入**：extend 成员只在 extend 可见处成立；
+diff --git a/product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/references/CjMacroDeclarationSignatureAnnotatorTest.kt b/product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/references/CjMacroDeclarationSignatureAnnotatorTest.kt
+index d45f4565..b4d498cb 100644
+--- a/product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/references/CjMacroDeclarationSignatureAnnotatorTest.kt
++++ b/product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/references/CjMacroDeclarationSignatureAnnotatorTest.kt
+@@ -1,3 +1,8 @@
++@file:OptIn(
++    org.cangnova.cangjie.analysis.api.CaImplementationDetail::class,
++    org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirInternals::class,
++)
++
+ /*
+  * Copyright 2026 LinQingYing. and contributors.
+  *
+@@ -17,61 +22,202 @@
+ package org.cangnova.cangjie.ide.references
+ 
+ import com.intellij.lang.annotation.HighlightSeverity
++import com.intellij.openapi.application.ApplicationManager
++import com.intellij.openapi.util.TextRange
++import com.intellij.psi.util.PsiTreeUtil
++import com.intellij.testFramework.PlatformTestUtil
++import org.cangnova.cangjie.analysis.api.projectStructure.CaModuleProvider
++import org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule
++import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirResolvableModuleSession
++import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSessionCache
+ import org.cangnova.cangjie.macro.messages.CangJieMacroBundle
++import org.cangnova.cangjie.macro.analysis.MacroSemanticHighlightingRefreshService
++import org.cangnova.cangjie.psi.CjFile
++import org.cangnova.cangjie.psi.CjMacroDeclaration
+ import org.cangnova.cangjie.test.CANGJIE_WITH_STDLIB
+ import org.cangnova.cangjie.test.CangJieLightCodeInsightFixtureTestCase
+ import org.cangnova.cangjie.test.ProjectDescriptorKind
++import org.cangnova.cangjie.utils.runReadActionInSmartMode
+ import kotlin.test.assertEquals
+ import kotlin.test.assertTrue
++import java.util.concurrent.Callable
++import java.util.concurrent.TimeUnit
+ 
+-/** 校验宏包、可见性和宏函数 Tokens 签名，并接受编译器默认的 Tokens 返回类型。 */
++/** 对照 cjc 的宏声明诊断规则，校验语法 PSI、诊断数量和每项主范围。 */
+ class CjMacroDeclarationSignatureAnnotatorTest : CangJieLightCodeInsightFixtureTestCase() {
+ 
+     @ProjectDescriptorKind(CANGJIE_WITH_STDLIB)
+-    fun testMacroDeclarationsFollowCompilerPackageAndSignatureRules() {
+-        myFixture.configureByText(
+-            "macroSignatures.cj",
+-            """
++    fun testInvalidMacroDeclarationsKeepPsiAndMatchCompilerDiagnosticRanges() {
++        val source = """
++            package untitled89.manual_cases
++            import std.ast.*
++            public macro MissingMacroPackage(input: Tokens): Tokens { return input }
++            macro MissingPublic(input: Tokens): Tokens { return input }
++            public macro WrongParameterType(input: Int64): Tokens { return quote(input) }
++            public macro WrongReturnType(input: Tokens): Int64 { return 42 }
++        """.trimIndent()
++        val file = myFixture.configureByText("macroDeclarationParity.cj", source) as CjFile
++        val declarations = PsiTreeUtil.findChildrenOfType(file, CjMacroDeclaration::class.java)
++        assertEquals(4, declarations.size, "Signature errors must not turn well-formed macro declarations into parser errors.")
++        awaitMacroSnapshotRefresh(file)
++
++        val expected = listOf(
++            diagnostic(
++                CangJieMacroBundle.message("macro.declaration.package.required", "MissingMacroPackage"),
++                source,
++                "public macro MissingMacroPackage(input: Tokens): Tokens { return input }",
++                "MissingMacroPackage",
++            ),
++            diagnostic(
++                CangJieMacroBundle.message("macro.declaration.public.required", "MissingPublic"),
++                source,
++                "macro MissingPublic(input: Tokens): Tokens { return input }",
++                "macro",
++            ),
++            diagnostic(
++                CangJieMacroBundle.message("macro.declaration.package.required", "MissingPublic"),
++                source,
++                "macro MissingPublic(input: Tokens): Tokens { return input }",
++                "MissingPublic",
++            ),
++            diagnostic(
++                CangJieMacroBundle.message("macro.declaration.package.required", "WrongParameterType"),
++                source,
++                "public macro WrongParameterType(input: Int64): Tokens { return quote(input) }",
++                "WrongParameterType",
++            ),
++            diagnostic(
++                CangJieMacroBundle.message("macro.declaration.parameter.type", "input", "WrongParameterType"),
++                source,
++                "public macro WrongParameterType(input: Int64): Tokens { return quote(input) }",
++                "Int64",
++            ),
++            diagnostic(
++                CangJieMacroBundle.message("macro.declaration.package.required", "WrongReturnType"),
++                source,
++                "public macro WrongReturnType(input: Tokens): Int64 { return 42 }",
++                "WrongReturnType",
++            ),
++            diagnostic(
++                CangJieMacroBundle.message("macro.declaration.return.type", "WrongReturnType"),
++                source,
++                "public macro WrongReturnType(input: Tokens): Int64 { return 42 }",
++                "Int64",
++            ),
++        )
++
++        assertEquals(expected, macroErrors())
++    }
++
++    @ProjectDescriptorKind(CANGJIE_WITH_STDLIB)
++    fun testMacroSignatureDiagnosticsMatchCompilerTokenAnchors() {
++        val source = """
+             macro package invalid_macros
++            import std.ast.*
+             public macro One(input: Tokens) { return input }
+             public macro Two(attributes: Tokens, input: Tokens): Tokens { return input }
+             macro MissingPublic(input: Tokens): Tokens { return input }
+-            public macro NoParameters(): Tokens { }
+-            public macro ThreeParameters(one: Tokens, two: Tokens, three: Tokens): Tokens { return one }
++            public macro NoParameters(): Tokens { return quote(42) }
++            public macro ThreeParameters(one!: String, two: Tokens, three: Tokens): Tokens { return one }
+             public macro WrongParameter(input: String): Tokens { return input }
+             public macro WrongReturn(input: Tokens): Int64 { return 1 }
+             public macro Named(input!: Tokens): Tokens { return input }
+-            """.trimIndent(),
++        """.trimIndent()
++        val file = myFixture.configureByText("macroSignatures.cj", source) as CjFile
++        awaitMacroSnapshotRefresh(file)
++
++        val expected = listOf(
++            diagnostic(
++                CangJieMacroBundle.message("macro.declaration.public.required", "MissingPublic"),
++                source,
++                "macro MissingPublic(input: Tokens): Tokens { return input }",
++                "macro",
++            ),
++            diagnostic(
++                CangJieMacroBundle.message("macro.declaration.parameter.empty", "NoParameters"),
++                source,
++                "public macro NoParameters(): Tokens { return quote(42) }",
++                ":",
++            ),
++            diagnostic(
++                CangJieMacroBundle.message("macro.declaration.parameter.too.many", "ThreeParameters"),
++                source,
++                "public macro ThreeParameters(one!: String, two: Tokens, three: Tokens): Tokens { return one }",
++                "!",
++            ),
++            diagnostic(
++                CangJieMacroBundle.message("macro.declaration.parameter.type", "input", "WrongParameter"),
++                source,
++                "public macro WrongParameter(input: String): Tokens { return input }",
++                "String",
++            ),
++            diagnostic(
++                CangJieMacroBundle.message("macro.declaration.return.type", "WrongReturn"),
++                source,
++                "public macro WrongReturn(input: Tokens): Int64 { return 1 }",
++                "Int64",
++            ),
++            diagnostic(
++                CangJieMacroBundle.message("macro.declaration.parameter.named", "Named"),
++                source,
++                "public macro Named(input!: Tokens): Tokens { return input }",
++                "!",
++            ),
+         )
+ 
+-        val errors = myFixture.doHighlighting(HighlightSeverity.ERROR)
+-            .mapNotNull { it.description }
++        assertEquals(expected, macroErrors())
++    }
+ 
+-        val publicError = CangJieMacroBundle.message("macro.declaration.public.required", "MissingPublic")
+-        val countError = CangJieMacroBundle.message("macro.declaration.parameter.count", "NoParameters")
+-        val threeParameterError = CangJieMacroBundle.message("macro.declaration.parameter.count", "ThreeParameters")
+-        val typeError = CangJieMacroBundle.message("macro.declaration.parameter.type", "input", "WrongParameter")
+-        val returnError = CangJieMacroBundle.message("macro.declaration.return.type", "WrongReturn")
+-        val namedError = CangJieMacroBundle.message("macro.declaration.parameter.named", "Named")
+-        val expected = listOf(publicError, countError, threeParameterError, typeError, returnError, namedError)
++    @ProjectDescriptorKind(CANGJIE_WITH_STDLIB)
++    fun testEmptyMacroParameterDiagnosticUsesImplicitBodyLookahead() {
++        val source = """
++            macro package macro_pkg
++            import std.ast.*
++            public macro NoParameters() { return quote(42) }
++        """.trimIndent()
++        val file = myFixture.configureByText("implicitMacroReturn.cj", source) as CjFile
++        awaitMacroSnapshotRefresh(file)
+ 
+-        assertEquals(expected.size, expected.distinct().size)
+-        assertTrue(expected.all(errors::contains), "Missing declaration diagnostics: ${expected - errors.toSet()}")
+-        assertTrue(errors.none { it.contains("macro One") || it.contains("macro Two") })
++        assertEquals(
++            listOf(
++                diagnostic(
++                    CangJieMacroBundle.message("macro.declaration.parameter.empty", "NoParameters"),
++                    source,
++                    "public macro NoParameters() { return quote(42) }",
++                    "{",
++                ),
++            ),
++            macroErrors(),
++        )
+     }
+ 
+-    @ProjectDescriptorKind(CANGJIE_WITH_STDLIB)
+-    fun testMacroDeclarationMustBeInMacroPackage() {
+-        myFixture.configureByText(
+-            "ordinaryPackage.cj",
+-            """
+-            package ordinary_package
+-            public macro NotMacroPackage(input: Tokens): Tokens { return input }
+-            """.trimIndent(),
++    private data class MacroDiagnostic(val description: String, val range: TextRange)
++
++    private fun diagnostic(description: String, source: String, line: String, token: String): MacroDiagnostic {
++        val lineOffset = source.indexOf(line)
++        assertTrue(lineOffset >= 0, "Fixture line not found: $line")
++        val tokenInLineOffset = line.indexOf(token)
++        assertTrue(tokenInLineOffset >= 0, "Token '$token' not found on fixture line: $line")
++        val tokenOffset = lineOffset + tokenInLineOffset
++        return MacroDiagnostic(description, TextRange(tokenOffset, tokenOffset + token.length))
++    }
++
++    private fun macroErrors(): List<MacroDiagnostic> = myFixture.doHighlighting(HighlightSeverity.ERROR)
++        .mapNotNull { info -> info.description?.let { MacroDiagnostic(it, TextRange(info.startOffset, info.endOffset)) } }
++        .sortedWith(compareBy({ it.range.startOffset }, { it.range.endOffset }, { it.description }))
++
++    private fun awaitMacroSnapshotRefresh(file: CjFile) {
++        val sessionFuture = ApplicationManager.getApplication().executeOnPooledThread(
++            Callable {
++                project.runReadActionInSmartMode {
++                    val module = CaModuleProvider.getModule(project, file, useSiteModule = null) as CaSourceModule
++                    LLCfirSessionCache.getInstance(project).getSession(module) as LLCfirResolvableModuleSession
++                }
++            },
+         )
+-        val errors = myFixture.doHighlighting(HighlightSeverity.ERROR)
+-            .mapNotNull { it.description }
+-        val packageError = CangJieMacroBundle.message("macro.declaration.package.required", "NotMacroPackage")
+-        assertTrue(errors.contains(packageError), "Missing macro package diagnostic: $packageError")
++        val session = PlatformTestUtil.waitForFuture(sessionFuture, TimeUnit.SECONDS.toMillis(30))
++        val refreshCompletion = MacroSemanticHighlightingRefreshService.getInstance(project)
++            .refreshCompletion(session)
++        PlatformTestUtil.waitForFuture(refreshCompletion, TimeUnit.SECONDS.toMillis(30))
+     }
+ }
+diff --git a/product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/references/CjMacroExpansionContextResolutionTest.kt b/product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/references/CjMacroExpansionContextResolutionTest.kt
+index 1c69924d..9cf44b97 100644
+--- a/product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/references/CjMacroExpansionContextResolutionTest.kt
++++ b/product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/references/CjMacroExpansionContextResolutionTest.kt
+@@ -24,6 +24,8 @@ import com.intellij.psi.util.PsiTreeUtil
+ import com.intellij.ui.components.JBLabel
+ import com.intellij.util.ui.JBUI
+ import com.intellij.util.ui.UIUtil
++import org.cangnova.cangjie.macro.engine.EngineProtocol
++import org.cangnova.cangjie.macro.engine.MacroExpansionEngine
+ import org.cangnova.cangjie.macro.messages.CangJieMacroBundle
+ import org.cangnova.cangjie.macro.service.MacroExpansionResult
+ import org.cangnova.cangjie.macro.service.MacroExpansionSource
+@@ -41,9 +43,6 @@ import org.cangnova.cangjie.test.ProjectDescriptorKind
+ import org.cangnova.cangjie.utils.runReadActionInSmartMode
+ import java.awt.Component
+ import java.awt.Container
+-import java.awt.BorderLayout
+-import java.awt.FlowLayout
+-import javax.swing.JPanel
+ import javax.swing.JButton
+ import kotlin.test.assertNotNull
+ import kotlin.test.assertEquals
+@@ -80,19 +79,7 @@ class CjMacroExpansionContextResolutionTest : CangJieLightCodeInsightFixtureTest
+                 assertEquals(JBUI.scale(820), popupSize.width, "展开预览弹窗应使用稳定的可读宽度。")
+                 assertTrue(popupSize.height <= JBUI.scale(720), "长展开结果不能让弹窗超过高度上限。")
+ 
+-                panel.setSize(popupSize)
+-                panel.doLayout()
+-                val borderLayout = panel.layout as BorderLayout
+-                val header = assertNotNull(borderLayout.getLayoutComponent(BorderLayout.NORTH))
+-                val expansionEditor = assertNotNull(borderLayout.getLayoutComponent(BorderLayout.CENTER))
+-                assertTrue(expansionEditor.height > 0, "弹窗布局应为展开代码编辑器保留可见区域。")
+-                val overflowingRows = flowLayoutPanels(header)
+-                    .filter { it.preferredSize.width > panel.width }
+-                assertTrue(
+-                    overflowingRows.isEmpty(),
+-                    "弹窗信息行不能超过展开面板宽度；实际宽度=${overflowingRows.map { it.preferredSize.width }}，" +
+-                        "面板宽度=${panel.width}。",
+-                )
++                MacroExpansionPanelLayoutAssertions.assertResponsiveLayout(panel)
+ 
+                 val openButton = assertNotNull(findOpenEditorButton(panel))
+                 assertSame(CangJieMacroBundle.message("macro.expansion.panel.open.editor"), openButton.text)
+@@ -121,6 +108,55 @@ class CjMacroExpansionContextResolutionTest : CangJieLightCodeInsightFixtureTest
+         }
+     }
+ 
++    fun testExpansionHeaderRemainsContainedForLongNamesWhenResized() {
++        val longMacroName = "VeryLongMacroName".repeat(12)
++        val longSourceName = "LongSourceFileName" + "WithManySegments".repeat(8)
++        val longEngineName = "Macro&<ExpansionEngine>" + "MacroExpansionEngine".repeat(10)
++        val sourceFile = myFixture.addFileToProject("$longSourceName.cj", "func host() {}") as CjFile
++        val engine = object : MacroExpansionEngine {
++            override val id: String = "layout-test-engine"
++            override val displayName: String = longEngineName
++            override val description: String = "Layout test engine"
++            override val executableName: String = "layout-test-engine"
++            override val protocol: EngineProtocol = EngineProtocol.FILE
++        }
++        val panel = MacroExpansionPanel(
++            project,
++            MacroExpansionResult(
++                filePath = sourceFile.virtualFile.path,
++                startOffset = 0,
++                endOffset = 0,
++                expandedText = "func generatedFunction() {}",
++                macroName = longMacroName,
++                source = MacroExpansionSource.Cache(engine),
++            ),
++            sourceContext = sourceFile,
++        )
++
++        try {
++            UIUtil.invokeAndWaitIfNeeded {
++                val macroLabel = assertNotNull(findMacroLabel(panel, longMacroName))
++                assertEquals(longMacroName, macroLabel.toolTipText)
++                val sourceLabel = assertNotNull(findLabelContaining(panel, longEngineName))
++                val callSiteLabel = assertNotNull(findLabelContaining(panel, longSourceName))
++                MacroExpansionPanelLayoutAssertions.assertResponsiveLayout(panel)
++                assertEquals(sourceLabel.text, sourceLabel.accessibleContext.accessibleName)
++                val escapedSourceLabel = sourceLabel.text
++                    .replace("&", "&amp;")
++                    .replace("<", "&lt;")
++                    .replace(">", "&gt;")
++                assertTrue(sourceLabel.toolTipText.contains(escapedSourceLabel))
++                assertTrue(sourceLabel.toolTipText.contains("Macro&amp;&lt;ExpansionEngine&gt;"))
++                assertEquals(1, Regex("<html>").findAll(sourceLabel.toolTipText).count())
++                assertEquals(callSiteLabel.text, callSiteLabel.accessibleContext.accessibleName)
++                assertTrue(callSiteLabel.toolTipText.contains(callSiteLabel.text))
++                assertTrue(macroLabel.toolTipText.contains(longMacroName))
++            }
++        } finally {
++            panel.dispose()
++        }
++    }
++
+     private fun findOpenEditorButton(component: Component): JButton? {
+         if (component is JButton && component.text == CangJieMacroBundle.message("macro.expansion.panel.open.editor")) {
+             return component
+@@ -144,10 +180,15 @@ class CjMacroExpansionContextResolutionTest : CangJieLightCodeInsightFixtureTest
+         }
+     }
+ 
+-    private fun flowLayoutPanels(component: Component): List<JPanel> = buildList {
+-        if (component is JPanel && component.layout is FlowLayout) add(component)
+-        if (component is Container) {
+-            component.components.forEach { child -> addAll(flowLayoutPanels(child)) }
+-        }
++    private fun findMacroLabel(component: Component, macroName: String): JBLabel? {
++        if (component is JBLabel && component.toolTipText == macroName) return component
++        if (component !is Container) return null
++        return component.components.firstNotNullOfOrNull { child -> findMacroLabel(child, macroName) }
++    }
++
++    private fun findLabelContaining(component: Component, text: String): JBLabel? {
++        if (component is JBLabel && component.text.contains(text)) return component
++        if (component !is Container) return null
++        return component.components.firstNotNullOfOrNull { child -> findLabelContaining(child, text) }
+     }
+ }
+diff --git a/product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/references/CjMacroOrganizationQualifiedReferenceTest.kt b/product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/references/CjMacroOrganizationQualifiedReferenceTest.kt
+index 479fa542..f73dc365 100644
+--- a/product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/references/CjMacroOrganizationQualifiedReferenceTest.kt
++++ b/product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/references/CjMacroOrganizationQualifiedReferenceTest.kt
+@@ -1,24 +1,33 @@
+ package org.cangnova.cangjie.ide.references
+ 
++import com.intellij.openapi.actionSystem.IdeActions
+ import com.intellij.openapi.application.ApplicationManager
++import com.intellij.openapi.fileEditor.FileEditorManager
++import com.intellij.openapi.fileEditor.ex.FileEditorManagerEx
+ import com.intellij.codeInsight.lookup.LookupElementPresentation
+ import com.intellij.codeInsight.lookup.LookupManager
+ import com.intellij.psi.PsiDocumentManager
++import com.intellij.psi.PsiPolyVariantReference
+ import com.intellij.psi.search.LocalSearchScope
+ import com.intellij.psi.search.searches.ReferencesSearch
+ import com.intellij.psi.util.PsiTreeUtil
++import com.intellij.testFramework.PlatformTestUtil
+ import org.cangnova.cangjie.idea.references.mainReference
+ import org.cangnova.cangjie.psi.CjFile
+ import org.cangnova.cangjie.psi.CjMacroDeclaration
+ import org.cangnova.cangjie.psi.CjMacroExpression
++import org.cangnova.cangjie.psi.CjImportAlias
++import org.cangnova.cangjie.idea.references.CjReference
+ import org.cangnova.cangjie.test.CANGJIE_WITH_STDLIB
+ import org.cangnova.cangjie.test.CangJieLightCodeInsightFixtureTestCase
+ import org.cangnova.cangjie.test.ProjectDescriptorKind
+ import org.cangnova.cangjie.utils.runReadActionInSmartMode
+ import java.util.concurrent.Callable
++import java.util.concurrent.TimeUnit
+ import kotlin.test.assertEquals
+ import kotlin.test.assertNotNull
+ import kotlin.test.assertSame
++import kotlin.test.assertTrue
+ 
+ /** 通过产品装配、stub 索引和真实 PSI 引用验证组织限定宏包及重导出解析。 */
+ class CjMacroOrganizationQualifiedReferenceTest : CangJieLightCodeInsightFixtureTestCase() {
+@@ -102,8 +111,169 @@ class CjMacroOrganizationQualifiedReferenceTest : CangJieLightCodeInsightFixture
+     }
+ 
+     @ProjectDescriptorKind(CANGJIE_WITH_STDLIB)
+-    fun testCompletionInsertsOrganizationQualifiedMacroPackageImport() {
++    fun testMacroCallGoToDeclarationOpensTheResolvedMacroDeclaration() {
++        val macroDeclaration = addMacroPackage(
++            "orgOneMacro.cj",
++            "macro package org_one::macro_pkg\npublic macro Build(input: Tokens): Tokens { return input }",
++        )
+         addMacroPackage(
++            "orgTwoMacro.cj",
++            "macro package org_two::macro_pkg\npublic macro Build(input: Tokens): Tokens { return input }",
++        )
++        val consumer = myFixture.configureByText(
++            "consumer.cj",
++            "package consumer\nimport org_one::macro_pkg.*\nfunc Build(input: Int64): Int64 { return input }\nfunc use() { @Bu<caret>ild(42) }",
++        ) as CjFile
++        val sourceVirtualFile = assertNotNull(consumer.virtualFile)
++        val macroExpression = assertNotNull(PsiTreeUtil.findChildOfType(consumer, CjMacroExpression::class.java))
++        val callee = assertNotNull(macroExpression.referenceExpression)
++        val caretReference = assertNotNull(
++            consumer.findReferenceAt(myFixture.editor.caretModel.offset),
++            "The macro callee under the caret must expose a PSI reference.",
++        )
++        assertSame(callee, caretReference.element, "The reference host must be the actual macro callee PSI.")
++        assertEquals("Build", caretReference.canonicalText)
++        assertEquals(com.intellij.openapi.util.TextRange(0, callee.textLength), caretReference.rangeInElement)
++        assertSame(macroDeclaration, caretReference.resolve())
++        assertEquals(
++            listOf(macroDeclaration),
++            (caretReference as PsiPolyVariantReference).multiResolve(false).mapNotNull { it.element },
++            "The imported org_one macro must win over the ordinary local function and org_two macro.",
++        )
++        assertTrue(caretReference is CjReference)
++
++        myFixture.performEditorAction(IdeActions.ACTION_GOTO_DECLARATION)
++
++        val targetEditor = assertNotNull(
++            (FileEditorManager.getInstance(project) as FileEditorManagerEx).selectedTextEditor,
++            "Go To Declaration on a macro call must open a text editor for its declaration.",
++        )
++        val targetVirtualFile = assertNotNull(targetEditor.virtualFile)
++        val targetPsi = assertNotNull(
++            PsiDocumentManager.getInstance(project).getPsiFile(targetEditor.document),
++            "The macro navigation target document must map back to PSI.",
++        )
++
++        assertTrue(targetVirtualFile != sourceVirtualFile, "Navigation must leave the macro call site.")
++        assertSame(macroDeclaration.containingFile.virtualFile, targetVirtualFile)
++        val targetLeaf = assertNotNull(targetPsi.findElementAt(targetEditor.caretModel.offset))
++        assertSame(
++            macroDeclaration,
++            PsiTreeUtil.getParentOfType(targetLeaf, CjMacroDeclaration::class.java, false),
++            "Go To Declaration must land inside the exact imported macro declaration.",
++        )
++    }
++
++    @ProjectDescriptorKind(CANGJIE_WITH_STDLIB)
++    fun testAliasedMacroCallGoToDeclarationOpensTheResolvedMacroDeclaration() {
++        val macroDeclaration = addMacroPackage(
++            "orgOneMacro.cj",
++            "macro package org_one::macro_pkg\npublic macro Build(input: Tokens): Tokens { return input }",
++        )
++        val otherOrganizationDeclaration = addMacroPackage(
++            "orgTwoMacro.cj",
++            "macro package org_two::macro_pkg\npublic macro Build(input: Tokens): Tokens { return input }",
++        )
++        val consumer = myFixture.configureByText(
++            "consumer.cj",
++            "package consumer\nimport org_one::macro_pkg.Build as Exported\nfunc use() { @Exp<caret>orted(42) }",
++        ) as CjFile
++        val macroExpression = assertNotNull(PsiTreeUtil.findChildOfType(consumer, CjMacroExpression::class.java))
++        val callee = assertNotNull(macroExpression.referenceExpression)
++        val caretReference = assertNotNull(consumer.findReferenceAt(myFixture.editor.caretModel.offset))
++        val importAlias = assertNotNull(PsiTreeUtil.findChildOfType(consumer, CjImportAlias::class.java))
++
++        assertSame(callee, caretReference.element)
++        assertSame(macroDeclaration, caretReference.resolve())
++        assertEquals(
++            listOf(macroDeclaration),
++            (caretReference as PsiPolyVariantReference).multiResolve(false).mapNotNull { it.element },
++            "The organization-qualified import alias must select only its own macro declaration.",
++        )
++        assertTrue(!caretReference.isReferenceTo(otherOrganizationDeclaration))
++        assertTrue(caretReference.isReferenceTo(importAlias), "The macro call reference must retain its import-alias identity.")
++        val macroDeclarationUsages = ReferencesSearch.search(macroDeclaration, LocalSearchScope(consumer), false).findAll()
++        assertEquals(1, macroDeclarationUsages.count { it.element == callee })
++        val aliasUsages = ReferencesSearch.search(importAlias, LocalSearchScope(consumer), false).findAll()
++        assertEquals(1, aliasUsages.count { it.element == callee })
++
++        myFixture.performEditorAction(IdeActions.ACTION_GOTO_DECLARATION)
++
++        val targetEditor = assertNotNull(
++            (FileEditorManager.getInstance(project) as FileEditorManagerEx).selectedTextEditor,
++            "Go To Declaration on an aliased macro call must open the macro declaration.",
++        )
++        val targetPsi = assertNotNull(PsiDocumentManager.getInstance(project).getPsiFile(targetEditor.document))
++        val targetLeaf = assertNotNull(targetPsi.findElementAt(targetEditor.caretModel.offset))
++        assertSame(
++            macroDeclaration,
++            PsiTreeUtil.getParentOfType(targetLeaf, CjMacroDeclaration::class.java, false),
++        )
++    }
++
++    @ProjectDescriptorKind(CANGJIE_WITH_STDLIB)
++    fun testImportedMacroNameGoToDeclarationOpensTheMacroDefinition() {
++        val macroDeclaration = addMacroPackage(
++            "orgOneMacro.cj",
++            "macro package org_one::macro_pkg\npublic macro Build(input: Tokens): Tokens { return input }",
++        )
++        addMacroPackage(
++            "orgTwoMacro.cj",
++            "macro package org_two::macro_pkg\npublic macro Build(input: Tokens): Tokens { return input }",
++        )
++        val consumer = myFixture.configureByText(
++            "consumer.cj",
++            "package consumer\nimport org_one::macro_pkg.Bu<caret>ild\nfunc use() { @Build(42) }",
++        ) as CjFile
++        val sourceVirtualFile = assertNotNull(consumer.virtualFile)
++        val importLeaf = assertNotNull(consumer.findReferenceAt(myFixture.editor.caretModel.offset))
++        val importResolveResultsFuture = ApplicationManager.getApplication().executeOnPooledThread(Callable {
++            project.runReadActionInSmartMode {
++                (importLeaf as PsiPolyVariantReference).multiResolve(false).toList()
++            }
++        })
++        val importResolveResults = PlatformTestUtil.waitForFuture(importResolveResultsFuture, TimeUnit.SECONDS.toMillis(30))
++        assertEquals(1, importResolveResults.size, "The import leaf must have exactly one macro target.")
++        assertSame(
++            macroDeclaration,
++            importResolveResults.single().element,
++            "The organization-qualified import name must resolve uniquely through the matching macro package.",
++        )
++
++        myFixture.performEditorAction(IdeActions.ACTION_GOTO_DECLARATION)
++
++        val targetEditor = assertNotNull(
++            (FileEditorManager.getInstance(project) as FileEditorManagerEx).selectedTextEditor,
++            "Go To Declaration on the imported macro name must open its macro definition.",
++        )
++        val targetPsi = assertNotNull(PsiDocumentManager.getInstance(project).getPsiFile(targetEditor.document))
++        val targetLeaf = assertNotNull(targetPsi.findElementAt(targetEditor.caretModel.offset))
++        assertTrue(targetEditor.virtualFile != sourceVirtualFile, "Navigation must leave the import statement.")
++        assertSame(
++            macroDeclaration,
++            PsiTreeUtil.getParentOfType(targetLeaf, CjMacroDeclaration::class.java, false),
++            "The import's macro name must navigate to the exact macro declaration.",
++        )
++    }
++
++    @ProjectDescriptorKind(CANGJIE_WITH_STDLIB)
++    fun testUnresolvedMacroCalleeDoesNotFallBackToAnOrdinaryCallable() {
++        val consumer = myFixture.configureByText(
++            "consumer.cj",
++            "package consumer\nfunc Missing(input: Int64): Int64 { return input }\nfunc use() { @Mis<caret>sing(42) }",
++        ) as CjFile
++        val macroExpression = assertNotNull(PsiTreeUtil.findChildOfType(consumer, CjMacroExpression::class.java))
++        val callee = assertNotNull(macroExpression.referenceExpression)
++        val references = callee.references.filterIsInstance<CjReference>()
++
++        assertEquals(1, references.size, "A macro callee has one macro-namespace reference, not an ordinary CFIR name reference.")
++        assertTrue(references.single().multiResolve(false).isEmpty())
++        assertEquals("Missing", references.single().canonicalText)
++    }
++
++    @ProjectDescriptorKind(CANGJIE_WITH_STDLIB)
++    fun testCompletionInsertsOrganizationQualifiedMacroPackageImport() {
++        val orgOneDeclaration = addMacroPackage(
+             "orgOneMacro.cj",
+             "macro package org_one::macro_pkg\npublic macro Build(input: Tokens): Tokens { return input }",
+         )
+@@ -128,9 +298,10 @@ class CjMacroOrganizationQualifiedReferenceTest : CangJieLightCodeInsightFixture
+         myFixture.finishLookup('\n')
+ 
+         assertEquals(
+-            "package consumer\n\nimport org_one::macro_pkg.*\n\nfunc use() { @Build(42) }",
++            "package consumer\n\nimport org_one::macro_pkg.Build\n\nfunc use() { @Build(42) }",
+             myFixture.file.text,
+         )
++        assertSame(orgOneDeclaration, resolveMacroInCurrentPsi(myFixture.file as CjFile).single())
+     }
+ 
+     private fun addMacroPackage(path: String, source: String): CjMacroDeclaration {
+@@ -142,10 +313,15 @@ class CjMacroOrganizationQualifiedReferenceTest : CangJieLightCodeInsightFixture
+         myFixture.configureFromExistingVirtualFile(file.virtualFile)
+         PsiDocumentManager.getInstance(project).commitAllDocuments()
+ 
++        return resolveMacroInCurrentPsi(file)
++    }
++
++    private fun resolveMacroInCurrentPsi(file: CjFile): List<CjMacroDeclaration> {
++        PsiDocumentManager.getInstance(project).commitAllDocuments()
+         return ApplicationManager.getApplication().executeOnPooledThread(Callable {
+             project.runReadActionInSmartMode {
+                 val expression = assertNotNull(PsiTreeUtil.findChildOfType(file, CjMacroExpression::class.java))
+-                assertNotNull(expression.mainReference).multiResolve(false)
++                assertNotNull(expression.referenceExpression?.mainReference).multiResolve(false)
+                     .mapNotNull { it.element as? CjMacroDeclaration }
+             }
+         }).get()
+diff --git a/product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/references/CjMacroPackageConstraintTest.kt b/product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/references/CjMacroPackageConstraintTest.kt
+index 206c0925..8ba6ec7d 100644
+--- a/product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/references/CjMacroPackageConstraintTest.kt
++++ b/product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/references/CjMacroPackageConstraintTest.kt
+@@ -1,3 +1,8 @@
++@file:OptIn(
++    org.cangnova.cangjie.analysis.api.CaImplementationDetail::class,
++    org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirInternals::class,
++)
++
+ /*
+  * Copyright 2026 LinQingYing. and contributors.
+  *
+@@ -17,7 +22,14 @@
+ package org.cangnova.cangjie.ide.references
+ 
+ import com.intellij.lang.annotation.HighlightSeverity
++import com.intellij.openapi.application.ApplicationManager
+ import com.intellij.psi.util.PsiTreeUtil
++import com.intellij.testFramework.PlatformTestUtil
++import org.cangnova.cangjie.analysis.api.projectStructure.CaModuleProvider
++import org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule
++import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirResolvableModuleSession
++import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSessionCache
++import org.cangnova.cangjie.macro.analysis.MacroSemanticHighlightingRefreshService
+ import kotlin.test.assertEquals
+ import kotlin.test.assertFalse
+ import kotlin.test.assertNotNull
+@@ -31,6 +43,9 @@ import org.cangnova.cangjie.references.mainReference
+ import org.cangnova.cangjie.test.CANGJIE_WITH_STDLIB
+ import org.cangnova.cangjie.test.CangJieLightCodeInsightFixtureTestCase
+ import org.cangnova.cangjie.test.ProjectDescriptorKind
++import org.cangnova.cangjie.utils.runReadActionInSmartMode
++import java.util.concurrent.Callable
++import java.util.concurrent.TimeUnit
+ 
+ /** 验证宏定义包约束，并确保重导出包不会被误认为宏的原始定义包。 */
+ class CjMacroPackageConstraintTest : CangJieLightCodeInsightFixtureTestCase() {
+@@ -44,10 +59,11 @@ class CjMacroPackageConstraintTest : CangJieLightCodeInsightFixtureTestCase() {
+             func useMacro() { @<caret>Build(42) }
+         """.trimIndent()
+         myFixture.configureByText("sameMacroPackage.cj", source)
++        awaitMacroSnapshotRefresh(myFixture.file as CjFile)
+         val expression = assertNotNull(PsiTreeUtil.findChildOfType(myFixture.file, CjMacroExpression::class.java))
+         val declaration = assertNotNull(PsiTreeUtil.findChildOfType(myFixture.file, CjMacroDeclaration::class.java))
+ 
+-        assertSame(declaration, assertNotNull(expression.mainReference).resolve())
++        assertSame(declaration, assertNotNull(expression.referenceExpression?.mainReference).resolve())
+ 
+         val diagnostic = CangJieMacroBundle.message("macro.call.same.package", "Build")
+         val errors = myFixture.doHighlighting(HighlightSeverity.ERROR).mapNotNull { it.description }
+@@ -67,10 +83,11 @@ class CjMacroPackageConstraintTest : CangJieLightCodeInsightFixtureTestCase() {
+             "sameNamedPackage.cj",
+             "package macro_pkg\nfunc useMacro() { @<caret>Build(42) }",
+         )
++        awaitMacroSnapshotRefresh(myFixture.file as CjFile)
+         val expression = assertNotNull(PsiTreeUtil.findChildOfType(myFixture.file, CjMacroExpression::class.java))
+         val declaration = assertNotNull(PsiTreeUtil.findChildOfType(declarationFile, CjMacroDeclaration::class.java))
+ 
+-        assertSame(declaration, assertNotNull(expression.mainReference).resolve())
++        assertSame(declaration, assertNotNull(expression.referenceExpression?.mainReference).resolve())
+         assertTrue(
+             myFixture.doHighlighting(HighlightSeverity.ERROR)
+                 .any { it.description == CangJieMacroBundle.message("macro.call.same.package", "Build") },
+@@ -91,10 +108,11 @@ class CjMacroPackageConstraintTest : CangJieLightCodeInsightFixtureTestCase() {
+             "facadeUse.cj",
+             "macro package facade_macro\npublic import source_macro.*\nfunc useMacro() { @Build(42) }",
+         ) as CjFile
++        awaitMacroSnapshotRefresh(consumer)
+         val expression = assertNotNull(PsiTreeUtil.findChildOfType(consumer, CjMacroExpression::class.java))
+         val declaration = assertNotNull(PsiTreeUtil.findChildOfType(sourceMacro, CjMacroDeclaration::class.java))
+ 
+-        assertSame(declaration, assertNotNull(expression.mainReference).resolve())
++        assertSame(declaration, assertNotNull(expression.referenceExpression?.mainReference).resolve())
+ 
+         myFixture.configureFromExistingVirtualFile(consumer.virtualFile)
+         assertTrue(
+@@ -102,4 +120,20 @@ class CjMacroPackageConstraintTest : CangJieLightCodeInsightFixtureTestCase() {
+                 .none { it.description == CangJieMacroBundle.message("macro.call.same.package", "Build") },
+         )
+     }
++
++    private fun awaitMacroSnapshotRefresh(file: CjFile) {
++        val sessionFuture = ApplicationManager.getApplication().executeOnPooledThread(
++            Callable {
++                project.runReadActionInSmartMode {
++                    val module = CaModuleProvider.getModule(project, file, useSiteModule = null) as CaSourceModule
++                    LLCfirSessionCache.getInstance(project).getSession(module) as LLCfirResolvableModuleSession
++                }
++            },
++        )
++        val session = PlatformTestUtil.waitForFuture(sessionFuture, TimeUnit.SECONDS.toMillis(30))
++
++        val refreshCompletion = MacroSemanticHighlightingRefreshService.getInstance(project)
++            .refreshCompletion(session)
++        PlatformTestUtil.waitForFuture(refreshCompletion, TimeUnit.SECONDS.toMillis(30))
++    }
+ }
+diff --git a/product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/references/CjMacroSemanticSnapshotIntegrationTest.kt b/product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/references/CjMacroSemanticSnapshotIntegrationTest.kt
+index 3a6d1213..4567ede9 100644
+--- a/product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/references/CjMacroSemanticSnapshotIntegrationTest.kt
++++ b/product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/references/CjMacroSemanticSnapshotIntegrationTest.kt
+@@ -618,11 +618,16 @@ class CjMacroSemanticSnapshotIntegrationTest : AbstractCangJieAnalysisStructureT
+                             """
+                             package sample
+                             import macros.Generate
++                            import macros.GenerateConflict
+ 
+                             public func ideTarget(): Int64 { return 42 }
+                             @Generate
+                             public func carrier(): Unit {}
+                             public func useGenerated(): Int64 { return generated() }
++
++                            public func duplicateTarget(): Int64 { return 1 }
++                            @GenerateConflict
++                            public func duplicateCarrier(): Unit {}
+                             """.trimIndent(),
+                         ),
+                     )
+@@ -641,6 +646,10 @@ class CjMacroSemanticSnapshotIntegrationTest : AbstractCangJieAnalysisStructureT
+                     public macro Generate(input: Tokens): Tokens {
+                         return quote(public func generated(): Int64 { return ideTarget() })
+                     }
++
++                    public macro GenerateConflict(input: Tokens): Tokens {
++                        return quote(public func duplicateTarget(): Int64 { return 2 })
++                    }
+                     """.trimIndent(),
+                 )
+                 appModule.addSourceContentRoot(macroSourceRoot)
+@@ -683,6 +692,31 @@ class CjMacroSemanticSnapshotIntegrationTest : AbstractCangJieAnalysisStructureT
+                     "actual=$ideTargetOverloadDiagnostics, " +
+                     "snapshotCallables=${snapshot.callableNames(FqName("sample"))}",
+             )
++            val generatedDeclarationConflicts = analyzeOffEdt {
++                analyze(file) {
++                    file.collectDiagnostics(CaDiagnosticCheckerFilter.ONLY_COMMON_CHECKERS)
++                        .filter { it.factoryName == "CONFLICTING_OVERLOADS" }
++                        .map { diagnostic ->
++                            val diagnosticPsi = (diagnostic as? CaDiagnosticWithPsi<*>)?.psi
++                            diagnostic.defaultMessage to diagnosticPsi
++                        }
++                        .toList()
++                }
++            }
++            assertEquals(
++                1,
++                generatedDeclarationConflicts.size,
++                "真实 SDK 宏产生的 duplicateTarget 与源码声明属于同签名冲突簇，IDE 应保留一个完整诊断；" +
++                    "actual=${generatedDeclarationConflicts.map { (message, psi) -> "$message at '${psi?.text}'" }}",
++            )
++            assertTrue(
++                generatedDeclarationConflicts.single().first.contains("duplicateTarget"),
++                "宏生成声明冲突消息必须保留真实声明名；actual=${generatedDeclarationConflicts.single().first}",
++            )
++            assertNotNull(
++                generatedDeclarationConflicts.single().second,
++                "宏生成声明的冲突诊断必须映射到可导航的宿主 PSI。",
++            )
+ 
+             val (generatedReference, generatedCall) = runProjectStructureReadAction {
+                 val reference = PsiTreeUtil.findChildrenOfType(file, CjSimpleNameExpression::class.java)

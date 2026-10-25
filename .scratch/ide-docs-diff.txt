@@ -1,0 +1,369 @@
+diff --git a/AGENTS.md b/AGENTS.md
+index 232437af..17b3b6d6 100644
+--- a/AGENTS.md
++++ b/AGENTS.md
+@@ -29,7 +29,7 @@ This file provides guidance to Codex (Codex.ai/code) when working with code in t
+ **关键技术栈**：
+ 
+ - Kotlin + Gradle Kotlin DSL（构建逻辑通过 `build-logic/` 中的 convention plugin 统一）
+-- IntelliJ Platform Gradle Plugin 2.10.5
++- IntelliJ Platform Gradle Plugin 2.19.0
+ - 默认基线平台 `platformVersion=253`，向下兼容 4 个版本（242 / 243 / 251 / 252 / 253）
+ - Java 工具链由 `foojay-resolver-convention` 自动 provisioning
+ 
+@@ -44,7 +44,8 @@ This file provides guidance to Codex (Codex.ai/code) when working with code in t
+ 模块清单以 `settings.gradle.kts` 为准。当前接入构建的模块：
+ 
+ **产品装配**
+-- `:product:idea-plugin` — 唯一插件入口，承载 `plugin.xml`、`META-INF/cangjie-all.xml` 与最终打包
++- `:` — 唯一插件入口，应用 Platform 插件并负责最终打包
++- `product/idea-plugin/` — 插件描述符、商店描述和产品级集成测试的源码目录，由根项目 source set 接入
+ 
+ **Foundation**
+ - `:modules:foundation` — 基础设施与公共能力（含历史 `common` / `util` / `messages` / `namedpipe` 已收敛能力）
+@@ -89,9 +90,9 @@ This file provides guidance to Codex (Codex.ai/code) when working with code in t
+ 
+ ```bash
+ ./gradlew build                              # 完整构建
+-./gradlew :product:idea-plugin:runIde        # 在 IDE 沙箱中运行插件
+-./gradlew :product:idea-plugin:buildPlugin   # 构建插件分发包
+-./gradlew :product:idea-plugin:verifyPlugin  # 验证插件兼容性
++./gradlew runIde                             # 在 IDE 沙箱中运行插件
++./gradlew buildPlugin                        # 构建插件分发包
++./gradlew verifyPlugin                       # 验证插件兼容性
+ ./gradlew prepareSandbox                      # 仅准备沙箱
+ ./gradlew clean
+ ```
+@@ -131,7 +132,7 @@ CI=true ./gradlew test                                  # CI 模式（启用失
+ ### XML 接线布局
+ 
+ 主入口：`product/idea-plugin/src/main/resources/META-INF/plugin.xml`
+-通过 `cangjie-all.xml` 用 `xi:include` 聚合：
++主描述符通过 `xi:include` 引入各 Gradle 模块的接线描述符；这些模块由根项目合并进经典插件 JAR。
+ 
+ | 配置 | 职责 |
+ |---|---|
+@@ -201,7 +202,7 @@ val message = CangJieBundle.message("key.in.properties")
+ ## 调试
+ 
+ ```bash
+-./gradlew :product:idea-plugin:runIde   # 启动调试模式 IDE
++./gradlew runIde   # 启动调试模式 IDE
+ ```
+ 
+ 启用日志：Help → Diagnostic Tools → Debug Log Settings → 添加 `#org.cangnova.cangjie`。
+@@ -228,7 +229,7 @@ val message = CangJieBundle.message("key.in.properties")
+ 
+ - 检查 `plugin.xml` 的 `<id>` 与 `<dependencies>`
+ - 验证所有 `xi:include` 引用的文件都存在
+-- `./gradlew :product:idea-plugin:verifyPlugin`
++- `./gradlew verifyPlugin`
+ 
+ ### 测试失败
+ 
+diff --git a/CLAUDE.md b/CLAUDE.md
+index 5fb976be..2675e736 100644
+--- a/CLAUDE.md
++++ b/CLAUDE.md
+@@ -29,7 +29,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
+ **关键技术栈**：
+ 
+ - Kotlin + Gradle Kotlin DSL（构建逻辑通过 `build-logic/` 中的 convention plugin 统一）
+-- IntelliJ Platform Gradle Plugin 2.10.5
++- IntelliJ Platform Gradle Plugin 2.19.0
+ - 默认基线平台 `platformVersion=253`，向下兼容 4 个版本（242 / 243 / 251 / 252 / 253）
+ - Java 工具链由 `foojay-resolver-convention` 自动 provisioning
+ 
+@@ -44,7 +44,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
+ 模块清单以 `settings.gradle.kts` 为准。当前接入构建的模块：
+ 
+ **产品装配**
+-- `:product:idea-plugin` — 唯一插件入口，承载 `plugin.xml`、`META-INF/cangjie-all.xml` 与最终打包
++- `:` — 唯一插件入口，应用 Platform 插件并负责最终打包
++- `product/idea-plugin/` — 插件描述符、商店描述和产品级集成测试的源码目录，由根项目 source set 接入
+ 
+ **Foundation**
+ - `:modules:foundation` — 基础设施与公共能力（含历史 `common` / `util` / `messages` / `namedpipe` 已收敛能力）
+@@ -89,9 +90,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
+ 
+ ```bash
+ ./gradlew build                              # 完整构建
+-./gradlew :product:idea-plugin:runIde        # 在 IDE 沙箱中运行插件
+-./gradlew :product:idea-plugin:buildPlugin   # 构建插件分发包
+-./gradlew :product:idea-plugin:verifyPlugin  # 验证插件兼容性
++./gradlew runIde                             # 在 IDE 沙箱中运行插件
++./gradlew buildPlugin                        # 构建插件分发包
++./gradlew verifyPlugin                       # 验证插件兼容性
+ ./gradlew prepareSandbox                      # 仅准备沙箱
+ ./gradlew clean
+ ```
+@@ -131,7 +132,7 @@ CI=true ./gradlew test                                  # CI 模式（启用失
+ ### XML 接线布局
+ 
+ 主入口：`product/idea-plugin/src/main/resources/META-INF/plugin.xml`
+-通过 `cangjie-all.xml` 用 `xi:include` 聚合：
++主描述符通过 `xi:include` 引入各 Gradle 模块的接线描述符；这些模块由根项目合并进经典插件 JAR。
+ 
+ | 配置 | 职责 |
+ |---|---|
+@@ -201,7 +202,7 @@ val message = CangJieBundle.message("key.in.properties")
+ ## 调试
+ 
+ ```bash
+-./gradlew :product:idea-plugin:runIde   # 启动调试模式 IDE
++./gradlew runIde   # 启动调试模式 IDE
+ ```
+ 
+ 启用日志：Help → Diagnostic Tools → Debug Log Settings → 添加 `#org.cangnova.cangjie`。
+@@ -228,7 +229,7 @@ val message = CangJieBundle.message("key.in.properties")
+ 
+ - 检查 `plugin.xml` 的 `<id>` 与 `<dependencies>`
+ - 验证所有 `xi:include` 引用的文件都存在
+-- `./gradlew :product:idea-plugin:verifyPlugin`
++- `./gradlew verifyPlugin`
+ 
+ ### 测试失败
+ 
+diff --git a/PROJECT_RESTRUCTURE.md b/PROJECT_RESTRUCTURE.md
+index f734da7a..e1fdcc9e 100644
+--- a/PROJECT_RESTRUCTURE.md
++++ b/PROJECT_RESTRUCTURE.md
+@@ -2,10 +2,10 @@
+ 
+ ## 当前状态
+ 
+-本项目已经切换到新的多模块主结构：
++本项目已经切换到新的多模块主结构，Gradle 根项目是唯一插件入口：
+ 
+ - `build-logic/`：统一承载 Gradle convention plugins。
+-- `product/idea-plugin/`：唯一产品插件入口。
++- `product/idea-plugin/`：插件描述符、商店描述和产品级集成测试源码，由根项目的 source set 接入。
+ - `modules/foundation`：基础设施与公共能力。
+ - `modules/domain/*`：工具链、项目模型、包管理、遥测等领域能力。
+ - `modules/ide/*`：IDE 注册、项目交互、运行、LSP、调试、UX 等能力。
+@@ -16,7 +16,7 @@
+ ## 第一阶段重构结果
+ 
+ - 构建体系已从旧根工程脚本式拼装切换到 `build-logic`。
+-- 产品层已改为单插件发布模型，内部通过 Gradle 多模块组织代码。
++- 产品层使用单个经典插件描述符；根项目以 `pluginComposedModule` 将代码模块合并进宿主插件 JAR。
+ - `foundation / toolchain / project-model / package-manager / telemetry / ide-base / ide-project / ide-run / ide-lsp / debugger-* / macro / ux` 已纳入新主架构。
+ - `ide-macro` 已纳入主架构（`:modules:ide:macro`）。
+ - 旧的聚合式运行时装配问题已经移除，当前以单插件类加载器稳定运行。
+diff --git a/PROJECT_STRUCTURE.md b/PROJECT_STRUCTURE.md
+index e586150c..0bf303d5 100644
+--- a/PROJECT_STRUCTURE.md
++++ b/PROJECT_STRUCTURE.md
+@@ -16,7 +16,7 @@
+ intellij-ide/
+ ├── build-logic/                 # Gradle convention plugins（独立 included build）
+ ├── product/
+-│   └── idea-plugin/             # 唯一插件入口：plugin.xml、cangjie-all.xml、最终打包
++│   └── idea-plugin/             # 插件描述符、商店描述和产品级集成测试源码（由根项目 source set 接入）
+ ├── modules/
+ │   ├── foundation/              # 基础设施与公共能力
+ │   ├── domain/
+@@ -68,7 +68,7 @@ intellij-ide/
+ 
+ | Gradle 路径 | 职责 |
+ |---|---|
+-| `:product:idea-plugin` | 唯一产品插件入口，承载 `plugin.xml`、`META-INF/cangjie-all.xml`，负责最终装配与发布 |
++| `:` | 唯一产品插件入口，应用 IntelliJ Platform Plugin 并负责最终装配与发布 |
+ 
+ ### Foundation 层
+ 
+@@ -152,25 +152,12 @@ includeBuild("../") {
+ 
+ 版本特定的兼容层应放在 `platform/<version>/`（当前仅 `platform/253/`），**不应**在业务模块内散落 if-version 分支。
+ 
+-## XML 接线（在 `product/idea-plugin`）
++## XML 接线（描述符源码在 `product/idea-plugin`）
+ 
+ 主入口：`product/idea-plugin/src/main/resources/META-INF/plugin.xml`
+-通过 `cangjie-all.xml` 用 `xi:include` 聚合：
++主描述符通过 `xi:include` 引入各 Gradle 模块的接线描述符，再由它们引入责任域 XML：
+ 
+-```
+-cangjie-all.xml
+-├── cangjie-product.xml              # startup / configurables / host product
+-├── cangjie-language-shell.xml       # parser definition / language shell
+-├── cangjie-editor.xml               # editor handlers
+-├── cangjie-ide-features.xml         # 高亮等 IDE 集成
+-├── cangjie-extensionPoints.xml      # 自定义扩展点
+-├── cangjie-project.xml              # 项目集成
+-├── cangjie-dependency.xml           # 依赖集成
+-├── cangjie-toolchain.xml            # 工具链集成
+-├── cangjie-run.xml                  # 运行集成
+-├── cangjie-debugger.xml             # 调试器集成
+-└── cangjie-analysis-entry.xml       # 仅 include 上游 analysis
+-```
++`plugin.xml` 直接 include `org.cangnova.cangjie.*.xml` 模块聚合描述符。各聚合描述符再 include 自己模块资源目录下的 `META-INF/*.xml` 责任域注册。Gradle 根项目将这些模块合并到经典插件 JAR，使 XInclude 资源和实现类使用同一插件类加载器。
+ 
+ 详细约束见 [`docs/xml-wiring-layout.md`](docs/xml-wiring-layout.md)。
+ 
+@@ -178,7 +165,7 @@ cangjie-all.xml
+ 
+ - **语言**：Kotlin
+ - **构建**：Gradle + Kotlin DSL，build-logic convention plugins
+-- **平台 SDK**：IntelliJ Platform Gradle Plugin 2.10.5
++- **平台 SDK**：IntelliJ Platform Gradle Plugin 2.19.0
+ - **协议**：DAP（Debug Adapter Protocol）、LSP（Language Server Protocol）
+ - **解析**：Jackson（TOML / JSON）
+ - **LSP 宿主**：RedHat LSP4IJ
+@@ -186,7 +173,7 @@ cangjie-all.xml
+ ## 模块依赖大致方向
+ 
+ ```
+-product:idea-plugin
++root plugin project (`:`)
+   ↓
+ modules:ide:*  (project / run / lsp / debugger-* / macro / ux / base)
+   ↓
+diff --git a/README.md b/README.md
+index 0d89cc46..062c75aa 100644
+--- a/README.md
++++ b/README.md
+@@ -63,10 +63,10 @@ The settings build requires `GITHUB_PACKAGES_USERNAME` and `GITHUB_PACKAGES_TOKE
+ ./gradlew build
+ 
+ # Run plugin in IDE sandbox
+-./gradlew :product:idea-plugin:runIde
++./gradlew runIde
+ 
+ # Build plugin distribution
+-./gradlew :product:idea-plugin:buildPlugin
++./gradlew buildPlugin
+ ```
+ 
+ ### Running Tests
+diff --git a/README.zh-CN.md b/README.zh-CN.md
+index 0a000640..da8a12bb 100644
+--- a/README.zh-CN.md
++++ b/README.zh-CN.md
+@@ -63,10 +63,10 @@ settings 构建需要通过 Gradle 属性或环境变量提供 `GITHUB_PACKAGES_
+ ./gradlew build
+ 
+ # 在 IDE 沙箱中运行插件
+-./gradlew :product:idea-plugin:runIde
++./gradlew runIde
+ 
+ # 构建插件分发包
+-./gradlew :product:idea-plugin:buildPlugin
++./gradlew buildPlugin
+ ```
+ 
+  
+diff --git a/docs/architecture-host-plugin.md b/docs/architecture-host-plugin.md
+index 5993c0e9..538843b4 100644
+--- a/docs/architecture-host-plugin.md
++++ b/docs/architecture-host-plugin.md
+@@ -1,12 +1,12 @@
+ # CangJie host-plugin architecture
+ 
+-`intellij-ide/` is an independently built IntelliJ Platform host plugin. Its module graph is defined by [`settings.gradle.kts`](../settings.gradle.kts); the product assembly entry is `:product:idea-plugin`.
++`intellij-ide/` is an independently built IntelliJ Platform host plugin. Its module graph is defined by [`settings.gradle.kts`](../settings.gradle.kts); the Gradle root project is the sole plugin entry. Descriptor and product integration test sources remain under `product/idea-plugin/` and are added to the root source sets.
+ 
+ ## Layers
+ 
+ | Layer | Modules | Responsibility |
+ | --- | --- | --- |
+-| Product | `:product:idea-plugin` | Plugin metadata, XML aggregation, packaging, and Marketplace distribution |
++| Product | `:` | Plugin metadata, XML aggregation, packaging, and Marketplace distribution |
+ | Foundation | `:modules:foundation`, `:modules:ide:ux` | Shared host-plugin services, notifications, and presentation support |
+ | Project and toolchain | `:modules:domain:*`, `:modules:ide:project` | Toolchain discovery, project model, package management, workspace integration, and telemetry |
+ | IDE integration | `:modules:ide:base`, `:modules:ide:run`, `:modules:ide:lsp`, `:modules:ide:debugger-*`, `:modules:ide:macro` | IntelliJ extension wiring, editor integration, run/debug, LSP client, and macro-facing UI |
+@@ -20,7 +20,7 @@ Its `:prepare:ide-plugin-dependencies-module:*` projects substitute the frontend
+ 
+ ### Completion capability: no upstream-change exception
+ 
+-Native CangJie completion is consumed like the other code-insight capabilities: `:modules:ide:base` includes the upstream descriptor `META-INF/code-insight/cangjie-code-insight-completion.xml`, `:product:idea-plugin` declares the artifact as `runtimeOnly`, and the settings substitution resolves it to the `-module` project in source mode. The contributor itself is registered **by the upstream descriptor**, not by this repository.
++Native CangJie completion is consumed like the other code-insight capabilities: `:modules:ide:base` includes the upstream descriptor `META-INF/code-insight/cangjie-code-insight-completion.xml`, the root plugin declares the artifact as `runtimeOnly`, and the settings substitution resolves it to the `-module` project in source mode. The contributor itself is registered **by the upstream descriptor**, not by this repository.
+ 
+ ### Default completion path and kill switch
+ 
+@@ -43,8 +43,8 @@ The settings build requires `GITHUB_PACKAGES_USERNAME` and `GITHUB_PACKAGES_TOKE
+ 
+ ```powershell
+ # Run from intellij-ide/
+-.\gradlew.bat :product:idea-plugin:buildPlugin
+-.\gradlew.bat :product:idea-plugin:runIde
++.\gradlew.bat buildPlugin
++.\gradlew.bat runIde
+ .\gradlew.bat test
+ ```
+ 
+diff --git a/docs/xml-wiring-layout.md b/docs/xml-wiring-layout.md
+index b58f0fac..cf20588a 100644
+--- a/docs/xml-wiring-layout.md
++++ b/docs/xml-wiring-layout.md
+@@ -2,21 +2,15 @@
+ 
+ ## Main entry
+ 
+-`plugin.xml` -> `META-INF/cangjie-all.xml`
++`product/idea-plugin/src/main/resources/META-INF/plugin.xml` includes the descriptor aggregator from each Gradle module. The root plugin project composes those module resources into the classic plugin JAR, so the `xi:include` resources share the plugin class loader.
+ 
+ ## Wiring domains
+ 
+-- `cangjie-product.xml`: startup, configurables, and host product services
+-- `cangjie-language-shell.xml`: parser definition and language shell
+-- `cangjie-editor.xml`: editor handlers and editor shell
+-- `cangjie-ide-features.xml`: highlighting and other IDE-facing integrations
+-- `cangjie-extensionPoints.xml`: host extension points
+-- `cangjie-project.xml` / `cangjie-dependency.xml` / `cangjie-toolchain.xml`: project-side integrations
+-- `cangjie-run.xml`: run integration
+-- `cangjie-debugger.xml`: debugger integration
+-- `cangjie-analysis-entry.xml`: upstream analysis include only
++- `org.cangnova.cangjie.domain.*.xml`: domain module aggregators
++- `org.cangnova.cangjie.ide.*.xml`: IDE module aggregators
++- `META-INF/*.xml`: individual extension and service registration groups owned by each module
+ 
+ ## Rule
+ 
+-Each XML should describe one responsibility domain.
++Each registration file should describe one responsibility domain. A module aggregator may include its registrations, while the main plugin descriptor only declares plugin identity dependencies and includes module aggregators.
+ No historical “catch-all” implementation registration should remain.
+diff --git a/modules/domain/package-manager/src/main/resources/org.cangnova.cangjie.cjpm.xml b/modules/domain/package-manager/src/main/resources/org.cangnova.cangjie.cjpm.xml
+index 2ca2a87f..21945d8c 100644
+--- a/modules/domain/package-manager/src/main/resources/org.cangnova.cangjie.cjpm.xml
++++ b/modules/domain/package-manager/src/main/resources/org.cangnova.cangjie.cjpm.xml
+@@ -23,16 +23,6 @@
+   -->
+ 
+ <idea-plugin xmlns:xi="http://www.w3.org/2001/XInclude">
+-    <dependencies>
+-
+-
+-        <plugin id="com.intellij.modules.json"/>
+-        <plugin id="org.toml.lang"/>
+-
+-
+-    </dependencies>
+-
+-
+     <!-- 注册 CJPM 项目提供者 -->
+     <extensions defaultExtensionNs="org.cangnova.cangjie.project">
+         <projectProvider implementation="org.cangnova.cangjie.cjpm.project.CjpmProjectProvider"/>
+diff --git a/openspec/changes/align-cangjie-completion-with-kotlin-k2/tasks.md b/openspec/changes/align-cangjie-completion-with-kotlin-k2/tasks.md
+index a39ab787..be422a0a 100644
+--- a/openspec/changes/align-cangjie-completion-with-kotlin-k2/tasks.md
++++ b/openspec/changes/align-cangjie-completion-with-kotlin-k2/tasks.md
+@@ -177,15 +177,15 @@
+ ```
+ 
+ ```bash
+-./gradlew :product:idea-plugin:test
++./gradlew test
+ ```
+ 
+ ```bash
+-./gradlew :product:idea-plugin:buildPlugin
++./gradlew buildPlugin
+ ```
+ 
+ ```bash
+-./gradlew :product:idea-plugin:verifyPlugin
++./gradlew verifyPlugin
+ ```
+ 
+ 受影响 LSP 回归：

@@ -1,0 +1,58 @@
+ M AGENTS.md
+ M CLAUDE.md
+ M PROJECT_RESTRUCTURE.md
+ M PROJECT_STRUCTURE.md
+ M README.md
+ M README.zh-CN.md
+ M build-logic/build.gradle.kts
+ M build-logic/src/main/kotlin/cangjie.intellij-module.gradle.kts
+ M build-logic/src/main/kotlin/cangjie.intellij-product.gradle.kts
+ M build-logic/src/main/kotlin/cangjie.test-support.gradle.kts
+ M build.gradle.kts
+ M docs/architecture-host-plugin.md
+ M docs/xml-wiring-layout.md
+ M gradle.properties
+ M gradle/libs.versions.toml
+ M modules/domain/package-manager/src/main/resources/org.cangnova.cangjie.cjpm.xml
+ M modules/foundation/src/main/kotlin/org/cangnova/cangjie/task/CjBackgroundTaskQueue.kt
+ M modules/ide/base/build.gradle.kts
+ D modules/ide/base/src/main/kotlin/org/cangnova/cangjie/formatter/CangJiePreFormatProcessor.kt
+ M modules/ide/base/src/main/resources/META-INF/cangjie-formatter.xml
+ M modules/ide/base/src/main/resources/META-INF/cangjie-ide-analysis-api-cfir.xml
+ M modules/ide/lsp/build.gradle.kts
+ M modules/ide/lsp/src/main/resources/org.cangnova.cangjie.lsp4ij.xml
+ M modules/ide/macro/build.gradle.kts
+ M modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/analysis/CjMacroGeneratedStructureViewExtension.kt
+ M modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/analysis/LLCfirMacroSessionConfigurator.kt
+ M modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/analysis/MacroCallQuickFixAnnotator.kt
+ M modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/analysis/MacroCallSignatureAnnotator.kt
+ M modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/analysis/MacroContextAnnotator.kt
+ M modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/analysis/MacroDeclarationSignatureAnnotator.kt
+ M modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/analysis/MacroPackageConstraintAnnotator.kt
+ M modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/references/CjMacroReferenceProvider.kt
+ M modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/references/CompileMacroPackageIntentionAction.kt
+ M modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/references/MacroCallQuickFixes.kt
+ M modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/server/protocol/MacroMsgCodec.kt
+ M modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/ui/MacroExpansionPanel.kt
+ M modules/ide/macro/src/main/resources/META-INF/cangjie-macro.xml
+ M modules/ide/macro/src/main/resources/messages/CangJieMacroBundle.properties
+ M modules/ide/macro/src/main/resources/messages/CangJieMacroBundle_zh_CN.properties
+ M modules/ide/macro/src/test/kotlin/org/cangnova/cangjie/macro/server/protocol/MacroMsgCodecTest.kt
+ M modules/ide/project/build.gradle.kts
+ M modules/test-support/src/test/hostPlugin/META-INF/plugin.xml
+ M openspec/changes/align-cangjie-completion-with-kotlin-k2/tasks.md
+ D product/idea-plugin/build.gradle.kts
+ M product/idea-plugin/description.html
+ M product/idea-plugin/src/main/resources/META-INF/plugin.xml
+ M product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/index/CangJieSymbolIndexQueryTest.kt
+ M product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/references/CjMacroDeclarationSignatureAnnotatorTest.kt
+ M product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/references/CjMacroExpansionContextResolutionTest.kt
+ M product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/references/CjMacroOrganizationQualifiedReferenceTest.kt
+ M product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/references/CjMacroPackageConstraintTest.kt
+ M product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/references/CjMacroSemanticSnapshotIntegrationTest.kt
+ M settings.gradle.kts
+?? build-logic/src/main/kotlin/org/cangnova/build/intellij/PrepareRunIdeDumpDirectoryTask.kt
+?? modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/analysis/MacroSemanticHighlightingRefreshService.kt
+?? modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/ui/MacroExpansionHeader.kt
+?? modules/test-support/src/test/kotlin/org/cangnova/cangjie/test/ScratchRealSdkProbeTest.kt
+?? product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/references/MacroExpansionPanelLayoutAssertions.kt

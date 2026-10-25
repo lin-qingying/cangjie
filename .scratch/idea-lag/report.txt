@@ -1,0 +1,2084 @@
+
+########## FREEZE 42s snapshot 12:50:04 ##########
+file=D:\code\intellij\cangjie\intellij-ide\.intellijPlatform\sandbox\intellij-cangjie\IU-2025.3.1\log_runIde\threadDumps-freeze-20261022-124946-IU-253.29346.50-Unsafe.park-42sec\threadDump-20261022-125004.txt
+threads=109 size=2.02MB
+state histogram: {'TIMED_WAITING': 22, 'RUNNABLE': 37, 'BLOCKED': 19, 'WAITING': 31}
+interesting threads=57
+
+-- "AWT-EventQueue-0" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=TIMED_WAITING
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+     at java.base@21.0.9/java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:269)
+     at java.base@21.0.9/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.awaitNanos(AbstractQueuedSynchronizer.java:1797)
+     at java.base@21.0.9/java.util.concurrent.LinkedBlockingQueue.poll(LinkedBlockingQueue.java:460)
+     at com.intellij.openapi.progress.util.EternalEventStealer.dispatchAllEventsForTimeout(SuvorovProgress.kt:378)
+     at com.intellij.openapi.progress.util.SuvorovProgress.processInvocationEventsWithoutDialog(SuvorovProgress.kt:272)
+     at com.intellij.openapi.progress.util.SuvorovProgress.dispatchEventsUntilComputationCompletes(SuvorovProgress.kt:152)
+     at com.intellij.openapi.application.impl.ApplicationImpl.lambda$postInit$14(ApplicationImpl.java:1450)
+     at com.intellij.openapi.application.impl.ApplicationImpl$$Lambda/0x0000019f22540b38.invoke(Unknown Source)
+     at com.intellij.platform.locking.impl.RunSuspend.await(NestedLocksThreadingSupport.kt:1814)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupportKt.runSuspendWithWaitingConsumer(NestedLocksThreadingSupport.kt:1769)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupportKt.access$runSuspendWithWaitingConsumer(NestedLocksThreadingSupport.kt:1)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport.runSuspendMaybeConsuming(NestedLocksThreadingSupport.kt:1708)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport$ComputationState.acquireWriteIntentPermit(NestedLocksThreadingSupport.kt:432)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport.doRunWriteIntentReadAction(NestedLocksThreadingSupport.kt:728)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport.runPreventiveWriteIntentReadAction(NestedLocksThreadingSupport.kt:711)
+     at com.intellij.ide.IdeEventQueue._dispatchEvent(IdeEventQueue.kt:492)
+     at com.intellij.ide.IdeEventQueue.dispatchEvent$lambda$0$0$0$0(IdeEventQueue.kt:337)
+
+-- "ApplicationImpl pooled thread 63" prio=0 tid=0x0 nid=0x0 runnable
+   state=RUNNABLE
+     at java.base@21.0.9/java.lang.Throwable.fillInStackTrace(Native Method)
+     at java.base@21.0.9/java.lang.Throwable.fillInStackTrace(Throwable.java:822)
+     at java.base@21.0.9/java.lang.Throwable.<init>(Throwable.java:275)
+     at com.intellij.lang.impl.MarkerOptionalData.notifyAllocated(MarkerOptionalData.java:76)
+     at com.intellij.lang.impl.PsiBuilderImpl.createMarker(PsiBuilderImpl.java:900)
+     at com.intellij.lang.impl.PsiBuilderImpl.mark(PsiBuilderImpl.java:891)
+     at com.intellij.lang.impl.PsiBuilderAdapter.mark(PsiBuilderAdapter.java:99)
+     at org.cangnova.cangjie.parsing.AbstractCangJieParsing.mark(AbstractCangJieParsing.kt:239)
+     at org.cangnova.cangjie.parsing.CangJieExpressionParsing.parseWhile(CangJieExpressionParsing.kt:1855)
+     at org.cangnova.cangjie.parsing.CangJieExpressionParsing.parseAtomicExpression(CangJieExpressionParsing.kt:888)
+     at org.cangnova.cangjie.parsing.CangJieExpressionParsing.parsePostfixExpression(CangJieExpressionParsing.kt:677)
+     at org.cangnova.cangjie.parsing.CangJieExpressionParsing.parsePrefixExpression(CangJieExpressionParsing.kt:558)
+     at org.cangnova.cangjie.parsing.CangJieExpressionParsing$Precedence$EXPONENTIATION.parseHigherPrecedence(CangJieExpressionParsing.kt:162)
+     at org.cangnova.cangjie.parsing.CangJieExpressionParsing.parseBinaryExpression(CangJieExpressionParsing.kt:511)
+     at org.cangnova.cangjie.parsing.CangJieExpressionParsing.access$parseBinaryExpression(CangJieExpressionParsing.kt:48)
+     at org.cangnova.cangjie.parsing.CangJieExpressionParsing$Precedence.parseHigherPrecedence(CangJieExpressionParsing.kt:402)
+     at org.cangnova.cangjie.parsing.CangJieExpressionParsing.parseBinaryExpression(CangJieExpressionParsing.kt:511)
+     at org.cangnova.cangjie.parsing.CangJieExpressionParsing.access$parseBinaryExpression(CangJieExpressionParsing.kt:48)
+
+-- "ApplicationImpl pooled thread 80" prio=0 tid=0x0 nid=0x0 runnable
+   state=RUNNABLE
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.unpark(Native Method)
+     at java.base@21.0.9/java.util.concurrent.locks.LockSupport.unpark(LockSupport.java:181)
+     at java.base@21.0.9/java.util.concurrent.locks.AbstractQueuedSynchronizer.signalNext(AbstractQueuedSynchronizer.java:645)
+     at java.base@21.0.9/java.util.concurrent.locks.AbstractQueuedSynchronizer.release(AbstractQueuedSynchronizer.java:1094)
+     at java.base@21.0.9/java.util.concurrent.locks.ReentrantLock.unlock(ReentrantLock.java:494)
+     at java.base@21.0.9/java.util.concurrent.DelayQueue.offer(DelayQueue.java:178)
+     at com.intellij.util.concurrency.AppDelayQueue.offer(AppDelayQueue.java:66)
+     at com.intellij.util.concurrency.SchedulingWrapper.delayedExecute(SchedulingWrapper.java:412)
+     at com.intellij.util.concurrency.SchedulingWrapper.schedule(SchedulingWrapper.java:371)
+     at com.intellij.util.concurrency.SchedulingWrapper.schedule(SchedulingWrapper.java:366)
+     at com.intellij.openapi.progress.impl.CoreProgressManager.checkLaterThreadsAreUnblocked(CoreProgressManager.java:1003)
+     at com.intellij.openapi.progress.impl.CoreProgressManager.avoidBlockingPrioritizingThread(CoreProgressManager.java:995)
+     at com.intellij.openapi.progress.impl.CoreProgressManager.isLowPriorityReallyApplicable(CoreProgressManager.java:973)
+     at com.intellij.openapi.progress.impl.CoreProgressManager.sleepIfNeededToGivePriorityToAnotherThread(CoreProgressManager.java:952)
+     at com.intellij.openapi.progress.impl.ProgressManagerImpl.runCheckCanceledHooks(ProgressManagerImpl.java:291)
+     at com.intellij.openapi.progress.impl.CoreProgressManager.doCheckCanceled(CoreProgressManager.java:192)
+     at com.intellij.openapi.progress.ProgressManager.checkCanceled(ProgressManager.java:336)
+     at com.intellij.openapi.progress.ProgressIndicatorProvider.checkCanceled(ProgressIndicatorProvider.java:41)
+
+-- "ApplicationImpl pooled thread 78" prio=0 tid=0x0 nid=0x0 runnable
+   state=RUNNABLE
+     at java.base@21.0.9/sun.reflect.generics.parser.SignatureParser.parseZeroOrMoreFormalTypeParameters(SignatureParser.java:218)
+     at java.base@21.0.9/sun.reflect.generics.parser.SignatureParser.parseMethodTypeSignature(SignatureParser.java:559)
+     at java.base@21.0.9/sun.reflect.generics.parser.SignatureParser.parseMethodSig(SignatureParser.java:171)
+     at java.base@21.0.9/sun.reflect.generics.repository.ConstructorRepository.parse(ConstructorRepository.java:58)
+     at java.base@21.0.9/sun.reflect.generics.repository.ConstructorRepository.parse(ConstructorRepository.java:43)
+     at java.base@21.0.9/sun.reflect.generics.repository.AbstractRepository.<init>(AbstractRepository.java:74)
+     at java.base@21.0.9/sun.reflect.generics.repository.GenericDeclRepository.<init>(GenericDeclRepository.java:51)
+     at java.base@21.0.9/sun.reflect.generics.repository.ConstructorRepository.<init>(ConstructorRepository.java:54)
+     at java.base@21.0.9/sun.reflect.generics.repository.MethodRepository.<init>(MethodRepository.java:47)
+     at java.base@21.0.9/sun.reflect.generics.repository.MethodRepository.make(MethodRepository.java:60)
+     at java.base@21.0.9/java.lang.reflect.Method.getGenericInfo(Method.java:115)
+     at java.base@21.0.9/java.lang.reflect.Method.getGenericReturnType(Method.java:299)
+     at com.fasterxml.jackson.databind.introspect.AnnotatedMethod.getType(AnnotatedMethod.java:77)
+     at com.fasterxml.jackson.databind.introspect.DefaultAccessorNamingStrategy.findNameForIsGetter(DefaultAccessorNamingStrategy.java:80)
+     at com.fasterxml.jackson.databind.introspect.POJOPropertiesCollector._addGetterMethod(POJOPropertiesCollector.java:1161)
+     at com.fasterxml.jackson.databind.introspect.POJOPropertiesCollector._addMethods(POJOPropertiesCollector.java:1096)
+     at com.fasterxml.jackson.databind.introspect.POJOPropertiesCollector.collectAll(POJOPropertiesCollector.java:442)
+     at com.fasterxml.jackson.databind.introspect.POJOPropertiesCollector.getJsonValueAccessor(POJOPropertiesCollector.java:270)
+
+-- "ApplicationImpl pooled thread 82" prio=0 tid=0x0 nid=0x0 runnable
+   state=RUNNABLE
+     at org.cangnova.cangjie.cfir.builder.macro.MacroPayloadTokenizer.mergeStringLiterals(MacroPayloadTokenizer.kt:107)
+     at org.cangnova.cangjie.cfir.builder.macro.MacroPayloadTokenizer.tokenize(MacroPayloadTokenizer.kt:86)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Converter.applyTopLevelMacroExpression(PsiRawCfirBuilder.kt:681)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Converter.convertDeclaration(PsiRawCfirBuilder.kt:548)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Converter.convertTopLevelMacroDeclaration(PsiRawCfirBuilder.kt:562)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Converter.convertClassMembers(PsiRawCfirBuilder.kt:3997)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Converter.convertClass(PsiRawCfirBuilder.kt:819)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Converter.convertDeclaration(PsiRawCfirBuilder.kt:515)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Converter.convertTopLevelMacroDeclaration(PsiRawCfirBuilder.kt:562)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Converter.convertFileDeclarations(PsiRawCfirBuilder.kt:456)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile$lambda$20(PsiRawCfirBuilder.kt:385)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$$Lambda/0x0000019f246a66d8.invoke(Unknown Source)
+     at org.cangnova.cangjie.cfir.builder.Context.withPackage(RawCfirBuilderContext.kt:70)
+     at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilder.withPackageContext(AbstractRawCfirBuilder.kt:87)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile(PsiRawCfirBuilder.kt:365)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$buildFile(PsiRawCfirBuilder.kt:123)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:398)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:396)
+
+-- "ApplicationImpl pooled thread 90" prio=0 tid=0x0 nid=0x0 runnable
+   state=RUNNABLE
+     at java.base@21.0.9/java.lang.invoke.MethodHandleNatives.resolve(Native Method)
+     at java.base@21.0.9/java.lang.invoke.MemberName$Factory.resolve(MemberName.java:962)
+     at java.base@21.0.9/java.lang.invoke.MemberName$Factory.resolveOrFail(MemberName.java:991)
+     at java.base@21.0.9/java.lang.invoke.MethodHandles$Lookup.resolveOrFail(MethodHandles.java:3750)
+     at java.base@21.0.9/java.lang.invoke.MethodHandles$Lookup.findConstructor(MethodHandles.java:2837)
+     at com.intellij.serviceContainer.ComponentManagerImplKt.findConstructorOrNull(ComponentManagerImpl.kt:99)
+     at com.intellij.serviceContainer.ComponentManagerImpl.findConstructorAndInstantiateClass(ComponentManagerImpl.kt:882)
+     at com.intellij.serviceContainer.ComponentManagerImpl.doInstantiateClass(ComponentManagerImpl.kt:891)
+     at com.intellij.serviceContainer.ComponentManagerImpl.instantiateClass$lambda$1$0(ComponentManagerImpl.kt:875)
+     at com.intellij.serviceContainer.ComponentManagerImpl$$Lambda/0x0000019f22312230.invoke(Unknown Source)
+     at com.intellij.concurrency.ThreadContext.installThreadContext(threadContext.kt:305)
+     at com.intellij.concurrency.ThreadContext.installThreadContext$default(threadContext.kt:303)
+     at com.intellij.serviceContainer.ComponentManagerImpl.instantiateClass$lambda$1(ComponentManagerImpl.kt:874)
+     at com.intellij.serviceContainer.ComponentManagerImpl$$Lambda/0x0000019f22317508.invoke(Unknown Source)
+     at com.intellij.concurrency.ThreadContext.resetThreadContext(threadContext.kt:294)
+     at com.intellij.serviceContainer.ComponentManagerImpl.instantiateClass(ComponentManagerImpl.kt:873)
+     at com.intellij.openapi.extensions.impl.SimpleConstructorInjectionAdapter.instantiateClass(XmlExtensionAdapter.kt:102)
+     at com.intellij.openapi.extensions.impl.XmlExtensionAdapter.doCreateInstance(XmlExtensionAdapter.kt:52)
+
+-- "DefaultDispatcher-worker-5 @com.intellij.internal.statistic.updater.StatisticsJobsScheduler#11108" prio=0 tid=0x0 nid=0x0 runnable
+   state=RUNNABLE
+     at java.base@21.0.9/java.lang.ClassLoader.defineClass0(Native Method)
+     at java.base@21.0.9/java.lang.System$2.defineClass(System.java:2406)
+     at java.base@21.0.9/java.lang.invoke.MethodHandles$Lookup$ClassDefiner.defineClass(MethodHandles.java:2505)
+     at java.base@21.0.9/java.lang.invoke.InvokerBytecodeGenerator.loadMethod(InvokerBytecodeGenerator.java:249)
+     at java.base@21.0.9/java.lang.invoke.InvokerBytecodeGenerator.generateCustomizedCode(InvokerBytecodeGenerator.java:712)
+     at java.base@21.0.9/java.lang.invoke.LambdaForm.compileToBytecode(LambdaForm.java:849)
+     at java.base@21.0.9/java.lang.invoke.LambdaForm.prepare(LambdaForm.java:807)
+     at java.base@21.0.9/java.lang.invoke.MethodHandle.<init>(MethodHandle.java:482)
+     at java.base@21.0.9/java.lang.invoke.BoundMethodHandle.<init>(BoundMethodHandle.java:52)
+     at java.base@21.0.9/java.lang.invoke.BoundMethodHandle$Species_L.<init>(BoundMethodHandle.java:210)
+     at java.base@21.0.9/java.lang.invoke.BoundMethodHandle$Species_L.copyWith(BoundMethodHandle.java:230)
+     at java.base@21.0.9/java.lang.invoke.MethodHandles.dropArgumentsTrusted(MethodHandles.java:5375)
+     at java.base@21.0.9/java.lang.invoke.StringConcatFactory.generateMHInlineCopy(StringConcatFactory.java:534)
+     at java.base@21.0.9/java.lang.invoke.StringConcatFactory.makeConcatWithConstants(StringConcatFactory.java:365)
+     at java.base@21.0.9/java.lang.invoke.DirectMethodHandle$Holder.invokeStatic(DirectMethodHandle$Holder)
+     at java.base@21.0.9/java.lang.invoke.DelegatingMethodHandle$Holder.delegate(DelegatingMethodHandle$Holder)
+     at java.base@21.0.9/java.lang.invoke.Invokers$Holder.invokeExact_MT(Invokers$Holder)
+     at java.base@21.0.9/java.lang.invoke.BootstrapMethodInvoker.invoke(BootstrapMethodInvoker.java:102)
+
+-- "DefaultDispatcher-worker-17 @com.intellij.internal.statistic.updater.StatisticsJobsScheduler#11106" prio=0 tid=0x0 nid=0x0 runnable
+   state=RUNNABLE
+     at java.base@21.0.9/sun.nio.ch.FileDispatcherImpl.read0(Native Method)
+     at java.base@21.0.9/sun.nio.ch.FileDispatcherImpl.read(FileDispatcherImpl.java:61)
+     at java.base@21.0.9/sun.nio.ch.IOUtil.readIntoNativeBuffer(IOUtil.java:340)
+     at java.base@21.0.9/sun.nio.ch.IOUtil.read(IOUtil.java:306)
+     at java.base@21.0.9/sun.nio.ch.IOUtil.read(IOUtil.java:283)
+     at java.base@21.0.9/sun.nio.ch.FileChannelImpl.read(FileChannelImpl.java:256)
+     at java.base@21.0.9/java.io.FileInputStream.implRead(FileInputStream.java:383)
+     at java.base@21.0.9/java.io.FileInputStream.read(FileInputStream.java:371)
+     at java.base@21.0.9/sun.nio.cs.StreamDecoder.readBytes(StreamDecoder.java:350)
+     at java.base@21.0.9/sun.nio.cs.StreamDecoder.implRead(StreamDecoder.java:393)
+     at java.base@21.0.9/sun.nio.cs.StreamDecoder.lockedRead(StreamDecoder.java:217)
+     at java.base@21.0.9/sun.nio.cs.StreamDecoder.read(StreamDecoder.java:171)
+     at java.base@21.0.9/java.io.InputStreamReader.read(InputStreamReader.java:188)
+     at java.base@21.0.9/java.io.BufferedReader.fill(BufferedReader.java:160)
+     at java.base@21.0.9/java.io.BufferedReader.implReadLine(BufferedReader.java:370)
+     at java.base@21.0.9/java.io.BufferedReader.readLine(BufferedReader.java:347)
+     at java.base@21.0.9/java.io.BufferedReader.readLine(BufferedReader.java:436)
+     at com.intellij.internal.statistic.eventLog.LogEventRecordRequest$Companion.fillNextBatch(LogEventRecordRequest.kt:86)
+
+-- "AWT-Windows" prio=0 tid=0x0 nid=0x0 runnable
+   state=RUNNABLE
+     at java.desktop/sun.awt.windows.WToolkit.eventLoop(Native Method)
+     at java.desktop/sun.awt.windows.WToolkit.run(WToolkit.java:371)
+     at java.base@21.0.9/java.lang.Thread.runWith(Thread.java:1596)
+     at java.base@21.0.9/java.lang.Thread.run(Thread.java:1583)
+
+-- "ApplicationImpl pooled thread 1" prio=0 tid=0x0 nid=0x0 blocked
+   state=BLOCKED
+     at com.intellij.psi.impl.source.PsiFileImpl.loadTreeElement(PsiFileImpl.java:218)
+     at com.intellij.psi.impl.source.PsiFileImpl.calcTreeElement(PsiFileImpl.java:841)
+     at com.intellij.psi.impl.source.PsiFileImpl.getNode(PsiFileImpl.java:1040)
+     at org.cangnova.cangjie.psi.CjCommonFile.getFeaturesDirective(CjFile.kt:343)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile$lambda$20(PsiRawCfirBuilder.kt:379)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$$Lambda/0x0000019f246a66d8.invoke(Unknown Source)
+     at org.cangnova.cangjie.cfir.builder.Context.withPackage(RawCfirBuilderContext.kt:70)
+     at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilder.withPackageContext(AbstractRawCfirBuilder.kt:87)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile(PsiRawCfirBuilder.kt:365)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$buildFile(PsiRawCfirBuilder.kt:123)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:398)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:396)
+     at org.cangnova.cangjie.psi.CjFile.accept(CjFile.kt:443)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.Context.withSourceModuleName(RawCfirBuilderContext.kt:38)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.withSourceModuleContext(PsiRawCfirBuilder.kt:215)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$withSourceModuleContext(PsiRawCfirBuilder.kt:123)
+
+-- "ApplicationImpl pooled thread 3" prio=0 tid=0x0 nid=0x0 blocked
+   state=BLOCKED
+     at com.intellij.psi.impl.source.PsiFileImpl.loadTreeElement(PsiFileImpl.java:218)
+     at com.intellij.psi.impl.source.PsiFileImpl.calcTreeElement(PsiFileImpl.java:841)
+     at com.intellij.psi.impl.source.PsiFileImpl.getNode(PsiFileImpl.java:1040)
+     at org.cangnova.cangjie.psi.CjCommonFile.getFeaturesDirective(CjFile.kt:343)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile$lambda$20(PsiRawCfirBuilder.kt:379)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$$Lambda/0x0000019f246a66d8.invoke(Unknown Source)
+     at org.cangnova.cangjie.cfir.builder.Context.withPackage(RawCfirBuilderContext.kt:70)
+     at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilder.withPackageContext(AbstractRawCfirBuilder.kt:87)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile(PsiRawCfirBuilder.kt:365)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$buildFile(PsiRawCfirBuilder.kt:123)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:398)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:396)
+     at org.cangnova.cangjie.psi.CjFile.accept(CjFile.kt:443)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.Context.withSourceModuleName(RawCfirBuilderContext.kt:38)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.withSourceModuleContext(PsiRawCfirBuilder.kt:215)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$withSourceModuleContext(PsiRawCfirBuilder.kt:123)
+
+-- "ApplicationImpl pooled thread 4" prio=0 tid=0x0 nid=0x0 blocked
+   state=BLOCKED
+     at com.intellij.psi.impl.source.PsiFileImpl.loadTreeElement(PsiFileImpl.java:218)
+     at com.intellij.psi.impl.source.PsiFileImpl.calcTreeElement(PsiFileImpl.java:841)
+     at com.intellij.psi.impl.source.PsiFileImpl.getNode(PsiFileImpl.java:1040)
+     at org.cangnova.cangjie.psi.CjCommonFile.getFeaturesDirective(CjFile.kt:343)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile$lambda$20(PsiRawCfirBuilder.kt:379)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$$Lambda/0x0000019f246a66d8.invoke(Unknown Source)
+     at org.cangnova.cangjie.cfir.builder.Context.withPackage(RawCfirBuilderContext.kt:70)
+     at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilder.withPackageContext(AbstractRawCfirBuilder.kt:87)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile(PsiRawCfirBuilder.kt:365)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$buildFile(PsiRawCfirBuilder.kt:123)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:398)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:396)
+     at org.cangnova.cangjie.psi.CjFile.accept(CjFile.kt:443)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.Context.withSourceModuleName(RawCfirBuilderContext.kt:38)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.withSourceModuleContext(PsiRawCfirBuilder.kt:215)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$withSourceModuleContext(PsiRawCfirBuilder.kt:123)
+
+-- "ApplicationImpl pooled thread 5" prio=0 tid=0x0 nid=0x0 blocked
+   state=BLOCKED
+     at com.intellij.psi.impl.source.PsiFileImpl.loadTreeElement(PsiFileImpl.java:218)
+     at com.intellij.psi.impl.source.PsiFileImpl.calcTreeElement(PsiFileImpl.java:841)
+     at com.intellij.psi.impl.source.PsiFileImpl.getNode(PsiFileImpl.java:1040)
+     at org.cangnova.cangjie.psi.CjCommonFile.getFeaturesDirective(CjFile.kt:343)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile$lambda$20(PsiRawCfirBuilder.kt:379)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$$Lambda/0x0000019f246a66d8.invoke(Unknown Source)
+     at org.cangnova.cangjie.cfir.builder.Context.withPackage(RawCfirBuilderContext.kt:70)
+     at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilder.withPackageContext(AbstractRawCfirBuilder.kt:87)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile(PsiRawCfirBuilder.kt:365)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$buildFile(PsiRawCfirBuilder.kt:123)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:398)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:396)
+     at org.cangnova.cangjie.psi.CjFile.accept(CjFile.kt:443)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.Context.withSourceModuleName(RawCfirBuilderContext.kt:38)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.withSourceModuleContext(PsiRawCfirBuilder.kt:215)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$withSourceModuleContext(PsiRawCfirBuilder.kt:123)
+
+-- "ApplicationImpl pooled thread 6" prio=0 tid=0x0 nid=0x0 blocked
+   state=BLOCKED
+     at com.intellij.psi.impl.source.PsiFileImpl.loadTreeElement(PsiFileImpl.java:218)
+     at com.intellij.psi.impl.source.PsiFileImpl.calcTreeElement(PsiFileImpl.java:841)
+     at com.intellij.psi.impl.source.PsiFileImpl.getNode(PsiFileImpl.java:1040)
+     at org.cangnova.cangjie.psi.CjCommonFile.getFeaturesDirective(CjFile.kt:343)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile$lambda$20(PsiRawCfirBuilder.kt:379)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$$Lambda/0x0000019f246a66d8.invoke(Unknown Source)
+     at org.cangnova.cangjie.cfir.builder.Context.withPackage(RawCfirBuilderContext.kt:70)
+     at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilder.withPackageContext(AbstractRawCfirBuilder.kt:87)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile(PsiRawCfirBuilder.kt:365)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$buildFile(PsiRawCfirBuilder.kt:123)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:398)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:396)
+     at org.cangnova.cangjie.psi.CjFile.accept(CjFile.kt:443)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.Context.withSourceModuleName(RawCfirBuilderContext.kt:38)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.withSourceModuleContext(PsiRawCfirBuilder.kt:215)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$withSourceModuleContext(PsiRawCfirBuilder.kt:123)
+
+-- "ApplicationImpl pooled thread 62" prio=0 tid=0x0 nid=0x0 blocked
+   state=BLOCKED
+     at com.intellij.psi.impl.source.PsiFileImpl.loadTreeElement(PsiFileImpl.java:218)
+     at com.intellij.psi.impl.source.PsiFileImpl.calcTreeElement(PsiFileImpl.java:841)
+     at com.intellij.psi.impl.source.PsiFileImpl.getNode(PsiFileImpl.java:1040)
+     at org.cangnova.cangjie.psi.CjCommonFile.getFeaturesDirective(CjFile.kt:343)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile$lambda$20(PsiRawCfirBuilder.kt:379)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$$Lambda/0x0000019f246a66d8.invoke(Unknown Source)
+     at org.cangnova.cangjie.cfir.builder.Context.withPackage(RawCfirBuilderContext.kt:70)
+     at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilder.withPackageContext(AbstractRawCfirBuilder.kt:87)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile(PsiRawCfirBuilder.kt:365)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$buildFile(PsiRawCfirBuilder.kt:123)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:398)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:396)
+     at org.cangnova.cangjie.psi.CjFile.accept(CjFile.kt:443)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.Context.withSourceModuleName(RawCfirBuilderContext.kt:38)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.withSourceModuleContext(PsiRawCfirBuilder.kt:215)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$withSourceModuleContext(PsiRawCfirBuilder.kt:123)
+
+-- "ApplicationImpl pooled thread 64" prio=0 tid=0x0 nid=0x0 blocked
+   state=BLOCKED
+     at com.intellij.psi.impl.source.PsiFileImpl.loadTreeElement(PsiFileImpl.java:218)
+     at com.intellij.psi.impl.source.PsiFileImpl.calcTreeElement(PsiFileImpl.java:841)
+     at com.intellij.psi.impl.source.PsiFileImpl.getNode(PsiFileImpl.java:1040)
+     at org.cangnova.cangjie.psi.CjCommonFile.getFeaturesDirective(CjFile.kt:343)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile$lambda$20(PsiRawCfirBuilder.kt:379)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$$Lambda/0x0000019f246a66d8.invoke(Unknown Source)
+     at org.cangnova.cangjie.cfir.builder.Context.withPackage(RawCfirBuilderContext.kt:70)
+     at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilder.withPackageContext(AbstractRawCfirBuilder.kt:87)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile(PsiRawCfirBuilder.kt:365)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$buildFile(PsiRawCfirBuilder.kt:123)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:398)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:396)
+     at org.cangnova.cangjie.psi.CjFile.accept(CjFile.kt:443)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.Context.withSourceModuleName(RawCfirBuilderContext.kt:38)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.withSourceModuleContext(PsiRawCfirBuilder.kt:215)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$withSourceModuleContext(PsiRawCfirBuilder.kt:123)
+
+-- "ApplicationImpl pooled thread 65" prio=0 tid=0x0 nid=0x0 blocked
+   state=BLOCKED
+     at com.intellij.psi.impl.source.PsiFileImpl.loadTreeElement(PsiFileImpl.java:218)
+     at com.intellij.psi.impl.source.PsiFileImpl.calcTreeElement(PsiFileImpl.java:841)
+     at com.intellij.psi.impl.source.PsiFileImpl.getNode(PsiFileImpl.java:1040)
+     at org.cangnova.cangjie.psi.CjCommonFile.getFeaturesDirective(CjFile.kt:343)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile$lambda$20(PsiRawCfirBuilder.kt:379)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$$Lambda/0x0000019f246a66d8.invoke(Unknown Source)
+     at org.cangnova.cangjie.cfir.builder.Context.withPackage(RawCfirBuilderContext.kt:70)
+     at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilder.withPackageContext(AbstractRawCfirBuilder.kt:87)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile(PsiRawCfirBuilder.kt:365)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$buildFile(PsiRawCfirBuilder.kt:123)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:398)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:396)
+     at org.cangnova.cangjie.psi.CjFile.accept(CjFile.kt:443)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.Context.withSourceModuleName(RawCfirBuilderContext.kt:38)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.withSourceModuleContext(PsiRawCfirBuilder.kt:215)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$withSourceModuleContext(PsiRawCfirBuilder.kt:123)
+
+-- "ApplicationImpl pooled thread 67" prio=0 tid=0x0 nid=0x0 blocked
+   state=BLOCKED
+     at com.intellij.psi.impl.source.PsiFileImpl.loadTreeElement(PsiFileImpl.java:218)
+     at com.intellij.psi.impl.source.PsiFileImpl.calcTreeElement(PsiFileImpl.java:841)
+     at com.intellij.psi.impl.source.PsiFileImpl.getNode(PsiFileImpl.java:1040)
+     at org.cangnova.cangjie.psi.CjCommonFile.getFeaturesDirective(CjFile.kt:343)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile$lambda$20(PsiRawCfirBuilder.kt:379)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$$Lambda/0x0000019f246a66d8.invoke(Unknown Source)
+     at org.cangnova.cangjie.cfir.builder.Context.withPackage(RawCfirBuilderContext.kt:70)
+     at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilder.withPackageContext(AbstractRawCfirBuilder.kt:87)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile(PsiRawCfirBuilder.kt:365)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$buildFile(PsiRawCfirBuilder.kt:123)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:398)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:396)
+     at org.cangnova.cangjie.psi.CjFile.accept(CjFile.kt:443)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.Context.withSourceModuleName(RawCfirBuilderContext.kt:38)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.withSourceModuleContext(PsiRawCfirBuilder.kt:215)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$withSourceModuleContext(PsiRawCfirBuilder.kt:123)
+
+-- "ApplicationImpl pooled thread 68" prio=0 tid=0x0 nid=0x0 blocked
+   state=BLOCKED
+     at com.intellij.psi.impl.source.PsiFileImpl.loadTreeElement(PsiFileImpl.java:218)
+     at com.intellij.psi.impl.source.PsiFileImpl.calcTreeElement(PsiFileImpl.java:841)
+     at com.intellij.psi.impl.source.PsiFileImpl.getNode(PsiFileImpl.java:1040)
+     at org.cangnova.cangjie.psi.CjCommonFile.getFeaturesDirective(CjFile.kt:343)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile$lambda$20(PsiRawCfirBuilder.kt:379)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$$Lambda/0x0000019f246a66d8.invoke(Unknown Source)
+     at org.cangnova.cangjie.cfir.builder.Context.withPackage(RawCfirBuilderContext.kt:70)
+     at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilder.withPackageContext(AbstractRawCfirBuilder.kt:87)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile(PsiRawCfirBuilder.kt:365)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$buildFile(PsiRawCfirBuilder.kt:123)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:398)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:396)
+     at org.cangnova.cangjie.psi.CjFile.accept(CjFile.kt:443)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.Context.withSourceModuleName(RawCfirBuilderContext.kt:38)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.withSourceModuleContext(PsiRawCfirBuilder.kt:215)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$withSourceModuleContext(PsiRawCfirBuilder.kt:123)
+
+-- "ApplicationImpl pooled thread 69" prio=0 tid=0x0 nid=0x0 blocked
+   state=BLOCKED
+     at com.intellij.psi.impl.source.PsiFileImpl.loadTreeElement(PsiFileImpl.java:218)
+     at com.intellij.psi.impl.source.PsiFileImpl.calcTreeElement(PsiFileImpl.java:841)
+     at com.intellij.psi.impl.source.PsiFileImpl.getNode(PsiFileImpl.java:1040)
+     at org.cangnova.cangjie.psi.CjCommonFile.getFeaturesDirective(CjFile.kt:343)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile$lambda$20(PsiRawCfirBuilder.kt:379)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$$Lambda/0x0000019f246a66d8.invoke(Unknown Source)
+     at org.cangnova.cangjie.cfir.builder.Context.withPackage(RawCfirBuilderContext.kt:70)
+     at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilder.withPackageContext(AbstractRawCfirBuilder.kt:87)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile(PsiRawCfirBuilder.kt:365)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$buildFile(PsiRawCfirBuilder.kt:123)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:398)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:396)
+     at org.cangnova.cangjie.psi.CjFile.accept(CjFile.kt:443)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.Context.withSourceModuleName(RawCfirBuilderContext.kt:38)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.withSourceModuleContext(PsiRawCfirBuilder.kt:215)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$withSourceModuleContext(PsiRawCfirBuilder.kt:123)
+
+-- "ApplicationImpl pooled thread 7" prio=0 tid=0x0 nid=0x0 blocked
+   state=BLOCKED
+     at com.intellij.psi.impl.source.PsiFileImpl.loadTreeElement(PsiFileImpl.java:218)
+     at com.intellij.psi.impl.source.PsiFileImpl.calcTreeElement(PsiFileImpl.java:841)
+     at com.intellij.psi.impl.source.PsiFileImpl.getNode(PsiFileImpl.java:1040)
+     at org.cangnova.cangjie.psi.CjCommonFile.getFeaturesDirective(CjFile.kt:343)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile$lambda$20(PsiRawCfirBuilder.kt:379)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$$Lambda/0x0000019f246a66d8.invoke(Unknown Source)
+     at org.cangnova.cangjie.cfir.builder.Context.withPackage(RawCfirBuilderContext.kt:70)
+     at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilder.withPackageContext(AbstractRawCfirBuilder.kt:87)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile(PsiRawCfirBuilder.kt:365)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$buildFile(PsiRawCfirBuilder.kt:123)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:398)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:396)
+     at org.cangnova.cangjie.psi.CjFile.accept(CjFile.kt:443)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.Context.withSourceModuleName(RawCfirBuilderContext.kt:38)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.withSourceModuleContext(PsiRawCfirBuilder.kt:215)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$withSourceModuleContext(PsiRawCfirBuilder.kt:123)
+
+-- "ApplicationImpl pooled thread 70" prio=0 tid=0x0 nid=0x0 blocked
+   state=BLOCKED
+     at com.intellij.psi.impl.source.PsiFileImpl.loadTreeElement(PsiFileImpl.java:218)
+     at com.intellij.psi.impl.source.PsiFileImpl.calcTreeElement(PsiFileImpl.java:841)
+     at com.intellij.psi.impl.source.PsiFileImpl.getNode(PsiFileImpl.java:1040)
+     at org.cangnova.cangjie.psi.CjCommonFile.getFeaturesDirective(CjFile.kt:343)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile$lambda$20(PsiRawCfirBuilder.kt:379)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$$Lambda/0x0000019f246a66d8.invoke(Unknown Source)
+     at org.cangnova.cangjie.cfir.builder.Context.withPackage(RawCfirBuilderContext.kt:70)
+     at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilder.withPackageContext(AbstractRawCfirBuilder.kt:87)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile(PsiRawCfirBuilder.kt:365)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$buildFile(PsiRawCfirBuilder.kt:123)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:398)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:396)
+     at org.cangnova.cangjie.psi.CjFile.accept(CjFile.kt:443)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.Context.withSourceModuleName(RawCfirBuilderContext.kt:38)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.withSourceModuleContext(PsiRawCfirBuilder.kt:215)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$withSourceModuleContext(PsiRawCfirBuilder.kt:123)
+
+-- "ApplicationImpl pooled thread 71" prio=0 tid=0x0 nid=0x0 blocked
+   state=BLOCKED
+     at com.intellij.psi.impl.source.PsiFileImpl.loadTreeElement(PsiFileImpl.java:218)
+     at com.intellij.psi.impl.source.PsiFileImpl.calcTreeElement(PsiFileImpl.java:841)
+     at com.intellij.psi.impl.source.PsiFileImpl.getNode(PsiFileImpl.java:1040)
+     at org.cangnova.cangjie.psi.CjCommonFile.getFeaturesDirective(CjFile.kt:343)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile$lambda$20(PsiRawCfirBuilder.kt:379)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$$Lambda/0x0000019f246a66d8.invoke(Unknown Source)
+     at org.cangnova.cangjie.cfir.builder.Context.withPackage(RawCfirBuilderContext.kt:70)
+     at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilder.withPackageContext(AbstractRawCfirBuilder.kt:87)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile(PsiRawCfirBuilder.kt:365)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$buildFile(PsiRawCfirBuilder.kt:123)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:398)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:396)
+     at org.cangnova.cangjie.psi.CjFile.accept(CjFile.kt:443)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.Context.withSourceModuleName(RawCfirBuilderContext.kt:38)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.withSourceModuleContext(PsiRawCfirBuilder.kt:215)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$withSourceModuleContext(PsiRawCfirBuilder.kt:123)
+
+-- "ApplicationImpl pooled thread 73" prio=0 tid=0x0 nid=0x0 blocked
+   state=BLOCKED
+     at com.intellij.psi.impl.source.PsiFileImpl.loadTreeElement(PsiFileImpl.java:218)
+     at com.intellij.psi.impl.source.PsiFileImpl.calcTreeElement(PsiFileImpl.java:841)
+     at com.intellij.psi.impl.source.PsiFileImpl.getNode(PsiFileImpl.java:1040)
+     at org.cangnova.cangjie.psi.CjCommonFile.getFeaturesDirective(CjFile.kt:343)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile$lambda$20(PsiRawCfirBuilder.kt:379)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$$Lambda/0x0000019f246a66d8.invoke(Unknown Source)
+     at org.cangnova.cangjie.cfir.builder.Context.withPackage(RawCfirBuilderContext.kt:70)
+     at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilder.withPackageContext(AbstractRawCfirBuilder.kt:87)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile(PsiRawCfirBuilder.kt:365)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$buildFile(PsiRawCfirBuilder.kt:123)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:398)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:396)
+     at org.cangnova.cangjie.psi.CjFile.accept(CjFile.kt:443)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.Context.withSourceModuleName(RawCfirBuilderContext.kt:38)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.withSourceModuleContext(PsiRawCfirBuilder.kt:215)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$withSourceModuleContext(PsiRawCfirBuilder.kt:123)
+
+-- "ApplicationImpl pooled thread 74" prio=0 tid=0x0 nid=0x0 blocked
+   state=BLOCKED
+     at com.intellij.psi.impl.source.PsiFileImpl.loadTreeElement(PsiFileImpl.java:218)
+     at com.intellij.psi.impl.source.PsiFileImpl.calcTreeElement(PsiFileImpl.java:841)
+     at com.intellij.psi.impl.source.PsiFileImpl.getNode(PsiFileImpl.java:1040)
+     at org.cangnova.cangjie.psi.CjCommonFile.getFeaturesDirective(CjFile.kt:343)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile$lambda$20(PsiRawCfirBuilder.kt:379)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$$Lambda/0x0000019f246a66d8.invoke(Unknown Source)
+     at org.cangnova.cangjie.cfir.builder.Context.withPackage(RawCfirBuilderContext.kt:70)
+     at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilder.withPackageContext(AbstractRawCfirBuilder.kt:87)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile(PsiRawCfirBuilder.kt:365)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$buildFile(PsiRawCfirBuilder.kt:123)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:398)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:396)
+     at org.cangnova.cangjie.psi.CjFile.accept(CjFile.kt:443)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.Context.withSourceModuleName(RawCfirBuilderContext.kt:38)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.withSourceModuleContext(PsiRawCfirBuilder.kt:215)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$withSourceModuleContext(PsiRawCfirBuilder.kt:123)
+
+-- "ApplicationImpl pooled thread 75" prio=0 tid=0x0 nid=0x0 blocked
+   state=BLOCKED
+     at com.intellij.psi.impl.source.PsiFileImpl.loadTreeElement(PsiFileImpl.java:218)
+     at com.intellij.psi.impl.source.PsiFileImpl.calcTreeElement(PsiFileImpl.java:841)
+     at com.intellij.psi.impl.source.PsiFileImpl.getNode(PsiFileImpl.java:1040)
+     at org.cangnova.cangjie.psi.CjCommonFile.getFeaturesDirective(CjFile.kt:343)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile$lambda$20(PsiRawCfirBuilder.kt:379)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$$Lambda/0x0000019f246a66d8.invoke(Unknown Source)
+     at org.cangnova.cangjie.cfir.builder.Context.withPackage(RawCfirBuilderContext.kt:70)
+     at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilder.withPackageContext(AbstractRawCfirBuilder.kt:87)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile(PsiRawCfirBuilder.kt:365)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$buildFile(PsiRawCfirBuilder.kt:123)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:398)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:396)
+     at org.cangnova.cangjie.psi.CjFile.accept(CjFile.kt:443)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.Context.withSourceModuleName(RawCfirBuilderContext.kt:38)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.withSourceModuleContext(PsiRawCfirBuilder.kt:215)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$withSourceModuleContext(PsiRawCfirBuilder.kt:123)
+
+-- "ApplicationImpl pooled thread 77" prio=0 tid=0x0 nid=0x0 blocked
+   state=BLOCKED
+     at com.intellij.psi.impl.source.PsiFileImpl.loadTreeElement(PsiFileImpl.java:218)
+     at com.intellij.psi.impl.source.PsiFileImpl.calcTreeElement(PsiFileImpl.java:841)
+     at com.intellij.psi.impl.source.PsiFileImpl.getNode(PsiFileImpl.java:1040)
+     at org.cangnova.cangjie.psi.CjCommonFile.getFeaturesDirective(CjFile.kt:343)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile$lambda$20(PsiRawCfirBuilder.kt:379)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$$Lambda/0x0000019f246a66d8.invoke(Unknown Source)
+     at org.cangnova.cangjie.cfir.builder.Context.withPackage(RawCfirBuilderContext.kt:70)
+     at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilder.withPackageContext(AbstractRawCfirBuilder.kt:87)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile(PsiRawCfirBuilder.kt:365)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$buildFile(PsiRawCfirBuilder.kt:123)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:398)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:396)
+     at org.cangnova.cangjie.psi.CjFile.accept(CjFile.kt:443)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.Context.withSourceModuleName(RawCfirBuilderContext.kt:38)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.withSourceModuleContext(PsiRawCfirBuilder.kt:215)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$withSourceModuleContext(PsiRawCfirBuilder.kt:123)
+
+-- "ApplicationImpl pooled thread 79" prio=0 tid=0x0 nid=0x0 blocked
+   state=BLOCKED
+     at com.intellij.psi.impl.source.PsiFileImpl.loadTreeElement(PsiFileImpl.java:218)
+     at com.intellij.psi.impl.source.PsiFileImpl.calcTreeElement(PsiFileImpl.java:841)
+     at com.intellij.psi.impl.source.PsiFileImpl.getNode(PsiFileImpl.java:1040)
+     at org.cangnova.cangjie.psi.CjCommonFile.getFeaturesDirective(CjFile.kt:343)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile$lambda$20(PsiRawCfirBuilder.kt:379)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$$Lambda/0x0000019f246a66d8.invoke(Unknown Source)
+     at org.cangnova.cangjie.cfir.builder.Context.withPackage(RawCfirBuilderContext.kt:70)
+     at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilder.withPackageContext(AbstractRawCfirBuilder.kt:87)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile(PsiRawCfirBuilder.kt:365)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$buildFile(PsiRawCfirBuilder.kt:123)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:398)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:396)
+     at org.cangnova.cangjie.psi.CjFile.accept(CjFile.kt:443)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.Context.withSourceModuleName(RawCfirBuilderContext.kt:38)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.withSourceModuleContext(PsiRawCfirBuilder.kt:215)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$withSourceModuleContext(PsiRawCfirBuilder.kt:123)
+
+-- "ApplicationImpl pooled thread 66" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=WAITING
+     at java.base@21.0.9/java.lang.Object.wait0(Native Method)
+     at java.base@21.0.9/java.lang.Object.wait(Object.java:366)
+     at java.base@21.0.9/java.lang.Object.wait(Object.java:339)
+     at com.intellij.platform.locking.impl.RunSuspend.await(NestedLocksThreadingSupport.kt:1803)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupportKt.runSuspendWithWaitingConsumer(NestedLocksThreadingSupport.kt:1769)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupportKt.access$runSuspendWithWaitingConsumer(NestedLocksThreadingSupport.kt:1)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport.runSuspendMaybeConsuming$lambda$0(NestedLocksThreadingSupport.kt:1704)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport$$Lambda/0x0000019f23e30238.invoke(Unknown Source)
+     at kotlinx.coroutines.internal.intellij.IntellijCoroutines.runAndCompensateParallelism-VtjQ1oo(intellij.kt:91)
+     at com.intellij.util.IntelliJCoroutinesFacade.runAndCompensateParallelism-VtjQ1oo(IntelliJCoroutinesFacade.kt:45)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport.runSuspendMaybeConsuming(NestedLocksThreadingSupport.kt:1703)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport$ComputationState.acquireReadPermit(NestedLocksThreadingSupport.kt:467)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport.smartAcquireReadPermit(NestedLocksThreadingSupport.kt:798)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport.runReadAction(NestedLocksThreadingSupport.kt:847)
+     at com.intellij.openapi.application.impl.ApplicationImpl.runReadAction(ApplicationImpl.java:1069)
+     at com.intellij.openapi.application.ReadAction.compute(ReadAction.java:66)
+     at org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirMacroConstructionInputKt.buildPreMacroRawBuildResultForModule(LLCfirMacroConstructionInput.kt:60)
+     at org.cangnova.cangjie.macro.analysis.LLCfirMacroSessionConfigurator.runConstructionAttempt(LLCfirMacroSessionConfigurator.kt:127)
+
+-- "ApplicationImpl pooled thread 72" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=WAITING
+     at java.base@21.0.9/java.lang.Object.wait0(Native Method)
+     at java.base@21.0.9/java.lang.Object.wait(Object.java:366)
+     at java.base@21.0.9/java.lang.Object.wait(Object.java:339)
+     at com.intellij.platform.locking.impl.RunSuspend.await(NestedLocksThreadingSupport.kt:1803)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupportKt.runSuspendWithWaitingConsumer(NestedLocksThreadingSupport.kt:1769)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupportKt.access$runSuspendWithWaitingConsumer(NestedLocksThreadingSupport.kt:1)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport.runSuspendMaybeConsuming$lambda$0(NestedLocksThreadingSupport.kt:1704)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport$$Lambda/0x0000019f23e30238.invoke(Unknown Source)
+     at kotlinx.coroutines.internal.intellij.IntellijCoroutines.runAndCompensateParallelism-VtjQ1oo(intellij.kt:91)
+     at com.intellij.util.IntelliJCoroutinesFacade.runAndCompensateParallelism-VtjQ1oo(IntelliJCoroutinesFacade.kt:45)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport.runSuspendMaybeConsuming(NestedLocksThreadingSupport.kt:1703)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport$ComputationState.acquireReadPermit(NestedLocksThreadingSupport.kt:467)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport.smartAcquireReadPermit(NestedLocksThreadingSupport.kt:798)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport.runReadAction(NestedLocksThreadingSupport.kt:847)
+     at com.intellij.openapi.application.impl.ApplicationImpl.runReadAction(ApplicationImpl.java:1069)
+     at com.intellij.openapi.application.ReadAction.compute(ReadAction.java:66)
+     at org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirMacroConstructionInputKt.buildPreMacroRawBuildResultForModule(LLCfirMacroConstructionInput.kt:60)
+     at org.cangnova.cangjie.macro.analysis.LLCfirMacroSessionConfigurator.runConstructionAttempt(LLCfirMacroSessionConfigurator.kt:127)
+
+-- "ApplicationImpl pooled thread 81" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=WAITING
+     at java.base@21.0.9/java.lang.Object.wait0(Native Method)
+     at java.base@21.0.9/java.lang.Object.wait(Object.java:366)
+     at java.base@21.0.9/java.lang.Object.wait(Object.java:339)
+     at com.intellij.platform.locking.impl.RunSuspend.await(NestedLocksThreadingSupport.kt:1803)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupportKt.runSuspendWithWaitingConsumer(NestedLocksThreadingSupport.kt:1769)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupportKt.access$runSuspendWithWaitingConsumer(NestedLocksThreadingSupport.kt:1)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport.runSuspendMaybeConsuming$lambda$0(NestedLocksThreadingSupport.kt:1704)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport$$Lambda/0x0000019f23e30238.invoke(Unknown Source)
+     at kotlinx.coroutines.internal.intellij.IntellijCoroutines.runAndCompensateParallelism-VtjQ1oo(intellij.kt:91)
+     at com.intellij.util.IntelliJCoroutinesFacade.runAndCompensateParallelism-VtjQ1oo(IntelliJCoroutinesFacade.kt:45)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport.runSuspendMaybeConsuming(NestedLocksThreadingSupport.kt:1703)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport$ComputationState.acquireReadPermit(NestedLocksThreadingSupport.kt:467)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport.smartAcquireReadPermit(NestedLocksThreadingSupport.kt:798)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport.runReadAction(NestedLocksThreadingSupport.kt:847)
+     at com.intellij.openapi.application.impl.ApplicationImpl.runReadAction(ApplicationImpl.java:1069)
+     at com.intellij.openapi.application.ReadAction.compute(ReadAction.java:66)
+     at org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirMacroConstructionInputKt.buildPreMacroRawBuildResultForModule(LLCfirMacroConstructionInput.kt:60)
+     at org.cangnova.cangjie.macro.analysis.LLCfirMacroSessionConfigurator.runConstructionAttempt(LLCfirMacroSessionConfigurator.kt:127)
+
+-- "ApplicationImpl pooled thread 84" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=WAITING
+     at java.base@21.0.9/java.lang.Object.wait0(Native Method)
+     at java.base@21.0.9/java.lang.Object.wait(Object.java:366)
+     at java.base@21.0.9/java.lang.Object.wait(Object.java:339)
+     at com.intellij.platform.locking.impl.RunSuspend.await(NestedLocksThreadingSupport.kt:1803)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupportKt.runSuspendWithWaitingConsumer(NestedLocksThreadingSupport.kt:1769)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupportKt.access$runSuspendWithWaitingConsumer(NestedLocksThreadingSupport.kt:1)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport.runSuspendMaybeConsuming$lambda$0(NestedLocksThreadingSupport.kt:1704)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport$$Lambda/0x0000019f23e30238.invoke(Unknown Source)
+     at kotlinx.coroutines.internal.intellij.IntellijCoroutines.runAndCompensateParallelism-VtjQ1oo(intellij.kt:91)
+     at com.intellij.util.IntelliJCoroutinesFacade.runAndCompensateParallelism-VtjQ1oo(IntelliJCoroutinesFacade.kt:45)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport.runSuspendMaybeConsuming(NestedLocksThreadingSupport.kt:1703)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport$ComputationState.acquireReadPermit(NestedLocksThreadingSupport.kt:467)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport.smartAcquireReadPermit(NestedLocksThreadingSupport.kt:798)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport.runReadAction(NestedLocksThreadingSupport.kt:847)
+     at com.intellij.openapi.application.impl.ApplicationImpl.runReadAction(ApplicationImpl.java:1069)
+     at com.intellij.openapi.application.ReadAction.compute(ReadAction.java:66)
+     at org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirMacroConstructionInputKt.buildPreMacroRawBuildResultForModule(LLCfirMacroConstructionInput.kt:60)
+     at org.cangnova.cangjie.macro.analysis.LLCfirMacroSessionConfigurator.runConstructionAttempt(LLCfirMacroSessionConfigurator.kt:127)
+
+-- "ApplicationImpl pooled thread 83" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=TIMED_WAITING
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+     at java.base@21.0.9/java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:410)
+     at java.base@21.0.9/java.util.concurrent.LinkedTransferQueue$DualNode.await(LinkedTransferQueue.java:452)
+     at java.base@21.0.9/java.util.concurrent.SynchronousQueue$Transferer.xferLifo(SynchronousQueue.java:194)
+     at java.base@21.0.9/java.util.concurrent.SynchronousQueue.xfer(SynchronousQueue.java:235)
+     at java.base@21.0.9/java.util.concurrent.SynchronousQueue.poll(SynchronousQueue.java:338)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor.getTask(ThreadPoolExecutor.java:1069)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1130)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+     at java.base@21.0.9/java.util.concurrent.Executors$PrivilegedThreadFactory$1$1.run(Executors.java:735)
+     at java.base@21.0.9/java.util.concurrent.Executors$PrivilegedThreadFactory$1$1.run(Executors.java:732)
+     at java.base@21.0.9/java.security.AccessController.executePrivileged(AccessController.java:778)
+     at java.base@21.0.9/java.security.AccessController.doPrivileged(AccessController.java:400)
+     at java.base@21.0.9/java.util.concurrent.Executors$PrivilegedThreadFactory$1.run(Executors.java:732)
+     at java.base@21.0.9/java.lang.Thread.runWith(Thread.java:1596)
+     at java.base@21.0.9/java.lang.Thread.run(Thread.java:1583)
+
+-- "ApplicationImpl pooled thread 85" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=TIMED_WAITING
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+     at java.base@21.0.9/java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:410)
+     at java.base@21.0.9/java.util.concurrent.LinkedTransferQueue$DualNode.await(LinkedTransferQueue.java:452)
+     at java.base@21.0.9/java.util.concurrent.SynchronousQueue$Transferer.xferLifo(SynchronousQueue.java:194)
+     at java.base@21.0.9/java.util.concurrent.SynchronousQueue.xfer(SynchronousQueue.java:235)
+     at java.base@21.0.9/java.util.concurrent.SynchronousQueue.poll(SynchronousQueue.java:338)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor.getTask(ThreadPoolExecutor.java:1069)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1130)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+     at java.base@21.0.9/java.util.concurrent.Executors$PrivilegedThreadFactory$1$1.run(Executors.java:735)
+     at java.base@21.0.9/java.util.concurrent.Executors$PrivilegedThreadFactory$1$1.run(Executors.java:732)
+     at java.base@21.0.9/java.security.AccessController.executePrivileged(AccessController.java:778)
+     at java.base@21.0.9/java.security.AccessController.doPrivileged(AccessController.java:400)
+     at java.base@21.0.9/java.util.concurrent.Executors$PrivilegedThreadFactory$1.run(Executors.java:732)
+     at java.base@21.0.9/java.lang.Thread.runWith(Thread.java:1596)
+     at java.base@21.0.9/java.lang.Thread.run(Thread.java:1583)
+
+-- "ApplicationImpl pooled thread 86" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=TIMED_WAITING
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+     at java.base@21.0.9/java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:410)
+     at java.base@21.0.9/java.util.concurrent.LinkedTransferQueue$DualNode.await(LinkedTransferQueue.java:452)
+     at java.base@21.0.9/java.util.concurrent.SynchronousQueue$Transferer.xferLifo(SynchronousQueue.java:194)
+     at java.base@21.0.9/java.util.concurrent.SynchronousQueue.xfer(SynchronousQueue.java:235)
+     at java.base@21.0.9/java.util.concurrent.SynchronousQueue.poll(SynchronousQueue.java:338)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor.getTask(ThreadPoolExecutor.java:1069)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1130)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+     at java.base@21.0.9/java.util.concurrent.Executors$PrivilegedThreadFactory$1$1.run(Executors.java:735)
+     at java.base@21.0.9/java.util.concurrent.Executors$PrivilegedThreadFactory$1$1.run(Executors.java:732)
+     at java.base@21.0.9/java.security.AccessController.executePrivileged(AccessController.java:778)
+     at java.base@21.0.9/java.security.AccessController.doPrivileged(AccessController.java:400)
+     at java.base@21.0.9/java.util.concurrent.Executors$PrivilegedThreadFactory$1.run(Executors.java:732)
+     at java.base@21.0.9/java.lang.Thread.runWith(Thread.java:1596)
+     at java.base@21.0.9/java.lang.Thread.run(Thread.java:1583)
+
+-- "ApplicationImpl pooled thread 91" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=TIMED_WAITING
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+     at java.base@21.0.9/java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:410)
+     at java.base@21.0.9/java.util.concurrent.LinkedTransferQueue$DualNode.await(LinkedTransferQueue.java:452)
+     at java.base@21.0.9/java.util.concurrent.SynchronousQueue$Transferer.xferLifo(SynchronousQueue.java:194)
+     at java.base@21.0.9/java.util.concurrent.SynchronousQueue.xfer(SynchronousQueue.java:235)
+     at java.base@21.0.9/java.util.concurrent.SynchronousQueue.poll(SynchronousQueue.java:338)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor.getTask(ThreadPoolExecutor.java:1069)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1130)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+     at java.base@21.0.9/java.util.concurrent.Executors$PrivilegedThreadFactory$1$1.run(Executors.java:735)
+     at java.base@21.0.9/java.util.concurrent.Executors$PrivilegedThreadFactory$1$1.run(Executors.java:732)
+     at java.base@21.0.9/java.security.AccessController.executePrivileged(AccessController.java:778)
+     at java.base@21.0.9/java.security.AccessController.doPrivileged(AccessController.java:400)
+     at java.base@21.0.9/java.util.concurrent.Executors$PrivilegedThreadFactory$1.run(Executors.java:732)
+     at java.base@21.0.9/java.lang.Thread.runWith(Thread.java:1596)
+     at java.base@21.0.9/java.lang.Thread.run(Thread.java:1583)
+
+-- "ApplicationImpl pooled thread 92" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=TIMED_WAITING
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+     at java.base@21.0.9/java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:410)
+     at java.base@21.0.9/java.util.concurrent.LinkedTransferQueue$DualNode.await(LinkedTransferQueue.java:452)
+     at java.base@21.0.9/java.util.concurrent.SynchronousQueue$Transferer.xferLifo(SynchronousQueue.java:194)
+     at java.base@21.0.9/java.util.concurrent.SynchronousQueue.xfer(SynchronousQueue.java:235)
+     at java.base@21.0.9/java.util.concurrent.SynchronousQueue.poll(SynchronousQueue.java:338)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor.getTask(ThreadPoolExecutor.java:1069)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1130)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+     at java.base@21.0.9/java.util.concurrent.Executors$PrivilegedThreadFactory$1$1.run(Executors.java:735)
+     at java.base@21.0.9/java.util.concurrent.Executors$PrivilegedThreadFactory$1$1.run(Executors.java:732)
+     at java.base@21.0.9/java.security.AccessController.executePrivileged(AccessController.java:778)
+     at java.base@21.0.9/java.security.AccessController.doPrivileged(AccessController.java:400)
+     at java.base@21.0.9/java.util.concurrent.Executors$PrivilegedThreadFactory$1.run(Executors.java:732)
+     at java.base@21.0.9/java.lang.Thread.runWith(Thread.java:1596)
+     at java.base@21.0.9/java.lang.Thread.run(Thread.java:1583)
+
+-- "ApplicationImpl pooled thread 93" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=TIMED_WAITING
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+     at java.base@21.0.9/java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:410)
+     at java.base@21.0.9/java.util.concurrent.LinkedTransferQueue$DualNode.await(LinkedTransferQueue.java:452)
+     at java.base@21.0.9/java.util.concurrent.SynchronousQueue$Transferer.xferLifo(SynchronousQueue.java:194)
+     at java.base@21.0.9/java.util.concurrent.SynchronousQueue.xfer(SynchronousQueue.java:235)
+     at java.base@21.0.9/java.util.concurrent.SynchronousQueue.poll(SynchronousQueue.java:338)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor.getTask(ThreadPoolExecutor.java:1069)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1130)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+     at java.base@21.0.9/java.util.concurrent.Executors$PrivilegedThreadFactory$1$1.run(Executors.java:735)
+     at java.base@21.0.9/java.util.concurrent.Executors$PrivilegedThreadFactory$1$1.run(Executors.java:732)
+     at java.base@21.0.9/java.security.AccessController.executePrivileged(AccessController.java:778)
+     at java.base@21.0.9/java.security.AccessController.doPrivileged(AccessController.java:400)
+     at java.base@21.0.9/java.util.concurrent.Executors$PrivilegedThreadFactory$1.run(Executors.java:732)
+     at java.base@21.0.9/java.lang.Thread.runWith(Thread.java:1596)
+     at java.base@21.0.9/java.lang.Thread.run(Thread.java:1583)
+
+-- "ApplicationImpl pooled thread 95" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=TIMED_WAITING
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+     at java.base@21.0.9/java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:410)
+     at java.base@21.0.9/java.util.concurrent.LinkedTransferQueue$DualNode.await(LinkedTransferQueue.java:452)
+     at java.base@21.0.9/java.util.concurrent.SynchronousQueue$Transferer.xferLifo(SynchronousQueue.java:194)
+     at java.base@21.0.9/java.util.concurrent.SynchronousQueue.xfer(SynchronousQueue.java:235)
+     at java.base@21.0.9/java.util.concurrent.SynchronousQueue.poll(SynchronousQueue.java:338)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor.getTask(ThreadPoolExecutor.java:1069)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1130)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+     at java.base@21.0.9/java.util.concurrent.Executors$PrivilegedThreadFactory$1$1.run(Executors.java:735)
+     at java.base@21.0.9/java.util.concurrent.Executors$PrivilegedThreadFactory$1$1.run(Executors.java:732)
+     at java.base@21.0.9/java.security.AccessController.executePrivileged(AccessController.java:778)
+     at java.base@21.0.9/java.security.AccessController.doPrivileged(AccessController.java:400)
+     at java.base@21.0.9/java.util.concurrent.Executors$PrivilegedThreadFactory$1.run(Executors.java:732)
+     at java.base@21.0.9/java.lang.Thread.runWith(Thread.java:1596)
+     at java.base@21.0.9/java.lang.Thread.run(Thread.java:1583)
+
+-- "Aux Index Writer #1" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=WAITING
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+     at java.base@21.0.9/java.util.concurrent.locks.LockSupport.park(LockSupport.java:371)
+     at java.base@21.0.9/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionNode.block(AbstractQueuedSynchronizer.java:519)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.unmanagedBlock(ForkJoinPool.java:4013)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.managedBlock(ForkJoinPool.java:3961)
+     at java.base@21.0.9/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:1746)
+     at java.base@21.0.9/java.util.concurrent.LinkedBlockingQueue.take(LinkedBlockingQueue.java:435)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor.getTask(ThreadPoolExecutor.java:1070)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1130)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+     at java.base@21.0.9/java.lang.Thread.runWith(Thread.java:1596)
+     at java.base@21.0.9/java.lang.Thread.run(Thread.java:1583)
+
+-- "IdIndex Writer #0" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=WAITING
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+     at java.base@21.0.9/java.util.concurrent.locks.LockSupport.park(LockSupport.java:371)
+     at java.base@21.0.9/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionNode.block(AbstractQueuedSynchronizer.java:519)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.unmanagedBlock(ForkJoinPool.java:4013)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.managedBlock(ForkJoinPool.java:3961)
+     at java.base@21.0.9/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:1746)
+     at java.base@21.0.9/java.util.concurrent.LinkedBlockingQueue.take(LinkedBlockingQueue.java:435)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor.getTask(ThreadPoolExecutor.java:1070)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1130)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+     at java.base@21.0.9/java.lang.Thread.runWith(Thread.java:1596)
+     at java.base@21.0.9/java.lang.Thread.run(Thread.java:1583)
+
+-- "Trigram.Index Writer #1" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=WAITING
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+     at java.base@21.0.9/java.util.concurrent.locks.LockSupport.park(LockSupport.java:371)
+     at java.base@21.0.9/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionNode.block(AbstractQueuedSynchronizer.java:519)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.unmanagedBlock(ForkJoinPool.java:4013)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.managedBlock(ForkJoinPool.java:3961)
+     at java.base@21.0.9/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:1746)
+     at java.base@21.0.9/java.util.concurrent.LinkedBlockingQueue.take(LinkedBlockingQueue.java:435)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor.getTask(ThreadPoolExecutor.java:1070)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1130)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+     at java.base@21.0.9/java.lang.Thread.runWith(Thread.java:1596)
+     at java.base@21.0.9/java.lang.Thread.run(Thread.java:1583)
+
+-- "ForkJoinPool.commonPool-worker-1" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=WAITING
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.awaitWork(ForkJoinPool.java:2145)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.runWorker(ForkJoinPool.java:2036)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:187)
+
+-- "ForkJoinPool.commonPool-worker-10" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=WAITING
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.awaitWork(ForkJoinPool.java:2145)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.runWorker(ForkJoinPool.java:2036)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:187)
+
+-- "ForkJoinPool.commonPool-worker-11" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=WAITING
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.awaitWork(ForkJoinPool.java:2145)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.runWorker(ForkJoinPool.java:2036)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:187)
+
+-- "ForkJoinPool.commonPool-worker-12" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=WAITING
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.awaitWork(ForkJoinPool.java:2145)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.runWorker(ForkJoinPool.java:2036)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:187)
+
+-- "ForkJoinPool.commonPool-worker-13" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=WAITING
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.awaitWork(ForkJoinPool.java:2145)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.runWorker(ForkJoinPool.java:2036)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:187)
+
+-- "ForkJoinPool.commonPool-worker-14" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=WAITING
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.awaitWork(ForkJoinPool.java:2145)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.runWorker(ForkJoinPool.java:2036)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:187)
+
+-- "ForkJoinPool.commonPool-worker-15" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=WAITING
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.awaitWork(ForkJoinPool.java:2145)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.runWorker(ForkJoinPool.java:2036)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:187)
+
+-- "ForkJoinPool.commonPool-worker-2" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=TIMED_WAITING
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.awaitWork(ForkJoinPool.java:2145)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.runWorker(ForkJoinPool.java:2036)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:187)
+
+-- "ForkJoinPool.commonPool-worker-3" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=WAITING
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.awaitWork(ForkJoinPool.java:2145)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.runWorker(ForkJoinPool.java:2036)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:187)
+
+-- "ForkJoinPool.commonPool-worker-4" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=WAITING
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.awaitWork(ForkJoinPool.java:2145)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.runWorker(ForkJoinPool.java:2036)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:187)
+
+-- "ForkJoinPool.commonPool-worker-5" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=WAITING
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.awaitWork(ForkJoinPool.java:2145)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.runWorker(ForkJoinPool.java:2036)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:187)
+
+-- "ForkJoinPool.commonPool-worker-6" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=WAITING
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.awaitWork(ForkJoinPool.java:2145)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.runWorker(ForkJoinPool.java:2036)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:187)
+
+-- "ForkJoinPool.commonPool-worker-7" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=WAITING
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.awaitWork(ForkJoinPool.java:2145)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.runWorker(ForkJoinPool.java:2036)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:187)
+
+-- "ForkJoinPool.commonPool-worker-8" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=WAITING
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.awaitWork(ForkJoinPool.java:2145)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.runWorker(ForkJoinPool.java:2036)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:187)
+
+-- "ForkJoinPool.commonPool-worker-9" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=WAITING
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.awaitWork(ForkJoinPool.java:2145)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.runWorker(ForkJoinPool.java:2036)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:187)
+     at com.intellij.idea.Main$mainImpl$1.invokeSuspend(Main.kt:77)
+     at com.intellij.platform.ide.bootstrap.kernel.KernelKt$startKernel$2$1$1.invokeSuspend(kernel.kt:54)
+     at fleet.kernel.rete.ReteKt$withRete$2$1$1$3$1.invokeSuspend(Rete.kt:154)
+     at fleet.kernel.rete.ReteKt$withRete$2$1$1$3.invokeSuspend(Rete.kt:153)
+     at fleet.util.async.JobExtKt$use$2.invokeSuspend(JobExt.kt:10)
+     at fleet.util.async.JobExtKt.use(JobExt.kt:10)
+     at fleet.kernel.rete.ReteKt$withRete$2$1$1.invokeSuspend(Rete.kt:139)
+     at fleet.kernel.TransactorKt$subscribe$2$1.invokeSuspend(Transactor.kt:155)
+     at fleet.kernel.TransactorKt$subscribe$2.invokeSuspend(Transactor.kt:154)
+     at fleet.kernel.rete.ReteKt$withRete$2.invokeSuspend(Rete.kt:98)
+     at fleet.reporting.shared.tracing.TracingKt.spannedScope(Tracing.kt:64)
+     at com.intellij.platform.ide.bootstrap.kernel.KernelKt$startKernel$2$1.invokeSuspend(kernel.kt:52)
+     at fleet.kernel.TransactorKt$withTransactor$2$1$3$1.invokeSuspend(Transactor.kt:524)
+     at fleet.kernel.TransactorKt$withTransactor$2$1$3.invokeSuspend(Transactor.kt:523)
+
+=== RUNNABLE threads (top 25 by first frame) ===
+[ApplicationImpl pooled thread 63] java.base@21.0.9/java.lang.Throwable.fillInStackTrace(Native Method)
+[ApplicationImpl pooled thread 80] java.base@21.0.9/jdk.internal.misc.Unsafe.unpark(Native Method)
+[StatisticsFileEventLogger] java.base@21.0.9/java.lang.Class.getDeclaringClass0(Native Method)
+[ApplicationImpl pooled thread 78] java.base@21.0.9/sun.reflect.generics.parser.SignatureParser.parseZeroOrMoreFormalTypeParameters(SignatureParser.java:218)
+[ApplicationImpl pooled thread 82] org.cangnova.cangjie.cfir.builder.macro.MacroPayloadTokenizer.mergeStringLiterals(MacroPayloadTokenizer.kt:107)
+[ApplicationImpl pooled thread 90] java.base@21.0.9/java.lang.invoke.MethodHandleNatives.resolve(Native Method)
+[DefaultDispatcher-worker-48] java.base@21.0.9/java.nio.MappedByteBuffer.limit(MappedByteBuffer.java:73)
+[BaseDataReader: output stream of fsnotifier.exe] java.base@21.0.9/java.io.FileInputStream.readBytes(Native Method)
+[DefaultDispatcher-worker-50 @com.intellij.internal.statistic] java.base@21.0.9/java.lang.ClassLoader.defineClass2(Native Method)
+[BaseDataReader: error stream of fsnotifier.exe] java.base@21.0.9/java.io.FileInputStream.readBytes(Native Method)
+[DefaultDispatcher-worker-5 @com.intellij.internal.statistic.] java.base@21.0.9/java.lang.ClassLoader.defineClass0(Native Method)
+[DefaultDispatcher-worker-6] java.base@21.0.9/java.lang.ClassLoader.defineClass0(Native Method)
+[DefaultDispatcher-worker-17 @com.intellij.internal.statistic] java.base@21.0.9/sun.nio.ch.FileDispatcherImpl.read0(Native Method)
+[fsnotifier.exe] java.base@21.0.9/java.lang.ProcessImpl.waitForInterruptibly(Native Method)
+[CefHandlers-execution-0] java.base@21.0.9/sun.nio.ch.SocketDispatcher.read0(Native Method)
+[CefHandlers-execution-1] java.base@21.0.9/sun.nio.ch.SocketDispatcher.read0(Native Method)
+[CefHandlers-execution-2] java.base@21.0.9/sun.nio.ch.SocketDispatcher.read0(Native Method)
+[PeriodicMetricReader] java.management@21.0.9/sun.management.ThreadImpl.getThreadAllocatedMemory1(Native Method)
+[CefHandlers-listening] java.base@21.0.9/sun.nio.ch.Net.accept(Native Method)
+[DefaultDispatcher-worker-20 @freeze dumper#60831] java.management@21.0.9/sun.management.ThreadImpl.dumpThreads0(Native Method)
+[DefaultDispatcher-worker-25 @freeze dumper#60832] java.management@21.0.9/sun.management.ThreadImpl.dumpThreads0(Native Method)
+[DefaultDispatcher-worker-30 @freeze dumper#60820] java.management@21.0.9/sun.management.ThreadImpl.dumpThreads0(Native Method)
+[DefaultDispatcher-worker-40 @freeze dumper#60811] java.management@21.0.9/sun.management.ThreadImpl.dumpThreads0(Native Method)
+[Netty Builtin Server 1] java.base@21.0.9/sun.nio.ch.WEPoll.wait(Native Method)
+[Netty Builtin Server 2] java.base@21.0.9/sun.nio.ch.WEPoll.wait(Native Method)
+
+########## BACKGROUND WRITE ACTION STUCK 12:50:10 ##########
+file=D:\code\intellij\cangjie\intellij-ide\.intellijPlatform\sandbox\intellij-cangjie\IU-2025.3.1\log_runIde\bg-wa\thread-dump-205654388.txt
+threads=119 size=2.13MB
+state histogram: {'TIMED_WAITING': 33, 'RUNNABLE': 35, 'BLOCKED': 19, 'WAITING': 32}
+interesting threads=56
+
+-- "AWT-EventQueue-0" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=TIMED_WAITING
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+     at java.base@21.0.9/java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:269)
+     at java.base@21.0.9/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.awaitNanos(AbstractQueuedSynchronizer.java:1797)
+     at java.base@21.0.9/java.util.concurrent.LinkedBlockingQueue.poll(LinkedBlockingQueue.java:460)
+     at com.intellij.openapi.progress.util.EternalEventStealer.dispatchAllEventsForTimeout(SuvorovProgress.kt:378)
+     at com.intellij.openapi.progress.util.SuvorovProgress.processInvocationEventsWithoutDialog(SuvorovProgress.kt:272)
+     at com.intellij.openapi.progress.util.SuvorovProgress.dispatchEventsUntilComputationCompletes(SuvorovProgress.kt:152)
+     at com.intellij.openapi.application.impl.ApplicationImpl.lambda$postInit$14(ApplicationImpl.java:1450)
+     at com.intellij.openapi.application.impl.ApplicationImpl$$Lambda/0x0000019f22540b38.invoke(Unknown Source)
+     at com.intellij.platform.locking.impl.RunSuspend.await(NestedLocksThreadingSupport.kt:1814)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupportKt.runSuspendWithWaitingConsumer(NestedLocksThreadingSupport.kt:1769)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupportKt.access$runSuspendWithWaitingConsumer(NestedLocksThreadingSupport.kt:1)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport.runSuspendMaybeConsuming(NestedLocksThreadingSupport.kt:1708)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport$ComputationState.acquireWriteIntentPermit(NestedLocksThreadingSupport.kt:432)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport.doRunWriteIntentReadAction(NestedLocksThreadingSupport.kt:728)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport.runPreventiveWriteIntentReadAction(NestedLocksThreadingSupport.kt:711)
+     at com.intellij.ide.IdeEventQueue._dispatchEvent(IdeEventQueue.kt:492)
+     at com.intellij.ide.IdeEventQueue.dispatchEvent$lambda$0$0$0$0(IdeEventQueue.kt:337)
+
+-- "ApplicationImpl pooled thread 63" prio=0 tid=0x0 nid=0x0 runnable
+   state=RUNNABLE
+     at java.base@21.0.9/java.lang.Throwable.fillInStackTrace(Native Method)
+     at java.base@21.0.9/java.lang.Throwable.fillInStackTrace(Throwable.java:822)
+     at java.base@21.0.9/java.lang.Throwable.<init>(Throwable.java:275)
+     at com.intellij.lang.impl.MarkerOptionalData.notifyAllocated(MarkerOptionalData.java:76)
+     at com.intellij.lang.impl.PsiBuilderImpl.createMarker(PsiBuilderImpl.java:900)
+     at com.intellij.lang.impl.PsiBuilderImpl.mark(PsiBuilderImpl.java:891)
+     at com.intellij.lang.impl.PsiBuilderAdapter.mark(PsiBuilderAdapter.java:99)
+     at org.cangnova.cangjie.parsing.AbstractCangJieParsing.mark(AbstractCangJieParsing.kt:239)
+     at org.cangnova.cangjie.parsing.AbstractCangJieParsing.advanceGtToken(AbstractCangJieParsing.kt:904)
+     at org.cangnova.cangjie.parsing.CangJieExpressionParsing.parseOperationReference(CangJieExpressionParsing.kt:807)
+     at org.cangnova.cangjie.parsing.CangJieExpressionParsing.parseBinaryExpression(CangJieExpressionParsing.kt:520)
+     at org.cangnova.cangjie.parsing.CangJieExpressionParsing.access$parseBinaryExpression(CangJieExpressionParsing.kt:48)
+     at org.cangnova.cangjie.parsing.CangJieExpressionParsing$Precedence.parseHigherPrecedence(CangJieExpressionParsing.kt:402)
+     at org.cangnova.cangjie.parsing.CangJieExpressionParsing.parseBinaryExpression(CangJieExpressionParsing.kt:511)
+     at org.cangnova.cangjie.parsing.CangJieExpressionParsing.access$parseBinaryExpression(CangJieExpressionParsing.kt:48)
+     at org.cangnova.cangjie.parsing.CangJieExpressionParsing$Precedence.parseHigherPrecedence(CangJieExpressionParsing.kt:402)
+     at org.cangnova.cangjie.parsing.CangJieExpressionParsing.parseBinaryExpression(CangJieExpressionParsing.kt:511)
+     at org.cangnova.cangjie.parsing.CangJieExpressionParsing.access$parseBinaryExpression(CangJieExpressionParsing.kt:48)
+
+-- "ApplicationImpl pooled thread 90" prio=0 tid=0x0 nid=0x0 runnable
+   state=RUNNABLE
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.ensureClassInitialized0(Native Method)
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.ensureClassInitialized(Unsafe.java:1160)
+     at java.base@21.0.9/java.lang.invoke.MethodHandles.classData(MethodHandles.java:379)
+     at java.base@21.0.9/java.lang.invoke.LambdaForm$MH/0x0000019f23ef1400.<clinit>(LambdaForm$MH)
+     at java.base@21.0.9/java.lang.ClassLoader.defineClass0(Native Method)
+     at java.base@21.0.9/java.lang.System$2.defineClass(System.java:2406)
+     at java.base@21.0.9/java.lang.invoke.MethodHandles$Lookup$ClassDefiner.defineClass(MethodHandles.java:2505)
+     at java.base@21.0.9/java.lang.invoke.InvokerBytecodeGenerator.loadMethod(InvokerBytecodeGenerator.java:249)
+     at java.base@21.0.9/java.lang.invoke.InvokerBytecodeGenerator.generateCustomizedCode(InvokerBytecodeGenerator.java:712)
+     at java.base@21.0.9/java.lang.invoke.LambdaForm.compileToBytecode(LambdaForm.java:849)
+     at java.base@21.0.9/java.lang.invoke.LambdaForm.prepare(LambdaForm.java:807)
+     at java.base@21.0.9/java.lang.invoke.MethodHandle.<init>(MethodHandle.java:482)
+     at java.base@21.0.9/java.lang.invoke.BoundMethodHandle.<init>(BoundMethodHandle.java:52)
+     at java.base@21.0.9/java.lang.invoke.BoundMethodHandle$Species_L.<init>(BoundMethodHandle.java:210)
+     at java.base@21.0.9/java.lang.invoke.BoundMethodHandle$Species_L.make(BoundMethodHandle.java:225)
+     at java.base@21.0.9/java.lang.invoke.BoundMethodHandle.bindSingle(BoundMethodHandle.java:66)
+     at java.base@21.0.9/java.lang.invoke.SimpleMethodHandle.copyWithExtendL(SimpleMethodHandle.java:71)
+     at java.base@21.0.9/java.lang.invoke.MethodHandles.argumentsWithCombiner(MethodHandles.java:6266)
+
+-- "ApplicationImpl pooled thread 82" prio=0 tid=0x0 nid=0x0 runnable
+   state=RUNNABLE
+     at org.cangnova.cangjie.cfir.expressions.builder.CfirFunctionCallBuilder.build(CfirFunctionCallBuilder.kt:37)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Converter.convertDotQualified(PsiRawCfirBuilder.kt:5671)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Converter.convertExpression(PsiRawCfirBuilder.kt:2164)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Converter.convertDotQualified(PsiRawCfirBuilder.kt:2934)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Converter.convertExpression(PsiRawCfirBuilder.kt:2164)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Converter.convertCallArgument(PsiRawCfirBuilder.kt:2769)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Converter.convertCall(PsiRawCfirBuilder.kt:2708)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Converter.convertExpression(PsiRawCfirBuilder.kt:2195)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Converter.convertBlock$lambda$163(PsiRawCfirBuilder.kt:6633)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Converter$$Lambda/0x0000019f246b1030.invoke(Unknown Source)
+     at org.cangnova.cangjie.cfir.builder.Context.withLocalContext(RawCfirBuilderContext.kt:81)
+     at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilder.withLocalContext(AbstractRawCfirBuilder.kt:90)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Converter.convertBlock(PsiRawCfirBuilder.kt:2274)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Converter.toBlock(PsiRawCfirBuilder.kt:3814)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Converter.buildCfirBody(PsiRawCfirBuilder.kt:3806)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Converter.convertFunction(PsiRawCfirBuilder.kt:1170)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Converter.convertDeclaration(PsiRawCfirBuilder.kt:523)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Converter.convertTopLevelMacroDeclaration(PsiRawCfirBuilder.kt:562)
+
+-- "ApplicationImpl pooled thread 83" prio=0 tid=0x0 nid=0x0 runnable
+   state=RUNNABLE
+     at java.base@21.0.9/java.util.Arrays.copyOfRangeByte(Arrays.java:3863)
+     at java.base@21.0.9/java.util.Arrays.copyOfRange(Arrays.java:3854)
+     at java.base@21.0.9/java.lang.String.<init>(String.java:4788)
+     at java.base@21.0.9/java.lang.String.<init>(String.java:1507)
+     at java.base@21.0.9/java.lang.StringBuilder.toString(StringBuilder.java:475)
+     at java.base@21.0.9/sun.nio.fs.WindowsPath.resolve(WindowsPath.java:611)
+     at java.base@21.0.9/sun.nio.fs.WindowsPath.resolve(WindowsPath.java:42)
+     at java.base@21.0.9/java.nio.file.Path.resolveSibling(Path.java:550)
+     at java.base@21.0.9/java.nio.file.Path.resolveSibling(Path.java:575)
+     at com.intellij.platform.core.nio.fs.MultiRoutingFsPath.resolveSibling(MultiRoutingFsPath.java:130)
+     at com.intellij.platform.core.nio.fs.MultiRoutingFsPath.resolveSibling(MultiRoutingFsPath.java:16)
+     at com.intellij.util.io.CompressedAppendableFile.getChunkLengthFile(CompressedAppendableFile.java:103)
+     at com.intellij.util.io.PersistentHashMapValueStorage$MyCompressedAppendableFile.force(PersistentHashMapValueStorage.java:945)
+     at com.intellij.util.io.PersistentHashMapValueStorage.force(PersistentHashMapValueStorage.java:726)
+     at com.intellij.util.io.PersistentMapImpl.clearAppenderCaches(PersistentMapImpl.java:832)
+     at com.intellij.util.io.PersistentMapImpl.doForce(PersistentMapImpl.java:818)
+     at com.intellij.util.io.PersistentMapImpl.force(PersistentMapImpl.java:807)
+     at com.intellij.util.io.PersistentHashMap.force(PersistentHashMap.java:212)
+
+-- "AWT-Windows" prio=0 tid=0x0 nid=0x0 runnable
+   state=RUNNABLE
+     at java.desktop/sun.awt.windows.WToolkit.eventLoop(Native Method)
+     at java.desktop/sun.awt.windows.WToolkit.run(WToolkit.java:371)
+     at java.base@21.0.9/java.lang.Thread.runWith(Thread.java:1596)
+     at java.base@21.0.9/java.lang.Thread.run(Thread.java:1583)
+
+-- "ApplicationImpl pooled thread 1" prio=0 tid=0x0 nid=0x0 blocked
+   state=BLOCKED
+     at com.intellij.psi.impl.source.PsiFileImpl.loadTreeElement(PsiFileImpl.java:218)
+     at com.intellij.psi.impl.source.PsiFileImpl.calcTreeElement(PsiFileImpl.java:841)
+     at com.intellij.psi.impl.source.PsiFileImpl.getNode(PsiFileImpl.java:1040)
+     at org.cangnova.cangjie.psi.CjCommonFile.getFeaturesDirective(CjFile.kt:343)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile$lambda$20(PsiRawCfirBuilder.kt:379)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$$Lambda/0x0000019f246a66d8.invoke(Unknown Source)
+     at org.cangnova.cangjie.cfir.builder.Context.withPackage(RawCfirBuilderContext.kt:70)
+     at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilder.withPackageContext(AbstractRawCfirBuilder.kt:87)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile(PsiRawCfirBuilder.kt:365)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$buildFile(PsiRawCfirBuilder.kt:123)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:398)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:396)
+     at org.cangnova.cangjie.psi.CjFile.accept(CjFile.kt:443)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.Context.withSourceModuleName(RawCfirBuilderContext.kt:38)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.withSourceModuleContext(PsiRawCfirBuilder.kt:215)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$withSourceModuleContext(PsiRawCfirBuilder.kt:123)
+
+-- "ApplicationImpl pooled thread 3" prio=0 tid=0x0 nid=0x0 blocked
+   state=BLOCKED
+     at com.intellij.psi.impl.source.PsiFileImpl.loadTreeElement(PsiFileImpl.java:218)
+     at com.intellij.psi.impl.source.PsiFileImpl.calcTreeElement(PsiFileImpl.java:841)
+     at com.intellij.psi.impl.source.PsiFileImpl.getNode(PsiFileImpl.java:1040)
+     at org.cangnova.cangjie.psi.CjCommonFile.getFeaturesDirective(CjFile.kt:343)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile$lambda$20(PsiRawCfirBuilder.kt:379)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$$Lambda/0x0000019f246a66d8.invoke(Unknown Source)
+     at org.cangnova.cangjie.cfir.builder.Context.withPackage(RawCfirBuilderContext.kt:70)
+     at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilder.withPackageContext(AbstractRawCfirBuilder.kt:87)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile(PsiRawCfirBuilder.kt:365)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$buildFile(PsiRawCfirBuilder.kt:123)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:398)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:396)
+     at org.cangnova.cangjie.psi.CjFile.accept(CjFile.kt:443)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.Context.withSourceModuleName(RawCfirBuilderContext.kt:38)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.withSourceModuleContext(PsiRawCfirBuilder.kt:215)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$withSourceModuleContext(PsiRawCfirBuilder.kt:123)
+
+-- "ApplicationImpl pooled thread 4" prio=0 tid=0x0 nid=0x0 blocked
+   state=BLOCKED
+     at com.intellij.psi.impl.source.PsiFileImpl.loadTreeElement(PsiFileImpl.java:218)
+     at com.intellij.psi.impl.source.PsiFileImpl.calcTreeElement(PsiFileImpl.java:841)
+     at com.intellij.psi.impl.source.PsiFileImpl.getNode(PsiFileImpl.java:1040)
+     at org.cangnova.cangjie.psi.CjCommonFile.getFeaturesDirective(CjFile.kt:343)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile$lambda$20(PsiRawCfirBuilder.kt:379)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$$Lambda/0x0000019f246a66d8.invoke(Unknown Source)
+     at org.cangnova.cangjie.cfir.builder.Context.withPackage(RawCfirBuilderContext.kt:70)
+     at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilder.withPackageContext(AbstractRawCfirBuilder.kt:87)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile(PsiRawCfirBuilder.kt:365)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$buildFile(PsiRawCfirBuilder.kt:123)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:398)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:396)
+     at org.cangnova.cangjie.psi.CjFile.accept(CjFile.kt:443)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.Context.withSourceModuleName(RawCfirBuilderContext.kt:38)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.withSourceModuleContext(PsiRawCfirBuilder.kt:215)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$withSourceModuleContext(PsiRawCfirBuilder.kt:123)
+
+-- "ApplicationImpl pooled thread 5" prio=0 tid=0x0 nid=0x0 blocked
+   state=BLOCKED
+     at com.intellij.psi.impl.source.PsiFileImpl.loadTreeElement(PsiFileImpl.java:218)
+     at com.intellij.psi.impl.source.PsiFileImpl.calcTreeElement(PsiFileImpl.java:841)
+     at com.intellij.psi.impl.source.PsiFileImpl.getNode(PsiFileImpl.java:1040)
+     at org.cangnova.cangjie.psi.CjCommonFile.getFeaturesDirective(CjFile.kt:343)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile$lambda$20(PsiRawCfirBuilder.kt:379)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$$Lambda/0x0000019f246a66d8.invoke(Unknown Source)
+     at org.cangnova.cangjie.cfir.builder.Context.withPackage(RawCfirBuilderContext.kt:70)
+     at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilder.withPackageContext(AbstractRawCfirBuilder.kt:87)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile(PsiRawCfirBuilder.kt:365)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$buildFile(PsiRawCfirBuilder.kt:123)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:398)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:396)
+     at org.cangnova.cangjie.psi.CjFile.accept(CjFile.kt:443)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.Context.withSourceModuleName(RawCfirBuilderContext.kt:38)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.withSourceModuleContext(PsiRawCfirBuilder.kt:215)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$withSourceModuleContext(PsiRawCfirBuilder.kt:123)
+
+-- "ApplicationImpl pooled thread 6" prio=0 tid=0x0 nid=0x0 blocked
+   state=BLOCKED
+     at com.intellij.psi.impl.source.PsiFileImpl.loadTreeElement(PsiFileImpl.java:218)
+     at com.intellij.psi.impl.source.PsiFileImpl.calcTreeElement(PsiFileImpl.java:841)
+     at com.intellij.psi.impl.source.PsiFileImpl.getNode(PsiFileImpl.java:1040)
+     at org.cangnova.cangjie.psi.CjCommonFile.getFeaturesDirective(CjFile.kt:343)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile$lambda$20(PsiRawCfirBuilder.kt:379)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$$Lambda/0x0000019f246a66d8.invoke(Unknown Source)
+     at org.cangnova.cangjie.cfir.builder.Context.withPackage(RawCfirBuilderContext.kt:70)
+     at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilder.withPackageContext(AbstractRawCfirBuilder.kt:87)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile(PsiRawCfirBuilder.kt:365)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$buildFile(PsiRawCfirBuilder.kt:123)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:398)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:396)
+     at org.cangnova.cangjie.psi.CjFile.accept(CjFile.kt:443)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.Context.withSourceModuleName(RawCfirBuilderContext.kt:38)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.withSourceModuleContext(PsiRawCfirBuilder.kt:215)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$withSourceModuleContext(PsiRawCfirBuilder.kt:123)
+
+-- "ApplicationImpl pooled thread 62" prio=0 tid=0x0 nid=0x0 blocked
+   state=BLOCKED
+     at com.intellij.psi.impl.source.PsiFileImpl.loadTreeElement(PsiFileImpl.java:218)
+     at com.intellij.psi.impl.source.PsiFileImpl.calcTreeElement(PsiFileImpl.java:841)
+     at com.intellij.psi.impl.source.PsiFileImpl.getNode(PsiFileImpl.java:1040)
+     at org.cangnova.cangjie.psi.CjCommonFile.getFeaturesDirective(CjFile.kt:343)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile$lambda$20(PsiRawCfirBuilder.kt:379)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$$Lambda/0x0000019f246a66d8.invoke(Unknown Source)
+     at org.cangnova.cangjie.cfir.builder.Context.withPackage(RawCfirBuilderContext.kt:70)
+     at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilder.withPackageContext(AbstractRawCfirBuilder.kt:87)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile(PsiRawCfirBuilder.kt:365)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$buildFile(PsiRawCfirBuilder.kt:123)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:398)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:396)
+     at org.cangnova.cangjie.psi.CjFile.accept(CjFile.kt:443)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.Context.withSourceModuleName(RawCfirBuilderContext.kt:38)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.withSourceModuleContext(PsiRawCfirBuilder.kt:215)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$withSourceModuleContext(PsiRawCfirBuilder.kt:123)
+
+-- "ApplicationImpl pooled thread 64" prio=0 tid=0x0 nid=0x0 blocked
+   state=BLOCKED
+     at com.intellij.psi.impl.source.PsiFileImpl.loadTreeElement(PsiFileImpl.java:218)
+     at com.intellij.psi.impl.source.PsiFileImpl.calcTreeElement(PsiFileImpl.java:841)
+     at com.intellij.psi.impl.source.PsiFileImpl.getNode(PsiFileImpl.java:1040)
+     at org.cangnova.cangjie.psi.CjCommonFile.getFeaturesDirective(CjFile.kt:343)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile$lambda$20(PsiRawCfirBuilder.kt:379)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$$Lambda/0x0000019f246a66d8.invoke(Unknown Source)
+     at org.cangnova.cangjie.cfir.builder.Context.withPackage(RawCfirBuilderContext.kt:70)
+     at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilder.withPackageContext(AbstractRawCfirBuilder.kt:87)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile(PsiRawCfirBuilder.kt:365)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$buildFile(PsiRawCfirBuilder.kt:123)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:398)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:396)
+     at org.cangnova.cangjie.psi.CjFile.accept(CjFile.kt:443)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.Context.withSourceModuleName(RawCfirBuilderContext.kt:38)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.withSourceModuleContext(PsiRawCfirBuilder.kt:215)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$withSourceModuleContext(PsiRawCfirBuilder.kt:123)
+
+-- "ApplicationImpl pooled thread 65" prio=0 tid=0x0 nid=0x0 blocked
+   state=BLOCKED
+     at com.intellij.psi.impl.source.PsiFileImpl.loadTreeElement(PsiFileImpl.java:218)
+     at com.intellij.psi.impl.source.PsiFileImpl.calcTreeElement(PsiFileImpl.java:841)
+     at com.intellij.psi.impl.source.PsiFileImpl.getNode(PsiFileImpl.java:1040)
+     at org.cangnova.cangjie.psi.CjCommonFile.getFeaturesDirective(CjFile.kt:343)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile$lambda$20(PsiRawCfirBuilder.kt:379)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$$Lambda/0x0000019f246a66d8.invoke(Unknown Source)
+     at org.cangnova.cangjie.cfir.builder.Context.withPackage(RawCfirBuilderContext.kt:70)
+     at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilder.withPackageContext(AbstractRawCfirBuilder.kt:87)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile(PsiRawCfirBuilder.kt:365)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$buildFile(PsiRawCfirBuilder.kt:123)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:398)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:396)
+     at org.cangnova.cangjie.psi.CjFile.accept(CjFile.kt:443)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.Context.withSourceModuleName(RawCfirBuilderContext.kt:38)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.withSourceModuleContext(PsiRawCfirBuilder.kt:215)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$withSourceModuleContext(PsiRawCfirBuilder.kt:123)
+
+-- "ApplicationImpl pooled thread 67" prio=0 tid=0x0 nid=0x0 blocked
+   state=BLOCKED
+     at com.intellij.psi.impl.source.PsiFileImpl.loadTreeElement(PsiFileImpl.java:218)
+     at com.intellij.psi.impl.source.PsiFileImpl.calcTreeElement(PsiFileImpl.java:841)
+     at com.intellij.psi.impl.source.PsiFileImpl.getNode(PsiFileImpl.java:1040)
+     at org.cangnova.cangjie.psi.CjCommonFile.getFeaturesDirective(CjFile.kt:343)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile$lambda$20(PsiRawCfirBuilder.kt:379)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$$Lambda/0x0000019f246a66d8.invoke(Unknown Source)
+     at org.cangnova.cangjie.cfir.builder.Context.withPackage(RawCfirBuilderContext.kt:70)
+     at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilder.withPackageContext(AbstractRawCfirBuilder.kt:87)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile(PsiRawCfirBuilder.kt:365)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$buildFile(PsiRawCfirBuilder.kt:123)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:398)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:396)
+     at org.cangnova.cangjie.psi.CjFile.accept(CjFile.kt:443)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.Context.withSourceModuleName(RawCfirBuilderContext.kt:38)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.withSourceModuleContext(PsiRawCfirBuilder.kt:215)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$withSourceModuleContext(PsiRawCfirBuilder.kt:123)
+
+-- "ApplicationImpl pooled thread 68" prio=0 tid=0x0 nid=0x0 blocked
+   state=BLOCKED
+     at com.intellij.psi.impl.source.PsiFileImpl.loadTreeElement(PsiFileImpl.java:218)
+     at com.intellij.psi.impl.source.PsiFileImpl.calcTreeElement(PsiFileImpl.java:841)
+     at com.intellij.psi.impl.source.PsiFileImpl.getNode(PsiFileImpl.java:1040)
+     at org.cangnova.cangjie.psi.CjCommonFile.getFeaturesDirective(CjFile.kt:343)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile$lambda$20(PsiRawCfirBuilder.kt:379)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$$Lambda/0x0000019f246a66d8.invoke(Unknown Source)
+     at org.cangnova.cangjie.cfir.builder.Context.withPackage(RawCfirBuilderContext.kt:70)
+     at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilder.withPackageContext(AbstractRawCfirBuilder.kt:87)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile(PsiRawCfirBuilder.kt:365)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$buildFile(PsiRawCfirBuilder.kt:123)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:398)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:396)
+     at org.cangnova.cangjie.psi.CjFile.accept(CjFile.kt:443)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.Context.withSourceModuleName(RawCfirBuilderContext.kt:38)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.withSourceModuleContext(PsiRawCfirBuilder.kt:215)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$withSourceModuleContext(PsiRawCfirBuilder.kt:123)
+
+-- "ApplicationImpl pooled thread 69" prio=0 tid=0x0 nid=0x0 blocked
+   state=BLOCKED
+     at com.intellij.psi.impl.source.PsiFileImpl.loadTreeElement(PsiFileImpl.java:218)
+     at com.intellij.psi.impl.source.PsiFileImpl.calcTreeElement(PsiFileImpl.java:841)
+     at com.intellij.psi.impl.source.PsiFileImpl.getNode(PsiFileImpl.java:1040)
+     at org.cangnova.cangjie.psi.CjCommonFile.getFeaturesDirective(CjFile.kt:343)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile$lambda$20(PsiRawCfirBuilder.kt:379)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$$Lambda/0x0000019f246a66d8.invoke(Unknown Source)
+     at org.cangnova.cangjie.cfir.builder.Context.withPackage(RawCfirBuilderContext.kt:70)
+     at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilder.withPackageContext(AbstractRawCfirBuilder.kt:87)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile(PsiRawCfirBuilder.kt:365)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$buildFile(PsiRawCfirBuilder.kt:123)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:398)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:396)
+     at org.cangnova.cangjie.psi.CjFile.accept(CjFile.kt:443)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.Context.withSourceModuleName(RawCfirBuilderContext.kt:38)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.withSourceModuleContext(PsiRawCfirBuilder.kt:215)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$withSourceModuleContext(PsiRawCfirBuilder.kt:123)
+
+-- "ApplicationImpl pooled thread 7" prio=0 tid=0x0 nid=0x0 blocked
+   state=BLOCKED
+     at com.intellij.psi.impl.source.PsiFileImpl.loadTreeElement(PsiFileImpl.java:218)
+     at com.intellij.psi.impl.source.PsiFileImpl.calcTreeElement(PsiFileImpl.java:841)
+     at com.intellij.psi.impl.source.PsiFileImpl.getNode(PsiFileImpl.java:1040)
+     at org.cangnova.cangjie.psi.CjCommonFile.getFeaturesDirective(CjFile.kt:343)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile$lambda$20(PsiRawCfirBuilder.kt:379)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$$Lambda/0x0000019f246a66d8.invoke(Unknown Source)
+     at org.cangnova.cangjie.cfir.builder.Context.withPackage(RawCfirBuilderContext.kt:70)
+     at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilder.withPackageContext(AbstractRawCfirBuilder.kt:87)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile(PsiRawCfirBuilder.kt:365)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$buildFile(PsiRawCfirBuilder.kt:123)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:398)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:396)
+     at org.cangnova.cangjie.psi.CjFile.accept(CjFile.kt:443)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.Context.withSourceModuleName(RawCfirBuilderContext.kt:38)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.withSourceModuleContext(PsiRawCfirBuilder.kt:215)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$withSourceModuleContext(PsiRawCfirBuilder.kt:123)
+
+-- "ApplicationImpl pooled thread 70" prio=0 tid=0x0 nid=0x0 blocked
+   state=BLOCKED
+     at com.intellij.psi.impl.source.PsiFileImpl.loadTreeElement(PsiFileImpl.java:218)
+     at com.intellij.psi.impl.source.PsiFileImpl.calcTreeElement(PsiFileImpl.java:841)
+     at com.intellij.psi.impl.source.PsiFileImpl.getNode(PsiFileImpl.java:1040)
+     at org.cangnova.cangjie.psi.CjCommonFile.getFeaturesDirective(CjFile.kt:343)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile$lambda$20(PsiRawCfirBuilder.kt:379)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$$Lambda/0x0000019f246a66d8.invoke(Unknown Source)
+     at org.cangnova.cangjie.cfir.builder.Context.withPackage(RawCfirBuilderContext.kt:70)
+     at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilder.withPackageContext(AbstractRawCfirBuilder.kt:87)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile(PsiRawCfirBuilder.kt:365)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$buildFile(PsiRawCfirBuilder.kt:123)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:398)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:396)
+     at org.cangnova.cangjie.psi.CjFile.accept(CjFile.kt:443)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.Context.withSourceModuleName(RawCfirBuilderContext.kt:38)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.withSourceModuleContext(PsiRawCfirBuilder.kt:215)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$withSourceModuleContext(PsiRawCfirBuilder.kt:123)
+
+-- "ApplicationImpl pooled thread 71" prio=0 tid=0x0 nid=0x0 blocked
+   state=BLOCKED
+     at com.intellij.psi.impl.source.PsiFileImpl.loadTreeElement(PsiFileImpl.java:218)
+     at com.intellij.psi.impl.source.PsiFileImpl.calcTreeElement(PsiFileImpl.java:841)
+     at com.intellij.psi.impl.source.PsiFileImpl.getNode(PsiFileImpl.java:1040)
+     at org.cangnova.cangjie.psi.CjCommonFile.getFeaturesDirective(CjFile.kt:343)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile$lambda$20(PsiRawCfirBuilder.kt:379)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$$Lambda/0x0000019f246a66d8.invoke(Unknown Source)
+     at org.cangnova.cangjie.cfir.builder.Context.withPackage(RawCfirBuilderContext.kt:70)
+     at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilder.withPackageContext(AbstractRawCfirBuilder.kt:87)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile(PsiRawCfirBuilder.kt:365)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$buildFile(PsiRawCfirBuilder.kt:123)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:398)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:396)
+     at org.cangnova.cangjie.psi.CjFile.accept(CjFile.kt:443)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.Context.withSourceModuleName(RawCfirBuilderContext.kt:38)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.withSourceModuleContext(PsiRawCfirBuilder.kt:215)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$withSourceModuleContext(PsiRawCfirBuilder.kt:123)
+
+-- "ApplicationImpl pooled thread 73" prio=0 tid=0x0 nid=0x0 blocked
+   state=BLOCKED
+     at com.intellij.psi.impl.source.PsiFileImpl.loadTreeElement(PsiFileImpl.java:218)
+     at com.intellij.psi.impl.source.PsiFileImpl.calcTreeElement(PsiFileImpl.java:841)
+     at com.intellij.psi.impl.source.PsiFileImpl.getNode(PsiFileImpl.java:1040)
+     at org.cangnova.cangjie.psi.CjCommonFile.getFeaturesDirective(CjFile.kt:343)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile$lambda$20(PsiRawCfirBuilder.kt:379)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$$Lambda/0x0000019f246a66d8.invoke(Unknown Source)
+     at org.cangnova.cangjie.cfir.builder.Context.withPackage(RawCfirBuilderContext.kt:70)
+     at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilder.withPackageContext(AbstractRawCfirBuilder.kt:87)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile(PsiRawCfirBuilder.kt:365)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$buildFile(PsiRawCfirBuilder.kt:123)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:398)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:396)
+     at org.cangnova.cangjie.psi.CjFile.accept(CjFile.kt:443)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.Context.withSourceModuleName(RawCfirBuilderContext.kt:38)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.withSourceModuleContext(PsiRawCfirBuilder.kt:215)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$withSourceModuleContext(PsiRawCfirBuilder.kt:123)
+
+-- "ApplicationImpl pooled thread 74" prio=0 tid=0x0 nid=0x0 blocked
+   state=BLOCKED
+     at com.intellij.psi.impl.source.PsiFileImpl.loadTreeElement(PsiFileImpl.java:218)
+     at com.intellij.psi.impl.source.PsiFileImpl.calcTreeElement(PsiFileImpl.java:841)
+     at com.intellij.psi.impl.source.PsiFileImpl.getNode(PsiFileImpl.java:1040)
+     at org.cangnova.cangjie.psi.CjCommonFile.getFeaturesDirective(CjFile.kt:343)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile$lambda$20(PsiRawCfirBuilder.kt:379)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$$Lambda/0x0000019f246a66d8.invoke(Unknown Source)
+     at org.cangnova.cangjie.cfir.builder.Context.withPackage(RawCfirBuilderContext.kt:70)
+     at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilder.withPackageContext(AbstractRawCfirBuilder.kt:87)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile(PsiRawCfirBuilder.kt:365)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$buildFile(PsiRawCfirBuilder.kt:123)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:398)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:396)
+     at org.cangnova.cangjie.psi.CjFile.accept(CjFile.kt:443)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.Context.withSourceModuleName(RawCfirBuilderContext.kt:38)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.withSourceModuleContext(PsiRawCfirBuilder.kt:215)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$withSourceModuleContext(PsiRawCfirBuilder.kt:123)
+
+-- "ApplicationImpl pooled thread 75" prio=0 tid=0x0 nid=0x0 blocked
+   state=BLOCKED
+     at com.intellij.psi.impl.source.PsiFileImpl.loadTreeElement(PsiFileImpl.java:218)
+     at com.intellij.psi.impl.source.PsiFileImpl.calcTreeElement(PsiFileImpl.java:841)
+     at com.intellij.psi.impl.source.PsiFileImpl.getNode(PsiFileImpl.java:1040)
+     at org.cangnova.cangjie.psi.CjCommonFile.getFeaturesDirective(CjFile.kt:343)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile$lambda$20(PsiRawCfirBuilder.kt:379)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$$Lambda/0x0000019f246a66d8.invoke(Unknown Source)
+     at org.cangnova.cangjie.cfir.builder.Context.withPackage(RawCfirBuilderContext.kt:70)
+     at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilder.withPackageContext(AbstractRawCfirBuilder.kt:87)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile(PsiRawCfirBuilder.kt:365)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$buildFile(PsiRawCfirBuilder.kt:123)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:398)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:396)
+     at org.cangnova.cangjie.psi.CjFile.accept(CjFile.kt:443)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.Context.withSourceModuleName(RawCfirBuilderContext.kt:38)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.withSourceModuleContext(PsiRawCfirBuilder.kt:215)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$withSourceModuleContext(PsiRawCfirBuilder.kt:123)
+
+-- "ApplicationImpl pooled thread 77" prio=0 tid=0x0 nid=0x0 blocked
+   state=BLOCKED
+     at com.intellij.psi.impl.source.PsiFileImpl.loadTreeElement(PsiFileImpl.java:218)
+     at com.intellij.psi.impl.source.PsiFileImpl.calcTreeElement(PsiFileImpl.java:841)
+     at com.intellij.psi.impl.source.PsiFileImpl.getNode(PsiFileImpl.java:1040)
+     at org.cangnova.cangjie.psi.CjCommonFile.getFeaturesDirective(CjFile.kt:343)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile$lambda$20(PsiRawCfirBuilder.kt:379)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$$Lambda/0x0000019f246a66d8.invoke(Unknown Source)
+     at org.cangnova.cangjie.cfir.builder.Context.withPackage(RawCfirBuilderContext.kt:70)
+     at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilder.withPackageContext(AbstractRawCfirBuilder.kt:87)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile(PsiRawCfirBuilder.kt:365)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$buildFile(PsiRawCfirBuilder.kt:123)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:398)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:396)
+     at org.cangnova.cangjie.psi.CjFile.accept(CjFile.kt:443)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.Context.withSourceModuleName(RawCfirBuilderContext.kt:38)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.withSourceModuleContext(PsiRawCfirBuilder.kt:215)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$withSourceModuleContext(PsiRawCfirBuilder.kt:123)
+
+-- "ApplicationImpl pooled thread 79" prio=0 tid=0x0 nid=0x0 blocked
+   state=BLOCKED
+     at com.intellij.psi.impl.source.PsiFileImpl.loadTreeElement(PsiFileImpl.java:218)
+     at com.intellij.psi.impl.source.PsiFileImpl.calcTreeElement(PsiFileImpl.java:841)
+     at com.intellij.psi.impl.source.PsiFileImpl.getNode(PsiFileImpl.java:1040)
+     at org.cangnova.cangjie.psi.CjCommonFile.getFeaturesDirective(CjFile.kt:343)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile$lambda$20(PsiRawCfirBuilder.kt:379)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$$Lambda/0x0000019f246a66d8.invoke(Unknown Source)
+     at org.cangnova.cangjie.cfir.builder.Context.withPackage(RawCfirBuilderContext.kt:70)
+     at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilder.withPackageContext(AbstractRawCfirBuilder.kt:87)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.buildFile(PsiRawCfirBuilder.kt:365)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$buildFile(PsiRawCfirBuilder.kt:123)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:398)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$Visitor.visitCjFile(PsiRawCfirBuilder.kt:396)
+     at org.cangnova.cangjie.psi.CjFile.accept(CjFile.kt:443)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder$buildCfirFile$1$1$1.invoke(PsiRawCfirBuilder.kt:228)
+     at org.cangnova.cangjie.cfir.builder.Context.withSourceModuleName(RawCfirBuilderContext.kt:38)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.withSourceModuleContext(PsiRawCfirBuilder.kt:215)
+     at org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder.access$withSourceModuleContext(PsiRawCfirBuilder.kt:123)
+
+-- "ApplicationImpl pooled thread 66" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=WAITING
+     at java.base@21.0.9/java.lang.Object.wait0(Native Method)
+     at java.base@21.0.9/java.lang.Object.wait(Object.java:366)
+     at java.base@21.0.9/java.lang.Object.wait(Object.java:339)
+     at com.intellij.platform.locking.impl.RunSuspend.await(NestedLocksThreadingSupport.kt:1803)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupportKt.runSuspendWithWaitingConsumer(NestedLocksThreadingSupport.kt:1769)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupportKt.access$runSuspendWithWaitingConsumer(NestedLocksThreadingSupport.kt:1)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport.runSuspendMaybeConsuming$lambda$0(NestedLocksThreadingSupport.kt:1704)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport$$Lambda/0x0000019f23e30238.invoke(Unknown Source)
+     at kotlinx.coroutines.internal.intellij.IntellijCoroutines.runAndCompensateParallelism-VtjQ1oo(intellij.kt:91)
+     at com.intellij.util.IntelliJCoroutinesFacade.runAndCompensateParallelism-VtjQ1oo(IntelliJCoroutinesFacade.kt:45)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport.runSuspendMaybeConsuming(NestedLocksThreadingSupport.kt:1703)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport$ComputationState.acquireReadPermit(NestedLocksThreadingSupport.kt:467)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport.smartAcquireReadPermit(NestedLocksThreadingSupport.kt:798)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport.runReadAction(NestedLocksThreadingSupport.kt:847)
+     at com.intellij.openapi.application.impl.ApplicationImpl.runReadAction(ApplicationImpl.java:1069)
+     at com.intellij.openapi.application.ReadAction.compute(ReadAction.java:66)
+     at org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirMacroConstructionInputKt.buildPreMacroRawBuildResultForModule(LLCfirMacroConstructionInput.kt:60)
+     at org.cangnova.cangjie.macro.analysis.LLCfirMacroSessionConfigurator.runConstructionAttempt(LLCfirMacroSessionConfigurator.kt:127)
+
+-- "ApplicationImpl pooled thread 72" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=WAITING
+     at java.base@21.0.9/java.lang.Object.wait0(Native Method)
+     at java.base@21.0.9/java.lang.Object.wait(Object.java:366)
+     at java.base@21.0.9/java.lang.Object.wait(Object.java:339)
+     at com.intellij.platform.locking.impl.RunSuspend.await(NestedLocksThreadingSupport.kt:1803)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupportKt.runSuspendWithWaitingConsumer(NestedLocksThreadingSupport.kt:1769)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupportKt.access$runSuspendWithWaitingConsumer(NestedLocksThreadingSupport.kt:1)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport.runSuspendMaybeConsuming$lambda$0(NestedLocksThreadingSupport.kt:1704)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport$$Lambda/0x0000019f23e30238.invoke(Unknown Source)
+     at kotlinx.coroutines.internal.intellij.IntellijCoroutines.runAndCompensateParallelism-VtjQ1oo(intellij.kt:91)
+     at com.intellij.util.IntelliJCoroutinesFacade.runAndCompensateParallelism-VtjQ1oo(IntelliJCoroutinesFacade.kt:45)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport.runSuspendMaybeConsuming(NestedLocksThreadingSupport.kt:1703)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport$ComputationState.acquireReadPermit(NestedLocksThreadingSupport.kt:467)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport.smartAcquireReadPermit(NestedLocksThreadingSupport.kt:798)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport.runReadAction(NestedLocksThreadingSupport.kt:847)
+     at com.intellij.openapi.application.impl.ApplicationImpl.runReadAction(ApplicationImpl.java:1069)
+     at com.intellij.openapi.application.ReadAction.compute(ReadAction.java:66)
+     at org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirMacroConstructionInputKt.buildPreMacroRawBuildResultForModule(LLCfirMacroConstructionInput.kt:60)
+     at org.cangnova.cangjie.macro.analysis.LLCfirMacroSessionConfigurator.runConstructionAttempt(LLCfirMacroSessionConfigurator.kt:127)
+
+-- "ApplicationImpl pooled thread 80" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=WAITING
+     at java.base@21.0.9/java.lang.Object.wait0(Native Method)
+     at java.base@21.0.9/java.lang.Object.wait(Object.java:366)
+     at java.base@21.0.9/java.lang.Object.wait(Object.java:339)
+     at com.intellij.platform.locking.impl.RunSuspend.await(NestedLocksThreadingSupport.kt:1803)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupportKt.runSuspendWithWaitingConsumer(NestedLocksThreadingSupport.kt:1769)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupportKt.access$runSuspendWithWaitingConsumer(NestedLocksThreadingSupport.kt:1)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport.runSuspendMaybeConsuming$lambda$0(NestedLocksThreadingSupport.kt:1704)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport$$Lambda/0x0000019f23e30238.invoke(Unknown Source)
+     at kotlinx.coroutines.internal.intellij.IntellijCoroutines.runAndCompensateParallelism-VtjQ1oo(intellij.kt:91)
+     at com.intellij.util.IntelliJCoroutinesFacade.runAndCompensateParallelism-VtjQ1oo(IntelliJCoroutinesFacade.kt:45)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport.runSuspendMaybeConsuming(NestedLocksThreadingSupport.kt:1703)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport$ComputationState.acquireReadPermit(NestedLocksThreadingSupport.kt:467)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport.smartAcquireReadPermit(NestedLocksThreadingSupport.kt:798)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport.runReadAction(NestedLocksThreadingSupport.kt:847)
+     at com.intellij.openapi.application.impl.ApplicationImpl.runReadAction(ApplicationImpl.java:1069)
+     at com.intellij.openapi.application.ReadAction.compute(ReadAction.java:66)
+     at org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirMacroConstructionInputKt.buildPreMacroRawBuildResultForModule(LLCfirMacroConstructionInput.kt:60)
+     at org.cangnova.cangjie.macro.analysis.LLCfirMacroSessionConfigurator.runConstructionAttempt(LLCfirMacroSessionConfigurator.kt:127)
+
+-- "ApplicationImpl pooled thread 81" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=WAITING
+     at java.base@21.0.9/java.lang.Object.wait0(Native Method)
+     at java.base@21.0.9/java.lang.Object.wait(Object.java:366)
+     at java.base@21.0.9/java.lang.Object.wait(Object.java:339)
+     at com.intellij.platform.locking.impl.RunSuspend.await(NestedLocksThreadingSupport.kt:1803)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupportKt.runSuspendWithWaitingConsumer(NestedLocksThreadingSupport.kt:1769)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupportKt.access$runSuspendWithWaitingConsumer(NestedLocksThreadingSupport.kt:1)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport.runSuspendMaybeConsuming$lambda$0(NestedLocksThreadingSupport.kt:1704)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport$$Lambda/0x0000019f23e30238.invoke(Unknown Source)
+     at kotlinx.coroutines.internal.intellij.IntellijCoroutines.runAndCompensateParallelism-VtjQ1oo(intellij.kt:91)
+     at com.intellij.util.IntelliJCoroutinesFacade.runAndCompensateParallelism-VtjQ1oo(IntelliJCoroutinesFacade.kt:45)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport.runSuspendMaybeConsuming(NestedLocksThreadingSupport.kt:1703)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport$ComputationState.acquireReadPermit(NestedLocksThreadingSupport.kt:467)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport.smartAcquireReadPermit(NestedLocksThreadingSupport.kt:798)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport.runReadAction(NestedLocksThreadingSupport.kt:847)
+     at com.intellij.openapi.application.impl.ApplicationImpl.runReadAction(ApplicationImpl.java:1069)
+     at com.intellij.openapi.application.ReadAction.compute(ReadAction.java:66)
+     at org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirMacroConstructionInputKt.buildPreMacroRawBuildResultForModule(LLCfirMacroConstructionInput.kt:60)
+     at org.cangnova.cangjie.macro.analysis.LLCfirMacroSessionConfigurator.runConstructionAttempt(LLCfirMacroSessionConfigurator.kt:127)
+
+-- "ApplicationImpl pooled thread 84" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=WAITING
+     at java.base@21.0.9/java.lang.Object.wait0(Native Method)
+     at java.base@21.0.9/java.lang.Object.wait(Object.java:366)
+     at java.base@21.0.9/java.lang.Object.wait(Object.java:339)
+     at com.intellij.platform.locking.impl.RunSuspend.await(NestedLocksThreadingSupport.kt:1803)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupportKt.runSuspendWithWaitingConsumer(NestedLocksThreadingSupport.kt:1769)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupportKt.access$runSuspendWithWaitingConsumer(NestedLocksThreadingSupport.kt:1)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport.runSuspendMaybeConsuming$lambda$0(NestedLocksThreadingSupport.kt:1704)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport$$Lambda/0x0000019f23e30238.invoke(Unknown Source)
+     at kotlinx.coroutines.internal.intellij.IntellijCoroutines.runAndCompensateParallelism-VtjQ1oo(intellij.kt:91)
+     at com.intellij.util.IntelliJCoroutinesFacade.runAndCompensateParallelism-VtjQ1oo(IntelliJCoroutinesFacade.kt:45)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport.runSuspendMaybeConsuming(NestedLocksThreadingSupport.kt:1703)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport$ComputationState.acquireReadPermit(NestedLocksThreadingSupport.kt:467)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport.smartAcquireReadPermit(NestedLocksThreadingSupport.kt:798)
+     at com.intellij.platform.locking.impl.NestedLocksThreadingSupport.runReadAction(NestedLocksThreadingSupport.kt:847)
+     at com.intellij.openapi.application.impl.ApplicationImpl.runReadAction(ApplicationImpl.java:1069)
+     at com.intellij.openapi.application.ReadAction.compute(ReadAction.java:66)
+     at org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirMacroConstructionInputKt.buildPreMacroRawBuildResultForModule(LLCfirMacroConstructionInput.kt:60)
+     at org.cangnova.cangjie.macro.analysis.LLCfirMacroSessionConfigurator.runConstructionAttempt(LLCfirMacroSessionConfigurator.kt:127)
+
+-- "ApplicationImpl pooled thread 78" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=TIMED_WAITING
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+     at java.base@21.0.9/java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:410)
+     at java.base@21.0.9/java.util.concurrent.LinkedTransferQueue$DualNode.await(LinkedTransferQueue.java:452)
+     at java.base@21.0.9/java.util.concurrent.SynchronousQueue$Transferer.xferLifo(SynchronousQueue.java:194)
+     at java.base@21.0.9/java.util.concurrent.SynchronousQueue.xfer(SynchronousQueue.java:235)
+     at java.base@21.0.9/java.util.concurrent.SynchronousQueue.poll(SynchronousQueue.java:338)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor.getTask(ThreadPoolExecutor.java:1069)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1130)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+     at java.base@21.0.9/java.util.concurrent.Executors$PrivilegedThreadFactory$1$1.run(Executors.java:735)
+     at java.base@21.0.9/java.util.concurrent.Executors$PrivilegedThreadFactory$1$1.run(Executors.java:732)
+     at java.base@21.0.9/java.security.AccessController.executePrivileged(AccessController.java:778)
+     at java.base@21.0.9/java.security.AccessController.doPrivileged(AccessController.java:400)
+     at java.base@21.0.9/java.util.concurrent.Executors$PrivilegedThreadFactory$1.run(Executors.java:732)
+     at java.base@21.0.9/java.lang.Thread.runWith(Thread.java:1596)
+     at java.base@21.0.9/java.lang.Thread.run(Thread.java:1583)
+
+-- "ApplicationImpl pooled thread 85" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=TIMED_WAITING
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+     at java.base@21.0.9/java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:410)
+     at java.base@21.0.9/java.util.concurrent.LinkedTransferQueue$DualNode.await(LinkedTransferQueue.java:452)
+     at java.base@21.0.9/java.util.concurrent.SynchronousQueue$Transferer.xferLifo(SynchronousQueue.java:194)
+     at java.base@21.0.9/java.util.concurrent.SynchronousQueue.xfer(SynchronousQueue.java:235)
+     at java.base@21.0.9/java.util.concurrent.SynchronousQueue.poll(SynchronousQueue.java:338)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor.getTask(ThreadPoolExecutor.java:1069)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1130)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+     at java.base@21.0.9/java.util.concurrent.Executors$PrivilegedThreadFactory$1$1.run(Executors.java:735)
+     at java.base@21.0.9/java.util.concurrent.Executors$PrivilegedThreadFactory$1$1.run(Executors.java:732)
+     at java.base@21.0.9/java.security.AccessController.executePrivileged(AccessController.java:778)
+     at java.base@21.0.9/java.security.AccessController.doPrivileged(AccessController.java:400)
+     at java.base@21.0.9/java.util.concurrent.Executors$PrivilegedThreadFactory$1.run(Executors.java:732)
+     at java.base@21.0.9/java.lang.Thread.runWith(Thread.java:1596)
+     at java.base@21.0.9/java.lang.Thread.run(Thread.java:1583)
+
+-- "ApplicationImpl pooled thread 86" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=TIMED_WAITING
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+     at java.base@21.0.9/java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:410)
+     at java.base@21.0.9/java.util.concurrent.LinkedTransferQueue$DualNode.await(LinkedTransferQueue.java:452)
+     at java.base@21.0.9/java.util.concurrent.SynchronousQueue$Transferer.xferLifo(SynchronousQueue.java:194)
+     at java.base@21.0.9/java.util.concurrent.SynchronousQueue.xfer(SynchronousQueue.java:235)
+     at java.base@21.0.9/java.util.concurrent.SynchronousQueue.poll(SynchronousQueue.java:338)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor.getTask(ThreadPoolExecutor.java:1069)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1130)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+     at java.base@21.0.9/java.util.concurrent.Executors$PrivilegedThreadFactory$1$1.run(Executors.java:735)
+     at java.base@21.0.9/java.util.concurrent.Executors$PrivilegedThreadFactory$1$1.run(Executors.java:732)
+     at java.base@21.0.9/java.security.AccessController.executePrivileged(AccessController.java:778)
+     at java.base@21.0.9/java.security.AccessController.doPrivileged(AccessController.java:400)
+     at java.base@21.0.9/java.util.concurrent.Executors$PrivilegedThreadFactory$1.run(Executors.java:732)
+     at java.base@21.0.9/java.lang.Thread.runWith(Thread.java:1596)
+     at java.base@21.0.9/java.lang.Thread.run(Thread.java:1583)
+
+-- "ApplicationImpl pooled thread 91" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=TIMED_WAITING
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+     at java.base@21.0.9/java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:410)
+     at java.base@21.0.9/java.util.concurrent.LinkedTransferQueue$DualNode.await(LinkedTransferQueue.java:452)
+     at java.base@21.0.9/java.util.concurrent.SynchronousQueue$Transferer.xferLifo(SynchronousQueue.java:194)
+     at java.base@21.0.9/java.util.concurrent.SynchronousQueue.xfer(SynchronousQueue.java:235)
+     at java.base@21.0.9/java.util.concurrent.SynchronousQueue.poll(SynchronousQueue.java:338)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor.getTask(ThreadPoolExecutor.java:1069)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1130)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+     at java.base@21.0.9/java.util.concurrent.Executors$PrivilegedThreadFactory$1$1.run(Executors.java:735)
+     at java.base@21.0.9/java.util.concurrent.Executors$PrivilegedThreadFactory$1$1.run(Executors.java:732)
+     at java.base@21.0.9/java.security.AccessController.executePrivileged(AccessController.java:778)
+     at java.base@21.0.9/java.security.AccessController.doPrivileged(AccessController.java:400)
+     at java.base@21.0.9/java.util.concurrent.Executors$PrivilegedThreadFactory$1.run(Executors.java:732)
+     at java.base@21.0.9/java.lang.Thread.runWith(Thread.java:1596)
+     at java.base@21.0.9/java.lang.Thread.run(Thread.java:1583)
+
+-- "ApplicationImpl pooled thread 92" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=TIMED_WAITING
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+     at java.base@21.0.9/java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:410)
+     at java.base@21.0.9/java.util.concurrent.LinkedTransferQueue$DualNode.await(LinkedTransferQueue.java:452)
+     at java.base@21.0.9/java.util.concurrent.SynchronousQueue$Transferer.xferLifo(SynchronousQueue.java:194)
+     at java.base@21.0.9/java.util.concurrent.SynchronousQueue.xfer(SynchronousQueue.java:235)
+     at java.base@21.0.9/java.util.concurrent.SynchronousQueue.poll(SynchronousQueue.java:338)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor.getTask(ThreadPoolExecutor.java:1069)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1130)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+     at java.base@21.0.9/java.util.concurrent.Executors$PrivilegedThreadFactory$1$1.run(Executors.java:735)
+     at java.base@21.0.9/java.util.concurrent.Executors$PrivilegedThreadFactory$1$1.run(Executors.java:732)
+     at java.base@21.0.9/java.security.AccessController.executePrivileged(AccessController.java:778)
+     at java.base@21.0.9/java.security.AccessController.doPrivileged(AccessController.java:400)
+     at java.base@21.0.9/java.util.concurrent.Executors$PrivilegedThreadFactory$1.run(Executors.java:732)
+     at java.base@21.0.9/java.lang.Thread.runWith(Thread.java:1596)
+     at java.base@21.0.9/java.lang.Thread.run(Thread.java:1583)
+
+-- "ApplicationImpl pooled thread 93" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=TIMED_WAITING
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+     at java.base@21.0.9/java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:410)
+     at java.base@21.0.9/java.util.concurrent.LinkedTransferQueue$DualNode.await(LinkedTransferQueue.java:452)
+     at java.base@21.0.9/java.util.concurrent.SynchronousQueue$Transferer.xferLifo(SynchronousQueue.java:194)
+     at java.base@21.0.9/java.util.concurrent.SynchronousQueue.xfer(SynchronousQueue.java:235)
+     at java.base@21.0.9/java.util.concurrent.SynchronousQueue.poll(SynchronousQueue.java:338)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor.getTask(ThreadPoolExecutor.java:1069)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1130)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+     at java.base@21.0.9/java.util.concurrent.Executors$PrivilegedThreadFactory$1$1.run(Executors.java:735)
+     at java.base@21.0.9/java.util.concurrent.Executors$PrivilegedThreadFactory$1$1.run(Executors.java:732)
+     at java.base@21.0.9/java.security.AccessController.executePrivileged(AccessController.java:778)
+     at java.base@21.0.9/java.security.AccessController.doPrivileged(AccessController.java:400)
+     at java.base@21.0.9/java.util.concurrent.Executors$PrivilegedThreadFactory$1.run(Executors.java:732)
+     at java.base@21.0.9/java.lang.Thread.runWith(Thread.java:1596)
+     at java.base@21.0.9/java.lang.Thread.run(Thread.java:1583)
+
+-- "ApplicationImpl pooled thread 94" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=TIMED_WAITING
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+     at java.base@21.0.9/java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:410)
+     at java.base@21.0.9/java.util.concurrent.LinkedTransferQueue$DualNode.await(LinkedTransferQueue.java:452)
+     at java.base@21.0.9/java.util.concurrent.SynchronousQueue$Transferer.xferLifo(SynchronousQueue.java:194)
+     at java.base@21.0.9/java.util.concurrent.SynchronousQueue.xfer(SynchronousQueue.java:235)
+     at java.base@21.0.9/java.util.concurrent.SynchronousQueue.poll(SynchronousQueue.java:338)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor.getTask(ThreadPoolExecutor.java:1069)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1130)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+     at java.base@21.0.9/java.util.concurrent.Executors$PrivilegedThreadFactory$1$1.run(Executors.java:735)
+     at java.base@21.0.9/java.util.concurrent.Executors$PrivilegedThreadFactory$1$1.run(Executors.java:732)
+     at java.base@21.0.9/java.security.AccessController.executePrivileged(AccessController.java:778)
+     at java.base@21.0.9/java.security.AccessController.doPrivileged(AccessController.java:400)
+     at java.base@21.0.9/java.util.concurrent.Executors$PrivilegedThreadFactory$1.run(Executors.java:732)
+     at java.base@21.0.9/java.lang.Thread.runWith(Thread.java:1596)
+     at java.base@21.0.9/java.lang.Thread.run(Thread.java:1583)
+
+-- "ApplicationImpl pooled thread 95" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=TIMED_WAITING
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+     at java.base@21.0.9/java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:410)
+     at java.base@21.0.9/java.util.concurrent.LinkedTransferQueue$DualNode.await(LinkedTransferQueue.java:452)
+     at java.base@21.0.9/java.util.concurrent.SynchronousQueue$Transferer.xferLifo(SynchronousQueue.java:194)
+     at java.base@21.0.9/java.util.concurrent.SynchronousQueue.xfer(SynchronousQueue.java:235)
+     at java.base@21.0.9/java.util.concurrent.SynchronousQueue.poll(SynchronousQueue.java:338)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor.getTask(ThreadPoolExecutor.java:1069)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1130)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+     at java.base@21.0.9/java.util.concurrent.Executors$PrivilegedThreadFactory$1$1.run(Executors.java:735)
+     at java.base@21.0.9/java.util.concurrent.Executors$PrivilegedThreadFactory$1$1.run(Executors.java:732)
+     at java.base@21.0.9/java.security.AccessController.executePrivileged(AccessController.java:778)
+     at java.base@21.0.9/java.security.AccessController.doPrivileged(AccessController.java:400)
+     at java.base@21.0.9/java.util.concurrent.Executors$PrivilegedThreadFactory$1.run(Executors.java:732)
+     at java.base@21.0.9/java.lang.Thread.runWith(Thread.java:1596)
+     at java.base@21.0.9/java.lang.Thread.run(Thread.java:1583)
+
+-- "Aux Index Writer #1" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=WAITING
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+     at java.base@21.0.9/java.util.concurrent.locks.LockSupport.park(LockSupport.java:371)
+     at java.base@21.0.9/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionNode.block(AbstractQueuedSynchronizer.java:519)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.unmanagedBlock(ForkJoinPool.java:4013)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.managedBlock(ForkJoinPool.java:3961)
+     at java.base@21.0.9/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:1746)
+     at java.base@21.0.9/java.util.concurrent.LinkedBlockingQueue.take(LinkedBlockingQueue.java:435)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor.getTask(ThreadPoolExecutor.java:1070)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1130)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+     at java.base@21.0.9/java.lang.Thread.runWith(Thread.java:1596)
+     at java.base@21.0.9/java.lang.Thread.run(Thread.java:1583)
+
+-- "IdIndex Writer #0" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=WAITING
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+     at java.base@21.0.9/java.util.concurrent.locks.LockSupport.park(LockSupport.java:371)
+     at java.base@21.0.9/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionNode.block(AbstractQueuedSynchronizer.java:519)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.unmanagedBlock(ForkJoinPool.java:4013)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.managedBlock(ForkJoinPool.java:3961)
+     at java.base@21.0.9/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:1746)
+     at java.base@21.0.9/java.util.concurrent.LinkedBlockingQueue.take(LinkedBlockingQueue.java:435)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor.getTask(ThreadPoolExecutor.java:1070)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1130)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+     at java.base@21.0.9/java.lang.Thread.runWith(Thread.java:1596)
+     at java.base@21.0.9/java.lang.Thread.run(Thread.java:1583)
+
+-- "Trigram.Index Writer #1" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=WAITING
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+     at java.base@21.0.9/java.util.concurrent.locks.LockSupport.park(LockSupport.java:371)
+     at java.base@21.0.9/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionNode.block(AbstractQueuedSynchronizer.java:519)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.unmanagedBlock(ForkJoinPool.java:4013)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.managedBlock(ForkJoinPool.java:3961)
+     at java.base@21.0.9/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:1746)
+     at java.base@21.0.9/java.util.concurrent.LinkedBlockingQueue.take(LinkedBlockingQueue.java:435)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor.getTask(ThreadPoolExecutor.java:1070)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1130)
+     at java.base@21.0.9/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+     at java.base@21.0.9/java.lang.Thread.runWith(Thread.java:1596)
+     at java.base@21.0.9/java.lang.Thread.run(Thread.java:1583)
+
+-- "ForkJoinPool.commonPool-worker-1" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=WAITING
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.awaitWork(ForkJoinPool.java:2145)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.runWorker(ForkJoinPool.java:2036)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:187)
+
+-- "ForkJoinPool.commonPool-worker-10" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=WAITING
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.awaitWork(ForkJoinPool.java:2145)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.runWorker(ForkJoinPool.java:2036)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:187)
+
+-- "ForkJoinPool.commonPool-worker-11" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=WAITING
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.awaitWork(ForkJoinPool.java:2145)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.runWorker(ForkJoinPool.java:2036)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:187)
+
+-- "ForkJoinPool.commonPool-worker-12" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=WAITING
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.awaitWork(ForkJoinPool.java:2145)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.runWorker(ForkJoinPool.java:2036)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:187)
+
+-- "ForkJoinPool.commonPool-worker-13" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=WAITING
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.awaitWork(ForkJoinPool.java:2145)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.runWorker(ForkJoinPool.java:2036)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:187)
+
+-- "ForkJoinPool.commonPool-worker-14" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=WAITING
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.awaitWork(ForkJoinPool.java:2145)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.runWorker(ForkJoinPool.java:2036)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:187)
+
+-- "ForkJoinPool.commonPool-worker-15" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=WAITING
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.awaitWork(ForkJoinPool.java:2145)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.runWorker(ForkJoinPool.java:2036)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:187)
+
+-- "ForkJoinPool.commonPool-worker-2" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=TIMED_WAITING
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.awaitWork(ForkJoinPool.java:2145)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.runWorker(ForkJoinPool.java:2036)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:187)
+
+-- "ForkJoinPool.commonPool-worker-3" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=WAITING
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.awaitWork(ForkJoinPool.java:2145)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.runWorker(ForkJoinPool.java:2036)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:187)
+
+-- "ForkJoinPool.commonPool-worker-4" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=WAITING
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.awaitWork(ForkJoinPool.java:2145)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.runWorker(ForkJoinPool.java:2036)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:187)
+
+-- "ForkJoinPool.commonPool-worker-5" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=WAITING
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.awaitWork(ForkJoinPool.java:2145)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.runWorker(ForkJoinPool.java:2036)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:187)
+
+-- "ForkJoinPool.commonPool-worker-6" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=WAITING
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.awaitWork(ForkJoinPool.java:2145)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.runWorker(ForkJoinPool.java:2036)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:187)
+
+-- "ForkJoinPool.commonPool-worker-7" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=WAITING
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.awaitWork(ForkJoinPool.java:2145)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.runWorker(ForkJoinPool.java:2036)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:187)
+
+-- "ForkJoinPool.commonPool-worker-8" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=WAITING
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.awaitWork(ForkJoinPool.java:2145)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.runWorker(ForkJoinPool.java:2036)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:187)
+
+-- "ForkJoinPool.commonPool-worker-9" prio=0 tid=0x0 nid=0x0 waiting on condition
+   state=WAITING
+     at java.base@21.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.awaitWork(ForkJoinPool.java:2145)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinPool.runWorker(ForkJoinPool.java:2036)
+     at java.base@21.0.9/java.util.concurrent.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:187)
+     at kotlinx.coroutines.DelayKt.awaitCancellation(Delay.kt:160)
+     at com.intellij.idea.Main$mainImpl$1.invokeSuspend(Main.kt:77)
+     at kotlinx.coroutines.DelayKt.awaitCancellation(Delay.kt:160)
+     at com.intellij.platform.ide.bootstrap.kernel.KernelKt$startKernel$2$1$1.invokeSuspend(kernel.kt:54)
+     at fleet.kernel.rete.ReteKt$withRete$2$1$1$3$1.invokeSuspend(Rete.kt:154)
+     at fleet.kernel.rete.ReteKt$withRete$2$1$1$3.invokeSuspend(Rete.kt:153)
+     at fleet.util.async.JobExtKt$use$2.invokeSuspend(JobExt.kt:10)
+     at fleet.util.async.JobExtKt.use(JobExt.kt:10)
+     at fleet.kernel.rete.ReteKt$withRete$2$1$1.invokeSuspend(Rete.kt:139)
+     at fleet.kernel.TransactorKt$subscribe$2$1.invokeSuspend(Transactor.kt:155)
+     at fleet.kernel.TransactorKt$subscribe$2.invokeSuspend(Transactor.kt:154)
+     at fleet.kernel.rete.ReteKt$withRete$2.invokeSuspend(Rete.kt:98)
+     at fleet.reporting.shared.tracing.TracingKt.spannedScope(Tracing.kt:64)
+     at com.intellij.platform.ide.bootstrap.kernel.KernelKt$startKernel$2$1.invokeSuspend(kernel.kt:52)
+
+=== RUNNABLE threads (top 25 by first frame) ===
+[ApplicationImpl pooled thread 63] java.base@21.0.9/java.lang.Throwable.fillInStackTrace(Native Method)
+[ApplicationImpl pooled thread 90] java.base@21.0.9/jdk.internal.misc.Unsafe.ensureClassInitialized0(Native Method)
+[ApplicationImpl pooled thread 82] org.cangnova.cangjie.cfir.expressions.builder.CfirFunctionCallBuilder.build(CfirFunctionCallBuilder.kt:37)
+[ApplicationImpl pooled thread 83] java.base@21.0.9/java.util.Arrays.copyOfRangeByte(Arrays.java:3863)
+[DefaultDispatcher-worker-48] java.base@21.0.9/java.lang.invoke.VarHandleByteArrayAsInts$ArrayHandle.set(VarHandleByteArrayAsInts.java:126)
+[DefaultDispatcher-worker-50 @com.intellij.internal.statistic] com.intellij.AbstractBundle.getBundle(AbstractBundle.kt:174)
+[BaseDataReader: output stream of fsnotifier.exe] java.base@21.0.9/java.io.FileInputStream.readBytes(Native Method)
+[BaseDataReader: error stream of fsnotifier.exe] java.base@21.0.9/java.io.FileInputStream.readBytes(Native Method)
+[DefaultDispatcher-worker-5] java.base@21.0.9/java.lang.invoke.InvokerBytecodeGenerator.emitReturn(InvokerBytecodeGenerator.java:1688)
+[DefaultDispatcher-worker-20 @async freeze dumper#60833] java.base@21.0.9/java.lang.Class.getDeclaredFields0(Native Method)
+[DefaultDispatcher-worker-25 @async freeze dumper#60834] java.base@21.0.9/java.lang.Class.getDeclaredFields0(Native Method)
+[fsnotifier.exe] java.base@21.0.9/java.lang.ProcessImpl.waitForInterruptibly(Native Method)
+[DefaultDispatcher-worker-52] com.intellij.diagnostic.ActivityImpl.<init>(ActivityImpl.java:38)
+[CefHandlers-execution-0] java.base@21.0.9/sun.nio.ch.SocketDispatcher.read0(Native Method)
+[CefHandlers-execution-1] java.base@21.0.9/sun.nio.ch.SocketDispatcher.read0(Native Method)
+[CefHandlers-execution-2] java.base@21.0.9/sun.nio.ch.SocketDispatcher.read0(Native Method)
+[DefaultDispatcher-worker-34] com.intellij.openapi.vfs.newvfs.persistent.namecache.MRUFileNameCache.valueOf(MRUFileNameCache.java:23)
+[DefaultDispatcher-worker-36] java.base@21.0.9/java.lang.Thread.setNativeName(Native Method)
+[CefHandlers-listening] java.base@21.0.9/sun.nio.ch.Net.accept(Native Method)
+[DefaultDispatcher-worker-26 @Saving documents on frame deact] java.management@21.0.9/sun.management.ThreadImpl.dumpThreads0(Native Method)
+[Netty Builtin Server 1] java.base@21.0.9/sun.nio.ch.WEPoll.wait(Native Method)
+[Netty Builtin Server 2] java.base@21.0.9/sun.nio.ch.WEPoll.wait(Native Method)
+[Netty Station Client 1-1] java.base@21.0.9/sun.nio.ch.WEPoll.wait(Native Method)
+[Netty Station Client 1-2] java.base@21.0.9/sun.nio.ch.WEPoll.wait(Native Method)
+[Netty Station Server 1-1] java.base@21.0.9/sun.nio.ch.WEPoll.wait(Native Method)
+
+########## idea.log ##########
+D:\code\intellij\cangjie\intellij-ide\.intellijPlatform\sandbox\intellij-cangjie\IU-2025.3.1\log_runIde\idea.log
+lines: 17531
+level counts: {'INFO': 5416, 'WARN': 171, 'SEVERE': 163}
+
+=== ERROR grouped (top 30) ===
+
+=== WARN grouped (top 30) ===
+    14  #c.i.g.c.l.GrazieLoginManager - Need explicit activation dialog agreement, so skipping cloud login
+    12  #c.i.d.PerformanceWatcherImpl - UI was frozen for #ms, details saved to D:\code\intellij\cangjie\intellij-ide\.intellijPlatform\sandbox\intellij-cangjie\IU-#.#.#\log_runIde\threadD
+     8  #fleet.util.async.UncaughtCoroutineExceptionHandler - Suppressed a frequent exception logged for the #nd time: No remote API found for com.intellij.kubernetes.splitApi.KubernetesAp
+     8  #c.i.s.ComponentManagerImpl - `preload=NOT_HEADLESS` must be used only for core services (service=org.jetbrains.kotlin.idea.search.refIndex.KotlinCompilerReferenceIndexService, plu
+     8  #c.i.s.ComponentManagerImpl - `preload=NOT_HEADLESS` must be used only for core services (service=com.jetbrains.rdserver.toolWindow.BackendServerToolWindowManager, plugin=com.jetbr
+     8  #fleet.util.async.UncaughtCoroutineExceptionHandler - Suppressed a frequent exception logged for the #th time: No remote API found for com.intellij.kubernetes.splitApi.KubernetesAp
+     7  com.redhat.devtools.lsp#ij.LanguageServersRegistry - server 'CangJie' for mapping IntelliJ language 'Language: CangJie' not available
+     7  #fleet.util.async.UncaughtCoroutineExceptionHandler - Suppressed a frequent exception logged for the #nd time: No remote API found for com.intellij.kubernetes.editor.floatingToolba
+     6  #c.i.i.p.PluginManager - Problems found loading plugins:
+     6  #c.i.o.e.c.i.EditorColorsManagerImpl - resource not found: colorSchemes/SqlDefault.xml
+     6  #c.i.o.e.c.i.EditorColorsManagerImpl - resource not found: colorSchemes/SqlDarcula.xml
+     6  #c.i.o.a.i.ActionUpdater - # ms total to grab EDT # times to expand EditorMarkupModelImpl$StatusToolbarGroup#expandGroup@EditorInspectionsToolbar (com.intellij.openapi.editor.impl.
+     6  #c.i.o.a.i.ExceptionsKt - Suppressed a frequent exception logged for the #nd time: No remote API found for com.intellij.kubernetes.splitApi.KubernetesApiProviderRpcRemoteApiDescrip
+     5  #c.i.o.a.i.ActionUpdater - # ms total to grab EDT # times to expand ToolWindowHeader$##expandGroup@ToolwindowTitle (com.intellij.toolWindow.ToolWindowHeader$#). Use `ActionUpdateTh
+     4  #org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics.LLCfirDiagnosticVisitor$Companion - Suppressed a frequent exception logged for the #nd time: Error while resolving org
+     4  #org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics.LLCfirDiagnosticVisitor$Companion - Suppressed a frequent exception logged for the #th time: Error while resolving org
+     4  #c.i.o.a.i.ActionUpdater - # ms to call on BGT ExecutorRegistryImpl$ExecutorAction#presentation@NewUiRunToolbar (com.intellij.execution.ExecutorRegistryImpl$ExecutorAction(id=Debug
+     3  #c.i.o.f.i.EditorCompositeModelManager - Cannot use saved provider list (savedProviders={split-provider[text-editor;markdown-preview-editor]=[Element: <state/>]}, resolvedProvider=
+     3  #c.i.o.a.i.ActionUpdater - # ms to call on BGT ExecutionTargetComboBoxAction#presentation@MainToolbar (com.intellij.execution.actions.ExecutionTargetComboBoxAction) "ExecutionTarge
+     3  #c.i.o.a.i.ActionUpdater - # ms to call on BGT RedesignedRunConfigurationSelector#presentation@NewUiRunToolbar (com.intellij.execution.ui.RedesignedRunConfigurationSelector) "Redes
+     3  #org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics.LLCfirDiagnosticVisitor$Companion - The diagnostic collector has been interrupted by an exception. The result may be i
+     2  #c.i.o.a.ApplicationManager - Cannot execute background write action in # seconds. Thread dump is stored in file:///D:/code/intellij/cangjie/intellij-ide/.intellijPlatform/sandbox/
+     2  #c.i.o.v.n.p.FSRecords - Records storage [D:\code\intellij\cangjie\intellij-ide\.intellijPlatform\sandbox\intellij-cangjie\IU-#.#.#\system_runIde\caches\records.dat] was in use by 
+     2  #c.i.o.v.n.p.m.c.VFSContentStorageOverMMappedFile - Content map[D:\code\intellij\cangjie\intellij-ide\.intellijPlatform\sandbox\intellij-cangjie\IU-#.#.#\system_runIde\caches\conte
+     2  #c.i.o.v.n.p.PersistentFSLoader - [VFS load problem]: VFS wasn't safely shut down: records.wasClosedProperly is false
+     2  #c.i.o.v.n.p.PersistentFSLoader - [VFS load problem]: NOT_CLOSED_PROPERLY recovered, no problems remain
+     2  #c.i.o.p.i.ProjectFrameAllocator - Cannot load project in # seconds: 
+     2  #c.i.o.a.i.ActionUpdater - # ms to call on BGT ExecutorRegistryImpl$ExecutorAction#presentation@NewUiRunToolbar (com.intellij.execution.ExecutorRegistryImpl$ExecutorAction(id=Run))
+     2  #c.i.o.a.i.ExceptionsKt - Suppressed a frequent exception logged for the #th time: No remote API found for com.intellij.kubernetes.editor.floatingToolbar.KubernetesFloatingToolbarR
+     2  #c.i.u.n.AppShutdownProxySelector - network access during/after app shutdown
+
+=== ERROR samples (first 40, deduped) ===
+
+--- GC/low-memory: 450 hits
+    209  #c.i.o.u.LowMemoryWatcher - Low memory signal received (gc overloaded: true)
+    209  #c.i.d.LowMemoryNotifier - Memory deficit score: #.#, threshold: #.#
+     12  #c.i.o.u.LowMemoryWatcher - Low memory signal received (gc overloaded: false)
+      6  #c.i.o.u.LowMemoryWatcherManager - Use ExponentiallySmoothingTracker(# ms)
+      6  #c.i.o.u.LowMemoryWatcherManager - Subscribing to MemoryPool[G# Old Gen]{max: #, threshold: # (#.# * max)}
+      6  #c.i.o.u.LowMemoryWatcherManager - Schedule GC-time updating: each #ms
+      1  #c.i.o.u.LowMemoryWatcher - Suppressed a frequent exception logged for the #nd time: Already disposed: Project(name=cj, containerState=DISPOSE_IN_PROGRESS, componentStore=C:\cj) (d
+      1  #c.i.o.u.LowMemoryWatcher - Suppressed a frequent exception logged for the #nd time: Already disposed: Project(name=cj, containerState=DISPOSED, componentStore=C:\cj) (disposed)
+   first@2026-10-21 19:06:36,800 #c.i.o.u.LowMemoryWatcher - Low memory signal received (gc overloaded: false)
+   first@2026-10-21 19:06:44,875 #c.i.o.u.LowMemoryWatcher - Low memory signal received (gc overloaded: false)
+   first@2026-10-21 19:07:02,578 #c.i.o.u.LowMemoryWatcher - Low memory signal received (gc overloaded: false)
+
+--- freeze: 22 hits
+     12  #c.i.d.PerformanceWatcherImpl - UI was frozen for #ms, details saved to D:\code\intellij\cangjie\intellij-ide\.intellijPlatform\sandbox\intellij-cangjie\IU-#.#.#\log_runIde\threadD
+     10  #c.i.d.PerformanceWatcherImpl - High memory usage (free # of # MB) while dumping threads to D:\code\intellij\cangjie\intellij-ide\.intellijPlatform\sandbox\intellij-cangjie\IU-#.#.
+   first@2026-10-21 19:06:09,642 #c.i.d.PerformanceWatcherImpl - UI was frozen for 7049ms, details saved to D:\code\intellij\cangjie\intellij-ide\.intellijPlatform\sandbox\intellij-cangjie\IU-2025.3.1\log_runIde\threadDumps-freeze-20261021-190607-IU-253.29346.50-7sec
+   first@2026-10-21 19:06:52,349 #c.i.d.PerformanceWatcherImpl - High memory usage (free 454 of 6144 MB) while dumping threads to D:\code\intellij\cangjie\intellij-ide\.intellijPlatform\sandbox\intellij-cangjie\IU-2025.3.1\log_runIde\threadDumps-freeze-20261021-190651-IU-2
+   first@2026-10-21 19:06:53,828 #c.i.d.PerformanceWatcherImpl - UI was frozen for 7098ms, details saved to D:\code\intellij\cangjie\intellij-ide\.intellijPlatform\sandbox\intellij-cangjie\IU-2025.3.1\log_runIde\threadDumps-freeze-20261021-190651-IU-253.29346.50-Unsafe.par
+
+--- indexing: 1662 hits
+    420  #c.i.u.i.c.IndexUpdateRunner - Coroutine # finished gracefully
+     74  #c.i.u.i.FileBasedIndexImpl - Indexes are already loaded
+     28  #c.i.u.i.c.IndexUpdateRunner - Using # workers for indexing and # for writing indexes
+     20  #c.i.u.i.ProjectChangedFilesScanner - Retrieving changed during indexing files of cj : # to update, calculated in #ms
+     18  #org.cangnova.cangjie.project.service.impl.CjProjectsServiceImpl - Stub index rebuild requested after workspace initialization
+     18  #c.i.u.i.UnindexedFilesScanner - [#cb#f] scanning stage (scanning id=#): DelayedPushProperties
+     18  #c.i.u.i.UnindexedFilesScanner - [#cb#f] scanning stage (scanning id=#): CreatingIterators
+     18  #c.i.u.i.UnindexedFilesScanner - [#cb#f] scanning stage (scanning id=#): CollectingIndexableFiles
+   first@2026-10-21 19:04:52,579 #c.i.u.i.IndexDataInitializer - Index data initialization done: 387 ms. Initialized stub indexes: {KotlinTypeAliasByExpansionShortNameIndex, KotlinFileFacadeClassByPackageIndex, KotlinExtensionsInObjectsByReceiverTypeIndex, java.field.name,
+   first@2026-10-21 19:04:53,196 #c.i.o.p.DumbServiceMergingTaskQueue - Running initialization condition: com.intellij.indexing.shared.download.SharedIndexDownloadedCondition@3150506
+   first@2026-10-21 19:04:53,199 #c.i.o.p.DumbServiceMergingTaskQueue - Finished: com.intellij.indexing.shared.download.SharedIndexDownloadedCondition@3150506
+
+--- outofmemory: 6 hits
+      6  #c.i.p.i.b.AppStarter - JVM options: [-Daether.connector.resumeDownloads=false, -Dcompose.swing.render.on.graphics=true, -Dide.native.launcher=false, -Dide.no.platform.update=false
+   first@2026-10-21 19:20:52,656 #c.i.p.i.b.AppStarter - JVM options: [-Daether.connector.resumeDownloads=false, -Dcompose.swing.render.on.graphics=true, -Dide.native.launcher=false, -Dide.no.platform.update=false, -Didea.auto.reload.plugins=false, -Didea.classpath.index.e
+   first@2026-10-21 19:35:41,171 #c.i.p.i.b.AppStarter - JVM options: [-Daether.connector.resumeDownloads=false, -Dcompose.swing.render.on.graphics=true, -Dide.native.launcher=false, -Dide.no.platform.update=false, -Didea.auto.reload.plugins=false, -Didea.classpath.index.e
+   first@2026-10-21 20:02:21,923 #c.i.p.i.b.AppStarter - JVM options: [-Daether.connector.resumeDownloads=false, -Dcompose.swing.render.on.graphics=true, -Dide.native.launcher=false, -Dide.no.platform.update=false, -Didea.auto.reload.plugins=false, -Didea.classpath.index.e
+
+--- slow-op: 60 hits
+     18  #org.cangnova.cangjie.project.task.CangJieProjectSyncTask - Finished CangJie sync task in # ms
+      6  #c.i.l.u.p.AIPromoWindowAdvisor - Calculated verdict in # ms: false, isCalculatedInAcceptableTime: true
+      5  #c.i.o.c.i.s.StoreUtil - saveProjectsAndApp took # ms
+      4  #c.i.o.f.i.FileTypeDetectionService - # auto-detected files. Detection took # ms
+      3  #c.i.c.ComponentStoreImpl - Saving default projectServiceViewManager took # ms
+      2  #c.i.c.ComponentStoreImpl - Saving Project(name=icu#cj, containerState=COMPONENT_CREATED, componentStore=C:\Users\lin#\IdeaProjects\icu#cj)Kotlin#JvmCompilerArguments took # ms, Ru
+      2  #c.i.c.ComponentStoreImpl - Saving appFileEditorProviderManager took # ms
+      2  #c.i.c.ComponentStoreImpl - Saving appFileTypeManager took # ms
+   first@2026-10-21 19:05:00,953 #c.i.l.u.p.AIPromoWindowAdvisor - Calculated verdict in 1277 ms: false, isCalculatedInAcceptableTime: true
+   first@2026-10-21 19:05:01,367 #org.cangnova.cangjie.project.task.CangJieProjectSyncTask - Finished CangJie sync task in 7067 ms
+   first@2026-10-21 19:05:02,509 #org.cangnova.cangjie.project.task.CangJieProjectSyncTask - Finished CangJie sync task in 1127 ms
+
+--- write-action: 2 hits
+      2  #c.i.o.a.ApplicationManager - Cannot execute background write action in # seconds. Thread dump is stored in file:///D:/code/intellij/cangjie/intellij-ide/.intellijPlatform/sandbox/
+   first@2026-10-21 19:09:38,559 #c.i.o.a.ApplicationManager - Cannot execute background write action in 10 seconds. Thread dump is stored in file:///D:/code/intellij/cangjie/intellij-ide/.intellijPlatform/sandbox/intellij-cangjie/IU-2025.3.1/log_runIde/bg-wa/thread-dump-2
+   first@2026-10-22 12:50:13,354 #c.i.o.a.ApplicationManager - Cannot execute background write action in 10 seconds. Thread dump is stored in file:///D:/code/intellij/cangjie/intellij-ide/.intellijPlatform/sandbox/intellij-cangjie/IU-2025.3.1/log_runIde/bg-wa/thread-dump-2
+
+--- plugin: 127 hits
+     10  #c.i.i.p.PluginManager - Using cached broken plugins file
+      9  #o.j.k.i.PluginStartupActivity - Kotlin plugin mode: K#
+      9  #org.cangnova.cangjie.CangJieStartupActivity - Cangjie plugin has been launched
+      8  #c.i.s.ComponentManagerImpl - `preload=NOT_HEADLESS` must be used only for core services (service=org.jetbrains.kotlin.idea.search.refIndex.KotlinCompilerReferenceIndexService, plu
+      8  #c.i.s.ComponentManagerImpl - `preload=NOT_HEADLESS` must be used only for core services (service=com.jetbrains.rdserver.toolWindow.BackendServerToolWindowManager, plugin=com.jetbr
+      7  #c.i.c.p.p.ProvisionedCodeWithMeEnterpriseConfiguration - No JBIDES plugin found. Using public/self-configured CWM.
+      6  #c.i.p.i.b.AppStarter - Will skip the config import to directory "D:\code\intellij\cangjie\intellij-ide\.intellijPlatform\sandbox\intellij-cangjie\IU-#.#.#\config_runIde" (exists =
+      6  #c.i.p.i.b.AppStarter - JVM options: [-Daether.connector.resumeDownloads=false, -Dcompose.swing.render.on.graphics=true, -Dide.native.launcher=false, -Dide.no.platform.update=false
+   first@2026-10-21 19:04:52,254 #c.i.c.p.p.ProvisionedCodeWithMeEnterpriseConfiguration - No JBIDES plugin found. Using public/self-configured CWM.
+   first@2026-10-21 19:04:56,668 #org.intellij.plugins.markdown.ui.preview.MarkdownPreviewFileEditor$Companion - MarkdownPreviewFileEditor: attachHtmlPanel
+   first@2026-10-21 19:04:57,380 #org.intellij.plugins.markdown.ui.preview.MarkdownPreviewFileEditor$Companion - MarkdownPreviewFileEditor: updateHtml
+
+--- cancel: 6 hits
+      2  #c.i.u.i.UnindexedFilesScanner - [#cb#f] Scanning is interrupted (scanning id=#). java.util.concurrent.CancellationException: Full scanning is queued
+      1  #c.i.u.i.UnindexedFilesScanner - [dbc#e#] Scanning is interrupted (scanning id=#). java.util.concurrent.CancellationException: Full scanning is queued
+      1  #c.i.o.p.UnindexedFilesScannerExecutor - [dbc#e#] Task was cancelled: com.intellij.util.indexing.UnindexedFilesScannerExecutorImpl$ScheduledScanningTask@#bf#ed#e. (enable debug log
+      1  #c.i.o.p.UnindexedFilesScannerExecutor - [#cb#f] Task was cancelled: com.intellij.util.indexing.UnindexedFilesScannerExecutorImpl$ScheduledScanningTask@#b#f. (enable debug log to s
+      1  #c.i.o.p.UnindexedFilesScannerExecutor - [#cb#f] Task was cancelled: com.intellij.util.indexing.UnindexedFilesScannerExecutorImpl$ScheduledScanningTask@#a#ec#. (enable debug log to
+   first@2026-10-21 19:05:02,496 #c.i.u.i.UnindexedFilesScanner - [dbc7e587] Scanning is interrupted (scanning id=1). java.util.concurrent.CancellationException: Full scanning is queued
+   first@2026-10-21 19:05:02,512 #c.i.o.p.UnindexedFilesScannerExecutor - [dbc7e587] Task was cancelled: com.intellij.util.indexing.UnindexedFilesScannerExecutorImpl$ScheduledScanningTask@7bf1ed4e. (enable debug log to see cancellation trace)
+   first@2026-10-21 20:02:33,779 #c.i.u.i.UnindexedFilesScanner - [3cb411f] Scanning is interrupted (scanning id=1). java.util.concurrent.CancellationException: Full scanning is queued
+
+########## metrics ##########
+D:\code\intellij\cangjie\intellij-ide\.intellijPlatform\sandbox\intellij-cangjie\IU-2025.3.1\log_runIde\open-telemetry-metrics.2026-10-22-12-43-03.csv
+JVM.GC.collectionTimesMs                                     latest=           33960 min=             675 max=           87278 n=7
+JVM.GC.collections                                           latest=              35 min=              35 max=             104 n=7
+JVM.maxThreadCount                                           latest=             234 min=             234 max=             234 n=7
+JVM.threadCount                                              latest=             143 min=             143 max=             232 n=7
+LowMemory.gcLoad                                             latest=               1 min=               0 max=               1 n=7
+LowMemory.gcOverloaded                                       latest=               1 min=               0 max=               1 n=7
+LowMemory.memoryDeficitScore                                 latest=               2 min=               1 max=               5 n=5

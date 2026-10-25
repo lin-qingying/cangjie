@@ -1,0 +1,144 @@
+diff --git a/modules/ide/macro/src/main/resources/META-INF/cangjie-macro.xml b/modules/ide/macro/src/main/resources/META-INF/cangjie-macro.xml
+index 22c1739f..311ec0b8 100644
+--- a/modules/ide/macro/src/main/resources/META-INF/cangjie-macro.xml
++++ b/modules/ide/macro/src/main/resources/META-INF/cangjie-macro.xml
+@@ -79,6 +79,10 @@
+         <projectService
+                 serviceImplementation="org.cangnova.cangjie.macro.service.MacroExpansionSettings"/>
+ 
++        <!-- 宏语义快照发布后的 daemon 刷新协调器 -->
++        <projectService
++                serviceImplementation="org.cangnova.cangjie.macro.analysis.MacroSemanticHighlightingRefreshService"/>
++
+         <!-- 宏展开选项 Registry Keys -->
+         <registryKey key="cangjie.macro.expansion.recursive"
+                      description="Enable recursive expansion of nested macros"
+diff --git a/modules/ide/macro/src/main/resources/messages/CangJieMacroBundle.properties b/modules/ide/macro/src/main/resources/messages/CangJieMacroBundle.properties
+index a80b3b46..30a75ac8 100644
+--- a/modules/ide/macro/src/main/resources/messages/CangJieMacroBundle.properties
++++ b/modules/ide/macro/src/main/resources/messages/CangJieMacroBundle.properties
+@@ -200,7 +200,8 @@ macro.diagnostic.aggregate.message={0} (reported at {1} macro calls)
+ macro.diagnostic.aggregate.locations=Same diagnostic occurs at: {0}
+ macro.declaration.package.required=Macro {0} must be declared in a macro package.
+ macro.declaration.public.required=Macro {0} must be public.
+-macro.declaration.parameter.count=Macro {0} must declare one or two parameters.
++macro.declaration.parameter.empty=Macro {0} must declare at least one parameter.
++macro.declaration.parameter.too.many=Macro {0} supports at most two parameters.
+ macro.declaration.parameter.type=Parameter {0} of macro {1} must have type Tokens.
+ macro.declaration.parameter.named=Macro {0} cannot use named parameters.
+ macro.declaration.return.type=Return type of macro {0} must be Tokens.
+diff --git a/modules/ide/macro/src/main/resources/messages/CangJieMacroBundle_zh_CN.properties b/modules/ide/macro/src/main/resources/messages/CangJieMacroBundle_zh_CN.properties
+index 7691a50d..0c6e1b21 100644
+--- a/modules/ide/macro/src/main/resources/messages/CangJieMacroBundle_zh_CN.properties
++++ b/modules/ide/macro/src/main/resources/messages/CangJieMacroBundle_zh_CN.properties
+@@ -190,7 +190,8 @@ macro.diagnostic.aggregate.message={0}（共出现在 {1} 处宏调用）
+ macro.diagnostic.aggregate.locations=相同诊断还出现在：{0}
+ macro.declaration.package.required=宏 {0} 必须声明在宏包中。
+ macro.declaration.public.required=宏 {0} 必须声明为 public。
+-macro.declaration.parameter.count=宏 {0} 必须声明一个或两个参数。
++macro.declaration.parameter.empty=宏 {0} 至少需要声明一个参数。
++macro.declaration.parameter.too.many=宏 {0} 最多只能声明两个参数。
+ macro.declaration.parameter.type=宏 {1} 的参数 {0} 类型必须为 Tokens。
+ macro.declaration.parameter.named=宏 {0} 不允许使用命名参数。
+ macro.declaration.return.type=宏 {0} 的返回类型必须为 Tokens。
+diff --git a/product/idea-plugin/description.html b/product/idea-plugin/description.html
+index 84fdd163..7af9153a 100644
+--- a/product/idea-plugin/description.html
++++ b/product/idea-plugin/description.html
+@@ -1,54 +1,17 @@
+-<!--
+-  ~ Copyright 2025 LinQingYing. and contributors.
+-  ~
+-  ~ Licensed under the Apache License, Version 2.0 (the "License");
+-  ~ you may not use this file except in compliance with the License.
+-  ~ You may obtain a copy of the License at
+-  ~
+-  ~     http://www.apache.org/licenses/LICENSE-2.0
+-  ~
+-  ~ Unless required by applicable law or agreed to in writing, software
+-  ~ distributed under the License is distributed on an "AS IS" BASIS,
+-  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-  ~ See the License for the specific language governing permissions and
+-  ~ limitations under the License.
+-  ~
+-  ~ The use of this source code is governed by the Apache License 2.0,
+-  ~ which allows users to freely use, modify, and distribute the code,
+-  ~ provided they adhere to the terms of the license.
+-  ~
+-  ~ The software is provided "as-is", and the authors are not responsible for
+-  ~ any damages or issues arising from its use.
+-  ~
+-  -->
++<p>CangJie language support for IntelliJ IDEA and other compatible IntelliJ-based IDEs.</p>
++<p>为 IntelliJ IDEA 及其他兼容的 IntelliJ 平台 IDE 提供仓颉语言支持。</p>
+ 
+-<!DOCTYPE html>
+-<html lang="en">
+-<head>
+-    <meta charset="UTF-8">
+-    <title>Intellij-cangjie</title>
+-</head>
+-<body>
+-
+-<h3>About Intellij-cangjie</h3>
+-<p>A plugin that provides comprehensive support for the CangJie language in IntelliJ IDEA.</p>
+-
+-<h4>Main Features</h4>
++<h4>Features</h4>
+ <ul>
+-    <li>CangJie language keyword highlighting</li>
+-    <li>Automatic identification of project entrances</li>
+-    <li>Quick project startup and configuration</li>
+-    <li>Code completion and syntax validation</li>
+-    <li>Project templates and scaffolding</li>
+-    <li>Integrated debugging tools</li>
+-    <li>Custom run configurations</li>
++    <li>Syntax highlighting, code completion, and diagnostics</li>
++    <li>CangJie project and CJPM integration</li>
++    <li>Run configurations, debugging, and language-server integration</li>
+ </ul>
+-
+-<div>
+-    <span><b>Disclaimer:</b> This plugin is not an official plugin!</span>
+-    <br/>
+-    <span><b>声明:</b> 该插件并非官方插件!</span>
+-</div>
+-
+-</body>
+-</html>
+\ No newline at end of file
++<h4>功能</h4>
++<ul>
++    <li>语法高亮、代码补全和诊断</li>
++    <li>仓颉项目与 CJPM 集成</li>
++    <li>运行配置、调试和语言服务器集成</li>
++</ul>
++<p>This is a community-maintained plugin and is not an official JetBrains or CangJie plugin.</p>
++<p>本插件由社区维护，并非 JetBrains 或仓颉官方插件。</p>
+diff --git a/product/idea-plugin/src/main/resources/META-INF/plugin.xml b/product/idea-plugin/src/main/resources/META-INF/plugin.xml
+index c93d45b7..0f3ea018 100644
+--- a/product/idea-plugin/src/main/resources/META-INF/plugin.xml
++++ b/product/idea-plugin/src/main/resources/META-INF/plugin.xml
+@@ -1,15 +1,11 @@
+ <idea-plugin xmlns:xi="http://www.w3.org/2001/XInclude">
+-    <id>cn.cangnova.cangjie</id>
+-    <name>CangJie</name>
+-    <vendor email="lin17624294976@outlook.com" url="https://github.com/lin-qingying">Lin_Qing_Ying</vendor>
+-
+-    <dependencies>
+-        <plugin id="com.intellij.modules.platform"/>
+-        <plugin id="com.intellij.modules.json"/>
+-        <plugin id="org.toml.lang"/>
+-        <plugin id="com.intellij.copyright"/>
+-        <plugin id="com.redhat.devtools.lsp4ij"/>
+-    </dependencies>
++    <!-- 身份、版本、描述和兼容范围由 IntelliJ Platform Gradle Plugin 写入最终描述符。 -->
++    <depends>com.intellij.modules.platform</depends>
++    <depends>com.intellij.modules.json</depends>
++    <depends>com.intellij.modules.jcef</depends>
++    <depends>org.toml.lang</depends>
++    <depends>com.intellij.copyright</depends>
++    <depends>com.redhat.devtools.lsp4ij</depends>
+ 
+     <xi:include href="/org.cangnova.cangjie.domain.toolchain.xml"/>
+     <xi:include href="/org.cangnova.cangjie.domain.projectModel.xml"/>

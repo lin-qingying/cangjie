@@ -1,0 +1,2203 @@
+diff --git a/analysis/analysis-api-platform-interface/src/org/cangnova/cangjie/analysis/api/platform/declarations/CangJieFileBasedDeclarationProvider.kt b/analysis/analysis-api-platform-interface/src/org/cangnova/cangjie/analysis/api/platform/declarations/CangJieFileBasedDeclarationProvider.kt
+index 9c89527cf..cd535a3de 100644
+--- a/analysis/analysis-api-platform-interface/src/org/cangnova/cangjie/analysis/api/platform/declarations/CangJieFileBasedDeclarationProvider.kt
++++ b/analysis/analysis-api-platform-interface/src/org/cangnova/cangjie/analysis/api/platform/declarations/CangJieFileBasedDeclarationProvider.kt
+@@ -17,9 +17,11 @@ import org.cangnova.cangjie.psi.CjFile
+ import org.cangnova.cangjie.psi.CjMacroDeclaration
+ import org.cangnova.cangjie.psi.CjNamedDeclaration
+ import org.cangnova.cangjie.psi.CjNamedFunction
++import org.cangnova.cangjie.psi.CjPatternVariable
+ import org.cangnova.cangjie.psi.CjProperty
+ import org.cangnova.cangjie.psi.CjTypeAlias
+ import org.cangnova.cangjie.psi.CjTypeStatement
++import org.cangnova.cangjie.psi.stubs.elements.getAllPatternDeclarations
+ import org.cangnova.cangjie.utils.addIfNotNull
+ import org.cangnova.cangjie.utils.yieldIfNotNull
+ 
+@@ -203,9 +205,33 @@ class CangJieFileBasedDeclarationProvider private constructor(
+             getTopLevelProperties(callableId).mapTo(this) { it.containingCjFile }
+             getTopLevelFunctions(callableId).mapTo(this) { it.containingCjFile }
+             getTopLevelMacros(callableId).mapTo(this) { it.containingCjFile }
++            /*
++             * 仓颉顶层 `const` / `let` 在 PSI 中是 CjPatternVariable，不是 property/function。
++             * 它们同样进入包级 callable 索引，因此文件级查找也必须返回其 carrier 文件，
++             * 否则跨文件引用包级常量/变量时会在文件索引阶段就被误判为不存在。
++             */
++            addAll(getTopLevelPatternVariableFiles(callableId))
+         }
+     }
+ 
++    /**
++     * 获取指定 callable id 对应的顶层模式变量声明所在的文件。
++     *
++     * [CjPatternVariable] 自身没有单一名称，名称位于 pattern 的绑定声明中；因此不能复用
++     * 按 `nameAsName` 过滤的通用 callable 查找。
++     */
++    private fun getTopLevelPatternVariableFiles(callableId: CallableId): Collection<CjFile> {
++        if (filePackageFqName != callableId.packageName) return emptyList()
++        return topLevelDeclarations
++            .filterIsInstance<CjPatternVariable>()
++            .filter { variable ->
++                variable.pattern.getAllPatternDeclarations().any { pattern -> pattern.nameAsName == callableId.callableName }
++            }
++            .map { it.containingCjFile }
++            .distinct()
++            .toList()
++    }
++
+     /**
+      * 获取当前文件中的顶层 extend 声明。
+      */
+@@ -222,9 +248,26 @@ class CangJieFileBasedDeclarationProvider private constructor(
+ 
+     /**
+      * 获取指定包中的顶层 callable 名称。
++     *
++     * 顶层 `const` / `let` 的 `CjPatternVariable` 没有单一 `nameAsName`；名称来自 pattern
++     * 内的绑定声明。名称索引必须暴露这些绑定名，否则 `mayHaveTopLevelCallable` 会在
++     * 符号查找前把包级常量/变量过滤掉。
+      */
+     override fun getTopLevelCallableNamesInPackage(packageFqName: FqName): Set<Name> {
+-        return getTopLevelDeclarationNames<CjCallableDeclaration>(packageFqName)
++        if (filePackageFqName != packageFqName) {
++            return emptySet()
++        }
++
++        return buildSet {
++            for (declaration in topLevelDeclarations) {
++                when (declaration) {
++                    is CjPatternVariable ->
++                        declaration.pattern.getAllPatternDeclarations().mapNotNullTo(this) { it.nameAsName }
++
++                    is CjCallableDeclaration -> addIfNotNull(declaration.nameAsName)
++                }
++            }
++        }
+     }
+ 
+     /**
+diff --git a/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/diagnostics/LLCfirDiagnosticVisitor.kt b/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/diagnostics/LLCfirDiagnosticVisitor.kt
+index 3a752f9a8..bb0f83834 100644
+--- a/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/diagnostics/LLCfirDiagnosticVisitor.kt
++++ b/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/diagnostics/LLCfirDiagnosticVisitor.kt
+@@ -144,6 +144,12 @@ internal open class LLCfirDiagnosticVisitor(
+          * an alternative handler.
+          *
+          * For instance, the IntelliJ plugin reports such exceptions and doesn't interrupt the execution flow.
++         *
++         * 偏差说明：默认测试 logger 的 `error` 会抛出 AssertionError，从而让一个元素的失败
++         * 终止整份文件的诊断收集。这里以 warn 记录完整异常并继续，保证诊断隔离粒度是
++         * “单个 checker / structure element”，而不是整个文件。被隔离的异常同时写入
++         * [DiagnosticCollectionFailures]，测试与真实项目报告必须显式断言其数量为 0，
++         * 因此异常不会被静默忽略。
+          */
+         inline fun <T> suppressAndLogExceptions(block: () -> T): T? = try {
+             block()
+@@ -152,7 +158,8 @@ internal open class LLCfirDiagnosticVisitor(
+                 throw e
+             }
+ 
+-            thisLogger().error("The diagnostic collector has been interrupted by an exception. The result may be incomplete", e)
++            DiagnosticCollectionFailures.record(e)
++            thisLogger().warn("The diagnostic collector has been interrupted by an exception. The result may be incomplete", e)
+             null
+         }
+     }
+diff --git a/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/file/structure/FileStructure.kt b/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/file/structure/FileStructure.kt
+index a4aa22f14..163900ffd 100644
+--- a/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/file/structure/FileStructure.kt
++++ b/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/file/structure/FileStructure.kt
+@@ -9,7 +9,9 @@ import com.intellij.openapi.progress.ProgressManager
+ import com.intellij.psi.PsiElement
+ import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirModuleResolveComponents
+ import org.cangnova.cangjie.analysis.low.level.api.cfir.api.DiagnosticCheckerFilter
++import org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics.DiagnosticCollectionFailures
+ import org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics.LLCfirDiagnosticVisitor
++import org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics.forEachWithDiagnosticIsolation
+ import org.cangnova.cangjie.analysis.low.level.api.cfir.element.builder.getNonLocalContainingOrThisElement
+ import org.cangnova.cangjie.analysis.low.level.api.cfir.element.builder.isAutonomousElement
+ import org.cangnova.cangjie.analysis.low.level.api.cfir.lazy.resolve.elementCanBeLazilyResolved
+@@ -202,6 +204,8 @@ internal class FileStructure private constructor(
+      * 收集整个文件所有 structure element 的 diagnostics。
+      */
+     fun getAllDiagnosticsForFile(diagnosticCheckerFilter: DiagnosticCheckerFilter): List<CjPsiDiagnostic> {
++        // 每次顶层收集前重置隔离异常记录，避免 IDE 长生命周期线程累积上一次收集的 Throwable。
++        DiagnosticCollectionFailures.clear()
+         val structureElements = getAllStructureElements()
+         return buildList {
+             collectDiagnosticsFromStructureElements(structureElements, diagnosticCheckerFilter)
+@@ -215,9 +219,12 @@ internal class FileStructure private constructor(
+         structureElements: Collection<FileStructureElement>,
+         diagnosticCheckerFilter: DiagnosticCheckerFilter,
+     ) {
+-        structureElements.forEach { structureElement ->
+-            ProgressManager.checkCanceled()
+-
++        /*
++         * 单个 structure element 的解析/收集失败不能丢弃整份文件其余元素的诊断。
++         * 隔离边界放在 element 级；[forEachWithDiagnosticIsolation] 同时把失败写入
++         * DiagnosticCollectionFailures，测试/报告必须断言该计数为 0。
++         */
++        forEachWithDiagnosticIsolation(structureElements) { structureElement ->
+             structureElement.diagnostics.forEach(diagnosticCheckerFilter) { diagnostics ->
+                 addAll(diagnostics)
+             }
+diff --git a/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/lazy/resolve/RawCfirNonLocalDeclarationBuilder.kt b/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/lazy/resolve/RawCfirNonLocalDeclarationBuilder.kt
+index b3aa3aceb..ebaba85a8 100644
+--- a/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/lazy/resolve/RawCfirNonLocalDeclarationBuilder.kt
++++ b/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/lazy/resolve/RawCfirNonLocalDeclarationBuilder.kt
+@@ -12,6 +12,7 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.util.errorWithCfirSpecif
+ import org.cangnova.cangjie.cfir.builder.BodyBuildingMode
+ import org.cangnova.cangjie.cfir.builder.MacroSurfaceCollectionMode
+ import org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder
++import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
+ import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+ import org.cangnova.cangjie.cfir.declarations.CfirFile
+ import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
+@@ -91,12 +92,21 @@ internal object RawCfirNonLocalDeclarationBuilder {
+                 CfirElementFinder.findPatternVariable(rebuiltFile, patternVariablePsi)
+             }
+ 
+-            else -> CfirElementFinder.findDeclaration(rebuiltFile, declaration)
++            else -> CfirElementFinder.findDeclaration(
++                cfirFile = rebuiltFile,
++                nonLocalDeclaration = declaration,
++                containerClassIds = designation.path
++                    .filterIsInstance<CfirClassLikeDeclaration>()
++                    .map { classLike -> classLike.symbol.classId },
++            )
+         }
+ 
+         return rebuiltDeclaration
+             ?: errorWithCfirSpecificEntries(
+-                "No rebuilt CFIR declaration was found for PSI",
++                "No rebuilt CFIR declaration was found for PSI " +
++                    "${declaration::class.simpleName} " +
++                    "`${declaration.text.take(80).replace('\n', ' ')}` " +
++                    "in ${declaration.containingCjFile?.name}",
+                 psi = declaration,
+                 cfir = designation.target,
+             )
+diff --git a/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/macro/LLCfirMacroSemanticSnapshot.kt b/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/macro/LLCfirMacroSemanticSnapshot.kt
+index a9d3c0c93..0456a82d6 100644
+--- a/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/macro/LLCfirMacroSemanticSnapshot.kt
++++ b/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/macro/LLCfirMacroSemanticSnapshot.kt
+@@ -9,6 +9,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
+ import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+ import org.cangnova.cangjie.cfir.declarations.CfirFile
+ import org.cangnova.cangjie.cfir.expressions.CfirExpression
++import org.cangnova.cangjie.cfir.patterns.bindingVariables
+ import org.cangnova.cangjie.cfir.psi
+ import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroAppliedDeclarationReplacement
+ import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroAppliedExpressionReplacement
+@@ -295,6 +296,21 @@ class LLCfirMacroSemanticSnapshot internal constructor(
+                     if (macroGenerated) {
+                         macroGeneratedCallableNames.getOrPut(packageFqName, ::linkedSetOf).add(callableName)
+                     }
++
++                    /*
++                     * 顶层 `const` / `let` 是 CfirPatternVariable，其自身 symbol 名是内部占位名；
++                     * 包级可见的是 pattern 内的 binding 名。快照名称索引必须与
++                     * CfirSourceSymbolProvider 一样按 binding 名登记，否则跨文件引用会 unresolved。
++                     */
++                    if (declaration is org.cangnova.cangjie.cfir.declarations.CfirPatternVariable) {
++                        for (binding in declaration.pattern.bindingVariables()) {
++                            callables.getOrPut(CallableId(packageFqName, binding.name), ::mutableListOf).add(binding)
++                            callableNames.getOrPut(packageFqName, ::linkedSetOf).add(binding.name)
++                            if (macroGenerated) {
++                                macroGeneratedCallableNames.getOrPut(packageFqName, ::linkedSetOf).add(binding.name)
++                            }
++                        }
++                    }
+                 }
+             }
+ 
+diff --git a/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/symbolProviders/LLCangJieSourceSymbolProvider.kt b/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/symbolProviders/LLCangJieSourceSymbolProvider.kt
+index d9222b6c5..7d671a316 100644
+--- a/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/symbolProviders/LLCangJieSourceSymbolProvider.kt
++++ b/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/symbolProviders/LLCangJieSourceSymbolProvider.kt
+@@ -24,6 +24,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirFile
+ import org.cangnova.cangjie.cfir.resolve.providers.CfirCompositeCachedSymbolNamesProvider
+ import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolNamesProvider
+ import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProviderInternals
++import org.cangnova.cangjie.cfir.patterns.bindingVariables
+ import org.cangnova.cangjie.cfir.psi
+ import org.cangnova.cangjie.cfir.symbols.*
+ import org.cangnova.cangjie.name.CallableId
+@@ -418,10 +419,19 @@ internal class LLCangJieSourceSymbolProvider(
+ 
+     /**
+      * 从当前 [CfirFile] 的顶层声明中收集指定 [name] 与 [TYPE] 类型匹配的 callable 符号。
++     *
++     * 顶层 `const` / `let` 是 [CfirPatternVariable]，其自身 symbol 名固定为内部占位名；
++     * 真正进入包级作用域的是 pattern 内的 binding 名。这里必须把 binding symbol 与普通
++     * 顶层 callable 一视同仁，否则跨文件引用包级常量/变量会全部退化为 unresolved。
+      */
+     private inline fun <reified TYPE : CfirCallableSymbol<*>> CfirFile.collectCallableSymbolsOfTypeTo(result: MutableList<TYPE>, name: Name) {
+         declarations.mapNotNullTo(result) { declaration ->
+-            if (declaration is CfirCallableDeclaration && declaration.symbol.name == name) {
++            if (declaration is CfirPatternVariable) {
++                declaration.pattern.bindingVariables()
++                    .firstOrNull { binding -> binding.name == name }
++                    ?.symbol
++                    ?.let { symbol -> symbol as? TYPE }
++            } else if (declaration is CfirCallableDeclaration && declaration.symbol.name == name) {
+                 declaration.symbol as? TYPE
+             } else null
+         }
+diff --git a/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/transformers/LLCfirAbstractBodyTargetResolver.kt b/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/transformers/LLCfirAbstractBodyTargetResolver.kt
+index 9c2ac6e45..dec36bab1 100644
+--- a/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/transformers/LLCfirAbstractBodyTargetResolver.kt
++++ b/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/transformers/LLCfirAbstractBodyTargetResolver.kt
+@@ -70,7 +70,15 @@ internal sealed class LLCfirAbstractBodyTargetResolver(
+         val context = declarationsTransformer.context
+         val actionWithScopes = {
+             context.withScopesForClass(cfirClassLike, declarationsTransformer.components) {
+-                action()
++                /*
++                 * 类体解析的容器栈必须包含当前 class-like，与 eager 路径
++                 * `forRegularClassBody` 以及 ContextCollector 的 class-like body 入口保持一致。
++                 * 否则 components.containingDeclarations 只剩文件和函数，private/protected
++                 * 成员会被误判为跨类访问，private 成员也不再参与成员候选解析。
++                 */
++                context.withContainer(cfirClassLike) {
++                    action()
++                }
+             }
+         }
+ 
+diff --git a/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/transformers/LLCfirBodyLazyResolver.kt b/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/transformers/LLCfirBodyLazyResolver.kt
+index 937e3d282..f454492c3 100644
+--- a/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/transformers/LLCfirBodyLazyResolver.kt
++++ b/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/transformers/LLCfirBodyLazyResolver.kt
+@@ -883,6 +883,9 @@ private class LLCfirBodyTargetResolver(target: LLCfirResolveTarget) : LLCfirAbst
+                 -> {
+                 // No bodies here
+             }
++            is CfirEnumConstructor -> {
++                // 枚举构造器没有函数体；返回类型由所属 enum 在 TYPES 阶段写入。
++            }
+             else -> throwUnexpectedCfirElementError(target)
+         }
+     }
+@@ -959,7 +962,12 @@ internal object BodyStateKeepers {
+     val VARIABLE: StateKeeper<CfirVariable, CfirDesignation> = stateKeeper { builder, variable, _ ->
+         builder.add(CfirVariable::returnTypeRef, CfirVariable::replaceReturnTypeRef)
+ 
+-        if (!isCallableWithSpecialBody(variable)) {
++        /*
++         * pattern binding 的 initializer 由其唯一模式树 owner 派生，不是 binding 自己拥有的
++         * 可变状态。状态保持器只能保存真正由该声明拥有的槽位；对派生槽位调用 replaceInitializer
++         * 会违反模式树所有权不变量。
++         */
++        if (variable !is CfirPatternBindingVariable && !isCallableWithSpecialBody(variable)) {
+             variable.initializerGetterIfUnresolved?.let {
+                 builder.add(it, CfirVariable::replaceInitializer, ::expressionGuard)
+             }
+diff --git a/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/transformers/LLCfirImplicitTypesLazyResolver.kt b/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/transformers/LLCfirImplicitTypesLazyResolver.kt
+index 3ec0adef6..fdbb86285 100644
+--- a/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/transformers/LLCfirImplicitTypesLazyResolver.kt
++++ b/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/transformers/LLCfirImplicitTypesLazyResolver.kt
+@@ -19,16 +19,22 @@ import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
+ import org.cangnova.cangjie.cfir.declarations.CfirFile
+ import org.cangnova.cangjie.cfir.declarations.CfirFunction
+ import org.cangnova.cangjie.cfir.declarations.CfirProperty
++import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
++import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
+ import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+ import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
+ import org.cangnova.cangjie.cfir.declarations.CfirVariable
+ import org.cangnova.cangjie.cfir.expressions.withCfirSymbolEntry
++import org.cangnova.cangjie.cfir.patterns.wholeValueBindingOrNull
+ 
+ import org.cangnova.cangjie.cfir.resolve.body.CfirImplicitAwareBodyResolveTransformer
+ import org.cangnova.cangjie.cfir.resolve.body.ImplicitBodyResolveComputationSession
++import org.cangnova.cangjie.cfir.session.cfirProvider
+ import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
+ import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
++import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
+ import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
++import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
+ import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
+ import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
+ import org.cangnova.cangjie.utils.exceptions.withCfirEntry
+@@ -201,6 +207,14 @@ internal class LLCfirImplicitBodyTargetResolver(
+                 // 枚举构造器返回类型由所属 enum 在 TYPES 阶段写入，且没有函数体可供隐式返回类型推断。
+             }
+ 
++            is CfirPatternBindingVariable -> {
++                // 非局部 pattern binding 的隐式类型必须由 owner 的 pattern 投影写入；
++                // 绑定自身没有 independent initializer，不能走普通变量 body resolve。
++                if (target.returnTypeRef is CfirImplicitTypeRef) {
++                    projectPatternBindingTypeFromOwner(target)
++                }
++            }
++
+             is CfirCallableDeclaration if target.canHaveDeferredReturnTypeCalculation -> {
+                 transformer.context.returnTypeCalculator.callableCopyTypeCalculator.computeReturnType(target)
+             }
+@@ -231,6 +245,28 @@ internal class LLCfirImplicitBodyTargetResolver(
+         }
+     }
+ 
++    /**
++     * 把 owner pattern 的已解析类型投影到唯一承载完整值的 binding。
++     *
++     * 顶层 `const` / `let` 的 binding 没有独立 initializer；其类型只存在于 owner
++     * pattern variable 上。IMPLICIT_TYPES 直接以 binding 为目标时必须先推进 owner，
++     * 再把同一 `CfirResolvedTypeRef` 投影到 binding，否则阶段完成性检查会看到
++     * `CfirImplicitTypeRef`。拆分绑定由 pattern 形状在 body resolve 中逐元素投影，
++     * 这里不处理。
++     */
++    private fun projectPatternBindingTypeFromOwner(binding: CfirPatternBindingVariable) {
++        val owner = (binding.patternTreeOwner as? CfirPatternVariable)
++            ?: resolveTargetSession.cfirProvider.getCfirPatternVariableForBinding(binding.symbol)
++            ?: return
++        if (!owner.isLocal) {
++            owner.lazyResolveToPhase(CfirResolvePhase.IMPLICIT_TYPES)
++        }
++        val ownerTypeRef = owner.returnTypeRef as? CfirResolvedTypeRef ?: return
++        if (owner.pattern.wholeValueBindingOrNull() === binding) {
++            binding.replaceReturnTypeRef(ownerTypeRef)
++        }
++    }
++
+     /**
+      * 执行父类 raw body 解析，并记录 body 已推进到当前阶段。
+      */
+diff --git a/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/util/CfirElementFinder.kt b/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/util/CfirElementFinder.kt
+index 08b788711..6e30e7336 100644
+--- a/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/util/CfirElementFinder.kt
++++ b/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/util/CfirElementFinder.kt
+@@ -5,12 +5,14 @@
+ 
+ package org.cangnova.cangjie.analysis.low.level.api.cfir.util
+ 
++import com.intellij.psi.PsiElement
+ import com.intellij.util.containers.ContainerUtil
+ import org.cangnova.cangjie.analysis.low.level.api.cfir.api.CfirDesignation
+ import org.cangnova.cangjie.analysis.low.level.api.cfir.api.findExtendDeclarationIn
+ import org.cangnova.cangjie.analysis.low.level.api.cfir.api.patchDesignationPathIfNeeded
+ import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.llCfirSession
+ import org.cangnova.cangjie.cfir.CfirElement
++import org.cangnova.cangjie.cfir.containingClassLookupTag
+ import org.cangnova.cangjie.cfir.patterns.bindingVariables
+ import org.cangnova.cangjie.cfir.psi
+ import org.cangnova.cangjie.cfir.declarations.*
+@@ -62,11 +64,65 @@ internal class CfirElementFinder : CfirSessionComponent {
+ 
+         /**
+          * 在 [cfirFile] 中查找 [nonLocalDeclaration] 对应的 CFIR 声明。
++         *
++         * 宏展开输出可能复制 PSI，使 PSI 身份与物理 carrier 不再一致。结构路径失败时，
++         * 仅对**非局部命名函数**增加一个受限回退：同名、非 local、且 owner class 必须属于
++         * 目标 designation 的 class 链。回退仍不唯一时返回 `null`，继续由调用方显式失败。
+          */
+-        fun findDeclaration(cfirFile: CfirFile, nonLocalDeclaration: CjDeclaration): CfirDeclaration? = collectDesignationPath(
+-            cfirFile = cfirFile,
+-            nonLocalDeclaration = nonLocalDeclaration,
+-        )?.declarationTarget
++        fun findDeclaration(
++            cfirFile: CfirFile,
++            nonLocalDeclaration: CjDeclaration,
++            containerClassIds: List<ClassId> = emptyList(),
++        ): CfirDeclaration? {
++            collectDesignationPath(
++                cfirFile = cfirFile,
++                nonLocalDeclaration = nonLocalDeclaration,
++            )?.declarationTarget?.let { return it }
++            if (nonLocalDeclaration !is CjNamedFunction) return null
++            // extend 成员没有可比较的 class-like 容器，禁止唯一同名回退，避免跨 extend 错配。
++            if (nonLocalDeclaration.findExtendDeclarationIn(cfirFile) != null) return null
++            val name = CfirFileStructureNode.mappingNameByPsi(nonLocalDeclaration) ?: return null
++            val classIds = containerClassIds.ifEmpty {
++                val targetClassId = nonLocalDeclaration.containingTypeStatement?.let { typeStatement ->
++                    typeStatement.nameAsName?.let { className ->
++                        ClassId(typeStatement.containingCjFile.packageFqName, className)
++                    }
++                }
++                listOfNotNull(targetClassId)
++            }
++            return findUniqueNonLocalFunction(cfirFile, name, classIds)
++        }
++
++        /**
++         * 返回指定 owner class 链下唯一的同名非局部函数；歧义时返回 `null`。
++         */
++        private fun findUniqueNonLocalFunction(
++            cfirFile: CfirFile,
++            name: Name,
++            containerClassIds: List<ClassId>,
++        ): CfirNamedFunction? {
++            val candidates = mutableListOf<CfirNamedFunction>()
++            cfirFile.accept(object : CfirVisitorVoid() {
++                override fun visitElement(element: CfirElement) {
++                    if (element is CfirNamedFunction && element.name == name && !element.isLocal) {
++                        candidates += element
++                    }
++                    element.acceptChildren(this)
++                }
++            })
++            val scoped = candidates.filter { function ->
++                val ownerClassId = function.containingClassLookupTag()?.classId
++                if (containerClassIds.isEmpty()) {
++                    ownerClassId == null
++                } else {
++                    // 只接受直接 owner（designation 链的最后一个 class-like），避免把祖先类
++                    // 的同名方法当成内层类目标。ClassId 目前只表达顶层类，嵌套类由 CFIR
++                    // 结构本身约束；无法表达时宁可显式失败，不做跨类猜测。
++                    ownerClassId == containerClassIds.last()
++                }
++            }
++            return scoped.singleOrNull()
++        }
+ 
+         /**
+          * 遍历完整 CFIR 文件，按源码 PSI 等价关系查找模式变量。
+@@ -465,3 +521,4 @@ private sealed class CfirFileStructureNode(val element: CfirDeclaration) {
+         }
+     }
+ }
++
+diff --git a/analysis/low-level-api-cfir/test/org/cangnova/cangjie/analysis/low/level/api/cfir/diagnostic/SourcePostSemaDiagnosticsTest.kt b/analysis/low-level-api-cfir/test/org/cangnova/cangjie/analysis/low/level/api/cfir/diagnostic/SourcePostSemaDiagnosticsTest.kt
+index 5147ee1d3..4a3f97f85 100644
+--- a/analysis/low-level-api-cfir/test/org/cangnova/cangjie/analysis/low/level/api/cfir/diagnostic/SourcePostSemaDiagnosticsTest.kt
++++ b/analysis/low-level-api-cfir/test/org/cangnova/cangjie/analysis/low/level/api/cfir/diagnostic/SourcePostSemaDiagnosticsTest.kt
+@@ -1,13 +1,29 @@
++@file:OptIn(org.cangnova.cangjie.analysis.api.CaPlatformInterface::class)
++
+ package org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostic
+ 
++import org.cangnova.cangjie.analysis.api.platform.declarations.CangJieFileBasedDeclarationProvider
+ import org.cangnova.cangjie.analysis.low.level.api.cfir.api.DiagnosticCheckerFilter
+ import org.cangnova.cangjie.analysis.low.level.api.cfir.api.collectDiagnosticsForFile
++import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getOrBuildCfirFile
++import org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics.DiagnosticCollectionFailures
+ import org.cangnova.cangjie.analysis.low.level.api.cfir.test.configurators.analysisApiCfirSourceTestConfigurator
+ import org.cangnova.cangjie.analysis.low.level.api.cfir.test.getResolutionFacadeForTest
++import org.cangnova.cangjie.analysis.low.level.api.cfir.test.getResolvableSessionForTest
+ import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
++import org.cangnova.cangjie.analysis.test.framework.projectStructure.cjTestModuleStructure
+ import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
++import org.cangnova.cangjie.cfir.patterns.bindingVariables
++import org.cangnova.cangjie.cfir.psi
++import org.cangnova.cangjie.cfir.session.symbolProvider
++import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
++import org.cangnova.cangjie.name.CallableId
++import org.cangnova.cangjie.name.FqName
++import org.cangnova.cangjie.name.Name
+ import org.cangnova.cangjie.psi.CjFile
++import org.cangnova.cangjie.test.services.TestServices
+ import org.junit.jupiter.api.Assertions.assertEquals
++import org.junit.jupiter.api.Assertions.assertTrue
+ import org.junit.jupiter.api.Test
+ 
+ /** 通过真实 IDE structure-element 收集入口验证 Sema 与后续常量流诊断的阶段边界。 */
+@@ -28,11 +44,192 @@ class SourcePostSemaDiagnosticsTest : AbstractAnalysisApiExecutionTest(
+         assertDiagnosticNames(mainFile, listOf(CfirErrors.UNRESOLVED_REFERENCE.name))
+     }
+ 
+-    private fun assertDiagnosticNames(mainFile: CjFile, expected: List<String>) {
+-        val diagnostics = mainFile.collectDiagnosticsForFile(
+-            mainFile.getResolutionFacadeForTest(),
+-            DiagnosticCheckerFilter.ONLY_DEFAULT_CHECKERS,
++    /** 类内 private 成员访问必须使用真实的 use-site 容器链，不得被当成跨类访问。 */
++    @Test
++    fun privateMemberAccess(mainFile: CjFile) {
++        assertNoDiagnostics(mainFile)
++    }
++
++    /** 局部解构 pattern binding 参与比较时，必须能从 owner 取得已推断的返回类型。 */
++    @Test
++    fun patternBindingComparison(mainFile: CjFile) {
++        assertNoDiagnostics(mainFile)
++    }
++
++    /** 枚举构造器没有函数体，BODY_RESOLVE 不得把它当成可 body 解析的目标。 */
++    @Test
++    fun enumConstructor(mainFile: CjFile) {
++        assertNoDiagnostics(mainFile)
++    }
++
++    /** 顶层 pattern binding 的 initializer 由 owner 派生，LL 状态保持器不得改写它。 */
++    @Test
++    fun topLevelPatternVariable(mainFile: CjFile) {
++        assertNoDiagnostics(mainFile)
++    }
++
++    /** 类成员函数内的解构 binding 与 private 成员访问必须共享正确的外围类容器。 */
++    @Test
++    fun patternBindingInClassMember(mainFile: CjFile) {
++        assertNoDiagnostics(mainFile)
++    }
++
++    /** match 分支 binding 在比较中使用时，类型必须已从分支模式写入。 */
++    @Test
++    fun matchPatternBindingComparison(mainFile: CjFile) {
++        assertNoDiagnostics(mainFile)
++    }
++
++    /** 跨文件包级 constant 必须进入包的顶层 callable 索引并可解析。 */
++    @Test
++    fun useCrossFileConstant(mainFile: CjFile, testServices: TestServices) {
++        val constantsFile = testServices.cjTestModuleStructure.allCjFiles.single { it.name == "constants.cj" }
++        assertCrossFileCallableIsIndexed(constantsFile, "SHARED_CONST")
++        assertNoDiagnostics(mainFile)
++    }
++
++    /** 跨文件包级 let pattern binding 必须进入包的顶层 callable 索引并可解析。 */
++    @Test
++    fun useCrossFileLet(mainFile: CjFile, testServices: TestServices) {
++        val sharedLetFile = testServices.cjTestModuleStructure.allCjFiles.single { it.name == "sharedLet.cj" }
++        assertCrossFileCallableIsIndexed(sharedLetFile, "sharedRoot")
++        assertNoDiagnostics(mainFile)
++    }
++
++    private fun assertCrossFileCallableIsIndexed(declarationFile: CjFile, name: String) {
++        val callableId = CallableId(FqName("test"), Name.identifier(name))
++        val provider = CangJieFileBasedDeclarationProvider(declarationFile)
++        val callableNames = provider.getTopLevelCallableNamesInPackage(FqName("test"))
++        val indexedFiles = provider.getTopLevelCallableFiles(callableId)
++        val cfirFile = declarationFile.getOrBuildCfirFile(declarationFile.getResolutionFacadeForTest())
++        val cfirBindings = cfirFile.declarations
++            .filterIsInstance<org.cangnova.cangjie.cfir.declarations.CfirPatternVariable>()
++            .flatMap { patternVariable -> patternVariable.pattern.bindingVariables() }
++            .map { binding -> binding.name.asString() }
++        val session = declarationFile.getResolvableSessionForTest()
++        val symbols = session.symbolProvider.getTopLevelCallableSymbols(FqName("test"), Name.identifier(name))
++
++        assertTrue(
++            name in callableNames.map { it.asString() },
++            "Cross-file callable `$name` missing from callable-name index; names=$callableNames",
++        )
++        assertTrue(
++            indexedFiles.isNotEmpty(),
++            "Cross-file callable `$name` must be found in the platform declaration index, " +
++                "but getTopLevelCallableFiles returned no files. " +
++                "package=${declarationFile.packageFqName.asString()}, " +
++                "declarations=" + declarationFile.declarations.joinToString { declaration ->
++                    "${declaration::class.simpleName}(${declaration.text.take(60).replace('\n', ' ')})"
++                },
++        )
++        assertTrue(
++            name in cfirBindings,
++            "Cross-file callable `$name` missing from raw CFIR top-level bindings; bindings=$cfirBindings",
++        )
++        assertTrue(
++            symbols.isNotEmpty(),
++            "Cross-file callable `$name` must be present in the CFIR symbol provider of " +
++                "${declarationFile.name}; indexedFiles=${indexedFiles.map { it.name }}, " +
++                "callableNames=$callableNames, cfirBindings=$cfirBindings.",
++        )
++    }
++
++    /** 函数类型 typealias 作为参数类型时必须可直接调用。 */
++    @Test
++    fun functionTypeAliasCall(mainFile: CjFile) {
++        assertNoDiagnostics(mainFile)
++    }
++
++    /** match 分支从 Option<typealias> 投影出的函数值必须保持可调用。 */
++    @Test
++    fun matchedFunctionTypeAliasCall(mainFile: CjFile) {
++        assertNoDiagnostics(mainFile)
++    }
++
++    /** 从 HashMap 查询并 match 出的 typealias 函数值必须保持可调用。 */
++    @Test
++    fun matchedFunctionTypeAliasFromMap(mainFile: CjFile) {
++        assertNoDiagnostics(mainFile)
++    }
++
++    /** 跨文件 typealias 函数值经 HashMap + match 投影后仍必须可调用。 */
++    @Test
++    fun matchedCrossFileFunctionTypeAlias(mainFile: CjFile) {
++        assertNoDiagnostics(mainFile)
++    }
++
++    /** 标准库宏注解（`@Test`）名位于宏命名空间，不能被报成 NOT_A_TYPE。 */
++    @Test
++    fun macroAnnotationType(mainFile: CjFile) {
++        assertNoDiagnostics(mainFile)
++    }
++
++    /** 普通 callable 用作类型位置时必须保留 NOT_A_TYPE，不能退化为 unresolved 或空诊断。 */
++    @Test
++    fun functionNameAsType(mainFile: CjFile) {
++        assertDiagnosticNames(mainFile, listOf(CfirErrors.NOT_A_TYPE.name))
++    }
++
++    /** 直接把顶层 binding 推到 IMPLICIT_TYPES 时，必须从 owner 投影出 resolved 类型。 */
++    @Test
++    fun patternBindingImplicitType(mainFile: CjFile) {
++        val cfirFile = mainFile.getOrBuildCfirFile(mainFile.getResolutionFacadeForTest())
++        val patternVariable = cfirFile.declarations
++            .filterIsInstance<org.cangnova.cangjie.cfir.declarations.CfirPatternVariable>()
++            .single()
++        val binding = (patternVariable.pattern as org.cangnova.cangjie.cfir.patterns.CfirBindingPattern)
++            .bindingVariable
++            ?: error("Test fixture must declare a simple binding pattern.")
++        binding.lazyResolveToPhase(org.cangnova.cangjie.cfir.declarations.CfirResolvePhase.IMPLICIT_TYPES)
++        val returnTypeRef = binding.returnTypeRef
++        assertTrue(
++            returnTypeRef is org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef,
++            "Pattern binding return type must be projected from its owner, but was ${returnTypeRef::class.simpleName}.",
++        )
++        assertEquals(
++            org.cangnova.cangjie.cfir.types.ConePrimitiveType.INT64,
++            (returnTypeRef as org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef).coneType,
+         )
++    }
++
++    private fun assertNoDiagnostics(mainFile: CjFile) {
++        val diagnostics = collectDiagnostics(mainFile)
++        assertTrue(
++            diagnostics.isEmpty(),
++            "Expected no diagnostics but got: " +
++                diagnostics.joinToString { diagnostic ->
++                    "${diagnostic.factoryName}@${diagnostic.textRanges.firstOrNull()}"
++                },
++        )
++    }
++
++    private fun assertDiagnosticNames(mainFile: CjFile, expected: List<String>) {
++        val diagnostics = collectDiagnostics(mainFile)
+         assertEquals(expected.sorted(), diagnostics.map { it.factoryName }.sorted())
+     }
++
++    /**
++     * 收集诊断，并断言没有元素级异常被隔离。
++     *
++     * 仅断言 diagnostics 为空无法区分“根因修复”和“异常被 warn 吞掉”；这里把
++     * DiagnosticCollectionFailures 也纳入断言，使异常类用例可以独立失败。
++     */
++    private fun collectDiagnostics(mainFile: CjFile): List<org.cangnova.cangjie.cfir.diagnostics.CjPsiDiagnostic> {
++        DiagnosticCollectionFailures.clear()
++        var failures: List<Throwable> = emptyList()
++        val diagnostics = try {
++            mainFile.collectDiagnosticsForFile(
++                mainFile.getResolutionFacadeForTest(),
++                DiagnosticCheckerFilter.ONLY_DEFAULT_CHECKERS,
++            ).toList()
++        } finally {
++            failures = DiagnosticCollectionFailures.drain()
++        }
++        assertTrue(
++            failures.isEmpty(),
++            "Diagnostic collection isolated ${failures.size} exception(s):\n" +
++                failures.joinToString("\n") { failure -> failure.stackTraceToString() },
++        )
++        return diagnostics
++    }
+ }
+diff --git a/cfir/cfir-tree/src/org/cangnova/cangjie/cfir/patterns/CfirPatternBindingUtils.kt b/cfir/cfir-tree/src/org/cangnova/cangjie/cfir/patterns/CfirPatternBindingUtils.kt
+index 7aa7a4912..ed76ff941 100644
+--- a/cfir/cfir-tree/src/org/cangnova/cangjie/cfir/patterns/CfirPatternBindingUtils.kt
++++ b/cfir/cfir-tree/src/org/cangnova/cangjie/cfir/patterns/CfirPatternBindingUtils.kt
+@@ -1,8 +1,12 @@
+ package org.cangnova.cangjie.cfir.patterns
+ 
+ import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
++import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
++import org.cangnova.cangjie.cfir.CfirElement
+ import org.cangnova.cangjie.name.Name
+ import org.cangnova.cangjie.source.CjSourceElement
++import java.util.Collections
++import java.util.IdentityHashMap
+ 
+ /**
+  * 模式绑定出现位置。
+@@ -61,6 +65,10 @@ fun CfirPattern.bindingOccurrences(): List<CfirPatternBindingOccurrence> = when
+ fun CfirPattern.bindingVariables(): List<CfirPatternBindingVariable> =
+     bindingOccurrences().mapNotNull(CfirPatternBindingOccurrence::variable)
+ 
++/** 供生成源码调用的模式绑定集合入口。 */
++internal fun patternBindingVariables(pattern: CfirPattern): List<CfirPatternBindingVariable> =
++    pattern.bindingVariables()
++
+ /**
+  * 返回可进入局部作用域/局部重定义检查的模式绑定。
+  *
+@@ -73,6 +81,217 @@ fun CfirPattern.visibleBindingVariables(): List<CfirPatternBindingVariable> = wh
+     else -> bindingVariables()
+ }
+ 
++/**
++ * 返回 binding 唯一 owner 的完整 initializer。拆分、嵌套模式和脱离 owner 的 binding 均无此值。
++ */
++fun wholeValueInitializer(
++    owner: CfirPatternTreeOwner?,
++    binding: CfirPatternBindingVariable,
++) = (owner as? CfirPatternVariable)
++    ?.takeIf { it.pattern.wholeValueBindingOrNull() === binding }
++    ?.initializer
++
++/** 一棵模式子树在 owner 变更前的节点身份快照。 */
++internal data class CfirPatternTreeSnapshot(
++    val nodes: List<CfirPatternTreeNode>,
++)
++
++/** 捕获任何 CFIR 模式宿主的整棵模式树，包括 catch/handle 专用模式节点。 */
++internal fun capturePatternTree(root: CfirElement): CfirPatternTreeSnapshot {
++    val nodes = mutableListOf<CfirPatternTreeNode>()
++    val visited = Collections.newSetFromMap(IdentityHashMap<CfirPatternTreeNode, Boolean>())
++
++    fun visit(element: CfirElement) {
++        val node = element as? CfirPatternTreeNode
++            ?: error("Pattern tree contains a node without CfirPatternTreeNode ownership support: ${element::class.qualifiedName}")
++        require(visited.add(node)) {
++            "A CFIR pattern tree cannot contain a cycle or share the same tree node more than once."
++        }
++        nodes += node
++        for (binding in immediatePatternBindings(element)) {
++            require(visited.add(binding)) {
++                "A CFIR pattern tree cannot contain a cycle or share the same tree node more than once."
++            }
++            nodes += binding
++        }
++        when (element) {
++            is CfirCatchPattern -> Unit
++            is CfirPattern -> element.childPatterns().forEach(::visit)
++            is CfirCommandTypePattern -> Unit
++            else -> error("Unsupported CFIR pattern tree root: ${element::class.qualifiedName}")
++        }
++    }
++
++    visit(root)
++    return CfirPatternTreeSnapshot(nodes)
++}
++
++/** 返回当前模式节点直接声明的 binding；嵌套模式由树遍历分别访问。 */
++private fun immediatePatternBindings(element: CfirElement): List<CfirPatternBindingVariable> = when (element) {
++    is CfirBindingPattern -> listOfNotNull(element.bindingVariable)
++    is CfirVarOrEnumPattern -> listOfNotNull(element.bindingVariable)
++    is CfirTypePattern -> listOfNotNull(element.bindingVariable)
++    is CfirCatchPattern -> listOfNotNull(element.bindingVariable)
++    else -> emptyList()
++}
++
++private fun CfirPattern.childPatterns(): List<CfirPattern> = when (this) {
++    is CfirBindingPattern -> listOfNotNull(nestedPattern)
++    is CfirTuplePattern -> elements
++    is CfirEnumPattern -> arguments
++    is CfirOrPattern -> alternatives
++    is CfirConstPattern,
++    is CfirWildcardPattern,
++    is CfirVarOrEnumPattern,
++    is CfirTypePattern,
++    is CfirExpressionPattern,
++    -> emptyList()
++}
++
++/** 校验任意模式树节点的反向 owner 引用只随真实子树关系建立和解除。 */
++internal fun validatePatternTreeNodeOwnerChange(
++    node: CfirPatternTreeNode,
++    previousOwner: CfirPatternTreeOwner?,
++    newOwner: CfirPatternTreeOwner?,
++) {
++    if (previousOwner === newOwner) return
++
++    require(previousOwner == null || newOwner == null) {
++        "A pattern tree node cannot be transferred directly between owners."
++    }
++    if (previousOwner != null) {
++        require(capturePatternTree(previousOwner.patternTreeRoot()).nodes.none { it === node }) {
++            "A pattern tree node cannot detach while its owner tree still contains it."
++        }
++    }
++    if (newOwner != null) {
++        require(capturePatternTree(newOwner.patternTreeRoot()).nodes.any { it === node }) {
++            "A pattern tree owner can only claim a node contained in its tree."
++        }
++    }
++}
++
++/**
++ * 在 pattern 写入前验证所有 binding 均可由该 owner 持有。
++ *
++ * 使用身份集合拒绝同一 binding 在一棵 CFIR pattern 中重复出现，保证 pattern 是树而非共享子图。
++ */
++private fun validatePatternTreeContents(root: CfirElement, owner: CfirPatternTreeOwner?) {
++    val snapshot = capturePatternTree(root)
++    val seenNodes = Collections.newSetFromMap(IdentityHashMap<CfirPatternTreeNode, Boolean>())
++    for (node in snapshot.nodes) {
++        require(seenNodes.add(node)) {
++            "A CFIR pattern tree cannot contain the same tree node more than once."
++        }
++        require(node.patternTreeOwner == null || node.patternTreeOwner === owner) {
++            "A CFIR pattern tree cannot be shared by different owners."
++        }
++    }
++
++}
++
++/** 在任意模式宿主安装新的根节点前验证整棵新树的节点和 binding 身份。 */
++internal fun validatePatternTreeReplacement(owner: CfirPatternTreeOwner, pattern: CfirElement) =
++    validatePatternTreeContents(pattern, owner)
++
++/** 校验暂时没有模式宿主的独立模式树不引用其他 owner 的节点。 */
++internal fun validateDetachedPatternTree(pattern: CfirElement) =
++    validatePatternTreeContents(pattern, owner = null)
++
++/**
++ * 原子恢复一个解析快照中的全部模式根。
++ *
++ * 候选解析期间允许旧根先从一个 owner 脱离，再由另一个 owner 接管；逐个恢复会受 owner 遍历顺序影响。
++ * 这里先验证整组根和节点，再暂存根字段，最后统一重建每个节点的唯一反向 owner 链接。
++ */
++fun restorePatternTreeRoots(roots: List<Pair<CfirPatternTreeOwner, CfirElement>>) {
++    val rootsSnapshot = roots.toList()
++    if (rootsSnapshot.isEmpty()) return
++
++    val owners = Collections.newSetFromMap(IdentityHashMap<CfirPatternTreeOwner, Boolean>())
++    for ((owner, restoredRoot) in rootsSnapshot) {
++        require(owners.add(owner)) {
++            "A pattern tree snapshot cannot contain the same owner more than once."
++        }
++        owner.validatePatternTreeRoot(restoredRoot)
++    }
++
++    val affectedNodes = Collections.newSetFromMap(IdentityHashMap<CfirPatternTreeNode, Boolean>())
++    val restoredOwnerByNode = IdentityHashMap<CfirPatternTreeNode, CfirPatternTreeOwner>()
++
++    for ((owner, restoredRoot) in rootsSnapshot) {
++        affectedNodes.addAll(capturePatternTree(owner.patternTreeRoot()).nodes)
++        for (node in capturePatternTree(restoredRoot).nodes) {
++            require(restoredOwnerByNode.put(node, owner) == null) {
++                "A restored CFIR pattern node cannot be shared by different owners."
++            }
++            affectedNodes += node
++        }
++    }
++
++    for (node in affectedNodes) {
++        val currentOwner = node.patternTreeOwner
++        require(currentOwner == null || currentOwner in owners) {
++            "A pattern tree snapshot cannot restore a node currently owned outside the captured owner set."
++        }
++    }
++
++    withPatternTreeRootRestore {
++        for ((owner, restoredRoot) in rootsSnapshot) {
++            owner.replacePatternTreeRoot(restoredRoot)
++        }
++        for (node in affectedNodes) {
++            node.replacePatternTreeOwner(restoredOwnerByNode[node])
++        }
++    }
++}
++
++/** 将原树身份快照与 owner 当前的根节点协调，先完整验证，再解除旧链接和建立新链接。 */
++internal fun reconcilePatternTree(
++    owner: CfirPatternTreeOwner,
++    previousTree: CfirPatternTreeSnapshot,
++    newPattern: CfirElement,
++) {
++    require(owner.patternTreeRoot() === newPattern) {
++        "Pattern tree reconciliation requires the owner's current root node."
++    }
++    validatePatternTreeReplacement(owner, newPattern)
++    val newTree = capturePatternTree(newPattern)
++
++    for (node in previousTree.nodes) {
++        require(node.patternTreeOwner == null || node.patternTreeOwner === owner) {
++            "A previous pattern tree node is owned by a different owner."
++        }
++        if (node.patternTreeOwner === owner && newTree.nodes.none { it === node }) {
++            node.replacePatternTreeOwner(null)
++        }
++    }
++    for (node in newTree.nodes) {
++        if (node.patternTreeOwner == null) node.replacePatternTreeOwner(owner)
++    }
++}
++
++/** 为新构造的模式宿主建立根节点和全部子节点的双向 owner 关系。 */
++internal fun bindPatternTree(owner: CfirPatternTreeOwner, pattern: CfirElement) {
++    require(owner.patternTreeRoot() === pattern) {
++        "Pattern tree nodes can only be bound after the owner has installed its root."
++    }
++    reconcilePatternTree(owner, CfirPatternTreeSnapshot(emptyList()), pattern)
++}
++
++/**
++ * 返回模式树中唯一承载整个模式值的 binding；元组/枚举等拆分绑定返回 `null`。
++ *
++ * 只有这类 binding 的语义类型与 owner 的完整值类型一致，可以直接投影 owner 的
++ * return type；其余 binding 必须由 pattern 形状逐元素投影。
++ */
++fun CfirPattern.wholeValueBindingOrNull(): CfirPatternBindingVariable? = when (this) {
++    is CfirBindingPattern if nestedPattern == null -> bindingVariable
++    is CfirVarOrEnumPattern -> bindingVariable
++    is CfirTypePattern -> bindingVariable
++    else -> null
++}
++
+ /**
+  * 收集 type-pattern 产生的绑定变量。
+  *
+diff --git a/cfir/providers/src/org/cangnova/cangjie/cfir/resolve/providers/macro/MacroDemandClassification.kt b/cfir/providers/src/org/cangnova/cangjie/cfir/resolve/providers/macro/MacroDemandClassification.kt
+index d0818cc3f..02cf5a3e9 100644
+--- a/cfir/providers/src/org/cangnova/cangjie/cfir/resolve/providers/macro/MacroDemandClassification.kt
++++ b/cfir/providers/src/org/cangnova/cangjie/cfir/resolve/providers/macro/MacroDemandClassification.kt
+@@ -458,6 +458,9 @@ private val OFFICIAL_STDLIB_MACRO_PACKAGES: Set<FqName> = setOf(
+     StandardNames.STD_UNITTEST_MOCK_MOCKMACRO_PACKAGE_FQ_NAME,
+ )
+ 
++/** 判断包是否是官方标准库宏包；类型解析的注解命名空间判定复用同一来源，避免 allowlist 漂移。 */
++fun isOfficialStdlibMacroPackage(fqName: FqName): Boolean = fqName in OFFICIAL_STDLIB_MACRO_PACKAGES
++
+ /** 判定当前 surface 是否只是 macro 定义签名的一部分，而不是 macro 调用需求。 */
+ private fun MacroSurface.isMacroDefinitionSignatureSurfaceForClassification(): Boolean {
+     val carrier = replaceHandle.carrier
+diff --git a/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/CfirTypeCandidateCollector.kt b/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/CfirTypeCandidateCollector.kt
+index 534891291..079d3f7a0 100644
+--- a/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/CfirTypeCandidateCollector.kt
++++ b/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/CfirTypeCandidateCollector.kt
+@@ -13,6 +13,7 @@ import org.cangnova.cangjie.cfir.session.accessibilityChecker
+ import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+ import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+ import org.cangnova.cangjie.cfir.symbols.CfirClassifierSymbol
++import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
+ import org.cangnova.cangjie.cfir.types.CfirTypeRef
+ import org.cangnova.cangjie.name.ClassId
+ import org.cangnova.cangjie.name.Name
+@@ -64,8 +65,13 @@ internal class CfirTypeCandidateCollector(
+          *
+          * 官方 `PreCheck::GetTyFromASTType` 在筛掉非类型声明后 candidates 为空，
+          * 而原始声明集合非空，此时报 `not_a_type`。
++         *
++         * [hasNonMacroBinding] 区分“只被宏名遮蔽”和“被普通值/函数遮蔽”：注解位置上的
++         * 宏名不应报类型诊断，而普通 callable 仍必须报。
+          */
+-        data object ShadowedByNonTypeDeclaration : SimpleTypeNameLookup
++        data class ShadowedByNonTypeDeclaration(
++            val hasNonMacroBinding: Boolean,
++        ) : SimpleTypeNameLookup
+ 
+         /** 所有作用域都没有该名字；官方报 `undeclared_type_name`。 */
+         data object NotDeclared : SimpleTypeNameLookup
+@@ -90,28 +96,39 @@ internal class CfirTypeCandidateCollector(
+         for (scope in scopes) {
+             val candidates = candidatesFromScope(scope, name)
+             if (candidates.isNotEmpty()) return SimpleTypeNameLookup.Classifiers(candidates)
+-            if (bindsOwnNonTypeDeclaration(scope, name, exemptDeclarationTypeRef)) {
+-                return SimpleTypeNameLookup.ShadowedByNonTypeDeclaration
+-            }
++            ownNonTypeShadowing(scope, name, exemptDeclarationTypeRef)?.let { return it }
+         }
+         return SimpleTypeNameLookup.NotDeclared
+     }
+ 
+     /**
+      * 判断 [scope] 自身是否把 [name] 绑定到会遮蔽类型名的非类型声明。
++     *
++     * 返回 `null` 表示没有绑定；否则携带“是否存在普通（非宏）绑定”。宏名在注解位置
++     * 仍由调用方决定不报类型诊断，但在普通类型位置仍应遮蔽。
+      */
+-    private fun bindsOwnNonTypeDeclaration(
++    private fun ownNonTypeShadowing(
+         scope: CfirScope,
+         name: Name,
+         exemptDeclarationTypeRef: CfirTypeRef?,
+-    ): Boolean {
+-        var bound = false
++    ): SimpleTypeNameLookup.ShadowedByNonTypeDeclaration? {
++        var hasAnyBinding = false
++        var hasNonMacroBinding = false
+         scope.processOwnNonTypeBindingsByName(name) { symbol ->
+-            if (!bound && !symbol.isExemptFromShadowing(exemptDeclarationTypeRef)) {
+-                bound = true
++            // enum 构造器不是注解/类型目标，不参与简单类型名的“非类型遮蔽”判定。
++            if (symbol is CfirEnumConstructorSymbol) return@processOwnNonTypeBindingsByName
++            if (!symbol.isExemptFromShadowing(exemptDeclarationTypeRef)) {
++                hasAnyBinding = true
++                if (!symbol.isMacroLikeName(session)) {
++                    hasNonMacroBinding = true
++                }
+             }
+         }
+-        return bound
++        return if (hasAnyBinding) {
++            SimpleTypeNameLookup.ShadowedByNonTypeDeclaration(hasNonMacroBinding)
++        } else {
++            null
++        }
+     }
+ 
+     /**
+diff --git a/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/CfirTypeResolver.kt b/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/CfirTypeResolver.kt
+index 481cfe926..b62b59f59 100644
+--- a/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/CfirTypeResolver.kt
++++ b/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/CfirTypeResolver.kt
+@@ -46,15 +46,19 @@ import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityResult
+ import org.cangnova.cangjie.cfir.resolve.providers.CfirImportNamespaceContext
+ import org.cangnova.cangjie.cfir.resolve.providers.CfirLookupOrigin
+ import org.cangnova.cangjie.cfir.resolve.providers.lookupOriginForAccessibility
++import org.cangnova.cangjie.cfir.resolve.providers.macro.isOfficialStdlibMacroPackage
+ import org.cangnova.cangjie.cfir.scopes.CfirTypeParameterScope
+ import org.cangnova.cangjie.cfir.semantics.AbstractCandidate
+ import org.cangnova.cangjie.cfir.session.*
+ import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
++import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
++import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
+ import org.cangnova.cangjie.cfir.symbols.CfirMacroDeclarationSymbol
+ import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagImpl
+ import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
+ import org.cangnova.cangjie.cfir.symbols.constructType
+ import org.cangnova.cangjie.cfir.symbols.toLookupTag
++import org.cangnova.cangjie.cfir.session.macroExpansionRegistry
+ import org.cangnova.cangjie.cfir.types.*
+ import org.cangnova.cangjie.cfir.types.builder.buildUserTypeRef
+ import org.cangnova.cangjie.name.ClassId
+@@ -62,6 +66,7 @@ import org.cangnova.cangjie.name.FqName
+ import org.cangnova.cangjie.name.Name
+ import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability
+ import org.cangnova.cangjie.source.CjBinarySourceElement
++import org.cangnova.cangjie.source.psi
+ 
+ /**
+  * CFIR 类型解析器抽象。
+@@ -133,6 +138,19 @@ fun interface SupertypeSupplier {
+     }
+ }
+ 
++/**
++ * 判断 callable 是否属于宏命名空间。
++ *
++ * 外部 `.cjo` 可能把宏注解暴露成普通函数，因此不能只依赖 [CfirMacroDeclarationSymbol]：
++ * 官方标准宏包与当前 session 已声明的宏包同样携带宏身份。
++ */
++internal fun CfirCallableSymbol<*>.isMacroLikeName(session: CfirSession): Boolean {
++    if (this is CfirMacroDeclarationSymbol) return true
++    val packageFqName = callableId.packageName
++    if (isOfficialStdlibMacroPackage(packageFqName)) return true
++    return session.macroExpansionRegistry?.isDeclaredMacroPackage(packageFqName) == true
++}
++
+ /**
+  * 默认 CFIR 类型解析器实现。
+  */
+@@ -500,7 +518,11 @@ class CfirTypeResolverImpl(
+                 return QualifiedClassLikeResolution(
+                     classId = null,
+                     declaration = null,
+-                    diagnostic = ConeNotATypeError(lastQualifier.name),
++                    diagnostic = notATypeDiagnostic(
++                        typeRef = typeRef,
++                        name = lastQualifier.name,
++                        isMacroOnly = !simpleNameLookup.hasNonMacroBinding,
++                    ),
+                 )
+             }
+             val simpleCandidate = (
+@@ -523,10 +545,14 @@ class CfirTypeResolverImpl(
+             return if (declaration != null) {
+                 QualifiedClassLikeResolution(classId, declaration, null)
+             } else {
+-                val diagnostic = if (simpleNameResolvesToCallable(lastQualifier.name, configuration)) {
+-                    ConeNotATypeError(lastQualifier.name)
+-                } else {
+-                    ConeUnresolvedTypeQualifierError(typeRef.qualifier)
++                val callables = visibleCallablesForTypeName(lastQualifier.name, configuration)
++                val diagnostic = when {
++                    callables.isEmpty() -> ConeUnresolvedTypeQualifierError(typeRef.qualifier)
++                    else -> notATypeDiagnostic(
++                        typeRef = typeRef,
++                        name = lastQualifier.name,
++                        isMacroOnly = callables.all { callable -> callable.isMacroLikeName(session) },
++                    )
+                 }
+                 QualifiedClassLikeResolution(classId, null, diagnostic)
+             }
+@@ -653,9 +679,12 @@ class CfirTypeResolverImpl(
+         }
+ 
+         val callables = namespace.callables(lastQualifier.name)
++            .filterNot { it is CfirEnumConstructorSymbol }
+         if (callables.isNotEmpty()) {
+             // 宏注解继续交由宏名解析路径处理；普通 callable 在类型位置报告 not-a-type。
+-            if (callables.all { it is CfirMacroDeclarationSymbol }) {
++            val annotationMacroName = typeRef.isAnnotationTypeReference() &&
++                callables.all { callable -> callable.isMacroLikeName(session) }
++            if (annotationMacroName) {
+                 return QualifiedClassLikeResolution(
+                     classId = null,
+                     declaration = null,
+@@ -703,11 +732,15 @@ class CfirTypeResolverImpl(
+             return QualifiedClassLikeResolution(fullClassId, declaration, null)
+         }
+         if (packageExists(fullPackageFqName)) {
+-            val topLevelCallables = session.symbolProvider.getTopLevelCallableSymbols(fullPackageFqName, lastQualifier.name)
++            val topLevelCallables = session.symbolProvider
++                .getTopLevelCallableSymbols(fullPackageFqName, lastQualifier.name)
++                .filterNot { it is CfirEnumConstructorSymbol }
+             if (topLevelCallables.isNotEmpty()) {
+                 // 官方语义：宏名是合法的宏调用/注解目标（`@Pkg.MacroName`），不算 NOT_A_TYPE；
+                 // 交给 macro demand classification 按名字裁决。
+-                if (topLevelCallables.all { it is CfirMacroDeclarationSymbol }) {
++                val annotationMacroName = typeRef.isAnnotationTypeReference() &&
++                    topLevelCallables.all { callable -> callable.isMacroLikeName(session) }
++                if (annotationMacroName) {
+                     return QualifiedClassLikeResolution(fullClassId, null, null)
+                 }
+                 return QualifiedClassLikeResolution(
+@@ -863,18 +896,49 @@ class CfirTypeResolverImpl(
+     }
+ 
+     /**
+-     * 判断简单类型名称是否已经解析到当前可见的顶层 callable。
++     * 判断类型引用是否位于注解名位置。
++     */
++    private fun CfirUserTypeRef.isAnnotationTypeReference(): Boolean {
++        val parent = source?.psi?.parent
++        return parent is org.cangnova.cangjie.psi.CjAnnotation ||
++            parent is org.cangnova.cangjie.psi.CjMacroExpression
++    }
++
++    /**
++     * 类型位置上的名称已解析到 callable 时的诊断。
++     *
++     * 官方把注解名（`@Name`）当作宏调用目标：只有宏名（宏声明或宏包中的 callable）在注解
++     * 位置不报类型诊断；普通函数注解仍应暴露为“已声明但不是类型”，不能静默变成空诊断。
++     * 非注解类型位置（例如 `let x: MacroName`）仍按官方 `PreCheck` 报 `NOT_A_TYPE`。
++     */
++    private fun notATypeDiagnostic(
++        typeRef: CfirUserTypeRef,
++        name: Name,
++        isMacroOnly: Boolean,
++    ): ConeDiagnostic {
++        val diagnostic = ConeNotATypeError(name)
++        return if (isMacroOnly && typeRef.isAnnotationTypeReference()) {
++            ConeUnreportedDuplicateDiagnostic(diagnostic)
++        } else {
++            diagnostic
++        }
++    }
++
++    /**
++     * 返回类型位置简单名在第一个可见 scope 中解析到的全部 callable。
+      *
+-     * 类型解析仍以 classifier namespace 为主；只有 classifier 全部解析失败后才调用该入口，
+-     * 因而 callable 只负责把“未声明”细化为“已声明但不是类型”，不会抢占同名类型声明。
++     * 只有 classifier namespace 全部解析失败后才调用该入口；返回 callable 列表是为了让
++     * 调用方区分“宏名注解”和“普通函数注解”，而不是把所有 callable 当成同一类。
+      */
+-    private fun simpleNameResolvesToCallable(
++    private fun visibleCallablesForTypeName(
+         shortName: Name,
+         configuration: TypeResolutionConfiguration,
+-    ): Boolean {
++    ): List<CfirCallableSymbol<*>> {
+         for (scope in configuration.scopes) {
+-            var found = false
++            val callables = mutableListOf<CfirCallableSymbol<*>>()
+             scope.processCallablesByName(shortName) { symbol ->
++                // enum 构造器不是类型，也不是宏注解目标；其类型位置诊断由专用路径处理。
++                if (symbol is CfirEnumConstructorSymbol) return@processCallablesByName
+                 if (
+                     session.accessibilityChecker.checkCallable(
+                         symbol,
+@@ -883,12 +947,12 @@ class CfirTypeResolverImpl(
+                         ),
+                     ) is CfirAccessibilityResult.Accessible
+                 ) {
+-                    found = true
++                    callables += symbol
+                 }
+             }
+-            if (found) return true
++            if (callables.isNotEmpty()) return callables
+         }
+-        return false
++        return emptyList()
+     }
+ 
+     /**
+diff --git a/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirPatternBindingResolution.kt b/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirPatternBindingResolution.kt
+index 59b3893ea..40ea49868 100644
+--- a/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirPatternBindingResolution.kt
++++ b/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirPatternBindingResolution.kt
+@@ -234,25 +234,6 @@ internal fun CfirPartialBodyResolveTransformer.registerPatternBindings(pattern:
+     }
+ }
+ 
+-/**
+- * 简单 `let/var x = initializer` 中，名字解析指向内层 binding variable，
+- * 但 initializer 归属于外层 pattern variable。这里把“整个绑定值”的来源同步到
+- * 内层变量，供后续数据流、可达性和诊断按普通局部变量读取。
+- */
+-internal fun propagateWholeInitializerToSimplePatternBinding(
+-    pattern: CfirPattern,
+-    initializer: CfirExpression?,
+-) {
+-    if (initializer == null) return
+-    val binding = when (pattern) {
+-        is CfirBindingPattern if pattern.nestedPattern == null -> pattern.bindingVariable
+-        is CfirVarOrEnumPattern -> pattern.bindingVariable
+-        is CfirTypePattern -> pattern.bindingVariable
+-        else -> null
+-    } ?: return
+-    binding.replaceInitializer(initializer)
+-}
+-
+ /**
+  * 解析 pattern 显式类型引用；已解析或隐式类型引用直接复用。
+  */
+@@ -281,7 +262,7 @@ internal fun CfirPartialBodyResolveTransformer.resolveEnumArgumentTypes(
+     pattern: CfirEnumPattern,
+     expectedType: ConeCangJieType?,
+ ): List<ConeCangJieType> {
+-    val optionArgumentTypes = expectedType?.let { resolveStdlibOptionArgumentTypes(pattern, it) }
++    val optionArgumentTypes = expectedType?.let { resolveStdlibOptionArgumentTypes(pattern, it, session) }
+     if (optionArgumentTypes != null) return optionArgumentTypes
+ 
+     val enumType = expectedType?.expandedPatternEnumType(session) ?: return emptyList()
+@@ -307,11 +288,17 @@ internal fun CfirPartialBodyResolveTransformer.resolveEnumArgumentTypes(
+ private fun resolveStdlibOptionArgumentTypes(
+     pattern: CfirEnumPattern,
+     expectedType: ConeCangJieType,
++    session: org.cangnova.cangjie.cfir.session.CfirSession,
+ ): List<ConeCangJieType>? {
+     val constructorAccess = pattern.constructorReference.enumPatternConstructorAccessOrNull()
+         ?.takeIf { it.matchesStdlibOptionOwner(expectedType) }
+     val constructorName = constructorAccess?.constructorName
+-    val optionArgumentType = expectedType.optionElementType ?: return null
++    /*
++     * Option 的元素类型可能是跨文件 typealias（例如 `?MessageHandler`）。
++     * 绑定类型必须投影其展开后的类型；否则 `Some(handler)` 得到的函数值仍是 alias 类型，
++     * 后续 `handler(x)` 会因看不到函数类型而报 WRONG_NUMBER_OF_ARGUMENTS。
++     */
++    val optionArgumentType = expectedType.optionElementType?.fullyExpandedType(session) ?: return null
+     return when {
+         constructorName == OPTION_SOME_CONSTRUCTOR_NAME &&
+                 pattern.arguments.size == 1 &&
+diff --git a/cfir/resolve/test/org/cangnova/cangjie/cfir/resolve/CfirRawQualifiedTypeResolutionTest.kt b/cfir/resolve/test/org/cangnova/cangjie/cfir/resolve/CfirRawQualifiedTypeResolutionTest.kt
+index be30e3933..78497d3f3 100644
+--- a/cfir/resolve/test/org/cangnova/cangjie/cfir/resolve/CfirRawQualifiedTypeResolutionTest.kt
++++ b/cfir/resolve/test/org/cangnova/cangjie/cfir/resolve/CfirRawQualifiedTypeResolutionTest.kt
+@@ -113,12 +113,14 @@ class CfirRawQualifiedTypeResolutionTest {
+     }
+ 
+     @Test
+-    fun `macro name lookup does not attach package diagnostic`() {
++    fun `macro name used as type reports not-a-type without package diagnostic`() {
+         val fixture = Fixture(includeNetMacro = true)
+         val result = fixture.resolve(fixture.typeRef("std", "net", "MacroType"))
+ 
+         assertInstanceOf(ConeErrorType::class.java, result.type)
+-        assertInstanceOf(ConeUnresolvedTypeQualifierError::class.java, result.diagnostic)
++        // 官方 PreCheck 对非注解类型位置的非类型声明报 not_a_type；这里同时确认没有
++        // 被误判成“包名不能作为类型”诊断。
++        assertInstanceOf(ConeNotATypeError::class.java, result.diagnostic)
+     }
+ 
+     @Test
+diff --git a/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/diagnostics/DiagnosticCollectionFailures.kt b/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/diagnostics/DiagnosticCollectionFailures.kt
+new file mode 100644
+index 000000000..c14ec9d90
+--- /dev/null
++++ b/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/diagnostics/DiagnosticCollectionFailures.kt
+@@ -0,0 +1,42 @@
++package org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics
++
++/**
++ * low-level 诊断收集中被隔离的异常记录。
++ *
++ * 单个 checker / structure element 失败时，收集流程必须继续处理其它元素；但“继续”不能
++ * 等价于“没有失败”。这里把被隔离的异常显式记录下来，测试和真实项目报告可以断言
++ * 收集期间没有发生任何被吞掉的异常，避免异常门禁失效。
++ *
++ * 记录按线程保存；当前 low-level 收集在单线程内顺序执行。
++ */
++object DiagnosticCollectionFailures {
++    /**
++     * 当前线程上尚未被消费的隔离异常。
++     */
++    private val failures: ThreadLocal<MutableList<Throwable>> = ThreadLocal.withInitial(::mutableListOf)
++
++    /**
++     * 记录一个被隔离的异常。
++     */
++    fun record(failure: Throwable) {
++        failures.get().add(failure)
++    }
++
++    /**
++     * 取出并清空当前线程的隔离异常。
++     */
++    fun drain(): List<Throwable> {
++        val pending = failures.get()
++        if (pending.isEmpty()) return emptyList()
++        val result = pending.toList()
++        pending.clear()
++        return result
++    }
++
++    /**
++     * 清空当前线程的隔离异常，供一次收集开始前重置状态。
++     */
++    fun clear() {
++        failures.get().clear()
++    }
++}
+diff --git a/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/diagnostics/DiagnosticCollectionIsolation.kt b/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/diagnostics/DiagnosticCollectionIsolation.kt
+new file mode 100644
+index 000000000..9ed6a29c2
+--- /dev/null
++++ b/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/diagnostics/DiagnosticCollectionIsolation.kt
+@@ -0,0 +1,23 @@
++package org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics
++
++import com.intellij.openapi.progress.ProgressManager
++
++/**
++ * 按元素执行诊断收集，并把单个元素的异常隔离在该元素内。
++ *
++ * 该 helper 是 [org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure.FileStructure]
++ * 逐 structure element 收集的实际入口，单独暴露以便回归测试验证：
++ * 某个元素失败后，后续元素仍然会被执行；失败同时记录到
++ * [DiagnosticCollectionFailures]，不会变成静默 partial result。
++ */
++internal inline fun <T> forEachWithDiagnosticIsolation(
++    elements: Iterable<T>,
++    crossinline action: (T) -> Unit,
++) {
++    for (element in elements) {
++        ProgressManager.checkCanceled()
++        LLCfirDiagnosticVisitor.suppressAndLogExceptions {
++            action(element)
++        }
++    }
++}
+diff --git a/analysis/low-level-api-cfir/test/org/cangnova/cangjie/analysis/low/level/api/cfir/diagnostics/DiagnosticCollectionIsolationTest.kt b/analysis/low-level-api-cfir/test/org/cangnova/cangjie/analysis/low/level/api/cfir/diagnostics/DiagnosticCollectionIsolationTest.kt
+new file mode 100644
+index 000000000..cc8ddf8f7
+--- /dev/null
++++ b/analysis/low-level-api-cfir/test/org/cangnova/cangjie/analysis/low/level/api/cfir/diagnostics/DiagnosticCollectionIsolationTest.kt
+@@ -0,0 +1,45 @@
++package org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics
++
++import org.junit.jupiter.api.Assertions.assertEquals
++import org.junit.jupiter.api.Assertions.assertNull
++import org.junit.jupiter.api.Assertions.assertTrue
++import org.junit.jupiter.api.Test
++
++/**
++ * 诊断收集的异常隔离契约。
++ *
++ * [forEachWithDiagnosticIsolation] 是 `FileStructure.collectDiagnosticsFromStructureElements`
++ * 实际使用的 element 级收集入口；该边界必须把单个元素的失败记录下来并继续，而不是让平台
++ * logger 把异常升级为 AssertionError、终止整份文件的收集。
++ */
++class DiagnosticCollectionIsolationTest {
++    /** 单个 checker/element 抛出的异常不得逃出隔离边界，且必须可被观测。 */
++    @Test
++    fun failingElementDoesNotEscape() {
++        DiagnosticCollectionFailures.clear()
++        assertNull(
++            LLCfirDiagnosticVisitor.suppressAndLogExceptions<Unit> {
++                throw IllegalStateException("simulated checker failure")
++            },
++        )
++        assertEquals(1, DiagnosticCollectionFailures.drain().size)
++    }
++
++    /** 一个元素失败后，后续元素仍必须继续被收集，隔离异常可被逐元素观测。 */
++    @Test
++    fun laterElementsContinueAfterFailure() {
++        DiagnosticCollectionFailures.clear()
++        val collected = mutableListOf<String>()
++        forEachWithDiagnosticIsolation(listOf("broken", "healthy")) { name ->
++            if (name == "broken") {
++                throw IllegalStateException("simulated checker failure")
++            }
++            collected += name
++        }
++
++        assertEquals(listOf("healthy"), collected)
++        val failures = DiagnosticCollectionFailures.drain()
++        assertEquals(1, failures.size)
++        assertTrue(failures.single().message.orEmpty().contains("simulated checker failure"))
++    }
++}
+diff --git a/analysis/analysis-real-project-test/testFixtures/org/cangnova/cangjie/analysis/realproject/RealProjectReport.kt b/analysis/analysis-real-project-test/testFixtures/org/cangnova/cangjie/analysis/realproject/RealProjectReport.kt
+new file mode 100644
+index 000000000..e704d63e6
+--- /dev/null
++++ b/analysis/analysis-real-project-test/testFixtures/org/cangnova/cangjie/analysis/realproject/RealProjectReport.kt
+@@ -0,0 +1,117 @@
++package org.cangnova.cangjie.analysis.realproject
++
++import java.nio.file.Files
++import java.nio.file.Path
++
++/** 单条 CFIR 诊断的序列化形态。 */
++data class DiagnosticRecord(
++    val name: String,
++    val severity: String,
++    val message: String,
++    val startOffset: Int,
++    val endOffset: Int,
++    val line: Int,
++    val column: Int,
++    val psiText: String,
++    val snippet: String,
++)
++
++/** 单个文件的 CFIR 分析结果。 */
++data class FileAnalysis(
++    val path: String,
++    val diagnostics: List<DiagnosticRecord>,
++    val error: String?,
++    val durationMillis: Long,
++    /**
++     * 诊断收集期间被 element 级隔离的异常。
++     *
++     * 这些异常不会逃逸出 analysis 调用，但同样表示诊断不完整；真实项目测试必须断言为空。
++     */
++    val collectionFailures: List<String> = emptyList(),
++)
++
++/**
++ * 把真实项目的 cjpm 编译结果与 CFIR 分析结果写成 JSON，便于逐项对照。
++ */
++object RealProjectReport {
++
++    /** 写出报告；目录不存在时自动创建。 */
++    fun write(
++        config: RealProjectConfig,
++        checkout: Path,
++        model: CjpmProjectModel,
++        buildResults: List<CjpmRunner.Result>,
++        dependencyCjoCount: Int,
++        analyses: List<FileAnalysis>,
++        reportFile: Path,
++    ) {
++        Files.createDirectories(reportFile.parent)
++        val errorCount = analyses.sumOf { analysis ->
++            analysis.diagnostics.count { it.severity == "ERROR" }
++        }
++        val json = buildString {
++            appendLine("{")
++            appendLine("  \"project\": ${quote(config.id)},")
++            appendLine("  \"repo\": ${quote(config.repo)},")
++            appendLine("  \"ref\": ${quote(config.ref)},")
++            appendLine("  \"checkout\": ${quote(checkout.toString())},")
++            appendLine("  \"package\": ${quote(model.name)},")
++            appendLine("  \"sourceFileCount\": ${model.cjFiles.size},")
++            appendLine("  \"projectPackageCount\": ${model.sourcePackages.size},")
++            appendLine("  \"dependencyCjoCount\": $dependencyCjoCount,")
++            appendLine("  \"errorDiagnosticCount\": $errorCount,")
++            appendLine("  \"exceptionFileCount\": ${analyses.count { it.error != null }},")
++            appendLine("  \"collectionFailureFileCount\": ${analyses.count { it.collectionFailures.isNotEmpty() }},")
++            appendLine("  \"collectionFailureCount\": ${analyses.sumOf { it.collectionFailures.size }},")
++            appendLine("  \"cjpm\": [")
++            buildResults.forEachIndexed { index, result ->
++                val comma = if (index == buildResults.lastIndex) "" else ","
++                appendLine(
++                    "    {\"command\": ${quote(result.command)}, \"exitCode\": ${result.exitCode}, " +
++                        "\"durationMillis\": ${result.durationMillis}}$comma",
++                )
++            }
++            appendLine("  ],")
++            appendLine("  \"files\": [")
++            analyses.forEachIndexed { index, analysis ->
++                val comma = if (index == analyses.lastIndex) "" else ","
++                appendLine("    {")
++                appendLine("      \"path\": ${quote(analysis.path)},")
++                appendLine("      \"durationMillis\": ${analysis.durationMillis},")
++                appendLine("      \"error\": ${analysis.error?.let(::quote) ?: "null"},")
++                appendLine("      \"collectionFailures\": [${analysis.collectionFailures.joinToString(", ") { quote(it) }}],")
++                appendLine("      \"diagnostics\": [")
++                analysis.diagnostics.forEachIndexed { diagIndex, diagnostic ->
++                    val diagComma = if (diagIndex == analysis.diagnostics.lastIndex) "" else ","
++                    appendLine(
++                        "        {\"name\": ${quote(diagnostic.name)}, \"severity\": ${quote(diagnostic.severity)}, " +
++                            "\"start\": ${diagnostic.startOffset}, \"end\": ${diagnostic.endOffset}, " +
++                            "\"line\": ${diagnostic.line}, \"column\": ${diagnostic.column}, " +
++                            "\"message\": ${quote(diagnostic.message)}, \"psiText\": ${quote(diagnostic.psiText)}, " +
++                            "\"snippet\": ${quote(diagnostic.snippet)}}$diagComma",
++                    )
++                }
++                appendLine("      ]")
++                appendLine("    }$comma")
++            }
++            appendLine("  ]")
++            appendLine("}")
++        }
++        Files.writeString(reportFile, json)
++    }
++
++    private fun quote(value: String): String = buildString {
++        append('"')
++        value.forEach { char ->
++            when (char) {
++                '\\' -> append("\\\\")
++                '"' -> append("\\\"")
++                '\n' -> append("\\n")
++                '\r' -> append("\\r")
++                '\t' -> append("\\t")
++                else -> append(char)
++            }
++        }
++        append('"')
++    }
++}
+diff --git a/analysis/analysis-real-project-test/testFixtures/org/cangnova/cangjie/analysis/realproject/RealProjectSession.kt b/analysis/analysis-real-project-test/testFixtures/org/cangnova/cangjie/analysis/realproject/RealProjectSession.kt
+new file mode 100644
+index 000000000..715e01438
+--- /dev/null
++++ b/analysis/analysis-real-project-test/testFixtures/org/cangnova/cangjie/analysis/realproject/RealProjectSession.kt
+@@ -0,0 +1,258 @@
++@file:OptIn(
++    org.cangnova.cangjie.analysis.api.CaPlatformInterface::class,
++    org.cangnova.cangjie.analysis.api.CaImplementationDetail::class,
++)
++
++package org.cangnova.cangjie.analysis.realproject
++
++import com.intellij.openapi.progress.ProcessCanceledException
++import com.intellij.openapi.vfs.StandardFileSystems
++import com.intellij.openapi.vfs.VirtualFile
++import com.intellij.psi.PsiFileSystemItem
++import com.intellij.psi.PsiManager
++import org.cangnova.cangjie.LanguageVersionSettings
++import org.cangnova.cangjie.analysis.api.components.CaDiagnosticCheckerFilter
++import org.cangnova.cangjie.analysis.api.impl.base.projectStructure.CaBuiltinsModuleImpl
++import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
++import org.cangnova.cangjie.analysis.api.standalone.projectStructure.CaStandaloneLibraryModule
++import org.cangnova.cangjie.analysis.api.standalone.projectStructure.CaStandaloneSourceModule
++import org.cangnova.cangjie.analysis.api.standalone.session.CaStandaloneAnalysisContext
++import org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics.DiagnosticCollectionFailures
++import org.cangnova.cangjie.analysis.api.standalone.session.CaStandaloneSessionBuilder
++import org.cangnova.cangjie.analysis.decompiler.stub.file.CjoBinaryFileReader
++import org.cangnova.cangjie.platform.CangJiePlatforms
++import org.cangnova.cangjie.psi.CjFile
++import com.intellij.openapi.project.Project
++import java.nio.file.Path
++
++/**
++ * 单个真实项目的已准备会话：检出、cjpm 结果、项目模型与 standalone 模块图。
++ *
++ * 由 [RealProjectTestBase] 创建并注入测试；测试只通过该会话取分析结果。
++ *
++ * @property config 项目配置。
++ * @property checkout 检出目录。
++ * @property buildResults `cjpm clean/build` 结果。
++ * @property model 项目结构。
++ * @property dependencyCjoCount 作为依赖挂载的 `.cjo` 数量。
++ */
++class RealProjectSession internal constructor(
++    val config: RealProjectConfig,
++    val checkout: Path,
++    val buildResults: List<CjpmRunner.Result>,
++    val model: CjpmProjectModel,
++    val dependencyCjoCount: Int,
++    private val context: CaStandaloneAnalysisContext,
++    private val files: List<CjFile>,
++) {
++    /** 最后一次构建结果。 */
++    val buildResult: CjpmRunner.Result get() = buildResults.last()
++
++    /** 报告目录（每个项目一份）。 */
++    val reportDir: Path
++        get() = config.workspaceRoot
++            .resolve("reports")
++            .resolve(checkout.fileName.toString())
++
++    /** JSON 报告路径。 */
++    val reportFile: Path get() = reportDir.resolve("cfir.json")
++
++    /** 断言 cjpm 构建成功；失败时附带输出尾部。 */
++    fun requireBuildSucceeded() {
++        check(buildResult.exitCode == 0) {
++            "cjpm build 失败:\n${buildResult.output.takeLast(8_000)}"
++        }
++    }
++
++    /** 逐文件收集 CFIR 诊断；单文件异常被捕获在结果里。 */
++    fun analyzeAll(): List<FileAnalysis> {
++        val analyses = files.map(::analyzeFile)
++        lastAnalyses = analyses
++        return analyses
++    }
++
++    /** 最近一次 [analyzeAll] 的结果，供汇总页使用。 */
++    var lastAnalyses: List<FileAnalysis> = emptyList()
++        private set
++
++    /** 写出当前项目的 JSON 与 HTML 报告。 */
++    fun writeReport(analyses: List<FileAnalysis>) {
++        RealProjectReport.write(
++            config = config,
++            checkout = checkout,
++            model = model,
++            buildResults = buildResults,
++            dependencyCjoCount = dependencyCjoCount,
++            analyses = analyses,
++            reportFile = reportFile,
++        )
++        RealProjectHtmlReport.writeProject(
++            file = reportFile.parent.resolve("report.html"),
++            config = config,
++            checkout = checkout,
++            buildResults = buildResults,
++            dependencyCjoCount = dependencyCjoCount,
++            analyses = analyses,
++        )
++    }
++
++    /** 构建/准备失败时也要留下一份可视化报告。 */
++    fun writeFailureReport(failure: Throwable) {
++        RealProjectHtmlReport.writeFailure(
++            file = reportFile.parent.resolve("report.html"),
++            config = config,
++            checkout = checkout,
++            buildResults = buildResults,
++            failure = failure,
++        )
++    }
++
++    private fun analyzeFile(file: CjFile): FileAnalysis {
++        val startedAt = System.currentTimeMillis()
++        DiagnosticCollectionFailures.clear()
++        return try {
++            val diagnostics = context.analyze(file) {
++                file.collectDiagnostics(CaDiagnosticCheckerFilter.EXTENDED_AND_COMMON_CHECKERS)
++            }
++            val collectionFailures = DiagnosticCollectionFailures.drain().map { failure -> failure.stackTraceToString() }
++            val text = file.text
++            FileAnalysis(
++                path = file.virtualFile?.path ?: file.name,
++                diagnostics = diagnostics.map { diagnostic ->
++                    val range = diagnostic.textRanges.firstOrNull()
++                    val position = positionOf(text, range?.startOffset ?: -1)
++                    DiagnosticRecord(
++                        name = diagnostic.factoryName,
++                        severity = diagnostic.severity.name,
++                        message = diagnostic.defaultMessage,
++                        startOffset = range?.startOffset ?: -1,
++                        endOffset = range?.endOffset ?: -1,
++                        line = position.line,
++                        column = position.column,
++                        psiText = diagnostic.psi.text.take(120),
++                        snippet = position.snippet,
++                    )
++                },
++                error = null,
++                durationMillis = System.currentTimeMillis() - startedAt,
++                collectionFailures = collectionFailures,
++            )
++        } catch (cancelled: ProcessCanceledException) {
++            throw cancelled
++        } catch (failure: Throwable) {
++            val collectionFailures = DiagnosticCollectionFailures.drain().map { swallowed -> swallowed.stackTraceToString() }
++            FileAnalysis(
++                path = file.virtualFile?.path ?: file.name,
++                diagnostics = emptyList(),
++                error = failure.stackTraceToString(),
++                durationMillis = System.currentTimeMillis() - startedAt,
++                collectionFailures = collectionFailures,
++            )
++        }
++    }
++
++    /** 由偏移计算 1-based 行/列与该行文本。 */
++    private fun positionOf(text: String, offset: Int): SourcePosition {
++        if (offset < 0 || offset > text.length) return SourcePosition(-1, -1, "")
++        val lineStart = text.lastIndexOf('\n', (offset - 1).coerceAtLeast(0)).let { if (it < 0) 0 else it + 1 }
++        val line = text.substring(0, lineStart).count { it == '\n' } + 1
++        val lineEnd = text.indexOf('\n', offset).let { if (it < 0) text.length else it }
++        return SourcePosition(
++            line = line,
++            column = offset - lineStart + 1,
++            snippet = text.substring(lineStart, lineEnd).trim().take(200),
++        )
++    }
++
++    private data class SourcePosition(val line: Int, val column: Int, val snippet: String)
++
++    companion object {
++        /** 执行检出、cjpm 构建并组装 standalone 模块图。 */
++        fun prepare(
++            config: RealProjectConfig,
++            project: Project,
++            languageVersionSettings: LanguageVersionSettings,
++        ): RealProjectSession {
++            val checkout = GitFixture.prepare(config)
++            val buildResults = CjpmRunner(config, checkout).build()
++            val model = CjpmProjectModel.read(checkout)
++            check(model.cjFiles.isNotEmpty()) { "未找到 .cj 源文件: ${model.sourceRoots}" }
++
++            val psiManager = PsiManager.getInstance(project)
++            val targetPlatform = CangJiePlatforms.defaultCangJiePlatform
++            val builtinsModule = CaBuiltinsModuleImpl(targetPlatform, project)
++            val sourceModule = CaStandaloneSourceModule(
++                name = model.name,
++                languageVersionSettings = languageVersionSettings,
++                project = project,
++                psiRoots = model.sourceRoots.map { path -> psiItem(psiManager, path) },
++                targetPlatform = targetPlatform,
++            ).apply {
++                directRegularDependencies += builtinsModule
++            }
++
++            val dependencyCjoItems = collectDependencyCjoItems(psiManager, model)
++            val libraryModules = if (dependencyCjoItems.isEmpty()) {
++                emptyList()
++            } else {
++                listOf(
++                    CaStandaloneLibraryModule(
++                        libraryName = "cjpm-dependencies",
++                        project = project,
++                        binaryRoots = dependencyCjoItems,
++                        targetPlatform = targetPlatform,
++                    ),
++                )
++            }
++            sourceModule.directRegularDependencies += libraryModules
++
++            val context = CaStandaloneSessionBuilder(project)
++                .build(listOf<CaModule>(sourceModule, builtinsModule) + libraryModules)
++            val files = model.cjFiles.mapNotNull { path -> psiItem(psiManager, path) as? CjFile }
++            check(files.isNotEmpty()) { "未能把 .cj 文件恢复为 PSI: ${model.sourceRoots}" }
++
++            return RealProjectSession(
++                config = config,
++                checkout = checkout,
++                buildResults = buildResults,
++                model = model,
++                dependencyCjoCount = dependencyCjoItems.size,
++                context = context,
++                files = files,
++            )
++        }
++
++        /** 把 cjpm 产出的 `.cjo` 恢复为 library binary roots，并排除项目自身的包。 */
++        private fun collectDependencyCjoItems(
++            psiManager: PsiManager,
++            model: CjpmProjectModel,
++        ): List<PsiFileSystemItem> {
++            if (model.cjoFiles.isEmpty()) return emptyList()
++            return model.cjoFiles.mapNotNull { path ->
++                val virtualFile = virtualFile(path) ?: return@mapNotNull null
++                val packageFqName = runCatching { CjoBinaryFileReader.readPackageFqName(virtualFile) }
++                    .getOrNull()
++                    ?: return@mapNotNull null
++                if (packageFqName.asString() in model.sourcePackages) return@mapNotNull null
++                runCatching { psiManager.findFile(virtualFile) }.getOrNull()
++            }
++        }
++
++        /** headless 环境只能用 StandardFileSystems 恢复 VirtualFile。 */
++        private fun virtualFile(path: Path): VirtualFile? {
++            val normalizedPath = path.toAbsolutePath().normalize().toString().replace('\\', '/')
++            val fileSystem = StandardFileSystems.local()
++            return fileSystem.findFileByPath(normalizedPath)
++                ?: fileSystem.refreshAndFindFileByPath(normalizedPath)
++        }
++
++        private fun psiItem(psiManager: PsiManager, path: Path): PsiFileSystemItem {
++            val virtualFile = virtualFile(path) ?: error("Cannot restore VirtualFile for `$path`.")
++            return if (virtualFile.isDirectory) {
++                psiManager.findDirectory(virtualFile) ?: error("Cannot restore PSI directory for `$path`.")
++            } else {
++                psiManager.findFile(virtualFile) ?: error("Cannot restore PSI file for `$path`.")
++            }
++        }
++    }
++}
+diff --git a/analysis/analysis-real-project-test/testFixtures/org/cangnova/cangjie/analysis/realproject/RealProjectTestBase.kt b/analysis/analysis-real-project-test/testFixtures/org/cangnova/cangjie/analysis/realproject/RealProjectTestBase.kt
+new file mode 100644
+index 000000000..b24457e78
+--- /dev/null
++++ b/analysis/analysis-real-project-test/testFixtures/org/cangnova/cangjie/analysis/realproject/RealProjectTestBase.kt
+@@ -0,0 +1,131 @@
++package org.cangnova.cangjie.analysis.realproject
++
++import com.intellij.openapi.progress.ProcessCanceledException
++import com.intellij.openapi.project.Project
++import org.cangnova.cangjie.LanguageVersionSettings
++import org.cangnova.cangjie.analysis.api.impl.base.test.configurators.CaAnalysisApiDecompiledTestServiceRegistrar
++import org.cangnova.cangjie.analysis.api.standalone.cfir.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
++import org.cangnova.cangjie.analysis.api.standalone.projectStructure.AnalysisApiServiceRegistrar
++import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
++import org.cangnova.cangjie.test.services.TestServices
++import org.junit.jupiter.api.Assertions.assertTrue
++import org.junit.jupiter.api.Assumptions.assumeTrue
++
++/**
++ * 真实项目测试基座。
++ *
++ * 负责：注册 standalone 平台服务、读取项目列表、逐个准备 [RealProjectSession]、
++ * 汇总每个项目的失败；子类只写对分析结果的断言。
++ *
++ * @param testDataPath 该测试模块的 testData 目录（相对仓库根）。
++ */
++abstract class RealProjectTestBase(testDataPath: String) : AbstractAnalysisApiExecutionTest(testDataPath) {
++
++    final override val configurator = CaCfirStandaloneAnalysisApiTestConfigurator
++
++    final override val additionalServiceRegistrars: List<AnalysisApiServiceRegistrar<TestServices>> =
++        listOf(
++            CaAnalysisApiDecompiledTestServiceRegistrar,
++            RealProjectStandalonePlatformRegistrar,
++        )
++
++    /**
++     * 按 `realProject.config` / 单项目参数逐个执行 [body]。
++     *
++     * 单个项目失败（clone、cjpm、分析异常）不会中断其它项目，最后统一断言。
++     */
++    protected fun runRealProjects(
++        project: Project,
++        languageVersionSettings: LanguageVersionSettings,
++        body: (RealProjectSession) -> Unit,
++    ) {
++        val configs = RealProjects.resolve()
++        assumeTrue(
++            configs.isNotEmpty(),
++            "未配置真实项目：使用 -PrealProjectRepo/-PrealProjectRef 或 realProject.config",
++        )
++
++        val failures = mutableListOf<String>()
++        val entries = mutableListOf<RealProjectIndexEntry>()
++        for (config in configs) {
++            var session: RealProjectSession? = null
++            try {
++                session = RealProjectSession.prepare(config, project, languageVersionSettings)
++                session.requireBuildSucceeded()
++                body(session)
++                entries += RealProjectIndexEntry(
++                    config = config,
++                    reportDir = session.reportDir,
++                    ok = true,
++                    message = null,
++                    analyses = session.lastAnalyses,
++                )
++            } catch (cancelled: ProcessCanceledException) {
++                throw cancelled
++            } catch (failure: Throwable) {
++                val analyses = session?.lastAnalyses.orEmpty()
++                val reportDir = session?.reportDir
++                    ?: config.workspaceRoot.resolve("reports").resolve(config.id)
++                if (session != null && analyses.isEmpty()) {
++                    session.writeFailureReport(failure)
++                } else if (session == null) {
++                    RealProjectHtmlReport.writeFailure(
++                        file = reportDir.resolve("report.html"),
++                        config = config,
++                        checkout = null,
++                        buildResults = null,
++                        failure = failure,
++                    )
++                }
++                entries += RealProjectIndexEntry(
++                    config = config,
++                    reportDir = reportDir,
++                    // 已经产出分析结果就算“跑过”，状态由诊断/异常决定；否则是环境失败。
++                    ok = analyses.isNotEmpty(),
++                    message = failure.message?.lineSequence()?.firstOrNull()?.take(300),
++                    analyses = analyses,
++                )
++                failures += "[${config.id}] ${failure.message ?: failure::class.simpleName}"
++            }
++        }
++
++        val reportsRoot = configs.first().workspaceRoot.resolve("reports")
++        runCatching {
++            RealProjectHtmlReport.writeIndex(reportsRoot.resolve("index.html"), entries)
++        }
++
++        assertTrue(
++            failures.isEmpty(),
++            buildString {
++                appendLine("${failures.size}/${configs.size} 个真实项目分析失败:")
++                failures.forEach { appendLine("  $it") }
++                appendLine("报告: ${reportsRoot.resolve("index.html")}")
++            },
++        )
++    }
++
++    /** 断言分析期间没有文件抛出异常，也没有元素级异常被收集隔离吞掉。 */
++    protected fun assertNoAnalysisExceptions(session: RealProjectSession, analyses: List<FileAnalysis>) {
++        val failures = analyses.filter { it.error != null }
++        val collectionFailures = analyses.filter { it.collectionFailures.isNotEmpty() }
++        assertTrue(
++            failures.isEmpty() && collectionFailures.isEmpty(),
++            buildString {
++                appendLine(
++                    "CFIR 在 ${session.config.id} 上抛出 ${failures.size} 个文件异常、" +
++                        "${collectionFailures.sumOf { it.collectionFailures.size }} 个被隔离异常" +
++                        "（报告: ${session.reportFile}）:",
++                )
++                failures.take(5).forEach { failure ->
++                    appendLine("  ${failure.path}: ${failure.error?.lineSequence()?.firstOrNull()}")
++                }
++                collectionFailures.take(5).forEach { failure ->
++                    appendLine(
++                        "  ${failure.path}: " +
++                            (failure.collectionFailures.firstOrNull()?.lineSequence()?.firstOrNull() ?: "isolated failure"),
++                    )
++                }
++            },
++        )
++    }
++}
+diff --git a/analysis/low-level-api-cfir/testData/diagnostics/postSema/enumConstructor.cj b/analysis/low-level-api-cfir/testData/diagnostics/postSema/enumConstructor.cj
+new file mode 100644
+index 000000000..8617e16b0
+--- /dev/null
++++ b/analysis/low-level-api-cfir/testData/diagnostics/postSema/enumConstructor.cj
+@@ -0,0 +1,6 @@
++package test
++
++enum Color {
++    | Red
++    | Green
++}
+diff --git a/analysis/low-level-api-cfir/testData/diagnostics/postSema/functionNameAsType.cj b/analysis/low-level-api-cfir/testData/diagnostics/postSema/functionNameAsType.cj
+new file mode 100644
+index 000000000..664a74567
+--- /dev/null
++++ b/analysis/low-level-api-cfir/testData/diagnostics/postSema/functionNameAsType.cj
+@@ -0,0 +1,7 @@
++package test
++
++func helper(): Unit {
++}
++
++func consume(value: helper): Unit {
++}
+diff --git a/analysis/low-level-api-cfir/testData/diagnostics/postSema/functionTypeAliasCall.cj b/analysis/low-level-api-cfir/testData/diagnostics/postSema/functionTypeAliasCall.cj
+new file mode 100644
+index 000000000..89d39716f
+--- /dev/null
++++ b/analysis/low-level-api-cfir/testData/diagnostics/postSema/functionTypeAliasCall.cj
+@@ -0,0 +1,7 @@
++package test
++
++type Handler = (Int64) -> Unit
++
++func invokeHandler(handler: Handler): Unit {
++    handler(1)
++}
+diff --git a/analysis/low-level-api-cfir/testData/diagnostics/postSema/macroAnnotationType.cj b/analysis/low-level-api-cfir/testData/diagnostics/postSema/macroAnnotationType.cj
+new file mode 100644
+index 000000000..afd7b09c9
+--- /dev/null
++++ b/analysis/low-level-api-cfir/testData/diagnostics/postSema/macroAnnotationType.cj
+@@ -0,0 +1,11 @@
++package test
++
++import std.unittest.*
++import std.unittest.testmacro.*
++
++@Test
++class MacroAnnotatedTests {
++    @TestCase
++    func sample(): Unit {
++    }
++}
+diff --git a/analysis/low-level-api-cfir/testData/diagnostics/postSema/matchedCrossFileFunctionTypeAlias.cj b/analysis/low-level-api-cfir/testData/diagnostics/postSema/matchedCrossFileFunctionTypeAlias.cj
+new file mode 100644
+index 000000000..4704486f7
+--- /dev/null
++++ b/analysis/low-level-api-cfir/testData/diagnostics/postSema/matchedCrossFileFunctionTypeAlias.cj
+@@ -0,0 +1,18 @@
++// MODULE: main
++// MAIN_FILE_NAME: matchedCrossFileFunctionTypeAlias.cj
++// FILE: handlerTypes.cj
++package test
++
++type Handler = (Int64) -> Unit
++
++// FILE: matchedCrossFileFunctionTypeAlias.cj
++package test
++
++import std.collection.*
++
++func invokeCrossFileMap(map: HashMap<String, Handler>): Unit {
++    match (map.get("key")) {
++        case Some(handler) => handler(1)
++        case None => ()
++    }
++}
+diff --git a/analysis/low-level-api-cfir/testData/diagnostics/postSema/matchedFunctionTypeAliasCall.cj b/analysis/low-level-api-cfir/testData/diagnostics/postSema/matchedFunctionTypeAliasCall.cj
+new file mode 100644
+index 000000000..5b590e110
+--- /dev/null
++++ b/analysis/low-level-api-cfir/testData/diagnostics/postSema/matchedFunctionTypeAliasCall.cj
+@@ -0,0 +1,10 @@
++package test
++
++type Handler = (Int64) -> Unit
++
++func invokeMatchedHandler(opt: ?Handler): Unit {
++    match (opt) {
++        case Some(handler) => handler(1)
++        case None => ()
++    }
++}
+diff --git a/analysis/low-level-api-cfir/testData/diagnostics/postSema/matchedFunctionTypeAliasFromMap.cj b/analysis/low-level-api-cfir/testData/diagnostics/postSema/matchedFunctionTypeAliasFromMap.cj
+new file mode 100644
+index 000000000..47db4ce0f
+--- /dev/null
++++ b/analysis/low-level-api-cfir/testData/diagnostics/postSema/matchedFunctionTypeAliasFromMap.cj
+@@ -0,0 +1,12 @@
++package test
++
++import std.collection.*
++
++type Handler = (Int64) -> Unit
++
++func invokeFromMap(map: HashMap<String, Handler>): Unit {
++    match (map.get("key")) {
++        case Some(handler) => handler(1)
++        case None => ()
++    }
++}
+diff --git a/analysis/low-level-api-cfir/testData/diagnostics/postSema/matchPatternBindingComparison.cj b/analysis/low-level-api-cfir/testData/diagnostics/postSema/matchPatternBindingComparison.cj
+new file mode 100644
+index 000000000..9380d40bd
+--- /dev/null
++++ b/analysis/low-level-api-cfir/testData/diagnostics/postSema/matchPatternBindingComparison.cj
+@@ -0,0 +1,15 @@
++package test
++
++func pair(): (Int64, Int64) {
++    return (1, 2)
++}
++
++func matchBinding(): Bool {
++    match (pair()) {
++        case (value, _) =>
++            if (value == 1) {
++                return true
++            }
++    }
++    return false
++}
+diff --git a/analysis/low-level-api-cfir/testData/diagnostics/postSema/patternBindingComparison.cj b/analysis/low-level-api-cfir/testData/diagnostics/postSema/patternBindingComparison.cj
+new file mode 100644
+index 000000000..00767726b
+--- /dev/null
++++ b/analysis/low-level-api-cfir/testData/diagnostics/postSema/patternBindingComparison.cj
+@@ -0,0 +1,13 @@
++package test
++
++func pair(): (Int64, Int64) {
++    return (1, 2)
++}
++
++func destructure(): Int64 {
++    let (left, right) = pair()
++    if (left == 1) {
++        return right
++    }
++    return 0
++}
+diff --git a/analysis/low-level-api-cfir/testData/diagnostics/postSema/patternBindingImplicitType.cj b/analysis/low-level-api-cfir/testData/diagnostics/postSema/patternBindingImplicitType.cj
+new file mode 100644
+index 000000000..01dc7d7bb
+--- /dev/null
++++ b/analysis/low-level-api-cfir/testData/diagnostics/postSema/patternBindingImplicitType.cj
+@@ -0,0 +1,3 @@
++package test
++
++let topValue = 1
+diff --git a/analysis/low-level-api-cfir/testData/diagnostics/postSema/patternBindingInClassMember.cj b/analysis/low-level-api-cfir/testData/diagnostics/postSema/patternBindingInClassMember.cj
+new file mode 100644
+index 000000000..20bccf8e4
+--- /dev/null
++++ b/analysis/low-level-api-cfir/testData/diagnostics/postSema/patternBindingInClassMember.cj
+@@ -0,0 +1,17 @@
++package test
++
++class Cursor {
++    private var position: Int64 = 0
++
++    private func pair(): (Int64, Int64) {
++        return (1, 2)
++    }
++
++    func consume(): Int64 {
++        let (left, right) = pair()
++        if (left == 1) {
++            return right
++        }
++        return position
++    }
++}
+diff --git a/analysis/low-level-api-cfir/testData/diagnostics/postSema/privateMemberAccess.cj b/analysis/low-level-api-cfir/testData/diagnostics/postSema/privateMemberAccess.cj
+new file mode 100644
+index 000000000..b2979e8fa
+--- /dev/null
++++ b/analysis/low-level-api-cfir/testData/diagnostics/postSema/privateMemberAccess.cj
+@@ -0,0 +1,14 @@
++package test
++
++class Counter {
++    private var value: Int64 = 0
++
++    private func bump(): Unit {
++        value = value + 1
++    }
++
++    func tick(): Unit {
++        bump()
++        value = value + 1
++    }
++}
+diff --git a/analysis/low-level-api-cfir/testData/diagnostics/postSema/topLevelPatternVariable.cj b/analysis/low-level-api-cfir/testData/diagnostics/postSema/topLevelPatternVariable.cj
+new file mode 100644
+index 000000000..951ba03c9
+--- /dev/null
++++ b/analysis/low-level-api-cfir/testData/diagnostics/postSema/topLevelPatternVariable.cj
+@@ -0,0 +1,7 @@
++package test
++
++let delimiter: String = "<<<DELIM>>>"
++
++func useDelimiter(): String {
++    return delimiter
++}
+diff --git a/analysis/low-level-api-cfir/testData/diagnostics/postSema/useCrossFileConstant.cj b/analysis/low-level-api-cfir/testData/diagnostics/postSema/useCrossFileConstant.cj
+new file mode 100644
+index 000000000..369e958f1
+--- /dev/null
++++ b/analysis/low-level-api-cfir/testData/diagnostics/postSema/useCrossFileConstant.cj
+@@ -0,0 +1,13 @@
++// MODULE: main
++// MAIN_FILE_NAME: useCrossFileConstant.cj
++// FILE: constants.cj
++package test
++
++const SHARED_CONST: Int64 = 60
++
++// FILE: useCrossFileConstant.cj
++package test
++
++func useSharedConst(): Int64 {
++    return SHARED_CONST
++}
+diff --git a/analysis/low-level-api-cfir/testData/diagnostics/postSema/useCrossFileLet.cj b/analysis/low-level-api-cfir/testData/diagnostics/postSema/useCrossFileLet.cj
+new file mode 100644
+index 000000000..b35ee6393
+--- /dev/null
++++ b/analysis/low-level-api-cfir/testData/diagnostics/postSema/useCrossFileLet.cj
+@@ -0,0 +1,13 @@
++// MODULE: main
++// MAIN_FILE_NAME: useCrossFileLet.cj
++// FILE: sharedLet.cj
++package test
++
++let sharedRoot: String = "/"
++
++// FILE: useCrossFileLet.cj
++package test
++
++func useSharedLet(): String {
++    return sharedRoot
++}
