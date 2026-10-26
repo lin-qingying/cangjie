@@ -15,6 +15,8 @@ import org.cangnova.cangjie.analysis.api.platform.caches.withStatsCounter
 import org.cangnova.cangjie.analysis.api.resolution.CaCallResolutionAttempt
 import org.cangnova.cangjie.analysis.api.resolution.CaSymbolResolutionAttempt
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
+import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure.LLCfirInBlockModificationTracker
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirResolvableModuleSession
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsService
@@ -82,6 +84,29 @@ internal class CaCfirInternalCacheStorage(private val analysisSession: CaCfirSes
                 .build()
         }
     }
+
+    @OptIn(CaPlatformInterface::class)
+    /**
+     * Cone 类型到替换后成员作用域的会话级缓存。
+     *
+     * `CaType.scope` 家族与 `CaType.typeScope` 走同一条 `typeToScope` 接缝且参数
+     * 完全一致（同 session、同 scopeSession、同 `USE_SITE` 模式），一个类型必须
+     * 只构造一份作用域：补全是高频调用方，两个公开入口共享该缓存也避免同一接收者
+     * 在一次补全会话里重复遍历 extend 索引与父类型图。
+     */
+    val typeScopeCache: CachedValue<NullableConcurrentCache<ConeCangJieType, CfirTypeScope?>> by lazy {
+        softCachedValueWithPsiKey {
+            NullableConcurrentCache()
+        }
+    }
+
+    /**
+     * 获取或计算 [type] 的替换后成员作用域，供 use-site 成员通道与类型作用域通道共享。
+     */
+    fun getOrCreateTypeScope(
+        type: ConeCangJieType,
+        create: () -> CfirTypeScope?,
+    ): CfirTypeScope? = typeScopeCache.value.getOrPut(type) { create() }
 
     /**
      * The lifetime of this cache is the same as the corresponding [org.jetbrains.kotlin.analysis.api.CaSession],

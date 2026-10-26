@@ -32,12 +32,19 @@ import org.cangnova.cangjie.analysis.api.symbols.CaTypeAliasSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaTypeParameterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaVariableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.markers.CaDeclarationContainerSymbol
+import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.errorWithCfirSpecificEntries
+import org.cangnova.cangjie.cfir.declarations.CfirBuiltInTypeKind
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolNamesProvider
 import org.cangnova.cangjie.cfir.session.extendProviderOrNull
+import org.cangnova.cangjie.cfir.session.services.CfirExtendTargetKey
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeAliasSymbol
+import org.cangnova.cangjie.cfir.types.ConePrimitiveType
+import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
+import org.cangnova.cangjie.cfir.types.expandedExtendTargetKey
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
@@ -289,6 +296,37 @@ internal class CaCfirSymbolProvider(
             ?.getExtendsForClass(targetClassId)
             ?.map { extend -> analysisSession.cfirSymbolBuilder.buildExtendSymbol(extend.symbol) }
             .orEmpty()
+    }
+
+    /**
+     * 查询对给定接收者类型可匹配的 extend 符号。
+     *
+     * 镜像编译器 extend 索引的目标键语义（`CfirExtendIndexStore` 的
+     * `toExtendTargetKeyOrNull`）：基本类型走内建目标，`CPointer` / `CString`
+     * 走非 ClassId 内建目标键，typealias 按展开后的真实目标查询。
+     *
+     * 注意公开类型的投影形状：`CPointer<T>` 在公开模型里是合成 ClassId 的
+     * class-like 类型（`CaSymbolByCfirBuilder` 把 `ConePointerType` 投影成
+     * `std.core.CPointer` 的 class type），`ConePointerType` 身份不保留在公开
+     * coneType 里。因此这里对合成 ClassId 反查 [CfirBuiltInTypeKind]，
+     * 还原成编译器索引使用的内建目标键——直接按 ClassLike 桶查询会恒空。
+     */
+    override fun getExtendSymbols(receiverType: CaType): List<CaExtendSymbol> = withValidityAssertion {
+        val extendProvider = analysisSession.cfirSession.extendProviderOrNull
+            ?: return@withValidityAssertion emptyList()
+        val coneType = receiverType.requireCfirConeType("extend 目标查询")
+            .fullyExpandedType(analysisSession.cfirSession)
+        val extends = when (coneType) {
+            is ConePrimitiveType -> extendProvider.getExtendsForBuiltinType(coneType.kind)
+            else -> when (val builtinKind = coneType.classIdOrPrimitiveClassId?.let(CfirBuiltInTypeKind::fromClassIdOrNull)) {
+                CfirBuiltInTypeKind.CPOINTER -> extendProvider.getExtendsForTarget(CfirExtendTargetKey.CPointer)
+                CfirBuiltInTypeKind.CSTRING -> extendProvider.getExtendsForTarget(CfirExtendTargetKey.CString)
+                else -> coneType.expandedExtendTargetKey
+                    ?.let { targetKey -> extendProvider.getExtendsForTarget(targetKey) }
+                    .orEmpty()
+            }
+        }
+        extends.map { extend -> analysisSession.cfirSymbolBuilder.buildExtendSymbol(extend.symbol) }
     }
 
     /**

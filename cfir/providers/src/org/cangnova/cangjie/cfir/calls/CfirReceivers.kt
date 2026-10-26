@@ -29,6 +29,7 @@ import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.builtins.StandardNames
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.SessionAndScopeSessionHolder
+import org.cangnova.cangjie.cfir.declarations.CfirBuiltInDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
@@ -531,6 +532,20 @@ private fun collectTypeScopes(
             if (!visitedTypes.add(type)) return
             val symbol = session.symbolProvider.getClassLikeSymbolByClassId(classId) ?: return
             val declaration = symbol.cfir
+            /*
+             * 内建声明（CPointer / CString / VArray / CFunc）在符号层是合成 class-like，
+             * 但其语义类型是专用 Cone 形状（`constructType` 的既有纪律：五种内建声明
+             * 不能全部按普通 class type 处理）。Analysis 公开层把 `ConePointerType`
+             * 投影成合成 ClassId 的 class-like 类型，这里必须经 `constructType` 还原
+             * 真实形状再进成员 scope——否则 extend scope 的目标键会按
+             * `ClassLike(CPOINTER)` 建索引，而 extend 索引用的是非 ClassId 的
+             * `CfirExtendTargetKey.CPointer`，`extend<T> CPointer<T>` 的成员整体丢失。
+             */
+            val semanticOwnerType = if (declaration is CfirBuiltInDeclaration) {
+                declaration.symbol.constructType(type.typeArguments.map { it.type })
+            } else {
+                type
+            }
             val rawScope = when (declaration) {
                 is CfirClass -> CfirClassUseSiteMemberScope(
                     session,
@@ -538,7 +553,7 @@ private fun collectTypeScopes(
                     session.symbolProvider,
                     session.extendProvider,
                     session.directSupertypeProviderOrNull,
-                    ownerType = type,
+                    ownerType = semanticOwnerType,
                     scopeKind = scopeKind,
                 )
                 is CfirExtend -> CfirClassUseSiteMemberScope(
@@ -547,7 +562,7 @@ private fun collectTypeScopes(
                     session.symbolProvider,
                     session.extendProvider,
                     session.directSupertypeProviderOrNull,
-                    ownerType = type,
+                    ownerType = semanticOwnerType,
                     scopeKind = scopeKind,
                 )
                 else -> CfirClassUseSiteMemberScope(
@@ -556,11 +571,11 @@ private fun collectTypeScopes(
                     session.symbolProvider,
                     session.extendProvider,
                     session.directSupertypeProviderOrNull,
-                    ownerType = type,
+                    ownerType = semanticOwnerType,
                     scopeKind = scopeKind,
                 )
             }
-            destination += CfirClassSubstitutionScope(session, rawScope, type)
+            destination += CfirClassSubstitutionScope(session, rawScope, semanticOwnerType)
         }
     }
 }

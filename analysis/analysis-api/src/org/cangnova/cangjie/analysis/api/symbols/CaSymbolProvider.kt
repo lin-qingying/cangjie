@@ -2,6 +2,7 @@ package org.cangnova.cangjie.analysis.api.symbols
 
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeOwner
+import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
@@ -168,6 +169,16 @@ interface CaSymbolProvider : CaLifetimeOwner {
      * 查询针对某个目标 `ClassId` 的全部 `extend`。
      */
     fun getExtendSymbols(targetClassId: ClassId): List<CaExtendSymbol>
+
+    /**
+     * 查询对给定接收者类型可匹配的全部 `extend`。
+     *
+     * 覆盖完整接收者形状:基本类型按内建目标查询、`CPointer` / `CString` 按
+     * 非 ClassId 内建目标键查询、typealias 按展开后的语义目标查询。对齐编译器
+     * `CfirExtendProvider` 的完整查询面——`ClassId` 键天然表达不了基本类型与
+     * 内建目标,只有本入口能让 IDE 消费方不必自行把接收者类型降级成 `ClassId`。
+     */
+    fun getExtendSymbols(receiverType: CaType): List<CaExtendSymbol>
 
     /**
      * 按名称前缀发现声明。
