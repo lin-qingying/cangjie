@@ -2,6 +2,7 @@ package org.cangnova.cangjie.analysis.api.cfir.test
 
 import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.analysis.api.components.CaDiagnosticCheckerFilter
+import org.cangnova.cangjie.analysis.api.diagnostics.CaDiagnosticWithPsi
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
 import org.cangnova.cangjie.analysis.api.standalone.cfir.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
 import org.cangnova.cangjie.psi.CjFile
@@ -161,6 +162,59 @@ class AnalysisApiCfirDiagnosticsTest : AbstractAnalysisApiExecutionTest(
             },
             "interface 成员签名中的外层类型参数 `T` 不应在 Analysis API 懒解析链路上退化成 UNRESOLVED_REFERENCE: " +
                 diagnostics.joinToString { diagnostic -> "${diagnostic.factoryName}@${diagnostic.psi.text}" },
+        )
+    }
+
+    /**
+     * 基本类型与 `CPointer` 的 extend 成员调用不得产生假的未解析诊断。
+     *
+     * 定位说明（实测结论，勿按直觉假设）：`collectDiagnostics` 走的是**编译器 checker 链**，
+     * 不是 IDE 高亮那条链路。本用例在基线 `eb2c704ec` 上同样通过，说明现场的“整片变红”
+     * 并非由这条链产生——红色的真正来源是 Analysis 侧成员作用域为空（`typeScope` 取不到
+     * 基本类型接收者的成员）以及库 extend 身份还原抛错。因此本用例的价值是**必要条件**：
+     * 修复不得让编译器诊断多出假的未解析引用。红色本身的护栏见
+     * `StandaloneDecompiledExtendMemberTest`（库 extend 符号查询，基线直接抛错）与
+     * `ExtendReceiverShapesExecutionTest`（接收者形状矩阵）。
+     *
+     * 用例自带控制组：对 `Int64` 调用不存在的方法 `bogus` 必须报出来。没有这个控制组，
+     * “没有未解析诊断”的断言可能只是因为诊断收集链路自己空转（历史上 reporter 抛异常
+     * 被 `suppressAndLogExceptions` 吞掉，就会连带中止该元素上剩余 checker）而假通过。
+     */
+    @Test
+    fun primitiveExtendMemberDiagnostics(mainFile: CjFile) {
+        val diagnostics = analyzeForTest(mainFile) {
+            mainFile.collectDiagnostics(CaDiagnosticCheckerFilter.EXTENDED_AND_COMMON_CHECKERS)
+        }
+
+        fun textOf(diagnostic: CaDiagnosticWithPsi<*>): List<String> =
+            diagnostic.textRanges.map { range -> mainFile.text.substring(range.startOffset, range.endOffset) }
+
+        fun at(name: String) = diagnostics.filter { diagnostic -> name in textOf(diagnostic) }
+
+        val rendered = diagnostics.joinToString { diagnostic -> "${diagnostic.factoryName}@${textOf(diagnostic)}" }
+
+        // 控制组：链路必须真的在报诊断。
+        assertTrue(
+            at("bogus").isNotEmpty(),
+            "控制组缺失：对 Int64 调用不存在的方法必须产生诊断，否则说明收集链路空转，主断言没有证明力。实际：$rendered",
+        )
+
+        // 主断言：extend 成员调用不得退化成未解析引用（红色波浪线的直接来源）。
+        for (extendMember in listOf("doubled", "pointeeTag")) {
+            assertTrue(
+                at(extendMember).none { diagnostic -> diagnostic.factoryName == "UNRESOLVED_REFERENCE" },
+                "extend 成员 `$extendMember` 不得在 Analysis API 诊断链路上退化成 UNRESOLVED_REFERENCE。实际：$rendered",
+            )
+        }
+
+        // 基本类型 / 内建类型本身也不能变红：除控制组的 `bogus` 外不应有任何未解析引用。
+        val strayUnresolved = diagnostics.filter { diagnostic ->
+            diagnostic.factoryName == "UNRESOLVED_REFERENCE" && "bogus" !in textOf(diagnostic)
+        }
+        assertTrue(
+            strayUnresolved.isEmpty(),
+            "除控制组 `bogus` 外不得出现未解析引用；基本类型与 CPointer 自身必须保持已解析。实际：" +
+                strayUnresolved.joinToString { diagnostic -> "${diagnostic.factoryName}@${textOf(diagnostic)}" },
         )
     }
 
