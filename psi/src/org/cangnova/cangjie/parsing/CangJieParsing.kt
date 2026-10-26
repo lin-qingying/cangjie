@@ -2989,13 +2989,21 @@ class CangJieParsing private constructor(
      *   : "get" "(" ")" block
      *   ;
      * ```
+     *
+     * @param duplicated 是否已存在同类 getter；为 true 时仍照常解析，只补一条重复诊断
      */
     context(parseContext: ParsingContext)
-    private fun parsePropertyGet() {
+    private fun parsePropertyGet(duplicated: Boolean = false) {
         assert(_at(GET_KEYWORD))
 
         val get = mark()
         advance() // GET_KEYWORD
+
+        // 官方在解析前判重（`ParseDecl.cpp:296-300`），本仓库的 PsiErrorElement 为零宽节点，
+        // 在消费关键字后上报才能落在重复 accessor 所在行。
+        if (duplicated) {
+            error(CangJieParsingBundle.message("parsing.error.duplicated.get.or.set", "get"))
+        }
 
         if (at(LPAR)) {
             do {
@@ -3028,14 +3036,19 @@ class CangJieParsing private constructor(
      * ```
      *
      * @param detector 修饰符检测器
+     * @param duplicated 是否已存在同类 setter；为 true 时仍照常解析，只补一条重复诊断
      */
     context(parseContext: ParsingContext)
-    private fun parsePropertySet(detector: ModifierDetector?) {
+    private fun parsePropertySet(detector: ModifierDetector?, duplicated: Boolean = false) {
         assert(_at(SET_KEYWORD))
         val set = mark()
 
         // if(detector?.isMutDetected() == true) {
         advance() // SET_KEYWORD
+
+        if (duplicated) {
+            error(CangJieParsingBundle.message("parsing.error.duplicated.get.or.set", "set"))
+        }
 
         if (at(LPAR)) {
             do {
@@ -3080,7 +3093,16 @@ class CangJieParsing private constructor(
      *   ;
      * ```
      *
-     * @param detector 修饰符检测器
+     * 官方 `ParserImpl::ParsePropBody`（`external/cangjie_compiler/src/Parse/ParseDecl.cpp:275-329`）
+     * 对重复的同类 accessor 报 `duplicated '<get|set>' in prop`，但**不丢弃**第二个节点：
+     * 诊断后照常解析并追加进 `getters` / `setters`。本实现同样保留全部节点，仅在解析重复项时补报诊断。
+     *
+     * 官方主诊断锚重复关键字，另带 "previous one" 与 prop 起始位置两个 hint；仓库的
+     * `PsiErrorElement` 只有 errorDescription，无法表达 hint。
+     *
+     * 当前循环只接受裸 `get` / `set`；注解、访问器修饰符与分号分隔尚未对齐官方循环。
+     *
+     * @param detector 修饰符检测器，透传给 setter 解析
      */
     context(parseContext: ParsingContext)
     private fun parsePropertyBody(detector: ModifierDetector?) {
@@ -3089,45 +3111,25 @@ class CangJieParsing private constructor(
         val body = mark()
         advance() // LBRACE
 
-        // var isGet = false
-        // var isSet = false
-        // while (at(GET_KEYWORD) || at(SET_KEYWORD)) {
-        //     if (at(GET_KEYWORD) && !isGet) {
-        //         isGet = true
-        //         parsePropertyGet()
-        //     }
-        //     if (at(SET_KEYWORD) && !isSet) {
-        //         isSet = true
-        //         parsePropertySet(detector)
-        //     }
-        // }
-        //
-        // if (!isGet) {
-        //     error("Get accessor should be implemented")
-        // }
-        //
-        // if (!isSet && detector?.isMutDetected() == true) {
-        //     error("Set accessor should be implemented")
-        // }
+        // 官方用 getter / setter 节点指针判重，指针后续还会充当 "previous one" 的锚点。
+        // 本仓库的 PsiErrorElement 只有 errorDescription，无法携带 related location，
+        // 故这里只需同类是否已出现；重复节点必须保留，不能像旧注释代码那样跳过。
+        var hasGetter = false
+        var hasSetter = false
 
         while (at(GET_KEYWORD) || at(SET_KEYWORD)) {
-            parsePropertyAccessor()
+            if (at(GET_KEYWORD)) {
+                parsePropertyGet(duplicated = hasGetter)
+                hasGetter = true
+            } else {
+                parsePropertySet(detector, duplicated = hasSetter)
+                hasSetter = true
+            }
         }
 
         expect(RBRACE, "Expecting '}'")
 
         body.done(PROPERTY_BODY)
-    }
-
-
-    context(parseContext: ParsingContext)
-    private fun parsePropertyAccessor() {
-        if (at(GET_KEYWORD)) {
-            parsePropertyGet()
-        }
-        if (at(SET_KEYWORD)) {
-            parsePropertySet(null)
-        }
     }
 
 
