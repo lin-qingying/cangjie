@@ -74,9 +74,11 @@ interface CaScopeProvider : CaLifetimeOwner {
     /**
      * 通过该类型可访问到的成员作用域;不可计算时(例如错误类型)返回 `null`。
      *
-     * 该入口把具体类型还原为 class-like 声明后取未替换的成员作用域，
-     * 因此不保证成员签名保留接收者的实际类型实参。需要 use-site 签名的消费方
-     * 必须走 [org.cangnova.cangjie.analysis.api.components.CaTypeScopeProvider]。
+     * 覆盖全部接收者形状:基本类型、typealias、内建泛型目标(`CPointer`)、
+     * 受上界约束的类型参数与普通 class-like。成员签名按接收者实际类型实参
+     * 替换;需要声明侧(未替换)对照视图的消费方走
+     * [org.cangnova.cangjie.analysis.api.components.CaTypeScopeProvider] 的
+     * `typeScope.declarationScope`。
      */
     val CaType.scope: CaScope?
 

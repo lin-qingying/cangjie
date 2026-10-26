@@ -6,10 +6,14 @@ import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.renderer.CfirRenderer
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.services.CfirExtendSemanticModel
-import org.cangnova.cangjie.cfir.session.extendIndexStore
+import org.cangnova.cangjie.cfir.session.extendIndexStoreOrNull
+import org.cangnova.cangjie.cfir.session.extendProviderOrNull
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.cfir.symbols.CfirExtendSymbol
+import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
+import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.psi.CjExtend
@@ -72,19 +76,83 @@ internal data class CaCfirResolvedExtendIdentity(
  * 规则分成两层：
  * 1. cache key / pointer restore 使用 `extendIndexStore` 提供的正式语义身份；
  * 2. public `extendId` 继续保留现有文本投影，作为公开 API 的兼容视图。
+ *
+ * 语义模型按**声明所属 session** 的 extend 索引解析：基本类型目标的查询天然命中
+ * 标准库的大量 `extend Int64 <: Comparable` 等库声明，库 extend 的模型不在 use-site
+ * session 的 `CfirExtendIndexStore` 里（该索引只随源码 EXTENSIONS 阶段建立），
+ * 固定查 use-site store 会让所有库 extend 抛 `missing semantic model`。
+ *
+ * 库 extend 没有 EXTENSIONS 阶段语义模型（源码管线的产物），按结构信息构造
+ * **降级身份**：包名取 provider 的 `getPackageFqName`，目标 ClassId 取
+ * `extendedTypeRef` 的展开结果，文件名与声明序号用稳定占位。降级身份只服务
+ * 符号缓存与展示；pointer restore 对库 extend 仍走 PSI/符号身份路径。
  */
 internal fun CaCfirSession.resolveExtendIdentity(symbol: CfirExtendSymbol): CaCfirResolvedExtendIdentity {
     // 仓颉 `extend` 的稳定身份建立在 EXTENSIONS 阶段后的语义模型上。
     // 因此统一在 identity 入口推进到该阶段，再读取 extendIndexStore。
     symbol.lazyResolveToPhase(CfirResolvePhase.EXTENSIONS)
-    val semanticModel = cfirSession.extendIndexStore.modelForDeclaration(symbol.cfir)
-        ?: error("Extend `${symbol}` is missing semantic model in extendIndexStore")
+    val declaration = symbol.cfir
+    val declarationSession = declaration.moduleData.session
+    val semanticModel = declarationSession.extendIndexStoreOrNull?.modelForDeclaration(declaration)
     val sourceExtendPsi = symbol.backingPsiIfApplicable as? CjExtend
+    if (semanticModel != null) {
+        return CaCfirResolvedExtendIdentity(
+            stableIdentity = semanticModel.toPublicSymbolIdentity(),
+            extendId = buildPublicExtendId(semanticModel, sourceExtendPsi),
+            extendPsi = sourceExtendPsi,
+            packageFqName = semanticModel.packageFqName,
+        )
+    }
+
+    // 库 extend：无源码语义模型，按结构信息构造降级身份。
+    val packageFqName = declarationSession.extendProviderOrNull
+        ?.getPackageFqName(declaration)
+        ?: declaration.moduleData.name.let { FqName(it.asString()) }
+    val targetClassId = declaration.extendedTypeRef.coneTypeOrNull
+        ?.fullyExpandedType(declarationSession)
+        ?.classIdOrPrimitiveClassId
+    val stableIdentity = CaCfirExtendSymbolIdentity(
+        packageFqName = packageFqName,
+        fileName = LIBRARY_EXTEND_FILE_NAME,
+        declarationIndexInFile = -1,
+        targetClassId = targetClassId,
+        inheritedInterfaceSemanticKeys = emptyList(),
+    )
     return CaCfirResolvedExtendIdentity(
-        stableIdentity = semanticModel.toPublicSymbolIdentity(),
-        extendId = buildPublicExtendId(semanticModel, sourceExtendPsi),
+        stableIdentity = stableIdentity,
+        extendId = buildPublicExtendId(semanticModel = null, extend = declaration, sourceExtendPsi),
         extendPsi = sourceExtendPsi,
-        packageFqName = semanticModel.packageFqName,
+        packageFqName = packageFqName,
+    )
+}
+
+/**
+ * 库 extend 身份使用的稳定文件名占位：反序列化声明没有源码文件身份。
+ */
+private const val LIBRARY_EXTEND_FILE_NAME: String = "<library>"
+
+/**
+ * 无语义模型时按声明结构生成公开 `extendId`（对齐 [buildPublicExtendId] 的文本投影）。
+ */
+private fun buildPublicExtendId(
+    semanticModel: CfirExtendSemanticModel?,
+    extend: CfirExtend,
+    sourceExtendPsi: CjExtend?,
+): String {
+    if (semanticModel != null) return buildPublicExtendId(semanticModel, sourceExtendPsi)
+    sourceExtendPsi?.let { return it.getExtendId() }
+
+    val readableRenderer = CfirRenderer.withReadability()
+    val extendedTypeText = normalizeExtendTypeText(readableRenderer.renderElementAsString(extend.extendedTypeRef))
+    val superTypeTexts = extend.superTypeRefs
+        .map { superTypeRef -> normalizeExtendTypeText(readableRenderer.renderElementAsString(superTypeRef)) }
+        .filter(String::isNotBlank)
+    return buildExtendId(
+        packageFqName = extend.moduleData.session.extendProviderOrNull
+            ?.getPackageFqName(extend)
+            ?: FqName(extend.moduleData.name.asString()),
+        receiverTypeText = extendedTypeText,
+        superTypeTexts = superTypeTexts,
     )
 }
 

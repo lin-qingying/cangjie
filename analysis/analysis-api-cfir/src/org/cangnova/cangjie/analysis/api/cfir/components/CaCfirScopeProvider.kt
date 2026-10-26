@@ -29,14 +29,16 @@ import org.cangnova.cangjie.analysis.api.symbols.CaClassSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPackageSymbol
 import org.cangnova.cangjie.analysis.api.symbols.markers.CaDeclarationContainerSymbol
 import org.cangnova.cangjie.analysis.api.types.CaType
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.ScopeSession
+import org.cangnova.cangjie.cfir.calls.typeToScope
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
-import org.cangnova.cangjie.cfir.resolve.toClassLikeSymbol
 import org.cangnova.cangjie.cfir.scopes.unsubstitutedScope
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassDeclaredMemberScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassStaticScope
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
@@ -245,21 +247,28 @@ internal class CaCfirScopeProvider(
     /**
      * 构造类型的 use-site 成员作用域（CFIR 层）。
      *
-     * **未替换**视图：把类型还原成 class-like 声明后取 unsubstituted scope，
-     * 因此成员签名里仍是声明自身的类型参数（`Box<Int64>` 的成员仍是 `T`）。
-     * 需要实际类型实参的消费方走 `CaTypeScopeProvider.typeScope`（任务 4.1 的新入口，
-     * 复用接收者查找共用的 `typeToScope` 接缝）。
+     * 与 `CaTypeScopeProvider.typeScope` 走**同一条** `typeToScope` 接缝：该接缝是
+     * 接收者查找与 Analysis 类型作用域共用的唯一入口（任务 4.2），统一处理类型变量
+     * 上界、交叉类型、ideal literal、builtin extend、typealias 展开与继承替换。
+     * 成员通道若在此各自复制“类型 → 作用域 owner”的还原逻辑，非 nominal 接收者
+     * （`ConePrimitiveType` 等）会整体退化成 `null`——`extend Int64` 注入的成员
+     * 随之在 IDE 补全与成员查询中不可见，而调用解析路径却一切正常。
+     *
+     * 成员签名按接收者实际类型实参替换；需要声明侧（未替换）对照视图的消费方走
+     * `CaTypeScopeProvider.typeScope.declarationScope`。
      */
-    private fun useSiteTypeScopeOf(type: CaType): CfirTypeScope? = type
-        .requireCfirConeType("成员作用域查询")
-        .toClassLikeSymbol(analysisSession.cfirSession)
-        ?.cfir
-        ?.unsubstitutedScope(
-            analysisSession.cfirSession,
-            getScopeSession(),
-            withForcedTypeCalculator = false,
-            memberRequiredPhase = CfirResolvePhase.STATUS,
-        )
+    @OptIn(CfirImplementationDetail::class)
+    private fun useSiteTypeScopeOf(type: CaType): CfirTypeScope? {
+        val coneType = type.requireCfirConeType("成员作用域查询")
+        return analysisSession.cacheStorage.getOrCreateTypeScope(coneType) {
+            typeToScope(
+                analysisSession.cfirSession,
+                getScopeSession(),
+                coneType,
+                scopeKind = CfirClassMemberScopeKind.USE_SITE,
+            )
+        }
+    }
 
     /**
      * 构造类型的 use-site 成员作用域（公开层）。

@@ -11,7 +11,6 @@ import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaExtendSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaFileSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaVariableSymbol
-import org.cangnova.cangjie.analysis.api.types.CaClassLikeType
 import org.cangnova.cangjie.analysis.api.types.CaErrorType
 import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.ide.completion.api.CompletionItemKind
@@ -148,6 +147,12 @@ class CfirMemberCompletionSection : CfirCompletionSection(
      *
      * 返回「候选去重键 → 符号」的映射：去重键用于与成员通道对齐身份，
      * 符号本身用于在成员通道未覆盖时补齐候选。
+     *
+     * extend 候选按**接收者类型**查询而不是降级成 `ClassId`：基本类型在公开
+     * 模型里不是 `CaClassLikeType`（`CaPrimitiveType` 刻意不暴露 `classId`），
+     * `CPointer` / `CString` 甚至没有 ClassId——按 ClassId 查询会把这两类接收者
+     * 的 extend 通道整体判空。`getExtendSymbols(receiverType)` 内部镜像编译器
+     * extend 索引的目标键语义，保证补全候选与调用解析同源。
      */
     private fun CaSession.applicableExtendMembers(
         receiverType: CaType,
@@ -155,9 +160,8 @@ class CfirMemberCompletionSection : CfirCompletionSection(
         file: CjFile,
         prefix: String,
     ): Map<String, CaCallableSymbol> {
-        val classId = (receiverType as? CaClassLikeType)?.classId ?: return emptyMap()
         val result = mutableMapOf<String, CaCallableSymbol>()
-        for (extend in getExtendSymbols(classId)) {
+        for (extend in getExtendSymbols(receiverType)) {
             if (!appliesTo(extend, receiverType, useSite)) continue
             for (symbol in extend.declaredMemberScope.callables { true }) {
                 if (!symbol.matchesPrefix(prefix)) continue

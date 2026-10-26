@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.resolve
 
 import org.cangnova.cangjie.cfir.SessionHolder
+import org.cangnova.cangjie.cfir.declarations.CfirBuiltInTypeKind
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirClassifierSymbol
@@ -14,6 +15,7 @@ import org.cangnova.cangjie.cfir.types.ConeClassifierLookupTag
 import org.cangnova.cangjie.cfir.types.ConeClassLikeLookupTag
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeLookupTagBasedType
+import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.name.ClassId
 
 /**
@@ -132,6 +134,49 @@ fun ConeCangJieType.toClassLikeSymbol(session: CfirSession): CfirClassLikeSymbol
 context(sessionHolder: SessionHolder)
 fun ConeCangJieType.toClassLikeSymbol(): CfirClassLikeSymbol<*>? {
     return toClassLikeSymbol(session = sessionHolder.session)
+}
+
+/**
+ * 把类型解析为其“成员表面声明侧 owner”的 class-like symbol。
+ *
+ * 与 [toClassLikeSymbol] 的差异：本入口覆盖内建目标身份。`ConePrimitiveType`
+ * 不是 lookup-tag 类型，但 [classIdOrPrimitiveClassId] 给出的合成 [ClassId]
+ * 在符号层对应 `CfirPrimitiveTypeSymbol`——官方编译器把基本类型同时暴露为
+ * 合成 classifier 与真实 builtin type（`builtinTyToExtendMap`），两条身份必须
+ * 还原到同一份声明，才能让“声明对照视图”与 use-site 成员表面共享 owner。
+ *
+ * `CPointer` / `CString` 没有 nominal 声明视图（`CfirExtendTargetKey` 专门为
+ * 它们设计了非 ClassId 键），本入口对它们返回 `null`；其成员表面必须经
+ * `typeToScope` 接缝按内建目标查询。
+ */
+fun ConeCangJieType.toOwningClassLikeSymbol(session: CfirSession): CfirClassLikeSymbol<*>? {
+    if (hasNoNominalDeclarationView()) return null
+    toClassLikeSymbol(session)?.let { return it }
+    return classIdOrPrimitiveClassId
+        ?.let { classId -> session.symbolProvider.getClassLikeSymbolByClassId(classId) }
+}
+
+/**
+ * 该类型是否只有内建目标身份、没有可作声明对照视图的 nominal 声明。
+ *
+ * `CPointer` / `CString` 的 builtin 声明本身不承载成员表面：它们的成员全部来自
+ * extend，而 extend 索引对二者使用 [org.cangnova.cangjie.cfir.types.CfirExtendTargetKey.CPointer]
+ * / `CString` 这类非 ClassId 键，按 `ClassLike(classId)` 取 unsubstituted scope
+ * 必然查不到任何 extend 成员。所以这两个内建种类必须排除在 owner 还原之外，
+ * 让调用方走 `typeToScope` 接缝按内建目标查询。
+ */
+private fun ConeCangJieType.hasNoNominalDeclarationView(): Boolean =
+    when (classIdOrPrimitiveClassId?.let(CfirBuiltInTypeKind::fromClassIdOrNull)) {
+        CfirBuiltInTypeKind.CPOINTER, CfirBuiltInTypeKind.CSTRING -> true
+        else -> false
+    }
+
+/**
+ * 使用当前上下文 session 把类型解析为成员表面声明侧 owner。
+ */
+context(sessionHolder: SessionHolder)
+fun ConeCangJieType.toOwningClassLikeSymbol(): CfirClassLikeSymbol<*>? {
+    return toOwningClassLikeSymbol(session = sessionHolder.session)
 }
 
 /**

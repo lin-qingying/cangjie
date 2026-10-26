@@ -21,7 +21,8 @@ import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.calls.typeToScope
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
-import org.cangnova.cangjie.cfir.resolve.toClassLikeSymbol
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
+import org.cangnova.cangjie.cfir.resolve.toOwningClassLikeSymbol
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
 import org.cangnova.cangjie.cfir.scopes.unsubstitutedScope
@@ -133,12 +134,15 @@ internal class CaCfirTypeScopeProvider(
      */
     override val CaType.typeScope: CaTypeScope?
         get() = withValidityAssertion {
-            val cfirScope = typeToScope(
-                session = analysisSession.cfirSession,
-                scopeSession = analysisSession.getScopeSessionFor(analysisSession.cfirSession),
-                type = this.requireCfirConeType("类型作用域查询"),
-                scopeKind = CfirClassMemberScopeKind.USE_SITE,
-            ) ?: return@withValidityAssertion null
+            val coneType = this.requireCfirConeType("类型作用域查询")
+            val cfirScope = analysisSession.cacheStorage.getOrCreateTypeScope(coneType) {
+                typeToScope(
+                    session = analysisSession.cfirSession,
+                    scopeSession = analysisSession.getScopeSessionFor(analysisSession.cfirSession),
+                    type = coneType,
+                    scopeKind = CfirClassMemberScopeKind.USE_SITE,
+                )
+            } ?: return@withValidityAssertion null
             CaCfirTypeScope(this, cfirScope, analysisSession.cfirSymbolBuilder, ::declarationScopeOf)
         }
 
@@ -149,20 +153,45 @@ internal class CaCfirTypeScopeProvider(
         get() = withValidityAssertion { (this as CaCfirTypeScope).declarationScope }
 
     /**
-     * 取声明视图：把类型还原成 class-like 声明后取 unsubstituted scope。
+     * 取声明视图：把类型还原成声明侧 owner 后取 unsubstituted scope。
      *
-     * 与 `CaScopeProvider.scope` 同源（那条路径服务旧契约），这里只把它作为**对照视图**复用，
-     * 不改变旧入口的语义。
+     * 与 use-site 视图的分工：这里保留**未替换**的声明签名（`Box<Int64>` 的成员
+     * 仍显示 `T`），作为 `TypeScopeExecutionTest` 断言 ② 的对照视图。
+     *
+     * owner 还原走 [toOwningClassLikeSymbol]：基本类型按合成 [ClassId] 取
+     * `CfirPrimitiveTypeSymbol`（`ConePrimitiveType` 不是 lookup-tag 类型，
+     * `toClassLikeSymbol` 对它返回 `null`，会撞上本类 `declarationScope` 的
+     * `error("类型作用域缺少声明视图")` 兜底）；typealias 先按语义展开再取 owner，
+     * 与 extend 索引的同一展开纪律对齐。
+     *
+     * `CPointer` / `CString` 没有 nominal 声明视图，其成员表面全部来自 extend；
+     * 此时对照视图退化为 use-site 视图本身——对照的目的是“未替换 vs 替换”，
+     * 无声明可对照时返回替换后结果比直接失败更接近调用方预期。
      */
-    private fun declarationScopeOf(type: CaType): CaScope? = type
-        .requireCfirConeType("类型作用域声明视图")
-        .toClassLikeSymbol(analysisSession.cfirSession)
-        ?.cfir
-        ?.unsubstitutedScope(
-            analysisSession.cfirSession,
-            analysisSession.getScopeSessionFor(analysisSession.cfirSession),
-            withForcedTypeCalculator = false,
-            memberRequiredPhase = CfirResolvePhase.STATUS,
-        )
-        ?.let { CaCfirDelegatingNamesAwareScope(it, analysisSession.cfirSymbolBuilder) }
+    private fun declarationScopeOf(type: CaType): CaScope? {
+        val expandedConeType = type.requireCfirConeType("类型作用域声明视图")
+            .fullyExpandedType(analysisSession.cfirSession)
+        val owner = expandedConeType.toOwningClassLikeSymbol(analysisSession.cfirSession)
+        if (owner == null) {
+            // 无 nominal 声明可对照（CPointer / CString 等内建目标）：成员表面全部
+            // 来自 extend，对照视图退化为 use-site 视图本身。
+            val useSiteScope = analysisSession.cacheStorage.getOrCreateTypeScope(expandedConeType) {
+                typeToScope(
+                    session = analysisSession.cfirSession,
+                    scopeSession = analysisSession.getScopeSessionFor(analysisSession.cfirSession),
+                    type = expandedConeType,
+                    scopeKind = CfirClassMemberScopeKind.USE_SITE,
+                )
+            } ?: return null
+            return CaCfirDelegatingNamesAwareScope(useSiteScope, analysisSession.cfirSymbolBuilder)
+        }
+        return owner.cfir
+            .unsubstitutedScope(
+                analysisSession.cfirSession,
+                analysisSession.getScopeSessionFor(analysisSession.cfirSession),
+                withForcedTypeCalculator = false,
+                memberRequiredPhase = CfirResolvePhase.STATUS,
+            )
+            ?.let { CaCfirDelegatingNamesAwareScope(it, analysisSession.cfirSymbolBuilder) }
+    }
 }

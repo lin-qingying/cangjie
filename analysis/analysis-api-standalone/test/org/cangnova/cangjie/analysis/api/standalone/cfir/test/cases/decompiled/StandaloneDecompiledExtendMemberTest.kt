@@ -14,6 +14,7 @@ import org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModul
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.cjTestModuleStructure
 import org.cangnova.cangjie.analysis.test.framework.services.expressionMarkerProvider
 import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjCallExpression
 import org.cangnova.cangjie.psi.CjExtend
 import org.cangnova.cangjie.psi.CjFile
@@ -30,10 +31,13 @@ import org.junit.jupiter.api.Test
 /**
  * 反序列化 `.cjo` 库模块中 `extend` 成员的 standalone 解析回归测试。
  *
- * 锁定的是 `.cjo` 路径上的三条契约：
+ * 锁定的是 `.cjo` 路径上的四条契约：
  * 1. 反编译 PSI 的 `extend` 没有 `ClassId`，稳定身份只能用 `getExtendId()`；
  * 2. 库 `extend` 成员对源码调用点可见，公开符号 origin 为 `LIBRARY`；
- * 3. 库 `extend` 能按目标 `ClassId` 被查到，且 `extendId` 与反编译 PSI 一致。
+ * 3. 库 `extend` 的**符号层查询可用**（`getTopLevelExtendSymbols` / `getExtendSymbols`），
+ *    身份由 `resolveExtendIdentity` 的降级路径给出，而不是抛
+ *    `missing semantic model in extendIndexStore`；
+ * 4. 库 `extend` 能按目标 `ClassId` 被查到，且 `extendId` 与反编译 PSI 一致。
  *
  * 这条路径与 IDE 内置库模块（同样由 `.cjo` 反编译而来）走同一份 deserializer，
  * 但 IDE 使用 `STUBS` origin、standalone 使用 `BINARIES` origin，因此本测试只覆盖 `BINARIES` 分支。
@@ -57,6 +61,11 @@ class StandaloneDecompiledExtendMemberTest : AbstractAnalysisApiExecutionTest(
 
     /**
      * 验证源码模块能解析 `.cjo` 库中 `extend` 提供的成员，并锁定其公开身份形状。
+     *
+     * 同时覆盖库 `extend` 的符号层查询：基线在 `getTopLevelExtendSymbols` 上会抛
+     * `IllegalStateException: Extend CfirExtendSymbol is missing semantic model in extendIndexStore`，
+     * 该异常会被 `suppressAndLogExceptions` 吞掉并连带中止同一元素上剩余 checker——
+     * 这正是 IDE 里“extend 成员整片变红”的成因，因此本用例是该症状的直接护栏。
      */
     @Test
     fun extendMemberInDecompiledLibrary(
@@ -107,11 +116,38 @@ class StandaloneDecompiledExtendMemberTest : AbstractAnalysisApiExecutionTest(
             assertEquals(FqName("sample.lib"), callableId.packageName)
             assertNull(callableId.classId, "库 extend 成员不是 class-like 成员，`callableId` 只能是包级身份。")
 
-            // 已知缺口（不在本次修复范围）：`getExtendSymbols` / `getTopLevelExtendSymbols` 会对反序列化 extend
-            // 走 `resolveExtendIdentity`，而 extend 语义模型只在源码 extend 的 EXTENSIONS 阶段建立，
-            // 因此库 extend 目前会抛 `Extend `CfirExtendSymbol` is missing semantic model in extendIndexStore`。
-            // extend 身份断言因此落在反编译 PSI 的 `getExtendId()` 上（见上），公开 extend 符号查询留待该缺口修复后补齐。
+            // 库 extend 的**符号层**查询：语义模型只在源码 extend 的 EXTENSIONS 阶段建立，
+            // 因此 `.cjo` 反序列化的 extend 在 extendIndexStore 里没有条目。这里锁定修复后的
+            // 契约——`resolveExtendIdentity` 必须为库 extend 构造降级身份，而不是抛
+            // `Extend `CfirExtendSymbol` is missing semantic model in extendIndexStore`；
+            // 后者会连带中止该 CFIR 元素上剩余 checker，表现为 IDE 里“extend 成员整片变红”。
             assertTrue(extendId.isNotBlank())
+
+            val libraryExtends = getTopLevelExtendSymbols(FqName("sample.lib"))
+            assertEquals(
+                1,
+                libraryExtends.size,
+                "库模块的 extend 必须能按包查询到；查询失败说明库 extend 身份还原仍在抛错。",
+            )
+            val libraryExtend = libraryExtends.single()
+            assertEquals(
+                1,
+                libraryExtend.declaredMemberScope.callables(Name.identifier("render")).count(),
+                "库 extend 的声明成员 render 必须可查询——extend 成员补全与导航都依赖它。",
+            )
+            assertEquals(
+                1,
+                libraryExtend.declaredMemberScope.callables(Name.identifier("combine")).count(),
+                "库 extend 的第二个声明成员 combine 同样必须可查询。",
+            )
+
+            val documentSymbol = getTopLevelClassLikeSymbols(FqName("sample.lib"), Name.identifier("Document")).single()
+            val documentClassId = requireNotNull(documentSymbol.classId) { "库 class Document 必须有 ClassId。" }
+            assertEquals(
+                1,
+                getExtendSymbols(documentClassId).size,
+                "库 extend 必须能按目标 ClassId 查到，且不抛错。",
+            )
         }
     }
 }
