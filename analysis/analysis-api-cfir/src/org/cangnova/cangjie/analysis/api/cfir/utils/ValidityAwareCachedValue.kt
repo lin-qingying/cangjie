@@ -26,7 +26,7 @@ internal value class ValidityAwareCachedValue<T>(
 /**
  * 为生命周期拥有者创建带有效性检查的 publication lazy 缓存。
  */
-@Suppress("UnusedReceiverParameter") // we need to have the KtLifetimeOwner as receiver to make sure it's called only for KtLifetimeOwner
+@Suppress("UnusedReceiverParameter") // 该扩展接收者用于限定委托只能声明在 CaLifetimeOwner 上。
 internal fun <T> CaLifetimeOwner.cached(init: () -> T): ValidityAwareCachedValue<T> {
     return ValidityAwareCachedValue(lazy(LazyThreadSafetyMode.PUBLICATION, init))
 }

@@ -25,6 +25,7 @@ import org.cangnova.cangjie.analysis.api.impl.base.components.CaBaseSessionCompo
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.scopes.CaScope
 import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaClassSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPackageSymbol
 import org.cangnova.cangjie.analysis.api.symbols.markers.CaDeclarationContainerSymbol
 import org.cangnova.cangjie.analysis.api.types.CaType
@@ -367,4 +368,15 @@ internal class CaCfirScopeProvider(
             ?: error("仅 CFIR class-like 符号支持成员作用域查询：${symbol::class.simpleName}")
     }
 
+}
+
+/**
+ * 返回 class、interface、struct 或 enum 声明成员及显式继承成员，不纳入 extend 注入的成员。
+ */
+internal fun CaCfirSession.declarationSiteMemberScope(symbol: CaClassSymbol): CaScope = withValidityAssertion {
+    val classSymbol = symbol as? CaCfirClassSymbol
+        ?: error("仅 CFIR class symbol 支持声明站点成员作用域：${symbol::class.simpleName}")
+    val lowLevelSession = cfirSession
+    val cfirScope = lowLevelSession.cangjieScopeProvider.getDeclarationSiteMemberScope(classSymbol.cfirSymbol, lowLevelSession)
+    CaCfirDelegatingNamesAwareScope(cfirScope, cfirSymbolBuilder)
 }

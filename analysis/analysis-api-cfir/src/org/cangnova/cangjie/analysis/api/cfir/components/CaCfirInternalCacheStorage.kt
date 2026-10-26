@@ -15,6 +15,7 @@ import org.cangnova.cangjie.analysis.api.platform.caches.withStatsCounter
 import org.cangnova.cangjie.analysis.api.resolution.CaCallResolutionAttempt
 import org.cangnova.cangjie.analysis.api.resolution.CaSymbolResolutionAttempt
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
+import org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure.LLCfirDeclarationModificationService
 import org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure.LLCfirInBlockModificationTracker
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirResolvableModuleSession
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsService
@@ -84,11 +85,10 @@ internal class CaCfirInternalCacheStorage(private val analysisSession: CaCfirSes
     }
 
     /**
-     * The lifetime of this cache is the same as the corresponding [org.jetbrains.kotlin.analysis.api.CaSession],
-     * so it doesn't require additional invalidation.
+     * 缓存随对应的 [CaSession] 持有；为响应 session 存续期间的语义变化，也会注册独立修改跟踪器。
      *
-     * The only case where we need to invalidate FIR without the containing session being invalidated is
-     * [in-block modification][org.jetbrains.kotlin.analysis.low.level.api.fir.file.structure.LLCfirDeclarationModificationService].
+     * 函数体内修改由 [LLCfirDeclarationModificationService] 管理的 tracker 跟踪；当 CFIR session
+     * 可解析时，宏语义快照修改也会通过 session 的快照 tracker 单独触发缓存失效。
      */
     private inline fun <T> softCachedValueWithPsiKey(crossinline createValue: () -> T): CachedValue<T> {
         val invalidationTrackers = buildList {

@@ -29,8 +29,6 @@ enum class CaSymbolOrigin {
 
     /**
      * 由编译器合成的声明。
-     *
-     * 例如 data class 自动生成的成员、enum 类的 `valueOf` / `values` 等。
      */
     SYNTHETIC,
 

@@ -7,11 +7,17 @@ import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.impl.base.references.CaBaseSimpleNameReference
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getOrBuildCfir
+import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
+import org.cangnova.cangjie.cfir.CfirAnnotationContainer
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 import org.cangnova.cangjie.cfir.expressions.CfirLoopJump
+import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
+import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
 import org.cangnova.cangjie.cfir.psi
 import org.cangnova.cangjie.psi.CjAnnotation
 import org.cangnova.cangjie.psi.CjConstructorCalleeExpression
+import org.cangnova.cangjie.psi.CjDeclaration
 import org.cangnova.cangjie.psi.CjImportAlias
 import org.cangnova.cangjie.psi.CjLabelReferenceExpression
 import org.cangnova.cangjie.psi.CjMacroExpression
@@ -22,7 +28,9 @@ import org.cangnova.cangjie.psi.CjUserType
 import org.cangnova.cangjie.psi.CjValueArgumentName
 import org.cangnova.cangjie.psi.CjExpression
 import org.cangnova.cangjie.psi.psiUtil.getAssignmentByLHS
+import org.cangnova.cangjie.psi.psiUtil.getStrictParentOfType
 import org.cangnova.cangjie.psi.psiUtil.getQualifiedExpressionForSelectorOrThis
+import org.cangnova.cangjie.psi.psiUtil.parentOfType
 import org.cangnova.cangjie.references.CangJiePsiReferenceProviderContributor
 
 /**
@@ -46,10 +54,10 @@ internal class CaCfirSimpleNameReference(
      */
     private val isAnnotationCall: Boolean
         get() {
-            val ktUserType = expression.parent as? CjUserType ?: return false
-            val ktTypeReference = ktUserType.parent as? CjTypeReference ?: return false
-            val ktConstructorCalleeExpression = ktTypeReference.parent as? CjConstructorCalleeExpression ?: return false
-            return ktConstructorCalleeExpression.parent is CjAnnotation
+            val cjUserType = expression.parent as? CjUserType ?: return false
+            val cjTypeReference = cjUserType.parent as? CjTypeReference ?: return false
+            val cjConstructorCalleeExpression = cjTypeReference.parent as? CjConstructorCalleeExpression ?: return false
+            return cjConstructorCalleeExpression.parent is CjAnnotation
         }
 
     /**
@@ -58,7 +66,29 @@ internal class CaCfirSimpleNameReference(
     private fun CaSession.fixUpAnnotationCallResolveToCtor(resultsToFix: Collection<CaSymbol>): Collection<CaSymbol> {
         if (resultsToFix.isEmpty() || !isAnnotationCall) return resultsToFix
 
-        return resultsToFix
+        val cfirSession = this as? CaCfirSession ?: return resultsToFix
+        val annotationCall = cfirSession.resolveAnnotationCall() ?: return resultsToFix
+        val constructor = (annotationCall.calleeReference as? CfirResolvedNamedReference)
+            ?.resolvedSymbol as? CfirConstructorSymbol
+            ?: return resultsToFix
+        val constructorSymbol = cfirSession.cfirSymbolBuilder.functionBuilder.buildConstructorSymbol(constructor)
+        val annotationClassId = annotationCall.annotationClassId ?: return resultsToFix
+
+        return resultsToFix.map { symbol ->
+            if (symbol is CaClassLikeSymbol && symbol.classId == annotationClassId) constructorSymbol else symbol
+        }
+    }
+
+    /**
+     * 从注解所属声明中读取解析完成的 CFIR 注解调用，以复用调用解析选中的构造器。
+     */
+    private fun CaCfirSession.resolveAnnotationCall(): CfirAnnotationCall? {
+        val annotation = expression.parentOfType<CjAnnotation>() ?: return null
+        val declaration = annotation.getStrictParentOfType<CjDeclaration>() ?: return null
+        val annotationContainer = declaration.getOrBuildCfir(resolutionFacade) as? CfirAnnotationContainer ?: return null
+        return annotationContainer.annotations
+            .filterIsInstance<CfirAnnotationCall>()
+            .firstOrNull { it.psi === annotation }
     }
 
     /**

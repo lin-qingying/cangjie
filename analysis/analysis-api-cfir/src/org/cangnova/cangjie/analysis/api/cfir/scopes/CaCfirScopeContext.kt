@@ -160,7 +160,9 @@ internal class CaCfirScopeContext(
                 token = session.token,
                 scope = publicScope,
                 kind = cfirScope.toScopeKind(isLocal = element.isLocal),
-                ownerSymbol = element.staticScopeOwnerSymbol?.let { session.cfirSymbolBuilder.buildSymbol(it) },
+                ownerSymbol = element.staticScopeOwnerSymbol?.let { session.cfirSymbolBuilder.buildSymbol(it) }
+                    ?: element.implicitReceiver?.boundSymbol?.let { session.cfirSymbolBuilder.buildSymbol(it) },
+                sourceTowerElement = element,
             )
         }
 
@@ -278,6 +280,8 @@ internal class CaCfirScopeWithKind(
     override val scope: CaScope,
     override val kind: CaScopeKind,
     override val ownerSymbol: CaSymbol?,
+    /** CFIR tower 来源，用于 Analysis API 内部保留作用域与隐式接收者的精确配对。 */
+    internal val sourceTowerElement: CfirTowerDataElement? = null,
 ) : CaScopeWithKind {
 
     override fun toString(): String = "CaScopeWithKind(kind=$kind, scope=$scope, owner=$ownerSymbol)"
