@@ -9,6 +9,7 @@ import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirCreateFreshTypeVariableSubstitutorStage
 import org.cangnova.cangjie.cfir.resolve.inference.InferenceComponents
 import org.cangnova.cangjie.cfir.resolve.providers.getContainingExtend
+import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.types.createTypeSubstitutorByTypeConstructor
 import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeParameterBasedTypeVariable
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
@@ -1304,7 +1305,7 @@ class ConeOverloadConflictResolver(
      * 创建用于签名比较的空约束系统。
      */
     private fun createEmptyConstraintSystem(): SimpleConstraintSystem {
-        return ConeSimpleConstraintSystemImpl(inferenceComponents.createConstraintSystem(), inferenceComponents)
+        return ConeSimpleConstraintSystemImpl(inferenceComponents.createConstraintSystem(), inferenceComponents.session)
     }
 
     /**
@@ -1414,7 +1415,7 @@ private fun CfirTypeRef.coneTypeOrNull(): ConeCangJieType? {
  */
 class ConeSimpleConstraintSystemImpl(
     val system: ConstraintSystemImpl,
-    val inferenceComponents: InferenceComponents,
+    val session: CfirSession,
 ) : SimpleConstraintSystem {
     override fun registerTypeVariables(typeParameters: Collection<TypeParameterMarker>): TypeSubstitutorMarker {
         val builder = system.getBuilder()
@@ -1430,7 +1431,7 @@ class ConeSimpleConstraintSystemImpl(
 
         val substitutor = createTypeSubstitutorByTypeConstructor(
             map = substitutionMap,
-            context = inferenceComponents.session.typeContext,
+            context = session.typeContext,
             approximateIntegerLiterals = false,
         )
 
@@ -1441,7 +1442,7 @@ class ConeSimpleConstraintSystemImpl(
             for (upperBound in typeParameter.typeParameterSymbol.resolvedBounds) {
                 addSubtypeConstraint(
                     variableType,
-                    with(inferenceComponents.session.typeContext) {
+                    with(session.typeContext) {
                         substitutor.safeSubstitute(upperBound.coneType) as ConeCangJieType
                     },
                 )
