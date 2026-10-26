@@ -133,6 +133,39 @@ class TypeScopeExecutionTest : AbstractAnalysisApiExecutionTest(
     }
 
     /**
+     * 非 class-like 接收者的声明视图：基本类型与 `CPointer`。
+     *
+     * 两类类型都取不到 lookup-tag 形式的 class-like 符号，声明视图的 owner 还原因此
+     * 分两条路：基本类型经合成 `ClassId` 拿到 `CfirPrimitiveTypeSymbol`，而
+     * `CPointer` / `CString` 没有 nominal 声明，声明视图退化为 use-site 视图。
+     * 两条路都**不得**撞上「类型作用域缺少声明视图」的兜底失败——那是本测试要锁的行为，
+     * 因为它此前正是让基本类型整体变红的形态。
+     */
+    @Test
+    fun typeScopePrimitiveDeclarationScope(mainFile: CjFile) {
+        analyzeForTest(mainFile) {
+            fun typeOfParameter(functionName: String): CaType =
+                mainFile.function(functionName).symbol.valueParameters.single().returnType
+
+            // ① 基本类型：owner 经合成 ClassId 还原，声明视图可用且 extend 成员在其中。
+            val int64Type = typeOfParameter("takesInt64")
+            val int64Scope = requireNotNull(int64Type.typeScope) { "Int64 必须有类型作用域" }
+            assertTrue(
+                int64Scope.declarationScope.callables(Name.identifier("doubled")).toList().isNotEmpty(),
+                "基本类型的声明视图必须能查到 extend 成员 doubled，而不是抛出缺少声明视图",
+            )
+
+            // ② CPointer：没有 nominal 声明，声明视图退化为 use-site 视图，成员仍可见。
+            val pointerType = typeOfParameter("takesPointer")
+            val pointerScope = requireNotNull(pointerType.typeScope) { "CPointer<Int64> 必须有类型作用域" }
+            assertTrue(
+                pointerScope.declarationScope.callables(Name.identifier("pointeeTag")).toList().isNotEmpty(),
+                "CPointer 的声明视图必须退化为 use-site 视图并保留 extend 成员 pointeeTag",
+            )
+        }
+    }
+
+    /**
      * 按名字取夹具里的唯一命名函数。
      */
     private fun CjFile.function(name: String): CjNamedFunction =
