@@ -4,14 +4,11 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.vfs.StandardFileSystems
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.psi.search.GlobalSearchScope
-import com.intellij.psi.util.PsiModificationTracker
-import org.cangnova.cangjie.analysis.api.platform.modification.CaModificationTracker
 import org.cangnova.cangjie.lang.declarations.CangJieBuiltInFileType
 import java.io.File
 import java.nio.file.Path
@@ -86,7 +83,7 @@ abstract class BuiltinsVirtualFileProvider {
  * 仓颉 builtins 的真实来源与 Kotlin 不同，
  * 但“由 provider 基类统一收集 binary files，再由具体宿主实现 root 定位”这一 owner 形状保持一致。
  *
- * 枚举结果按“根列表 + 修改计数”缓存：根发现是宿主级的廉价路径解析（SDK 目录），而递归枚举整棵
+ * 枚举结果按“根列表 + VFS 结构戳”缓存：根发现是宿主级的廉价路径解析（SDK 目录），而递归枚举整棵
  * SDK 目录不是——类查找、候选收集、解析作用域构建都会高频调用这里，Kotlin 侧
  * `BuiltinsVirtualFileProviderBaseImpl` 也维护自己的枚举缓存。
  */
@@ -94,12 +91,12 @@ abstract class BuiltinsVirtualFileProviderBaseImpl : BuiltinsVirtualFileProvider
     /**
      * 应用级枚举缓存。
      */
-    private val applicationFileCache = ConcurrentHashMap<EnumerationCacheKey, Set<VirtualFile>>()
+    private val applicationFileCache = ConcurrentHashMap<Set<VirtualFile>, CachedEnumeration>()
 
     /**
      * 项目级枚举缓存。
      */
-    private val projectFileCache = ConcurrentHashMap<EnumerationCacheKey, Set<VirtualFile>>()
+    private val projectFileCache = ConcurrentHashMap<Set<VirtualFile>, CachedEnumeration>()
 
     /**
      * 返回当前宿主环境声明的 builtins 根虚拟文件。
@@ -117,7 +114,6 @@ abstract class BuiltinsVirtualFileProviderBaseImpl : BuiltinsVirtualFileProvider
     override fun getBuiltinVirtualFiles(): Set<VirtualFile> = enumerateBuiltinFiles(
         getBuiltinRootVirtualFiles(),
         applicationFileCache,
-        applicationModificationCount(),
     )
 
     /**
@@ -126,7 +122,6 @@ abstract class BuiltinsVirtualFileProviderBaseImpl : BuiltinsVirtualFileProvider
     override fun getBuiltinVirtualFiles(project: Project): Set<VirtualFile> = enumerateBuiltinFiles(
         getBuiltinRootVirtualFiles(project),
         projectFileCache,
-        projectModificationCount(project),
     )
 
     /**
@@ -160,56 +155,67 @@ abstract class BuiltinsVirtualFileProviderBaseImpl : BuiltinsVirtualFileProvider
     }
 
     /**
-     * 按“根列表 + 修改计数”缓存枚举结果。
+     * 按“根列表 + VFS 结构戳”缓存枚举结果。
      *
-     * 根列表或修改计数任一变化都会重建；旧键的条目随缓存表清理时消失，
-     * 这里不保留过期结果（SDK 切换后旧文件集合必须立刻不可见）。
+     * **不能**用 PSI / Analysis API 修改计数做键：那个计数几乎每次编辑都会变，
+     * 而 builtins 目录的内容只随 VFS 结构变化（SDK 切换、目录增删、`.cjo` 落地）。
+     * 旧实现用修改计数做键，等于让“编辑一个字符后第一次类查找”重新遍历整棵 SDK 目录。
+     *
+     * **戳必须在枚举之后取**：`iterateChildrenRecursively` 首次把子节点装入 VFS 时
+     * （`FSRecordsImpl.updateSymlinksForNewChildren`）会推进 `VFS_STRUCTURE_MODIFICATIONS`。
+     * 若在枚举前取戳做键，枚举自身就会让刚写入的条目立刻失配，形成“每次查找都重枚举”的抖动。
      */
     private fun enumerateBuiltinFiles(
         roots: Set<VirtualFile>,
-        cache: ConcurrentHashMap<EnumerationCacheKey, Set<VirtualFile>>,
-        modificationCount: Long,
+        cache: ConcurrentHashMap<Set<VirtualFile>, CachedEnumeration>,
     ): Set<VirtualFile> {
-        val key = EnumerationCacheKey(roots, modificationCount)
         // 根列表变化（SDK 切换）时清掉旧根的条目：旧文件集合必须立刻不可见。
-        cache.entries.removeIf { it.key.roots != key.roots }
-        return cache.computeIfAbsent(key) { current ->
-            current.roots.flatMapTo(linkedSetOf(), ::collectBuiltinFiles)
+        cache.keys.removeIf { cachedRoots -> cachedRoots != roots }
+
+        val vfsStamp = vfsStructureModificationCount()
+        cache[roots]?.let { cached ->
+            if (cached.vfsStructureModificationCount == vfsStamp) {
+                return cached.files
+            }
         }
+
+        val files = roots.flatMapTo(linkedSetOf(), ::collectBuiltinFiles)
+        // 枚举之后再取戳：把枚举自身引起的 VFS 结构推进一并记入，避免自失效。
+        cache[roots] = CachedEnumeration(vfsStructureModificationCount(), files)
+        return files
     }
 
     /**
-     * 枚举缓存键：根集合与修改计数共同决定结果。
+     * 单次枚举结果及其观测戳。
      *
-     * @property roots 宿主解析出的 builtins 根虚拟文件；VFS 对同一路径返回同一实例，
-     *   因此按实例比较等价于按路径比较。
-     * @property modificationCount 观察枚举结果时的项目（或应用）修改计数。
+     * @property vfsStructureModificationCount 本次枚举**完成后**观察到的 VFS 结构修改计数。
+     * @property files 枚举出的 builtins `.cjo` 文件集合。
      */
-    private class EnumerationCacheKey(
-        val roots: Set<VirtualFile>,
-        val modificationCount: Long,
+    private class CachedEnumeration(
+        val vfsStructureModificationCount: Long,
+        val files: Set<VirtualFile>,
     )
 
     /**
-     * 项目修改计数：优先 Analysis API 的计数（结构变化），否则退回 PSI 修改计数，
-     * 不能退化为常量 `0`，否则 SDK 变化后缓存永不失效。
+     * VFS 结构修改计数：builtins 目录内容变化的唯一廉价观察点。
+     *
+     * 用 `VFS_STRUCTURE_MODIFICATIONS` 而不是 `CaModificationTracker` / `PsiModificationTracker`：
+     * 后两者的变化包含源码编辑，把它们并进键会让缓存随每次按键失效，表现为输入卡顿。
+     * 本仓 `AbstractVirtualFileRootsScope.extractFileEnumeration` 用的是同一个观察点。
      */
-    private fun projectModificationCount(project: Project): Long =
-        CaModificationTracker.getInstance(project)?.modificationCount
-            ?: PsiModificationTracker.getInstance(project).modificationCount
+    private fun vfsStructureModificationCount(): Long =
+        VirtualFileManager.VFS_STRUCTURE_MODIFICATIONS.modificationCount
 
     /**
-     * 应用级修改计数：取所有未释放工程的计数之和。
+     * 显式失效枚举缓存。
      *
-     * 应用级 provider 聚合多个工程的 SDK 根，单个工程的计数不足以代表整体；没有应用容器（CLI 单元测试）
-     * 或没有打开工程时退化为 0，此时缓存只随根列表变化失效——SDK 切换本来就表现为根变化。
+     * 宿主在确认 builtins 根目录内容发生变化（SDK 切换、标准库重新安装）时调用；
+     * 不依赖任何全局修改计数，避免“该失效时没失效”或“编辑源码也失效”两个方向的误判。
      */
-    private fun applicationModificationCount(): Long = ProjectManager.getInstance()
-        ?.openProjects
-        .orEmpty()
-        .asSequence()
-        .filterNot { project -> project.isDisposed }
-        .sumOf { project -> projectModificationCount(project) }
+    fun invalidateBuiltinFileCache() {
+        applicationFileCache.clear()
+        projectFileCache.clear()
+    }
 
     /**
      * 从单个 builtins 根收集可反编译的 `.cjo` 文件。

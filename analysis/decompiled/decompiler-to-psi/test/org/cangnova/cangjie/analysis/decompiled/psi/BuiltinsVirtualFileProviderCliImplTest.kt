@@ -3,6 +3,9 @@ package org.cangnova.cangjie.analysis.decompiled.psi
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.util.Disposer
 import org.cangnova.cangjie.CangJieCoreEnvironment
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotSame
+import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.nio.file.Files
@@ -73,6 +76,56 @@ class BuiltinsVirtualFileProviderCliImplTest {
                     System.setProperty("cangjie.stdlib.module", oldValue)
                 }
                 tempStdlibRoot.toFile().deleteRecursively()
+            }
+        }
+    }
+
+    /**
+     * 验证枚举缓存不随源码编辑失效，但可被显式失效。
+     *
+     * 这是 EDT 慢操作修复的核心不变量：旧实现把 `CaModificationTracker` / `PsiModificationTracker`
+     * 的计数并进缓存键，于是**每次源码编辑**之后的第一次类查找都会重新递归遍历整棵 SDK 目录
+     * （`VfsUtilCore.iterateChildrenRecursively` → `PersistentFSImpl.listAll` → `FSRecordsImpl.update`），
+     * 平台在 `FSRecordsImpl.update` 入口断言“EDT 上禁止慢操作”。
+     *
+     * 这里用“同一 root 连续取两次必须是同一个集合实例”表达“第二次命中缓存”：
+     * `computeIfAbsent` 命中时返回的正是上次存入的实例，重新枚举必然产生新的 `LinkedHashSet`。
+     */
+    @Test
+    fun enumerationIsCacheHitForSameRoots() {
+        withEnvironment {
+            val stdlibRoot = locateStdlibFixtureRoot()
+            val oldValue = System.getProperty("cangjie.stdlib.module")
+            try {
+                System.setProperty("cangjie.stdlib.module", stdlibRoot.toString())
+
+                val provider = BuiltinsVirtualFileProviderCliImpl()
+                val first = provider.getBuiltinVirtualFiles()
+                assertTrue(first.isNotEmpty(), "builtins provider should expose `.cjo` files")
+
+                val second = provider.getBuiltinVirtualFiles()
+                assertSame(
+                    first,
+                    second,
+                    "builtins enumeration must be cached for an unchanged root set; " +
+                        "re-enumerating the SDK directory per lookup is the EDT slow-operation source",
+                )
+
+                // 显式失效后必须重新枚举（SDK 切换 / 标准库重装）。
+                provider.invalidateBuiltinFileCache()
+                val third = provider.getBuiltinVirtualFiles()
+                assertNotSame(first, third, "invalidateBuiltinFileCache must drop the cached enumeration")
+                assertEquals(
+                    first.map { file -> file.path }.sorted(),
+                    third.map { file -> file.path }.sorted(),
+                    "re-enumerated builtins file set must be identical for the same root",
+                )
+            } finally {
+                if (oldValue == null) {
+                    System.clearProperty("cangjie.stdlib.module")
+                } else {
+                    System.setProperty("cangjie.stdlib.module", oldValue)
+                }
             }
         }
     }
