@@ -5,6 +5,8 @@ import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExec
 import org.cangnova.cangjie.analysis.api.standalone.cfir.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
 import org.cangnova.cangjie.idea.references.mainReference
 import org.cangnova.cangjie.psi.CangJieReferenceProvidersService
+import org.cangnova.cangjie.psi.CjClass
+import org.cangnova.cangjie.psi.CjExtend
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjNamedDeclaration
 import org.cangnova.cangjie.psi.CjSimpleNameExpression
@@ -89,6 +91,28 @@ class AnalysisApiReferenceServiceTest : AbstractAnalysisApiExecutionTest(
         val resolvedDeclaration = references.singleOrNull()?.resolve() as? CjNamedDeclaration
         assertNotNull(resolvedDeclaration, "type-position 引用未解析成功")
         assertEquals("Box", resolvedDeclaration?.name)
+    }
+
+    /**
+     * 验证 `extend` 声明的接收者类型名是引用位置，可导航到被扩展类型声明。
+     *
+     * `CjExtend` 会把接收者类型的标识符当成 `nameIdentifier` 暴露（用于展示/重命名），
+     * reference service 不能把它按声明名过滤掉，否则「从扩展声明导航到被扩展类型」恒为空。
+     */
+    @Test
+    fun extendReceiverReference(mainFile: CjFile) {
+        val extend = PsiTreeUtil.findChildrenOfType(mainFile, CjExtend::class.java).single()
+        val receiverName = PsiTreeUtil.findChildrenOfType(
+            extend.receiverTypeReceiver,
+            CjSimpleNameExpression::class.java,
+        ).single { it.referencedName == "Document" }
+
+        val references = CangJieReferenceProvidersService.getReferencesFromProviders(receiverName)
+        assertFalse(references.isEmpty(), "extend 的接收者类型名没有拿到引用实现")
+
+        val resolved = receiverName.mainReference.resolve() as? CjClass
+        assertNotNull(resolved, "extend 的接收者类型名必须能导航到类型声明")
+        assertEquals("Document", resolved?.name)
     }
 
     /**

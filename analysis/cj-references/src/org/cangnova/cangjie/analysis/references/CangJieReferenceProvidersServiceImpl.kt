@@ -134,6 +134,9 @@ internal class CangJieReferenceProvidersServiceImpl(
  * Kotlin 的声明名通常不会沿着 simple-name reference provider 这条链路分发，
  * 但仓颉这里如果不先过滤，会把 `let result = ...` 里的 `result` 错当成引用。
  * 因此统一在 reference service 入口排除 declaration-name 场景，再继续 contributor 分发。
+ *
+ * `extend` 没有声明名（[org.cangnova.cangjie.psi.CjExtend.getNameIdentifier] 返回 null），
+ * 其接收者类型名是普通引用位置，不会被这里过滤。
  */
 private fun CjSimpleNameExpression.isDeclarationNameExpression(): Boolean {
     val owner = parentOfType<PsiNameIdentifierOwner>(withSelf = true) ?: return false

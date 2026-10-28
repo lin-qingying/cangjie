@@ -79,16 +79,15 @@ class CjExtend : CjTypeStatement {
     }
 
     /**
-     * 实现 `getNameIdentifier` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
+     * `extend` 没有自己的声明名。
+     *
+     * 被扩展类型（`extend Foo` 的 `Foo`）是**引用位置**，不是声明名；把接收者标识符当作
+     * [getNameIdentifier] 违反了 `PsiNameIdentifierOwner` 的契约：
+     * 引用服务会把它按"声明名"过滤掉，导致 `extend Foo` 的 `Foo` 无法导航。
+     *
+     * 展示用名称仍由 [getName] 提供（接收者类型文本）。
      */
-    override fun getNameIdentifier(): PsiElement? {
-        return when (val type = receiverTypeReceiver?.typeElement) {
-            is CjUserType -> type.referenceExpression?.identifier
-            is CjBasicType -> type
-            is CjOptionType -> type
-            else -> null
-        }
-    }
+    override fun getNameIdentifier(): PsiElement? = null
 
     /**
      * `extend` 不属于公开类型标识体系，没有 `ClassId`，稳定身份是 [getExtendId]。
