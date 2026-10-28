@@ -42,59 +42,17 @@
       <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/__probe/g10_this_type.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/__probe/g1_toplevel_prop.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/__probe/g2_local_class.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/__probe/g3_var_no_init.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/__probe/g4_let_no_init.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/__probe/g5_prop_wildcard.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/__probe/g6_prop_no_type.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/__probe/g7_dup_getter.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/__probe/g8_redundant_arrow.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/__probe/g9_unmatched_rparen.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/__probe/notes.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/__probe/o_g3_var_no_init" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/__probe/o_g4_let_no_init" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirInternalCacheStorage.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirInternalCacheStorage.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirScopeProvider.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirScopeProvider.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/psiUtils.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/psiUtils.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/references/CaCfirSimpleNameReference.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/references/CaCfirSimpleNameReference.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/references/CfirCDocReferenceResolver.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/references/CfirCDocReferenceResolver.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/scopes/CaCfirScopeContext.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/scopes/CaCfirScopeContext.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/symbols/CaCfirPsiSymbol.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/symbols/CaCfirPsiSymbol.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/utils/ValidityAwareCachedValue.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/utils/ValidityAwareCachedValue.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/symbols/CaSymbolOrigin.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/symbols/CaSymbolOrigin.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/providers/src/org/cangnova/cangjie/cfir/scopes/CfirCangJieScopeProvider.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/providers/src/org/cangnova/cangjie/cfir/scopes/CfirCangJieScopeProvider.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/overloads/ConeOverloadConflictResolver.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/overloads/ConeOverloadConflictResolver.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/code-insight/highlighting/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/code-insight/highlighting/build.gradle.kts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/code-insight/highlighting/src/org/cangnova/cangjie/lexer/cdoc/render/CDocRenderer.kt" beforeDir="false" afterPath="$PROJECT_DIR$/code-insight/highlighting/src/org/cangnova/cangjie/lexer/cdoc/render/CDocRenderer.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/deveco/.run/Run IDE with Plugin.run.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/deveco/modules/domain/toolchain/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/deveco/modules/domain/toolchain/build.gradle.kts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/deveco/modules/foundation/src/main/kotlin/org/cangnova/cangjie/utils/psiUtil.kt" beforeDir="false" afterPath="$PROJECT_DIR$/deveco/modules/foundation/src/main/kotlin/org/cangnova/cangjie/utils/psiUtil.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/deveco/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysisApiPlatform/projectStructure/LanguageVersionSettingsProvider.kt" beforeDir="false" afterPath="$PROJECT_DIR$/deveco/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysisApiPlatform/projectStructure/LanguageVersionSettingsProvider.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/deveco/product/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/deveco/product/build.gradle.kts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/deveco/product/src/main/resources/META-INF/plugin.xml" beforeDir="false" afterPath="$PROJECT_DIR$/deveco/product/src/main/resources/META-INF/plugin.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/deveco/settings.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/deveco/settings.gradle.kts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/domain/project-model/src/main/kotlin/org/cangnova/cangjie/project/workspace/CjWorkspaceModelSync.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/domain/project-model/src/main/kotlin/org/cangnova/cangjie/project/workspace/CjWorkspaceModelSync.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/foundation/src/main/kotlin/org/cangnova/cangjie/projectStructure/CangJieProjectStructureProviderService.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisLLTPsiTestGenerated.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisLLTPsiTestGenerated.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisLLTTestGenerated.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisLLTTestGenerated.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/light-tree2cfir/test/org/cangnova/cangjie/cfir/lightTree/MacroSurfacePayloadTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/light-tree2cfir/test/org/cangnova/cangjie/cfir/lightTree/MacroSurfacePayloadTest.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/ide/base/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/ide/base/build.gradle.kts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/highlighter/CangJieIdeDeclarationRenderer.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/highlighter/CangJieIdeDeclarationRenderer.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/highlighter/cDocUtil.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/highlighter/cDocUtil.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysisApiPlatform/projectStructure/CaIdeProjectStructureProviderService.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysisApiPlatform/projectStructure/provider/CaIdeProjectStructureProviderCache.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysisApiPlatform/projectStructure/provider/CaIdeProjectStructureProviderCache.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysisApiPlatform/projectStructure/provider/CaIdeProjectStructureState.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysisApiPlatform/projectStructure/provider/CaIdeProjectStructureState.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/documentation/CangJieDocumentationProvider.kt" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/documentation/CangJieDocumentationTarget.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/documentation/CangJieDocumentationTarget.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/documentation/CangJieDocumentationTargetProviders.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/documentation/CangJieDocumentationTargetProviders.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/resources/META-INF/cangjie-editor.xml" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/resources/META-INF/cangjie-editor.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/resources/META-INF/cangjie-ide-analysis-api-cfir.xml" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/resources/META-INF/cangjie-ide-analysis-api-cfir.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/resources/META-INF/cangjie-jps.xml" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/resources/META-INF/cangjie-jps.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/analysis/LLCfirMacroSessionConfigurator.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/analysis/LLCfirMacroSessionConfigurator.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/ide/project/src/main/kotlin/org/cangnova/cangjie/project/service/impl/CjProjectsServiceImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/ide/project/src/main/kotlin/org/cangnova/cangjie/project/service/impl/CjProjectsServiceImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/test-support/src/test/kotlin/org/cangnova/cangjie/test/CangJieDecompiledDescriptorParityTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/test-support/src/test/kotlin/org/cangnova/cangjie/test/CangJieDecompiledDescriptorParityTest.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/test-support/src/test/kotlin/org/cangnova/cangjie/test/CjWorkspaceModelSyncStdlibTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/test-support/src/test/kotlin/org/cangnova/cangjie/test/CjWorkspaceModelSyncStdlibTest.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/psi/resources/messages/CangJieParsingBundle.properties" beforeDir="false" afterPath="$PROJECT_DIR$/psi/resources/messages/CangJieParsingBundle.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/psi/resources/messages/CangJieParsingBundle_zh_CN.properties" beforeDir="false" afterPath="$PROJECT_DIR$/psi/resources/messages/CangJieParsingBundle_zh_CN.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/parsing/CangJieParsing.kt" beforeDir="false" afterPath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/parsing/CangJieParsing.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/test/kotlin/org/cangnova/cangjie/ide/documentation/CangJieQuickDocumentationTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/test/kotlin/org/cangnova/cangjie/ide/documentation/CangJieQuickDocumentationTest.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/test-support/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/test-support/build.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/parsing/CangJieExpressionParsing.kt" beforeDir="false" afterPath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/parsing/CangJieExpressionParsing.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/psi/CjElementImplStub.kt" beforeDir="false" afterPath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/psi/CjElementImplStub.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/psi/stubs/CangJieStubVersions.kt" beforeDir="false" afterPath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/psi/stubs/CangJieStubVersions.kt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -318,61 +276,61 @@
   </component>
   <component name="NextEditCompletionFeaturesState">
     <decayedCancelled>
-      <entry key="MS100" value="1.0376737146534427" />
-      <entry key="MS500" value="2.2191798187272527" />
-      <entry key="S2" value="5.756114555025036" />
-      <entry key="S5" value="7.863326200973023" />
-      <entry key="S10" value="8.837269157511196" />
-      <entry key="S30" value="9.652484370124556" />
-      <entry key="S60" value="10.045780589381224" />
-      <entry key="M2" value="10.645657821405344" />
-      <entry key="M5" value="15.125573689135132" />
-      <entry key="M10" value="22.350375744115077" />
-      <entry key="M15" value="26.729207181900666" />
-      <entry key="M30" value="32.74097027097306" />
-      <entry key="H1" value="36.54315042561236" />
-      <entry key="H2" value="38.73736790645694" />
-      <entry key="H4" value="41.142643962765455" />
-      <entry key="D1" value="64.19595530600029" />
-      <entry key="W1" value="81.83662477267204" />
+      <entry key="MS100" value="1.5693678770765052" />
+      <entry key="MS500" value="4.727964877391237" />
+      <entry key="S2" value="10.426465449844946" />
+      <entry key="S5" value="14.045590640248292" />
+      <entry key="S10" value="15.812461802959877" />
+      <entry key="S30" value="17.278735345866103" />
+      <entry key="S60" value="17.85204280173467" />
+      <entry key="M2" value="18.54415710888061" />
+      <entry key="M5" value="23.071983171333343" />
+      <entry key="M10" value="30.313145191401006" />
+      <entry key="M15" value="34.700170988420346" />
+      <entry key="M30" value="40.72355805076736" />
+      <entry key="H1" value="44.533529050048365" />
+      <entry key="H2" value="46.732293117013064" />
+      <entry key="H4" value="49.139961890855666" />
+      <entry key="D1" value="72.19527728666102" />
+      <entry key="W1" value="89.83650266064313" />
     </decayedCancelled>
     <decayedSelected>
       <entry key="MS100" value="0.0" />
       <entry key="MS500" value="0.0" />
-      <entry key="S2" value="9.438799595496354E-126" />
-      <entry key="S5" value="2.016276636121332E-50" />
-      <entry key="S10" value="3.003267049917098E-25" />
-      <entry key="S30" value="1.931928141094864E-8" />
-      <entry key="S60" value="3.102629699262539E-4" />
-      <entry key="M2" value="0.03936964237327456" />
-      <entry key="M5" value="0.7201140134371086" />
-      <entry key="M10" value="1.8974837813277088" />
-      <entry key="M15" value="2.6208391592446527" />
-      <entry key="M30" value="3.619964789870092" />
-      <entry key="H1" value="4.254386728438367" />
-      <entry key="H2" value="4.612150094699069" />
-      <entry key="H4" value="4.802160875974067" />
-      <entry key="D1" value="4.966469651496869" />
-      <entry key="W1" value="4.995196125527724" />
+      <entry key="S2" value="6.122425835385036E-126" />
+      <entry key="S5" value="1.6957148551749524E-50" />
+      <entry key="S10" value="2.7541989275033106E-25" />
+      <entry key="S30" value="1.8769732638770385E-8" />
+      <entry key="S60" value="3.0581832428852937E-4" />
+      <entry key="M2" value="0.03908663193446974" />
+      <entry key="M5" value="0.7180389020495596" />
+      <entry key="M10" value="1.894747873656611" />
+      <entry key="M15" value="2.6183192964488615" />
+      <entry key="M30" value="3.6182241244404096" />
+      <entry key="H1" value="4.25336374136822" />
+      <entry key="H2" value="4.611595554894131" />
+      <entry key="H4" value="4.801872174462687" />
+      <entry key="D1" value="4.966419886982873" />
+      <entry key="W1" value="4.995188975160434" />
     </decayedSelected>
     <decayedShown>
-      <entry key="MS100" value="0.07328518861988545" />
-      <entry key="MS500" value="1.6312576218275825" />
-      <entry key="S2" value="5.287636691832306" />
-      <entry key="S5" value="7.577968114464669" />
-      <entry key="S10" value="8.670712556248816" />
-      <entry key="S30" value="9.590464153797068" />
-      <entry key="S60" value="10.013868491263098" />
-      <entry key="M2" value="10.667839062531046" />
-      <entry key="M5" value="15.834284730872618" />
-      <entry key="M10" value="24.23833633592418" />
-      <entry key="M15" value="29.34213643424955" />
-      <entry key="M30" value="36.35590283714148" />
-      <entry key="H1" value="40.79467915612979" />
-      <entry key="H2" value="43.34799187925065" />
-      <entry key="H4" value="45.94400787669353" />
-      <entry key="D1" value="69.16226401858289" />
-      <entry key="W1" value="86.83179493988389" />
+      <entry key="MS100" value="1.5261205458926224" />
+      <entry key="MS500" value="4.590963374360002" />
+      <entry key="S2" value="10.104824973307768" />
+      <entry key="S5" value="13.797059157847976" />
+      <entry key="S10" value="15.655168139317281" />
+      <entry key="S30" value="17.216896433252863" />
+      <entry key="S60" value="17.81978785357794" />
+      <entry key="M2" value="18.56577673733861" />
+      <entry key="M5" value="23.778490575164607" />
+      <entry key="M10" value="32.19830282667279" />
+      <entry key="M15" value="37.31053411043774" />
+      <entry key="M30" value="44.33672542522666" />
+      <entry key="H1" value="48.784022005275965" />
+      <entry key="H2" value="51.34235599516934" />
+      <entry key="H4" value="53.941033781871006" />
+      <entry key="D1" value="77.16153567476887" />
+      <entry key="W1" value="94.83166559729958" />
     </decayedShown>
   </component>
   <component name="PackageJsonUpdateNotifier">
@@ -1479,7 +1437,7 @@
                   <entry key="branch">
                     <value>
                       <list>
-                        <option value="codex/cjmp-framework-implementation" />
+                        <option value="main" />
                       </list>
                     </value>
                   </entry>
