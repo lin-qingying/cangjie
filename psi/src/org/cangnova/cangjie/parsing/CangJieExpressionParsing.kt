@@ -510,7 +510,7 @@ open class CangJieExpressionParsing(
         var expression = mark()
         precedence.parseHigherPrecedence(this)
 
-        while (!interruptedWithNewLine() && precedence.getOperations().contains(getGtTokenType())) {
+        while (!binaryExpressionStopsAtNewline() && precedence.getOperations().contains(getGtTokenType())) {
             getGtTokenType()?.let { operation ->
                 if (context.stopAtConditionOperatorInLetInitializer &&
                     (operation === ANDAND || operation === OROR)
@@ -826,6 +826,22 @@ open class CangJieExpressionParsing(
     context(context: ParsingContext)
     private fun interruptedWithNewLine(): Boolean {
         return !ALLOW_NEWLINE_OPERATIONS.contains(tt()) && builder.newlineBeforeCurrentToken()
+    }
+
+    /**
+     * 判断二元表达式是否应在当前换行处结束。
+     *
+     * 对齐官方 `ParserImpl::SeeingExprOperator`（`external/cangjie_compiler/src/Parse/ParseExpr.cpp:39`）：
+     * 换行后只有 `-` 与 `?` 不再作为二元运算符续接（`-` 可以开启新的 unary 表达式），
+     * 其余运算符仍属于同一表达式；官方会为这种续接发出 `parse_nl_warning` 警告。
+     *
+     * 注意：这里不能用 [interruptedWithNewLine]，后者是 Kotlin 风格的换行白名单，
+     * 会把行首 `+`、`*` 等官方允许续接的运算符误判为语句边界。
+     */
+    private fun binaryExpressionStopsAtNewline(): Boolean {
+        if (!builder.newlineBeforeCurrentToken()) return false
+        val tokenType = getGtTokenType() ?: return false
+        return tokenType === MINUS || tokenType === QUEST
     }
 
     // ==================== 原子表达式解析 ====================
@@ -2901,8 +2917,17 @@ open class CangJieExpressionParsing(
     private fun tokenPresentation(token: CjToken): String =
         (token as? CjSingleValueToken)?.value ?: token.name
 
+    /**
+     * 换行后遇到只能作为语句开头的 token 时，说明当前表达式已经结束。
+     *
+     * 条件表达式上下文里 `allowLetExpression = true`，此时 `let` 是合法表达式
+     * （`ParsingContext.expressionFirst` 返回 `EXPRESSION_FIRST_WITH_LET`），
+     * 不能按语句边界处理；否则 if-let 链在 `&&` 之后换行、下一行以 `let` 开头时
+     * 会被误报 `Expecting an expression`。官方 `ParseIfExpr` 允许这种换行。
+     */
+    context(context: ParsingContext)
     private fun atStatementOnlyTokenAfterPhysicalNewline(): Boolean =
-        physicalNewlineBeforeCurrentToken() && atSet(STATEMENT_FIRST) && !atSet(EXPRESSION_FIRST)
+        physicalNewlineBeforeCurrentToken() && atSet(STATEMENT_FIRST) && !atSet(context.expressionFirst)
 
     // ==================== 语句解析 ====================
 
@@ -4065,10 +4090,12 @@ open class CangJieExpressionParsing(
                 INTEGER_LITERAL,
                 FLOAT_LITERAL,
                 RUNE_LITERAL,
+                CHARACTER_BYTE_LITERAL,
                 LONG_TEMPLATE_ENTRY_START,
                 LONG_TEMPLATE_ENTRY_END,
             ),
             CjTokens.KEYWORDALL,
+            CjTokens.OPERATIONS,
             LITERAL_CONSTANT,
         )
 

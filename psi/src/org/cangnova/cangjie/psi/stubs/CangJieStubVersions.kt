@@ -30,6 +30,17 @@ package org.cangnova.cangjie.psi.stubs
 object CangJieStubVersions {
 
     /**
+     * 214:
+     * - 宏调用 `@Macro(...)` 的 Tokens 输入补齐 `<<`/`>>`、`b'0'` 等运算符与字面量 token，
+     *   宏输入边界变化会改变 PSI 树与 stub 数量；与 213 是两次独立解析变更，必须再次重建索引
+     *
+     * 213:
+     * - 二元表达式换行续接对齐官方 `ParserImpl::SeeingExprOperator`：行首运算符（如 `+`）继续上一行表达式，
+     *   条件里换行后的 `let` 不再被当作语句边界。PSI 树形状发生变化，必须重建 stub 索引，
+     *   否则旧索引（例如把续行 `let` 索引成 VARIABLE）与新 AST（ENUM_PATTERN）会触发 stub 绑定断言。
+     */
+
+    /**
      * 217:
      * - `.cjo` type stub 为 CPointer 保存结构化类型实参，并按包段/顶层声明段恢复限定名
      */
@@ -66,7 +77,7 @@ object CangJieStubVersions {
      * - extend stub 显式持久化稳定 extendId
      * - decompiled compiled stub 与 source stub 统一使用同一套 extend identity 协议
      */
-    const val SOURCE_STUB_VERSION = 212
+    const val SOURCE_STUB_VERSION = 214
 
     /**
      * 保存 `BINARY_STUB_VERSION`，供PSI Stub流程读取节点结构或语义信息。

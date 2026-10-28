@@ -284,4 +284,46 @@ class MacroSurfacePayloadTest : AbstractLightTree2CfirConverterTestCase() {
         val outerNode = forest.allNodes.single { it.surface === outer }
         assertTrue(outerNode.childEdges.isEmpty())
     }
+
+    /**
+     * 宏 Tokens 输入必须包含移位运算符与字节字面量：
+     * 旧实现的 quote token 集合缺少 `<<`、`b'0'` 对应 token，
+     * 会让 `@NoFormat(...)`、`@assert(...)` 的输入在中途截断。
+     */
+    fun testMacroSurfaceKeepsShiftOperatorAndByteLiteralTokens() {
+        val source = """
+            package payloadprobe
+
+            func payloadProbe(x: Int64, b: UInt8): Int64 {
+                let shifted = @NoFormat(x << 1)
+                @assert(b >= b'0' && b <= b'9')
+                shifted
+            }
+        """.trimIndent()
+        val sourceFile = CjInMemoryTextSourceFile("macroSurfaceTokens.cj", null, source)
+        val session = createTestSession()
+        val (_, allSurfaces) = LightTree2Cfir(
+            session = session,
+            scopeProvider = session.cangjieScopeProvider,
+            bodyBuildingMode = BodyBuildingMode.NORMAL,
+        ).buildCfirFileWithSurfaces(
+            source,
+            sourceFile,
+            source.toSourceLinesMapping(),
+        )
+        val expressionSurfaces = allSurfaces.filterIsInstance<MacroSurfaceExpr>()
+            .associateBy { it.qualifiedName?.shortName()?.asString() }
+
+        val noFormat = expressionSurfaces.getValue("NoFormat")
+        assertTrue(
+            noFormat.inputTokens.joinToString(separator = "") { it.text }.contains("<< 1"),
+            "NoFormat input must keep the shift operator: ${noFormat.inputTokens.joinToString(separator = "") { it.text }}",
+        )
+
+        val assertSurface = expressionSurfaces.getValue("assert")
+        assertTrue(
+            assertSurface.inputTokens.joinToString(separator = "") { it.text }.contains("b'0'"),
+            "assert input must keep the byte literal: ${assertSurface.inputTokens.joinToString(separator = "") { it.text }}",
+        )
+    }
 }
