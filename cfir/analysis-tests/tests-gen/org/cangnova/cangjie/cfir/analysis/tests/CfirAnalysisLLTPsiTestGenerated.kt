@@ -3110,6 +3110,22 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
             }
         }
 
+        @TestMetadata("sql_parameter_extend")
+        @TestDataPath("${'$'}PROJECT_ROOT")
+        @Nested
+        inner class SqlParameterExtend : AbstractCfirPsiLlTDiagnosticsTest() {
+            @Test
+            fun testAllFilesPresent() {
+                assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/sql_parameter_extend")
+            }
+
+            @TestMetadata("main.cj")
+            @Test
+            fun testMain() {
+                runTest("cfir/analysis-tests/testData/llt/Extend/sql_parameter_extend/main.cj")
+            }
+        }
+
         @TestMetadata("type_alias")
         @TestDataPath("${'$'}PROJECT_ROOT")
         @Nested
