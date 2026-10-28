@@ -38,6 +38,7 @@ import com.intellij.psi.StubBasedPsiElement
 import com.intellij.psi.impl.source.PsiFileImpl
 import com.intellij.psi.stubs.IStubElementType
 import com.intellij.psi.stubs.StubElement
+import com.intellij.psi.tree.IElementType
 
 /**
  * 表示 `CjElementImplStub`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
@@ -49,6 +50,16 @@ open class CjElementImplStub<T : StubElement<*>> :
     constructor(stub: T, nodeType: IStubElementType<*, *>, node: ASTNode?) : super(stub, nodeType, node)
 
     constructor(node: ASTNode) : super(node)
+
+    /**
+     * 平台 2025.3 起 [StubBasedPsiElementBase.getElementType] 只允许返回真正的 stub 类型，
+     * 由 AST 构造、但节点类型不是 stub 类型的元素（例如 `MATCH_CONDITION_WITH_EXPRESSION`
+     * 对应的 [CjMatchConditionWithExpression]）走默认实现会抛 `ClassCastException`。
+     *
+     * 统一改走平台提供的 `getElementTypeImpl()`：stub 构造时它返回 stub 类型，
+     * AST 构造时返回节点类型，两者都与元素实际来源一致。
+     */
+    override fun getIElementType(): IElementType = getElementTypeImpl()
 
     /**
      * 实现 `getPsiOrParent` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
