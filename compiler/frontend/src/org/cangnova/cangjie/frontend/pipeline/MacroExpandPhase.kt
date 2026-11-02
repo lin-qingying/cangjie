@@ -121,18 +121,10 @@ fun interface MacroFragmentParserFactory {
 /**
  * 为宏构造中必须读取 IntelliJ PSI 的短阶段提供调度边界。
  *
- * IDE 应把 PSI fragment reparse、stable splice 和读取 PSI source 的快照哈希分别放入读访问；
- * 宏执行器与宏包编译不经过此接口，避免外部进程等待期间长期持有读锁。
+ * 类型实体已下沉到 `macro:macro-common`，使 `analysis:macro-expansion` 能声明读访问边界
+ * 而不依赖 `compiler:frontend`；这里保留别名以维持前端与既有调用方的导入路径。
  */
-interface MacroConstructionReadAccess {
-    /** 在宿主定义的读访问中计算 [action]。 */
-    fun <T> compute(action: () -> T): T
-
-    /** 不要求 PSI 访问的编译器调用默认直接运行。 */
-    object Direct : MacroConstructionReadAccess {
-        override fun <T> compute(action: () -> T): T = action()
-    }
-}
+typealias MacroConstructionReadAccess = org.cangnova.cangjie.macro.expansion.MacroConstructionReadAccess
 
 /**
  * 前端宏展开配置键。
@@ -269,7 +261,8 @@ var CompilerConfiguration.macroFragmentParserFactory: MacroFragmentParserFactory
  * 当前宏构造短 PSI 阶段的访问调度器；CLI 与非 IntelliJ 调用默认直接运行。
  */
 var CompilerConfiguration.macroConstructionReadAccess: MacroConstructionReadAccess
-    get() = get(FrontendMacroConfigurationKeys.MACRO_CONSTRUCTION_READ_ACCESS) ?: MacroConstructionReadAccess.Direct
+    get() = get(FrontendMacroConfigurationKeys.MACRO_CONSTRUCTION_READ_ACCESS)
+        ?: org.cangnova.cangjie.macro.expansion.MacroConstructionReadAccess.Direct
     set(value) {
         put(FrontendMacroConfigurationKeys.MACRO_CONSTRUCTION_READ_ACCESS, value)
     }

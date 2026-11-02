@@ -120,7 +120,7 @@ class MacroArtifactResolver {
         val definitions = mutableListOf<MacroDefinitionEntry>()
         val diagnostics = mutableListOf<MacroConstructionDiagnostic>()
         val exportedTopLevelNamesResolver = buildExportedTopLevelNamesResolver(packages, searchRoots)
-        val artifactLocator = MacroArtifactLocator(sdkHome = sdkHome)
+        val artifactLocator = createArtifactLocator(packages, sdkHome)
         val providedArtifactsByPackage = packages.associateBy(MacroArtifactPackage::packageFqName)
         val executableArtifactCache = mutableMapOf<FqName, MacroArtifactPackage?>()
         val fileHashCache = mutableMapOf<String, String>()
@@ -341,6 +341,58 @@ class MacroArtifactResolver {
         }
         return diagnostics
     }
+
+    /**
+     * 构造重导出宏解析使用的 artifact 定位器。
+     *
+     * 调用方显式配置 `sdkHome` 时以配置为准（与 `MacroExpandPhase` 的
+     * "不隐式选择机器级 SDK" 约定一致）。未配置时，若输入 artifact 本身来自 SDK stdlib，
+     * 就从它自己的 `modules/<host>/…` 与 `runtime/lib/<host>/…` 路径反推 SDK 根：
+     * 重导出宏的可执行包与入口包属于同一个 SDK，这是 artifact 自带的事实，
+     * 不是对机器级 SDK 的猜测。
+     */
+    private fun createArtifactLocator(
+        packages: List<MacroArtifactPackage>,
+        sdkHome: String,
+    ): MacroArtifactLocator {
+        if (sdkHome.isNotBlank()) return MacroArtifactLocator(sdkHome = sdkHome)
+        val derived = packages.firstNotNullOfOrNull { it.deriveSdkArtifactRoot() }
+            ?: return MacroArtifactLocator(sdkHome = sdkHome)
+        return MacroArtifactLocator(sdkHome = derived.home, host = derived.host)
+    }
+
+    /**
+     * 从 SDK stdlib artifact 的路径反推 SDK 根目录与宿主库目录名。
+     *
+     * 官方 SDK 的固定布局是 `<sdk>/modules/<host>/[<pkg>/]<name>.cjo` 与
+     * `<sdk>/runtime/lib/<host>/libcangjie-…`；只有两者结构都对上才返回结果，
+     * 结构不匹配时返回 `null`，绝不兜底猜测。
+     */
+    private fun MacroArtifactPackage.deriveSdkArtifactRoot(): SdkArtifactRoot? {
+        if (origin != MacroArtifactPackage.Origin.SDK_STDLIB) return null
+        val cjo = File(cjoPath).absoluteFile
+        val ancestors = generateSequence(cjo.parentFile) { it.parentFile }.take(6).toList()
+        val modulesIndex = ancestors.indexOfFirst { it.name == "modules" }
+        // modules 之上必须还有 SDK 根，之下必须紧邻宿主目录。
+        if (modulesIndex < 1) return null
+        val hostDir = ancestors[modulesIndex - 1]
+        val sdkDir = ancestors.getOrNull(modulesIndex + 1) ?: return null
+        val host = hostDir.name.ifBlank { return null }
+
+        val runtimeLibDir = File(sdkDir, "runtime/lib/$host")
+        if (!runtimeLibDir.isDirectory) return null
+        val dynamicLib = File(dynamicLibPath).absoluteFile
+        if (!dynamicLib.toPath().startsWith(runtimeLibDir.toPath())) return null
+        return SdkArtifactRoot(home = sdkDir.path, host = host)
+    }
+
+    /** 由 SDK stdlib artifact 反推出的 SDK 根与宿主库目录名。 */
+    private class SdkArtifactRoot(
+        /** SDK 根目录。 */
+        val home: String,
+        /** `modules` / `runtime/lib` 下的宿主目录名。 */
+        val host: String,
+    )
 
     /**
      * 为重导出的宏解析真正执行宏的 artifact 包。

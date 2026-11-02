@@ -40,6 +40,7 @@ import org.cangnova.cangjie.cfir.resolve.providers.macro.IfAvailableSurface
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroCallNode
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionResult
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionService
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroDeclarationFragment
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroDemandClassification
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroDefinitionEntry
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroExpansionCacheKey
@@ -216,7 +217,9 @@ class FrontendMacroConstructionExecutionTest {
                 RecordingExecutor(MacroExpansionResult.Success(listOf(tokenInfo("func expanded() {}")), "func expanded() {}"))
             }
             macroFragmentParserFactory = MacroFragmentParserFactory {
-                StaticPayloadParser(replacement)
+                // 声明片段契约（fragment parser v4）：payload 是零到多个声明的序列，
+                // 而不是裸 CfirDeclaration；测试替身必须遵守同一契约。
+                StaticPayloadParser(MacroDeclarationFragment(listOf(replacement)))
             }
         }
 
@@ -271,8 +274,9 @@ class FrontendMacroConstructionExecutionTest {
         val parser = object : MacroFragmentParser {
             override fun parse(input: MacroFragmentInput): MacroFragmentResult {
                 val payload = when (input.node.surface.surfaceId) {
-                    parentSurfaceId -> expandedClass
-                    childSurfaceId -> expandedMember
+                    // 声明片段契约（fragment parser v4）：声明宏 payload 是零到多个声明的序列。
+                    parentSurfaceId -> MacroDeclarationFragment(listOf(expandedClass))
+                    childSurfaceId -> MacroDeclarationFragment(listOf(expandedMember))
                     else -> error("Unexpected macro surface ${input.node.surface.surfaceId}")
                 }
                 return MacroFragmentResult.Success(input.node, input.tokens, input.mode, payload)
@@ -586,7 +590,10 @@ class FrontendMacroConstructionExecutionTest {
             )
             val configuration = CompilerConfiguration().apply {
                 macroExecutorFactory = MacroExecutorFactory { executor }
-                macroFragmentParserFactory = MacroFragmentParserFactory { StaticPayloadParser(replacement) }
+                macroFragmentParserFactory = MacroFragmentParserFactory {
+                    // 同上：声明宏 payload 必须是 MacroDeclarationFragment。
+                    StaticPayloadParser(MacroDeclarationFragment(listOf(replacement)))
+                }
             }
 
             val result = FrontendMacroConstructionService(configuration).expandWithClassification(

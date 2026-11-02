@@ -285,12 +285,17 @@ class CjmpTwoPhaseCompilationTest {
             cjoOutputDirectory = outputRoot.toString()
         }
         assertTrue(result.completed, "ordinary library frontend completes: ${result.messages}")
+        // 编译返回后 PSI 可能已失效（无 Application / 文件已释放）；诊断定位只用于失败信息，
+        // 不能在格式化阶段抛 PsiInvalidElementAccessException 掩盖真实诊断。
         val diagnosticLocations = result.diagnostics.joinToString { diagnostic ->
             val psi = ((diagnostic as? CjDiagnosticWithSource)?.element as? CjPsiSourceElement)?.psi
-            val line = psi?.let { element ->
-                element.containingFile.text.take(element.textRange.startOffset).count { it == '\n' } + 1
-            }
-            "${diagnostic.factoryName}@$line '${psi?.text ?: "<no PSI>"}'"
+            val line = runCatching {
+                psi?.let { element ->
+                    element.containingFile.text.take(element.textRange.startOffset).count { it == '\n' } + 1
+                }
+            }.getOrNull()
+            val psiText = runCatching { psi?.text }.getOrNull()
+            "${diagnostic.factoryName}@$line '${psiText ?: "<no PSI>"}'"
         }
         assertTrue(
             result.diagnostics.none { it.severity.isError },
@@ -964,7 +969,13 @@ class CjmpTwoPhaseCompilationTest {
                         identifier = "platform",
                         kind = DeclKind.FuncDecl,
                         type = 1u,
-                        attributes = cjmpAttributeWords(Attribute.COMMON, Attribute.FROM_COMMON_PART),
+                        // CJO 的可见性是显式属性位：官方 writer 对 public 声明会写 PUBLIC，
+                        // 反序列化端在缺失/冲突位时保留 UNKNOWN（不臆造 public），因此最小夹具也要带上。
+                        attributes = cjmpAttributeWords(
+                            Attribute.COMMON,
+                            Attribute.FROM_COMMON_PART,
+                            Attribute.PUBLIC,
+                        ),
                         info = CjoFunctionInfo(body = CjoFunctionBodyInfo(returnType = 2u)),
                     ),
                 ),
