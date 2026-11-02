@@ -27,7 +27,9 @@ package org.cangnova.cangjie.cfir.declarations.impl
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.CfirPureAbstractElement
+import org.cangnova.cangjie.cfir.declarations.CfirBodyPresence
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationStatus
+import org.cangnova.cangjie.cfir.declarations.CfirModifierExplicitness
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.descriptors.Modality
@@ -54,6 +56,23 @@ open class CfirDeclarationStatusImpl(
      */
     override val modality: Modality? = null,
 ) : CfirPureAbstractElement(), CfirDeclarationStatus {
+    /** 源码声明默认已知省略 visibility modifier。 */
+    override var visibilityExplicitness: CfirModifierExplicitness = CfirModifierExplicitness.IMPLICIT
+
+    /** 没有 modality 语义的声明不能声称显式或隐式写出 modality。 */
+    override var modalityExplicitness: CfirModifierExplicitness =
+        if (modality == null) CfirModifierExplicitness.UNKNOWN else CfirModifierExplicitness.IMPLICIT
+        get() = if (modality == null) CfirModifierExplicitness.UNKNOWN else field
+        set(value) {
+            field = if (modality == null) CfirModifierExplicitness.UNKNOWN else value
+        }
+
+    /** Raw builder 提供的函数/属性体事实；库来源默认未知。 */
+    override var bodyPresence: CfirBodyPresence = CfirBodyPresence.UNKNOWN
+
+    /** Raw builder 提供的声明文件事实；resolver 据此区分 `.cj.d` 的缺体 override 默认模态。 */
+    override var isDeclarationFile: Boolean = false
+
     /**
      * 声明状态对象本身没有独立源码节点。
      */
@@ -101,18 +120,22 @@ open class CfirDeclarationStatusImpl(
      * 声明可见性是否由源码显式写出。
      */
     override var isVisibilityExplicit: Boolean
-        get() = this[Modifier.VISIBILITY_EXPLICIT]
+        get() = visibilityExplicitness == CfirModifierExplicitness.EXPLICIT
         set(value) {
-            this[Modifier.VISIBILITY_EXPLICIT] = value
+            visibilityExplicitness = if (value) CfirModifierExplicitness.EXPLICIT else CfirModifierExplicitness.IMPLICIT
         }
 
     /**
      * 声明 modality 是否由源码显式写出。
      */
     override var isModalityExplicit: Boolean
-        get() = this[Modifier.MODALITY_EXPLICIT]
+        get() = modalityExplicitness == CfirModifierExplicitness.EXPLICIT
         set(value) {
-            this[Modifier.MODALITY_EXPLICIT] = value
+            modalityExplicitness = when {
+                modality == null -> CfirModifierExplicitness.UNKNOWN
+                value -> CfirModifierExplicitness.EXPLICIT
+                else -> CfirModifierExplicitness.IMPLICIT
+            }
         }
 
     /**
@@ -195,6 +218,13 @@ open class CfirDeclarationStatusImpl(
         get() = this[Modifier.COMMON]
         set(value) {
             this[Modifier.COMMON] = value
+        }
+
+    /** CJO `FROM_COMMON_PART` 来源事实，不等价于源码 `common` modifier。 */
+    override var isFromCommonPart: Boolean
+        get() = this[Modifier.FROM_COMMON_PART]
+        set(value) {
+            this[Modifier.FROM_COMMON_PART] = value
         }
 
     /**
@@ -324,14 +354,6 @@ open class CfirDeclarationStatusImpl(
          */
         SEALED(0x1000),
         /**
-         * 可见性显式写出 bit。
-         */
-        VISIBILITY_EXPLICIT(0x2000),
-        /**
-         * modality 显式写出 bit。
-         */
-        MODALITY_EXPLICIT(0x4000),
-        /**
          * default 修饰符 bit。
          */
         DEFAULT(0x8000),
@@ -343,6 +365,8 @@ open class CfirDeclarationStatusImpl(
         C(0x20000),
         /** 官方 `Attribute::COMMON_WITH_DEFAULT` 位（写侧派生、读侧恢复）。 */
         COMMON_WITH_DEFAULT(0x40000),
+        /** CJO `FROM_COMMON_PART` 来源事实；不代表真实 `COMMON` modifier。 */
+        FROM_COMMON_PART(0x80000),
     }
 
     /**

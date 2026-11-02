@@ -7,6 +7,8 @@ import org.cangnova.cangjie.cfir.builder.BodyBuildingMode
 import org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.declarations.CfirBodyPresence
+import org.cangnova.cangjie.cfir.declarations.CfirModifierExplicitness
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
@@ -109,6 +111,111 @@ class DeclarationModeRawCfirStatusTest : AbstractLightTree2CfirConverterTestCase
         assertFalse(status.isDefault)
     }
 
+    fun testPsiSourceCommonInterfaceBodylessFunctionStaysAbstractAndNotDefault() {
+        val file = buildFromPsi(INTERFACE_COMMON_BODYLESS_FUNC, SOURCE_FILE_NAME, CjSourceKind.SOURCE)
+        val status = singleFunctionIn(singleClassLike(file)).status
+        assertTrue(status.isAbstract)
+        assertTrue(status.isCommon)
+        assertFalse(status.isDefault)
+    }
+
+    fun testLightTreeSourceCommonInterfaceBodylessFunctionStaysAbstractAndNotDefault() {
+        val file = buildFromLightTree(INTERFACE_COMMON_BODYLESS_FUNC, SOURCE_FILE_NAME, CjSourceKind.SOURCE)
+        val status = singleFunctionIn(singleClassLike(file)).status
+        assertTrue(status.isAbstract)
+        assertTrue(status.isCommon)
+        assertFalse(status.isDefault)
+    }
+
+    fun testPsiDeclarationFileCommonInterfaceFunctionKeepsDefaultAndPostAbstract() {
+        val file = buildFromPsi(INTERFACE_COMMON_BODYLESS_FUNC, DECLARATION_FILE_NAME, CjSourceKind.DECLARATION)
+        val status = singleFunctionIn(singleClassLike(file)).status
+        assertTrue(status.isAbstract)
+        assertTrue(status.isCommon)
+        assertTrue(status.isDefault)
+    }
+
+    fun testLightTreeDeclarationFileCommonInterfaceFunctionKeepsDefaultAndPostAbstract() {
+        val file = buildFromLightTree(INTERFACE_COMMON_BODYLESS_FUNC, DECLARATION_FILE_NAME, CjSourceKind.DECLARATION)
+        val status = singleFunctionIn(singleClassLike(file)).status
+        assertTrue(status.isAbstract)
+        assertTrue(status.isCommon)
+        assertTrue(status.isDefault)
+    }
+
+    fun testDeclarationFileFactAndBodyPresenceSurvivePsiAndLightTreeBuilders() {
+        val sourceCases = listOf(
+            buildFromPsi(CLASS_BODYLESS_FUNC, SOURCE_FILE_NAME, CjSourceKind.SOURCE),
+            buildFromLightTree(CLASS_BODYLESS_FUNC, SOURCE_FILE_NAME, CjSourceKind.SOURCE),
+        )
+        sourceCases.forEach { file ->
+            val status = singleFunctionIn(singleClassLike(file)).status
+            assertFalse(status.isDeclarationFile)
+            assertTrue(status.bodyPresence == CfirBodyPresence.ABSENT)
+            assertTrue(status.modalityExplicitness == CfirModifierExplicitness.IMPLICIT)
+            assertFalse(status.isModalityExplicit)
+        }
+
+        val declarationCases = listOf(
+            buildFromPsi(CLASS_BODYLESS_FUNC, DECLARATION_FILE_NAME, CjSourceKind.DECLARATION),
+            buildFromLightTree(CLASS_BODYLESS_FUNC, DECLARATION_FILE_NAME, CjSourceKind.DECLARATION),
+        )
+        declarationCases.forEach { file ->
+            val status = singleFunctionIn(singleClassLike(file)).status
+            assertTrue(status.isDeclarationFile)
+            assertTrue(status.bodyPresence == CfirBodyPresence.ABSENT)
+            assertTrue(status.modalityExplicitness == CfirModifierExplicitness.IMPLICIT)
+            assertFalse(status.isModalityExplicit)
+        }
+    }
+
+    fun testExplicitModalityFactsAreCapturedByPsiAndLightTreeBuilders() {
+        val explicitSource = """
+            class C {
+                abstract func f(): Int64
+            }
+        """.trimIndent()
+        val explicitDeclaration = """
+            class C {
+                open func f(): Int64
+            }
+        """.trimIndent()
+        val cases = listOf(
+            buildFromPsi(explicitSource, SOURCE_FILE_NAME, CjSourceKind.SOURCE) to true,
+            buildFromLightTree(explicitSource, SOURCE_FILE_NAME, CjSourceKind.SOURCE) to true,
+            buildFromPsi(explicitDeclaration, DECLARATION_FILE_NAME, CjSourceKind.DECLARATION) to false,
+            buildFromLightTree(explicitDeclaration, DECLARATION_FILE_NAME, CjSourceKind.DECLARATION) to false,
+        )
+        cases.forEach { (file, isAbstract) ->
+            val status = singleFunctionIn(singleClassLike(file)).status
+            assertTrue(status.modalityExplicitness == CfirModifierExplicitness.EXPLICIT)
+            assertTrue(status.isModalityExplicit)
+            assertTrue(status.isAbstract == isAbstract)
+        }
+    }
+
+    fun testForeignModifierAndForeignBlockFactsSurviveBothBuilders() {
+        val source = """
+            foreign func directNative(): Unit
+            foreign {
+                func blockNative(): Unit
+            }
+        """.trimIndent()
+        val files = listOf(
+            buildFromPsi(source, SOURCE_FILE_NAME, CjSourceKind.SOURCE),
+            buildFromLightTree(source, SOURCE_FILE_NAME, CjSourceKind.SOURCE),
+        )
+        files.forEach { file ->
+            val functions = file.declarations.filterIsInstance<CfirNamedFunction>().associateBy { it.name.asString() }
+            assertTrue(functions.keys == setOf("directNative", "blockNative"))
+            functions.values.forEach { function ->
+                assertTrue(function.status.isForeign, "${function.name} 必须保留 foreign 事实")
+                assertFalse(function.status.isAbstract, "foreign 函数不能因缺体推导为 abstract")
+                assertTrue(function.status.bodyPresence == CfirBodyPresence.ABSENT)
+            }
+        }
+    }
+
     // ==================== 基础设施 ====================
 
     private fun buildFromPsi(text: String, fileName: String, kind: CjSourceKind): CfirFile {
@@ -126,6 +233,53 @@ class DeclarationModeRawCfirStatusTest : AbstractLightTree2CfirConverterTestCase
     }
 
     /** 以显式 FileType 创建 PSI 文件：fileType 是 CjFile.sourceKind 的唯一真源。 */
+    fun testPsiJavaMirrorBodyFactsUseNativePostRules() {
+        assertJavaMirrorBodyFacts { text, kind -> buildFromPsi(text, if (kind.isDeclaration) DECLARATION_FILE_NAME else SOURCE_FILE_NAME, kind) }
+    }
+
+    fun testLightTreeJavaMirrorBodyFactsUseNativePostRules() {
+        assertJavaMirrorBodyFacts { text, kind -> buildFromLightTree(text, if (kind.isDeclaration) DECLARATION_FILE_NAME else SOURCE_FILE_NAME, kind) }
+    }
+
+    /** PSI 与 LightTree 各自提取同一组 JavaMirror 语法事实，不能借普通缺体规则推导实例函数。 */
+    private fun assertJavaMirrorBodyFacts(build: (String, CjSourceKind) -> CfirFile) {
+        for (kind in listOf(CjSourceKind.SOURCE, CjSourceKind.DECLARATION)) {
+            val concrete = singleClassLike(build("""
+                import interoplib.interop.*
+                @JavaMirror
+                class Mirror {
+                    func closed(): Unit
+                    prop value: Int32
+                }
+            """.trimIndent(), kind))
+            assertFalse(singleFunctionIn(concrete).status.isAbstract)
+            assertFalse(singlePropertyIn(concrete).status.isAbstract)
+
+            val abstractHost = singleClassLike(build("""
+                import interoplib.interop.*
+                @JavaMirror
+                abstract class Mirror {
+                    abstract func required(): Unit
+                    func closed(): Unit
+                    prop value: Int32
+                }
+            """.trimIndent(), kind))
+            val functions = abstractHost.declarations.filterIsInstance<CfirNamedFunction>().associateBy { it.name.asString() }
+            assertTrue(functions.getValue("required").status.isAbstract)
+            assertFalse(functions.getValue("closed").status.isAbstract)
+            assertTrue(singlePropertyIn(abstractHost).status.isAbstract)
+
+            val contract = singleClassLike(build("""
+                import interoplib.interop.*
+                @JavaMirror
+                interface Mirror {
+                    func required(): Unit
+                }
+            """.trimIndent(), kind))
+            assertTrue(singleFunctionIn(contract).status.isAbstract)
+        }
+    }
+
     private fun psiFile(text: String, fileName: String, kind: CjSourceKind): CjFile {
         val fileType: LanguageFileType = when (kind) {
             CjSourceKind.DECLARATION -> CangJieDeclarationFileType
@@ -163,6 +317,12 @@ class DeclarationModeRawCfirStatusTest : AbstractLightTree2CfirConverterTestCase
         private val INTERFACE_BODYLESS_FUNC = """
             interface I {
                 func f(): Int64
+            }
+        """.trimIndent()
+
+        private val INTERFACE_COMMON_BODYLESS_FUNC = """
+            interface I {
+                common func f(): Int64
             }
         """.trimIndent()
     }

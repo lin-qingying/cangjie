@@ -7,11 +7,15 @@ import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 import org.cangnova.cangjie.cfir.expressions.builtInDescriptor
 import org.cangnova.cangjie.annotations.CangjieAnnotationIdentity
+import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
+import org.cangnova.cangjie.annotations.BuiltInAnnotationRegistry
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoImportEntry
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.descriptors.Visibilities
+import org.cangnova.cangjie.descriptors.Modality
 import org.cangnova.cangjie.psi.CjAnnotations
 import org.cangnova.cangjie.psi.CjDotQualifiedExpression
 import org.cangnova.cangjie.psi.CjImportList
@@ -149,10 +153,11 @@ private fun createNameReferenceStub(parent: StubElement<*>, name: Name) {
 internal fun createEmptyDeclarationHeaderStubs(
     parent: StubElement<*>,
     modifierMask: Long = 0,
-    annotations: List<org.cangnova.cangjie.cfir.expressions.CfirAnnotation> = emptyList(),
+    declaration: CfirDeclaration,
 ) {
     val annotationsStub = CangJiePlaceHolderStubImpl<CjAnnotations>(parent, CjStubElementTypes.ANNOTATIONS)
-    annotations.filterIsInstance<CfirAnnotationCall>().forEach { annotation ->
+    val annotationCalls = declaration.annotations.filterIsInstance<CfirAnnotationCall>()
+    annotationCalls.forEach { annotation ->
         val platformIdentity = annotation.annotationIdentity as? CangjieAnnotationIdentity.PlatformDerived
         val name = annotation.annotationSourceName
             ?.removePrefix("@!")
@@ -178,6 +183,36 @@ internal fun createEmptyDeclarationHeaderStubs(
             compileTimeVisible = annotation.isCompileTimeVisible == true,
         )
         createAnnotationChildrenStubs(annotationStub, annotation, name)
+    }
+    // CJO 的属性位也是注解身份的来源；恢复语法需要的 marker，避免重解析丢失宿主规则。
+    // Mirror 属性还会继承到成员上，只有对应源码目标可恢复成显式注解。
+    val serialized = declaration.serializedInteropFacts
+    val attributeAnnotations = buildList {
+        if (declaration.annotationInfo?.isIntrinsic == true || serialized?.isIntrinsic == true) {
+            add(BuiltInAnnotationKind.INTRINSIC)
+        }
+        if (declaration is CfirClassLikeDeclaration && serialized?.isJavaMirror == true) {
+            add(BuiltInAnnotationKind.JAVA_MIRROR)
+        }
+        if ((declaration is CfirClassLikeDeclaration ||
+                    declaration is CfirNamedFunction && declaration.symbol.callableId.classId == null) &&
+            serialized?.isObjCMirror == true
+        ) {
+            add(BuiltInAnnotationKind.OBJ_C_MIRROR)
+        }
+    }
+    for (kind in attributeAnnotations) {
+        if (annotationCalls.any { it.annotationKind == kind || it.builtInDescriptor?.kind == kind }) continue
+        val descriptor = checkNotNull(BuiltInAnnotationRegistry.findLanguageBuiltIn(kind))
+        val annotationStub = CangJieAnnotationStubImpl(
+            parent = annotationsStub,
+            shortName = StringRef.fromString(descriptor.sourceName),
+            hasValueArguments = false,
+            classId = null,
+            builtInKind = kind,
+            compileTimeVisible = false,
+        )
+        createAnnotationChildrenStubs(annotationStub, descriptor.sourceName, emptyList())
     }
     CangJieModifierListStubImpl(parent, modifierMask, CjStubElementTypes.MODIFIER_LIST)
 }
@@ -214,19 +249,31 @@ internal fun createCallableModifierMask(isOperator: Boolean): Long {
  * 该映射覆盖 abstract/open/static/mut/override/redef/unsafe/operator/foreign 等反编译文本需要展示的修饰符。
  */
 internal fun createDeclarationModifierMask(
-    status: CfirDeclarationStatus,
+    declaration: CfirMemberDeclaration,
     isOperator: Boolean = false,
+    context: CjoStubBuilderContext? = null,
+    isCallable: Boolean = false,
 ): Long {
+    val status = declaration.status
     return ModifierMaskUtils.computeMask(
         hasModifier = { modifier ->
             when (modifier) {
-                CjTokens.ABSTRACT_KEYWORD -> status.isAbstract
-                CjTokens.OPEN_KEYWORD -> status.isOpen
+                CjTokens.ABSTRACT_KEYWORD -> status.isAbstract && (!isCallable ||
+                        status.isAbstractExplicit && status.modalityExplicitness == CfirModifierExplicitness.EXPLICIT ||
+                        context.requiresAbstractModifier(status))
+                CjTokens.OPEN_KEYWORD -> status.isOpen &&
+                        !(declaration is CfirProperty && context?.owningClassIsJavaMirror == true)
                 CjTokens.STATIC_KEYWORD -> status.isStatic
                 CjTokens.MUT_KEYWORD -> status.isMut
                 CjTokens.OVERRIDE_KEYWORD -> status.isOverride
                 CjTokens.REDEF_KEYWORD -> status.isRedef
                 CjTokens.UNSAFE_KEYWORD -> status.isUnsafe
+                CjTokens.PUBLIC_KEYWORD -> status.visibility == Visibilities.Public
+                CjTokens.PRIVATE_KEYWORD -> status.visibility == Visibilities.Private
+                CjTokens.PROTECTED_KEYWORD -> status.visibility == Visibilities.Protected
+                CjTokens.INTERNAL_KEYWORD -> status.visibility == Visibilities.Internal
+                CjTokens.COMMON_KEYWORD -> status.isCommon && context?.owningClassIsJavaMirror != true
+                CjTokens.SPECIFIC_KEYWORD -> status.isSpecific && context?.owningClassIsJavaMirror != true
                 CjTokens.OPERATOR_KEYWORD -> isOperator
                 else -> false
             }
@@ -235,6 +282,14 @@ internal fun createDeclarationModifierMask(
             keyword == CjTokens.FOREIGN_KEYWORD && status.isForeign
         },
     )
+}
+
+/** CJMP 与 JavaMirror 抽象类的成员需要 abstract 修饰符才能在重解析时保留抽象性。 */
+private fun CjoStubBuilderContext?.requiresAbstractModifier(status: CfirDeclarationStatus): Boolean {
+    val host = this ?: return false
+    val hostStatus = host.owningClassStatus ?: return false
+    return host.owningClassKind == CjoStubHostKind.CLASS && hostStatus.modality == Modality.ABSTRACT &&
+            (host.owningClassIsJavaMirror || hostStatus.isCommon || hostStatus.isSpecific || status.isCommon)
 }
 
 /**

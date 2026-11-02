@@ -26,6 +26,7 @@ import org.cangnova.cangjie.analysis.api.symbols.CaMainFunctionSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaNamedFunctionSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolLocation
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolModality
+import org.cangnova.cangjie.analysis.api.symbols.CaModifierExplicitness
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolVisibility
 import org.cangnova.cangjie.analysis.api.symbols.CaTypeParameterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaValueParameterSymbol
@@ -97,7 +98,7 @@ internal class CaCfirNamedFunctionSymbol private constructor(
      * 函数 CFIR member 状态。
      */
     private val status
-        get() = (cfirSymbol.cfir as? CfirMemberDeclaration)?.status
+        get() = cfirSymbol.resolvedStatus
 
     /**
      * 函数对应的 PSI。
@@ -168,50 +169,37 @@ internal class CaCfirNamedFunctionSymbol private constructor(
      */
     override val visibility: CaSymbolVisibility
         get() = withValidityAssertion {
-            backingPsi?.psiBasedVisibility(::isOverride)?.asPublicVisibility()
-                ?: status?.visibility?.asPublicVisibility()
-                ?: CaSymbolVisibility.PUBLIC
+            status.visibility.asPublicVisibility()
+        }
+
+    override val visibilityExplicitness: CaModifierExplicitness
+        get() = withValidityAssertion {
+            status.visibilityExplicitness.asPublicExplicitness()
         }
 
     /**
      * 函数可见性是否显式声明。
      */
     override val isVisibilityExplicit: Boolean
-        get() = withValidityAssertion {
-            backingPsi?.let { it.visibilityByModifiers != null }
-                ?: (status?.isVisibilityExplicit == true)
-        }
+        get() = visibilityExplicitness == CaModifierExplicitness.EXPLICIT
 
     /**
      * 函数 modality。
      */
     override val modality: CaSymbolModality?
+        get() = withValidityAssertion { status.modality.asPublicModality() }
+
+    override val modalityExplicitness: CaModifierExplicitness
         get() = withValidityAssertion {
-            val psiBasedModality = backingPsi?.run {
-                val modalityByModifiers = caSymbolModalityByModifiers
-                when {
-                    modalityByModifiers != null -> when {
-                        modalityByModifiers.isOpenFromInterface && !hasBody() -> CaSymbolModality.ABSTRACT
-                        else -> modalityByModifiers
-                    }
-
-                    isTopLevel || isLocal -> CaSymbolModality.FINAL
-                    hasModifier(CjTokens.CONST_KEYWORD) -> CaSymbolModality.FINAL
-                    else -> psiBasedDefaultCaModality(::isOverride)
-                }
-            }
-
-            psiBasedModality ?: status?.modality?.asPublicModality()
+            if (modality == null) CaModifierExplicitness.UNKNOWN
+            else status.modalityExplicitness.asPublicExplicitness()
         }
 
     /**
      * 函数 modality 是否显式声明。
      */
     override val isModalityExplicit: Boolean
-        get() = withValidityAssertion {
-            backingPsi?.let { it.caSymbolModalityByModifiers != null }
-                ?: (status?.isModalityExplicit == true)
-        }
+        get() = modalityExplicitness == CaModifierExplicitness.EXPLICIT
 
     @OptIn(CaImplementationDetail::class)
     /**
@@ -387,7 +375,10 @@ internal class CaCfirMainFunctionSymbol(
      * main 函数可见性是否显式声明。
      */
     override val isVisibilityExplicit: Boolean
-        get() = status?.isVisibilityExplicit == true
+        get() = visibilityExplicitness == CaModifierExplicitness.EXPLICIT
+
+    override val visibilityExplicitness: CaModifierExplicitness
+        get() = status.asPublicVisibilityExplicitness()
 
     /**
      * main 函数 modality。
@@ -399,7 +390,10 @@ internal class CaCfirMainFunctionSymbol(
      * main 函数 modality 是否显式声明。
      */
     override val isModalityExplicit: Boolean
-        get() = status?.isModalityExplicit == true
+        get() = modalityExplicitness == CaModifierExplicitness.EXPLICIT
+
+    override val modalityExplicitness: CaModifierExplicitness
+        get() = status.asPublicModalityExplicitness()
 
     /**
      * main 函数当前没有稳定 pointer。
@@ -582,9 +576,11 @@ internal class CaCfirMacroSymbol private constructor(
      */
     override val isVisibilityExplicit: Boolean
         get() = withValidityAssertion {
-            backingPsi?.let { it.visibilityByModifiers != null }
-                ?: (status?.isVisibilityExplicit == true)
+            visibilityExplicitness == CaModifierExplicitness.EXPLICIT
         }
+
+    override val visibilityExplicitness: CaModifierExplicitness
+        get() = withValidityAssertion { status.asPublicVisibilityExplicitness() }
 
     /**
      * macro modality。
@@ -602,9 +598,11 @@ internal class CaCfirMacroSymbol private constructor(
      */
     override val isModalityExplicit: Boolean
         get() = withValidityAssertion {
-            backingPsi?.let { it.caSymbolModalityByModifiers != null }
-                ?: (status?.isModalityExplicit == true)
+            modalityExplicitness == CaModifierExplicitness.EXPLICIT
         }
+
+    override val modalityExplicitness: CaModifierExplicitness
+        get() = withValidityAssertion { status.asPublicModalityExplicitness() }
 
     /**
      * macro 当前没有稳定 pointer。

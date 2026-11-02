@@ -283,6 +283,43 @@ class CfirDeclarationModeCheckersTest : AbstractCfirAnalysisResolveTest() {
         )
     }
 
+    @Test
+    fun testLegalBodylessClassOverridesProduceNoDiagnosticsInBothFileModes() {
+        val source = """
+            public abstract class Parent {
+                public func run(): Unit
+                public func runOpen(): Unit
+            }
+
+            public abstract class Child <: Parent {
+                public override func run(): Unit
+                public open override func runOpen(): Unit
+            }
+        """.trimIndent()
+        val sourceDiagnostics = collectDiagnosticNames(createCjFile("bodylessOverrides", source))
+        assertTrue(
+            sourceDiagnostics.isEmpty(),
+            "合法的普通源码抽象 override 不应报告缺少实现或非法 override，实际：$sourceDiagnostics",
+        )
+
+        val declaration = """
+            public open class Parent {
+                public open func run(): Unit
+                public open func runOpen(): Unit
+            }
+
+            public open class Child <: Parent {
+                public override func run(): Unit
+                public open override func runOpen(): Unit
+            }
+        """.trimIndent()
+        val declarationDiagnostics = collectDiagnosticNames(createDeclarationCjFile("bodylessOverrides", declaration))
+        assertTrue(
+            declarationDiagnostics.isEmpty(),
+            "合法的声明文件 override 不应报告缺少实现或非法 override，实际：$declarationDiagnostics",
+        )
+    }
+
     // ==================== 基础设施 ====================
 
     private fun collectDiagnosticNames(

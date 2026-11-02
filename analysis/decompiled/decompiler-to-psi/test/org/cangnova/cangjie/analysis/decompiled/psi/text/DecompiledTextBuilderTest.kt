@@ -397,10 +397,10 @@ class DecompiledTextBuilderTest {
     }
 
     /**
-     * 验证没有显式 accessor stub 的 compiled `prop` 仍会渲染 getter body 占位。
+     * 没有 accessor stub 时，文本不凭 modifier 推测并补造 getter。
      */
     @Test
-    fun compiledPropertyWithoutAccessorStubsStillRendersGetterBody() {
+    fun compiledPropertyWithoutAccessorStubsRemainsBodyless() {
         withCoreEnvironment {
             val rendered = renderManualStructStub { classBodyStub ->
                 val propertyStub = CangJiePropertyStubImpl(
@@ -413,15 +413,15 @@ class DecompiledTextBuilderTest {
             }
 
             assertTrue(rendered.contains("prop first"), rendered)
-            assertTrue(rendered.contains("get() { /* compiled code */ }"), rendered)
+            assertFalse(rendered.contains("get()"), rendered)
         }
     }
 
     /**
-     * 验证没有显式 accessor stub 的 `mut prop` 会同时渲染 getter 与 setter body 占位。
+     * mut 属性同样只渲染 stub 中实际存在的访问器。
      */
     @Test
-    fun compiledMutPropertyWithoutAccessorStubsStillRendersGetterAndSetterBodies() {
+    fun compiledMutPropertyWithoutAccessorStubsRemainsBodyless() {
         withCoreEnvironment {
             val rendered = renderManualStructStub { classBodyStub ->
                 val propertyStub = CangJiePropertyStubImpl(
@@ -436,10 +436,9 @@ class DecompiledTextBuilderTest {
                 createBasicTypeReference(propertyStub, "Int64")
             }
 
-            assertTrue(rendered.contains("mut prop state: Int64 {"), rendered)
-            assertTrue(rendered.contains("get() { /* compiled code */ }"), rendered)
-            assertTrue(rendered.contains("set(value) { /* compiled code */ }"), rendered)
-            assertFalse(rendered.contains("set(value: "), rendered)
+            assertTrue(rendered.contains("mut prop state: Int64"), rendered)
+            assertFalse(rendered.contains("get()"), rendered)
+            assertFalse(rendered.contains("set(value"), rendered)
         }
     }
 

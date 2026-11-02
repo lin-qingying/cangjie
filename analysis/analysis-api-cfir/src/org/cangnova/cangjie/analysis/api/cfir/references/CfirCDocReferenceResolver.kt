@@ -7,14 +7,15 @@ import org.cangnova.cangjie.analysis.api.CaExperimentalApi
 import org.cangnova.cangjie.analysis.api.CaImplementationDetail
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
+import org.cangnova.cangjie.analysis.api.cfir.scopes.CaCfirScopeWithKind
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirTypeParameterSymbol
 import org.cangnova.cangjie.analysis.api.cfir.components.createUseSiteMemberCallableVisibilityChecker
+import org.cangnova.cangjie.analysis.api.cfir.components.declarationSiteMemberScope
 import org.cangnova.cangjie.analysis.api.cfir.scopes.CaCfirBasedScope
 import org.cangnova.cangjie.analysis.api.components.CaScopeKind
 import org.cangnova.cangjie.analysis.api.components.correspondingProperty
 import org.cangnova.cangjie.analysis.api.components.deprecationStatus
 import org.cangnova.cangjie.analysis.api.components.memberScope
-import org.cangnova.cangjie.analysis.api.components.combinedDeclaredMemberScope
 import org.cangnova.cangjie.analysis.api.components.containingDeclaration
 import org.cangnova.cangjie.analysis.api.components.packageScope
 import org.cangnova.cangjie.analysis.api.components.scope
@@ -39,8 +40,10 @@ import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getOrBuildCfirFile
 import org.cangnova.cangjie.cfir.scopes.CfirPotentialDirectExtendCallableScope
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
+import org.cangnova.cangjie.cfir.scopes.processCallablesByNameWithLookupProvenance
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.calls.producesInapplicableCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.overloads.ConeSimpleConstraintSystemImpl
 import org.cangnova.cangjie.cfir.resolve.inference.inferenceComponents
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
@@ -94,6 +97,11 @@ internal object CfirCDocReferenceResolver {
     private data class ResolveResult(
         val symbol: CaSymbol,
         val receiverClassReference: CaClassLikeSymbol? = null,
+    )
+
+    private data class VisibleScope(
+        val scope: CaScope,
+        val receiverType: ConeCangJieType? = null,
     )
 
     private enum class ContextDeclarationHandlingMode {
@@ -180,12 +188,11 @@ internal object CfirCDocReferenceResolver {
                 val containingType = (contextElement as? CjTypeStatement)
                     ?.takeUnless { it.isExtend() }
                     ?: return emptyList()
-                val property = with(this) {
-                    containingType.classSymbol.combinedDeclaredMemberScope.callables(shortName)
-                        .filterIsInstance<CaPropertySymbol>()
-                        .let { nonHidden(it.toList()) }
-                        .firstOrNull()
-                }
+                val cfirSession = this as CaCfirSession
+                val property = cfirSession.declarationSiteMemberScope(containingType.classSymbol).callables(shortName)
+                    .filterIsInstance<CaPropertySymbol>()
+                    .let { nonHidden(it.toList()) }
+                    .firstOrNull()
                 return listOfNotNull(property?.toResolveResult())
             }
 
@@ -259,32 +266,37 @@ internal object CfirCDocReferenceResolver {
         }
     }
 
-    private fun CaSession.getVisibleScopes(position: CjElement): List<CaScope> {
+    private fun CaSession.getVisibleScopes(position: CjElement): List<VisibleScope> {
         val contextScopes = position.containingCjFile.scopeContext(position).scopes
         val localScopes = contextScopes.filter { entry ->
             entry.kind == CaScopeKind.LOCAL_SCOPE ||
                 entry.kind == CaScopeKind.TYPE_SCOPE ||
                 entry.kind == CaScopeKind.TYPE_PARAMETER_SCOPE ||
                 entry.kind == CaScopeKind.STATIC_MEMBER_SCOPE
-        }.map { it.scope }
+        }.map { entry ->
+            val sourceTowerElement = (entry as? CaCfirScopeWithKind)?.sourceTowerElement
+            val receiver = sourceTowerElement?.implicitReceiver
+                ?.takeUnless { it.producesInapplicableCandidate() }
+            VisibleScope(entry.scope, receiver?.type)
+        }
         val globalScopes = contextScopes.filter { entry ->
             entry.kind == CaScopeKind.FILE_SCOPE ||
                 entry.kind == CaScopeKind.PACKAGE_MEMBER_SCOPE ||
                 entry.kind == CaScopeKind.BUILTIN_SCOPE ||
                 entry.kind.isImporting
-        }.map { it.scope }
+        }.map { VisibleScope(it.scope) }
 
         return localScopes + getOuterTypeScopesForPosition(position) + globalScopes
     }
 
-    private fun CaSession.getOuterTypeScopesForPosition(position: CjElement): List<CaScope> {
+    private fun CaSession.getOuterTypeScopesForPosition(position: CjElement): List<VisibleScope> {
         val session = this
         return buildList {
             var current: PsiElement? = position
             while (current != null) {
                 if (current is CjTypeStatement && !current.isExtend()) {
                     val declarationContainer = current.classSymbol as CaDeclarationContainerSymbol
-                    add(with(session) { declarationContainer.memberScope })
+                    add(VisibleScope(with(session) { declarationContainer.memberScope }))
                 }
                 current = current.parent
             }
@@ -294,17 +306,26 @@ internal object CfirCDocReferenceResolver {
     private fun CaSession.findSymbolsInScopes(
         fqName: FqName,
         contextElement: CjElement,
-        visibleScopes: List<CaScope>,
+        visibleScopes: List<VisibleScope>,
         subjectTag: CDocKnownTag?,
     ): List<ResolveResult> {
         val shortName = fqName.shortName()
         val scopes = sequence {
-            yieldAll(applyScopeReduction(fqName, visibleScopes))
-            getLongestExistingPackageScope(fqName)?.let { yield(it) }
+            for (visibleScope in visibleScopes) {
+                for (scope in applyScopeReduction(fqName, listOf(visibleScope.scope))) {
+                    yield(
+                        VisibleScope(
+                            scope = scope,
+                            receiverType = visibleScope.receiverType.takeIf { fqName.isOneSegment() },
+                        ),
+                    )
+                }
+            }
+            getLongestExistingPackageScope(fqName)?.let { yield(VisibleScope(it)) }
         }
 
         if (subjectTag.isExceptionExpected()) {
-            for (scope in scopes) {
+            for ((scope) in scopes) {
                 scope.classifiers(shortName).toList()
                     .let { filterExceptionClasses(nonHidden(it)) }
                     .takeIf { it.isNotEmpty() }
@@ -317,16 +338,13 @@ internal object CfirCDocReferenceResolver {
             return emptyList()
         }
 
-        for (scope in scopes) {
+        for (visibleScope in scopes) {
+            val scope = visibleScope.scope
             scope.classifiers(shortName).toList().let { nonHidden(it) }
                 .takeIf { it.isNotEmpty() }
                 ?.let { return it.map { symbol -> symbol.toResolveResult() } }
 
-            val callables = nonHidden(
-                scope.callables(shortName)
-                    .filter { it.location != CaSymbolLocation.EXTEND }
-                    .toList(),
-            )
+            val callables = nonHidden(getVisibleCallables(visibleScope, shortName, contextElement))
             callables.filter { it is CaFunctionSymbol || it is CaEnumConstructorSymbol }
                 .takeIf { it.isNotEmpty() }
                 ?.let { return it.map { symbol -> symbol.toResolveResult() } }
@@ -337,13 +355,56 @@ internal object CfirCDocReferenceResolver {
 
         }
 
-        getTypeQualifiedExtensions(fqName, contextElement, visibleScopes)
+        getTypeQualifiedExtensions(fqName, contextElement, visibleScopes.map { it.scope })
             .takeIf { it.isNotEmpty() }
             ?.let { return it }
 
         getPackageSymbol(fqName)?.let { return listOf(it.toResolveResult()) }
 
         return resolveAdditionalCDocSymbols(fqName, contextElement).map { it.toResolveResult() }
+    }
+
+    /**
+     * 从公开 scope 对应的 CFIR scope 读取 callable 来源；extend 成员须连同原始 tower receiver
+     * 一起交给编译器可见性检查器，避免从最终 symbol 反推来源或丢失 private peer 信息。
+     */
+    private fun CaSession.getVisibleCallables(
+        visibleScope: VisibleScope,
+        name: Name,
+        contextElement: CjElement,
+    ): List<CaCallableSymbol> {
+        val cfirBackedScope = visibleScope.scope as? CaCfirBasedScope<*>
+            ?: return visibleScope.scope.callables(name)
+                .filter { it.location != CaSymbolLocation.EXTEND }
+                .toList()
+        val cfirTypeScope = cfirBackedScope.cfirScope as? CfirTypeScope
+            ?: return visibleScope.scope.callables(name)
+                .filter { it.location != CaSymbolLocation.EXTEND }
+                .toList()
+        val cfirSession = this as? CaCfirSession
+            ?: error("CFIR CDoc resolution requires a CFIR Analysis session")
+        val visibilityChecker = visibleScope.receiverType?.let { receiverType ->
+            val useSiteFile = contextElement.containingCjFile.getOrBuildCfirFile(cfirSession.resolutionFacade)
+            cfirSession.createUseSiteMemberCallableVisibilityChecker(
+                useSiteFile = useSiteFile,
+                receiverType = receiverType,
+                position = contextElement,
+            )
+        }
+        val callables = linkedSetOf<CaCallableSymbol>()
+
+        cfirTypeScope.processCallablesByNameWithLookupProvenance(name) { candidate ->
+            if (candidate.provenance.sourceExtend != null && visibilityChecker?.isVisible(candidate) != true) {
+                return@processCallablesByNameWithLookupProvenance
+            }
+
+            val callable = cfirSession.cfirSymbolBuilder.buildSymbol(candidate.symbol) as CaCallableSymbol
+            if (candidate.provenance.sourceExtend == null && callable.location == CaSymbolLocation.EXTEND) {
+                return@processCallablesByNameWithLookupProvenance
+            }
+            callables += callable
+        }
+        return callables.toList()
     }
 
     /**
@@ -448,7 +509,7 @@ internal object CfirCDocReferenceResolver {
         val inferenceComponents = cfirSession.inferenceComponents
         val constraintSystem = ConeSimpleConstraintSystemImpl(
             inferenceComponents.createConstraintSystem(),
-            inferenceComponents,
+            cfirSession,
         )
         val substitutor = constraintSystem.registerTypeVariables(typeParameters)
         val actualReceiverType = with(constraintSystem.context) {
@@ -542,7 +603,7 @@ internal object CfirCDocReferenceResolver {
 
     private fun CjElement.getContextElementOrSelf(): CjElement =
         PsiTreeUtil.findFirstContext(this, false) { context ->
-            context !is CDocElement && context !is CjFile
+            context !is CDocElement && context !is CDocName && context !is CDocLink && context !is CjFile
         } as? CjElement ?: this
 
     private fun FqName.isOneSegment(): Boolean = !isRoot && parent().isRoot

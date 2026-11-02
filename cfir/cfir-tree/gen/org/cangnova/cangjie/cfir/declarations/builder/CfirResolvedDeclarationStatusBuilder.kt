@@ -9,6 +9,8 @@ package org.cangnova.cangjie.cfir.declarations.builder
 
 import kotlin.contracts.*
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
+import org.cangnova.cangjie.cfir.declarations.CfirBodyPresence
+import org.cangnova.cangjie.cfir.declarations.CfirModifierExplicitness
 import org.cangnova.cangjie.cfir.declarations.CfirResolvedDeclarationStatus
 import org.cangnova.cangjie.cfir.declarations.impl.CfirResolvedDeclarationStatusImpl
 import org.cangnova.cangjie.descriptors.Modality
@@ -19,6 +21,10 @@ import org.cangnova.cangjie.source.CjSourceElement
 class CfirResolvedDeclarationStatusBuilder {
     var source: CjSourceElement? = null
     lateinit var visibility: Visibility
+    lateinit var visibilityExplicitness: CfirModifierExplicitness
+    lateinit var modalityExplicitness: CfirModifierExplicitness
+    lateinit var bodyPresence: CfirBodyPresence
+    var isDeclarationFile: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
     var isVisibilityExplicit: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
     var isModalityExplicit: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
     var isAbstractExplicit: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
@@ -31,6 +37,7 @@ class CfirResolvedDeclarationStatusBuilder {
     var isForeign: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
     var isC: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
     var isCommon: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
+    var isFromCommonPart: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
     var isSpecific: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
     var isCommonWithDefault: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
     var isRedef: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
@@ -44,6 +51,10 @@ class CfirResolvedDeclarationStatusBuilder {
         return CfirResolvedDeclarationStatusImpl(
             source,
             visibility,
+            visibilityExplicitness,
+            modalityExplicitness,
+            bodyPresence,
+            isDeclarationFile,
             isVisibilityExplicit,
             isModalityExplicit,
             isAbstractExplicit,
@@ -56,6 +67,7 @@ class CfirResolvedDeclarationStatusBuilder {
             isForeign,
             isC,
             isCommon,
+            isFromCommonPart,
             isSpecific,
             isCommonWithDefault,
             isRedef,

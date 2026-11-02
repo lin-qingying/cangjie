@@ -86,6 +86,7 @@ import org.cangnova.cangjie.parsing.CjMemberBodyFacts
 import org.cangnova.cangjie.parsing.CjMemberBodyPolicy
 import org.cangnova.cangjie.parsing.CjScopeKind
 import org.cangnova.cangjie.parsing.CjmpOverlayFacts
+import org.cangnova.cangjie.parsing.CjJavaMirrorBodyFacts
 import org.cangnova.cangjie.psi.CjNodeTypes
 import org.cangnova.cangjie.ImportPathPrefix
 import org.cangnova.cangjie.resolveImportPath
@@ -153,6 +154,7 @@ class LightTreeRawCfirDeclarationBuilder(
         defaultVisibility: Visibility? = null,
         isDefault: Boolean = false,
         isImplicitAbstract: Boolean = false,
+        bodyPresence: CfirBodyPresence = CfirBodyPresence.UNKNOWN,
     ): CfirDeclarationStatus {
         val inInterfaceContext = !context.inLocalContext && containerSymbolIfAny is CfirInterfaceSymbol
         return toDeclarationStatus(
@@ -161,6 +163,8 @@ class LightTreeRawCfirDeclarationBuilder(
             defaultVisibility,
             isDefault,
             isImplicitAbstract,
+            bodyPresence,
+            sourceKind.isDeclaration,
         )
     }
 
@@ -444,7 +448,7 @@ class LightTreeRawCfirDeclarationBuilder(
                     val (typeParams, classDeclarations) = withContainerSymbol(symbol) {
                         val typeParameters = extractTypeParameters(node, symbol)
                         val declarations = withDispatchReceiverType(symbol.rawDispatchReceiverType(typeParameters)) {
-                            val members = withEnclosingClassModifiers(modifiers) { extractClassMembers(node, name) }.toMutableList()
+                            val members = withEnclosingTypeModifiers(modifiers) { extractClassMembers(node, name) }.toMutableList()
                                 addPrimaryConstructorParameterProperties(node, members)
                                 orderClassLikeDeclarations(
                                     shape = RawClassShape(CfirClassKind.CLASS, members.hasNonStaticConstructor()),
@@ -474,7 +478,7 @@ class LightTreeRawCfirDeclarationBuilder(
                     val (typeParams, classDeclarations) = withContainerSymbol(symbol) {
                         val typeParameters = extractTypeParameters(node, symbol)
                         val declarations = withDispatchReceiverType(symbol.rawDispatchReceiverType(typeParameters)) {
-                            extractClassMembers(node).toMutableList()
+                            withEnclosingTypeModifiers(modifiers) { extractClassMembers(node) }.toMutableList()
                         }
                         typeParameters to declarations
                     }
@@ -849,12 +853,32 @@ class LightTreeRawCfirDeclarationBuilder(
                 isLocal = context.inLocalContext
                 dispatchReceiverType = currentDispatchReceiverType()
                 status = run {
-                    // DEFAULT 与隐式 abstract 同源（护栏 2）：官方 SetDefaultFunc 读的是
-                    // CheckFuncBody 的结果，因此这里只算一次，两边共用。
-                    val implicitAbstract = isImplicitAbstractClassLikeFunction(node, modifiers)
+                    val bodyFacts = if (isInClassOrInterfaceMemberContext()) {
+                        memberBodyFacts(
+                            scopeKind = currentMemberScopeKind(),
+                            hasBody = hasSyntaxBody(node),
+                            hasAccessors = false,
+                            modifiers = modifiers,
+                        )
+                    } else {
+                        null
+                    }
+                    val implicitAbstract = bodyFacts?.let { facts ->
+                        CjMemberBodyPolicy.applyCjmpOverlay(
+                            CjMemberBodyPolicy.applyJavaMirrorFunctionOverlay(
+                                CjMemberBodyPolicy.checkFunctionBody(facts), facts,
+                            ),
+                            facts,
+                        ).markImplicitAbstract ||
+                                CjMemberBodyPolicy.isImplicitAbstractCjmpCommonInterfaceFunction(facts)
+                    } ?: false
+                    val isDefault = bodyFacts?.let { facts ->
+                        CjMemberBodyPolicy.isDefaultInterfaceFunction(facts, modifiers.isAbstract)
+                    } ?: false
                     modifiers.toDeclarationStatusForCurrentContext(
-                        isDefault = isDefaultInterfaceFunction(node, modifiers, implicitAbstract),
+                        isDefault = isDefault,
                         isImplicitAbstract = implicitAbstract,
+                        bodyPresence = if (hasSyntaxBody(node)) CfirBodyPresence.PRESENT else CfirBodyPresence.ABSENT,
                     )
                 }
                 this.typeParameters.addAll(typeParams)
@@ -1014,6 +1038,11 @@ class LightTreeRawCfirDeclarationBuilder(
                     modifiers.toDeclarationStatusForCurrentContext(
                         isDefault = isDefaultInterfaceProperty(modifiers, implicitAbstract),
                         isImplicitAbstract = implicitAbstract,
+                        bodyPresence = if (hasPropertyBody(node) || accessors.isNotEmpty()) {
+                            CfirBodyPresence.PRESENT
+                        } else {
+                            CfirBodyPresence.ABSENT
+                        },
                     )
                 }
                 this.returnTypeRef = typeRef
@@ -3430,6 +3459,10 @@ class LightTreeRawCfirDeclarationBuilder(
             visibility = status.visibility,
             modality = status.modality,
         ).also { copied ->
+            copied.visibilityExplicitness = status.visibilityExplicitness
+            copied.modalityExplicitness = status.modalityExplicitness
+            copied.bodyPresence = status.bodyPresence
+            copied.isDeclarationFile = status.isDeclarationFile
             copied.isVisibilityExplicit = status.isVisibilityExplicit
             copied.isModalityExplicit = status.isModalityExplicit
             copied.isAbstractExplicit = status.isAbstractExplicit
@@ -3442,6 +3475,7 @@ class LightTreeRawCfirDeclarationBuilder(
             copied.isForeign = status.isForeign
             copied.isC = status.isC
             copied.isCommon = status.isCommon
+            copied.isFromCommonPart = status.isFromCommonPart
             copied.isSpecific = status.isSpecific
             copied.isCommonWithDefault = status.isCommonWithDefault
             copied.isRedef = status.isRedef
@@ -3451,25 +3485,6 @@ class LightTreeRawCfirDeclarationBuilder(
             copied.isSealed = status.isSealed
         }
     }
-
-    /**
-     * 判断接口成员函数是否应按 default 实现处理。
-     *
-     * 官方 `ParserImpl::SetDefaultFunc`（`ParseDecl.cpp:874-898`）的规则是
-     * `scopeKind == INTERFACE_BODY && !FOREIGN && !ABSTRACT` —— **DEFAULT 是 ABSTRACT 的补集**。
-     * 因此这里与隐式 abstract 推断**共用同一个结论**（[isImplicitAbstractClassLikeFunction]），
-     * 而不是再独立判一次 `hasSyntaxBody`：在 `.cj` 下两者等价，到 `.cj.d` 会分叉 ——
-     * 护栏 1 抑制了无体函数的隐式 abstract 后，官方会给这种函数置 DEFAULT。
-     */
-    private fun isDefaultInterfaceFunction(
-        node: LighterASTNode,
-        modifiers: LightTreeModifierList,
-        isImplicitAbstract: Boolean,
-    ): Boolean =
-        isInInterfaceMemberContext() &&
-                !modifiers.isForeign &&
-                !modifiers.isAbstract &&
-                !isImplicitAbstract
 
     /**
      * 判断接口属性是否应标记为 default 实现。
@@ -3505,66 +3520,39 @@ class LightTreeRawCfirDeclarationBuilder(
         !context.inLocalContext && containerSymbolIfAny is CfirInterfaceSymbol
 
     /**
-     * class / interface 成员的隐式 abstract 判定：只做 LightTree 事实提取，规则统一委托
-     * [CjMemberBodyPolicy]。
-     *
-     * ⚠️ 两个过程由策略对象分开承载：
-     * - 函数：`.cj.d` 下 `parseDeclFile` 罩住整个分支（`ParseDecl.cpp:1550`），
-     *   无体函数**既不打 `ABSTRACT` 也不报错**；
-     * - 属性：官方 `Parser.cpp:371-390` 的"无 `{}` 即 abstract"**没有** `parseDeclFile`
-     *   门禁，也**没有** `FOREIGN` / `INTRINSIC` 因子。
-     * 两者不对称，不要"统一处理"。
-     *
-     * 诊断字段（`hasReturnType` / `isSignatureBroken`）只服务 parser 适配器；
-     * CFIR 只消费 `markImplicitAbstract`，不在此层重算诊断事实。
+     * 当前 class 体的修饰符（供 class 宿主 CJMP 例外判定；interface/struct/enum 体为 null）。
      */
-    private fun isImplicitAbstractClassLikeFunction(
-        node: LighterASTNode,
-        modifiers: LightTreeModifierList,
-    ): Boolean {
-        if (!isInClassOrInterfaceMemberContext()) return false
-        val facts = memberBodyFacts(
-            scopeKind = currentMemberScopeKind(),
-            hasBody = hasSyntaxBody(node),
-            hasAccessors = false,
-            modifiers = modifiers,
-        )
-        return CjMemberBodyPolicy.applyCjmpOverlay(
-            CjMemberBodyPolicy.checkFunctionBody(facts),
-            facts,
-        ).markImplicitAbstract
-    }
+    private var enclosingTypeModifiers: LightTreeModifierList? = null
 
-    /**
-     * 当前 class 体的修饰符（供 CJMP 隐式 abstract 例外判定；interface/struct/enum 体为 null）。
-     */
-    private var enclosingClassModifiers: LightTreeModifierList? = null
-
-    /** 在 class 成员提取期间记录外层 class 修饰符。 */
-    private inline fun <T> withEnclosingClassModifiers(modifiers: LightTreeModifierList, block: () -> T): T {
-        val previous = enclosingClassModifiers
-        enclosingClassModifiers = modifiers
+    /** 在 class/interface 成员提取期间记录外层类型修饰符。 */
+    private inline fun <T> withEnclosingTypeModifiers(modifiers: LightTreeModifierList, block: () -> T): T {
+        val previous = enclosingTypeModifiers
+        enclosingTypeModifiers = modifiers
         try {
             return block()
         } finally {
-            enclosingClassModifiers = previous
+            enclosingTypeModifiers = previous
         }
     }
 
     /**
-     * 提取 1.1.3 CJMP 例外事实。
-     *
-     * 仅 `class` 体返回非 null，与 `CanBeAbstract` 的宿主条件一致；interface 的
-     * common 成员规则不在本 overlay 内，登记为分层偏差。
+     * 提取 class/interface 成员的 CJMP 事实。抽象宿主例外只读取 class 修饰符；
+     * interface common function 的后置规则读取其独立 host modifier facts。
      */
     private fun cjmpOverlayFacts(modifiers: LightTreeModifierList): CjmpOverlayFacts? {
-        if (containerSymbolIfAny !is CfirClassSymbol) return null
-        val outer = enclosingClassModifiers ?: return null
+        val inClass = containerSymbolIfAny is CfirClassSymbol
+        val inInterface = containerSymbolIfAny is CfirInterfaceSymbol
+        if (!inClass && !inInterface) return null
+        val outer = enclosingTypeModifiers ?: return null
         return CjmpOverlayFacts(
             memberIsCommon = modifiers.isCommon,
             memberIsExplicitAbstract = modifiers.isAbstract,
-            enclosingClassIsAbstract = outer.isAbstract,
-            enclosingClassIsCommonOrSpecific = outer.isCommon || outer.isSpecific,
+            enclosingClassIsAbstract = inClass && outer.isAbstract,
+            enclosingClassIsCommonOrSpecific = inClass && (outer.isCommon || outer.isSpecific),
+            enclosingTypeIsInteropHost = outer.hasBuiltinAnnotation(BuiltInAnnotationKind.JAVA) ||
+                    outer.hasBuiltinAnnotation(BuiltInAnnotationKind.JAVA_MIRROR) ||
+                    outer.hasBuiltinAnnotation(BuiltInAnnotationKind.JAVA_IMPL) ||
+                    outer.hasBuiltinAnnotation(BuiltInAnnotationKind.OBJ_C_MIRROR),
         )
     }
 
@@ -3603,7 +3591,9 @@ class LightTreeRawCfirDeclarationBuilder(
             modifiers = modifiers,
         )
         return CjMemberBodyPolicy.applyCjmpOverlay(
-            CjMemberBodyPolicy.checkPropertyBody(facts),
+            CjMemberBodyPolicy.applyJavaMirrorPropertyOverlay(
+                CjMemberBodyPolicy.checkPropertyBody(facts), facts,
+            ),
             facts,
         ).markImplicitAbstract
     }
@@ -3622,6 +3612,15 @@ class LightTreeRawCfirDeclarationBuilder(
         isIntrinsic = modifiers.hasBuiltinAnnotation(BuiltInAnnotationKind.INTRINSIC),
         isDeclarationFile = sourceKind.isDeclaration,
         cjmp = cjmpOverlayFacts(modifiers),
+        javaMirror = enclosingTypeModifiers?.takeIf {
+            it.hasBuiltinAnnotation(BuiltInAnnotationKind.JAVA_MIRROR)
+        }?.let { outer ->
+            CjJavaMirrorBodyFacts(
+                enclosingClassIsAbstract = outer.isAbstract,
+                memberIsExplicitAbstract = modifiers.isAbstract,
+                memberIsStatic = modifiers.isStatic,
+            )
+        },
     )
 
     /** 当前成员所在的 class/interface 作用域。调用前必须已通过 [isInClassOrInterfaceMemberContext]。 */

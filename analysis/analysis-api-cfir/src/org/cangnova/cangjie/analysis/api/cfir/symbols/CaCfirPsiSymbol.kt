@@ -17,6 +17,7 @@ import org.cangnova.cangjie.analysis.api.symbols.pointers.CaSymbolPointer
 import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.resolveToCfirSymbolOfType
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getOrBuildCfirOfType
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSessionCache
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.realPsi
@@ -183,8 +184,8 @@ internal fun CaCfirPsiSymbol<*, *>.psiOrSymbolEquals(other: Any?): Boolean {
 }
 
 /**
- * Currently, the compiled file can represent both library and non-library origin depending on the `preferBinary`
- * parameter from [org.jetbrains.kotlin.analysis.low.level.api.fir.sessions.LLCfirSessionCache.getSession].
+ * 当前编译文件的来源身份会随仓库 [LLCfirSessionCache.getSession] 的 `preferBinary` 参数变化，
+ * 因而同一反编译文件可能被表示为库来源或非库来源。
  *
  * So, depending on it, we may represent one decompiled file as [CaSymbolOrigin.SOURCE] and as [CaSymbolOrigin.LIBRARY]
  * at the same time.

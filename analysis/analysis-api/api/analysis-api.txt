@@ -341,10 +341,13 @@ public fun createSubstitutor(mappings: Map<CaTypeParameterSymbol, CaType>): CaSu
 ## org/cangnova/cangjie/analysis/api/components/CaSymbolInformationProvider.kt
 package org.cangnova.cangjie.analysis.api.components
 public interface CaSymbolInformationProvider : CaLifetimeOwner
+CaSymbolInformationProvider.public val CaSymbol.deprecationStatus: CaDeprecationInfo?
+public val CaSymbol.deprecationStatus: CaDeprecationInfo?
 ## org/cangnova/cangjie/analysis/api/components/CaSymbolRelationProvider.kt
 package org.cangnova.cangjie.analysis.api.components
 public interface CaSymbolRelationProvider : CaLifetimeOwner
 CaSymbolRelationProvider.public val CaSymbol.containingDeclaration: CaDeclarationSymbol?
+CaSymbolRelationProvider.public val CaValueParameterSymbol.correspondingProperty: CaPropertySymbol?
 CaSymbolRelationProvider.public fun CaSymbol.isEquivalentTo(other: CaSymbol): Boolean
 CaSymbolRelationProvider.public val CaCallableSymbol.directlyOverriddenSymbols: Sequence<CaCallableSymbol>
 CaSymbolRelationProvider.public val CaCallableSymbol.intersectionOverriddenSymbols: List<CaCallableSymbol>
@@ -353,6 +356,7 @@ CaSymbolRelationProvider.public fun CaClassSymbol.isSubClassOf(superClass: CaCla
 CaSymbolRelationProvider.public fun CaClassSymbol.isDirectSubClassOf(superClass: CaClassSymbol): Boolean
 CaSymbolRelationProvider.public fun CaDeclarationSymbol.getExpectsForActual(): List<CaDeclarationSymbol>
 public val CaSymbol.containingDeclaration: CaDeclarationSymbol?
+public val CaValueParameterSymbol.correspondingProperty: CaPropertySymbol?
 public fun CaSymbol.isEquivalentTo(other: CaSymbol): Boolean
 public val CaCallableSymbol.directlyOverriddenSymbols: Sequence<CaCallableSymbol>
 public val CaCallableSymbol.allOverriddenSymbols: Sequence<CaCallableSymbol>
@@ -1282,7 +1286,7 @@ CaStubIndexFacade.Companion.public fun getInstance(project: Project): CaStubInde
 ## org/cangnova/cangjie/analysis/api/symbols/CaAdditionalCDocResolutionProvider.kt
 package org.cangnova.cangjie.analysis.api.symbols
 public interface CaAdditionalCDocResolutionProvider
-CaAdditionalCDocResolutionProvider.public fun resolveCDocFqName(analysisSession: CaSession, fqName: FqName, contextElement: CjElement): Collection<CaSymbol>
+CaAdditionalCDocResolutionProvider.public fun resolveCDocFqName( analysisSession: CaSession, fqName: FqName, contextElement: CjElement, ): Collection<CaSymbol>
 ## org/cangnova/cangjie/analysis/api/symbols/CaAnnotatedSymbol.kt
 package org.cangnova.cangjie.analysis.api.symbols
 public interface CaAnnotatedSymbol : CaSymbol, CaAnnotated
@@ -1323,9 +1327,19 @@ CaConstructorSymbol.public abstract val containingClassId: ClassId?
 package org.cangnova.cangjie.analysis.api.symbols
 public interface CaDeclarationSymbol : CaSymbol ,CaAnnotatedSymbol
 CaDeclarationSymbol.public val visibility: CaSymbolVisibility
+CaDeclarationSymbol.public val visibilityExplicitness: CaModifierExplicitness
 CaDeclarationSymbol.public val isVisibilityExplicit: Boolean
 CaDeclarationSymbol.public val modality: CaSymbolModality?
+CaDeclarationSymbol.public val modalityExplicitness: CaModifierExplicitness
 CaDeclarationSymbol.public val isModalityExplicit: Boolean
+## org/cangnova/cangjie/analysis/api/symbols/CaDeprecationInfo.kt
+package org.cangnova.cangjie.analysis.api.symbols
+public abstract class CaDeprecationInfo : Comparable<CaDeprecationInfo>
+CaDeprecationInfo.public abstract val deprecationLevel: DeprecationLevelValue
+CaDeprecationInfo.public abstract val propagatesToOverrides: Boolean
+CaDeprecationInfo.public abstract val message: String?
+CaDeprecationInfo.public override fun compareTo(other: CaDeprecationInfo): Int
+public data class CaSimpleDeprecationInfo( override val deprecationLevel: DeprecationLevelValue, override val propagatesToOverrides: Boolean, override val message: String?, ) : CaDeprecationInfo()
 ## org/cangnova/cangjie/analysis/api/symbols/CaEnumConstructorSymbol.kt
 package org.cangnova.cangjie.analysis.api.symbols
 public abstract class CaEnumConstructorSymbol : CaCallableSymbol(), CaNamedSymbol
@@ -1374,6 +1388,9 @@ public abstract class CaMacroSymbol : CaNamedFunctionSymbol()
 ## org/cangnova/cangjie/analysis/api/symbols/CaMainFunctionSymbol.kt
 package org.cangnova.cangjie.analysis.api.symbols
 public abstract class CaMainFunctionSymbol : CaNamedFunctionSymbol()
+## org/cangnova/cangjie/analysis/api/symbols/CaModifierExplicitness.kt
+package org.cangnova.cangjie.analysis.api.symbols
+public enum class CaModifierExplicitness
 ## org/cangnova/cangjie/analysis/api/symbols/CaNamedFunctionSymbol.kt
 package org.cangnova.cangjie.analysis.api.symbols
 public abstract class CaNamedFunctionSymbol : CaFunctionSymbol(), CaNamedSymbol

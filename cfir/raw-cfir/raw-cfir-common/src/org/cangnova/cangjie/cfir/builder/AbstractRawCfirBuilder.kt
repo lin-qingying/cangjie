@@ -318,6 +318,8 @@ abstract class AbstractRawCfirBuilder<T : Any>(
         isDefault: Boolean = false,
         isCommon: Boolean = false,
         isSpecific: Boolean = false,
+        bodyPresence: CfirBodyPresence = CfirBodyPresence.UNKNOWN,
+        isDeclarationFile: Boolean = false,
     ): CfirDeclarationStatus {
         val status = CfirDeclarationStatusImpl(
             visibility = visibility,
@@ -326,6 +328,18 @@ abstract class AbstractRawCfirBuilder<T : Any>(
         status.isAbstract = isAbstract
         status.isOpen = isOpen
         status.isSealed = isSealed
+        status.visibilityExplicitness = if (isVisibilityExplicit) {
+            CfirModifierExplicitness.EXPLICIT
+        } else {
+            CfirModifierExplicitness.IMPLICIT
+        }
+        status.modalityExplicitness = if (status.modality == null) {
+            CfirModifierExplicitness.UNKNOWN
+        } else if (isModalityExplicit) {
+            CfirModifierExplicitness.EXPLICIT
+        } else {
+            CfirModifierExplicitness.IMPLICIT
+        }
         status.isVisibilityExplicit = isVisibilityExplicit
         status.isModalityExplicit = isModalityExplicit
         status.isAbstractExplicit = isAbstractExplicit
@@ -342,6 +356,8 @@ abstract class AbstractRawCfirBuilder<T : Any>(
         // （冲突/作用域规则由 checker 侧 ModifierCheckerTargets 与 CjmpGate 负责）
         status.isCommon = isCommon
         status.isSpecific = isSpecific
+        status.bodyPresence = bodyPresence
+        status.isDeclarationFile = isDeclarationFile
         return status
     }
 

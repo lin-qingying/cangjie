@@ -280,9 +280,8 @@ fun CfirBasedSymbol<*>.findPsi(scope: GlobalSearchScope, preferredProject: Proje
 
 
 /**
- * Finds [PsiElement] which will be used as go-to referenced element for [KtPsiReference]
- * For data classes & enums generated members like `copy` `componentN`, `values` it will return corresponding enum/data class
- * Otherwise, behaves the same way as [findPsi] returns exact PSI declaration corresponding to passed [CfirDeclaration]
+ * 为引用导航恢复 CFIR 声明的 PSI。当前 macro snapshot 识别出的宏生成声明或表面映射，仅在能唯一定位到宏表面源码，且恢复出的 PSI 有效、物理并位于搜索范围内时才返回映射结果。
+ * 其他声明中，callable 会先解包 fake override / delegated 包装，再恢复其声明 PSI。
  */
 internal fun CfirDeclaration.findReferencePsi(scope: GlobalSearchScope, preferredProject: Project? = null): PsiElement? {
     val declarationSource = source
@@ -301,10 +300,7 @@ internal fun CfirDeclaration.findReferencePsi(scope: GlobalSearchScope, preferre
             }
     }
 
-    return (if (
-        this is CfirCallableDeclaration /*&&
-        !this.symbol.isTypeAliasedConstructor*/ // typealiased constructors should not be unwrapped
-    ) {
+    return (if (this is CfirCallableDeclaration) {
         unwrapFakeOverridesOrDelegated().psi
     } else {
         psi

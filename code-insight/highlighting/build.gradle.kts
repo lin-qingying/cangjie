@@ -12,6 +12,7 @@ dependencies {
 
     implementation(project(":common"))
     implementation(project(":psi"))
+    implementation(project(":analysis:cj-references"))
     // CDoc → Quick Doc 渲染（对位上游 KDocRenderer 使用的 org.jetbrains:markdown）。
     implementation(libs.markdown)
 

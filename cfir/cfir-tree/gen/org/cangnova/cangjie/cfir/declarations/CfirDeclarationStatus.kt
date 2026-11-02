@@ -19,6 +19,10 @@ interface CfirDeclarationStatus : CfirElement {
     override val source: CjSourceElement?
     val visibility: Visibility
     val modality: Modality?
+    val visibilityExplicitness: CfirModifierExplicitness
+    val modalityExplicitness: CfirModifierExplicitness
+    val bodyPresence: CfirBodyPresence
+    val isDeclarationFile: Boolean
     val isVisibilityExplicit: Boolean
     val isModalityExplicit: Boolean
     val isAbstractExplicit: Boolean
@@ -31,6 +35,7 @@ interface CfirDeclarationStatus : CfirElement {
     val isForeign: Boolean
     val isC: Boolean
     val isCommon: Boolean
+    val isFromCommonPart: Boolean
     val isSpecific: Boolean
     val isCommonWithDefault: Boolean
     val isRedef: Boolean

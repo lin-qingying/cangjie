@@ -8,6 +8,7 @@ import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolLocation
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolOrigin
+import org.cangnova.cangjie.analysis.api.symbols.CaModifierExplicitness
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
@@ -102,4 +103,21 @@ internal fun Modality.asPublicModality() = when (this) {
     Modality.SEALED -> org.cangnova.cangjie.analysis.api.symbols.CaSymbolModality.SEALED
     Modality.OPEN -> org.cangnova.cangjie.analysis.api.symbols.CaSymbolModality.OPEN
     Modality.ABSTRACT -> org.cangnova.cangjie.analysis.api.symbols.CaSymbolModality.ABSTRACT
+}
+
+/** 将 CFIR 显式性投影到公开 Analysis API 类型。 */
+internal fun CfirModifierExplicitness.asPublicExplicitness(): CaModifierExplicitness = when (this) {
+    CfirModifierExplicitness.EXPLICIT -> CaModifierExplicitness.EXPLICIT
+    CfirModifierExplicitness.IMPLICIT -> CaModifierExplicitness.IMPLICIT
+    CfirModifierExplicitness.UNKNOWN -> CaModifierExplicitness.UNKNOWN
+}
+
+/** 将 CFIR 声明状态中的可见性显式性映射到公开 Analysis API。 */
+internal fun CfirDeclarationStatus?.asPublicVisibilityExplicitness(): CaModifierExplicitness =
+    this?.visibilityExplicitness?.asPublicExplicitness() ?: CaModifierExplicitness.UNKNOWN
+
+/** 没有有效 modality 的声明不公开 modality 显式性。 */
+internal fun CfirDeclarationStatus?.asPublicModalityExplicitness(): CaModifierExplicitness = when {
+    this?.modality == null -> CaModifierExplicitness.UNKNOWN
+    else -> modalityExplicitness.asPublicExplicitness()
 }

@@ -21,7 +21,7 @@ import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisA
 import org.cangnova.cangjie.test.services.TestServices
 
 /**
- * 为手写 standalone builder 测试补齐平台级 XML 服务。
+ * 为共享 standalone builder 测试补齐平台级 XML 服务。
  *
  * 直接调用 `CaStandaloneSessionBuilder` 时，必须和生产态一样把 standalone 平台服务
  * 注册进 headless project；否则 `CaStandalonePlatformState` 等 service 无法解析。

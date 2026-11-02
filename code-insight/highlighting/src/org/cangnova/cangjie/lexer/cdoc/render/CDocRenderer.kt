@@ -41,10 +41,9 @@ import com.intellij.openapi.editor.colors.TextAttributesKey
 import com.intellij.openapi.editor.markup.TextAttributes
 import com.intellij.openapi.project.DumbService
 import com.intellij.psi.PsiElement
-import com.intellij.psi.PsiPolyVariantReference
-import com.intellij.psi.PsiReference
 import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.codeinsight.highlighting.textAttributesKeyForCjElement
+import org.cangnova.cangjie.idea.references.CDocReference
 import org.cangnova.cangjie.lang.CangJieLanguage
 import org.cangnova.cangjie.lexer.cdoc.CDocTemplate
 import org.cangnova.cangjie.lexer.cdoc.insert
@@ -89,11 +88,15 @@ import org.intellij.markdown.parser.MarkdownParser
  * | `KDocReference` | `CDocReference` + `CaCfirCDocReference` | 本仓引用栈 |
  *
  * **已知差异（未移植）**：
- * - `receiver` 与 context parameters 分区上游存在，仓颉 `CDocKnownTag` 无对应标签，故不渲染；
+ * - 上游 `@receiver` 分区依赖 KDoc tag，仓颉 `CDocKnownTag` 没有该标签；
+ * - 上游 context-parameter 分区按 `KtCallableDeclaration.contextParameters` 分类 `@param`，仓颉 callable PSI 只暴露 value parameters，
+ *   `CjContextReceiver` 也不属于 callable 参数列表，故没有对应的分类承载物；
  *
- * 链接解析与上游 K2 `KDocReferenceResolver` 对齐：单段名查可见作用域，限定名按路径下钻，
- * 实现见 `CaCfirCDocReference`。`extend` 成员链接需要位置感知的可见作用域视图，
- * 该缺口在 resolver 中明确记录。
+ * 链接解析与上游 K2 `KDocReferenceResolver` 对齐：单段名查当前位置可见作用域，限定名按路径下钻，
+ * 实现见 `CaCfirCDocReference`。单段名的 `extend` 候选只从带对应隐式 receiver 的 CFIR tower type scope
+ * 读取并保留来源，由该 tower receiver 对应的有效 CFIR 类型 scope 筛选适用项；`Type.member` 先走限定作用域查找，
+ * 未命中时才通过 CFIR target index 查直接 `extend` 候选，并用 CFIR 类型约束检查 receiver 适用性。
+ * 两条路径的 `extend` 可见性均交给编译器 accessibility checker；限定名回退不处理 `extend` 注入的接口继承成员。
  */
 @CjNonPublicApi
 @CjImplementationDetail
@@ -104,7 +107,7 @@ object CDocRenderer {
      */
     fun StringBuilder.renderCDoc(
         contentTag: CDocTag,
-        sections: List<CDocSection>,
+        sections: List<CDocSection> = if (contentTag is CDocSection) listOf(contentTag) else emptyList(),
     ) {
         insert(CDocTemplate.DescriptionBodyTemplate.CangJie()) {
             content {
@@ -186,8 +189,8 @@ object CDocRenderer {
         }
     }
 
-    private fun PsiReference.resolveToElement(): PsiElement? =
-        (this as? PsiPolyVariantReference)?.multiResolve(false)?.firstOrNull()?.element ?: resolve()
+    private fun CDocReference.resolveToElement(): PsiElement? =
+        multiResolve(false).firstOrNull()?.element
 
     /**
      * 链接目标的行内属性（对位上游 `textAttributesKeyForKtElement(element)?.attributesKey`）。
@@ -224,14 +227,18 @@ object CDocRenderer {
     }
 
     private fun CDocLink.getTargetElement(): PsiElement? {
-        return getChildrenOfType<CDocName>().lastOrNull()?.references?.firstOrNull()?.resolveToElement()
+        return getChildrenOfType<CDocName>().last()
+            .references
+            .filterIsInstance<CDocReference>()
+            .firstOrNull()
+            ?.resolveToElement()
     }
 
     private fun PsiElement.extractExampleText() = when (this) {
         is CjDeclarationWithBody -> {
             when (val body = bodyExpression) {
                 is CjBlockExpression -> body.text.removeSurrounding("{", "}")
-                else -> body?.text ?: text
+                else -> body!!.text
             }
         }
 
@@ -501,6 +508,7 @@ object CDocRenderer {
                         } else {
                             comment.findDescendantOfType<CDocName> { it.text == label }
                                 ?.references
+                                ?.filterIsInstance<CDocReference>()
                                 ?.firstOrNull()
                                 ?.resolveToElement()
                                 ?.let { resolvedLinkElement ->

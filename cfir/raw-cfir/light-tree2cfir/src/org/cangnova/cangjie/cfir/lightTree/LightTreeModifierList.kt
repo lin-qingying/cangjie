@@ -27,6 +27,8 @@ package org.cangnova.cangjie.cfir.lightTree
 import com.intellij.lang.LighterASTNode
 import com.intellij.util.diff.FlyweightCapableTreeStructure
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationStatus
+import org.cangnova.cangjie.cfir.declarations.CfirBodyPresence
+import org.cangnova.cangjie.cfir.declarations.CfirModifierExplicitness
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
 import org.cangnova.cangjie.descriptors.Modality
 import org.cangnova.cangjie.descriptors.Visibilities
@@ -145,6 +147,8 @@ class LightTreeModifierList(
         defaultVisibility: Visibility? = null,
         isDefault: Boolean = false,
         isImplicitAbstract: Boolean = false,
+        bodyPresence: CfirBodyPresence = CfirBodyPresence.UNKNOWN,
+        isDeclarationFile: Boolean = false,
     ): CfirDeclarationStatus {
         val effectiveDefaultVisibility = defaultVisibility ?: when {
             inLocalContext -> Visibilities.Local
@@ -160,6 +164,18 @@ class LightTreeModifierList(
         status.isAbstract = effectiveIsAbstract
         status.isOpen = isOpen
         status.isSealed = isSealed
+        status.visibilityExplicitness = if (isVisibilityExplicit) {
+            CfirModifierExplicitness.EXPLICIT
+        } else {
+            CfirModifierExplicitness.IMPLICIT
+        }
+        status.modalityExplicitness = if (status.modality == null) {
+            CfirModifierExplicitness.UNKNOWN
+        } else if (isModalityExplicit) {
+            CfirModifierExplicitness.EXPLICIT
+        } else {
+            CfirModifierExplicitness.IMPLICIT
+        }
         status.isVisibilityExplicit = isVisibilityExplicit
         status.isModalityExplicit = isModalityExplicit
         status.isAbstractExplicit = isAbstract
@@ -176,6 +192,8 @@ class LightTreeModifierList(
         // 仅装填状态；语义合法性由 checker 侧负责。
         status.isCommon = isCommon
         status.isSpecific = isSpecific
+        status.bodyPresence = bodyPresence
+        status.isDeclarationFile = isDeclarationFile
         return status
     }
 

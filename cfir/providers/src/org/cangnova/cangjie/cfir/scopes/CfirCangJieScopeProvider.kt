@@ -21,6 +21,7 @@ import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirTypeAliasSymbol
 import org.cangnova.cangjie.cfir.symbols.constructType
 import org.cangnova.cangjie.name.FqName
 
@@ -72,6 +73,19 @@ open class CfirCangJieScopeProvider : CfirScopeProvider(), CfirSessionComponent 
         scopeSession: ScopeSession,
     ): CfirTypeScope {
         val classSymbol = klass.symbol as? CfirClassSymbol ?: return CfirTypeScope.Empty
+        return getDeclarationSiteMemberScope(classSymbol, useSiteSession)
+    }
+
+    /**
+     * 返回 class、interface、struct 或 enum 声明站点的成员 scope；typealias 使用专用构造器 scope。
+     */
+    fun getDeclarationSiteMemberScope(
+        classSymbol: CfirClassLikeSymbol<*>,
+        useSiteSession: CfirSession,
+    ): CfirTypeScope {
+        check(classSymbol !is CfirTypeAliasSymbol) {
+            "Type aliases do not support a nominal declaration-site member scope; constructor lookup uses its dedicated scope."
+        }
         return CfirClassUseSiteMemberScope(
             session = useSiteSession,
             classSymbol = classSymbol,
