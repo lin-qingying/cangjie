@@ -112,6 +112,8 @@ include(":analysis:analysis-api-standalone")
 include(":analysis:analysis-api-cfir")
 include(":analysis:analysis-api-cfir:analysis-api-cfir-generator")
 include(":analysis:low-level-api-cfir")
+// 宏语义展开的宿主无关编排：环境 SPI、服务与触发（Analysis 层一等能力）
+include(":analysis:macro-expansion")
 include(":analysis:analysis-internal-utils")
 include(":analysis:cj-references")
 include(":analysis:stubs")
