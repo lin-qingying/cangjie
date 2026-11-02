@@ -42,6 +42,14 @@ class LspMacroServerMacroExecutor(
      */
     private val macroServerPath: String,
     /**
+     * 所选 SDK 的根目录。
+     *
+     * 官方 LSPMacroServer 需要 `<sdkHome>/runtime/lib/<platform>` 下的运行时库：
+     * 实测传入 `<sdkHome>/tools/bin` 会让服务端启动即崩溃（0xC0000005），
+     * 传入 SDK 根目录则正常驻留。该参数同时作为工作目录。
+     */
+    private val sdkHome: String,
+    /**
      * 启动宏服务时由所选 SDK 提供的环境变量。
      */
     private val processEnvironment: Map<String, String>,
@@ -77,13 +85,13 @@ class LspMacroServerMacroExecutor(
         val command = buildCommand(executable)
         val processBuilder = ProcessBuilder(command)
             .redirectErrorStream(false)
-        processBuilder.environment().putAll(
-            mergeMacroProcessEnvironment(
-                inheritedEnvironment = processBuilder.environment().toMap(),
-                configuredEnvironment = processEnvironment,
-                caseInsensitiveKeys = false,
-            ),
-        )
+        val environment = mergeMacroProcessEnvironment(
+            inheritedEnvironment = processBuilder.environment().toMap(),
+            configuredEnvironment = processEnvironment,
+            caseInsensitiveKeys = false,
+        ).toMutableMap()
+        augmentUnixDynamicLibraryPath(environment)
+        processBuilder.environment().putAll(environment)
         val process = processBuilder.start()
 
         logger.info("LSPMacroServer 已启动: $macroServerPath")
@@ -97,17 +105,35 @@ class LspMacroServerMacroExecutor(
     /**
      * 构造非 Windows 平台下启动 LSPMacroServer 所需的命令行参数。
      */
+
     private fun buildCommand(executable: File): List<String> {
         return buildList {
             add(executable.absolutePath)
             add("0")
             add("1")
             add(if (enableParallel) "1" else "0")
+            // Unix 服务端用可执行文件目录（tools/bin）定位运行时；Windows 用 cjc 目录（bin）。
             add(executable.parent)
             if (!isWindows()) {
                 add(ProcessHandle.current().pid().toString())
             }
         }
+    }
+
+    /**
+     * 非 Windows 平台下，宏服务端需要能解析宏动态库所依赖的仓颉运行时库。
+     *
+     * Windows 由 SDK 环境注入 PATH；Linux/macOS 必须显式把
+     * `<sdkHome>/runtime/lib/<platform>` 与 `<sdkHome>/lib/<platform>` 加入
+     * `LD_LIBRARY_PATH` / `DYLD_LIBRARY_PATH`，否则 dlopen 宏库时会报
+     * `MACRO_CANNOT_OPEN_LIB`。
+     */
+    private fun augmentUnixDynamicLibraryPath(environment: MutableMap<String, String>) {
+        val key = unixDynamicLibraryPathVariable(System.getProperty("os.name"))
+        val directories = unixDynamicLibraryDirectories(sdkHome)
+        if (directories.isEmpty()) return
+        val existing = environment[key]?.takeIf(String::isNotBlank)
+        environment[key] = (directories + listOfNotNull(existing)).joinToString(File.pathSeparator)
     }
 
     /**
@@ -117,6 +143,7 @@ class LspMacroServerMacroExecutor(
     private fun startWindowsConnection(executable: File): ProcessMacroConnection {
         val connection = WindowsLspMacroServerConnection.start(
             executable = executable,
+            sdkHome = sdkHome,
             enableParallel = enableParallel,
             processEnvironment = processEnvironment,
             logger = logger,
@@ -193,6 +220,7 @@ private class WindowsLspMacroServerConnection(
          */
         fun start(
             executable: File,
+            sdkHome: String,
             enableParallel: Boolean,
             processEnvironment: Map<String, String>,
             logger: Logger,
@@ -220,26 +248,49 @@ private class WindowsLspMacroServerConnection(
                 throw error
             }
 
+            val stderrReadRef = WinNT.HANDLEByReference()
+            val stderrWriteRef = WinNT.HANDLEByReference()
+            checkWindows("CreatePipe(stderr)") {
+                Kernel32.INSTANCE.CreatePipe(stderrReadRef, stderrWriteRef, pipeAttributes, 0)
+            }
+            // 与 Java GeneralCommandLine 一致：stdin/stdout/stderr 都必须是有效句柄；
+            // 只设 stdout/stderr 而 stdin 为空会让服务端在运行时初始化时崩溃。
+            val stdinReadRef = WinNT.HANDLEByReference()
+            val stdinWriteRef = WinNT.HANDLEByReference()
+            checkWindows("CreatePipe(stdin)") {
+                Kernel32.INSTANCE.CreatePipe(stdinReadRef, stdinWriteRef, pipeAttributes, 0)
+            }
+            val stdoutReadRef = WinNT.HANDLEByReference()
+            val stdoutWriteRef = WinNT.HANDLEByReference()
+            checkWindows("CreatePipe(stdout)") {
+                Kernel32.INSTANCE.CreatePipe(stdoutReadRef, stdoutWriteRef, pipeAttributes, 0)
+            }
+
             val startupInfo = WinBase.STARTUPINFO().apply {
                 cb = DWORD(size().toLong())
+                dwFlags = STARTF_USESTDHANDLES
+                // 官方 cjc 风格：stdout/stderr 用父进程 STD_ERROR_HANDLE，stdin 不设。
+                val errorHandle = Kernel32.INSTANCE.GetStdHandle(STD_ERROR_HANDLE)
+                hStdOutput = errorHandle
+                hStdError = errorHandle
             }
             val processInfo = WinBase.PROCESS_INFORMATION()
-            val environment = buildWindowsEnvironment(processEnvironment)
             val commandLine = buildCommandLine(
                 executable = executable,
+                sdkHome = sdkHome,
                 childRead = childReadRef.value,
                 childWrite = childWriteRef.value,
                 enableParallel = enableParallel,
             )
             val created = Kernel32.INSTANCE.CreateProcessW(
-                executable.absolutePath,
+                null,
                 commandLine.toCharArrayWithTerminator(),
                 null,
                 null,
                 true,
-                DWORD((CREATE_UNICODE_ENVIRONMENT or CREATE_NO_WINDOW).toLong()),
-                environment,
-                executable.parent,
+                DWORD(0),
+                null,
+                null,
                 startupInfo,
                 processInfo,
             )
@@ -248,11 +299,68 @@ private class WindowsLspMacroServerConnection(
                 closeHandle(childWriteRef.value)
                 closeHandle(childReadRef.value)
                 closeHandle(parentWriteRef.value)
+                closeHandle(stderrReadRef.value)
+                closeHandle(stderrWriteRef.value)
+                closeHandle(stdinReadRef.value)
+                closeHandle(stdinWriteRef.value)
+                closeHandle(stdoutReadRef.value)
+                closeHandle(stdoutWriteRef.value)
                 error("CreateProcess(LSPMacroServer) failed: ${Native.getLastError()}")
             }
 
             closeHandle(childReadRef.value)
             closeHandle(childWriteRef.value)
+            closeHandle(stderrWriteRef.value)
+            closeHandle(stdinReadRef.value)
+            closeHandle(stdoutWriteRef.value)
+
+            Thread {
+                val buffer = ByteArray(4096)
+                val read = IntByReference()
+                while (Kernel32.INSTANCE.ReadFile(stderrReadRef.value, buffer, buffer.size, read, null)) {
+                    if (read.value > 0) {
+                        logger.severe("LSPMacroServer stderr: ${String(buffer, 0, read.value).trim()}")
+                    }
+                }
+                closeHandle(stderrReadRef.value)
+            }.apply {
+                name = "LSPMacroServer-stderr-reader"
+                isDaemon = true
+                start()
+            }
+            Thread {
+                val buffer = ByteArray(4096)
+                val read = IntByReference()
+                while (Kernel32.INSTANCE.ReadFile(stdoutReadRef.value, buffer, buffer.size, read, null)) {
+                    if (read.value > 0) {
+                        logger.fine("LSPMacroServer stdout: ${String(buffer, 0, read.value).trim()}")
+                    }
+                }
+                closeHandle(stdoutReadRef.value)
+            }.apply {
+                name = "LSPMacroServer-stdout-reader"
+                isDaemon = true
+                start()
+            }
+
+            /*
+             * 诊断：Windows 匿名管道握手失败时，父进程只会看到 broken pipe；
+             * 子进程若在握手前退出，退出码是唯一能区分「句柄无效 / DLL 加载失败 / 其它启动错误」的线索。
+             */
+            Thread {
+                val waitResult = Kernel32.INSTANCE.WaitForSingleObject(processInfo.hProcess, EARLY_EXIT_WATCH_MILLIS)
+                if (waitResult != WAIT_TIMEOUT) {
+                    val exitCode = IntByReference()
+                    Kernel32.INSTANCE.GetExitCodeProcess(processInfo.hProcess, exitCode)
+                    logger.severe(
+                        "LSPMacroServer exited within ${EARLY_EXIT_WATCH_MILLIS}ms: exitCode=${exitCode.value}",
+                    )
+                }
+            }.apply {
+                name = "LSPMacroServer-early-exit-watch"
+                isDaemon = true
+                start()
+            }
 
             logger.fine("LSPMacroServer Windows pipes established.")
             return WindowsLspMacroServerConnection(
@@ -268,8 +376,10 @@ private class WindowsLspMacroServerConnection(
         /**
          * 构造 Windows LSPMacroServer 官方参数格式的命令行。
          */
+
         private fun buildCommandLine(
             executable: File,
+            sdkHome: String,
             childRead: WinNT.HANDLE,
             childWrite: WinNT.HANDLE,
             enableParallel: Boolean,
@@ -282,7 +392,7 @@ private class WindowsLspMacroServerConnection(
             append(' ')
             append(if (enableParallel) "1" else "0")
             append(' ')
-            append(quoteCommandArgument(executable.parent))
+            append(quoteCommandArgument(cjcExecutable(sdkHome, executable).absolutePath))
         }
 
         /**
@@ -472,6 +582,8 @@ private const val SIZE_PREFIX_BYTES: Int = 8
 private const val CREATE_UNICODE_ENVIRONMENT: Int = 0x00000400
 /** IDE 中启动宏服务时不附加控制台，避免控制台窗口抢占编辑器前台焦点。 */
 private const val CREATE_NO_WINDOW: Int = 0x08000000
+/** STARTUPINFO.dwFlags：使用 hStdInput/hStdOutput/hStdError 指定的标准句柄。 */
+private const val STARTF_USESTDHANDLES: Int = 0x00000100
 /**
  * WaitForSingleObject 表示等待超时的返回值。
  */
@@ -480,3 +592,43 @@ private const val WAIT_TIMEOUT: Int = 0x00000102
  * 关闭服务端时等待进程自然退出的超时时间。
  */
 private const val CLOSE_TIMEOUT_MILLIS: Int = 3000
+/**
+ * 启动后观察子进程是否提前退出的窗口；命中时记录退出码用于定位管道握手失败。
+ */
+private const val EARLY_EXIT_WATCH_MILLIS: Int = 5000
+
+/** GetStdHandle 的标准错误句柄常量。 */
+private const val STD_ERROR_HANDLE: Int = -12
+
+/**
+ * 非 Windows 平台动态库搜索路径变量名。
+ */
+internal fun unixDynamicLibraryPathVariable(osName: String): String =
+    if (osName.contains("Mac", ignoreCase = true)) "DYLD_LIBRARY_PATH" else "LD_LIBRARY_PATH"
+
+/**
+ * 官方 `LSPMacroServer` 的 argv[4] 是 cjc 所在目录（`<sdk>/bin`）。
+ *
+ * 服务端用 `<cjcFolder>/../runtime/lib/<platform>` 定位运行时库；若传
+ * `<sdk>/tools/bin`，Windows 上会解析成错误的 `<sdk>/tools/runtime`，启动即
+ * `0xC0000005`。无法定位 `bin` 时退回 SDK 根目录，由调用方保证布局。
+ */
+internal fun cjcFolder(sdkHome: String): File =
+    File(sdkHome, "bin").takeIf(File::isDirectory) ?: File(sdkHome)
+
+/** 官方 Windows 宏服务端 argv[4] 使用 cjc.exe 的完整路径。 */
+internal fun cjcExecutable(sdkHome: String, executable: File): File =
+    File(sdkHome, "bin/cjc.exe").takeIf(File::isFile) ?: executable
+
+/**
+ * 非 Windows 平台需要加入动态库搜索路径的 SDK 目录。
+ *
+ * 覆盖 `<sdkHome>/runtime/lib/<platform>` 与 `<sdkHome>/lib/<platform>`；
+ * 宏服务端 dlopen 宏库时依赖其中的仓颉运行时库。
+ */
+internal fun unixDynamicLibraryDirectories(sdkHome: String): List<String> =
+    listOf(File(sdkHome, "runtime/lib"), File(sdkHome, "lib"))
+        .filter(File::isDirectory)
+        .flatMap { root -> root.listFiles()?.filter(File::isDirectory).orEmpty() }
+        .map(File::getAbsolutePath)
+        .distinct()

@@ -61,6 +61,7 @@ class ProcessMacroExecutorTest {
     fun lspMacroServerExecutorAvailabilityFollowsExecutableFileState() {
         val missing = LspMacroServerMacroExecutor(
             macroServerPath = tempDir.resolve("missing-LSPMacroServer").toString(),
+            sdkHome = tempDir.toString(),
             processEnvironment = emptyMap(),
         )
         assertFalse(missing.isAvailable())
@@ -76,6 +77,7 @@ class ProcessMacroExecutorTest {
 
         val available = LspMacroServerMacroExecutor(
             macroServerPath = executable.toString(),
+            sdkHome = tempDir.toString(),
             processEnvironment = emptyMap(),
         )
         assertEquals(executable.toFile().canExecute(), available.isAvailable())
