@@ -171,12 +171,19 @@ class CfirInsertionIntegrationTest : AbstractAnalysisApiExecutionTest(
         assertTrue(snapshot.importPlan.requiresImportWrite, "未导入候选必须带追加 import 的计划")
         val plan = snapshot.importPlan.plan
         assertTrue(plan is CompletionImportPlan.AddImport, "计划必须是 AddImport，实际 $plan")
+        // 官方 import 语义（cjc 1.0.5 实测）：`import insertion.dependency` 只导入包本身，
+        // 裸写 `insertionTarget()` 会报 undeclared identifier 且该 import 被报 unused；
+        // 让短名直接可用的是**声明级导入** `import insertion.dependency.insertionTarget`
+        // （`import insertion.dependency.*` 星号导入同样可以）。候选写的是短名，
+        // 因此这里断言的是声明级导入路径。
         assertEquals(
-            "insertion.dependency",
+            "insertion.dependency.insertionTarget",
             (plan as CompletionImportPlan.AddImport).target.importPath.pathStr,
         )
 
         val outcome = onEdt(mainFile.project) { selectAndInsert(snapshot, document) }
+        // import 的写入由 `PsiImportPlanApplier` 在平台提交选择时执行，插入策略本身只写候选文本；
+        // 本用例验证的是候选文本与括号 caret，import 计划已在上面的路径断言中覆盖。
         assertTrue(document.text.contains("insertionTarget()"), "候选文本必须被写入，实际：${document.text}")
         assertEquals(outcome.caret + 1, outcome.result.caretOffset, "caret 落在括号内")
     }

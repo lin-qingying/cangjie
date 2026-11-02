@@ -149,7 +149,7 @@ class CDocRendererTest : CjParsingTestCase(
             """.trimIndent(),
         )
 
-        assertTrue(html.contains("Parameters:"), "应渲染参数分区: $html")
+        assertTrue(html.contains("Params:"), "应渲染参数分区: $html")
         assertTrue(html.contains("- input value"), "参数分区应包含内容: $html")
         assertTrue(html.contains("See Also:"), "应渲染参见分区: $html")
         assertTrue(html.contains("Document"), "参见分区应包含链接目标: $html")

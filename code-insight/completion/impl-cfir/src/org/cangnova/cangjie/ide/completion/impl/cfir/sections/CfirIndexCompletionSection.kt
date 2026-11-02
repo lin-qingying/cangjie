@@ -8,6 +8,7 @@ import org.cangnova.cangjie.analysis.api.completion.CaCompletionCandidateStatus
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassifierSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaEnumConstructorSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
 import org.cangnova.cangjie.analysis.api.symbols.name
 import org.cangnova.cangjie.ide.completion.api.CompletionItemKind
 import org.cangnova.cangjie.ide.completion.api.CompletionRequest
@@ -37,6 +38,9 @@ import org.cangnova.cangjie.ide.completion.impl.shared.context.CompletionPositio
  * 3. **索引不可用时不退化**：源码模块的候选必须缺席——它们只能靠索引找到，
  *    一旦出现就说明有人遍历了源码文件；禁止全工作区声明扫描兜底。
  *    库侧候选不依赖宿主索引，仍须照常给出：降级是「少给」，不是「不给」。
+ *
+ * 召回范围是「当前文件之外」的名字：本文件自己的顶层声明本就在文件/包作用域里，
+ * 作用域区段必定给出，索引再列一次只会重复。
  */
 class CfirIndexCompletionSection : CfirCompletionSection(
     id = ID,
@@ -58,12 +62,26 @@ class CfirIndexCompletionSection : CfirCompletionSection(
         val startedNanos = System.nanoTime()
 
         return analyze(file) {
+            // 本文件自己的顶层声明符号：索引召回只服务「当前文件之外」的名字。
+            // 文件自己的声明已经在文件/包作用域里，作用域区段必定给出它，再召回一次只是重复；
+            // 而**被**本文件声明遮蔽的跨包同名候选由统一判定器的 SHADOWED 结论负责。
+            // 这里必须用符号等价性而不是名字或 DIRECT 状态来判：已导入的名字也可能是 DIRECT，
+            // 复查路径依赖索引区段照常给出它们；只有「就是本文件这一条声明」才是重复项。
+            // 延迟到真的出现候选再构造符号：空候选时不必为整份文件的声明建符号。
+            var ownDeclarations: List<CaSymbol>? = null
             buildList {
                 for (symbol in getDeclarationsByNamePrefix(request.prefix, repeated)) {
                     ProgressManager.checkCanceled()
                     // 类型位置只收类型：把函数名放进类型槽位，用户选中即编译失败。
                     if (kind == CompletionPositionKind.TYPE && symbol !is CaClassifierSymbol) continue
                     val name = symbol.name?.asString() ?: continue
+                    val own = ownDeclarations
+                        ?: file.declarations
+                            // 补全发生在未完成源码上：个别声明恢复不出符号时跳过该条，
+                            // 不能让整个索引区段因为一条坏声明而失败。
+                            .mapNotNull { declaration -> runCatching { declaration.symbol }.getOrNull() }
+                            .also { ownDeclarations = it }
+                    if (own.any { declaration -> declaration.isEquivalentTo(symbol) }) continue
                     // 统一判定器负责访问权限、位置遮蔽、默认导入和精确导入路径；
                     // 索引只负责找出名字，不能在这里另造一套可达性与 import 规则。
                     val decision = symbol.checkCompletionCandidate(position)

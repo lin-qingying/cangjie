@@ -102,7 +102,9 @@ class CfirIndexCompletionSectionTest : AbstractAnalysisApiExecutionTest(
 
         assertTrue(
             snapshots.none { it.lookupString == SHADOWED_TARGET },
-            "被本文件声明遮蔽的索引候选不得存活，实际 ${snapshots.map { it.lookupString }}",
+            "被本文件声明遮蔽的索引候选不得存活，实际 " + snapshots
+                .filter { it.lookupString == SHADOWED_TARGET }
+                .joinToString(separator = " | ") { "${it.identity.qualifiedName}/${it.importPlan}" },
         )
     }
 
