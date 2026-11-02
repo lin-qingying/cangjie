@@ -173,6 +173,11 @@ open class CfirDeclarationAvailabilityProvider(
      *
      * symbol provider 负责跨来源聚合，name-conflicts tracker 补齐单个 source provider 中被首项索引
      * 遮住的重声明；选择可用候选前不得退化为 `getClassLikeSymbolByClassId` 首命中。
+     *
+     * 同一处声明可能被多个来源重复枚举（IDE 的声明 provider、宏语义快照与实时文件结构会各自
+     * 构建一份 CFIR），这类候选共享同一源码文件与文本范围，**不是**重声明。必须按声明位置去重，
+     * 否则类型使用会被误判为 `ConeAmbiguityError`，进而让 `SqlParameter` 这类源码类型解析成
+     * error type、导航为空。
      */
     open fun classLikeCandidates(classId: ClassId): List<CfirClassLikeSymbol<*>> = buildList {
         addAll(session.symbolProvider.getClassLikeSymbolsByClassId(classId))
@@ -180,7 +185,7 @@ open class CfirDeclarationAvailabilityProvider(
             ?.getClassifierRedeclarations(classId)
             .orEmpty()
             .mapTo(this) { it.classifierSymbol }
-    }.distinct()
+    }.distinctBy { symbol -> symbol.declarationSiteId() ?: symbol }
 
     /**
      * 判断 [symbol] 在 [useSitePackage] 是否因 `Hide(isChecked: true)` 不可引用。

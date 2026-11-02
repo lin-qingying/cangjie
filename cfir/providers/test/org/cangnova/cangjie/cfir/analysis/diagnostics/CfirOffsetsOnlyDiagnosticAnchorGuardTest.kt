@@ -43,13 +43,8 @@ class CfirOffsetsOnlyDiagnosticAnchorGuardTest {
         "cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirObjCCallPropertyChecker.kt",
         "cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirStringInterpolationToStringChecker.kt",
         "cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirApiLevelRefHigherChecker.kt",
-        "cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirClassifierAsExpressionChecker.kt",
         "cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/type/CfirHideResolvedTypeRefChecker.kt",
         "cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/CfirVArraySizeLiteralUtils.kt",
-        // cfir/checkers —— cone 诊断映射
-        "cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/diagnostics/coneDiagnosticToCfirDiagnostic.kt",
-        // cfir/resolve
-        "cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/stages/CfirMapArguments.kt",
         // cfir/providers
         "cfir/providers/src/org/cangnova/cangjie/cfir/resolve/providers/DeclaredSupertypeClassification.kt",
     )

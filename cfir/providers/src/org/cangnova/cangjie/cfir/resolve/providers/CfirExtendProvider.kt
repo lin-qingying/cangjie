@@ -65,6 +65,15 @@ interface CfirExtendProvider : CfirSessionComponent {
     fun getPackageFqName(extend: CfirExtend): FqName? = null
 
     /**
+     * 按「接收者 + 父类型」结构签名查询 extend。
+     *
+     * 库 extend 的符号实例可能与 provider 索引内的实例不是同一个对象（session/provider 重建），
+     * 且没有源码文件/ClassId 可作为身份，因此跨边界对齐必须依赖结构签名。
+     * 默认返回 `null`：不支持该索引的 provider 仍然可以工作，只是调用方需要自行回退。
+     */
+    fun getExtendByStructuralKey(key: String): CfirExtend? = null
+
+    /**
      * 返回 extend 的声明文件。
      *
      * 这是 provider 的结构索引事实；它不代表调用方的 use-site，也不执行可见性判断。

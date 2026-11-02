@@ -62,4 +62,8 @@ class CfirCompositeExtendProvider(
     override fun getContainingFile(extend: CfirExtend): CfirFile? =
         providers.firstNotNullOfOrNull { it.getContainingFile(extend) }
 
+    /** 按 provider 顺序返回第一个匹配结构签名的 extend。 */
+    override fun getExtendByStructuralKey(key: String): CfirExtend? =
+        providers.firstNotNullOfOrNull { it.getExtendByStructuralKey(key) }
+
 }

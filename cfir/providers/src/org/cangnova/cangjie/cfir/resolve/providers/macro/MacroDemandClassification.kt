@@ -231,6 +231,18 @@ class MacroDemandClassification private constructor(
             pre: PreMacroRawBuildResult,
             defaultMacroImports: List<FqName> = emptyList(),
             builtinRegistries: MacroBuiltinRegistries = MacroBuiltinRegistries.DEFAULT,
+        ): MacroDemandClassification = create(
+            pre = pre,
+            defaultMacroImports = defaultMacroImports,
+            builtinRegistries = builtinRegistries,
+            externalMacroPackages = emptySet(),
+        )
+
+        fun create(
+            pre: PreMacroRawBuildResult,
+            defaultMacroImports: List<FqName>,
+            builtinRegistries: MacroBuiltinRegistries,
+            externalMacroPackages: Set<FqName>,
         ): MacroDemandClassification {
             val symbolIndex = buildMacroSymbolIndex(pre)
             val context = bindMacroImports(
@@ -249,6 +261,7 @@ class MacroDemandClassification private constructor(
                         preFile,
                         pre.session.annotationMetadataRegistryOrNull,
                         sourceMacroPackages,
+                        externalMacroPackages,
                     )
                 }
             }
@@ -268,6 +281,7 @@ private fun MacroSurface.toPreArtifactSnapshot(
     preFile: PreMacroCfirFile,
     annotationMetadataRegistry: CfirAnnotationMetadataRegistry?,
     sourceMacroPackages: Set<FqName>,
+    externalMacroPackages: Set<FqName>,
 ): PreArtifactSurfaceSnapshot {
     val callSite = callSite()
     val annotationCarrier = replaceHandle.annotationCarrier
@@ -291,6 +305,7 @@ private fun MacroSurface.toPreArtifactSnapshot(
         builtinMacro = builtinMacro,
         importCandidates = importCandidates,
         sourceMacroPackages = sourceMacroPackages,
+        externalMacroPackages = externalMacroPackages,
         packageAliases = context.packageAliases,
     )
     return PreArtifactSurfaceSnapshot(
@@ -422,6 +437,7 @@ private fun MacroSurface.externalDemandPackage(
     builtinMacro: MacroDefinitionEntry?,
     importCandidates: List<FqName>,
     sourceMacroPackages: Set<FqName>,
+    externalMacroPackages: Set<FqName>,
     packageAliases: Map<Name, FqName>,
 ): FqName? {
     if (preFile.isMacroPackage || isMacroDefinitionSignatureSurfaceForClassification()) return null
@@ -441,7 +457,7 @@ private fun MacroSurface.externalDemandPackage(
         if (kind == MacroSurface.Kind.FORCED) return null
         return listOfNotNull(qualifiedPackage)
             .plus(importCandidates)
-            .firstOrNull { it in sourceMacroPackages || it in OFFICIAL_STDLIB_MACRO_PACKAGES }
+            .firstOrNull { it in sourceMacroPackages || it in OFFICIAL_STDLIB_MACRO_PACKAGES || it in externalMacroPackages }
     }
     return qualifiedPackage ?: importCandidates.firstOrNull()
 }
