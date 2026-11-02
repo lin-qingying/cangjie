@@ -12,138 +12,131 @@ import std.collection.fold
 import std.collection.enumerate
 import std.convert.Formattable
 
-@Annotation
-let NOT_PRINTABLE_PLACEHOLDER: std.core.String
+let NOT_PRINTABLE_PLACEHOLDER: std.core.String = COMPILED_CODE /* compiled code */
 
-class Configuration <: std.core.Object & std.core.ToString {
+public class Configuration <: std.core.Object & std.core.ToString {
     init() { /* compiled code */ }
 
-    func get<T>(key: std.unittest.common.KeyFor<T>): std.core.Option<T> { /* compiled code */ }
+    public func get<T>(key: std.unittest.common.KeyFor<T>): std.core.Option<T> { /* compiled code */ }
 
-    func getByName<T>(name: std.core.String): std.core.Option<T> { /* compiled code */ }
+    public func getByName<T>(name: std.core.String): std.core.Option<T> { /* compiled code */ }
 
-    func set<T>(key: std.unittest.common.KeyFor<T>, value: T): Unit { /* compiled code */ }
+    public func set<T>(key: std.unittest.common.KeyFor<T>, value: T): Unit { /* compiled code */ }
 
-    func setByName<T>(name: std.core.String, value: T): Unit { /* compiled code */ }
+    public func setByName<T>(name: std.core.String, value: T): Unit { /* compiled code */ }
 
-    func remove<T>(key: std.unittest.common.KeyFor<T>): std.core.Option<T> { /* compiled code */ }
+    public func remove<T>(key: std.unittest.common.KeyFor<T>): std.core.Option<T> { /* compiled code */ }
 
-    func removeByName<T>(key: std.core.String): std.core.Option<T> { /* compiled code */ }
+    public func removeByName<T>(key: std.core.String): std.core.Option<T> { /* compiled code */ }
 
-    func clone(): std.unittest.common.Configuration { /* compiled code */ }
+    public func clone(): std.unittest.common.Configuration { /* compiled code */ }
 
-    func toString(): std.core.String { /* compiled code */ }
+    public func toString(): std.core.String { /* compiled code */ }
 
-    static func merge(parent: std.unittest.common.Configuration, child: std.unittest.common.Configuration): std.unittest.common.Configuration { /* compiled code */ }
+    public static func merge(parent: std.unittest.common.Configuration, child: std.unittest.common.Configuration): std.unittest.common.Configuration { /* compiled code */ }
 
-    let storage: std.collection.HashMap<std.unittest.common.ConfigurationKey, std.core.Any>
+    private let storage: std.collection.HashMap<std.unittest.common.ConfigurationKey, std.core.Any>
 }
 
-interface DataShrinker<T> {
-    abstract open func shrink(value: T): std.core.Iterable<T>
+public interface DataShrinker<T> {
+    public open func shrink(value: T): std.core.Iterable<T>
 }
 
-class NoShrinker<T> <: std.core.Object & std.unittest.common.DataShrinker<T> {
-    override func shrink(_: T): std.core.Iterable<T> { /* compiled code */ }
+internal class NoShrinker<T> <: std.core.Object & std.unittest.common.DataShrinker<T> {
+    public override func shrink(_: T): std.core.Iterable<T> { /* compiled code */ }
 
-    static func instance(): std.unittest.common.DataShrinker<T> { /* compiled code */ }
+    internal static func instance(): std.unittest.common.DataShrinker<T> { /* compiled code */ }
 
     init() { /* compiled code */ }
 }
 
-interface KeyFor<T> {
-    @Annotation
-    abstract open prop name: std.core.String
+public interface KeyFor<T> {
+    public open prop name: std.core.String
 }
 
-struct KeyTags <: std.unittest.common.KeyFor<std.core.Array<std.core.String>> {
-    @Annotation
-    static prop tags: std.unittest.common.KeyTags {
+public struct KeyTags <: std.unittest.common.KeyFor<std.core.Array<std.core.String>> {
+    public static prop tags: std.unittest.common.KeyTags {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    prop name: std.core.String {
+    public prop name: std.core.String {
         get() { /* compiled code */ }
     }
 
     init() { /* compiled code */ }
 }
 
-abstract open class ConfigurationKey <: std.core.Object & std.core.Equatable<std.unittest.common.ConfigurationKey> & std.core.Hashable {
-    override func hashCode(): Int64 { /* compiled code */ }
+public abstract open class ConfigurationKey <: std.core.Object & std.core.Equatable<std.unittest.common.ConfigurationKey> & std.core.Hashable {
+    public override func hashCode(): Int64 { /* compiled code */ }
 
-    abstract func equals(that: std.unittest.common.ConfigurationKey): Bool
+    protected func equals(that: std.unittest.common.ConfigurationKey): Bool
 
-    override operator func ==(that: std.unittest.common.ConfigurationKey): Bool { /* compiled code */ }
+    public override operator func ==(that: std.unittest.common.ConfigurationKey): Bool { /* compiled code */ }
 
-    override operator func !=(that: std.unittest.common.ConfigurationKey): Bool { /* compiled code */ }
+    public override operator func !=(that: std.unittest.common.ConfigurationKey): Bool { /* compiled code */ }
 
-    let name: std.core.String
+    public let name: std.core.String
 
     ConfigurationKey(name: std.core.String) { /* compiled code */ }
 }
 
 extend std.unittest.common.ConfigurationKey {
-    static func create<T>(name: std.core.String): std.unittest.common.ConfigurationKey { /* compiled code */ }
+    public static func create<T>(name: std.core.String): std.unittest.common.ConfigurationKey { /* compiled code */ }
 }
 
-interface DataProvider<T> {
-    abstract open func provide(): std.core.Iterable<T>
+public interface DataProvider<T> {
+    public open func provide(): std.core.Iterable<T>
 }
 
-interface DataStrategy<T> {
-    abstract open func provider(configuration: std.unittest.common.Configuration): std.unittest.common.DataProvider<T>
+public interface DataStrategy<T> {
+    public open func provider(configuration: std.unittest.common.Configuration): std.unittest.common.DataProvider<T>
 
-    open func shrinker(configuration: std.unittest.common.Configuration): std.unittest.common.DataShrinker<T> { /* compiled code */ }
+    public open func shrinker(configuration: std.unittest.common.Configuration): std.unittest.common.DataShrinker<T> { /* compiled code */ }
 
-    @Annotation
-    open prop isInfinite: Bool {
+    public open prop isInfinite: Bool {
         get() { /* compiled code */ }
     }
 }
 
 extend std.core.Array<T> <: DataStrategy & DataProvider {
-    func provide(): std.core.Iterable<T> { /* compiled code */ }
+    public func provide(): std.core.Iterable<T> { /* compiled code */ }
 
-    @Annotation
-    prop isInfinite: Bool {
+    public prop isInfinite: Bool {
         get() { /* compiled code */ }
     }
 
-    func provider(_: std.unittest.common.Configuration): std.unittest.common.DataProvider<T> { /* compiled code */ }
+    public func provider(_: std.unittest.common.Configuration): std.unittest.common.DataProvider<T> { /* compiled code */ }
 }
 
 extend std.core.Range<T> <: DataStrategy & DataProvider {
-    func provide(): std.core.Iterable<T> { /* compiled code */ }
+    public func provide(): std.core.Iterable<T> { /* compiled code */ }
 
-    @Annotation
-    prop isInfinite: Bool {
+    public prop isInfinite: Bool {
         get() { /* compiled code */ }
     }
 
-    func provider(_: std.unittest.common.Configuration): std.unittest.common.DataProvider<T> { /* compiled code */ }
+    public func provider(_: std.unittest.common.Configuration): std.unittest.common.DataProvider<T> { /* compiled code */ }
 }
 
-class JsonException <: std.core.Exception {
+protected class JsonException <: std.core.Exception {
     init() { /* compiled code */ }
 
     init(message: std.core.String) { /* compiled code */ }
 
-    override func getClassName(): std.core.String { /* compiled code */ }
+    protected override func getClassName(): std.core.String { /* compiled code */ }
 }
 
-class JsonNull <: std.unittest.common.JsonValue {
-    func kind(): std.unittest.common.JsonKind { /* compiled code */ }
+protected class JsonNull <: std.unittest.common.JsonValue {
+    public func kind(): std.unittest.common.JsonKind { /* compiled code */ }
 
-    func toString(): std.core.String { /* compiled code */ }
+    public func toString(): std.core.String { /* compiled code */ }
 
-    func toJsonString(): std.core.String { /* compiled code */ }
+    public func toJsonString(): std.core.String { /* compiled code */ }
 
     init() { /* compiled code */ }
 }
 
-enum JsonKind {
+protected enum JsonKind {
     | JsNull
 
     | JsBool
@@ -159,92 +152,92 @@ enum JsonKind {
     | JsObject
 }
 
-abstract class JsonValue <: std.core.Object & std.core.ToString {
-    abstract func toString(): std.core.String
+protected abstract class JsonValue <: std.core.Object & std.core.ToString {
+    public func toString(): std.core.String
 
-    abstract func toJsonString(): std.core.String
+    public func toJsonString(): std.core.String
 
-    static func fromStr(s: std.core.String): std.unittest.common.JsonValue { /* compiled code */ }
+    public static func fromStr(s: std.core.String): std.unittest.common.JsonValue { /* compiled code */ }
 
-    abstract func kind(): std.unittest.common.JsonKind
+    public func kind(): std.unittest.common.JsonKind
 
-    func asNull(): std.unittest.common.JsonNull { /* compiled code */ }
+    public func asNull(): std.unittest.common.JsonNull { /* compiled code */ }
 
-    func asBool(): std.unittest.common.JsonBool { /* compiled code */ }
+    public func asBool(): std.unittest.common.JsonBool { /* compiled code */ }
 
-    func asInt(): std.unittest.common.JsonInt { /* compiled code */ }
+    public func asInt(): std.unittest.common.JsonInt { /* compiled code */ }
 
-    func asFloat(): std.unittest.common.JsonFloat { /* compiled code */ }
+    public func asFloat(): std.unittest.common.JsonFloat { /* compiled code */ }
 
-    func asString(): std.unittest.common.JsonString { /* compiled code */ }
+    public func asString(): std.unittest.common.JsonString { /* compiled code */ }
 
-    func asArray(): std.unittest.common.JsonArray { /* compiled code */ }
+    public func asArray(): std.unittest.common.JsonArray { /* compiled code */ }
 
-    func asObject(): std.unittest.common.JsonObject { /* compiled code */ }
+    public func asObject(): std.unittest.common.JsonObject { /* compiled code */ }
 
     init() { /* compiled code */ }
 }
 
-class JsonBool <: std.unittest.common.JsonValue {
-    var value: Bool
+protected class JsonBool <: std.unittest.common.JsonValue {
+    private var value: Bool
 
     init(bv: Bool) { /* compiled code */ }
 
-    func getValue(): Bool { /* compiled code */ }
+    public func getValue(): Bool { /* compiled code */ }
 
-    func kind(): std.unittest.common.JsonKind { /* compiled code */ }
+    public func kind(): std.unittest.common.JsonKind { /* compiled code */ }
 
-    func toString(): std.core.String { /* compiled code */ }
+    public func toString(): std.core.String { /* compiled code */ }
 
-    func toJsonString(): std.core.String { /* compiled code */ }
+    public func toJsonString(): std.core.String { /* compiled code */ }
 }
 
-class JsonInt <: std.unittest.common.JsonValue {
-    var value: Int64
+protected class JsonInt <: std.unittest.common.JsonValue {
+    private var value: Int64
 
     init(iv: Int64) { /* compiled code */ }
 
-    func getValue(): Int64 { /* compiled code */ }
+    public func getValue(): Int64 { /* compiled code */ }
 
-    func kind(): std.unittest.common.JsonKind { /* compiled code */ }
+    public func kind(): std.unittest.common.JsonKind { /* compiled code */ }
 
-    func toString(): std.core.String { /* compiled code */ }
+    public func toString(): std.core.String { /* compiled code */ }
 
-    func toJsonString(): std.core.String { /* compiled code */ }
+    public func toJsonString(): std.core.String { /* compiled code */ }
 }
 
-class JsonFloat <: std.unittest.common.JsonValue {
-    var value: Float64
+protected class JsonFloat <: std.unittest.common.JsonValue {
+    private var value: Float64
 
     init(fv: Float64) { /* compiled code */ }
 
     init(v: Int64) { /* compiled code */ }
 
-    func getValue(): Float64 { /* compiled code */ }
+    public func getValue(): Float64 { /* compiled code */ }
 
-    func kind(): std.unittest.common.JsonKind { /* compiled code */ }
+    public func kind(): std.unittest.common.JsonKind { /* compiled code */ }
 
-    func toString(): std.core.String { /* compiled code */ }
+    public func toString(): std.core.String { /* compiled code */ }
 
-    func toJsonString(): std.core.String { /* compiled code */ }
+    public func toJsonString(): std.core.String { /* compiled code */ }
 }
 
-class JsonString <: std.unittest.common.JsonValue {
-    var value: std.core.String
+protected class JsonString <: std.unittest.common.JsonValue {
+    internal var value: std.core.String
 
     init(sv: std.core.String) { /* compiled code */ }
 
-    func getValue(): std.core.String { /* compiled code */ }
+    public func getValue(): std.core.String { /* compiled code */ }
 
-    func kind(): std.unittest.common.JsonKind { /* compiled code */ }
+    public func kind(): std.unittest.common.JsonKind { /* compiled code */ }
 
-    func toString(): std.core.String { /* compiled code */ }
+    public func toString(): std.core.String { /* compiled code */ }
 
-    func toJsonString(): std.core.String { /* compiled code */ }
+    public func toJsonString(): std.core.String { /* compiled code */ }
 }
 
-class JsonArray <: std.unittest.common.JsonValue {
-    var items: std.collection.ArrayList<std.unittest.common.JsonValue>
+protected class JsonArray <: std.unittest.common.JsonValue {
+    private var items: std.collection.ArrayList<std.unittest.common.JsonValue>
 
     init() { /* compiled code */ }
 
@@ -252,75 +245,74 @@ class JsonArray <: std.unittest.common.JsonValue {
 
     init(list: std.core.Array<std.unittest.common.JsonValue>) { /* compiled code */ }
 
-    func kind(): std.unittest.common.JsonKind { /* compiled code */ }
+    public func kind(): std.unittest.common.JsonKind { /* compiled code */ }
 
-    func toJsonString(): std.core.String { /* compiled code */ }
+    public func toJsonString(): std.core.String { /* compiled code */ }
 
-    func toJsonString(depth: Int64, bracketInNewLine: Bool, indent: std.core.String): std.core.String { /* compiled code */ }
+    public func toJsonString(depth: Int64, bracketInNewLine!: Bool = COMPILED_CODE /* compiled code */, indent!: std.core.String = COMPILED_CODE /* compiled code */): std.core.String { /* compiled code */ }
 
-    func toString(): std.core.String { /* compiled code */ }
+    public func toString(): std.core.String { /* compiled code */ }
 
-    func size(): Int64 { /* compiled code */ }
+    public func size(): Int64 { /* compiled code */ }
 
-    func add(jv: std.unittest.common.JsonValue): std.unittest.common.JsonArray { /* compiled code */ }
+    public func add(jv: std.unittest.common.JsonValue): std.unittest.common.JsonArray { /* compiled code */ }
 
-    func get(index: Int64): std.core.Option<std.unittest.common.JsonValue> { /* compiled code */ }
+    public func get(index: Int64): std.core.Option<std.unittest.common.JsonValue> { /* compiled code */ }
 
-    operator func [](index: Int64): std.unittest.common.JsonValue { /* compiled code */ }
+    public operator func [](index: Int64): std.unittest.common.JsonValue { /* compiled code */ }
 
-    func getItems(): std.collection.ArrayList<std.unittest.common.JsonValue> { /* compiled code */ }
+    public func getItems(): std.collection.ArrayList<std.unittest.common.JsonValue> { /* compiled code */ }
 }
 
-class JsonObject <: std.unittest.common.JsonValue {
-    var fields: std.collection.HashMap<std.core.String, std.unittest.common.JsonValue>
+protected class JsonObject <: std.unittest.common.JsonValue {
+    private var fields: std.collection.HashMap<std.core.String, std.unittest.common.JsonValue>
 
     init() { /* compiled code */ }
 
     init(map: std.collection.HashMap<std.core.String, std.unittest.common.JsonValue>) { /* compiled code */ }
 
-    func kind(): std.unittest.common.JsonKind { /* compiled code */ }
+    public func kind(): std.unittest.common.JsonKind { /* compiled code */ }
 
-    func toJsonString(): std.core.String { /* compiled code */ }
+    public func toJsonString(): std.core.String { /* compiled code */ }
 
-    func toJsonString(depth: Int64, bracketInNewLine: Bool, indent: std.core.String): std.core.String { /* compiled code */ }
+    public func toJsonString(depth: Int64, bracketInNewLine!: Bool = COMPILED_CODE /* compiled code */, indent!: std.core.String = COMPILED_CODE /* compiled code */): std.core.String { /* compiled code */ }
 
-    func toString(): std.core.String { /* compiled code */ }
+    public func toString(): std.core.String { /* compiled code */ }
 
-    func size(): Int64 { /* compiled code */ }
+    public func size(): Int64 { /* compiled code */ }
 
-    func containsKey(key: std.core.String): Bool { /* compiled code */ }
+    public func containsKey(key: std.core.String): Bool { /* compiled code */ }
 
-    func put(key: std.core.String, v: std.unittest.common.JsonValue): Unit { /* compiled code */ }
+    public func put(key: std.core.String, v: std.unittest.common.JsonValue): Unit { /* compiled code */ }
 
-    func get(key: std.core.String): std.core.Option<std.unittest.common.JsonValue> { /* compiled code */ }
+    public func get(key: std.core.String): std.core.Option<std.unittest.common.JsonValue> { /* compiled code */ }
 
-    operator func [](key: std.core.String): std.unittest.common.JsonValue { /* compiled code */ }
+    public operator func [](key: std.core.String): std.unittest.common.JsonValue { /* compiled code */ }
 
-    func getFields(): std.collection.HashMap<std.core.String, std.unittest.common.JsonValue> { /* compiled code */ }
+    public func getFields(): std.collection.HashMap<std.core.String, std.unittest.common.JsonValue> { /* compiled code */ }
 }
 
-interface ToJson {
-    abstract open func toJson(): std.unittest.common.JsonValue
+protected interface ToJson {
+    public open func toJson(): std.unittest.common.JsonValue
 
-    abstract static func fromJson(jv: std.unittest.common.JsonValue): std.unittest.common.DataModel
+    public static func fromJson(jv: std.unittest.common.JsonValue): std.unittest.common.DataModel
 }
 
-abstract class DataModel {
+protected abstract class DataModel {
     init() { /* compiled code */ }
 }
 
 extend std.unittest.common.DataModel <: ToJson {
-    static func fromJson(jv: std.unittest.common.JsonValue): std.unittest.common.DataModel { /* compiled code */ }
+    public static func fromJson(jv: std.unittest.common.JsonValue): std.unittest.common.DataModel { /* compiled code */ }
 
-    func toJson(): std.unittest.common.JsonValue { /* compiled code */ }
+    public func toJson(): std.unittest.common.JsonValue { /* compiled code */ }
 }
 
-class UnittestOptionValidationException <: std.core.Exception {
-    override func getClassName(): std.core.String { /* compiled code */ }
+public class UnittestOptionValidationException <: std.core.Exception {
+    protected override func getClassName(): std.core.String { /* compiled code */ }
 }
 
-@Annotation
-enum OptionValidity {
+public enum OptionValidity {
     | UnknownOptionType
 
     | InvalidOption(std.core.String)
@@ -330,25 +322,25 @@ enum OptionValidity {
 
 var unittestOptionsRegistryClosed: Bool
 
-struct OptionInfo {
-    let name: std.core.String
+public struct OptionInfo {
+    public let name: std.core.String
 
-    let userDefined: Bool
+    public let userDefined: Bool
 
-    let description: std.core.Option<std.core.String>
+    public let description: std.core.Option<std.core.String>
 
-    let types: std.collection.HashMap<std.core.String, std.core.Option<std.core.String>>
+    public let types: std.collection.HashMap<std.core.String, std.core.Option<std.core.String>>
 }
 
 let optionsInfo: std.collection.HashMap<std.core.String, std.unittest.common.OptionInfo>
 
-func registerOptionValidator(name: std.core.String, validator: (std.core.Any) -> std.unittest.common.OptionValidity): Unit { /* compiled code */ }
+public func registerOptionValidator(name: std.core.String, validator: (std.core.Any) -> std.unittest.common.OptionValidity): Unit { /* compiled code */ }
 
-func setOptionInfo(name: std.core.String, types: std.core.Array<std.core.String>, description: std.core.Option<std.core.String>): Unit { /* compiled code */ }
+public func setOptionInfo(name: std.core.String, types: std.core.Array<std.core.String>, description!: std.core.Option<std.core.String> = COMPILED_CODE /* compiled code */): Unit { /* compiled code */ }
 
-func setOrUpdateOptionInfo(name: std.core.String, description: std.core.Option<std.core.String>, ty: std.core.String, typeDescription: std.core.String): Unit { /* compiled code */ }
+public func setOrUpdateOptionInfo(name: std.core.String, description: std.core.Option<std.core.String>, ty: std.core.String, typeDescription: std.core.String): Unit { /* compiled code */ }
 
-enum Color <: std.core.Equatable<std.unittest.common.Color> {
+public enum Color <: std.core.Equatable<std.unittest.common.Color> {
     | RED
 
     | GREEN
@@ -365,70 +357,68 @@ enum Color <: std.core.Equatable<std.unittest.common.Color> {
 
     | DEFAULT_COLOR
 
-    operator func ==(that: std.unittest.common.Color): Bool { /* compiled code */ }
+    public operator func ==(that: std.unittest.common.Color): Bool { /* compiled code */ }
 
-    operator func !=(that: std.unittest.common.Color): Bool { /* compiled code */ }
+    public operator func !=(that: std.unittest.common.Color): Bool { /* compiled code */ }
 }
 
-abstract class PrettyPrinter {
-    abstract func put(s: std.core.String): Unit
+public abstract class PrettyPrinter {
+    protected func put(s: std.core.String): Unit
 
-    open func putNewLine(): Unit { /* compiled code */ }
+    protected open func putNewLine(): Unit { /* compiled code */ }
 
-    abstract func setColor(color: std.unittest.common.Color): Unit
+    protected func setColor(color: std.unittest.common.Color): Unit
 
-    var currentIndent: std.core.String
+    private var currentIndent: std.core.String
 
-    var needIndent: Bool
+    private var needIndent: Bool
 
-    var currentColor: std.unittest.common.Color
+    private var currentColor: std.unittest.common.Color
 
-    @Annotation
-    prop isTopLevel: Bool {
+    public prop isTopLevel: Bool {
         get() { /* compiled code */ }
     }
 
-    func indent(body: () -> Unit): std.unittest.common.PrettyPrinter { /* compiled code */ }
+    public func indent(body: () -> Unit): std.unittest.common.PrettyPrinter { /* compiled code */ }
 
-    func indent(indents: UInt64, body: () -> Unit): std.unittest.common.PrettyPrinter { /* compiled code */ }
+    public func indent(indents: UInt64, body: () -> Unit): std.unittest.common.PrettyPrinter { /* compiled code */ }
 
-    func customOffset(symbols: UInt64, body: () -> Unit): std.unittest.common.PrettyPrinter { /* compiled code */ }
+    public func customOffset(symbols: UInt64, body: () -> Unit): std.unittest.common.PrettyPrinter { /* compiled code */ }
 
-    func colored(color: std.unittest.common.Color, body: () -> Unit): std.unittest.common.PrettyPrinter { /* compiled code */ }
+    public func colored(color: std.unittest.common.Color, body: () -> Unit): std.unittest.common.PrettyPrinter { /* compiled code */ }
 
-    open func fillLimitedSpace(spaceSize: Int64, body: () -> Unit): std.unittest.common.PrettyPrinter { /* compiled code */ }
+    public open func fillLimitedSpace(spaceSize: Int64, body: () -> Unit): std.unittest.common.PrettyPrinter { /* compiled code */ }
 
-    func colored(color: std.unittest.common.Color, text: std.core.String): std.unittest.common.PrettyPrinter { /* compiled code */ }
+    public func colored(color: std.unittest.common.Color, text: std.core.String): std.unittest.common.PrettyPrinter { /* compiled code */ }
 
-    func append(text: std.core.String): std.unittest.common.PrettyPrinter { /* compiled code */ }
+    public func append(text: std.core.String): std.unittest.common.PrettyPrinter { /* compiled code */ }
 
-    func appendCentered(text: std.core.String, space: UInt64): std.unittest.common.PrettyPrinter { /* compiled code */ }
+    public func appendCentered(text: std.core.String, space: UInt64): std.unittest.common.PrettyPrinter { /* compiled code */ }
 
-    func appendLeftAligned(text: std.core.String, space: UInt64): std.unittest.common.PrettyPrinter { /* compiled code */ }
+    public func appendLeftAligned(text: std.core.String, space: UInt64): std.unittest.common.PrettyPrinter { /* compiled code */ }
 
-    func appendRightAligned(text: std.core.String, space: UInt64): std.unittest.common.PrettyPrinter { /* compiled code */ }
+    public func appendRightAligned(text: std.core.String, space: UInt64): std.unittest.common.PrettyPrinter { /* compiled code */ }
 
-    func append<PP>(value: PP): std.unittest.common.PrettyPrinter { /* compiled code */ }
+    public func append<PP>(value: PP): std.unittest.common.PrettyPrinter { /* compiled code */ }
 
-    func newLine(): std.unittest.common.PrettyPrinter { /* compiled code */ }
+    public func newLine(): std.unittest.common.PrettyPrinter { /* compiled code */ }
 
-    func appendLine(text: std.core.String): std.unittest.common.PrettyPrinter { /* compiled code */ }
+    public func appendLine(text: std.core.String): std.unittest.common.PrettyPrinter { /* compiled code */ }
 
-    func appendLine<PP>(value: PP): std.unittest.common.PrettyPrinter { /* compiled code */ }
+    public func appendLine<PP>(value: PP): std.unittest.common.PrettyPrinter { /* compiled code */ }
 
-    let indentationSize: UInt64
+    internal let indentationSize: UInt64
 
-    let startingIndent: UInt64
+    internal let startingIndent: UInt64
 
-    PrettyPrinter(indentationSize: UInt64, startingIndent: UInt64) { /* compiled code */ }
+    PrettyPrinter(indentationSize!: UInt64 = COMPILED_CODE /* compiled code */, startingIndent!: UInt64 = COMPILED_CODE /* compiled code */) { /* compiled code */ }
 }
 
-interface PrettyPrintable {
-    abstract open func pprint(to: std.unittest.common.PrettyPrinter): std.unittest.common.PrettyPrinter
+public interface PrettyPrintable {
+    public open func pprint(to: std.unittest.common.PrettyPrinter): std.unittest.common.PrettyPrinter
 }
 
-@Annotation
-enum PrettyPrintableTextChunk {
+internal enum PrettyPrintableTextChunk {
     | PPTextPiece(std.core.String)
 
     | PPColorSwitch(std.unittest.common.Color)
@@ -436,276 +426,276 @@ enum PrettyPrintableTextChunk {
     | PPNewLine
 }
 
-class PrettyText <: std.unittest.common.PrettyPrinter & std.unittest.common.PrettyPrintable & std.core.ToString {
+public class PrettyText <: std.unittest.common.PrettyPrinter & std.unittest.common.PrettyPrintable & std.core.ToString {
     init() { /* compiled code */ }
 
     init(string: std.core.String) { /* compiled code */ }
 
-    static func of<PP>(pp: PP): std.unittest.common.PrettyText { /* compiled code */ }
+    public static func of<PP>(pp: PP): std.unittest.common.PrettyText { /* compiled code */ }
 
-    func isEmpty(): Bool { /* compiled code */ }
+    public func isEmpty(): Bool { /* compiled code */ }
 
-    override func put(s: std.core.String): Unit { /* compiled code */ }
+    protected override func put(s: std.core.String): Unit { /* compiled code */ }
 
-    override func setColor(color: std.unittest.common.Color): Unit { /* compiled code */ }
+    protected override func setColor(color: std.unittest.common.Color): Unit { /* compiled code */ }
 
-    override func putNewLine(): Unit { /* compiled code */ }
+    protected override func putNewLine(): Unit { /* compiled code */ }
 
-    func pprint(to: std.unittest.common.PrettyPrinter): std.unittest.common.PrettyPrinter { /* compiled code */ }
+    public func pprint(to: std.unittest.common.PrettyPrinter): std.unittest.common.PrettyPrinter { /* compiled code */ }
 
-    func toString(): std.core.String { /* compiled code */ }
+    public func toString(): std.core.String { /* compiled code */ }
 
-    let data: std.collection.ArrayList<std.unittest.common.PrettyPrintableTextChunk>
+    internal let data: std.collection.ArrayList<std.unittest.common.PrettyPrintableTextChunk>
 }
 
 extend std.core.Array<T> <: PrettyPrintable {
-    func pprint(to: std.unittest.common.PrettyPrinter): std.unittest.common.PrettyPrinter { /* compiled code */ }
+    public func pprint(to: std.unittest.common.PrettyPrinter): std.unittest.common.PrettyPrinter { /* compiled code */ }
 }
 
 extend std.collection.ArrayList<T> <: PrettyPrintable {
-    func pprint(to: std.unittest.common.PrettyPrinter): std.unittest.common.PrettyPrinter { /* compiled code */ }
+    public func pprint(to: std.unittest.common.PrettyPrinter): std.unittest.common.PrettyPrinter { /* compiled code */ }
 }
 
-func toStringOrPlaceholder<T>(value: T): std.core.String { /* compiled code */ }
+protected func toStringOrPlaceholder<T>(value: T): std.core.String { /* compiled code */ }
 
-func toStringQuotedOrPlaceholder<T>(value: T): std.core.String { /* compiled code */ }
+protected func toStringQuotedOrPlaceholder<T>(value: T): std.core.String { /* compiled code */ }
 
-func quoteString<T>(value: T): std.core.String { /* compiled code */ }
+protected func quoteString<T>(value: T): std.core.String { /* compiled code */ }
 
 extend std.unittest.common.Color <: Serializable {
-    func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
+    public func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
-    static func deserialize(dm: std.unittest.common.DataModel): std.unittest.common.Color { /* compiled code */ }
+    public static func deserialize(dm: std.unittest.common.DataModel): std.unittest.common.Color { /* compiled code */ }
 }
 
-interface Serializable<T> {
-    abstract open func serializeInternal(): std.unittest.common.DataModel
+protected interface Serializable<T> {
+    public open func serializeInternal(): std.unittest.common.DataModel
 
-    abstract static func deserialize(dm: std.unittest.common.DataModel): T
+    public static func deserialize(dm: std.unittest.common.DataModel): T
 }
 
 extend std.unittest.common.PrettyText <: Serializable {
-    func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
+    public func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
-    static func deserialize(dm: std.unittest.common.DataModel): std.unittest.common.PrettyText { /* compiled code */ }
+    public static func deserialize(dm: std.unittest.common.DataModel): std.unittest.common.PrettyText { /* compiled code */ }
 }
 
-class DataModelNull <: std.unittest.common.DataModel {
+protected class DataModelNull <: std.unittest.common.DataModel {
     init() { /* compiled code */ }
 }
 
-class DataModelBool <: std.unittest.common.DataModel {
-    var value: Bool
+protected class DataModelBool <: std.unittest.common.DataModel {
+    private var value: Bool
 
     init(bv: Bool) { /* compiled code */ }
 
-    func getValue(): Bool { /* compiled code */ }
+    public func getValue(): Bool { /* compiled code */ }
 }
 
-class DataModelInt <: std.unittest.common.DataModel {
-    var value: Int64
+protected class DataModelInt <: std.unittest.common.DataModel {
+    private var value: Int64
 
     init(iv: Int64) { /* compiled code */ }
 
-    func getValue(): Int64 { /* compiled code */ }
+    public func getValue(): Int64 { /* compiled code */ }
 }
 
-class DataModelFloat <: std.unittest.common.DataModel {
-    var value: Float64
+protected class DataModelFloat <: std.unittest.common.DataModel {
+    private var value: Float64
 
     init(fv: Float64) { /* compiled code */ }
 
     init(v: Int64) { /* compiled code */ }
 
-    func getValue(): Float64 { /* compiled code */ }
+    public func getValue(): Float64 { /* compiled code */ }
 }
 
-class DataModelString <: std.unittest.common.DataModel {
-    var value: std.core.String
+protected class DataModelString <: std.unittest.common.DataModel {
+    private var value: std.core.String
 
     init(sv: std.core.String) { /* compiled code */ }
 
-    func getValue(): std.core.String { /* compiled code */ }
+    public func getValue(): std.core.String { /* compiled code */ }
 }
 
-class DataModelSeq <: std.unittest.common.DataModel {
-    var items: std.collection.ArrayList<std.unittest.common.DataModel>
+protected class DataModelSeq <: std.unittest.common.DataModel {
+    private var items: std.collection.ArrayList<std.unittest.common.DataModel>
 
     init() { /* compiled code */ }
 
     init(list: std.collection.ArrayList<std.unittest.common.DataModel>) { /* compiled code */ }
 
-    func getItems(): std.collection.ArrayList<std.unittest.common.DataModel> { /* compiled code */ }
+    public func getItems(): std.collection.ArrayList<std.unittest.common.DataModel> { /* compiled code */ }
 
-    func add(dm: std.unittest.common.DataModel): Unit { /* compiled code */ }
+    public func add(dm: std.unittest.common.DataModel): Unit { /* compiled code */ }
 }
 
-class DataModelStruct <: std.unittest.common.DataModel {
-    var fields: std.collection.ArrayList<std.unittest.common.Field>
+protected class DataModelStruct <: std.unittest.common.DataModel {
+    private var fields: std.collection.ArrayList<std.unittest.common.Field>
 
     init() { /* compiled code */ }
 
     init(list: std.collection.ArrayList<std.unittest.common.Field>) { /* compiled code */ }
 
-    func getFields(): std.collection.ArrayList<std.unittest.common.Field> { /* compiled code */ }
+    public func getFields(): std.collection.ArrayList<std.unittest.common.Field> { /* compiled code */ }
 
-    func add(fie: std.unittest.common.Field): std.unittest.common.DataModelStruct { /* compiled code */ }
+    public func add(fie: std.unittest.common.Field): std.unittest.common.DataModelStruct { /* compiled code */ }
 
-    func get(key: std.core.String): std.unittest.common.DataModel { /* compiled code */ }
+    public func get(key: std.core.String): std.unittest.common.DataModel { /* compiled code */ }
 }
 
-class Field {
-    var name: std.core.String
+protected class Field {
+    private var name: std.core.String
 
-    var data: std.unittest.common.DataModel
+    internal var data: std.unittest.common.DataModel
 
     init(name: std.core.String, data: std.unittest.common.DataModel) { /* compiled code */ }
 
-    func getName(): std.core.String { /* compiled code */ }
+    public func getName(): std.core.String { /* compiled code */ }
 
-    func getData(): std.unittest.common.DataModel { /* compiled code */ }
+    public func getData(): std.unittest.common.DataModel { /* compiled code */ }
 }
 
-func field<T>(name: std.core.String, data: T): std.unittest.common.Field { /* compiled code */ }
+protected func field<T>(name: std.core.String, data: T): std.unittest.common.Field { /* compiled code */ }
 
-class DataModelException <: std.core.Exception {
+protected class DataModelException <: std.core.Exception {
     init() { /* compiled code */ }
 
     init(message: std.core.String) { /* compiled code */ }
 
-    override func getClassName(): std.core.String { /* compiled code */ }
+    protected override func getClassName(): std.core.String { /* compiled code */ }
 }
 
 extend Int64 <: Serializable {
-    func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
+    public func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
-    static func deserialize(dm: std.unittest.common.DataModel): Int64 { /* compiled code */ }
+    public static func deserialize(dm: std.unittest.common.DataModel): Int64 { /* compiled code */ }
 }
 
 extend Int32 <: Serializable {
-    func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
+    public func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
-    static func deserialize(dm: std.unittest.common.DataModel): Int32 { /* compiled code */ }
+    public static func deserialize(dm: std.unittest.common.DataModel): Int32 { /* compiled code */ }
 }
 
 extend Int16 <: Serializable {
-    func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
+    public func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
-    static func deserialize(dm: std.unittest.common.DataModel): Int16 { /* compiled code */ }
+    public static func deserialize(dm: std.unittest.common.DataModel): Int16 { /* compiled code */ }
 }
 
 extend Int8 <: Serializable {
-    func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
+    public func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
-    static func deserialize(dm: std.unittest.common.DataModel): Int8 { /* compiled code */ }
+    public static func deserialize(dm: std.unittest.common.DataModel): Int8 { /* compiled code */ }
 }
 
 extend UInt64 <: Serializable {
-    func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
+    public func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
-    static func deserialize(dm: std.unittest.common.DataModel): UInt64 { /* compiled code */ }
+    public static func deserialize(dm: std.unittest.common.DataModel): UInt64 { /* compiled code */ }
 }
 
 extend UInt32 <: Serializable {
-    func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
+    public func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
-    static func deserialize(dm: std.unittest.common.DataModel): UInt32 { /* compiled code */ }
+    public static func deserialize(dm: std.unittest.common.DataModel): UInt32 { /* compiled code */ }
 }
 
 extend UInt16 <: Serializable {
-    func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
+    public func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
-    static func deserialize(dm: std.unittest.common.DataModel): UInt16 { /* compiled code */ }
+    public static func deserialize(dm: std.unittest.common.DataModel): UInt16 { /* compiled code */ }
 }
 
 extend UInt8 <: Serializable {
-    func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
+    public func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
-    static func deserialize(dm: std.unittest.common.DataModel): UInt8 { /* compiled code */ }
+    public static func deserialize(dm: std.unittest.common.DataModel): UInt8 { /* compiled code */ }
 }
 
 extend Float64 <: Serializable {
-    func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
+    public func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
-    static func deserialize(dm: std.unittest.common.DataModel): Float64 { /* compiled code */ }
+    public static func deserialize(dm: std.unittest.common.DataModel): Float64 { /* compiled code */ }
 }
 
 extend Float32 <: Serializable {
-    func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
+    public func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
-    static func deserialize(dm: std.unittest.common.DataModel): Float32 { /* compiled code */ }
+    public static func deserialize(dm: std.unittest.common.DataModel): Float32 { /* compiled code */ }
 }
 
 extend Float16 <: Serializable {
-    func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
+    public func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
-    static func deserialize(dm: std.unittest.common.DataModel): Float16 { /* compiled code */ }
+    public static func deserialize(dm: std.unittest.common.DataModel): Float16 { /* compiled code */ }
 }
 
 extend Bool <: Serializable {
-    func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
+    public func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
-    static func deserialize(dm: std.unittest.common.DataModel): Bool { /* compiled code */ }
+    public static func deserialize(dm: std.unittest.common.DataModel): Bool { /* compiled code */ }
 }
 
 extend std.core.String <: Serializable {
-    func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
+    public func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
-    static func deserialize(dm: std.unittest.common.DataModel): std.core.String { /* compiled code */ }
+    public static func deserialize(dm: std.unittest.common.DataModel): std.core.String { /* compiled code */ }
 }
 
 extend Rune <: Serializable {
-    func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
+    public func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
-    static func deserialize(dm: std.unittest.common.DataModel): Rune { /* compiled code */ }
+    public static func deserialize(dm: std.unittest.common.DataModel): Rune { /* compiled code */ }
 }
 
 extend std.core.Option<T> <: Serializable {
-    func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
+    public func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
-    static func deserialize(dm: std.unittest.common.DataModel): std.core.Option<T> { /* compiled code */ }
+    public static func deserialize(dm: std.unittest.common.DataModel): std.core.Option<T> { /* compiled code */ }
 }
 
 extend std.core.Array<T> <: Serializable {
-    func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
+    public func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
-    static func deserialize(dm: std.unittest.common.DataModel): std.core.Array<T> { /* compiled code */ }
+    public static func deserialize(dm: std.unittest.common.DataModel): std.core.Array<T> { /* compiled code */ }
 }
 
 extend std.collection.ArrayList<T> <: Serializable {
-    func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
+    public func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
-    static func deserialize(dm: std.unittest.common.DataModel): std.collection.ArrayList<T> { /* compiled code */ }
+    public static func deserialize(dm: std.unittest.common.DataModel): std.collection.ArrayList<T> { /* compiled code */ }
 }
 
 extend std.collection.HashSet<T> <: Serializable {
-    func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
+    public func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
-    static func deserialize(dm: std.unittest.common.DataModel): std.collection.HashSet<T> { /* compiled code */ }
+    public static func deserialize(dm: std.unittest.common.DataModel): std.collection.HashSet<T> { /* compiled code */ }
 }
 
 extend std.collection.HashMap<K, V> <: Serializable {
-    func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
+    public func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
-    static func deserialize(dm: std.unittest.common.DataModel): std.collection.HashMap<K, V> { /* compiled code */ }
+    public static func deserialize(dm: std.unittest.common.DataModel): std.collection.HashMap<K, V> { /* compiled code */ }
 }
 
-interface TextWidth {
-    abstract open func width(): Int64
+protected interface TextWidth {
+    public open func width(): Int64
 }
 
 extend Rune <: TextWidth {
-    func width(): Int64 { /* compiled code */ }
+    public func width(): Int64 { /* compiled code */ }
 }
 
 extend std.core.String <: TextWidth {
-    func width(): Int64 { /* compiled code */ }
+    public func width(): Int64 { /* compiled code */ }
 }
 
-func shieldEscapeSeq(s: std.core.String, shieldSingleQuote: Bool, shieldDoubleQuote: Bool, shieldBackslash: Bool, shieldInterpolation: Bool): std.core.String { /* compiled code */ }
+protected func shieldEscapeSeq(s: std.core.String, shieldSingleQuote!: Bool = COMPILED_CODE /* compiled code */, shieldDoubleQuote!: Bool = COMPILED_CODE /* compiled code */, shieldBackslash!: Bool = COMPILED_CODE /* compiled code */, shieldInterpolation!: Bool = COMPILED_CODE /* compiled code */): std.core.String { /* compiled code */ }
 
 extend std.unittest.common.PrettyPrinter {
-    func space(): std.unittest.common.PrettyPrinter { /* compiled code */ }
+    protected func space(): std.unittest.common.PrettyPrinter { /* compiled code */ }
 
-    func appendLine(): std.unittest.common.PrettyPrinter { /* compiled code */ }
+    protected func appendLine(): std.unittest.common.PrettyPrinter { /* compiled code */ }
 }

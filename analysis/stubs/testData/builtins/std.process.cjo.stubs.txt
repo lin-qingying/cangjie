@@ -47,7 +47,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
               CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
             CangJieStub$STRING_TEMPLATE
               CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use related global functions in the std.env instead.]
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -60,7 +60,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
     CangJieStub$CLASS_BODY
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=_stdIn]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[internal]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -70,7 +70,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
             CangJieStub$REFERENCE_EXPRESSION[referencedName=InputStream]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=_stdOut]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[internal]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -80,7 +80,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
             CangJieStub$REFERENCE_EXPRESSION[referencedName=OutputStream]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=_stdErr]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[internal]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -94,12 +94,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
         CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=stdErr]
         CangJieStub$ANNOTATIONS
-          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
-            CangJieStub$CONSTRUCTOR_CALLEE
-              CangJieStub$TYPE_REFERENCE
-                CangJieStub$USER_TYPE
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -112,12 +107,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
             CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=stdOut]
         CangJieStub$ANNOTATIONS
-          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
-            CangJieStub$CONSTRUCTOR_CALLEE
-              CangJieStub$TYPE_REFERENCE
-                CangJieStub$USER_TYPE
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -130,12 +120,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
             CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=stdIn]
         CangJieStub$ANNOTATIONS
-          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
-            CangJieStub$CONSTRUCTOR_CALLEE
-              CangJieStub$TYPE_REFERENCE
-                CangJieStub$USER_TYPE
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -148,12 +133,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
             CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=arguments]
         CangJieStub$ANNOTATIONS
-          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
-            CangJieStub$CONSTRUCTOR_CALLEE
-              CangJieStub$TYPE_REFERENCE
-                CangJieStub$USER_TYPE
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -175,12 +155,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
             CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=homeDirectory]
         CangJieStub$ANNOTATIONS
-          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
-            CangJieStub$CONSTRUCTOR_CALLEE
-              CangJieStub$TYPE_REFERENCE
-                CangJieStub$USER_TYPE
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -193,12 +168,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
             CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=tempDirectory]
         CangJieStub$ANNOTATIONS
-          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
-            CangJieStub$CONSTRUCTOR_CALLEE
-              CangJieStub$TYPE_REFERENCE
-                CangJieStub$USER_TYPE
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -211,7 +181,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
             CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -239,7 +209,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -261,7 +231,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -275,7 +245,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -287,7 +257,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -296,7 +266,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
           CangJieStub$BASIC_TYPE[basicType=Nothing]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[protected]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -308,21 +278,21 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
           CangJieStub$BASIC_TYPE[basicType=Unit]
   CangJieStub$CLASS[classId=std/process/Process, fqName=std.process.Process, name=Process, superNames=[]]
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[open]
+    CangJieStub$MODIFIER_LIST[public open]
     CangJieStub$CLASS_BODY
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=_pid]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[internal]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=_handle]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[internal]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=IntNative]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=_name]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[internal]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -341,7 +311,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=_command]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[internal]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -360,7 +330,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=_arguments]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[internal]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -388,7 +358,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=_commandLine]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[internal]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -416,7 +386,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=_workingDirectory]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[internal]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -435,7 +405,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=Path]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=_environment]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[internal]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -471,12 +441,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=_startTimeSinceUnixEpoch]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[internal]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=_startTime]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[internal]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=current]
@@ -492,12 +462,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
                 CangJieStub$STRING_TEMPLATE
                   CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=CurrentProcess has been marked as deprecated, use related global functions in the std.env instead.]
-          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
-            CangJieStub$CONSTRUCTOR_CALLEE
-              CangJieStub$TYPE_REFERENCE
-                CangJieStub$USER_TYPE
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[public static]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -510,12 +475,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
             CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=pid]
         CangJieStub$ANNOTATIONS
-          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
-            CangJieStub$CONSTRUCTOR_CALLEE
-              CangJieStub$TYPE_REFERENCE
-                CangJieStub$USER_TYPE
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$PROPERTY_BODY
@@ -523,12 +483,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
             CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=name]
         CangJieStub$ANNOTATIONS
-          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
-            CangJieStub$CONSTRUCTOR_CALLEE
-              CangJieStub$TYPE_REFERENCE
-                CangJieStub$USER_TYPE
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -541,12 +496,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
             CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=command]
         CangJieStub$ANNOTATIONS
-          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
-            CangJieStub$CONSTRUCTOR_CALLEE
-              CangJieStub$TYPE_REFERENCE
-                CangJieStub$USER_TYPE
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -559,12 +509,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
             CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=startTime]
         CangJieStub$ANNOTATIONS
-          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
-            CangJieStub$CONSTRUCTOR_CALLEE
-              CangJieStub$TYPE_REFERENCE
-                CangJieStub$USER_TYPE
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -577,12 +522,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
             CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=systemTime]
         CangJieStub$ANNOTATIONS
-          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
-            CangJieStub$CONSTRUCTOR_CALLEE
-              CangJieStub$TYPE_REFERENCE
-                CangJieStub$USER_TYPE
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -595,12 +535,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
             CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=userTime]
         CangJieStub$ANNOTATIONS
-          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
-            CangJieStub$CONSTRUCTOR_CALLEE
-              CangJieStub$TYPE_REFERENCE
-                CangJieStub$USER_TYPE
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -618,12 +553,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
               CangJieStub$TYPE_REFERENCE
                 CangJieStub$USER_TYPE
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=Deprecated]
-          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
-            CangJieStub$CONSTRUCTOR_CALLEE
-              CangJieStub$TYPE_REFERENCE
-                CangJieStub$USER_TYPE
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
-        CangJieStub$MODIFIER_LIST[open]
+        CangJieStub$MODIFIER_LIST[public open]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -656,12 +586,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
                 CangJieStub$STRING_TEMPLATE
                   CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use global function `public func getCommandLine(): Array<String>` in std.env instead.]
-          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
-            CangJieStub$CONSTRUCTOR_CALLEE
-              CangJieStub$TYPE_REFERENCE
-                CangJieStub$USER_TYPE
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -694,12 +619,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
                 CangJieStub$STRING_TEMPLATE
                   CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use global function `public func getHomeDirectory(): Path` in std.env instead.]
-          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
-            CangJieStub$CONSTRUCTOR_CALLEE
-              CangJieStub$TYPE_REFERENCE
-                CangJieStub$USER_TYPE
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -723,12 +643,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
                 CangJieStub$STRING_TEMPLATE
                   CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use global function `public func getVariables(): Array<(String, String)>` in std.env instead.]
-          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
-            CangJieStub$CONSTRUCTOR_CALLEE
-              CangJieStub$TYPE_REFERENCE
-                CangJieStub$USER_TYPE
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -769,7 +684,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
                 CangJieStub$STRING_TEMPLATE
                   CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use global function `public func findProcess(pid: Int64): Process` instead.]
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[public static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -794,7 +709,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
                 CangJieStub$STRING_TEMPLATE
                   CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use global function `public func launch(command: String, arguments: Array<String>, workingDirectory!: ?Path = None, environment!: ?Map<String, String> = None, stdIn!: ProcessRedirect = Inherit, stdOut!: ProcessRedirect = Inherit, stdErr!: ProcessRedirect = Inherit): SubProcess` instead.]
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[public static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -821,7 +736,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                           CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -838,7 +753,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                           CangJieStub$REFERENCE_EXPRESSION[referencedName=fs]
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=Path]
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -872,7 +788,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                                     CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                                   CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -880,7 +797,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=process]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=ProcessRedirect]
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -888,7 +806,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=process]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=ProcessRedirect]
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -896,6 +815,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=process]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=ProcessRedirect]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -916,7 +836,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
                 CangJieStub$STRING_TEMPLATE
                   CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use global function `public func execute(command: String, arguments: Array<String>, workingDirectory!: ?Path = None, environment!: ?Map<String, String> = None, stdIn!: ProcessRedirect = Inherit, stdOut!: ProcessRedirect = Inherit, stdErr!: ProcessRedirect = Inherit, timeout!: ?Duration = None): Int64` instead.]
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[public static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -943,7 +863,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                           CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -960,7 +880,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                           CangJieStub$REFERENCE_EXPRESSION[referencedName=fs]
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=Path]
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -994,7 +915,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                                     CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                                   CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1002,7 +924,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=process]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=ProcessRedirect]
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1010,7 +933,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=process]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=ProcessRedirect]
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1018,7 +942,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=process]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=ProcessRedirect]
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1035,6 +960,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                           CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=Duration]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
@@ -1050,7 +976,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
                 CangJieStub$STRING_TEMPLATE
                   CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use global function `public func executeWithOutput(command: String, arguments: Array<String>, workingDirectory!: ?Path = None, environment!: ?Map<String, String> = None, stdIn!: ProcessRedirect = Inherit, stdOut!: ProcessRedirect = Pipe, stdErr!: ProcessRedirect = Pipe): (Int64, Array<Byte>, Array<Byte>)` instead.]
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[public static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -1077,7 +1003,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                           CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1094,7 +1020,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                           CangJieStub$REFERENCE_EXPRESSION[referencedName=fs]
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=Path]
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1128,7 +1055,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                                     CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                                   CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1136,7 +1064,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=process]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=ProcessRedirect]
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1144,7 +1073,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=process]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=ProcessRedirect]
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1152,6 +1082,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=process]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=ProcessRedirect]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$TUPLE_TYPE
             CangJieStub$TYPE_REFERENCE
@@ -1180,7 +1111,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                       CangJieStub$BASIC_TYPE[basicType=UInt8]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[internal static]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -1191,7 +1122,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
             CangJieStub$REFERENCE_EXPRESSION[referencedName=CurrentProcess]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[internal static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -1205,22 +1136,23 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Process]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Bool]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[open]
+        CangJieStub$MODIFIER_LIST[protected open]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -1232,7 +1164,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[internal static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -1255,19 +1187,23 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
           CangJieStub$BASIC_TYPE[basicType=Bool]
   CangJieStub$STRUCT[classId=std/process/ProcessInfo, fqName=std.process.ProcessInfo, name=ProcessInfo, superNames=[]]
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[internal]
     CangJieStub$CLASS_BODY
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=command]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[internal]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=CString]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=commandLine]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[internal]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
+            CangJieStub$USER_TYPE
+              CangJieStub$USER_TYPE
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=CPointer]
             CangJieStub$TYPE_ARGUMENT_LIST
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
@@ -1276,9 +1212,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=CString]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=arguments]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[internal]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
+            CangJieStub$USER_TYPE
+              CangJieStub$USER_TYPE
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=CPointer]
             CangJieStub$TYPE_ARGUMENT_LIST
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
@@ -1287,15 +1227,19 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=CString]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=workingDirectory]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[internal]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=CString]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=environment]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[internal]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
+            CangJieStub$USER_TYPE
+              CangJieStub$USER_TYPE
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=CPointer]
             CangJieStub$TYPE_ARGUMENT_LIST
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
@@ -1308,84 +1252,84 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
         CangJieStub$VALUE_PARAMETER_LIST
   CangJieStub$STRUCT[classId=std/process/ProcessStartInfo, fqName=std.process.ProcessStartInfo, name=ProcessStartInfo, superNames=[]]
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[internal]
     CangJieStub$CLASS_BODY
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=_programName]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[internal]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=CString]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=_commandLine]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[internal]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=CString]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=_workingDirectory]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[internal]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=CString]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=_environment]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[internal]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=CString]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=_stdIn]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[internal]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=IntNative]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=_stdOut]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[internal]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=IntNative]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=_stdErr]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[internal]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=IntNative]
   CangJieStub$STRUCT[classId=std/process/ProcessRtnData, fqName=std.process.ProcessRtnData, name=ProcessRtnData, superNames=[]]
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[internal]
     CangJieStub$CLASS_BODY
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=pid]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[internal]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=handle]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[internal]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=IntNative]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=stdInHandle]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[internal]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=IntNative]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=stdOutHandle]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[internal]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=IntNative]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=stdErrHandle]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[internal]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=IntNative]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=errCode]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[internal]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=errMessage]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[internal]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=CString]
@@ -1395,16 +1339,16 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
         CangJieStub$VALUE_PARAMETER_LIST
   CangJieStub$STRUCT[classId=std/process/ExitInfo, fqName=std.process.ExitInfo, name=ExitInfo, superNames=[]]
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[internal]
     CangJieStub$CLASS_BODY
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=exitCode]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[internal]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=error]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[internal]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=ExitInfo]
@@ -1413,12 +1357,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
         CangJieStub$VALUE_PARAMETER_LIST
   CangJieStub$ENUM[classId=std/process/ProcessRedirect, fqName=std.process.ProcessRedirect, isNonExhaustive=false, name=ProcessRedirect, superNames=[]]
     CangJieStub$ANNOTATIONS
-      CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
-        CangJieStub$CONSTRUCTOR_CALLEE
-          CangJieStub$TYPE_REFERENCE
-            CangJieStub$USER_TYPE
-              CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$ENUM_BODY
       CangJieStub$ENUM_CONSTRUCTOR[enumFqName=std.process.ProcessRedirect, name=Inherit, typeCount=0]
         CangJieStub$ANNOTATIONS
@@ -1442,7 +1381,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
         CangJieStub$MODIFIER_LIST[]
   CangJieStub$CLASS[classId=std/process/SubProcess, fqName=std.process.SubProcess, name=SubProcess, superNames=[Process]]
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1455,7 +1394,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
     CangJieStub$CLASS_BODY
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=_stdIn]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[internal]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1465,7 +1404,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
             CangJieStub$REFERENCE_EXPRESSION[referencedName=OutputStream]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=_stdOut]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[internal]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1475,7 +1414,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
             CangJieStub$REFERENCE_EXPRESSION[referencedName=InputStream]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=_stdErr]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[internal]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1489,12 +1428,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
         CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=stdInPipe]
         CangJieStub$ANNOTATIONS
-          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
-            CangJieStub$CONSTRUCTOR_CALLEE
-              CangJieStub$TYPE_REFERENCE
-                CangJieStub$USER_TYPE
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1507,12 +1441,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
             CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=stdOutPipe]
         CangJieStub$ANNOTATIONS
-          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
-            CangJieStub$CONSTRUCTOR_CALLEE
-              CangJieStub$TYPE_REFERENCE
-                CangJieStub$USER_TYPE
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1525,12 +1454,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
             CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=stdErrPipe]
         CangJieStub$ANNOTATIONS
-          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
-            CangJieStub$CONSTRUCTOR_CALLEE
-              CangJieStub$TYPE_REFERENCE
-                CangJieStub$USER_TYPE
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1554,12 +1478,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
                 CangJieStub$STRING_TEMPLATE
                   CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use `public prop stdErrPipe: InputStream` instead.]
-          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
-            CangJieStub$CONSTRUCTOR_CALLEE
-              CangJieStub$TYPE_REFERENCE
-                CangJieStub$USER_TYPE
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1583,12 +1502,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
                 CangJieStub$STRING_TEMPLATE
                   CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use `public prop stdOutPipe: InputStream` instead.]
-          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
-            CangJieStub$CONSTRUCTOR_CALLEE
-              CangJieStub$TYPE_REFERENCE
-                CangJieStub$USER_TYPE
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1612,12 +1526,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
                 CangJieStub$STRING_TEMPLATE
                   CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use `public prop stdInPipe: OutputStream` instead.]
-          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
-            CangJieStub$CONSTRUCTOR_CALLEE
-              CangJieStub$TYPE_REFERENCE
-                CangJieStub$USER_TYPE
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1630,9 +1539,9 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
             CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1649,11 +1558,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                           CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=Duration]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$TUPLE_TYPE
@@ -1683,7 +1593,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                       CangJieStub$BASIC_TYPE[basicType=UInt8]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$TYPE_REFERENCE
@@ -1697,7 +1607,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
         CangJieStub$REFERENCE_EXPRESSION[referencedName=Process]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$TYPE_REFERENCE
@@ -1724,7 +1634,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1741,7 +1651,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=fs]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=Path]
-      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1775,7 +1686,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1783,7 +1695,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=process]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=ProcessRedirect]
-      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1791,7 +1704,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=process]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=ProcessRedirect]
-      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1799,6 +1713,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=process]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=ProcessRedirect]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
         CangJieStub$USER_TYPE
@@ -1808,7 +1723,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
         CangJieStub$REFERENCE_EXPRESSION[referencedName=SubProcess]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$TYPE_REFERENCE
@@ -1835,7 +1750,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1852,7 +1767,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=fs]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=Path]
-      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1886,7 +1802,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1894,7 +1811,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=process]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=ProcessRedirect]
-      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1902,7 +1820,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=process]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=ProcessRedirect]
-      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1910,7 +1829,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=process]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=ProcessRedirect]
-      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1927,11 +1847,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=Duration]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$TYPE_REFERENCE
@@ -1958,7 +1879,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1975,7 +1896,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=fs]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=Path]
-      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -2009,7 +1931,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -2017,7 +1940,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=process]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=ProcessRedirect]
-      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -2025,7 +1949,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=process]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=ProcessRedirect]
-      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -2033,6 +1958,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=process]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=ProcessRedirect]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$TUPLE_TYPE
         CangJieStub$TYPE_REFERENCE
@@ -2061,7 +1987,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                   CangJieStub$BASIC_TYPE[basicType=UInt8]
   CangJieStub$CLASS[classId=std/process/ProcessException, fqName=std.process.ProcessException, name=ProcessException, superNames=[IOException]]
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -2086,7 +2012,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.process, facadeFqName=std.p
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$MODIFIER_LIST[protected override]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE

@@ -11,137 +11,130 @@ import std.collection.*
 import std.fs.*
 import std.io.*
 
-@Annotation
-let defaultCapacity: Int64
+let defaultCapacity: Int64 = COMPILED_CODE /* compiled code */
 
-@Annotation
-let STDIN_FD: IntNative
+let STDIN_FD: IntNative = COMPILED_CODE /* compiled code */
 
-@Annotation
-let STDOUT_FD: IntNative
+let STDOUT_FD: IntNative = COMPILED_CODE /* compiled code */
 
-@Annotation
-let STDERR_FD: IntNative
+let STDERR_FD: IntNative = COMPILED_CODE /* compiled code */
 
-@Annotation
-let RTN_CODE_MIN_VAL: Int64
+let RTN_CODE_MIN_VAL: Int64 = COMPILED_CODE /* compiled code */
 
-@Annotation
-let RTN_CODE_MAX_VAL: Int64
+let RTN_CODE_MAX_VAL: Int64 = COMPILED_CODE /* compiled code */
 
-@Annotation
-let NULL_BYTE: std.core.String
+let NULL_BYTE: std.core.String = COMPILED_CODE /* compiled code */
 
-class ConsoleReader <: std.core.Object & std.io.InputStream {
-    var buffer: std.core.Array<UInt8>
+public class ConsoleReader <: std.core.Object & std.io.InputStream {
+    private var buffer: std.core.Array<UInt8>
 
-    var endIndex: Int64
+    private var endIndex: Int64
 
-    var startIndex: Int64
+    private var startIndex: Int64
 
     init() { /* compiled code */ }
 
-    func read(): std.core.Option<Rune> { /* compiled code */ }
+    public func read(): std.core.Option<Rune> { /* compiled code */ }
 
-    func readln(): std.core.Option<std.core.String> { /* compiled code */ }
+    public func readln(): std.core.Option<std.core.String> { /* compiled code */ }
 
-    func readToEnd(): std.core.Option<std.core.String> { /* compiled code */ }
+    public func readToEnd(): std.core.Option<std.core.String> { /* compiled code */ }
 
-    func readUntil(ch: Rune): std.core.Option<std.core.String> { /* compiled code */ }
+    public func readUntil(ch: Rune): std.core.Option<std.core.String> { /* compiled code */ }
 
-    func readUntil(predicate: (Rune) -> Bool): std.core.Option<std.core.String> { /* compiled code */ }
+    public func readUntil(predicate: (Rune) -> Bool): std.core.Option<std.core.String> { /* compiled code */ }
 
-    func read(arr: std.core.Array<UInt8>): Int64 { /* compiled code */ }
+    public func read(arr: std.core.Array<UInt8>): Int64 { /* compiled code */ }
 
-    func append(str: std.env.StructureString): Unit { /* compiled code */ }
+    internal func append(str: std.env.StructureString): Unit { /* compiled code */ }
 }
 
-struct StructureString {
-    let buffer: CPointer<UInt8>
+internal struct StructureString {
+    internal let buffer: std.core.CPointer<UInt8>
 
-    let length: UIntNative
+    internal let length: UIntNative
 
     init() { /* compiled code */ }
 }
 
-foreign func CJ_CONSOLE_Flush(fd: Int32): Unit
+internal foreign func CJ_CONSOLE_Flush(fd: Int32): Unit
 
-class ConsoleWriter <: std.core.Object & std.io.OutputStream {
-    let mutex: std.sync.Mutex
+public class ConsoleWriter <: std.core.Object & std.io.OutputStream {
+    private let mutex: std.sync.Mutex
 
-    let bufferSize: Int64
+    private let bufferSize: Int64
 
-    let buffer: std.core.Array<UInt8>
+    private let buffer: std.core.Array<UInt8>
 
-    let fd: Int32
+    private let fd: Int32
 
     init(fd: Int32) { /* compiled code */ }
 
-    func flush(): Unit { /* compiled code */ }
+    public func flush(): Unit { /* compiled code */ }
 
-    func write(buffer: std.core.Array<UInt8>): Unit { /* compiled code */ }
+    public func write(buffer: std.core.Array<UInt8>): Unit { /* compiled code */ }
 
-    func writeln(buffer: std.core.Array<UInt8>): Unit { /* compiled code */ }
+    public func writeln(buffer: std.core.Array<UInt8>): Unit { /* compiled code */ }
 
-    func write(v: std.core.String): Unit { /* compiled code */ }
+    public func write(v: std.core.String): Unit { /* compiled code */ }
 
-    func write<T>(v: T): Unit { /* compiled code */ }
+    public func write<T>(v: T): Unit { /* compiled code */ }
 
-    func write(v: Bool): Unit { /* compiled code */ }
+    public func write(v: Bool): Unit { /* compiled code */ }
 
-    func write(v: Int8): Unit { /* compiled code */ }
+    public func write(v: Int8): Unit { /* compiled code */ }
 
-    func write(v: Int16): Unit { /* compiled code */ }
+    public func write(v: Int16): Unit { /* compiled code */ }
 
-    func write(v: Int32): Unit { /* compiled code */ }
+    public func write(v: Int32): Unit { /* compiled code */ }
 
-    func write(v: Int64): Unit { /* compiled code */ }
+    public func write(v: Int64): Unit { /* compiled code */ }
 
-    func write(v: UInt8): Unit { /* compiled code */ }
+    public func write(v: UInt8): Unit { /* compiled code */ }
 
-    func write(v: UInt16): Unit { /* compiled code */ }
+    public func write(v: UInt16): Unit { /* compiled code */ }
 
-    func write(v: UInt32): Unit { /* compiled code */ }
+    public func write(v: UInt32): Unit { /* compiled code */ }
 
-    func write(v: UInt64): Unit { /* compiled code */ }
+    public func write(v: UInt64): Unit { /* compiled code */ }
 
-    func write(v: Float16): Unit { /* compiled code */ }
+    public func write(v: Float16): Unit { /* compiled code */ }
 
-    func write(v: Float32): Unit { /* compiled code */ }
+    public func write(v: Float32): Unit { /* compiled code */ }
 
-    func write(v: Float64): Unit { /* compiled code */ }
+    public func write(v: Float64): Unit { /* compiled code */ }
 
-    func write(v: Rune): Unit { /* compiled code */ }
+    public func write(v: Rune): Unit { /* compiled code */ }
 
-    func writeln(v: std.core.String): Unit { /* compiled code */ }
+    public func writeln(v: std.core.String): Unit { /* compiled code */ }
 
-    func writeln<T>(v: T): Unit { /* compiled code */ }
+    public func writeln<T>(v: T): Unit { /* compiled code */ }
 
-    func writeln(v: Bool): Unit { /* compiled code */ }
+    public func writeln(v: Bool): Unit { /* compiled code */ }
 
-    func writeln(v: Int8): Unit { /* compiled code */ }
+    public func writeln(v: Int8): Unit { /* compiled code */ }
 
-    func writeln(v: Int16): Unit { /* compiled code */ }
+    public func writeln(v: Int16): Unit { /* compiled code */ }
 
-    func writeln(v: Int32): Unit { /* compiled code */ }
+    public func writeln(v: Int32): Unit { /* compiled code */ }
 
-    func writeln(v: Int64): Unit { /* compiled code */ }
+    public func writeln(v: Int64): Unit { /* compiled code */ }
 
-    func writeln(v: UInt8): Unit { /* compiled code */ }
+    public func writeln(v: UInt8): Unit { /* compiled code */ }
 
-    func writeln(v: UInt16): Unit { /* compiled code */ }
+    public func writeln(v: UInt16): Unit { /* compiled code */ }
 
-    func writeln(v: UInt32): Unit { /* compiled code */ }
+    public func writeln(v: UInt32): Unit { /* compiled code */ }
 
-    func writeln(v: UInt64): Unit { /* compiled code */ }
+    public func writeln(v: UInt64): Unit { /* compiled code */ }
 
-    func writeln(v: Float16): Unit { /* compiled code */ }
+    public func writeln(v: Float16): Unit { /* compiled code */ }
 
-    func writeln(v: Float32): Unit { /* compiled code */ }
+    public func writeln(v: Float32): Unit { /* compiled code */ }
 
-    func writeln(v: Float64): Unit { /* compiled code */ }
+    public func writeln(v: Float64): Unit { /* compiled code */ }
 
-    func writeln(v: Rune): Unit { /* compiled code */ }
+    public func writeln(v: Rune): Unit { /* compiled code */ }
 }
 
 let mtx: std.sync.Mutex
@@ -152,122 +145,122 @@ let errConsole: std.env.ConsoleWriter
 
 let inConsole: std.env.ConsoleReader
 
-func getProcessId(): Int64 { /* compiled code */ }
+public func getProcessId(): Int64 { /* compiled code */ }
 
-func getCommand(): std.core.String { /* compiled code */ }
+public func getCommand(): std.core.String { /* compiled code */ }
 
-func getCommandLine(): std.core.Array<std.core.String> { /* compiled code */ }
+public func getCommandLine(): std.core.Array<std.core.String> { /* compiled code */ }
 
-func getWorkingDirectory(): std.fs.Path { /* compiled code */ }
+public func getWorkingDirectory(): std.fs.Path { /* compiled code */ }
 
-func getHomeDirectory(): std.fs.Path { /* compiled code */ }
+public func getHomeDirectory(): std.fs.Path { /* compiled code */ }
 
-func getTempDirectory(): std.fs.Path { /* compiled code */ }
+public func getTempDirectory(): std.fs.Path { /* compiled code */ }
 
-func getVariable(key: std.core.String): std.core.Option<std.core.String> { /* compiled code */ }
+public func getVariable(key: std.core.String): std.core.Option<std.core.String> { /* compiled code */ }
 
-func getVariables(): std.core.Array<(std.core.String, std.core.String)> { /* compiled code */ }
+public func getVariables(): std.core.Array<(std.core.String, std.core.String)> { /* compiled code */ }
 
-func setVariable(key: std.core.String, value: std.core.String): Unit { /* compiled code */ }
+public func setVariable(key: std.core.String, value: std.core.String): Unit { /* compiled code */ }
 
-func removeVariable(key: std.core.String): Unit { /* compiled code */ }
+public func removeVariable(key: std.core.String): Unit { /* compiled code */ }
 
-func getStdErr(): std.env.ConsoleWriter { /* compiled code */ }
+public func getStdErr(): std.env.ConsoleWriter { /* compiled code */ }
 
-func getStdIn(): std.env.ConsoleReader { /* compiled code */ }
+public func getStdIn(): std.env.ConsoleReader { /* compiled code */ }
 
-func getStdOut(): std.env.ConsoleWriter { /* compiled code */ }
+public func getStdOut(): std.env.ConsoleWriter { /* compiled code */ }
 
-func atExit(callback: () -> Unit): Unit { /* compiled code */ }
+public func atExit(callback: () -> Unit): Unit { /* compiled code */ }
 
-func exit(code: Int64): Nothing { /* compiled code */ }
+public func exit(code: Int64): Nothing { /* compiled code */ }
 
-func getCurrentProcessInfo(): (std.core.Option<std.core.String>, std.core.Option<std.fs.Path>, std.core.Option<std.core.Array<std.core.String>>, std.core.Option<std.core.Array<(std.core.String, std.core.String)>>) { /* compiled code */ }
+internal func getCurrentProcessInfo(): (std.core.Option<std.core.String>, std.core.Option<std.fs.Path>, std.core.Option<std.core.Array<std.core.String>>, std.core.Option<std.core.Array<(std.core.String, std.core.String)>>) { /* compiled code */ }
 
-func getProcessInfo(processInfo: std.env.ProcessInfo): (std.core.Option<std.core.String>, std.core.Option<std.fs.Path>, std.core.Option<std.core.Array<std.core.String>>, std.core.Option<std.core.Array<(std.core.String, std.core.String)>>) { /* compiled code */ }
+internal func getProcessInfo(processInfo: std.env.ProcessInfo): (std.core.Option<std.core.String>, std.core.Option<std.fs.Path>, std.core.Option<std.core.Array<std.core.String>>, std.core.Option<std.core.Array<(std.core.String, std.core.String)>>) { /* compiled code */ }
 
-struct ProcessInfo {
-    let command: CString
+internal struct ProcessInfo {
+    internal let command: CString
 
-    let commandLine: CPointer<CString>
+    internal let commandLine: std.core.CPointer<CString>
 
-    let arguments: CPointer<CString>
+    internal let arguments: std.core.CPointer<CString>
 
-    let workingDirectory: CString
+    internal let workingDirectory: CString
 
-    let environment: CPointer<CString>
+    internal let environment: std.core.CPointer<CString>
 
     init() { /* compiled code */ }
 }
 
-func cStringToOption(cstring: CString): std.core.Option<std.core.String> { /* compiled code */ }
+internal func cStringToOption(cstring: CString): std.core.Option<std.core.String> { /* compiled code */ }
 
-func cpointerToArray(cpointer: CPointer<CString>): std.core.Option<std.core.Array<std.core.String>> { /* compiled code */ }
+internal func cpointerToArray(cpointer: std.core.CPointer<CString>): std.core.Option<std.core.Array<std.core.String>> { /* compiled code */ }
 
-func getEnvirments(env: CPointer<CString>): std.core.Option<std.core.Array<(std.core.String, std.core.String)>> { /* compiled code */ }
+internal func getEnvirments(env: std.core.CPointer<CString>): std.core.Option<std.core.Array<(std.core.String, std.core.String)>> { /* compiled code */ }
 
-func homeDirectory(): std.fs.Path { /* compiled code */ }
+internal func homeDirectory(): std.fs.Path { /* compiled code */ }
 
-func tempDirectory(): std.fs.Path { /* compiled code */ }
+internal func tempDirectory(): std.fs.Path { /* compiled code */ }
 
-func nativeGetEnv(name: CString): std.core.Option<std.core.String> { /* compiled code */ }
+internal func nativeGetEnv(name: CString): std.core.Option<std.core.String> { /* compiled code */ }
 
-func nativeSetEnv(name: CString, value: CString, _: Int32): Int32 { /* compiled code */ }
+internal func nativeSetEnv(name: CString, value: CString, _: Int32): Int32 { /* compiled code */ }
 
-func getStdErrHandle(): IntNative { /* compiled code */ }
+internal func getStdErrHandle(): IntNative { /* compiled code */ }
 
-func nativeRemoveEnv(name: CString): Int32 { /* compiled code */ }
+internal func nativeRemoveEnv(name: CString): Int32 { /* compiled code */ }
 
-func getStdOutHandle(): IntNative { /* compiled code */ }
+internal func getStdOutHandle(): IntNative { /* compiled code */ }
 
-func getStdInHandle(): IntNative { /* compiled code */ }
+internal func getStdInHandle(): IntNative { /* compiled code */ }
 
-func getStdHandle(fd: IntNative): IntNative { /* compiled code */ }
+internal func getStdHandle(fd: IntNative): IntNative { /* compiled code */ }
 
-func processExit(exitCode: Int32): Nothing { /* compiled code */ }
+internal func processExit(exitCode: Int32): Nothing { /* compiled code */ }
 
-class EnvException <: std.core.Exception {
+public class EnvException <: std.core.Exception {
     init(message: std.core.String) { /* compiled code */ }
 
-    override func getClassName(): std.core.String { /* compiled code */ }
+    protected override func getClassName(): std.core.String { /* compiled code */ }
 }
 
-foreign func CJ_OS_GetCurrentPid(): Int32
+internal foreign func CJ_OS_GetCurrentPid(): Int32
 
-foreign func CJ_OS_GetProcessInfoByPid(pid: Int32): CPointer<std.env.ProcessInfo>
+internal foreign func CJ_OS_GetProcessInfoByPid(pid: Int32): std.core.CPointer<std.env.ProcessInfo>
 
-foreign func CJ_OS_FreeProcessInfo(processInfo_cp: CPointer<std.env.ProcessInfo>): Unit
+internal foreign func CJ_OS_FreeProcessInfo(processInfo_cp: std.core.CPointer<std.env.ProcessInfo>): Unit
 
-foreign func exit(status: Int32): Unit
+internal foreign func exit(status: Int32): Unit
 
-foreign func CJ_BUFFER_Int64ToCPointer(num: Int64, buf: CPointer<UInt8>, destMax: Int64): Int64
+internal foreign func CJ_BUFFER_Int64ToCPointer(num: Int64, buf: std.core.CPointer<UInt8>, destMax: Int64): Int64
 
-foreign func CJ_BUFFER_UInt64ToCPointer(num: UInt64, buf: CPointer<UInt8>, destMax: Int64): Int64
+internal foreign func CJ_BUFFER_UInt64ToCPointer(num: UInt64, buf: std.core.CPointer<UInt8>, destMax: Int64): Int64
 
-foreign func CJ_BUFFER_Float64ToCPointer(num: Float64, buf: CPointer<UInt8>, bufferSize: Int64): Int64
+internal foreign func CJ_BUFFER_Float64ToCPointer(num: Float64, buf: std.core.CPointer<UInt8>, bufferSize: Int64): Int64
 
-foreign func CJ_CONSOLE_Readline(): CPointer<std.env.StructureString>
+internal foreign func CJ_CONSOLE_Readline(): std.core.CPointer<std.env.StructureString>
 
-foreign func CJ_CONSOLE_ClearstdInerr(): Unit
+internal foreign func CJ_CONSOLE_ClearstdInerr(): Unit
 
-foreign func memcpy_s(dest: CPointer<UInt8>, destMax: UIntNative, src: CPointer<UInt8>, count: UIntNative): Int32
+internal foreign func memcpy_s(dest: std.core.CPointer<UInt8>, destMax: UIntNative, src: std.core.CPointer<UInt8>, count: UIntNative): Int32
 
-foreign func memset_s(dest: CPointer<UInt8>, destMax: UIntNative, c: Int32, count: UIntNative): Int32
+internal foreign func memset_s(dest: std.core.CPointer<UInt8>, destMax: UIntNative, c: Int32, count: UIntNative): Int32
 
-foreign func CJ_CONSOLE_Write(fd: Int32, c: CPointer<UInt8>, len: Int64, newLine: Bool): Unit
+internal foreign func CJ_CONSOLE_Write(fd: Int32, c: std.core.CPointer<UInt8>, len: Int64, newLine: Bool): Unit
 
-foreign func CJ_OS_GetEnvVal(envName: CString): CString
+internal foreign func CJ_OS_GetEnvVal(envName: CString): CString
 
-foreign func CJ_OS_SetEnvEntry(envEntry: CString): Int32
+internal foreign func CJ_OS_SetEnvEntry(envEntry: CString): Int32
 
-foreign func CJ_OS_GetStdHandle(fd: IntNative): IntNative
+internal foreign func CJ_OS_GetStdHandle(fd: IntNative): IntNative
 
-foreign func CJ_OS_CloseFile(fd: IntNative): Int64
+internal foreign func CJ_OS_CloseFile(fd: IntNative): Int64
 
-foreign func CJ_OS_FileRead(fd: IntNative, buffer: CPointer<UInt8>, maxLen: UIntNative): Int64
+internal foreign func CJ_OS_FileRead(fd: IntNative, buffer: std.core.CPointer<UInt8>, maxLen: UIntNative): Int64
 
-foreign func CJ_OS_FileWrite(fd: IntNative, buffer: CPointer<UInt8>, maxLen: UIntNative): Bool
+internal foreign func CJ_OS_FileWrite(fd: IntNative, buffer: std.core.CPointer<UInt8>, maxLen: UIntNative): Bool
 
-foreign func CJ_OS_HomeDir(): CString
+internal foreign func CJ_OS_HomeDir(): CString
 
-foreign func FiniCJRuntime(): Int64
+internal foreign func FiniCJRuntime(): Int64

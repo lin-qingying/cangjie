@@ -39,7 +39,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.mockmacro, fa
           CangJieStub$REFERENCE_EXPRESSION[referencedName=enumerate]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$TYPE_REFERENCE
@@ -58,7 +58,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.mockmacro, fa
         CangJieStub$REFERENCE_EXPRESSION[referencedName=Tokens]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$TYPE_REFERENCE
@@ -77,11 +77,15 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.mockmacro, fa
         CangJieStub$REFERENCE_EXPRESSION[referencedName=Tokens]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
+            CangJieStub$USER_TYPE
+              CangJieStub$USER_TYPE
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=CPointer]
             CangJieStub$TYPE_ARGUMENT_LIST
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
@@ -93,6 +97,10 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.mockmacro, fa
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
+            CangJieStub$USER_TYPE
+              CangJieStub$USER_TYPE
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=CPointer]
             CangJieStub$TYPE_ARGUMENT_LIST
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
@@ -100,6 +108,10 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.mockmacro, fa
                   CangJieStub$BASIC_TYPE[basicType=Unit]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
+        CangJieStub$USER_TYPE
+          CangJieStub$USER_TYPE
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
         CangJieStub$REFERENCE_EXPRESSION[referencedName=CPointer]
         CangJieStub$TYPE_ARGUMENT_LIST
           CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
@@ -107,11 +119,15 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.mockmacro, fa
               CangJieStub$BASIC_TYPE[basicType=UInt8]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
+            CangJieStub$USER_TYPE
+              CangJieStub$USER_TYPE
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=CPointer]
             CangJieStub$TYPE_ARGUMENT_LIST
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
@@ -123,6 +139,10 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.mockmacro, fa
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
+            CangJieStub$USER_TYPE
+              CangJieStub$USER_TYPE
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=CPointer]
             CangJieStub$TYPE_ARGUMENT_LIST
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
@@ -130,6 +150,10 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.mockmacro, fa
                   CangJieStub$BASIC_TYPE[basicType=Unit]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
+        CangJieStub$USER_TYPE
+          CangJieStub$USER_TYPE
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
         CangJieStub$REFERENCE_EXPRESSION[referencedName=CPointer]
         CangJieStub$TYPE_ARGUMENT_LIST
           CangJieStub$TYPE_PROJECTION[projectionKind=NONE]

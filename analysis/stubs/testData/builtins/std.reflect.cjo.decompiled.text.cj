@@ -8,575 +8,516 @@ import std.sync.*
 import std.core.*
 import std.fs.*
 
-@Annotation
-let constructorName: std.core.String
+let constructorName: std.core.String = COMPILED_CODE /* compiled code */
 
-@Annotation
-let FF_BYTE: UInt8
+let FF_BYTE: UInt8 = COMPILED_CODE /* compiled code */
 
-@Annotation
-let NOTHING_QN: std.core.String
+let NOTHING_QN: std.core.String = COMPILED_CODE /* compiled code */
 
-@Annotation
-let UNIT_QN: std.core.String
+let UNIT_QN: std.core.String = COMPILED_CODE /* compiled code */
 
-@Annotation
-let CHAR_QN: std.core.String
+let CHAR_QN: std.core.String = COMPILED_CODE /* compiled code */
 
-@Annotation
-let BOOL_QN: std.core.String
+let BOOL_QN: std.core.String = COMPILED_CODE /* compiled code */
 
-@Annotation
-let INT8_QN: std.core.String
+let INT8_QN: std.core.String = COMPILED_CODE /* compiled code */
 
-@Annotation
-let INT16_QN: std.core.String
+let INT16_QN: std.core.String = COMPILED_CODE /* compiled code */
 
-@Annotation
-let INT32_QN: std.core.String
+let INT32_QN: std.core.String = COMPILED_CODE /* compiled code */
 
-@Annotation
-let INT64_QN: std.core.String
+let INT64_QN: std.core.String = COMPILED_CODE /* compiled code */
 
-@Annotation
-let INT_NATIVE_QN: std.core.String
+let INT_NATIVE_QN: std.core.String = COMPILED_CODE /* compiled code */
 
-@Annotation
-let U_INT8_QN: std.core.String
+let U_INT8_QN: std.core.String = COMPILED_CODE /* compiled code */
 
-@Annotation
-let U_INT16_QN: std.core.String
+let U_INT16_QN: std.core.String = COMPILED_CODE /* compiled code */
 
-@Annotation
-let U_INT32_QN: std.core.String
+let U_INT32_QN: std.core.String = COMPILED_CODE /* compiled code */
 
-@Annotation
-let U_INT64_QN: std.core.String
+let U_INT64_QN: std.core.String = COMPILED_CODE /* compiled code */
 
-@Annotation
-let U_INT_NATIVE_QN: std.core.String
+let U_INT_NATIVE_QN: std.core.String = COMPILED_CODE /* compiled code */
 
-@Annotation
-let FLOAT16_QN: std.core.String
+let FLOAT16_QN: std.core.String = COMPILED_CODE /* compiled code */
 
-@Annotation
-let FLOAT32_QN: std.core.String
+let FLOAT32_QN: std.core.String = COMPILED_CODE /* compiled code */
 
-@Annotation
-let FLOAT64_QN: std.core.String
+let FLOAT64_QN: std.core.String = COMPILED_CODE /* compiled code */
 
-@Annotation
-let PACKAGE_LOAD_FAIL: UIntNative
+let PACKAGE_LOAD_FAIL: UIntNative = COMPILED_CODE /* compiled code */
 
-@Annotation
-let MULTI_PACKAGE_INFO: UIntNative
+let MULTI_PACKAGE_INFO: UIntNative = COMPILED_CODE /* compiled code */
 
-@Annotation
-let REPEATED_PACKAGE_LOAD: UIntNative
+let REPEATED_PACKAGE_LOAD: UIntNative = COMPILED_CODE /* compiled code */
 
-@Annotation
-let REPEATED_FILENAME_LOAD: UIntNative
+let REPEATED_FILENAME_LOAD: UIntNative = COMPILED_CODE /* compiled code */
 
-@Annotation
-let MODULE_SUFFIX: std.core.String
+let MODULE_SUFFIX: std.core.String = COMPILED_CODE /* compiled code */
 
-@Annotation
-let UUID_OFFSET: Int64
+let UUID_OFFSET: Int64 = COMPILED_CODE /* compiled code */
 
-class ClassTypeInfo <: std.reflect.TypeInfo {
-    var _constructors: std.core.Option<std.core.Collection<std.reflect.ConstructorInfo>>
+public class ClassTypeInfo <: std.reflect.TypeInfo {
+    internal var _constructors: std.core.Option<std.core.Collection<std.reflect.ConstructorInfo>>
 
-    var _instanceVariables: std.core.Option<std.core.Collection<std.reflect.InstanceVariableInfo>>
+    internal var _instanceVariables: std.core.Option<std.core.Collection<std.reflect.InstanceVariableInfo>>
 
-    var _staticVariables: std.core.Option<std.core.Collection<std.reflect.StaticVariableInfo>>
+    internal var _staticVariables: std.core.Option<std.core.Collection<std.reflect.StaticVariableInfo>>
 
-    var _superClass: std.core.Option<std.core.Option<std.reflect.ClassTypeInfo>>
+    internal var _superClass: std.core.Option<std.core.Option<std.reflect.ClassTypeInfo>>
 
-    var _sealedSubclasses: std.core.Option<std.core.Collection<std.reflect.ClassTypeInfo>>
+    internal var _sealedSubclasses: std.core.Option<std.core.Collection<std.reflect.ClassTypeInfo>>
 
-    init(cp: CPointer<Unit>) { /* compiled code */ }
+    init(cp: std.core.CPointer<Unit>) { /* compiled code */ }
 
-    redef static func get(qualifiedName: std.core.String): std.reflect.ClassTypeInfo { /* compiled code */ }
+    public redef static func get(qualifiedName: std.core.String): std.reflect.ClassTypeInfo { /* compiled code */ }
 
-    redef static func of(a: std.core.Any): std.reflect.ClassTypeInfo { /* compiled code */ }
+    public redef static func of(a: std.core.Any): std.reflect.ClassTypeInfo { /* compiled code */ }
 
-    static func of(a: std.core.Object): std.reflect.ClassTypeInfo { /* compiled code */ }
+    public static func of(a: std.core.Object): std.reflect.ClassTypeInfo { /* compiled code */ }
 
-    redef static func of<T>(): std.reflect.ClassTypeInfo { /* compiled code */ }
+    public redef static func of<T>(): std.reflect.ClassTypeInfo { /* compiled code */ }
 
-    @Annotation
-    prop constructors: std.core.Collection<std.reflect.ConstructorInfo> {
+    public prop constructors: std.core.Collection<std.reflect.ConstructorInfo> {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    prop instanceVariables: std.core.Collection<std.reflect.InstanceVariableInfo> {
+    public prop instanceVariables: std.core.Collection<std.reflect.InstanceVariableInfo> {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    prop staticVariables: std.core.Collection<std.reflect.StaticVariableInfo> {
+    public prop staticVariables: std.core.Collection<std.reflect.StaticVariableInfo> {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    prop superClass: std.core.Option<std.reflect.ClassTypeInfo> {
+    public prop superClass: std.core.Option<std.reflect.ClassTypeInfo> {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    prop sealedSubclasses: std.core.Collection<std.reflect.ClassTypeInfo> {
+    public prop sealedSubclasses: std.core.Collection<std.reflect.ClassTypeInfo> {
         get() { /* compiled code */ }
     }
 
-    func construct(args: std.core.Array<std.core.Any>): std.core.Any { /* compiled code */ }
+    public func construct(args: std.core.Array<std.core.Any>): std.core.Any { /* compiled code */ }
 
-    func isOpen(): Bool { /* compiled code */ }
+    public func isOpen(): Bool { /* compiled code */ }
 
-    func isAbstract(): Bool { /* compiled code */ }
+    public func isAbstract(): Bool { /* compiled code */ }
 
-    func isSealed(): Bool { /* compiled code */ }
+    public func isSealed(): Bool { /* compiled code */ }
 
-    func getConstructor(parameterTypes: std.core.Array<std.reflect.TypeInfo>): std.reflect.ConstructorInfo { /* compiled code */ }
+    public func getConstructor(parameterTypes: std.core.Array<std.reflect.TypeInfo>): std.reflect.ConstructorInfo { /* compiled code */ }
 
-    func getInstanceVariable(name: std.core.String): std.reflect.InstanceVariableInfo { /* compiled code */ }
+    public func getInstanceVariable(name: std.core.String): std.reflect.InstanceVariableInfo { /* compiled code */ }
 
-    func getStaticVariable(name: std.core.String): std.reflect.StaticVariableInfo { /* compiled code */ }
+    public func getStaticVariable(name: std.core.String): std.reflect.StaticVariableInfo { /* compiled code */ }
 }
 
-class ConstructorInfo <: std.core.Object & std.core.Equatable<std.reflect.ConstructorInfo> & std.core.Hashable & std.core.ToString {
-    let _info: CPointer<Unit>
+public class ConstructorInfo <: std.core.Object & std.core.Equatable<std.reflect.ConstructorInfo> & std.core.Hashable & std.core.ToString {
+    internal let _info: std.core.CPointer<Unit>
 
-    var _parameters: std.core.Option<std.collection.ArrayList<std.reflect.ParameterInfo>>
+    internal var _parameters: std.core.Option<std.collection.ArrayList<std.reflect.ParameterInfo>>
 
-    var _annotations: std.core.Option<std.core.Collection<std.core.Object>>
+    internal var _annotations: std.core.Option<std.core.Collection<std.core.Object>>
 
-    var _isAbstract: std.core.Option<Bool>
+    private var _isAbstract: std.core.Option<Bool>
 
-    var _declaringTypeInfo: CPointer<Unit>
+    internal var _declaringTypeInfo: std.core.CPointer<Unit>
 
-    init(infoPointer: CPointer<Unit>, declaringTypeInfo: CPointer<Unit>) { /* compiled code */ }
+    init(infoPointer: std.core.CPointer<Unit>, declaringTypeInfo: std.core.CPointer<Unit>) { /* compiled code */ }
 
-    @Annotation
-    prop parameters: std.collection.ReadOnlyList<std.reflect.ParameterInfo> {
+    public prop parameters: std.collection.ReadOnlyList<std.reflect.ParameterInfo> {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    prop annotations: std.core.Collection<std.core.Object> {
+    public prop annotations: std.core.Collection<std.core.Object> {
         get() { /* compiled code */ }
     }
 
-    func apply(args: std.core.Array<std.core.Any>): std.core.Any { /* compiled code */ }
+    public func apply(args: std.core.Array<std.core.Any>): std.core.Any { /* compiled code */ }
 
-    func findAnnotation<T>(): std.core.Option<T> { /* compiled code */ }
+    public func findAnnotation<T>(): std.core.Option<T> { /* compiled code */ }
 
-    operator func ==(that: std.reflect.ConstructorInfo): Bool { /* compiled code */ }
+    public operator func ==(that: std.reflect.ConstructorInfo): Bool { /* compiled code */ }
 
-    operator func !=(that: std.reflect.ConstructorInfo): Bool { /* compiled code */ }
+    public operator func !=(that: std.reflect.ConstructorInfo): Bool { /* compiled code */ }
 
-    func hashCode(): Int64 { /* compiled code */ }
+    public func hashCode(): Int64 { /* compiled code */ }
 
-    func toString(): std.core.String { /* compiled code */ }
+    public func toString(): std.core.String { /* compiled code */ }
 }
 
-class InstanceVariableInfo <: std.core.Object & std.core.Equatable<std.reflect.InstanceVariableInfo> & std.core.Hashable & std.core.ToString {
-    let _info: CPointer<Unit>
+public class InstanceVariableInfo <: std.core.Object & std.core.Equatable<std.reflect.InstanceVariableInfo> & std.core.Hashable & std.core.ToString {
+    internal let _info: std.core.CPointer<Unit>
 
-    let _isStruct: Bool
+    internal let _isStruct: Bool
 
-    var _mutable: std.core.Option<Bool>
+    internal var _mutable: std.core.Option<Bool>
 
-    var _name: std.core.Option<std.core.String>
+    internal var _name: std.core.Option<std.core.String>
 
-    var _typeInfo: std.core.Option<std.reflect.TypeInfo>
+    internal var _typeInfo: std.core.Option<std.reflect.TypeInfo>
 
-    var _modifiers: std.core.Option<std.core.Collection<std.reflect.ModifierInfo>>
+    internal var _modifiers: std.core.Option<std.core.Collection<std.reflect.ModifierInfo>>
 
-    var _annotations: std.core.Option<std.core.Collection<std.core.Object>>
+    internal var _annotations: std.core.Option<std.core.Collection<std.core.Object>>
 
-    var _declaringTypeInfo: CPointer<Unit>
+    internal var _declaringTypeInfo: std.core.CPointer<Unit>
 
-    init(cp: CPointer<Unit>, declaringTypeInfo: CPointer<Unit>, isStruct: Bool) { /* compiled code */ }
+    init(cp: std.core.CPointer<Unit>, declaringTypeInfo: std.core.CPointer<Unit>, isStruct!: Bool = COMPILED_CODE /* compiled code */) { /* compiled code */ }
 
-    @Annotation
-    prop name: std.core.String {
+    public prop name: std.core.String {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    prop typeInfo: std.reflect.TypeInfo {
+    public prop typeInfo: std.reflect.TypeInfo {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    prop modifiers: std.core.Collection<std.reflect.ModifierInfo> {
+    public prop modifiers: std.core.Collection<std.reflect.ModifierInfo> {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    prop annotations: std.core.Collection<std.core.Object> {
+    public prop annotations: std.core.Collection<std.core.Object> {
         get() { /* compiled code */ }
     }
 
-    func isMutable(): Bool { /* compiled code */ }
+    public func isMutable(): Bool { /* compiled code */ }
 
-    func getValue(instance: std.core.Any): std.core.Any { /* compiled code */ }
+    public func getValue(instance: std.core.Any): std.core.Any { /* compiled code */ }
 
-    func setValue(instance: std.core.Any, newValue: std.core.Any): Unit { /* compiled code */ }
+    public func setValue(instance: std.core.Any, newValue: std.core.Any): Unit { /* compiled code */ }
 
-    func checkDeclaringClassType(instance: std.core.Any): Unit { /* compiled code */ }
+    internal func checkDeclaringClassType(instance: std.core.Any): Unit { /* compiled code */ }
 
-    func findAnnotation<T>(): std.core.Option<T> { /* compiled code */ }
+    public func findAnnotation<T>(): std.core.Option<T> { /* compiled code */ }
 
-    operator func ==(that: std.reflect.InstanceVariableInfo): Bool { /* compiled code */ }
+    public operator func ==(that: std.reflect.InstanceVariableInfo): Bool { /* compiled code */ }
 
-    operator func !=(that: std.reflect.InstanceVariableInfo): Bool { /* compiled code */ }
+    public operator func !=(that: std.reflect.InstanceVariableInfo): Bool { /* compiled code */ }
 
-    func hashCode(): Int64 { /* compiled code */ }
+    public func hashCode(): Int64 { /* compiled code */ }
 
-    func toString(): std.core.String { /* compiled code */ }
+    public func toString(): std.core.String { /* compiled code */ }
 }
 
-class StaticVariableInfo <: std.core.Object & std.core.Equatable<std.reflect.StaticVariableInfo> & std.core.Hashable & std.core.ToString {
-    let _info: CPointer<Unit>
+public class StaticVariableInfo <: std.core.Object & std.core.Equatable<std.reflect.StaticVariableInfo> & std.core.Hashable & std.core.ToString {
+    internal let _info: std.core.CPointer<Unit>
 
-    let _isStruct: Bool
+    internal let _isStruct: Bool
 
-    var _mutable: std.core.Option<Bool>
+    internal var _mutable: std.core.Option<Bool>
 
-    var _name: std.core.Option<std.core.String>
+    internal var _name: std.core.Option<std.core.String>
 
-    var _typeInfo: std.core.Option<std.reflect.TypeInfo>
+    internal var _typeInfo: std.core.Option<std.reflect.TypeInfo>
 
-    var _modifiers: std.core.Option<std.core.Collection<std.reflect.ModifierInfo>>
+    internal var _modifiers: std.core.Option<std.core.Collection<std.reflect.ModifierInfo>>
 
-    var _annotations: std.core.Option<std.core.Collection<std.core.Object>>
+    internal var _annotations: std.core.Option<std.core.Collection<std.core.Object>>
 
-    var _declaringTypeInfo: CPointer<Unit>
+    internal var _declaringTypeInfo: std.core.CPointer<Unit>
 
-    init(cp: CPointer<Unit>, declaringTypeInfo: CPointer<Unit>) { /* compiled code */ }
+    init(cp: std.core.CPointer<Unit>, declaringTypeInfo: std.core.CPointer<Unit>) { /* compiled code */ }
 
-    @Annotation
-    prop name: std.core.String {
+    public prop name: std.core.String {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    prop typeInfo: std.reflect.TypeInfo {
+    public prop typeInfo: std.reflect.TypeInfo {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    prop modifiers: std.core.Collection<std.reflect.ModifierInfo> {
+    public prop modifiers: std.core.Collection<std.reflect.ModifierInfo> {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    prop annotations: std.core.Collection<std.core.Object> {
+    public prop annotations: std.core.Collection<std.core.Object> {
         get() { /* compiled code */ }
     }
 
-    func isMutable(): Bool { /* compiled code */ }
+    public func isMutable(): Bool { /* compiled code */ }
 
-    func getValue(): std.core.Any { /* compiled code */ }
+    public func getValue(): std.core.Any { /* compiled code */ }
 
-    func setValue(newValue: std.core.Any): Unit { /* compiled code */ }
+    public func setValue(newValue: std.core.Any): Unit { /* compiled code */ }
 
-    func findAnnotation<T>(): std.core.Option<T> { /* compiled code */ }
+    public func findAnnotation<T>(): std.core.Option<T> { /* compiled code */ }
 
-    operator func ==(that: std.reflect.StaticVariableInfo): Bool { /* compiled code */ }
+    public operator func ==(that: std.reflect.StaticVariableInfo): Bool { /* compiled code */ }
 
-    operator func !=(that: std.reflect.StaticVariableInfo): Bool { /* compiled code */ }
+    public operator func !=(that: std.reflect.StaticVariableInfo): Bool { /* compiled code */ }
 
-    func hashCode(): Int64 { /* compiled code */ }
+    public func hashCode(): Int64 { /* compiled code */ }
 
-    func toString(): std.core.String { /* compiled code */ }
+    public func toString(): std.core.String { /* compiled code */ }
 }
 
-abstract open class TypeInfo <: std.core.Object & std.core.Equatable<std.reflect.TypeInfo> & std.core.Hashable & std.core.ToString {
-    let _info: CPointer<Unit>
+public abstract open class TypeInfo <: std.core.Object & std.core.Equatable<std.reflect.TypeInfo> & std.core.Hashable & std.core.ToString {
+    protected let _info: std.core.CPointer<Unit>
 
-    var _qualifiedName: std.core.Option<std.core.String>
+    internal var _qualifiedName: std.core.Option<std.core.String>
 
-    var _name: std.core.Option<std.core.String>
+    internal var _name: std.core.Option<std.core.String>
 
-    var _instanceFunctions: std.core.Option<std.core.Collection<std.reflect.InstanceFunctionInfo>>
+    internal var _instanceFunctions: std.core.Option<std.core.Collection<std.reflect.InstanceFunctionInfo>>
 
-    var _staticFunctions: std.core.Option<std.core.Collection<std.reflect.StaticFunctionInfo>>
+    internal var _staticFunctions: std.core.Option<std.core.Collection<std.reflect.StaticFunctionInfo>>
 
-    var _instanceProperties: std.core.Option<std.core.Collection<std.reflect.InstancePropertyInfo>>
+    internal var _instanceProperties: std.core.Option<std.core.Collection<std.reflect.InstancePropertyInfo>>
 
-    var _staticProperties: std.core.Option<std.core.Collection<std.reflect.StaticPropertyInfo>>
+    internal var _staticProperties: std.core.Option<std.core.Collection<std.reflect.StaticPropertyInfo>>
 
-    var _annotations: std.core.Option<std.core.Collection<std.core.Object>>
+    internal var _annotations: std.core.Option<std.core.Collection<std.core.Object>>
 
-    var _superInterfaces: std.core.Option<std.core.Collection<std.reflect.InterfaceTypeInfo>>
+    internal var _superInterfaces: std.core.Option<std.core.Collection<std.reflect.InterfaceTypeInfo>>
 
-    var _modifiers: std.core.Option<std.core.Collection<std.reflect.ModifierInfo>>
+    internal var _modifiers: std.core.Option<std.core.Collection<std.reflect.ModifierInfo>>
 
-    var typeTemplate: std.reflect.TypeTemplate
+    internal var typeTemplate: std.reflect.TypeTemplate
 
-    var genericParams: std.core.Array<std.reflect.TypeInfo>
+    internal var genericParams: std.core.Array<std.reflect.TypeInfo>
 
-    init(cp: CPointer<Unit>) { /* compiled code */ }
+    init(cp: std.core.CPointer<Unit>) { /* compiled code */ }
 
-    static func of<T>(): std.reflect.TypeInfo { /* compiled code */ }
+    public static func of<T>(): std.reflect.TypeInfo { /* compiled code */ }
 
-    static func of(a: std.core.Any): std.reflect.TypeInfo { /* compiled code */ }
+    public static func of(a: std.core.Any): std.reflect.TypeInfo { /* compiled code */ }
 
     @Deprecated[message: "Use 'ClassTypeInfo.of(Object)' instead."]
-    static func of(a: std.core.Object): std.reflect.ClassTypeInfo { /* compiled code */ }
+    public static func of(a: std.core.Object): std.reflect.ClassTypeInfo { /* compiled code */ }
 
-    static func get(qualifiedName: std.core.String): std.reflect.TypeInfo { /* compiled code */ }
+    public static func get(qualifiedName: std.core.String): std.reflect.TypeInfo { /* compiled code */ }
 
-    static func getOrCreate(typeInfoPointer: CPointer<Unit>): std.reflect.TypeInfo { /* compiled code */ }
+    internal static func getOrCreate(typeInfoPointer: std.core.CPointer<Unit>): std.reflect.TypeInfo { /* compiled code */ }
 
-    static func createGenericTypeInfo(typeInfoPointer: CPointer<Unit>, qualifiedName: std.core.String): std.reflect.TypeInfo { /* compiled code */ }
+    internal static func createGenericTypeInfo(typeInfoPointer: std.core.CPointer<Unit>, qualifiedName: std.core.String): std.reflect.TypeInfo { /* compiled code */ }
 
-    static func createConcreteTypeInfo(typeInfoPointer: CPointer<Unit>, qualifiedName: std.core.String, uuid: std.core.Option<std.core.String>): std.reflect.TypeInfo { /* compiled code */ }
+    internal static func createConcreteTypeInfo(typeInfoPointer: std.core.CPointer<Unit>, qualifiedName: std.core.String, uuid!: std.core.Option<std.core.String> = COMPILED_CODE /* compiled code */): std.reflect.TypeInfo { /* compiled code */ }
 
-    @Annotation
-    prop name: std.core.String {
+    public prop name: std.core.String {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    prop qualifiedName: std.core.String {
+    public prop qualifiedName: std.core.String {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    prop instanceFunctions: std.core.Collection<std.reflect.InstanceFunctionInfo> {
+    public prop instanceFunctions: std.core.Collection<std.reflect.InstanceFunctionInfo> {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    prop staticFunctions: std.core.Collection<std.reflect.StaticFunctionInfo> {
+    public prop staticFunctions: std.core.Collection<std.reflect.StaticFunctionInfo> {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    prop instanceProperties: std.core.Collection<std.reflect.InstancePropertyInfo> {
+    public prop instanceProperties: std.core.Collection<std.reflect.InstancePropertyInfo> {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    prop staticProperties: std.core.Collection<std.reflect.StaticPropertyInfo> {
+    public prop staticProperties: std.core.Collection<std.reflect.StaticPropertyInfo> {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    prop annotations: std.core.Collection<std.core.Object> {
+    public prop annotations: std.core.Collection<std.core.Object> {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    prop superInterfaces: std.core.Collection<std.reflect.InterfaceTypeInfo> {
+    public prop superInterfaces: std.core.Collection<std.reflect.InterfaceTypeInfo> {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    prop modifiers: std.core.Collection<std.reflect.ModifierInfo> {
+    public prop modifiers: std.core.Collection<std.reflect.ModifierInfo> {
         get() { /* compiled code */ }
     }
 
-    func isSubtypeOf(supertype: std.reflect.TypeInfo): Bool { /* compiled code */ }
+    public func isSubtypeOf(supertype: std.reflect.TypeInfo): Bool { /* compiled code */ }
 
-    func getInstanceFunction(name: std.core.String, parameterTypes: std.core.Array<std.reflect.TypeInfo>): std.reflect.InstanceFunctionInfo { /* compiled code */ }
+    public func getInstanceFunction(name: std.core.String, parameterTypes: std.core.Array<std.reflect.TypeInfo>): std.reflect.InstanceFunctionInfo { /* compiled code */ }
 
-    func getInstanceFunctions(name: std.core.String): std.core.Array<std.reflect.InstanceFunctionInfo> { /* compiled code */ }
+    public func getInstanceFunctions(name: std.core.String): std.core.Array<std.reflect.InstanceFunctionInfo> { /* compiled code */ }
 
-    func getStaticFunction(name: std.core.String, parameterTypes: std.core.Array<std.reflect.TypeInfo>): std.reflect.StaticFunctionInfo { /* compiled code */ }
+    public func getStaticFunction(name: std.core.String, parameterTypes: std.core.Array<std.reflect.TypeInfo>): std.reflect.StaticFunctionInfo { /* compiled code */ }
 
-    func getStaticFunctions(name: std.core.String): std.core.Array<std.reflect.StaticFunctionInfo> { /* compiled code */ }
+    public func getStaticFunctions(name: std.core.String): std.core.Array<std.reflect.StaticFunctionInfo> { /* compiled code */ }
 
-    func getInstanceProperty(name: std.core.String): std.reflect.InstancePropertyInfo { /* compiled code */ }
+    public func getInstanceProperty(name: std.core.String): std.reflect.InstancePropertyInfo { /* compiled code */ }
 
-    func getStaticProperty(name: std.core.String): std.reflect.StaticPropertyInfo { /* compiled code */ }
+    public func getStaticProperty(name: std.core.String): std.reflect.StaticPropertyInfo { /* compiled code */ }
 
-    func findAnnotation<T>(): std.core.Option<T> { /* compiled code */ }
+    public func findAnnotation<T>(): std.core.Option<T> { /* compiled code */ }
 
-    operator func ==(that: std.reflect.TypeInfo): Bool { /* compiled code */ }
+    public operator func ==(that: std.reflect.TypeInfo): Bool { /* compiled code */ }
 
-    operator func !=(that: std.reflect.TypeInfo): Bool { /* compiled code */ }
+    public operator func !=(that: std.reflect.TypeInfo): Bool { /* compiled code */ }
 
-    func hashCode(): Int64 { /* compiled code */ }
+    public func hashCode(): Int64 { /* compiled code */ }
 
-    func toString(): std.core.String { /* compiled code */ }
+    public func toString(): std.core.String { /* compiled code */ }
 
-    func getInstanceFunctions(): Unit { /* compiled code */ }
+    internal func getInstanceFunctions(): Unit { /* compiled code */ }
 
-    func getStaticFunctions(): Unit { /* compiled code */ }
+    internal func getStaticFunctions(): Unit { /* compiled code */ }
 }
 
-open class ReflectException <: std.core.Exception {
+public open class ReflectException <: std.core.Exception {
     init() { /* compiled code */ }
 
     init(message: std.core.String) { /* compiled code */ }
 
-    open override func getClassName(): std.core.String { /* compiled code */ }
+    protected open override func getClassName(): std.core.String { /* compiled code */ }
 }
 
-class InfoNotFoundException <: std.reflect.ReflectException {
+public class InfoNotFoundException <: std.reflect.ReflectException {
     init() { /* compiled code */ }
 
     init(message: std.core.String) { /* compiled code */ }
 
-    override func getClassName(): std.core.String { /* compiled code */ }
+    protected override func getClassName(): std.core.String { /* compiled code */ }
 }
 
-class MisMatchException <: std.reflect.ReflectException {
+public class MisMatchException <: std.reflect.ReflectException {
     init() { /* compiled code */ }
 
     init(message: std.core.String) { /* compiled code */ }
 
-    override func getClassName(): std.core.String { /* compiled code */ }
+    protected override func getClassName(): std.core.String { /* compiled code */ }
 }
 
-class IllegalSetException <: std.reflect.ReflectException {
+public class IllegalSetException <: std.reflect.ReflectException {
     init() { /* compiled code */ }
 
     init(message: std.core.String) { /* compiled code */ }
 
-    override func getClassName(): std.core.String { /* compiled code */ }
+    protected override func getClassName(): std.core.String { /* compiled code */ }
 }
 
-class IllegalTypeException <: std.reflect.ReflectException {
+public class IllegalTypeException <: std.reflect.ReflectException {
     init() { /* compiled code */ }
 
     init(message: std.core.String) { /* compiled code */ }
 
-    override func getClassName(): std.core.String { /* compiled code */ }
+    protected override func getClassName(): std.core.String { /* compiled code */ }
 }
 
-class InvocationTargetException <: std.reflect.ReflectException {
+public class InvocationTargetException <: std.reflect.ReflectException {
     init() { /* compiled code */ }
 
     init(message: std.core.String) { /* compiled code */ }
 
-    override func getClassName(): std.core.String { /* compiled code */ }
+    protected override func getClassName(): std.core.String { /* compiled code */ }
 }
 
-class GenericTypeInfo <: std.reflect.TypeInfo & std.core.Equatable<std.reflect.GenericTypeInfo> {
-    operator func ==(that: std.reflect.GenericTypeInfo): Bool { /* compiled code */ }
+public class GenericTypeInfo <: std.reflect.TypeInfo & std.core.Equatable<std.reflect.GenericTypeInfo> {
+    public operator func ==(that: std.reflect.GenericTypeInfo): Bool { /* compiled code */ }
 
-    init(cp: CPointer<Unit>) { /* compiled code */ }
+    init(cp: std.core.CPointer<Unit>) { /* compiled code */ }
 }
 
-class InstanceFunctionInfo <: std.core.Object & std.core.Equatable<std.reflect.InstanceFunctionInfo> & std.core.Hashable & std.core.ToString {
-    let _info: CPointer<Unit>
+public class InstanceFunctionInfo <: std.core.Object & std.core.Equatable<std.reflect.InstanceFunctionInfo> & std.core.Hashable & std.core.ToString {
+    internal let _info: std.core.CPointer<Unit>
 
-    var _name: std.core.Option<std.core.String>
+    internal var _name: std.core.Option<std.core.String>
 
-    var _parameters: std.core.Option<std.collection.ArrayList<std.reflect.ParameterInfo>>
+    internal var _parameters: std.core.Option<std.collection.ArrayList<std.reflect.ParameterInfo>>
 
-    var _returnType: std.core.Option<std.reflect.TypeInfo>
+    internal var _returnType: std.core.Option<std.reflect.TypeInfo>
 
-    var _modifiers: std.core.Option<std.core.Collection<std.reflect.ModifierInfo>>
+    internal var _modifiers: std.core.Option<std.core.Collection<std.reflect.ModifierInfo>>
 
-    var _annotations: std.core.Option<std.core.Collection<std.core.Object>>
+    internal var _annotations: std.core.Option<std.core.Collection<std.core.Object>>
 
-    var _genericParams: std.core.Option<std.core.Collection<std.reflect.GenericTypeInfo>>
+    internal var _genericParams: std.core.Option<std.core.Collection<std.reflect.GenericTypeInfo>>
 
-    var _declaringTypeInfo: CPointer<Unit>
+    internal var _declaringTypeInfo: std.core.CPointer<Unit>
 
-    init(cp: CPointer<Unit>, info: CPointer<Unit>) { /* compiled code */ }
+    init(cp: std.core.CPointer<Unit>, info: std.core.CPointer<Unit>) { /* compiled code */ }
 
-    @Annotation
-    prop genericParams: std.core.Collection<std.reflect.GenericTypeInfo> {
+    public prop genericParams: std.core.Collection<std.reflect.GenericTypeInfo> {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    prop name: std.core.String {
+    public prop name: std.core.String {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    prop parameters: std.collection.ReadOnlyList<std.reflect.ParameterInfo> {
+    public prop parameters: std.collection.ReadOnlyList<std.reflect.ParameterInfo> {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    prop returnType: std.reflect.TypeInfo {
+    public prop returnType: std.reflect.TypeInfo {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    prop modifiers: std.core.Collection<std.reflect.ModifierInfo> {
+    public prop modifiers: std.core.Collection<std.reflect.ModifierInfo> {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    prop annotations: std.core.Collection<std.core.Object> {
+    public prop annotations: std.core.Collection<std.core.Object> {
         get() { /* compiled code */ }
     }
 
-    func isOpen(): Bool { /* compiled code */ }
+    public func isOpen(): Bool { /* compiled code */ }
 
-    func isAbstract(): Bool { /* compiled code */ }
+    public func isAbstract(): Bool { /* compiled code */ }
 
-    func apply(instance: std.core.Any, args: std.core.Array<std.core.Any>): std.core.Any { /* compiled code */ }
+    public func apply(instance: std.core.Any, args: std.core.Array<std.core.Any>): std.core.Any { /* compiled code */ }
 
-    func apply(instance: std.core.Any, genericTypeArgs: std.core.Array<std.reflect.TypeInfo>, args: std.core.Array<std.core.Any>): std.core.Any { /* compiled code */ }
+    public func apply(instance: std.core.Any, genericTypeArgs: std.core.Array<std.reflect.TypeInfo>, args: std.core.Array<std.core.Any>): std.core.Any { /* compiled code */ }
 
-    func findAnnotation<T>(): std.core.Option<T> { /* compiled code */ }
+    public func findAnnotation<T>(): std.core.Option<T> { /* compiled code */ }
 
-    operator func ==(that: std.reflect.InstanceFunctionInfo): Bool { /* compiled code */ }
+    public operator func ==(that: std.reflect.InstanceFunctionInfo): Bool { /* compiled code */ }
 
-    operator func !=(that: std.reflect.InstanceFunctionInfo): Bool { /* compiled code */ }
+    public operator func !=(that: std.reflect.InstanceFunctionInfo): Bool { /* compiled code */ }
 
-    func hashCode(): Int64 { /* compiled code */ }
+    public func hashCode(): Int64 { /* compiled code */ }
 
-    func toString(): std.core.String { /* compiled code */ }
+    public func toString(): std.core.String { /* compiled code */ }
 }
 
-class ParameterInfo <: std.core.Object & std.core.Equatable<std.reflect.ParameterInfo> & std.core.Hashable & std.core.ToString {
-    let _info: CPointer<Unit>
+public class ParameterInfo <: std.core.Object & std.core.Equatable<std.reflect.ParameterInfo> & std.core.Hashable & std.core.ToString {
+    internal let _info: std.core.CPointer<Unit>
 
-    var _index: std.core.Option<Int64>
+    internal var _index: std.core.Option<Int64>
 
-    var _name: std.core.Option<std.core.String>
+    internal var _name: std.core.Option<std.core.String>
 
-    var _typeInfo: std.core.Option<std.reflect.TypeInfo>
+    internal var _typeInfo: std.core.Option<std.reflect.TypeInfo>
 
-    var _annotations: std.core.Option<std.core.Collection<std.core.Object>>
+    internal var _annotations: std.core.Option<std.core.Collection<std.core.Object>>
 
-    init(cp: CPointer<Unit>) { /* compiled code */ }
+    init(cp: std.core.CPointer<Unit>) { /* compiled code */ }
 
-    @Annotation
-    prop index: Int64 {
+    public prop index: Int64 {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    prop name: std.core.String {
+    public prop name: std.core.String {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    prop typeInfo: std.reflect.TypeInfo {
+    public prop typeInfo: std.reflect.TypeInfo {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    prop annotations: std.core.Collection<std.core.Object> {
+    public prop annotations: std.core.Collection<std.core.Object> {
         get() { /* compiled code */ }
     }
 
-    func findAnnotation<T>(): std.core.Option<T> { /* compiled code */ }
+    public func findAnnotation<T>(): std.core.Option<T> { /* compiled code */ }
 
-    operator func ==(that: std.reflect.ParameterInfo): Bool { /* compiled code */ }
+    public operator func ==(that: std.reflect.ParameterInfo): Bool { /* compiled code */ }
 
-    operator func !=(that: std.reflect.ParameterInfo): Bool { /* compiled code */ }
+    public operator func !=(that: std.reflect.ParameterInfo): Bool { /* compiled code */ }
 
-    func hashCode(): Int64 { /* compiled code */ }
+    public func hashCode(): Int64 { /* compiled code */ }
 
-    func toString(): std.core.String { /* compiled code */ }
+    public func toString(): std.core.String { /* compiled code */ }
 }
 
-enum ModifierInfo <: std.core.Equatable<std.reflect.ModifierInfo> & std.core.Hashable & std.core.ToString {
+public enum ModifierInfo <: std.core.Equatable<std.reflect.ModifierInfo> & std.core.Hashable & std.core.ToString {
     | Open
 
     | Override
@@ -591,678 +532,713 @@ enum ModifierInfo <: std.core.Equatable<std.reflect.ModifierInfo> & std.core.Has
 
     | Static
 
-    static func byMask(mask: UInt32): std.core.Collection<std.reflect.ModifierInfo> { /* compiled code */ }
+    internal static func byMask(mask: UInt32): std.core.Collection<std.reflect.ModifierInfo> { /* compiled code */ }
 
-    static func isAbstract(mask: UInt32): Bool { /* compiled code */ }
+    internal static func isAbstract(mask: UInt32): Bool { /* compiled code */ }
 
-    static func isPublic(mask: UInt32): Bool { /* compiled code */ }
+    internal static func isPublic(mask: UInt32): Bool { /* compiled code */ }
 
-    static func isMutable(mask: UInt32): Bool { /* compiled code */ }
+    internal static func isMutable(mask: UInt32): Bool { /* compiled code */ }
 
-    override operator func ==(that: std.reflect.ModifierInfo): Bool { /* compiled code */ }
+    public override operator func ==(that: std.reflect.ModifierInfo): Bool { /* compiled code */ }
 
-    override operator func !=(that: std.reflect.ModifierInfo): Bool { /* compiled code */ }
+    public override operator func !=(that: std.reflect.ModifierInfo): Bool { /* compiled code */ }
 
-    func hashCode(): Int64 { /* compiled code */ }
+    public func hashCode(): Int64 { /* compiled code */ }
 
-    override func toString(): std.core.String { /* compiled code */ }
+    public override func toString(): std.core.String { /* compiled code */ }
 }
 
-class StaticFunctionInfo <: std.core.Object & std.core.Equatable<std.reflect.StaticFunctionInfo> & std.core.Hashable & std.core.ToString {
-    let _info: CPointer<Unit>
+public class StaticFunctionInfo <: std.core.Object & std.core.Equatable<std.reflect.StaticFunctionInfo> & std.core.Hashable & std.core.ToString {
+    internal let _info: std.core.CPointer<Unit>
 
-    var _name: std.core.Option<std.core.String>
+    internal var _name: std.core.Option<std.core.String>
 
-    var _parameters: std.core.Option<std.collection.ArrayList<std.reflect.ParameterInfo>>
+    internal var _parameters: std.core.Option<std.collection.ArrayList<std.reflect.ParameterInfo>>
 
-    var _genericParams: std.core.Option<std.core.Collection<std.reflect.GenericTypeInfo>>
+    internal var _genericParams: std.core.Option<std.core.Collection<std.reflect.GenericTypeInfo>>
 
-    var _returnType: std.core.Option<std.reflect.TypeInfo>
+    internal var _returnType: std.core.Option<std.reflect.TypeInfo>
 
-    var _modifiers: std.core.Option<std.core.Collection<std.reflect.ModifierInfo>>
+    internal var _modifiers: std.core.Option<std.core.Collection<std.reflect.ModifierInfo>>
 
-    var _annotations: std.core.Option<std.core.Collection<std.core.Object>>
+    internal var _annotations: std.core.Option<std.core.Collection<std.core.Object>>
 
-    var _declaringTypeInfo: CPointer<Unit>
+    internal var _declaringTypeInfo: std.core.CPointer<Unit>
 
-    init(cp: CPointer<Unit>, declaringTypeInfo: CPointer<Unit>) { /* compiled code */ }
+    init(cp: std.core.CPointer<Unit>, declaringTypeInfo: std.core.CPointer<Unit>) { /* compiled code */ }
 
-    @Annotation
-    prop genericParams: std.core.Collection<std.reflect.GenericTypeInfo> {
+    public prop genericParams: std.core.Collection<std.reflect.GenericTypeInfo> {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    prop name: std.core.String {
+    public prop name: std.core.String {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    prop parameters: std.collection.ReadOnlyList<std.reflect.ParameterInfo> {
+    public prop parameters: std.collection.ReadOnlyList<std.reflect.ParameterInfo> {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    prop returnType: std.reflect.TypeInfo {
+    public prop returnType: std.reflect.TypeInfo {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    prop modifiers: std.core.Collection<std.reflect.ModifierInfo> {
+    public prop modifiers: std.core.Collection<std.reflect.ModifierInfo> {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    prop annotations: std.core.Collection<std.core.Object> {
+    public prop annotations: std.core.Collection<std.core.Object> {
         get() { /* compiled code */ }
     }
 
-    func apply(thisType: std.reflect.TypeInfo, args: std.core.Array<std.core.Any>): std.core.Any { /* compiled code */ }
+    public func apply(thisType: std.reflect.TypeInfo, args: std.core.Array<std.core.Any>): std.core.Any { /* compiled code */ }
 
-    func apply(thisType: std.reflect.TypeInfo, genericTypeArgs: std.core.Array<std.reflect.TypeInfo>, args: std.core.Array<std.core.Any>): std.core.Any { /* compiled code */ }
+    public func apply(thisType: std.reflect.TypeInfo, genericTypeArgs: std.core.Array<std.reflect.TypeInfo>, args: std.core.Array<std.core.Any>): std.core.Any { /* compiled code */ }
 
-    func findAnnotation<T>(): std.core.Option<T> { /* compiled code */ }
+    public func findAnnotation<T>(): std.core.Option<T> { /* compiled code */ }
 
-    operator func ==(that: std.reflect.StaticFunctionInfo): Bool { /* compiled code */ }
+    public operator func ==(that: std.reflect.StaticFunctionInfo): Bool { /* compiled code */ }
 
-    operator func !=(that: std.reflect.StaticFunctionInfo): Bool { /* compiled code */ }
+    public operator func !=(that: std.reflect.StaticFunctionInfo): Bool { /* compiled code */ }
 
-    func hashCode(): Int64 { /* compiled code */ }
+    public func hashCode(): Int64 { /* compiled code */ }
 
-    func toString(): std.core.String { /* compiled code */ }
+    public func toString(): std.core.String { /* compiled code */ }
 }
 
-class InstancePropertyInfo <: std.core.Object & std.core.Equatable<std.reflect.InstancePropertyInfo> & std.core.Hashable & std.core.ToString {
-    let _name: std.core.String
+public class InstancePropertyInfo <: std.core.Object & std.core.Equatable<std.reflect.InstancePropertyInfo> & std.core.Hashable & std.core.ToString {
+    internal let _name: std.core.String
 
-    var _getterInfo: std.core.Option<std.reflect.InstanceFunctionInfo>
+    internal var _getterInfo: std.core.Option<std.reflect.InstanceFunctionInfo>
 
-    var _setterInfo: std.core.Option<std.reflect.InstanceFunctionInfo>
+    internal var _setterInfo: std.core.Option<std.reflect.InstanceFunctionInfo>
 
-    var _typeInfo: std.core.Option<std.reflect.TypeInfo>
+    internal var _typeInfo: std.core.Option<std.reflect.TypeInfo>
 
-    var _modifiers: std.core.Option<std.core.Collection<std.reflect.ModifierInfo>>
+    internal var _modifiers: std.core.Option<std.core.Collection<std.reflect.ModifierInfo>>
 
-    var _annotations: std.core.Option<std.core.Collection<std.core.Object>>
+    internal var _annotations: std.core.Option<std.core.Collection<std.core.Object>>
 
-    var _declaringTypeInfo: CPointer<Unit>
+    internal var _declaringTypeInfo: std.core.CPointer<Unit>
 
-    init(name: std.core.String, declaringTypeInfo: CPointer<Unit>) { /* compiled code */ }
+    init(name: std.core.String, declaringTypeInfo: std.core.CPointer<Unit>) { /* compiled code */ }
 
-    @Annotation
-    prop name: std.core.String {
+    public prop name: std.core.String {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    prop typeInfo: std.reflect.TypeInfo {
+    public prop typeInfo: std.reflect.TypeInfo {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    prop modifiers: std.core.Collection<std.reflect.ModifierInfo> {
+    public prop modifiers: std.core.Collection<std.reflect.ModifierInfo> {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    prop annotations: std.core.Collection<std.core.Object> {
+    public prop annotations: std.core.Collection<std.core.Object> {
         get() { /* compiled code */ }
     }
 
-    func isOpen(): Bool { /* compiled code */ }
+    public func isOpen(): Bool { /* compiled code */ }
 
-    func isAbstract(): Bool { /* compiled code */ }
+    public func isAbstract(): Bool { /* compiled code */ }
 
-    func isMutable(): Bool { /* compiled code */ }
+    public func isMutable(): Bool { /* compiled code */ }
 
-    func getValue(instance: std.core.Any): std.core.Any { /* compiled code */ }
+    public func getValue(instance: std.core.Any): std.core.Any { /* compiled code */ }
 
-    func setValue(instance: std.core.Any, newValue: std.core.Any): Unit { /* compiled code */ }
+    public func setValue(instance: std.core.Any, newValue: std.core.Any): Unit { /* compiled code */ }
 
-    func findAnnotation<T>(): std.core.Option<T> { /* compiled code */ }
+    public func findAnnotation<T>(): std.core.Option<T> { /* compiled code */ }
 
-    operator func ==(that: std.reflect.InstancePropertyInfo): Bool { /* compiled code */ }
+    public operator func ==(that: std.reflect.InstancePropertyInfo): Bool { /* compiled code */ }
 
-    operator func !=(that: std.reflect.InstancePropertyInfo): Bool { /* compiled code */ }
+    public operator func !=(that: std.reflect.InstancePropertyInfo): Bool { /* compiled code */ }
 
-    func hashCode(): Int64 { /* compiled code */ }
+    public func hashCode(): Int64 { /* compiled code */ }
 
-    func toString(): std.core.String { /* compiled code */ }
+    public func toString(): std.core.String { /* compiled code */ }
 
-    func setFunc(isGetter: Bool, pointer: CPointer<Unit>): Unit { /* compiled code */ }
+    internal func setFunc(isGetter: Bool, pointer: std.core.CPointer<Unit>): Unit { /* compiled code */ }
 }
 
-class StaticPropertyInfo <: std.core.Object & std.core.Equatable<std.reflect.StaticPropertyInfo> & std.core.Hashable & std.core.ToString {
-    let _name: std.core.String
+public class StaticPropertyInfo <: std.core.Object & std.core.Equatable<std.reflect.StaticPropertyInfo> & std.core.Hashable & std.core.ToString {
+    internal let _name: std.core.String
 
-    var _getterInfo: std.core.Option<std.reflect.StaticFunctionInfo>
+    internal var _getterInfo: std.core.Option<std.reflect.StaticFunctionInfo>
 
-    var _setterInfo: std.core.Option<std.reflect.StaticFunctionInfo>
+    internal var _setterInfo: std.core.Option<std.reflect.StaticFunctionInfo>
 
-    var _typeInfo: std.core.Option<std.reflect.TypeInfo>
+    internal var _typeInfo: std.core.Option<std.reflect.TypeInfo>
 
-    var _modifiers: std.core.Option<std.core.Collection<std.reflect.ModifierInfo>>
+    internal var _modifiers: std.core.Option<std.core.Collection<std.reflect.ModifierInfo>>
 
-    var _annotations: std.core.Option<std.core.Collection<std.core.Object>>
+    internal var _annotations: std.core.Option<std.core.Collection<std.core.Object>>
 
-    var _declaringTypeInfo: CPointer<Unit>
+    internal var _declaringTypeInfo: std.core.CPointer<Unit>
 
-    init(name: std.core.String, declaringTypeInfo: CPointer<Unit>) { /* compiled code */ }
+    init(name: std.core.String, declaringTypeInfo: std.core.CPointer<Unit>) { /* compiled code */ }
 
-    @Annotation
-    prop name: std.core.String {
+    public prop name: std.core.String {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    prop typeInfo: std.reflect.TypeInfo {
+    public prop typeInfo: std.reflect.TypeInfo {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    prop modifiers: std.core.Collection<std.reflect.ModifierInfo> {
+    public prop modifiers: std.core.Collection<std.reflect.ModifierInfo> {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    prop annotations: std.core.Collection<std.core.Object> {
+    public prop annotations: std.core.Collection<std.core.Object> {
         get() { /* compiled code */ }
     }
 
-    func isMutable(): Bool { /* compiled code */ }
+    public func isMutable(): Bool { /* compiled code */ }
 
-    func getValue(): std.core.Any { /* compiled code */ }
+    public func getValue(): std.core.Any { /* compiled code */ }
 
-    func setValue(newValue: std.core.Any): Unit { /* compiled code */ }
+    public func setValue(newValue: std.core.Any): Unit { /* compiled code */ }
 
-    func findAnnotation<T>(): std.core.Option<T> { /* compiled code */ }
+    public func findAnnotation<T>(): std.core.Option<T> { /* compiled code */ }
 
-    operator func ==(that: std.reflect.StaticPropertyInfo): Bool { /* compiled code */ }
+    public operator func ==(that: std.reflect.StaticPropertyInfo): Bool { /* compiled code */ }
 
-    operator func !=(that: std.reflect.StaticPropertyInfo): Bool { /* compiled code */ }
+    public operator func !=(that: std.reflect.StaticPropertyInfo): Bool { /* compiled code */ }
 
-    func hashCode(): Int64 { /* compiled code */ }
+    public func hashCode(): Int64 { /* compiled code */ }
 
-    func toString(): std.core.String { /* compiled code */ }
+    public func toString(): std.core.String { /* compiled code */ }
 
-    func setFunc(isGetter: Bool, pointer: CPointer<Unit>): Unit { /* compiled code */ }
+    internal func setFunc(isGetter: Bool, pointer: std.core.CPointer<Unit>): Unit { /* compiled code */ }
 }
 
-class GlobalFunctionInfo <: std.core.Object & std.core.Equatable<std.reflect.GlobalFunctionInfo> & std.core.Hashable & std.core.ToString {
-    let _info: CPointer<Unit>
+public class GlobalFunctionInfo <: std.core.Object & std.core.Equatable<std.reflect.GlobalFunctionInfo> & std.core.Hashable & std.core.ToString {
+    internal let _info: std.core.CPointer<Unit>
 
-    var _name: std.core.Option<std.core.String>
+    internal var _name: std.core.Option<std.core.String>
 
-    var _parameters: std.core.Option<std.collection.ArrayList<std.reflect.ParameterInfo>>
+    internal var _parameters: std.core.Option<std.collection.ArrayList<std.reflect.ParameterInfo>>
 
-    var _genericParams: std.core.Option<std.core.Collection<std.reflect.GenericTypeInfo>>
+    internal var _genericParams: std.core.Option<std.core.Collection<std.reflect.GenericTypeInfo>>
 
-    var _returnType: std.core.Option<std.reflect.TypeInfo>
+    internal var _returnType: std.core.Option<std.reflect.TypeInfo>
 
-    var _annotations: std.core.Option<std.core.Collection<std.core.Object>>
+    internal var _annotations: std.core.Option<std.core.Collection<std.core.Object>>
 
-    init(cp: CPointer<Unit>) { /* compiled code */ }
+    init(cp: std.core.CPointer<Unit>) { /* compiled code */ }
 
-    @Annotation
-    prop genericParams: std.core.Collection<std.reflect.GenericTypeInfo> {
+    public prop genericParams: std.core.Collection<std.reflect.GenericTypeInfo> {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    prop name: std.core.String {
+    public prop name: std.core.String {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    prop parameters: std.collection.ReadOnlyList<std.reflect.ParameterInfo> {
+    public prop parameters: std.collection.ReadOnlyList<std.reflect.ParameterInfo> {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    prop returnType: std.reflect.TypeInfo {
+    public prop returnType: std.reflect.TypeInfo {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    prop annotations: std.core.Collection<std.core.Object> {
+    public prop annotations: std.core.Collection<std.core.Object> {
         get() { /* compiled code */ }
     }
 
-    func apply(args: std.core.Array<std.core.Any>): std.core.Any { /* compiled code */ }
+    public func apply(args: std.core.Array<std.core.Any>): std.core.Any { /* compiled code */ }
 
-    func apply(genericTypeArgs: std.core.Array<std.reflect.TypeInfo>, args: std.core.Array<std.core.Any>): std.core.Any { /* compiled code */ }
+    public func apply(genericTypeArgs: std.core.Array<std.reflect.TypeInfo>, args: std.core.Array<std.core.Any>): std.core.Any { /* compiled code */ }
 
-    func findAnnotation<T>(): std.core.Option<T> { /* compiled code */ }
+    public func findAnnotation<T>(): std.core.Option<T> { /* compiled code */ }
 
-    operator func ==(that: std.reflect.GlobalFunctionInfo): Bool { /* compiled code */ }
+    public operator func ==(that: std.reflect.GlobalFunctionInfo): Bool { /* compiled code */ }
 
-    operator func !=(that: std.reflect.GlobalFunctionInfo): Bool { /* compiled code */ }
+    public operator func !=(that: std.reflect.GlobalFunctionInfo): Bool { /* compiled code */ }
 
-    func hashCode(): Int64 { /* compiled code */ }
+    public func hashCode(): Int64 { /* compiled code */ }
 
-    func toString(): std.core.String { /* compiled code */ }
+    public func toString(): std.core.String { /* compiled code */ }
 }
 
-func getFuncName(parentPointer: CPointer<Unit>): std.core.String { /* compiled code */ }
+internal func getFuncName(parentPointer: std.core.CPointer<Unit>): std.core.String { /* compiled code */ }
 
-func getParameters(cp: CPointer<Unit>): std.collection.ArrayList<std.reflect.ParameterInfo> { /* compiled code */ }
+internal func getParameters(cp: std.core.CPointer<Unit>): std.collection.ArrayList<std.reflect.ParameterInfo> { /* compiled code */ }
 
-func checkMethodDeclaringClassType(instance: std.core.Any, declaringTypeInfo: CPointer<Unit>): Unit { /* compiled code */ }
+internal func checkMethodDeclaringClassType(instance: std.core.Any, declaringTypeInfo: std.core.CPointer<Unit>): Unit { /* compiled code */ }
 
-func checkParamaterSize(genericParams: std.core.Collection<std.reflect.GenericTypeInfo>, actualParamSize: Int64, genericTypeParameters: std.core.Collection<std.reflect.TypeInfo>, args: std.core.Array<std.core.Any>): Unit { /* compiled code */ }
+internal func checkParamaterSize(genericParams: std.core.Collection<std.reflect.GenericTypeInfo>, actualParamSize: Int64, genericTypeParameters: std.core.Collection<std.reflect.TypeInfo>, args: std.core.Array<std.core.Any>): Unit { /* compiled code */ }
 
-class InterfaceTypeInfo <: std.reflect.TypeInfo {
-    var _sealedSubtypes: std.core.Option<std.core.Collection<std.reflect.TypeInfo>>
+public class InterfaceTypeInfo <: std.reflect.TypeInfo {
+    internal var _sealedSubtypes: std.core.Option<std.core.Collection<std.reflect.TypeInfo>>
 
-    init(cp: CPointer<Unit>) { /* compiled code */ }
+    init(cp: std.core.CPointer<Unit>) { /* compiled code */ }
 
-    redef static func get(qualifiedName: std.core.String): std.reflect.InterfaceTypeInfo { /* compiled code */ }
+    public redef static func get(qualifiedName: std.core.String): std.reflect.InterfaceTypeInfo { /* compiled code */ }
 
-    redef static func of(a: std.core.Any): std.reflect.InterfaceTypeInfo { /* compiled code */ }
+    public redef static func of(a: std.core.Any): std.reflect.InterfaceTypeInfo { /* compiled code */ }
 
-    redef static func of<T>(): std.reflect.InterfaceTypeInfo { /* compiled code */ }
+    public redef static func of<T>(): std.reflect.InterfaceTypeInfo { /* compiled code */ }
 
-    @Annotation
-    prop sealedSubtypes: std.core.Collection<std.reflect.TypeInfo> {
+    public prop sealedSubtypes: std.core.Collection<std.reflect.TypeInfo> {
         get() { /* compiled code */ }
     }
 
-    func isSealed(): Bool { /* compiled code */ }
+    public func isSealed(): Bool { /* compiled code */ }
 }
 
-func findSubtypeFromPackage<T>(curType: std.reflect.TypeInfo): std.core.Array<T> { /* compiled code */ }
+internal func findSubtypeFromPackage<T>(curType: std.reflect.TypeInfo): std.core.Array<T> { /* compiled code */ }
 
-func isInterface(ti: CPointer<Unit>): Bool { /* compiled code */ }
+@Intrinsic
+internal func isInterface(ti: std.core.CPointer<Unit>): Bool
 
-func isStruct(ti: CPointer<Unit>): Bool { /* compiled code */ }
+@Intrinsic
+internal func isStruct(ti: std.core.CPointer<Unit>): Bool
 
-func isPrimitive(ti: CPointer<Unit>): Bool { /* compiled code */ }
+@Intrinsic
+internal func isPrimitive(ti: std.core.CPointer<Unit>): Bool
 
-func isClass(ti: CPointer<Unit>): Bool { /* compiled code */ }
+@Intrinsic
+internal func isClass(ti: std.core.CPointer<Unit>): Bool
 
-func isGeneric(ti: CPointer<Unit>): Bool { /* compiled code */ }
+@Intrinsic
+internal func isGeneric(ti: std.core.CPointer<Unit>): Bool
 
-func getOrCreateTypeInfoForReflect(typeTemplate: CPointer<Unit>, typeArgs: std.core.Array<CPointer<Unit>>): CPointer<Unit> { /* compiled code */ }
+@Intrinsic
+internal func getOrCreateTypeInfoForReflect(typeTemplate: std.core.CPointer<Unit>, typeArgs: std.core.Array<std.core.CPointer<Unit>>): std.core.CPointer<Unit>
 
-func getTypeTemplate(name: CPointer<UInt8>): CPointer<Unit> { /* compiled code */ }
+@Intrinsic
+internal func getTypeTemplate(name: std.core.CPointer<UInt8>): std.core.CPointer<Unit>
 
-func checkMethodActualArgs(methodInfo: CPointer<Unit>, genericTypeArgs: std.core.Array<CPointer<Unit>>, args: std.core.Array<std.core.Any>): Bool { /* compiled code */ }
+@Intrinsic
+internal func checkMethodActualArgs(methodInfo: std.core.CPointer<Unit>, genericTypeArgs: std.core.Array<std.core.CPointer<Unit>>, args: std.core.Array<std.core.Any>): Bool
 
-func methodEntryPointIsNull(methodInfo: CPointer<Unit>): Bool { /* compiled code */ }
+@Intrinsic
+internal func methodEntryPointIsNull(methodInfo: std.core.CPointer<Unit>): Bool
 
-func isReflectUnsupportedType(ti: CPointer<Unit>): Bool { /* compiled code */ }
+@Intrinsic
+internal func isReflectUnsupportedType(ti: std.core.CPointer<Unit>): Bool
 
-func getTypeForAny(obj: std.core.Any): CPointer<Unit> { /* compiled code */ }
+@Intrinsic
+internal func getTypeForAny(obj: std.core.Any): std.core.CPointer<Unit>
 
-func getTypeByMangledName<T>(): CPointer<Unit> { /* compiled code */ }
+@Intrinsic
+internal func getTypeByMangledName<T>(): std.core.CPointer<Unit>
 
-func getTypeName(obj: CPointer<Unit>): CPointer<UInt8> { /* compiled code */ }
+@Intrinsic
+internal func getTypeName(obj: std.core.CPointer<Unit>): std.core.CPointer<UInt8>
 
-func getTypeByQualifiedName(qualifiedName: CPointer<UInt8>): CPointer<Unit> { /* compiled code */ }
+@Intrinsic
+internal func getTypeByQualifiedName(qualifiedName: std.core.CPointer<UInt8>): std.core.CPointer<Unit>
 
-func getTypeQualifiedNameLength(ti: CPointer<Unit>): UInt32 { /* compiled code */ }
+@Intrinsic
+internal func getTypeQualifiedNameLength(ti: std.core.CPointer<Unit>): UInt32
 
-func getTypeQualifiedName(ti: CPointer<Unit>, name: CPointer<UInt8>): Unit { /* compiled code */ }
+@Intrinsic
+internal func getTypeQualifiedName(ti: std.core.CPointer<Unit>, name: std.core.CPointer<UInt8>): Unit
 
-func getNumOfInterface(ti: CPointer<Unit>): UInt32 { /* compiled code */ }
+@Intrinsic
+internal func getNumOfInterface(ti: std.core.CPointer<Unit>): UInt32
 
-func getInterface(ti: CPointer<Unit>, index: UInt32): CPointer<Unit> { /* compiled code */ }
+@Intrinsic
+internal func getInterface(ti: std.core.CPointer<Unit>, index: UInt32): std.core.CPointer<Unit>
 
-func isSubType(ti: CPointer<Unit>, superTypeclassInfo: CPointer<Unit>): Bool { /* compiled code */ }
+@Intrinsic
+internal func isSubType(ti: std.core.CPointer<Unit>, superTypeclassInfo: std.core.CPointer<Unit>): Bool
 
-func getTypeInfoModifier(ti: CPointer<Unit>): UInt32 { /* compiled code */ }
+@Intrinsic
+internal func getTypeInfoModifier(ti: std.core.CPointer<Unit>): UInt32
 
-func getTypeInfoAnnotations(ti: CPointer<Unit>, arrayTi: CPointer<Unit>): std.core.Any { /* compiled code */ }
+@Intrinsic
+internal func getTypeInfoAnnotations(ti: std.core.CPointer<Unit>, arrayTi: std.core.CPointer<Unit>): std.core.Any
 
-func getObjClass(obj: std.core.Object): CPointer<Unit> { /* compiled code */ }
+@Intrinsic
+internal func getObjClass(obj: std.core.Object): std.core.CPointer<Unit>
 
-func getSuperTypeInfo(ti: CPointer<Unit>): CPointer<Unit> { /* compiled code */ }
+@Intrinsic
+internal func getSuperTypeInfo(ti: std.core.CPointer<Unit>): std.core.CPointer<Unit>
 
-func getNumOfInstanceMethodInfos(ti: CPointer<Unit>): UInt32 { /* compiled code */ }
+@Intrinsic
+internal func getNumOfInstanceMethodInfos(ti: std.core.CPointer<Unit>): UInt32
 
-func getInstanceMethodInfo(ti: CPointer<Unit>, index: UInt32): CPointer<Unit> { /* compiled code */ }
+@Intrinsic
+internal func getInstanceMethodInfo(ti: std.core.CPointer<Unit>, index: UInt32): std.core.CPointer<Unit>
 
-func getNumOfStaticMethodInfos(ti: CPointer<Unit>): UInt32 { /* compiled code */ }
+@Intrinsic
+internal func getNumOfStaticMethodInfos(ti: std.core.CPointer<Unit>): UInt32
 
-func getStaticMethodInfo(ti: CPointer<Unit>, index: UInt32): CPointer<Unit> { /* compiled code */ }
+@Intrinsic
+internal func getStaticMethodInfo(ti: std.core.CPointer<Unit>, index: UInt32): std.core.CPointer<Unit>
 
-func getMethodName(methodInfo: CPointer<Unit>): CPointer<UInt8> { /* compiled code */ }
+@Intrinsic
+internal func getMethodName(methodInfo: std.core.CPointer<Unit>): std.core.CPointer<UInt8>
 
-func getParameterInfo(methodInfo: CPointer<Unit>, index: UInt32): CPointer<Unit> { /* compiled code */ }
+@Intrinsic
+internal func getParameterInfo(methodInfo: std.core.CPointer<Unit>, index: UInt32): std.core.CPointer<Unit>
 
-func getMethodReturnType(methodInfo: CPointer<Unit>): CPointer<Unit> { /* compiled code */ }
+@Intrinsic
+internal func getMethodReturnType(methodInfo: std.core.CPointer<Unit>): std.core.CPointer<Unit>
 
-func getMethodModifier(methodInfo: CPointer<Unit>): UInt32 { /* compiled code */ }
+@Intrinsic
+internal func getMethodModifier(methodInfo: std.core.CPointer<Unit>): UInt32
 
-func getMethodAnnotations(methodInfo: CPointer<Unit>, arrayTi: CPointer<Unit>): std.core.Any { /* compiled code */ }
+@Intrinsic
+internal func getMethodAnnotations(methodInfo: std.core.CPointer<Unit>, arrayTi: std.core.CPointer<Unit>): std.core.Any
 
-func getNumOfActualParameters(methodInfo: CPointer<Unit>): UInt32 { /* compiled code */ }
+@Intrinsic
+internal func getNumOfActualParameters(methodInfo: std.core.CPointer<Unit>): UInt32
 
-func getNumOfGenericParameters(methodInfo: CPointer<Unit>): UInt32 { /* compiled code */ }
+@Intrinsic
+internal func getNumOfGenericParameters(methodInfo: std.core.CPointer<Unit>): UInt32
 
-func getActualParameterInfo(methodInfo: CPointer<Unit>, idx: UInt32): CPointer<Unit> { /* compiled code */ }
+@Intrinsic
+internal func getActualParameterInfo(methodInfo: std.core.CPointer<Unit>, idx: UInt32): std.core.CPointer<Unit>
 
-func getGenericParameterInfo(methodInfo: CPointer<Unit>, idx: UInt32): CPointer<Unit> { /* compiled code */ }
+@Intrinsic
+internal func getGenericParameterInfo(methodInfo: std.core.CPointer<Unit>, idx: UInt32): std.core.CPointer<Unit>
 
-func getNumOfInstanceFieldInfos(ti: CPointer<Unit>): UInt32 { /* compiled code */ }
+@Intrinsic
+internal func getNumOfInstanceFieldInfos(ti: std.core.CPointer<Unit>): UInt32
 
-func getInstanceFieldInfo(ti: CPointer<Unit>, index: UInt32): CPointer<Unit> { /* compiled code */ }
+@Intrinsic
+internal func getInstanceFieldInfo(ti: std.core.CPointer<Unit>, index: UInt32): std.core.CPointer<Unit>
 
-func getNumOfStaticFieldInfos(ti: CPointer<Unit>): UInt32 { /* compiled code */ }
+@Intrinsic
+internal func getNumOfStaticFieldInfos(ti: std.core.CPointer<Unit>): UInt32
 
-func getStaticFieldInfo(ti: CPointer<Unit>, index: UInt32): CPointer<Unit> { /* compiled code */ }
+@Intrinsic
+internal func getStaticFieldInfo(ti: std.core.CPointer<Unit>, index: UInt32): std.core.CPointer<Unit>
 
-func getStaticFieldName(fieldInfo: CPointer<Unit>): CPointer<UInt8> { /* compiled code */ }
+@Intrinsic
+internal func getStaticFieldName(fieldInfo: std.core.CPointer<Unit>): std.core.CPointer<UInt8>
 
-func getStaticFieldType(fieldInfo: CPointer<Unit>): CPointer<Unit> { /* compiled code */ }
+@Intrinsic
+internal func getStaticFieldType(fieldInfo: std.core.CPointer<Unit>): std.core.CPointer<Unit>
 
-func getStaticFieldAnnotations(fieldInfo: CPointer<Unit>, arrayTi: CPointer<Unit>): std.core.Any { /* compiled code */ }
+@Intrinsic
+internal func getStaticFieldAnnotations(fieldInfo: std.core.CPointer<Unit>, arrayTi: std.core.CPointer<Unit>): std.core.Any
 
-func getInstanceFieldName(fieldInfo: CPointer<Unit>, declaringTypeInfo: CPointer<Unit>): CPointer<UInt8> { /* compiled code */ }
+@Intrinsic
+internal func getInstanceFieldName(fieldInfo: std.core.CPointer<Unit>, declaringTypeInfo: std.core.CPointer<Unit>): std.core.CPointer<UInt8>
 
-func getInstanceFieldType(fieldInfo: CPointer<Unit>, declaringTypeInfo: CPointer<Unit>): CPointer<Unit> { /* compiled code */ }
+@Intrinsic
+internal func getInstanceFieldType(fieldInfo: std.core.CPointer<Unit>, declaringTypeInfo: std.core.CPointer<Unit>): std.core.CPointer<Unit>
 
-func getInstanceFieldModifier(fieldInfo: CPointer<Unit>): UInt32 { /* compiled code */ }
+@Intrinsic
+internal func getInstanceFieldModifier(fieldInfo: std.core.CPointer<Unit>): UInt32
 
-func getStaticFieldModifier(fieldInfo: CPointer<Unit>): UInt32 { /* compiled code */ }
+@Intrinsic
+internal func getStaticFieldModifier(fieldInfo: std.core.CPointer<Unit>): UInt32
 
-func getInstanceFieldAnnotations(fieldInfo: CPointer<Unit>, arrayTi: CPointer<Unit>): std.core.Any { /* compiled code */ }
+@Intrinsic
+internal func getInstanceFieldAnnotations(fieldInfo: std.core.CPointer<Unit>, arrayTi: std.core.CPointer<Unit>): std.core.Any
 
-func getInstanceFieldValue(fieldInfo: CPointer<Unit>, declaringTypeInfo: CPointer<Unit>, instance: std.core.Any): std.core.Any { /* compiled code */ }
+@Intrinsic
+internal func getInstanceFieldValue(fieldInfo: std.core.CPointer<Unit>, declaringTypeInfo: std.core.CPointer<Unit>, instance: std.core.Any): std.core.Any
 
-func setInstanceFieldValue(fieldInfo: CPointer<Unit>, declaringTypeInfo: CPointer<Unit>, instance: std.core.Any, value: std.core.Any): Unit { /* compiled code */ }
+@Intrinsic
+internal func setInstanceFieldValue(fieldInfo: std.core.CPointer<Unit>, declaringTypeInfo: std.core.CPointer<Unit>, instance: std.core.Any, value: std.core.Any): Unit
 
-func getStaticFieldValue(fieldInfo: CPointer<Unit>): std.core.Any { /* compiled code */ }
+@Intrinsic
+internal func getStaticFieldValue(fieldInfo: std.core.CPointer<Unit>): std.core.Any
 
-func setStaticFieldValue(fieldInfo: CPointer<Unit>, value: std.core.Any): Unit { /* compiled code */ }
+@Intrinsic
+internal func setStaticFieldValue(fieldInfo: std.core.CPointer<Unit>, value: std.core.Any): Unit
 
-func getParameterIndex(parameterInfo: CPointer<Unit>): UInt32 { /* compiled code */ }
+@Intrinsic
+internal func getParameterIndex(parameterInfo: std.core.CPointer<Unit>): UInt32
 
-func getParameterName(parameterInfo: CPointer<Unit>): CPointer<UInt8> { /* compiled code */ }
+@Intrinsic
+internal func getParameterName(parameterInfo: std.core.CPointer<Unit>): std.core.CPointer<UInt8>
 
-func getParameterType(parameterInfo: CPointer<Unit>): CPointer<Unit> { /* compiled code */ }
+@Intrinsic
+internal func getParameterType(parameterInfo: std.core.CPointer<Unit>): std.core.CPointer<Unit>
 
-func getParameterAnnotations(parameterInfo: CPointer<Unit>, arrayTi: CPointer<Unit>): std.core.Any { /* compiled code */ }
+@Intrinsic
+internal func getParameterAnnotations(parameterInfo: std.core.CPointer<Unit>, arrayTi: std.core.CPointer<Unit>): std.core.Any
 
-func applyCJInstanceMethod(methodInfo: CPointer<Unit>, instance: std.core.Any, args: std.core.Array<std.core.Any>): std.core.Any { /* compiled code */ }
+@Intrinsic
+internal func applyCJInstanceMethod(methodInfo: std.core.CPointer<Unit>, instance: std.core.Any, args: std.core.Array<std.core.Any>): std.core.Any
 
-func applyCJStaticMethod(methodInfo: CPointer<Unit>, args: std.core.Array<std.core.Any>, thisType: CPointer<Unit>): std.core.Any { /* compiled code */ }
+@Intrinsic
+internal func applyCJStaticMethod(methodInfo: std.core.CPointer<Unit>, args: std.core.Array<std.core.Any>, thisType: std.core.CPointer<Unit>): std.core.Any
 
-func applyCJGenericInstanceMethod(methodInfo: CPointer<Unit>, instance: std.core.Any, genericTypeArgs: std.core.Array<CPointer<Unit>>, args: std.core.Array<std.core.Any>): std.core.Any { /* compiled code */ }
+@Intrinsic
+internal func applyCJGenericInstanceMethod(methodInfo: std.core.CPointer<Unit>, instance: std.core.Any, genericTypeArgs: std.core.Array<std.core.CPointer<Unit>>, args: std.core.Array<std.core.Any>): std.core.Any
 
-func applyCJGenericStaticMethod(methodInfo: CPointer<Unit>, genericTypeArgs: std.core.Array<CPointer<Unit>>, args: std.core.Array<std.core.Any>, thisType: CPointer<Unit>): std.core.Any { /* compiled code */ }
+@Intrinsic
+internal func applyCJGenericStaticMethod(methodInfo: std.core.CPointer<Unit>, genericTypeArgs: std.core.Array<std.core.CPointer<Unit>>, args: std.core.Array<std.core.Any>, thisType: std.core.CPointer<Unit>): std.core.Any
 
-func getRelatedPackageInfo(packageInfo: CPointer<Unit>): CPointer<Unit> { /* compiled code */ }
+@Intrinsic
+internal func getRelatedPackageInfo(packageInfo: std.core.CPointer<Unit>): std.core.CPointer<Unit>
 
-func getPackageName(packageInfo: CPointer<Unit>): CPointer<UInt8> { /* compiled code */ }
+@Intrinsic
+internal func getPackageName(packageInfo: std.core.CPointer<Unit>): std.core.CPointer<UInt8>
 
-func getPackageNumOfTypeInfos(packageInfo: CPointer<Unit>): UInt32 { /* compiled code */ }
+@Intrinsic
+internal func getPackageNumOfTypeInfos(packageInfo: std.core.CPointer<Unit>): UInt32
 
-func getPackageTypeInfo(packageInfo: CPointer<Unit>, index: UInt32): CPointer<Unit> { /* compiled code */ }
+@Intrinsic
+internal func getPackageTypeInfo(packageInfo: std.core.CPointer<Unit>, index: UInt32): std.core.CPointer<Unit>
 
-func getPackageNumOfGlobalMethodInfos(packageInfo: CPointer<Unit>): UInt32 { /* compiled code */ }
+@Intrinsic
+internal func getPackageNumOfGlobalMethodInfos(packageInfo: std.core.CPointer<Unit>): UInt32
 
-func getPackageGlobalMethodInfo(packageInfo: CPointer<Unit>, index: UInt32): CPointer<Unit> { /* compiled code */ }
+@Intrinsic
+internal func getPackageGlobalMethodInfo(packageInfo: std.core.CPointer<Unit>, index: UInt32): std.core.CPointer<Unit>
 
-func getPackageNumOfGlobalFieldInfos(packageInfo: CPointer<Unit>): UInt32 { /* compiled code */ }
+@Intrinsic
+internal func getPackageNumOfGlobalFieldInfos(packageInfo: std.core.CPointer<Unit>): UInt32
 
-func getPackageGlobalFieldInfo(packageInfo: CPointer<Unit>, index: UInt32): CPointer<Unit> { /* compiled code */ }
+@Intrinsic
+internal func getPackageGlobalFieldInfo(packageInfo: std.core.CPointer<Unit>, index: UInt32): std.core.CPointer<Unit>
 
-func loadPackage(path: CPointer<UInt8>): CPointer<Unit> { /* compiled code */ }
+@Intrinsic
+internal func loadPackage(path: std.core.CPointer<UInt8>): std.core.CPointer<Unit>
 
-func getPackageByQualifiedName(qualifiedName: CPointer<UInt8>): CPointer<Unit> { /* compiled code */ }
+@Intrinsic
+internal func getPackageByQualifiedName(qualifiedName: std.core.CPointer<UInt8>): std.core.CPointer<Unit>
 
-func getPackageVersion(packageInfo: CPointer<Unit>): CPointer<UInt8> { /* compiled code */ }
+@Intrinsic
+internal func getPackageVersion(packageInfo: std.core.CPointer<Unit>): std.core.CPointer<UInt8>
 
-func getSubPackages(packageInfo: CPointer<Unit>, arrayTi: CPointer<Unit>): std.core.Any { /* compiled code */ }
+@Intrinsic
+internal func getSubPackages(packageInfo: std.core.CPointer<Unit>, arrayTi: std.core.CPointer<Unit>): std.core.Any
 
-func containsModifier(source: std.core.Collection<std.reflect.ModifierInfo>, modifier: std.reflect.ModifierInfo): Bool { /* compiled code */ }
+internal func containsModifier(source: std.core.Collection<std.reflect.ModifierInfo>, modifier: std.reflect.ModifierInfo): Bool { /* compiled code */ }
 
-func getMask(modifier: std.reflect.ModifierInfo): UInt32 { /* compiled code */ }
+internal func getMask(modifier: std.reflect.ModifierInfo): UInt32 { /* compiled code */ }
 
-class PackageInfo <: std.core.Object & std.core.Equatable<std.reflect.PackageInfo> & std.core.Hashable & std.core.ToString {
-    let _packageInfo: CPointer<Unit>
+public class PackageInfo <: std.core.Object & std.core.Equatable<std.reflect.PackageInfo> & std.core.Hashable & std.core.ToString {
+    internal let _packageInfo: std.core.CPointer<Unit>
 
-    var _qualifiedName: std.core.Option<std.core.String>
+    internal var _qualifiedName: std.core.Option<std.core.String>
 
-    var _name: std.core.Option<std.core.String>
+    internal var _name: std.core.Option<std.core.String>
 
-    var _typeInfos: std.core.Option<std.core.Collection<std.reflect.TypeInfo>>
+    internal var _typeInfos: std.core.Option<std.core.Collection<std.reflect.TypeInfo>>
 
-    var _variables: std.core.Option<std.core.Collection<std.reflect.GlobalVariableInfo>>
+    internal var _variables: std.core.Option<std.core.Collection<std.reflect.GlobalVariableInfo>>
 
-    var _functions: std.core.Option<std.core.Collection<std.reflect.GlobalFunctionInfo>>
+    internal var _functions: std.core.Option<std.core.Collection<std.reflect.GlobalFunctionInfo>>
 
-    var _version: std.core.Option<std.core.String>
+    internal var _version: std.core.Option<std.core.String>
 
-    var _rootPackage: std.core.Option<std.reflect.PackageInfo>
+    internal var _rootPackage: std.core.Option<std.reflect.PackageInfo>
 
-    var _noPublicInfoList: std.collection.ArrayList<std.reflect.TypeInfo>
+    internal var _noPublicInfoList: std.collection.ArrayList<std.reflect.TypeInfo>
 
-    init(cp: CPointer<Unit>) { /* compiled code */ }
+    init(cp: std.core.CPointer<Unit>) { /* compiled code */ }
 
-    static func get(qualifiedName: std.core.String): std.reflect.PackageInfo { /* compiled code */ }
+    public static func get(qualifiedName: std.core.String): std.reflect.PackageInfo { /* compiled code */ }
 
-    static func load(path: std.core.String): std.reflect.PackageInfo { /* compiled code */ }
+    public static func load(path: std.core.String): std.reflect.PackageInfo { /* compiled code */ }
 
-    @Annotation
-    prop qualifiedName: std.core.String {
+    public prop qualifiedName: std.core.String {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    prop name: std.core.String {
+    public prop name: std.core.String {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    prop noPublicInfos: std.collection.ArrayList<std.reflect.TypeInfo> {
+    internal prop noPublicInfos: std.collection.ArrayList<std.reflect.TypeInfo> {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    prop typeInfos: std.core.Collection<std.reflect.TypeInfo> {
+    public prop typeInfos: std.core.Collection<std.reflect.TypeInfo> {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    prop version: std.core.String {
+    public prop version: std.core.String {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    prop subPackages: std.core.Collection<std.reflect.PackageInfo> {
+    public prop subPackages: std.core.Collection<std.reflect.PackageInfo> {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    prop parentPackage: std.reflect.PackageInfo {
+    public prop parentPackage: std.reflect.PackageInfo {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    prop rootPackage: std.reflect.PackageInfo {
+    public prop rootPackage: std.reflect.PackageInfo {
         get() { /* compiled code */ }
     }
 
-    func getSubPackage(qualifiedName: std.core.String): std.reflect.PackageInfo { /* compiled code */ }
+    public func getSubPackage(qualifiedName: std.core.String): std.reflect.PackageInfo { /* compiled code */ }
 
-    func getTypeInfos(num: UInt32, subPackageInfo: CPointer<Unit>, infoList: std.collection.ArrayList<std.reflect.TypeInfo>): Unit { /* compiled code */ }
+    internal func getTypeInfos(num: UInt32, subPackageInfo: std.core.CPointer<Unit>, infoList: std.collection.ArrayList<std.reflect.TypeInfo>): Unit { /* compiled code */ }
 
-    @Annotation
-    prop variables: std.core.Collection<std.reflect.GlobalVariableInfo> {
+    public prop variables: std.core.Collection<std.reflect.GlobalVariableInfo> {
         get() { /* compiled code */ }
     }
 
-    func getGlobalVariableInfos(num: UInt32, subPackageInfo: CPointer<Unit>, infoList: std.collection.ArrayList<std.reflect.GlobalVariableInfo>): Unit { /* compiled code */ }
+    internal func getGlobalVariableInfos(num: UInt32, subPackageInfo: std.core.CPointer<Unit>, infoList: std.collection.ArrayList<std.reflect.GlobalVariableInfo>): Unit { /* compiled code */ }
 
-    @Annotation
-    prop functions: std.core.Collection<std.reflect.GlobalFunctionInfo> {
+    public prop functions: std.core.Collection<std.reflect.GlobalFunctionInfo> {
         get() { /* compiled code */ }
     }
 
-    func getGlobalFunctionInfos(num: UInt32, subPackageInfo: CPointer<Unit>, infoList: std.collection.ArrayList<std.reflect.GlobalFunctionInfo>): Unit { /* compiled code */ }
+    internal func getGlobalFunctionInfos(num: UInt32, subPackageInfo: std.core.CPointer<Unit>, infoList: std.collection.ArrayList<std.reflect.GlobalFunctionInfo>): Unit { /* compiled code */ }
 
-    func getTypeInfo(qualifiedTypeName: std.core.String): std.reflect.TypeInfo { /* compiled code */ }
+    public func getTypeInfo(qualifiedTypeName: std.core.String): std.reflect.TypeInfo { /* compiled code */ }
 
-    func getVariable(name: std.core.String): std.reflect.GlobalVariableInfo { /* compiled code */ }
+    public func getVariable(name: std.core.String): std.reflect.GlobalVariableInfo { /* compiled code */ }
 
-    func getFunction(name: std.core.String, parameterTypes: std.core.Array<std.reflect.TypeInfo>): std.reflect.GlobalFunctionInfo { /* compiled code */ }
+    public func getFunction(name: std.core.String, parameterTypes: std.core.Array<std.reflect.TypeInfo>): std.reflect.GlobalFunctionInfo { /* compiled code */ }
 
-    func getFunctions(name: std.core.String): std.core.Array<std.reflect.GlobalFunctionInfo> { /* compiled code */ }
+    public func getFunctions(name: std.core.String): std.core.Array<std.reflect.GlobalFunctionInfo> { /* compiled code */ }
 
-    operator func ==(that: std.reflect.PackageInfo): Bool { /* compiled code */ }
+    public operator func ==(that: std.reflect.PackageInfo): Bool { /* compiled code */ }
 
-    operator func !=(that: std.reflect.PackageInfo): Bool { /* compiled code */ }
+    public operator func !=(that: std.reflect.PackageInfo): Bool { /* compiled code */ }
 
-    func hashCode(): Int64 { /* compiled code */ }
+    public func hashCode(): Int64 { /* compiled code */ }
 
-    func toString(): std.core.String { /* compiled code */ }
+    public func toString(): std.core.String { /* compiled code */ }
 }
 
-class GlobalVariableInfo <: std.core.Object & std.core.Equatable<std.reflect.GlobalVariableInfo> & std.core.Hashable & std.core.ToString {
-    let _info: CPointer<Unit>
+public class GlobalVariableInfo <: std.core.Object & std.core.Equatable<std.reflect.GlobalVariableInfo> & std.core.Hashable & std.core.ToString {
+    internal let _info: std.core.CPointer<Unit>
 
-    var _mutable: std.core.Option<Bool>
+    internal var _mutable: std.core.Option<Bool>
 
-    var _name: std.core.Option<std.core.String>
+    internal var _name: std.core.Option<std.core.String>
 
-    var _typeInfo: std.core.Option<std.reflect.TypeInfo>
+    internal var _typeInfo: std.core.Option<std.reflect.TypeInfo>
 
-    var _annotations: std.core.Option<std.core.Collection<std.core.Object>>
+    internal var _annotations: std.core.Option<std.core.Collection<std.core.Object>>
 
-    init(cp: CPointer<Unit>) { /* compiled code */ }
+    init(cp: std.core.CPointer<Unit>) { /* compiled code */ }
 
-    @Annotation
-    prop name: std.core.String {
+    public prop name: std.core.String {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    prop typeInfo: std.reflect.TypeInfo {
+    public prop typeInfo: std.reflect.TypeInfo {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    prop annotations: std.core.Collection<std.core.Object> {
+    public prop annotations: std.core.Collection<std.core.Object> {
         get() { /* compiled code */ }
     }
 
-    func isMutable(): Bool { /* compiled code */ }
+    public func isMutable(): Bool { /* compiled code */ }
 
-    func getValue(): std.core.Any { /* compiled code */ }
+    public func getValue(): std.core.Any { /* compiled code */ }
 
-    func setValue(newValue: std.core.Any): Unit { /* compiled code */ }
+    public func setValue(newValue: std.core.Any): Unit { /* compiled code */ }
 
-    func findAnnotation<T>(): std.core.Option<T> { /* compiled code */ }
+    public func findAnnotation<T>(): std.core.Option<T> { /* compiled code */ }
 
-    operator func ==(that: std.reflect.GlobalVariableInfo): Bool { /* compiled code */ }
+    public operator func ==(that: std.reflect.GlobalVariableInfo): Bool { /* compiled code */ }
 
-    operator func !=(that: std.reflect.GlobalVariableInfo): Bool { /* compiled code */ }
+    public operator func !=(that: std.reflect.GlobalVariableInfo): Bool { /* compiled code */ }
 
-    func hashCode(): Int64 { /* compiled code */ }
+    public func hashCode(): Int64 { /* compiled code */ }
 
-    func toString(): std.core.String { /* compiled code */ }
+    public func toString(): std.core.String { /* compiled code */ }
 }
 
-class PrimitiveTypeInfo <: std.reflect.TypeInfo {
-    let PRIMITIVES: std.core.Array<std.core.String>
+public class PrimitiveTypeInfo <: std.reflect.TypeInfo {
+    internal static let PRIMITIVES: std.core.Array<std.core.String>
 
-    let ARRAY_OBJECT: std.core.Array<std.core.Object>
+    internal static let ARRAY_OBJECT: std.core.Array<std.core.Object>
 
-    init(cp: CPointer<Unit>, name: std.core.String) { /* compiled code */ }
+    init(cp: std.core.CPointer<Unit>, name: std.core.String) { /* compiled code */ }
 
-    redef static func get(qualifiedName: std.core.String): std.reflect.PrimitiveTypeInfo { /* compiled code */ }
+    public redef static func get(qualifiedName: std.core.String): std.reflect.PrimitiveTypeInfo { /* compiled code */ }
 
-    redef static func of(a: std.core.Any): std.reflect.PrimitiveTypeInfo { /* compiled code */ }
+    public redef static func of(a: std.core.Any): std.reflect.PrimitiveTypeInfo { /* compiled code */ }
 
-    redef static func of<T>(): std.reflect.PrimitiveTypeInfo { /* compiled code */ }
+    public redef static func of<T>(): std.reflect.PrimitiveTypeInfo { /* compiled code */ }
 }
 
-func checkPrimitive(name: std.core.String): (Bool, std.core.String, std.core.String) { /* compiled code */ }
+internal func checkPrimitive(name: std.core.String): (Bool, std.core.String, std.core.String) { /* compiled code */ }
 
-class StructTypeInfo <: std.reflect.TypeInfo {
-    var _constructors: std.core.Option<std.core.Collection<std.reflect.ConstructorInfo>>
+public class StructTypeInfo <: std.reflect.TypeInfo {
+    internal var _constructors: std.core.Option<std.core.Collection<std.reflect.ConstructorInfo>>
 
-    var _instanceVariables: std.core.Option<std.core.Collection<std.reflect.InstanceVariableInfo>>
+    internal var _instanceVariables: std.core.Option<std.core.Collection<std.reflect.InstanceVariableInfo>>
 
-    var _staticVariables: std.core.Option<std.core.Collection<std.reflect.StaticVariableInfo>>
+    internal var _staticVariables: std.core.Option<std.core.Collection<std.reflect.StaticVariableInfo>>
 
-    init(cp: CPointer<Unit>) { /* compiled code */ }
+    init(cp: std.core.CPointer<Unit>) { /* compiled code */ }
 
-    redef static func get(qualifiedName: std.core.String): std.reflect.StructTypeInfo { /* compiled code */ }
+    public redef static func get(qualifiedName: std.core.String): std.reflect.StructTypeInfo { /* compiled code */ }
 
-    redef static func of(a: std.core.Any): std.reflect.StructTypeInfo { /* compiled code */ }
+    public redef static func of(a: std.core.Any): std.reflect.StructTypeInfo { /* compiled code */ }
 
-    redef static func of<T>(): std.reflect.StructTypeInfo { /* compiled code */ }
+    public redef static func of<T>(): std.reflect.StructTypeInfo { /* compiled code */ }
 
-    @Annotation
-    prop constructors: std.core.Collection<std.reflect.ConstructorInfo> {
+    public prop constructors: std.core.Collection<std.reflect.ConstructorInfo> {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    prop instanceVariables: std.core.Collection<std.reflect.InstanceVariableInfo> {
+    public prop instanceVariables: std.core.Collection<std.reflect.InstanceVariableInfo> {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    prop staticVariables: std.core.Collection<std.reflect.StaticVariableInfo> {
+    public prop staticVariables: std.core.Collection<std.reflect.StaticVariableInfo> {
         get() { /* compiled code */ }
     }
 
-    func construct(args: std.core.Array<std.core.Any>): std.core.Any { /* compiled code */ }
+    public func construct(args: std.core.Array<std.core.Any>): std.core.Any { /* compiled code */ }
 
-    func getConstructor(parameterTypes: std.core.Array<std.reflect.TypeInfo>): std.reflect.ConstructorInfo { /* compiled code */ }
+    public func getConstructor(parameterTypes: std.core.Array<std.reflect.TypeInfo>): std.reflect.ConstructorInfo { /* compiled code */ }
 
-    func getInstanceVariable(name: std.core.String): std.reflect.InstanceVariableInfo { /* compiled code */ }
+    public func getInstanceVariable(name: std.core.String): std.reflect.InstanceVariableInfo { /* compiled code */ }
 
-    func getStaticVariable(name: std.core.String): std.reflect.StaticVariableInfo { /* compiled code */ }
+    public func getStaticVariable(name: std.core.String): std.reflect.StaticVariableInfo { /* compiled code */ }
 }
 
 let TYPE_INFO_CREATE_LOCK: std.sync.Mutex
 
-class TypeTemplate {
-    let _info: CPointer<Unit>
+internal class TypeTemplate {
+    protected let _info: std.core.CPointer<Unit>
 
-    init(info: CPointer<Unit>) { /* compiled code */ }
+    init(info: std.core.CPointer<Unit>) { /* compiled code */ }
 
-    static func get(typeinfoName: std.core.String): std.reflect.TypeTemplate { /* compiled code */ }
+    internal static func get(typeinfoName: std.core.String): std.reflect.TypeTemplate { /* compiled code */ }
 
-    @Annotation
-    prop info: CPointer<Unit> {
+    internal prop info: std.core.CPointer<Unit> {
         get() { /* compiled code */ }
     }
 }
 
-class TypeTemplateParser {
-    var templates: std.collection.ArrayList<std.core.String>
+internal class TypeTemplateParser {
+    internal var templates: std.collection.ArrayList<std.core.String>
 
-    var data: std.collection.ArrayList<std.collection.ArrayList<std.core.String>>
+    internal var data: std.collection.ArrayList<std.collection.ArrayList<std.core.String>>
 
-    var map: std.collection.HashMap<std.core.String, CPointer<Unit>>
+    internal var map: std.collection.HashMap<std.core.String, std.core.CPointer<Unit>>
 
-    func parse(string: std.core.String): std.reflect.TypeInfo { /* compiled code */ }
+    internal func parse(string: std.core.String): std.reflect.TypeInfo { /* compiled code */ }
 
-    func parseGenericString(name: std.core.Array<UInt8>, begin: Int64, end: Int64): Int64 { /* compiled code */ }
+    internal func parseGenericString(name: std.core.Array<UInt8>, begin: Int64, end: Int64): Int64 { /* compiled code */ }
 
     init() { /* compiled code */ }
 }
 
-type Annotation = std.core.Object
+public type Annotation = std.core.Object
 
-func parseParameterTypes(parameters: std.core.String): std.core.Array<std.reflect.TypeInfo> { /* compiled code */ }
+public func parseParameterTypes(parameters: std.core.String): std.core.Array<std.reflect.TypeInfo> { /* compiled code */ }
 
-func getByNameAndParamTypes<T>(source: std.core.Iterable<T>, name: std.core.String, parameterTypes: std.core.Array<std.reflect.TypeInfo>, message: std.core.String, nameAndParamsGetter: (T) -> (std.core.String, std.collection.ReadOnlyList<std.reflect.ParameterInfo>)): T { /* compiled code */ }
+internal func getByNameAndParamTypes<T>(source: std.core.Iterable<T>, name: std.core.String, parameterTypes: std.core.Array<std.reflect.TypeInfo>, message: std.core.String, nameAndParamsGetter: (T) -> (std.core.String, std.collection.ReadOnlyList<std.reflect.ParameterInfo>)): T { /* compiled code */ }
 
-func getByName<T>(source: std.core.Iterable<T>, name: std.core.String, message: std.core.String, nameGetter: (T) -> std.core.String): T { /* compiled code */ }
+internal func getByName<T>(source: std.core.Iterable<T>, name: std.core.String, message: std.core.String, nameGetter: (T) -> std.core.String): T { /* compiled code */ }
 
-func getTypeNameByQualifiedName(qualifiedName: std.core.String): std.core.String { /* compiled code */ }
+internal func getTypeNameByQualifiedName(qualifiedName: std.core.String): std.core.String { /* compiled code */ }
 
-func checkArgsSizeAndType(parameters: std.collection.ReadOnlyList<std.reflect.ParameterInfo>, args: std.core.Array<std.core.Any>): Unit { /* compiled code */ }
+internal func checkArgsSizeAndType(parameters: std.collection.ReadOnlyList<std.reflect.ParameterInfo>, args: std.core.Array<std.core.Any>): Unit { /* compiled code */ }
 
-func checkValueType(newValue: std.core.Any, typeInfo: std.reflect.TypeInfo): Unit { /* compiled code */ }
+internal func checkValueType(newValue: std.core.Any, typeInfo: std.reflect.TypeInfo): Unit { /* compiled code */ }
 
-func findAnnotation<T>(annotations: std.core.Collection<std.core.Object>): std.core.Option<T> { /* compiled code */ }
+internal func findAnnotation<T>(annotations: std.core.Collection<std.core.Object>): std.core.Option<T> { /* compiled code */ }
 
-func getFieldDeclaringClassType(declaringTypeInfo: CPointer<Unit>): std.reflect.TypeInfo { /* compiled code */ }
+internal func getFieldDeclaringClassType(declaringTypeInfo: std.core.CPointer<Unit>): std.reflect.TypeInfo { /* compiled code */ }
