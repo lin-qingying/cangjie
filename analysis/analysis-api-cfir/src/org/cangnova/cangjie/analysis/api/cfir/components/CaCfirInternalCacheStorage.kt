@@ -7,6 +7,7 @@ import org.cangnova.cangjie.analysis.api.CaPlatformInterface
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.references.CaCfirReference
+import org.cangnova.cangjie.analysis.api.cfir.references.CaResolvedSymbolsCacheEntry
 import org.cangnova.cangjie.analysis.api.lifetime.CaSessionComponent
 import org.cangnova.cangjie.analysis.api.platform.CaCachedService
 import org.cangnova.cangjie.analysis.api.platform.caches.NullableCaffeineCache
@@ -77,8 +78,12 @@ internal class CaCfirInternalCacheStorage(private val analysisSession: CaCfirSes
     @OptIn(CaPlatformInterface::class)
     /**
      * CFIR 引用到公开符号集合的缓存。
+     *
+     * 值里带有解析时的文件修改戳，因为 [softCachedValueWithPsiKey] 的失效追踪器只覆盖
+     * 物理 PSI 与宏快照，非物理副本（dangling file / PSI copy）的编辑只能靠条目自身校验
+     * `PsiFile.modificationStamp` 发现。见 [org.cangnova.cangjie.analysis.api.cfir.references.CaCfirReference.resolveToSymbols]。
      */
-    val resolveToSymbolsCache: CachedValue<Cache<CaCfirReference, Collection<CaSymbol>>> by lazy {
+    val resolveToSymbolsCache: CachedValue<Cache<CaCfirReference, CaResolvedSymbolsCacheEntry>> by lazy {
         softCachedValueWithPsiKey {
             Caffeine.newBuilder()
                 .withStatsCounter(statisticsService?.analysisSessions?.resolveToSymbolsCacheStatsCounter)

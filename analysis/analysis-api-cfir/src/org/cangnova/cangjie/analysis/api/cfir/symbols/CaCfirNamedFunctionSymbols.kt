@@ -96,9 +96,12 @@ internal class CaCfirNamedFunctionSymbol private constructor(
 
     /**
      * 函数 CFIR member 状态。
+     *
+     * 局部函数在 BODY_RESOLVE 中创建、不经过 STATUS phase，由 [symbolDeclarationStatus]
+     * 回退到 raw status；其余函数仍要求 STATUS 已发布。
      */
     private val status
-        get() = cfirSymbol.resolvedStatus
+        get() = cfirSymbol.symbolDeclarationStatus
 
     /**
      * 函数对应的 PSI。
@@ -187,7 +190,7 @@ internal class CaCfirNamedFunctionSymbol private constructor(
      * 函数 modality。
      */
     override val modality: CaSymbolModality?
-        get() = withValidityAssertion { status.modality.asPublicModality() }
+        get() = withValidityAssertion { status.modality?.asPublicModality() }
 
     override val modalityExplicitness: CaModifierExplicitness
         get() = withValidityAssertion {

@@ -17,8 +17,10 @@ import org.cangnova.cangjie.analysis.api.symbols.markers.CaTypeParameterOwnerSym
 import org.cangnova.cangjie.analysis.api.symbols.pointers.CaSymbolPointer
 import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
 import org.cangnova.cangjie.cfir.symbols.CfirExtendSymbol
+import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.name.ClassId
@@ -175,14 +177,27 @@ internal class CaCfirExtendSymbol private constructor(
      * extend 的被扩展目标类型。
      */
     override val extendedType: CaType
-        get() = extendDeclaration.extendedTypeRef.coneTypeOrNull?.let(builder.typeBuilder::buildType)
-            ?: error("Cannot build extended type for extend `${extendId}`")
+        get() = withValidityAssertion {
+            /*
+             * Ctrl+Hover / 快速文档会在文件尚未推进到 TYPES 时就取这个符号的属性。
+             * 直接读 raw `extendedTypeRef` 会得到 null，进而抛异常并中断整次
+             * Ctrl+点击导航（即使引用本身能解析）。这里先补一次类型解析。
+             */
+            extendDeclaration.lazyResolveToPhase(CfirResolvePhase.TYPES)
+            extendDeclaration.extendedTypeRef.coneTypeOrNull?.let(builder.typeBuilder::buildType)
+                ?: error("Cannot build extended type for extend `${extendId}`")
+        }
 
     /**
      * extend 显式声明的父接口或父类型列表。
      */
     override val superTypes: List<CaType>
-        get() = extendDeclaration.superTypeRefs.mapNotNull { superTypeRef -> superTypeRef.coneTypeOrNull?.let(builder.typeBuilder::buildType) }
+        get() = withValidityAssertion {
+            extendDeclaration.lazyResolveToPhase(CfirResolvePhase.TYPES)
+            extendDeclaration.superTypeRefs.mapNotNull { superTypeRef ->
+                superTypeRef.coneTypeOrNull?.let(builder.typeBuilder::buildType)
+            }
+        }
 
     /**
      * extend 类型参数列表。

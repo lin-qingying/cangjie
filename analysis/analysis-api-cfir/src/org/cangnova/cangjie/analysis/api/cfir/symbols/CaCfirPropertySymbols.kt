@@ -435,9 +435,12 @@ internal class CaCfirPropertySymbol private constructor(
 
     /**
      * 属性 CFIR member 状态。
+     *
+     * 局部属性与局部函数一样在 BODY_RESOLVE 中创建，由 [symbolDeclarationStatus]
+     * 回退到 raw status。
      */
     private val status
-        get() = cfirSymbol.resolvedStatus
+        get() = cfirSymbol.symbolDeclarationStatus
 
     /**
      * 属性公开注解列表。
@@ -506,7 +509,7 @@ internal class CaCfirPropertySymbol private constructor(
      * 属性 modality。
      */
     override val modality: CaSymbolModality?
-        get() = withValidityAssertion { status.modality.asPublicModality() }
+        get() = withValidityAssertion { status.modality?.asPublicModality() }
 
     override val modalityExplicitness: CaModifierExplicitness
         get() = withValidityAssertion {

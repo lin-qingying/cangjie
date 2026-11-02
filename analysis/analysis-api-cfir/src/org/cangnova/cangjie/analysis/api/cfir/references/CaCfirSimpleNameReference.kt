@@ -1,7 +1,6 @@
 package org.cangnova.cangjie.analysis.api.cfir.references
 
 import com.intellij.psi.PsiElement
-import org.cangnova.cangjie.analysis.api.CaImplementationDetail
 import org.cangnova.cangjie.analysis.api.analyze
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
@@ -15,8 +14,16 @@ import org.cangnova.cangjie.cfir.expressions.CfirLoopJump
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
 import org.cangnova.cangjie.cfir.psi
+import org.cangnova.cangjie.idea.references.mainReference
 import org.cangnova.cangjie.psi.CjAnnotation
+import org.cangnova.cangjie.psi.CjCallExpression
 import org.cangnova.cangjie.psi.CjConstructorCalleeExpression
+import org.cangnova.cangjie.psi.CjDotQualifiedExpression
+import org.cangnova.cangjie.psi.CjExtend
+import org.cangnova.cangjie.psi.CjThisExpression
+import org.cangnova.cangjie.psi.CjParameter
+import org.cangnova.cangjie.psi.CjProperty
+import org.cangnova.cangjie.psi.CjVariable
 import org.cangnova.cangjie.psi.CjDeclaration
 import org.cangnova.cangjie.psi.CjImportAlias
 import org.cangnova.cangjie.psi.CjLabelReferenceExpression
@@ -36,7 +43,6 @@ import org.cangnova.cangjie.references.CangJiePsiReferenceProviderContributor
 /**
  * 基于 CFIR Analysis API 的简单名引用实现。
  */
-@OptIn(CaImplementationDetail::class)
 internal class CaCfirSimpleNameReference(
     expression: CjSimpleNameExpression,
     /**
@@ -118,7 +124,7 @@ internal class CaCfirSimpleNameReference(
             }
         }
         val referenceTargetSymbols = resolveToSymbols()
-        return super.getResolvedToPsi(analysisSession, referenceTargetSymbols)
+        return super.getResolvedToPsi(analysisSession, referenceTargetSymbols, expression.libraryReceiverHint())
     }
 
     /**
@@ -236,5 +242,28 @@ private fun CjExpression.unwrapQualifiedOrWrappedExpression(): CjExpression {
             is org.cangnova.cangjie.psi.CjParenthesizedExpression -> parent
             else -> return current
         }
+    }
+}
+
+/**
+ * 调用点可提供的接收者类型文本，用于把库 `extend` 的同名成员收敛到唯一声明。
+ *
+ * 库 `extend` 成员在符号层没有 classId / dispatch receiver（primitive 接收者不属于
+ * `ConeSimpleCangJieType`），因此 `this.toString()` 这类调用只能借助 PSI 上下文定位：
+ * 所在 extend 的接收者，或显式接收者声明上的类型文本。
+ */
+private fun CjSimpleNameExpression.libraryReceiverHint(): String? {
+    val call = parent as? CjCallExpression ?: return null
+    val receiver = (call.parent as? CjDotQualifiedExpression)?.receiverExpression
+    if (receiver == null || receiver is CjThisExpression) {
+        return getStrictParentOfType<CjExtend>()?.receiverTypeReceiver?.text
+    }
+    val receiverName = receiver as? CjSimpleNameExpression ?: return null
+    val declaration = receiverName.mainReference.resolve()
+    return when (declaration) {
+        is CjParameter -> declaration.typeReference?.text
+        is CjProperty -> declaration.typeReference?.text
+        is CjVariable<*> -> declaration.typeReference?.text
+        else -> null
     }
 }

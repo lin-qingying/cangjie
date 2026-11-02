@@ -3,6 +3,8 @@
   <xi:include href="/META-INF/analysis-api/cangjie-analysis-stubs.xml"/>
   <xi:include href="/META-INF/analysis-api/cangjie-analysis-decompiled.xml"/>
   <xi:include href="/META-INF/analysis-api/cangjie-low-level-api-cfir.xml"/>
+  <!-- 宏语义展开的宿主环境 SPI、编排服务与触发点；未注册 environment 时不展开。 -->
+  <xi:include href="/META-INF/analysis-api/cangjie-macro-expansion.xml"/>
   <xi:include href="/META-INF/analysis-api/cangjie-symbol-light-declarations.xml"/>
 <extensions defaultExtensionNs="org.cangnova.cangjie">
   <psiReferenceProvider implementation="org.cangnova.cangjie.analysis.api.cfir.references.CaCfirSimpleNameReference$Provider"/>

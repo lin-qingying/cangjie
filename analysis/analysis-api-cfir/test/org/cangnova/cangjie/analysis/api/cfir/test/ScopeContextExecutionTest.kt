@@ -109,6 +109,27 @@ class ScopeContextExecutionTest : AbstractAnalysisApiExecutionTest(
         }
     }
 
+    /**
+     * extend 成员体内的隐式接收者是**被扩展类型**。
+     *
+     * 同时锁住 completion 路径：ContextCollector 在增量场景下可能拿到尚未推进到
+     * TYPES 的 extend，必须先补阶段，否则会抛
+     * "Extend target type must be resolved before body resolution"。
+     */
+    @Test
+    fun extendScopeContext(mainFile: CjFile) {
+        analyzeForTest(mainFile) {
+            val position = mainFile.usageReference("toString")
+            val receivers = mainFile.scopeContext(position).implicitReceivers
+
+            assertTrue(receivers.isNotEmpty(), "extend 成员体内必须存在隐式接收者")
+            assertTrue(
+                receivers.any { it.type.toString().contains("Box") },
+                "extend 成员的接收者类型应为 Box，实际 ${receivers.map { it.type }}",
+            )
+        }
+    }
+
     /** 导入上下文必须含文件与包来源，且不混入局部声明。 */
     @Test
     fun importingScopeContextIsIndependentFromFileScope(mainFile: CjFile) {

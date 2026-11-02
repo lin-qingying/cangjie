@@ -24,6 +24,7 @@ import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeLookupTagBasedType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
+import org.cangnova.cangjie.cfir.session.extendProviderOrNull
 import org.cangnova.cangjie.cfir.types.abbreviatedTypeOrSelf
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.psi.CjCallExpression
@@ -71,7 +72,7 @@ internal object CfirReferenceResolveHelper {
             return getSymbolsByUserTypeQualifierPart(expression, analysisSession, symbolBuilder)
         }
 
-        return when (cfir) {
+        val result = when (cfir) {
             is CfirResolvedTypeRef -> listOfNotNull(cfir.toTargetSymbol(analysisSession, symbolBuilder))
             is CfirTypeParameter -> listOf(symbolBuilder.buildSymbol(cfir.symbol))
             is CfirResolvable -> getSymbolsByResolvable(cfir, symbolBuilder)
@@ -79,6 +80,7 @@ internal object CfirReferenceResolveHelper {
             is CfirErrorNamedReference -> cfir.toCaTargetSymbols(symbolBuilder)
             else -> emptyList()
         }
+        return result
     }
 
     /**
@@ -101,8 +103,11 @@ internal object CfirReferenceResolveHelper {
         if (expression.isPartOfUserTypeRefQualifier()) return emptyList()
 
         val typeReference = userType.parent as? CjTypeReference ?: return emptyList()
-        val resolvedTypeRef = typeReference.getOrBuildCfir(analysisSession.resolutionFacade) as? CfirResolvedTypeRef
-            ?: return emptyList()
+        val typeReferenceCfir = typeReference.getOrBuildCfir(analysisSession.resolutionFacade)
+        val resolvedTypeRef = typeReferenceCfir as? CfirResolvedTypeRef
+        if (resolvedTypeRef == null) {
+            return emptyList()
+        }
 
         return listOfNotNull(resolvedTypeRef.toTargetSymbol(analysisSession, symbolBuilder))
     }
@@ -235,7 +240,8 @@ internal object CfirReferenceResolveHelper {
         analysisSession: CaCfirSession,
         symbolBuilder: CaSymbolByCfirBuilder,
     ): org.cangnova.cangjie.analysis.api.symbols.CaSymbol? {
-        return coneType.toTargetSymbol(analysisSession, symbolBuilder) ?: run {
+        val symbol = coneType.toTargetSymbol(analysisSession, symbolBuilder)
+        return symbol ?: run {
             val diagnostic = (this as? CfirErrorTypeRef)?.diagnostic as? ConeUnmatchedTypeArgumentsError
             diagnostic?.symbol?.buildSymbol(symbolBuilder)
         }

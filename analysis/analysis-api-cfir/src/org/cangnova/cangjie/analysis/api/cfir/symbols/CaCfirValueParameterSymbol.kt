@@ -179,9 +179,17 @@ internal class CaCfirValueParameterSymbol private constructor(
      * 除 `()`/`[]` 外的运算符重载两个例外。唯一实现在
      * [org.cangnova.cangjie.cfir.resolve.calls.cangjieVariadicParameterOrNull]，
      * 调用解析与分析层共用，避免两边各写一份后漂移。
+     *
+     * 该规则读取的是形参**已定型**的类型（官方 `IsFuncDeclPossibleVariadic` 以
+     * `Ty::IsTyCorrect(param->GetTy())` 为前提，
+     * 见 `external/cangjie_compiler/src/Sema/TypeCheckCall.cpp:342-359`），而分析层拿到的
+     * CFIR 符号默认只解析到 [org.cangnova.cangjie.cfir.declarations.CfirResolvePhase.RAW_CFIR]：
+     * 不先推进阶段时形参类型引用尚未定型，
+     * 规则会把真实变参静默判成非变参（因此本属性此前只有被 `returnType` 抢先推进后才正确）。
      */
     override val isVararg: Boolean
         get() = withValidityAssertion {
+            cfirSymbol.ensureReturnTypeIsResolvable()
             val owner = cfirSymbol.containingDeclarationSymbol.cfir as? CfirDeclaration ?: return false
             owner.cangjieVariadicParameterOrNull() === parameterDeclaration
         }

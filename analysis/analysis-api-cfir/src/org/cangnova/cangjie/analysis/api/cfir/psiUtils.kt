@@ -2,17 +2,25 @@ package org.cangnova.cangjie.analysis.api.cfir
 
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiManager
 import com.intellij.psi.search.GlobalSearchScope
 import org.cangnova.cangjie.analysis.api.cfir.diagnostics.CJ_DIAGNOSTIC_CONVERTER
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirSymbol
+import org.cangnova.cangjie.analysis.api.decompiled.CaDecompiledBinaryIndex
 import org.cangnova.cangjie.analysis.api.diagnostics.CaDiagnosticWithPsi
+import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
+import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.llCfirModuleData
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirResolvableModuleSession
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolLocation
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolModality
+import org.cangnova.cangjie.analysis.api.symbols.CaSymbolOrigin
 import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.cfir.common.moduleData
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.extensionSignatureKey
+import org.cangnova.cangjie.cfir.declarations.normalizeCfirExtendTypeText
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.CjPsiDiagnostic
 import org.cangnova.cangjie.cfir.CfirElement
@@ -20,6 +28,15 @@ import org.cangnova.cangjie.cfir.containingClassLookupTag
 import org.cangnova.cangjie.cfir.psi
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirExtendSymbol
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirExtendSymbol
+import org.cangnova.cangjie.cfir.session.extendProviderOrNull
+import org.cangnova.cangjie.cfir.types.ConeClassLikeType
+import org.cangnova.cangjie.cfir.types.ConePrimitiveType
+import org.cangnova.cangjie.cfir.types.ConeSimpleCangJieType
+import org.cangnova.cangjie.name.CallableId
+import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.cfir.realPsi
 import org.cangnova.cangjie.cfir.unwrapFakeOverridesOrDelegated
 import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
@@ -256,9 +273,170 @@ internal val CaSymbolModality.isOpenFromInterface: Boolean
 
 /**
  * 从公开 CFIR 符号恢复当前分析范围内的 PSI。
+ *
+ * 对齐 Kotlin `KaSymbol.psi` 的契约：源码符号返回源 PSI；`LIBRARY` 符号必须回链到
+ * `.cjo` 的反编译 PSI，而不是 null。
  */
 internal fun CaCfirSymbol<*>.findPsi(): PsiElement? {
     return cfirSymbol.findPsi(analysisSession.analysisScope, analysisSession.project)
+        ?: findLibraryPsi()
+}
+
+/**
+ * 为 `LIBRARY` origin 的 CFIR 符号恢复反编译 PSI。
+ *
+ * 库声明在 CFIR 侧由 `.cjo` 反序列化而来，没有 `source`，因此不能只依赖源 PSI 回链。
+ * 这里按 `module + package + 声明身份` 通过 [CaDecompiledBinaryIndex] 定位 binary 文件，
+ * 再用 `PsiManager` 取得 `CjDecompiledFile` 中的声明 PSI：
+ * - class-like：包 + 短类名；
+ * - 普通 callable：包（顶层）或 classId（成员）+ 名字；
+ * - xtend 声明：按接收者 + 父类型结构签名定位；xtend 成员：按接收者类型定位所属 extend，再按名字取成员。
+ */
+internal fun CaCfirSymbol<*>.findLibraryPsi(receiverHint: String? = null): PsiElement? {
+    // substitution override（泛型实参替换后的调用点视图）必须剥回原始库声明再回链。
+    val baseSymbol = (cfirSymbol as? CfirCallableSymbol<*>)?.unwrapSubstitutionOverrides() ?: cfirSymbol
+    if (origin != CaSymbolOrigin.LIBRARY &&
+        origin != CaSymbolOrigin.SUBSTITUTION_OVERRIDE_CALL_SITE &&
+        origin != CaSymbolOrigin.SUBSTITUTION_OVERRIDE_DECLARATION_SITE &&
+        baseSymbol === cfirSymbol
+    ) {
+        return null
+    }
+    val module = cfirSymbol.llCfirModuleData.caModule
+    val project = module.project
+    val binaryIndex = project.getService(CaDecompiledBinaryIndex::class.java) ?: return null
+
+    fun decompiledFile(packageFqName: FqName): CjFile? {
+        val binaryFile = when (module) {
+            is CaBuiltinsModule -> binaryIndex.findBinaryFile(module, packageFqName)
+            is CaLibraryModule -> binaryIndex.findBinaryFile(module, packageFqName)
+            else -> null
+        } ?: return null
+        return PsiManager.getInstance(project).findFile(binaryFile) as? CjFile
+    }
+
+    val element = when (val symbol = baseSymbol) {
+        is CfirClassLikeSymbol<*> -> {
+            val classId = symbol.classId
+            val file = decompiledFile(classId.packageFqName) ?: return null
+            file.declarations
+                .filterIsInstance<CjTypeStatement>()
+                .firstOrNull { declaration ->
+                    declaration.name == classId.relativeClassName.shortName().asString()
+                }
+        }
+
+        is CfirCallableSymbol<*> -> {
+            val callableId = symbol.callableId
+            val file = decompiledFile(callableId.packageName) ?: return null
+            findLibraryCallablePsi(file, callableId, receiverHint, symbol.dispatchReceiverType)
+        }
+
+        is CfirExtendSymbol -> {
+            /*
+             * 库 extend 的符号实例与 extend provider 索引里的实例可能不是同一个对象
+             * （库会话/provider 重建），因此不能直接用 `getPackageFqName(cfirSymbol.cfir)`。
+             * 这里按「接收者 + 父类型」结构签名在 provider 索引里找对应项，再用同一个
+             * provider 取包名，最后在反编译文件里按同样的签名定位 CjExtend。
+             */
+            val extendSymbol = this as? CaCfirExtendSymbol ?: return null
+            val cfirSession = extendSymbol.analysisSession.resolutionFacade.useSiteCfirSession
+            val extendProvider = cfirSession.extendProviderOrNull ?: return null
+            val signature = extendSymbol.cfirSymbol.cfir.extensionSignatureKey()
+            val providerExtend = extendProvider.getExtendByStructuralKey(signature) ?: return null
+            val packageFqName = extendProvider.getPackageFqName(providerExtend) ?: return null
+            val file = decompiledFile(packageFqName) ?: return null
+            file.declarations
+                .filterIsInstance<CjExtend>()
+                .firstOrNull { psi -> psi.psiExtensionSignatureKey() == signature }
+        }
+
+        else -> null
+    }
+    /*
+     * 反编译文件（`.cjo`）的 view provider 会在 SDK 重载/索引刷新时被重建；旧元素即使
+     * `isValid == true` 也挂在旧 provider 上，直接交给平台会抛
+     * `PsiInvalidElementAccessException: ... different providers`。
+     * 所有库 PSI 出口都必须先恢复到当前 live file 上的对应声明。
+     */
+    return element?.restoreCurrentCompiledPsi(project)
+}
+
+/**
+ * 反编译 `CjExtend` 的结构签名，与 CFIR 侧 `extensionSignatureKey()` 保持同一规范化规则。
+ */
+private fun CjExtend.psiExtensionSignatureKey(): String {
+    val receiver = normalizeCfirExtendTypeText(receiverTypeReceiver?.text.orEmpty())
+    val superTypes = superTypeListEntries
+        .mapNotNull { entry -> entry.typeReference?.getTypeText() }
+        .map(::normalizeCfirExtendTypeText)
+        .filter(String::isNotEmpty)
+        .sorted()
+        .joinToString(",")
+    return "$receiver<$superTypes>"
+}
+
+/**
+ * 在反编译 PSI 中定位库 callable 声明。
+ *
+ * [receiverHint] 优先于符号自身的 dispatch receiver：库 `extend` 成员在符号层
+ * 不带接收者（primitive 接收者不属于 `ConeSimpleCangJieType`），调用点的上下文
+ * 才是可靠来源。
+ */
+private fun findLibraryCallablePsi(
+    file: CjFile,
+    callableId: CallableId,
+    receiverHint: String?,
+    receiverType: ConeSimpleCangJieType?,
+): PsiElement? {
+    val name = callableId.callableName.asString()
+
+    val classId = callableId.classId
+    if (classId != null) {
+        val classShortName = classId.relativeClassName.shortName().asString()
+        val owner = file.declarations
+            .filterIsInstance<CjTypeStatement>()
+            .firstOrNull { declaration -> declaration.name == classShortName }
+        val declaredInClass = owner?.let { declaration -> findDeclaredCallable(declaration, name) }
+        if (declaredInClass != null) return declaredInClass
+
+        // 默认成员可能是库 `extend` 提供的（如 `Option.isNone`），继续在该类型的 extend 里找。
+        val receiverKey = normalizeCfirExtendTypeText(classShortName)
+        return file.declarations
+            .filterIsInstance<CjExtend>()
+            .filter { extend -> normalizeCfirExtendTypeText(extend.receiverTypeReceiver?.text.orEmpty()) == receiverKey }
+            .mapNotNull { extend -> findDeclaredCallable(extend, name) }
+            .singleOrNull()
+    }
+
+    file.declarations.firstOrNull { declaration -> isCallableNamed(declaration, name) }?.let { return it }
+
+    // `extend` 成员：用接收者类型收敛到唯一 extend，避免同名成员（如 std.core 的多个 `toString`）误导航。
+    val receiverName = receiverHint ?: receiverType?.let(::libraryReceiverTypeName) ?: return null
+    val receiverKey = normalizeCfirExtendTypeText(receiverName)
+    return file.declarations
+        .filterIsInstance<CjExtend>()
+        .filter { extend -> normalizeCfirExtendTypeText(extend.receiverTypeReceiver?.text.orEmpty()) == receiverKey }
+        .mapNotNull { extend -> findDeclaredCallable(extend, name) }
+        .singleOrNull()
+}
+
+/** 在声明容器内按名字取 callable 声明。 */
+private fun findDeclaredCallable(container: CjDeclarationContainer, name: String): PsiElement? =
+    container.declarations.firstOrNull { declaration -> isCallableNamed(declaration, name) }
+
+/** 判断声明是否为目标名字的 callable。 */
+private fun isCallableNamed(declaration: CjDeclaration, name: String): Boolean = when (declaration) {
+    is CjNamedFunction -> declaration.name == name
+    is CjProperty -> declaration.name == name
+    else -> false
+}
+
+/** 把接收者类型渲染成与 `CjExtend` 接收者文本一致的最短名字。 */
+private fun libraryReceiverTypeName(type: ConeSimpleCangJieType): String? = when (type) {
+    is ConePrimitiveType -> type.kind.typeName
+    is ConeClassLikeType -> type.lookupTag.classId.relativeClassName.shortName().asString()
+    else -> null
 }
 
 /**

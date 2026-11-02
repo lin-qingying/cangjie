@@ -1,4 +1,7 @@
 package org.cangnova.cangjie.analysis.api.cfir.test
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.command.WriteCommandAction
+import com.intellij.psi.PsiDocumentManager
 
 import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
@@ -8,6 +11,7 @@ import org.cangnova.cangjie.psi.CangJieReferenceProvidersService
 import org.cangnova.cangjie.psi.CjClass
 import org.cangnova.cangjie.psi.CjExtend
 import org.cangnova.cangjie.psi.CjFile
+import org.cangnova.cangjie.psi.CjInterface
 import org.cangnova.cangjie.psi.CjNamedDeclaration
 import org.cangnova.cangjie.psi.CjSimpleNameExpression
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -113,7 +117,84 @@ class AnalysisApiReferenceServiceTest : AbstractAnalysisApiExecutionTest(
         val resolved = receiverName.mainReference.resolve() as? CjClass
         assertNotNull(resolved, "extend 的接收者类型名必须能导航到类型声明")
         assertEquals("Document", resolved?.name)
+
+        // 同一 extend 的父类型名（`extend Document <: Printable` 的 `Printable`）同样必须可导航。
+        val superTypeName = PsiTreeUtil.findChildrenOfType(mainFile, CjSimpleNameExpression::class.java)
+            .single { it.referencedName == "Printable" }
+        val superTypeResolved = superTypeName.mainReference.resolve() as? CjInterface
+        assertNotNull(superTypeResolved, "extend 的父类型名必须能导航到接口声明")
+        assertEquals("Printable", superTypeResolved?.name)
     }
+
+    /**
+     * 真实 `mariadb-driver` 夹具：`extend X <: SqlParameter` 的每一处父类型名都必须能导航。
+     *
+     * 该文件同时包含 `?Any`、primitive、`Array<Byte>` 与库类型接收者，用来锁住真实工程形态。
+     */
+    @Test
+    fun sqlParameterReferences(mainFile: CjFile) {
+        // 先取 extend 符号的被扩展类型（冷文件路径，模拟 Ctrl+Hover），再解析引用。
+        analyzeForTest(mainFile) {
+            val int8Extend = mainFile.declarations
+                .filterIsInstance<CjExtend>()
+                .first { extend -> extend.receiverTypeReceiver?.text == "Int8" }
+            val extendedType = int8Extend.symbol.extendedType
+            assertTrue(
+                extendedType.toString().contains("Int8"),
+                "extend Int8 的 extendedType 必须是 Int8，实际 $extendedType",
+            )
+        }
+
+        val names = PsiTreeUtil.findChildrenOfType(mainFile, CjSimpleNameExpression::class.java)
+            .filter { it.referencedName == "SqlParameter" }
+        assertTrue(names.size >= 2, "夹具必须包含 SqlParameter 引用，实际 ${names.size}")
+
+        val resolved = names.mapNotNull { name -> name.mainReference.resolve() }
+        assertTrue(resolved.size >= 2, "SqlParameter 引用必须拿到解析目标，实际 ${resolved.size}")
+        for (target in resolved) {
+            assertTrue(
+                target is CjInterface,
+                "SqlParameter 必须解析到接口声明，实际 ${target.javaClass.simpleName}",
+            )
+        }
+
+        // 复现 IDE 反馈的“改一处后其它引用失效”：改名往返后重新解析全部引用。
+        val project = mainFile.project
+        val document = PsiDocumentManager.getInstance(project).getDocument(mainFile)
+            ?: error("No document for ${mainFile.name}")
+
+        fun renameOccurrence(from: String, to: String) {
+            val text = document.text
+            val declarationIndex = text.indexOf("interface $from")
+            val index = text.indexOf("<: $from", startIndex = declarationIndex + 1)
+            check(index >= 0) { "Cannot locate `<: $from` in ${mainFile.name}" }
+            val nameStart = index + "<: ".length
+            ApplicationManager.getApplication().invokeAndWait {
+                WriteCommandAction.runWriteCommandAction(project) {
+                    document.replaceString(nameStart, nameStart + from.length, to)
+                }
+                PsiDocumentManager.getInstance(project).commitAllDocuments()
+            }
+        }
+
+        renameOccurrence("SqlParameter", "SqlParameter1")
+        renameOccurrence("SqlParameter1", "SqlParameter")
+
+        val afterEdit = PsiTreeUtil.findChildrenOfType(mainFile, CjSimpleNameExpression::class.java)
+            .filter { it.referencedName == "SqlParameter" }
+        val resolvedAfterEdit = afterEdit.mapNotNull { name -> name.mainReference.resolve() }
+        assertEquals(
+            afterEdit.size, resolvedAfterEdit.size,
+            "改名往返后每个 SqlParameter 引用都必须仍然可解析，names=${afterEdit.size}, resolved=${resolvedAfterEdit.size}",
+        )
+        for (target in resolvedAfterEdit) {
+            assertTrue(
+                target is CjInterface,
+                "改名往返后 SqlParameter 必须解析到接口声明，实际 ${target.javaClass.simpleName}",
+            )
+        }
+    }
+
 
     /**
      * 验证未解析的简单名不会触发符号构造异常，也不会解析到任何目标。

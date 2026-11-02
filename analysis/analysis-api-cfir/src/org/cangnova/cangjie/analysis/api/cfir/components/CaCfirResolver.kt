@@ -46,6 +46,7 @@ import org.cangnova.cangjie.analysis.api.cfir.references.toCaTargetSymbol
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.resolution.*
 import org.cangnova.cangjie.analysis.api.resolution.CaSymbolResolutionAttempt
+import org.cangnova.cangjie.analysis.api.resolution.CaCallResolutionSuccess
 import org.cangnova.cangjie.analysis.api.resolution.CaSymbolResolutionSuccess
 import org.cangnova.cangjie.analysis.api.signatures.CaFunctionSignature
 import org.cangnova.cangjie.analysis.api.signatures.CaVariableSignature
@@ -158,24 +159,35 @@ internal class CaCfirResolver(
     }
 
     /**
-     * 将调用 PSI 解析为 success/error attempt，并缓存整个解析尝试。
+     * 将调用 PSI 解析为 success/error attempt。
+     *
+     * 只缓存成功结果：冷启动/索引未就绪时的失败尝试一旦写入缓存，会话内不会自动失效，
+     * 该元素会一直解析失败，直到用户修改它（新 PSI 元素）或发生块内修改。
      */
     override fun CjCallExpression.tryResolveCall(): CaCallResolutionAttempt? = withValidityAssertion {
-        analysisSession.cacheStorage.resolveCallCache.value.getOrPut(this@tryResolveCall) {
-            computeCallResolutionAttempt(this@tryResolveCall)
-        }
+        val cache = analysisSession.cacheStorage.resolveCallCache.value
+        cache.getIfPresent(this@tryResolveCall)?.let { return it }
+        val attempt = computeCallResolutionAttempt(this@tryResolveCall) ?: return null
+        if (attempt !is CaCallResolutionSuccess) return attempt
+        cache.put(this@tryResolveCall, attempt)
+        attempt
     }
 
     /**
-     * 把任意 PSI 元素解析为元素级符号解析尝试，并缓存整个尝试。
+     * 把任意 PSI 元素解析为元素级符号解析尝试。
      *
      * 对齐 Kotlin `KaFirResolver.performSymbolResolution`：元素先经 CFIR 取出对应树节点，
      * 再按节点种类投影为成功/失败尝试；失败时保留诊断与候选符号。
+     *
+     * 与 [tryResolveCall] 一样，失败尝试**不进入缓存**，避免冷启动阶段的失败被永久固化。
      */
     override fun performSymbolResolution(element: CjElement): CaSymbolResolutionAttempt? = withValidityAssertion {
-        analysisSession.cacheStorage.resolveSymbolCache.value.getOrPut(element) {
-            resolveSymbol(element)
-        }
+        val cache = analysisSession.cacheStorage.resolveSymbolCache.value
+        cache.getIfPresent(element)?.let { return it }
+        val attempt = resolveSymbol(element) ?: return null
+        if (attempt !is CaSymbolResolutionSuccess) return attempt
+        cache.put(element, attempt)
+        attempt
     }
 
     /**
