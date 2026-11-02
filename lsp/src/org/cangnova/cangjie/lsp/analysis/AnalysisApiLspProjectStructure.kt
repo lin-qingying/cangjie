@@ -670,8 +670,20 @@ internal class CaLspSourceModule(
 
     /**
      * 该源码模块暴露给 Analysis API 的 PSI 根。
+     *
+     * 注意：LSP 的 `psiRoots` 是**源码文件**集合（供 content scope/符号提供者按文件消费），
+     * 与 IDE 返回源码根目录不同；需要目录语义的调用方应使用 [sourceRoots]。
      */
     override val psiRoots: List<PsiFileSystemItem> = psiRoots.toList()
+
+    /**
+     * 该源码模块的规范化源码根目录路径。
+     *
+     * 宏展开等需要 `CompilerConfiguration.addCangJieSourceRoot` 目录语义的宿主使用该入口；
+     * 不要从 [psiRoots] 反推（它装的是文件）。
+     */
+    internal val sourceRoots: List<Path>
+        get() = sourceRootPaths
 
     /**
      * 直接 regular 依赖列表。

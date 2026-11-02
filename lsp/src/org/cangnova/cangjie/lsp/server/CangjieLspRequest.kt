@@ -24,6 +24,8 @@ enum class CangjieLspRequest(val lspMethod: String) {
 
     COMPLETION("textDocument/completion"),
 
+    RESOLVE_COMPLETION_ITEM("completionItem/resolve"),
+
     HOVER("textDocument/hover"),
 
     SIGNATURE_HELP("textDocument/signatureHelp"),

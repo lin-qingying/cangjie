@@ -16,6 +16,8 @@ dependencies {
     implementation(project(":analysis:analysis-api-impl-base"))
     implementation(project(":analysis:analysis-api-standalone"))
     implementation(project(":analysis:analysis-api-platform-interface"))
+    // 宏语义展开的宿主无关编排；LSP 通过它注册环境并触发快照构造。
+    implementation(project(":analysis:macro-expansion"))
     implementation(project(":analysis:cj-references"))
     /*
      * 补全三模块：LSP 与 IDE **共用同一份候选生成实现**（规格 L1）。
@@ -32,6 +34,9 @@ dependencies {
     implementation(project(":code-insight:highlighting"))
     implementation(project(":code-insight:refactoring"))
     implementation(project(":compiler:config"))
+    // LSP 的进程内宏展开：完整宏引擎只在 compiler:frontend；执行器在 macro:macro-process。
+    implementation(project(":compiler:frontend"))
+    implementation(project(":macro:macro-process"))
     implementation(libs.lsp4j)
     implementation(libs.lsp4j.jsonrpc)
     implementation("com.jetbrains.intellij.platform:analysis:$intellijVersion") { isTransitive = false }
@@ -62,6 +67,8 @@ dependencies {
     testImplementation(project(":code-insight:highlighting"))
     testImplementation(project(":code-insight:refactoring"))
     testImplementation(project(":compiler:config"))
+    // Phase 2 容器探针与后续宏展开用例复用 fake 环境 / 引擎。
+    testImplementation(testFixtures(project(":analysis:macro-expansion")))
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.platform.launcher)
     // 请求级接缝用例需要真实 SDK 才能读到指标：InMemoryMetricReader 断言采样确实进了后端。

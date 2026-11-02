@@ -679,9 +679,19 @@ class AnalysisApiCangjieAnalysisFacade(
         params: ReferenceParams,
     ): List<Location> {
         val targetKeys = semanticSupport.analyzeSnapshot(document) { snapshot ->
-            semanticSupport.findTargetElements(document, snapshot.psiFile, params.position)
-                .mapNotNull(semanticSupport::targetKeyFor)
-                .toSet()
+            val directReference = semanticSupport.referenceTargetKey(
+                session = this,
+                document = document,
+                file = snapshot.psiFile,
+                position = params.position,
+            )
+            if (directReference != null) {
+                setOf(directReference)
+            } else {
+                semanticSupport.findTargetElements(document, snapshot.psiFile, params.position)
+                    .mapNotNull(semanticSupport::targetKeyFor)
+                    .toSet()
+            }
         }
         if (targetKeys.isEmpty()) {
             return emptyList()
@@ -734,9 +744,19 @@ class AnalysisApiCangjieAnalysisFacade(
         document: LspTextDocument,
         params: DocumentHighlightParams,
     ): List<DocumentHighlight> = semanticSupport.analyzeSnapshot(document) { snapshot ->
-        val targetKeys = semanticSupport.findTargetElements(document, snapshot.psiFile, params.position)
-            .mapNotNull(semanticSupport::targetKeyFor)
-            .toSet()
+        val directReference = semanticSupport.referenceTargetKey(
+            session = this,
+            document = document,
+            file = snapshot.psiFile,
+            position = params.position,
+        )
+        val targetKeys = if (directReference != null) {
+            setOf(directReference)
+        } else {
+            semanticSupport.findTargetElements(document, snapshot.psiFile, params.position)
+                .mapNotNull(semanticSupport::targetKeyFor)
+                .toSet()
+        }
         if (targetKeys.isEmpty()) return@analyzeSnapshot emptyList()
 
         buildList {

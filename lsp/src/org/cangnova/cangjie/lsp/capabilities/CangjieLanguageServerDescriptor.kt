@@ -56,8 +56,11 @@ data class CangjieLanguageServerDescriptor(
 
     /**
      * completion item 是否支持 resolve 阶段。
+     *
+     * 服务端实现了延迟文档（按候选身份重进分析、取回 CDoc 再渲染 Markdown），
+     * 因此默认声明支持；客户端据此才会在候选被选中时发 `completionItem/resolve`。
      */
-    val completionResolveProvider: Boolean = false,
+    val completionResolveProvider: Boolean = true,
 
     /**
      * 触发补全请求的字符集合。

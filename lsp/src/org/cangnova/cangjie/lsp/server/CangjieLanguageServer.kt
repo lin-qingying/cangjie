@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.lsp.server
 
+import com.intellij.openapi.application.ApplicationManager
 import org.cangnova.cangjie.lsp.CangjieLspServerOptions
 import org.cangnova.cangjie.lsp.capabilities.CangjieClientCapabilityNegotiator
 import org.cangnova.cangjie.lsp.capabilities.CangjieServerCapabilitiesFactory
@@ -31,8 +32,34 @@ class CangjieLanguageServer(
     /**
      * 语言服务器启动和运行选项。
      */
-    private val options: CangjieLspServerOptions = CangjieLspServerOptions(),
+    initialOptions: CangjieLspServerOptions = CangjieLspServerOptions(),
 ) : LanguageServer, LanguageClientAware, AutoCloseable {
+    /**
+     * 生效的启动选项。
+     *
+     * 宏快照发布后需要把新的诊断推给客户端；这里在保留宿主配置的前提下挂接
+     * [CangjieServerContext.republishOpenDiagnostics]，避免每个宿主重复实现刷新。
+     */
+    private val options: CangjieLspServerOptions = initialOptions.withMacroPublishRefresh()
+
+    /**
+     * 为宏快照发布挂接诊断刷新。
+     *
+     * 发布回调运行在写屏障内，不能同步等待分析请求；因此转交后台线程，
+     * 等屏障释放后再统一重发打开文档的诊断。
+     */
+    private fun CangjieLspServerOptions.withMacroPublishRefresh(): CangjieLspServerOptions {
+        val expansion = macroExpansion ?: return this
+        return copy(
+            macroExpansion = expansion.copy(
+                publishListener = { _, _ ->
+                    ApplicationManager.getApplication().executeOnPooledThread {
+                        runCatching { serverContext.republishOpenDiagnostics() }
+                    }
+                },
+            ),
+        )
+    }
     /**
      * 语言服务器主日志记录器。
      */

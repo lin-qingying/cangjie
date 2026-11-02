@@ -20,6 +20,7 @@ import org.cangnova.cangjie.psi.CjDeclarationContainer
 import org.cangnova.cangjie.psi.CjExpression
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjNamedDeclaration
+import org.cangnova.cangjie.analysis.api.impl.base.util.callableIdForName
 import org.cangnova.cangjie.psi.CjReferenceExpression
 import org.cangnova.cangjie.psi.CjSimpleNameExpression
 import org.cangnova.cangjie.psi.psiUtil.collectDescendantsOfType
@@ -333,15 +334,47 @@ internal class AnalysisApiLspSemanticSupport(
      * 将公开符号或源码声明规约成可跨文档比较的稳定语义键。
      */
     fun CaSession.targetKeyFor(reference: CjReferenceExpression): AnalysisApiLspTargetKey? {
-        val resolvedSymbol = runCatching { reference.resolveToSymbol() }.getOrNull()
+        val resolvedSymbol = try {
+            reference.resolveToSymbol()
+        } catch (cancelled: com.intellij.openapi.progress.ProcessCanceledException) {
+            throw cancelled
+        } catch (_: Throwable) {
+            null
+        }
         if (resolvedSymbol != null) {
-            return resolvedSymbol.toTargetKey(this)
+            val key = resolvedSymbol.toTargetKey(this)
+            // 宏生成声明的 CallableId 来自 dummy fragment，落在 ROOT 伪包；
+            // 用引用所在文件的包重写，避免不同包同名生成符号撞键。
+            if (key is AnalysisApiLspTargetKey.Callable && key.callableId.packageName.isRoot) {
+                val packageName = (reference.containingFile as? CjFile)?.packageFqName
+                if (packageName != null) {
+                    return AnalysisApiLspTargetKey.Callable(
+                        CallableId(packageName, key.callableId.callableName),
+                    )
+                }
+            }
+            return key
         }
 
         val resolvedPsi = runCatching {
             reference.references.asSequence().mapNotNull { it.resolve() }.firstOrNull()
         }.getOrNull()
         return targetKeyFor(resolvedPsi)
+    }
+
+    /**
+     * 优先用当前位置的引用表达式解析目标键。
+     *
+     * 宏生成声明没有物理 PSI，平台 target 提取会把它还原成宏来源 PSI；
+     * 直接解析引用符号可以保留生成声明的 `CallableId`。
+     */
+    fun referenceTargetKey(
+        session: CaSession,
+        document: LspTextDocument,
+        file: CjFile,
+        position: Position,
+    ): AnalysisApiLspTargetKey? = session.run {
+        findReferenceExpression(document, file, position)?.let { reference -> targetKeyFor(reference) }
     }
 
     /**
@@ -377,11 +410,15 @@ internal class AnalysisApiLspSemanticSupport(
                     }
 
                     is CjCallableDeclaration -> {
-                        declaration.fqName?.let { fqName ->
-                            val callableName = fqName.shortName()
-                            val packageName = fqName.parent()
-                            AnalysisApiLspTargetKey.Callable(CallableId(packageName, null, callableName))
-                        } ?: AnalysisApiLspTargetKey.Local(documentUri, range.startOffset, range.endOffset, declaration.name)
+                        // 模式变量（CjVariable）没有单一 callableId，callableIdForName 会抛
+                        // UnsupportedOperationException；此类符号退回局部键。
+                        val callableId = try {
+                            declaration.callableIdForName(declaration.nameAsSafeName)
+                        } catch (_: UnsupportedOperationException) {
+                            null
+                        }
+                        callableId?.let(AnalysisApiLspTargetKey::Callable)
+                            ?: AnalysisApiLspTargetKey.Local(documentUri, range.startOffset, range.endOffset, declaration.name)
                     }
 
                     else -> AnalysisApiLspTargetKey.Local(documentUri, range.startOffset, range.endOffset, declaration.name)
@@ -462,7 +499,7 @@ internal class AnalysisApiLspSemanticSupport(
         val originalPsi = psi ?: return null
         val containingFile = originalPsi.containingFile as? CjFile ?: return null
         val uri = documentUriOf(containingFile) ?: return null
-        val range = originalPsi.textRange ?: return null
+        val range = (originalPsi as? CjNamedDeclaration)?.nameIdentifier?.textRange ?: originalPsi.textRange ?: return null
         return AnalysisApiLspTargetKey.Local(uri, range.startOffset, range.endOffset, stableName)
     }
 

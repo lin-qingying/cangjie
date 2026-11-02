@@ -173,6 +173,21 @@ class CangjieTextDocumentService(
     }
 
     /**
+     * 处理补全候选的 resolve 请求（LSP `completionItem/resolve`）。
+     *
+     * 协议上 resolve **不带文档 URI**：候选自己携带定位信息（会话键 + 下标），
+     * 因此这里不查文档存储，直接转发给分析 facade 延迟补齐文档。
+     * 补全能力关闭时原样返回候选——resolve 只是补文档，失败不得让候选消失。
+     */
+    override fun resolveCompletionItem(item: CompletionItem): CompletableFuture<CompletionItem> {
+        logger.info("====> completionItem/resolve: ${item.label}")
+        if (!serverContext.enabledFeatures.completion) return completed(item)
+        return serverContext.requestExecutor.compute(CangjieLspRequest.RESOLVE_COMPLETION_ITEM) {
+            serverContext.analysisFacade.resolveCompletionItem(serverContext.requestContext(), item)
+        }.also { it.thenAccept { logger.info("<==== completionItem/resolve") } }
+    }
+
+    /**
      * 处理悬停请求。
      *
      * 文档缺失或能力关闭时返回空 hover；启用时转发到分析 facade。
