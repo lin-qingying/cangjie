@@ -3,6 +3,7 @@ package org.cangnova.cangjie.cfir.serialization.provider
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.declarations.extensionSignatureKey
 import org.cangnova.cangjie.cfir.resolve.providers.CfirCompositeSymbolProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
@@ -55,6 +56,10 @@ class CfirDeserializedExtendProvider(
     override fun getPackageFqName(extend: CfirExtend): FqName? =
         index.byDeclarationPackage[extend]
 
+    /** 按「接收者 + 父类型」结构签名查询 extend。 */
+    override fun getExtendByStructuralKey(key: String): CfirExtend? =
+        index.byStructuralKey[key]
+
     /** 反序列化声明不携带可作为 use-site 身份的源码文件。 */
     override fun getContainingFile(extend: CfirExtend): CfirFile? = null
 
@@ -68,6 +73,7 @@ class CfirDeserializedExtendProvider(
         val byPackage = linkedMapOf<FqName, MutableList<CfirExtend>>()
         val byCallableSymbol = linkedMapOf<CfirCallableSymbol<*>, CfirExtend>()
         val byDeclarationPackage = linkedMapOf<CfirExtend, FqName>()
+        val byStructuralKey = linkedMapOf<String, CfirExtend>()
 
         for (provider in providers) {
             val packageNames = provider.symbolNamesProvider.getPackageNames().orEmpty()
@@ -79,9 +85,10 @@ class CfirDeserializedExtendProvider(
                 byPackage.getOrPut(packageFqName) { mutableListOf() }.addAll(extends)
                 for (extend in extends) {
                     byDeclarationPackage[extend] = packageFqName
-                    val targetKey =
-                        extend.extendedTypeRef.coneTypeOrNull?.expandedExtendTargetKey ?: continue
-                    byTargetKey.getOrPut(targetKey) { mutableListOf() }.add(extend)
+                    byStructuralKey.putIfAbsent(extend.extensionSignatureKey(), extend)
+                    extend.extendedTypeRef.coneTypeOrNull?.expandedExtendTargetKey?.let { targetKey ->
+                        byTargetKey.getOrPut(targetKey) { mutableListOf() }.add(extend)
+                    }
                     for (declaration in extend.declarations) {
                         val callableDeclaration = declaration as? CfirCallableDeclaration ?: continue
                         byCallableSymbol[callableDeclaration.symbol] = extend
@@ -95,6 +102,7 @@ class CfirDeserializedExtendProvider(
             byPackage = byPackage.mapValues { (_, extends) -> extends.distinct() },
             byCallableSymbol = byCallableSymbol,
             byDeclarationPackage = byDeclarationPackage,
+            byStructuralKey = byStructuralKey,
         )
     }
 
@@ -108,6 +116,8 @@ class CfirDeserializedExtendProvider(
         val byCallableSymbol: Map<CfirCallableSymbol<*>, CfirExtend>,
         /** extend 声明到所属包名的反查索引。 */
         val byDeclarationPackage: Map<CfirExtend, FqName>,
+        /** 「接收者 + 父类型」结构签名到 extend 的索引。 */
+        val byStructuralKey: Map<String, CfirExtend>,
     )
 }
 

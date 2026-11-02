@@ -153,7 +153,7 @@ class ConePrimitiveType(
     val kind: PrimitiveTypeKind,
     /** 类型附带的属性。 */
     override val attributes: ConeAttributes = ConeAttributes.Empty,
-) : ConeRigidType(), ConeTypeConstructorMarker {
+) : ConeSimpleCangJieType(), ConeTypeConstructorMarker {
 
     /**
      * 当前 primitive 是否是 `Unit`。

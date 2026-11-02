@@ -321,6 +321,55 @@ class CjoSdkDeserializationIntegrationTest {
     }
 
     /**
+     * 临时诊断：读取本机 CangJie 1.0.0 SDK，检查 extend Int8 <: ToString 及其成员。
+     */
+    @Test
+    fun `diagnose sdk100 int8 tostring extend`() {
+        val modulesRoot = System.getenv("CANGJIE_100_MODULES")
+            ?: "C:\\Users\\lin17\\.cangjie\\sdks\\cangjie-1.0.0\\modules\\windows_x86_64_llvm"
+        val root = java.io.File(modulesRoot)
+        org.junit.jupiter.api.Assumptions.assumeTrue(root.isDirectory, "SDK modules not found: $modulesRoot")
+
+        val manager = CjoManager(CjoSearchPath { key -> if (key == "CANGJIE_STDLIB_MODULE") modulesRoot else null })
+        val provider = org.cangnova.cangjie.cfir.serialization.provider.CfirDeserializedSymbolProvider(
+            session = DiagSession,
+            cjoManager = manager,
+            cangjieScopeProvider = org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider(),
+            libraryModuleData = DiagModuleData,
+        )
+        DiagSession.register(org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider::class, provider)
+        val extendProvider = org.cangnova.cangjie.cfir.serialization.provider.CfirDeserializedExtendProvider(listOf(provider))
+
+        val int8Extends = extendProvider.getExtendsForBuiltinType(org.cangnova.cangjie.cfir.types.PrimitiveTypeKind.INT8)
+        println("[diag100] int8 extends=${int8Extends.size}")
+        int8Extends.forEach { e ->
+            val supers = e.superTypeRefs.map { ref ->
+                ref.coneTypeOrNull?.toString() ?: "<unresolved:${ref::class.simpleName}>"
+            }
+            val members = e.declarations.mapNotNull { d ->
+                when (d) {
+                    is org.cangnova.cangjie.cfir.declarations.CfirNamedFunction -> d.name.asString()
+                    is org.cangnova.cangjie.cfir.declarations.CfirProperty -> d.name.asString()
+                    else -> d::class.simpleName ?: "<unknown>"
+                }
+            }
+            println("[diag100] supers=$supers members=$members")
+        }
+        val toStringExtends = int8Extends.filter { e ->
+            e.superTypeRefs.any { it.coneTypeOrNull?.toString()?.contains("ToString") == true }
+        }
+        println("[diag100] toStringExtends=${toStringExtends.size}")
+        toStringExtends.forEach { e ->
+            println("[diag100] toString members=" + e.declarations.mapNotNull { d ->
+                when (d) {
+                    is org.cangnova.cangjie.cfir.declarations.CfirNamedFunction -> d.name.asString()
+                    is org.cangnova.cangjie.cfir.declarations.CfirProperty -> d.name.asString()
+                    else -> d::class.simpleName ?: "<unknown>"
+                }
+            })
+        }
+    }
+    /**
      * 验证共享装配入口 [CfirExtendProviderComposer] 的三种组合语义。
      *
      * 主编译器与 LL/IDE 侧共用该 composer 构造 session 级 extend 视图；这里用真实 SDK CJO
@@ -371,6 +420,23 @@ class CjoSdkDeserializationIntegrationTest {
                 .fromSymbolProviders(listOf(provider))
             val int64Extends = library.getExtendsForBuiltinType(org.cangnova.cangjie.cfir.types.PrimitiveTypeKind.INT64)
             assertTrue(int64Extends.isNotEmpty(), "std.core Int64 extends should be visible through composer")
+
+            // 1.1 库 extend 成员必须携带被扩展类型作为 dispatch receiver（对齐 Kotlin 成员语义）。
+            // 之前 primitive 接收者无法表达（ConePrimitiveType 不属于 ConeSimpleCangJieType），
+            // 导致 std.core 的多个同名 extend 成员在符号层无法区分。
+            val extendWithMembers = int64Extends.first { extend ->
+                extend.declarations.any { declaration ->
+                    declaration is org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
+                }
+            }
+            val receiverMember = extendWithMembers.declarations
+                .filterIsInstance<org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration>()
+                .first { member -> !member.status.isStatic }
+            assertEquals(
+                org.cangnova.cangjie.cfir.types.PrimitiveTypeKind.INT64,
+                (receiverMember.dispatchReceiverType as? org.cangnova.cangjie.cfir.types.ConePrimitiveType)?.kind,
+                "library extend member must carry the extended Int64 type as dispatch receiver",
+            )
 
             // 2. combine：仅 own 自身时直接返回原实例，不引入多余包装
             val same = org.cangnova.cangjie.cfir.serialization.provider.CfirExtendProviderComposer

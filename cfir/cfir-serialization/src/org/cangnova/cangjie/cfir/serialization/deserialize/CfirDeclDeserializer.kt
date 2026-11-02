@@ -1088,6 +1088,30 @@ class CfirDeclDeserializer private constructor(
     private val currentEnumOwner: EnumOwnerContext?
         get() = enumOwnerStack.lastOrNull()
 
+    /**
+     * `extend` 成员反序列化期间的被扩展类型栈。
+     *
+     * Cangjie 的 `extend Foo { func bar() }` 与 Kotlin class 成员同构：`bar` 的接收者是 `Foo`。
+     * 库侧成员必须与源码侧共享同一份 dispatch receiver 语义，否则符号层无法区分
+     * 不同 extend 上的同名成员（如 std.core 的多个 `toString`），导航/文档/补全都会退化。
+     */
+    private val extendReceiverTypeStack = mutableListOf<ConeSimpleCangJieType>()
+
+    /** 在 [type] 作为当前 extend 接收者类型的上下文中执行 [block]。 */
+    private inline fun <R> withExtendReceiverType(type: ConeSimpleCangJieType?, block: () -> R): R {
+        if (type == null) return block()
+        extendReceiverTypeStack += type
+        return try {
+            block()
+        } finally {
+            extendReceiverTypeStack.removeAt(extendReceiverTypeStack.lastIndex)
+        }
+    }
+
+    /** 当前 extend 的接收者类型；不在 extend 成员内部或无法推断时为 null。 */
+    private val currentExtendReceiverType: ConeSimpleCangJieType?
+        get() = extendReceiverTypeStack.lastOrNull()
+
     /** 在 class-like 声明反序列化期间压入 owner 上下文。 */
     private inline fun <R> withClassLikeOwner(owner: ClassLikeOwnerContext, block: () -> R): R {
         classLikeOwnerStack += owner
@@ -1516,7 +1540,12 @@ class CfirDeclDeserializer private constructor(
      */
     private fun dispatchReceiverTypeForCurrentOwner(status: CfirDeclarationStatus): ConeSimpleCangJieType? {
         if (status.isStatic) return null
-        val ownerSymbol = currentContainingDeclarationSymbol as? CfirClassLikeSymbol<*> ?: return null
+        val ownerSymbol = currentContainingDeclarationSymbol as? CfirClassLikeSymbol<*>
+        if (ownerSymbol == null) {
+            // 普通 class-like 成员走上面的 owner 分支；`extend` 成员没有 class-like owner，
+            // 其接收者就是被扩展类型（对齐 Kotlin 中「成员接收者 = 声明所在类型」的语义）。
+            return currentExtendReceiverType
+        }
         val owner = checkNotNull(currentClassLikeOwner)
         check(owner.classId == ownerSymbol.classId)
         return ownerSymbol.constructType(owner.typeParameters.map { it.symbol.constructType() }) as ConeSimpleCangJieType
@@ -2187,12 +2216,16 @@ class CfirDeclDeserializer private constructor(
         val extendInfo = decl.info(ExtendInfo()) as? ExtendInfo
         // 被扩展的类型来自 decl.type
         val extendedTypeRef = buildTypeRef(decl.type)
+        // 成员接收者 = 被扩展类型；`extend<T> Foo<T>` 的接收者此时已带上该 extend 的类型参数 symbol。
+        val extendReceiverType = extendedTypeRef.coneType as? ConeSimpleCangJieType
         val superTypeRefs = if (extendInfo != null) {
             deserializeInheritedTypes(extendInfo::inheritedTypes, extendInfo.inheritedTypesLength)
         } else mutableListOf()
         val members = if (extendInfo != null) {
             withContainingDeclarationSymbol(symbol) {
-                deserializeBody(extendInfo::body, extendInfo.bodyLength)
+                withExtendReceiverType(extendReceiverType) {
+                    deserializeBody(extendInfo::body, extendInfo.bodyLength)
+                }
             }
         } else mutableListOf()
 

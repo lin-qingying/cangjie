@@ -24,7 +24,7 @@
 
 package org.cangnova.cangjie.cfir.resolve.body
 
-import org.cangnova.cangjie.cfir.session.cjmpHasDefaultValue
+import org.cangnova.cangjie.cfir.resolve.cjmp.cjmpHasDefaultValueForCallResolution
 
 import org.cangnova.cangjie.builtins.StandardNames
 import org.cangnova.cangjie.cfir.CfirElement
@@ -773,7 +773,7 @@ class CfirCallResolver(
     private fun Candidate.requiredAcceptedArity(): Int {
         val variadicParameter = cangjieVariadicParameterForCall
         return declaredParametersForMapping().count { parameter ->
-            parameter != variadicParameter && !parameter.cjmpHasDefaultValue()
+            parameter != variadicParameter && !parameter.cjmpHasDefaultValueForCallResolution()
         }
     }
 
@@ -2398,7 +2398,7 @@ class CfirCallResolver(
 
             val variadicParameter = candidate.cangjieVariadicParameterForMapping(parameters)
             val requiredCount = parameters.count { parameter ->
-                parameter != variadicParameter && !parameter.cjmpHasDefaultValue()
+                parameter != variadicParameter && !parameter.cjmpHasDefaultValueForCallResolution()
             }
             argumentCount >= requiredCount &&
                     (variadicParameter != null || argumentCount <= parameters.size)

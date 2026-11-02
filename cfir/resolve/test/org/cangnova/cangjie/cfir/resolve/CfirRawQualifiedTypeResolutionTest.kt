@@ -9,7 +9,6 @@ import org.cangnova.cangjie.LanguageVersionSettingsImpl
 import org.cangnova.cangjie.cfir.builder.buildQualifierPart
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAvailabilityProvider
 import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguityError
-import org.cangnova.cangjie.cfir.diagnostic.ConeCannotRefToPackageNameError
 import org.cangnova.cangjie.cfir.diagnostic.ConeNotATypeError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedTypeQualifierError
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityChecker
@@ -44,10 +43,16 @@ import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
 
-/** 锁定源码裸限定类型通过 package namespace 解析并保留独立诊断通道。 */
+/**
+ * 锁定源码裸限定类型通过 package namespace 解析，并按官方口径报告首段未绑定。
+ *
+ * 官方 `cjc 1.0.5` 对「把未导入的包前缀写进类型位置」报 `sema_undeclared_type_name`
+ * （首个未绑定段），`sema_cannot_ref_to_pkg_name` 只用于表达式位置独立引用包名
+ * （`external/cangjie_compiler/src/Sema/TypeCheckReference.cpp:344-352`）。
+ */
 class CfirRawQualifiedTypeResolutionTest {
     @Test
-    fun `raw qualified type retains its class id with package name diagnostic`() {
+    fun `raw qualified type retains its class id and reports undeclared first segment`() {
         val fixture = Fixture()
         val typeRef = fixture.typeRef("std", "net", "SockAddr")
 
@@ -62,7 +67,7 @@ class CfirRawQualifiedTypeResolutionTest {
 
         val resolvedType = assertInstanceOf(ConeClassLikeType::class.java, result.type)
         assertEquals(fixture.classId, resolvedType.lookupTag.classId)
-        assertInstanceOf(ConeCannotRefToPackageNameError::class.java, result.diagnostic)
+        assertInstanceOf(ConeUnresolvedTypeQualifierError::class.java, result.diagnostic)
     }
 
     @Test
@@ -81,11 +86,11 @@ class CfirRawQualifiedTypeResolutionTest {
 
         val resolvedType = assertInstanceOf(ConeClassLikeType::class.java, result.type)
         assertEquals(fixture.classId, resolvedType.lookupTag.classId)
-        assertInstanceOf(ConeCannotRefToPackageNameError::class.java, result.diagnostic)
+        assertInstanceOf(ConeUnresolvedTypeQualifierError::class.java, result.diagnostic)
     }
 
     @Test
-    fun `missing package and missing classifier do not report package name diagnostic`() {
+    fun `missing package and missing classifier do not report first segment diagnostic`() {
         val fixture = Fixture()
         val missingPackage = fixture.resolve(fixture.typeRef("missing", "package", "Type"))
         val missingClassifier = fixture.resolve(fixture.typeRef("std", "net", "MissingType"))

@@ -112,5 +112,8 @@ object CfirExtendProviderComposer {
 
         override fun getContainingFile(extend: CfirExtend): CfirFile? =
             delegate.getContainingFile(extend)
+
+        override fun getExtendByStructuralKey(key: String): CfirExtend? =
+            delegate.getExtendByStructuralKey(key)
     }
 }

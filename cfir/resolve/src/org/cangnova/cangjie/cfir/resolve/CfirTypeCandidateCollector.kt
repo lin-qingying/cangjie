@@ -11,6 +11,7 @@ import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.accessibilityChecker
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.declarations.declarationSiteId
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassifierSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
@@ -178,19 +179,35 @@ internal class CfirTypeCandidateCollector(
         classId: ClassId,
         preferredCandidate: TypeCandidate?,
         lookupOrigin: CfirLookupOrigin,
-    ): List<TypeCandidate> = buildList {
-        preferredCandidate?.let(::add)
-        session.declarationAvailabilityProvider.classLikeCandidates(classId).forEach { symbol ->
-            add(
-                TypeCandidate(
-                    symbol = symbol,
-                    substitutor = null,
-                    lookupOrigin = lookupOrigin,
+    ): List<TypeCandidate> {
+        /*
+         * 同一处源码声明可能同时存在于实时 raw 树与宏展开树，两者成员可能不同，但声明位置相同；
+         * 展开树（availability provider 在快照发布后给出的视图）是权威视图。这里按声明位置收敛，
+         * 丢弃 scope lookup 带来的同位置旧视图，只让**不同源码位置**的同名声明构成重声明歧义。
+         */
+        val availabilityCandidates = session.declarationAvailabilityProvider.classLikeCandidates(classId)
+        val availabilitySites = availabilityCandidates.mapNotNull { symbol ->
+            symbol.declarationSiteId()
+        }.toSet()
+        return buildList {
+            preferredCandidate?.let { candidate ->
+                val site = (candidate.symbol as? CfirClassLikeSymbol<*>)?.declarationSiteId()
+                if (site == null || site !in availabilitySites) {
+                    add(candidate)
+                }
+            }
+            availabilityCandidates.forEach { symbol ->
+                add(
+                    TypeCandidate(
+                        symbol = symbol,
+                        substitutor = null,
+                        lookupOrigin = lookupOrigin,
+                    )
                 )
-            )
+            }
+        }.distinctBy(TypeCandidate::symbol).filter { candidate ->
+            isAccessible(candidate.symbol, candidate.lookupOrigin)
         }
-    }.distinctBy(TypeCandidate::symbol).filter { candidate ->
-        isAccessible(candidate.symbol, candidate.lookupOrigin)
     }
 
     /**

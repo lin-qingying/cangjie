@@ -10,6 +10,7 @@ import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.session.cjmpMappingStorageOrNull
+import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
@@ -1035,6 +1036,13 @@ object CfirCjmpCommonSideChecker : CfirFileChecker() {
         if (context.session.cjmpSettings.mode != CfirCjmpMode.SPECIFIC) return
         val storage = context.session.cjmpMappingStorageOrNull ?: return
         val packageFqName = declaration.packageDirective.packageFqName
+        // caller-first：被调声明可能只被按需解析到较低阶段，而配对结论已在默认值读穿
+        // （`cjmpHasDefaultValueForCallResolution`）时建立。检查器运行在 lazy resolve
+        // 契约之外，这里让阶段事实追上存储事实：已配对声明推进到配对阶段；
+        // 未建立结论的声明保持原样，仍由正常阶段处理。
+        storage.matchedSpecificDeclarations.forEach { specific ->
+            specific.lazyResolveToPhase(org.cangnova.cangjie.cfir.declarations.CfirResolvePhase.CJMP_MATCHING)
+        }
         // 同一包只处理一次：只在本会话该包的首个源文件上执行（无状态去重，检查器可重复运行）
         val firstFileOfPackage = runCatching {
             context.session.cfirProvider.getCfirFilesByPackage(packageFqName).firstOrNull()

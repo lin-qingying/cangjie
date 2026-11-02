@@ -1,6 +1,6 @@
 package org.cangnova.cangjie.cfir.resolve.calls.stages
 
-import org.cangnova.cangjie.cfir.session.cjmpHasDefaultValue
+import org.cangnova.cangjie.cfir.resolve.cjmp.cjmpHasDefaultValueForCallResolution
 
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
@@ -570,7 +570,7 @@ object CfirMapArguments : ResolutionStage() {
             val hasMissingRequiredParameter = parameters
                 .filterNot { it in usedParameters }
                 .filter { it != variadicParameter }
-                .any { !it.cjmpHasDefaultValue() }
+                .any { !it.cjmpHasDefaultValueForCallResolution() }
             if (hasMissingRequiredParameter) {
                 diagnostics.addWrongNumberOfArguments(callShape, parameters.size)
             }
@@ -581,7 +581,7 @@ object CfirMapArguments : ResolutionStage() {
             diagnostics = diagnostics,
             nonBlockingDiagnostics = nonBlockingDiagnostics,
             matchedNamedArgumentCount = matchedNamedArgumentCount,
-            numDefaults = parameters.count { it != variadicParameter && it !in usedParameters && it.cjmpHasDefaultValue() },
+            numDefaults = parameters.count { it != variadicParameter && it !in usedParameters && it.cjmpHasDefaultValueForCallResolution() },
             variadicEligibleArguments = variadicEligibleArguments,
             isEmptyVariadicCall = isEmptyVariadicCall,
         )
@@ -605,7 +605,7 @@ object CfirMapArguments : ResolutionStage() {
 
         val trailingNamedParameters = parameters
             .drop(variadicParameterIndex + 1)
-            .filter { it.isNamed && !it.cjmpHasDefaultValue() && it !in usedParameters }
+            .filter { it.isNamed && !it.cjmpHasDefaultValueForCallResolution() && it !in usedParameters }
         if (trailingNamedParameters.isEmpty()) return null
 
         val remainingPositionalArguments = nonTrailingArguments
@@ -752,7 +752,7 @@ private fun createArgumentMappingOutcome(
     callShape = callShape,
     expectedParameterCount = parameters.size,
     requiredParameterCount = parameters.count { parameter ->
-        parameter != variadicParameter && !parameter.cjmpHasDefaultValue()
+        parameter != variadicParameter && !parameter.cjmpHasDefaultValueForCallResolution()
     },
     maximumAcceptedArgumentCount = parameters.size.takeIf { variadicParameter == null },
     mappedArgumentCount = mappedArgumentCount,

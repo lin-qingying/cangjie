@@ -1,4 +1,4 @@
-﻿@file:OptIn(org.cangnova.cangjie.cfir.CfirImplementationDetail::class)
+@file:OptIn(org.cangnova.cangjie.cfir.CfirImplementationDetail::class)
 
 package org.cangnova.cangjie.cfir.resolve.calls.stages
 
@@ -70,9 +70,14 @@ class CfirMapArgumentsTest {
     inner class Defaults {
         @Test
         fun `number of default arguments is counted`() {
+            // 官方语法（cjc 1.0.5 实测）：默认值只允许写在**命名参数**上——
+            // `func f(a: Int64, b: Bool = true)` 报 `expected ',' or ')', found '='`；
+            // `func f(a: Int64, b!: Bool = true)` 合法且可省略。因此这里的 `f(1)`
+            // 对应形参 `a: Int64, b!: Bool = true, c!: Float64 = 1.0`。
             val symbol = buildFunctionSymbol(
                 session, "f",
                 parameterTypes = listOf(ConePrimitiveType.INT32, ConePrimitiveType.BOOLEAN, ConePrimitiveType.FLOAT64),
+                parameterNamed = listOf(false, true, true),
                 parameterDefaults = listOf(false, true, true),
             )
             val arg0 = buildTypedExpression(ConePrimitiveType.INT32)

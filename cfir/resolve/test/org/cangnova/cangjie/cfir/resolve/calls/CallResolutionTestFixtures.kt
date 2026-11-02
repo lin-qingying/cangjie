@@ -1,4 +1,4 @@
-﻿@file:OptIn(
+@file:OptIn(
     org.cangnova.cangjie.cfir.CfirImplementationDetail::class,
     org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProviderInternals::class,
 )
@@ -200,7 +200,10 @@ object CallResolutionTestFixtures {
     /**
      * 构造并绑定指定签名的函数符号。
      *
-     * @param parameterDefaults 与 [parameterTypes] 对应的“是否有默认值”标记。
+     * @param parameterNamed 与 [parameterTypes] 对应的"是否命名参数"标记（仓颉的 `p!` 形态）。
+     * @param parameterDefaults 与 [parameterTypes] 对应的"是否有默认值"标记。
+     *   仓颉只允许**命名参数**带默认值（cjc 1.0.5 对 `p: T = x` 报 `expected ',' or ')', found '='`，
+     *   对 `p!: T = x` 接受且可省略），因此带默认值的形参必须同时标记为命名参数。
      * @param typeParameters 函数的声明类型参数（如 `newTypeParameter` 构造的实例）。
      */
     fun buildFunctionSymbol(
@@ -209,6 +212,7 @@ object CallResolutionTestFixtures {
         returnType: ConeCangJieType = ConePrimitiveType.UNIT,
         parameterTypes: List<ConeCangJieType> = emptyList(),
         parameterNames: List<String>? = null,
+        parameterNamed: List<Boolean>? = null,
         parameterDefaults: List<Boolean>? = null,
         typeParameters: List<CfirTypeParameter> = emptyList(),
     ): CfirNamedFunctionSymbol {
@@ -218,6 +222,7 @@ object CallResolutionTestFixtures {
                 session = session,
                 name = parameterNames?.getOrNull(index) ?: "p$index",
                 type = type,
+                isNamed = parameterNamed?.getOrNull(index) ?: false,
                 hasDefault = parameterDefaults?.getOrNull(index) ?: false,
                 containingDeclarationSymbol = symbol,
             )
@@ -247,12 +252,15 @@ object CallResolutionTestFixtures {
 
     /**
      * 构造并绑定指定的值参数。
+     *
+     * [isNamed] 对应仓颉的 `p!`：只有命名参数可以带默认值；定位参数带默认值不是合法语法。
      */
     fun buildValueParameter(
         session: TestSession,
         name: String,
         type: ConeCangJieType,
         hasDefault: Boolean = false,
+        isNamed: Boolean = false,
         containingDeclarationSymbol: CfirBasedSymbol<*>,
     ): CfirValueParameter {
         val symbol = CfirValueParameterSymbol(CallableId(FqName.ROOT, Name.identifier(name)))
@@ -268,7 +276,7 @@ object CallResolutionTestFixtures {
             dispatchReceiverType = null,
             symbol = symbol,
             containingDeclarationSymbol = containingDeclarationSymbol,
-            isNamed = false,
+            isNamed = isNamed,
             status = CfirDeclarationStatusImpl(),
             typeParameters = mutableListOf(),
             returnTypeRef = resolvedTypeRef(type),

@@ -1,6 +1,8 @@
-﻿package org.cangnova.cangjie.cfir.resolve.transformers
+package org.cangnova.cangjie.cfir.resolve.transformers
 
+import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.replaceResolvePhase
 import org.cangnova.cangjie.cfir.declarations.resolvePhase
@@ -10,6 +12,8 @@ import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.extendIndexStoreOrNull
 import org.cangnova.cangjie.cfir.session.typeResolver
+import org.cangnova.cangjie.cfir.types.ConeSimpleCangJieType
+import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 
 /** EXTENSIONS 阶段处理器，负责在阶段开始前重建 extend 索引。 */
 internal class CfirExtensionsResolveProcessor(
@@ -47,6 +51,25 @@ internal class CfirExtensionsResolveTransformer(
         }
 
         declaration.replaceResolvePhase(CfirResolvePhase.EXTENSIONS)
+        if (declaration is CfirExtend) {
+            propagateExtendedReceiverType(declaration)
+        }
         return declaration
+    }
+
+    /**
+     * 把被扩展类型写进 extend 成员的 dispatch receiver。
+     *
+     * 到 EXTENSIONS 阶段时 `extendedTypeRef` 已完成 TYPES 解析，可以把 `extend Foo` 的 `Foo`
+     * 作为成员接收者。源码侧与库侧（反序列化）因此共享同一套成员语义，
+     * 符号层才能区分不同 extend 上的同名成员。
+     */
+    private fun propagateExtendedReceiverType(extend: CfirExtend) {
+        val receiverType = extend.extendedTypeRef.coneTypeOrNull as? ConeSimpleCangJieType ?: return
+        for (member in extend.declarations) {
+            val callable = member as? CfirCallableDeclaration ?: continue
+            if (callable.status.isStatic) continue
+            callable.replaceDispatchReceiverType(receiverType)
+        }
     }
 }

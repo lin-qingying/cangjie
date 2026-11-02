@@ -28,7 +28,6 @@ import org.cangnova.cangjie.AnalysisFlags
 import org.cangnova.cangjie.cfir.CfirQualifierPart
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguityError
-import org.cangnova.cangjie.cfir.diagnostic.ConeCannotRefToPackageNameError
 import org.cangnova.cangjie.cfir.diagnostic.ConeGenericArgumentNoMatchError
 import org.cangnova.cangjie.cfir.diagnostic.ConeNotATypeError
 import org.cangnova.cangjie.cfir.diagnostic.ConePackageNameConflictError
@@ -591,7 +590,7 @@ class CfirTypeResolverImpl(
                 lastQualifier = lastQualifier,
                 typeRef = typeRef,
                 configuration = configuration,
-                reportCannotRefToPackageName = false,
+                reportUnresolvedFirstSegment = false,
             )
         }
 
@@ -616,7 +615,7 @@ class CfirTypeResolverImpl(
                 lastQualifier = lastQualifier,
                 typeRef = typeRef,
                 configuration = configuration,
-                reportCannotRefToPackageName = true,
+                reportUnresolvedFirstSegment = true,
             )
         }
 
@@ -633,13 +632,16 @@ class CfirTypeResolverImpl(
      * 源码裸 FQN 与显式包导入都通过同一 namespace 协议查询；裸 FQN 不附加组织约束，
      * 显式导入则保留绑定目标的组织身份。候选只来自该 namespace，再由统一 collector
      * 负责可访问性，避免按 ClassId 重新聚合出 namespace 之外的声明。
+     *
+     * [reportUnresolvedFirstSegment] 为 true 时，即使 namespace 能定位到 classifier，也要为
+     * 「首段没有绑定到任何名字」这件事报告**官方口径**的诊断。
      */
     private fun resolveQualifiedClassLikeInNamespace(
         namespaceContext: CfirImportNamespaceContext,
         lastQualifier: CfirQualifierPart,
         typeRef: CfirUserTypeRef,
         configuration: TypeResolutionConfiguration,
-        reportCannotRefToPackageName: Boolean,
+        reportUnresolvedFirstSegment: Boolean,
     ): QualifiedClassLikeResolution {
         val namespace = session.symbolProvider.getImportNamespace(namespaceContext)
         if (!namespace.hasPackage(includeSubpackages = false)) {
@@ -670,8 +672,15 @@ class CfirTypeResolverImpl(
             return QualifiedClassLikeResolution(
                 classId = symbol.classId,
                 declaration = symbol.cfir,
-                diagnostic = if (reportCannotRefToPackageName) {
-                    ConeCannotRefToPackageNameError(namespaceContext.packageFqName)
+                /*
+                 * 官方 `cjc 1.0.5` 对「把未导入的包前缀写进类型位置」报
+                 * `sema_undeclared_type_name`（首个未绑定段），而不是
+                 * `sema_cannot_ref_to_pkg_name`；后者官方只在**表达式位置**独立引用包名时发出
+                 * （`external/cangjie_compiler/src/Sema/TypeCheckReference.cpp:344-352`）。
+                 * 因此这里仍按 IDE 恢复需要保留 namespace 解析结果，但诊断身份与官方对齐。
+                 */
+                diagnostic = if (reportUnresolvedFirstSegment) {
+                    ConeUnresolvedTypeQualifierError(typeRef.qualifier.take(1))
                 } else {
                     null
                 },
