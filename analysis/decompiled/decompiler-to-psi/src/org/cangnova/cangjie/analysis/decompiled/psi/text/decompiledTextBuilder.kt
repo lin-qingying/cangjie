@@ -456,28 +456,11 @@ internal fun buildDecompiledText(fileStub: CangJieFileStubImpl): String = Pretty
             append(property.name?.let(::renderIdentifier).orEmpty())
             withPrefix(": ") { property.typeReference?.getTypeText()?.takeIf(String::isNotBlank)?.let(::append) }
             val accessors = property.accessors
-            if (accessors.isNotEmpty()) {
-                appendLine(" {")
-                withIndent {
-                    printCollection(accessors, separator = "\n") {
-                        it.accept(explicitThis)
-                    }
-                }
-                appendLine()
-                append("}")
-                return
-            }
-
-            if (!shouldRenderCompiledPropertyBody(property)) {
-                return
-            }
-
+            if (accessors.isEmpty()) return
             appendLine(" {")
             withIndent {
-                renderCompiledPropertyAccessor(isGetter = true)
-                if (property.isVar) {
-                    appendLine()
-                    renderCompiledPropertyAccessor(isGetter = false)
+                printCollection(accessors, separator = "\n") {
+                    it.accept(explicitThis)
                 }
             }
             appendLine()
@@ -586,16 +569,6 @@ internal fun buildDecompiledText(fileStub: CangJieFileStubImpl): String = Pretty
             append(COMPILED_DEFAULT_INITIALIZER)
             append(" ")
             append(DECOMPILED_CODE_COMMENT)
-        }
-
-        private fun shouldRenderCompiledPropertyBody(property: CjProperty): Boolean {
-            return !property.hasModifier(CjTokens.ABSTRACT_KEYWORD) &&
-                !property.hasModifier(CjTokens.FOREIGN_KEYWORD)
-        }
-
-        private fun renderCompiledPropertyAccessor(isGetter: Boolean) {
-            append(if (isGetter) "get()" else "set(value)")
-            printBody(hasBody = true)
         }
 
         private fun printPropertyAccessorParameterList(accessor: CjPropertyAccessor) {

@@ -73,6 +73,10 @@ object CfirTree : AbstractCfirTreeBuilder() {
      * 声明状态接口类型引用。
      */
     private val declarationStatusType = generatedType("declarations", "CfirDeclarationStatus", TypeKind.Interface)
+    /** 修饰符来源显式性类型。 */
+    private val modifierExplicitnessType = generatedType("declarations", "CfirModifierExplicitness", TypeKind.Class)
+    /** 可调用体存在性类型。 */
+    private val bodyPresenceType = generatedType("declarations", "CfirBodyPresence", TypeKind.Class)
     /**
      * 描述符可见性类型引用。
      */
@@ -1005,6 +1009,10 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
         kind = ImplementationKind.Interface
         +field("visibility", visibilityType)
         +field("modality", modalityType, nullable = true)
+        +field("visibilityExplicitness", modifierExplicitnessType)
+        +field("modalityExplicitness", modifierExplicitnessType)
+        +field("bodyPresence", bodyPresenceType)
+        +field("isDeclarationFile", booleanType)
         generateBooleanFields(
             "visibilityExplicit",
             "modalityExplicit",
@@ -1018,6 +1026,7 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
             "foreign",
             "c",
             "common",
+            "fromCommonPart",
             "specific",
             "commonWithDefault",
             "redef",

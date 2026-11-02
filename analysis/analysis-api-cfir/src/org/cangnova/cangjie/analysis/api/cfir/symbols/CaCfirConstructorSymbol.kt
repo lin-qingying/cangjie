@@ -9,6 +9,7 @@ import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.symbols.CaConstructorSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaModifierExplicitness
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolLocation
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolVisibility
 import org.cangnova.cangjie.analysis.api.symbols.CaTypeParameterSymbol
@@ -112,13 +113,19 @@ internal class CaCfirConstructorSymbol private constructor(
      * 构造器可见性是否显式声明。
      */
     override val isVisibilityExplicit: Boolean
-        get() = withValidityAssertion { status?.isVisibilityExplicit == true }
+        get() = visibilityExplicitness == CaModifierExplicitness.EXPLICIT
+
+    override val visibilityExplicitness: CaModifierExplicitness
+        get() = withValidityAssertion { status.asPublicVisibilityExplicitness() }
 
     /**
      * 构造器不显式暴露 modality。
      */
     override val isModalityExplicit: Boolean
         get() = withValidityAssertion { false }
+
+    override val modalityExplicitness: CaModifierExplicitness
+        get() = withValidityAssertion { CaModifierExplicitness.UNKNOWN }
 
     /**
      * 构造器显式 receiver 类型。

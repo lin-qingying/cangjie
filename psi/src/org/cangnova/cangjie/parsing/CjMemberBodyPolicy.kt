@@ -42,6 +42,7 @@ package org.cangnova.cangjie.parsing
  *   函数侧对位官方 `HAS_BROKEN`（缺参数列表）；属性侧近似官方"类型诊断已占用同一
  *   lookahead token"的去重效果（官方属性过程不读 `HAS_BROKEN`）。
  * @property cjmp 1.1.3 CJMP 例外事实；由 [CjMemberBodyPolicy.applyCjmpOverlay] 消费，主体过程不读取。
+ * @property javaMirror 官方 JavaMirror 后置处理所需的实际宿主与成员 modifier 事实。
  */
 data class CjMemberBodyFacts(
     val scopeKind: CjScopeKind,
@@ -53,6 +54,14 @@ data class CjMemberBodyFacts(
     val isDeclarationFile: Boolean = false,
     val isSignatureBroken: Boolean = false,
     val cjmp: CjmpOverlayFacts? = null,
+    val javaMirror: CjJavaMirrorBodyFacts? = null,
+)
+
+/** JavaMirror 函数与属性的后置规则使用的语法事实，不能由 Library 来源位代替。 */
+data class CjJavaMirrorBodyFacts(
+    val enclosingClassIsAbstract: Boolean,
+    val memberIsExplicitAbstract: Boolean,
+    val memberIsStatic: Boolean,
 )
 
 /**
@@ -81,25 +90,28 @@ enum class CjMemberBodyDiagnostic {
 }
 
 /**
- * cjc 1.1.3 CJMP 隐式 abstract 例外事实（仅 `class` 体）。
+ * cjc 1.1.3 CJMP 隐式 abstract 例外事实（class / interface 成员）。
  *
- * - `ParserImpl::CanBeAbstract`：class 体内 common 成员不隐式 abstract；
+ * - class 体内真实 `common` 成员不隐式 abstract；
  * - `CheckClassLikeFuncBodyAbstractness` / `CheckClassLikePropAbstractness`：
  *   common/specific abstract class 中未显式写 `abstract` 的函数或属性不是抽象成员。
  *
- * 两个后置过程是官方 1.1.3 的函数 / 属性双份实现，规则一致；本 overlay 因此不按
- * 成员种类分支。它们只清除隐式 `ABSTRACT` 属性，不回退 parser 侧返回类型诊断。
+ * 两个 class 后置过程是官方 1.1.3 的函数 / 属性双份实现，规则一致；interface 的
+ * common 函数另有 AST 后处理规则，不能借用这个清除 class implicit abstract 的 overlay。
+ * 本 overlay 只清除隐式 `ABSTRACT` 属性，不回退 parser 侧返回类型诊断。
  *
  * @property memberIsCommon 成员自身是否 `common`。
  * @property memberIsExplicitAbstract 成员自身是否显式 `abstract`。
  * @property enclosingClassIsAbstract 外层 class 是否 `abstract`。
  * @property enclosingClassIsCommonOrSpecific 外层 class 是否 `common` / `specific`。
+ * @property enclosingTypeIsInteropHost 外层类型是否命中 common-interface 后置规则前的互操作早退。
  */
 data class CjmpOverlayFacts(
     val memberIsCommon: Boolean,
     val memberIsExplicitAbstract: Boolean,
     val enclosingClassIsAbstract: Boolean,
     val enclosingClassIsCommonOrSpecific: Boolean,
+    val enclosingTypeIsInteropHost: Boolean = false,
 )
 
 /**
@@ -211,10 +223,74 @@ object CjMemberBodyPolicy {
     }
 
     /**
+     * 按官方 `SetDefaultFunc` 的调用顺序推导接口函数 DEFAULT。
+     *
+     * 函数缺体检查先于 `SetDefaultFunc`：普通 `.cj` 的无体函数此时已有隐式 ABSTRACT，
+     * 不会获得 DEFAULT；声明文件会跳过缺体推导，因此无体且未显式 abstract / foreign
+     * 的接口函数获得 DEFAULT。这里读取原始语法体与源文件模式，不能读取之后可能被 CJMP
+     * overlay 清除的隐式 ABSTRACT 结论。
+     */
+    fun isDefaultInterfaceFunction(
+        facts: CjMemberBodyFacts,
+        isExplicitAbstract: Boolean,
+    ): Boolean = facts.scopeKind == CjScopeKind.INTERFACE_BODY &&
+            !facts.isForeign &&
+            !isExplicitAbstract &&
+            (facts.hasBody || facts.isDeclarationFile)
+
+    /**
+     * 官方 interface body 后处理对无体 common 函数补充 ABSTRACT。
+     *
+     * 该步骤发生在 `SetDefaultFunc` 之后，不受 `.cj.d` 缺体抑制影响，也不会清除
+     * 已产生的 DEFAULT。官方在该 common 分支之后才处理 FOREIGN / INTRINSIC，因此二者
+     * 不能在这里提前排除；Java mirror/export 和 Objective-C foreign mirror 则在此前返回。
+     */
+    fun isImplicitAbstractCjmpCommonInterfaceFunction(facts: CjMemberBodyFacts): Boolean {
+        val cjmp = facts.cjmp ?: return false
+        return facts.scopeKind == CjScopeKind.INTERFACE_BODY &&
+                !facts.hasBody &&
+                cjmp.memberIsCommon &&
+                !cjmp.memberIsExplicitAbstract &&
+                !cjmp.enclosingTypeIsInteropHost
+    }
+
+    /**
+     * 官方 JFFIParserImpl::IsAbstractFunction 在普通缺体检查之后修正 JavaMirror 函数。
+     *
+     * class 成员必须同时具有显式 abstract 与抽象宿主；interface 的实例成员为抽象成员。
+     * 这里保留先前 parser 诊断，仅调整 Raw CFIR 要保存的抽象事实。
+     */
+    fun applyJavaMirrorFunctionOverlay(
+        decision: CjMemberBodyDecision,
+        facts: CjMemberBodyFacts,
+    ): CjMemberBodyDecision {
+        val mirror = facts.javaMirror ?: return decision
+        val isAbstract = when (facts.scopeKind) {
+            CjScopeKind.CLASS_BODY -> mirror.memberIsExplicitAbstract && mirror.enclosingClassIsAbstract
+            CjScopeKind.INTERFACE_BODY -> !mirror.memberIsStatic
+            else -> return decision
+        }
+        return decision.copy(markImplicitAbstract = isAbstract)
+    }
+
+    /** 官方 CheckPropDeclJavaMirror 在非抽象 class 宿主中清除属性的隐式 ABSTRACT。 */
+    fun applyJavaMirrorPropertyOverlay(
+        decision: CjMemberBodyDecision,
+        facts: CjMemberBodyFacts,
+    ): CjMemberBodyDecision {
+        val mirror = facts.javaMirror ?: return decision
+        return if (facts.scopeKind == CjScopeKind.CLASS_BODY && !mirror.enclosingClassIsAbstract) {
+            decision.copy(markImplicitAbstract = false)
+        } else {
+            decision
+        }
+    }
+
+    /**
      * CJMP 隐式 abstract 后置修正，对应官方 1.1.3 的旁路地位。
      *
      * 只在 [CjMemberBodyDecision.markImplicitAbstract] 为 true 时生效；facts 为 `null`
-     * 表示不在 `class` 体（interface/struct/enum/extend/top-level），原样返回。
+     * 表示不在 class / interface 成员体（struct/enum/extend/top-level），原样返回。
      *
      * 官方把同一例外写了函数 / 属性两份（`CheckClassLikeFuncBodyAbstractness` /
      * `CheckClassLikePropAbstractness`），规则一致，故本函数不接收成员种类参数。
@@ -226,8 +302,11 @@ object CjMemberBodyPolicy {
     ): CjMemberBodyDecision {
         val cjmp = facts.cjmp ?: return decision
         if (!decision.markImplicitAbstract) return decision
-        if (cjmp.memberIsCommon) return decision.copy(markImplicitAbstract = false)
-        if (!cjmp.memberIsExplicitAbstract &&
+        if (facts.scopeKind == CjScopeKind.CLASS_BODY && cjmp.memberIsCommon) {
+            return decision.copy(markImplicitAbstract = false)
+        }
+        if (facts.scopeKind == CjScopeKind.CLASS_BODY &&
+            !cjmp.memberIsExplicitAbstract &&
             cjmp.enclosingClassIsAbstract &&
             cjmp.enclosingClassIsCommonOrSpecific
         ) {

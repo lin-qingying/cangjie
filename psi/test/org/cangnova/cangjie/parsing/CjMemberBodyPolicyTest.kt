@@ -313,10 +313,103 @@ class CjMemberBodyPolicyTest {
     }
 
     @Test
-    fun cjmpOverlayWithoutClassFactsIsIdentity() {
-        val facts = property(CjScopeKind.INTERFACE_BODY, cjmp = null)
+    fun commonInterfaceFunctionKeepsParseAbstractAndAddsDeclarationPostAbstract() {
+        val sourceFacts = function(
+            CjScopeKind.INTERFACE_BODY,
+            cjmp = cjmpAbstractClass.copy(memberIsCommon = true),
+        )
+        val sourceDecision = CjMemberBodyPolicy.applyCjmpOverlay(
+            CjMemberBodyPolicy.checkFunctionBody(sourceFacts),
+            sourceFacts,
+        )
+        assertTrue(sourceDecision.markImplicitAbstract)
+        assertFalse(CjMemberBodyPolicy.isDefaultInterfaceFunction(sourceFacts, isExplicitAbstract = false))
+        assertTrue(CjMemberBodyPolicy.isImplicitAbstractCjmpCommonInterfaceFunction(sourceFacts))
+
+        val declarationFacts = sourceFacts.copy(isDeclarationFile = true)
+        val declarationDecision = CjMemberBodyPolicy.applyCjmpOverlay(
+            CjMemberBodyPolicy.checkFunctionBody(declarationFacts),
+            declarationFacts,
+        )
+        assertFalse(declarationDecision.markImplicitAbstract)
+        assertTrue(CjMemberBodyPolicy.isDefaultInterfaceFunction(declarationFacts, isExplicitAbstract = false))
+        assertTrue(CjMemberBodyPolicy.isImplicitAbstractCjmpCommonInterfaceFunction(declarationFacts))
+    }
+
+    @Test
+    fun commonInterfaceFunctionPostAbstractSkipsBodiesAndInteropHosts() {
+        val commonFacts = function(
+            CjScopeKind.INTERFACE_BODY,
+            hasBody = true,
+            cjmp = cjmpAbstractClass.copy(memberIsCommon = true),
+        )
+        assertFalse(CjMemberBodyPolicy.isImplicitAbstractCjmpCommonInterfaceFunction(commonFacts))
+        assertTrue(
+            CjMemberBodyPolicy.isImplicitAbstractCjmpCommonInterfaceFunction(
+                commonFacts.copy(hasBody = false, isForeign = true),
+            ),
+            "官方 FOREIGN early return is after the common-interface post rule",
+        )
+        assertTrue(
+            CjMemberBodyPolicy.isImplicitAbstractCjmpCommonInterfaceFunction(
+                commonFacts.copy(hasBody = false, isIntrinsic = true),
+            ),
+            "官方 INTRINSIC early return is after the common-interface post rule",
+        )
+        assertFalse(
+            CjMemberBodyPolicy.isImplicitAbstractCjmpCommonInterfaceFunction(
+                commonFacts.copy(
+                    hasBody = false,
+                    cjmp = commonFacts.cjmp?.copy(enclosingTypeIsInteropHost = true),
+                ),
+            ),
+        )
+    }
+
+    @Test
+    fun javaMirrorFunctionPostRuleUsesActualMemberAndHostModifiers() {
+        val mirror = CjJavaMirrorBodyFacts(
+            enclosingClassIsAbstract = true,
+            memberIsExplicitAbstract = false,
+            memberIsStatic = false,
+        )
+        val classFacts = function(CjScopeKind.CLASS_BODY).copy(javaMirror = mirror)
+        val sourceDecision = CjMemberBodyPolicy.checkFunctionBody(classFacts)
+        assertTrue(sourceDecision.markImplicitAbstract)
+        assertFalse(CjMemberBodyPolicy.applyJavaMirrorFunctionOverlay(sourceDecision, classFacts).markImplicitAbstract)
+        val explicit = classFacts.copy(javaMirror = mirror.copy(memberIsExplicitAbstract = true))
+        assertTrue(CjMemberBodyPolicy.applyJavaMirrorFunctionOverlay(sourceDecision, explicit).markImplicitAbstract)
+        val invalidHost = explicit.copy(javaMirror = mirror.copy(enclosingClassIsAbstract = false, memberIsExplicitAbstract = true))
+        assertFalse(CjMemberBodyPolicy.applyJavaMirrorFunctionOverlay(sourceDecision, invalidHost).markImplicitAbstract)
+
+        val declarationInterface = function(CjScopeKind.INTERFACE_BODY, isDeclarationFile = true).copy(javaMirror = mirror)
+        val declarationDecision = CjMemberBodyPolicy.checkFunctionBody(declarationInterface)
+        assertFalse(declarationDecision.markImplicitAbstract)
+        assertTrue(CjMemberBodyPolicy.applyJavaMirrorFunctionOverlay(declarationDecision, declarationInterface).markImplicitAbstract)
+        val staticInterface = declarationInterface.copy(javaMirror = mirror.copy(memberIsStatic = true))
+        assertFalse(CjMemberBodyPolicy.applyJavaMirrorFunctionOverlay(declarationDecision, staticInterface).markImplicitAbstract)
+    }
+
+    @Test
+    fun javaMirrorPropertyPostRuleKeepsOnlyAbstractHostMissingBodyFact() {
+        val mirror = CjJavaMirrorBodyFacts(false, false, false)
+        val facts = property(CjScopeKind.CLASS_BODY).copy(javaMirror = mirror)
+        val decision = CjMemberBodyPolicy.checkPropertyBody(facts)
+        assertTrue(decision.markImplicitAbstract)
+        assertFalse(CjMemberBodyPolicy.applyJavaMirrorPropertyOverlay(decision, facts).markImplicitAbstract)
+        val abstractHost = facts.copy(javaMirror = mirror.copy(enclosingClassIsAbstract = true))
+        assertTrue(CjMemberBodyPolicy.applyJavaMirrorPropertyOverlay(decision, abstractHost).markImplicitAbstract)
+        assertTrue(CjMemberBodyPolicy.applyJavaMirrorPropertyOverlay(decision, facts.copy(javaMirror = null)).markImplicitAbstract)
+    }
+
+    @Test
+    fun cjmpOverlayDoesNotClearInterfaceCommonAbstract() {
+        val facts = function(
+            CjScopeKind.INTERFACE_BODY,
+            cjmp = cjmpAbstractClass.copy(memberIsCommon = true),
+        )
         val decision = CjMemberBodyPolicy.applyCjmpOverlay(
-            CjMemberBodyPolicy.checkPropertyBody(facts),
+            CjMemberBodyPolicy.checkFunctionBody(facts),
             facts,
         )
         assertTrue(decision.markImplicitAbstract)

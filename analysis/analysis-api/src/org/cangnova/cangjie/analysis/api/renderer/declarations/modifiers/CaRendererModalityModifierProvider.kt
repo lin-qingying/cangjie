@@ -9,6 +9,7 @@ import org.cangnova.cangjie.analysis.api.symbols.CaLocalVariableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaParameterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPropertyAccessorSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolModality
+import org.cangnova.cangjie.analysis.api.symbols.CaModifierExplicitness
 import org.cangnova.cangjie.analysis.api.symbols.CaTypeAliasSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaTypeParameterSymbol
 
@@ -30,7 +31,7 @@ fun interface CaRendererModalityModifierProvider {
          * 适合贴近源码的展示模式。
          */
         val NO_IMPLICIT_MODALITY: CaRendererModalityModifierProvider = CaRendererModalityModifierProvider { symbol ->
-            if (!symbol.isModalityExplicit) return@CaRendererModalityModifierProvider null
+            if (symbol.modalityExplicitness != CaModifierExplicitness.EXPLICIT) return@CaRendererModalityModifierProvider null
             when (symbol.modality) {
                 CaSymbolModality.SEALED -> "sealed"
                 CaSymbolModality.OPEN -> "open"

@@ -10,6 +10,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirInterface
 import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
+import org.cangnova.cangjie.cfir.declarations.serializedInteropFacts
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeClassifierType
@@ -65,7 +66,7 @@ internal fun createExtendStub(
         superNames = superTypeTexts.map(StringRef::fromString).toTypedArray(),
         receiverTypeName = receiverTypeName,
     )
-    createEmptyDeclarationHeaderStubs(stub, annotations = declaration.annotations)
+    createEmptyDeclarationHeaderStubs(stub, declaration = declaration)
     // 用完整 extendedTypeRef 建 type stub：primitive 走 BASIC_TYPE，避免被当成 user type 再经
     // renderIdentifier 包成 `Unit` / `Int64`
     TypeCjoStubBuilder().createDeclaredTypeReferenceStub(stub, declaration.extendedTypeRef)
@@ -98,10 +99,21 @@ internal fun createClassStub(
         name = StringRef.fromString(declaration.name.asString()),
         superNames = superTypeRefs.toSuperNameRefs(),
     )
-    createEmptyDeclarationHeaderStubs(stub, createDeclarationModifierMask(declaration.status), declaration.annotations)
+    createEmptyDeclarationHeaderStubs(stub, createDeclarationModifierMask(declaration, context = context), declaration)
     createTypeParameterListStub(stub, declaration.typeParameters)
     createSuperTypeListStub(stub, superTypeRefs)
-    createTypeStatementBodyAndMembers(stub, CjStubElementTypes.CLASS_BODY, declaration.declarations, context.child(declaration.name))
+    createTypeStatementBodyAndMembers(
+        stub,
+        CjStubElementTypes.CLASS_BODY,
+        declaration.declarations,
+        context.child(
+            declaration.name,
+            declaration.status,
+            CjoStubHostKind.CLASS,
+            declaration.serializedInteropFacts?.isJavaMirror == true,
+            declaration.serializedInteropFacts?.isObjCMirror == true,
+        ),
+    )
 }
 
 /**
@@ -124,10 +136,21 @@ internal fun createInterfaceStub(
         name = StringRef.fromString(declaration.name.asString()),
         superNames = superTypeRefs.toSuperNameRefs(),
     )
-    createEmptyDeclarationHeaderStubs(stub, createDeclarationModifierMask(declaration.status), declaration.annotations)
+    createEmptyDeclarationHeaderStubs(stub, createDeclarationModifierMask(declaration, context = context), declaration)
     createTypeParameterListStub(stub, declaration.typeParameters)
     createSuperTypeListStub(stub, superTypeRefs)
-    createTypeStatementBodyAndMembers(stub, CjStubElementTypes.INTERFACE_BODY, declaration.declarations, context.child(declaration.name))
+    createTypeStatementBodyAndMembers(
+        stub,
+        CjStubElementTypes.INTERFACE_BODY,
+        declaration.declarations,
+        context.child(
+            declaration.name,
+            declaration.status,
+            CjoStubHostKind.INTERFACE,
+            declaration.serializedInteropFacts?.isJavaMirror == true,
+            declaration.serializedInteropFacts?.isObjCMirror == true,
+        ),
+    )
 }
 
 /**
@@ -150,10 +173,21 @@ internal fun createStructStub(
         name = StringRef.fromString(declaration.name.asString()),
         superNames = superTypeRefs.toSuperNameRefs(),
     )
-    createEmptyDeclarationHeaderStubs(stub, createDeclarationModifierMask(declaration.status), declaration.annotations)
+    createEmptyDeclarationHeaderStubs(stub, createDeclarationModifierMask(declaration, context = context), declaration)
     createTypeParameterListStub(stub, declaration.typeParameters)
     createSuperTypeListStub(stub, superTypeRefs)
-    createTypeStatementBodyAndMembers(stub, CjStubElementTypes.CLASS_BODY, declaration.declarations, context.child(declaration.name))
+    createTypeStatementBodyAndMembers(
+        stub,
+        CjStubElementTypes.CLASS_BODY,
+        declaration.declarations,
+        context.child(
+            declaration.name,
+            declaration.status,
+            CjoStubHostKind.STRUCT,
+            declaration.serializedInteropFacts?.isJavaMirror == true,
+            declaration.serializedInteropFacts?.isObjCMirror == true,
+        ),
+    )
 }
 
 /**
@@ -177,10 +211,21 @@ internal fun createEnumStub(
         superNames = superTypeRefs.toSuperNameRefs(),
         isNonExhaustive = declaration.isNonExhaustive,
     )
-    createEmptyDeclarationHeaderStubs(stub, createDeclarationModifierMask(declaration.status), declaration.annotations)
+    createEmptyDeclarationHeaderStubs(stub, createDeclarationModifierMask(declaration, context = context), declaration)
     createTypeParameterListStub(stub, declaration.typeParameters)
     createSuperTypeListStub(stub, superTypeRefs)
-    createTypeStatementBodyAndMembers(stub, CjStubElementTypes.ENUM_BODY, declaration.declarations, context.child(declaration.name))
+    createTypeStatementBodyAndMembers(
+        stub,
+        CjStubElementTypes.ENUM_BODY,
+        declaration.declarations,
+        context.child(
+            declaration.name,
+            declaration.status,
+            CjoStubHostKind.ENUM,
+            declaration.serializedInteropFacts?.isJavaMirror == true,
+            declaration.serializedInteropFacts?.isObjCMirror == true,
+        ),
+    )
 }
 
 /**
@@ -200,7 +245,7 @@ internal fun createTypeAliasStub(
         qualifiedName = StringRef.fromString(qualifiedName.asString()),
         classId = context.owningClassFqName?.let { null } ?: ClassId(context.packageFqName, declaration.name),
     )
-    createEmptyDeclarationHeaderStubs(stub, createDeclarationModifierMask(declaration.status), declaration.annotations)
+    createEmptyDeclarationHeaderStubs(stub, createDeclarationModifierMask(declaration, context = context), declaration)
     createTypeParameterListStub(stub, declaration.typeParameters)
     context.typeStubBuilder.createDeclaredTypeReferenceStub(stub, declaration.expandedTypeRef)
 }

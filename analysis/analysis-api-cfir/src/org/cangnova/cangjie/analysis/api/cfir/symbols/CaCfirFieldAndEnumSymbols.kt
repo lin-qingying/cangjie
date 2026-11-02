@@ -10,6 +10,7 @@ import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaEnumConstructorSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaFieldSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaModifierExplicitness
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolLocation
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolModality
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolVisibility
@@ -137,7 +138,10 @@ internal class CaCfirFieldSymbol private constructor(
      * 字段可见性是否显式声明。
      */
     override val isVisibilityExplicit: Boolean
-        get() = withValidityAssertion { status?.isVisibilityExplicit == true }
+        get() = visibilityExplicitness == CaModifierExplicitness.EXPLICIT
+
+    override val visibilityExplicitness: CaModifierExplicitness
+        get() = withValidityAssertion { status.asPublicVisibilityExplicitness() }
 
     /**
      * 字段 modality。
@@ -149,7 +153,10 @@ internal class CaCfirFieldSymbol private constructor(
      * 字段 modality 是否显式声明。
      */
     override val isModalityExplicit: Boolean
-        get() = withValidityAssertion { status?.isModalityExplicit == true }
+        get() = modalityExplicitness == CaModifierExplicitness.EXPLICIT
+
+    override val modalityExplicitness: CaModifierExplicitness
+        get() = withValidityAssertion { status.asPublicModalityExplicitness() }
 
     /**
      * 字段符号的稳定指针。
@@ -309,7 +316,10 @@ internal class CaCfirEnumConstructorSymbol private constructor(
      * enum constructor 可见性是否显式声明。
      */
     override val isVisibilityExplicit: Boolean
-        get() = withValidityAssertion { status?.isVisibilityExplicit == true }
+        get() = visibilityExplicitness == CaModifierExplicitness.EXPLICIT
+
+    override val visibilityExplicitness: CaModifierExplicitness
+        get() = withValidityAssertion { status.asPublicVisibilityExplicitness() }
 
     /**
      * enum constructor modality。
@@ -321,7 +331,10 @@ internal class CaCfirEnumConstructorSymbol private constructor(
      * enum constructor modality 是否显式声明。
      */
     override val isModalityExplicit: Boolean
-        get() = withValidityAssertion { status?.isModalityExplicit == true }
+        get() = modalityExplicitness == CaModifierExplicitness.EXPLICIT
+
+    override val modalityExplicitness: CaModifierExplicitness
+        get() = withValidityAssertion { status.asPublicModalityExplicitness() }
 
     /**
      * enum constructor 当前没有稳定 pointer。

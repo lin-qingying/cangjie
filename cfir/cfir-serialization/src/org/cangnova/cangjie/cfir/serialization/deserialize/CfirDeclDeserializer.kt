@@ -766,13 +766,15 @@ class CfirDeclDeserializer private constructor(
     private fun isEnumConstructorDecl(decl: Decl): Boolean =
         testAttr(decl, AttrBit.ENUM_CONSTRUCTOR)
 
-    /** 从 attributes 位域解析可见性 */
-    private fun resolveVisibility(decl: Decl): Visibility = when {
-        testAttr(decl, AttrBit.PUBLIC) -> Visibilities.Public
-        testAttr(decl, AttrBit.PRIVATE) -> Visibilities.Private
-        testAttr(decl, AttrBit.PROTECTED) -> Visibilities.Protected
-        testAttr(decl, AttrBit.INTERNAL) -> Visibilities.Internal
-        else -> Visibilities.Public // 默认 public
+    /** CJO visibility 只有唯一属性位时才是已知值；缺失或冲突位保留为 UNKNOWN。 */
+    private fun resolveVisibility(decl: Decl): Visibility {
+        val visibilityBits = buildList {
+            if (testAttr(decl, AttrBit.PUBLIC)) add(Visibilities.Public)
+            if (testAttr(decl, AttrBit.PRIVATE)) add(Visibilities.Private)
+            if (testAttr(decl, AttrBit.PROTECTED)) add(Visibilities.Protected)
+            if (testAttr(decl, AttrBit.INTERNAL)) add(Visibilities.Internal)
+        }
+        return visibilityBits.singleOrNull() ?: Visibilities.Unknown
     }
 
     /** 从 attributes 位域解析 modality */
@@ -790,8 +792,10 @@ class CfirDeclDeserializer private constructor(
             visibility = visibility,
             modality = modality,
         )
-        status.isVisibilityExplicit = visibility != Visibilities.Public
-        status.isModalityExplicit = modality != Modality.FINAL
+        status.isVisibilityExplicit = false
+        status.isModalityExplicit = false
+        status.visibilityExplicitness = CfirModifierExplicitness.UNKNOWN
+        status.modalityExplicitness = CfirModifierExplicitness.UNKNOWN
         status.isAbstract = testAttr(decl, AttrBit.ABSTRACT)
         status.isDefault = testAttr(decl, AttrBit.DEFAULT)
         status.isOpen = testAttr(decl, AttrBit.OPEN)
@@ -808,7 +812,8 @@ class CfirDeclDeserializer private constructor(
         status.isC = (testAttr(decl, AttrBit.C) &&
             context.languageVersionSettings.supportsFeature(org.cangnova.cangjie.LanguageFeature.BuiltInAnnotations)) ||
             status.isForeign
-        status.isCommon = testAttr(decl, AttrBit.COMMON) || testAttr(decl, AttrBit.FROM_COMMON_PART)
+        status.isCommon = testAttr(decl, AttrBit.COMMON)
+        status.isFromCommonPart = testAttr(decl, AttrBit.FROM_COMMON_PART)
         status.isSpecific = testAttr(decl, AttrBit.SPECIFIC)
         // 官方 ASTLoader 原样恢复 AttributePack；COMMON_WITH_DEFAULT 决定跨模块验证豁免
         //（CheckCJMP.cpp MustMatchWithPlatform），必须随位恢复而不是从函数体推导——
@@ -817,13 +822,14 @@ class CfirDeclDeserializer private constructor(
         status.isUnsafe = testAttr(decl, AttrBit.UNSAFE)
         status.isMut = testAttr(decl, AttrBit.MUT)
         status.isRedef = testAttr(decl, AttrBit.REDEF)
-        return status
+        // CJO 声明直接发布为 BODY_RESOLVE，解码出的有效状态必须满足 resolved 状态不变量。
+        return status.resolvedWithEffectiveModality()
     }
 
     /** Reconstruct non-Anno interop facts written by the official CJO writer. */
     private fun serializedInteropFacts(decl: Decl): CfirSerializedInteropFacts {
         val isForeign = testAttr(decl, AttrBit.FOREIGN)
-        val funcInfo = decl.info(FuncInfo()) as? FuncInfo
+        val funcInfo = if (decl.infoType == DeclInfo.FuncInfo) decl.info(FuncInfo()) as? FuncInfo else null
         return CfirSerializedInteropFacts(
             hasExplicitC = testAttr(decl, AttrBit.C) && !isForeign,
             callingConvention = if (testAttr(decl, AttrBit.STD_CALL)) {
@@ -876,6 +882,7 @@ class CfirDeclDeserializer private constructor(
 
     /** Restore ClassInfo's compact annotation declaration metadata. */
     private fun serializedAnnotationInfo(decl: Decl): CfirDeclarationAnnotationInfo? {
+        if (decl.infoType != DeclInfo.ClassInfo) return null
         val info = decl.info(ClassInfo()) as? ClassInfo ?: return null
         if (!testAttr(decl, AttrBit.IS_ANNOTATION) && !info.isAnno) return null
         val firstMask = info.annoTargets.toInt()
@@ -1207,7 +1214,7 @@ class CfirDeclDeserializer private constructor(
         val name = decl.classLikeName()
         val classId = resolveClassId(decl, name)
         val symbol = CfirClassSymbol(classId)
-        val status = buildStatus(decl).resolvedForStatuslessDeclaration()
+        val status = buildStatus(decl)
         val typeParams = withContainingDeclarationSymbol(symbol) {
             deserializeTypeParameters(decl)
         }
@@ -2123,15 +2130,19 @@ class CfirDeclDeserializer private constructor(
     /**
      * 深复制声明状态。
      *
-     * 模式绑定变量需要继承外层变量状态，但每个绑定变量必须拥有独立的可变 status 实例。
+     * 模式绑定变量需要继承外层变量状态，但每个绑定变量必须拥有独立的 resolved status 实例。
      */
-    private fun cloneStatus(status: CfirDeclarationStatus): CfirDeclarationStatusImpl {
+    private fun cloneStatus(status: CfirDeclarationStatus): CfirDeclarationStatus {
         return CfirDeclarationStatusImpl(
             visibility = status.visibility,
             modality = status.modality,
         ).also { copied ->
             copied.isVisibilityExplicit = status.isVisibilityExplicit
             copied.isModalityExplicit = status.isModalityExplicit
+            copied.visibilityExplicitness = status.visibilityExplicitness
+            copied.modalityExplicitness = status.modalityExplicitness
+            copied.bodyPresence = status.bodyPresence
+            copied.isDeclarationFile = status.isDeclarationFile
             copied.isAbstractExplicit = status.isAbstractExplicit
             copied.isOverride = status.isOverride
             copied.isOperator = status.isOperator
@@ -2142,6 +2153,7 @@ class CfirDeclDeserializer private constructor(
             copied.isForeign = status.isForeign
             copied.isC = status.isC
             copied.isCommon = status.isCommon
+            copied.isFromCommonPart = status.isFromCommonPart
             copied.isSpecific = status.isSpecific
             copied.isCommonWithDefault = status.isCommonWithDefault
             copied.isRedef = status.isRedef
@@ -2149,7 +2161,7 @@ class CfirDeclDeserializer private constructor(
             copied.isAbstract = status.isAbstract
             copied.isOpen = status.isOpen
             copied.isSealed = status.isSealed
-        }
+        }.resolvedWithEffectiveModality()
     }
 
     /** 从 `allExprs` 中的 reference expression 读取原始引用文本。 */

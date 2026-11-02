@@ -14,6 +14,7 @@ import PackageFormat.SemaTyInfo
 import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
 import org.cangnova.cangjie.annotations.CangjieAnnotationIdentity
 import org.cangnova.cangjie.descriptors.Visibilities
+import org.cangnova.cangjie.descriptors.Modality
 import org.cangnova.cangjie.LanguageVersion
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
@@ -475,7 +476,9 @@ object CfirCjoPackageMetadataProducer {
             if (status.isForeign) values += CfirAttribute.FOREIGN
             if (status.isStatic) values += CfirAttribute.STATIC
             if (status.isAbstract) values += CfirAttribute.ABSTRACT
-            if (status.isOpen) values += CfirAttribute.OPEN
+            // 官方语义检查会把接口等隐式开放成员的有效 OPEN 写入 AttributePack。
+            if (status.isOpen || status.modality == Modality.OPEN) values += CfirAttribute.OPEN
+            if (status.isDefault) values += CfirAttribute.DEFAULT
             if (status.isSealed) values += CfirAttribute.SEALED
             if (status.isOverride) values += CfirAttribute.OVERRIDE
             if (status.isRedef) values += CfirAttribute.REDEF
@@ -508,14 +511,13 @@ object CfirCjoPackageMetadataProducer {
 
         private fun annotations(declaration: CfirDeclaration): List<CjoAnnotationMetadata> =
             declaration.annotations.filterIsInstance<CfirAnnotationCall>().mapNotNull { annotation ->
-                val declarationStatus = (declaration as? CfirMemberDeclaration)?.status
                 /*
                  * Match the official ASTWriter::SaveAnnotations contract.  The
                  * wire kind is selected from resolved identity, never from the
                  * spelling of the annotation.  C/FFI and parser-only builtins
                  * are represented by Decl attributes/FuncInfo and therefore do
-                 * not become Anno records.  Non-visible custom annotations are
-                 * likewise not serialized by the official writer.
+                 * not become Anno records. Custom 注解除编译期可见性外，还按
+                 * 1.1 起的 COMMON/SPECIFIC 一致性检查要求保留；来源位不参与该规则。
                  */
                 val kind = when (val identity = annotation.annotationIdentity) {
                     is CangjieAnnotationIdentity.LanguageBuiltIn -> when (identity.kind) {
@@ -534,14 +536,14 @@ object CfirCjoPackageMetadataProducer {
                     }
                     is CangjieAnnotationIdentity.PlatformDerived ->
                         annotation.platformAnnotationDescriptor?.officialKind?.toCjoAnnoKind(languageVersion)
+                    // 官方 1.1 ASTWriter::SaveAnnotations 保留 common/specific 上的 custom 注解，
+                    // 供跨分部一致性检查使用；FROM_COMMON_PART 单独存在不触发这个例外。
                     is CangjieAnnotationIdentity.Custom ->
-                        // 对齐官方 ASTWriter：common/specific 声明上的普通 custom
-                        // annotation 也必须保留，供两侧一致性检查比较；不能只用
-                        // compile-time-visible 作为完整序列化条件。
                         AnnoKind.Custom.takeIf {
+                            val status = (declaration as? CfirMemberDeclaration)?.status
                             annotation.isCompileTimeVisible == true ||
-                                declarationStatus?.isCommon == true ||
-                                declarationStatus?.isSpecific == true
+                                    languageVersion >= LanguageVersion.CANGJIE_1_1_0 &&
+                                    (status?.isCommon == true || status?.isSpecific == true)
                         }
                     else -> null
                 } ?: return@mapNotNull null

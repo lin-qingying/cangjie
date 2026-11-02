@@ -74,6 +74,7 @@ import org.cangnova.cangjie.parsing.CjMemberBodyFacts
 import org.cangnova.cangjie.parsing.CjMemberBodyPolicy
 import org.cangnova.cangjie.parsing.CjScopeKind
 import org.cangnova.cangjie.parsing.CjmpOverlayFacts
+import org.cangnova.cangjie.parsing.CjJavaMirrorBodyFacts
 import org.cangnova.cangjie.psi.CjNodeTypes.*
 import org.cangnova.cangjie.source.*
 import org.cangnova.cangjie.cfir.expressions.builder.buildErrorExpression as buildErrorExpressionNode
@@ -3774,6 +3775,10 @@ class PsiRawCfirBuilder(
                 visibility = status.visibility,
                 modality = status.modality,
             ).also { copied ->
+                copied.visibilityExplicitness = status.visibilityExplicitness
+                copied.modalityExplicitness = status.modalityExplicitness
+                copied.bodyPresence = status.bodyPresence
+                copied.isDeclarationFile = status.isDeclarationFile
                 copied.isVisibilityExplicit = status.isVisibilityExplicit
                 copied.isModalityExplicit = status.isModalityExplicit
                 copied.isAbstractExplicit = status.isAbstractExplicit
@@ -3786,6 +3791,7 @@ class PsiRawCfirBuilder(
                 copied.isForeign = status.isForeign
                 copied.isC = status.isC
                 copied.isCommon = status.isCommon
+                copied.isFromCommonPart = status.isFromCommonPart
                 copied.isSpecific = status.isSpecific
                 copied.isCommonWithDefault = status.isCommonWithDefault
                 copied.isRedef = status.isRedef
@@ -4115,6 +4121,19 @@ class PsiRawCfirBuilder(
                 isDefault = isDefaultInterfaceMember(declaration),
                 isCommon = hasModifier(CjTokens.COMMON_KEYWORD),
                 isSpecific = hasModifier(CjTokens.SPECIFIC_KEYWORD),
+                isDeclarationFile = declaration.sourceKind.isDeclaration,
+                bodyPresence = when (declaration) {
+                    is CjNamedFunction -> if (declaration.hasBody()) CfirBodyPresence.PRESENT else CfirBodyPresence.ABSENT
+                    is CjProperty -> if (
+                        declaration.body != null || declaration.getter != null || declaration.setter != null
+                    ) {
+                        CfirBodyPresence.PRESENT
+                    } else {
+                        CfirBodyPresence.ABSENT
+                    }
+
+                    else -> CfirBodyPresence.UNKNOWN
+                },
             )
         }
 
@@ -4156,48 +4175,72 @@ class PsiRawCfirBuilder(
                 is CjNamedFunction -> CjMemberBodyFacts(
                     scopeKind = scopeKind,
                     hasBody = declaration.hasBody(),
-                    isForeign = owner.hasModifier(CjTokens.FOREIGN_KEYWORD),
+                    isForeign = owner.hasModifier(CjTokens.FOREIGN_KEYWORD) || declaration.parent is CjForeignBody,
                     isIntrinsic = declaration.hasBuiltinAnnotation(BuiltInAnnotationKind.INTRINSIC),
                     isDeclarationFile = declaration.sourceKind.isDeclaration,
                     cjmp = cjmpOverlayFacts(declaration, owner),
+                    javaMirror = javaMirrorBodyFacts(declaration, owner),
                 )
                 is CjProperty -> CjMemberBodyFacts(
                     scopeKind = scopeKind,
                     hasBody = declaration.body != null,
                     hasAccessors = declaration.getter != null || declaration.setter != null,
-                    isForeign = owner.hasModifier(CjTokens.FOREIGN_KEYWORD),
+                    isForeign = owner.hasModifier(CjTokens.FOREIGN_KEYWORD) || declaration.parent is CjForeignBody,
                     isIntrinsic = declaration.hasBuiltinAnnotation(BuiltInAnnotationKind.INTRINSIC),
                     isDeclarationFile = declaration.sourceKind.isDeclaration,
                     cjmp = cjmpOverlayFacts(declaration, owner),
+                    javaMirror = javaMirrorBodyFacts(declaration, owner),
                 )
                 else -> return false
             }
             val decision = when (declaration) {
-                is CjNamedFunction -> CjMemberBodyPolicy.checkFunctionBody(facts)
-                else -> CjMemberBodyPolicy.checkPropertyBody(facts)
+                is CjNamedFunction -> CjMemberBodyPolicy.applyJavaMirrorFunctionOverlay(
+                    CjMemberBodyPolicy.checkFunctionBody(facts), facts,
+                )
+                else -> CjMemberBodyPolicy.applyJavaMirrorPropertyOverlay(
+                    CjMemberBodyPolicy.checkPropertyBody(facts), facts,
+                )
             }
-            return CjMemberBodyPolicy.applyCjmpOverlay(decision, facts).markImplicitAbstract
+            val cjmpOverlayAbstract = CjMemberBodyPolicy.applyCjmpOverlay(decision, facts).markImplicitAbstract
+            val commonInterfacePostAbstract = declaration is CjNamedFunction &&
+                    CjMemberBodyPolicy.isImplicitAbstractCjmpCommonInterfaceFunction(facts)
+            return cjmpOverlayAbstract || commonInterfacePostAbstract
         }
 
-        /**
-         * 提取 1.1.3 CJMP 例外事实。
-         *
-         * 仅 `class` 体返回非 null，与 `CanBeAbstract` 的宿主条件一致；interface 的
-         * common 成员规则（`CheckClassLikeFuncBodyAbstractness` 的 `isCommon && outer is INTERFACE`
-         * 分支）不在本 overlay 内，登记为分层偏差。
-         */
+        /** 仅提取真实 JavaMirror 宿主的语法事实，后置规则由共享 body policy 计算。 */
+        private fun javaMirrorBodyFacts(
+            declaration: CjDeclaration,
+            owner: CjModifierListOwner,
+        ): CjJavaMirrorBodyFacts? {
+            val outer = PsiTreeUtil.getParentOfType(declaration, CjTypeStatement::class.java) ?: return null
+            if (!outer.hasBuiltinAnnotation(BuiltInAnnotationKind.JAVA_MIRROR)) return null
+            return CjJavaMirrorBodyFacts(
+                enclosingClassIsAbstract = outer.hasModifier(CjTokens.ABSTRACT_KEYWORD),
+                memberIsExplicitAbstract = owner.hasModifier(CjTokens.ABSTRACT_KEYWORD),
+                memberIsStatic = owner.hasModifier(CjTokens.STATIC_KEYWORD),
+            )
+        }
+
+        /** 提取 class / interface 成员的 CJMP 事实；抽象宿主例外只对 class 生效。 */
         private fun cjmpOverlayFacts(
             declaration: CjDeclaration,
             owner: CjModifierListOwner,
         ): CjmpOverlayFacts? {
-            if (containerSymbolIfAny !is CfirClassSymbol) return null
+            val inClass = containerSymbolIfAny is CfirClassSymbol
+            val inInterface = containerSymbolIfAny is CfirInterfaceSymbol
+            if (!inClass && !inInterface) return null
             val outer = PsiTreeUtil.getParentOfType(declaration, CjTypeStatement::class.java) ?: return null
             return CjmpOverlayFacts(
                 memberIsCommon = owner.hasModifier(CjTokens.COMMON_KEYWORD),
                 memberIsExplicitAbstract = owner.hasModifier(CjTokens.ABSTRACT_KEYWORD),
-                enclosingClassIsAbstract = outer.hasModifier(CjTokens.ABSTRACT_KEYWORD),
-                enclosingClassIsCommonOrSpecific = outer.hasModifier(CjTokens.COMMON_KEYWORD) ||
-                        outer.hasModifier(CjTokens.SPECIFIC_KEYWORD),
+                enclosingClassIsAbstract = inClass && outer.hasModifier(CjTokens.ABSTRACT_KEYWORD),
+                enclosingClassIsCommonOrSpecific = inClass && (
+                        outer.hasModifier(CjTokens.COMMON_KEYWORD) || outer.hasModifier(CjTokens.SPECIFIC_KEYWORD)
+                        ),
+                enclosingTypeIsInteropHost = outer.hasBuiltinAnnotation(BuiltInAnnotationKind.JAVA) ||
+                        outer.hasBuiltinAnnotation(BuiltInAnnotationKind.JAVA_MIRROR) ||
+                        outer.hasBuiltinAnnotation(BuiltInAnnotationKind.JAVA_IMPL) ||
+                        outer.hasBuiltinAnnotation(BuiltInAnnotationKind.OBJ_C_MIRROR),
             )
         }
 
@@ -4215,19 +4258,27 @@ class PsiRawCfirBuilder(
         /**
          * 判断 interface 成员是否应标记为 default 实现。
          *
-         * 官方 `ParserImpl::SetDefaultFunc`（`ParseDecl.cpp:874-898`）的规则是
-         * `scopeKind == INTERFACE_BODY && !FOREIGN && !ABSTRACT` —— **DEFAULT 是 ABSTRACT 的补集**。
-         * 因此这里与隐式 abstract 推断**共用同一个结论**（[isImplicitAbstractClassLikeMember]），
-         * 而不是再独立判一次 `hasBody`：在 `.cj` 下两者等价，到 `.cj.d` 会分叉 ——
-         * 护栏 1 抑制了无体函数的隐式 abstract 后，官方会给这种函数置 DEFAULT。
+         * 官方先执行 `CheckFuncBody`，之后执行 `SetDefaultFunc`。所以普通 `.cj` 中
+         * 无体函数已带隐式 abstract，不获得 DEFAULT；`.cj.d` 跳过缺体推导，无体且
+         * 没有显式 `abstract` / `foreign` 的接口函数获得 DEFAULT。
          */
         private fun isDefaultInterfaceMember(declaration: CjDeclaration): Boolean {
             if (containerSymbolIfAny !is CfirInterfaceSymbol) return false
 
             return when (declaration) {
-                is CjNamedFunction ->
-                    !declaration.hasModifier(CjTokens.FOREIGN_KEYWORD) &&
-                            !isImplicitAbstractClassLikeMember(declaration, declaration)
+                is CjNamedFunction -> {
+                    val facts = CjMemberBodyFacts(
+                        scopeKind = CjScopeKind.INTERFACE_BODY,
+                        hasBody = declaration.hasBody(),
+                        isForeign = declaration.hasModifier(CjTokens.FOREIGN_KEYWORD) ||
+                                declaration.parent is CjForeignBody,
+                        isDeclarationFile = declaration.sourceKind.isDeclaration,
+                    )
+                    CjMemberBodyPolicy.isDefaultInterfaceFunction(
+                        facts,
+                        isExplicitAbstract = declaration.hasModifier(CjTokens.ABSTRACT_KEYWORD),
+                    )
+                }
                 is CjProperty ->
                     !declaration.hasModifier(CjTokens.ABSTRACT_KEYWORD) &&
                             !isImplicitAbstractClassLikeMember(declaration, declaration)

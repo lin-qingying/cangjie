@@ -7,6 +7,7 @@ import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.annotations.CaAnnotationList
 import org.cangnova.cangjie.analysis.api.symbols.CaAnnotatedSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaExtendSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaModifierExplicitness
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolLocation
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolModality
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolOrigin
@@ -199,7 +200,10 @@ internal class CaCfirExtendSymbol private constructor(
      * extend 可见性是否显式声明。
      */
     override val isVisibilityExplicit: Boolean
-        get() = status?.isVisibilityExplicit == true
+        get() = visibilityExplicitness == CaModifierExplicitness.EXPLICIT
+
+    override val visibilityExplicitness: CaModifierExplicitness
+        get() = status.asPublicVisibilityExplicitness()
 
     /**
      * extend modality。
@@ -211,7 +215,10 @@ internal class CaCfirExtendSymbol private constructor(
      * extend modality 是否显式声明。
      */
     override val isModalityExplicit: Boolean
-        get() = status?.isModalityExplicit == true
+        get() = modalityExplicitness == CaModifierExplicitness.EXPLICIT
+
+    override val modalityExplicitness: CaModifierExplicitness
+        get() = status.asPublicModalityExplicitness()
 
     /**
      * extend 在公开 API 中位于顶层。

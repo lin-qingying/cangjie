@@ -168,6 +168,10 @@ internal sealed interface CaCfirBasePropertyAccessorSymbol :
     val isVisibilityExplicitImpl: Boolean
         get() = status?.isVisibilityExplicit == true
 
+    /** 公开 visibility 显式性保留 CFIR 的三态信息。 */
+    val visibilityExplicitnessImpl: CaModifierExplicitness
+        get() = status?.visibilityExplicitness?.asPublicExplicitness() ?: CaModifierExplicitness.UNKNOWN
+
     /**
      * 访问器 modality。
      */
@@ -179,6 +183,14 @@ internal sealed interface CaCfirBasePropertyAccessorSymbol :
      */
     val isModalityExplicitImpl: Boolean
         get() = status?.isModalityExplicit == true
+
+    /** 公开 modality 显式性保留 CFIR 的三态信息。 */
+    val modalityExplicitnessImpl: CaModifierExplicitness
+        get() = if (modalityImpl == null) {
+            CaModifierExplicitness.UNKNOWN
+        } else {
+            status?.modalityExplicitness?.asPublicExplicitness() ?: CaModifierExplicitness.UNKNOWN
+        }
 
     /**
      * 访问器是否为 static。

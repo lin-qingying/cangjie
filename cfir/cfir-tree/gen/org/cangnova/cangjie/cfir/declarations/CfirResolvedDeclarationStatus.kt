@@ -18,6 +18,10 @@ import org.cangnova.cangjie.source.CjSourceElement
 interface CfirResolvedDeclarationStatus : CfirDeclarationStatus {
     override val source: CjSourceElement?
     override val visibility: Visibility
+    override val visibilityExplicitness: CfirModifierExplicitness
+    override val modalityExplicitness: CfirModifierExplicitness
+    override val bodyPresence: CfirBodyPresence
+    override val isDeclarationFile: Boolean
     override val isVisibilityExplicit: Boolean
     override val isModalityExplicit: Boolean
     override val isAbstractExplicit: Boolean
@@ -30,6 +34,7 @@ interface CfirResolvedDeclarationStatus : CfirDeclarationStatus {
     override val isForeign: Boolean
     override val isC: Boolean
     override val isCommon: Boolean
+    override val isFromCommonPart: Boolean
     override val isSpecific: Boolean
     override val isCommonWithDefault: Boolean
     override val isRedef: Boolean
