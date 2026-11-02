@@ -214,6 +214,16 @@ class PsiRawCfirBuilder(
         PARAMETER,
     }
 
+    private companion object {
+        /**
+         * `@IfAvailable` 是 builtin non-macro surface（baseline 第 8 节）：
+         * 不送 macro executor，必须在 stable splice 之前 desugar。
+         *
+         * 名称与 `MacroBuiltinRegistries.DEFAULT.nonMacros` 同源，改动需同步两侧。
+         */
+        private const val IF_AVAILABLE_ANNOTATION_NAME: String = "IfAvailable"
+    }
+
     // ===== Public API =====
 
     /** 源文件、惰性子树与宏片段均读取自身 parser 来源，不能按目标包名补授内置身份。 */
@@ -673,36 +683,72 @@ class PsiRawCfirBuilder(
                 }
             }
             if (macroSurfaceCollectionMode == MacroSurfaceCollectionMode.EXPRESSION_ONLY) return
+            val surfaceKind = if (macroAnnotation?.isCompileTimeVisible == true) {
+                MacroSurface.Kind.FORCED
+            } else {
+                MacroSurface.Kind.PLAIN
+            }
+            val attrTokens = MacroPayloadTokenizer.tokenize(
+                psi.attr?.payload?.text,
+                psi.attr?.payload?.startOffset ?: 0,
+            ).toMacroSurfaceTokens()
+            val inputTokens = MacroPayloadTokenizer.tokenize(
+                inputPayload?.text,
+                inputPayload?.startOffset ?: 0,
+            ).toMacroSurfaceTokens()
+            val sourceRange = MacroSurfaceSourceRange(
+                source = source,
+                startOffset = source.startOffset,
+                endOffset = source.endOffset,
+            )
+            val containerContext = macroContainerContext(annotatedDeclaration, AnnotationSurfaceTarget.DECLARATION)
+            val replaceHandle = CfirReplaceHandle(
+                handleId = surfaceId,
+                carrier = carrier,
+                annotationCarrier = annotationCarrier,
+            )
+            val isQualifiedName = headSyntax.rawName.contains('.')
+            // `@IfAvailable[...]` 包住声明时 PSI 走的是 MACRO_EXPRESSION（不是 annotation，
+            // 也不是 CjIfAvailableExpression）；它是 builtin non-macro surface：不送 executor，
+            // 也不进 stable splice，否则会按声明宏把 carrier 拼成自身副本。
+            if (!isQualifiedName && qualifiedName?.shortName()?.asString() == IF_AVAILABLE_ANNOTATION_NAME) {
+                collectedMacroSurfaces += IfAvailableSurface(
+                    surfaceId = surfaceId,
+                    qualifiedName = qualifiedName,
+                    isQualifiedName = false,
+                    kind = surfaceKind,
+                    hasParenthesis = hasCompleteParenthesizedInput,
+                    attrTokens = attrTokens,
+                    hasAttr = psi.attr != null,
+                    inputTokens = inputTokens,
+                    sourceRange = sourceRange,
+                    scopeContext = macroSurfaceScopeContext(),
+                    modifiers = emptyList(),
+                    carriedAnnotations = emptyList(),
+                    capturedRawSyntax = text.substring(headSyntax.annotationStartOffset),
+                    containerContext = containerContext,
+                    replaceHandle = replaceHandle,
+                    // 父宏可见 token 就是 `@IfAvailable[...]` 包裹的声明输入。
+                    branchTokens = inputTokens,
+                )
+                return
+            }
             collectedMacroSurfaces += MacroSurfaceDecl(
                 surfaceId = surfaceId,
                 qualifiedName = qualifiedName,
-                isQualifiedName = headSyntax.rawName.contains('.'),
-                kind = if (macroAnnotation?.isCompileTimeVisible == true) MacroSurface.Kind.FORCED else MacroSurface.Kind.PLAIN,
+                isQualifiedName = isQualifiedName,
+                kind = surfaceKind,
                 hasParenthesis = hasCompleteParenthesizedInput,
-                attrTokens = MacroPayloadTokenizer.tokenize(
-                    psi.attr?.payload?.text,
-                    psi.attr?.payload?.startOffset ?: 0,
-                ).toMacroSurfaceTokens(),
+                attrTokens = attrTokens,
                 hasAttr = psi.attr != null,
-                inputTokens = MacroPayloadTokenizer.tokenize(
-                    inputPayload?.text,
-                    inputPayload?.startOffset ?: 0,
-                ).toMacroSurfaceTokens(),
-                sourceRange = MacroSurfaceSourceRange(
-                    source = source,
-                    startOffset = source.startOffset,
-                    endOffset = source.endOffset,
-                ),
+                inputTokens = inputTokens,
+                sourceRange = sourceRange,
                 scopeContext = macroSurfaceScopeContext(),
                 modifiers = emptyList(),
                 carriedAnnotations = emptyList(),
                 capturedRawSyntax = text.substring(headSyntax.annotationStartOffset),
-                containerContext = macroContainerContext(annotatedDeclaration, AnnotationSurfaceTarget.DECLARATION),
-                replaceHandle = CfirReplaceHandle(
-                    handleId = surfaceId,
-                    carrier = carrier,
-                    annotationCarrier = annotationCarrier,
-                ),
+                containerContext = containerContext,
+                replaceHandle = replaceHandle,
             )
         }
 

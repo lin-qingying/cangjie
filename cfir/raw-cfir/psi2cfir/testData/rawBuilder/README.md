@@ -367,3 +367,68 @@ const 实例成员函数缺少 `const init`（`sema_no_const_init`）；extend �
 （`sema_no_const_init`）；const 函数体读实例 `let` 字段（`sema_expect_const`）。
 
 注意：rawBuilder 夹具止于 `FRONTEND`，`unsafe` 调用点约束与 const 求值规则只由 cjc 探针固定，仓库内没有对应测试覆盖这两条。
+
+## 类型参数列表（元组 / 函数类型）对齐官方 `ParseTypeWithParen`（2026-11-01）
+
+`psi` 解析器此前没有完整实现官方 `ParserImpl::ParseTypeWithParen`（`src/Parse/ParseType.cpp:186-225`）与
+`ParseTypeParameterInTupleType`（`:154-184`）的契约，导致一批 rawBuilder golden 记录的是解析器的旧恢复形态而不是官方语义。
+本次把该契约收敛到解析器（`CangJieParsing.parseTupleType` / `parseFunctionType` / `parseParameterListCore`）并同步两条
+raw CFIR 路径：
+
+| 官方规则 | 官方依据 | 本地实现 |
+| --- | --- | --- |
+| 类型形参可写 `name:` 标签；标签只是语法元数据，`TupleType` 只保存 `fieldTypes`，不保留字段名 | `ParseType.cpp:154-184`、`:138-152`、`AST/Node.h:908-917` | `parseTupleType` 识别 `IDENTIFIER ':'` 后丢弃标签文本，元素仍是普通 `TYPE_REFERENCE` |
+| 形参表要么全具名、要么全无名（`parse_all_parameters_must_be_named`），**诊断不破坏类型节点** | `ParseType.cpp:198-205` | 零宽错误节点落在列表末尾；`TUPLE_TYPE` / `VALUE_PARAMETER_LIST` 照常构造 |
+| 具名不得重名（`parse_duplicate_type_parameter_name`），反引号转义写法与普通写法同名 | `ParseType.cpp:161-176`、`DiagnosticParser.def:293` | 名称身份用 `Name` + `CjPsiUtil.unquoteIdentifier`（去反引号）比较 |
+| 单元素括号类型不允许类型形参名（`parse_only_tuple_and_func_type_allow_type_parameter_name`） | `ParseType.cpp:230-235`、`:227-244` | `(x: Int64)` 报诊断，节点仍是 `PARENTHESIZED_TYPE` |
+| 尾逗号合法 | `ParserUtils.cpp:303-314 ParseZeroOrMoreSepTrailing` | `parseParameterSeparator` 遇到 `,)` 直接结束列表 |
+| 缺右括号时整段类型是 `InvalidType`，不是括号类型 / 函数类型 | `ParseType.cpp:206-209` | 整段类型标成错误节点；raw CFIR 侧由 `RawCfirTypeDiagnostics.INVALID_TYPE` 产出 `R\|<ERROR:Invalid type>\|` |
+| 空形参表没有 `->` 是损坏的函数类型（`parse_expected_arrow_in_func_type`） | `ParseType.cpp:222-224` | `()` 构造 `FUNCTION_TYPE` 并报箭头诊断 |
+| 宏调用是原子表达式，可作二元运算操作数 | `ParseAtom.cpp:91-137`、`:114-116`、`ParseExpr.cpp:499-551` | 解析器侧无改动，旧 golden 记录的是旧解析器的解析失败；本次按官方形状重生成 |
+
+raw CFIR 侧同时修掉一处 implicit/error 混同：类型引用**存在**但没有类型元素（官方 `InvalidType`）此前被
+`toCfirOrImplicitTypeRef` / `LightTreeTypeConverter.convertTypeReference` 映射成 implicit type ref，现在两条路径
+统一产出 error type ref（对齐 Kotlin `KtTypeReference.toFirType` 的 `typeElement == null ⇒ FirErrorTypeRef`），
+诊断由 `raw-cfir-common` 的 `RawCfirTypeDiagnostics.invalidTypeDiagnostic()` 单一维护。
+
+该诊断必须是 `ConeUnreportedDuplicateDiagnostic` 而不是裸 `ConeSimpleDiagnostic`：语法错误在解析阶段已经报给用户
+（`Unclosed delimiter: '('` 等），CFIR 侧若再发一条语义诊断，同一位置会出现两条。仓库已有的表达就是
+`ConeUnreportedDuplicateDiagnostic`——诊断映射层对它直接返回空（`coneDiagnosticToCfirDiagnostic.kt` 的
+`toCfirDiagnostics` 首行），而 `ConeSimpleDiagnostic` 要走 `mapOtherDiagnostic` 的 reason 表兜底，依赖字符串表太脆。
+`ConeErrorType` 在下游同时起"级联诊断抑制"作用（如 `CfirDeclarationsResolveTransformer.kt:1017` 遇 error type 直接返回），
+这是 Kotlin `FirErrorTypeRef` 的同款设计。
+
+**与官方 AST 形状的一处已知偏差**：`CFunc<(x!: Int64) -> Unit>` 官方 `ParseTypeArguments`（`ParseType.cpp:333-365`）
+遇到坏类型实参会 `ret.clear()` 把整组类型实参丢掉，AST 上是裸 `CFunc`；本仓库保留源码写出的类型实参、
+只在其中放 error type ref，即 `CFunc<R\|<ERROR:Invalid type>\|>`。保留的理由：raw CFIR 是语法树，官方能清空是因为它
+同时把声明标成 broken、sema 整段跳过；本仓库没有这条声明级跳过通道，照抄清空会让 `CFunc` 以"泛型未带类型实参"的
+身份进入 resolve，凭空多一条与源码事实不符的元数/泛型诊断。等实现官方的声明级 broken 跳过后再改为清空更合适。
+
+保留坏类型实参有一个必须配套的模型约束（否则本仓库诊断面会出现假阳性）：**合成错误类型不保留分类器身份**。
+`TypeConstructionUtils` 的 `CFUNC` 分支只有在"实参存在、已解析、且不含错误类型"时才把 `CFunc` 分类器挂到
+`ConeErrorType.delegatedType` 上——那种失败是"写了 `CFunc<非函数类型>`"，检查器需要身份区分同名用户类型并报
+`CFUNC_TYPE`；实参本身是 error type（语法写坏 / 未解析）时不挂身份，错误类型就不会冒充一个构造失败的 `CFunc`，
+任何按 `lookupTag.classId` 识别 CFunc 的消费者也不会对坏代码二次开诊断。回归夹具：
+`cfir/analysis-tests/testData/diagnostics2/interop/cfuncSignatureRules.cj` 的形态 21（`CFunc<(x!: Int64) -> Unit>`
+期望零 CFIR 诊断；形态 16/17 的 `CFunc<CFunc<…>>` / `CFunc<Int64>` 仍照常报 `CFUNC_TYPE`）。
+
+`-Dupdate.test.data=true` 重生成的 17 个 golden（同一批 `.cj` 未改动）均以 cjc 1.0.5 逐文件取证：
+
+| 夹具 | 官方行为（cjc 1.0.5） | 新 golden |
+| --- | --- | --- |
+| `types/functionTypeRefs.cj` | `type NamedTuple = (x: Int64, y: String)` 零诊断 | `NamedTuple = R\|(R\|Int64\|, R\|String\|)\|` |
+| `recovery/functionTypeMixedParamNames.cj` | `parse_all_parameters_must_be_named`，类型照常构造 | 函数类型保留两个形参；元组保留两个元素 |
+| `recovery/functionTypeParamDefault.cj` | `parse_expected_right_delimiter`，形参类型 `InvalidType` | `g: R\|<ERROR:Invalid type>\|` |
+| `recovery/functionTypeNamedParamBang.cj` | `parse_expected_right_delimiter` | `g: R\|<ERROR:Invalid type>\|`，函数体与返回类型保留 |
+| `recovery/cfuncNamedParam.cj` | `parse_expected_right_delimiter`（CFunc 类型实参坏） | `CFunc<R\|<ERROR:Invalid type>\|>`，函数体保留 |
+| `recovery/inoutParameter.cj` | `parse_expected_type`（`inout` 不是普通形参类型） | `x: R\|<ERROR:Invalid type>\|` |
+| `recovery/missingTypeInVar.cj` | `parse_expected_type`（`var x: = 1`） | `x: R\|<ERROR:Invalid type>\|` |
+| `recovery/enumCtorParenEmpty.cj` | `parse_expected_type`（`\| B()` 空参数表） | `B(R\|<ERROR:Invalid type>\|)` |
+| `declarations/macroCallForms.cj`、`builtinAnnotationForms.cj` | 宏调用是原子表达式，可作 `+` 的操作数 | `FUNCTION_CALL(*operator_plus)` 包住两个宏错误节点 |
+
+恢复策略说明：官方在缺右括号后返回 `InvalidType`，由声明层的 broken-signature 跳过继续解析；本地解析器在类型层收口，
+把已放弃的函数类型尾巴 `-> T` 一并吞进错误节点，避免上层把 `-> Bool` 当成声明之间的垃圾 token（`parseTupleOrFunctionType`）。
+这是恢复动作，不参与语义判定：类型本身仍按官方判为 `InvalidType`。
+
+解析器回归：`psi/test/org/cangnova/cangjie/psi/FunctionTypeParameterListParsingTest.kt` 逐条覆盖上表规则
+（含反引号同名查重、尾逗号、`()` 损坏函数类型、缺右括号 `InvalidType`）；`psi2cfir` 3231 例与 `light-tree2cfir` 1121 例全绿。

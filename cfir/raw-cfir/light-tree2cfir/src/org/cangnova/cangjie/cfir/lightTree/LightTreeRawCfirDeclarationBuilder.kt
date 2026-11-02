@@ -176,6 +176,16 @@ class LightTreeRawCfirDeclarationBuilder(
         PARAMETER,
     }
 
+    private companion object {
+        /**
+         * `@IfAvailable` 是 builtin non-macro surface（baseline 第 8 节）：
+         * 不送 macro executor，必须在 stable splice 之前 desugar。
+         *
+         * 名称与 `MacroBuiltinRegistries.DEFAULT.nonMacros` 同源，改动需同步两侧。
+         */
+        private const val IF_AVAILABLE_ANNOTATION_NAME: String = "IfAvailable"
+    }
+
     // ===== AbstractRawCfirBuilder 抽象方法实现 =====
 
     // ===== 表达式构建器（延迟初始化，解决循环依赖） =====
@@ -2708,37 +2718,68 @@ class LightTreeRawCfirDeclarationBuilder(
                 callSite = MacroCallSite.DECLARATION,
             )
         )
+        val surfaceKind = if (isCompileTimeVisible) MacroSurface.Kind.FORCED else MacroSurface.Kind.PLAIN
+        val attrTokens = macroExpressionAttributePayloadTokens(attrNode)
+        val inputTokens = macroExpressionDeclarationInputTokens(
+            annotationSource = annotationSource,
+            declarationNode = declarationNode,
+            inputLeftDelimiter = inputLeftDelimiter,
+            inputRightDelimiter = inputRightDelimiter,
+            hasAnyParenthesisDelimiter = hasAnyParenthesisDelimiter,
+            parserErrorOffset = inputParserErrorOffset,
+        )
+        val surfaceSourceRange = MacroSurfaceSourceRange(
+            source = surfaceSource,
+            startOffset = surfaceSource.startOffset,
+            endOffset = surfaceSource.endOffset,
+        )
+        val surfaceContainerContext = macroSurfaceContainerContext(declarationNode)
+        val replaceHandle = CfirReplaceHandle(
+            handleId = surfaceId,
+            carrier = carrier,
+            annotationCarrier = annotationCarrier,
+        )
+        val isQualifiedName = rawName.contains('.')
+        // `@IfAvailable[...]` 包住声明时 LightTree 走 MACRO_EXPRESSION；它是 builtin
+        // non-macro surface：不送 executor，也不进 stable splice（与 PSI raw builder 对称）。
+        if (!isQualifiedName && rawName == IF_AVAILABLE_ANNOTATION_NAME) {
+            collectedMacroSurfaces += IfAvailableSurface(
+                surfaceId = surfaceId,
+                qualifiedName = macroSurfaceQualifiedName(rawName),
+                isQualifiedName = false,
+                kind = surfaceKind,
+                hasParenthesis = hasParenthesizedInput,
+                attrTokens = attrTokens,
+                hasAttr = attrNode != null,
+                inputTokens = inputTokens,
+                sourceRange = surfaceSourceRange,
+                scopeContext = macroSurfaceScopeContext(),
+                modifiers = emptyList(),
+                carriedAnnotations = emptyList(),
+                capturedRawSyntax = rawWrapperText.substring(headScan.annotationStartOffset),
+                containerContext = surfaceContainerContext,
+                replaceHandle = replaceHandle,
+                // 父宏可见 token 就是 `@IfAvailable[...]` 包裹的声明输入。
+                branchTokens = inputTokens,
+            )
+            return
+        }
         collectedMacroSurfaces += MacroSurfaceDecl(
             surfaceId = surfaceId,
             qualifiedName = macroSurfaceQualifiedName(rawName),
-            isQualifiedName = rawName.contains('.'),
-            kind = if (isCompileTimeVisible) MacroSurface.Kind.FORCED else MacroSurface.Kind.PLAIN,
+            isQualifiedName = isQualifiedName,
+            kind = surfaceKind,
             hasParenthesis = hasParenthesizedInput,
-            attrTokens = macroExpressionAttributePayloadTokens(attrNode),
+            attrTokens = attrTokens,
             hasAttr = attrNode != null,
-            inputTokens = macroExpressionDeclarationInputTokens(
-                annotationSource = annotationSource,
-                declarationNode = declarationNode,
-                inputLeftDelimiter = inputLeftDelimiter,
-                inputRightDelimiter = inputRightDelimiter,
-                hasAnyParenthesisDelimiter = hasAnyParenthesisDelimiter,
-                parserErrorOffset = inputParserErrorOffset,
-            ),
-            sourceRange = MacroSurfaceSourceRange(
-                source = surfaceSource,
-                startOffset = surfaceSource.startOffset,
-                endOffset = surfaceSource.endOffset,
-            ),
+            inputTokens = inputTokens,
+            sourceRange = surfaceSourceRange,
             scopeContext = macroSurfaceScopeContext(),
             modifiers = emptyList(),
             carriedAnnotations = emptyList(),
             capturedRawSyntax = rawWrapperText.substring(headScan.annotationStartOffset),
-            containerContext = macroSurfaceContainerContext(declarationNode),
-            replaceHandle = CfirReplaceHandle(
-                handleId = surfaceId,
-                carrier = carrier,
-                annotationCarrier = annotationCarrier,
-            ),
+            containerContext = surfaceContainerContext,
+            replaceHandle = replaceHandle,
         )
     }
 

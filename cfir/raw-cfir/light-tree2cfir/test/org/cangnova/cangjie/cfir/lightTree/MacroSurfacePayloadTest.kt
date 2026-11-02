@@ -2,6 +2,7 @@ package org.cangnova.cangjie.cfir.lightTree
 
 import org.cangnova.cangjie.CjInMemoryTextSourceFile
 import org.cangnova.cangjie.cfir.builder.BodyBuildingMode
+import org.cangnova.cangjie.cfir.resolve.providers.macro.IfAvailableSurface
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroCallForestBuilder
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceDecl
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceExpr
@@ -325,5 +326,40 @@ class MacroSurfacePayloadTest : AbstractLightTree2CfirConverterTestCase() {
             assertSurface.inputTokens.joinToString(separator = "") { it.text }.contains("b'0'"),
             "assert input must keep the byte literal: ${assertSurface.inputTokens.joinToString(separator = "") { it.text }}",
         )
+    }
+
+    /**
+     * 官方 `@IfAvailable` 只有圆括号表达式形态（`ParserImpl::ParseIfAvailable`）；
+     * `@IfAvailable[...] decl` 是 LightTree 的恢复形态（cjc 1.0.5 报
+     * `parse_expected_character: expected (, found [`）。恢复形态必须归入 builtin
+     * non-macro surface，不能按声明宏进入 stable splice（与 PSI raw builder 对称）。
+     */
+    fun testLightTreeIfAvailableDeclarationWrapperIsBuiltinNonMacroSurface() {
+        val source = """
+            package nestedmacros
+
+            @IfAvailable[level: 19]
+            func gated(): Unit { }
+        """.trimIndent()
+        val sourceFile = CjInMemoryTextSourceFile("ifAvailableDeclarationWrapper.cj", null, source)
+        val session = createTestSession()
+        val (_, surfaces) = LightTree2Cfir(
+            session = session,
+            scopeProvider = session.cangjieScopeProvider,
+            bodyBuildingMode = BodyBuildingMode.NORMAL,
+        ).buildCfirFileWithSurfaces(
+            source,
+            sourceFile,
+            source.toSourceLinesMapping(),
+        )
+        val surface = surfaces.filterIsInstance<IfAvailableSurface>().single()
+
+        assertEquals("IfAvailable", surface.qualifiedName?.shortName()?.asString())
+        assertTrue(
+            surfaces.none { it is MacroSurfaceDecl },
+            "builtin non-macro surface must not also become a declaration macro surface",
+        )
+        assertEquals(surface.inputTokens, surface.branchTokens)
+        assertTrue(surface.inputTokens.joinToString(separator = "") { it.text }.contains("func gated"))
     }
 }

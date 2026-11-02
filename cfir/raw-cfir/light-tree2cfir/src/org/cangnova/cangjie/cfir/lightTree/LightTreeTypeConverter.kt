@@ -3,6 +3,7 @@ package org.cangnova.cangjie.cfir.lightTree
 import com.intellij.lang.LighterASTNode
 import com.intellij.util.diff.FlyweightCapableTreeStructure
 import org.cangnova.cangjie.cfir.CfirQualifierPart
+import org.cangnova.cangjie.cfir.builder.RawCfirTypeDiagnostics
 import org.cangnova.cangjie.cfir.builder.buildQualifierPart
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.source.AbstractCjSourceElement
@@ -22,6 +23,13 @@ import org.cangnova.cangjie.psi.CjNodeTypes
 
 /**
  * 将 TYPE_REFERENCE 节点转换为 CfirTypeRef，若为 null 返回隐式类型。
+ *
+ * 三分法与 PSI 侧 `toCfirOrImplicitTypeRef` 保持一致（对齐 Kotlin
+ * `LightTreeRawFirDeclarationBuilder.convertType` 的 error/implicit 分支）：
+ * - 没有类型引用节点 ⇒ implicit type ref；
+ * - 类型引用存在但内部没有类型元素（语法写坏，官方 `InvalidType`）⇒ error type ref，
+ *   该错误由解析阶段已经上报，CFIR 侧不再重复报；
+ * - 其余按具体类型元素分派。
  */
 fun convertTypeReference(
     typeRefNode: LighterASTNode?,
@@ -32,8 +40,11 @@ fun convertTypeReference(
     if (typeRefNode == null) return buildImplicitTypeRef {}
     // TYPE_REFERENCE 内部包含一个具体的类型元素子节点
     val typeElement = findDirectTypeElement(typeRefNode, tree)
-    val element = typeElement ?: return buildImplicitTypeRef {}
-    return convertTypeElement(element, typeRefNode, tree, source, toSource)
+        ?: return buildErrorTypeRef {
+            this.source = toSource(typeRefNode) as? CjSourceElement
+            diagnostic = RawCfirTypeDiagnostics.invalidTypeDiagnostic()
+        }
+    return convertTypeElement(typeElement, typeRefNode, tree, source, toSource)
 }
 
 /** 查找 TYPE_REFERENCE 或括号类型节点内部的直接类型元素子节点。 */

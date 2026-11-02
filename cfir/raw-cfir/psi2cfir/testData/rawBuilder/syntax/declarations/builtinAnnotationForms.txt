@@ -164,7 +164,12 @@ FILE: builtinAnnotationForms.cj
             ERROR_EXPR(Macro expression `@sourcePackage()` is a construction-only surface and must be replaced before final provider registration.)
     internal? func builtinAnnoSrcExpr(line: R|Int64|): R|Int64| {
         RETURN {
-            ERROR_EXPR(Missing right operand)
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    NAMED_ACCESS(line)
+                arguments:
+                    ERROR_EXPR(Macro expression `@sourceLine()` is a construction-only surface and must be replaced before final provider registration.)
+            }
         }
     }
     internal? func builtinAnnoSrcDefault(line: R|Int64| = ERROR_EXPR(Macro expression `@sourceLine()` is a construction-only surface and must be replaced before final provider registration.)

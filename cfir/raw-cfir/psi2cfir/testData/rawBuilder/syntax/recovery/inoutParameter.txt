@@ -1,5 +1,5 @@
 FILE: inoutParameter.cj
-    internal? func inoutParameter(x: <implicit>): R|Unit| {
+    internal? func inoutParameter(x: R|<ERROR:Invalid type>|): R|Unit| {
         ASSIGNMENT {
             lValue:
                 NAMED_ACCESS(x)

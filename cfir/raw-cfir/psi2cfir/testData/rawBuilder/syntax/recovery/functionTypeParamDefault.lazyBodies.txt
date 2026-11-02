@@ -1,2 +1,2 @@
 FILE: functionTypeParamDefault.cj
-    internal? func withDefault(g: R|x|): <implicit>
+    internal? func withDefault(g: R|<ERROR:Invalid type>|): <implicit>

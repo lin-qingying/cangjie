@@ -1,6 +1,6 @@
 FILE: missingTypeInVar.cj
     internal? func missingTypeInVar(): R|Unit| {
-        local? var x: <implicit> = ...
+        local? var x: R|<ERROR:Invalid type>| = ...
             initializer:
                 INT(1)
     }

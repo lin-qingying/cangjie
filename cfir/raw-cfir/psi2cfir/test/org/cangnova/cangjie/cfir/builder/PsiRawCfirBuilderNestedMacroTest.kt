@@ -1,12 +1,14 @@
 package org.cangnova.cangjie.cfir.builder
 
 import org.cangnova.cangjie.ObsoleteTestInfrastructure
+import org.cangnova.cangjie.cfir.resolve.providers.macro.IfAvailableSurface
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroCallForestBuilder
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroPayloadChannel
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceDecl
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceExpr
 import org.cangnova.cangjie.test.JUnit3RunnerWithInners
 import org.junit.runner.RunWith
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -134,6 +136,36 @@ class PsiRawCfirBuilderNestedMacroTest : AbstractRawCfirBuilderTestCase() {
                 file.text.substring(token.startOffset, token.endOffset),
             )
         }
+    }
+
+    fun testIfAvailableDeclarationWrapperIsBuiltinNonMacroSurfaceNotDeclarationMacro() {
+        // 官方 `@IfAvailable` 只有圆括号表达式形态（`ParserImpl::ParseIfAvailable`）；
+        // `@IfAvailable[...] decl` 是 PSI 的恢复形态（cjc 1.0.5 对同一写法报
+        // `parse_expected_character: expected (, found [`）。恢复形态仍必须归入
+        // builtin non-macro surface：否则它会按声明宏进入 stable splice，
+        // 把 carrier 替换成重新解析出来的声明副本。
+        val file = createCjFile(
+            "ifAvailableDeclarationWrapper",
+            """
+            package nestedmacros
+
+            @IfAvailable[level: 19]
+            func gated(): Unit { }
+            """.trimIndent(),
+        )
+        val builder = PsiRawCfirBuilder(createTestSession(), BodyBuildingMode.NORMAL)
+        builder.buildCfirFile(file)
+
+        val surfaces = builder.consumeCollectedMacroSurfaces()
+        val surface = surfaces.filterIsInstance<IfAvailableSurface>().single()
+
+        assertEquals("IfAvailable", surface.qualifiedName?.shortName()?.asString())
+        assertTrue(
+            surfaces.none { it is MacroSurfaceDecl },
+            "builtin non-macro surface must not also become a declaration macro surface",
+        )
+        assertEquals(surface.inputTokens, surface.branchTokens)
+        assertTrue(surface.inputTokens.joinToString(separator = "") { it.text }.contains("func gated"))
     }
 
     fun testForcedAnnotationMacroSurfaceCapturesBracketArgumentContentsOnly() {

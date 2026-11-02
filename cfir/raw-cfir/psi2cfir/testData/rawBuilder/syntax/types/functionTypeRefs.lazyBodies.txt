@@ -22,4 +22,4 @@ FILE: functionTypeRefs.cj
     internal? typealias Callback = R|(R|Int64|) -> R|Unit||
     internal? typealias HigherOrder = R|(R|(R|Int64|) -> R|Int64||) -> R|Int64||
     internal? typealias NamedHigherOrder = R|(R|(R|Int64|) -> R|Int64||) -> R|Int64||
-    internal? typealias NamedTuple = R|x|
+    internal? typealias NamedTuple = R|(R|Int64|, R|String|)|

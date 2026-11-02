@@ -18,7 +18,12 @@ FILE: macroCallForms.cj
                 ERROR_EXPR(Macro expression `@pair(@echo(5), 6)` is a construction-only surface and must be replaced before final provider registration.)
         local? let e: <implicit> = ...
             initializer:
-                ERROR_EXPR(Macro expression `@echo(1)` is a construction-only surface and must be replaced before final provider registration.)
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        ERROR_EXPR(Macro expression `@echo(1)` is a construction-only surface and must be replaced before final provider registration.)
+                    arguments:
+                        ERROR_EXPR(Macro expression `@echo(2)` is a construction-only surface and must be replaced before final provider registration.)
+                }
         RETURN {
             FUNCTION_CALL(*operator_plus) {
                 receiver:
