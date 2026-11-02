@@ -1,0 +1,26 @@
+<idea-plugin>
+  <extensionPoints>
+    <!--
+      宿主环境 SPI：IDE / LSP / standalone / 测试各自注册一份实现。
+      没有实现时宏展开完全不触发（与未接入宏展开的宿主行为一致）。
+    -->
+    <extensionPoint
+        qualifiedName="org.cangnova.cangjie.macroExpansionEnvironment"
+        interface="org.cangnova.cangjie.analysis.macro.expansion.MacroSemanticExpansionEnvironment"
+        area="IDEA_PROJECT"
+        dynamic="true"/>
+  </extensionPoints>
+
+  <extensions defaultExtensionNs="org.cangnova.cangjie">
+    <!-- 宏语义展开的触发点：存在 environment 才 request，宿主不再注册 configurator。 -->
+    <llCfirSessionConfigurator
+        implementation="org.cangnova.cangjie.analysis.macro.expansion.MacroSemanticSessionConfigurator"/>
+  </extensions>
+
+  <extensions defaultExtensionNs="com.intellij">
+    <!-- 每工程一个的编排服务：调度、revision、失效、发布与单视图。 -->
+    <projectService
+        serviceInterface="org.cangnova.cangjie.analysis.macro.expansion.MacroSemanticExpansionService"
+        serviceImplementation="org.cangnova.cangjie.analysis.macro.expansion.MacroSemanticExpansionServiceImpl"/>
+  </extensions>
+</idea-plugin>
