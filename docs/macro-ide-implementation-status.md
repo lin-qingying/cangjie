@@ -602,3 +602,56 @@ Pop-Location
 ```
 
 重启后的 `runIde --args C:\cj` 日志记录 20:52:07 输入变更并重新尝试，20:52:08 成功发布 production snapshot：`expandedFiles=2`、`generatedSources=47`；该次构造没有再出现注册表冻结异常。IDE 同时记录了归因于 Kubernetes 插件的异常，与仓颉宏构造无关。`C:\cj` 宏工程先由 Cangjie 1.0.5 执行 `cjpm build --jobs 2` 并成功。桌面中 Ctrl+B 从生成 API 跳转到 `@DeclareGeneratedApi` 物理调用；在生成产物存在后尝试 Ctrl+Alt+M，未观察到展开预览，因此预览动作仍未完成手工验收。之前在尚未构建宏包时出现的 “No compiled macro libraries” 属于缺少产物的预期失败，不作为展开功能通过证据。
+
+## 15. 2026-10-30 宏语义展开编排迁移到 Analysis（Phase 0/1b/1c）
+
+**结论：宏语义快照的编排不再属于 IDE 宿主。** 新增 `analysis:macro-expansion` 承载触发、调度、revision、
+写屏障、重试与发布；IDE 只保留 `IntelliJMacroSemanticExpansionEnvironment`（SDK / roots / revision /
+读访问 / 屏障 / 编译器配置 / 回调）。`LLCfirMacroSessionConfigurator` 与 `LLCfirMacroSnapshotService`
+已删除，`cangjie-macro.xml` 只注册 `macroExpansionEnvironment`。
+
+关键代码事实：
+
+- 引擎 SPI 在 `macro:macro-common`（`org.cangnova.cangjie.macro.expansion`），`compiler:frontend`
+  以 `FrontendMacroSemanticExpansionEngine` 实现，**不依赖** `analysis:*`；
+- `analysis:macro-expansion` 的 compileClasspath **不含** `compiler:frontend`（`dependencies` 任务断言通过）；
+- 无宏判据收敛为 `MacroSemanticSnapshotContract`（展开前必要条件 + 展开后权威判定），宿主不再重复判断；
+- Phase 1c 新增 `hasMacroCallCandidateForModule()` PSI 预扫描：无注解 / 表达式宏调用的模块在整模块
+  raw CFIR 构建前短路；构造耗时按模块写入日志；
+- 修复 surface store 懒创建的首次构造丢 surface 根因（`ensureRawMacroSurfaceUsageStore()`）；
+- `analysis-api-standalone` 的 headless 扩展点白名单放行 `llCfirSessionConfigurator` /
+  `macroExpansionEnvironment`；LSP 容器探针确认后台线程 `invokeAndWait { WriteAction }` 可用。
+
+验证结果（2026-10-30）：
+
+```text
+.\gradlew.bat :analysis:macro-expansion:test                       → BUILD SUCCESSFUL
+.\gradlew.bat :analysis:analysis-api-cfir:compileKotlin            → BUILD SUCCESSFUL
+.\gradlew.bat :lsp:test --tests "*MacroExpansionHostContainerProbeTest" → BUILD SUCCESSFUL（2 tests）
+.\gradlew.bat :lsp:test --tests "*LspMacroSemanticExpansionEnvironmentTest" → BUILD SUCCESSFUL（4 tests：未配置不注册、注册与委托、真实工作区 roots/revision、frontend 配置装配）
+.\gradlew.bat :analysis:macro-expansion:dependencies --configuration runtimeClasspath → 不含 compiler:frontend
+.\gradlew.bat :compiler:frontend:dependencies --configuration runtimeClasspath → 不含 analysis
+.\gradlew.bat :analysis:analysis-api-cfir:test --tests "*Reference*" :analysis:cj-references:test → BUILD SUCCESSFUL
+.\gradlew.bat :cfir:analysis-tests:test --tests "*CfirAnalysisMacroTestGenerated" --tests "*CfirAnalysisMacroPsiTestGenerated"
+→ 670 tests / 57 failed；逐条检查失败文本：57/57 都含 MACRO_EXECUTOR_SERVER_DISCONNECTED 或
+  ReadFile(LSPMacroServer) failed: 109，0 条为测试数据/语义差异（环境限制，非本次迁移回归）
+.\gradlew.bat :cfir:analysis-tests:test --tests "*MacroConstructionTimingObserverTest" → BUILD SUCCESSFUL
+.\gradlew.bat -p intellij-ide :test --tests "*...SkipsSnapshotForMacroFreeModule" --tests "*...PublishesAndRebuildsSnapshot..." → BUILD SUCCESSFUL
+  新增 raw 构建计数断言：无宏 session（含失效重建）preMacroRawBuildCount()==0，有宏 session==1
+.\gradlew.bat -p intellij-ide :modules:ide:macro:compileKotlin     → BUILD SUCCESSFUL
+.\gradlew.bat -p intellij-ide :compileTestKotlin                   → BUILD SUCCESSFUL
+.\gradlew.bat -p intellij-ide :test --tests "*CjMacroSemanticSnapshotIntegrationTest" 
+→ 8 tests：5 通过，3 失败。
+  通过：结构视图、确定性引擎的新编排端到端（environment → service → 构造 → 屏障发布，
+  onConstructionStarted / onPublished 各 1 次，快照含 generated，发布后名称解析为 generated；
+  随后编辑并失效 session，断言新 revision 发布新快照且回调各累计 2 次）、
+  在途构造取消（失效 session 后 onAbandoned 到达，outcome 为 CANCELLED/INPUT_CHANGED，published=0）、
+  degraded 构造、无宏 parity。
+  失败：2 个真实 SDK 用例在 LSPMacroServer 阶段失败（MACRO_EXECUTOR_SERVER_DISCONNECTED，
+  Windows 命名管道 ReadFile 109 / WriteFile 232），1 个 UI 展开管线用例同因失败。
+  手工执行 `LSPMacroServer.exe 0 1 0 <dir>` 能正常启动并报 `Read handle is not available`，
+  说明可执行文件 / DLL 正常，失败点在测试 JVM 的 JNA 可继承管道，与本迁移无关。
+```
+
+无宏模块的契约同步改为 parity 用例：`testRegisteredSessionConfiguratorSkipsSnapshotForMacroFreeModule`
+断言无宏模块（含失效重建后）不发布快照；旧 identity 快照生命周期用例已删除。
