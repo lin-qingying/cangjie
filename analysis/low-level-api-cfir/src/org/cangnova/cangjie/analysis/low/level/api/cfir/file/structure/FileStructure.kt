@@ -15,9 +15,11 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics.forEachWithD
 import org.cangnova.cangjie.analysis.low.level.api.cfir.element.builder.getNonLocalContainingOrThisElement
 import org.cangnova.cangjie.analysis.low.level.api.cfir.element.builder.isAutonomousElement
 import org.cangnova.cangjie.analysis.low.level.api.cfir.lazy.resolve.elementCanBeLazilyResolved
+import org.cangnova.cangjie.analysis.low.level.api.cfir.macro.LLCfirMacroSemanticSnapshot
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.*
 import org.cangnova.cangjie.cfir.diagnostics.CjPsiDiagnostic
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.realPsi
@@ -260,25 +262,49 @@ internal class FileStructure private constructor(
 
     /**
      * 创建根文件 structure element。
+     *
+     * 根结构元素只负责**文件级**诊断（imports/package 等）：凡是在 [getAllStructureElements]
+     * 中获得独立结构单元的顶层声明，都必须在这里跳过，否则同一声明内部的诊断会被根与声明结构单元
+     * 各收集一次。
+     *
+     * 判据是「声明有自己的真实 PSI 且该 PSI 属于本文件」，**不是「PSI 是否物理」**：
+     * dangling file 等非物理副本的整棵 PSI 树都不是物理 PSI，但 [getAllStructureElements] 仍然
+     * 逐条为它们建立结构单元。按物理性判据会让副本的声明既由根、又由自身结构单元收集，
+     * 同一 PSI、同一 text range 的诊断被报告两次。
+     *
+     * 一对多宏替换输出没有唯一 carrier（[LLCfirMacroSemanticSnapshot.physicalSourceForDeclaration]
+     * 返回 null），它们仍然归根结构元素统一拥有。
      */
     private fun createRootStructure(): RootStructureElement {
         val semanticCfirFile = semanticCfirFile()
         val snapshot = moduleComponents.macroSemanticSnapshotStore.snapshot
-        val declarationsWithPhysicalStructure = semanticCfirFile.declarations.filterTo(linkedSetOf()) { declaration ->
-            val physicalPsi = if (snapshot?.isDeclarationReplacementOutput(declaration, cjFile) == true) {
-                snapshot.physicalSourceForDeclaration(declaration, cjFile)
-            } else {
-                declaration.realPsi as? CjDeclaration
-            }
-            physicalPsi != null && physicalPsi.isPhysical && physicalPsi.containingFile === cjFile
+        val declarationsWithOwnStructure = semanticCfirFile.declarations.filterTo(linkedSetOf()) { declaration ->
+            declaration.sourceDeclarationIn(cjFile, snapshot) != null
         }
         semanticCfirFile.lazyResolveToPhase(semanticCfirFile.moduleData.session.bodyResolvePrerequisitePhase)
         return RootStructureElement(
             sourceCfirFile = cfirFile,
             semanticCfirFile = semanticCfirFile,
-            declarationsWithPhysicalStructure = declarationsWithPhysicalStructure,
+            declarationsWithOwnStructure = declarationsWithOwnStructure,
             moduleComponents = moduleComponents,
         )
+    }
+
+    /**
+     * 返回该语义声明在本文件中拥有独立结构单元的物理来源声明。
+     *
+     * 与 [createDeclarationStructure] 使用同一对 source→declaration 映射（快照优先，
+     * 否则按 PSI 在 raw CFIR 中定位），因此「根跳过哪些声明」与「哪些声明有自己的结构单元」
+     * 由同一份关系决定，不会各自漂移。
+     */
+    private fun CfirDeclaration.sourceDeclarationIn(
+        physicalFile: CjFile,
+        snapshot: LLCfirMacroSemanticSnapshot?,
+    ): CjDeclaration? {
+        if (snapshot?.isDeclarationReplacementOutput(this, physicalFile) == true) {
+            return snapshot.physicalSourceForDeclaration(this, physicalFile)
+        }
+        return (realPsi as? CjDeclaration)?.takeIf { it.containingFile === physicalFile }
     }
 
     /**

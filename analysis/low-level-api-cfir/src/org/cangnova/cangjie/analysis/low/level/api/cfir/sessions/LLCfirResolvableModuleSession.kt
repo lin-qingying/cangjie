@@ -9,6 +9,7 @@ import org.cangnova.cangjie.analysis.api.CaExperimentalApi
 import org.cangnova.cangjie.analysis.api.projectStructure.contextModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.low.level.api.cfir.macro.LLCfirMacroSemanticSnapshot
+import org.cangnova.cangjie.analysis.low.level.api.cfir.macro.MacroSemanticSnapshotContract
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.declarations.CfirFile
@@ -73,6 +74,20 @@ abstract class LLCfirResolvableModuleSession(
         pre: PreMacroRawBuildResult,
         result: MacroConstructionResult.Recordable,
     ): LLCfirMacroSemanticSnapshot? {
+        /*
+         * 快照的语义契约是“宏展开后的替换视图”。
+         *
+         * 没有任何宏调用 surface、也没有生成源码时，展开结果与实时 CFIR 同构。发布这种 identity
+         * 快照会让同一处声明同时存在于实时树与快照树两套 CFIR 中：类型引用由实时树提供 scope
+         * 候选，模块级候选聚合却从快照取声明，于是同一 ClassId 被判成重声明
+         * （`ConeAmbiguityError`），类型解析退化为 error type，导航与补全全部丢失。
+         *
+         * 因此无宏效果时不得生成快照；调用方应保持单一实时视图。判据定义在
+         * [MacroSemanticSnapshotContract]，宿主不得重复判断。
+         */
+        if (!MacroSemanticSnapshotContract.hasMacroSemanticEffect(pre, result)) {
+            return null
+        }
         val sourceFiles = sourceFilesFor(pre, result) ?: return null
         if (moduleComponents.macroSemanticSnapshotStore.snapshot != null) return null
         return moduleComponents.macroSemanticSnapshotStore.prepareSnapshot(

@@ -449,6 +449,10 @@ private class ContextCollectorVisitor(
         }
 
         onActive {
+            // `withScopesForExtend` 要求 extend 目标类型已解析；completion 等增量场景下
+            // 文件可能只推进到 RAW/STATUS，必须先补到 TYPES，否则会命中
+            // "Extend target type must be resolved before body resolution"。
+            extend.lazyResolveToPhase(CfirResolvePhase.TYPES)
             val holder = getSessionHolder(extend)
             context.withScopesForExtend(extend, holder) {
                 context.withContainer(extend) {

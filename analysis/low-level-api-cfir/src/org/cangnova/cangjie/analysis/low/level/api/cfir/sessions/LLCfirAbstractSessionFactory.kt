@@ -13,6 +13,9 @@ import org.cangnova.cangjie.AnalysisFlags
 import org.cangnova.cangjie.LanguageFeature
 import org.cangnova.cangjie.LanguageVersionSettings
 import org.cangnova.cangjie.analysis.api.platform.CaCachedService
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.factories.LLBinaryOriginLibrarySymbolProviderFactory
+import org.cangnova.cangjie.analysis.api.platform.CaPlatformSettings
+import org.cangnova.cangjie.analysis.api.platform.CaDeserializedDeclarationsOrigin
 import org.cangnova.cangjie.analysis.api.platform.declarations.*
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaDanglingFileModuleImpl
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaResolutionScopeProvider
@@ -161,7 +164,28 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
                 }
             }
 
-            registerLLCfirExtendProvider { dependencyProvider.providers }
+            /*
+             * extend 元数据只能来自 `.cjo` 反序列化：STUBS 模式下依赖/builtins 的 symbol provider
+             * 是 stub 形态，不携带 `CfirExtend`，因此 `extend Int8 <: ToString` 这类库 extend
+             * 成员在源码里完全不可见（`this.toString()` 的候选集合为空）。
+             * 这里在 STUBS 模式下为 builtins 与库依赖补上二进制 extend 来源；BINARIES 模式下
+             * 依赖 provider 本身已是反序列化 provider，无需重复注册。
+             */
+            val stubOrigin = CaPlatformSettings.getInstance(project).deserializedDeclarationsOrigin ==
+                CaDeserializedDeclarationsOrigin.STUBS
+            registerLLCfirExtendProvider {
+                buildList {
+                    addAll(dependencyProvider.providers)
+                    if (stubOrigin) {
+                        add(LLBinaryOriginLibrarySymbolProviderFactory.createBuiltinsExtendProvider(builtinsSession))
+                        computeDependencySessions(module).forEach { dependencySession ->
+                            if (dependencySession.caModule is CaLibraryModule) {
+                                add(LLBinaryOriginLibrarySymbolProviderFactory.createLibraryExtendProvider(dependencySession))
+                            }
+                        }
+                    }
+                }
+            }
 
             register(
                 CfirSymbolProvider::class,

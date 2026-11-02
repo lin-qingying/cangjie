@@ -55,6 +55,21 @@ internal object LLBinaryOriginLibrarySymbolProviderFactory : LLLibrarySymbolProv
         )
 
     /**
+     * 为 STUBS 来源的 source session 提供 builtins 的二进制 extend 来源。
+     *
+     * stub 形态的 builtins provider 不携带 `CfirExtend`，`extend Int8 <: ToString` 等库 extend
+     * 必须仍从 `.cjo` 反序列化获得，否则 primitive/`String` 的扩展成员在源码中不可见。
+     */
+    fun createBuiltinsExtendProvider(session: LLCfirSession): CfirSymbolProvider =
+        createBuiltinsDeserializedSymbolProvider(session)
+
+    /**
+     * 为 STUBS 来源的 source session 提供库依赖的二进制 extend 来源。
+     */
+    fun createLibraryExtendProvider(session: LLCfirSession): CfirSymbolProvider =
+        createDeserializedLibrarySymbolProvider(session)
+
+    /**
      * 创建普通 library `.cjo` 反序列化 symbol provider。
      */
     private fun createDeserializedLibrarySymbolProvider(session: LLCfirSession): CfirSymbolProvider {

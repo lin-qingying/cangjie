@@ -90,6 +90,9 @@ internal class LLSourceDiagnosticProvider(
      * 文件级诊断收集的实际执行体，由计时包装与零开销路径共用。
      */
     private fun collectDiagnosticsWithoutStatistics(file: CjFile, filter: DiagnosticCheckerFilter): List<CjPsiDiagnostic> {
+        // 反编译 `.cjo` 视图没有源码语义：不允许走 PSI→raw CFIR 诊断路径。
+        // 该路径会在反编译 provider 重建后读到失效 PSI，抛 invalid element 异常并中断检查。
+        if (file.isCompiled) return emptyList()
         val module = moduleProvider.getModule(file)
         val moduleComponents = sessionProvider.getResolvableSession(module).moduleComponents
         return moduleComponents.diagnosticsCollector.collectDiagnosticsForFile(file, filter)

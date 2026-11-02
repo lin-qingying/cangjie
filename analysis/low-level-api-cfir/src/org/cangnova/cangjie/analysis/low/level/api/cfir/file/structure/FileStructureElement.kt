@@ -533,21 +533,24 @@ internal class DeclarationStructureElement(
 
 /**
  * 整个文件根结构元素。
+ *
+ * 根结构元素只拥有**文件级**诊断；凡是有独立结构单元的顶层声明都必须被跳过，
+ * 否则同一声明内部的诊断会被收集两次。见 [RootStructureElement] 的构造参数说明。
  */
 internal class RootStructureElement(
     /** 保持与物理 PSI 对应的 raw CFIR，专供根结构元素建立 PSI 映射。 */
     sourceCfirFile: CfirFile,
     /** 与符号 provider 处于同一快照的语义 CFIR，专供文件级 diagnostics。 */
     semanticCfirFile: CfirFile,
-    /** 已有独立物理 PSI structure element 的最终顶层语义声明。 */
-    declarationsWithPhysicalStructure: Set<CfirDeclaration>,
+    /** 已有自己结构单元的最终顶层语义声明；判据是「有自己的真实 PSI」，与 PSI 是否物理无关。 */
+    declarationsWithOwnStructure: Set<CfirDeclaration>,
     moduleComponents: LLCfirModuleResolveComponents,
 ) : FileStructureElement(
     declaration = sourceCfirFile,
     diagnostics = FileStructureElementDiagnostics(
         FileDiagnosticRetriever(
             file = semanticCfirFile,
-            declarationsToIgnore = declarationsWithPhysicalStructure,
+            declarationsToIgnore = declarationsWithOwnStructure,
             moduleComponents = moduleComponents,
         )
     ),

@@ -24,7 +24,6 @@ import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhaseRecursively
 import org.cangnova.cangjie.psi.*
 import org.cangnova.cangjie.psi.psiUtil.parentOfType
 import org.cangnova.cangjie.psi.psiUtil.parentsWithSelf
-import org.cangnova.cangjie.utils.ThreadSafe
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.withPsiEntry
 
@@ -36,7 +35,6 @@ import org.cangnova.cangjie.utils.exceptions.withPsiEntry
  * @see org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure.FileStructure
  * @see getNonLocalContainingOrThisElement
  */
-@ThreadSafe
 internal class CfirElementBuilder(private val moduleComponents: LLCfirModuleResolveComponents) {
     companion object {
         private fun getPsiAsCfirElementSource(element: CjElement): CjElement? {

@@ -21,7 +21,6 @@ import org.cangnova.cangjie.analysis.api.platform.modification.KotlinModuleState
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieAnchorModuleProvider
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieModuleDependentsProvider
 import org.cangnova.cangjie.analysis.api.projectStructure.*
-import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirInternals
 import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.LLCfirBuiltinsSessionFactory
 
 /**
@@ -45,7 +44,6 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.LLCfirB
  * - An invalidation operation might be composed of several, independent cache removal operations. The invalidator uses
  *   [withIndependentRemoval] to ensure that all removal operations run even if one of them throws an exception.
  */
-@LLCfirInternals
 class LLCfirSessionCacheStorageInvalidator(
     /**
      * 当前 invalidator 所属工程。
