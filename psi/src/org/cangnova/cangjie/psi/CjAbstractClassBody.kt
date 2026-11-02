@@ -112,15 +112,24 @@ abstract class CjAbstractClassBody :
      */
     override fun getParent() = parentByStub
     /**
+     * 类体直接子节点：stub 优先，AST 回退。
+     *
+     * 成员声明可以被声明宏包装成 [CjMacroExpression]（成员带 `@Anno` 注解时的解析形态），
+     * 因此构造器不能按 `PRIMARY_CONSTRUCTOR` / `SECONDARY_CONSTRUCTOR` 直系子节点取。
+     */
+    private val declarationChildren: List<PsiElement>
+        get() = greenStub?.childrenStubs?.map { it.psi } ?: children.asList()
+
+    /**
      * 保存 `secondaryConstructors`，供仓颉 PSI流程读取节点结构或语义信息。
      */
     internal val secondaryConstructors: List<CjSecondaryConstructor>
-        get() = getStubOrPsiChildrenAsList(SECONDARY_CONSTRUCTOR)
+        get() = declarationChildren.mapNotNull { it.unwrappedDeclarationOrSelf as? CjSecondaryConstructor }
     /**
      * 保存 `primaryConstructors`，供仓颉 PSI流程读取节点结构或语义信息。
      */
     internal val primaryConstructors: List<CjPrimaryConstructor>
-        get() = getStubOrPsiChildrenAsList(PRIMARY_CONSTRUCTOR)
+        get() = declarationChildren.mapNotNull { it.unwrappedDeclarationOrSelf as? CjPrimaryConstructor }
     /**
      * 保存 `finalizers`，供仓颉 PSI流程读取节点结构或语义信息。
      */
@@ -174,3 +183,12 @@ abstract class CjAbstractClassBody :
     val lBrace: PsiElement?
         get() = node.getChildren(lBraceTokenSet).singleOrNull()?.psi
 }
+
+/**
+ * 声明宏包装链解包；非宏节点原样返回。
+ *
+ * 与 [CjFile.declarations]、[CjEnumBody.constructor] 使用同一条解包规则：
+ * 包装不改变被包裹声明对容器的归属。
+ */
+private val PsiElement.unwrappedDeclarationOrSelf: PsiElement
+    get() = (this as? CjMacroExpression)?.unwrappedDeclaration ?: this

@@ -511,6 +511,11 @@ object CjPsiUtil {
 
     /**
      * 提供 `unquoteIdentifier` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
+     *
+     * 词法层把 `ESCAPED_IDENTIFIER`（`` `x` ``）与 `PLAIN_IDENTIFIER` 都收敛为同一个
+     * [org.cangnova.cangjie.lexer.CjTokens.IDENTIFIER] token，反引号只是源文本写法；
+     * 标识符的身份是去掉反引号后的文本。去反引号规则只在这里维护，调用方（PSI 访问器、
+     * 解析器）一律复用，不再各自 `toString()` 后手工切片。
      */
     fun unquoteIdentifier(quoted: String): String {
         if (quoted.indexOf('`') < 0) {
@@ -523,6 +528,14 @@ object CjPsiUtil {
             quoted
         }
     }
+
+    /**
+     * [unquoteIdentifier] 的 CharSequence 重载。
+     *
+     * 解析器手里是 `PsiBuilder.tokenText`（CharSequence?），直接传进来即可，
+     * 避免每个调用点自己 `toString()`。
+     */
+    fun unquoteIdentifier(quoted: CharSequence): String = unquoteIdentifier(quoted.toString())
 
     /**
      * 定义 `CjExpressionWrapper` 接口，约束仓颉 PSI节点或服务需要暴露的结构能力。

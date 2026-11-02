@@ -168,7 +168,7 @@ abstract class CjTypeStatement :
      * “Stub count != stubbed node length” 断言，并把整文件解析拖进前台请求。
      */
     override val primaryConstructor: CjPrimaryConstructor?
-        get() = body?.getStubOrPsiChild(CjStubElementTypes.PRIMARY_CONSTRUCTOR)
+        get() = body?.primaryConstructors?.firstOrNull()
 
     /**
      * 暴露 `primaryConstructorModifierList`，实现仓颉 PSI节点对上层接口的属性契约。

@@ -117,7 +117,17 @@ class ForeignAndAnnotationParsingTest : CjParsingTestCase(
         }
     }
 
-    /** 1.1.x 平台注解在 parser 层保留普通 annotation 结构，不降级为宏。 */
+    /**
+     * 1.1.x 平台注解在 parser 层保留普通 annotation 结构，不降级为宏；
+     * 其语言 builtin 身份按官方 parser 目录判定，不由 PSI 层凭短名投影出平台 kind。
+     *
+     * 官方 `IsBuiltinAnnotation`（`external/cangjie_compiler/src/Parse/ParseAnnotations.cpp`）
+     * 只看 `@` 后的**第一个标识符**是否命中 `NAME_TO_ANNO_KIND`
+     * （`include/cangjie/Parse/Parser.h`，其中含 `JavaMirror`）：因此未限定 `@JavaMirror`
+     * 属于语言 builtin 身份，限定形式 `@interoplib.interop.JavaMirror` 的首个标识符
+     * `interoplib` 不命中、只是普通 annotation。`cjc 1.0.5` 探针同形源码对未限定形式零诊断，
+     * 对限定形式报 `macro_undefined_pkg_name`。
+     */
     @Test
     fun platformAnnotationSurfaceIsRetainedWithoutBuiltinKindFacade() {
         val file = parse(
@@ -134,7 +144,11 @@ class ForeignAndAnnotationParsingTest : CjParsingTestCase(
         assertEquals(listOf("JavaMirror", "JavaMirror"), entries.map { it.shortName?.asString() })
         assertEquals("@JavaMirror[\"java.lang.Object\"]", entries[0].text)
         assertEquals("@interoplib.interop.JavaMirror[\"java.lang.Object\"]", entries[1].text)
-        assertTrue(entries.all { !it.isBuiltInAnnotation })
+        assertEquals(
+            listOf(true, false),
+            entries.map { it.isBuiltInAnnotation },
+            "未限定 spelling 命中官方 NAME_TO_ANNO_KIND；限定形式的首个标识符不命中",
+        )
     }
 
     /** @ 与 @! 的区别属于语法来源，不能从名称或声明类型推断。 */

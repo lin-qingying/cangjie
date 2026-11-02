@@ -38,6 +38,8 @@ import org.cangnova.cangjie.annotations.BuiltInAnnotationRegistry
 import org.cangnova.cangjie.lexer.CjKeywordToken
 import org.cangnova.cangjie.lexer.CjTokens.*
 import org.cangnova.cangjie.messages.CangJieParsingBundle
+import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.psi.CjPsiUtil
 import org.cangnova.cangjie.psi.CallingConvention
 import org.cangnova.cangjie.psi.CjBuiltInAnnotation
 import org.cangnova.cangjie.psi.CjNodeTypes.*
@@ -4607,6 +4609,73 @@ class CangJieParsing private constructor(
     }
 
     /**
+     * 类型参数列表（元组类型 / 函数类型的形参表）的解析结果。
+     *
+     * 对齐官方 `ParserImpl::ParseTypeWithParen`（`src/Parse/ParseType.cpp:186-225`）：形参可带
+     * `name:` 标签；列表要么全部具名、要么全部无名；具名不得重名；右括号缺失时整段类型
+     * 退化为官方 `InvalidType`，因此这里把"是否闭合"一并带回给调用方。
+     *
+     * @property count 形参（类型）个数。
+     * @property namedFlags 每个形参是否带 `name:` 标签，按出现顺序。
+     * @property labelNames 具名形参的名称身份，按出现顺序，用于重名检查。
+     * @property isClosed 是否在类型参数列表自己的位置解析到右括号 `)`。
+     */
+    private class TypeParameterListInfo(
+        val count: Int,
+        val namedFlags: List<Boolean>,
+        val labelNames: List<Name>,
+        val isClosed: Boolean,
+    )
+
+    /**
+     * 单个类型形参的头部信息：是否具名、名称身份。
+     *
+     * @property isNamed 是否写成 `name:` 形式。
+     * @property name 名称身份；匿名形参为 null。
+     */
+    private class TypeParameterHead(val isNamed: Boolean, val name: Name?)
+
+    /**
+     * 把标识符 token 文本转成解析期的名称身份。
+     *
+     * 反引号只是转义写法：词法层把 `ESCAPED_IDENTIFIER` 与 `PLAIN_IDENTIFIER` 收敛为同一个
+     * `IDENTIFIER` token，标识符身份由 `CjPsiUtil.unquoteIdentifier` 单一维护；官方
+     * `SrcIdentifier` 的相等性也按去掉反引号的文本比较（`src/Parse/ParseType.cpp:164-171`
+     * 用 `typeNameMap.find(typeParameterName)` 查重，实测 ``(x: Int64, `x`: String)`` 也报重复）。
+     */
+    private fun typeParameterNameOf(tokenText: CharSequence?): Name? =
+        tokenText?.let { Name.identifier(CjPsiUtil.unquoteIdentifier(it)) }
+
+    /**
+     * 报告类型参数列表的官方命名诊断。
+     *
+     * 对齐官方 `src/Parse/ParseType.cpp`：
+     * - `:164-171` `parse_duplicate_type_parameter_name` —— 具名形参重名；
+     * - `:198-205` `parse_all_parameters_must_be_named` —— 具名与匿名混用。
+     *
+     * 诊断以零宽错误节点落在最后一个形参之后，不改变列表节点类型：官方在这些情形下
+     * 仍然构造 `TupleType` / `FuncType`，只有缺右括号才退化为 `InvalidType`。
+     *
+     * @param namedFlags 每个形参是否具名。
+     * @param labelNames 具名形参的名称身份。
+     */
+    context(parseContext: ParsingContext)
+    private fun reportTypeParameterListViolations(
+        namedFlags: List<Boolean>,
+        labelNames: List<Name>,
+    ) {
+        val reportedNames = mutableSetOf<Name>()
+        for (name in labelNames) {
+            if (!reportedNames.add(name)) {
+                error(CangJieParsingBundle.message("parsing.error.duplicated.type.parameter.name", name.asString()))
+            }
+        }
+        if (namedFlags.any { it } && namedFlags.any { !it }) {
+            error(CangJieParsingBundle.message("parsing.error.mixed.named.parameters"))
+        }
+    }
+
+    /**
      * 解析函数类型的参数列表
      *
      * 用于解析函数类型声明中的参数列表，参数可以省略名称（仅类型）。
@@ -4636,15 +4705,17 @@ class CangJieParsing private constructor(
      * ```
      */
     context(parseContext: ParsingContext)
-    fun parseFunctionTypeParameterList(
+    private fun parseFunctionTypeParameterList(
         typeRequired: Boolean = true
-    ) {
+    ): TypeParameterListInfo {
 //   不允许处理注解和宏
-        with(parseContext.copy(disableMacroParsing = true, allowParseAnnotationsInValueParameter = false)) {
+        return with(parseContext.copy(disableMacroParsing = true, allowParseAnnotationsInValueParameter = false)) {
             parseParameterListCore(
                 parseParameter = { parseFunctionTypeParameter(typeRequired) },
                 checkMixedParameters = true,
-                recoverySet = TokenSet.EMPTY
+                recoverySet = TokenSet.EMPTY,
+                // 缺右括号时整段函数类型按官方 InvalidType 处理，诊断由 parseFunctionType 落在整段类型上
+                reportUnclosedDelimiter = false
             )
         }
     }
@@ -4654,16 +4725,19 @@ class CangJieParsing private constructor(
      *
      * 提取公共的参数列表解析逻辑，避免代码重复。
      *
-     * @param parseParameter 参数解析函数，返回 null（不检查混合）或 Boolean（是否为命名参数）
+     * @param parseParameter 参数解析函数，返回 null（不检查混合）或形参头部信息
      * @param checkMixedParameters 是否检查混合命名/匿名参数
      * @param recoverySet 错误恢复token集合
+     * @param reportUnclosedDelimiter 缺右括号时是否就地报诊断；调用方要把整段类型
+     *        标成错误节点（官方 `InvalidType`）时传 false，由调用方统一报一次
      */
     context(parseContext: ParsingContext)
     private fun parseParameterListCore(
-        parseParameter: () -> Boolean?,
+        parseParameter: () -> TypeParameterHead?,
         checkMixedParameters: Boolean,
-        recoverySet: TokenSet
-    ) {
+        recoverySet: TokenSet,
+        reportUnclosedDelimiter: Boolean = true,
+    ): TypeParameterListInfo {
         assert(at(LPAR))
         val parameters = mark()
 
@@ -4671,8 +4745,9 @@ class CangJieParsing private constructor(
         advance() // consume '('
 
         // 只在需要时追踪命名参数状态
-        var hasNamedParameters: Boolean? = null
-        var hasMixedParameters = false
+        val namedFlags = mutableListOf<Boolean>()
+        val labelNames = mutableListOf<Name>()
+        var count = 0
 
         while (!at(RPAR) && !atSet(recoverySet) && !eof()) {
             // 处理连续逗号错误
@@ -4684,17 +4759,13 @@ class CangJieParsing private constructor(
             }
 
             // 解析参数
-            val isNamed = parseParameter()
+            val head = parseParameter()
+            count++
 
-            // 检测混合参数（仅当需要时）
-            if (checkMixedParameters && isNamed != null && !hasMixedParameters) {
-                when (hasNamedParameters) {
-                    null -> hasNamedParameters = isNamed
-                    isNamed -> { /* 一致，继续 */
-                    }
-
-                    else -> hasMixedParameters = true  // 检测到混合
-                }
+            // 官方 ParseTypeParameterInTupleType:161-176：逐项记录形参是否具名及其名称身份
+            if (checkMixedParameters && head != null) {
+                namedFlags += head.isNamed
+                head.name?.let { labelNames += it }
             }
 
             // 处理分隔符
@@ -4703,15 +4774,29 @@ class CangJieParsing private constructor(
             }
         }
 
-        expect(RPAR, "Expecting ')'", recoverySet)
+        // 官方 ParseType.cpp:198-205：要么全具名、要么全无名；具名不得重名
+        if (checkMixedParameters) {
+            reportTypeParameterListViolations(namedFlags, labelNames)
+        }
+
+        val isClosed = if (at(RPAR)) {
+            advance()
+            true
+        } else {
+            if (reportUnclosedDelimiter) {
+                // 官方 DiagExpectedRightDelimiter("(", leftParenPos)：报在缺右括号的位置
+                errorWithRecovery(
+                    CangJieParsingBundle.message("parsing.error.unclosed.delimiter", "("),
+                    recoverySet
+                )
+            }
+            false
+        }
         builder.restoreNewlinesState()
 
-        // 完成或报错
-        if (hasMixedParameters) {
-            parameters.error(CangJieParsingBundle.message("parsing.error.mixed.named.parameters"))
-        } else {
-            parameters.done(VALUE_PARAMETER_LIST)
-        }
+        parameters.done(VALUE_PARAMETER_LIST)
+
+        return TypeParameterListInfo(count, namedFlags, labelNames, isClosed)
     }
 //    context(parseContext: ParsingContext) fun parseValueParameterList(
 //        isFunctionTypeContents: Boolean,
@@ -4782,20 +4867,24 @@ class CangJieParsing private constructor(
     /**
      * 解析函数类型参数
      *
+     * 官方 `ParseType.cpp:161-176 ParseTypeParameterInTupleType` 的形参标签只有
+     * `IDENTIFIER ':' type` 一种写法，所以标签名在进入参数解析前按同样的形状识别。
+     *
      * @param typeRequired 是否要求类型注解
-     * @return true 如果是命名参数，false 如果是匿名参数（仅类型）
+     * @return 形参头部信息：是否具名、标签名（匿名形参为 null）
      */
     context(parseContext: ParsingContext)
-    private fun parseFunctionTypeParameter(typeRequired: Boolean): Boolean {
+    private fun parseFunctionTypeParameter(typeRequired: Boolean): TypeParameterHead {
+        val label = if (at(IDENTIFIER) && lookahead(1) == COLON) typeParameterNameOf(builder.tokenText) else null
         return if (!tryParseValueParameter(typeRequired)) {
             // 匿名参数：只有类型
             val valueParameter = mark()
             parseTypeRef()
             closeDeclarationWithCommentBinders(valueParameter, VALUE_PARAMETER, false)
-            false
+            TypeParameterHead(isNamed = false, name = null)
         } else {
             // 命名参数
-            true
+            TypeParameterHead(isNamed = true, name = label)
         }
     }
 
@@ -4809,11 +4898,8 @@ class CangJieParsing private constructor(
         if (at(COMMA)) {
             advance() // consume ','
 
-            if (at(RPAR)) {
-                error(CangJieParsingBundle.message("parsing.error.expecting", "a parameter declaration"))
-                return false
-            }
-            return true
+            // 官方 ParseZeroOrMoreSepTrailing 允许尾逗号：`,)` 直接结束列表
+            return !at(RPAR)
         } else if (!at(RPAR)) {
             errorAndAdvance(
                 CangJieParsingBundle.message(
@@ -5114,6 +5200,10 @@ class CangJieParsing private constructor(
     /**
      * 解析函数类型
      *
+     * 官方 `ParseTypeWithParen` 只有在右括号之后看到 `->` 才构造 `FuncType`；右括号缺失时
+     * 直接返回 `InvalidType`（`src/Parse/ParseType.cpp:206-212`），这里同样把整段类型标成
+     * 错误节点，不再退化成括号类型。
+     *
      * Grammar:
      * ```
      * functionType
@@ -5125,32 +5215,30 @@ class CangJieParsing private constructor(
      */
     context(parseContext: ParsingContext)
     private fun parseFunctionType(functionType: PsiBuilder.Marker) {
-        parseFunctionTypeContents(functionType).done(FUNCTION_TYPE)
-    }
+        val info = parseFunctionTypeParameterList(typeRequired = true)
 
-
-    /**
-     * 解析函数类型内容
-     *
-     * @param functionType 函数类型标记
-     * @return 处理后的标记
-     */
-    context(parseContext: ParsingContext)
-
-    private fun parseFunctionTypeContents(functionType: PsiBuilder.Marker): PsiBuilder.Marker {
-        assert(_at(LPAR)) { tt()!! }
-
-        parseFunctionTypeParameterList(typeRequired = true)
+        if (!info.isClosed) {
+            // 官方 ParseType.cpp:206-209：缺右括号 ⇒ InvalidType
+            functionType.error(CangJieParsingBundle.message("parsing.error.unclosed.delimiter", "("))
+            return
+        }
 
         expect(ARROW, "Expecting '->' to specify return type of a function type", TYPE_REF_FIRST)
         parseTypeRef()
 
-        return functionType
+        functionType.done(FUNCTION_TYPE)
     }
 
 
     /**
-     * 解析元组类型
+     * 解析元组 / 括号类型的类型参数列表
+     *
+     * 对齐官方 `ParserImpl::ParseTypeWithParen`（`src/Parse/ParseType.cpp:186-225`）：
+     * 每个类型前允许一段 `IDENTIFIER ':'` 标签；标签只有元组类型与函数类型允许
+     * （单元素括号类型报 `parse_only_tuple_and_func_type_allow_type_parameter_name`），
+     * 具名不得重名（`parse_duplicate_type_parameter_name`），且必须全具名或全无名
+     * （`parse_all_parameters_must_be_named`）。右括号缺失时返回 `isClosed = false`，
+     * 由调用方把整段类型标成官方 `InvalidType`。
      *
      * Grammar:
      * ```
@@ -5159,53 +5247,76 @@ class CangJieParsing private constructor(
      *   ;
      * ```
      *
-     * @return 元组中类型的数量
+     * @return 类型参数列表的解析结果
      */
     context(parseContext: ParsingContext)
-    private fun parseTupleType(): Int {
+    private fun parseTupleType(): TypeParameterListInfo {
         assert(_at(LPAR))
         var count = 0
+        val namedFlags = mutableListOf<Boolean>()
+        val labelNames = mutableListOf<Name>()
 
         advance() // LPAR
 
-        if (!at(RPAR)) {
-            while (true) {
-                // Cangjie tuple fields may carry labels; the label is syntax metadata,
-                // while the following type reference remains the tuple element type.
-                if (at(IDENTIFIER) && lookahead(1) == COLON) {
-                    advance() // field label
-                    advance() // colon
-                }
-                parseTypeRef()
-                count++
-                if (!at(COMMA)) break
-                advance() // COMMA
+        while (!at(RPAR) && !eof()) {
+            // 官方 ParseTypeParameterInTupleType:161-176：`IDENTIFIER ':'` 是类型形参名，
+            // 其余情况按匿名类型解析。标签只是语法元数据——官方 TupleType 只保存 fieldTypes，
+            // 标签不进入元组类型本身，因此这里也不为标签建立 PSI 节点。
+            if (at(IDENTIFIER) && lookahead(1) == COLON) {
+                typeParameterNameOf(builder.tokenText)?.let(labelNames::add)
+                advance() // 类型形参名
+                advance() // ':'
+                namedFlags += true
+            } else {
+                namedFlags += false
             }
-        } else {
-            error(CangJieParsingBundle.message("parsing.error.expecting", "type"))
+            parseTypeRef()
+            count++
+
+            if (!at(COMMA)) break
+            advance() // COMMA
+            // 官方 ParseZeroOrMoreSepTrailing 允许尾逗号：`,)` 直接结束类型参数列表
         }
 
-        expectRightParenthesisInTupleType()
+        reportTypeParameterListViolations(namedFlags, labelNames)
 
-        return count
+        val isClosed = acceptRightParenthesisInTupleType()
+        // 官方 ParseType.cpp:227-244：单元素括号类型不是元组类型，不允许类型形参名；
+        // 该诊断在官方位于 `)` 之后的 ParseParenType 分支，缺右括号时不会报。
+        if (isClosed && count == 1 && namedFlags.any { it }) {
+            error(CangJieParsingBundle.message("parsing.error.type.parameter.name.not.allowed"))
+        }
+
+        return TypeParameterListInfo(count, namedFlags, labelNames, isClosed)
     }
 
     /**
-     * 元组/括号类型缺少右括号时，官方 parser 只报告右定界符缺失并把当前类型标为损坏。
-     * 本地也要消费到右括号或声明恢复点，避免后续变量声明层继续报告同一坏类型尾巴。
+     * 消费元组/括号类型的右括号，并返回类型参数列表是否以自己的 `)` 闭合。
+     *
+     * 官方 `ParseTypeWithParen:206-209` 在缺右括号时报告 `DiagExpectedRightDelimiter("(")`
+     * 并把整段类型标成 `InvalidType`。这里不就地报诊断，而是把"是否在自己的位置闭合"
+     * 交回调用方：调用方据此把整段类型标成错误节点（官方 `InvalidType`）；同时仍按
+     * 既有恢复策略消费到右括号或声明恢复点，避免上层声明层继续报告同一个坏类型尾巴。
+     *
+     * @return 右括号是否出现在类型参数列表自己的位置
      */
     context(parseContext: ParsingContext)
-    private fun expectRightParenthesisInTupleType() {
-        if (expect(RPAR, "Expecting ')'")) return
+    private fun acceptRightParenthesisInTupleType(): Boolean {
+        if (at(RPAR)) {
+            advance()
+            return true
+        }
 
         while (!eof() && !at(RPAR) && !at(EQ) && !at(LBRACE) && !at(RBRACE) && !at(SEMICOLON)) {
-            if (builder.newlineBeforeCurrentToken()) return
+            if (builder.newlineBeforeCurrentToken()) break
             advance()
         }
 
+        // 恢复：把扫到的右括号一并消费，让上层声明继续解析
         if (at(RPAR)) {
             advance()
         }
+        return false
     }
 
 
@@ -5556,24 +5667,46 @@ class CangJieParsing private constructor(
     /**
      * 解析元组或函数类型
      *
-     * 根据上下文决定是解析为元组还是函数类型。
+     * 官方 `ParseTypeWithParen` 先解析类型参数列表，再决定类型种类：看到 `->` 是函数类型，
+     * 1 个类型是括号类型，2 个及以上是元组类型，0 个且没有 `->` 是损坏的函数类型。
      */
     context(parseContext: ParsingContext)
     private fun parseTupleOrFunctionType() {
         var oType = mark()
 
-        val count = parseTupleType()
+        val info = parseTupleType()
+
+        if (!info.isClosed) {
+            // 官方 ParseType.cpp:206-209：缺右括号是 InvalidType，整段类型不再作为括号/元组/函数类型。
+            // 官方在声明层靠 HAS_BROKEN 跳过残缺签名；这里在类型层收口：已经放弃的函数类型尾巴
+            // `-> T` 也一并吞进错误节点，避免上层把 `-> Bool` 当成声明之间的垃圾 token。
+            if (at(ARROW)) {
+                advance() // '->' 属于已被放弃的函数类型
+                parseTypeRef() // 返回类型同样属于该被放弃的类型
+            }
+            oType.error(CangJieParsingBundle.message("parsing.error.unclosed.delimiter", "("))
+            return
+        }
 
         if (at(ARROW) || at(COLON)) {
             oType.rollbackTo()
             oType = mark()
             parseFunctionType(oType)
+            return
+        }
+
+        if (info.count == 0) {
+            // 官方 ParseType.cpp:222-224：空类型参数列表没有 '->' 时按损坏的函数类型处理
+            error(CangJieParsingBundle.message("parsing.error.expected.arrow.in.function.type"))
+            parseTypeRef()
+            oType.done(FUNCTION_TYPE)
+            return
+        }
+
+        if (info.count <= 1) {
+            oType.done(PARENTHESIZED_TYPE)
         } else {
-            if (count <= 1) {
-                oType.done(PARENTHESIZED_TYPE)
-            } else {
-                oType.done(TUPLE_TYPE)
-            }
+            oType.done(TUPLE_TYPE)
         }
     }
 
