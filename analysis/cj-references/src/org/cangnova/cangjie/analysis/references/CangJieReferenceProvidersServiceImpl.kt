@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.analysis.references
 
+import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.project.Project
@@ -65,8 +66,12 @@ internal class CangJieReferenceProvidersServiceImpl(
 
     /**
      * 从仓颉 contributor provider 中收集指定上下文元素的 references。
+     *
+     * 返回 `null` 表示收集过程中有 provider 失败（例如索引/分析尚未就绪）。这种结果
+     * **不能**进入缓存：缓存依赖 `PsiModificationTracker.MODIFICATION_COUNT`，只有用户
+     * 修改文件才会失效，否则一次加载期的失败会让导航一直为空，直到用户重新输入。
      */
-    private fun doGetCangJieReferencesFromProviders(context: CjElement): Array<PsiReference> {
+    private fun doGetCangJieReferencesFromProviders(context: CjElement): Array<PsiReference>? {
         if (context is CjSimpleNameExpression && context.isDeclarationNameExpression()) {
             return PsiReference.EMPTY_ARRAY
         }
@@ -74,14 +79,20 @@ internal class CangJieReferenceProvidersServiceImpl(
         val providers = providersBindingCache[context.javaClass]
         if (providers.isNullOrEmpty()) return PsiReference.EMPTY_ARRAY
 
+        var failed = false
         val result = buildList {
             for (provider in providers) {
-                runSafely {
+                try {
                     addAll(provider(context))
+                } catch (t: Throwable) {
+                    failed = true
+                    // 索引/分析未就绪时的 provider 失败是可恢复的，不应升级为 IDE internal error。
+                    LOG.warn(t)
                 }
             }
         }
 
+        if (failed) return null
         return if (result.isEmpty()) PsiReference.EMPTY_ARRAY else result.toTypedArray()
     }
 
@@ -90,15 +101,24 @@ internal class CangJieReferenceProvidersServiceImpl(
      *
      * IntelliJ contributed reference host 交回平台 registry；仓颉 PSI 走本模块 contributor 分发，
      * 非仓颉 PSI 直接返回空引用。
+     *
+     * 索引构建期（dumb mode）或 provider 失败时不写缓存，保证分析就绪后能重新收集到引用，
+     * 而不是等用户修改文件（PSI 修改计数变化）才恢复导航。
      */
     override fun getReferences(psiElement: PsiElement): Array<PsiReference> = when (psiElement) {
         is ContributedReferenceHost -> ReferenceProvidersRegistry.getReferencesFromProviders(psiElement)
         !is CjElement -> PsiReference.EMPTY_ARRAY
-        else -> CachedValuesManager.getCachedValue(psiElement) {
-            CachedValueProvider.Result.create(
-                doGetCangJieReferencesFromProviders(psiElement),
-                PsiModificationTracker.MODIFICATION_COUNT,
-            )
+        else -> {
+            val references = doGetCangJieReferencesFromProviders(psiElement)
+            if (references == null || references.isEmpty() || DumbService.isDumb(project)) {
+                // 失败/空结果不缓存：空结果可能来自索引或分析尚未就绪，缓存后只能等
+                // 用户修改文件（PSI 修改计数变化）才会重算，表现为“重新输入后才能跳转”。
+                references ?: PsiReference.EMPTY_ARRAY
+            } else {
+                CachedValuesManager.getCachedValue(psiElement) {
+                    CachedValueProvider.Result.create(references, PsiModificationTracker.MODIFICATION_COUNT)
+                }
+            }
         }
     }
 

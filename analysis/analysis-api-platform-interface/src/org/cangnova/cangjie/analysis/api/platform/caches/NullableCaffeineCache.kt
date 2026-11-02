@@ -34,6 +34,20 @@ value class NullableCaffeineCache<K : Any, V : Any>(
         cache.getOrPutWithNullableValue(key) { compute(key) }
 
     /**
+     * 读取已缓存的值；不存在（包括以 null 缓存）时返回 null，不会触发计算。
+     */
+    @OptIn(CaImplementationDetail::class)
+    fun getIfPresent(key: K): V? = cache.getIfPresent(key)?.nullValueToNull()
+
+    /**
+     * 写入 [key] 对应的可空值。
+     */
+    @OptIn(CaImplementationDetail::class)
+    fun put(key: K, value: V?) {
+        cache.put(key, value ?: NullValue)
+    }
+
+    /**
      * 当前 Caffeine cache 的估算条目数量。
      */
     val estimatedSize: @NonNegative Long

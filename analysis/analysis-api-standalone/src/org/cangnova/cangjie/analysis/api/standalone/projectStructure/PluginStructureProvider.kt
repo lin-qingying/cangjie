@@ -367,6 +367,10 @@ object PluginStructureProvider {
     private val allowedExtensionPointNames = listOf(
         "org.cangnova.cangjie.psiReferenceProvider",
         "org.cangnova.cangjie.cjoFileDecompiler",
+        // 宏语义展开：触发器由 analysis 描述符注册，环境由宿主决定是否注册。
+        // 没有 environment 时 configurator 不触发任何构造，因此可以安全地在 headless 容器装配。
+        "org.cangnova.cangjie.llCfirSessionConfigurator",
+        "org.cangnova.cangjie.macroExpansionEnvironment",
         "com.intellij.filetype.decompiler",
         "com.intellij.fileType.fileViewProviderFactory",
         "com.intellij.referencesSearch",
