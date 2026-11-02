@@ -35,7 +35,7 @@ class CfirValueParameterImpl @CfirImplementationDetail constructor(
     override val attributes: CfirDeclarationAttributes,
     override val isLocal: Boolean,
     override var deprecationsProvider: DeprecationsProvider,
-    override val dispatchReceiverType: ConeSimpleCangJieType?,
+    override var dispatchReceiverType: ConeSimpleCangJieType?,
     override val isTypeImplicit: Boolean,
     override val symbol: CfirValueParameterSymbol,
     override val containingDeclarationSymbol: CfirBasedSymbol<*>,
@@ -110,6 +110,10 @@ class CfirValueParameterImpl @CfirImplementationDetail constructor(
 
     override fun replaceDeprecationsProvider(newDeprecationsProvider: DeprecationsProvider) {
         deprecationsProvider = newDeprecationsProvider
+    }
+
+    override fun replaceDispatchReceiverType(newDispatchReceiverType: ConeSimpleCangJieType?) {
+        dispatchReceiverType = newDispatchReceiverType
     }
 
     override fun replaceInitializer(newInitializer: CfirExpression?) {}

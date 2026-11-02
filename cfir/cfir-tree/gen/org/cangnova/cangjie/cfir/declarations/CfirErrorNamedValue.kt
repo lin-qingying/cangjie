@@ -52,6 +52,8 @@ abstract class CfirErrorNamedValue : CfirCallableDeclaration(), CfirDiagnosticHo
 
     abstract override fun replaceDeprecationsProvider(newDeprecationsProvider: DeprecationsProvider)
 
+    abstract override fun replaceDispatchReceiverType(newDispatchReceiverType: ConeSimpleCangJieType?)
+
     abstract override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirErrorNamedValue
 
     abstract override fun <D> transformTypeParameters(transformer: CfirTransformer<D>, data: D): CfirErrorNamedValue

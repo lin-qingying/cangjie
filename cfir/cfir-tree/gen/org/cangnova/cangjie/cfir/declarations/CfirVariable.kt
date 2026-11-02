@@ -50,6 +50,8 @@ sealed class CfirVariable : CfirCallableDeclaration(), CfirStatement {
 
     abstract override fun replaceDeprecationsProvider(newDeprecationsProvider: DeprecationsProvider)
 
+    abstract override fun replaceDispatchReceiverType(newDispatchReceiverType: ConeSimpleCangJieType?)
+
     abstract override fun replaceStatus(newStatus: CfirDeclarationStatus)
 
     abstract fun replaceInitializer(newInitializer: CfirExpression?)

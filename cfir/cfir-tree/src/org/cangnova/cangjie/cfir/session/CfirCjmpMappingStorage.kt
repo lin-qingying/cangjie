@@ -346,6 +346,10 @@ fun org.cangnova.cangjie.cfir.declarations.CfirDeclaration.cjmpHasCommonDefault(
  * 克隆到 specific 形参，本仓库不跨 session 克隆表达式，改为按配对结果读穿）。
  *
  * 自身有默认值，或所属函数是已配对的 specific 函数且 common 对应形参有默认值。
+ *
+ * 本函数只读配对结果；"配对尚未执行"时由调用解析侧的
+ * `org.cangnova.cangjie.cfir.resolve.cjmp.cjmpHasDefaultValueForCallResolution`
+ * 先按需建立对位（那里能安全地直接调用配对核心，不受 lazy resolve 阶段契约限制）。
  */
 fun org.cangnova.cangjie.cfir.declarations.CfirValueParameter.cjmpHasDefaultValue(): Boolean {
     if (defaultValue != null) return true

@@ -47,6 +47,8 @@ sealed class CfirCallableDeclaration : CfirMemberDeclaration() {
 
     abstract fun replaceDeprecationsProvider(newDeprecationsProvider: DeprecationsProvider)
 
+    abstract fun replaceDispatchReceiverType(newDispatchReceiverType: ConeSimpleCangJieType?)
+
     abstract override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirCallableDeclaration
 
     abstract override fun <D> transformTypeParameters(transformer: CfirTransformer<D>, data: D): CfirCallableDeclaration

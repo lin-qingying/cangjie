@@ -427,10 +427,24 @@ sealed class CfirCallableSymbol<out D : CfirCallableDeclaration> :
         get() = resolvedReturnTypeRef.coneType
 
     /**
+     * 推进当前声明的类型引用到可消费状态。
+     *
+     * 「哪种类型引用需要推进到哪个阶段」只在这里定义一次：[CfirImplicitTypeRef] 需要
+     * [CfirResolvePhase.IMPLICIT_TYPES]，其余未解析引用需要 [CfirResolvePhase.TYPES]，
+     * 已经是 [CfirResolvedTypeRef] 时不动。
+     *
+     * 供那些在读取类型引用**之前**必须自行保证阶段、而不是依赖调用方先读
+     * [resolvedReturnType] 的调用方复用（例如分析层的变参判定）。
+     */
+    fun ensureReturnTypeIsResolvable() {
+        ensureType(cfir.returnTypeRef)
+    }
+
+    /**
      * 推进返回类型引用到已解析状态。
      */
     fun calculateReturnType() {
-        ensureType(cfir.returnTypeRef)
+        ensureReturnTypeIsResolvable()
         val returnTypeRef = cfir.returnTypeRef
         if (returnTypeRef !is CfirResolvedTypeRef) {
             errorInLazyResolve("returnTypeRef", returnTypeRef::class, CfirResolvedTypeRef::class)

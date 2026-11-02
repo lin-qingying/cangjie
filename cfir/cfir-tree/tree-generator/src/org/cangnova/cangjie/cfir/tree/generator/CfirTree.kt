@@ -602,7 +602,7 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
             arbitraryImportables += unresolvedDeprecationsProviderType
         }
 
-        +field("dispatchReceiverType", coneSimpleCangJieTypeType, nullable = true)
+        +field("dispatchReceiverType", coneSimpleCangJieTypeType, nullable = true, withReplace = true)
         +referencedSymbol(callableSymbolType.withArgs(callableDeclaration))
 
     }

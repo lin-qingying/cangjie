@@ -18,6 +18,7 @@ import org.cangnova.cangjie.cfir.types.ConeStructType
 import org.cangnova.cangjie.cfir.types.ConeTypeProjection
 import org.cangnova.cangjie.cfir.types.ConeVArrayType
 import org.cangnova.cangjie.cfir.types.ConeCStringType
+import org.cangnova.cangjie.cfir.types.containsErrorType
 import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.name.ClassId
 
@@ -147,17 +148,26 @@ private fun CfirBuiltInTypeSymbol.constructBuiltInType(
     }
 
     CfirBuiltInTypeKind.CFUNC -> {
-        val functionType = typeArguments.singleOrNull()?.type as? ConeFunctionType
+        val argumentType = typeArguments.singleOrNull()?.type
+        val functionType = argumentType as? ConeFunctionType
         if (functionType == null) {
             ConeErrorType(
                 ConeSimpleDiagnostic("CFunc expects exactly one function type argument"),
-                // Preserve the resolved CFunc classifier on the error type. This
-                // lets the CFIR type checker distinguish an invalid CFunc
-                // application from a user-defined class with the same spelling.
-                delegatedType = ConeClassLikeType(
-                    lookupTag = toLookupTag(),
-                    typeArguments = typeArguments,
-                ),
+                // 合成错误类型只在"实参存在、已解析、且不含错误类型"时才保留 CFunc 分类器身份：
+                // 这类失败是"写了 CFunc<非函数类型>"，CFunc 检查器要靠身份把它与同名用户类型
+                // 区分开并报 `CFUNC_TYPE`。
+                // 实参本身是 error type（语法写坏 / 类型未解析）时不保留身份：那是上游已经报过
+                // 的错误，错误类型不应冒充一个构造失败的 CFunc，否则任何按 `lookupTag.classId`
+                // 识别 CFunc 的消费者都会对坏代码再报一条假阳性。与
+                // `ConeTypeUtils.containsErrorType` 的"实参含错误类型必须阻断普通类型规则"一致。
+                delegatedType = argumentType
+                    ?.takeUnless { it.containsErrorType() }
+                    ?.let {
+                        ConeClassLikeType(
+                            lookupTag = toLookupTag(),
+                            typeArguments = typeArguments,
+                        )
+                    },
                 attributes = attributes,
             )
         } else {
