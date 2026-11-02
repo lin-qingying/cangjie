@@ -52,6 +52,7 @@
             <option value="$PROJECT_DIR$/analysis/decompiled/light-declarations-for-decompiled" />
             <option value="$PROJECT_DIR$/analysis/light-declarations" />
             <option value="$PROJECT_DIR$/analysis/low-level-api-cfir" />
+            <option value="$PROJECT_DIR$/analysis/macro-expansion" />
             <option value="$PROJECT_DIR$/analysis/stubs" />
             <option value="$PROJECT_DIR$/analysis/symbol-light-declarations" />
             <option value="$PROJECT_DIR$/cfir" />
@@ -223,6 +224,7 @@
                   <project path="$PROJECT_DIR$/analysis/decompiled/light-declarations-for-decompiled" />
                   <project path="$PROJECT_DIR$/analysis/light-declarations" />
                   <project path="$PROJECT_DIR$/analysis/low-level-api-cfir" />
+                  <project path="$PROJECT_DIR$/analysis/macro-expansion" />
                   <project path="$PROJECT_DIR$/analysis/stubs" />
                   <project path="$PROJECT_DIR$/analysis/symbol-light-declarations" />
                   <project path="$PROJECT_DIR$/cfir" />
@@ -367,6 +369,7 @@
             <option value="$PROJECT_DIR$/analysis/decompiled/light-declarations-for-decompiled" />
             <option value="$PROJECT_DIR$/analysis/light-declarations" />
             <option value="$PROJECT_DIR$/analysis/low-level-api-cfir" />
+            <option value="$PROJECT_DIR$/analysis/macro-expansion" />
             <option value="$PROJECT_DIR$/analysis/stubs" />
             <option value="$PROJECT_DIR$/analysis/symbol-light-declarations" />
             <option value="$PROJECT_DIR$/cfir" />
