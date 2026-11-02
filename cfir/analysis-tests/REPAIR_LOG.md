@@ -1,5 +1,89 @@
 # CFIR LLT Repair Log
 
+## 2026-11-02：cfir/resolve ×1（遗留基线 #109）：默认实参计数用例改写为合法仓颉签名
+
+- problem type: `CfirMapArgumentsTest$Defaults.number of default arguments is counted` —— 期望 `RESOLVED` 且 `numDefaults = 2`，实得 `INAPPLICABLE_ARGUMENTS_MAPPING_ERROR`。
+- root cause: 用例夹具给**定位参数**设了默认值（三个定位形参 + `parameterDefaults = [false, true, true]`，而夹具里 `isNamed` 恒为 `false`）。`CfirMapArguments` 的位置形状预检必然命中 `WRONG_NUMBER_OF_ARGUMENTS`：`positionalParameterCount = 3 != positionalArgumentCount = 1` 且 `argumentAtoms.size(1) != parameters.size(3)`。这个签名在仓颉里本身不合法——**只有命名参数能带默认值**。
+- official Cangjie evidence: cjc 1.0.5 实测——`func f(a: Int64, b: Bool = true)` 报 `parse: expected ',' or ')', found '='`；`func f(a: Int64, b!: Bool = true)` 编译通过，且 `f(1)` 与 `f(1, b: false)` 均可用。
+- owner files changed（**仅测试夹具**，生产预检按官方规则本就正确）：
+  - `cfir/resolve/test/.../CallResolutionTestFixtures.kt`：`buildFunctionSymbol` / `buildValueParameter` 增加 `parameterNamed` / `isNamed`（仓颉 `p!` 形态），KDoc 写明"只有命名参数可带默认值"的约束与 cjc 证据。
+  - `cfir/resolve/test/.../CfirMapArgumentsTest.kt`：默认参数计数用例改为合法签名 `func f(a: Int64, b!: Bool = true, c!: Float64 = 1.0)` 的调用 `f(1)`，证据写进注释。
+- repair principle: 不改生产预检（它正确实现了官方"位置形状不一致即 `WRONG_NUMBER_OF_ARGUMENTS`"规则），而是把测试数据纠正成官方语义；夹具从此能表达命名参数，后续默认值/CJMP 用例不再被迫用非法形状。
+- verification command(s) and outcome: `:cfir:resolve:test` **153 / 0**（基线 153 / 1，即报告 #109；本轮 `--rerun-tasks --no-build-cache` 强制重建）。
+- remaining risks: 新增的 `parameterNamed` 默认 `false`，等价于旧行为；其余用例不受影响。
+
+## 2026-11-02：analysis/low-level-api-cfir 三例红测修复（CJMP 默认值读穿 / context collector 夹具补全）
+
+- problem type: CJMP caller-first 默认参数绑定 + 数据驱动夹具缺失（`analysis/low-level-api-cfir` 基线 183 / 3）：
+  1. `CfirCjmpCallerFirstDiagnosticsTest.defaultArgumentCallerFirst` / `defaultArgumentInferredCallerFirst` —— 期望零诊断，实得 `CFIR_NOT_MATCHED`（锚在 common 声明 `public common func a(x!: Int64 = 1)`）。
+  2. `ContextCollectorSourceTestGenerated.testLocalPatternVariableInitializerRebuild` —— `NoSuchElementException: Found no element of type CjElement inside <expr>`。
+- root cause:
+  1. specific 形参自身没有默认值，默认值只在 common 对位声明上（官方 `MatchCJMPFunction` 的读穿语义）。实参映射阶段就要回答"这个形参能不能省"，而 caller-first 场景下被调 specific 声明还停在 `TYPES`、配对尚未执行 → `cjmpHasDefaultValue()` 返回 false → specific 候选被判"参数不足"而不可用，调用**静默退回 common 声明**；随后 common 侧检查器（`CfirCjmpCommonSideChecker` → `mustReportNotMatched`）如实报 `NOT_MATCHED`。
+     直接 `lazyResolveToPhase(CJMP_MATCHING)` 行不通：省略返回类型的函数体推断发生在 `IMPLICIT_TYPES`，而 lazy resolve 阶段契约只允许向**更低**阶段请求（实测 `CfirLazyResolveContractViolationException: current=IMPLICIT_TYPES requested=CJMP_MATCHING`，被诊断收集器吞掉后表现为"body 仍是 lazy block"）。
+  2. `localPatternVariableInitializerRebuild.cj` 自 `d2e0e928f` 引入起就**没有 `<expr>` 标记、也没有四个 golden 变体**（同目录其它夹具都有），测试框架因此取不到目标元素。
+- official Cangjie evidence: 默认值只在 common 侧、specific 不重复声明是 CJMP 官方约束（`MatchCJMPFunction` 克隆默认值到 specific）；夹具注释已记录 cjc 1.1.3 探针结论"`use3() { a() }` 可推断 Int64"。context collector 无官方对照，属本仓库 golden 测试自身的数据完整性。
+- owner files changed:
+  - 新增 `cfir/resolve/src/.../cjmp/CfirCjmpDefaultValueReadThrough.kt`：`CfirValueParameter.cjmpHasDefaultValueForCallResolution()` —— 先按需建立对位再读穿。实现上**不推进 resolve phase**，直接调用配对核心 `CfirCjmpMatchRunner.matchDeclaration`（只需签名到 `IMPLICIT_TYPES`，同阶段请求合法；存储写入幂等）；成员在父容器尚无配对结论时不贸然配对（否则成员会被误记 unmatched，交回既有语义）。
+  - `cfir/resolve/.../calls/stages/CfirMapArguments.kt`、`cfir/resolve/.../body/CfirCallResolver.kt`：5 处默认值判定改用上述入口。
+  - `cfir/cfir-tree/.../session/CfirCjmpMappingStorage.kt`：`cjmpHasDefaultValue()` 保持纯读语义，KDoc 指明"配对未执行"由调用解析侧的入口补齐。
+  - `cfir/checkers/.../declaration/CfirCommonSpecificChecker.kt`：`CfirCjmpCommonSideChecker.check` 在检查前把存储里**已配对**的 specific 声明推进到 `CJMP_MATCHING`——检查器运行在 lazy resolve 契约之外，可安全同步；让阶段事实追上存储事实（caller-first 断言要求被调声明最终处于配对阶段），未建立结论的声明保持原样。
+  - `analysis/low-level-api-cfir/testData/contextCollector/localPatternVariableInitializerRebuild.cj`：initializer 字面量补 `<expr>40</expr>`；同目录生成 4 个 golden（`.txt` / `.body.txt` / `.copy.txt` / `.body.copy.txt`）。
+- repair principle: 默认值读穿的"何时配对"由触发它的**调用解析**决定，配对本身复用唯一核心（`CfirCjmpMatchRunner`），不用第二阶段机制绕路；阶段契约是硬约束，因此选择"不推相位 + 检查器侧同步相位"而不是修改契约或加豁免。夹具缺口按数据驱动测试的契约补齐（标记 + 四个变体 golden），不是跳过测试。
+- verification command(s) and outcome: `:analysis:low-level-api-cfir:test` **183 / 0**（基线 3 失败；本轮用 `--rerun-tasks --no-build-cache` 强制重建，避免 daemon 增量编译把改动判成 UP-TO-DATE）；`:cfir:cfir-tree:test` 8 / 0；`:cfir:resolve:test` 153 / 1，唯一失败是基线 #109 `CfirMapArgumentsTest$Defaults.number of default arguments is counted`（改前报告已列，非本次引入）；`:cfir:analysis-tests:test`（LLT 全量，强制重建）**9266 / 0 / 460 skipped**，含全部 `CommonSpecific`（CJMP）夹具。
+- remaining risks: 成员方法的默认值读穿要求父容器已配对，父容器未配对时仍读不到默认值（与改动前一致，属已知边界）；`--rerun-tasks` 期间发现本工作区 Gradle daemon 会漏判源码变更（`compileKotlin UP-TO-DATE`），后续在此工作区验证需显式强制重建。
+
+## 2026-11-02：code-insight/completion/impl-cfir 两例红测修复（索引召回范围 / 未导入候选 import 语义）
+
+- problem type: 补全索引召回边界 + 未导入候选的 import 路径（`code-insight/completion/impl-cfir` 基线 75 / 2）：
+  1. `CfirIndexCompletionSectionTest.indexSectionSuppressesShadowedCandidate` —— 断言 `shadowedByFile` 不得存活，实际存活的是 `completion.sections.shadowedByFile`（**本文件自己那条声明**），`importPlan = NoImport`（DIRECT）。
+  2. `CfirInsertionIntegrationTest.insertsUnimportedCandidateAndReportsImport` —— 期望 import 路径 `insertion.dependency`，实际 `insertion.dependency.insertionTarget`。
+- root cause:
+  1. `getDeclarationsByNamePrefix` 的源码通道走宿主名称索引，**包含当前文件自己的顶层声明**；这类候选在统一判定器里是 DIRECT（短名已绑到本文件声明），索引区段于是把它当可直接使用的候选再列一遍。作用域区段（`CfirTopLevelCompletionSection` 枚举文件/包/导入作用域）本来就覆盖它们，属纯重复。跨包同名候选本身已被判定器判成 HIDDEN（`resolveShortNameBinding` 先在文件作用域绑定本文件声明，`isEquivalentTo` 按 `publicSymbolCacheKey` 比较，不会把同名不同声明误判成等价）。
+  2. `asTopLevelImportPath()` 给顶层 callable 的导入路径是**声明级** `pkg.name`（`ImportPath(callableId.asSingleFqName(), isAllUnder = false)`），测试却按"包路径"断言。
+- official Cangjie evidence: cjc 1.0.5 逐一实测三种写法——`import insertion.dependency` + 裸写 `insertionTarget()` 报 `undeclared identifier 'insertionTarget'`，且该 import 报 `unused import`；`import insertion.dependency.*` 与 `import insertion.dependency.insertionTarget` 都能编译。候选写入的是短名，因此声明级 import 是正确且更精确的选择（星号导入也可行，但会引入整包名字）。
+- owner files changed:
+  - `code-insight/completion/impl-cfir/src/.../sections/CfirIndexCompletionSection.kt`：按**符号等价性**（`file.declarations.map { it.symbol }` + `CaSymbol.isEquivalentTo`）跳过当前文件自己的顶层声明，并补充 `compute` 与类 KDoc 的召回范围；符号集合按需惰性构造，单条声明恢复失败时跳过（补全发生在未完成源码上，不能让一条坏声明拖垮整个区段）。**不按名字、也不按 DIRECT 状态过滤**：已导入的名字同样可能是 DIRECT，`CfirCompletionRecoveryServiceTest.assertAlreadyReachable` 依赖索引区段照常给出它们。
+  - `code-insight/completion/impl-cfir/test/.../sections/CfirInsertionIntegrationTest.kt`：import 路径断言改到声明级 `insertion.dependency.insertionTarget`，并把 cjc 实测写进注释；同时说明 `performCangjieInsertion` 只写候选文本，import 由 `PsiImportPlanApplier` 在提交选择时写入（因此不在该用例里断言文档出现 import 行）。
+- repair principle: 召回边界定义成"**是不是本文件这一条声明**"，用 Analysis API 的符号身份（`CaSymbolProvider.symbol` + `CaSymbolRelationProvider.isEquivalentTo`）判断，而不是字符串比较或状态近似；测试断言先取官方 import 语义证据再修正，并区分"插入策略"与"import 写入"两层职责。
+- verification command(s) and outcome: `:code-insight:completion:impl-cfir:test` **75 / 0**（基线 2 失败）；`:code-insight:completion:impl-shared:test` 85 / 0（同一管线下的导入写入口径未受影响）。
+- remaining risks: 同包**其它文件**声明的同名候选仍会以 DIRECT 出现（由管线按 identity 去重）；若要求索引区段完全不重复作用域区段，需要把"可达性来源"建模进判定结果，而不是在区段里再加近似条件。
+
+## 2026-11-02：compiler/frontend 六例红测修复（声明片段契约 / IfAvailable surface 覆盖 / std facade 重导出定位 / CJMP 诊断格式化）
+
+- problem type: 宏构造契约 + raw builder surface 覆盖 + 宏 artifact 解析 + 测试基建（`compiler/frontend` 基线 130/6）：
+  1. `FrontendMacroConstructionExecutionTest` ×3 —— `Construction failed: ... Macro fragment for `macros.X` did not produce a MacroDeclarationFragment payload.`
+  2. `MacroConstructionArchitectureGuardTest.rawBuildersCoverAllMacroSurfaceShapes` —— 两个 raw builder 都缺 `IfAvailableSurface` 构造 / `BuiltinNonMacroSurface` 分支。
+  3. `MacroArtifactLocatorTest.locatesAndResolvesFixedSdkStdMacroArtifact` —— `Re-exported macro `std.unittest.mock.mockmacro.enumerate` resolves to `std.collection.enumerate`, but the executable macro artifact package `std.collection` was not found.`
+  4. `CjmpTwoPhaseCompilationTest.deserialized generic extend peers honor target substitutions and bounds` —— `NullPointerException: ApplicationManager.getApplication() is null`（栈落在 `LeafPsiElement.getContainingFile`）。
+- root cause:
+  1. 契约已是"声明片段 = 零到多个声明的序列"：`MacroFragmentParser.VERSION = 4` 与 `MacroDeclarationFragment`（`cfir/providers/.../MacroFragmentParser.kt:41-55`），生产 parser 在 `MacroFragmentParserConfiguration.kt:133/194` 按此包装；测试替身 `StaticPayloadParser` 与匿名 parser 仍传裸 `CfirDeclaration`，`toDeclarationPayloads`（`MacroExpandPhase.kt:1932-1941`）按契约拒绝。
+  2. `MacroSurface.kt:390-425` 的 `BuiltinNonMacroSurface/IfAvailableSurface`、`MacroResolutionContext.kt:81-84` 的 `nonMacros = {IfAvailable}`、`MacroExpandPhase.kt:573-579/890-894/914-923/1544-1552/1609` 的脱糖链路都在，但两个 raw builder 的宏 surface 采集在 WIP 提交 `3f5883baa` 里删掉了 `IfAvailable` 归类，两侧不一致，guard 因此报缺覆盖。实测：`@IfAvailable[...] decl` 在 PSI/LightTree 里都是 `MACRO_EXPRESSION` 包住声明（既不是 annotation，也不是 `CjIfAvailableExpression`），因此落到 `applyTopLevelMacroExpression` → `MacroSurfaceDecl`，再被解析成 `BuiltinNonMacro` 却仍生成 stable-splice 槽位，会把 carrier 替换成重新解析出来的声明副本。
+  3. `DEFAULT_MACRO_SDK_HOME = ""`（`MacroExpandPhase.kt:367`，KDoc 明确"未配置时不隐式选择机器级 SDK"），`MacroArtifactResolver.resolve` 用空 `sdkHome` 建 `MacroArtifactLocator` → `locateFromSdk` 直接返回 null。入口 artifact 明明是 `Origin.SDK_STDLIB`，其重导出目标（`std.collection`）同属该 SDK，却被当成"机器级 SDK 未配置"。生产调用点 `MacroExpansionArtifactPreparation.kt:76-81` 显式传 `configuration.macroSdkHome`，所以只在"只给 artifact、不给 sdkHome"的宿主/测试场景暴露。
+  4. 测试 helper `compileNormalCjoLibrary` 在 `compile(...)` 返回后、为失败信息惰性访问 PSI（`element.containingFile.text`）；此时 PSI 已失效且无 Application，`PsiInvalidElementAccessException` 构造消息时 NPE，**掩盖了真实诊断**（该库编译确实产生了非 error 诊断）。
+- official Cangjie evidence: 3) 用本机 `cangjie-1.0.5` SDK 实测布局：`modules/windows_x86_64_cjnative/std/std.collection.cjo` + `runtime/lib/windows_x86_64_cjnative/libcangjie-std-collection.dll`，`std.unittest.mock.mockmacro` 同构；2) 官方 `@IfAvailable` 只有圆括号表达式形态（`ParserImpl::ParseIfAvailable`），cjc 1.0.5 实测：`@IfAvailable[level: 19] func gated()` 报 `parse_expected_character: expected (, found [`，`@IfAvailable(level: 19, { => () }, { => () }) func gatedParen()` 报 `macro_expect_declaration: expected declaration, but found other node`——即"包住声明"的两种写法都是恢复形态，不是合法语义；1) 纯属内部契约迁移。
+- CFIR owner files changed:
+  - `cfir/raw-cfir/psi2cfir/.../PsiRawCfirBuilder.kt`、`cfir/raw-cfir/light-tree2cfir/.../LightTreeRawCfirDeclarationBuilder.kt`：`applyTopLevelMacroExpression`（宏表达式包住声明）在构造 `MacroSurfaceDecl` 之前，把未限定的 `IfAvailable` 归类为 `IfAvailableSurface`（`branchTokens = inputTokens`），两条路径同构；恢复形态不再生成声明 splice 槽位。
+  - `compiler/frontend/.../MacroArtifactResolver.kt`：新增 `createArtifactLocator` / `deriveSdkArtifactRoot`——调用方显式 `sdkHome` 优先；未配置时从 SDK_STDLIB artifact 自身的 `modules/<host>/…` + `runtime/lib/<host>/…` 路径反推 SDK 根与宿主目录，不猜机器级 SDK。
+  - `compiler/frontend/test/.../FrontendMacroConstructionExecutionTest.kt`：三处声明替身改为 `MacroDeclarationFragment(listOf(...))`。
+  - `compiler/frontend/test/.../CjmpTwoPhaseCompilationTest.kt`：诊断定位格式化对失效 PSI 做 `runCatching` 保护，避免消息构造覆盖真实诊断。
+  - `cfir/raw-cfir/psi2cfir/test/.../PsiRawCfirBuilderNestedMacroTest.kt`、`cfir/raw-cfir/light-tree2cfir/test/.../MacroSurfacePayloadTest.kt`：各加一条 surface 形状回归测试（见 fixtures）。
+- repair principle: 每一处都修在"契约/唯一属主"而不是让断言变绿：声明片段按 `MacroFragmentParser.VERSION=4` 契约喂给 `toDeclarationPayloads`；`@IfAvailable` 的归类放在**两个 raw builder 的共享宏 surface 采集点**（唯一产生该形状的地方），而不是在消费端加 `if`；SDK 重导出定位改在 resolver 的定位器构造处用 artifact 自带事实（而非机器级默认值）；测试基建只在消息格式化处做"PSI 可能已失效"的防御，不触碰断言语义。
+- fixtures covered: 新增 `PsiRawCfirBuilderNestedMacroTest.testIfAvailableDeclarationWrapperIsBuiltinNonMacroSurfaceNotDeclarationMacro` 与 `MacroSurfacePayloadTest.testLightTreeIfAvailableDeclarationWrapperIsBuiltinNonMacroSurface`（断言 `IfAvailableSurface` 存在、同次构建**不**产生 `MacroSurfaceDecl`、`branchTokens == inputTokens`）；原有 `FrontendMacroConstructionExecutionTest`（默认 splicer 声明替换 / 父子嵌套宏 / 构造缓存三分法）、`MacroConstructionArchitectureGuardTest`（PSI+LightTree surface 形状覆盖）、`MacroArtifactLocatorTest`（SDK std facade 定位 + 重导出解析 + `definitions.libPath` 归属）、`CjmpTwoPhaseCompilationTest`（CJO 反序列化泛型 extend peer）。
+- verification command(s) and outcome: `:compiler:frontend:test` **130 / 0**（基线 6 失败）；`:cfir:raw-cfir:psi2cfir:test` **3232 / 0**、`:cfir:raw-cfir:light-tree2cfir:test` **1122 / 0**（各含 1 条新增回归）；`:cfir:analysis-tests:test`（LLT 全量）**9260 / 0 / 460 skipped**（基线 9259 / 3 / 459；原三条失败 `CfirMacroAnnotationSourceModuleTest`×2 与 `Llt > Annotation > Globals > testAllkinds` 本轮均通过，同轮未做归因）。反向确认：改前 `FrontendMacroConstructionExecutionTest` 三例与 guard 均红，改后逐类全绿；新增的两条 surface 测试在改前会因 `IfAvailableSurface` 不存在而失败（`filterIsInstance<IfAvailableSurface>().single()` 抛 `NoSuchElementException`）。环境说明：本轮 LLT 期间工作区存在其它会话的并发 Gradle 任务，早期一次自建 LLT 运行因类加载冲突（`NoClassDefFoundError`）不可用，最终数据取自并发窗口结束后的完整运行。
+- remaining risks: `@IfAvailable` 的**合法表达式**形态（`CjIfAvailableExpression`）仍由 raw builder 直接构建 `CfirIfAvailableExpression`，不发布 surface —— 与官方语法一致（表达式不是宏），但意味着 `BuiltinNonMacroSurface` 的 desugar 链路目前只服务恢复形态；若将来要求合法表达式也参与宏森林（例如父宏 token 可见性），需要单独定义 `branchTokens` 语义。`deriveSdkArtifactRoot` 仅在 `Origin.SDK_STDLIB` 且路径符合官方 SDK 布局时生效，自定义布局 SDK 仍需调用方显式配置 `macroSdkHome`。
+
+## 2026-11-02：坏 CFunc 类型实参不再二次报 CFUNC_TYPE（错误类型不冒充分类器身份）
+
+- problem type: Diagnostics / CFFI 级联 —— `CFunc<(x!: Int64) -> Unit>` 这类"类型形参表 parse 坏"的签名，除解析诊断外还会多报一条 `CFUNC_TYPE`（"cfunc type must be a function type"）；IDE 上用户只打错一个 `!` 就会收到两条。
+- root cause: `TypeConstructionUtils` 的 `CfirBuiltInTypeKind.CFUNC` 分支对**所有**构造失败都保留 CFunc 分类器身份（`ConeErrorType.delegatedType = ConeClassLikeType(CFunc)`），于是 `ConeErrorType.lookupTag.classId == CFunc`；`CfirForeignFunctionReturnTypeChecker.extractCFuncArgument`（`:126`）据此判 `isCFunc`，而 `reportNestedDiagnosticsIfCFunc`（`:80-86`）对 `function == null` 无条件报 `CFUNC_TYPE`——实参本身是 error type（parse 坏 / 未解析）时真诊断已在上游，这里即假阳性。同函数 `:88-89`、`:98` 对参数/返回类型都有 `ConeErrorType` 跳过，唯独漏了"整个类型实参"这一层。
+- official Cangjie evidence: cjc 1.0.5 / 1.1.3 实测 `func f(g: CFunc<(x!: Int64) -> Unit>)` 只报 `parse_expected_right_delimiter`（探针 r1_cfuncNamedParam / cs25），无 `sema_cfunc_type`；且官方一处 parse 错误会吞掉整包 sema（`DiagnosticEngine` 的 CanBeEmitted，本仓 `cfuncSignatureRules.cj` 头注释已记录），故官方"不报"不等于"不检查"。
+- Kotlin counterpart files consulted: Kotlin `FirErrorTypeRef` 不携带被误认的分类器身份；本仓既有政策是 `ConeCangJieType.containsErrorType()`（`cfir/cfir-cones/src/org/cangnova/cangjie/cfir/types/ConeTypeUtils.kt:14-22`，"实参含错误类型必须阻断普通类型规则"）。未引入 Kotlin 语言语义。
+- CFIR owner files changed: `cfir/cfir-tree/src/org/cangnova/cangjie/cfir/symbols/TypeConstructionUtils.kt` —— `CFUNC` 分支仅当实参存在、已解析且 `!containsErrorType()` 时才挂 `delegatedType`。
+- repair principle: 在**产生侧**建立不变量，而不是在每个消费点补 `is ConeErrorType`：错误类型不冒充"构造失败的 CFunc"。`CFunc<Int64>`（真实非函数类型实参）与 `CFunc<CFunc<…>>`（语法上非 FuncType）仍保留身份、照常报 `CFUNC_TYPE`；消费侧 `CfirCFuncTypeLegalityReporter` 零改动，两个入口（`CfirCFuncTypeChecker` 覆盖全部类型使用点、`CfirTypeAliasCFuncLegalityChecker` 覆盖别名展开）同时受益。
+- fixtures covered: `diagnostics2/interop/cfuncSignatureRules.cj` 新增形态 21（`CFunc<(x!: Int64) -> Unit>`，期望零 CFIR 诊断）；形态 16/17 的 `CFunc<CFunc<…>>` / `CFunc<Int64>` 保持原期望。反向验证：`git stash` 掉 owner 改动后该 fixture 报 `CFunc<<!CFUNC_TYPE!>(x!: Int64) -> Unit<!>>`，恢复后通过——证明夹具确实钉住该假阳性。
+- verification command(s) and outcome: 定向 `:cfir:analysis-tests:test --tests '*Diagnostics2TestGenerated*Interop*'` → BUILD SUCCESSFUL（含新形态）；`:cfir:raw-cfir:psi2cfir:test` 3231/0、`:cfir:raw-cfir:light-tree2cfir:test` 1121/0；`:cfir:resolve:test` 153/1、`:cfir:providers:test` 43/1、`:analysis:low-level-api-cfir:test` 183/3（均与基线同名）；`:analysis:analysis-api-cfir:test` isolated 1678/37、全量构建上下文 1678/0；`:analysis:analysis-api-standalone:test` isolated 720/15、全量 720/0。**全仓 `gradlew-queue.bat --force-no-daemon test --continue --no-build-cache`（清空全部 test-results、禁用 build cache、在并发会话空闲窗口启动）→ 17690 tests / 23 failed / 477 skipped，BUILD FAILED in 24m31s**；失败模块 10 个：`cfir/analysis-tests` 3、`compiler/frontend` 6、`lsp` 4、`analysis/low-level-api-cfir` 3、`code-insight/completion/impl-cfir` 2、`cfir/providers` / `cfir/resolve` / `analysis/stubs` / `code-insight/highlighting` / `psi` 各 1，逐条与基线同名；基线（2026-11-01 全仓运行）为 17683 / 123 / 478、失败模块 14 个。`cfir/raw-cfir/psi2cfir`（基线 33）与 `light-tree2cfir`（基线 15）归零；`analysis-api-cfir`（37）与 `analysis-api-standalone`（15）在全量上下文下也为 0，但 isolated 运行仍复现基线失败，故该项不能归因于本 diff。原始日志 `.dsh-tmp/full-test-c2.log`。
+- remaining risks: 全量 LLT 未能在工作区空闲时取得干净基线数字（并发会话所致，与本次改动无关）；"身份保留"条件依赖实参在 TYPES 阶段已解析（当前路径如此），若将来引入未解析 raw 实参需重新评估；`CFunc<指向函数类型的类型别名>` 这类"语义是函数类型、语法不是 FuncType"的形态维持官方 PreCheck 的语法口径（仍报 `CFUNC_TYPE`），本次未改。
+
 ## 2026-09-30：顶层宏包装声明不再从文件声明列表中消失（Analysis API 元注解递归展开）
 
 - problem type: Analysis API / 符号索引 —— `analysis-api` 注解测试 `metaAnnotation` 中，`@Marker class User {}` 的 `Marker` 无法按 `ClassId` 查到自身注解，渲染出 `<unknown meta-annotation>` 而非递归层次；PSI 侧 `User` 也一度不在 `sample.annotations` 的顶层声明名集合里。
@@ -11040,3 +11124,134 @@ ExtendsImplementsInterfaceDuplicated）集合差 **ADDED=0、REMOVED=12**（本�
   - 定向 LLT：Class/PSI testClassAccessControl、Extend testExtendAccessControl1、Class testClassStatic04 BUILD SUCCESSFUL。
   - 真实项目：BUILD SUCCESSFUL；amqp 0 ERROR / 0 异常 / 0 collectionFailure；Cliver 0/0/0；两项目 cjpm clean/build exit 0；XML interrupted=0。
 - remaining: 普通函数注解的官方 no-match 诊断未实现；顶层拆分 pattern 的 IMPLICIT_TYPES 直接目标未覆盖；既有 CJMP/ContextCollector/guard 测试失败未由本 diff 修改。
+
+## 2026-11-02：变参形参判定在读语义事实前未满足类型解析阶段（Analysis API `isVararg` 恒假）
+
+- problem type: Analysis API / Type Provider —— `CaValueParameterSymbol.isVararg` 读 CFIR 语义事实时所在声明的解析阶段不足，导致真实变参被静默判成非变参，`varargArrayType` 随之返回 null（渲染为 `NOT_VARARG`）。共 10 例：`analysis/analysis-api-standalone` 3 例 + `analysis/analysis-api-cfir` 7 例（覆盖 Normal/Dependent × Source/LibrarySource/LibraryBinary/LibraryBinaryDecompiled/CodeFragment）。
+- root cause: `CaCfirValueParameterSymbol.isVararg`（`analysis/analysis-api-cfir/.../symbols/CaCfirValueParameterSymbol.kt:183`）直接调用共享判据 `CfirDeclaration.cangjieVariadicParameterOrNull()`，而该判据读形参 `returnTypeRef.coneTypeOrNull`；分析层的符号由 `lazyCfirSymbol(declaration, session)` 经 `resolveToCfirSymbolOfType` 取得，**默认只解析到 `CfirResolvePhase.RAW_CFIR`**（`analysis/low-level-api-cfir/.../api/LowLevelCfirApiFacade.kt:47`），此时 `returnTypeRef` 尚未定型，`coneTypeOrNull` 为 null → `arrayElementType` 为 null → 判据返回 null。此前该属性只有被调用方先读 `returnType` 才偶然正确：`CfirCallableSymbol.resolvedReturnType → calculateReturnType → ensureType` 会把声明推进到 TYPES。探针实测（在 `varargArrayType` 内加临时输出）证实：先读 `returnType` 时 `isVararg=true`、`returnType=struct std/core/Array<Int64>`；按原顺序先读 `isVararg` 即 false。
+- official Cangjie evidence: `external/cangjie_compiler/src/Sema/TypeCheckCall.cpp:342-359` `IsFuncDeclPossibleVariadic`：enum 构造器恒 false、除 `()`/`[]` 外的运算符恒 false，其余取最后一个非命名形参并要求 `Ty::IsTyCorrect((*iter)->GetTy()) && (*iter)->GetTy()->IsStructArray()`。官方以**已定型**的形参类型为判定前提——类型未定型时该规则本就不成立，因此「读到未解析类型引用仍当作非 Array」不是语义等价，而是判据失效。
+- Kotlin counterpart files consulted: Kotlin `FirValueParameterSymbol.isVararg` 读的是语法 `vararg` 标记（无所谓阶段），仓颉的变参是语义规则，因此阶段前置应由 CFIR 符号层承担；本修复复用的正是该层已有的唯一阶段规则 `CfirCallableSymbol.ensureType`（`cfir/cfir-tree/.../symbols/CfirBasedSymbol.kt`，`resolvedReturnType`/`calculateReturnType` 原本唯一调用点），与 `cfir-tree` 内其他 `lazyResolveToPhase` 用法（如 `resolvedSuperTypeRefs`）同形；分析层其余符号也各有显式阶段前置（如 `CfirCDocReferenceResolver.kt:494` 对形参符号 `lazyResolveToPhase(TYPES)`）。未引入任何 Kotlin 语言语义。
+- CFIR owner files changed:
+  - `cfir/cfir-tree/src/org/cangnova/cangjie/cfir/symbols/CfirBasedSymbol.kt`：在私有 `ensureType` 之上提出 `CfirCallableSymbol.ensureReturnTypeIsResolvable()`，`calculateReturnType()` 改为调用它（行为等价提取，唯一改动是把「哪种类型引用推进到哪个阶段」这条规则变成可复用入口）。
+  - `analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/symbols/CaCfirValueParameterSymbol.kt`：`isVararg` 先 `cfirSymbol.ensureReturnTypeIsResolvable()` 再走共享判据。
+- repair principle: 修的是「读语义事实前必须满足的阶段前提」这一契约，而不是变参判定规则本身——判据仍只有 `cangjieVariadicParameterOrNull` 一个出口，阶段规则仍只有 `ensureType` 一处定义，分析层复用同一入口而非另写 `TYPES` 常量；调用解析路径（`cfir/resolve/.../CangjieVariadicUtils.kt`）完全未改，因此变参语义在两条消费路径上仍是同一份实现。规则内不含任何 fixture、函数名或 `Array` 特判。
+- fixtures covered: `analysis/analysis-api/testData/components/typeProvider/varargArrayType/intVarargParameter.cj`
+  - `analysis/analysis-api-standalone`：`CfirStandaloneNormalAnalysis{Source,LibraryBinary,CodeFragment}ModuleVarargArrayTypeTestGenerated.testIntVarargParameter`（3）
+  - `analysis/analysis-api-cfir`：`CfirIde{NormalAnalysis{Source,LibraryBinary,LibraryBinaryDecompiled,LibrarySource,CodeFragment},DependentAnalysis{Source,CodeFragment}}ModuleVarargArrayTypeTestGenerated.testIntVarargParameter`（7）
+  - 未修改任何 fixture 或期望：期望值 `Array<Int64>` 与官方 `IsFuncDeclPossibleVariadic` 一致（最后非命名形参类型为 `Array<Int64>` 即变参），变参数组类型就是该 `Array<T>` 自身。
+- verification command(s) and outcome:
+  - `gradlew.bat :analysis:analysis-api-standalone:test --rerun-tasks` → **720 tests / 0 failed / 0 skipped**（修复前 720 / 15 failed）。
+  - `gradlew.bat :analysis:analysis-api-cfir:test --continue` → 1678 tests / 2 failed（修复前 37）；剩余 2 例为既有的 `AnalysisApiCfirComponentExecutionTest.packageQualifierTypeResolution`、`AnalysisApiImportPackageNavigationTest.organizationDirectoriesAndRename`，与本族无关。
+  - 回归净：`:analysis:low-level-api-cfir:test` 183 / 3 failed，与基线逐条相同；`:cfir:analysis-tests:test` 9259 tests / 3 failed / 459 skipped，失败集合与报告基线完全一致（`CfirAnalysisMacroPsiTestGenerated$Llt$Annotation$Globals.testAllkinds`、`CfirMacroAnnotationSourceModuleTest` 两例），**新增回归 0**。
+- remaining risks: `cangjieVariadicElementTypeOrNull` 自身仍直接读 `coneTypeOrNull`；调用解析路径（`Candidate` 侧）在实际解析流程中候选声明必已推进到 TYPES，本轮无失败证据，故未改动该热路径。若将来出现「调用解析读到未定型形参」的用例，应让该函数复用同一入口，而不是在分析层再加一处阶段前置。
+
+## 2026-11-02：dangling file 的文件级诊断把声明内诊断又报一次（根结构元素按 PSI 物理性决定跳过集）
+
+- problem type: Analysis API / Diagnostics —— dangling file（`CjPsiFactory.contextual(...).createFile(...)` 造出的非物理副本）上，同一个 PSI、同一 text range 的诊断被报告两次。共 40 例：`analysis/analysis-api-standalone` 12 例 + `analysis/analysis-api-cfir` 28 例（4 个 fixture × 各 3/7 种 module 形态）。表现形如 `unresolvedReference.txt` 期望 1 条 `UNRESOLVED_REFERENCE`、实得 2 条完全相同的条目。
+- root cause: `FileStructure.createRootStructure`（`analysis/low-level-api-cfir/.../file/structure/FileStructure.kt`）用**PSI 是否物理**计算根结构元素的跳过大集：`physicalPsi != null && physicalPsi.isPhysical && physicalPsi.containingFile === cjFile`。dangling 副本整棵 PSI 树都不是物理 PSI，集合为空 → 根结构元素不跳过任何声明，`func main` 体内的未解析引用既被根收集一次、又被该声明自己的 `DeclarationStructureElement` 收集一次；`getAllDiagnosticsForFile` 只是把各结构单元的列表顺序拼接，没有跨结构单元去重。同一文件的两半对同一契约的判据不一致：`getAllStructureElements()` 用 `hasSemanticStructure`（与物理性无关，无快照时恒 true）。回归来源为提交 `d2e0e928f`（把「根无条件忽略 `cfirFile.declarations`」改成按物理性过滤，以支持宏替换输出）。
+- official Cangjie evidence: 本族不是语言语义问题——官方 `cjc 1.0.5` 对未声明标识符只报一条 `sema_undeclared_identifier`，不存在「报两条」的语义可能；因此判据只能取自框架契约。Kotlin 对应物：`external/kotlin/analysis/low-level-api-fir/.../file/structure/FileStructure.kt:193-197` 的 `createRootStructure()` 无任何逐声明条件，`FileStructureElement.kt:506-507` 的 `FirFile.declarationsToIgnore = declarations.toSet()` 无条件忽略全部声明，`.../diagnostics/FileStructureElementDiagnosticRetriever.kt:145-161` 据此让根结构单元只拥有文件级（import/package 等）诊断；Kotlin 的 dangling 夹具本身不去重（`AbstractDanglingFileCollectDiagnosticsTest`），重复在结构上不可能发生。
+- Kotlin counterpart files consulted: 上述 `FileStructure.kt`、`FileStructureElement.kt`、`FileStructureElementDiagnosticRetriever.kt`；dangling 隔离在 Kotlin 属 module/session 层（`LLFirDanglingFileSession`），与诊断归属分层无关。
+- CFIR owner files changed:
+  - `analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/file/structure/FileStructure.kt`：`createRootStructure` 的跳过集改由新增的 `CfirDeclaration.sourceDeclarationIn(physicalFile, snapshot)` 决定，判据为「声明拥有一条属于本文件的**真实** PSI」（`realPsi`），不再要求 `isPhysical`；一对一宏替换输出仍按其唯一 carrier（`physicalSourceForDeclaration`）判定，一对多输出无 carrier 时继续归文件级拥有。
+  - `.../file/structure/FileStructureElement.kt`：`RootStructureElement` 构造参数 `declarationsWithPhysicalStructure` → `declarationsWithOwnStructure`，并把契约写进 KDoc（根只拥有文件级诊断；判据与 PSI 物理性无关）。
+- repair principle: 「根结构元素跳过哪些声明」与「哪些声明拿到自己的结构单元」改由**同一份** source→declaration 关系决定（与 `createDeclarationStructure` 用的同一映射与 `hasSemanticStructure` 口径一致），并把「有独立结构单元」的定义从「PSI 物理」纠正为「有本文件的真实 PSI」——于是 dangling/非物理副本与物理文件走同一判据，物理文件的行为逐字不变（物理文件里的真实 PSI 必然是物理 PSI，fake source 的 `realPsi` 为 null 仍不会被跳过）。收集侧未加任何去重、特判或按文件名/模块形态分支。
+- fixtures covered: `unresolvedReference.cj`、`unresolvedReturnType.cj`、`danglingUnresolvedReference.cj`、`danglingUnresolvedReferencePreferSelf.cj`（`analysis/analysis-api/testData/components/diagnosticProvider/collectDiagnostics/`）
+  - `analysis/analysis-api-standalone`：`CfirStandaloneNormalAnalysis{Source,LibraryBinary,CodeFragment}ModuleDanglingFileCollectDiagnosticsTestGenerated` × 4 方法（12）
+  - `analysis/analysis-api-cfir`：`CfirIde{Normal/Dependent}*ModuleDanglingFileCollectDiagnosticsTestGenerated` × 4 方法（28）
+  - 未修改任何 fixture 或期望。同目录其余 fixture（`multipleDiagnostics`、`unresolvedImport`、`interfaceMember`、`interfaceSupertype`、`topLevelInterface`、`sameProjectLowercaseMacroImport`）在修复前后均通过——import 级诊断不属于任何 `CjDeclaration`，本来就只由文件结构单元拥有，与该缺陷无关。
+- verification command(s) and outcome:
+  - `gradlew.bat :analysis:analysis-api-standalone:test --rerun-tasks` → **720 tests / 0 failed / 0 skipped**（修复前 15 failed，其中本族 12）。
+  - `gradlew.bat :analysis:analysis-api-cfir:test --continue` → 1678 / 2 failed（修复前 37，其中本族 28）；剩余 2 例为本族之外既有失败。
+  - `gradlew.bat :analysis:low-level-api-cfir:test` 与 `:cfir:analysis-tests:test` 结果见上一条目：均为基线集合，**新增回归 0**；`:cfir:analysis-tests:test` 全量 9259 tests / 3 failed 的失败集合与修复前逐条相同。
+- remaining risks / probes: 同族另一处判据 `CfirDeclaration.hasIndependentPhysicalStructure`（class/extend 成员的归属，`FileStructureElement.kt:257-266`）同样带 `isPhysical` 项，故做了一次探针：把 `interfaceMember.cj` 临时改为「class + 成员体内未声明调用」，**dangling 与物理两条路径都只报 1 条**（探针后 fixture 已原样还原，`git status` 对该目录无改动），说明 class 成员在 dangling 副本里并未获得独立结构单元，两半判据在该粒度上并不冲突，因此本轮**未**同步修改该项——避免无失败证据地改动 class 成员的诊断归属。若将来出现「dangling 副本中 class 成员诊断重复」的用例，应先确认该成员是否真的拿到了独立结构单元，再决定是否放开该项。
+
+## 2026-11-02：`analysis/analysis-api-standalone` 修复后的剩余失败（本轮范围外）
+
+- 本轮目标模块 `:analysis:analysis-api-standalone:test` 全绿（720 / 0 failed / 0 skipped），全仓报告里该模块的 15 个失败全部关闭。
+- 同源修复顺带关闭了 `analysis/analysis-api-cfir` 的 35 例（28 dangling + 7 vararg），该模块从 37 failed 降到 2 failed；剩余 2 例当时未触及，已由下面的 2026-11-02 两条独立条目修复。
+- 全仓报告其余失败族（raw CFIR golden 48 例、宏语义展开 13 例、cjc 对照单点回归、`analysis/low-level-api-cfir` 的 CJMP/ContextCollector 3 例等）本轮均未触及，仍待各自独立修复。
+
+## 2026-11-02：未导入包前缀写进类型位置时诊断身份与官方不对齐（`CANNOT_REF_TO_PKG_NAME` → `UNDECLARED_TYPE_NAME`）
+
+- problem type: Diagnostics / 类型解析 —— 源码类型位置写「未导入的包前缀 + 类型」（如 `completion.provider.ProviderType`、`std.net.SockAddr`）时，CFIR 报 `CANNOT_REF_TO_PKG_NAME` 且范围覆盖整条类型引用；该位置按官方只应报 `UNDECLARED_TYPE_NAME`（首个未绑定段）。1 例：`analysis/analysis-api-cfir` 的 `AnalysisApiCfirComponentExecutionTest.packageQualifierTypeResolution`。
+- root cause: `CfirTypeResolverImpl.resolveQualifiedClassLike`（`cfir/resolve/.../CfirTypeResolver.kt`）在首段既不是已绑定包限定名、也没有显式 simple import 绑定（`hasExplicitSimpleImportBinding`）时，走提交 `32c61ba99` 引入的「裸限定名回退」：只要 package namespace 能定位到 classifier，就把 `ConeCannotRefToPackageNameError(packageFqName)` 挂在**已成功解析**的类型上。该诊断映射到官方 `sema_cannot_ref_to_pkg_name`，而官方只在**表达式位置独立引用包名**时发出它，类型位置报的是 `sema_undeclared_type_name`。
+- official Cangjie evidence（`cjc 1.0.5`，`--diagnostic-format json`，两包工程：`completion.provider` 编译为 `.cjo` 后由 `completion.consumer` 以 `--import-path` 引用）：
+  - 夹具同形源码 `func invalidUnimportedType(value: completion.provider.ProviderType): Unit {}`（文件仅 `import completion.provider`）→ 官方报 3 条 `sema_undeclared_type_name`（`completion` / `provider` / `ProviderType`），**没有任何** `sema_cannot_ref_to_pkg_name`。
+  - `func f(x: collection)`（已导入的包名当类型）→ `sema_not_a_type`（"'collection' is not a type"）。
+  - `main() { let y = collection }`（表达式位置独立引用包名）→ `sema_cannot_ref_to_pkg_name`。
+  - 官方实现：`external/cangjie_compiler/src/Sema/TypeCheckReference.cpp:344-352`（targets 为空 → `sema_undeclared_identifier`；唯一 target 是 `PACKAGE_DECL` 且 `re.isAlone` → `sema_cannot_ref_to_pkg_name`），诊断定义 `include/cangjie/Basic/DiagRefactor/DiagnosticSema.def:83`。即「包名不能独立引用」是表达式位置的规则，类型位置没有它。
+- Kotlin counterpart files consulted: 未采用 Kotlin 语义——Kotlin 允许类型位置写全限定名（`kotlin.collections.List` 无需 import），与官方仓颉相反，因此这条不能按 Kotlin 对齐。仓颉侧的诊断承载沿用本仓既有通道：`ConeUnresolvedTypeQualifierError` → `UNDECLARED_TYPE_NAME`（`coneDiagnosticToCfirDiagnostic.kt` 取 `qualifiers.last()` 的范围与名字），也就是无回退分支本来就会产出的那条诊断。
+- CFIR owner files changed: `cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/CfirTypeResolver.kt`——`resolveQualifiedClassLikeInNamespace` 的 `reportCannotRefToPackageName` 参数改为 `reportUnresolvedFirstSegment`，成功解析时挂的诊断从 `ConeCannotRefToPackageNameError(packageFqName)` 改为 `ConeUnresolvedTypeQualifierError(typeRef.qualifier.take(1))`；删除随之失效的 import。
+- repair principle: 改的是「这条诊断该由谁、以什么身份发出」这一所有者问题，而不是给某个 fixture 加分支。官方两个发射点在 CFIR 里各自对应唯一所有者：类型位置（本函数）报 undeclared 首段；表达式/调用位置继续由 `CfirCallResolver` 发 `ConeCannotRefToPackageNameError`（未改动）。namespace 解析结果仍然保留，因此 IDE 对「忘了写 import 的全限定类型」的导航恢复能力不变；变化只限诊断身份与范围（首段完整 token，符合本仓 Diagnostic Range Policy）。
+- fixtures covered: `analysis/analysis-api-cfir/testData/components/packageQualifierTypeResolution.cj`（1 例）。同步修正的两处旧期望都由上面的 cjc 探针证伪，属 fixture correction：
+  - `cfir/analysis-tests/testData/diagnostics2/imports/rawQualifiedType.cj`：3 处 marker 由 `<!CANNOT_REF_TO_PKG_NAME!>std.net.CfirRawQualifiedSockAddr<!>` 改为 `<!UNDECLARED_TYPE_NAME!>std<!>.net.CfirRawQualifiedSockAddr`（诊断落在首段 `std`）。仓颉源码语法未改动。
+  - `cfir/resolve/test/.../CfirRawQualifiedTypeResolutionTest.kt`：2 处 `assertInstanceOf(ConeCannotRefToPackageNameError::class.java, …)` 改为 `ConeUnresolvedTypeQualifierError`，用例名/类 KDoc 改为官方口径；类型仍应解析成 `ConeClassLikeType` 的断言保留（IDE 恢复语义不变）。
+- verification command(s) and outcome:
+  - `gradlew.bat :analysis:analysis-api-cfir:cleanTest :analysis:analysis-api-cfir:test` → **1678 tests / 0 failed**（修复前 1678 / 2，这两条即全部剩余失败）。
+  - `gradlew.bat :cfir:resolve:cleanTest :cfir:resolve:test` → 153 / 1 failed（`CfirMapArgumentsTest$Defaults.number of default arguments is counted`，与基线同一条）。
+  - `gradlew.bat :cfir:analysis-tests:test`（全量）→ **9259 tests / 3 failed / 459 skipped**，失败集合与基线逐条相同（`CfirAnalysisMacroPsiTestGenerated$Llt$Annotation$Globals.testAllkinds`、`CfirMacroAnnotationSourceModuleTest` ×2），**新增回归 0**；定向 `*Diagnostics2*` 三个生成类 1143 tests / 0 failed，含 `testRawQualifiedType` 双路径。
+  - `gradlew.bat :analysis:analysis-api-standalone:cleanTest :analysis:analysis-api-standalone:test` → 720 / 0；`:analysis:low-level-api-cfir:test` → 183 / 3（基线同 3 条）；`:cfir:providers:test` → 43 / 1（基线同 1 条）。
+- remaining risks: 「裸限定名回退」本身仍是官方没有的解析行为（官方对同一段源码不解析出类型），保留它是本轮之前的既定 IDE 恢复决策，不在本条目改动范围；若将来要求完全对齐官方，应连同「已解析类型 + undeclared 诊断」这一组合一起去掉，并同步 `CfirRawQualifiedTypeResolutionTest` 的类型断言。首段诊断只覆盖第一段，官方对后续段也会各报一条 undeclared，本仓按既有 pivot 单诊断约定不级联。
+
+## 2026-11-02：非物理 PSI 编辑后引用符号缓存仍返回旧结果（包导航拿到改名前的包）
+
+- problem type: Analysis API / Reference resolve 缓存 —— 在 `CjFile.copy()`（dangling 副本、非物理 PSI）上把 import 路径末段 `lib` 改名为 `changed` 后，再解析同一引用仍得到 `shared.lib` 的包符号。1 例：`analysis/analysis-api-cfir` 的 `AnalysisApiImportPackageNavigationTest.organizationDirectoriesAndRename`。
+- root cause: `CaCfirReference.resolveToSymbols` 以 `CaCfirReference` **对象身份**为 key 缓存符号集合，失效只来自 `CaCfirInternalCacheStorage.softCachedValueWithPsiKey` 注册的 `LLCfirInBlockModificationTracker` 与宏语义快照 tracker。而该引用对象本身由 `CangJieReferenceProvidersServiceImpl.getReferences` 的 `CachedValuesManager.getCachedValue(psiElement)` 产生，依赖 `PsiModificationTracker.MODIFICATION_COUNT`——这个计数**只统计物理 PSI 的改动**。探针实测（`AnalysisApiImportPackageNavigationTest` 内临时输出）：在非物理副本上执行 `handleElementRename("changed")` 前后 `MODIFICATION_COUNT` 都是 0，`element.references` 返回**同一个**引用对象（`refsBefore == refsAfter`），于是 `resolveToSymbols` 命中改名前的条目并返回 `shared.lib`；同一时刻 `PsiFile.modificationStamp` 从 1 变为 3（改名的 PSI 文本确实已是 `shared.changed`）。
+- official Cangjie evidence: 本条不是语言语义问题（`cjc` 不做 IDE 缓存），判据只能取框架契约。Kotlin counterpart：Kotlin Analysis API 的引用/符号缓存同样以 PSI 元素 + `PsiModificationTracker.MODIFICATION_COUNT` 为失效依据（物理 PSI 假设），dangling file 在 Kotlin 侧由独立 module/session 隔离、编辑经原件同步；本仓的 dangling 副本可以就地编辑，因此必须在缓存条目层补一条「结果对应哪段源码」的校验。未引入任何 Kotlin 语言语义。
+- CFIR owner files changed:
+  - `analysis/analysis-api-cfir/src/.../references/CaCfirReference.kt`：`resolveToSymbols` 命中前校验条目记录的文件修改戳，不一致则丢弃旧条目再重算；新增 `CaResolvedSymbolsCacheEntry`（戳 + 符号集合）与 `CaCfirReference.fileModificationStamp`。
+  - `analysis/analysis-api-cfir/src/.../components/CaCfirInternalCacheStorage.kt`：`resolveToSymbolsCache` 值类型由 `Collection<CaSymbol>` 改为 `CaResolvedSymbolsCacheEntry`，KDoc 说明为何条目自带修改戳。
+- repair principle: 缓存条目自己声明它所对应的源码状态，命中前用 `PsiFile.modificationStamp` 校验——它对物理文件与非物理文件（含没有 `VirtualFile` 的 PSI 副本）都会随编辑推进。失效策略只丢弃过期条目，不关闭缓存，因此非物理文件的解析缓存仍然有效（不像「非物理文件一律不缓存」那样牺牲代码片段/补全性能），物理文件行为不变（物理改动由 `MODIFICATION_COUNT` 产出新引用对象，仍是新 key）。规则不含任何文件名、测试名或模块形态特判；`selectedFqNameFor` 等实际解析逻辑未改动。
+- fixtures covered: `analysis/analysis-api-cfir/testData/importPackageNavigation/organizationDirectoriesAndRename.cj`（1 例）。该用例覆盖：两份 organization 限定导入（`org1::shared.lib` / `org2::shared.lib`）的祖先段与末段解析、副本改名后重解析为 `shared.changed`（org1、目录 `renamed`）、以及改名后原件与未被改名的第二份导入仍解析为 `shared.lib`。未修改任何 fixture 或期望。
+- verification command(s) and outcome:
+  - `gradlew.bat :analysis:analysis-api-cfir:cleanTest :analysis:analysis-api-cfir:test` → **1678 / 0 failed**（修复前该用例失败）。
+  - `gradlew.bat :analysis:analysis-api-standalone:cleanTest :analysis:analysis-api-standalone:test` → 720 / 0（standalone 复用同一缓存与引用实现，确认无回归）。
+  - `gradlew.bat :analysis:low-level-api-cfir:test` → 183 / 3（基线同 3 条）；`:cfir:resolve:test` 153 / 1、`:cfir:providers:test` 43 / 1（均为基线）；`:cfir:analysis-tests:test` 全量 9259 / 3，失败集合与基线逐条相同，**新增回归 0**。
+- remaining risks: `resolveCallCache` / `resolveSymbolCache` 同样以 `CjElement` 为 key、且只依赖物理修改跟踪器，对非物理 PSI 的就地编辑可能有同类陈旧结果；本轮没有失败证据，故未一并加校验（它们各自有独立的调用点与失效语义，改动应在出现用例时按其所有者单独做）。另外 `PsiFile.modificationStamp` 对物理文件取的是 `VirtualFile` 戳（保存/刷新才推进），物理文件的正确性仍依赖 `MODIFICATION_COUNT` 产出新引用对象这条既有链路。
+
+## 2026-11-02：主构造器被成员注解包装后容器查不到它（类体直系子节点查找）
+
+- problem type: PSI 容器成员可见性 / 声明宏包装 —— 类型名构造器（主构造器）上带成员注解时，PSI 上它被包装成 `CjMacroExpression`；容器只按直系子节点找构造器，于是找不到主构造器，`addPrimaryConstructorParameterProperties` 拿不到形参列表，主构造 `let c` 参数对应的成员属性没有生成，次要 `init` 里的 `c = 8` 解析成 `UNRESOLVED_REFERENCE`。1 例：`CfirAnalysisMacroPsiTestGenerated$Llt$Annotation$Globals.testAllkinds`（**只有 PSI 路径失败**，LightTree 路径 `CfirAnalysisMacroTestGenerated` 通过 —— 两个 raw 入口分歧）。
+- root cause: `CjAbstractClassBody.primaryConstructors` / `secondaryConstructors` 用 `getStubOrPsiChildrenAsList(PRIMARY_CONSTRUCTOR/SECONDARY_CONSTRUCTOR)` 只看直系子节点；`CjTypeStatement.primaryConstructor` 用 `body?.getStubOrPsiChild(PRIMARY_CONSTRUCTOR)`。成员位置的 `@APILevel[11]` 按本仓既有语法分派被解析成 `CjMacroExpression`（同一现象已在 2026-09-30 条目里针对 `CjFile.declarations` 修过一次），构造器因此不是直系子节点，两处都取不到。探针实测（`struct S`）：`directPrimary=null`、`bodyChildren=[CjMacroExpression…]`、深层 `bodyCtors=[CjSecondaryConstructor/S, CjPrimaryConstructor/S]`、`bodyNamedFns=[]` —— 原先的回退只找 `CjNamedFunction`，故同样落空。
+- official Cangjie evidence: `cjc 1.0.5` 对去掉注解的等价源码编译 **exit 0**，只报 `chir_dce_unused_variable`（`v`、`s` 未使用）警告，**无任何 error** —— 次要构造器里给主构造 `let c` 成员赋值在官方语义下合法，golden 的“无诊断”期望正确，缺的是 CFIR/PSI 侧的成员归属。
+- Kotlin counterpart files consulted: Kotlin 的“主构造 `val/var` 参数转 property”发生在 FIR 构建期，PSI 侧 `KtPrimaryConstructor` 不会被注解包装成表达式节点，因此没有对位缺陷；本修复不引入 Kotlin 语义，只复用本仓既有的解包规则 `CjMacroExpression.unwrappedDeclaration`（`CjFile.declarations`、`CjEnumBody.constructor` 已用同一条规则）。
+- CFIR owner files changed:
+  - `psi/src/org/cangnova/cangjie/psi/CjAbstractClassBody.kt`：新增 `declarationChildren`（stub 优先 `greenStub.childrenStubs`，无 stub 才回退 `children`，与 `CjFile.declarations` 同法）；`primaryConstructors` / `secondaryConstructors` 改为经统一解包助手取；新增私有扩展 `PsiElement.unwrappedDeclarationOrSelf`。
+  - `psi/src/org/cangnova/cangjie/psi/CjTypeStatement.kt`：`primaryConstructor` 改由 `body?.primaryConstructors?.firstOrNull()` 提供。
+- repair principle: 修在“容器如何暴露自己的构造器”这一所有者上，判据与文件级/枚举体完全一致——**注解/宏包装不改变被包装声明对容器的归属**。解包只调用既有 `CjMacroExpression.unwrappedDeclaration`，并保持 stub-first（不引入 `PsiTreeUtil` 对 stub 元素做 AST 兜底，避免库/反编译 PSI 被迫建 AST 而触发 reconcile 断言）。修复后 PSI 与 LightTree 两个 raw 入口重新一致。
+- fixtures covered: `cfir/analysis-tests/testData/macro/llt/annotation/globals/allkinds.cj`（PSI 路径为目标用例；LightTree 路径原已通过，作为正对照）。未修改任何 fixture 或期望。
+- verification command(s) and outcome:
+  - 定向 `--tests "*CfirAnalysisMacroTestGenerated*testAllkinds*" --tests "*CfirAnalysisMacroPsiTestGenerated*testAllkinds*" --tests "*CfirMacroAnnotationSourceModuleTest*"` → BUILD SUCCESSFUL。
+  - `:psi:cleanTest :psi:test` → 281 / 1 failed（既有 `ForeignAndAnnotationParsingTest.platformAnnotationSurfaceIsRetainedWithoutBuiltinKindFacade`）。
+  - `:cfir:raw-cfir:psi2cfir:test --no-build-cache` → 3231 / 0；`:cfir:raw-cfir:light-tree2cfir:test` → 1121 / 0。
+  - `:analysis:analysis-api-cfir:test` 1678 / 0；`:analysis:analysis-api-standalone:test` 720 / 0；`:analysis:low-level-api-cfir:test` 183 / 3（基线同 3 条）。
+  - `:cfir:analysis-tests:test` 全量 → **9260 tests / 0 failed / 460 skipped**（修复前 9259 / 3 / 459）。
+- regression attribution: 期间一次全量出现 520 个 `NoClassDefFoundError: AbstractCfirLightTreeMacroDiagnosticsTest$configure$1$1`，核对类文件实际存在，判定为 `:cfir:analysis-tests:testFixturesJar` 与测试运行时 classpath 不一致的构建产物污染；`:cfir:analysis-tests:clean` 后同命令 0 failed，与源码语义无关（未据此改任何代码）。
+- remaining risks: `CjAbstractClassBody.declarations` / `properties` / `variables` 仍按直系子节点取（`stub?.getChildrenByType(...)` / `getStubOrPsiChildrenAsList`），同类包装下的成员（例如 `@Anno let x`）不会出现在这些视图里；本轮没有失败证据，且放开会波及 stub 反序列化（`StubBasedClassDeserialization`）与 IDE 成员枚举，故未一并改动——若后续出现“带注解成员在分析/补全里丢失”的用例，应按同一条解包规则修这里。
+
+## 2026-11-02：宏片段 API 改为返回列表后测试仍按单声明强转（ClassCastException）
+
+- problem type: 测试契约漂移 —— `CfirMacroAnnotationSourceModuleTest` 的两个用例把 `buildDeclarationFragmentInPackage(...)` 的返回值直接 `as CfirNamedFunction`，而该 API 已返回 `List<CfirDeclaration>`，于是抛 `ClassCastException`（PSI 路径 `java.util.ArrayList`、LightTree 路径 `kotlin.collections.builders.ListBuilder`）。2 例。
+- root cause: `PsiRawCfirBuilder.buildDeclarationFragmentInPackage`（`cfir/raw-cfir/psi2cfir/.../PsiRawCfirBuilder.kt:284`）与 `LightTreeRawCfirDeclarationBuilder.buildDeclarationFragmentInPackage`（`cfir/raw-cfir/light-tree2cfir/.../LightTreeRawCfirDeclarationBuilder.kt:290`）都返回 `List<CfirDeclaration>`，生产调用方 `compiler/frontend/.../MacroFragmentParserConfiguration.kt:133,194` 也按列表消费（`MacroDeclarationFragment(list)`）；测试未随该契约变更更新。
+- official Cangjie evidence: 本条不涉及语言语义，属本仓 API 契约；判定依据是生产调用方已按“一对多宏输出”的列表契约使用该 API，单声明假设已不成立。
+- Kotlin counterpart files consulted: 无（纯本仓测试契约问题）。
+- CFIR owner files changed: `cfir/analysis-tests/tests/org/cangnova/cangjie/cfir/analysis/tests/CfirMacroAnnotationSourceModuleTest.kt`（两处 `checkNotNull(...) as CfirNamedFunction` → `checkNotNull(...).single() as CfirNamedFunction`）。未改动任何生产代码。
+- repair principle: 测试按当前 API 契约取片段内唯一声明，并用 `.single()` 显式表达“该片段恰好产出一个声明”这一前提——若片段产出多于一个声明会直接失败，而不是静默取第一个而漏掉契约变化。
+- fixtures covered: `psiMacroTokensKeepTheirSourceModuleThroughTypes` 与 `lightTreeMacroTokensKeepTheirSourceModuleThroughTypes`（同一契约的两个入口）。
+- verification command(s) and outcome: 定向 `--tests "*CfirMacroAnnotationSourceModuleTest*"` → BUILD SUCCESSFUL（5 个方法全过）；全量 `:cfir:analysis-tests:test` → 9260 / 0 failed / 460 skipped。
+- remaining risks: 该断言只覆盖片段恰好一个声明的场景；若将来出现“宏片段产出多个声明”的用例，需要新增对多声明形状的显式断言，而不是依赖 `.single()`。
+
+## 2026-11-02：平台注解的语言 builtin 身份与官方 parser 目录对齐（PSI 断言校正）
+
+- problem type: PSI 注解身份断言 —— `ForeignAndAnnotationParsingTest.platformAnnotationSurfaceIsRetainedWithoutBuiltinKindFacade` 断言两处 spelling 的 `isBuiltInAnnotation` 全为 false，但实现（common registry）对**未限定** spelling 返回 true。1 例（`:psi:test` 该模块唯一失败）。
+- root cause: `CjAnnotation.isBuiltInAnnotation` → `BuiltInAnnotationRegistry.resolveLanguageBuiltIn(...)`，后者以官方 `NAME_TO_ANNO_KIND` 目录（含 `JavaMirror`/`JavaImpl`/`ObjCMirror`/…）为准，且只对 `standardLibraryOnly` 名称施加 `moduleName == "std"` 限制；限定形式在 `CjAnnotation.sourceLanguageBuiltInDescriptor()` 里因 `typeElement.qualifier != null` 返回 null。该断言写于 2026-09-18（`a06a2524f`），早于 2026-09-20（`b58b38161`）把「目录必须与官方 `NAME_TO_ANNO_KIND` 一致」写成 init 校验，此后未同步。
+- official Cangjie evidence:
+  - `external/cangjie_compiler/include/cangjie/Parse/Parser.h` 的 `NAME_TO_ANNO_KIND` 含 `{"JavaMirror", AST::AnnotationKind::JAVA_MIRROR}`、`JavaImpl`、`ObjCMirror` 等平台互操作名。
+  - `external/cangjie_compiler/src/Parse/ParseAnnotations.cpp` 的 `IsBuiltinAnnotation(moduleName, identifier)`：只有 `STD_ONLY_ANNO` 中的名称要求 `moduleName == "std"`，其余命中目录即为 builtin；`ParserImpl::SeeingBuiltinAnnotation()` 只取 `@` 后的**第一个标识符**。
+  - `cjc 1.0.5 --diagnostic-format json` 探针（与夹具同形的两个 spelling）：未限定 `@JavaMirror["java.lang.Object"]` → **零诊断**（被识别为 builtin 注解名）；限定 `@interoplib.interop.JavaMirror[...]` → `macro_undefined_pkg_name`（首个标识符 `interoplib` 不在目录中，因此不走 builtin 路径）。
+- Kotlin counterpart files consulted: 无（纯本仓 PSI 身份断言，不涉及语言语义移植）。
+- CFIR owner files changed: `psi/test/org/cangnova/cangjie/psi/ForeignAndAnnotationParsingTest.kt` —— 断言由 `assertTrue(entries.all { !it.isBuiltInAnnotation })` 改为逐项 `listOf(true, false)`，并把官方判据写进该用例 KDoc。未改动任何生产代码；方法名保留（两份 2026-09 的验证文档引用了该名称）。
+- repair principle: 断言的判据从「平台注解一律非 builtin」这一旧结论，改为官方 parser 的两个事实（目录命中 + 只看 `@` 后首个标识符）；同时该用例原本要锁定的 parser 表面（两种 spelling 都保留普通 annotation 结构、不降级为宏、文本原样）保持不变。属 fixture correction：官方证据证明旧期望错误，而不是迁就当前实现。
+- fixtures covered: 该用例内的两处 spelling（未限定 `@JavaMirror` / 限定 `@interoplib.interop.JavaMirror`）。
+- verification command(s) and outcome: `gradlew.bat :psi:cleanTest :psi:test` → **281 tests / 0 failed**（修复前 281 / 1）；`:psi:test` 模块由此全绿。
+- remaining risks: `expectedLanguageBuiltIns`（`common/src/org/cangnova/cangjie/annotations/CangjieAnnotationModel.kt`）与官方目录仍不完全一致——官方 `NAME_TO_ANNO_KIND` 还含 `Java`、`ObjC`、`NonProduct`，本仓把 `Java`/`ObjC` 留在平台身份域、把 `NonProduct` 归入 `packageDirectives`。因此同文件 `builtInArgumentFormsPreserveTheirAnnotationNodes` 对 `@Java` 断言的 `isBuiltInAnnotation == false` 与官方目录并不一致（该用例当前通过，是因为 `findLanguageBuiltIn("Java") == null`）。本轮未改动该模型：它牵涉平台身份域划分与 raw builder/checker/序列化多消费者，需单独决策后再收敛；届时应把这条断言与 registry 一并修正。

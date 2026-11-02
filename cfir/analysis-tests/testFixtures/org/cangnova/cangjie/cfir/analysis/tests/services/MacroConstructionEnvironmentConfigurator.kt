@@ -91,6 +91,7 @@ class MacroConstructionEnvironmentConfigurator(testServices: TestServices) : Env
             configuration.macroExecutorFactory = MacroExecutorFactory {
                 LspMacroServerMacroExecutor(
                     macroServerPath = executable,
+                    sdkHome = configuration.macroSdkHome,
                     processEnvironment = configuration.macroCompilerEnvironment,
                 )
             }

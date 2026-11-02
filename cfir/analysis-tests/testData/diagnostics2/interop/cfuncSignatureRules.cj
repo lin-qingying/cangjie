@@ -344,6 +344,16 @@ struct CSRLegalPoint {
 
 foreign func csLegalCStruct(p: CSRLegalPoint): Unit
 
+// ── 形态 21：`CFunc<(x!: Int64) -> Unit>` —— 类型形参表在 parse 阶段就坏，实参是官方 `InvalidType`
+// 源码依据：ParseType.cpp 的 ParseTypeParameterInTupleType 只接受 `name:`，`!` 不被消费，报
+// parse_expected_right_delimiter 并返回 InvalidType；本文件"已删除的形态"第 7 条已记录该形状在官方
+// 只产生 parse 诊断（探针 cs25）。
+// 本仓库口径：parse 错误由 PSI 层上报，CFIR 不得对"实参本身是坏类型"的 CFunc 应用再报 CFUNC_TYPE——
+// 否则 IDE 会额外出现一条 "cfunc type must be a function type"，即错误类型冒充了分类器身份。
+// 本段期望**零 CFIR 诊断**（形态 16/17 的 `CFunc<CFunc<…>>` / `CFunc<Int64>` 仍照常报，是合法负例）。
+// FILE: cfuncBrokenTypeArgumentIsNotRediagnosed.cj
+foreign func csBrokenTypeArgument(cb: CFunc<(x!: Int64) -> Unit>): Unit
+
 // 已删除的形态（取证 kind 与 Range 见下；1.0.5 与 1.1.3 两版一致，除注明外）：
 //   1. 具名形参被调用（`q06(value: 1)` / `q07(1)`）：官方两条**调用**诊断——sema_unknown_named_argument
 //      （"unknown named argument prefix '%s:'"，锚实参名）与 sema_need_named_argument（锚实参），属"实参名"族，

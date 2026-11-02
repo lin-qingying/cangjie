@@ -10,7 +10,7 @@ package raw.qualified
 public struct Wrapper<T> {}
 
 public interface SockAddrTypeUses {
-    func returnSockAddr(): <!CANNOT_REF_TO_PKG_NAME!>std.net.CfirRawQualifiedSockAddr<!>
-    func acceptSockAddr(value: <!CANNOT_REF_TO_PKG_NAME!>std.net.CfirRawQualifiedSockAddr<!>): Unit
-    func nestedSockAddr(): Wrapper<<!CANNOT_REF_TO_PKG_NAME!>std.net.CfirRawQualifiedSockAddr<!>>
+    func returnSockAddr(): <!UNDECLARED_TYPE_NAME!>std<!>.net.CfirRawQualifiedSockAddr
+    func acceptSockAddr(value: <!UNDECLARED_TYPE_NAME!>std<!>.net.CfirRawQualifiedSockAddr): Unit
+    func nestedSockAddr(): Wrapper<<!UNDECLARED_TYPE_NAME!>std<!>.net.CfirRawQualifiedSockAddr>
 }

@@ -113,7 +113,7 @@ class CfirMacroAnnotationSourceModuleTest : AbstractCfirAnalysisTestCase() {
                 )
                 generated = checkNotNull(builder.buildDeclarationFragmentInPackage(
                     generatedTree.root, context.packageFqName,
-                )) as CfirNamedFunction
+                )).single() as CfirNamedFunction
                 generatedSurfaces = builder.consumeCollectedMacroSurfaces()
             } else {
                 val sourceBuilder = PsiRawCfirBuilder(session)
@@ -124,7 +124,7 @@ class CfirMacroAnnotationSourceModuleTest : AbstractCfirAnalysisTestCase() {
                 val builder = PsiRawCfirBuilder(session)
                 generated = checkNotNull(builder.buildDeclarationFragmentInPackage(
                     generatedPsi, context.packageFqName,
-                )) as CfirNamedFunction
+                )).single() as CfirNamedFunction
                 generatedSurfaces = builder.consumeCollectedMacroSurfaces()
             }
 
