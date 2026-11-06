@@ -18,6 +18,21 @@ class CangJieQuickFixRegistrar : CangJieQuickFixRegistrar() {
      */
     override val list: CangJieQuickFixesList = CangJieQuickFixesListBuilder.registerQuickFixes {
         registerFactory(
+            CaCfirDiagnostic.UnresolvedImport::class,
+            ImportQuickFixFactories.unresolvedImport,
+        )
+        registerFactory(
+            CaCfirDiagnostic.UseExprWithoutImport::class,
+            ImportQuickFixFactories.useExprWithoutImport,
+        )
+    }
+
+    /**
+     * 延迟 quick-fix 注册表：成员生成类重修复需全量 resolve 成员候选，
+     * 迁到 lazy 通道后仅在用户点开 Alt+Enter 时才计算，避免拖慢整份高亮。
+     */
+    override val lazyList: CangJieQuickFixesList = CangJieQuickFixesListBuilder.registerQuickFixes {
+        registerFactory(
             CaCfirDiagnostic.AbstractMemberNotImplemented::class,
             MemberNotImplementedQuickfixFactories.abstractMemberNotImplemented,
         )
