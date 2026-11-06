@@ -50,7 +50,7 @@ abstract class CangJiePsiElementFinderBase : PossiblyDumbAware {
     companion object {
 
         val EP =
-            ProjectExtensionPointName<CangJiePsiElementFinderBase>("cn.cangnova.cangjie.psi.elementFinder")
+            ProjectExtensionPointName<CangJiePsiElementFinderBase>("org.cangnova.cangjie.psi.elementFinder")
 
     }
 }

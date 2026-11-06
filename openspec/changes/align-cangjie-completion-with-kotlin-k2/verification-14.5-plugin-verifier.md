@@ -32,7 +32,7 @@
 ## 2. 结论（verifier 原文）
 
 ```
-Plugin cn.cangnova.cangjie:2.1.4 against IU-253.29346.50: Compatible.
+Plugin org.cangnova.cangjie:2.1.4 against IU-253.29346.50: Compatible.
 14 usages of scheduled for removal API and 168 usages of deprecated API.
 265 usages of experimental API. 104 usages of internal API.
 2 non-extendable API usage violations. 3 plugin configuration defects
