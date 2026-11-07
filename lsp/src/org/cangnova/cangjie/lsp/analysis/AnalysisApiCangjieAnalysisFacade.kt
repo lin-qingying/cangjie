@@ -831,33 +831,15 @@ class AnalysisApiCangjieAnalysisFacade(
     }
 
     /**
-     * 计算 code action（P3 接线）。
+     * 计算 code action。
      *
-     * 与 IDE 共用同一批 quick-fix factory：请求范围命中的诊断逐条送
-     * `CangJieQuickFixService`（catching 版本），产出以 quick-fix 类型的
-     * [CodeAction] 呈现；实际写入由客户端 apply-command 回到 IDE 语义执行。
+     * 当前 Analysis API facade 尚未提供 code action，返回空列表。
      */
     override fun codeActions(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
         params: CodeActionParams,
-    ): List<Either<Command, CodeAction>> {
-        val range = params.range ?: return emptyList()
-        return semanticSupport.analyzeSnapshot(document) { snapshot ->
-            val startOffset = document.analysisOffsetAt(range.start)
-            val endOffset = document.analysisOffsetAt(range.end)
-            val diagnostics = snapshot.psiFile
-                .collectDiagnostics(CaDiagnosticCheckerFilter.ONLY_COMMON_CHECKERS)
-                .toList()
-            AnalysisApiCodeActions.toCodeActions(
-                session = this,
-                document = document,
-                requestStartOffset = startOffset,
-                requestEndOffset = maxOf(startOffset, endOffset),
-                diagnostics = diagnostics,
-            )
-        }
-    }
+    ): List<Either<Command, CodeAction>> = emptyList()
 
     /**
      * 计算整篇文档格式化编辑。
