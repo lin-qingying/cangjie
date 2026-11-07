@@ -37,8 +37,11 @@ class CangJieQuickFixesList @ForCangJieQuickFixesListBuilder constructor(
     fun CaSession.getQuickFixesWithCatchingFor(diagnostic: CaDiagnosticWithPsi<*>): Sequence<Result<IntentionAction>> {
         val factories = quickFixes[diagnostic.diagnosticClass] ?: return emptySequence()
 
+        // 同一诊断多 factory 时按声明优先级升序（值小的先产出），未声明的排后面；
+        // 优先级相同保持注册顺序，保证 UI 顺序可预期。
         return factories.asSequence()
             .map { @Suppress("UNCHECKED_CAST") (it as CangJieQuickFixFactory<CaDiagnosticWithPsi<*>>) }
+            .sortedWith(compareBy({ it.priority }, { factories.indexOf(it) }))
             .map { factory ->
                 with(factory) {
                     runCatching { createQuickFixes(diagnostic).map { it.asIntention() } }

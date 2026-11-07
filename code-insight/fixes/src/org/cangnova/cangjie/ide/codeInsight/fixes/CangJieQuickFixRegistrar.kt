@@ -46,6 +46,19 @@ class CangJieQuickFixRegistrar : CangJieQuickFixRegistrar() {
     }
 
     /**
+     * import-on-the-fly 注册表：AddImport 类修复同时可用作「修复即补 import」通道。
+     *
+     * 与 Kotlin K2 对齐——补 import 的 factory 同时出现在普通通道与
+     * import-on-the-fly 通道，后者由 IDE 高亮链在构建 HighlightInfo 时合并消费。
+     */
+    override val importOnTheFlyList: CangJieQuickFixesList = CangJieQuickFixesListBuilder.registerQuickFixes {
+        registerFactory(
+            CaCfirDiagnostic.UseExprWithoutImport::class,
+            ImportQuickFixFactories.useExprWithoutImport,
+        )
+    }
+
+    /**
      * 延迟 quick-fix 注册表：成员生成类重修复需全量 resolve 成员候选，
      * 迁到 lazy 通道后仅在用户点开 Alt+Enter 时才计算，避免拖慢整份高亮。
      *
