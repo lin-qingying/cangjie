@@ -33,6 +33,9 @@ dependencies {
     implementation(project(":code-insight:folding"))
     implementation(project(":code-insight:highlighting"))
     implementation(project(":code-insight:refactoring"))
+    // code action 与 IDE 共用同一批 quick-fix factory（P3 接线）。
+    implementation(project(":code-insight:api"))
+    implementation(project(":code-insight:fixes"))
     implementation(project(":compiler:config"))
     // LSP 的进程内宏展开：完整宏引擎只在 compiler:frontend；执行器在 macro:macro-process。
     implementation(project(":compiler:frontend"))
