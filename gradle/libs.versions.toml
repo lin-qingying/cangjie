@@ -4,7 +4,7 @@ kover = "0.9.1"
 shadow = "9.3.2"
 lsp4j = "1.0.0"
 # The version for foojay should be synced with the version in repo/gradle-settings-conventions/settings.gradle.kts
-gradle-toolchains-foojay-resolver = "0.9.0"
+gradle-toolchains-foojay-resolver = "1.0.0"
 guava = "33.4.0-jre"
 junit4 = "4.13.2"
 junit-jupiter = "5.10.2"

@@ -8,7 +8,7 @@ pluginManagement {
 
 plugins {
     // Should be synced with the version in gradle/libs.versions.toml
-    id("org.gradle.toolchains.foojay-resolver-convention") version "0.9.0"
+    id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
 }
 
 dependencyResolutionManagement {
