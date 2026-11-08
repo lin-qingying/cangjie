@@ -91,6 +91,9 @@ enum class CangJieInlayHintTarget {
 
     /** lambda 函数体末表达式的类型（即隐式返回值类型）。 */
     LAMBDA_RETURN_TYPE,
+
+    /** 多行链式调用中每个环节的结果类型。 */
+    CALL_CHAIN_TYPE,
 }
 
 /**
@@ -111,4 +114,6 @@ data class CangJieInlayHintOptions(
     val showRangeValues: Boolean = true,
     /** 是否显示 lambda 隐式返回值类型。 */
     val showLambdaReturns: Boolean = true,
+    /** 是否显示多行链式调用各环节的结果类型。 */
+    val showCallChainTypes: Boolean = true,
 )

@@ -40,6 +40,9 @@ object CangJieInlayHintCollector {
         if (options.showLambdaReturns) {
             hints += CjLambdaHintsCollector.collect(file, range, session)
         }
+        if (options.showCallChainTypes) {
+            hints += CjCallChainHintsCollector.collect(file, range, session)
+        }
         return hints.sortedBy { it.offset }
     }
 }

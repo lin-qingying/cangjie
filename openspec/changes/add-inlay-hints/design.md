@@ -462,3 +462,28 @@ P3 剩余的 `cangjie.lambdas.hints` 只落地了 `hints.lambda.return`，接收
 - IDE 侧 EP 新增 `providerId=cangjie.lambdas.hints`（`group=TYPES_GROUP`），
   逐项开关 `hints.lambda.return`；其余三个 provider 显式 `showLambdaReturns = false`
 
+## 16. P6 实施记录：链式调用类型提示（第十四轮，v15）
+
+P3 的最后一项，`cangjie.call.chains.hints`。
+
+- D52（定标）：只处理**多行链**（至少一个 `.` / `?.` 另起一行），且链长 ≥ 2；
+  单行链一眼能读完，逐环节加提示纯噪声。只标**调用环节**（`a.b()`），纯属性链
+  （`a.b.c`）不标——属性访问的类型通常已由声明侧提示覆盖。
+  每个换行的调用环节后标该环节的结果类型（`: List<Int64>`），`Unit` 结尾（`forEach`）不标。
+- D53（实现）：`CjCallChainHintsCollector` 先取链**根**（父节点不是限定表达式，或父节点接收者不是自己），
+  再沿 `receiverExpression` 由外到内拆链——链内部每个环节都会被 `collectDescendantsOfType` 收到，
+  不按根过滤会把同一条链反复处理。换行判定用 `operationTokenNode` 与接收者起始行的行号差，
+  需要 document，因此必须在有 `PsiDocumentManager` 的环境里跑（IDE 与 LSP 都满足）。
+  拆分顺序是「由外到内」，产出前按 offset 排序还原成源码顺序。
+- D54（golden 坑）：链式调用 golden 里 `demo` 没有显式返回类型、函数体末表达式是链，
+  因此会额外产出一条**函数返回类型**提示（`: Box`）——golden 必须把它也写进去，
+  否则逐字符比对必挂。同类文件的构造原则：要么显式写返回类型，要么把这条提示算进期望。
+- D55（命名对齐）：预览目录 `inlayProviders/cangjie.method.chains/` 已按 D8 的建议
+  改名为 `cangjie.call.chains.hints/`，与 bundle key 和 providerId 一致。
+
+验证：
+- `:code-insight:hints:test` → **34/34**（新增 `CjCallChainHintsCollectorCandidatesTest` 6 例）
+- `:lsp:test --tests "*CangjieInlayHintIntegrationTest*"` → **10/10**（新增 `callChains.cj` golden）
+- `intellij-ide`：`CangJieInlayHintsProviderTest` → **12/12**（新增链式调用行为用例）
+- IDE 侧该 provider **没有** `<option>`：bundle 未预置逐项 key，`optionIdOf` 返回 `null`
+

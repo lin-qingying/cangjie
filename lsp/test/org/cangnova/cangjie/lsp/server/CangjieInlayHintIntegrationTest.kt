@@ -127,6 +127,28 @@ class CangjieInlayHintIntegrationTest : AbstractLspIntegrationTest() {
     }
 
     /**
+     * 链式调用各环节的类型必须与 golden 契约逐字符一致。
+     *
+     * 该文件里只有多行链上的调用环节会产出提示：声明都写了显式类型，也没有 lambda。
+     */
+    @Test
+    fun `call chain hints match shared golden contract`() {
+        val golden = readGolden("callChains.cj")
+        val source = stripMarkers(golden)
+        hintsWorkspace(source).use { fixture ->
+            createSession(fixture.initializeParams()).use { testSession ->
+                val uri = fixture.uri("src/hints.cj")
+                testSession.openDocument(uri, source)
+
+                val hints = testSession.inlayHint(fullDocumentParams(uri, source))
+
+                assertTrue(hints.isNotEmpty(), "golden 文件里必须至少产出一条链式调用提示")
+                assertEquals(golden.trimEnd(), renderWithMarkers(source, hints, uri).trimEnd())
+            }
+        }
+    }
+
+    /**
      * 命名实参不产出参数名提示：形参名已经写在源码里。
      */
     @Test
