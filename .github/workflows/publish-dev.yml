@@ -1,0 +1,57 @@
+name: publish-dev
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "intellij-ide/**"
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: write
+concurrency:
+  group: publish-dev-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  commit-check:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate commit subjects
+        env:
+          BASE_SHA: ${{ github.event.before }}
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          if [[ -z "$BASE_SHA" ]]; then
+            BASE_SHA="$(git rev-parse "$HEAD_SHA^" 2>/dev/null || printf "%040d" 0)"
+          fi
+          python3 .github/scripts/check_commits.py --base "$BASE_SHA" --head "$HEAD_SHA"
+  test:
+    needs: commit-check
+    runs-on: ubuntu-24.04
+    outputs:
+      base_version: ${{ steps.version.outputs.base_version }}
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - name: Resolve base version
+        id: version
+        shell: bash
+        run: |
+          version=$(sed -n 's/^cangjieVersion=//p' gradle.properties | head -n1)
+          echo "base_version=${version}" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: gradle/actions/setup-gradle@v4
+      - run: chmod +x ./gradlew && ./gradlew test --continue --no-daemon --stacktrace
+  publish:
+    needs: test
+    uses: ./.github/workflows/publish-github-packages.yml
+    with:
+      version: ${{ needs.test.outputs.base_version }}-dev.${{ github.run_number }}.g${{ github.sha }}
+    permissions:
+      contents: read
+      packages: write
