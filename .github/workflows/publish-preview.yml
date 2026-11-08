@@ -13,9 +13,17 @@ concurrency:
 jobs:
   test:
     runs-on: ubuntu-24.04
+    outputs:
+      base_version: ${{ steps.version.outputs.base_version }}
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
+      - name: Resolve base version
+        id: version
+        shell: bash
+        run: |
+          version=$(sed -n 's/^cangjieVersion=//p' gradle.properties | head -n1)
+          echo "base_version=${version}" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -27,7 +35,7 @@ jobs:
     needs: test
     uses: ./.github/workflows/publish-github-packages.yml
     with:
-      version: 1.1.2-pr.${{ github.event.pull_request.number }}.${{ github.run_number }}
+      version: ${{ needs.test.outputs.base_version }}-pr.${{ github.event.pull_request.number }}.${{ github.run_number }}
     permissions:
       contents: read
       packages: write
