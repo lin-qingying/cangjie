@@ -36,12 +36,22 @@ jobs:
         run: |
           version=$(sed -n 's/^cangjieVersion=//p' gradle.properties | head -n1)
           echo "base_version=${version}" >> "$GITHUB_OUTPUT"
+          echo "lsp_version=${version}-pr.${{ github.event.pull_request.number }}.${{ github.run_number }}" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "21"
       - uses: gradle/actions/setup-gradle@v4
       - run: chmod +x ./gradlew && ./gradlew test --continue --no-daemon --stacktrace
+      - name: Build LSP distribution
+        run: ./gradlew :lsp:distZip --no-daemon --stacktrace -PcangjieVersion="${{ steps.version.outputs.lsp_version }}"
+      - name: Upload LSP distribution
+        uses: actions/upload-artifact@v4
+        with:
+          name: cangjie-lsp-${{ steps.version.outputs.lsp_version }}
+          path: lsp/build/distributions/*.zip
+          if-no-files-found: error
+          retention-days: 90
   publish:
     if: github.event.pull_request.head.repo.full_name == github.repository
     needs: test
