@@ -81,6 +81,30 @@ class CangjieInlayHintIntegrationTest : AbstractLspIntegrationTest() {
     }
 
     /**
+     * 区间开闭性提示必须与 golden 契约逐字符一致。
+     *
+     * `..` 与 `..=` 只差一个字符，读代码时容易看漏，因此端点旁的关系符是本类提示的全部价值：
+     * `0 ≤ .. < 10` 与 `0 ≤ .. ≤ 10`。这里只取协议层没有类别（`kind == null`）的提示，
+     * 同一文件里由声明产生的类型提示不参与比对。
+     */
+    @Test
+    fun `range value hints match shared golden contract`() {
+        val golden = readGolden("rangeValues.cj")
+        val source = stripMarkers(golden)
+        hintsWorkspace(source).use { fixture ->
+            createSession(fixture.initializeParams()).use { testSession ->
+                val uri = fixture.uri("src/hints.cj")
+                testSession.openDocument(uri, source)
+
+                val hints = testSession.inlayHint(fullDocumentParams(uri, source)).filter { it.kind == null }
+
+                assertTrue(hints.isNotEmpty(), "golden 文件里必须至少产出一条区间提示")
+                assertEquals(golden.trimEnd(), renderWithMarkers(source, hints, uri).trimEnd())
+            }
+        }
+    }
+
+    /**
      * 命名实参不产出参数名提示：形参名已经写在源码里。
      */
     @Test

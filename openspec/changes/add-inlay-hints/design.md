@@ -353,3 +353,63 @@ P3 第一批完成 **逐项 optionId 开关**（4 项，见 D29）。
 - D31（补充）：`CangJieBundle_zh_CN.properties` 里 `inlay.cangjie.references.types.hints.hints.type.pattern.variabl`
   少一个 `e`（key 打错，对应选项文案会退化为 key 本身），已顺手修正。
 
+
+## 13. 后续批次的前置调研（第十一轮，v12）
+
+在独立工作树 `feature/inlay-hints-next` 上继续。动工前先核实了两个「下一项」的真实前置条件，
+结论与本提案早期评估有出入，记录在此以免重复踩：
+
+- D39（已查清，非阻塞）：注解**语义入口其实存在**——`CaAnnotatedSymbol.annotations: CaAnnotationList`
+  （`CaAnnotationList : List<CaAnnotation>`），配合 `CaAnnotation.arguments: List<CaNamedAnnotationValue>`
+  （形参名）与 `CaAnnotationValue.sourcePsi`（实参表达式），足以把「源码位置实参 → 形参名」建起来，
+  **不需要**改 analysis 层。真正卡住的是 PSI 层（见 D41）。
+- D40（待确认：区间值提示）：PSI 侧完备（`CjRangeExpressionBase.startExpression/stopExpression/isInclusive`），
+  但仓库里的预览 `inlayProviders/cangjie.values.hints/preview.cj` 写的是
+  `0/*<# ≤ #>*/../*<# ≤ #>*/10`，在 `..` **前后各插一个全角 `≤`**。这不是 Kotlin 的 value hint 形态，
+  语义上也没区分 `..`（左闭右开）与 `..=`（含右端）。落地前需要先定标：是标端点可读性（`0 ≤ .. ≤ 10`），
+  还是标开闭性（`[0, 10)`）。**不建议照抄预览**。
+- D41（阻塞，实测）：**`@X` 在 PSI 层普遍被解析成 `MACRO_EXPRESSION`，不是 `CjAnnotation`**。
+  用三个位置的探针实测（`collectDescendantsOfType<CjAnnotation>()` 计数 / `MACRO_EXPRESSION` 计数）：
+
+  | 源码 | CjAnnotation | MACRO_EXPRESSION |
+  |---|---|---|
+  | `@Ann(1, 2)` + `func demo()` | 0 | 1 |
+  | `@Ann[1, 2]` + `func demo()` | 0 | 1 |
+  | `@Ann` + `func demo()` | 0 | 1 |
+  | `class C { @Ann prop x: Int64 }` | 0 | 1 |
+  | `func f(@Ann a: Int64)` | **1** | 0 |
+  | `@C` + `foreign func g()` | **1** | 0 |
+
+  即：声明前缀位置的 `@X` 先被宏语法吃掉，只有参数位置与部分 `foreign` 前才产出真正的注解节点。
+  注解实参名提示因此**覆盖不完整**，已实现一版后回退（`CjAnnotationParameterNameHintsCollector`
+  与接入点均已删除，不留死代码）。
+  要恢复这条线，前置是**消解 `@X` 与宏声明的语法歧义**（解析器层改动，独立提案），
+  不是提示层的活。
+
+
+## 14. P4 实施记录：区间开闭性提示（第十二轮，v13）
+
+D40 的定标问题在本轮解决，并已落地共享层与 LSP 宿主。
+
+- D42（定标，取代 D40 的待定项）：采用**不等式标记**而非区间记法。
+  起点恒为闭（`..` 与 `..=` 都包含起点），故左端一律 `≤`；右端按 `..  => <`、`..= => ≤`。
+  渲染结果 `0 ≤ .. < 10` / `0 ≤ .. ≤ 10`。
+  否决 `[0, 10)` 的理由：切片 `a[0..10]` 自带方括号，补方括号会渲染成 `a[[0..10)]`；
+  不等式形式与宿主上下文无关，切片与普通范围可共用同一套文本。
+  预览资源 `inlayProviders/cangjie.values.hints/preview.cj` 原写 `≤ .. ≤`，对 `..` 是错误的，
+  IDE 侧接线时须同步改成 `≤ .. <`（该文件属 `intellij-ide` 仓库，见 D44）。
+- D43（实现）：`CjRangeValueHintsCollector` 复用「候选（纯 PSI）+ 解析（`analyze` 内）」两层结构。
+  候选同时覆盖 `CjRangeExpression`（`0..10`、含步长 `0..10:2`）与 `CjSliceExpression`（`a[0..10]`、`a[..10]`）；
+  缺端点时只提示存在的一端。`session` 仅用于宏展开过滤，本类提示不依赖类型信息。
+  端点判定顺序有硬约束：`hasErrorAncestor` 必须在读 `rangeOperatorNode` 之前，
+  因为残缺节点取运算符会直接 `error(...)`。
+- D44（未完成，跨仓库）：IDE 侧还需 ①`optionIdOf` 增加 `RANGE_VALUE -> "cangjie.values.ranges"`、
+  ②新增 provider `cangjie.values.hints`（`CangJieValueInlayHintsProvider`）+ EP `<option>`、
+  ③把 `preview.cj` 改为 `0/*<# ≤ #>*/../*<# < #>*/10`
+  （按已有约定另建 `inlayProviders/cangjie.values.hints/cangjie.values.ranges.cj` 供逐项开关用）。
+  这三项都引用 `CangJieInlayHintTarget.RANGE_VALUE`，**必须在本分支合入后才能编译**，因此不在本轮做。
+
+验证：
+- `:code-insight:hints:test` → **22/22**（新增 `CjRangeValueHintsCollectorCandidatesTest` 6 例）
+- `:lsp:test --tests "*CangjieInlayHintIntegrationTest*"` → **8/8**（新增 `rangeValues.cj` golden）
+- golden 只比对 `kind == null`（协议里 `OTHER` 无对应类别）的提示，同文件的类型提示不参与

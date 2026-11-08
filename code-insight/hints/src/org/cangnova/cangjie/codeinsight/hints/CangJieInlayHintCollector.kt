@@ -34,6 +34,9 @@ object CangJieInlayHintCollector {
         if (options.showParameterNames) {
             hints += CjParameterNameHintsCollector.collect(file, range, session)
         }
+        if (options.showRangeValues) {
+            hints += CjRangeValueHintsCollector.collect(file, range, session)
+        }
         return hints.sortedBy { it.offset }
     }
 }

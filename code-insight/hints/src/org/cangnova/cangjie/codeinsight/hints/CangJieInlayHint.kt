@@ -85,6 +85,9 @@ enum class CangJieInlayHintTarget {
 
     /** 调用点实参的形参名。 */
     PARAMETER_NAME,
+
+    /** 范围/切片端点的开闭性。 */
+    RANGE_VALUE,
 }
 
 /**
@@ -101,4 +104,6 @@ data class CangJieInlayHintOptions(
     val showFunctionReturnTypes: Boolean = true,
     /** 是否显示调用实参的形参名。 */
     val showParameterNames: Boolean = true,
+    /** 是否显示范围/切片端点的开闭性。 */
+    val showRangeValues: Boolean = true,
 )
