@@ -99,7 +99,7 @@ class CjRangeValueHintsCollectorCandidatesTest : CjParsingTestCase(
         val markers = candidates(source).single().markers
 
         assertEquals(listOf(" < "), markers.map { it.text })
-        assertEquals(source.indexOf("10") , markers.single().offset)
+        assertEquals(source.indexOf("10"), markers.single().offset)
     }
 
     /**
