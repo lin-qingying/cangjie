@@ -65,13 +65,13 @@ class CangJieQuickFixService {
      * 注册进普通 fix 列表（修复即补 import 链路），AddImport 类 factory 同时
      * 注册在 `list` 与 `importOnTheFlyList` 两条通道上。
      */
-    internal fun CaSession.getImportOnTheFlyQuickFixesFor(diagnostic: CaDiagnosticWithPsi<*>): List<IntentionAction> =
+    fun CaSession.getImportOnTheFlyQuickFixesFor(diagnostic: CaDiagnosticWithPsi<*>): List<IntentionAction> =
         with(importOnTheFlyList) { getQuickFixesFor(diagnostic) }
 
     /**
      * 判断诊断是否存在 import-on-the-fly 修复。
      */
-    internal fun CaSession.canProduceImportOnTheFlyQuickFixesFor(diagnostic: CaDiagnosticWithPsi<*>): Boolean =
+    fun CaSession.canProduceImportOnTheFlyQuickFixesFor(diagnostic: CaDiagnosticWithPsi<*>): Boolean =
         with(importOnTheFlyList) { canProduceQuickFixesFor(diagnostic) }
 }
 
