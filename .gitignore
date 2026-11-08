@@ -40,6 +40,7 @@ bin/
 /NUL
 /external/
 /intellij-ide/
+.idea/workspace.xml
 /deveco/
 /.gradle-user-fresh/
 /.gradle-user-fresh-resolve/
