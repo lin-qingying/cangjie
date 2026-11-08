@@ -188,7 +188,6 @@
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/generators/cangjie.generators.iml" filepath="$PROJECT_DIR$/.idea/modules/generators/cangjie.generators.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/generators/cangjie.generators.main.iml" filepath="$PROJECT_DIR$/.idea/modules/generators/cangjie.generators.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/generators/cangjie.generators.test.iml" filepath="$PROJECT_DIR$/.idea/modules/generators/cangjie.generators.test.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/intellij-ide/cangjie.intellij-ide.iml" filepath="$PROJECT_DIR$/.idea/modules/intellij-ide/cangjie.intellij-ide.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/llvm-interop/cangjie.llvm-interop.iml" filepath="$PROJECT_DIR$/.idea/modules/llvm-interop/cangjie.llvm-interop.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/llvm-interop/llvm-interop-api/cangjie.llvm-interop.llvm-interop-api.iml" filepath="$PROJECT_DIR$/.idea/modules/llvm-interop/llvm-interop-api/cangjie.llvm-interop.llvm-interop-api.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/llvm-interop/llvm-interop-api/cangjie.llvm-interop.llvm-interop-api.main.iml" filepath="$PROJECT_DIR$/.idea/modules/llvm-interop/llvm-interop-api/cangjie.llvm-interop.llvm-interop-api.main.iml" />
