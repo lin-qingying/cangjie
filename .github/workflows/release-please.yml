@@ -16,12 +16,18 @@ jobs:
     outputs:
       released: ${{ steps.release.outputs.release_created }}
       tag: ${{ steps.release.outputs.tag_name }}
+      version: ${{ steps.version.outputs.version }}
     steps:
       - uses: googleapis/release-please-action@v4
         id: release
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+      - id: version
+        if: steps.release.outputs.release_created == 'true'
+        env:
+          RELEASE_TAG: ${{ steps.release.outputs.tag_name }}
+        run: echo "version=${RELEASE_TAG#v}" >> "$GITHUB_OUTPUT"
   test:
     needs: release
     if: needs.release.outputs.released == 'true'
@@ -41,7 +47,7 @@ jobs:
     if: needs.release.outputs.released == 'true'
     uses: ./.github/workflows/publish-github-packages.yml
     with:
-      version: ${{ needs.release.outputs.tag }}
+      version: ${{ needs.release.outputs.version }}
     permissions:
       contents: read
       packages: write
