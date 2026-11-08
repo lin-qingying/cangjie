@@ -3,4 +3,10 @@ name = "lspserver-shim"
 version = "0.1.0"
 edition = "2024"
 
+# The binary must carry exactly the official SDK executable name so it can
+# drop-in replace it (on Windows this builds as `LSPServer.exe`).
+[[bin]]
+name = "LSPServer"
+path = "src/main.rs"
+
 [dependencies]

@@ -129,8 +129,23 @@ data class LspProjectConfiguration(
                     name = moduleMap["name"].asNonBlankStringOrNull() ?: inferWorkspaceName(moduleRootUri),
                     sourceRootUris = sourceRootUris.ifEmpty { listOf(moduleRootUri) },
                     packageSearchPaths = packageSearchPaths,
+                    requiredModuleNames = parseRequiredModuleNames(moduleMap),
                 )
             }
+        }
+
+        /**
+         * 解析模块依赖的其它工作区模块名。
+         *
+         * 客户端 `requires` 形态为 `{ "<模块名>": { "path": "<uri>" } }`；这里只取模块名，
+         * 路径信息由对应模块自身的 `source_sets` 提供。
+         */
+        private fun parseRequiredModuleNames(moduleMap: Map<*, *>): List<String> {
+            val requires = moduleMap["requires"] as? Map<*, *> ?: return emptyList()
+            return requires.keys
+                .mapNotNull { it as? String }
+                .filter { it.isNotBlank() }
+                .distinct()
         }
 
         /**
@@ -229,6 +244,14 @@ data class LspWorkspaceModuleDefinition(
      * 该模块额外贡献的 package 依赖搜索路径。
      */
     val packageSearchPaths: List<String>,
+
+    /**
+     * 该模块依赖的其它工作区模块名（来自 `requires` 声明）。
+     *
+     * 源码依赖（Git/Path/中心仓源码包）在工作区里各自是一个源码模块，
+     * 只有建立模块依赖边，`import <包名>` 才能跨模块解析。
+     */
+    val requiredModuleNames: List<String> = emptyList(),
 )
 
 /**

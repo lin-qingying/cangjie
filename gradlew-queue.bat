@@ -21,7 +21,7 @@ if "%PROJECT_ROOT:~-1%"=="\" set "PROJECT_ROOT=%PROJECT_ROOT:~0,-1%"
 set "QUEUE_DIR=%PROJECT_ROOT%\.gradle\queue"
 if not exist "%QUEUE_DIR%" mkdir "%QUEUE_DIR%" 2>nul
 
-set "JAR=%PROJECT_ROOT%\gradle-queue-cli\build\libs\gradle-queue-cli.jar"
+set "JAR=%PROJECT_ROOT%\gradle-queue-cli\build\libs\gradle-queue-cli-2.jar"
 set "BOOTSTRAP_LOCK=%QUEUE_DIR%\bootstrap.lock"
 
 REM ======= 1) Jar exists -> forward raw CLI via PowerShell =======

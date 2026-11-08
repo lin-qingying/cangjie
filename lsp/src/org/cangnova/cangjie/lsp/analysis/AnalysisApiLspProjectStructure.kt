@@ -450,7 +450,7 @@ class AnalysisApiLspProjectStructureState(
             snapshot.normalizedPath?.let { path -> openSnapshotsByPath[path] = snapshot }
         }
 
-        return definitions.map { definition ->
+        val entries = definitions.map { definition ->
             val sourceRootPaths = definition.sourceRootUris
                 .mapNotNull(String::uriToPathOrNull)
                 .map(Path::normalize)
@@ -480,6 +480,20 @@ class AnalysisApiLspProjectStructureState(
                 documentUris = sourceFileEntries.mapNotNull(WorkspaceSourceFileEntry::documentUri).toSet(),
             )
         }
+
+        // 建立模块依赖边：`requires` 声明的是其它工作区模块（源码依赖各自成模块）。
+        // 没有依赖边时，`import <包名>` 只能按二进制搜索路径解析，纯源码依赖必然 UNRESOLVED。
+        val modulesByName = entries.associateBy { entry -> entry.module.name }
+        for (entry in entries) {
+            for (requiredName in entry.definition.requiredModuleNames) {
+                val target = modulesByName[requiredName] ?: continue
+                if (target.module !== entry.module) {
+                    entry.module.directRegularDependencies += target.module
+                }
+            }
+        }
+
+        return entries
     }
 
     /**

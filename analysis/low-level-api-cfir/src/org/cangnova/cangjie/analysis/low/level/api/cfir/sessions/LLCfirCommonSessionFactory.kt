@@ -76,8 +76,7 @@ internal class LLCfirCommonSessionFactory(project: Project) : LLCfirAbstractSess
 
     /**
      * 创建 common dangling file session，并使用当前 dangling provider 与上下文依赖 provider 组合符号视图。
-     */
-    override fun createDanglingFileSession(module: CaDanglingFileModule, contextSession: LLCfirSession): LLCfirSession {
+     */    override fun createDanglingFileSession(module: CaDanglingFileModule, contextSession: LLCfirSession): LLCfirSession {
         return doCreateDanglingFileSession(module, contextSession) { context ->
             register(
                 CfirSymbolProvider::class,
@@ -92,6 +91,17 @@ internal class LLCfirCommonSessionFactory(project: Project) : LLCfirAbstractSess
 
             registerCommonComponents()
         }
+    }
+
+    /**
+     * not-under-content-root session 与源码 session 共享同一套 common 组件。
+     *
+     * 缺了这一步，`CfirImportResolveTransformer` 在 IMPORTS 阶段取
+     * `CfirDefaultImportsProviderHolder` 时会直接抛
+     * `No '…CfirDefaultImportsProviderHolder' in array owner`。
+     */
+    override fun LLCfirSession.registerNotUnderContentRootComponents() {
+        registerCommonComponents()
     }
 
     /**

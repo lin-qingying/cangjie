@@ -103,6 +103,9 @@ class LspIntegrationTestSession(
     /** 发起 codeAction 请求。 */
     fun codeAction(params: CodeActionParams): List<Either<Command, CodeAction>> = connection.codeAction(params)
 
+    /** 发起 codeAction/resolve 请求。 */
+    fun resolveCodeAction(params: CodeAction): CodeAction = connection.resolveCodeAction(params)
+
     /** 发起 formatting 请求。 */
     fun formatting(params: DocumentFormattingParams): List<TextEdit> = connection.formatting(params)
 
@@ -131,6 +134,9 @@ class LspIntegrationTestSession(
 
     /** 发起 inlayHint 请求。 */
     fun inlayHint(params: InlayHintParams): List<InlayHint> = connection.inlayHint(params)
+
+    /** 发起 inlayHint/resolve 请求。 */
+    fun resolveInlayHint(hint: InlayHint): InlayHint = connection.resolveInlayHint(hint)
 
     /** 发起 textDocument/diagnostic 请求。 */
     fun documentDiagnostic(params: DocumentDiagnosticParams): DocumentDiagnosticReport =

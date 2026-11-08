@@ -216,7 +216,9 @@ internal fun CaSymbol.completionSymbolKind(): CompletionSymbolKind = when (this)
         CaClassKind.INTERFACE -> CompletionSymbolKind.INTERFACE
         CaClassKind.STRUCT -> CompletionSymbolKind.STRUCT
         CaClassKind.ENUM -> CompletionSymbolKind.ENUM
-        null -> CompletionSymbolKind.OTHER
+        // primitive 合成符号（UInt8 等）现在 classKind 不再抛错；补全候选里
+        // 它按内建类型图标兜底即可，与修复前的 OTHER 落点一致。
+        CaClassKind.PRIMITIVE, null -> CompletionSymbolKind.OTHER
     }
 
     is CaTypeAliasSymbol -> CompletionSymbolKind.TYPE_ALIAS

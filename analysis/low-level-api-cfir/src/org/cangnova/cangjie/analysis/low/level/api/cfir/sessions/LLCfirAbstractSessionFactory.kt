@@ -44,6 +44,7 @@ import org.cangnova.cangjie.cfir.SessionConfiguration
 import org.cangnova.cangjie.cfir.diagnostics.CjRegisteredDiagnosticFactoriesStorage
 import org.cangnova.cangjie.cfir.common.moduleData
 import org.cangnova.cangjie.cfir.extensions.*
+import org.cangnova.cangjie.cfir.resolve.CfirDiagnosticCollector
 import org.cangnova.cangjie.cfir.resolve.providers.*
 import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
 import org.cangnova.cangjie.cfir.serialization.provider.CfirExtendProviderComposer
@@ -119,6 +120,15 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
     ): List<CfirSymbolProvider>
 
     /**
+     * 为 not-under-content-root session 注册平台公共组件。
+     *
+     * 该 session 由本类直接构造，不经过各平台的 `createSourcesSession` /
+     * `createResolvableLibrarySession` 模板，因此平台侧的公共组件（例如默认导入 provider）
+     * 必须通过这个钩子补进来，否则会与其它 session 的能力集不一致。
+     */
+    protected open fun LLCfirSession.registerNotUnderContentRootComponents() = Unit
+
+    /**
      * 创建不在内容根内的源码文件模块 session。
      *
      * 该 session 仍按源码模块注册 resolver、provider 和扩展索引，但依赖集合来自模块本身的项目结构信息。
@@ -144,6 +154,10 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
             registerSourceLikeComponents()
 
             registerCommonComponentsAfterExtensionsAreConfigured()
+
+            // 该 session 不走 `createSourcesSession` / `createResolvableLibrarySession` 的模板，
+            // 平台侧补充注册必须从这里进入；否则它的能力集会与其它 session 不一致。
+            registerNotUnderContentRootComponents()
 
 
             val provider = LLCfirProvider(
@@ -445,6 +459,16 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
             register(CfirLazyDeclarationResolver::class, CfirDummyCompilerLazyDeclarationResolver)
             registerCommonComponents(languageVersionSettings)
             registerCommonComponentsAfterExtensionsAreConfigured()
+            /*
+             * 二进制库 session 虽然不做源码 lazy resolve，但库反序列化声明的
+             * moduleData 指向本 session，checkers 与诊断收集同样会经声明所属
+             * session 触达分析基础组件（TypeComponents、typeResolver 等）。
+             * 缺失时与 builtins session 同样炸 `No '<component>' in array owner`。
+             * 不注册阶段 Processor 与 InferenceComponents：本 session 不跑 resolve 流水线。
+             */
+            registerAnalysisBaseComponents(
+                diagnosticReporterOrNull ?: CfirDiagnosticCollector().also(::registerDiagnosticReporter),
+            )
 
             val kotlinScopeProvider = CfirCangJieScopeProvider()
 
@@ -678,6 +702,12 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
             }
 
             is CaLibraryModule, is CaLibraryFallbackDependenciesModule -> sessionCache.getDependencySession(dependency)
+
+            // 纯源码库（无 `.cjo` 产物）的源码孪生：session cache 已支持为它创建
+            // resolvable library session（`createResolvableLibrarySession`），
+            // 直接复用即可。此前缺这一分支会让"源码依赖"落到 else 抛
+            // `Module X cannot depend on Y`，表现为 `import <依赖包>` 解析中断。
+            is CaLibrarySourceModule -> sessionCache.getDependencySession(dependency)
 
             is CaSourceModule -> sessionCache.getDependencySession(dependency)
 

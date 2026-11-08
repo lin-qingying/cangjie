@@ -12,6 +12,9 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.cangnova.cangjie.analysis.api.symbols.CaClassSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaClassKind
+import org.cangnova.cangjie.psi.CjSimpleNameExpression
 import org.junit.jupiter.api.Test
 
 /**
@@ -246,4 +249,173 @@ class AnalysisApiCfirDiagnosticsTest : AbstractAnalysisApiExecutionTest(
             "the peer note preserves both opposing subtype relations",
         )
     }
+
+    /**
+     * IDE（STUBS）链路：库 extend 提供的 `Array.size` 与库签名 `Array<Byte>` 必须都能正确解析。
+     *
+     * 这两个症状在真实 IDE 里表现为 `'size' is not a member of 'Array'` 与
+     * `RETURN_TYPE_MISMATCH: expected Array<UInt8>, actual Array<Any>`。
+     */
+    @Test
+    fun stubsArrayMembers(mainFile: CjFile) {
+        val diagnostics = analyzeForTest(mainFile) {
+            mainFile.collectDiagnostics(CaDiagnosticCheckerFilter.EXTENDED_AND_COMMON_CHECKERS)
+        }
+
+        assertTrue(
+            diagnostics.isEmpty(),
+            "STUBS 模式下 Array 成员与库签名不应产生诊断：" +
+                diagnostics.joinToString { diagnostic -> "${diagnostic.factoryName}@${diagnostic.psi.textRange}" },
+        )
+    }
+
+    /**
+     * decompiled 库签名里的 typealias + `Array` 的 extend 成员（size/isEmpty）必须都正确解析。
+     *
+     * 覆盖 `LibraryBinaryDecompiled` 库：库 `.cjo` 由测试框架用本机 cjc 编译，并走仓库自己的
+     * 反编译 stub 链。对应症状：`RETURN_TYPE_MISMATCH(Array<UInt8> vs Array<MyByte>)` 与
+     * `NOT_MEMBER_OF('size')`。
+     */
+    @Test
+    fun decompiledLibraryAliasExtendMembers(mainFile: CjFile) {
+        val diagnostics = analyzeForTest(mainFile) {
+            mainFile.collectDiagnostics(CaDiagnosticCheckerFilter.EXTENDED_AND_COMMON_CHECKERS)
+                .map { diagnostic -> "${diagnostic.factoryName}@${diagnostic.psi.textRange}" }
+        }
+        assertTrue(
+            diagnostics.isEmpty(),
+            "decompiled 库签名中的别名与 extend 成员不应产生诊断：\n" +
+                diagnostics.joinToString("\n") { "  - $it" },
+        )
+    }
+
+    /**
+     * 实现弃用成员时，`DEPRECATION_OVERRIDE_WARNING` 只允许出现一次。
+     *
+     * `EXTENDED_AND_COMMON_CHECKERS` 是 common 与 extended 两个 filter 的并集；同一个 checker
+     * 若被两个集合同时收录，就会在逐 filter 派发时重复报告同一条诊断（mariadb 真实项目里
+     * `DEPRECATION_OVERRIDE_WARNING` 出现 5 对重复）。集合契约是互不重叠。
+     */
+    /**
+     * 传递依赖：main 只声明依赖 libUser，别名包 libAlias 不在直接依赖里。
+     *
+     * 若别名无法在 use-site 解析（Kotlin KDoc 里的 `M1` 不依赖 `L2` 场景），这里会暴露
+     * 「别名永远展不开」的问题；通过则说明依赖闭包仍能提供别名声明。
+     */
+    @Test
+    fun decompiledCrossPackageAliasTransitive(mainFile: CjFile) {
+        val diagnostics = analyzeForTest(mainFile) {
+            mainFile.collectDiagnostics(CaDiagnosticCheckerFilter.EXTENDED_AND_COMMON_CHECKERS)
+                .map { diagnostic -> "${diagnostic.factoryName}@${diagnostic.psi.textRange}" }
+        }
+        assertTrue(
+            diagnostics.isEmpty(),
+            "仅传递依赖时别名也应可展开：\n" + diagnostics.joinToString("\n") { "  - $it" },
+        )
+    }
+
+    /**
+     * 跨包别名：库 A 的签名引用库 B 的 `type` 别名（真实 IDE 里是 std.io 引用 std.core.Byte）。
+     *
+     * STUBS 链路若只在本文件里找别名，这条必然报 RETURN_TYPE_MISMATCH / NOT_MEMBER_OF。
+     */
+    @Test
+    fun decompiledCrossPackageAlias(mainFile: CjFile) {
+        val diagnostics = analyzeForTest(mainFile) {
+            mainFile.collectDiagnostics(CaDiagnosticCheckerFilter.EXTENDED_AND_COMMON_CHECKERS)
+                .map { diagnostic -> "${diagnostic.factoryName}@${diagnostic.psi.textRange}" }
+        }
+        assertTrue(
+            diagnostics.isEmpty(),
+            "跨包别名与 extend 成员不应产生诊断：\n" + diagnostics.joinToString("\n") { "  - $it" },
+        )
+    }
+
+    /**
+     * 负例：别名指向 enum 时，非穷尽 match 必须报 `NON_EXHAUSTIVE_MATCH`。
+     *
+     * 只断言“穷尽 match 无诊断”是 vacuous 的——检查器在别名未展开时会整体 Skipped。
+     */
+    @Test
+    fun decompiledLibraryAliasNonexhaustiveMatch(mainFile: CjFile) {
+        val diagnostics = analyzeForTest(mainFile) {
+            mainFile.collectDiagnostics(CaDiagnosticCheckerFilter.EXTENDED_AND_COMMON_CHECKERS)
+                .map { diagnostic -> diagnostic.factoryName }
+        }
+        assertTrue(
+            diagnostics.contains("NON_EXHAUSTIVE_MATCH"),
+            "别名指向 enum 时非穷尽 match 必须报 NON_EXHAUSTIVE_MATCH，实际：$diagnostics",
+        )
+    }
+
+    /**
+     * 别名在使用点的三种形态：alias→enum 穷尽 match、alias→函数类型调用、外层 alias→Array 的 extend 成员。
+     *
+     * 这三条只要别名的展开语义有任何缺失就会直接报诊断（未知构造器 / 不可调用 / 找不到成员）。
+     */
+    @Test
+    fun decompiledLibraryAliasUseSites(mainFile: CjFile) {
+        val diagnostics = analyzeForTest(mainFile) {
+            mainFile.collectDiagnostics(CaDiagnosticCheckerFilter.EXTENDED_AND_COMMON_CHECKERS)
+                .map { diagnostic -> "${diagnostic.factoryName}@[${diagnostic.psi.text}]${diagnostic.psi.textRange}" }
+        }
+        assertTrue(
+            diagnostics.isEmpty(),
+            "别名使用点不应产生诊断：\n" + diagnostics.joinToString("\n") { "  - $it" },
+        )
+    }
+
+    /**
+     * decompiled 库签名里的声明种类矩阵：interface / class / struct / enum / typealias
+     * 以及函数类型、Option、tuple、VArray 等类型形态都必须被 stub 链路正确重建。
+     */
+    @Test
+    fun decompiledLibraryTypeMatrix(mainFile: CjFile) {
+        val (diagnostics, kinds) = analyzeForTest(mainFile) {
+            val diagnostics = mainFile.collectDiagnostics(CaDiagnosticCheckerFilter.EXTENDED_AND_COMMON_CHECKERS)
+                .map { diagnostic -> "${diagnostic.factoryName}@${diagnostic.psi.textRange}" }
+            val kinds = PsiTreeUtil.findChildrenOfType(mainFile, CjSimpleNameExpression::class.java)
+                .filter { expression -> expression.text in setOf("Shape", "ShapeAlias", "Point", "Color") }
+                .mapNotNull { expression ->
+                    val classSymbol = expression.resolveToSymbols()
+                        .filterIsInstance<CaClassSymbol>()
+                        .firstOrNull()
+                        ?: return@mapNotNull null
+                    expression.text to classSymbol.classKind
+                }
+                .toMap()
+            diagnostics to kinds
+        }
+
+        assertTrue(
+            diagnostics.isEmpty(),
+            "decompiled 库的声明种类矩阵不应产生诊断：\n" + diagnostics.joinToString("\n") { "  - $it" },
+        )
+        // 诊断为空时种类仍可能退化（class-like 的成员查找常常照样成功），因此直接断言符号种类。
+        assertEquals(CaClassKind.INTERFACE, kinds["Shape"], "decompiled 库的 interface 必须保持 INTERFACE：$kinds")
+        assertEquals(CaClassKind.STRUCT, kinds["Point"], "decompiled 库的 struct 必须保持 STRUCT：$kinds")
+        assertEquals(CaClassKind.ENUM, kinds["Color"], "decompiled 库的 enum 必须保持 ENUM：$kinds")
+    }
+
+    @Test
+    fun deprecatedOverrideReportedOnce(mainFile: CjFile) {
+        val diagnostics = analyzeForTest(mainFile) {
+            mainFile.collectDiagnostics(CaDiagnosticCheckerFilter.EXTENDED_AND_COMMON_CHECKERS)
+        }
+        val overrideWarnings = diagnostics.filter {
+            it.factoryName == "DEPRECATION_OVERRIDE_WARNING"
+        }
+
+        assertEquals(
+            1,
+            overrideWarnings.size,
+            "弃用成员实现只应报告一次 DEPRECATION_OVERRIDE_WARNING：" +
+                diagnostics.joinToString { diagnostic -> "${diagnostic.factoryName}@${diagnostic.psi.textRange}" },
+        )
+    }
 }
+
+
+
+
+

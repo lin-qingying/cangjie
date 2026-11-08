@@ -1,0 +1,96 @@
+name: llt-tests
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "cfir/**"
+      - "compiler/frontend/**"
+      - "psi/**"
+      - "testData/llt/**"
+      - ".github/workflows/llt-tests.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "cfir/**"
+      - "compiler/frontend/**"
+      - "psi/**"
+      - "testData/llt/**"
+      - ".github/workflows/llt-tests.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: llt-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  llt:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ensure Gradle wrapper is executable
+        shell: bash
+        run: chmod +x ./gradlew
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Run LLT tests
+        shell: bash
+        run: |
+          ./gradlew \
+            :cfir:analysis-tests:test \
+            --continue \
+            --no-daemon \
+            --stacktrace
+
+      - name: Summarize LLT failures
+        if: failure()
+        shell: bash
+        run: |
+          if compgen -G "**/build/test-results/**/*.xml" > /dev/null; then
+            python3 - <<'EOF'
+          import glob, xml.etree.ElementTree as ET
+
+          failures = []
+          for f in glob.glob("**/build/test-results/**/*.xml", recursive=True):
+              try:
+                  root = ET.parse(f).getroot()
+              except ET.ParseError:
+                  continue
+              for tc in root.iter("testcase"):
+                  if tc.find("failure") is not None or tc.find("error") is not None:
+                      failures.append((tc.get("classname"), tc.get("name")))
+
+          print(f"LLT failures: {len(failures)}")
+          for cls, name in failures[:200]:
+              print(f"- {cls}.{name}")
+          if len(failures) > 200:
+              print(f"... and {len(failures) - 200} more")
+          EOF
+          else
+            echo "No test result files found."
+          fi
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: llt-test-results
+          if-no-files-found: warn
+          retention-days: 14
+          path: |
+            **/build/test-results/**/*.xml
+            **/build/reports/tests/**

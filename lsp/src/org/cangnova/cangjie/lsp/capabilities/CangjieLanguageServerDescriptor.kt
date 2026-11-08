@@ -68,6 +68,14 @@ data class CangjieLanguageServerDescriptor(
     val completionTriggerCharacters: List<String> = listOf(".", ":", "@"),
 
     /**
+     * code action 是否支持 resolve 阶段。
+     *
+     * 编辑延迟到用户真正选中动作后才计算（列表阶段绝不修改 PSI），
+     * 因此默认声明支持；客户端据此才会在动作被选中时发 `codeAction/resolve`。
+     */
+    val codeActionResolveProvider: Boolean = true,
+
+    /**
      * 触发 signature help 请求的字符集合。
      */
     val signatureHelpTriggerCharacters: List<String> = listOf("(", ","),

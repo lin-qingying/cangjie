@@ -31,7 +31,9 @@ import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
+import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
+import org.cangnova.cangjie.cfir.expressions.CfirLazyBlock
 import org.cangnova.cangjie.cfir.expressions.CfirReturnExpression
 import org.cangnova.cangjie.cfir.references.CfirResolvedErrorReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
@@ -228,7 +230,7 @@ private class RecursiveConstructorGraph(
         val defaultValueCalls = valueParameters.flatMap { parameter ->
             parameter.defaultValue?.collectConstructorDependencyCalls().orEmpty()
         }
-        val bodyCalls = body?.collectConstructorDependencyCalls().orEmpty()
+        val bodyCalls = resolvedBodyOrNull()?.collectConstructorDependencyCalls().orEmpty()
         return ownerInitializerCalls + defaultValueCalls + bodyCalls
     }
 
@@ -236,13 +238,24 @@ private class RecursiveConstructorGraph(
      * 查找隐式 super() 构造依赖。
      */
     private fun CfirConstructor.implicitSuperConstructorDependencyOrNull(): CfirConstructor? {
-        if (body?.statements?.firstOrNull().constructorDelegationCallOrNull() != null) return null
+        if (resolvedBodyOrNull()?.statements?.firstOrNull().constructorDelegationCallOrNull() != null) return null
         val owner = ownerClassLikeDeclarationOrNull() as? CfirClass ?: return null
         val superDeclaration = owner.directConcreteSuperDeclaration(context) ?: return null
         return superDeclaration.declarations
             .filterIsInstance<CfirConstructor>()
             .firstOrNull { constructor -> constructor.requiredParameterCount() == 0 }
     }
+
+    /**
+     * 返回已解析的构造器体；`CfirLazyBlock` 表示该体尚未 resolve。
+     *
+     * 递归构造器检查会沿 `super(...)` 走到**其它文件**里的父类构造器，这些构造器在逐文件
+     * 分析中仍是 lazy body；直接读 `CfirLazyBlock.statements` 会抛
+     * `CfirLazyBlock should be resolved before accessing`，并让整个文件的声明检查被隔离
+     * （真实项目 `server_auth_more_data.cj` 即此形态）。未解析的体按「没有显式委托」处理：
+     * 既不会误报，也不会中断检查。
+     */
+    private fun CfirFunction.resolvedBodyOrNull(): CfirBlock? = body?.takeUnless { it is CfirLazyBlock }
 
     /**
      * 收集类型字段初始化器中的构造调用依赖。

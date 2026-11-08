@@ -165,6 +165,15 @@ class CjoPackageHeader(
 
                 if (decl.kind != DeclKind.ExtendDecl && fullIdReferenceKey != null) {
                     fullIdReferenceKeyToIndex.putIfAbsent(fullIdReferenceKey, index)
+                    /*
+                     * 官方 ASTWriter 的跨包 FullId 只写 exportId（如 `_CNat4ByteE`），本仓库的写出侧
+                     * 目前把引用键写成声明名（CFIR 声明不保留目标声明的 exportId）。这里同时登记声明名
+                     * 键，使官方 cjo 的 exportId 键与本仓库写出的声明名键都能解析；冲突时先注册者
+                     * （exportId）优先，与官方“只认 exportId”的语义保持兼容。
+                     */
+                    if (identifier != null && identifier != fullIdReferenceKey) {
+                        fullIdReferenceKeyToIndex.putIfAbsent(identifier, index)
+                    }
                 }
 
                 if (!decl.isTopLevel) continue

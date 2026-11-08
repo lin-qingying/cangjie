@@ -7,6 +7,7 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir
 
 import com.intellij.openapi.project.Project
 import org.cangnova.cangjie.analysis.api.projectStructure.*
+import org.cangnova.cangjie.analysis.api.projectStructure.CaLibrarySourceModule
 import org.cangnova.cangjie.analysis.api.util.withCaModuleEntry
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.LLResolutionFacade
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirLibraryOrLibrarySourceResolvableModuleSession
@@ -106,10 +107,14 @@ class LLResolutionFacadeService(project: Project) {
 private class LLSourceModuleResolutionStrategyProvider(private val useSiteModule: CaModule) : LLModuleResolutionStrategyProvider {
     /**
      * source 模块走 lazy 解析，builtins/library 依赖走 static 解析。
+     *
+     * `CaLibrarySourceModule` 是纯源码库（无 `.cjo`）的源码孪生，它可以作为源码模块的
+     * 直接依赖参与解析，因此必须按源码模块（LAZY）处理；否则解析库源码里的声明时会落到
+     * `cannotProvideResolutionStrategy` 硬报错。
      */
     override fun getKind(module: CaModule): LLModuleResolutionStrategy {
         return when (module) {
-            is CaSourceModule -> LLModuleResolutionStrategy.LAZY
+            is CaSourceModule, is CaLibrarySourceModule -> LLModuleResolutionStrategy.LAZY
             is CaBuiltinsModule, is CaLibraryModule -> LLModuleResolutionStrategy.STATIC
             else -> cannotProvideResolutionStrategy(module, useSiteModule)
         }

@@ -88,7 +88,7 @@ import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisA
 import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisSessionMode
 import org.cangnova.cangjie.analysis.test.framework.test.configurators.FrontendKind
 import org.cangnova.cangjie.analysis.test.framework.test.configurators.TestModuleKind
-import org.jetbrains.kotlin.generators.dsl.TestGroup
+import org.cangnova.cangjie.test.generators.dsl.TestGroup
 
 /**
  * 声明仓颉 Analysis API 的全部 generated test 分组。

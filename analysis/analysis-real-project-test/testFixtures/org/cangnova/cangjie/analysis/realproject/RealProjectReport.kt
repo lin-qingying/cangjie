@@ -49,6 +49,7 @@ object RealProjectReport {
         val errorCount = analyses.sumOf { analysis ->
             analysis.diagnostics.count { it.severity == "ERROR" }
         }
+        val binDependencyRoots = model.binDependencyRoots.map { path -> path.toString() }
         val json = buildString {
             appendLine("{")
             appendLine("  \"project\": ${quote(config.id)},")
@@ -59,6 +60,13 @@ object RealProjectReport {
             appendLine("  \"sourceFileCount\": ${model.cjFiles.size},")
             appendLine("  \"projectPackageCount\": ${model.sourcePackages.size},")
             appendLine("  \"dependencyCjoCount\": $dependencyCjoCount,")
+            appendLine("  \"binDependencyRootCount\": ${binDependencyRoots.size},")
+            append("  \"binDependencyRoots\": [")
+            binDependencyRoots.forEachIndexed { index, root ->
+                val comma = if (index == binDependencyRoots.lastIndex) "" else ","
+                append("${quote(root)}$comma")
+            }
+            appendLine("],")
             appendLine("  \"errorDiagnosticCount\": $errorCount,")
             appendLine("  \"exceptionFileCount\": ${analyses.count { it.error != null }},")
             appendLine("  \"collectionFailureFileCount\": ${analyses.count { it.collectionFailures.isNotEmpty() }},")

@@ -84,6 +84,18 @@ class CfirAnalysisDiagnostics2PsiTestGenerated : AbstractCfirPsiDiagnosticTest()
             runTest("cfir/analysis-tests/testData/diagnostics2/calls/ambiguousFunctionCall.cj")
         }
 
+        @TestMetadata("digestLibraryMemberCall.cj")
+        @Test
+        fun testDigestLibraryMemberCall() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/calls/digestLibraryMemberCall.cj")
+        }
+
+        @TestMetadata("digestMemberCall.cj")
+        @Test
+        fun testDigestMemberCall() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/calls/digestMemberCall.cj")
+        }
+
         @TestMetadata("functionReferenceAmbiguityPlaceholder.cj")
         @Test
         fun testFunctionReferenceAmbiguityPlaceholder() {
@@ -950,6 +962,18 @@ class CfirAnalysisDiagnostics2PsiTestGenerated : AbstractCfirPsiDiagnosticTest()
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics2/enum")
         }
 
+        @TestMetadata("enumConstructorValueScope.cj")
+        @Test
+        fun testEnumConstructorValueScope() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/enum/enumConstructorValueScope.cj")
+        }
+
+        @TestMetadata("enumEntryShadowedByTypeName.cj")
+        @Test
+        fun testEnumEntryShadowedByTypeName() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/enum/enumEntryShadowedByTypeName.cj")
+        }
+
         @TestMetadata("errorSimpleEnum.cj")
         @Test
         fun testErrorSimpleEnum() {
@@ -1070,6 +1094,12 @@ class CfirAnalysisDiagnostics2PsiTestGenerated : AbstractCfirPsiDiagnosticTest()
             runTest("cfir/analysis-tests/testData/diagnostics2/general/extendInterfaceParentAndMemberInFile.cj")
         }
 
+        @TestMetadata("libraryAliasOperand.cj")
+        @Test
+        fun testLibraryAliasOperand() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/general/libraryAliasOperand.cj")
+        }
+
         @TestMetadata("multipleDiagnostics.cj")
         @Test
         fun testMultipleDiagnostics() {
@@ -1094,6 +1124,12 @@ class CfirAnalysisDiagnostics2PsiTestGenerated : AbstractCfirPsiDiagnosticTest()
             runTest("cfir/analysis-tests/testData/diagnostics2/general/simpleT.cj")
         }
 
+        @TestMetadata("synchronizedLockFromSiblingImport.cj")
+        @Test
+        fun testSynchronizedLockFromSiblingImport() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/general/synchronizedLockFromSiblingImport.cj")
+        }
+
         @TestMetadata("toStringInterfaceParentType.cj")
         @Test
         fun testToStringInterfaceParentType() {
@@ -1104,6 +1140,12 @@ class CfirAnalysisDiagnostics2PsiTestGenerated : AbstractCfirPsiDiagnosticTest()
         @Test
         fun testToStringInterfaceParentTypeInFileExtend() {
             runTest("cfir/analysis-tests/testData/diagnostics2/general/toStringInterfaceParentTypeInFileExtend.cj")
+        }
+
+        @TestMetadata("typeAliasInSignature.cj")
+        @Test
+        fun testTypeAliasInSignature() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/general/typeAliasInSignature.cj")
         }
     }
 
@@ -1258,6 +1300,12 @@ class CfirAnalysisDiagnostics2PsiTestGenerated : AbstractCfirPsiDiagnosticTest()
         @Test
         fun testNewInferenceErrorConflict() {
             runTest("cfir/analysis-tests/testData/diagnostics2/inference/newInferenceErrorConflict.cj")
+        }
+
+        @TestMetadata("repeatEmptyArrayLiteral.cj")
+        @Test
+        fun testRepeatEmptyArrayLiteral() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/inference/repeatEmptyArrayLiteral.cj")
         }
 
         @TestMetadata("returnTypeInferenceMismatch.cj")
@@ -1790,6 +1838,12 @@ class CfirAnalysisDiagnostics2PsiTestGenerated : AbstractCfirPsiDiagnosticTest()
         @Test
         fun testInternal() {
             runTest("cfir/analysis-tests/testData/diagnostics2/modifier/internal.cj")
+        }
+
+        @TestMetadata("packageAccessModifier.cj")
+        @Test
+        fun testPackageAccessModifier() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/modifier/packageAccessModifier.cj")
         }
 
         @TestMetadata("private.cj")

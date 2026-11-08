@@ -17,7 +17,7 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.AbstractGlobalS
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.AbstractModuleOutOfBlockModificationLLCfirSessionInvalidationTest
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.AbstractModuleStateModificationLLCfirSessionInvalidationTest
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.combined.AbstractCombinedPackageDelegationSymbolProviderTest
-import org.jetbrains.kotlin.generators.dsl.junit5.generateTestGroupSuiteWithJUnit5
+import org.cangnova.cangjie.test.generators.dsl.junit5.generateTestGroupSuiteWithJUnit5
 
 /**
  * 生成 low-level CFIR 相关测试类。

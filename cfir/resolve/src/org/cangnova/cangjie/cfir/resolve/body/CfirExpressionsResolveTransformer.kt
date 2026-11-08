@@ -24,6 +24,7 @@
 
 package org.cangnova.cangjie.cfir.resolve.body
 
+import org.cangnova.cangjie.cfir.resolve.expandedArrayLiteralElementType
 import java.math.BigInteger
 import org.cangnova.cangjie.LanguageFeature
 import org.cangnova.cangjie.requireFeatureSupport
@@ -602,7 +603,7 @@ open class CfirExpressionsResolveTransformer(
         if (kind != CfirLiteralKind.INT) return false
         val parsed = CfirIntConstantEvalUtils.parseIntLiteral(this) ?: return false
         if (parsed.explicitSuffix != null) return false
-        val targetType = expectedType.fullyExpandedType().arrayLiteralElementType ?: expectedType
+        val targetType = expectedType.expandedArrayLiteralElementType(session) ?: expectedType
         val range = CfirIntConstantEvalUtils.rangeForIntLiteralValueTargetType(targetType, parsed.value) ?: return false
         return !range.contains(parsed.value)
     }

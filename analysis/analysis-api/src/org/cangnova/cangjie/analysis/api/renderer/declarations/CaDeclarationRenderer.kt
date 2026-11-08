@@ -401,4 +401,7 @@ private fun CaClassKind.keyword(): String = when (this) {
     CaClassKind.INTERFACE -> "interface"
     CaClassKind.STRUCT -> "struct"
     CaClassKind.ENUM -> "enum"
+    // primitive 没有关键字形态的声明体；渲染层按语言层类型名直接呈现，
+    // 这里返回空串由调用方以 `name` 承载（对齐反编译文本的 primitive 形态）。
+    CaClassKind.PRIMITIVE -> ""
 }

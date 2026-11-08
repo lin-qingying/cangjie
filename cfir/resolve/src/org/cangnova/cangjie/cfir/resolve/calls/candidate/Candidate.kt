@@ -48,6 +48,7 @@ import org.cangnova.cangjie.cfir.semantics.AbstractCallCandidate
 import org.cangnova.cangjie.cfir.semantics.ResolutionDiagnostic
 import org.cangnova.cangjie.cfir.semantics.hasBareGenericFunctionReferencePayloadArgument
 import org.cangnova.cangjie.cfir.semantics.isSuccess
+import org.cangnova.cangjie.cfir.resolve.recoverableFunctionTypeOrNull
 import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.*
@@ -942,7 +943,7 @@ class Candidate(
             return declaredReturnType
         }
         val functionType = callableValueInvokeFunctionShape
-            ?: declaredReturnType?.recoverableFunctionTypeOrNull()
+            ?: declaredReturnType?.recoverableFunctionTypeOrNull(callInfo.session)
             ?: return null
         return functionType.returnType
     }
@@ -964,7 +965,7 @@ class Candidate(
 
         val functionType = callableValueInvokeFunctionShape
             ?: declaration.returnTypeRef.resolvedConeTypeOrNull()
-                ?.recoverableFunctionTypeOrNull()
+                ?.recoverableFunctionTypeOrNull(callInfo.session)
         if (functionType == null || functionType.parameterTypes.isEmpty()) {
             cachedSyntheticCallableValueParameters = emptyList()
             return emptyList()
@@ -997,18 +998,6 @@ class Candidate(
         cachedSyntheticCallableValueParameters = syntheticParameters
         return syntheticParameters
     }
-
-    /**
-     * 函数值候选允许错误类型携带函数 delegated type。
-     *
-     * 这类类型保留原始诊断，同时让实参映射和返回类型计算继续走普通函数值候选流程。
-     */
-    private fun ConeCangJieType.recoverableFunctionTypeOrNull(): ConeFunctionType? =
-        when (this) {
-            is ConeFunctionType -> this
-            is ConeErrorType -> delegatedType as? ConeFunctionType
-            else -> null
-        }
 
     /** 只有变量和属性的值访问可以作为函数值；普通函数声明走直接调用路径。 */
     private fun CfirDeclaration?.isCallableValueDeclaration(): Boolean =

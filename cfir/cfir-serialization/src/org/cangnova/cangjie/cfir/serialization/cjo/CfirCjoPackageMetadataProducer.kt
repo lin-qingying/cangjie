@@ -618,6 +618,16 @@ object CfirCjoPackageMetadataProducer {
         }
 
         private fun type(type: ConeCangJieType): UInt {
+            /*
+             * 官方 `ASTWriter::SaveType` 写的是 `TypeManager::ObtainsAliasType(&node)`：解析阶段把
+             * 别名展开成底层类型并保留 `AbbreviatedTypeAttribute`，写出时仍以别名身份（`TypeKind.Type`）
+             * 落盘。这里必须同样优先写缩写类型，否则默认流水线（`expandTypeAliasesInTypeResolution=true`）
+             * 下 `Array<Byte>` 会被写成 `Array<UInt8>`，与官方 `.cjo` 不等价、反编译也丢失别名。
+             */
+            val abbreviated = type.abbreviatedType as? ConeTypeAliasType
+            if (abbreviated != null && type !is ConeTypeAliasType) {
+                return type(abbreviated)
+            }
             typeIndex[type]?.let { return it }
             require(type !in typeIndex) { "Recursive CJO type is not serializable yet: $type" }
             val index = types.size.toUInt() + 1u
@@ -642,7 +652,9 @@ object CfirCjoPackageMetadataProducer {
                 is ConeClassLikeType -> CjoTypeMetadata(
                     kind = if (type.isInterface) PackageFormat.TypeKind.Interface else PackageFormat.TypeKind.Class,
                     typeArguments = type.typeArguments.map { projectionType(it) },
-                    semanticInfo = compositeInfo(type.classId),
+                    // 官方 `CompositeTyInfo.isThisTy`：类体内的 `This` 必须随签名落盘，
+                    // 否则 `.cjo` 往返会把它静默当成普通 class-like 类型。
+                    semanticInfo = compositeInfo(type.classId, isThisType = type.isThisType),
                 )
                 is ConeStructType -> CjoTypeMetadata(
                     kind = PackageFormat.TypeKind.Struct,
@@ -651,6 +663,16 @@ object CfirCjoPackageMetadataProducer {
                 )
                 is ConeEnumType -> CjoTypeMetadata(
                     kind = PackageFormat.TypeKind.Enum,
+                    typeArguments = type.typeArguments.map { projectionType(it) },
+                    semanticInfo = compositeInfo(type.classId),
+                )
+                /*
+                 * typealias 类型按官方 `SaveNominalTy` 写：`TypeKind.Type` + 别名声明 FullId + use-site 实参。
+                 * 读出侧（`CfirTypeDeserializer.convertTypeAliasType`）按同一契约恢复，
+                 * 保证「写出 → 读入」对别名保持别名身份，而不是被静默展开或报 unsupported。
+                 */
+                is ConeTypeAliasType -> CjoTypeMetadata(
+                    kind = PackageFormat.TypeKind.Type,
                     typeArguments = type.typeArguments.map { projectionType(it) },
                     semanticInfo = compositeInfo(type.classId),
                 )
@@ -675,8 +697,8 @@ object CfirCjoPackageMetadataProducer {
 
         private fun projectionType(projection: ConeTypeProjection): UInt = type(projection.type)
 
-        private fun compositeInfo(classId: ClassId): CjoCompositeTypeInfoMetadata {
-            classIndex[classId]?.let { return CjoCompositeTypeInfoMetadata(it) }
+        private fun compositeInfo(classId: ClassId, isThisType: Boolean = false): CjoCompositeTypeInfoMetadata {
+            classIndex[classId]?.let { return CjoCompositeTypeInfoMetadata(it, isThisType = isThisType) }
             val packageName = classId.packageFqName.asString()
             val packageIndex = externalImports.indexOf(packageName).let { existing ->
                 if (existing >= 0) existing else {
@@ -694,6 +716,7 @@ object CfirCjoPackageMetadataProducer {
                 } else {
                     classId.relativeClassName.asString()
                 },
+                isThisType = isThisType,
             )
         }
 

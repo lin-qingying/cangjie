@@ -665,7 +665,7 @@ public val CaDanglingFileModule.isStable: Boolean
 ## org/cangnova/cangjie/analysis/api/projectStructure/CaLibraryFallbackDependenciesModule.kt
 package org.cangnova.cangjie.analysis.api.projectStructure
 public interface CaLibraryFallbackDependenciesModule : CaModule
-CaLibraryFallbackDependenciesModule.public val dependencyOwnerName: String
+CaLibraryFallbackDependenciesModule.public val dependentLibrary: CaLibraryModule
 CaLibraryFallbackDependenciesModule.public override val moduleDescription: String
 ## org/cangnova/cangjie/analysis/api/projectStructure/CaLibraryModule.kt
 package org.cangnova.cangjie.analysis.api.projectStructure
@@ -1487,6 +1487,7 @@ CaSymbolProvider.public fun getTopLevelClassLikeSymbols(packageFqName: FqName, n
 CaSymbolProvider.public fun getTopLevelCallableSymbols(packageFqName: FqName, name: Name): List<CaCallableSymbol>
 CaSymbolProvider.public fun getTopLevelExtendSymbols(packageFqName: FqName): List<CaExtendSymbol>
 CaSymbolProvider.public fun getExtendSymbols(targetClassId: ClassId): List<CaExtendSymbol>
+CaSymbolProvider.public fun getExtendSymbols(receiverType: CaType): List<CaExtendSymbol>
 CaSymbolProvider.public fun getDeclarationsByNamePrefix( namePrefix: String, isRepeatedInvocation: Boolean = false, ): List<CaDeclarationSymbol>
 public val CjElement.symbol: CaDeclarationSymbol
 public class.simpleName}")

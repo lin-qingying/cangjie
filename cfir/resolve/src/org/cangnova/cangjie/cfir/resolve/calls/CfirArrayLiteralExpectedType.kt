@@ -29,7 +29,13 @@ internal fun CfirArrayLiteral.contextualArrayLiteralTypeOrNull(
     } else {
         expandedExpectedType.arrayLiteralTypeForSupertypeTarget(session) ?: return null
     }
-    val elementExpectedType = arrayType.arrayLiteralElementType ?: return null
+    /*
+     * 元素目标类型必须先展开别名：库签名里的 `Array<Byte>` 中 `Byte` 是跨包 typealias，
+     * `ConeTypeAliasType.expandedType` 可能为空；官方在 `ChkArrayLit` 前已做
+     * `SubstituteTypeAliasInTy`，字面量转换看到的是被别名指向的 primitive（UInt8），
+     * 否则 `write([1])` 会误报 `ARGUMENT_TYPE_MISMATCH`。
+     */
+    val elementExpectedType = (arrayType.arrayLiteralElementType ?: return null).fullyExpandedType(session)
     if (arrayType is ConeVArrayType && arrayType.size != elements.size.toLong()) return null
 
     for (element in elements) {

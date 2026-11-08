@@ -17,7 +17,7 @@ cd "D:/code/intellij/cangjie/intellij-ide/.claude/worktrees/musing-bun-5ae793" &
 
 - [ ] IDE 起来后 `Help → About` / 插件列表里能看到 **CangJie 2.1.4** 已启用，且**没有**报依赖缺失（LSP4IJ / TOML / JSON 三件）。
 - [ ] 打开 `.cj` 文件，语法高亮正常、无红色报错横幅。
-- [ ] `Help → Show Log in Explorer` 看 `idea.log`：搜 `cn.cangnova.cangjie`，确认无 `PluginException` / `ClassNotFoundException`。
+- [ ] `Help → Show Log in Explorer` 看 `idea.log`：搜 `org.cangnova.cangjie`，确认无 `PluginException` / `ClassNotFoundException`。
 
 ## 2. 触发
 

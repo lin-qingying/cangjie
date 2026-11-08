@@ -25,19 +25,20 @@ package org.cangnova.cangjie.psi.stubs.elements
 
 import org.cangnova.cangjie.psi.CjUserType
 import org.cangnova.cangjie.psi.stubs.CangJieUserTypeStub
+import org.cangnova.cangjie.psi.stubs.impl.CangJieStubClassifierKind
+import org.cangnova.cangjie.psi.psiUtil.StubUtils
 import org.cangnova.cangjie.psi.stubs.impl.CangJieUserTypeStubImpl
 import com.intellij.lang.ASTNode
 import com.intellij.psi.stubs.StubElement
 import com.intellij.psi.stubs.StubInputStream
 import com.intellij.psi.stubs.StubOutputStream
-import org.jetbrains.annotations.NonNls
 import java.io.IOException
 
 /**
  * 表示 `CjUserTypeElementType`，承载PSI Stub中的语法节点、索引桩或辅助模型。
  */
 class CjUserTypeElementType(debugName: String) :
-    CjStubElementType<CangJieUserTypeStub, CjUserType>(
+    CjStubElementType<CangJieUserTypeStubImpl, CjUserType>(
         debugName,
         CjUserType::class.java,
         CangJieUserTypeStub::class.java,
@@ -45,14 +46,14 @@ class CjUserTypeElementType(debugName: String) :
     /**
      * 实现 `createStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
      */
-    override fun createStub(psi: CjUserType, parentStub: StubElement<*>?): CangJieUserTypeStub {
+    override fun createStub(psi: CjUserType, parentStub: StubElement<*>?): CangJieUserTypeStubImpl {
         return CangJieUserTypeStubImpl(parentStub)
     }
 
     /**
      * 实现 `createPsi` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
      */
-    override fun createPsi(stub: CangJieUserTypeStub): CjUserType {
+    override fun createPsi(stub: CangJieUserTypeStubImpl): CjUserType {
         return CjUserType(stub)
     }
 
@@ -67,14 +68,23 @@ class CjUserTypeElementType(debugName: String) :
      * 实现 `serialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
      */
     @Throws(IOException::class)
-    override fun serialize(stub: CangJieUserTypeStub, dataStream: StubOutputStream) {
+    override fun serialize(stub: CangJieUserTypeStubImpl, dataStream: StubOutputStream) {
+        // 反编译元数据：别名 ClassId（统一样式，无别名写 present=false）与声明种类编码。
+        StubUtils.serializeClassId(dataStream, stub.typeAliasClassId)
+        dataStream.writeByte(stub.classifierKind?.ordinal ?: -1)
+        dataStream.writeBoolean(stub.isThisType)
     }
 
     /**
      * 实现 `deserialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
      */
     @Throws(IOException::class)
-    override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>): CangJieUserTypeStub {
-        return CangJieUserTypeStubImpl(parentStub)
+    override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>): CangJieUserTypeStubImpl {
+        val typeAliasClassId = StubUtils.deserializeClassId(dataStream)
+        val kindOrdinal = dataStream.readByte().toInt()
+        val classifierKind = CangJieStubClassifierKind.entries.getOrNull(kindOrdinal)
+        val isThisType = dataStream.readBoolean()
+        return CangJieUserTypeStubImpl(parentStub, typeAliasClassId, classifierKind, isThisType)
     }
 }
+

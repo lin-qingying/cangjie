@@ -30,6 +30,7 @@ import org.cangnova.cangjie.cfir.MutableOrEmptyList
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAttributes
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.declarations.impl.CfirTypeParameterImpl
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
@@ -137,7 +138,7 @@ class CfirTypeDeserializer(
 
             TypeKind.Generic -> convertGenericType(semaTy)
 
-            TypeKind.Type -> errorType("Unsupported type kind: Type")
+            TypeKind.Type -> convertTypeAliasType(semaTy)
             else -> errorType("Unknown TypeKind: ${semaTy.kind}")
         }
     }
@@ -261,6 +262,56 @@ class CfirTypeDeserializer(
     }
 
     /**
+     * 反序列化 typealias 类型引用（`TypeKind.Type`）。
+     *
+     * 官方 `.cjo` 把“源码里出现别名”的类型位置记录为 `TypeKind.Type`（schema 注释即 typealias），
+     * 携带 `CompositeTyInfo.declPtr` 指向别名声明的 FullId。这里必须恢复成与源码解析一致的
+     * [ConeTypeAliasType]：保留别名身份（`classId` + 实参），并尽量附加别名 RHS 的展开类型，
+     * 使 `fullyExpandedType` 与 `Array<UInt8>` 等展开类型等价。
+     *
+     * 反例（修复前的行为）：把该 kind 一律退化为错误类型，会导致库签名里的 `Array<Byte>`
+     * 变成 `Array<ERROR TYPE>`，进而在 IDE（STUBS）反编译视图里被渲染成 `Array<Any>`，
+     * 并在使用点报出 `RETURN_TYPE_MISMATCH`。
+     */
+    private fun convertTypeAliasType(semaTy: SemaTy): ConeCangJieType {
+        val info = semaTy.info(CompositeTyInfo()) as? CompositeTyInfo
+            ?: return errorType("TypeAlias missing CompositeTyInfo")
+        val fullId = info.declPtr
+            ?: return errorType("TypeAlias CompositeTyInfo missing declPtr")
+        val classId = context.fullIdResolver.resolveClassId(fullId)
+            ?: return errorType("Cannot resolve typealias FullId: ${context.fullIdResolver.describe(fullId)}")
+        val typeArguments = deserializeTypeArgs(semaTy)
+        val aliasDeclaration = materializedTypeAliasOrNull(fullId)
+        return ConeTypeAliasType(
+            classId = classId,
+            /*
+             * 展开类型只在“同包已物化、且别名不是泛型”时内联：
+             * 泛型别名的 RHS 需要按 use-site 实参替换，直接内联会得到未代入的 `Array<T>`，
+             * 比留空更糟。留空走 `directExpansionType` 在 use-site 惰性展开（含实参替换）。
+             */
+            expandedType = aliasDeclaration
+                ?.takeIf { alias -> alias.typeParameters.isEmpty() }
+                ?.expandedTypeRef
+                ?.coneTypeOrNull,
+            typeArguments = typeArguments,
+        )
+    }
+
+    /**
+     * 取当前包中**已经物化**的别名声明；跨包或尚未物化时返回 null。
+     *
+     * 类型反序列化期间不得回调 `symbolProvider`：那会进入声明反序列化，而“正在反序列化”的
+     * 重入守卫返回 null，provider 随即把该 classId 记入负缓存，别名将永久不可解析
+     * （`AbstractCfirDeserializedSymbolProvider` 的 `missingClasses`）。
+     * 跨包别名交给 use-site 的 `directExpansionType` 惰性展开，这也是源码路径的契约。
+     */
+    private fun materializedTypeAliasOrNull(fullId: FullId): CfirTypeAlias? {
+        val resolved = context.fullIdResolver.resolve(fullId) as? ResolvedFullId.Declaration ?: return null
+        if (resolved.source != ResolvedFullId.Declaration.Source.CURRENT_PACKAGE) return null
+        return context.declCache[resolved.declaration.zeroBasedIndex] as? CfirTypeAlias
+    }
+
+    /**
      * CJO `GenericTyInfo.declPtr` 指向真实的 `GenericParamDecl`。
      * 当声明反序列化已物化该类型参数时，类型引用必须复用同一个 symbol，
      * 否则函数/enum constructor 签名中的 `T` 无法被调用候选的 fresh substitutor 命中。
@@ -346,3 +397,4 @@ class CfirTypeDeserializer(
         return symbol
     }
 }
+

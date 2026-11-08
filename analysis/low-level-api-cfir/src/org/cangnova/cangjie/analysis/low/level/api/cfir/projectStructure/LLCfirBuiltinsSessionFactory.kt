@@ -24,6 +24,7 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.factorie
 import kotlin.time.TimeSource
 import org.cangnova.cangjie.cfir.PrivateSessionConstructor
 import org.cangnova.cangjie.cfir.SessionConfiguration
+import org.cangnova.cangjie.cfir.resolve.CfirDiagnosticCollector
 import org.cangnova.cangjie.cfir.resolve.providers.CfirProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
@@ -193,6 +194,20 @@ class LLCfirBuiltinsSessionFactory(private val project: Project) {
                 registerModuleData(moduleData)
                 val cangjieScopeProvider = CfirCangJieScopeProvider()
                 register(CfirCangJieScopeProvider::class, cangjieScopeProvider)
+
+                /*
+                 * builtins session 同样必须满足分析基础组件契约（TypeComponents、
+                 * typeResolver、superTypeGraph、accessibility、extend 索引等）：
+                 * primitive / BuiltInDecl 的合成声明 moduleData 指向本 session，
+                 * checkers 与 IDE 诊断收集会经声明所属 session 触达这些组件。
+                 * 缺失时以 `No '<component>' in array owner` 炸掉诊断收集
+                 * （实证：`LLCfirBuiltinsSession … 缺 TypeComponents`）。
+                 * builtins 不跑 resolve 流水线，因此不注册阶段 Processor；
+                 * 诊断上报器复用默认 collector，与 CLI 共享行为。
+                 */
+                registerAnalysisBaseComponents(
+                    diagnosticReporterOrNull ?: CfirDiagnosticCollector().also(::registerDiagnosticReporter),
+                )
 
                 val symbolProvider = createCompositeSymbolProvider(this) {
                     addAll(

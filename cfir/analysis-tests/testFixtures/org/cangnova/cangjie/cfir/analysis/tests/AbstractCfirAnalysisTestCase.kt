@@ -53,6 +53,15 @@ abstract class AbstractCfirAnalysisTestCase : CjParsingTestCase(
     }
 
     /**
+     * 测试 session 使用的语言设置。
+     *
+     * 子类可覆盖以验证受分析标志控制的行为（例如关闭 `expandTypeAliasesInTypeResolution`
+     * 让声明签名保留 `ConeTypeAliasType`，对齐官方 `.cjo` 中的 `TypeKind.Type`）。
+     */
+    protected open val sessionLanguageVersionSettings: org.cangnova.cangjie.LanguageVersionSettings
+        get() = org.cangnova.cangjie.LanguageVersionSettingsImpl.DEFAULT
+
+    /**
      * 创建 analysis-tests 使用的最小 source session。
      *
      * Session 内注册 module data、scope provider、source provider 与 builtin symbol provider，
@@ -76,7 +85,7 @@ abstract class AbstractCfirAnalysisTestCase : CjParsingTestCase(
             session.register(
                 org.cangnova.cangjie.cfir.session.CfirLanguageSettingsComponent::class,
                 org.cangnova.cangjie.cfir.session.CfirLanguageSettingsComponent(
-                    org.cangnova.cangjie.LanguageVersionSettingsImpl.DEFAULT,
+                    sessionLanguageVersionSettings,
                 ),
             )
             session.register(

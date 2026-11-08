@@ -64,6 +64,9 @@ class RealProjectSession internal constructor(
         }
     }
 
+    /** `cjpm.toml` bin-dependencies 解析出的依赖根数量（如 stdx 根），报告与验证用。 */
+    val binDependencyRootCount: Int get() = model.binDependencyRoots.size
+
     /** 逐文件收集 CFIR 诊断；单文件异常被捕获在结果里。 */
     fun analyzeAll(): List<FileAnalysis> {
         val analyses = files.map(::analyzeFile)
@@ -93,6 +96,7 @@ class RealProjectSession internal constructor(
             buildResults = buildResults,
             dependencyCjoCount = dependencyCjoCount,
             analyses = analyses,
+            binDependencyRoots = model.binDependencyRoots,
         )
     }
 
@@ -192,14 +196,19 @@ class RealProjectSession internal constructor(
             }
 
             val dependencyCjoItems = collectDependencyCjoItems(psiManager, model)
-            val libraryModules = if (dependencyCjoItems.isEmpty()) {
+            // cjpm 的 bin-dependencies（如 stdx）是 SDK 外置预编译库：cjpm build 不会把它们的
+            // `.cjo` 拷进 `target/`，必须按 `cjpm.toml` 解析出的目录根一并挂载，
+            // 否则 `import stdx.*` 在 standalone 模块图里无库可查。
+            val binDependencyItems = model.binDependencyRoots.mapNotNull { path -> psiItemOrNull(psiManager, path) }
+            val libraryBinaryRoots = dependencyCjoItems + binDependencyItems
+            val libraryModules = if (libraryBinaryRoots.isEmpty()) {
                 emptyList()
             } else {
                 listOf(
                     CaStandaloneLibraryModule(
                         libraryName = "cjpm-dependencies",
                         project = project,
-                        binaryRoots = dependencyCjoItems,
+                        binaryRoots = libraryBinaryRoots,
                         targetPlatform = targetPlatform,
                     ),
                 )
@@ -254,5 +263,13 @@ class RealProjectSession internal constructor(
                 psiManager.findFile(virtualFile) ?: error("Cannot restore PSI file for `$path`.")
             }
         }
+
+        /**
+         * [psiItem] 的容错版：bin-dependency 根是外部目录（如 `~/.cangjie/stdx/.../stdx`），
+         * 恢复失败时丢弃该根而不是让整个项目准备失败； cjpm 已成功编译过，
+         * 缺根只表现为该库不可解析，会直接体现在报告里。
+         */
+        private fun psiItemOrNull(psiManager: PsiManager, path: Path): PsiFileSystemItem? =
+            runCatching { psiItem(psiManager, path) }.getOrNull()
     }
 }

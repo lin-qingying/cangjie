@@ -27,6 +27,7 @@ import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolNamesProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProviderInternals
 import org.cangnova.cangjie.cfir.patterns.bindingVariables
 import org.cangnova.cangjie.cfir.psi
+import org.cangnova.cangjie.cfir.realPsi
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.ClassId
@@ -52,10 +53,16 @@ internal class LLCangJieSourceSymbolProvider(
     declarationProviderFactory: (GlobalSearchScope) -> CangJieDeclarationProvider?,
 ) : LLCangJieSymbolProvider(session), LLMultiClassLikeSymbolProvider {
     /**
-     * 当前源码模块的内容搜索范围。
+     * 当前源码模块的**声明来源**搜索范围。
+     *
+     * 必须使用 [CaModule.baseContentScope]（仅本模块源根），而不是 [CaModule.contentScope]：
+     * `contentScope` 已被 content-scope refiner 扩展到依赖模块的文件，
+     * 若用它做声明索引，本模块的符号提供器会查到依赖模块（如 `import stdx.*` 的目标）
+     * 的声明，再用**本模块**的 `LLCfirModuleResolveComponents` 去构建其 CFIR，
+     * 触发 `Modules are inconsistent`（跨模块源码依赖场景必然出现）。
      */
     private val searchScope: GlobalSearchScope
-        get() = moduleComponents.module.contentScope
+        get() = moduleComponents.module.baseContentScope
 
     /**
      * 聚合当前内容范围内可用的仓颉声明索引。
@@ -255,7 +262,9 @@ internal class LLCangJieSourceSymbolProvider(
      */
     override fun getTopLevelCallableSymbols(packageFqName: FqName, name: Name): List<CfirCallableSymbol<*>> {
         if (!symbolNamesProvider.mayHaveTopLevelCallable(packageFqName, name)) return emptyList()
-        return getTopLevelCallableSymbols(CallableId(packageFqName, name), callableFiles = null)
+        val callableId = CallableId(packageFqName, name)
+        return getTopLevelCallableSymbols(callableId, callableFiles = null) +
+            getTopLevelEnumConstructorSymbols(callableId, constructors = null)
     }
 
     /**
@@ -264,7 +273,9 @@ internal class LLCangJieSourceSymbolProvider(
     @CfirSymbolProviderInternals
     override fun getTopLevelCallableSymbolsTo(destination: MutableList<CfirCallableSymbol<*>>, packageFqName: FqName, name: Name) {
         if (!symbolNamesProvider.mayHaveTopLevelCallable(packageFqName, name)) return
-        destination += getTopLevelCallableSymbols(CallableId(packageFqName, name), callableFiles = null)
+        val callableId = CallableId(packageFqName, name)
+        destination += getTopLevelCallableSymbols(callableId, callableFiles = null)
+        destination += getTopLevelEnumConstructorSymbols(callableId, constructors = null)
     }
 
     /**
@@ -443,12 +454,57 @@ internal class LLCangJieSourceSymbolProvider(
     }
 
     /**
+     * 源码顶层 enum 的枚举项缓存，键为 [CallableId]，上下文为可选的已知枚举项 PSI。
+     *
+     * 仓颉枚举项在 enum 限定位之外按 global scope 参与名字查找
+     * （官方 `Sema/TypeCheckCall.cpp` 的 `CalculateEnumCtorScopeLevel`），
+     * 因此与顶层函数/属性一样必须能从包级 callable 入口取到；
+     * 已编译库侧由 [LLCangJieStubBasedLibrarySymbolProvider] 以同样的投影暴露。
+     */
+    private val enumConstructorCache: CfirCache<CallableId, List<CfirEnumConstructorSymbol>, Collection<CjEnumConstructor>?> =
+        session.cfirCachesFactory.createCache { callableId, context ->
+            loadEnumConstructorsByCallableId(callableId, context)
+        }
+
+    /**
+     * 按 [callableId] 在当前源码模块中加载同名枚举项符号。
+     *
+     * 符号身份取自所属 enum 的 CFIR 声明，不新建第二份枚举项符号；
+     * 找不到对应 CFIR 声明时按缺失处理，交由调用方报 unresolved。
+     */
+    private fun loadEnumConstructorsByCallableId(
+        callableId: CallableId,
+        foundConstructors: Collection<CjEnumConstructor>?,
+    ): List<CfirEnumConstructorSymbol> {
+        val constructors = foundConstructors ?: declarationProvider.getTopLevelEnumConstructors(callableId)
+        if (constructors.isEmpty()) return emptyList()
+        return constructors.mapNotNull { constructor ->
+            val enumDeclaration = constructor.parentEnum ?: return@mapNotNull null
+            val cfirFile = moduleComponents.cfirFileBuilder.buildRawCfirFileWithCaching(enumDeclaration.containingCjFile)
+            val cfirEnum = CfirElementFinder.findDeclaration(cfirFile, enumDeclaration) as? CfirEnum
+                ?: return@mapNotNull null
+            cfirEnum.declarations
+                .filterIsInstance<CfirEnumConstructor>()
+                .firstOrNull { enumConstructor -> enumConstructor.realPsi === constructor }
+                ?.symbol
+        }
+    }
+
+    /**
+     * 查询指定包和名称下的全部枚举项符号（包级 callable 视图）。
+     */
+    private fun getTopLevelEnumConstructorSymbols(
+        callableId: CallableId,
+        constructors: Collection<CjEnumConstructor>?,
+    ): List<CfirEnumConstructorSymbol> =
+        enumConstructorCache.getValue(callableId, constructors)
+
+    /**
      * 判断当前源码模块包索引中是否存在 [fqName] 包。
      */
     override fun hasPackage(fqName: FqName): Boolean {
         return packageProvider.doesPackageExist(fqName)
     }
-
     /**
      * 物化当前源码模块中的顶层扩展文件为 raw CFIR 文件。
      */

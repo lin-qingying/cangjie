@@ -18,6 +18,23 @@ interface CangJieGeneratableMember {
 
     /** 渲染后的声明源码，供候选预览与插入。 */
     val renderedText: String
+
+    /**
+     * 声明形态，决定插入时使用函数还是属性的 PSI 工厂路径。
+     *
+     * 历史消费方（补全声明建议）只读 [name] 与 [renderedText]，因此这里给出
+     * 函数默认值保持源兼容；真实生成器必须显式声明形态，不得依赖默认值。
+     */
+    val kind: Kind get() = Kind.FUNCTION
+
+    /** 可生成成员的声明形态。 */
+    enum class Kind {
+        /** 函数成员：`func ...` 声明。 */
+        FUNCTION,
+
+        /** 属性成员：`prop ...` 声明。 */
+        PROPERTY,
+    }
 }
 
 /**
@@ -43,6 +60,16 @@ interface CangJieMemberGenerationService {
      * 类型不可分析（未解析、不是类状声明）时返回空列表，由调用方决定是否提示。
      */
     fun collectUnimplementedMembers(typeStatement: CjTypeStatement): List<CangJieGeneratableMember>
+
+    /**
+     * 把 [collectUnimplementedMembers] 产出的成员**插入**到目标类型声明中。
+     *
+     * 这是 headless 写路径：方法内部**不**启动写事务、**不**重排格式、也不弹任何 UI——
+     * 调用方负责提供写动作与 undo 分组语义（IDE 动作处理器用 `WriteCommandAction` 包裹并在
+     * 插入后重排；LSP 等 headless 宿主在 `runWriteAction` 中执行后 diff 出协议编辑）。
+     * 成员列表为空时是 no-op，不触碰文件。
+     */
+    fun generateMembers(typeStatement: CjTypeStatement, members: List<CangJieGeneratableMember>)
 }
 
 /**

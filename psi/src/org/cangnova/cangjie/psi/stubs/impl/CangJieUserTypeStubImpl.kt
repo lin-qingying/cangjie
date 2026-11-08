@@ -24,6 +24,7 @@
 
 package org.cangnova.cangjie.psi.stubs.impl
 
+import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.psi.CjUserType
 import org.cangnova.cangjie.psi.stubs.CangJieUserTypeStub
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
@@ -33,14 +34,34 @@ import com.intellij.psi.stubs.StubElement
 /**
  * 表示 `CangJieUserTypeStubImpl`，承载PSI Stub中的语法节点、索引桩或辅助模型。
  */
+
 class CangJieUserTypeStubImpl(
 
     parent: StubElement<out PsiElement>?,
+
+    /**
+     * 反编译来源里该 user type 指向的 `type` 别名 ClassId。
+     */
+    val typeAliasClassId: ClassId? = null,
+
+    /**
+     * 反编译来源里该 user type 的声明种类；源码 PSI 或无法判定时为 null。
+     */
+    val classifierKind: CangJieStubClassifierKind? = null,
+
+    /**
+     * 反编译来源里该 class-like user type 是否为类体内的 `This` 类型（cjo `CompositeTyInfo.isThisTy`）。
+     */
+    val isThisType: Boolean = false,
 ) : CangJieStubBaseImpl<CjUserType>(parent, CjStubElementTypes.USER_TYPE), CangJieUserTypeStub {
     /**
      * 实现 `copyInto` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
      */
     override fun copyInto(newParent: StubElement<*>?): CangJieUserTypeStubImpl = CangJieUserTypeStubImpl(
         parent = newParent,
+        typeAliasClassId = typeAliasClassId,
+        classifierKind = classifierKind,
+        isThisType = isThisType,
     )
 }
+

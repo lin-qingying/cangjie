@@ -63,7 +63,9 @@ public class FakeLsp {
             }
         }
         if (contentLength < 0) {
-            return "";
+            // Protocol violation: no Content-Length header. Treat as EOF
+            // rather than returning an empty message body.
+            return null;
         }
         byte[] body = new byte[contentLength];
         int read = 0;

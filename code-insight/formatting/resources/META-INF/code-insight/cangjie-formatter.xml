@@ -1,0 +1,15 @@
+<idea-plugin>
+    <extensions defaultExtensionNs="com.intellij">
+        <!--
+            formatter 依赖的 registry 键在 headless（LSP/standalone）容器中的声明。
+            IDE 插件的同一份声明在 intellij-ide/modules/ide/base 的 META-INF/cangjie-formatter.xml，
+            两处键名与默认值保持一致；不加载此文件，formatter 读 registry 时会抛
+            MissingResourceException（MockApplication 没有装载 IDE 侧的插件描述符）。
+        -->
+        <registryKey
+                key="cangjie.formatter.allowTrailingCommaOnCallSite"
+                description="Allow a trailing comma on call-site"
+                defaultValue="false"
+                restartRequired="false"/>
+    </extensions>
+</idea-plugin>

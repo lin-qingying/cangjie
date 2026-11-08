@@ -16,6 +16,7 @@ import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.patterns.bindingVariables
 import org.cangnova.cangjie.cfir.psi
 import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.FqName
@@ -93,6 +94,84 @@ class SourcePostSemaDiagnosticsTest : AbstractAnalysisApiExecutionTest(
     fun useCrossFileLet(mainFile: CjFile, testServices: TestServices) {
         val sharedLetFile = testServices.cjTestModuleStructure.allCjFiles.single { it.name == "sharedLet.cj" }
         assertCrossFileCallableIsIndexed(sharedLetFile, "sharedRoot")
+        assertNoDiagnostics(mainFile)
+    }
+
+    /**
+     * 同包另一文件的裸枚举构造器必须进入包级 callable 入口。
+     *
+     * 官方 `Sema/TypeCheckCall.cpp` 的 `CalculateEnumCtorScopeLevel` 把 enum 限定位之外的
+     * 构造器按 global scope level 参与查找；已编译库侧（stub provider）本来就按此暴露，
+     * 源码侧 provider 若只收集顶层函数/属性就会漏掉枚举项，真实项目表现为
+     * `super(Query)` / `hasCapability(SSL)` 等值位置成片 `UNRESOLVED_REFERENCE`。
+     */
+    @Test
+    fun useCrossFileEnumConstructor(mainFile: CjFile) {
+        val session = mainFile.getResolvableSessionForTest()
+        val enumConstructors = session.symbolProvider.getTopLevelCallableSymbols(
+            FqName("test"),
+            Name.identifier("Query"),
+        )
+        assertTrue(
+            enumConstructors.any { it is CfirEnumConstructorSymbol },
+            "Same-package enum constructor `Query` must be exposed through the package-level " +
+                "callable entry; got=${enumConstructors.map { it::class.simpleName }}",
+        )
+        assertNoDiagnostics(mainFile)
+    }
+
+    /**
+     * 枚举项与同名类型共存时，值位置必须解析成枚举项。
+     *
+     * 官方 `Sema/EnumSugarTargetsFinder.cpp` 的 `RefineTargets` 只保留 owner enum 与
+     * target type 一致的枚举项，同名 class/struct（含默认导入的 `std.core.String`）被淘汰；
+     * CFIR 若先落回 classifier 就会报 `REF_NOT_BE_TYPE` + 连带 `TYPE_MISMATCH`。
+     */
+    @Test
+    fun enumEntryShadowedByTypeName(mainFile: CjFile) {
+        assertNoDiagnostics(mainFile)
+    }
+
+    /**
+     * 库模块 `.cjo` 的跨包依赖（`std.core` 的 `Array<Byte>`）必须能从库 provider 的依赖搜索根解析。
+     *
+     * 缺 builtins 根时，库成员 {@code finish()} 的返回类型会退化成 error type，
+     * `reduceInvalidReturnTypeOverloads` 会把正确的零参候选淘汰，使 `sha256.finish()`
+     * 误报 `WRONG_NUMBER_OF_ARGUMENTS`（真实项目 stdx `Digest.finish` 即此形态）。
+     */
+    @Test
+    fun libraryMemberOverloadCall(mainFile: CjFile) {
+        assertNoDiagnostics(mainFile)
+    }
+
+    /**
+     * 同包另一文件导入 `std.sync` 时，本文件的 `synchronized` 不得误报 `USE_EXPR_WITHOUT_IMPORT`。
+     *
+     * 官方判定走 `GetImportedDecl(std.sync, "Lock")`，取决于包级 import 并集；
+     * 只按当前文件 import 判定会在 mariadb `transaction.cj`（同包 `connection.cj` 导入）上误报。
+     */
+    @Test
+    fun synchronizedLockFromSiblingImport(mainFile: CjFile) {
+        assertNoDiagnostics(mainFile)
+    }
+
+    /**
+     * `Array<?Array<Byte>>(n, repeat: [])` 的空数组字面量必须按 `Option` 自动装箱后的
+     * `Array<Byte>` 推断元素类型（官方 `ChkArrayLit` 在 box 后检查数组目标）。
+     */
+    @Test
+    fun repeatEmptyArrayLiteral(mainFile: CjFile) {
+        assertNoDiagnostics(mainFile)
+    }
+
+    /**
+     * 递归构造器检查沿 `super(...)` 走到另一文件的父类构造器时，父类构造器体仍是 lazy body。
+     *
+     * 读 `CfirLazyBlock.statements` 会抛 `CfirLazyBlock should be resolved before accessing`，
+     * 让整个文件的声明检查被隔离（真实项目 `server_auth_more_data.cj` 的 3 条隔离异常）。
+     */
+    @Test
+    fun recursiveConstructorLazySuperConstructor(mainFile: CjFile) {
         assertNoDiagnostics(mainFile)
     }
 

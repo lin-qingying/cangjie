@@ -65,13 +65,11 @@ class CfirBuiltinSymbolProvider(
             ?: CfirBinaryDependenciesModuleData(Name.identifier("<builtins>")).also { it.bindSession(session) }
     }
 
-    /** primitive ClassId 到合成声明的缓存。 */
-    private val primitiveDeclarationsByClassId: Map<ClassId, CfirPrimitiveTypeDeclaration> by lazy(LazyThreadSafetyMode.PUBLICATION) {
-        PrimitiveTypeKind.entries.associateBy(
-            keySelector = { it.classId },
-            valueTransform = ::buildPrimitiveDeclaration,
-        )
-    }
+    /**
+     * primitive 声明的会话级单例工厂；provider 只是其名称解析外观，
+     * 声明与 symbol 的唯一构造来源是 [primitiveFactory]。
+     */
+    private val primitiveFactory = CfirPrimitiveDeclarationFactory(session)
 
     /** 官方 BuiltInDecl ClassId 到合成声明的缓存。 */
     private val builtInDeclarationsByClassId: Map<ClassId, CfirBuiltInDeclaration> by lazy(LazyThreadSafetyMode.PUBLICATION) {
@@ -100,7 +98,7 @@ class CfirBuiltinSymbolProvider(
      */
     override fun getClassLikeSymbolByClassId(classId: ClassId): CfirClassLikeSymbol<*>? =
         builtInDeclarationsByClassId[classId]?.symbol
-            ?: primitiveDeclarationsByClassId[classId]?.symbol
+            ?: primitiveFactory.getDeclaration(classId)?.symbol
 
     /**
      * builtin provider 不提供顶层 callable symbol。
@@ -200,77 +198,6 @@ class CfirBuiltinSymbolProvider(
             ).toCfirResolvedTypeRef()
         }
     }
-
-    /**
-     * 构造一个 primitive 类型的合成 class-like 声明。
-     */
-    private fun buildPrimitiveDeclaration(kind: PrimitiveTypeKind): CfirPrimitiveTypeDeclaration {
-        val symbol = CfirPrimitiveTypeSymbol(kind.classId, kind)
-        val declaration = CfirPrimitiveTypeDeclaration(
-            moduleData = builtinModuleData,
-            symbol = symbol,
-            name = kind.classId.shortClassName,
-            kind = kind,
-            scopeProvider = session.cangjieScopeProvider,
-            origin = CfirDeclarationOrigin.Synthetic.Default,
-            attributes = CfirDeclarationAttributes.EMPTY,
-            declarations = buildPrimitiveMembers(kind).toMutableList(),
-            superTypeRefs = mutableListOf(),
-        )
-        declaration.initDefaultResolveState()
-
-        return declaration
-    }
-
-    /**
-     * 为 primitive 类型构造合成 operator 成员。
-     *
-     * 这些成员用于 scope 与调用解析统一看见 primitive 运算能力。
-     */
-    private fun buildPrimitiveMembers(kind: PrimitiveTypeKind): List<CfirDeclaration> =
-        BuiltinPrimitiveOperators.signaturesFor(kind).map { signature ->
-            val functionSymbol = CfirNamedFunctionSymbol(CallableId(kind.classId, signature.name))
-            val parameters = signature.parameterKinds.mapIndexed { index, parameterKind ->
-                val parameterSymbol = CfirValueParameterSymbol(CallableId(signature.name))
-                buildValueParameter {
-                    moduleData = builtinModuleData
-                    resolvePhase = CfirResolvePhase.BODY_RESOLVE
-                    origin = CfirDeclarationOrigin.Synthetic.FakeFunction
-                    attributes = CfirDeclarationAttributes.EMPTY
-                    isLocal = false
-                    deprecationsProvider = EmptyDeprecationsProvider
-                    dispatchReceiverType = null
-                    symbol = parameterSymbol
-                    containingDeclarationSymbol = functionSymbol
-                    isNamed = false
-                    status = DEFAULT_STATUS_FOR_STATUSLESS_DECLARATIONS
-                    returnTypeRef = buildResolvedTypeRef {
-                        coneType = ConePrimitiveType(parameterKind)
-                    }
-                    name = Name.identifier("p$index")
-                }
-            }
-
-            val status = CfirDeclarationStatusImpl().apply {
-                isOperator = true
-            }
-            buildNamedFunction {
-                moduleData = builtinModuleData
-                resolvePhase = CfirResolvePhase.BODY_RESOLVE
-                origin = CfirDeclarationOrigin.Synthetic.FakeFunction
-                attributes = CfirDeclarationAttributes.EMPTY
-                isLocal = false
-                dispatchReceiverType = null
-                this.status = status
-                returnTypeRef = buildResolvedTypeRef {
-                    coneType = ConePrimitiveType(signature.returnKind)
-                }
-                valueParameters += parameters
-                symbol = functionSymbol
-                name = signature.name
-                isMut = false
-            }
-        }
 
     /**
      * builtin provider 的名称索引实现。

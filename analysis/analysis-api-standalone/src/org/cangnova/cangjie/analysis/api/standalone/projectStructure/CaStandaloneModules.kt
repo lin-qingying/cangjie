@@ -122,9 +122,9 @@ class CaStandaloneLibrarySourceModule(
  */
 class CaStandaloneLibraryFallbackDependenciesModule(
     /**
-     * 触发 fallback 依赖模块创建的依赖拥有者名称。
+     * 触发 fallback 依赖模块创建的库。
      */
-    override val dependencyOwnerName: String,
+    override val dependentLibrary: CaLibraryModule,
     project: Project,
     scopeRoots: List<PsiFileSystemItem>,
     targetPlatform: TargetPlatform = CangJiePlatforms.defaultCangJiePlatform,

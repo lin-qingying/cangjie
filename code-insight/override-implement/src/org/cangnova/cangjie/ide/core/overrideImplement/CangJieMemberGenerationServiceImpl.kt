@@ -2,16 +2,19 @@ package org.cangnova.cangjie.ide.core.overrideImplement
 
 import org.cangnova.cangjie.analysis.api.CaExperimentalApi
 import org.cangnova.cangjie.analysis.api.analyze
+import org.cangnova.cangjie.analysis.api.symbols.CaNamedFunctionSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaPropertySymbol
 import org.cangnova.cangjie.analysis.api.symbols.markers.CaNamedSymbol
 import org.cangnova.cangjie.codeinsight.api.members.CangJieGeneratableMember
 import org.cangnova.cangjie.codeinsight.api.members.CangJieMemberGenerationService
+import org.cangnova.cangjie.psi.CjPsiFactory
 import org.cangnova.cangjie.psi.CjTypeStatement
 
 /**
  * 成员生成窄接口的适配实现。
  *
  * 它把内部处理器的「收集」结果翻译成接口类型：内部对象带着 chooser 语义与符号指针，
- * 接口只保留**名字**与**渲染后的声明文本**。
+ * 接口只保留**名字**、**渲染后的声明文本**与**声明形态**。
  *
  * 名字经符号恢复得到，不从渲染文本里截取：从 `func greet(name: String)` 这类文本里
  * 猜名字，在参数、泛型、命名参数都出现后会立刻出错。
@@ -40,10 +43,37 @@ internal class CangJieMemberGenerationServiceImpl : CangJieMemberGenerationServi
                 val symbol = chooser.symbolPointer.restoreSymbol(this)
                 GeneratableMember(
                     name = (symbol as? CaNamedSymbol)?.name?.asString() ?: chooser.text,
-                    renderedText = chooser.text,
+                    // 渲染与 IDE 生成路径共用同一份实现：规范化 override 签名 + 占位函数体。
+                    // chooser.text 只是展示用原始签名（无 override、无体），直接插入会产生
+                    // 与 IDE 行为不一致的声明。
+                    renderedText = when (symbol) {
+                        is CaNamedFunctionSymbol -> buildOverrideFunctionText(symbol)
+                        is CaPropertySymbol -> buildOverridePropertyText(symbol)
+                        else -> chooser.text
+                    },
+                    kind = if (symbol is CaPropertySymbol) {
+                        CangJieGeneratableMember.Kind.PROPERTY
+                    } else {
+                        CangJieGeneratableMember.Kind.FUNCTION
+                    },
                 )
             }
         }
+
+    override fun generateMembers(typeStatement: CjTypeStatement, members: List<CangJieGeneratableMember>) {
+        if (members.isEmpty()) return
+
+        // 接口契约：本方法只做插入，不带写事务、不做重排（见接口 KDoc）。
+        // 与 IDE 动作处理器一致，插入锚点取类型体末尾；宿主随后自行重排或 diff。
+        val psiFactory = CjPsiFactory(typeStatement.project)
+        members.forEach { member ->
+            val declaration = when (member.kind) {
+                CangJieGeneratableMember.Kind.FUNCTION -> psiFactory.createFunction(member.renderedText)
+                CangJieGeneratableMember.Kind.PROPERTY -> psiFactory.createProperty(member.renderedText)
+            }
+            typeStatement.addDeclaration(declaration)
+        }
+    }
 }
 
 /**
@@ -52,4 +82,5 @@ internal class CangJieMemberGenerationServiceImpl : CangJieMemberGenerationServi
 private data class GeneratableMember(
     override val name: String,
     override val renderedText: String,
+    override val kind: CangJieGeneratableMember.Kind,
 ) : CangJieGeneratableMember
