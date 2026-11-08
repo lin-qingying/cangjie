@@ -11,7 +11,19 @@ concurrency:
   group: publish-preview-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 jobs:
+  commit-check:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate commit subjects
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: python3 .github/scripts/check_commits.py --pr --base "$BASE_SHA" --head "$HEAD_SHA"
   test:
+    needs: commit-check
     runs-on: ubuntu-24.04
     outputs:
       base_version: ${{ steps.version.outputs.base_version }}
