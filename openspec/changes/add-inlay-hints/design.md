@@ -403,13 +403,30 @@ D40 的定标问题在本轮解决，并已落地共享层与 LSP 宿主。
   缺端点时只提示存在的一端。`session` 仅用于宏展开过滤，本类提示不依赖类型信息。
   端点判定顺序有硬约束：`hasErrorAncestor` 必须在读 `rangeOperatorNode` 之前，
   因为残缺节点取运算符会直接 `error(...)`。
-- D44（未完成，跨仓库）：IDE 侧还需 ①`optionIdOf` 增加 `RANGE_VALUE -> "cangjie.values.ranges"`、
-  ②新增 provider `cangjie.values.hints`（`CangJieValueInlayHintsProvider`）+ EP `<option>`、
-  ③把 `preview.cj` 改为 `0/*<# ≤ #>*/../*<# < #>*/10`
-  （按已有约定另建 `inlayProviders/cangjie.values.hints/cangjie.values.ranges.cj` 供逐项开关用）。
-  这三项都引用 `CangJieInlayHintTarget.RANGE_VALUE`，**必须在本分支合入后才能编译**，因此不在本轮做。
+- D44（已完成）：IDE 侧接线落在 `intellij-ide` 仓库的独立工作树
+  `cangjie-wt-hints/intellij-ide`（分支 `feature/inlay-hints-next`）：
+  ①`optionIdOf` 增加 `RANGE_VALUE -> "cangjie.values.ranges"`；
+  ②新增 provider `cangjie.values.hints`（`CangJieValueInlayHintsProvider`，`group=VALUES_GROUP`）+ EP `<option>`；
+  ③预览改成 `0/*<# ≤ #>*/../*<# < #>*/10`，并按约定新增逐项预览 `cangjie.values.hints/cangjie.values.ranges.cj`；
+  ④类型/参数名 provider 显式 `showRangeValues = false`，否则同一区间会被三个 provider 重复提示；
+  ⑤补 zh_CN 文案（含此前缺失的 `hints.type.property`）。
+  该仓库改动引用 `RANGE_VALUE`，`-Pcangjie.upstream.root=<根工作树>` 指向上游即可在本分支上独立编译。
 
 验证：
 - `:code-insight:hints:test` → **22/22**（新增 `CjRangeValueHintsCollectorCandidatesTest` 6 例）
 - `:lsp:test --tests "*CangjieInlayHintIntegrationTest*"` → **8/8**（新增 `rangeValues.cj` golden）
 - golden 只比对 `kind == null`（协议里 `OTHER` 无对应类别）的提示，同文件的类型提示不参与
+- `intellij-ide`：`:modules:ide:base:compileKotlin` **BUILD SUCCESSFUL**；
+  `CangJieInlayHintsProviderTest` **9/9**（新增值 provider 两例 + 更新 EP 注册断言）
+
+环境约束（复现时先看这三条，否则会误判成代码问题）：
+- D45（工作树布局）：IDE 测试基类 `CangJiePluginTestCaseBase.locateRepositoryRoot` 靠**向上**找
+  `cfir/cfir-serialization/testResources/cjo-sdk/*/std.cjo` 定位仓库根。因此 `intellij-ide` 的
+  worktree 必须位于根工作树**内部**（`cangjie-wt-hints/intellij-ide`，正好命中根 `.gitignore`
+  的 `/intellij-ide/`），放在兄弟目录会 `Cannot locate repository root`。
+  放进去后 `includeBuild("..")` 自然指向根工作树，无需再传 `-Pcangjie.upstream.root`。
+- D46（沙箱）：IDE 构建要读根工作树的 `psi/build/classes/**`，agent 沙箱默认拒绝跨目录 file-read，
+  表现为 **Gradle daemon 无故消失**（不是 OOM）。跨工作树构建必须在沙箱外执行。
+- D47（磁盘）：C 盘曾被 Gradle daemon 日志占满到 0 字节，同样表现为 daemon 猝死；
+  `~/.gradle/daemon/*/*.log` 可安全清理。
+
