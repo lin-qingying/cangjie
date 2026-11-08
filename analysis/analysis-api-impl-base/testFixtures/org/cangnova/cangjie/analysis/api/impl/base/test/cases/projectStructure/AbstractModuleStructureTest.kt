@@ -168,7 +168,7 @@ private fun toAuxiliaryShapeOrNull(module: CaModule): ExpectedCaModuleShape? = w
 private fun presentableModuleName(module: CaModule): String = when (module) {
     is CaDanglingFileModule -> module.file.name
     is CaLibrarySourceModule -> module.libraryName
-    is CaLibraryFallbackDependenciesModule -> "${module.dependencyOwnerName}.fallback"
+    is CaLibraryFallbackDependenciesModule -> "${module.dependentLibrary.libraryName}.fallback"
     is CaBuiltinsModule -> module.builtinsName
     is CaLibraryModule -> module.libraryName
     is CaNotUnderContentRootModule -> module.name

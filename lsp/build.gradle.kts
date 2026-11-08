@@ -31,8 +31,14 @@ dependencies {
     implementation(libs.opentelemetry.api)
     implementation(project(":code-insight:formatting"))
     implementation(project(":code-insight:folding"))
+    implementation(project(":code-insight:hints"))
     implementation(project(":code-insight:highlighting"))
     implementation(project(":code-insight:refactoring"))
+    // codeAction：quick-fix 注册表（协议侧标题与存在性）与成员生成（headless 应用）。
+    // api 模块必须显式声明：fixes/override-implement 用 implementation 引它，不透传。
+    implementation(project(":code-insight:api"))
+    implementation(project(":code-insight:fixes"))
+    implementation(project(":code-insight:override-implement"))
     implementation(project(":compiler:config"))
     // LSP 的进程内宏展开：完整宏引擎只在 compiler:frontend；执行器在 macro:macro-process。
     implementation(project(":compiler:frontend"))
@@ -64,8 +70,11 @@ dependencies {
     testImplementation(project(":code-insight:completion:impl-cfir"))
     testImplementation(project(":code-insight:formatting"))
     testImplementation(project(":code-insight:folding"))
+    testImplementation(project(":code-insight:hints"))
     testImplementation(project(":code-insight:highlighting"))
     testImplementation(project(":code-insight:refactoring"))
+    testImplementation(project(":code-insight:fixes"))
+    testImplementation(project(":code-insight:override-implement"))
     testImplementation(project(":compiler:config"))
     // Phase 2 容器探针与后续宏展开用例复用 fake 环境 / 引擎。
     testImplementation(testFixtures(project(":analysis:macro-expansion")))

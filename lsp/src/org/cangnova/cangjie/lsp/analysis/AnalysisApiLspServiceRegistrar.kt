@@ -31,6 +31,7 @@ import org.cangnova.cangjie.ide.completion.api.statistics.CangJieCompletionStati
 import org.cangnova.cangjie.ide.completion.impl.shared.resolve.CompletionDeclarationResolverRegistry
 import org.cangnova.cangjie.ide.completion.impl.shared.statistics.installOtelCompletionStatistics
 import org.cangnova.cangjie.ide.completion.impl.cfir.CfirCompletionServiceProvider
+import org.cangnova.cangjie.ide.core.overrideImplement.CangJieMemberGenerationHeadlessRegistrar
 import org.cangnova.cangjie.lsp.CangjieLspEnvironment
 
 /**
@@ -57,6 +58,28 @@ internal object AnalysisApiLspServiceRegistrar {
     )
 
     /**
+     * LSP 运行时需要显式加载的 code-insight 插件 XML。
+     *
+     * 必须先加载 api 描述符（声明 quick-fix registrar 扩展点与 [CangJieQuickFixService] 服务），
+     * 再加载 fixes 描述符（把 registrar 实现挂到扩展点上）——扩展注册要求扩展点已存在。
+     */
+    private val quickFixPluginXmls = listOf(
+        "META-INF/code-insight/cangjie-code-insight-api.xml",
+        "META-INF/code-insight/cangjie-code-insight-fixes.xml",
+    )
+
+    /**
+     * LSP 运行时需要显式加载的 formatter 插件 XML。
+     *
+     * 声明 formatter 依赖的 registry 键（如 `cangjie.formatter.allowTrailingCommaOnCallSite`）。
+     * 不加载它，格式化路径读 registry 会抛 MissingResourceException——
+     * headless 容器没有 IDE 插件描述符，键声明必须在这里显式装载。
+     */
+    private val formatterPluginXmls = listOf(
+        "META-INF/code-insight/cangjie-formatter.xml",
+    )
+
+    /**
      * 向当前 LSP 环境注册 Analysis API 运行所需的 application 和 project 服务。
      *
      * 该方法集中装配 standalone provider、project structure、modification tracker 和受限分析服务，
@@ -73,12 +96,24 @@ internal object AnalysisApiLspServiceRegistrar {
             PluginStructureProvider.registerApplicationServices(application, pluginXmlPath)
             PluginStructureProvider.registerProjectServices(project, pluginXmlPath)
         }
+        // quick-fix 框架：EP + 服务 + registrar 扩展（见 quickFixPluginXmls 的顺序注释）。
+        // `CangJieQuickFixService` 是惰性构建的：首次取用时才聚合 registrar 列表，
+        // 因此这里的装配顺序只影响扩展注册，不会触发过早构造。
+        quickFixPluginXmls.forEach { pluginXmlPath ->
+            PluginStructureProvider.registerApplicationServices(application, pluginXmlPath)
+        }
+        // formatter registry 键（纯 application 级声明，无服务/扩展）。
+        formatterPluginXmls.forEach { pluginXmlPath ->
+            PluginStructureProvider.registerApplicationServices(application, pluginXmlPath)
+        }
         CangJieRefactoringHeadlessRegistrar.registerExtensionPoints(application)
         CangJieRefactoringHeadlessRegistrar.registerProjectServices(project)
         PluginStructureProvider.registerApplicationServices(
             application,
             CangJieRefactoringHeadlessRegistrar.PLUGIN_XML_PATH,
         )
+        // 成员生成服务（quick fix 的 headless 应用路径）。
+        CangJieMemberGenerationHeadlessRegistrar.registerProjectServices(project)
 
         /*
          * LSP 运行时要保留自己的 project structure / modification 服务实现，

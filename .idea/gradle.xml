@@ -86,6 +86,7 @@
             <option value="$PROJECT_DIR$/code-insight/folding" />
             <option value="$PROJECT_DIR$/code-insight/formatting" />
             <option value="$PROJECT_DIR$/code-insight/highlighting" />
+            <option value="$PROJECT_DIR$/code-insight/hints" />
             <option value="$PROJECT_DIR$/code-insight/override-implement" />
             <option value="$PROJECT_DIR$/code-insight/refactoring" />
             <option value="$PROJECT_DIR$/common" />
@@ -129,6 +130,7 @@
             <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-code-insight-for-ide-module" />
             <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-code-insight-formatting-for-ide-module" />
             <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-code-insight-highlighting-for-ide-module" />
+            <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-code-insight-hints-for-ide-module" />
             <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-code-insight-refactoring-for-ide-module" />
             <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-common-for-ide-module" />
             <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-psi-for-ide-module" />
@@ -141,6 +143,7 @@
             <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-code-insight-for-ide" />
             <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-code-insight-formatting-for-ide" />
             <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-code-insight-highlighting-for-ide" />
+            <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-code-insight-hints-for-ide" />
             <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-code-insight-refactoring-for-ide" />
             <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-common-for-ide" />
             <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-psi-for-ide" />
@@ -258,6 +261,7 @@
                   <project path="$PROJECT_DIR$/code-insight/folding" />
                   <project path="$PROJECT_DIR$/code-insight/formatting" />
                   <project path="$PROJECT_DIR$/code-insight/highlighting" />
+                  <project path="$PROJECT_DIR$/code-insight/hints" />
                   <project path="$PROJECT_DIR$/code-insight/override-implement" />
                   <project path="$PROJECT_DIR$/code-insight/refactoring" />
                   <project path="$PROJECT_DIR$/common" />
@@ -301,6 +305,7 @@
                   <project path="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-code-insight-for-ide-module" />
                   <project path="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-code-insight-formatting-for-ide-module" />
                   <project path="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-code-insight-highlighting-for-ide-module" />
+                  <project path="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-code-insight-hints-for-ide-module" />
                   <project path="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-code-insight-refactoring-for-ide-module" />
                   <project path="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-common-for-ide-module" />
                   <project path="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-psi-for-ide-module" />
@@ -313,6 +318,7 @@
                   <project path="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-code-insight-for-ide" />
                   <project path="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-code-insight-formatting-for-ide" />
                   <project path="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-code-insight-highlighting-for-ide" />
+                  <project path="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-code-insight-hints-for-ide" />
                   <project path="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-code-insight-refactoring-for-ide" />
                   <project path="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-common-for-ide" />
                   <project path="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-psi-for-ide" />
@@ -403,6 +409,7 @@
             <option value="$PROJECT_DIR$/code-insight/folding" />
             <option value="$PROJECT_DIR$/code-insight/formatting" />
             <option value="$PROJECT_DIR$/code-insight/highlighting" />
+            <option value="$PROJECT_DIR$/code-insight/hints" />
             <option value="$PROJECT_DIR$/code-insight/override-implement" />
             <option value="$PROJECT_DIR$/code-insight/refactoring" />
             <option value="$PROJECT_DIR$/common" />
@@ -466,6 +473,7 @@
             <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-code-insight-for-ide-module" />
             <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-code-insight-formatting-for-ide-module" />
             <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-code-insight-highlighting-for-ide-module" />
+            <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-code-insight-hints-for-ide-module" />
             <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-code-insight-refactoring-for-ide-module" />
             <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-common-for-ide-module" />
             <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-psi-for-ide-module" />
@@ -478,6 +486,7 @@
             <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-code-insight-for-ide" />
             <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-code-insight-formatting-for-ide" />
             <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-code-insight-highlighting-for-ide" />
+            <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-code-insight-hints-for-ide" />
             <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-code-insight-refactoring-for-ide" />
             <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-common-for-ide" />
             <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-psi-for-ide" />

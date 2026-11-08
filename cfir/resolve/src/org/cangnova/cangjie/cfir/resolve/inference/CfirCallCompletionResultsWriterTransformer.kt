@@ -544,7 +544,7 @@ class CfirCallCompletionResultsWriterTransformer(
         } else {
             dispatchReceiver
                 .transformSingle(this@CfirCallCompletionResultsWriterTransformer, receiverData)
-                .transformSingle(integerOperatorApproximator, expectedReceiverType) as? CfirExpression
+                .transformSingle(integerOperatorApproximator, expectedReceiverType)
         }?.withCompletedEnumConstructorReceiverType(candidate)
 
         replaceDispatchReceiver(completedReceiver)
@@ -757,11 +757,11 @@ class CfirCallCompletionResultsWriterTransformer(
         expectedArgumentsTypeMapping: ExpectedArgumentType.ArgumentsMap?,
     ): CfirExpression {
         val argumentBeforeTransform =
-            (expectedArgumentsTypeMapping?.argumentReplacements?.get(originalArgument) ?: originalArgument) as CfirExpression
+            (expectedArgumentsTypeMapping?.argumentReplacements?.get(originalArgument) ?: originalArgument)
         val transformedArgument =
-            argumentBeforeTransform.transformSingle(this, expectedArgumentsTypeMapping) as CfirExpression
+            argumentBeforeTransform.transformSingle(this, expectedArgumentsTypeMapping)
         val replacedAfterTransform =
-            (expectedArgumentsTypeMapping?.argumentReplacements?.get(transformedArgument) ?: transformedArgument) as CfirExpression
+            (expectedArgumentsTypeMapping?.argumentReplacements?.get(transformedArgument) ?: transformedArgument)
         val expectedType = expectedArgumentsTypeMapping?.getExpectedType(originalArgument)
             ?: expectedArgumentsTypeMapping?.getExpectedType(argumentBeforeTransform)
             ?: expectedArgumentsTypeMapping?.getExpectedType(replacedAfterTransform)
@@ -773,7 +773,7 @@ class CfirCallCompletionResultsWriterTransformer(
         ) {
             replacedAfterTransform.replaceConeTypeOrNull(expectedArrayType)
         }
-        return replacedAfterTransform.transformSingle(integerOperatorApproximator, expectedType) as CfirExpression
+        return replacedAfterTransform.transformSingle(integerOperatorApproximator, expectedType)
     }
 
     /**
@@ -1265,8 +1265,8 @@ class CfirCallCompletionResultsWriterTransformer(
         val expectedRangeType = data?.getExpectedType(rangeExpression)?.rangeTypeForExpectedType(session)
         val endpointExpectedType = expectedRangeType?.typeArguments?.singleOrNull()?.type
         val endpointData = endpointExpectedType?.toExpectedType(
-            argumentReplacements = data?.argumentReplacements,
-            argumentMappingFailed = data?.argumentMappingFailed == true,
+            argumentReplacements = data.argumentReplacements,
+            argumentMappingFailed = data.argumentMappingFailed == true,
         )
         rangeExpression.transformAnnotations(this, data)
         rangeExpression.transformStart(this, endpointData)

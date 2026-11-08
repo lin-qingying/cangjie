@@ -30,6 +30,22 @@ package org.cangnova.cangjie.psi.stubs
 object CangJieStubVersions {
 
     /**
+     * 217:
+     * - USER_TYPE 别名 ClassId 改用 `StubUtils.serializeClassId/deserializeClassId`（`writeName(null)`
+     *   表达缺失），替换 216 的空串哨兵；同一元数据段新增 `isThisType` 字节（cjo `isThisTy`）。
+     *
+     * 216:
+     * - USER_TYPE 反编译元数据：`typeAliasClassId` + `classifierKind`（CLASS/INTERFACE/STRUCT/ENUM）
+     *   一起序列化（`UTF` + 单字节 ordinal）。215 只写 classId，同一版本号下格式不一致会被
+     *   错位读取，因此递增版本。
+     * - `.cjo` type stub 为 CPointer 保存结构化类型实参，并按包段/顶层声明段恢复限定名。
+     *
+     * 215:
+     * - USER_TYPE stub 新增反编译元数据位（初始只有 `typeAliasClassId`）。stub 格式变化，
+     *   必须重建索引；该版本已被 216 取代，仅保留变更记录。
+     */
+
+    /**
      * 214:
      * - 宏调用 `@Macro(...)` 的 Tokens 输入补齐 `<<`/`>>`、`b'0'` 等运算符与字面量 token，
      *   宏输入边界变化会改变 PSI 树与 stub 数量；与 213 是两次独立解析变更，必须再次重建索引
@@ -40,10 +56,6 @@ object CangJieStubVersions {
      *   否则旧索引（例如把续行 `let` 索引成 VARIABLE）与新 AST（ENUM_PATTERN）会触发 stub 绑定断言。
      */
 
-    /**
-     * 217:
-     * - `.cjo` type stub 为 CPointer 保存结构化类型实参，并按包段/顶层声明段恢复限定名
-     */
 
     /**
      * 212:
@@ -77,7 +89,7 @@ object CangJieStubVersions {
      * - extend stub 显式持久化稳定 extendId
      * - decompiled compiled stub 与 source stub 统一使用同一套 extend identity 协议
      */
-    const val SOURCE_STUB_VERSION = 214
+    const val SOURCE_STUB_VERSION = 217
 
     /**
      * 保存 `BINARY_STUB_VERSION`，供PSI Stub流程读取节点结构或语义信息。
@@ -98,3 +110,4 @@ object CangJieStubVersions {
 
 
 }
+

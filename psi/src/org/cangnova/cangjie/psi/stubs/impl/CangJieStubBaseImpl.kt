@@ -58,6 +58,7 @@ abstract class CangJieStubBaseImpl<T : CjElementImplStub<*>>(parent: StubElement
          *
          * 新增基接口（如区分有无 `ClassId` 的类型声明 stub 层次）必须登记在这里，否则反射渲染会静默丢失属性。
          */
+
         private val BASE_STUB_INTERFACES = listOf(
             CangJieStubWithFqName::class.java,
             CangJieClassifierStub::class.java,

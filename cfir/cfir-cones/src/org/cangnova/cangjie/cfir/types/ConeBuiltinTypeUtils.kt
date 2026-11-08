@@ -167,13 +167,17 @@ val ConeCangJieType.arrayElementType: ConeCangJieType?
  *
  * 官方 `ChkArrayLit` 同时接受 `Array<T>` 与 `VArray<T, N>` 作为目标类型；
  * 这里与普通变参的 `arrayElementType` 分离，避免把 `VArray` 误当作变参形参。
+ *
+ * `Option<T>` 按官方自动装箱（box）语义先解包：`Array<Option<Array<Byte>>>(n, repeat: [])`
+ * 的 `repeat:` 实参目标类型是 `Option<Array<Byte>>`，空字面量必须按解包后的 `Array<Byte>`
+ * 继续取元素类型，否则会误报 `ARRAY_LITERAL_TYPE_CANNOT_BE_INFERRED`。
  */
 val ConeCangJieType.arrayLiteralElementType: ConeCangJieType?
     get() = when (this) {
         is ConeVArrayType -> elementType
         is ConeErrorType -> delegatedType?.arrayLiteralElementType ?: arrayElementType
         is ConeTypeAliasType -> expandedType?.arrayLiteralElementType
-        else -> arrayElementType
+        else -> if (isOption) optionElementType?.arrayLiteralElementType else arrayElementType
     }
 
 /**

@@ -233,6 +233,11 @@ class LspIntegrationTestConnection private constructor(
         return awaitFuture(serverProxy.textDocumentService.codeAction(params))
     }
 
+    /** 发起 codeAction/resolve 请求并等待结果。 */
+    fun resolveCodeAction(params: CodeAction): CodeAction {
+        return awaitFuture(serverProxy.textDocumentService.resolveCodeAction(params))
+    }
+
     /** 发起 formatting 请求并等待结果。 */
     fun formatting(params: DocumentFormattingParams): List<TextEdit> {
         return awaitFuture(serverProxy.textDocumentService.formatting(params))
@@ -278,6 +283,11 @@ class LspIntegrationTestConnection private constructor(
     /** 发起 inlayHint 请求并等待结果。 */
     fun inlayHint(params: InlayHintParams): List<InlayHint> {
         return awaitFuture(serverProxy.textDocumentService.inlayHint(params))
+    }
+
+    /** 发起 inlayHint/resolve 请求并等待结果。 */
+    fun resolveInlayHint(hint: InlayHint): InlayHint {
+        return awaitFuture(serverProxy.textDocumentService.resolveInlayHint(hint))
     }
 
     /** 发起 textDocument/diagnostic 请求并等待结果。 */

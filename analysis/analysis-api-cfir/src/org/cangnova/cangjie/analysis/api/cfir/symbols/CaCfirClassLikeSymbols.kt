@@ -168,6 +168,9 @@ internal class CaCfirClassSymbol private constructor(
                 is CfirInterfaceSymbol -> CaClassKind.INTERFACE
                 is org.cangnova.cangjie.cfir.symbols.CfirStructSymbol -> CaClassKind.STRUCT
                 is org.cangnova.cangjie.cfir.symbols.CfirEnumSymbol -> CaClassKind.ENUM
+                // primitive 的合成 class-like 是名称解析与 qualifier 查找的正常形态，
+                // 不是错误路径；Analysis 公开层必须能区分它而不是抛错。
+                is org.cangnova.cangjie.cfir.symbols.CfirPrimitiveTypeSymbol -> CaClassKind.PRIMITIVE
                 else -> error("Unsupported class-like symbol `${cfirSymbol::class.simpleName}`")
             }
         }

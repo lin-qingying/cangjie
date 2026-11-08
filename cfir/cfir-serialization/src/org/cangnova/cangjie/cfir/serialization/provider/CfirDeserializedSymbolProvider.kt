@@ -37,6 +37,15 @@ class CfirDeserializedSymbolProvider(
      * 为 null 或路径无专属模块时统一归入 [libraryModuleData]。
      */
     private val moduleDataProvider: ModuleDataProvider? = null,
+    /**
+     * 解析导入包（跨包 `FullId`）时使用的 `.cjo` 管理器。
+     *
+     * 库模块的 `.cjo` 会在包头依赖表里引用 SDK 的 `std.*` 包等外部包；这些包不在库模块根里，
+     * 但本 provider 也不能因此把它们当作自己的包对外暴露（会与 builtins provider 重复，
+     * 表现为 `Array` / `Byte` 等 `ambiguous use`）。因此包暴露与包依赖解析必须分开：
+     * [cjoManager] 决定本 provider 的包集合，本字段决定反序列化期间导入包能从哪里加载。
+     */
+    private val dependencyCjoManager: CjoManager = cjoManager,
 ) : AbstractCfirDeserializedSymbolProvider(
     session = session,
     cangjieScopeProvider = cangjieScopeProvider,
@@ -67,7 +76,8 @@ class CfirDeserializedSymbolProvider(
             pkg = pkg,
             header = header,
             moduleData = moduleDataFor(loaded.sourcePath),
-            cjoManager = cjoManager,
+            // 跨包 FullId 由依赖管理器解析：库根的包 + SDK/builtins 根的包都要能查到。
+            cjoManager = dependencyCjoManager,
             classSymbolLookup = this,
             sourcePath = loaded.sourcePath,
         )

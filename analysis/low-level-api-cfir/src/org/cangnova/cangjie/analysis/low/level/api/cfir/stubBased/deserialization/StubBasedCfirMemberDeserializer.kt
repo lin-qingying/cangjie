@@ -714,3 +714,4 @@ internal class StubBasedCfirMemberDeserializer(
         }
     }
 }
+

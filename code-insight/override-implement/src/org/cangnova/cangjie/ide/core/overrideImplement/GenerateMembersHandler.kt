@@ -109,59 +109,13 @@ internal abstract class GenerateMembersHandler(
      * 渲染函数 override/implement 声明文本。
      */
     context(_: CaSession)
-    private fun buildFunctionText(symbol: CaNamedFunctionSymbol): String {
-        val signature = normalizeOverrideSignature(
-            symbol.render(CaDeclarationRendererForSource.WITH_SHORT_NAMES)
-        )
-        return buildString {
-            append(signature)
-            append(" {\n")
-            append(UNIMPLEMENTED_BODY_TEXT)
-            append("\n}")
-        }
-    }
+    private fun buildFunctionText(symbol: CaNamedFunctionSymbol): String = buildOverrideFunctionText(symbol)
 
     /**
      * 渲染属性 override/implement 声明文本。
      */
     context(_: CaSession)
-    private fun buildPropertyText(symbol: CaPropertySymbol): String {
-        val signature = normalizeOverrideSignature(
-            symbol.render(CaDeclarationRendererForSource.WITH_SHORT_NAMES)
-        )
-        return buildString {
-            append(signature)
-            append(" {\n")
-            append("get() {\n")
-            append(UNIMPLEMENTED_BODY_TEXT)
-            append("\n}\n")
-            if (!symbol.isLet || symbol.setter != null) {
-                append("set(value) {\n")
-                append(UNIMPLEMENTED_BODY_TEXT)
-                append("\n}\n")
-            }
-            append("}")
-        }
-    }
-
-    /**
-     * 渲染出来的 fake/intersection override 签名可能仍带 `abstract` / `open`，
-     * 这里统一规范成 IDE 生成所需的 concrete `override` 形态。
-     */
-    private fun normalizeOverrideSignature(rendered: String): String {
-        var normalized = rendered
-            .replace("abstract ", "")
-            .replace("open ", "")
-
-        if ("override " !in normalized) {
-            normalized = when {
-                "func " in normalized -> normalized.replaceFirst("func ", "override func ")
-                "prop " in normalized -> normalized.replaceFirst("prop ", "override prop ")
-                else -> normalized
-            }
-        }
-        return normalized
-    }
+    private fun buildPropertyText(symbol: CaPropertySymbol): String = buildOverridePropertyText(symbol)
 
     /**
      * 可插入到 PSI 的生成成员文本模型。
@@ -198,7 +152,67 @@ internal abstract class GenerateMembersHandler(
          * 与 IDE 现有 `New CangJie Function Body.cj.ft` / `New CangJie Property Initializer.cj.ft`
          * 的默认占位语义保持一致。
          */
-        private const val UNIMPLEMENTED_BODY_TEXT = "throw Exception(\"Not yet implemented\")"
+        const val UNIMPLEMENTED_BODY_TEXT = "throw Exception(\"Not yet implemented\")"
+    }
+}
+
+/**
+ * 渲染出来的 fake/intersection override 签名可能仍带 `abstract` / `open`，
+ * 这里统一规范成 IDE 生成所需的 concrete `override` 形态。
+ *
+ * IDE 生成与 headless（LSP quick fix）两条路径共用，保证插入文本一致。
+ */
+internal fun normalizeOverrideSignature(rendered: String): String {
+    var normalized = rendered
+        .replace("abstract ", "")
+        .replace("open ", "")
+
+    if ("override " !in normalized) {
+        normalized = when {
+            "func " in normalized -> normalized.replaceFirst("func ", "override func ")
+            "prop " in normalized -> normalized.replaceFirst("prop ", "override prop ")
+            else -> normalized
+        }
+    }
+    return normalized
+}
+
+/**
+ * 渲染函数 override/implement 声明文本（签名 + 占位函数体）。
+ */
+context(_: CaSession)
+internal fun buildOverrideFunctionText(symbol: CaNamedFunctionSymbol): String {
+    val signature = normalizeOverrideSignature(
+        symbol.render(CaDeclarationRendererForSource.WITH_SHORT_NAMES)
+    )
+    return buildString {
+        append(signature)
+        append(" {\n")
+        append(GenerateMembersHandler.UNIMPLEMENTED_BODY_TEXT)
+        append("\n}")
+    }
+}
+
+/**
+ * 渲染属性 override/implement 声明文本（签名 + 占位 get/set 体）。
+ */
+context(_: CaSession)
+internal fun buildOverridePropertyText(symbol: CaPropertySymbol): String {
+    val signature = normalizeOverrideSignature(
+        symbol.render(CaDeclarationRendererForSource.WITH_SHORT_NAMES)
+    )
+    return buildString {
+        append(signature)
+        append(" {\n")
+        append("get() {\n")
+        append(GenerateMembersHandler.UNIMPLEMENTED_BODY_TEXT)
+        append("\n}\n")
+        if (!symbol.isLet || symbol.setter != null) {
+            append("set(value) {\n")
+            append(GenerateMembersHandler.UNIMPLEMENTED_BODY_TEXT)
+            append("\n}\n")
+        }
+        append("}")
     }
 }
 

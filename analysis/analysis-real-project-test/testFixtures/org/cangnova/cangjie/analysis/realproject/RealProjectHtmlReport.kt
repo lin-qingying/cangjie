@@ -32,6 +32,7 @@ object RealProjectHtmlReport {
         buildResults: List<CjpmRunner.Result>,
         dependencyCjoCount: Int,
         analyses: List<FileAnalysis>,
+        binDependencyRoots: List<Path> = emptyList(),
     ) {
         val diagnostics = analyses.flatMap { analysis ->
             analysis.diagnostics.map { diagnostic -> analysis.path to diagnostic }
@@ -44,6 +45,11 @@ object RealProjectHtmlReport {
 
         write(file, page("CFIR · ${esc(config.id)}") {
             header(config, checkout, build, dependencyCjoCount)
+            if (binDependencyRoots.isNotEmpty()) {
+                append("<div class=meta>bin-dependencies 根: ")
+                append(binDependencyRoots.joinToString(" · ") { root -> esc(root.toString()) })
+                append("</div>")
+            }
             section("summary") {
                 cards(
                     "文件" to analyses.size,

@@ -37,6 +37,8 @@ dependencies {
     testFixturesApi(project(":analysis:analysis-api-standalone"))
     testFixturesApi(project(":psi"))
     testFixturesApi(testFixtures(project(":analysis:analysis-test-framework")))
+    // 测试源码生成器框架复用 :generators 的唯一 GeneratorsFileUtil（对齐 Kotlin 上游 generators/test-generator 结构）
+    testFixturesImplementation(project(":generators"))
     testFixturesImplementation(project(":analysis:cj-references"))
     testFixturesApi(libs.junit.jupiter)
     testFixturesRuntimeOnly(libs.junit.platform.launcher)

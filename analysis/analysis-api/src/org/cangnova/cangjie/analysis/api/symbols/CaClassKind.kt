@@ -26,4 +26,12 @@ enum class CaClassKind {
      * `enum` 声明：以枚举构造器列举所有实例的代数数据类型。
      */
     ENUM,
+
+    /**
+     * primitive 内建类型（`Int64`、`UInt8` 等）的合成声明形态。
+     *
+     * primitive 没有源码声明；它在符号层以合成 class-like 参与名称解析、
+     * qualifier 成员查找与导航，公开 API 需要能与其余种类一起被区分。
+     */
+    PRIMITIVE,
 }

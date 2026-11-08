@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.cfir.resolve.inference
 
+import org.cangnova.cangjie.cfir.resolve.expandedArrayLiteralElementType
 import org.cangnova.cangjie.cfir.CfirLookupTrackerComponent
 import org.cangnova.cangjie.cfir.SessionHolder
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
@@ -361,7 +362,7 @@ class CfirCallCompleter(
         if (callable.origin != CfirDeclarationOrigin.Synthetic.BuiltinArrayConstructor) return false
         if (hasSourceTypeArguments()) return false
 
-        val expectedElementType = expectedType.fullyExpandedType().arrayLiteralElementType ?: return false
+        val expectedElementType = expectedType.expandedArrayLiteralElementType(session) ?: return false
         val elementVariableType = freshVariables.singleOrNull()?.defaultType as? ConeCangJieType ?: return false
         system.addSubtypeConstraint(elementVariableType, expectedElementType, ConeExpectedTypeConstraintPosition)
         return true

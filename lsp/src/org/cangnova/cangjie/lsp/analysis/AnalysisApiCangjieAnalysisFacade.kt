@@ -21,6 +21,8 @@ import org.cangnova.cangjie.analysis.api.symbols.*
 import org.cangnova.cangjie.analysis.api.symbols.markers.CaNamedSymbol
 import org.cangnova.cangjie.codeinsight.folding.CangJieFoldingKind
 import org.cangnova.cangjie.codeinsight.folding.CangJieFoldingRangeCollector
+import org.cangnova.cangjie.codeinsight.hints.CangJieInlayHintCollector
+import org.cangnova.cangjie.codeinsight.hints.CangJieInlayHintOptions
 import org.cangnova.cangjie.formatter.CangJieCodeStyleSettingsFactory
 import org.cangnova.cangjie.formatter.CangJieFormatter
 import org.cangnova.cangjie.formatter.cangjieCommonSettings
@@ -38,6 +40,7 @@ import org.cangnova.cangjie.lexer.cdoc.psi.impl.CDocTag
 import org.cangnova.cangjie.lsp.capabilities.CangjieLspFeatureSet
 import org.cangnova.cangjie.lsp.completion.LspCompletionCommands
 import org.cangnova.cangjie.lsp.completion.LspCompletionItemConverter
+import org.cangnova.cangjie.lsp.hints.CangjieLspInlayHintConverter
 import org.cangnova.cangjie.lsp.server.LspRequestCancellation
 import org.cangnova.cangjie.lsp.semantic.CangJieSemanticToken
 import org.cangnova.cangjie.lsp.semantic.CangJieSemanticTokenCollector
@@ -85,6 +88,11 @@ class AnalysisApiCangjieAnalysisFacade(
     private val renameSupport = AnalysisApiLspRenameSupport(semanticSupport)
 
     /**
+     * LSP codeAction 协议适配器：列表走 quick-fix 框架，应用走成员生成 headless 写路径。
+     */
+    private val codeActionSupport = AnalysisApiLspCodeActionSupport(semanticSupport)
+
+    /**
      * Analysis API facade 当前支持的 LSP 功能集合。
      */
     override val supportedFeatures: CangjieLspFeatureSet = CangjieLspFeatureSet(
@@ -99,13 +107,24 @@ class AnalysisApiCangjieAnalysisFacade(
         documentHighlight = true,
         documentSymbol = true,
         workspaceSymbol = true,
+        codeAction = true,
         rename = true,
         formatting = true,
         foldingRange = true,
         selectionRange = true,
         semanticTokens = true,
+        inlayHints = true,
         diagnostics = true,
     )
+
+    /**
+     * LSP 侧 inlay hint 开关。
+     *
+     * 协议不传递逐项开关，因此全开；共享层的 `options` 参数只服务 IDE 宿主的设置项。
+     * 后续要做服务端可配置时走描述符级 flag 或 `workspace/didChangeConfiguration`，
+     * 不复用 IDE 的 optionId 体系。
+     */
+    private val inlayHintOptions: CangJieInlayHintOptions = CangJieInlayHintOptions()
 
     /**
      * 文档打开后创建或更新 PSI 快照。
@@ -833,13 +852,25 @@ class AnalysisApiCangjieAnalysisFacade(
     /**
      * 计算 code action。
      *
-     * 当前 Analysis API facade 尚未提供 code action，返回空列表。
+     * 列表经 quick-fix 框架过滤（仅暴露 LSP 侧存在 headless 应用路径的诊断），
+     * 编辑延迟到 `codeAction/resolve` 阶段计算——列表阶段绝不修改 PSI。
      */
     override fun codeActions(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
         params: CodeActionParams,
-    ): List<Either<Command, CodeAction>> = emptyList()
+    ): List<Either<Command, CodeAction>> = codeActionSupport.list(context, document, params)
+
+    /**
+     * 补齐 code action 的编辑（LSP `codeAction/resolve`）。
+     *
+     * 诊断定位失败或应用后无差异时返回原样，动作不消失。
+     */
+    override fun resolveCodeAction(
+        context: CangjieAnalysisRequestContext,
+        document: LspTextDocument,
+        params: CodeAction,
+    ): CodeAction = codeActionSupport.resolve(context, document, params)
 
     /**
      * 计算整篇文档格式化编辑。
@@ -946,13 +977,32 @@ class AnalysisApiCangjieAnalysisFacade(
     /**
      * 计算 inlay hints。
      *
-     * 当前未接入 inlay hint 语义，返回空列表。
+     * 与 foldingRanges 同构：位置在 `document -> snapshot -> session` 主链上解析，
+     * 提示文本在会话内渲染完成，出块后只剩纯文本，转换到 LSP 对象不依赖会话。
      */
     override fun inlayHints(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
         params: InlayHintParams,
-    ): List<InlayHint> = emptyList()
+    ): List<InlayHint> {
+        // 取消闸门（前）：容器里 ProgressManager 不生效，必须直接查请求取消状态。
+        context.cancellation.throwIfCancelled()
+        val startOffset = document.analysisOffsetAt(params.range.start)
+        val endOffset = document.analysisOffsetAt(params.range.end)
+        val range = TextRange(startOffset, maxOf(startOffset, endOffset))
+        val hints = try {
+            semanticSupport.analyzeSnapshot(document) { snapshot ->
+                CangJieInlayHintCollector.collect(snapshot.psiFile, range, this, inlayHintOptions)
+            }
+        } catch (cancelled: ProcessCanceledException) {
+            // 取消不是失败：转成 LSP 的 RequestCancelled，客户端据此丢弃结果而不弹错。
+            context.cancellation.throwIfCancelled()
+            throw cancelled
+        }
+        // 取消闸门（后）：算完但用户已经不要了，就不要把结果送回去。
+        context.cancellation.throwIfCancelled()
+        return hints.map { hint -> CangjieLspInlayHintConverter.toInlayHint(document, hint) }
+    }
 
     /**
      * 打开文档的 PSI 快照必须先稳定落库，再交给 project structure 选择 overlay 或 dangling 语义。

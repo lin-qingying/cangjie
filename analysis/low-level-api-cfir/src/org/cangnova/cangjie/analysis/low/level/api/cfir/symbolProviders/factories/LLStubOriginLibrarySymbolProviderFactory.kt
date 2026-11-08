@@ -9,6 +9,7 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.stubBased.deserializatio
 import org.cangnova.cangjie.analysis.low.level.api.cfir.stubBased.deserialization.NullDeserializedContainerSourceProvider
 import org.cangnova.cangjie.analysis.low.level.api.cfir.stubBased.deserialization.StubAndBuiltinsDeserializedContainerSourceProvider
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLCangJieStubBasedLibrarySymbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirBuiltinSymbolProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 
 /**
@@ -45,6 +46,13 @@ internal object LLStubOriginLibrarySymbolProviderFactory : LLLibrarySymbolProvid
 
     /**
      * 创建基于 builtins compiled PSI/stub 的 builtins symbol provider。
+     *
+     * 与 BINARIES 工厂（[LLBinaryOriginLibrarySymbolProviderFactory]）保持同一装配契约：
+     * stub 反序列化 provider 只覆盖 `.cjo` 真实导出的声明（`AtomicInt64` 等派生名），
+     * **`Int64` / `UInt8` 等 primitive 的合成声明只由 [CfirBuiltinSymbolProvider] 暴露**
+     * （`CfirBuiltinSymbolProviderTest` 实证）。缺了它，IDE（默认 STUBS 模式）里
+     * 表达式位置 `UInt8.fromLE()` 这类 primitive qualifier 的名称解析整段失效——
+     * 类型位置因 `basicTypeOf` 直映射不经 provider，所以表现上只有表达式爆红。
      */
     override fun createBuiltinsSymbolProvider(session: LLCfirSession): List<CfirSymbolProvider> {
         return listOf(
@@ -54,6 +62,7 @@ internal object LLStubOriginLibrarySymbolProviderFactory : LLLibrarySymbolProvid
                 // builtins 搜索作用域每次访问都会重新遍历 SDK 目录，只能在首次查询声明时创建。
                 { BuiltinsVirtualFileProvider.getInstance().createBuiltinsScope(session.project) },
             ),
+            CfirBuiltinSymbolProvider(session),
         )
     }
 }

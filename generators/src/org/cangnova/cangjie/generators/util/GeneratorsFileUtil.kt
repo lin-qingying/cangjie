@@ -12,6 +12,10 @@ import kotlin.io.path.*
 
 /**
  * 生成器文件 I/O 工具。
+ *
+ * 全仓唯一声明，对齐 Kotlin 上游 `generators/main/GeneratorsFileUtil.kt` 的单点复用结构：
+ * tree 生成管线（cfir-tree/gen 等中文标记文件头）与测试源码生成管线
+ * （`analysis-api-impl-base/testFixtures` 中的 Kotlin 生成器框架）共用本对象。
  */
 object GeneratorsFileUtil {
     /**

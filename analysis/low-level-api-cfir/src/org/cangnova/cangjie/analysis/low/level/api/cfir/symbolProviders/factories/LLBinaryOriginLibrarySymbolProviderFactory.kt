@@ -71,6 +71,13 @@ internal object LLBinaryOriginLibrarySymbolProviderFactory : LLLibrarySymbolProv
 
     /**
      * 创建普通 library `.cjo` 反序列化 symbol provider。
+     *
+     * 包暴露与包依赖解析使用两套搜索根：
+     * - 暴露面只看库模块自己的 binary roots（避免把 SDK std 包重复暴露给解析器，
+     *   否则 `Array`/`Byte` 会与 builtins provider 形成 `ambiguous use`）；
+     * - 依赖解析面额外带上 builtins（SDK stdlib）根：库模块的 `.cjo` 会在包头依赖表里引用
+     *   `std.*` 包，缺了这些根会让跨包引用退化成 `ConeErrorType`（真实项目表现为
+     *   `sha256.finish()` 被当成参数个数不符的函数值调用）。
      */
     private fun createDeserializedLibrarySymbolProvider(session: LLCfirSession): CfirSymbolProvider {
         val librarySearchPaths = (session.caModule as? CaLibraryModule)
@@ -80,11 +87,21 @@ internal object LLBinaryOriginLibrarySymbolProviderFactory : LLLibrarySymbolProv
             .mapNotNull(VirtualFile::asCjoSearchRoot)
             .distinctCjoSearchRoots()
 
+        val builtinsRoots = BuiltinsVirtualFileProvider.getInstance().getBuiltinVirtualFiles(session.project)
+            .map(::toCjoSearchRoot)
+            .distinctCjoSearchRoots()
+
+        val dependencySearchPath = CjoSearchPath.forRoots(
+            builtinsRoots = builtinsRoots,
+            libraryRoots = librarySearchPaths + builtinsRoots,
+        )
+
         return CfirDeserializedSymbolProvider(
             session = session,
             cjoManager = CjoManager(CjoSearchPath(additionalLibrarySearchPaths = librarySearchPaths)),
             cangjieScopeProvider = session.cangjieScopeProvider,
             libraryModuleData = session.moduleData,
+            dependencyCjoManager = CjoManager(dependencySearchPath),
         )
     }
 

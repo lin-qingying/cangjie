@@ -230,14 +230,8 @@ class CaLibraryFallbackDependenciesModuleImpl(
     /**
      * 需要 fallback dependencies 的 library module。
      */
-    private val dependentLibraryModule: CaLibraryModule,
+    override val dependentLibrary: CaLibraryModule,
 ) : CaModuleBase(), CaLibraryFallbackDependenciesModule {
-    /**
-     * fallback dependencies 所属 library 的名称。
-     */
-    override val dependencyOwnerName: String
-        get() = dependentLibraryModule.libraryName
-
     /**
      * fallback dependencies 模块不作为普通解析入口。
      */
@@ -266,24 +260,24 @@ class CaLibraryFallbackDependenciesModuleImpl(
      * fallback dependencies 所属 project。
      */
     override val project: Project
-        get() = dependentLibraryModule.project
+        get() = dependentLibrary.project
 
     /**
      * fallback dependencies 使用所属 library 的目标平台。
      */
     override val targetPlatform: TargetPlatform
-        get() = dependentLibraryModule.targetPlatform
+        get() = dependentLibrary.targetPlatform
 
     /**
      * fallback dependencies 覆盖 library scope 之外的测试库搜索空间。
      */
     override val baseContentScope: GlobalSearchScope
-        get() = ProjectScope.getLibrariesScope(project).intersectWith(GlobalSearchScope.notScope(dependentLibraryModule.contentScope))
+        get() = ProjectScope.getLibrariesScope(project).intersectWith(GlobalSearchScope.notScope(dependentLibrary.contentScope))
 
     /**
      * 返回 fallback 模块名称，便于测试失败输出。
      */
-    override fun toString(): String = "$dependencyOwnerName.fallback"
+    override fun toString(): String = "${dependentLibrary.libraryName}.fallback"
 }
 
 /**

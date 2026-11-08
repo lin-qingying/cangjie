@@ -40,8 +40,9 @@ internal object AnalysisApiDiagnostics {
      * 将诊断有效范围映射为 LSP 文档范围。
      *
      * 映射使用文档快照的 analysis 文本偏移，保证 PSI 诊断位置与客户端可见文本一致。
+     * codeAction 适配层复用同一映射，确保「列表与 resolve 看到的是同一套范围」。
      */
-    private fun CaDiagnosticWithPsi<*>.lspRanges(document: LspTextDocument) =
+    internal fun CaDiagnosticWithPsi<*>.lspRanges(document: LspTextDocument) =
         effectiveRanges().map { range -> document.analysisRangeOf(range.startOffset, range.endOffset) }
 
     /**

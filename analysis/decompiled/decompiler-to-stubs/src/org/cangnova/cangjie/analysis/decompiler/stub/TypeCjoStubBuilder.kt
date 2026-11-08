@@ -5,6 +5,8 @@ import com.intellij.util.io.StringRef
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.types.*
+import org.cangnova.cangjie.name.ClassId
+import org.cangnova.cangjie.psi.stubs.impl.CangJieStubClassifierKind
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.*
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
@@ -145,7 +147,31 @@ internal class TypeCjoStubBuilder {
             // 写进反编译文本会让整段源码不可解析（进而触发 stub/AST 计数断言）。
             // 与 Kotlin 一致：优先使用 delegatedType，否则退化为合法的 std.core.Any。
             is ConeErrorType -> createErrorTypeReferenceStub(parent, coneType.lookupTag)
+            /*
+             * typealias（`Byte`、`MyArr<T>` 等）必须渲染成它自己的限定名 + 实参，
+             * 不能落到 `else` 分支：那里用 `coneType.toString()` 会产出
+             * `typealias std/core/Byte` 这种非法类型文本（带 `typealias ` 关键字与 `/` 包路径），
+             * 使反编译源码不可重新解析，进而在 IDE 侧退化成签名错误。
+             */
+            is ConeTypeAliasType -> createQualifiedUserTypeReferenceStub(
+                parent = parent,
+                segments = buildList {
+                    coneType.classId.packageFqName.pathSegments().forEach { packageSegment ->
+                        add(packageSegment to false)
+                    }
+                    add(coneType.classId.shortClassName to true)
+                },
+                typeArguments = coneType.typeArguments,
+                typeAliasClassId = coneType.classId,
+            )
             is ConeClassifierType -> {
+                /*
+                 * 段构造只取 `packageFqName` + `shortClassName`：官方把 class/interface/struct/
+                 * enum/type 声明限制在 TOPLEVEL（`ParserModifierRules` 的 scope 规则），因此合法
+                 * 程序的 ClassId 至多一个 class 段，不存在被压平的嵌套段。若将来宏展开允许
+                 * 成员声明，必须先让嵌套声明也有 ClassId（`StubUtils.createClassId` 对
+                 * CLASS_BODY 返回 null），再谈限定名。
+                 */
                 val classId = coneType.lookupTag.classId
                 createQualifiedUserTypeReferenceStub(
                     parent = parent,
@@ -156,6 +182,8 @@ internal class TypeCjoStubBuilder {
                         add(classId.shortClassName to true)
                     },
                     typeArguments = coneType.typeArguments,
+                    classifierKind = coneType.stubClassifierKindOrNull(),
+                    isThisType = (coneType as? ConeClassLikeType)?.isThisType == true,
                 )
             }
             is ConePointerType -> createQualifiedUserTypeReferenceStub(
@@ -236,6 +264,10 @@ internal class TypeCjoStubBuilder {
 
     /**
      * 为已经渲染好的用户类型文本创建 type reference stub。
+     *
+     * 这是**文本兜底**：非分类器类 Cone 输入（`?`、CString、literal/stub 等）以及
+     * `CfirBasicTypeRef` 的非基础名会走到这里。没有 ClassId、kind、`This` 这些事实，
+     * 不允许按名字猜别名；需要元数据时必须走 Cone 路径。
      */
     private fun createRenderedUserTypeReferenceStub(
         parent: StubElement<*>,
@@ -257,14 +289,29 @@ internal class TypeCjoStubBuilder {
         parent: StubElement<*>,
         segments: List<Pair<Name, Boolean>>,
         typeArguments: List<ConeTypeProjection>,
+        typeAliasClassId: ClassId? = null,
+        classifierKind: CangJieStubClassifierKind? = null,
+        isThisType: Boolean = false,
     ) {
         if (segments.isEmpty()) return
         val typeReferenceStub = CangJiePlaceHolderStubImpl<CjTypeReference>(parent, CjStubElementTypes.TYPE_REFERENCE)
-        createQualifiedUserTypeStub(typeReferenceStub, segments, typeArguments)
+        createQualifiedUserTypeStub(
+            typeReferenceStub,
+            segments,
+            typeArguments,
+            typeAliasClassId,
+            classifierKind,
+            isThisType,
+        )
     }
 
     /**
      * 为 CFIR user type 创建限定用户类型引用 stub。
+     *
+     * `CfirUserTypeRef` 的构造点只在源侧（`raw-cfir/psi2cfir`、`raw-cfir/light-tree2cfir`），
+     * `.cjo` 读侧不产出它，因此反编译链路实际不可达；保留该重载只为 `CfirTypeRef` 入口的通用性。
+     * 这里不携带别名/kind/`This` 元数据——那些事实只有解析后的 Cone 类型才有，
+     * 走 `createTypeReferenceStub(parent, coneType)`。
      */
     private fun createQualifiedUserTypeReferenceStubFromCfir(
         parent: StubElement<*>,
@@ -285,9 +332,13 @@ internal class TypeCjoStubBuilder {
         parent: StubElement<*>,
         segments: List<Pair<Name, Boolean>>,
         typeArguments: List<ConeTypeProjection>,
+        typeAliasClassId: ClassId? = null,
+        classifierKind: CangJieStubClassifierKind? = null,
+        isThisType: Boolean = false,
     ) {
         if (segments.isEmpty()) return
-        val userTypeStub = CangJieUserTypeStubImpl(parent)
+        // 别名/种类/This 事实挂在最外层 user type stub 上：类型反序列化只读 stub，不做名字解析。
+        val userTypeStub = CangJieUserTypeStubImpl(parent, typeAliasClassId, classifierKind, isThisType)
         if (segments.size > 1) {
             createQualifiedUserTypeStub(userTypeStub, segments.dropLast(1), emptyList())
         }
@@ -610,6 +661,15 @@ internal class TypeCjoStubBuilder {
         return result.filter(String::isNotBlank)
     }
 
+    /**
+     * 把已解析的 Cone 类型映射为 stub 层的声明种类。
+     *
+     * `.cjo` 的 `SemaTy.kind` 在反编译期就已知；写进 USER_TYPE stub 后，类型反序列化不必再查
+     * 声明（那会重入 provider），也能保住 interface/struct/enum 的 kind。
+     */
+    private fun ConeCangJieType.stubClassifierKindOrNull(): CangJieStubClassifierKind? =
+        stubClassifierKindOf(this)
+
     private companion object {
         /**
          * 错误类型在 lookup tag 中使用的占位 ClassId 名；它不能出现在反编译文本里。
@@ -639,4 +699,19 @@ internal class TypeCjoStubBuilder {
             "Unit",
         )
     }
+}
+
+/**
+ * 把已解析的 Cone 类型映射为 stub 层的声明种类。
+ *
+ * 这是 `.cjo` `SemaTy.kind` 到 USER_TYPE stub 的唯一生产端映射；
+ * `CangJieStubClassifierKindConsistencyTest` 断言其词汇与 `CfirClassKind` 同序。
+ */
+internal fun stubClassifierKindOf(coneType: ConeCangJieType): CangJieStubClassifierKind? = when (coneType) {
+    is ConeStructType -> CangJieStubClassifierKind.STRUCT
+    is ConeEnumType -> CangJieStubClassifierKind.ENUM
+    is ConeClassLikeType ->
+        if (coneType.isInterface) CangJieStubClassifierKind.INTERFACE else CangJieStubClassifierKind.CLASS
+
+    else -> null
 }

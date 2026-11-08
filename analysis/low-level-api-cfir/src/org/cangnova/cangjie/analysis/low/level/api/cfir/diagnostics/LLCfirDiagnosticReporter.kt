@@ -73,14 +73,20 @@ internal class LLCfirDiagnosticReporter(
         // So as a temporary solution we filter out related diagnostics here.
         if (diagnostic.isAboutImplicitImport()) return
 
-        val psiDiagnostic = diagnostic.toPsiDiagnostic()
+        val psiDiagnostic = diagnostic.toPsiDiagnosticOrNull()
+            ?: diagnostic.toContainerBackedPsiDiagnostic(context)
+            ?: return
         pendingDiagnostics.addValueFor(psiDiagnostic.psiElement, psiDiagnostic)
     }
 
     /**
-     * 将任意 CFIR diagnostic 转换为 PSI diagnostic，并应用 source mapper。
+     * 将任意 CFIR diagnostic 转换为 PSI diagnostic，并应用 source mapper；没有 PSI 源时返回 `null`。
+     *
+     * 部分 checker 只持有 offsets-only 源（`CjOffsetsOnlyDiagnostic`）：这在 headless 批处理路径
+     * 合法，但 IDE/LL 路径要求 PSI 锚点。这里不再 `error()`——单个元素缺锚点会中断整份文件的
+     * 诊断收集（真实项目 `server_auth_more_data.cj` 即此形态），改由调用方降级或丢弃。
      */
-    private fun CjDiagnostic.toPsiDiagnostic(): CjPsiDiagnostic {
+    private fun CjDiagnostic.toPsiDiagnosticOrNull(): CjPsiDiagnostic? {
         val currentElement = when (this) {
             is CjPsiDiagnostic -> element
             is CjDiagnosticWithSource -> element
@@ -96,13 +102,24 @@ internal class LLCfirDiagnosticReporter(
         return when (this) {
             is CjPsiDiagnostic -> this
             is CjLightDiagnostic -> this.toPsiDiagnosticFromLight()
-            else -> currentElement.toPsiSourceElementPreservingRange()
-                ?.let { toPsiDiagnosticAt(it) }
-                ?: error(
-                    "Diagnostic ${this::class.simpleName} has no PSI-backed source " +
-                            "(${currentElement::class.simpleName}, ${currentElement.startOffset}..${currentElement.endOffset})",
-                )
+            else -> currentElement.toPsiSourceElementPreservingRange()?.let { toPsiDiagnosticAt(it) }
         }
+    }
+
+    /**
+     * 把没有 PSI 源的诊断降级到最近的 PSI-backed 容器。
+     *
+     * 官方/IDE 语义要求诊断有 PSI 锚点；offsets-only 源只能定位到偏移，无法投影为 PSI 诊断。
+     * 这里取当前遍历栈（[org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext]）
+     * 里最内层的 PSI-backed 容器作为替代锚点，保证诊断仍可见；完全没有容器时才丢弃。
+     */
+    private fun CjDiagnostic.toContainerBackedPsiDiagnostic(context: DiagnosticContext): CjPsiDiagnostic? {
+        val checkerContext = context as? org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+            ?: return null
+        val containerSource = checkerContext.containingElements.asReversed()
+            .firstNotNullOfOrNull { element -> element.source?.toPsiSourceElementPreservingRange() }
+            ?: return null
+        return toPsiDiagnosticAt(containerSource)
     }
 
     /**

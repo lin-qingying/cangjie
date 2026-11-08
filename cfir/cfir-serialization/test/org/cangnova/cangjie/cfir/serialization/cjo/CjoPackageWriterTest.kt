@@ -1,5 +1,7 @@
 package org.cangnova.cangjie.cfir.serialization.cjo
 
+import PackageFormat.CompositeTyInfo
+import PackageFormat.SemaTyInfo
 import PackageFormat.DeclKind
 import PackageFormat.AnnoKind
 import PackageFormat.DeclInfo
@@ -601,5 +603,45 @@ class CjoPackageWriterTest {
         val header = CjoPackageHeader.fromPackage(Package.getRootAsPackage(ByteBuffer.wrap(Files.readAllBytes(path))))
         assertEquals("written.pkg", header.fullPkgName)
         assertEquals(setOf("Generated"), header.topLevelCallableNames.mapTo(mutableSetOf()) { it.asString() })
+    }
+    /**
+     * `CompositeTyInfo.isThisTy` 必须随 `ConeClassLikeType.isThisType` 落盘。
+     *
+     * 官方 `.cjo` 用它区分类体内的 `This` 与普通 class-like 类型；写出侧曾从不写 `true`，
+     * 导致 `This` 在往返中静默退化成普通类型。
+     */
+    @Test
+    fun `encodes this type flag in composite type info`() {
+        val bytes = CjoPackageWriter.toByteArray(
+            CjoPackageMetadata(
+                fullPackageName = "sample.pkg",
+                moduleName = "sample",
+                types = listOf(
+                    CjoTypeMetadata(
+                        kind = PackageFormat.TypeKind.Class,
+                        semanticInfo = CjoCompositeTypeInfoMetadata(
+                            declarationIndex = 0u,
+                            packageId = -2,
+                            declarationKey = "Widget",
+                            isThisType = true,
+                        ),
+                    ),
+                    CjoTypeMetadata(
+                        kind = PackageFormat.TypeKind.Class,
+                        semanticInfo = CjoCompositeTypeInfoMetadata(
+                            declarationIndex = 0u,
+                            packageId = -2,
+                            declarationKey = "Widget",
+                        ),
+                    ),
+                ),
+            ),
+        )
+
+        val root = Package.getRootAsPackage(ByteBuffer.wrap(bytes))
+        val thisType = requireNotNull(root.allTypes(0)).info(CompositeTyInfo()) as CompositeTyInfo
+        val plainType = requireNotNull(root.allTypes(1)).info(CompositeTyInfo()) as CompositeTyInfo
+        assertTrue(thisType.isThisTy)
+        assertEquals(false, plainType.isThisTy)
     }
 }

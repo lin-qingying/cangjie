@@ -14,13 +14,16 @@ package org.cangnova.cangjie.analysis.api.projectStructure
  */
 interface CaLibraryFallbackDependenciesModule : CaModule {
     /**
-     * 依赖该兜底模块的库的稳定标识(通常为库名)。
+     * 依赖该兜底模块的库。
+     *
+     * 内容范围必须由它推导（`全部库 − 它自己`），因此这里必须是类型引用而不是字符串名称：
+     * 只有拿到 [CaLibraryModule.contentScope] 才能表达"排除被兜底库"。
      */
-    val dependencyOwnerName: String
+    val dependentLibrary: CaLibraryModule
 
     /**
      * 人类可读的模块描述。
      */
     override val moduleDescription: String
-        get() = "Fallback dependencies of $dependencyOwnerName"
+        get() = "Fallback dependencies of ${dependentLibrary.libraryName}"
 }

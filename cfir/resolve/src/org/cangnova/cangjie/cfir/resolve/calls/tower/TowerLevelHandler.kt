@@ -24,6 +24,8 @@
 
 package org.cangnova.cangjie.cfir.resolve.calls.tower
 
+import org.cangnova.cangjie.cfir.resolve.recoverableFunctionTypeOrNull
+import org.cangnova.cangjie.cfir.resolve.functionTypeOrNull
 import org.cangnova.cangjie.cfir.calls.ExpressionReceiverValue
 import org.cangnova.cangjie.cfir.calls.ReceiverValue
 import org.cangnova.cangjie.cfir.calls.qualifierScopeOrNull
@@ -451,15 +453,6 @@ private enum class CallableCandidateDiscovery {
         get() = this != NOT_DISCOVERABLE
 }
 
-/**
- * 错误类型携带函数 delegated type 时仍可作为函数值进入调用解析。
- */
-private fun ConeCangJieType?.recoverableFunctionTypeOrNull(): ConeFunctionType? =
-    when (this) {
-        is ConeFunctionType -> this
-        is ConeErrorType -> delegatedType as? ConeFunctionType
-        else -> null
-    }
 
 /**
  * 基于 dispatch receiver 成员作用域的 tower level。
@@ -653,7 +646,7 @@ internal class TowerLevelProcessor(
         receiverExpression: org.cangnova.cangjie.cfir.expressions.CfirExpression,
         dispatchReceiver: ReceiverValue,
     ): CandidateApplicability {
-        val functionType = receiverExpression.resolvedType.recoverableFunctionTypeOrNull()
+        val functionType = receiverExpression.resolvedType.recoverableFunctionTypeOrNull(callInfo.session, expandDelegated = false)
             ?: error("Expected function type or recoverable error function type receiver")
 
         return resultCollector.consumeCandidate(
@@ -692,7 +685,7 @@ internal class FunctionTypeInvokeTowerLevel(
         if (info.callKind != CallKind.Function || info.name != OperatorNameConventions.INVOKE) {
             return ProcessResult.SCOPE_EMPTY
         }
-        if (receiverExpression.resolvedType.recoverableFunctionTypeOrNull() == null) return ProcessResult.SCOPE_EMPTY
+        if (receiverExpression.resolvedType.recoverableFunctionTypeOrNull(info.session, expandDelegated = false) == null) return ProcessResult.SCOPE_EMPTY
 
         val functionTypeReceiver = ExpressionReceiverValue(receiverExpression)
         processor.consumeFunctionTypeInvokeCandidate(receiverExpression, functionTypeReceiver)

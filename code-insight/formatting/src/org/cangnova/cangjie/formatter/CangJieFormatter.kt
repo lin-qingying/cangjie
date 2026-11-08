@@ -87,6 +87,36 @@ object CangJieFormatter {
     }
 
     /**
+     * 原地重排仓颉 PSI 文件格式（不创建副本），供 headless 写路径复用。
+     *
+     * 与 [format] 不同：这里直接修改传入文件的 AST，调用方负责持有 PSI 引用与读写一致性。
+     * 快速修复等「先插入声明再统一重排」的场景走这里，避免宿主重复装配 formatter 基础设施。
+     */
+    fun reformatInPlace(
+        file: CjFile,
+        settings: CodeStyleSettings = CangJieCodeStyleSettingsFactory.createDefaultSettings(),
+    ) {
+        ensureFormattingModelRegistered()
+
+        val action = {
+            val projectSettingsManager = ensureProjectCodeStyleSettingsManager(file.project)
+            // 与 format() 一致：把 settings 挂成本线程 local settings。
+            // 否则平台 getCurrentSettings() 会落到 CodeStyleSchemes 分支，
+            // 而 headless 容器没有注册应用级 CodeStyleSchemes 服务，直接 NPE。
+            projectSettingsManager.computeWithLocalSettings(settings) {
+                CodeFormatterFacade(settings, CangJieLanguage).processElement(file.node).text
+            }
+        }
+        val application = runCatching { ApplicationManager.getApplication() }.getOrNull()
+
+        if (application != null) {
+            runInEdtWriteAction(application, action)
+        } else {
+            action()
+        }
+    }
+
+    /**
      * headless 宿主没有 plugin.xml 自动注册 formatting 相关扩展点，
      * 这里在共享 formatter 侧显式补齐最小平台基础设施。
      */

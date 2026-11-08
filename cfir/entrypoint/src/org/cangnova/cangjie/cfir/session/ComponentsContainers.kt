@@ -148,8 +148,12 @@ fun CfirSession.registerResolveComponents(
     val diagnosticReporter = diagnosticReporterOrNull ?: CfirDiagnosticCollector().also(::registerDiagnosticReporter)
 
     // ── Step 3：注册核心 resolve 服务 ─────────────────────────────────────
-    registerCoreResolveServices(diagnosticReporter)
-    register(TypeComponents::class, TypeComponents(this))
+    registerAnalysisBaseComponents(diagnosticReporter)
+
+    // CLI 批处理模式按阶段整体推进，懒解析器固定为 no-op 的 dummy 实现；
+    // LL / builtins 会话在各自工厂注册自己的 resolver 实现。
+    register(CfirLazyDeclarationResolver::class, CfirDummyCompilerLazyDeclarationResolver)
+
     register(InferenceComponents::class, InferenceComponents(this))
 
     // 注册源文件路径映射服务，用于将 CjSourceElement 转换为文件系统路径
@@ -239,26 +243,27 @@ fun CfirSession.registerModuleData(moduleData: CfirModuleData) {
 }
 
 /**
- * 注册核心 resolve 服务（内部公共方法，被多个注册函数复用）。
+ * 注册**分析基础组件集**——所有参与语义分析的 session 种类的公共装配契约。
  *
- * 包含 resolve 流水线正常运转所必需的最小服务集合：
+ * CLI 源码会话、LL 源码/库/二进制会话与 **builtins 会话**都必须拥有这一组组件：
+ * checkers、resolve 各阶段、extend 索引与 IDE 诊断收集随时可能经声明所属 session
+ * 触达它们（`CfirPrimitiveTypeDeclaration` 等 synthetic 声明的 `moduleData` 指向
+ * builtins session，`CfirConflictsHelpers.redeclarationTypeSubstitutor` 等路径
+ * 会经 `session.typeContext` 读 [TypeComponents]）。缺任何一项都会在运行期以
+ * `No '<component>' in array owner` 形态炸掉诊断收集（IDE 实证：
+ * `LLCfirBuiltinsSession … construction=COMPLETED` 缺 `TypeComponents`）。
  *
- * | 服务 | 职责 |
- * |------|------|
- * | [CfirLazyDeclarationResolver] | 按需（懒加载）触发声明的各阶段解析，避免循环依赖 |
- * | [CfirImportBindingStore] | 缓存 import 解析结果，供后续符号查找复用 |
- * | [CfirSuperTypeGraphStore] | 维护父类型图，支持继承关系查询和循环继承检测 |
- * | [CfirTypeResolver] | 将类型引用（FqName/FirTypeRef）解析为具体的 ConeType |
+ * 边界：本契约**不含**以下职责，由调用方按会话种类自行装配：
+ * - 懒解析器（[CfirLazyDeclarationResolver]）：CLI 用 dummy，LL 用
+ *   `LLCfirLazyDeclarationResolver`，builtins 用 dummy——三者互不通用；
+ * - 推断组件（[InferenceComponents]）：仅真实调用解析会话需要；
+ * - 诊断上报器与阶段 Processor 注册（[registerResolveComponents] 的
+ *   Step 1/2/5/6）：builtins 不跑 resolve 流水线，不注册。
  *
  * @param diagnosticReporter 诊断上报器，部分服务在初始化时需要用于上报错误
  */
-private fun CfirSession.registerCoreResolveServices(
-    diagnosticReporter: CfirDiagnosticReporter,
-) {
-    // 懒加载声明解析器：协调各 Processor 按正确顺序解析声明，
-    // 通过懒加载机制打破符号解析中的循环依赖
-    register(CfirLazyDeclarationResolver::class, CfirDummyCompilerLazyDeclarationResolver)
-
+@OptIn(SessionConfiguration::class)
+fun CfirSession.registerAnalysisBaseComponents(diagnosticReporter: CfirDiagnosticReporter) {
     // import 绑定存储：持久化每个文件的 import 解析结果
     // （由 CfirImportResolveTransformer 写入，由类型解析阶段读取）
     register(CfirImportBindingStore::class, CfirImportBindingStore())
@@ -285,4 +290,7 @@ private fun CfirSession.registerCoreResolveServices(
     // 类型解析器：将 CFIR 树中的类型引用解析为 ConeType（CFIR 的内部类型表示）
     register(CfirTypeResolver::class, CfirTypeResolverImpl(this))
 
+    // 类型系统组件：类型上下文与类型构造的公共入口；checkers 与 resolve 经
+    // `session.typeContext` 随时读取，builtins session 的 synthetic 声明同样会被触达。
+    register(TypeComponents::class, TypeComponents(this))
 }

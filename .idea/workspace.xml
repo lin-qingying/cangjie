@@ -39,253 +39,153 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7e15012e-e26c-4b45-a5dc-4283160ad6fc" name="更改" comment="update action">
+      <change beforePath="$PROJECT_DIR$/.github/workflows/llm-availability.yml" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/gradle.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/gradle.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.junie/memory/errors.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.junie/memory/feedback.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.junie/memory/language.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.junie/memory/memory.version" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.junie/memory/tasks.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.zcode/commands/a.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/__ilprobe/x.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/build.gradle.kts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/resources/META-INF/analysis-api/cangjie-analysis-api-cfir.xml" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/resources/META-INF/analysis-api/cangjie-analysis-api-cfir.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirDiagnosticProvider.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirDiagnosticProvider.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirInternalCacheStorage.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirInternalCacheStorage.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirResolver.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirResolver.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/psiUtils.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/psiUtils.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/references/CaCfirReference.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/references/CaCfirReference.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/references/CaCfirSimpleNameReference.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/references/CaCfirSimpleNameReference.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/references/CfirReferenceResolveHelper.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/references/CfirReferenceResolveHelper.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/symbols/CaCfirExtendSymbol.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/symbols/CaCfirExtendSymbol.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/symbols/CaCfirNamedFunctionSymbols.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/symbols/CaCfirNamedFunctionSymbols.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/symbols/CaCfirPropertySymbols.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/symbols/CaCfirPropertySymbols.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/symbols/CaCfirValueParameterSymbol.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/symbols/CaCfirValueParameterSymbol.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/test/org/cangnova/cangjie/analysis/api/cfir/test/AnalysisApiReferenceServiceTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/test/org/cangnova/cangjie/analysis/api/cfir/test/AnalysisApiReferenceServiceTest.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/test/org/cangnova/cangjie/analysis/api/cfir/test/ScopeContextExecutionTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/test/org/cangnova/cangjie/analysis/api/cfir/test/ScopeContextExecutionTest.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-platform-interface/src/org/cangnova/cangjie/analysis/api/platform/caches/NullableCaffeineCache.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-platform-interface/src/org/cangnova/cangjie/analysis/api/platform/caches/NullableCaffeineCache.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.scratch/ide-build-diff.txt" beforeDir="false" afterPath="$PROJECT_DIR$/.scratch/ide-build-diff.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.scratch/ide-macro-diff.txt" beforeDir="false" afterPath="$PROJECT_DIR$/.scratch/ide-macro-diff.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.scratch/ide-plugin-xml-diff.txt" beforeDir="false" afterPath="$PROJECT_DIR$/.scratch/ide-plugin-xml-diff.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/symbols/CaCfirClassLikeSymbols.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/symbols/CaCfirClassLikeSymbols.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/test/org/cangnova/cangjie/analysis/api/cfir/test/AnalysisApiCfirDiagnosticsTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/test/org/cangnova/cangjie/analysis/api/cfir/test/AnalysisApiCfirDiagnosticsTest.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/test/org/cangnova/cangjie/analysis/api/cfir/test/AnalysisApiIdeDecompiledReferenceTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/test/org/cangnova/cangjie/analysis/api/cfir/test/AnalysisApiIdeDecompiledReferenceTest.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/testFixtures/org/cangnova/cangjie/analysis/api/cfir/test/TestGenerator.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/testFixtures/org/cangnova/cangjie/analysis/api/cfir/test/TestGenerator.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-impl-base/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-impl-base/build.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/analysis/api/impl/base/test/cases/projectStructure/AbstractModuleStructureTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/analysis/api/impl/base/test/cases/projectStructure/AbstractModuleStructureTest.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/analysis/api/impl/base/test/dsl/AnalysisApiTestGenerator.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/analysis/api/impl/base/test/dsl/AnalysisApiTestGenerator.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/analysis/api/impl/base/test/dsl/AnalysisApiTestGroup.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/analysis/api/impl/base/test/dsl/AnalysisApiTestGroup.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/analysis/api/impl/base/test/dsl/FrontendConfiguratorTestGenerator.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/analysis/api/impl/base/test/dsl/FrontendConfiguratorTestGenerator.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/analysis/api/impl/base/test/dsl/TestGenerator.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/analysis/api/impl/base/test/dsl/TestGenerator.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/jetbrains/kotlin/generators/AbstractTestGenerator.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/test/generators/AbstractTestGenerator.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/jetbrains/kotlin/generators/ArgumentUtils.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/test/generators/ArgumentUtils.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/jetbrains/kotlin/generators/InconsistencyChecker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/test/generators/InconsistencyChecker.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/jetbrains/kotlin/generators/MethodGenerator.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/test/generators/MethodGenerator.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/jetbrains/kotlin/generators/dsl/TestGenerationDSL.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/test/generators/dsl/TestGenerationDSL.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/jetbrains/kotlin/generators/dsl/junit4/TestGenerationDSLForJUnit4.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/test/generators/dsl/junit4/TestGenerationDSLForJUnit4.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/jetbrains/kotlin/generators/dsl/junit4/TestGeneratorForJUnit4.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/test/generators/dsl/junit4/TestGeneratorForJUnit4.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/jetbrains/kotlin/generators/dsl/junit5/TestGenerationDSLForJUnit5.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/test/generators/dsl/junit5/TestGenerationDSLForJUnit5.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/jetbrains/kotlin/generators/dsl/junit5/TestGeneratorForJUnit5.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/test/generators/dsl/junit5/TestGeneratorForJUnit5.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/jetbrains/kotlin/generators/model/AnnotationArgumentModel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/test/generators/model/AnnotationArgumentModel.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/jetbrains/kotlin/generators/model/AnnotationModel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/test/generators/model/AnnotationModel.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/jetbrains/kotlin/generators/model/DelegatingTestClassModel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/test/generators/model/DelegatingTestClassModel.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/jetbrains/kotlin/generators/model/SimpleTestClassModel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/test/generators/model/SimpleTestClassModel.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/jetbrains/kotlin/generators/model/TestInfraRevision.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/test/generators/model/TestInfraRevision.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/jetbrains/kotlin/generators/model/TestModel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/test/generators/model/TestModel.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/jetbrains/kotlin/generators/model/methods/RunTestMethodModel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/test/generators/model/methods/RunTestMethodModel.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/jetbrains/kotlin/generators/model/methods/RunTestWithDirectoryPrefixMethodModel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/test/generators/model/methods/RunTestWithDirectoryPrefixMethodModel.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/jetbrains/kotlin/generators/model/methods/SimpleTestMethodModel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/test/generators/model/methods/SimpleTestMethodModel.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/jetbrains/kotlin/generators/model/methods/TestAllFilesPresentMethodModel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/test/generators/model/methods/TestAllFilesPresentMethodModel.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/jetbrains/kotlin/generators/util/GeneratorsFileUtil.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/jetbrains/kotlin/generators/util/TagsExtractor.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/test/generators/util/TagsExtractor.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/jetbrains/kotlin/generators/util/TestGeneratorUtil.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/test/generators/util/TestGeneratorUtil.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/jetbrains/kotlin/test/TargetBackend.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/test/generators/TargetBackend.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/jetbrains/kotlin/utils/Printer.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/test/generators/util/Printer.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-standalone/api/analysis-api-standalone.txt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-standalone/api/analysis-api-standalone.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-standalone/src/org/cangnova/cangjie/analysis/api/standalone/projectStructure/CaStandaloneModules.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-standalone/src/org/cangnova/cangjie/analysis/api/standalone/projectStructure/CaStandaloneModules.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/analysis/analysis-api-standalone/src/org/cangnova/cangjie/analysis/api/standalone/projectStructure/PluginStructureProvider.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-standalone/src/org/cangnova/cangjie/analysis/api/standalone/projectStructure/PluginStructureProvider.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-standalone/tests-gen/org/cangnova/cangjie/analysis/api/standalone/cfir/test/cases/generated/cases/components/diagnosticProvider/CfirStandaloneNormalAnalysisCodeFragmentModuleCollectDiagnosticsTestGenerated.java" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-standalone/tests-gen/org/cangnova/cangjie/analysis/api/standalone/cfir/test/cases/generated/cases/components/diagnosticProvider/CfirStandaloneNormalAnalysisCodeFragmentModuleCollectDiagnosticsTestGenerated.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-standalone/tests-gen/org/cangnova/cangjie/analysis/api/standalone/cfir/test/cases/generated/cases/components/diagnosticProvider/CfirStandaloneNormalAnalysisCodeFragmentModuleDanglingFileCollectDiagnosticsTestGenerated.java" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-standalone/tests-gen/org/cangnova/cangjie/analysis/api/standalone/cfir/test/cases/generated/cases/components/diagnosticProvider/CfirStandaloneNormalAnalysisCodeFragmentModuleDanglingFileCollectDiagnosticsTestGenerated.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-standalone/tests-gen/org/cangnova/cangjie/analysis/api/standalone/cfir/test/cases/generated/cases/components/diagnosticProvider/CfirStandaloneNormalAnalysisLibraryBinaryModuleCollectDiagnosticsTestGenerated.java" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-standalone/tests-gen/org/cangnova/cangjie/analysis/api/standalone/cfir/test/cases/generated/cases/components/diagnosticProvider/CfirStandaloneNormalAnalysisLibraryBinaryModuleCollectDiagnosticsTestGenerated.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-standalone/tests-gen/org/cangnova/cangjie/analysis/api/standalone/cfir/test/cases/generated/cases/components/diagnosticProvider/CfirStandaloneNormalAnalysisLibraryBinaryModuleDanglingFileCollectDiagnosticsTestGenerated.java" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-standalone/tests-gen/org/cangnova/cangjie/analysis/api/standalone/cfir/test/cases/generated/cases/components/diagnosticProvider/CfirStandaloneNormalAnalysisLibraryBinaryModuleDanglingFileCollectDiagnosticsTestGenerated.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-standalone/tests-gen/org/cangnova/cangjie/analysis/api/standalone/cfir/test/cases/generated/cases/components/diagnosticProvider/CfirStandaloneNormalAnalysisSourceModuleCollectDiagnosticsTestGenerated.java" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-standalone/tests-gen/org/cangnova/cangjie/analysis/api/standalone/cfir/test/cases/generated/cases/components/diagnosticProvider/CfirStandaloneNormalAnalysisSourceModuleCollectDiagnosticsTestGenerated.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-standalone/tests-gen/org/cangnova/cangjie/analysis/api/standalone/cfir/test/cases/generated/cases/components/diagnosticProvider/CfirStandaloneNormalAnalysisSourceModuleDanglingFileCollectDiagnosticsTestGenerated.java" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-standalone/tests-gen/org/cangnova/cangjie/analysis/api/standalone/cfir/test/cases/generated/cases/components/diagnosticProvider/CfirStandaloneNormalAnalysisSourceModuleDanglingFileCollectDiagnosticsTestGenerated.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-standalone/tests-gen/org/cangnova/cangjie/analysis/api/standalone/cfir/test/cases/generated/cases/components/expressionTypeProvider/CfirStandaloneNormalAnalysisCodeFragmentModuleExpectedExpressionTypeTestGenerated.java" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-standalone/tests-gen/org/cangnova/cangjie/analysis/api/standalone/cfir/test/cases/generated/cases/components/expressionTypeProvider/CfirStandaloneNormalAnalysisCodeFragmentModuleExpectedExpressionTypeTestGenerated.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-standalone/tests-gen/org/cangnova/cangjie/analysis/api/standalone/cfir/test/cases/generated/cases/components/expressionTypeProvider/CfirStandaloneNormalAnalysisLibraryBinaryModuleExpectedExpressionTypeTestGenerated.java" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-standalone/tests-gen/org/cangnova/cangjie/analysis/api/standalone/cfir/test/cases/generated/cases/components/expressionTypeProvider/CfirStandaloneNormalAnalysisLibraryBinaryModuleExpectedExpressionTypeTestGenerated.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-standalone/tests-gen/org/cangnova/cangjie/analysis/api/standalone/cfir/test/cases/generated/cases/components/expressionTypeProvider/CfirStandaloneNormalAnalysisSourceModuleExpectedExpressionTypeTestGenerated.java" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-standalone/tests-gen/org/cangnova/cangjie/analysis/api/standalone/cfir/test/cases/generated/cases/components/expressionTypeProvider/CfirStandaloneNormalAnalysisSourceModuleExpectedExpressionTypeTestGenerated.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/symbols/CaSymbol.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/symbols/CaSymbol.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/cj-references/src/org/cangnova/cangjie/analysis/references/CangJieReferenceProvidersServiceImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/cj-references/src/org/cangnova/cangjie/analysis/references/CangJieReferenceProvidersServiceImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/cj-references/src/org/cangnova/cangjie/idea/references/CjReference.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/cj-references/src/org/cangnova/cangjie/idea/references/CjReference.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/element/builder/CfirElementBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/element/builder/CfirElementBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/file/structure/FileStructure.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/file/structure/FileStructure.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/file/structure/FileStructureElement.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/file/structure/FileStructureElement.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-standalone/testFixtures/org/cangnova/cangjie/analysis/api/standalone/cfir/test/TestGenerator.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-standalone/testFixtures/org/cangnova/cangjie/analysis/api/standalone/cfir/test/TestGenerator.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/api/analysis-api.txt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/api/analysis-api.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/projectStructure/CaLibraryFallbackDependenciesModule.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/projectStructure/CaLibraryFallbackDependenciesModule.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/renderer/declarations/CaDeclarationRenderer.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/renderer/declarations/CaDeclarationRenderer.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/symbols/CaClassKind.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/symbols/CaClassKind.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-real-project-test/projects.properties" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-real-project-test/projects.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-real-project-test/testFixtures/org/cangnova/cangjie/analysis/realproject/CjpmProjectModel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-real-project-test/testFixtures/org/cangnova/cangjie/analysis/realproject/CjpmProjectModel.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-real-project-test/testFixtures/org/cangnova/cangjie/analysis/realproject/RealProjectHtmlReport.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-real-project-test/testFixtures/org/cangnova/cangjie/analysis/realproject/RealProjectHtmlReport.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-real-project-test/testFixtures/org/cangnova/cangjie/analysis/realproject/RealProjectReport.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-real-project-test/testFixtures/org/cangnova/cangjie/analysis/realproject/RealProjectReport.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-real-project-test/testFixtures/org/cangnova/cangjie/analysis/realproject/RealProjectSession.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-real-project-test/testFixtures/org/cangnova/cangjie/analysis/realproject/RealProjectSession.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-test-framework/testFixtures/org/cangnova/cangjie/analysis/test/framework/projectStructure/CaSourceModuleImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-test-framework/testFixtures/org/cangnova/cangjie/analysis/test/framework/projectStructure/CaSourceModuleImpl.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/decompiled/decompiler-to-stubs/src/org/cangnova/cangjie/analysis/decompiler/stub/TypeCjoStubBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/decompiled/decompiler-to-stubs/src/org/cangnova/cangjie/analysis/decompiler/stub/TypeCjoStubBuilder.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/LLResolutionFacadeService.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/LLResolutionFacadeService.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/diagnostics/LLCfirDiagnosticReporter.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/diagnostics/LLCfirDiagnosticReporter.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/projectStructure/LLCfirBuiltinsSessionFactory.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/projectStructure/LLCfirBuiltinsSessionFactory.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/sessions/LLCfirAbstractSessionFactory.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/sessions/LLCfirAbstractSessionFactory.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/sessions/LLCfirMacroConstructionInput.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/sessions/LLCfirMacroConstructionInput.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/sessions/LLCfirResolvableModuleSession.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/sessions/LLCfirResolvableModuleSession.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/sessions/LLCfirSessionCacheStorageInvalidator.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/sessions/LLCfirSessionCacheStorageInvalidator.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/state/LLDiagnosticProvider.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/state/LLDiagnosticProvider.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/sessions/LLCfirCommonSessionFactory.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/sessions/LLCfirCommonSessionFactory.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/stubBased/deserialization/StubBasedCfirMemberDeserializer.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/stubBased/deserialization/StubBasedCfirMemberDeserializer.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/stubBased/deserialization/StubBasedCfirTypeDeserializer.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/stubBased/deserialization/StubBasedCfirTypeDeserializer.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/symbolProviders/LLCangJieSourceSymbolProvider.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/symbolProviders/LLCangJieSourceSymbolProvider.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/symbolProviders/factories/LLBinaryOriginLibrarySymbolProviderFactory.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/symbolProviders/factories/LLBinaryOriginLibrarySymbolProviderFactory.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/util/ContextCollector.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/util/ContextCollector.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/low-level-api-cfir/testData/contextCollector/localPatternVariableInitializerRebuild.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/low-level-api-cfir/testData/contextCollector/localPatternVariableInitializerRebuild.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.argopt.cjo.decompiled.text.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.argopt.cjo.decompiled.text.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.argopt.cjo.stubs.txt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.argopt.cjo.stubs.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.ast.cjo.decompiled.text.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.ast.cjo.decompiled.text.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.ast.cjo.stubs.txt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.ast.cjo.stubs.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.binary.cjo.decompiled.text.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.binary.cjo.decompiled.text.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.binary.cjo.stubs.txt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.binary.cjo.stubs.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.collection.cjo.decompiled.text.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.collection.cjo.decompiled.text.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.collection.cjo.stubs.txt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.collection.cjo.stubs.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.collection.concurrent.cjo.decompiled.text.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.collection.concurrent.cjo.decompiled.text.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.collection.concurrent.cjo.stubs.txt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.collection.concurrent.cjo.stubs.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.console.cjo.decompiled.text.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.console.cjo.decompiled.text.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.console.cjo.stubs.txt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.console.cjo.stubs.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.convert.cjo.decompiled.text.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.convert.cjo.decompiled.text.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.convert.cjo.stubs.txt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.convert.cjo.stubs.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.core.cjo.decompiled.text.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.core.cjo.decompiled.text.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.core.cjo.stubs.txt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.core.cjo.stubs.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.crypto.cipher.cjo.decompiled.text.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.crypto.cipher.cjo.decompiled.text.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.crypto.cipher.cjo.stubs.txt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.crypto.cipher.cjo.stubs.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.crypto.digest.cjo.decompiled.text.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.crypto.digest.cjo.decompiled.text.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.crypto.digest.cjo.stubs.txt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.crypto.digest.cjo.stubs.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.database.sql.cjo.decompiled.text.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.database.sql.cjo.decompiled.text.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.database.sql.cjo.stubs.txt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.database.sql.cjo.stubs.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.deriving.api.cjo.decompiled.text.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.deriving.api.cjo.decompiled.text.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.deriving.api.cjo.stubs.txt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.deriving.api.cjo.stubs.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.deriving.builtins.cjo.decompiled.text.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.deriving.builtins.cjo.decompiled.text.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.deriving.builtins.cjo.stubs.txt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.deriving.builtins.cjo.stubs.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.deriving.cjo.decompiled.text.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.deriving.cjo.decompiled.text.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.deriving.cjo.stubs.txt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.deriving.cjo.stubs.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.deriving.impl.cjo.decompiled.text.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.deriving.impl.cjo.decompiled.text.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.deriving.impl.cjo.stubs.txt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.deriving.impl.cjo.stubs.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.deriving.resolve.cjo.decompiled.text.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.deriving.resolve.cjo.decompiled.text.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.deriving.resolve.cjo.stubs.txt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.deriving.resolve.cjo.stubs.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.env.cjo.decompiled.text.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.env.cjo.decompiled.text.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.env.cjo.stubs.txt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.env.cjo.stubs.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.fs.cjo.decompiled.text.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.fs.cjo.decompiled.text.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.fs.cjo.stubs.txt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.fs.cjo.stubs.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.io.cjo.decompiled.text.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.io.cjo.decompiled.text.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.io.cjo.stubs.txt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.io.cjo.stubs.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.math.cjo.decompiled.text.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.math.cjo.decompiled.text.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.math.cjo.stubs.txt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.math.cjo.stubs.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.math.numeric.cjo.decompiled.text.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.math.numeric.cjo.decompiled.text.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.math.numeric.cjo.stubs.txt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.math.numeric.cjo.stubs.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.net.cjo.decompiled.text.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.net.cjo.decompiled.text.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.net.cjo.stubs.txt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.net.cjo.stubs.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.objectpool.cjo.decompiled.text.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.objectpool.cjo.decompiled.text.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.objectpool.cjo.stubs.txt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.objectpool.cjo.stubs.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.overflow.cjo.decompiled.text.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.overflow.cjo.decompiled.text.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.overflow.cjo.stubs.txt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.overflow.cjo.stubs.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.posix.cjo.decompiled.text.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.posix.cjo.decompiled.text.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.posix.cjo.stubs.txt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.posix.cjo.stubs.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.process.cjo.decompiled.text.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.process.cjo.decompiled.text.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.process.cjo.stubs.txt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.process.cjo.stubs.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.random.cjo.decompiled.text.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.random.cjo.decompiled.text.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.random.cjo.stubs.txt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.random.cjo.stubs.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.ref.cjo.decompiled.text.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.ref.cjo.decompiled.text.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.ref.cjo.stubs.txt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.ref.cjo.stubs.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.reflect.cjo.decompiled.text.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.reflect.cjo.decompiled.text.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.reflect.cjo.stubs.txt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.reflect.cjo.stubs.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.regex.cjo.decompiled.text.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.regex.cjo.decompiled.text.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.regex.cjo.stubs.txt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.regex.cjo.stubs.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.runtime.cjo.decompiled.text.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.runtime.cjo.decompiled.text.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.runtime.cjo.stubs.txt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.runtime.cjo.stubs.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.sort.cjo.decompiled.text.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.sort.cjo.decompiled.text.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.sort.cjo.stubs.txt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.sort.cjo.stubs.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.sync.cjo.decompiled.text.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.sync.cjo.decompiled.text.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.sync.cjo.stubs.txt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.sync.cjo.stubs.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.time.cjo.decompiled.text.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.time.cjo.decompiled.text.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.time.cjo.stubs.txt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.time.cjo.stubs.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.unicode.cjo.decompiled.text.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.unicode.cjo.decompiled.text.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.unicode.cjo.stubs.txt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.unicode.cjo.stubs.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.unittest.cjo.decompiled.text.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.unittest.cjo.decompiled.text.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.unittest.cjo.stubs.txt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.unittest.cjo.stubs.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.unittest.common.cjo.decompiled.text.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.unittest.common.cjo.decompiled.text.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.unittest.common.cjo.stubs.txt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.unittest.common.cjo.stubs.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.unittest.diff.cjo.decompiled.text.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.unittest.diff.cjo.decompiled.text.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.unittest.diff.cjo.stubs.txt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.unittest.diff.cjo.stubs.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.unittest.mock.cjo.decompiled.text.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.unittest.mock.cjo.decompiled.text.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.unittest.mock.cjo.stubs.txt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.unittest.mock.cjo.stubs.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.unittest.mock.internal.cjo.decompiled.text.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.unittest.mock.internal.cjo.decompiled.text.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.unittest.mock.internal.cjo.stubs.txt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.unittest.mock.internal.cjo.stubs.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.unittest.mock.mockmacro.cjo.decompiled.text.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.unittest.mock.mockmacro.cjo.decompiled.text.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.unittest.mock.mockmacro.cjo.stubs.txt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.unittest.mock.mockmacro.cjo.stubs.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.unittest.prop_test.cjo.decompiled.text.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.unittest.prop_test.cjo.decompiled.text.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.unittest.prop_test.cjo.stubs.txt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.unittest.prop_test.cjo.stubs.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.unittest.testmacro.cjo.decompiled.text.cj" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.unittest.testmacro.cjo.decompiled.text.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.unittest.testmacro.cjo.stubs.txt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/stubs/testData/builtins/std.unittest.testmacro.cjo.stubs.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/REPAIR_LOG.md" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/REPAIR_LOG.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics2/imports/rawQualifiedType.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics2/imports/rawQualifiedType.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics2/interop/cfuncSignatureRules.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics2/interop/cfuncSignatureRules.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testFixtures/org/cangnova/cangjie/cfir/analysis/tests/services/MacroConstructionEnvironmentConfigurator.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testFixtures/org/cangnova/cangjie/cfir/analysis/tests/services/MacroConstructionEnvironmentConfigurator.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/tests/org/cangnova/cangjie/cfir/analysis/tests/CfirMacroAnnotationSourceModuleTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/tests/org/cangnova/cangjie/cfir/analysis/tests/CfirMacroAnnotationSourceModuleTest.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-cones/src/org/cangnova/cangjie/cfir/types/ConePrimitiveType.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-cones/src/org/cangnova/cangjie/cfir/types/ConePrimitiveType.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-serialization/src/org/cangnova/cangjie/cfir/serialization/deserialize/CfirDeclDeserializer.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-serialization/src/org/cangnova/cangjie/cfir/serialization/deserialize/CfirDeclDeserializer.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-serialization/src/org/cangnova/cangjie/cfir/serialization/provider/CfirDeserializedExtendProvider.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-serialization/src/org/cangnova/cangjie/cfir/serialization/provider/CfirDeserializedExtendProvider.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-serialization/src/org/cangnova/cangjie/cfir/serialization/provider/CfirExtendProviderComposer.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-serialization/src/org/cangnova/cangjie/cfir/serialization/provider/CfirExtendProviderComposer.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-serialization/test/org/cangnova/cangjie/cfir/serialization/cjo/CjoSdkDeserializationIntegrationTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-serialization/test/org/cangnova/cangjie/cfir/serialization/cjo/CjoSdkDeserializationIntegrationTest.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirAnonymousFunction.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirAnonymousFunction.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirCallableDeclaration.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirCallableDeclaration.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirConstructor.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirConstructor.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirDeclarationStatus.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirDeclarationStatus.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirEnumConstructor.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirEnumConstructor.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirErrorFunction.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirErrorFunction.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirErrorNamedValue.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirErrorNamedValue.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirErrorPrimaryConstructor.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirErrorPrimaryConstructor.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirFieldVariable.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirFieldVariable.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirFinalizer.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirFinalizer.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirFunction.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirFunction.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirMacroDeclaration.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirMacroDeclaration.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirMainFunction.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirMainFunction.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirNamedFunction.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirNamedFunction.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirPatternBindingVariable.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirPatternBindingVariable.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirPatternVariable.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirPatternVariable.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirProperty.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirProperty.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirPropertyAccessor.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirPropertyAccessor.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirResolvedDeclarationStatus.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirResolvedDeclarationStatus.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirValueParameter.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirValueParameter.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirVariable.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirVariable.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/builder/CfirResolvedDeclarationStatusBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/builder/CfirResolvedDeclarationStatusBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirAnonymousFunctionImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirAnonymousFunctionImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirConstructorImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirConstructorImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirEnumConstructorImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirEnumConstructorImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirErrorFunctionImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirErrorFunctionImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirErrorNamedValueImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirErrorNamedValueImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirErrorPrimaryConstructorImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirErrorPrimaryConstructorImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirFieldVariableImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirFieldVariableImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirFinalizerImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirFinalizerImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirMacroDeclarationImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirMacroDeclarationImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirMainFunctionImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirMainFunctionImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirNamedFunctionImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirNamedFunctionImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirPatternBindingVariableImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirPatternBindingVariableImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirPatternVariableImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirPatternVariableImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirPrimaryConstructor.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirPrimaryConstructor.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirPropertyAccessorImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirPropertyAccessorImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirPropertyImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirPropertyImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirResolvedDeclarationStatusImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirResolvedDeclarationStatusImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirValueParameterImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirValueParameterImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangnova/cangjie/cfir/session/CfirCjmpMappingStorage.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangnova/cangjie/cfir/session/CfirCjmpMappingStorage.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangnova/cangjie/cfir/symbols/CfirBasedSymbol.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangnova/cangjie/cfir/symbols/CfirBasedSymbol.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangnova/cangjie/cfir/symbols/TypeConstructionUtils.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangnova/cangjie/cfir/symbols/TypeConstructionUtils.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/CfirTree.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/CfirTree.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirCommonSpecificChecker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirCommonSpecificChecker.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/providers/src/org/cangnova/cangjie/cfir/declarations/CfirDeclarationAvailabilityProvider.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/providers/src/org/cangnova/cangjie/cfir/declarations/CfirDeclarationAvailabilityProvider.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/providers/src/org/cangnova/cangjie/cfir/resolve/providers/CfirCompositeExtendProvider.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/providers/src/org/cangnova/cangjie/cfir/resolve/providers/CfirCompositeExtendProvider.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/providers/src/org/cangnova/cangjie/cfir/resolve/providers/CfirExtendProvider.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/providers/src/org/cangnova/cangjie/cfir/resolve/providers/CfirExtendProvider.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/providers/src/org/cangnova/cangjie/cfir/resolve/providers/macro/MacroDemandClassification.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/providers/src/org/cangnova/cangjie/cfir/resolve/providers/macro/MacroDemandClassification.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/providers/test/org/cangnova/cangjie/cfir/analysis/diagnostics/CfirOffsetsOnlyDiagnosticAnchorGuardTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/providers/test/org/cangnova/cangjie/cfir/analysis/diagnostics/CfirOffsetsOnlyDiagnosticAnchorGuardTest.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/light-tree2cfir/src/org/cangnova/cangjie/cfir/lightTree/LightTreeRawCfirDeclarationBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/light-tree2cfir/src/org/cangnova/cangjie/cfir/lightTree/LightTreeRawCfirDeclarationBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/light-tree2cfir/src/org/cangnova/cangjie/cfir/lightTree/LightTreeTypeConverter.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/light-tree2cfir/src/org/cangnova/cangjie/cfir/lightTree/LightTreeTypeConverter.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/light-tree2cfir/test/org/cangnova/cangjie/cfir/lightTree/MacroSurfacePayloadTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/light-tree2cfir/test/org/cangnova/cangjie/cfir/lightTree/MacroSurfacePayloadTest.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/src/org/cangnova/cangjie/cfir/builder/PsiConversionUtils.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/src/org/cangnova/cangjie/cfir/builder/PsiConversionUtils.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/src/org/cangnova/cangjie/cfir/builder/PsiRawCfirBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/src/org/cangnova/cangjie/cfir/builder/PsiRawCfirBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/test/org/cangnova/cangjie/cfir/builder/PsiRawCfirBuilderNestedMacroTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/test/org/cangnova/cangjie/cfir/builder/PsiRawCfirBuilderNestedMacroTest.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/builtinAnnotationForms.txt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/builtinAnnotationForms.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/macroCallForms.txt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/macroCallForms.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/cfuncNamedParam.lazyBodies.txt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/cfuncNamedParam.lazyBodies.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/cfuncNamedParam.txt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/cfuncNamedParam.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/enumCtorParenEmpty.lazyBodies.txt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/enumCtorParenEmpty.lazyBodies.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/enumCtorParenEmpty.txt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/enumCtorParenEmpty.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/functionTypeMixedParamNames.lazyBodies.txt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/functionTypeMixedParamNames.lazyBodies.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/functionTypeMixedParamNames.txt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/functionTypeMixedParamNames.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/functionTypeNamedParamBang.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/functionTypeNamedParamBang.cj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/functionTypeNamedParamBang.lazyBodies.txt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/functionTypeNamedParamBang.lazyBodies.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/functionTypeNamedParamBang.txt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/functionTypeNamedParamBang.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/functionTypeParamDefault.lazyBodies.txt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/functionTypeParamDefault.lazyBodies.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/functionTypeParamDefault.txt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/functionTypeParamDefault.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/inoutParameter.lazyBodies.txt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/inoutParameter.lazyBodies.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/inoutParameter.txt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/inoutParameter.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/missingTypeInVar.txt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/missingTypeInVar.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/types/functionTypeRefs.lazyBodies.txt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/types/functionTypeRefs.lazyBodies.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/types/functionTypeRefs.txt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/types/functionTypeRefs.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/CfirTypeCandidateCollector.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/CfirTypeCandidateCollector.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/CfirTypeResolver.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/CfirTypeResolver.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirCallResolver.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirCallResolver.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/stages/CfirMapArguments.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/stages/CfirMapArguments.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/transformers/CfirExtensionsResolveProcessor.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/transformers/CfirExtensionsResolveProcessor.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/test/org/cangnova/cangjie/cfir/resolve/CfirRawQualifiedTypeResolutionTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/test/org/cangnova/cangjie/cfir/resolve/CfirRawQualifiedTypeResolutionTest.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/test/org/cangnova/cangjie/cfir/resolve/calls/CallResolutionTestFixtures.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/test/org/cangnova/cangjie/cfir/resolve/calls/CallResolutionTestFixtures.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/test/org/cangnova/cangjie/cfir/resolve/calls/stages/CfirMapArgumentsTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/test/org/cangnova/cangjie/cfir/resolve/calls/stages/CfirMapArgumentsTest.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/resolve/test/org/cangnova/cangjie/cfir/resolve/transformers/CfirExtensionsResolveProcessorTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/test/org/cangnova/cangjie/cfir/resolve/transformers/CfirExtensionsResolveProcessorTest.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/code-insight/completion/impl-cfir/src/org/cangnova/cangjie/ide/completion/impl/cfir/sections/CfirIndexCompletionSection.kt" beforeDir="false" afterPath="$PROJECT_DIR$/code-insight/completion/impl-cfir/src/org/cangnova/cangjie/ide/completion/impl/cfir/sections/CfirIndexCompletionSection.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/code-insight/completion/impl-cfir/test/org/cangnova/cangjie/ide/completion/impl/cfir/sections/CfirIndexCompletionSectionTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/code-insight/completion/impl-cfir/test/org/cangnova/cangjie/ide/completion/impl/cfir/sections/CfirIndexCompletionSectionTest.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/code-insight/completion/impl-cfir/test/org/cangnova/cangjie/ide/completion/impl/cfir/sections/CfirInsertionIntegrationTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/code-insight/completion/impl-cfir/test/org/cangnova/cangjie/ide/completion/impl/cfir/sections/CfirInsertionIntegrationTest.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/code-insight/highlighting/test/org/cangnova/cangjie/lexer/cdoc/CDocRendererTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/code-insight/highlighting/test/org/cangnova/cangjie/lexer/cdoc/CDocRendererTest.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/compiler/frontend/src/org/cangnova/cangjie/frontend/pipeline/MacroArtifactResolver.kt" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/frontend/src/org/cangnova/cangjie/frontend/pipeline/MacroArtifactResolver.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/compiler/frontend/src/org/cangnova/cangjie/frontend/pipeline/MacroExpandPhase.kt" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/frontend/src/org/cangnova/cangjie/frontend/pipeline/MacroExpandPhase.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/compiler/frontend/test/org/cangnova/cangjie/frontend/pipeline/CjmpTwoPhaseCompilationTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/frontend/test/org/cangnova/cangjie/frontend/pipeline/CjmpTwoPhaseCompilationTest.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/compiler/frontend/test/org/cangnova/cangjie/frontend/pipeline/FrontendMacroConstructionExecutionTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/compiler/frontend/test/org/cangnova/cangjie/frontend/pipeline/FrontendMacroConstructionExecutionTest.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/symbolProviders/factories/LLStubOriginLibrarySymbolProviderFactory.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/symbolProviders/factories/LLStubOriginLibrarySymbolProviderFactory.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/low-level-api-cfir/test/org/cangnova/cangjie/analysis/low/level/api/cfir/diagnostic/SourcePostSemaDiagnosticsTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/low-level-api-cfir/test/org/cangnova/cangjie/analysis/low/level/api/cfir/diagnostic/SourcePostSemaDiagnosticsTest.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/low-level-api-cfir/testFixtures/org/cangnova/cangjie/analysis/low/level/api/cfir/TestGenerator.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/low-level-api-cfir/testFixtures/org/cangnova/cangjie/analysis/low/level/api/cfir/TestGenerator.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/capture_lines.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testFixtures/org/cangnova/cangjie/cfir/analysis/tests/AbstractCfirAnalysisTestCase.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testFixtures/org/cangnova/cangjie/cfir/analysis/tests/AbstractCfirAnalysisTestCase.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisDiagnostics2PsiTestGenerated.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisDiagnostics2PsiTestGenerated.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisDiagnostics2TestGenerated.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisDiagnostics2TestGenerated.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisDiagnostics2WithoutAliasExpansionTestGenerated.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisDiagnostics2WithoutAliasExpansionTestGenerated.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisLLTPsiTestGenerated.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisLLTPsiTestGenerated.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisLLTTestGenerated.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisLLTTestGenerated.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-cones/src/org/cangnova/cangjie/cfir/types/ConeBuiltinTypeUtils.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-cones/src/org/cangnova/cangjie/cfir/types/ConeBuiltinTypeUtils.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-cones/src/org/cangnova/cangjie/cfir/types/ConeTypeAliasType.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-cones/src/org/cangnova/cangjie/cfir/types/ConeTypeAliasType.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-serialization/src/org/cangnova/cangjie/cfir/serialization/cjo/CfirCjoPackageMetadataProducer.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-serialization/src/org/cangnova/cangjie/cfir/serialization/cjo/CfirCjoPackageMetadataProducer.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-serialization/src/org/cangnova/cangjie/cfir/serialization/cjo/CjoPackageHeader.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-serialization/src/org/cangnova/cangjie/cfir/serialization/cjo/CjoPackageHeader.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-serialization/src/org/cangnova/cangjie/cfir/serialization/deserialize/CfirTypeDeserializer.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-serialization/src/org/cangnova/cangjie/cfir/serialization/deserialize/CfirTypeDeserializer.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-serialization/src/org/cangnova/cangjie/cfir/serialization/provider/CfirDeserializedSymbolProvider.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-serialization/src/org/cangnova/cangjie/cfir/serialization/provider/CfirDeserializedSymbolProvider.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-serialization/test/org/cangnova/cangjie/cfir/serialization/cjo/CjoPackageHeaderTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-serialization/test/org/cangnova/cangjie/cfir/serialization/cjo/CjoPackageHeaderTest.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-serialization/test/org/cangnova/cangjie/cfir/serialization/cjo/CjoPackageWriterTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-serialization/test/org/cangnova/cangjie/cfir/serialization/cjo/CjoPackageWriterTest.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/ExtraDeclarationCheckers.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/ExtraDeclarationCheckers.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirRecursiveConstructorCallChecker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirRecursiveConstructorCallChecker.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirExpressionImportChecker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirExpressionImportChecker.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/entrypoint/src/org/cangnova/cangjie/cfir/session/ComponentsContainers.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/entrypoint/src/org/cangnova/cangjie/cfir/session/ComponentsContainers.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/providers/src/org/cangnova/cangjie/cfir/resolve/TypeExpansionUtils.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/providers/src/org/cangnova/cangjie/cfir/resolve/TypeExpansionUtils.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/providers/src/org/cangnova/cangjie/cfir/resolve/providers/CfirBuiltinSymbolProvider.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/providers/src/org/cangnova/cangjie/cfir/resolve/providers/CfirBuiltinSymbolProvider.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirExpressionsResolveTransformer.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirExpressionsResolveTransformer.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/CfirArrayLiteralExpectedType.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/CfirArrayLiteralExpectedType.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/candidate/Candidate.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/candidate/Candidate.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/stages/ArgumentCheckingProcessor.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/stages/ArgumentCheckingProcessor.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/tower/TowerLevelHandler.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/tower/TowerLevelHandler.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/inference/CfirCallCompleter.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/inference/CfirCallCompleter.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/inference/CfirCallCompletionResultsWriterTransformer.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/inference/CfirCallCompletionResultsWriterTransformer.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/code-insight/api/src/org/cangnova/cangjie/codeinsight/api/members/CangJieMemberGenerationService.kt" beforeDir="false" afterPath="$PROJECT_DIR$/code-insight/api/src/org/cangnova/cangjie/codeinsight/api/members/CangJieMemberGenerationService.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/code-insight/completion/impl-cfir/src/org/cangnova/cangjie/ide/completion/impl/cfir/sections/CfirSnapshotFactory.kt" beforeDir="false" afterPath="$PROJECT_DIR$/code-insight/completion/impl-cfir/src/org/cangnova/cangjie/ide/completion/impl/cfir/sections/CfirSnapshotFactory.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/code-insight/fixes/resources/META-INF/code-insight/cangjie-code-insight-fixes-k2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/code-insight/formatting/src/org/cangnova/cangjie/formatter/CangJieFormatter.kt" beforeDir="false" afterPath="$PROJECT_DIR$/code-insight/formatting/src/org/cangnova/cangjie/formatter/CangJieFormatter.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/code-insight/override-implement/src/org/cangnova/cangjie/ide/core/overrideImplement/CangJieMemberGenerationServiceImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/code-insight/override-implement/src/org/cangnova/cangjie/ide/core/overrideImplement/CangJieMemberGenerationServiceImpl.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/code-insight/override-implement/src/org/cangnova/cangjie/ide/core/overrideImplement/GenerateMembersHandler.kt" beforeDir="false" afterPath="$PROJECT_DIR$/code-insight/override-implement/src/org/cangnova/cangjie/ide/core/overrideImplement/GenerateMembersHandler.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/deveco/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysis/builtins/BuiltinsDecompiledDocumentRefresher.kt" beforeDir="false" afterPath="$PROJECT_DIR$/deveco/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysis/builtins/BuiltinsDecompiledDocumentRefresher.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/deveco/modules/ide/project/src/main/kotlin/org/cangnova/cangjie/project/service/impl/CjProjectsServiceImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/deveco/modules/ide/project/src/main/kotlin/org/cangnova/cangjie/project/service/impl/CjProjectsServiceImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/macro-ide-implementation-status.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/macro-ide-implementation-status.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/external/cangjie_compiler" beforeDir="false" afterPath="$PROJECT_DIR$/external/cangjie_compiler" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/generators/src/org/cangnova/cangjie/generators/util/GeneratorsFileUtil.kt" beforeDir="false" afterPath="$PROJECT_DIR$/generators/src/org/cangnova/cangjie/generators/util/GeneratorsFileUtil.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gradle-queue-cli/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/gradle-queue-cli/build.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gradlew-queue.bat" beforeDir="false" afterPath="$PROJECT_DIR$/gradlew-queue.bat" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/intellij-ide/build-logic/src/main/kotlin/cangjie.intellij-product.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/build-logic/src/main/kotlin/cangjie.intellij-product.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/build.gradle.kts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/intellij-ide/gradle.properties" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/gradle.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/gradle/libs.versions.toml" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/gradle/libs.versions.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/domain/package-manager/src/main/kotlin/org/cangnova/cangjie/cjpm/config/lock/CjpmLockParser.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/domain/package-manager/src/main/kotlin/org/cangnova/cangjie/cjpm/config/lock/CjpmLockParser.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/domain/package-manager/src/main/kotlin/org/cangnova/cangjie/cjpm/config/toml/CjpmTomlConfig.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/domain/package-manager/src/main/kotlin/org/cangnova/cangjie/cjpm/config/toml/CjpmTomlConfig.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/domain/package-manager/src/main/kotlin/org/cangnova/cangjie/cjpm/config/toml/CjpmTomlDiffer.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/domain/package-manager/src/main/kotlin/org/cangnova/cangjie/cjpm/config/toml/CjpmTomlDiffer.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/domain/package-manager/src/main/kotlin/org/cangnova/cangjie/cjpm/config/toml/CjpmTomlMerger.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/domain/package-manager/src/main/kotlin/org/cangnova/cangjie/cjpm/config/toml/CjpmTomlMerger.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/domain/package-manager/src/main/kotlin/org/cangnova/cangjie/cjpm/config/toml/CjpmTomlParser.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/domain/package-manager/src/main/kotlin/org/cangnova/cangjie/cjpm/config/toml/CjpmTomlParser.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/domain/package-manager/src/main/kotlin/org/cangnova/cangjie/cjpm/config/toml/DependencyConfig.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/domain/package-manager/src/main/kotlin/org/cangnova/cangjie/cjpm/config/toml/DependencyConfig.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/domain/package-manager/src/main/kotlin/org/cangnova/cangjie/cjpm/config/toml/TargetConfig.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/domain/package-manager/src/main/kotlin/org/cangnova/cangjie/cjpm/config/toml/TargetConfig.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/domain/package-manager/src/main/kotlin/org/cangnova/cangjie/cjpm/dependency/CjpmDependencyResolver.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/domain/package-manager/src/main/kotlin/org/cangnova/cangjie/cjpm/dependency/CjpmDependencyResolver.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/domain/package-manager/src/main/kotlin/org/cangnova/cangjie/cjpm/project/CjpmModuleImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/domain/package-manager/src/main/kotlin/org/cangnova/cangjie/cjpm/project/CjpmModuleImpl.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/domain/package-manager/src/main/kotlin/org/cangnova/cangjie/cjpm/project/CjpmProjectImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/domain/package-manager/src/main/kotlin/org/cangnova/cangjie/cjpm/project/CjpmProjectImpl.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/domain/package-manager/src/main/kotlin/org/cangnova/cangjie/cjpm/project/CjpmProjectProvider.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/domain/package-manager/src/main/kotlin/org/cangnova/cangjie/cjpm/project/CjpmProjectProvider.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/domain/package-manager/src/main/kotlin/org/cangnova/cangjie/cjpm/toml/completion/CjpmTomlKeysCompletionProvider.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/domain/package-manager/src/main/kotlin/org/cangnova/cangjie/cjpm/toml/completion/CjpmTomlKeysCompletionProvider.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/domain/package-manager/src/main/resources/messages/CJPMConfigInspectionBundle.properties" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/domain/package-manager/src/main/resources/messages/CJPMConfigInspectionBundle.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/domain/package-manager/src/main/resources/messages/CJPMConfigInspectionBundle_zh_CN.properties" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/domain/package-manager/src/main/resources/messages/CJPMConfigInspectionBundle_zh_CN.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/domain/package-manager/src/main/resources/messages/CjpmBundle.properties" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/domain/package-manager/src/main/resources/messages/CjpmBundle.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/domain/package-manager/src/main/resources/messages/CjpmBundle_zh_CN.properties" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/domain/package-manager/src/main/resources/messages/CjpmBundle_zh_CN.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/domain/package-manager/src/main/resources/org.cangnova.cangjie.cjpm.xml" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/domain/package-manager/src/main/resources/org.cangnova.cangjie.cjpm.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/domain/project-model/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/domain/project-model/build.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/domain/project-model/src/main/kotlin/org/cangnova/cangjie/project/model/CjDependency.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/domain/project-model/src/main/kotlin/org/cangnova/cangjie/project/model/CjDependency.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/domain/project-model/src/main/kotlin/org/cangnova/cangjie/project/model/CjModule.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/domain/project-model/src/main/kotlin/org/cangnova/cangjie/project/model/CjModule.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/domain/project-model/src/main/kotlin/org/cangnova/cangjie/project/service/impl/DependencyResolverImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/domain/project-model/src/main/kotlin/org/cangnova/cangjie/project/service/impl/DependencyResolverImpl.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/domain/project-model/src/main/kotlin/org/cangnova/cangjie/project/workspace/CjWorkspaceModelSync.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/domain/project-model/src/main/kotlin/org/cangnova/cangjie/project/workspace/CjWorkspaceModelSync.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/domain/toolchain/src/main/kotlin/org/cangnova/cangjie/toolchain/env/CangJieEnv.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/domain/toolchain/src/main/kotlin/org/cangnova/cangjie/toolchain/env/CangJieEnv.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/foundation/src/main/resources/messages/CangJieBundle.properties" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/foundation/src/main/resources/messages/CangJieBundle.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/foundation/src/main/resources/messages/CangJieBundle_zh_CN.properties" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/foundation/src/main/resources/messages/CangJieBundle_zh_CN.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/ide/base/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/ide/base/build.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/highlighter/CangJieIdeDeclarationRenderer.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/highlighter/CangJieIdeDeclarationRenderer.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysis/builtins/BuiltinsDecompiledDocumentRefresher.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysis/builtins/BuiltinsDecompiledDocumentRefresher.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysisApiPlatform/projectStructure/modules/CaIdeLibraryFallbackDependenciesModule.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysisApiPlatform/projectStructure/modules/CaIdeLibraryFallbackDependenciesModule.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysisApiPlatform/projectStructure/provider/CaIdeProjectStructureState.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysisApiPlatform/projectStructure/provider/CaIdeProjectStructureState.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/documentation/CangJieDocumentationTarget.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/documentation/CangJieDocumentationTarget.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/resources/META-INF/cangjie-editor.xml" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/resources/META-INF/cangjie-editor.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/resources/META-INF/cangjie-ide-analysis-api-cfir.xml" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/resources/META-INF/cangjie-ide-analysis-api-cfir.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/resources/org.cangnova.cangjie.ide.base.xml" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/resources/org.cangnova.cangjie.ide.base.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/ide/lsp/src/main/kotlin/org/cangnova/cangjie/lsp4ij/CangJieLanguageServerFactory.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/ide/lsp/src/main/kotlin/org/cangnova/cangjie/lsp4ij/CangJieLanguageServerFactory.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/intellij-ide/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/analysis/LLCfirMacroSessionConfigurator.kt" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/intellij-ide/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/analysis/LLCfirMacroSnapshotService.kt" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/intellij-ide/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/compiler/CompilerMacroCompilationProvider.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/ide/macro/src/main/kotlin/org/cangnova/cangjie/macro/compiler/CompilerMacroCompilationProvider.kt" afterDir="false" />
@@ -296,35 +196,50 @@
       <change beforePath="$PROJECT_DIR$/intellij-ide/modules/ide/macro/src/test/kotlin/org/cangnova/cangjie/macro/analysis/MacroSemanticSnapshotConstructionRetryTest.kt" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/intellij-ide/modules/ide/macro/src/test/kotlin/org/cangnova/cangjie/macro/analysis/MacroSemanticSnapshotInputRevisionTest.kt" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/intellij-ide/modules/ide/project/src/main/kotlin/org/cangnova/cangjie/project/service/impl/CjProjectsServiceImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/ide/project/src/main/kotlin/org/cangnova/cangjie/project/service/impl/CjProjectsServiceImpl.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/test-support/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/test-support/build.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/test-support/src/test/hostPlugin/META-INF/plugin.xml" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/test-support/src/test/hostPlugin/META-INF/plugin.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/test-support/src/test/kotlin/org/cangnova/cangjie/test/CangJieStdlibDiagnosticsEndToEndTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/test-support/src/test/kotlin/org/cangnova/cangjie/test/CangJieStdlibDiagnosticsEndToEndTest.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/test-support/src/test/kotlin/org/cangnova/cangjie/test/CjWorkspaceModelSyncStdlibTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/test-support/src/test/kotlin/org/cangnova/cangjie/test/CjWorkspaceModelSyncStdlibTest.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/intellij-ide/product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/references/CjMacroSemanticSnapshotIntegrationTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/references/CjMacroSemanticSnapshotIntegrationTest.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/settings.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/settings.gradle.kts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lsp/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/lsp/build.gradle.kts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lsp/src/org/cangnova/cangjie/lsp/CangjieLspEnvironment.kt" beforeDir="false" afterPath="$PROJECT_DIR$/lsp/src/org/cangnova/cangjie/lsp/CangjieLspEnvironment.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lsp/src/org/cangnova/cangjie/lsp/CangjieLspServerLauncher.kt" beforeDir="false" afterPath="$PROJECT_DIR$/lsp/src/org/cangnova/cangjie/lsp/CangjieLspServerLauncher.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lsp/src/org/cangnova/cangjie/lsp/CangjieLspServerOptions.kt" beforeDir="false" afterPath="$PROJECT_DIR$/lsp/src/org/cangnova/cangjie/lsp/CangjieLspServerOptions.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lsp/src/org/cangnova/cangjie/lsp/analysis/AnalysisApiCangjieAnalysisFacade.kt" beforeDir="false" afterPath="$PROJECT_DIR$/lsp/src/org/cangnova/cangjie/lsp/analysis/AnalysisApiCangjieAnalysisFacade.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lsp/src/org/cangnova/cangjie/lsp/analysis/AnalysisApiDiagnostics.kt" beforeDir="false" afterPath="$PROJECT_DIR$/lsp/src/org/cangnova/cangjie/lsp/analysis/AnalysisApiDiagnostics.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lsp/src/org/cangnova/cangjie/lsp/analysis/AnalysisApiLspProjectStructure.kt" beforeDir="false" afterPath="$PROJECT_DIR$/lsp/src/org/cangnova/cangjie/lsp/analysis/AnalysisApiLspProjectStructure.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lsp/src/org/cangnova/cangjie/lsp/analysis/AnalysisApiLspSemanticSupport.kt" beforeDir="false" afterPath="$PROJECT_DIR$/lsp/src/org/cangnova/cangjie/lsp/analysis/AnalysisApiLspSemanticSupport.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lsp/src/org/cangnova/cangjie/lsp/analysis/AnalysisApiLspServiceRegistrar.kt" beforeDir="false" afterPath="$PROJECT_DIR$/lsp/src/org/cangnova/cangjie/lsp/analysis/AnalysisApiLspServiceRegistrar.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lsp/src/org/cangnova/cangjie/lsp/analysis/CangjieAnalysisFacade.kt" beforeDir="false" afterPath="$PROJECT_DIR$/lsp/src/org/cangnova/cangjie/lsp/analysis/CangjieAnalysisFacade.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lsp/src/org/cangnova/cangjie/lsp/capabilities/CangjieLanguageServerDescriptor.kt" beforeDir="false" afterPath="$PROJECT_DIR$/lsp/src/org/cangnova/cangjie/lsp/capabilities/CangjieLanguageServerDescriptor.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lsp/src/org/cangnova/cangjie/lsp/server/CangjieLanguageServer.kt" beforeDir="false" afterPath="$PROJECT_DIR$/lsp/src/org/cangnova/cangjie/lsp/server/CangjieLanguageServer.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lsp/src/org/cangnova/cangjie/lsp/capabilities/CangjieServerCapabilitiesFactory.kt" beforeDir="false" afterPath="$PROJECT_DIR$/lsp/src/org/cangnova/cangjie/lsp/capabilities/CangjieServerCapabilitiesFactory.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lsp/src/org/cangnova/cangjie/lsp/server/CangjieLspRequest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/lsp/src/org/cangnova/cangjie/lsp/server/CangjieLspRequest.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lsp/src/org/cangnova/cangjie/lsp/server/CangjieTextDocumentService.kt" beforeDir="false" afterPath="$PROJECT_DIR$/lsp/src/org/cangnova/cangjie/lsp/server/CangjieTextDocumentService.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lsp/src/org/cangnova/cangjie/lsp/state/LspProjectConfiguration.kt" beforeDir="false" afterPath="$PROJECT_DIR$/lsp/src/org/cangnova/cangjie/lsp/state/LspProjectConfiguration.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lsp/test/org/cangnova/cangjie/lsp/server/CangjieCapabilityNegotiationIntegrationTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/lsp/test/org/cangnova/cangjie/lsp/server/CangjieCapabilityNegotiationIntegrationTest.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lsp/test/org/cangnova/cangjie/lsp/server/CangjieLspRequestCoverageTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/lsp/test/org/cangnova/cangjie/lsp/server/CangjieLspRequestCoverageTest.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lsp/testFixtures/org/cangnova/cangjie/lsp/testkit/ServiceLoadedLspTestEnvironment.kt" beforeDir="false" afterPath="$PROJECT_DIR$/lsp/testFixtures/org/cangnova/cangjie/lsp/testkit/ServiceLoadedLspTestEnvironment.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/macro/macro-common/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/macro/macro-common/build.gradle.kts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/macro/macro-process/src/org/cangnova/cangjie/macro/process/LspMacroServerMacroExecutor.kt" beforeDir="false" afterPath="$PROJECT_DIR$/macro/macro-process/src/org/cangnova/cangjie/macro/process/LspMacroServerMacroExecutor.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/macro/macro-process/src/org/cangnova/cangjie/macro/process/ProcessMacroExecutor.kt" beforeDir="false" afterPath="$PROJECT_DIR$/macro/macro-process/src/org/cangnova/cangjie/macro/process/ProcessMacroExecutor.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/macro/macro-process/test/org/cangnova/cangjie/macro/process/ProcessMacroExecutorTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/macro/macro-process/test/org/cangnova/cangjie/macro/process/ProcessMacroExecutorTest.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/macro/macro-stub/src/org/cangnova/cangjie/macro/stub/StubMacroExecutor.kt" beforeDir="false" afterPath="$PROJECT_DIR$/macro/macro-stub/src/org/cangnova/cangjie/macro/stub/StubMacroExecutor.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-analysis-api-cfir-for-ide-module/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-analysis-api-cfir-for-ide-module/build.gradle.kts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-analysis-api-cfir-for-ide/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-analysis-api-cfir-for-ide/build.gradle.kts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/psi/resources/messages/CangJieParsingBundle.properties" beforeDir="false" afterPath="$PROJECT_DIR$/psi/resources/messages/CangJieParsingBundle.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/psi/resources/messages/CangJieParsingBundle_zh_CN.properties" beforeDir="false" afterPath="$PROJECT_DIR$/psi/resources/messages/CangJieParsingBundle_zh_CN.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/parsing/CangJieParsing.kt" beforeDir="false" afterPath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/parsing/CangJieParsing.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/psi/CjAbstractClassBody.kt" beforeDir="false" afterPath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/psi/CjAbstractClassBody.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/psi/CjPsiUtil.kt" beforeDir="false" afterPath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/psi/CjPsiUtil.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/psi/CjTypeStatement.kt" beforeDir="false" afterPath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/psi/CjTypeStatement.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/psi/test/org/cangnova/cangjie/psi/ForeignAndAnnotationParsingTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/psi/test/org/cangnova/cangjie/psi/ForeignAndAnnotationParsingTest.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lsp/testFixtures/org/cangnova/cangjie/lsp/framework/LspIntegrationTestSession.kt" beforeDir="false" afterPath="$PROJECT_DIR$/lsp/testFixtures/org/cangnova/cangjie/lsp/framework/LspIntegrationTestSession.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lsp/testFixtures/org/cangnova/cangjie/lsp/testkit/LspIntegrationTestConnection.kt" beforeDir="false" afterPath="$PROJECT_DIR$/lsp/testFixtures/org/cangnova/cangjie/lsp/testkit/LspIntegrationTestConnection.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lsp/wrapper/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/lsp/wrapper/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lsp/wrapper/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/lsp/wrapper/src/main.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lsp/wrapper/test/java/FakeLsp.java" beforeDir="false" afterPath="$PROJECT_DIR$/lsp/wrapper/test/java/FakeLsp.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/psi/CjUserType.kt" beforeDir="false" afterPath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/psi/CjUserType.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/psi/stubs/CangJieStubVersions.kt" beforeDir="false" afterPath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/psi/stubs/CangJieStubVersions.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/psi/stubs/StubInterfaces.kt" beforeDir="false" afterPath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/psi/stubs/StubInterfaces.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/psi/stubs/elements/CjUserTypeElementType.kt" beforeDir="false" afterPath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/psi/stubs/elements/CjUserTypeElementType.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/psi/stubs/impl/CangJieStubBaseImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/psi/stubs/impl/CangJieStubBaseImpl.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/psi/stubs/impl/CangJieUserTypeStubImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/psi/src/org/cangnova/cangjie/psi/stubs/impl/CangJieUserTypeStubImpl.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/settings.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/settings.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test-infrastructure/testFixtures/org/cangnova/cangjie/test/TargetBackend.kt" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test-infrastructure/testFixtures/org/cangnova/cangjie/test/TargetBackend.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmp_compile.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmp_f3_out.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmp_full_f3.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmp_full_f3_failures.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmp_full_f3_v2.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmp_geninst_failures.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmp_tgt.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/测试结果 -Run_Cfir_Test_All-2026-08-31-ShadowParent.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/测试结果 -Run_Cfir_Test_All-2026-08-31.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/测试结果 -Run_Cfir_Test_All-2026-09-02.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/测试结果 -Run_Cfir_Test_All.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/测试结果 -Run_Cfir_Test_All.xml" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -425,20 +340,29 @@
                 <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
                 <item name="cangjie" type="f1a62948:ProjectNode" />
                 <item name="cangjie" type="2d1252cf:ModuleNode" />
-                <item name="psi" type="2d1252cf:ModuleNode" />
+                <item name="analysis" type="2d1252cf:ModuleNode" />
               </path>
               <path>
                 <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
                 <item name="cangjie" type="f1a62948:ProjectNode" />
                 <item name="cangjie" type="2d1252cf:ModuleNode" />
-                <item name="psi" type="2d1252cf:ModuleNode" />
+                <item name="analysis" type="2d1252cf:ModuleNode" />
+                <item name="analysis-real-project-test" type="2d1252cf:ModuleNode" />
+              </path>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="cangjie" type="f1a62948:ProjectNode" />
+                <item name="cangjie" type="2d1252cf:ModuleNode" />
+                <item name="analysis" type="2d1252cf:ModuleNode" />
+                <item name="analysis-real-project-test" type="2d1252cf:ModuleNode" />
                 <item name="Tasks" type="e4a08cd1:TasksNode" />
               </path>
               <path>
                 <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
                 <item name="cangjie" type="f1a62948:ProjectNode" />
                 <item name="cangjie" type="2d1252cf:ModuleNode" />
-                <item name="psi" type="2d1252cf:ModuleNode" />
+                <item name="analysis" type="2d1252cf:ModuleNode" />
+                <item name="analysis-real-project-test" type="2d1252cf:ModuleNode" />
                 <item name="Tasks" type="e4a08cd1:TasksNode" />
                 <item name="verification" type="c8890929:TasksNode$1" />
               </path>
@@ -548,61 +472,61 @@
   </component>
   <component name="NextEditCompletionFeaturesState">
     <decayedCancelled>
-      <entry key="MS100" value="1.5693678770765052" />
-      <entry key="MS500" value="4.727964877391237" />
-      <entry key="S2" value="10.426465449844946" />
-      <entry key="S5" value="14.045590640248292" />
-      <entry key="S10" value="15.812461802959877" />
-      <entry key="S30" value="17.278735345866103" />
-      <entry key="S60" value="17.85204280173467" />
-      <entry key="M2" value="18.54415710888061" />
-      <entry key="M5" value="23.071983171333343" />
-      <entry key="M10" value="30.313145191401006" />
-      <entry key="M15" value="34.700170988420346" />
-      <entry key="M30" value="40.72355805076736" />
-      <entry key="H1" value="44.533529050048365" />
-      <entry key="H2" value="46.732293117013064" />
-      <entry key="H4" value="49.139961890855666" />
-      <entry key="D1" value="72.19527728666102" />
-      <entry key="W1" value="89.83650266064313" />
+      <entry key="MS100" value="1.1538930516681145" />
+      <entry key="MS500" value="1.6881468286280954" />
+      <entry key="S2" value="2.1540900750717036" />
+      <entry key="S5" value="3.7033072174905763" />
+      <entry key="S10" value="6.115063189137974" />
+      <entry key="S30" value="9.840899661374403" />
+      <entry key="S60" value="11.275204248535417" />
+      <entry key="M2" value="12.09779514854703" />
+      <entry key="M5" value="12.744530574589165" />
+      <entry key="M10" value="13.991760792042236" />
+      <entry key="M15" value="15.46379130973135" />
+      <entry key="M30" value="19.617797514240056" />
+      <entry key="H1" value="29.238480776137248" />
+      <entry key="H2" value="46.06988246082319" />
+      <entry key="H4" value="64.42381197712072" />
+      <entry key="D1" value="108.95062841341189" />
+      <entry key="W1" value="133.36903720320407" />
     </decayedCancelled>
     <decayedSelected>
       <entry key="MS100" value="0.0" />
       <entry key="MS500" value="0.0" />
-      <entry key="S2" value="6.122425835385036E-126" />
-      <entry key="S5" value="1.6957148551749524E-50" />
-      <entry key="S10" value="2.7541989275033106E-25" />
-      <entry key="S30" value="1.8769732638770385E-8" />
-      <entry key="S60" value="3.0581832428852937E-4" />
-      <entry key="M2" value="0.03908663193446974" />
-      <entry key="M5" value="0.7180389020495596" />
-      <entry key="M10" value="1.894747873656611" />
-      <entry key="M15" value="2.6183192964488615" />
-      <entry key="M30" value="3.6182241244404096" />
-      <entry key="H1" value="4.25336374136822" />
-      <entry key="H2" value="4.611595554894131" />
-      <entry key="H4" value="4.801872174462687" />
-      <entry key="D1" value="4.966419886982873" />
-      <entry key="W1" value="4.995188975160434" />
+      <entry key="S2" value="0.0" />
+      <entry key="S5" value="0.0" />
+      <entry key="S10" value="0.0" />
+      <entry key="S30" value="1.8040409325268687E-121" />
+      <entry key="S60" value="5.914945802319179E-61" />
+      <entry key="M2" value="1.09994856773551E-30" />
+      <entry key="M5" value="2.074102756617062E-12" />
+      <entry key="M10" value="3.365841071962543E-6" />
+      <entry key="M15" value="4.1791994932815894E-4" />
+      <entry key="M30" value="0.0533778264843228" />
+      <entry key="H1" value="0.6093510104202904" />
+      <entry key="H2" value="2.063729605245442" />
+      <entry key="H4" value="3.800093704736493" />
+      <entry key="D1" value="6.322220028740379" />
+      <entry key="W1" value="6.89889318733806" />
     </decayedSelected>
     <decayedShown>
-      <entry key="MS100" value="1.5261205458926224" />
-      <entry key="MS500" value="4.590963374360002" />
-      <entry key="S2" value="10.104824973307768" />
-      <entry key="S5" value="13.797059157847976" />
-      <entry key="S10" value="15.655168139317281" />
-      <entry key="S30" value="17.216896433252863" />
-      <entry key="S60" value="17.81978785357794" />
-      <entry key="M2" value="18.56577673733861" />
-      <entry key="M5" value="23.778490575164607" />
-      <entry key="M10" value="32.19830282667279" />
-      <entry key="M15" value="37.31053411043774" />
-      <entry key="M30" value="44.33672542522666" />
-      <entry key="H1" value="48.784022005275965" />
-      <entry key="H2" value="51.34235599516934" />
-      <entry key="H4" value="53.941033781871006" />
-      <entry key="D1" value="77.16153567476887" />
-      <entry key="W1" value="94.83166559729958" />
+      <entry key="MS100" value="1.091649345034153" />
+      <entry key="MS500" value="1.6691952420291547" />
+      <entry key="S2" value="2.084635454375968" />
+      <entry key="S5" value="3.5891596519014186" />
+      <entry key="S10" value="6.01330201818749" />
+      <entry key="S30" value="9.78805912056929" />
+      <entry key="S60" value="11.245423645881692" />
+      <entry key="M2" value="12.081963348491794" />
+      <entry key="M5" value="12.737930162374921" />
+      <entry key="M10" value="13.988296505908373" />
+      <entry key="M15" value="15.461775593818183" />
+      <entry key="M30" value="19.669648741469143" />
+      <entry key="H1" value="29.84611985585554" />
+      <entry key="H2" value="48.131623450111654" />
+      <entry key="H4" value="68.22225368237632" />
+      <entry key="D1" value="115.27239558207593" />
+      <entry key="W1" value="140.2678575615525" />
     </decayedShown>
   </component>
   <component name="PackageJsonUpdateNotifier">
@@ -734,6 +658,7 @@
     &quot;Gradle.RawCfirBuilderTestCase.executor&quot;: &quot;Run&quot;,
     &quot;Gradle.RawCfirBuilderTestCaseGenerated (1).executor&quot;: &quot;Run&quot;,
     &quot;Gradle.RawCfirBuilderTestCaseGenerated.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.RealProjectAnalysisTest (1).executor&quot;: &quot;Run&quot;,
     &quot;Gradle.RealProjectAnalysisTest.executor&quot;: &quot;Run&quot;,
     &quot;Gradle.Redeclaration.testSimple.executor&quot;: &quot;Run&quot;,
     &quot;Gradle.Run All Test.executor&quot;: &quot;Run&quot;,
@@ -765,6 +690,8 @@
     &quot;Gradle.cangjie [:analysis:analysis-api-cfir:generateDiagnostics].executor&quot;: &quot;Run&quot;,
     &quot;Gradle.cangjie [:analysis:analysis-api-cfir:test].executor&quot;: &quot;Run&quot;,
     &quot;Gradle.cangjie [:analysis:analysis-performance-test:test].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [:analysis:analysis-real-project-test:check].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.cangjie [:analysis:analysis-real-project-test:test].executor&quot;: &quot;Run&quot;,
     &quot;Gradle.cangjie [:analysis:low-level-api-cfir:test].executor&quot;: &quot;Run&quot;,
     &quot;Gradle.cangjie [:cfir:analysis-tests:build].executor&quot;: &quot;Run&quot;,
     &quot;Gradle.cangjie [:cfir:analysis-tests:generateTestGeneratorForCfirAnalysisTestsTests].executor&quot;: &quot;Run&quot;,
@@ -910,7 +837,7 @@
       <command value="gradle codeStats" />
     </option>
   </component>
-  <component name="RunManager" selected="Gradle.Run All Test">
+  <component name="RunManager" selected="Gradle.Run IDE with Plugin">
     <configuration default="true" type="JUnit" factoryName="JUnit">
       <shortenClasspath name="ARGS_FILE" />
       <option name="TEST_OBJECT" value="class" />
@@ -957,7 +884,7 @@
       <GradleCoverageDisabled>false</GradleCoverageDisabled>
       <method v="2" />
     </configuration>
-    <configuration name="Lambda.testLambdaCaptureVarRules" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+    <configuration name="RealProjectAnalysisTest (1)" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
         <option name="externalProjectPath" value="$PROJECT_DIR$/intellij-ide" />
@@ -968,34 +895,7 @@
         </option>
         <option name="taskNames">
           <list>
-            <option value=":cangjie:cfir:analysis-tests:test" />
-            <option value="--tests" />
-            <option value="&quot;org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisDiagnostics2PsiTestGenerated$Lambda.testLambdaCaptureVarRules&quot;" />
-          </list>
-        </option>
-        <option name="vmOptions" />
-      </ExternalSystemSettings>
-      <ExternalSystemDebugServerProcess>false</ExternalSystemDebugServerProcess>
-      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
-      <ExternalSystemDebugDisabled>false</ExternalSystemDebugDisabled>
-      <DebugAllEnabled>false</DebugAllEnabled>
-      <RunAsTest>true</RunAsTest>
-      <GradleProfilingDisabled>false</GradleProfilingDisabled>
-      <GradleCoverageDisabled>false</GradleCoverageDisabled>
-      <method v="2" />
-    </configuration>
-    <configuration name="RealProjectAnalysisTest" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
-      <ExternalSystemSettings>
-        <option name="executionName" />
-        <option name="externalProjectPath" value="$PROJECT_DIR$" />
-        <option name="externalSystemIdString" value="GRADLE" />
-        <option name="scriptParameters" value="" />
-        <option name="taskDescriptions">
-          <list />
-        </option>
-        <option name="taskNames">
-          <list>
-            <option value=":analysis:analysis-real-project-test:test" />
+            <option value=":cangjie:analysis:analysis-real-project-test:test" />
             <option value="--tests" />
             <option value="&quot;org.cangnova.cangjie.analysis.realproject.RealProjectAnalysisTest&quot;" />
           </list>
@@ -1011,7 +911,7 @@
       <GradleCoverageDisabled>false</GradleCoverageDisabled>
       <method v="2" />
     </configuration>
-    <configuration name="cangjie [:analysis:analysis-performance-test:test]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+    <configuration name="cangjie [:analysis:analysis-real-project-test:check]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
@@ -1022,7 +922,7 @@
         </option>
         <option name="taskNames">
           <list>
-            <option value=":analysis:analysis-performance-test:test" />
+            <option value=":analysis:analysis-real-project-test:check" />
           </list>
         </option>
         <option name="vmOptions" />
@@ -1036,7 +936,7 @@
       <GradleCoverageDisabled>false</GradleCoverageDisabled>
       <method v="2" />
     </configuration>
-    <configuration name="cangjie [:lsp:jar]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+    <configuration name="cangjie [:analysis:analysis-real-project-test:test]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
@@ -1047,7 +947,7 @@
         </option>
         <option name="taskNames">
           <list>
-            <option value=":lsp:jar" />
+            <option value=":analysis:analysis-real-project-test:test" />
           </list>
         </option>
         <option name="vmOptions" />
@@ -1086,31 +986,6 @@
       <GradleCoverageDisabled>false</GradleCoverageDisabled>
       <method v="2" />
     </configuration>
-    <configuration name="deveco [:product:runIde]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
-      <ExternalSystemSettings>
-        <option name="executionName" />
-        <option name="externalProjectPath" value="$PROJECT_DIR$/deveco" />
-        <option name="externalSystemIdString" value="GRADLE" />
-        <option name="scriptParameters" />
-        <option name="taskDescriptions">
-          <list />
-        </option>
-        <option name="taskNames">
-          <list>
-            <option value=":product:runIde" />
-          </list>
-        </option>
-        <option name="vmOptions" />
-      </ExternalSystemSettings>
-      <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
-      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
-      <ExternalSystemDebugDisabled>false</ExternalSystemDebugDisabled>
-      <DebugAllEnabled>false</DebugAllEnabled>
-      <RunAsTest>false</RunAsTest>
-      <GradleProfilingDisabled>false</GradleProfilingDisabled>
-      <GradleCoverageDisabled>false</GradleCoverageDisabled>
-      <method v="2" />
-    </configuration>
     <configuration default="true" type="JUnit" factoryName="JUnit">
       <shortenClasspath name="ARGS_FILE" />
       <option name="TEST_OBJECT" value="class" />
@@ -1133,21 +1008,19 @@
       <item itemvalue="Gradle.Run All Test" />
       <item itemvalue="Gradle.Run Cfir Test" />
       <item itemvalue="Gradle.Run IDE with Plugin" />
-      <item itemvalue="Gradle.cangjie [:lsp:jar]" />
-      <item itemvalue="Gradle.deveco [:product:runIde]" />
+      <item itemvalue="Gradle.RealProjectAnalysisTest (1)" />
+      <item itemvalue="Gradle.cangjie [:analysis:analysis-real-project-test:check]" />
+      <item itemvalue="Gradle.cangjie [:analysis:analysis-real-project-test:test]" />
       <item itemvalue="Gradle.Declarations.testAbstractClass" />
       <item itemvalue="Gradle.cangjie [:psi:test]" />
-      <item itemvalue="Gradle.RealProjectAnalysisTest" />
-      <item itemvalue="Gradle.Lambda.testLambdaCaptureVarRules" />
-      <item itemvalue="Gradle.cangjie [:analysis:analysis-performance-test:test]" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Gradle.RealProjectAnalysisTest (1)" />
+        <item itemvalue="Gradle.cangjie [:analysis:analysis-real-project-test:test]" />
+        <item itemvalue="Gradle.cangjie [:analysis:analysis-real-project-test:check]" />
         <item itemvalue="Gradle.Declarations.testAbstractClass" />
         <item itemvalue="Gradle.cangjie [:psi:test]" />
-        <item itemvalue="Gradle.RealProjectAnalysisTest" />
-        <item itemvalue="Gradle.Lambda.testLambdaCaptureVarRules" />
-        <item itemvalue="Gradle.cangjie [:analysis:analysis-performance-test:test]" />
       </list>
     </recent_temporary>
   </component>

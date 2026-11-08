@@ -2405,6 +2405,12 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 runTest("cfir/analysis-tests/testData/llt/Extend/generic/primitive_default_implement.cj")
             }
 
+            @TestMetadata("primitive_static_extend_uint8.cj")
+            @Test
+            fun testPrimitiveStaticExtendUint8() {
+                runTest("cfir/analysis-tests/testData/llt/Extend/generic/primitive_static_extend_uint8.cj")
+            }
+
             @TestMetadata("primitive_static_generic_func.cj")
             @Test
             fun testPrimitiveStaticGenericFunc() {
@@ -17100,6 +17106,40 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testMut3() {
             runTest("cfir/analysis-tests/testData/llt/let/mut_3.cj")
+        }
+    }
+
+    @TestMetadata("library_member_call")
+    @TestDataPath("${'$'}PROJECT_ROOT")
+    @Nested
+    inner class LibraryMemberCall : AbstractCfirLightTreeLlTDiagnosticsTest() {
+        @Test
+        fun testAllFilesPresent() {
+            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/library_member_call")
+        }
+
+        @TestMetadata("library_digest_cross_package.cj")
+        @Test
+        fun testLibraryDigestCrossPackage() {
+            runTest("cfir/analysis-tests/testData/llt/library_member_call/library_digest_cross_package.cj")
+        }
+
+        @TestMetadata("library_digest_default_impl.cj")
+        @Test
+        fun testLibraryDigestDefaultImpl() {
+            runTest("cfir/analysis-tests/testData/llt/library_member_call/library_digest_default_impl.cj")
+        }
+
+        @TestMetadata("library_digest_invalid_element.cj")
+        @Test
+        fun testLibraryDigestInvalidElement() {
+            runTest("cfir/analysis-tests/testData/llt/library_member_call/library_digest_invalid_element.cj")
+        }
+
+        @TestMetadata("library_digest_overload.cj")
+        @Test
+        fun testLibraryDigestOverload() {
+            runTest("cfir/analysis-tests/testData/llt/library_member_call/library_digest_overload.cj")
         }
     }
 

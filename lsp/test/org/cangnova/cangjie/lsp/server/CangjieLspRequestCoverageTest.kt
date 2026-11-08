@@ -53,7 +53,9 @@ class CangjieLspRequestCoverageTest {
      * LSP 方法名必须形如 `namespace/method`，且命名空间必须来自 LSP 规范定义的那几个。
      *
      * 除 `textDocument/`、`workspace/` 之外，补全候选的延迟文档用的是规范里的
-     * `completionItem/resolve`，因此 `completionItem` 同样是合法命名空间。
+     * `completionItem/resolve`，code action 的延迟编辑用的是 `codeAction/resolve`，
+     * inlay hint 的延迟悬浮提示用的是 `inlayHint/resolve`，
+     * 因此 `completionItem`、`codeAction`、`inlayHint` 同样是合法命名空间。
      *
      * 这里不校验"枚举名 = 方法名的机械换算"：枚举名对应的是**服务方法名**，与协议里的
      * 方法串不是一回事（`semanticTokensFull` 对应 `textDocument/semanticTokens.full`）。
@@ -61,7 +63,7 @@ class CangjieLspRequestCoverageTest {
      */
     @Test
     fun lspMethodsUseProtocolNamespace() {
-        val namespaces = setOf("textDocument", "workspace", "completionItem")
+        val namespaces = setOf("textDocument", "workspace", "completionItem", "codeAction", "inlayHint")
         CangjieLspRequest.entries.forEach { request ->
             if (request.lspMethod == "initialize") return@forEach
 

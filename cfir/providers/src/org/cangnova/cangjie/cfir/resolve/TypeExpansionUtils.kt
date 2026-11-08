@@ -31,6 +31,7 @@ import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.cfir.types.withAbbreviation
 import org.cangnova.cangjie.cfir.types.withAttributes
+import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.withoutAbbreviation
 
 /**
@@ -260,3 +261,39 @@ inline fun ConeCangJieType.forEachExpandedType(
         action = action,
     )
 }
+
+/**
+ * 该类型（展开别名后）是否为函数类型；是则返回函数类型结构。
+ *
+ * 对齐 Kotlin `functionTypeKind(session)` 的判据：**先 `fullyExpandedType` 再判定**。
+ * 别名视图（`ConeTypeAliasType`）会遮住真实类型头，逐处手写 `is ConeFunctionType` 会导致
+ * `type Handler = (Int64) -> Int64` 被误判，进而误报 `WRONG_NUMBER_OF_ARGUMENTS`。
+ */
+fun ConeCangJieType.functionTypeOrNull(session: CfirSession): ConeFunctionType? =
+    when (val expanded = fullyExpandedType(session)) {
+        is ConeFunctionType -> expanded
+        else -> null
+    }
+
+/**
+ * 调用解析的宽松判据：在 [functionTypeOrNull] 之上，允许错误类型沿 delegated type 恢复。
+ *
+ * 这是调用侧特有的容错契约（错误类型上保留原诊断的同时让实参映射继续走函数值流程），
+ * 类型层/checker 侧不应隐式继承。
+ *
+ * @param expandDelegated 为 true 时对 delegated type 再做一次 `fullyExpandedType`（别名→错误→函数
+ *   这一链路需要）；Tower 的 synthetic invoke 判定传 false，只恢复一层，避免扩大候选面。
+ */
+fun ConeCangJieType.recoverableFunctionTypeOrNull(
+    session: CfirSession,
+    expandDelegated: Boolean = true,
+): ConeFunctionType? =
+    when (val expanded = fullyExpandedType(session)) {
+        is ConeFunctionType -> expanded
+        is ConeErrorType -> when {
+            expandDelegated -> expanded.delegatedType?.fullyExpandedType(session) as? ConeFunctionType
+            else -> expanded.delegatedType as? ConeFunctionType
+        }
+
+        else -> null
+    }

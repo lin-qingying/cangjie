@@ -46,6 +46,8 @@ enum class CangjieLspRequest(val lspMethod: String) {
 
     CODE_ACTION("textDocument/codeAction"),
 
+    RESOLVE_CODE_ACTION("codeAction/resolve"),
+
     FORMATTING("textDocument/formatting"),
 
     RANGE_FORMATTING("textDocument/rangeFormatting"),
@@ -63,6 +65,8 @@ enum class CangjieLspRequest(val lspMethod: String) {
     SEMANTIC_TOKENS_RANGE("textDocument/semanticTokens/range"),
 
     INLAY_HINT("textDocument/inlayHint"),
+
+    RESOLVE_INLAY_HINT("inlayHint/resolve"),
 
     DIAGNOSTIC("textDocument/diagnostic"),
 
