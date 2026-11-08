@@ -430,3 +430,35 @@ D40 的定标问题在本轮解决，并已落地共享层与 LSP 宿主。
 - D47（磁盘）：C 盘曾被 Gradle daemon 日志占满到 0 字节，同样表现为 daemon 猝死；
   `~/.gradle/daemon/*/*.log` 可安全清理。
 
+## 15. P5 实施记录：lambda 返回类型提示（第十三轮，v14）
+
+P3 剩余的 `cangjie.lambdas.hints` 只落地了 `hints.lambda.return`，接收者那一项被证伪后搁置。
+
+- D48（阻塞，实测）：**`hints.lambda.receivers.parameters` 取不到接收者类型**。
+  `CaFunctionType` 只暴露 `parameterTypes` / `returnType`，没有 receiver 槽位；
+  `expression.expectedType` 拿到的同样是函数类型，无法还原 `this: String` 里的 `String`
+  （仓颉的接收者写在 `CjFunctionTypeReceiver`，但那是**类型注解**侧的 PSI，
+  调用点推断出的 `CaFunctionType` 已经把它抹平）。要恢复这条线，前置是 Analysis API
+  在函数类型上暴露接收者，属于 analysis 层改动，不在提示层做。
+- D49（实现）：`CjLambdaHintsCollector` 沿用「候选（纯 PSI）+ 解析（`analyze` 内）」两层结构。
+  候选 = 无显式返回类型 + 有函数体 + 末语句不是 `return`；返回值类型取
+  `bodyExpression.lastStatement.expressionType`。`Unit` 与类型错误一律不产出
+  （`forEach { println(it) }` 这类噪音占绝大多数）。
+  文本沿用类型提示的 `: Type` 形态，锚在末表达式之后（`i + 20: Int64`）。
+- D50（测试夹具坑）：`values.forEach { value -> ... }` 在 LSP 集成夹具里产不出提示——
+  `forEach` 在该 SDK 夹具下解析不到，`hasErrorAncestor` 把整个 lambda 过滤掉了。
+  这不是收集器的缺陷，而是夹具的 stdlib 覆盖不全。golden 改用**不依赖成员解析**的写法：
+  `let f: (Int64) -> Int64 = { i: Int64 => i + 1 }`。顺带记录：golden 标记里**不写空格**
+  （`<#: Int64#>`），否则逐字符比对必然不合。
+- D51（环境，非本变更缺陷）：①`gradlew-queue.bat` 在新建的工作树里首跑 bootstrap 会
+  构建出 shadowJar 却起不来（`ClassNotFoundException: GradleQueueMainKt`），直连
+  `gradlew.bat` 即可；②agent 的 Bash 沙箱在 C 盘吃紧时会整体不可用（连自身二进制都被拒），
+  改用 PowerShell 传参数时 `-D` 开头的参数必须放进**字符串数组**，否则会被吞掉前缀。
+
+验证：
+- `:code-insight:hints:test` → **28/28**（新增 `CjLambdaHintsCollectorCandidatesTest` 6 例）
+- `:lsp:test --tests "*CangjieInlayHintIntegrationTest*"` → **9/9**（新增 `lambdaReturns.cj` golden）
+- `intellij-ide`：`CangJieInlayHintsProviderTest` → **11/11**（新增 lambda 行为与 option 声明两例）
+- IDE 侧 EP 新增 `providerId=cangjie.lambdas.hints`（`group=TYPES_GROUP`），
+  逐项开关 `hints.lambda.return`；其余三个 provider 显式 `showLambdaReturns = false`
+

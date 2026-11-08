@@ -88,6 +88,9 @@ enum class CangJieInlayHintTarget {
 
     /** 范围/切片端点的开闭性。 */
     RANGE_VALUE,
+
+    /** lambda 函数体末表达式的类型（即隐式返回值类型）。 */
+    LAMBDA_RETURN_TYPE,
 }
 
 /**
@@ -106,4 +109,6 @@ data class CangJieInlayHintOptions(
     val showParameterNames: Boolean = true,
     /** 是否显示范围/切片端点的开闭性。 */
     val showRangeValues: Boolean = true,
+    /** 是否显示 lambda 隐式返回值类型。 */
+    val showLambdaReturns: Boolean = true,
 )

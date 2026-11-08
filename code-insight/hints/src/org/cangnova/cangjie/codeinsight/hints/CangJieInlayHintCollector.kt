@@ -37,6 +37,9 @@ object CangJieInlayHintCollector {
         if (options.showRangeValues) {
             hints += CjRangeValueHintsCollector.collect(file, range, session)
         }
+        if (options.showLambdaReturns) {
+            hints += CjLambdaHintsCollector.collect(file, range, session)
+        }
         return hints.sortedBy { it.offset }
     }
 }

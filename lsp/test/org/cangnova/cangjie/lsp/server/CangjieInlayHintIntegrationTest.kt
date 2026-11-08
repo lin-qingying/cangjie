@@ -105,6 +105,28 @@ class CangjieInlayHintIntegrationTest : AbstractLspIntegrationTest() {
     }
 
     /**
+     * lambda 的隐式返回值类型必须与 golden 契约逐字符一致。
+     *
+     * 该文件里没有任何「源码没写类型」的声明，因此整篇只有 lambda 返回类型这一类提示。
+     */
+    @Test
+    fun `lambda return hints match shared golden contract`() {
+        val golden = readGolden("lambdaReturns.cj")
+        val source = stripMarkers(golden)
+        hintsWorkspace(source).use { fixture ->
+            createSession(fixture.initializeParams()).use { testSession ->
+                val uri = fixture.uri("src/hints.cj")
+                testSession.openDocument(uri, source)
+
+                val hints = testSession.inlayHint(fullDocumentParams(uri, source))
+
+                assertTrue(hints.isNotEmpty(), "golden 文件里必须至少产出一条 lambda 提示")
+                assertEquals(golden.trimEnd(), renderWithMarkers(source, hints, uri).trimEnd())
+            }
+        }
+    }
+
+    /**
      * 命名实参不产出参数名提示：形参名已经写在源码里。
      */
     @Test
