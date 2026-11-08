@@ -1,0 +1,47 @@
+name: release-please
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+  pull-requests: write
+  packages: write
+concurrency:
+  group: release-please-main
+  cancel-in-progress: false
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    outputs:
+      released: ${{ steps.release.outputs.release_created }}
+      tag: ${{ steps.release.outputs.tag_name }}
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+  test:
+    needs: release
+    if: needs.release.outputs.released == 'true'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release.outputs.tag }}
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: gradle/actions/setup-gradle@v4
+      - run: chmod +x ./gradlew && ./gradlew test --continue --no-daemon --stacktrace
+  publish:
+    needs: [release, test]
+    if: needs.release.outputs.released == 'true'
+    uses: ./.github/workflows/publish-github-packages.yml
+    with:
+      version: ${{ needs.release.outputs.tag }}
+    permissions:
+      contents: read
+      packages: write
