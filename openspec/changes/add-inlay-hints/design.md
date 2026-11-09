@@ -421,6 +421,19 @@ P3 第一批完成 **逐项 optionId 开关**（4 项，见 D29）。
   `CjAnnotation`，所以在声明前缀位置覆盖为 0。
   若要重启这条线，建议单开变更：先做 `CjMacroInput` → 表达式列表的重建工具并单独测试，
   再谈提示。
+- D57（D41 落地，第十四轮后半）：按 D56 的路径实现完成，`CjAnnotationArgumentHintsCollector`
+  + `CjAnnotationArgumentHints` 已进共享层，LSP 侧自动生效（golden `annotationArgs.cj`）。
+  实现中撞到三件事，都记在这里：
+
+  1. **`CjPsiFactory.createCallArguments("(1, 2)")` 可以直接重建实参**，返回的
+     `CjValueArgumentList` 里就是带类型的表达式（探针输出 `args=[1, 2]`），
+     偏移按 `input.start + 1 + (arg.start - list.start - 1)` 换回源码即可。
+  2. **`CjAnnotation` 之外还有一条路走不通**：`CjSimpleNameExpression.reference` 在悬空会话里是
+     `null`；改用 `with(session) { ref.resolveSymbol() }` 也一样返回 `null`——
+     Analysis API 不建模宏表达式 callee 的符号。最终退化为「先符号、失败则同文件按名查
+     `CjTypeStatement`」，因此**跨文件/跨包的注解暂时没有提示**，这是有意的降级。
+  3. **不能套 `isInsideMacroExpansion`**：注解本身就是宏表达式，它的区间会被算进宏展开，
+     套上去整类提示永远为空（实测 candidates=1、hints=0 就是这么来的）。
 
 
 ## 14. P4 实施记录：区间开闭性提示（第十二轮，v13）

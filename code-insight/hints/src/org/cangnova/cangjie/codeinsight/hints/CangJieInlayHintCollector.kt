@@ -43,6 +43,9 @@ object CangJieInlayHintCollector {
         if (options.showCallChainTypes) {
             hints += CjCallChainHintsCollector.collect(file, range, session)
         }
+        if (options.showAnnotationArgumentNames) {
+            hints += CjAnnotationArgumentHintsCollector.collect(file, range, session)
+        }
         return hints.sortedBy { it.offset }
     }
 }

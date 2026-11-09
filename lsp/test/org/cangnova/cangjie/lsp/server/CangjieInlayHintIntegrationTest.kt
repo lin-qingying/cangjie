@@ -149,6 +149,28 @@ class CangjieInlayHintIntegrationTest : AbstractLspIntegrationTest() {
     }
 
     /**
+     * 注解位置实参的形参名必须与 golden 契约逐字符一致。
+     *
+     * 该文件里注解类与调用同文件声明，只考察「重建实参 → 解析形参名 → 配对」这条链。
+     */
+    @Test
+    fun `annotation argument hints match shared golden contract`() {
+        val golden = readGolden("annotationArgs.cj")
+        val source = stripMarkers(golden)
+        hintsWorkspace(source).use { fixture ->
+            createSession(fixture.initializeParams()).use { testSession ->
+                val uri = fixture.uri("src/hints.cj")
+                testSession.openDocument(uri, source)
+
+                val hints = testSession.inlayHint(fullDocumentParams(uri, source))
+
+                assertTrue(hints.isNotEmpty(), "golden 文件里必须至少产出一条注解实参提示")
+                assertEquals(golden.trimEnd(), renderWithMarkers(source, hints, uri).trimEnd())
+            }
+        }
+    }
+
+    /**
      * 命名实参不产出参数名提示：形参名已经写在源码里。
      */
     @Test

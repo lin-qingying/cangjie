@@ -94,6 +94,9 @@ enum class CangJieInlayHintTarget {
 
     /** 多行链式调用中每个环节的结果类型。 */
     CALL_CHAIN_TYPE,
+
+    /** 注解调用的位置实参对应的形参名。 */
+    ANNOTATION_ARGUMENT_NAME,
 }
 
 /**
@@ -116,4 +119,6 @@ data class CangJieInlayHintOptions(
     val showLambdaReturns: Boolean = true,
     /** 是否显示多行链式调用各环节的结果类型。 */
     val showCallChainTypes: Boolean = true,
+    /** 是否显示注解位置实参对应的形参名。 */
+    val showAnnotationArgumentNames: Boolean = true,
 )
