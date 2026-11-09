@@ -172,12 +172,24 @@ class CangJieInlayHintsProvider : InlayHintsProvider {
 
 §1.1 八处接线归属：**P0 只做第 1、4 项**（根 include + hints build.gradle.kts，LSP 可编译即可）；**P2 做其余 6 项**（第 2、3、5、6 项 prepare 打包链 + 第 7、8 项 intellij-ide 侧）。
 
-| 期 | 内容 | 验证 |
-|---|---|---|
-| P0 | §1.1 第 1、4 项 + 数据模型/`CjTypeHintsCollector`（类型 hint）+ LSP 实装 + `RESOLVE_INLAY_HINT` 枚举与 `resolveInlayHint` 兜底 override + **`CangjieLspRequestCoverageTest` 白名单加 `"inlayHint"`** + capabilities 切 `InlayHintRegistrationOptions(resolveProvider=true)` | `gradlew-queue.bat :code-insight:hints:test` + `:lsp:test` 契约用例 |
-| P1 | 参数名 hint（`CjParameterNameHintsCollector`，exclude-list 预留扩展点） | 同上 |
-| P2 | §1.1 第 2、3、5、6、7、8 项（prepare 打包链 + intellij-ide substitution/catalog/依赖）+ IDE 声明式 provider + providerId 对齐 §5 | intellij-ide 构建 + IDE hint 测试 |
-| P3 | resolve 会话存储实装（含协商层 resolveSupport 检查）、设置下发（descriptor flag / didChangeConfiguration）、lambda/链式/values hint | 增量 |
+| 期 | 内容 | 验证 | 状态 |
+|---|---|---|---|
+| P0 | §1.1 第 1、4 项 + 数据模型/`CjTypeHintsCollector`（类型 hint）+ LSP 实装 + `RESOLVE_INLAY_HINT` 枚举与 `resolveInlayHint` 兜底 override + **`CangjieLspRequestCoverageTest` 白名单加 `"inlayHint"`** + capabilities 切 `InlayHintRegistrationOptions(resolveProvider=true)` | `gradlew-queue.bat :code-insight:hints:test` + `:lsp:test` 契约用例 | 完成（§10） |
+| P1 | 参数名 hint（`CjParameterNameHintsCollector`，exclude-list 预留扩展点） | 同上 | 完成（§11） |
+| P2 | §1.1 第 2、3、5、6、7、8 项（prepare 打包链 + intellij-ide substitution/catalog/依赖）+ IDE 声明式 provider + providerId 对齐 §5 | intellij-ide 构建 + IDE hint 测试 | 完成（§12） |
+| P3 | resolve 会话存储实装（含协商层 resolveSupport 检查）、设置下发（descriptor flag / didChangeConfiguration）、lambda/链式/values hint | 增量 | 提示三类**完成**（P4/P5/P6）；resolve 会话存储与设置下发**未做**，理由见下 |
+| P4 | 区间开闭性提示（`cangjie.values.ranges`） | hints + LSP golden + IDE | 完成（§14） |
+| P5 | lambda 隐式返回类型（`hints.lambda.return`） | 同上 | 完成（§15），接收者项阻塞见 D48 |
+| P6 | 链式调用各环节类型（`cangjie.call.chains.hints`） | 同上 | 完成（§16） |
+
+P3 两项未做，都是有意的：
+
+- **resolve 会话存储**：P0 已按协议给出「原样返回」的兜底（`CangjieAnalysisFacade.resolveInlayHint` 直接 `return hint`），
+  客户端不会拿不到响应。真正的懒导航（点击提示跳转目标）需要跨请求存 PSI 指针，
+  而共享层硬约束是「不得持有 lifetime owner」，两者要做必须先在协议层设计指针表，收益低于成本。
+- **LSP 侧设置下发**：按评审 E3 的结论，LSP 侧 `options` 固定全开，**不做** optionId 映射；
+  要演进就走 `CangjieLanguageServerDescriptor` 级 flag（`useLegacyCompletion` 先例）或 `didChangeConfiguration`，
+  属于宿主级配置能力，不阻塞提示本身。
 
 ## 7. 评审修正记录
 
