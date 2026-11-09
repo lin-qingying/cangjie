@@ -34,6 +34,18 @@ object CangJieInlayHintCollector {
         if (options.showParameterNames) {
             hints += CjParameterNameHintsCollector.collect(file, range, session)
         }
+        if (options.showRangeValues) {
+            hints += CjRangeValueHintsCollector.collect(file, range, session)
+        }
+        if (options.showLambdaReturns) {
+            hints += CjLambdaHintsCollector.collect(file, range, session)
+        }
+        if (options.showCallChainTypes) {
+            hints += CjCallChainHintsCollector.collect(file, range, session)
+        }
+        if (options.showAnnotationArgumentNames) {
+            hints += CjAnnotationArgumentHintsCollector.collect(file, range, session)
+        }
         return hints.sortedBy { it.offset }
     }
 }

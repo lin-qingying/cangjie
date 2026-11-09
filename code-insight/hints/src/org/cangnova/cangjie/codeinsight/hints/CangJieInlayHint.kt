@@ -85,6 +85,18 @@ enum class CangJieInlayHintTarget {
 
     /** 调用点实参的形参名。 */
     PARAMETER_NAME,
+
+    /** 范围/切片端点的开闭性。 */
+    RANGE_VALUE,
+
+    /** lambda 函数体末表达式的类型（即隐式返回值类型）。 */
+    LAMBDA_RETURN_TYPE,
+
+    /** 多行链式调用中每个环节的结果类型。 */
+    CALL_CHAIN_TYPE,
+
+    /** 注解调用的位置实参对应的形参名。 */
+    ANNOTATION_ARGUMENT_NAME,
 }
 
 /**
@@ -101,4 +113,12 @@ data class CangJieInlayHintOptions(
     val showFunctionReturnTypes: Boolean = true,
     /** 是否显示调用实参的形参名。 */
     val showParameterNames: Boolean = true,
+    /** 是否显示范围/切片端点的开闭性。 */
+    val showRangeValues: Boolean = true,
+    /** 是否显示 lambda 隐式返回值类型。 */
+    val showLambdaReturns: Boolean = true,
+    /** 是否显示多行链式调用各环节的结果类型。 */
+    val showCallChainTypes: Boolean = true,
+    /** 是否显示注解位置实参对应的形参名。 */
+    val showAnnotationArgumentNames: Boolean = true,
 )

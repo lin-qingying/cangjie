@@ -81,6 +81,96 @@ class CangjieInlayHintIntegrationTest : AbstractLspIntegrationTest() {
     }
 
     /**
+     * 区间开闭性提示必须与 golden 契约逐字符一致。
+     *
+     * `..` 与 `..=` 只差一个字符，读代码时容易看漏，因此端点旁的关系符是本类提示的全部价值：
+     * `0 ≤ .. < 10` 与 `0 ≤ .. ≤ 10`。这里只取协议层没有类别（`kind == null`）的提示，
+     * 同一文件里由声明产生的类型提示不参与比对。
+     */
+    @Test
+    fun `range value hints match shared golden contract`() {
+        val golden = readGolden("rangeValues.cj")
+        val source = stripMarkers(golden)
+        hintsWorkspace(source).use { fixture ->
+            createSession(fixture.initializeParams()).use { testSession ->
+                val uri = fixture.uri("src/hints.cj")
+                testSession.openDocument(uri, source)
+
+                val hints = testSession.inlayHint(fullDocumentParams(uri, source)).filter { it.kind == null }
+
+                assertTrue(hints.isNotEmpty(), "golden 文件里必须至少产出一条区间提示")
+                assertEquals(golden.trimEnd(), renderWithMarkers(source, hints, uri).trimEnd())
+            }
+        }
+    }
+
+    /**
+     * lambda 的隐式返回值类型必须与 golden 契约逐字符一致。
+     *
+     * 该文件里没有任何「源码没写类型」的声明，因此整篇只有 lambda 返回类型这一类提示。
+     */
+    @Test
+    fun `lambda return hints match shared golden contract`() {
+        val golden = readGolden("lambdaReturns.cj")
+        val source = stripMarkers(golden)
+        hintsWorkspace(source).use { fixture ->
+            createSession(fixture.initializeParams()).use { testSession ->
+                val uri = fixture.uri("src/hints.cj")
+                testSession.openDocument(uri, source)
+
+                val hints = testSession.inlayHint(fullDocumentParams(uri, source))
+
+                assertTrue(hints.isNotEmpty(), "golden 文件里必须至少产出一条 lambda 提示")
+                assertEquals(golden.trimEnd(), renderWithMarkers(source, hints, uri).trimEnd())
+            }
+        }
+    }
+
+    /**
+     * 链式调用各环节的类型必须与 golden 契约逐字符一致。
+     *
+     * 该文件里只有多行链上的调用环节会产出提示：声明都写了显式类型，也没有 lambda。
+     */
+    @Test
+    fun `call chain hints match shared golden contract`() {
+        val golden = readGolden("callChains.cj")
+        val source = stripMarkers(golden)
+        hintsWorkspace(source).use { fixture ->
+            createSession(fixture.initializeParams()).use { testSession ->
+                val uri = fixture.uri("src/hints.cj")
+                testSession.openDocument(uri, source)
+
+                val hints = testSession.inlayHint(fullDocumentParams(uri, source))
+
+                assertTrue(hints.isNotEmpty(), "golden 文件里必须至少产出一条链式调用提示")
+                assertEquals(golden.trimEnd(), renderWithMarkers(source, hints, uri).trimEnd())
+            }
+        }
+    }
+
+    /**
+     * 注解位置实参的形参名必须与 golden 契约逐字符一致。
+     *
+     * 该文件里注解类与调用同文件声明，只考察「重建实参 → 解析形参名 → 配对」这条链。
+     */
+    @Test
+    fun `annotation argument hints match shared golden contract`() {
+        val golden = readGolden("annotationArgs.cj")
+        val source = stripMarkers(golden)
+        hintsWorkspace(source).use { fixture ->
+            createSession(fixture.initializeParams()).use { testSession ->
+                val uri = fixture.uri("src/hints.cj")
+                testSession.openDocument(uri, source)
+
+                val hints = testSession.inlayHint(fullDocumentParams(uri, source))
+
+                assertTrue(hints.isNotEmpty(), "golden 文件里必须至少产出一条注解实参提示")
+                assertEquals(golden.trimEnd(), renderWithMarkers(source, hints, uri).trimEnd())
+            }
+        }
+    }
+
+    /**
      * 命名实参不产出参数名提示：形参名已经写在源码里。
      */
     @Test
