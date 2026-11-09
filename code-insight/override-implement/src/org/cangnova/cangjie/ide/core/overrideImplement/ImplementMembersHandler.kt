@@ -3,6 +3,7 @@ package org.cangnova.cangjie.ide.core.overrideImplement
 import com.intellij.codeInsight.intention.IntentionAction
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
+import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.cfir.diagnostics.CaCfirDiagnostic
@@ -81,6 +82,10 @@ internal class ImplementMembersQuickfix(
 
 /**
  * “抽象成员未实现”诊断的 K2 quick-fix factory。
+ *
+ * 抽象成员实现族（`AbstractMemberNotImplemented` / `NeedMemberImplementation` /
+ * `InterfaceMemberMustBeImplemented` / `SpecificMemberMustHaveImplementation`）
+ * 的诊断 PSI 都落在类型声明上，共用同一套「收集未实现成员 → Implement Members」链路。
  */
 object MemberNotImplementedQuickfixFactories {
     /**
@@ -91,6 +96,27 @@ object MemberNotImplementedQuickfixFactories {
             val typeStatement = diagnostic.psi as? CjTypeStatement ?: return@IntentionBased emptyList()
             getUnimplementedMemberFixes(typeStatement)
         }
+
+    /**
+     * 为 `InterfaceMemberMustBeImplemented` 诊断创建“实现成员” quick-fix。
+     *
+     * 该诊断有两个上报场景：类实现接口缺成员（PSI 挂在类型声明上，可收集成员）
+     * 与 extend 父接口义务（PSI 挂在 extend 上，符号模型不同不在此处理）。
+     */
+    val interfaceMemberMustBeImplemented: CangJieQuickFixFactory.IntentionBased<CaCfirDiagnostic.InterfaceMemberMustBeImplemented> =
+        CangJieQuickFixFactory.IntentionBased { diagnostic ->
+            fixesForAncestorTypeStatement(diagnostic.psi)
+        }
+
+    /**
+     * 从诊断 PSI 向上找最近的类型声明并生成修复。
+     */
+    private fun CaSession.fixesForAncestorTypeStatement(psi: PsiElement): List<IntentionAction> {
+        val typeStatement = generateSequence(psi) { it.parent }
+            .firstOrNull { it is CjTypeStatement } as? CjTypeStatement
+            ?: return emptyList()
+        return getUnimplementedMemberFixes(typeStatement)
+    }
 
     /**
      * 根据诊断所在类型声明收集未实现成员并包装为 intention。

@@ -61,11 +61,18 @@ class CangJieQuickFixService {
     /**
      * 预留与 Kotlin K2 一致的 import-on-the-fly 聚合口。
      *
-     * 当前 CangJie IDE 侧尚未消费这条链，但 registrar 层的形状要先对齐，
-     * 避免后续再回退到 K1 风格扩展点。
+     * 消费方：IDE 高亮 visitor 在构建 HighlightInfo 时把该通道产出的修复一并
+     * 注册进普通 fix 列表（修复即补 import 链路），AddImport 类 factory 同时
+     * 注册在 `list` 与 `importOnTheFlyList` 两条通道上。
      */
-    internal fun CaSession.getImportOnTheFlyQuickFixesFor(diagnostic: CaDiagnosticWithPsi<*>): List<IntentionAction> =
+    fun CaSession.getImportOnTheFlyQuickFixesFor(diagnostic: CaDiagnosticWithPsi<*>): List<IntentionAction> =
         with(importOnTheFlyList) { getQuickFixesFor(diagnostic) }
+
+    /**
+     * 判断诊断是否存在 import-on-the-fly 修复。
+     */
+    fun CaSession.canProduceImportOnTheFlyQuickFixesFor(diagnostic: CaDiagnosticWithPsi<*>): Boolean =
+        with(importOnTheFlyList) { canProduceQuickFixesFor(diagnostic) }
 }
 
 /**
