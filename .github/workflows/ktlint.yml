@@ -24,11 +24,17 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
       - name: Install ktlint
         shell: bash
         run: |
           curl --fail --location --silent --show-error \
-            https://github.com/ktlint/ktlint/releases/download/1.8.0/ktlint_linux-x86-64 \
+            https://github.com/ktlint/ktlint/releases/download/1.8.0/ktlint \
             --output ktlint
           chmod +x ktlint
           ./ktlint --version
