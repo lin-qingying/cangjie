@@ -1,0 +1,61 @@
+name: ktlint
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ktlint-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ktlint:
+    name: ktlint
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Install ktlint
+        shell: bash
+        run: |
+          curl --fail --location --silent --show-error \
+            https://github.com/ktlint/ktlint/releases/download/1.8.0/ktlint \
+            --output ktlint
+          chmod +x ktlint
+          ./ktlint --version
+
+      - name: Check changed Kotlin files
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          if [[ "$EVENT_NAME" == "pull_request" ]]; then
+            git diff --name-only --diff-filter=ACMR -z "$BASE_SHA...$HEAD_SHA" -- '*.kt' '*.kts' > ktlint-files
+          elif [[ "$BASE_SHA" =~ ^0+$ ]]; then
+            git ls-files -z -- '*.kt' '*.kts' > ktlint-files
+          else
+            git diff --name-only --diff-filter=ACMR -z "$BASE_SHA" "$HEAD_SHA" -- '*.kt' '*.kts' > ktlint-files
+          fi
+
+          if [[ -s ktlint-files ]]; then
+            xargs -0 -r ./ktlint < ktlint-files
+          else
+            echo "No changed Kotlin files to check."
+          fi
