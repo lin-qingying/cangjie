@@ -435,6 +435,10 @@ P3 第一批完成 **逐项 optionId 开关**（4 项，见 D29）。
   3. **不能套 `isInsideMacroExpansion`**：注解本身就是宏表达式，它的区间会被算进宏展开，
      套上去整类提示永远为空（实测 candidates=1、hints=0 就是这么来的）。
 
+  宿主接线：IDE 侧新增 provider `cangjie.annotations.hints`（`group=PARAMETERS_GROUP`），
+  逐项开关 `hints.annotation.parameter.name`；bundle 补了 en/zh 两条文案与两套预览资源，
+  由 `testProviderResourcesAreConsistent` 兜底校验。
+
 
 ## 14. P4 实施记录：区间开闭性提示（第十二轮，v13）
 
