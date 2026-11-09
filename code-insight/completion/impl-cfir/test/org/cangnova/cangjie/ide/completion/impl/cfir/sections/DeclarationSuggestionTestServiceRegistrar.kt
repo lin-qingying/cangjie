@@ -35,6 +35,8 @@ object DeclarationSuggestionTestServiceRegistrar : AnalysisApiTestServiceRegistr
 private object FakeGenerationService : CangJieMemberGenerationService {
     override fun collectUnimplementedMembers(typeStatement: CjTypeStatement): List<CangJieGeneratableMember> =
         listOf(FakeMember)
+
+    override fun generateMembers(typeStatement: CjTypeStatement, members: List<CangJieGeneratableMember>) = Unit
 }
 
 /**
