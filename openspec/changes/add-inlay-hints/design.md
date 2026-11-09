@@ -397,6 +397,30 @@ P3 第一批完成 **逐项 optionId 开关**（4 项，见 D29）。
   与接入点均已删除，不留死代码）。
   要恢复这条线，前置是**消解 `@X` 与宏声明的语法歧义**（解析器层改动，独立提案），
   不是提示层的活。
+- D56（D41 的更新，第十三轮探针实测）：**不必改解析器也能做**，但成本在「实参重建」。
+  探针打印 `@Ann(1, 2)` + `func demo()` 的 PSI 树，结论有两条：
+
+  ```
+  FILE
+    MACRO_EXPRESSION `@Ann(1, 2)`
+      AT `@`
+      REFERENCE_EXPRESSION `Ann`
+      MACRO_INPUT `(1, 2)`
+        LPAR / QUOTE_TOKENS / RPAR            ← 实参是原始 token，不是表达式节点
+    FUNC `func demo() {}`                     ← 声明是**兄弟**节点，没被宏吞掉
+  ```
+
+  ① **声明没被吞**：D41 早前测到的「只有 1 个 `CjAnnotation`」是因为注解节点不存在，
+  而不是整段声明被吃进宏输入——`func demo()` 始终是 `MACRO_EXPRESSION` 的兄弟。
+  ② **实参降级成 token**：`(1, 2)` 落在 `MACRO_INPUT/QUOTE_TOKENS` 里，只有 `INTEGER_LITERAL` /
+  `COMMA` 这类叶子，**没有**带类型的表达式节点。
+
+  因此注解实参名提示的可行路径是：收集 `CjMacroExpression` → 取 callee 文本 →
+  **把 `MACRO_INPUT` 的 token 区间按逗号切分后重新 parse 成表达式** → 用注解符号声明的形参名配对。
+  第二步是唯一的脏活（要绕过 PSI 的「宏输入不当表达式」约定），此前回退的那版实现只走
+  `CjAnnotation`，所以在声明前缀位置覆盖为 0。
+  若要重启这条线，建议单开变更：先做 `CjMacroInput` → 表达式列表的重建工具并单独测试，
+  再谈提示。
 
 
 ## 14. P4 实施记录：区间开闭性提示（第十二轮，v13）
