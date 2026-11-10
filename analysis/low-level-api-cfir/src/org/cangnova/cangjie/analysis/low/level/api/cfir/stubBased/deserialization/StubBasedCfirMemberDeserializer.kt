@@ -336,6 +336,7 @@ internal class StubBasedCfirMemberDeserializer(
         classSymbol: CfirClassLikeSymbol<*>?,
         returnTypeRef: CfirTypeRef,
         propertySymbol: CfirPropertySymbol,
+        isStatic: Boolean,
     ): CfirPropertyAccessor? {
         if (getter == null) return null
         val accessor = buildPropertyAccessor {
@@ -347,9 +348,12 @@ internal class StubBasedCfirMemberDeserializer(
             this.returnTypeRef = returnTypeRef.copyWithNewSource(source!!)
             resolvePhase = CfirResolvePhase.ANALYZED_DEPENDENCIES
             isGetter = true
-            status = buildResolvedStatus(getter.visibility, getter.modality)
+            status = buildResolvedStatus(getter.visibility, getter.modality).apply {
+                this.isStatic = isStatic
+            }
             this.symbol = CfirPropertyAccessorSymbol()
-            dispatchReceiverType = c.dispatchReceiver
+            // 对齐 binary accessor 的 dispatchReceiverTypeForCurrentOwner：static accessor 没有接收者。
+            dispatchReceiverType = c.dispatchReceiver.takeUnless { isStatic }
             this.propertySymbol = propertySymbol
             deprecationsProvider = EmptyDeprecationsProvider
         }
@@ -369,6 +373,7 @@ internal class StubBasedCfirMemberDeserializer(
         propertyTypeRef: CfirTypeRef,
         propertySymbol: CfirPropertySymbol,
         local: StubBasedCfirDeserializationContext,
+        isStatic: Boolean,
     ): CfirPropertyAccessor? {
         if (setter == null) return null
         val accessor = buildPropertyAccessor {
@@ -380,9 +385,12 @@ internal class StubBasedCfirMemberDeserializer(
             this.returnTypeRef = c.session.builtinTypes.unitType.toCfirResolvedTypeRef(source)
             resolvePhase = CfirResolvePhase.ANALYZED_DEPENDENCIES
             isGetter = false
-            status = buildResolvedStatus(setter.visibility, setter.modality)
+            status = buildResolvedStatus(setter.visibility, setter.modality).apply {
+                this.isStatic = isStatic
+            }
             this.symbol = CfirPropertyAccessorSymbol()
-            dispatchReceiverType = c.dispatchReceiver
+            // 对齐 binary accessor 的 dispatchReceiverTypeForCurrentOwner：static accessor 没有接收者。
+            dispatchReceiverType = c.dispatchReceiver.takeUnless { isStatic }
             // 仓颉 setter 的参数类型由属性声明确定，反编译 PSI 合法地只保存参数名。
             // 对齐官方 TypeChecker 对 PropDecl setter 的类型赋值，不把省略类型当作损坏参数。
             val parameter = setter.valueParameters.single()
@@ -422,22 +430,28 @@ internal class StubBasedCfirMemberDeserializer(
             this.returnTypeRef = returnTypeRef
             name = callableName
             this.symbol = symbol
-            dispatchReceiverType = c.dispatchReceiver
             status = buildResolvedStatus(property.visibility, property.modality).apply {
+                isStatic = property.isStatic
                 isOverride = false
                 isConst = property.hasModifier(CjTokens.CONST_KEYWORD)
                 isMut = property.isVar
             }
+            // 对齐 binary `dispatchReceiverTypeForCurrentOwner`：static 成员没有 dispatch receiver。
+            dispatchReceiverType = c.dispatchReceiver.takeUnless { status.isStatic }
             isLocal = false
             resolvePhase = CfirResolvePhase.ANALYZED_DEPENDENCIES
             typeParameters += local.typeDeserializer.ownTypeParameters.map { it.cfir }
             val allAnnotations = c.annotationDeserializer.loadAnnotations(property, symbol)
             annotations += allAnnotations
-            getter = loadPropertyGetter(property.getter, classSymbol, returnTypeRef, symbol)
-            setter = loadPropertySetter(property.setter, classSymbol, returnTypeRef, symbol, local)
+            getter = loadPropertyGetter(property.getter, classSymbol, returnTypeRef, symbol, property.isStatic)
+            setter = loadPropertySetter(property.setter, classSymbol, returnTypeRef, symbol, local, property.isStatic)
             bodyResolveState = CfirPropertyBodyResolveState.ALL_BODIES_RESOLVED
             deprecationsProvider = EmptyDeprecationsProvider
         }.apply {
+            // 对齐 binary `publishDeclarationMetadata`：static callable 必须显式记录名义 owner。
+            if (status.isStatic) {
+                containingClassForStaticMemberAttr = c.dispatchReceiver?.lookupTag
+            }
             replaceDeprecationsProvider(EmptyDeprecationsProvider)
         }
     }
@@ -484,6 +498,10 @@ internal class StubBasedCfirMemberDeserializer(
             name = callableName
             annotations += c.annotationDeserializer.loadAnnotations(field, symbol)
         }.also { fieldVariable ->
+            // 对齐 binary `publishDeclarationMetadata`：static 字段没有 dispatch receiver，必须记录名义 owner。
+            if (status.isStatic) {
+                fieldVariable.containingClassForStaticMemberAttr = c.dispatchReceiver?.lookupTag
+            }
             fieldVariable.hasSerializedInitializer = field.hasInitializer()
         }
     }
@@ -547,6 +565,9 @@ internal class StubBasedCfirMemberDeserializer(
             this.valueParameters += valueParameters
             name = callableName
             annotations += c.annotationDeserializer.loadAnnotations(enumConstructor, enumConstructorSymbol)
+        }.apply {
+            // 对齐 binary `publishDeclarationMetadata`：enum constructor 无 dispatch receiver，必须记录 owner enum。
+            containingClassForStaticMemberAttr = c.dispatchReceiver?.lookupTag ?: enumSymbol.classId.toLookupTag()
         }
     }
 
@@ -570,18 +591,25 @@ internal class StubBasedCfirMemberDeserializer(
         returnTypeRef = function.typeReference?.toTypeRef(local) ?: session.builtinTypes.unitType.toCfirResolvedTypeRef(null)
         name = callableName
         status = buildResolvedStatus(function.visibility, function.modality).apply {
+            isStatic = function.isStatic
             isOverride = false
             isOperator = function.hasModifier(CjTokens.OPERATOR_KEYWORD)
         }
         isLocal = false
         this.symbol = symbol
-        dispatchReceiverType = c.dispatchReceiver
+        // 对齐 binary `dispatchReceiverTypeForCurrentOwner`：static 成员没有 dispatch receiver。
+        dispatchReceiverType = c.dispatchReceiver.takeUnless { status.isStatic }
         resolvePhase = CfirResolvePhase.ANALYZED_DEPENDENCIES
         typeParameters += local.typeDeserializer.ownTypeParameters.map { it.cfir }
         valueParameters += local.memberDeserializer.valueParameters(function.valueParameters, symbol)
         annotations += c.annotationDeserializer.loadAnnotations(function, symbol)
         deprecationsProvider = EmptyDeprecationsProvider
         isMut = false
+    }.apply {
+        // 对齐 binary `publishDeclarationMetadata`：static callable 必须显式记录名义 owner。
+        if (status.isStatic) {
+            containingClassForStaticMemberAttr = c.dispatchReceiver?.lookupTag
+        }
     }
 
     @OptIn(SuspiciousFakeSourceCheck::class)
