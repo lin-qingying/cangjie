@@ -49,17 +49,13 @@ Module-specific implementation notes belong to the linked subsystem document. In
 | `:chir` | CHIR | CHIR aggregation | [owner](../chir/README.md) |
 | `:chir:cfir2chir` | CHIR | CFIR to CHIR lowering | [owner](../chir/README.md) |
 | `:chir:chir-tree` | CHIR | CHIR tree and passes | [owner](../chir/README.md) |
-| `:code-insight` | Code insight | Editor-service aggregation | [owner](../code-insight/README.md) |
-| `:code-insight:api` | Code insight | Editor-service API | [owner](../code-insight/README.md) |
-| `:code-insight:completion:contracts` | Code insight | Native completion service contracts | [owner](../code-insight/README.md) |
-| `:code-insight:completion:impl-cfir` | Code insight | Analysis-backed native completion pipeline | [owner](../code-insight/README.md) |
-| `:code-insight:completion:impl-shared` | Code insight | Completion position and editing support | [owner](../code-insight/README.md) |
-| `:code-insight:fixes` | Code insight | Editor quick fixes | [owner](../code-insight/README.md) |
-| `:code-insight:folding` | Code insight | Editor folding | [owner](../code-insight/README.md) |
-| `:code-insight:formatting` | Code insight | Editor formatting | [owner](../code-insight/README.md) |
-| `:code-insight:highlighting` | Code insight | Editor highlighting | [owner](../code-insight/README.md) |
-| `:code-insight:override-implement` | Code insight | Override and implement actions | [owner](../code-insight/README.md) |
-| `:code-insight:refactoring` | Code insight | Editor refactoring | [owner](../code-insight/README.md) |
+| `:code-insight:api` | Code insight | Extension contracts: quick fixes, member generation, completion service | [owner](../code-insight/README.md) |
+| `:code-insight:code-actions` | Code insight | Quick fixes and override/implement member generation | [owner](../code-insight/README.md) |
+| `:code-insight:completion` | Code insight | Native completion: contributors, lookup, insertion, recovery | [owner](../code-insight/README.md) |
+| `:code-insight:editor` | Code insight | Editor mechanics: folding, formatting and code style | [owner](../code-insight/README.md) |
+| `:code-insight:highlighting` | Code insight | Lexical, structural and semantic highlighting | [owner](../code-insight/README.md) |
+| `:code-insight:hints` | Code insight | Inlay hints: types, parameter names, lambdas, call chains | [owner](../code-insight/README.md) |
+| `:code-insight:refactoring` | Code insight | Rename and refactoring support | [owner](../code-insight/README.md) |
 | `:common` | Common | Shared compiler domain model | [owner](../common/README.md) |
 | `:common:diagnostics` | Common | Shared diagnostics framework | [owner](../common/README.md) |
 | `:compiler` | Compiler | Compiler driver aggregation | [owner](../compiler/README.md) |
@@ -90,24 +86,14 @@ Module-specific implementation notes belong to the linked subsystem document. In
 | `:prepare:ide-plugin-dependencies-module:cangjie-frontend-analysis-api-for-ide-module` | Publication | IDE dependency publication artifact | [owner](../prepare/README.md) |
 | `:prepare:ide-plugin-dependencies-module:cangjie-frontend-analysis-api-standalone-for-ide-module` | Publication | IDE dependency publication artifact | [owner](../prepare/README.md) |
 | `:prepare:ide-plugin-dependencies-module:cangjie-frontend-cfir-for-ide-module` | Publication | IDE dependency publication artifact | [owner](../prepare/README.md) |
-| `:prepare:ide-plugin-dependencies-module:cangjie-frontend-code-insight-completion-for-ide-module` | Publication | Native completion source bridge | [owner](../prepare/README.md) |
-| `:prepare:ide-plugin-dependencies-module:cangjie-frontend-code-insight-folding-for-ide-module` | Publication | IDE dependency publication artifact | [owner](../prepare/README.md) |
 | `:prepare:ide-plugin-dependencies-module:cangjie-frontend-code-insight-for-ide-module` | Publication | IDE dependency publication artifact | [owner](../prepare/README.md) |
-| `:prepare:ide-plugin-dependencies-module:cangjie-frontend-code-insight-formatting-for-ide-module` | Publication | IDE dependency publication artifact | [owner](../prepare/README.md) |
-| `:prepare:ide-plugin-dependencies-module:cangjie-frontend-code-insight-highlighting-for-ide-module` | Publication | IDE dependency publication artifact | [owner](../prepare/README.md) |
-| `:prepare:ide-plugin-dependencies-module:cangjie-frontend-code-insight-refactoring-for-ide-module` | Publication | IDE dependency publication artifact | [owner](../prepare/README.md) |
 | `:prepare:ide-plugin-dependencies-module:cangjie-frontend-common-for-ide-module` | Publication | IDE dependency publication artifact | [owner](../prepare/README.md) |
 | `:prepare:ide-plugin-dependencies-module:cangjie-frontend-psi-for-ide-module` | Publication | IDE dependency publication artifact | [owner](../prepare/README.md) |
 | `:prepare:ide-plugin-dependencies:cangjie-frontend-analysis-api-cfir-for-ide` | Publication | IDE dependency publication artifact | [owner](../prepare/README.md) |
 | `:prepare:ide-plugin-dependencies:cangjie-frontend-analysis-api-for-ide` | Publication | IDE dependency publication artifact | [owner](../prepare/README.md) |
 | `:prepare:ide-plugin-dependencies:cangjie-frontend-analysis-api-standalone-for-ide` | Publication | IDE dependency publication artifact | [owner](../prepare/README.md) |
 | `:prepare:ide-plugin-dependencies:cangjie-frontend-cfir-for-ide` | Publication | IDE dependency publication artifact | [owner](../prepare/README.md) |
-| `:prepare:ide-plugin-dependencies:cangjie-frontend-code-insight-completion-for-ide` | Publication | Native completion bundled artifact | [owner](../prepare/README.md) |
-| `:prepare:ide-plugin-dependencies:cangjie-frontend-code-insight-folding-for-ide` | Publication | IDE dependency publication artifact | [owner](../prepare/README.md) |
 | `:prepare:ide-plugin-dependencies:cangjie-frontend-code-insight-for-ide` | Publication | IDE dependency publication artifact | [owner](../prepare/README.md) |
-| `:prepare:ide-plugin-dependencies:cangjie-frontend-code-insight-formatting-for-ide` | Publication | IDE dependency publication artifact | [owner](../prepare/README.md) |
-| `:prepare:ide-plugin-dependencies:cangjie-frontend-code-insight-highlighting-for-ide` | Publication | IDE dependency publication artifact | [owner](../prepare/README.md) |
-| `:prepare:ide-plugin-dependencies:cangjie-frontend-code-insight-refactoring-for-ide` | Publication | IDE dependency publication artifact | [owner](../prepare/README.md) |
 | `:prepare:ide-plugin-dependencies:cangjie-frontend-common-for-ide` | Publication | IDE dependency publication artifact | [owner](../prepare/README.md) |
 | `:prepare:ide-plugin-dependencies:cangjie-frontend-psi-for-ide` | Publication | IDE dependency publication artifact | [owner](../prepare/README.md) |
 | `:prepare:test-infrastructure` | Publication | Published frontend support artifact | [owner](../prepare/README.md) |

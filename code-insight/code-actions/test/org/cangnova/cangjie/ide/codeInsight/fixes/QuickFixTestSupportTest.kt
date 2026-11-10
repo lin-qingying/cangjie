@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test
  */
 @OptIn(CaExperimentalApi::class)
 class QuickFixTestSupportTest : AbstractAnalysisApiExecutionTest(
-    "code-insight/fixes/testData/p1",
+    "code-insight/code-actions/testData/fixes/p1",
 ) {
     override val configurator = CaCfirStandaloneAnalysisApiTestConfigurator
 

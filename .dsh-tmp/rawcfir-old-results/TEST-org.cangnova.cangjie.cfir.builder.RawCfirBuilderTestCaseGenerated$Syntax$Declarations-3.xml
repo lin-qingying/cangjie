@@ -1,0 +1,618 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Declarations" tests="36" skipped="0" failures="2" errors="0" timestamp="2026-11-01T10:01:25.889Z" hostname="LIN" time="0.438">
+  <properties/>
+  <testcase name="testVarDeclForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Declarations" time="0.003"/>
+  <testcase name="testMacroDeclVariants" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Declarations" time="0.002"/>
+  <testcase name="testConstAndForeign" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Declarations" time="0.005"/>
+  <testcase name="testMacroCallForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Declarations" time="0.008">
+    <failure message="java.lang.AssertionError: Golden file mismatch: cfir\raw-cfir\psi2cfir\testData\rawBuilder\syntax\declarations\macroCallForms.txt&#10;Run with -Dupdate.test.data=true to update golden files.&#10;=== Expected ===&#10;FILE: macroCallForms.cj&#10;    package macrocalls&#10;    import std.ast.*&#10;    &lt;element: CfirMacroDeclaration&gt;&#10;    &lt;element: CfirMacroDeclaration&gt;&#10;    internal? func macroCalls(): R|Int64| {&#10;        local? let a: &lt;implicit&gt; = ...&#10;            initializer:&#10;                ERROR_EXPR(Macro expression `@echo(1)` is a construction-only surface and must be replaced before final provider registration.)&#10;        local? let b: &lt;implicit&gt; = ...&#10;            initializer:&#10;                ERROR_EXPR(Macro expression `@echo(@echo(2))` is a construction-only surface and must be replaced before final provider registration.)&#10;        local? let c: &lt;implicit&gt; = ...&#10;            initializer:&#10;                ERROR_EXPR(Macro expression `@echo(@pair(3, 4))` is a construction-only surface and must be replaced before final provider registration.)&#10;        local? let d: &lt;implicit&gt; = ...&#10;            initializer:&#10;                ERROR_EXPR(Macro expression `@pair(@echo(5), 6)` is a construction-only surface and must be replaced before final provider registration.)&#10;        local? let e: &lt;implicit&gt; = ...&#10;            initializer:&#10;                ERROR_EXPR(Macro expression `@echo(1)` is a construction-only surface and must be replaced before final provider registration.)&#10;        RETURN {&#10;            FUNCTION_CALL(*operator_plus) {&#10;                receiver:&#10;                    FUNCTION_CALL(*operator_plus) {&#10;                        receiver:&#10;                            FUNCTION_CALL(*operator_plus) {&#10;                                receiver:&#10;                                    FUNCTION_CALL(*operator_plus) {&#10;                                        receiver:&#10;                                            NAMED_ACCESS(a)&#10;                                        arguments:&#10;                                            NAMED_ACCESS(b)&#10;                                    }&#10;                                arguments:&#10;                                    NAMED_ACCESS(c)&#10;                            }&#10;                        arguments:&#10;                            NAMED_ACCESS(d)&#10;                    }&#10;                arguments:&#10;                    NAMED_ACCESS(e)&#10;            }&#10;        }&#10;    }&#10;    @R|echo|(1, 2) internal? func attributed(): R|Int64| {&#10;        RETURN {&#10;            INT(1)&#10;        }&#10;    }&#10;=== Actual ===&#10;FILE: macroCallForms.cj&#10;    package macrocalls&#10;    import std.ast.*&#10;    &lt;element: CfirMacroDeclaration&gt;&#10;    &lt;element: CfirMacroDeclaration&gt;&#10;    internal? func macroCalls(): R|Int64| {&#10;        local? let a: &lt;implicit&gt; = ...&#10;            initializer:&#10;                ERROR_EXPR(Macro expression `@echo(1)` is a construction-only surface and must be replaced before final provider registration.)&#10;        local? let b: &lt;implicit&gt; = ...&#10;            initializer:&#10;                ERROR_EXPR(Macro expression `@echo(@echo(2))` is a construction-only surface and must be replaced before final provider registration.)&#10;        local? let c: &lt;implicit&gt; = ...&#10;            initializer:&#10;                ERROR_EXPR(Macro expression `@echo(@pair(3, 4))` is a construction-only surface and must be replaced before final provider registration.)&#10;        local? let d: &lt;implicit&gt; = ...&#10;            initializer:&#10;                ERROR_EXPR(Macro expression `@pair(@echo(5), 6)` is a construction-only surface and must be replaced before final provider registration.)&#10;        local? let e: &lt;implicit&gt; = ...&#10;            initializer:&#10;                FUNCTION_CALL(*operator_plus) {&#10;                    receiver:&#10;                        ERROR_EXPR(Macro expression `@echo(1)` is a construction-only surface and must be replaced before final provider registration.)&#10;                    arguments:&#10;                        ERROR_EXPR(Macro expression `@echo(2)` is a construction-only surface and must be replaced before final provider registration.)&#10;                }&#10;        RETURN {&#10;            FUNCTION_CALL(*operator_plus) {&#10;                receiver:&#10;                    FUNCTION_CALL(*operator_plus) {&#10;                        receiver:&#10;                            FUNCTION_CALL(*operator_plus) {&#10;                                receiver:&#10;                                    FUNCTION_CALL(*operator_plus) {&#10;                                        receiver:&#10;                                            NAMED_ACCESS(a)&#10;                                        arguments:&#10;                                            NAMED_ACCESS(b)&#10;                                    }&#10;                                arguments:&#10;                                    NAMED_ACCESS(c)&#10;                            }&#10;                        arguments:&#10;                            NAMED_ACCESS(d)&#10;                    }&#10;                arguments:&#10;                    NAMED_ACCESS(e)&#10;            }&#10;        }&#10;    }&#10;    @R|echo|(1, 2) internal? func attributed(): R|Int64| {&#10;        RETURN {&#10;            INT(1)&#10;        }&#10;    }" type="java.lang.AssertionError">java.lang.AssertionError: Golden file mismatch: cfir\raw-cfir\psi2cfir\testData\rawBuilder\syntax\declarations\macroCallForms.txt
+Run with -Dupdate.test.data=true to update golden files.
+=== Expected ===
+FILE: macroCallForms.cj
+    package macrocalls
+    import std.ast.*
+    &lt;element: CfirMacroDeclaration&gt;
+    &lt;element: CfirMacroDeclaration&gt;
+    internal? func macroCalls(): R|Int64| {
+        local? let a: &lt;implicit&gt; = ...
+            initializer:
+                ERROR_EXPR(Macro expression `@echo(1)` is a construction-only surface and must be replaced before final provider registration.)
+        local? let b: &lt;implicit&gt; = ...
+            initializer:
+                ERROR_EXPR(Macro expression `@echo(@echo(2))` is a construction-only surface and must be replaced before final provider registration.)
+        local? let c: &lt;implicit&gt; = ...
+            initializer:
+                ERROR_EXPR(Macro expression `@echo(@pair(3, 4))` is a construction-only surface and must be replaced before final provider registration.)
+        local? let d: &lt;implicit&gt; = ...
+            initializer:
+                ERROR_EXPR(Macro expression `@pair(@echo(5), 6)` is a construction-only surface and must be replaced before final provider registration.)
+        local? let e: &lt;implicit&gt; = ...
+            initializer:
+                ERROR_EXPR(Macro expression `@echo(1)` is a construction-only surface and must be replaced before final provider registration.)
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            FUNCTION_CALL(*operator_plus) {
+                                receiver:
+                                    FUNCTION_CALL(*operator_plus) {
+                                        receiver:
+                                            NAMED_ACCESS(a)
+                                        arguments:
+                                            NAMED_ACCESS(b)
+                                    }
+                                arguments:
+                                    NAMED_ACCESS(c)
+                            }
+                        arguments:
+                            NAMED_ACCESS(d)
+                    }
+                arguments:
+                    NAMED_ACCESS(e)
+            }
+        }
+    }
+    @R|echo|(1, 2) internal? func attributed(): R|Int64| {
+        RETURN {
+            INT(1)
+        }
+    }
+=== Actual ===
+FILE: macroCallForms.cj
+    package macrocalls
+    import std.ast.*
+    &lt;element: CfirMacroDeclaration&gt;
+    &lt;element: CfirMacroDeclaration&gt;
+    internal? func macroCalls(): R|Int64| {
+        local? let a: &lt;implicit&gt; = ...
+            initializer:
+                ERROR_EXPR(Macro expression `@echo(1)` is a construction-only surface and must be replaced before final provider registration.)
+        local? let b: &lt;implicit&gt; = ...
+            initializer:
+                ERROR_EXPR(Macro expression `@echo(@echo(2))` is a construction-only surface and must be replaced before final provider registration.)
+        local? let c: &lt;implicit&gt; = ...
+            initializer:
+                ERROR_EXPR(Macro expression `@echo(@pair(3, 4))` is a construction-only surface and must be replaced before final provider registration.)
+        local? let d: &lt;implicit&gt; = ...
+            initializer:
+                ERROR_EXPR(Macro expression `@pair(@echo(5), 6)` is a construction-only surface and must be replaced before final provider registration.)
+        local? let e: &lt;implicit&gt; = ...
+            initializer:
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        ERROR_EXPR(Macro expression `@echo(1)` is a construction-only surface and must be replaced before final provider registration.)
+                    arguments:
+                        ERROR_EXPR(Macro expression `@echo(2)` is a construction-only surface and must be replaced before final provider registration.)
+                }
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            FUNCTION_CALL(*operator_plus) {
+                                receiver:
+                                    FUNCTION_CALL(*operator_plus) {
+                                        receiver:
+                                            NAMED_ACCESS(a)
+                                        arguments:
+                                            NAMED_ACCESS(b)
+                                    }
+                                arguments:
+                                    NAMED_ACCESS(c)
+                            }
+                        arguments:
+                            NAMED_ACCESS(d)
+                    }
+                arguments:
+                    NAMED_ACCESS(e)
+            }
+        }
+    }
+    @R|echo|(1, 2) internal? func attributed(): R|Int64| {
+        RETURN {
+            INT(1)
+        }
+    }
+	at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilderTestCase$Companion.assertEqualsToFile(AbstractRawCfirBuilderTestCase.kt:401)
+	at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilderTestCase.doRawCfirTest(AbstractRawCfirBuilderTestCase.kt:357)
+	at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilderTestCase.runTest(AbstractRawCfirBuilderTestCase.kt:46)
+	at org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Declarations.testMacroCallForms(RawCfirBuilderTestCaseGenerated.kt:1098)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at junit.framework.TestCase.runTest(TestCase.java:177)
+	at junit.framework.TestCase.runBare(TestCase.java:142)
+	at junit.framework.TestResult$1.protect(TestResult.java:122)
+	at junit.framework.TestResult.runProtected(TestResult.java:142)
+	at junit.framework.TestResult.run(TestResult.java:125)
+	at junit.framework.TestCase.run(TestCase.java:130)
+	at junit.framework.TestSuite.runTest(TestSuite.java:241)
+	at junit.framework.TestSuite.run(TestSuite.java:236)
+	at org.junit.internal.runners.JUnit38ClassRunner.run(JUnit38ClassRunner.java:90)
+	at org.cangnova.cangjie.test.JUnit3RunnerWithInners.run(JUnit3RunnerWithInners.kt:44)
+	at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
+	at org.junit.runner.JUnitCore.run(JUnitCore.java:115)
+	at org.gradle.api.internal.tasks.testing.junit.JUnitTestExecutor.runRequest(JUnitTestExecutor.java:175)
+	at org.gradle.api.internal.tasks.testing.junit.JUnitTestExecutor.accept(JUnitTestExecutor.java:84)
+	at org.gradle.api.internal.tasks.testing.junit.JUnitTestExecutor.accept(JUnitTestExecutor.java:47)
+	at org.gradle.api.internal.tasks.testing.junit.AbstractJUnitTestDefinitionProcessor.processTestDefinition(AbstractJUnitTestDefinitionProcessor.java:65)
+	at org.gradle.api.internal.tasks.testing.SuiteTestDefinitionProcessor.processTestDefinition(SuiteTestDefinitionProcessor.java:53)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.gradle.internal.dispatch.MethodInvocation.invokeOn(MethodInvocation.java:77)
+	at org.gradle.internal.dispatch.ReflectionDispatch.dispatch(ReflectionDispatch.java:28)
+	at org.gradle.internal.dispatch.ReflectionDispatch.dispatch(ReflectionDispatch.java:19)
+	at org.gradle.internal.dispatch.ContextClassLoaderDispatch.dispatch(ContextClassLoaderDispatch.java:33)
+	at org.gradle.internal.dispatch.ProxyDispatchAdapter$DispatchingInvocationHandler.invoke(ProxyDispatchAdapter.java:88)
+	at jdk.proxy1/jdk.proxy1.$Proxy4.processTestDefinition(Unknown Source)
+	at org.gradle.api.internal.tasks.testing.worker.TestWorker$2.run(TestWorker.java:178)
+	at org.gradle.api.internal.tasks.testing.worker.TestWorker.executeAndMaintainThreadName(TestWorker.java:126)
+	at org.gradle.api.internal.tasks.testing.worker.TestWorker.execute(TestWorker.java:103)
+	at org.gradle.api.internal.tasks.testing.worker.TestWorker.execute(TestWorker.java:63)
+	at org.gradle.process.internal.worker.child.ActionExecutionWorker.execute(ActionExecutionWorker.java:56)
+	at org.gradle.process.internal.worker.child.SystemApplicationClassLoaderWorker.call(SystemApplicationClassLoaderWorker.java:122)
+	at org.gradle.process.internal.worker.child.SystemApplicationClassLoaderWorker.call(SystemApplicationClassLoaderWorker.java:72)
+	at worker.org.gradle.process.internal.worker.GradleWorkerMain.run(GradleWorkerMain.java:69)
+	at worker.org.gradle.process.internal.worker.GradleWorkerMain.main(GradleWorkerMain.java:74)
+</failure>
+  </testcase>
+  <testcase name="testExtendForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Declarations" time="0.007"/>
+  <testcase name="testConstructorForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Declarations" time="0.006"/>
+  <testcase name="testGenericDeclarationForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Declarations" time="0.004"/>
+  <testcase name="testLocalFunctionForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Declarations" time="0.014"/>
+  <testcase name="testAllFilesPresentInDeclarations" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Declarations" time="0.206"/>
+  <testcase name="testRedefMemberForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Declarations" time="0.004"/>
+  <testcase name="testMemberInitForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Declarations" time="0.008"/>
+  <testcase name="testTypeAliasSignatureForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Declarations" time="0.005"/>
+  <testcase name="testPackageAndImportVariants" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Declarations" time="0.003"/>
+  <testcase name="testMacroQuoteForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Declarations" time="0.006"/>
+  <testcase name="testStaticMemberForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Declarations" time="0.004"/>
+  <testcase name="testOperatorOverloadForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Declarations" time="0.009"/>
+  <testcase name="testTypeAliasForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Declarations" time="0.005"/>
+  <testcase name="testClassBodyForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Declarations" time="0.005"/>
+  <testcase name="testCInteropForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Declarations" time="0.004"/>
+  <testcase name="testConstExpressions" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Declarations" time="0.003"/>
+  <testcase name="testExtendStructForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Declarations" time="0.006"/>
+  <testcase name="testExtendBuiltinForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Declarations" time="0.004"/>
+  <testcase name="testStructForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Declarations" time="0.005"/>
+  <testcase name="testGenericForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Declarations" time="0.006"/>
+  <testcase name="testEnumForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Declarations" time="0.005"/>
+  <testcase name="testMemberModifierForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Declarations" time="0.01"/>
+  <testcase name="testBuiltinAnnotationForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Declarations" time="0.014">
+    <failure message="java.lang.AssertionError: Golden file mismatch: cfir\raw-cfir\psi2cfir\testData\rawBuilder\syntax\declarations\builtinAnnotationForms.txt&#10;Run with -Dupdate.test.data=true to update golden files.&#10;=== Expected ===&#10;FILE: builtinAnnotationForms.cj&#10;    @R|Attribute|(&quot;a&quot;, &quot;b&quot;, &quot;s&quot;) internal? class BuiltinAnnoClass {&#10;        init()&#10;    }&#10;    @R|Attribute|(&quot;State&quot;) internal? var builtinAnnoVarA: R|Int64| = ...&#10;        initializer:&#10;            INT(0)&#10;    @R|Attribute|(&quot;Binding&quot;) internal? var builtinAnnoVarB: R|Int64| = ...&#10;        initializer:&#10;            INT(0)&#10;    @R|Attribute|(&quot;public&quot;, &quot;open&quot;) internal? class BuiltinAnnoCtxKeyword {&#10;        init()&#10;    }&#10;    @R|Attribute|() internal? class BuiltinAnnoEmpty {&#10;        init()&#10;    }&#10;    @R|Attribute|(&quot;BuiltinAnnoBare&quot;, &quot;Attribute&quot;, &quot;State&quot;) internal? interface BuiltinAnnoIface {&#10;        public? abstract? func f(): R|Int64|&#10;    }&#10;    @R|Attribute|(&quot;State&quot;) internal? struct BuiltinAnnoStruct {&#10;        init()&#10;        internal? var v: R|Int64| = ...&#10;            initializer:&#10;                INT(0)&#10;    }&#10;    @R|Attribute|(&quot;State&quot;) internal? enum BuiltinAnnoEnum {&#10;        A&#10;        B&#10;        init()&#10;    }&#10;    @R|Attribute|(&quot;State&quot;) internal? func builtinAnnoFunc(x: R|Int64|): R|Int64| {&#10;        RETURN {&#10;            NAMED_ACCESS(x)&#10;        }&#10;    }&#10;    @R|Attribute|(&quot;In&quot;) internal? func builtinAnnoParam(@R|Attribute|(&quot;State&quot;) x: R|Int64|): R|Int64| {&#10;        RETURN {&#10;            NAMED_ACCESS(x)&#10;        }&#10;    }&#10;    internal? class BuiltinAnnoMember {&#10;        @R|Attribute|(&quot;State&quot;) internal? var v: R|Int64| = ...&#10;            initializer:&#10;                INT(0)&#10;        @R|Attribute|(&quot;Binding&quot;, &quot;other&quot;) internal? func m(@R|Attribute|(&quot;In&quot;) x: R|Int64|): R|Int64| {&#10;            RETURN {&#10;                FUNCTION_CALL(*operator_plus) {&#10;                    receiver:&#10;                        NAMED_ACCESS(v)&#10;                    arguments:&#10;                        NAMED_ACCESS(x)&#10;                }&#10;            }&#10;        }&#10;        @R|Attribute|(&quot;Binding&quot;) internal? prop q: R|Int64|&#10;        init(@R|Attribute|(&quot;In&quot;) y: R|Int64|) {&#10;            ASSIGNMENT {&#10;                lValue:&#10;                    NAMED_ACCESS(v) {&#10;                        receiver:&#10;                            &lt;element: CfirThisReceiverExpression&gt;&#10;                    }&#10;                rValue:&#10;                    NAMED_ACCESS(y)&#10;            }&#10;        }&#10;    }&#10;    extend R|Int64| {&#10;        @R|Attribute|(&quot;State&quot;) internal? func builtinAnnoExtendMember(): R|Int64| {&#10;            RETURN {&#10;                &lt;element: CfirThisReceiverExpression&gt;&#10;            }&#10;        }&#10;    }&#10;    @R|EnsurePreparedToMock|() internal? class BuiltinAnnoMockClass {&#10;        init()&#10;    }&#10;    @R|EnsurePreparedToMock|() internal? func builtinAnnoMockFunc(): R|Int64| {&#10;        RETURN {&#10;            INT(1)&#10;        }&#10;    }&#10;    internal? class BuiltinAnnoMockMember {&#10;        init()&#10;        @R|EnsurePreparedToMock|() internal? func f(): R|Int64| {&#10;            RETURN {&#10;                INT(1)&#10;            }&#10;        }&#10;    }&#10;    @R|Deprecated|() internal? class BuiltinAnnoDepEmpty {&#10;        init()&#10;    }&#10;    @R|Deprecated|(&lt;expr&gt;) internal? class BuiltinAnnoDepNamed {&#10;        init()&#10;    }&#10;    @R|Deprecated|() internal? class BuiltinAnnoDepBare {&#10;        init()&#10;    }&#10;    @R|OverflowWrapping|(wrapping) internal? func builtinAnnoOverflowWrapping(x: R|UInt8|): R|UInt8| {&#10;        RETURN {&#10;            FUNCTION_CALL(*operator_plus) {&#10;                receiver:&#10;                    NAMED_ACCESS(x)&#10;                arguments:&#10;                    INT(1u8)&#10;            }&#10;        }&#10;    }&#10;    @R|OverflowThrowing|(saturating) internal? func builtinAnnoOverflowSaturating(x: R|UInt8|): R|UInt8| {&#10;        RETURN {&#10;            FUNCTION_CALL(*operator_plus) {&#10;                receiver:&#10;                    NAMED_ACCESS(x)&#10;                arguments:&#10;                    INT(1u8)&#10;            }&#10;        }&#10;    }&#10;    @R|When|(cjc_version &gt;= &quot;1.0.0&quot;) internal? class BuiltinAnnoWhenVersion {&#10;        init()&#10;    }&#10;    @R|When|(backend == &quot;cjnative&quot;) internal? func builtinAnnoWhenBackend(): R|Int64| {&#10;        RETURN {&#10;            INT(1)&#10;        }&#10;    }&#10;    @R|When|(debug) internal? func builtinAnnoWhenDebug(): R|Int64| {&#10;        RETURN {&#10;            INT(1)&#10;        }&#10;    }&#10;    @R|When|(*operator_not()) internal? func builtinAnnoWhenNotDebug(): R|Int64| {&#10;        RETURN {&#10;            INT(2)&#10;        }&#10;    }&#10;    @R|When|(test) internal? class BuiltinAnnoWhenTest {&#10;        init()&#10;    }&#10;    @R|When|(*operator_not()) internal? class BuiltinAnnoWhenNotTest {&#10;        init()&#10;    }&#10;    @R|When|(os == &quot;Windows&quot; || os == &quot;Linux&quot; &amp;&amp; *operator_not()) internal? func builtinAnnoWhenCombo(): R|Int64| {&#10;        RETURN {&#10;            INT(3)&#10;        }&#10;    }&#10;    @R|Annotation|() public class BuiltinAnnoMarked {&#10;        init() {&#10;        }&#10;    }&#10;    @R|BuiltinAnnoMarked|() internal? class BuiltinAnnoMarkedBare {&#10;        init()&#10;    }&#10;    @R|BuiltinAnnoMarked|() internal? class BuiltinAnnoMarkedEmpty {&#10;        init()&#10;    }&#10;    internal? let builtinAnnoSrcFile: R|String| = ...&#10;        initializer:&#10;            ERROR_EXPR(Macro expression `@sourceFile()` is a construction-only surface and must be replaced before final provider registration.)&#10;    internal? let builtinAnnoSrcPackage: R|String| = ...&#10;        initializer:&#10;            ERROR_EXPR(Macro expression `@sourcePackage()` is a construction-only surface and must be replaced before final provider registration.)&#10;    internal? func builtinAnnoSrcExpr(line: R|Int64|): R|Int64| {&#10;        RETURN {&#10;            ERROR_EXPR(Missing right operand)&#10;        }&#10;    }&#10;    internal? func builtinAnnoSrcDefault(line: R|Int64| = ERROR_EXPR(Macro expression `@sourceLine()` is a construction-only surface and must be replaced before final provider registration.)&#10;    ): R|Int64| {&#10;        RETURN {&#10;            NAMED_ACCESS(line)&#10;        }&#10;    }&#10;    internal? func builtinAnnoSrcInterp(): R|String| {&#10;        RETURN {&#10;            STRING_INTERPOLATION {&#10;                ERROR_EXPR(Macro expression `@sourceFile()` is a construction-only surface and must be replaced before final provider registration.)&#10;                STRING(&quot;:&quot;)&#10;                ERROR_EXPR(Macro expression `@sourceLine()` is a construction-only surface and must be replaced before final provider registration.)&#10;            }&#10;        }&#10;    }&#10;    @R|When|(*operator_not()) @R|Attribute|(&quot;State&quot;) @R|Deprecated|(&quot;gone&quot;, &lt;expr&gt;) @R|EnsurePreparedToMock|() internal? class BuiltinAnnoStacked {&#10;        init()&#10;    }&#10;=== Actual ===&#10;FILE: builtinAnnotationForms.cj&#10;    @R|Attribute|(&quot;a&quot;, &quot;b&quot;, &quot;s&quot;) internal? class BuiltinAnnoClass {&#10;        init()&#10;    }&#10;    @R|Attribute|(&quot;State&quot;) internal? var builtinAnnoVarA: R|Int64| = ...&#10;        initializer:&#10;            INT(0)&#10;    @R|Attribute|(&quot;Binding&quot;) internal? var builtinAnnoVarB: R|Int64| = ...&#10;        initializer:&#10;            INT(0)&#10;    @R|Attribute|(&quot;public&quot;, &quot;open&quot;) internal? class BuiltinAnnoCtxKeyword {&#10;        init()&#10;    }&#10;    @R|Attribute|() internal? class BuiltinAnnoEmpty {&#10;        init()&#10;    }&#10;    @R|Attribute|(&quot;BuiltinAnnoBare&quot;, &quot;Attribute&quot;, &quot;State&quot;) internal? interface BuiltinAnnoIface {&#10;        public? abstract? func f(): R|Int64|&#10;    }&#10;    @R|Attribute|(&quot;State&quot;) internal? struct BuiltinAnnoStruct {&#10;        init()&#10;        internal? var v: R|Int64| = ...&#10;            initializer:&#10;                INT(0)&#10;    }&#10;    @R|Attribute|(&quot;State&quot;) internal? enum BuiltinAnnoEnum {&#10;        A&#10;        B&#10;        init()&#10;    }&#10;    @R|Attribute|(&quot;State&quot;) internal? func builtinAnnoFunc(x: R|Int64|): R|Int64| {&#10;        RETURN {&#10;            NAMED_ACCESS(x)&#10;        }&#10;    }&#10;    @R|Attribute|(&quot;In&quot;) internal? func builtinAnnoParam(@R|Attribute|(&quot;State&quot;) x: R|Int64|): R|Int64| {&#10;        RETURN {&#10;            NAMED_ACCESS(x)&#10;        }&#10;    }&#10;    internal? class BuiltinAnnoMember {&#10;        @R|Attribute|(&quot;State&quot;) internal? var v: R|Int64| = ...&#10;            initializer:&#10;                INT(0)&#10;        @R|Attribute|(&quot;Binding&quot;, &quot;other&quot;) internal? func m(@R|Attribute|(&quot;In&quot;) x: R|Int64|): R|Int64| {&#10;            RETURN {&#10;                FUNCTION_CALL(*operator_plus) {&#10;                    receiver:&#10;                        NAMED_ACCESS(v)&#10;                    arguments:&#10;                        NAMED_ACCESS(x)&#10;                }&#10;            }&#10;        }&#10;        @R|Attribute|(&quot;Binding&quot;) internal? prop q: R|Int64|&#10;        init(@R|Attribute|(&quot;In&quot;) y: R|Int64|) {&#10;            ASSIGNMENT {&#10;                lValue:&#10;                    NAMED_ACCESS(v) {&#10;                        receiver:&#10;                            &lt;element: CfirThisReceiverExpression&gt;&#10;                    }&#10;                rValue:&#10;                    NAMED_ACCESS(y)&#10;            }&#10;        }&#10;    }&#10;    extend R|Int64| {&#10;        @R|Attribute|(&quot;State&quot;) internal? func builtinAnnoExtendMember(): R|Int64| {&#10;            RETURN {&#10;                &lt;element: CfirThisReceiverExpression&gt;&#10;            }&#10;        }&#10;    }&#10;    @R|EnsurePreparedToMock|() internal? class BuiltinAnnoMockClass {&#10;        init()&#10;    }&#10;    @R|EnsurePreparedToMock|() internal? func builtinAnnoMockFunc(): R|Int64| {&#10;        RETURN {&#10;            INT(1)&#10;        }&#10;    }&#10;    internal? class BuiltinAnnoMockMember {&#10;        init()&#10;        @R|EnsurePreparedToMock|() internal? func f(): R|Int64| {&#10;            RETURN {&#10;                INT(1)&#10;            }&#10;        }&#10;    }&#10;    @R|Deprecated|() internal? class BuiltinAnnoDepEmpty {&#10;        init()&#10;    }&#10;    @R|Deprecated|(&lt;expr&gt;) internal? class BuiltinAnnoDepNamed {&#10;        init()&#10;    }&#10;    @R|Deprecated|() internal? class BuiltinAnnoDepBare {&#10;        init()&#10;    }&#10;    @R|OverflowWrapping|(wrapping) internal? func builtinAnnoOverflowWrapping(x: R|UInt8|): R|UInt8| {&#10;        RETURN {&#10;            FUNCTION_CALL(*operator_plus) {&#10;                receiver:&#10;                    NAMED_ACCESS(x)&#10;                arguments:&#10;                    INT(1u8)&#10;            }&#10;        }&#10;    }&#10;    @R|OverflowThrowing|(saturating) internal? func builtinAnnoOverflowSaturating(x: R|UInt8|): R|UInt8| {&#10;        RETURN {&#10;            FUNCTION_CALL(*operator_plus) {&#10;                receiver:&#10;                    NAMED_ACCESS(x)&#10;                arguments:&#10;                    INT(1u8)&#10;            }&#10;        }&#10;    }&#10;    @R|When|(cjc_version &gt;= &quot;1.0.0&quot;) internal? class BuiltinAnnoWhenVersion {&#10;        init()&#10;    }&#10;    @R|When|(backend == &quot;cjnative&quot;) internal? func builtinAnnoWhenBackend(): R|Int64| {&#10;        RETURN {&#10;            INT(1)&#10;        }&#10;    }&#10;    @R|When|(debug) internal? func builtinAnnoWhenDebug(): R|Int64| {&#10;        RETURN {&#10;            INT(1)&#10;        }&#10;    }&#10;    @R|When|(*operator_not()) internal? func builtinAnnoWhenNotDebug(): R|Int64| {&#10;        RETURN {&#10;            INT(2)&#10;        }&#10;    }&#10;    @R|When|(test) internal? class BuiltinAnnoWhenTest {&#10;        init()&#10;    }&#10;    @R|When|(*operator_not()) internal? class BuiltinAnnoWhenNotTest {&#10;        init()&#10;    }&#10;    @R|When|(os == &quot;Windows&quot; || os == &quot;Linux&quot; &amp;&amp; *operator_not()) internal? func builtinAnnoWhenCombo(): R|Int64| {&#10;        RETURN {&#10;            INT(3)&#10;        }&#10;    }&#10;    @R|Annotation|() public class BuiltinAnnoMarked {&#10;        init() {&#10;        }&#10;    }&#10;    @R|BuiltinAnnoMarked|() internal? class BuiltinAnnoMarkedBare {&#10;        init()&#10;    }&#10;    @R|BuiltinAnnoMarked|() internal? class BuiltinAnnoMarkedEmpty {&#10;        init()&#10;    }&#10;    internal? let builtinAnnoSrcFile: R|String| = ...&#10;        initializer:&#10;            ERROR_EXPR(Macro expression `@sourceFile()` is a construction-only surface and must be replaced before final provider registration.)&#10;    internal? let builtinAnnoSrcPackage: R|String| = ...&#10;        initializer:&#10;            ERROR_EXPR(Macro expression `@sourcePackage()` is a construction-only surface and must be replaced before final provider registration.)&#10;    internal? func builtinAnnoSrcExpr(line: R|Int64|): R|Int64| {&#10;        RETURN {&#10;            FUNCTION_CALL(*operator_plus) {&#10;                receiver:&#10;                    NAMED_ACCESS(line)&#10;                arguments:&#10;                    ERROR_EXPR(Macro expression `@sourceLine()` is a construction-only surface and must be replaced before final provider registration.)&#10;            }&#10;        }&#10;    }&#10;    internal? func builtinAnnoSrcDefault(line: R|Int64| = ERROR_EXPR(Macro expression `@sourceLine()` is a construction-only surface and must be replaced before final provider registration.)&#10;    ): R|Int64| {&#10;        RETURN {&#10;            NAMED_ACCESS(line)&#10;        }&#10;    }&#10;    internal? func builtinAnnoSrcInterp(): R|String| {&#10;        RETURN {&#10;            STRING_INTERPOLATION {&#10;                ERROR_EXPR(Macro expression `@sourceFile()` is a construction-only surface and must be replaced before final provider registration.)&#10;                STRING(&quot;:&quot;)&#10;                ERROR_EXPR(Macro expression `@sourceLine()` is a construction-only surface and must be replaced before final provider registration.)&#10;            }&#10;        }&#10;    }&#10;    @R|When|(*operator_not()) @R|Attribute|(&quot;State&quot;) @R|Deprecated|(&quot;gone&quot;, &lt;expr&gt;) @R|EnsurePreparedToMock|() internal? class BuiltinAnnoStacked {&#10;        init()&#10;    }" type="java.lang.AssertionError">java.lang.AssertionError: Golden file mismatch: cfir\raw-cfir\psi2cfir\testData\rawBuilder\syntax\declarations\builtinAnnotationForms.txt
+Run with -Dupdate.test.data=true to update golden files.
+=== Expected ===
+FILE: builtinAnnotationForms.cj
+    @R|Attribute|(&quot;a&quot;, &quot;b&quot;, &quot;s&quot;) internal? class BuiltinAnnoClass {
+        init()
+    }
+    @R|Attribute|(&quot;State&quot;) internal? var builtinAnnoVarA: R|Int64| = ...
+        initializer:
+            INT(0)
+    @R|Attribute|(&quot;Binding&quot;) internal? var builtinAnnoVarB: R|Int64| = ...
+        initializer:
+            INT(0)
+    @R|Attribute|(&quot;public&quot;, &quot;open&quot;) internal? class BuiltinAnnoCtxKeyword {
+        init()
+    }
+    @R|Attribute|() internal? class BuiltinAnnoEmpty {
+        init()
+    }
+    @R|Attribute|(&quot;BuiltinAnnoBare&quot;, &quot;Attribute&quot;, &quot;State&quot;) internal? interface BuiltinAnnoIface {
+        public? abstract? func f(): R|Int64|
+    }
+    @R|Attribute|(&quot;State&quot;) internal? struct BuiltinAnnoStruct {
+        init()
+        internal? var v: R|Int64| = ...
+            initializer:
+                INT(0)
+    }
+    @R|Attribute|(&quot;State&quot;) internal? enum BuiltinAnnoEnum {
+        A
+        B
+        init()
+    }
+    @R|Attribute|(&quot;State&quot;) internal? func builtinAnnoFunc(x: R|Int64|): R|Int64| {
+        RETURN {
+            NAMED_ACCESS(x)
+        }
+    }
+    @R|Attribute|(&quot;In&quot;) internal? func builtinAnnoParam(@R|Attribute|(&quot;State&quot;) x: R|Int64|): R|Int64| {
+        RETURN {
+            NAMED_ACCESS(x)
+        }
+    }
+    internal? class BuiltinAnnoMember {
+        @R|Attribute|(&quot;State&quot;) internal? var v: R|Int64| = ...
+            initializer:
+                INT(0)
+        @R|Attribute|(&quot;Binding&quot;, &quot;other&quot;) internal? func m(@R|Attribute|(&quot;In&quot;) x: R|Int64|): R|Int64| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        NAMED_ACCESS(v)
+                    arguments:
+                        NAMED_ACCESS(x)
+                }
+            }
+        }
+        @R|Attribute|(&quot;Binding&quot;) internal? prop q: R|Int64|
+        init(@R|Attribute|(&quot;In&quot;) y: R|Int64|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(v) {
+                        receiver:
+                            &lt;element: CfirThisReceiverExpression&gt;
+                    }
+                rValue:
+                    NAMED_ACCESS(y)
+            }
+        }
+    }
+    extend R|Int64| {
+        @R|Attribute|(&quot;State&quot;) internal? func builtinAnnoExtendMember(): R|Int64| {
+            RETURN {
+                &lt;element: CfirThisReceiverExpression&gt;
+            }
+        }
+    }
+    @R|EnsurePreparedToMock|() internal? class BuiltinAnnoMockClass {
+        init()
+    }
+    @R|EnsurePreparedToMock|() internal? func builtinAnnoMockFunc(): R|Int64| {
+        RETURN {
+            INT(1)
+        }
+    }
+    internal? class BuiltinAnnoMockMember {
+        init()
+        @R|EnsurePreparedToMock|() internal? func f(): R|Int64| {
+            RETURN {
+                INT(1)
+            }
+        }
+    }
+    @R|Deprecated|() internal? class BuiltinAnnoDepEmpty {
+        init()
+    }
+    @R|Deprecated|(&lt;expr&gt;) internal? class BuiltinAnnoDepNamed {
+        init()
+    }
+    @R|Deprecated|() internal? class BuiltinAnnoDepBare {
+        init()
+    }
+    @R|OverflowWrapping|(wrapping) internal? func builtinAnnoOverflowWrapping(x: R|UInt8|): R|UInt8| {
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    NAMED_ACCESS(x)
+                arguments:
+                    INT(1u8)
+            }
+        }
+    }
+    @R|OverflowThrowing|(saturating) internal? func builtinAnnoOverflowSaturating(x: R|UInt8|): R|UInt8| {
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    NAMED_ACCESS(x)
+                arguments:
+                    INT(1u8)
+            }
+        }
+    }
+    @R|When|(cjc_version &gt;= &quot;1.0.0&quot;) internal? class BuiltinAnnoWhenVersion {
+        init()
+    }
+    @R|When|(backend == &quot;cjnative&quot;) internal? func builtinAnnoWhenBackend(): R|Int64| {
+        RETURN {
+            INT(1)
+        }
+    }
+    @R|When|(debug) internal? func builtinAnnoWhenDebug(): R|Int64| {
+        RETURN {
+            INT(1)
+        }
+    }
+    @R|When|(*operator_not()) internal? func builtinAnnoWhenNotDebug(): R|Int64| {
+        RETURN {
+            INT(2)
+        }
+    }
+    @R|When|(test) internal? class BuiltinAnnoWhenTest {
+        init()
+    }
+    @R|When|(*operator_not()) internal? class BuiltinAnnoWhenNotTest {
+        init()
+    }
+    @R|When|(os == &quot;Windows&quot; || os == &quot;Linux&quot; &amp;&amp; *operator_not()) internal? func builtinAnnoWhenCombo(): R|Int64| {
+        RETURN {
+            INT(3)
+        }
+    }
+    @R|Annotation|() public class BuiltinAnnoMarked {
+        init() {
+        }
+    }
+    @R|BuiltinAnnoMarked|() internal? class BuiltinAnnoMarkedBare {
+        init()
+    }
+    @R|BuiltinAnnoMarked|() internal? class BuiltinAnnoMarkedEmpty {
+        init()
+    }
+    internal? let builtinAnnoSrcFile: R|String| = ...
+        initializer:
+            ERROR_EXPR(Macro expression `@sourceFile()` is a construction-only surface and must be replaced before final provider registration.)
+    internal? let builtinAnnoSrcPackage: R|String| = ...
+        initializer:
+            ERROR_EXPR(Macro expression `@sourcePackage()` is a construction-only surface and must be replaced before final provider registration.)
+    internal? func builtinAnnoSrcExpr(line: R|Int64|): R|Int64| {
+        RETURN {
+            ERROR_EXPR(Missing right operand)
+        }
+    }
+    internal? func builtinAnnoSrcDefault(line: R|Int64| = ERROR_EXPR(Macro expression `@sourceLine()` is a construction-only surface and must be replaced before final provider registration.)
+    ): R|Int64| {
+        RETURN {
+            NAMED_ACCESS(line)
+        }
+    }
+    internal? func builtinAnnoSrcInterp(): R|String| {
+        RETURN {
+            STRING_INTERPOLATION {
+                ERROR_EXPR(Macro expression `@sourceFile()` is a construction-only surface and must be replaced before final provider registration.)
+                STRING(&quot;:&quot;)
+                ERROR_EXPR(Macro expression `@sourceLine()` is a construction-only surface and must be replaced before final provider registration.)
+            }
+        }
+    }
+    @R|When|(*operator_not()) @R|Attribute|(&quot;State&quot;) @R|Deprecated|(&quot;gone&quot;, &lt;expr&gt;) @R|EnsurePreparedToMock|() internal? class BuiltinAnnoStacked {
+        init()
+    }
+=== Actual ===
+FILE: builtinAnnotationForms.cj
+    @R|Attribute|(&quot;a&quot;, &quot;b&quot;, &quot;s&quot;) internal? class BuiltinAnnoClass {
+        init()
+    }
+    @R|Attribute|(&quot;State&quot;) internal? var builtinAnnoVarA: R|Int64| = ...
+        initializer:
+            INT(0)
+    @R|Attribute|(&quot;Binding&quot;) internal? var builtinAnnoVarB: R|Int64| = ...
+        initializer:
+            INT(0)
+    @R|Attribute|(&quot;public&quot;, &quot;open&quot;) internal? class BuiltinAnnoCtxKeyword {
+        init()
+    }
+    @R|Attribute|() internal? class BuiltinAnnoEmpty {
+        init()
+    }
+    @R|Attribute|(&quot;BuiltinAnnoBare&quot;, &quot;Attribute&quot;, &quot;State&quot;) internal? interface BuiltinAnnoIface {
+        public? abstract? func f(): R|Int64|
+    }
+    @R|Attribute|(&quot;State&quot;) internal? struct BuiltinAnnoStruct {
+        init()
+        internal? var v: R|Int64| = ...
+            initializer:
+                INT(0)
+    }
+    @R|Attribute|(&quot;State&quot;) internal? enum BuiltinAnnoEnum {
+        A
+        B
+        init()
+    }
+    @R|Attribute|(&quot;State&quot;) internal? func builtinAnnoFunc(x: R|Int64|): R|Int64| {
+        RETURN {
+            NAMED_ACCESS(x)
+        }
+    }
+    @R|Attribute|(&quot;In&quot;) internal? func builtinAnnoParam(@R|Attribute|(&quot;State&quot;) x: R|Int64|): R|Int64| {
+        RETURN {
+            NAMED_ACCESS(x)
+        }
+    }
+    internal? class BuiltinAnnoMember {
+        @R|Attribute|(&quot;State&quot;) internal? var v: R|Int64| = ...
+            initializer:
+                INT(0)
+        @R|Attribute|(&quot;Binding&quot;, &quot;other&quot;) internal? func m(@R|Attribute|(&quot;In&quot;) x: R|Int64|): R|Int64| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        NAMED_ACCESS(v)
+                    arguments:
+                        NAMED_ACCESS(x)
+                }
+            }
+        }
+        @R|Attribute|(&quot;Binding&quot;) internal? prop q: R|Int64|
+        init(@R|Attribute|(&quot;In&quot;) y: R|Int64|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(v) {
+                        receiver:
+                            &lt;element: CfirThisReceiverExpression&gt;
+                    }
+                rValue:
+                    NAMED_ACCESS(y)
+            }
+        }
+    }
+    extend R|Int64| {
+        @R|Attribute|(&quot;State&quot;) internal? func builtinAnnoExtendMember(): R|Int64| {
+            RETURN {
+                &lt;element: CfirThisReceiverExpression&gt;
+            }
+        }
+    }
+    @R|EnsurePreparedToMock|() internal? class BuiltinAnnoMockClass {
+        init()
+    }
+    @R|EnsurePreparedToMock|() internal? func builtinAnnoMockFunc(): R|Int64| {
+        RETURN {
+            INT(1)
+        }
+    }
+    internal? class BuiltinAnnoMockMember {
+        init()
+        @R|EnsurePreparedToMock|() internal? func f(): R|Int64| {
+            RETURN {
+                INT(1)
+            }
+        }
+    }
+    @R|Deprecated|() internal? class BuiltinAnnoDepEmpty {
+        init()
+    }
+    @R|Deprecated|(&lt;expr&gt;) internal? class BuiltinAnnoDepNamed {
+        init()
+    }
+    @R|Deprecated|() internal? class BuiltinAnnoDepBare {
+        init()
+    }
+    @R|OverflowWrapping|(wrapping) internal? func builtinAnnoOverflowWrapping(x: R|UInt8|): R|UInt8| {
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    NAMED_ACCESS(x)
+                arguments:
+                    INT(1u8)
+            }
+        }
+    }
+    @R|OverflowThrowing|(saturating) internal? func builtinAnnoOverflowSaturating(x: R|UInt8|): R|UInt8| {
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    NAMED_ACCESS(x)
+                arguments:
+                    INT(1u8)
+            }
+        }
+    }
+    @R|When|(cjc_version &gt;= &quot;1.0.0&quot;) internal? class BuiltinAnnoWhenVersion {
+        init()
+    }
+    @R|When|(backend == &quot;cjnative&quot;) internal? func builtinAnnoWhenBackend(): R|Int64| {
+        RETURN {
+            INT(1)
+        }
+    }
+    @R|When|(debug) internal? func builtinAnnoWhenDebug(): R|Int64| {
+        RETURN {
+            INT(1)
+        }
+    }
+    @R|When|(*operator_not()) internal? func builtinAnnoWhenNotDebug(): R|Int64| {
+        RETURN {
+            INT(2)
+        }
+    }
+    @R|When|(test) internal? class BuiltinAnnoWhenTest {
+        init()
+    }
+    @R|When|(*operator_not()) internal? class BuiltinAnnoWhenNotTest {
+        init()
+    }
+    @R|When|(os == &quot;Windows&quot; || os == &quot;Linux&quot; &amp;&amp; *operator_not()) internal? func builtinAnnoWhenCombo(): R|Int64| {
+        RETURN {
+            INT(3)
+        }
+    }
+    @R|Annotation|() public class BuiltinAnnoMarked {
+        init() {
+        }
+    }
+    @R|BuiltinAnnoMarked|() internal? class BuiltinAnnoMarkedBare {
+        init()
+    }
+    @R|BuiltinAnnoMarked|() internal? class BuiltinAnnoMarkedEmpty {
+        init()
+    }
+    internal? let builtinAnnoSrcFile: R|String| = ...
+        initializer:
+            ERROR_EXPR(Macro expression `@sourceFile()` is a construction-only surface and must be replaced before final provider registration.)
+    internal? let builtinAnnoSrcPackage: R|String| = ...
+        initializer:
+            ERROR_EXPR(Macro expression `@sourcePackage()` is a construction-only surface and must be replaced before final provider registration.)
+    internal? func builtinAnnoSrcExpr(line: R|Int64|): R|Int64| {
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    NAMED_ACCESS(line)
+                arguments:
+                    ERROR_EXPR(Macro expression `@sourceLine()` is a construction-only surface and must be replaced before final provider registration.)
+            }
+        }
+    }
+    internal? func builtinAnnoSrcDefault(line: R|Int64| = ERROR_EXPR(Macro expression `@sourceLine()` is a construction-only surface and must be replaced before final provider registration.)
+    ): R|Int64| {
+        RETURN {
+            NAMED_ACCESS(line)
+        }
+    }
+    internal? func builtinAnnoSrcInterp(): R|String| {
+        RETURN {
+            STRING_INTERPOLATION {
+                ERROR_EXPR(Macro expression `@sourceFile()` is a construction-only surface and must be replaced before final provider registration.)
+                STRING(&quot;:&quot;)
+                ERROR_EXPR(Macro expression `@sourceLine()` is a construction-only surface and must be replaced before final provider registration.)
+            }
+        }
+    }
+    @R|When|(*operator_not()) @R|Attribute|(&quot;State&quot;) @R|Deprecated|(&quot;gone&quot;, &lt;expr&gt;) @R|EnsurePreparedToMock|() internal? class BuiltinAnnoStacked {
+        init()
+    }
+	at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilderTestCase$Companion.assertEqualsToFile(AbstractRawCfirBuilderTestCase.kt:401)
+	at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilderTestCase.doRawCfirTest(AbstractRawCfirBuilderTestCase.kt:357)
+	at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilderTestCase.runTest(AbstractRawCfirBuilderTestCase.kt:46)
+	at org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Declarations.testBuiltinAnnotationForms(RawCfirBuilderTestCaseGenerated.kt:1013)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at junit.framework.TestCase.runTest(TestCase.java:177)
+	at junit.framework.TestCase.runBare(TestCase.java:142)
+	at junit.framework.TestResult$1.protect(TestResult.java:122)
+	at junit.framework.TestResult.runProtected(TestResult.java:142)
+	at junit.framework.TestResult.run(TestResult.java:125)
+	at junit.framework.TestCase.run(TestCase.java:130)
+	at junit.framework.TestSuite.runTest(TestSuite.java:241)
+	at junit.framework.TestSuite.run(TestSuite.java:236)
+	at org.junit.internal.runners.JUnit38ClassRunner.run(JUnit38ClassRunner.java:90)
+	at org.cangnova.cangjie.test.JUnit3RunnerWithInners.run(JUnit3RunnerWithInners.kt:44)
+	at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
+	at org.junit.runner.JUnitCore.run(JUnitCore.java:115)
+	at org.gradle.api.internal.tasks.testing.junit.JUnitTestExecutor.runRequest(JUnitTestExecutor.java:175)
+	at org.gradle.api.internal.tasks.testing.junit.JUnitTestExecutor.accept(JUnitTestExecutor.java:84)
+	at org.gradle.api.internal.tasks.testing.junit.JUnitTestExecutor.accept(JUnitTestExecutor.java:47)
+	at org.gradle.api.internal.tasks.testing.junit.AbstractJUnitTestDefinitionProcessor.processTestDefinition(AbstractJUnitTestDefinitionProcessor.java:65)
+	at org.gradle.api.internal.tasks.testing.SuiteTestDefinitionProcessor.processTestDefinition(SuiteTestDefinitionProcessor.java:53)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.gradle.internal.dispatch.MethodInvocation.invokeOn(MethodInvocation.java:77)
+	at org.gradle.internal.dispatch.ReflectionDispatch.dispatch(ReflectionDispatch.java:28)
+	at org.gradle.internal.dispatch.ReflectionDispatch.dispatch(ReflectionDispatch.java:19)
+	at org.gradle.internal.dispatch.ContextClassLoaderDispatch.dispatch(ContextClassLoaderDispatch.java:33)
+	at org.gradle.internal.dispatch.ProxyDispatchAdapter$DispatchingInvocationHandler.invoke(ProxyDispatchAdapter.java:88)
+	at jdk.proxy1/jdk.proxy1.$Proxy4.processTestDefinition(Unknown Source)
+	at org.gradle.api.internal.tasks.testing.worker.TestWorker$2.run(TestWorker.java:178)
+	at org.gradle.api.internal.tasks.testing.worker.TestWorker.executeAndMaintainThreadName(TestWorker.java:126)
+	at org.gradle.api.internal.tasks.testing.worker.TestWorker.execute(TestWorker.java:103)
+	at org.gradle.api.internal.tasks.testing.worker.TestWorker.execute(TestWorker.java:63)
+	at org.gradle.process.internal.worker.child.ActionExecutionWorker.execute(ActionExecutionWorker.java:56)
+	at org.gradle.process.internal.worker.child.SystemApplicationClassLoaderWorker.call(SystemApplicationClassLoaderWorker.java:122)
+	at org.gradle.process.internal.worker.child.SystemApplicationClassLoaderWorker.call(SystemApplicationClassLoaderWorker.java:72)
+	at worker.org.gradle.process.internal.worker.GradleWorkerMain.run(GradleWorkerMain.java:69)
+	at worker.org.gradle.process.internal.worker.GradleWorkerMain.main(GradleWorkerMain.java:74)
+</failure>
+  </testcase>
+  <testcase name="testAnnotationForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Declarations" time="0.005"/>
+  <testcase name="testImportGroupForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Declarations" time="0.006"/>
+  <testcase name="testFunctionParams" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Declarations" time="0.005"/>
+  <testcase name="testInterfaceForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Declarations" time="0.005"/>
+  <testcase name="testFunctionModifiers" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Declarations" time="0.007"/>
+  <testcase name="testPropAccessorForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Declarations" time="0.007"/>
+  <testcase name="testStaticInitAndFinalizer" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Declarations" time="0.012"/>
+  <testcase name="testWhereConstraints" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Declarations" time="0.006"/>
+  <testcase name="testPrimaryConstructorForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Declarations" time="0.02"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

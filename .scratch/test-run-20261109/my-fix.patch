@@ -1,0 +1,414 @@
+diff --git a/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/diagnostics/LLCfirDiagnosticReporter.kt b/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/diagnostics/LLCfirDiagnosticReporter.kt
+index 707f984f3..288446b92 100644
+--- a/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/diagnostics/LLCfirDiagnosticReporter.kt
++++ b/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/diagnostics/LLCfirDiagnosticReporter.kt
+@@ -10,6 +10,7 @@ import org.cangnova.cangjie.source.CjFakeSourceElementKind
+ import org.cangnova.cangjie.analysis.low.level.api.cfir.util.addValueFor
+ import org.cangnova.cangjie.cfir.diagnostics.*
+ import org.cangnova.cangjie.cfir.diagnostics.PendingDiagnosticReporter
++import org.cangnova.cangjie.cfir.diagnostics.impl.CfirDiagnosticCommitPolicy
+ import org.cangnova.cangjie.source.AbstractCjSourceElement
+ import org.cangnova.cangjie.source.CjFakePsiSourceElement
+ import org.cangnova.cangjie.source.CjLightSourceElement
+@@ -25,6 +26,11 @@ internal class LLCfirDiagnosticReporter(
+      * 将宏展开等生成源码位置映射回原始源码位置的函数。
+      */
+     private val sourceMapper: (AbstractCjSourceElement) -> AbstractCjSourceElement? = { null },
++    /**
++     * 提交期裁决策略；必须与编译管线的 `PendingDiagnosticsReporterImpl` 保持一致，
++     * 否则同一源码在 IDE 与 CLI 中得到不同的诊断集合。
++     */
++    private val commitPolicy: DiagnosticCommitPolicy = CfirDiagnosticCommitPolicy,
+ ) : PendingDiagnosticReporter() {
+     /**
+      * 尚未提交到最终结果的 diagnostics，按 PSI 元素归组。
+@@ -141,6 +147,22 @@ internal class LLCfirDiagnosticReporter(
+                     }
+                     diagnostic.element == element || commitEverything -> {
+                         iterator.remove()
++                        val coreDiagnostic = diagnostic as CjDiagnostic
++                        if (commitPolicy.isSupersededByMoreSpecific(
++                                diagnostic = coreDiagnostic,
++                                pending = pendingDiagnostics.diagnosticsInFileOf(diagnosticElement),
++                                committed = _committedDiagnostics.diagnosticsInFileOf(diagnosticElement),
++                            )
++                        ) {
++                            continue
++                        }
++                        if (commitPolicy.isDuplicateOfCommitted(
++                                diagnostic = coreDiagnostic,
++                                committed = _committedDiagnostics.diagnosticsInFileOf(diagnosticElement),
++                            )
++                        ) {
++                            continue
++                        }
+                         committedList += diagnostic
+                     }
+                 }
+@@ -149,6 +171,17 @@ internal class LLCfirDiagnosticReporter(
+     }
+ }
+ 
++/**
++ * 返回与 [anchor] 同一 PSI 文件的诊断序列；与编译管线一致，提交期裁决按文件进行。
++ */
++private fun Map<PsiElement, List<CjPsiDiagnostic>>.diagnosticsInFileOf(anchor: PsiElement): Sequence<CjDiagnostic> {
++    val file = anchor.containingFile
++    return asSequence()
++        .filter { (element, _) -> element.containingFile == file }
++        .flatMap { (_, diagnostics) -> diagnostics.asSequence() }
++        .map { it as CjDiagnostic }
++}
++
+ /**
+  * 判断 diagnostic 是否来自脚本隐式 import 的 fake source。
+  */
+diff --git a/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/CommonExpressionCheckers.kt b/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/CommonExpressionCheckers.kt
+index e19215a4b..6ef792f92 100644
+--- a/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/CommonExpressionCheckers.kt
++++ b/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/CommonExpressionCheckers.kt
+@@ -60,12 +60,15 @@ object CommonExpressionCheckers : ExpressionCheckers() {
+     override val errorExpressionCheckers: Set<CfirErrorExpressionChecker>
+         get() = emptySet()
+ 
+-    /** 对 `match` 表达式的 case 类型、模式合法性、穷尽性和可达性执行的 checker 集合。 */
++    /**
++     * 对 `match` 表达式的 case 类型、模式合法性、穷尽性和可达性执行的 checker 集合。
++     *
++     * target-typed 分支体检查不在这里：它由根位置 checker 经 `checkTargetTypedExpression` 统一下钻。
++     */
+     override val matchExpressionCheckers: Set<CfirMatchExpressionChecker>
+         get() = setOf(
+             CfirMatchCaseTypeChecker,
+             CfirMatchConditionTypeChecker,
+-            CfirMatchTargetTypeMismatchChecker,
+             CfirMatchPatternLegalityChecker,
+             CfirMatchExhaustivenessChecker,
+             CfirOrPatternVariableChecker,
+@@ -165,11 +168,14 @@ object CommonExpressionCheckers : ExpressionCheckers() {
+             CfirCFuncCaptureSuperChecker,
+         )
+ 
+-    /** 对 `try` 表达式返回、目标类型和已解析 catch 覆盖规则执行的 checker 集合。 */
++    /**
++     * 对 `try` 表达式返回和已解析 catch 覆盖规则执行的 checker 集合。
++     *
++     * target-typed try/catch 尾表达式检查由根位置 checker 经 `checkTargetTypedExpression` 统一下钻。
++     */
+     override val tryExpressionCheckers: Set<CfirTryExpressionChecker>
+         get() = setOf(
+             CfirTryHandleReturnChecker,
+-            org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirTryTargetTypeMismatchChecker,
+             org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirCatchTypeChecker,
+         )
+ 
+diff --git a/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirFunctionBodyTypeMismatchChecker.kt b/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirFunctionBodyTypeMismatchChecker.kt
+index a3433c6e1..b2ace5c03 100644
+--- a/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirFunctionBodyTypeMismatchChecker.kt
++++ b/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirFunctionBodyTypeMismatchChecker.kt
+@@ -99,6 +99,11 @@ object CfirFunctionBodyTypeMismatchChecker : CfirBasicExpressionChecker() {
+         val tailExpression = tailStatement as? CfirExpression
+         if (tailExpression?.isTerminatingFunctionBodyTail() == true) return
+ 
++        // 复合尾表达式（block/if/match/try）由共享 owner 下钻到真实结果位置，叶子自身的错误类型
++        // 在下钻中逐个裁决；不能先按整个尾表达式的错误类型或子树错误短路，否则 match 某个分支失败
++        // 后其余合法分支的类型义务会丢失（官方 ChkMatchExpr 逐 case 独立检查）。
++        if (tailExpression != null && checkTargetTypedExpression(tailExpression, expectedType).isHandled) return
++
+         // 空函数体或以声明结尾的函数体会正常流出 Unit，仍然必须参与显式返回类型检查。
+         // 属性 getter 尤其依赖这一规则：`get() {}` 不能因为没有尾表达式而绕过属性类型约束。
+         val actualType = when (tailExpression) {
+@@ -135,8 +140,6 @@ object CfirFunctionBodyTypeMismatchChecker : CfirBasicExpressionChecker() {
+         // 定位在该尾声明本身；只有真正的空 body 才定位到整个 block。
+         val resultSource = tailStatement?.source ?: block.source ?: return
+ 
+-        if (tailExpression != null && checkTargetTypedExpression(tailExpression, expectedType).isHandled) return
+-
+         // 目标类型直接检查字面量时，显式 return 与隐式尾表达式都使用同一专用诊断。
+         literalConversionDiagnostic(
+             source = resultSource,
+diff --git a/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirMatchTargetTypeMismatchChecker.kt b/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirMatchTargetTypeMismatchChecker.kt
+deleted file mode 100644
+index 31b47464b..000000000
+--- a/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirMatchTargetTypeMismatchChecker.kt
++++ /dev/null
+@@ -1,21 +0,0 @@
+-package org.cangnova.cangjie.cfir.analysis.checkers.expression
+-
+-import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+-import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
+-import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
+-
+-/**
+- * target-typed `match` 分支体类型检查。
+- *
+- * 官方 `ChkMatchExpr` 在带目标类型时会对每个 case action 执行 `Check(ctx, target, action)`；
+- * CFIR resolve 已经把 expected type 下传给分支体，这里负责在真实尾表达式上补齐诊断落点。
+- */
+-object CfirMatchTargetTypeMismatchChecker : CfirMatchExpressionChecker() {
+-    /** 检查每个 `match` 分支体尾表达式是否满足外层目标类型。 */
+-    context(context: CheckerContext, reporter: DiagnosticReporter)
+-    override fun check(expression: CfirMatchExpression) {
+-        val expectedType = expression.expectedTypeFromTargetContext(context) ?: return
+-        // 官方逐 case 独立执行 ChkMatchCaseActions；模式绑定失效后，仍须检查合法分支体。
+-        checkTargetTypedMatchExpression(expression, expectedType)
+-    }
+-}
+diff --git a/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirReturnTypeMismatchChecker.kt b/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirReturnTypeMismatchChecker.kt
+index 3c5a32636..a8a34b187 100644
+--- a/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirReturnTypeMismatchChecker.kt
++++ b/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirReturnTypeMismatchChecker.kt
+@@ -67,13 +67,6 @@ object CfirReturnTypeMismatchChecker : CfirReturnExpressionChecker( ) {
+         val rawActualType = result.coneTypeOrNull ?: return
+         val returnTypeMismatch = result.returnTypeMismatchError(rawActualType)
+         val actualType = returnTypeMismatch?.actualType ?: rawActualType
+-        if (actualType is ConeErrorType) return
+-        if (result is CfirMatchExpression && result.branches.any { branch ->
+-                branch.body.coneTypeOrNull is ConeErrorType || branch.coneTypeOrNull is ConeErrorType
+-            }
+-        ) {
+-            return
+-        }
+         if (expression.source?.kind == CjFakeSourceElementKind.DelegatedPropertyAccessor) return
+ 
+         if (
+@@ -119,7 +112,9 @@ object CfirReturnTypeMismatchChecker : CfirReturnExpressionChecker( ) {
+             }
+         }
+ 
++        // 复合 return 值由共享 owner 下钻并逐叶裁决错误类型；match 某分支失败不影响其余分支的检查。
+         if (checkTargetTypedExpression(result, expectedType).isHandled) return
++        if (actualType is ConeErrorType) return
+ 
+         // 显式 return 的字面量与函数体尾字面量都经过同一目标类型转换规则。
+         literalConversionDiagnostic(
+diff --git a/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirTargetTypedTailExpressionUtils.kt b/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirTargetTypedTailExpressionUtils.kt
+index 79a576a02..d7fe7e918 100644
+--- a/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirTargetTypedTailExpressionUtils.kt
++++ b/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirTargetTypedTailExpressionUtils.kt
+@@ -99,6 +99,9 @@ internal fun CfirVariable.explicitDeclaredTypeOrNull(): ConeCangJieType? {
+  * 该入口只接管 block/双分支 if/match/普通 try 这类会把结果藏在子结构里的复合表达式。
+  * 普通叶子表达式返回 [TargetTypedCheckOutcome.NotHandled]，让 return、assignment、
+  * initializer 等调用方继续使用各自的根级诊断类型。
++ *
++ * 这是 target-typed 复合表达式的唯一 owner：对齐官方 `Check(ctx, target, expr)` 自根位置一次递归下推，
++ * 复合表达式内部不再由独立 checker 重复下钻。
+  */
+ context(context: CheckerContext, reporter: DiagnosticReporter)
+ internal fun checkTargetTypedExpression(
+@@ -106,9 +109,9 @@ internal fun checkTargetTypedExpression(
+     expectedType: ConeCangJieType,
+ ): TargetTypedCheckOutcome {
+     val unwrapped = expression.unwrapForTargetTyping()
+-    if (expectedType is ConeErrorType || unwrapped.coneTypeOrNull is ConeErrorType) {
+-        return TargetTypedCheckOutcome.Handled(reported = false)
+-    }
++    if (expectedType is ConeErrorType) return TargetTypedCheckOutcome.Handled(reported = false)
++    if (unwrapped is CfirMatchExpression) return checkTargetTypedMatchExpression(unwrapped, expectedType)
++    if (unwrapped.coneTypeOrNull is ConeErrorType) return TargetTypedCheckOutcome.Handled(reported = false)
+ 
+     return when (unwrapped) {
+         is CfirAnonymousFunctionExpression -> {
+@@ -131,7 +134,6 @@ internal fun checkTargetTypedExpression(
+                 checkTargetTypedIfExpression(unwrapped, expectedType)
+             }
+         }
+-        is CfirMatchExpression -> checkTargetTypedMatchExpression(unwrapped, expectedType)
+         is CfirTryExpression -> {
+             if (unwrapped.resources.isNotEmpty()) {
+                 TargetTypedCheckOutcome.NotHandled
+@@ -203,9 +205,9 @@ internal fun checkTargetTypedTailExpression(
+     expectedType: ConeCangJieType,
+ ): TargetTypedCheckOutcome {
+     val unwrapped = expression.unwrapForTargetTyping()
+-    if (expectedType is ConeErrorType || unwrapped.coneTypeOrNull is ConeErrorType) {
+-        return TargetTypedCheckOutcome.Handled(reported = false)
+-    }
++    if (expectedType is ConeErrorType) return TargetTypedCheckOutcome.Handled(reported = false)
++    if (unwrapped is CfirMatchExpression) return checkTargetTypedMatchExpression(unwrapped, expectedType)
++    if (unwrapped.coneTypeOrNull is ConeErrorType) return TargetTypedCheckOutcome.Handled(reported = false)
+ 
+     return when (unwrapped) {
+         is CfirBlock -> checkTargetTypedBlockTail(unwrapped, expectedType)
+@@ -216,7 +218,6 @@ internal fun checkTargetTypedTailExpression(
+                 checkTargetTypedIfExpression(unwrapped, expectedType)
+             }
+         }
+-        is CfirMatchExpression -> checkTargetTypedMatchExpression(unwrapped, expectedType)
+         is CfirTryExpression -> {
+             if (unwrapped.resources.isNotEmpty()) {
+                 checkTargetTypedLeaf(unwrapped, expectedType)
+@@ -243,9 +244,14 @@ private fun checkTargetTypedIfExpression(
+     ).combineTargetTypedOutcomes()
+ }
+ 
+-/** 检查 `match` 每个分支 body 的尾结果表达式。 */
++/**
++ * 检查 `match` 每个分支 body 的尾结果表达式。
++ *
++ * 官方 `ChkMatchExpr` 带目标类型时对每个 case action 独立执行 `Check(ctx, target, action)`：某个分支或模式
++ * 失败使 match 整体成为错误类型时，其余合法分支仍须检查，因此调用方不能因 match 自身的错误类型短路。
++ */
+ context(context: CheckerContext, reporter: DiagnosticReporter)
+-internal fun checkTargetTypedMatchExpression(
++private fun checkTargetTypedMatchExpression(
+     expression: CfirMatchExpression,
+     expectedType: ConeCangJieType,
+ ): TargetTypedCheckOutcome {
+diff --git a/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirTryTargetTypeMismatchChecker.kt b/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirTryTargetTypeMismatchChecker.kt
+deleted file mode 100644
+index 0c7efb612..000000000
+--- a/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirTryTargetTypeMismatchChecker.kt
++++ /dev/null
+@@ -1,19 +0,0 @@
+-package org.cangnova.cangjie.cfir.analysis.checkers.expression
+-
+-import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+-import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
+-import org.cangnova.cangjie.cfir.expressions.CfirTryExpression
+-
+-/**
+- * 对齐官方仓颉 `ChkTryExpr/ChkTryExprCatchesAndHandles + ChkBlock`：
+- * target-typed `try` 会把外层目标类型分别下推到 try/catch block 的尾表达式，
+- * 类型不匹配时主诊断落在具体尾表达式上，而不是落回整个 `return try`。
+- */
+-object CfirTryTargetTypeMismatchChecker : CfirTryExpressionChecker() {
+-    /** 检查 target-typed try/catch block 尾表达式是否符合外层期望类型。 */
+-    context(context: CheckerContext, reporter: DiagnosticReporter)
+-    override fun check(expression: CfirTryExpression) {
+-        val expectedType = expression.expectedTypeFromTargetContext(context) ?: return
+-        checkTargetTypedExpression(expression, expectedType)
+-    }
+-}
+diff --git a/common/diagnostics/src/org/cangnova/cangjie/cfir/diagnostics/impl/PendingDiagnosticsReporterImpl.kt b/common/diagnostics/src/org/cangnova/cangjie/cfir/diagnostics/impl/PendingDiagnosticsReporterImpl.kt
+index f8c1fba45..804231604 100644
+--- a/common/diagnostics/src/org/cangnova/cangjie/cfir/diagnostics/impl/PendingDiagnosticsReporterImpl.kt
++++ b/common/diagnostics/src/org/cangnova/cangjie/cfir/diagnostics/impl/PendingDiagnosticsReporterImpl.kt
+@@ -1,6 +1,7 @@
+ ﻿package org.cangnova.cangjie.cfir.diagnostics.impl
+ 
+ import org.cangnova.cangjie.cfir.diagnostics.DiagnosticContext
++import org.cangnova.cangjie.cfir.diagnostics.DiagnosticCommitPolicy
+ import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
+ import org.cangnova.cangjie.cfir.diagnostics.CjDiagnostic
+ import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticWithSource
+@@ -29,6 +30,10 @@ class PendingDiagnosticsReporterImpl(
+      * 可选的源码元素映射函数，用于把诊断重定向到 offset-only 元素。
+      */
+     private val sourceMapper: (AbstractCjSourceElement) -> AbstractCjSourceElement? = { null },
++    /**
++     * 提交期裁决策略；必须与 IDE 低级 API 的 reporter 保持一致。
++     */
++    private val commitPolicy: DiagnosticCommitPolicy = CfirDiagnosticCommitPolicy,
+ ) : PendingDiagnosticReporter() {
+     private val pendingDiagnosticsByFilePath: MutableMap<String, MutableList<CjDiagnostic>> = mutableMapOf()
+     private val committedDiagnosticsByFilePath: MutableMap<String, MutableList<CjDiagnostic>> = mutableMapOf()
+@@ -162,16 +167,10 @@ class PendingDiagnosticsReporterImpl(
+                         if (diagnostic.isCfirDceWarning() && hasErrorInFile(path, pendingList)) {
+                             continue
+                         }
+-                        if (diagnostic.isGenericTypeMismatchSupersededByReturnMismatch(
+-                                pendingDiagnostics = pendingList,
+-                                committedDiagnostics = committedDiagnosticsByFilePath[path],
+-                            )
+-                        ) {
+-                            continue
+-                        }
+-                        if (diagnostic.isAccessibilityErrorSupersededByReturnTypeError(
+-                                pendingDiagnostics = pendingList,
+-                                committedDiagnostics = committedDiagnosticsByFilePath[path],
++                        if (commitPolicy.isSupersededByMoreSpecific(
++                                diagnostic = diagnostic,
++                                pending = pendingList.asSequence(),
++                                committed = committedDiagnosticsByFilePath[path].orEmpty().asSequence(),
+                             )
+                         ) {
+                             continue
+@@ -197,11 +196,12 @@ class PendingDiagnosticsReporterImpl(
+             val (_, pendingList) = iterator.next()
+             for (diagnostic in pendingList) {
+                 if (!context.isDiagnosticSuppressed(diagnostic)) {
+-                    if (diagnostic.isAccessibilityErrorSupersededByReturnTypeError(
+-                            pendingDiagnostics = pendingList,
+-                            committedDiagnostics = committedDiagnosticsByFilePath[
++                    if (commitPolicy.isSupersededByMoreSpecific(
++                            diagnostic = diagnostic,
++                            pending = pendingList.asSequence(),
++                            committed = committedDiagnosticsByFilePath[
+                                 (diagnostic.context as? DiagnosticContext)?.containingFilePath
+-                            ],
++                            ].orEmpty().asSequence(),
+                         )
+                     ) {
+                         continue
+@@ -226,7 +226,7 @@ class PendingDiagnosticsReporterImpl(
+             committedDiagnosticsByFilePath.getOrPut(it) { mutableListOf() }
+         }
+         if (committedDiagnostics != null) {
+-            if (committedDiagnostics.any { it.hasSameDiagnosticIdentity(diagnostic) }) return
++            if (commitPolicy.isDuplicateOfCommitted(diagnostic, committedDiagnostics.asSequence())) return
+         }
+ 
+         delegate.report(diagnostic, context)
+@@ -238,61 +238,8 @@ class PendingDiagnosticsReporterImpl(
+             pendingList.any { it.severity.isError }
+ }
+ 
+-/**
+- * 判断两个诊断是否在名称、消息和首范围上等价。
+- */
+-private fun CjDiagnostic.hasSameDiagnosticIdentity(other: CjDiagnostic): Boolean =
+-    factoryName == other.factoryName &&
+-        renderMessage() == other.renderMessage() &&
+-        firstRange.startOffset == other.firstRange.startOffset &&
+-        firstRange.endOffset == other.firstRange.endOffset
+-
+ /**
+  * 判断诊断是否是 CFIR DCE 产生的 unused warning。
+  */
+ private fun CjDiagnostic.isCfirDceWarning(): Boolean =
+     factoryName == "CFIR_UNUSED_VARIABLE" || factoryName == "CFIR_UNUSED_EXPRESSION"
+-
+-/** 判断诊断是否是可见性（accessibility）错误；用于同范围诊断的取代规则。 */
+-private fun CjDiagnostic.isAccessibilityError(): Boolean = factoryName == "CFIR_ACCESSIBILITY_ERROR"
+-
+-/**
+- * 官方诊断引擎对同范围、同严重级别错误只保留一个；继承检查中返回类型错误比随后产生的
+- * 可见性错误更具体，因此相同首范围上的可见性错误由返回类型诊断取代。
+- */
+-private fun CjDiagnostic.isAccessibilityErrorSupersededByReturnTypeError(
+-    pendingDiagnostics: List<CjDiagnostic>,
+-    committedDiagnostics: List<CjDiagnostic>?,
+-): Boolean {
+-    if (!isAccessibilityError()) return false
+-    return (pendingDiagnostics.asSequence() + committedDiagnostics.orEmpty().asSequence())
+-        .any { candidate ->
+-            candidate.factoryName in RETURN_TYPE_OVERRIDE_ERROR_NAMES &&
+-                candidate.severity == severity &&
+-                candidate.firstRange.startOffset == firstRange.startOffset &&
+-                candidate.firstRange.endOffset == firstRange.endOffset
+-        }
+-}
+-
+-/** 能在同范围上取代可见性错误的返回类型诊断名称集合。 */
+-private val RETURN_TYPE_OVERRIDE_ERROR_NAMES: Set<String> = setOf(
+-    "CFIR_RETURN_TYPE_INCOMPATIBLE",
+-    "CFIR_RETURN_TYPE_INVARIANCE",
+-)
+-
+-/**
+- * RETURN_TYPE_MISMATCH 是 return 根表达式上的专用分类；同一起点且覆盖通用
+- * TYPE_MISMATCH 范围时，专用诊断拥有该位置，避免重复输出通用类型不匹配。
+- */
+-private fun CjDiagnostic.isGenericTypeMismatchSupersededByReturnMismatch(
+-    pendingDiagnostics: List<CjDiagnostic>,
+-    committedDiagnostics: List<CjDiagnostic>?,
+-): Boolean {
+-    if (factoryName != "CFIR_TYPE_MISMATCH") return false
+-    return (pendingDiagnostics.asSequence() + committedDiagnostics.orEmpty().asSequence())
+-        .any { candidate ->
+-            candidate.factoryName == "CFIR_RETURN_TYPE_MISMATCH" &&
+-                candidate.firstRange.startOffset == firstRange.startOffset &&
+-                candidate.firstRange.endOffset >= firstRange.endOffset
+-        }
+-}

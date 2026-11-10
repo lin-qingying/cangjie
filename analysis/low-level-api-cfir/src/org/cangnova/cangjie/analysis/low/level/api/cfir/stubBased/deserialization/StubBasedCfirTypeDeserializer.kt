@@ -58,6 +58,11 @@ internal class StubBasedCfirTypeDeserializer(
     private val containingSymbol: CfirBasedSymbol<*>?,
     owner: CjTypeParameterListOwner?,
     initialOrigin: CfirDeclarationOrigin,
+    /**
+     * 额外可见的类型参数 symbol（例如 extend 的隐式类型参数 `T`，它来自 `.cjo` 元数据，
+     * 不在 stub/PSI 中显式声明）。
+     */
+    private val additionalTypeParameters: Map<String, CfirTypeParameterSymbol> = emptyMap(),
 ) {
     /**
      * 用于从 option 类型内部文本重建类型引用的 PSI factory。
@@ -116,7 +121,7 @@ internal class StubBasedCfirTypeDeserializer(
                 }.build()
             }
         } else {
-            typeParametersByName = emptyMap()
+            typeParametersByName = additionalTypeParameters
         }
     }
 

@@ -258,7 +258,10 @@ class LLResolutionFacade internal constructor(
             withPsiEntry("declaration", cjDeclaration, module)
         }
 
-        val session = getSessionFor(module)
+        // compiled 声明属于其所在文件（library/builtins）的模块，与 use-site 无关；
+        // 用 use-site module 查会落到完成/表达式所在的 source/temp module，找不到库 class-like 符号。
+        val owningModule = CangJieProjectStructureProvider.getModule(project, cjDeclaration, useSiteModule = null)
+        val session = getSessionFor(owningModule)
         val searcher = CfirDeclarationForCompiledElementSearcher(session)
         val cfirDeclaration = searcher.findNonLocalDeclaration(cjDeclaration)
         return cfirDeclaration.symbol

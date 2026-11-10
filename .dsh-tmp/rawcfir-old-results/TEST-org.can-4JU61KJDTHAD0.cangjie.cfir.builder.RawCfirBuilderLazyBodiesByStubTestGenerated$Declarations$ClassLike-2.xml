@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Declarations$ClassLike" tests="34" skipped="0" failures="0" errors="0" timestamp="2026-11-01T10:01:38.456Z" hostname="LIN" time="0.296">
+  <properties/>
+  <testcase name="testInterfaceStaticProp" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Declarations$ClassLike" time="0.003"/>
+  <testcase name="testAllFilesPresentInClassLike" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Declarations$ClassLike" time="0.173"/>
+  <testcase name="testGenericOptionField" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Declarations$ClassLike" time="0.004"/>
+  <testcase name="testEmptyClass" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Declarations$ClassLike" time="0.004"/>
+  <testcase name="testStaticInitAssign" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Declarations$ClassLike" time="0.003"/>
+  <testcase name="testAbstractAndStructForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Declarations$ClassLike" time="0.005"/>
+  <testcase name="testClassWithSuperReference" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Declarations$ClassLike" time="0.003"/>
+  <testcase name="testClassWithThisReference" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Declarations$ClassLike" time="0.004"/>
+  <testcase name="testOperatorOverloads" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Declarations$ClassLike" time="0.007"/>
+  <testcase name="testEnumDeclaration" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Declarations$ClassLike" time="0.005"/>
+  <testcase name="testGenericWhereTypeDeclarations" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Declarations$ClassLike" time="0.004"/>
+  <testcase name="testMultipleExtendBlocks" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Declarations$ClassLike" time="0.003"/>
+  <testcase name="testClassWithTypeParameters" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Declarations$ClassLike" time="0.003"/>
+  <testcase name="testStructDeclaration" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Declarations$ClassLike" time="0.003"/>
+  <testcase name="testFinalizerWithReturn" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Declarations$ClassLike" time="0.003"/>
+  <testcase name="testClassWithMembers" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Declarations$ClassLike" time="0.003"/>
+  <testcase name="testStaticConstMember" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Declarations$ClassLike" time="0.003"/>
+  <testcase name="testClassWithModifiers" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Declarations$ClassLike" time="0.004"/>
+  <testcase name="testConstructorDelegation" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Declarations$ClassLike" time="0.003"/>
+  <testcase name="testInterfaceDeclaration" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Declarations$ClassLike" time="0.003"/>
+  <testcase name="testAccessControlMemberModifiers" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Declarations$ClassLike" time="0.003"/>
+  <testcase name="testPropUsingThis" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Declarations$ClassLike" time="0.003"/>
+  <testcase name="testPublicVisibilityDisplay" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Declarations$ClassLike" time="0.002"/>
+  <testcase name="testThisQualifiedCall" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Declarations$ClassLike" time="0.003"/>
+  <testcase name="testThisAndSuperUsage" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Declarations$ClassLike" time="0.004"/>
+  <testcase name="testAccessControlVisibilityDisplay" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Declarations$ClassLike" time="0.003"/>
+  <testcase name="testClassMembersOrderStability" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Declarations$ClassLike" time="0.005"/>
+  <testcase name="testFinalizerInClass" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Declarations$ClassLike" time="0.003"/>
+  <testcase name="testClassWithSupertype" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Declarations$ClassLike" time="0.003"/>
+  <testcase name="testStructMemberFunction" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Declarations$ClassLike" time="0.004"/>
+  <testcase name="testPropertyAccessors" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Declarations$ClassLike" time="0.005"/>
+  <testcase name="testStructStaticConst" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Declarations$ClassLike" time="0.005"/>
+  <testcase name="testInterfaceMutAndDefault" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Declarations$ClassLike" time="0.003"/>
+  <testcase name="testExtendInterfaceWithWhere" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Declarations$ClassLike" time="0.005"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

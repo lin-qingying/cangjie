@@ -15,9 +15,10 @@ import org.cangnova.cangjie.name.FqName
 /**
  * 仓颉 extend provider 装配的单一共享入口。
  *
- * 主编译器（`CfirAbstractSessionFactory`）与 low-level/IDE 侧（`LLCfirAbstractSessionFactory`）
- * 都以"own 源码 extend 索引 + 依赖反序列化注册表"构造 session 级 extend 视图。该装配语义
- * 必须只有一个实现，否则两处行为漂移会导致库（.cjo）中的 extend 对某一侧不可见。
+ * 主编译器（`CfirAbstractSessionFactory`）以"own 源码 extend 索引 + 依赖会话 extend provider"
+ * 构造 session 级视图；low-level/IDE 侧（`LLCfirAbstractSessionFactory`）用同一个 composer
+ * 组合 own 索引、builtins 与依赖会话的 `extendProviderOrNull`。该装配语义必须只有一个实现，
+ * 否则两处行为漂移会导致库（.cjo）中的 extend 对某一侧不可见。
  *
  * 语义对齐官方编译器 `BuildImportedExtendMap`（`TypeCheckExtend.cpp`）：注册阶段对所有可见
  * 来源做全量合并、不做可见性预判；可见性判定留到消费端的会话级 accessibility checker，
@@ -86,34 +87,110 @@ object CfirExtendProviderComposer {
         }
     }
 
-    /** 创建使用线程安全 lazy 初始化的 provider 代理。 */
+    /**
+     * 当前线程正在求值的 lazily composed provider（identity 集合）。
+     *
+     * 循环模块依赖会让 A→B→A 的 session extend provider 组合递归（`CfirCompositeExtendProvider`
+     * 对子 provider 递归 flatMap）。重入时直接返回空结果，保证查询终止。
+     *
+     * 取舍：防护键是 **provider 实例 identity**，不是 `(实例, 查询种类+参数)`。因此同一线程对同一
+     * session provider 的合法重入（例如 `LLCfirSessionExtendProvider` 索引构建期间的递归查询）
+     * 也会被短路为空结果，而不是返回已发布的部分索引。这只会影响同线程递归重入，正常跨 session
+     * 查询不受影响；如需更精细语义，可把键收窄为 `(实例, 查询参数)`。
+     */
+    private val evaluatingProviders: ThreadLocal<java.util.IdentityHashMap<CfirExtendProvider, Boolean>> =
+        ThreadLocal.withInitial { java.util.IdentityHashMap() }
+
+    private fun enter(provider: CfirExtendProvider): Boolean =
+        evaluatingProviders.get().put(provider, true) != null
+
+    private fun exit(provider: CfirExtendProvider) {
+        evaluatingProviders.get().remove(provider)
+    }
+
+    /** 创建使用线程安全 lazy 初始化的 provider 代理（带循环重入防护）。 */
     private fun lazyProvider(providerRef: () -> CfirExtendProvider): CfirExtendProvider = object : CfirExtendProvider {
         private val delegate: CfirExtendProvider by lazy(LazyThreadSafetyMode.PUBLICATION, providerRef)
 
-        override fun getAllExtends(): List<CfirExtend> = delegate.getAllExtends()
+        override fun getAllExtends(): List<CfirExtend> {
+            if (enter(this)) return emptyList()
+            try {
+                return delegate.getAllExtends()
+            } finally {
+                exit(this)
+            }
+        }
 
-        override fun getExtendsForTarget(targetKey: CfirExtendTargetKey): List<CfirExtend> =
-            delegate.getExtendsForTarget(targetKey)
+        override fun getExtendsForTarget(targetKey: CfirExtendTargetKey): List<CfirExtend> {
+            if (enter(this)) return emptyList()
+            try {
+                return delegate.getExtendsForTarget(targetKey)
+            } finally {
+                exit(this)
+            }
+        }
 
-        override fun getExtendsForClass(classId: ClassId): List<CfirExtend> =
-            delegate.getExtendsForClass(classId)
+        override fun getExtendsForClass(classId: ClassId): List<CfirExtend> {
+            if (enter(this)) return emptyList()
+            try {
+                return delegate.getExtendsForClass(classId)
+            } finally {
+                exit(this)
+            }
+        }
 
-        override fun getExtendsInPackage(packageFqName: FqName): List<CfirExtend> =
-            delegate.getExtendsInPackage(packageFqName)
+        override fun getExtendsInPackage(packageFqName: FqName): List<CfirExtend> {
+            if (enter(this)) return emptyList()
+            try {
+                return delegate.getExtendsInPackage(packageFqName)
+            } finally {
+                exit(this)
+            }
+        }
 
-        override fun getExtendsForBuiltinType(kind: PrimitiveTypeKind): List<CfirExtend> =
-            delegate.getExtendsForBuiltinType(kind)
+        override fun getExtendsForBuiltinType(kind: PrimitiveTypeKind): List<CfirExtend> {
+            if (enter(this)) return emptyList()
+            try {
+                return delegate.getExtendsForBuiltinType(kind)
+            } finally {
+                exit(this)
+            }
+        }
 
-        override fun getContainingExtend(symbol: CfirCallableSymbol<*>): CfirExtend? =
-            delegate.getContainingExtend(symbol)
+        override fun getContainingExtend(symbol: CfirCallableSymbol<*>): CfirExtend? {
+            if (enter(this)) return null
+            try {
+                return delegate.getContainingExtend(symbol)
+            } finally {
+                exit(this)
+            }
+        }
 
-        override fun getPackageFqName(extend: CfirExtend): FqName? =
-            delegate.getPackageFqName(extend)
+        override fun getPackageFqName(extend: CfirExtend): FqName? {
+            if (enter(this)) return null
+            try {
+                return delegate.getPackageFqName(extend)
+            } finally {
+                exit(this)
+            }
+        }
 
-        override fun getContainingFile(extend: CfirExtend): CfirFile? =
-            delegate.getContainingFile(extend)
+        override fun getContainingFile(extend: CfirExtend): CfirFile? {
+            if (enter(this)) return null
+            try {
+                return delegate.getContainingFile(extend)
+            } finally {
+                exit(this)
+            }
+        }
 
-        override fun getExtendByStructuralKey(key: String): CfirExtend? =
-            delegate.getExtendByStructuralKey(key)
+        override fun getExtendByStructuralKey(key: String): CfirExtend? {
+            if (enter(this)) return null
+            try {
+                return delegate.getExtendByStructuralKey(key)
+            } finally {
+                exit(this)
+            }
+        }
     }
 }

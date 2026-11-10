@@ -23,8 +23,8 @@
 | 组件 | 位置 | 状态 |
 |---|---|---|
 | 注册器抽象类 + 扩展点 | `code-insight/api/.../fixes/CangJieQuickFixService.kt:76` | 有 `list` / `lazyList` / `importOnTheFlyList` 三条通道 |
-| 注册器实现 | `code-insight/fixes/src/.../CangJieQuickFixRegistrar.kt` | 仅注册 1 条 |
-| 装配 XML | `code-insight/fixes/resources/META-INF/code-insight/cangjie-code-insight-fixes.xml` | 扩展点 `org.cangnova.cangjie.codeinsight.quickfix.registrar` |
+| 注册器实现 | `code-insight/code-actions/src/.../CangJieQuickFixRegistrar.kt` | 仅注册 1 条 |
+| 装配 XML | `code-insight/code-actions/resources/META-INF/code-insight/cangjie-code-insight-fixes.xml` | 扩展点 `org.cangnova.cangjie.codeinsight.quickfix.registrar` |
 | 列表/工厂协议 | `code-insight/api/.../CangJieQuickFixesList.kt`、`CangJieQuickFixFactory.kt` | `IntentionBased` / `ModCommandBased` 两种 factory |
 | 高亮消费（普通） | `intellij-ide/modules/ide/base/.../CangJieDiagnosticHighlightVisitor.kt:194` | 已接线 |
 | 高亮消费（lazy） | 同文件 `registerLazyFixes()` | 已接线，但无 factory 可产出 |
@@ -34,7 +34,7 @@
 
 | 诊断 | 修复 | 实现 |
 |---|---|---|
-| `CaCfirDiagnostic.AbstractMemberNotImplemented` | Implement members | `implementMembers` factory → `ImplementMembersQuickfix`（`code-insight/override-implement/.../ImplementMembersHandler.kt:85`） |
+| `CaCfirDiagnostic.AbstractMemberNotImplemented` | Implement members | `implementMembers` factory → `ImplementMembersQuickfix`（`code-insight/code-actions/.../ImplementMembersHandler.kt:85`） |
 
 ### 2.3 已实现但绕过 K2 通道的修复（双轨）
 

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Basics" tests="30" skipped="0" failures="0" errors="0" timestamp="2026-11-01T10:01:33.943Z" hostname="LIN" time="0.218">
+  <properties/>
+  <testcase name="testParenthesizedExpression" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Basics" time="0.002"/>
+  <testcase name="testTupleReturnValue" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Basics" time="0.003"/>
+  <testcase name="testIsTypeCheckExpression" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Basics" time="0.001"/>
+  <testcase name="testIfLetWhileLet" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Basics" time="0.003"/>
+  <testcase name="testOptionalChainAccess" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Basics" time="0.002"/>
+  <testcase name="testOptionalChainInvoke" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Basics" time="0.002"/>
+  <testcase name="testIncDecExpressions" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Basics" time="0.002"/>
+  <testcase name="testOpAndIfExpressions" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Basics" time="0.002"/>
+  <testcase name="testLiteralForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Basics" time="0.002"/>
+  <testcase name="testFunctionExpressions" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Basics" time="0.001"/>
+  <testcase name="testCoalescingOperator" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Basics" time="0.002"/>
+  <testcase name="testAllFilesPresentInBasics" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Basics" time="0.155"/>
+  <testcase name="testRangeExpression" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Basics" time="0.002"/>
+  <testcase name="testTrailingClosureOfficial" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Basics" time="0.002"/>
+  <testcase name="testTypeConversions" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Basics" time="0.002"/>
+  <testcase name="testStringInterpolationCall" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Basics" time="0.002"/>
+  <testcase name="testArrayAndTupleLiterals" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Basics" time="0.002"/>
+  <testcase name="testRawStringEscapes" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Basics" time="0.003"/>
+  <testcase name="testDotQualifiedAccess" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Basics" time="0.002"/>
+  <testcase name="testSliceExpression" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Basics" time="0.001"/>
+  <testcase name="testStringTemplates" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Basics" time="0.004"/>
+  <testcase name="testThrowExpression" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Basics" time="0.002"/>
+  <testcase name="testStringInterpolation" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Basics" time="0.002"/>
+  <testcase name="testLambdaBlockBody" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Basics" time="0.002"/>
+  <testcase name="testSpecialExpressionsPreserve" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Basics" time="0.002"/>
+  <testcase name="testSubscriptAccess" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Basics" time="0.002"/>
+  <testcase name="testTryExpression" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Basics" time="0.003"/>
+  <testcase name="testLambdaParameters" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Basics" time="0.002"/>
+  <testcase name="testNestedArrayAndTupleLiterals" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Basics" time="0.002"/>
+  <testcase name="testOptionAndCoalescing" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Basics" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

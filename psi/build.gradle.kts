@@ -51,7 +51,7 @@ dependencies {
     testImplementation(libs.markdown)
     implementation(libs.guava)
 
-    jflexPath("org.jetbrains.intellij.deps.jflex:jflex:1.10.14") {
+    jflexPath(libs.jflex) {
         isTransitive = false
     }
 }

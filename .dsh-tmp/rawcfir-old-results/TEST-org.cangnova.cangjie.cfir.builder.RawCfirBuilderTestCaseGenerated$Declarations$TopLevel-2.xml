@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Declarations$TopLevel" tests="16" skipped="0" failures="0" errors="0" timestamp="2026-11-01T10:01:47.294Z" hostname="LIN" time="0.302">
+  <properties/>
+  <testcase name="testMainWithoutReturnType" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Declarations$TopLevel" time="0.006"/>
+  <testcase name="testMainWithArgs" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Declarations$TopLevel" time="0.005"/>
+  <testcase name="testForeignDecls" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Declarations$TopLevel" time="0.004"/>
+  <testcase name="testTopLevelProperty" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Declarations$TopLevel" time="0.006"/>
+  <testcase name="testMainEntryOfficial" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Declarations$TopLevel" time="0.002"/>
+  <testcase name="testConstFunc" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Declarations$TopLevel" time="0.005"/>
+  <testcase name="testCfuncCallNamedParams" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Declarations$TopLevel" time="0.04"/>
+  <testcase name="testLocalScopeVisibility" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Declarations$TopLevel" time="0.004"/>
+  <testcase name="testAllFilesPresentInTopLevel" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Declarations$TopLevel" time="0.206"/>
+  <testcase name="testTypeAlias" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Declarations$TopLevel" time="0.003"/>
+  <testcase name="testNothingReturn" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Declarations$TopLevel" time="0.003"/>
+  <testcase name="testNamedAndDefaultParams" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Declarations$TopLevel" time="0.003"/>
+  <testcase name="testGenericWhereFunction" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Declarations$TopLevel" time="0.004"/>
+  <testcase name="testLocalScopeInNestedBlock" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Declarations$TopLevel" time="0.003"/>
+  <testcase name="testMainArgsSize" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Declarations$TopLevel" time="0.003"/>
+  <testcase name="testTopLevelFunction" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Declarations$TopLevel" time="0.003"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

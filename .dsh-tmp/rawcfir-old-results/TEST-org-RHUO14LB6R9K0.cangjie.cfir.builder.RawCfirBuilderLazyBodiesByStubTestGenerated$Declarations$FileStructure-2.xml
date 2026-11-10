@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Declarations$FileStructure" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-11-01T10:01:38.752Z" hostname="LIN" time="0.131">
+  <properties/>
+  <testcase name="testConditionalCompilation" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Declarations$FileStructure" time="0.005"/>
+  <testcase name="testMacroPackage" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Declarations$FileStructure" time="0.005"/>
+  <testcase name="testAllFilesPresentInFileStructure" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Declarations$FileStructure" time="0.106"/>
+  <testcase name="testEmptyFile" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Declarations$FileStructure" time="0.004"/>
+  <testcase name="testFeaturesDirective" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Declarations$FileStructure" time="0.003"/>
+  <testcase name="testImportForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Declarations$FileStructure" time="0.003"/>
+  <testcase name="testPackageAndImport" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Declarations$FileStructure" time="0.004"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

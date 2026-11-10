@@ -37,7 +37,7 @@ import org.junit.jupiter.api.Test
  */
 @OptIn(CaExperimentalApi::class)
 class CfirExpectedTypeCompletionFilterTest : AbstractAnalysisApiExecutionTest(
-    "code-insight/completion/impl-cfir/testData/filter",
+    "code-insight/completion/testData/filter",
 ) {
     override val configurator = CaCfirStandaloneAnalysisApiTestConfigurator
 

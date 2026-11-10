@@ -31,7 +31,7 @@ import org.junit.jupiter.api.Test
  */
 @OptIn(CaExperimentalApi::class)
 class CompletionDslTest : AbstractAnalysisApiExecutionTest(
-    "code-insight/completion/impl-cfir/testData/completionDsl",
+    "code-insight/completion/testData/completionDsl",
 ) {
     override val configurator = CaCfirStandaloneAnalysisApiTestConfigurator
 

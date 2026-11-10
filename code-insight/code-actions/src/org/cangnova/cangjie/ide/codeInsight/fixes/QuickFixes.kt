@@ -1,7 +1,5 @@
 package org.cangnova.cangjie.ide.codeInsight.fixes
 
-import com.intellij.codeInsight.intention.IntentionAction
-import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.cfir.diagnostics.CaCfirDiagnostic
 import org.cangnova.cangjie.codeinsight.api.applicators.fixes.CangJieQuickFixFactory
 import org.cangnova.cangjie.lexer.CjKeywordToken

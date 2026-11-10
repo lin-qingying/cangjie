@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$CangjieFeatures$Spawn" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-11-01T10:00:43.023Z" hostname="LIN" time="0.324">
+  <properties/>
+  <testcase name="testSpawnExpressionOfficial" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$CangjieFeatures$Spawn" time="0.007"/>
+  <testcase name="testAllFilesPresentInSpawn" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$CangjieFeatures$Spawn" time="0.317"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

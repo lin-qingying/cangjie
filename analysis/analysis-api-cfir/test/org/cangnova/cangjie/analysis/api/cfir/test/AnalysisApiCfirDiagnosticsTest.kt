@@ -349,6 +349,23 @@ class AnalysisApiCfirDiagnosticsTest : AbstractAnalysisApiExecutionTest(
     }
 
     /**
+     * 库里的 `size` 只声明在接口上，由 `extend Box <: Sized` 给 struct 加超类型并实现。
+     *
+     * 对齐 std.core 的 `Array<T> <: Collection<T>` 机制；STUBS 丢失 extend 超类型/成员时这里会报 NOT_MEMBER_OF。
+     */
+    @Test
+    fun decompiledLibraryExtendSupertypeMember(mainFile: CjFile) {
+        val diagnostics = analyzeForTest(mainFile) {
+            mainFile.collectDiagnostics(CaDiagnosticCheckerFilter.EXTENDED_AND_COMMON_CHECKERS)
+                .map { diagnostic -> diagnostic.factoryName }
+        }
+        assertTrue(
+            diagnostics.isEmpty(),
+            "库 extend 提供的超类型成员必须可见：$diagnostics",
+        )
+    }
+
+    /**
      * 别名在使用点的三种形态：alias→enum 穷尽 match、alias→函数类型调用、外层 alias→Array 的 extend 成员。
      *
      * 这三条只要别名的展开语义有任何缺失就会直接报诊断（未知构造器 / 不可调用 / 找不到成员）。

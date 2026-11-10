@@ -33,7 +33,7 @@ import org.junit.jupiter.api.Test
  */
 @OptIn(CaExperimentalApi::class)
 class CfirCompletionRecoveryServiceTest : AbstractAnalysisApiExecutionTest(
-    "code-insight/completion/impl-cfir/testData/recovery",
+    "code-insight/completion/testData/recovery",
 ) {
     override val configurator = CaCfirStandaloneAnalysisApiTestConfigurator
 

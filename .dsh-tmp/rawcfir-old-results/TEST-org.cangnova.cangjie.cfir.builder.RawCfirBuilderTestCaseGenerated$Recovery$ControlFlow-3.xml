@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Recovery$ControlFlow" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-01T10:01:51.351Z" hostname="LIN" time="0.174">
+  <properties/>
+  <testcase name="testForMissingIterable" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Recovery$ControlFlow" time="0.002"/>
+  <testcase name="testAllFilesPresentInControlFlow" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Recovery$ControlFlow" time="0.164"/>
+  <testcase name="testWhileMissingCondition" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Recovery$ControlFlow" time="0.002"/>
+  <testcase name="testIfMissingCondition" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Recovery$ControlFlow" time="0.003"/>
+  <testcase name="testThrowMissingExpression" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Recovery$ControlFlow" time="0.003"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

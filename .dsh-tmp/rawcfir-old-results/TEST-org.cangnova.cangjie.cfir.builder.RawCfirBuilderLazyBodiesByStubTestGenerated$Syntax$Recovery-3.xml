@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" tests="106" skipped="0" failures="2" errors="0" timestamp="2026-11-01T10:01:11.490Z" hostname="LIN" time="1.408">
+  <properties/>
+  <testcase name="testForeignCArrayType" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.005"/>
+  <testcase name="testArraySingleArgConstruction" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.007"/>
+  <testcase name="testInitCallingInit" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.005"/>
+  <testcase name="testVarrayConstructorArgForm" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.005"/>
+  <testcase name="testVarrayConstructorArgName" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.005"/>
+  <testcase name="testPowerOperatorRightOperand" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.004"/>
+  <testcase name="testWithExpression" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.007"/>
+  <testcase name="testNonPublicMacroDecl" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.004"/>
+  <testcase name="testInterfaceInit" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.004"/>
+  <testcase name="testMissingBodyInFunc" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.005"/>
+  <testcase name="testSubscriptSetUnnamedParameter" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.005"/>
+  <testcase name="testCollectionTypeNoImport" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.004"/>
+  <testcase name="testBareArrowType" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.004"/>
+  <testcase name="testLambdaNamedParameter" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.004"/>
+  <testcase name="testEnumInterfaceUnimplemented" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.006"/>
+  <testcase name="testQuoteDollarIdentifier" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.005"/>
+  <testcase name="testEnumTrailingPipe" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.005"/>
+  <testcase name="testEnumDuplicateConstructor" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.005"/>
+  <testcase name="testStaticInitInEnum" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.005"/>
+  <testcase name="testCfuncValueTypeName" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.005"/>
+  <testcase name="testFlatNestedArrayLiteral" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.014"/>
+  <testcase name="testCfuncUnitTypeName" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.005"/>
+  <testcase name="testInvalidModifierMutFunc" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.004"/>
+  <testcase name="testVarrayNestedArray" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.004"/>
+  <testcase name="testRedefInstanceMember" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.004"/>
+  <testcase name="testTryResourceWithoutResourceInterface" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.004"/>
+  <testcase name="testArrayPattern" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.003"/>
+  <testcase name="testCoalescingAssign" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.004"/>
+  <testcase name="testEnumCtorWithoutPipe" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.005"/>
+  <testcase name="testLambdaWithoutArrow" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.005"/>
+  <testcase name="testMacroQuoteInterpolation" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.006"/>
+  <testcase name="testOperatorNotOverloadable" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.004"/>
+  <testcase name="testImmutablePropSetter" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.005"/>
+  <testcase name="testEmptyWhenCondition" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.004"/>
+  <testcase name="testInoutParameter" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.006"/>
+  <testcase name="testExtendBuiltinOperator" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.008"/>
+  <testcase name="testForeignNamedParam" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.004"/>
+  <testcase name="testJstringLowerCase" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.003"/>
+  <testcase name="testVarrayTypeArgumentWithoutDollar" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.004"/>
+  <testcase name="testRangeStringOperands" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.003"/>
+  <testcase name="testFunctionTypeMixedParamNames" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.005">
+    <failure message="java.lang.AssertionError: Golden file mismatch: cfir\raw-cfir\psi2cfir\testData\rawBuilder\syntax\recovery\functionTypeMixedParamNames.lazyBodies.txt&#10;Run with -Dupdate.test.data=true to update golden files.&#10;=== Expected ===&#10;FILE: functionTypeMixedParamNames.cj&#10;    internal? func mixed(g: R|() -&gt; R|Bool||): R|Bool| {&#10;        &lt;element: CfirLazyBlock&gt;&#10;    }&#10;    internal? typealias MixedTuple = R|(R|Int64|, R|x|)|&#10;=== Actual ===&#10;FILE: functionTypeMixedParamNames.cj&#10;    internal? func mixed(g: R|() -&gt; R|Bool||): R|Bool| {&#10;        &lt;element: CfirLazyBlock&gt;&#10;    }&#10;    internal? typealias MixedTuple = R|(R|Int64|, R|String|)|" type="java.lang.AssertionError">java.lang.AssertionError: Golden file mismatch: cfir\raw-cfir\psi2cfir\testData\rawBuilder\syntax\recovery\functionTypeMixedParamNames.lazyBodies.txt
+Run with -Dupdate.test.data=true to update golden files.
+=== Expected ===
+FILE: functionTypeMixedParamNames.cj
+    internal? func mixed(g: R|() -&gt; R|Bool||): R|Bool| {
+        &lt;element: CfirLazyBlock&gt;
+    }
+    internal? typealias MixedTuple = R|(R|Int64|, R|x|)|
+=== Actual ===
+FILE: functionTypeMixedParamNames.cj
+    internal? func mixed(g: R|() -&gt; R|Bool||): R|Bool| {
+        &lt;element: CfirLazyBlock&gt;
+    }
+    internal? typealias MixedTuple = R|(R|Int64|, R|String|)|
+	at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilderTestCase$Companion.assertEqualsToFile(AbstractRawCfirBuilderTestCase.kt:401)
+	at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilderLazyBodiesTestCase.doRawCfirTest(AbstractRawCfirBuilderLazyBodiesTestCase.kt:18)
+	at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilderLazyBodiesByStubTest.doRawCfirTest$lambda$0(AbstractRawCfirBuilderLazyBodiesByStubTest.kt:36)
+	at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilderLazyBodiesByStubTest.runOnEdt$lambda$6(AbstractRawCfirBuilderLazyBodiesByStubTest.kt:114)
+	at java.desktop/java.awt.event.InvocationEvent.dispatch(InvocationEvent.java:308)
+	at java.desktop/java.awt.EventQueue.dispatchEventImpl(EventQueue.java:773)
+	at java.desktop/java.awt.EventQueue$4.run(EventQueue.java:720)
+	at java.desktop/java.awt.EventQueue$4.run(EventQueue.java:714)
+	at java.base/java.security.AccessController.doPrivileged(AccessController.java:400)
+	at java.base/java.security.ProtectionDomain$JavaSecurityAccessImpl.doIntersectionPrivilege(ProtectionDomain.java:87)
+	at java.desktop/java.awt.EventQueue.dispatchEvent(EventQueue.java:742)
+	at java.desktop/java.awt.EventDispatchThread.pumpOneEventForFilters(EventDispatchThread.java:203)
+	at java.desktop/java.awt.EventDispatchThread.pumpEventsForFilter(EventDispatchThread.java:124)
+	at java.desktop/java.awt.EventDispatchThread.pumpEventsForHierarchy(EventDispatchThread.java:113)
+	at java.desktop/java.awt.EventDispatchThread.pumpEvents(EventDispatchThread.java:109)
+	at java.desktop/java.awt.EventDispatchThread.pumpEvents(EventDispatchThread.java:101)
+	at java.desktop/java.awt.EventDispatchThread.run(EventDispatchThread.java:90)
+</failure>
+  </testcase>
+  <testcase name="testResultTypeUndeclared" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.003"/>
+  <testcase name="testUnclosedBrace" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.006"/>
+  <testcase name="testFunctionTypeNamedParamBang" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.007"/>
+  <testcase name="testUnclosedParen" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.004"/>
+  <testcase name="testUnterminatedMultilineString" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.004"/>
+  <testcase name="testPowerOperatorChain" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.004"/>
+  <testcase name="testVarPatternInMatch" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.042"/>
+  <testcase name="testMatchRangePattern" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.008"/>
+  <testcase name="testNestedClassDecl" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.004"/>
+  <testcase name="testTryResourceAsValue" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.007"/>
+  <testcase name="testAnnotationDeclaration" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.004"/>
+  <testcase name="testRangeChainedOperators" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.005"/>
+  <testcase name="testWhereOnTypeAlias" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.004"/>
+  <testcase name="testUnterminatedRawString" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.01"/>
+  <testcase name="testCfuncNamedParam" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.011"/>
+  <testcase name="testUnterminatedString" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.004"/>
+  <testcase name="testMacroNamedParams" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.005"/>
+  <testcase name="testMainBadParameterType" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.006"/>
+  <testcase name="testJstringUpperCase" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.008"/>
+  <testcase name="testLambdaDefaultValue" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.007"/>
+  <testcase name="testDefaultParamOnUnnamed" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.02"/>
+  <testcase name="testIfAvailableBracketForm" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.009"/>
+  <testcase name="testDoWhileWithoutBrace" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.007"/>
+  <testcase name="testWhereWithoutTypeParams" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.006"/>
+  <testcase name="testConstructorMemberParams" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.005"/>
+  <testcase name="testConstArrayInitializer" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.006"/>
+  <testcase name="testStrayCloseBrace" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.004"/>
+  <testcase name="testThisTypeAsParameter" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.005"/>
+  <testcase name="testEmptyMultilineString" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.006"/>
+  <testcase name="testTryResourceExpressionOnly" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.01"/>
+  <testcase name="testVarrayRefTypeArg" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.009"/>
+  <testcase name="testGenericVarianceMarker" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.004"/>
+  <testcase name="testEnumEllipsisNotSupported" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.006"/>
+  <testcase name="testStructFinalizer" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.003"/>
+  <testcase name="testAllFilesPresentInRecovery" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.708"/>
+  <testcase name="testStepFunctionCall" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.012"/>
+  <testcase name="testNamedArgumentInFuncValueCall" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.011"/>
+  <testcase name="testMissingTypeInVar" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.013"/>
+  <testcase name="testMacroOutsideMacroPackage" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.01"/>
+  <testcase name="testPrefixIncDec" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.004"/>
+  <testcase name="testForWithLetPattern" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.006"/>
+  <testcase name="testPrivateInitCalledOutside" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.007"/>
+  <testcase name="testCcharTypeUndeclared" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.006"/>
+  <testcase name="testMainVariadicArgs" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.006"/>
+  <testcase name="testFunctionTypeParamDefault" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.005">
+    <failure message="java.lang.AssertionError: Golden file mismatch: cfir\raw-cfir\psi2cfir\testData\rawBuilder\syntax\recovery\functionTypeParamDefault.lazyBodies.txt&#10;Run with -Dupdate.test.data=true to update golden files.&#10;=== Expected ===&#10;FILE: functionTypeParamDefault.cj&#10;    internal? func withDefault(g: R|x|): &lt;implicit&gt;&#10;=== Actual ===&#10;FILE: functionTypeParamDefault.cj&#10;    internal? func withDefault(g: R|Int64|): &lt;implicit&gt;" type="java.lang.AssertionError">java.lang.AssertionError: Golden file mismatch: cfir\raw-cfir\psi2cfir\testData\rawBuilder\syntax\recovery\functionTypeParamDefault.lazyBodies.txt
+Run with -Dupdate.test.data=true to update golden files.
+=== Expected ===
+FILE: functionTypeParamDefault.cj
+    internal? func withDefault(g: R|x|): &lt;implicit&gt;
+=== Actual ===
+FILE: functionTypeParamDefault.cj
+    internal? func withDefault(g: R|Int64|): &lt;implicit&gt;
+	at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilderTestCase$Companion.assertEqualsToFile(AbstractRawCfirBuilderTestCase.kt:401)
+	at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilderLazyBodiesTestCase.doRawCfirTest(AbstractRawCfirBuilderLazyBodiesTestCase.kt:18)
+	at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilderLazyBodiesByStubTest.doRawCfirTest$lambda$0(AbstractRawCfirBuilderLazyBodiesByStubTest.kt:36)
+	at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilderLazyBodiesByStubTest.runOnEdt$lambda$6(AbstractRawCfirBuilderLazyBodiesByStubTest.kt:114)
+	at java.desktop/java.awt.event.InvocationEvent.dispatch(InvocationEvent.java:308)
+	at java.desktop/java.awt.EventQueue.dispatchEventImpl(EventQueue.java:773)
+	at java.desktop/java.awt.EventQueue$4.run(EventQueue.java:720)
+	at java.desktop/java.awt.EventQueue$4.run(EventQueue.java:714)
+	at java.base/java.security.AccessController.doPrivileged(AccessController.java:400)
+	at java.base/java.security.ProtectionDomain$JavaSecurityAccessImpl.doIntersectionPrivilege(ProtectionDomain.java:87)
+	at java.desktop/java.awt.EventQueue.dispatchEvent(EventQueue.java:742)
+	at java.desktop/java.awt.EventDispatchThread.pumpOneEventForFilters(EventDispatchThread.java:203)
+	at java.desktop/java.awt.EventDispatchThread.pumpEventsForFilter(EventDispatchThread.java:124)
+	at java.desktop/java.awt.EventDispatchThread.pumpEventsForHierarchy(EventDispatchThread.java:113)
+	at java.desktop/java.awt.EventDispatchThread.pumpEvents(EventDispatchThread.java:109)
+	at java.desktop/java.awt.EventDispatchThread.pumpEvents(EventDispatchThread.java:101)
+	at java.desktop/java.awt.EventDispatchThread.run(EventDispatchThread.java:90)
+</failure>
+  </testcase>
+  <testcase name="testMainCurriedParameterList" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.011"/>
+  <testcase name="testBitwiseNotPrefix" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.007"/>
+  <testcase name="testHexOverflow" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.007"/>
+  <testcase name="testQuoteOutsideMacroPackage" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.008"/>
+  <testcase name="testExtendWhereNonGeneric" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.005"/>
+  <testcase name="testEnumCtorParenEmpty" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.005"/>
+  <testcase name="testForLetPattern" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.007"/>
+  <testcase name="testTryResourceMissingBlock" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.008"/>
+  <testcase name="testSynchronizedWithoutLock" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.006"/>
+  <testcase name="testMissingNameInFunc" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.008"/>
+  <testcase name="testAbstractPropInClass" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.005"/>
+  <testcase name="testIntegerOverflow" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.024"/>
+  <testcase name="testVarraySliceNotSupported" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.009"/>
+  <testcase name="testFuncMainKeyword" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.004"/>
+  <testcase name="testFunctionExpressionBody" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.004"/>
+  <testcase name="testMainWithModifier" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.004"/>
+  <testcase name="testThisTypeInStruct" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.005"/>
+  <testcase name="testLogicalOperatorOverload" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.015"/>
+  <testcase name="testExtendGenericUnused" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.005"/>
+  <testcase name="testRangeMissingOperands" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery" time="0.007"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

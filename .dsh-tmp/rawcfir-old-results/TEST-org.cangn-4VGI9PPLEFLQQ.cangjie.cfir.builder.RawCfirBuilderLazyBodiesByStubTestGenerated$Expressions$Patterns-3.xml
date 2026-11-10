@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Expressions$Patterns" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-11-01T10:01:40.344Z" hostname="LIN" time="0.128">
+  <properties/>
+  <testcase name="testLetPatternBinding" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Expressions$Patterns" time="0.004"/>
+  <testcase name="testAllFilesPresentInPatterns" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Expressions$Patterns" time="0.107"/>
+  <testcase name="testLetPatternNestedOption" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Expressions$Patterns" time="0.002"/>
+  <testcase name="testForTuplePattern" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Expressions$Patterns" time="0.003"/>
+  <testcase name="testMatchPatternForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Expressions$Patterns" time="0.006"/>
+  <testcase name="testMatchBindingPattern" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Expressions$Patterns" time="0.003"/>
+  <testcase name="testMatchConstPatternKinds" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Expressions$Patterns" time="0.003"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

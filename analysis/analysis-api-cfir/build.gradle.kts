@@ -59,7 +59,7 @@ dependencies {
     api(project(":common:diagnostics"))
     implementation(project(":psi"))
     // 缓存清理器与 session provider 直接使用 LLAnalysisSessionStatistics 的计数器类型（opentelemetry LongCounter）。
-    implementation("io.opentelemetry:opentelemetry-api:1.39.0")
+    implementation(libs.opentelemetry.api)
 
 
     compileOnly(intellijCore())

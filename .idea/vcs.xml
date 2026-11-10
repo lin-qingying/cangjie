@@ -2,5 +2,10 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/deveco" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/external/cangjie_compiler" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/external/kotlin" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/intellij-ide" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/vscode_cangjie" vcs="Git" />
   </component>
 </project>

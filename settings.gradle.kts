@@ -37,12 +37,6 @@ include(":prepare:analysis-test-framework")
 include(":prepare:ide-plugin-dependencies:cangjie-frontend-common-for-ide")
 include(":prepare:ide-plugin-dependencies:cangjie-frontend-psi-for-ide")
 include(":prepare:ide-plugin-dependencies:cangjie-frontend-code-insight-for-ide")
-include(":prepare:ide-plugin-dependencies:cangjie-frontend-code-insight-completion-for-ide")
-include(":prepare:ide-plugin-dependencies:cangjie-frontend-code-insight-formatting-for-ide")
-include(":prepare:ide-plugin-dependencies:cangjie-frontend-code-insight-folding-for-ide")
-include(":prepare:ide-plugin-dependencies:cangjie-frontend-code-insight-hints-for-ide")
-include(":prepare:ide-plugin-dependencies:cangjie-frontend-code-insight-highlighting-for-ide")
-include(":prepare:ide-plugin-dependencies:cangjie-frontend-code-insight-refactoring-for-ide")
 include(":prepare:ide-plugin-dependencies:cangjie-frontend-cfir-for-ide")
 include(":prepare:ide-plugin-dependencies:cangjie-frontend-analysis-api-for-ide")
 include(":prepare:ide-plugin-dependencies:cangjie-frontend-analysis-api-cfir-for-ide")
@@ -54,12 +48,6 @@ include("prepare:ide-plugin-dependencies-module")
 include(":prepare:ide-plugin-dependencies-module:cangjie-frontend-psi-for-ide-module")
 include(":prepare:ide-plugin-dependencies-module:cangjie-frontend-common-for-ide-module")
 include(":prepare:ide-plugin-dependencies-module:cangjie-frontend-code-insight-for-ide-module")
-include(":prepare:ide-plugin-dependencies-module:cangjie-frontend-code-insight-completion-for-ide-module")
-include(":prepare:ide-plugin-dependencies-module:cangjie-frontend-code-insight-formatting-for-ide-module")
-include(":prepare:ide-plugin-dependencies-module:cangjie-frontend-code-insight-folding-for-ide-module")
-include(":prepare:ide-plugin-dependencies-module:cangjie-frontend-code-insight-hints-for-ide-module")
-include(":prepare:ide-plugin-dependencies-module:cangjie-frontend-code-insight-highlighting-for-ide-module")
-include(":prepare:ide-plugin-dependencies-module:cangjie-frontend-code-insight-refactoring-for-ide-module")
 
 include(":prepare:ide-plugin-dependencies-module:cangjie-frontend-cfir-for-ide-module")
 include(":prepare:ide-plugin-dependencies-module:cangjie-frontend-analysis-api-for-ide-module")
@@ -73,18 +61,21 @@ include(":lsp")
 // PSI 模块
 include(":psi")
 
-// Code Insight，共享 IDE 与 LSP 的编辑器能力
-include(":code-insight")
+// Code Insight，共享 IDE 与 LSP 的编辑器能力。
+// 一个用户可见能力 = 一个模块；能力内部的契约/机制/流水线用包分层，不再拆模块。
+//   api         —— 对外扩展契约（quick-fix 注册、成员生成、补全服务与插入/导入计划）
+//   editor      —— 编辑力学：折叠、格式化与代码风格
+//   highlighting—— 高亮：词法/结构/语义着色、属性 key、CDoc 渲染
+//   completion  —— 补全：contributor、section、lookup、排序、插入、恢复、统计
+//   code-actions—— 诊断驱动的代码修改：quick fixes、override/implement
+//   hints       —— inlay hints：类型、参数名、lambda、调用链、注解参数
+//   refactoring —— 重命名与重构
 include(":code-insight:api")
-include(":code-insight:completion:contracts")
-include(":code-insight:completion:impl-shared")
-include(":code-insight:completion:impl-cfir")
-include(":code-insight:fixes")
-include(":code-insight:formatting")
-include(":code-insight:folding")
-include(":code-insight:hints")
+include(":code-insight:editor")
 include(":code-insight:highlighting")
-include(":code-insight:override-implement")
+include(":code-insight:completion")
+include(":code-insight:code-actions")
+include(":code-insight:hints")
 include(":code-insight:refactoring")
 
 

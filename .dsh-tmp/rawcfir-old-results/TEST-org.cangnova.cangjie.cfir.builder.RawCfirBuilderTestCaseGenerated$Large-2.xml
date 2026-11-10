@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Large" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-11-01T10:01:50.206Z" hostname="LIN" time="0.295">
+  <properties/>
+  <testcase name="testDeepGenerics" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Large" time="0.012"/>
+  <testcase name="testManyMatchCases" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Large" time="0.052"/>
+  <testcase name="testLargeComments" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Large" time="0.004"/>
+  <testcase name="testWideArrayLiterals" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Large" time="0.006"/>
+  <testcase name="testAllFilesPresentInLarge" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Large" time="0.125"/>
+  <testcase name="testManyDeclarations" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Large" time="0.055"/>
+  <testcase name="testLongStrings" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Large" time="0.012"/>
+  <testcase name="testDeepNesting" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Large" time="0.007"/>
+  <testcase name="testLargeLineComment" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Large" time="0.005"/>
+  <testcase name="testLongOperatorChain" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Large" time="0.017"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

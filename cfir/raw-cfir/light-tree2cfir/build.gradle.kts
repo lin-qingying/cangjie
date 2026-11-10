@@ -49,7 +49,7 @@ dependencies {
     testImplementation(project(":psi"))
     testImplementation(project(":cfir:providers"))
     testImplementation(project(":cfir:resolve"))
-    testImplementation("org.jetbrains.kotlin:kotlin-test-junit")
+    testImplementation(libs.kotlin.test.junit)
 
     testRuntimeOnly(libs.junit.vintage.engine)
     testRuntimeOnly(libs.junit.platform.launcher)

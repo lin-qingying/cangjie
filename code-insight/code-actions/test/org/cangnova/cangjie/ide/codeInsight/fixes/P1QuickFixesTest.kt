@@ -23,7 +23,7 @@ import kotlin.test.assertNotNull
  */
 @OptIn(CaExperimentalApi::class)
 class P1QuickFixesTest : AbstractAnalysisApiExecutionTest(
-    "code-insight/fixes/testData/p1",
+    "code-insight/code-actions/testData/fixes/p1",
 ) {
     override val configurator = CaCfirStandaloneAnalysisApiTestConfigurator
 

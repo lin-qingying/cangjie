@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Types$TypeReferences" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-11-01T10:01:13.460Z" hostname="LIN" time="0.349">
+  <properties/>
+  <testcase name="testCffiParameterTypes" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Types$TypeReferences" time="0.007"/>
+  <testcase name="testCffiTypeRefs" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Types$TypeReferences" time="0.008"/>
+  <testcase name="testGenericTypeAliases" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Types$TypeReferences" time="0.011"/>
+  <testcase name="testFunctionTypeNamedParams" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Types$TypeReferences" time="0.006"/>
+  <testcase name="testTypeAliasRefsOfficial" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Types$TypeReferences" time="0.009"/>
+  <testcase name="testNestedFunctionAndTupleTypes" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Types$TypeReferences" time="0.004"/>
+  <testcase name="testOptionalTypeRefs" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Types$TypeReferences" time="0.003"/>
+  <testcase name="testAllFilesPresentInTypeReferences" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Types$TypeReferences" time="0.293"/>
+  <testcase name="testThisType" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Types$TypeReferences" time="0.007"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

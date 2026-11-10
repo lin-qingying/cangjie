@@ -1,0 +1,2 @@
+sizeExpr=size parent=DOT_QUALIFIED_EXPRESSION
+symbol=CaCfirPropertySymbol psiType=null psiFile=null enclosingExtend=null

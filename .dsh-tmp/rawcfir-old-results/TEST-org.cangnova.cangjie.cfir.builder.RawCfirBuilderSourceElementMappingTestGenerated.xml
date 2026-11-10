@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.cangnova.cangjie.cfir.builder.RawCfirBuilderSourceElementMappingTestGenerated" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-11-01T10:01:43.535Z" hostname="LIN" time="0.096">
+  <properties/>
+  <testcase name="testSimpleExpr" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderSourceElementMappingTestGenerated" time="0.053"/>
+  <testcase name="testCallArgExpr" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderSourceElementMappingTestGenerated" time="0.004"/>
+  <testcase name="testBinaryExpr" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderSourceElementMappingTestGenerated" time="0.004"/>
+  <testcase name="testSmoke" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderSourceElementMappingTestGenerated" time="0.001"/>
+  <testcase name="testIndexExpr" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderSourceElementMappingTestGenerated" time="0.004"/>
+  <testcase name="testMemberLikeAccessExpr" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderSourceElementMappingTestGenerated" time="0.004"/>
+  <testcase name="testStringTemplate" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderSourceElementMappingTestGenerated" time="0.003"/>
+  <testcase name="testAllFilesPresentInTestData" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderSourceElementMappingTestGenerated" time="0.016"/>
+  <testcase name="testLambdaExpr" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderSourceElementMappingTestGenerated" time="0.003"/>
+  <testcase name="testIfExpr" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderSourceElementMappingTestGenerated" time="0.004"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

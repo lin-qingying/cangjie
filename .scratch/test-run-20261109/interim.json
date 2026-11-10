@@ -1,0 +1,82 @@
+{
+ "per_task": {
+  ":analysis:analysis-api-cfir:test": {
+   "tests": 1694,
+   "passed": 1694
+  },
+  ":analysis:analysis-api-standalone:test": {
+   "tests": 720,
+   "passed": 720
+  },
+  ":analysis:analysis-performance-test:test": {
+   "tests": 32,
+   "passed": 32
+  },
+  ":analysis:analysis-real-project-test:test": {
+   "tests": 14,
+   "passed": 13,
+   "failure": 1
+  },
+  ":analysis:cj-references:test": {
+   "tests": 5,
+   "passed": 5
+  },
+  ":analysis:light-declarations:test": {
+   "tests": 3,
+   "passed": 3
+  },
+  ":analysis:low-level-api-cfir:test": {
+   "tests": 190,
+   "passed": 189,
+   "failure": 1
+  },
+  ":analysis:macro-expansion:test": {
+   "tests": 10,
+   "passed": 10
+  },
+  ":analysis:stubs:test": {
+   "tests": 8,
+   "passed": 8
+  },
+  ":analysis:symbol-light-declarations:test": {
+   "tests": 8,
+   "passed": 8
+  },
+  ":common:test": {
+   "tests": 44,
+   "passed": 44
+  },
+  ":lsp:test": {
+   "tests": 121,
+   "skipped": 7,
+   "passed": 114
+  },
+  ":psi:test": {
+   "tests": 285,
+   "passed": 285
+  },
+  ":resolution.common:test": {
+   "tests": 14,
+   "passed": 14
+  }
+ },
+ "failures": [
+  {
+   "task": ":analysis:analysis-real-project-test:test",
+   "class": "org.cangnova.cangjie.analysis.realproject.RealProjectAnalysisTest",
+   "name": "realProject(CjFile, CjTestModule)",
+   "kind": "failure",
+   "type": "org.opentest4j.AssertionFailedError",
+   "msg": "org.opentest4j.AssertionFailedError: 1/3 个真实项目分析失败:"
+  },
+  {
+   "task": ":analysis:low-level-api-cfir:test",
+   "class": "org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostic.SourcePostSemaDiagnosticsTest",
+   "name": "enumEntryShadowedByTypeName(CjFile)",
+   "kind": "failure",
+   "type": "org.opentest4j.AssertionFailedError",
+   "msg": "org.opentest4j.AssertionFailedError: Expected no diagnostics but got: CFIR_TYPE_MISMATCH@(362,368), CFIR_TYPE_MISMATCH@(362,368), CFIR_REF_NOT_BE_TYPE@(362,368), CFIR_TYPE_MISMATCH@(183,195), CFIR_TYPE_MISMATCH@(183,195), CFIR_REF_NOT_BE_TYPE@(183,195), CFIR_TYPE_MISMATCH@(217,222), CFIR_TYPE_MISMAT"
+  }
+ ],
+ "stale_xml": 540
+}

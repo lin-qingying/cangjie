@@ -1,0 +1,55 @@
+topLevelExtendIndices=98 nameToIndices=404
+declarations: CfirNamedFunctionImpl=253, CfirExtendImpl=98, CfirFieldVariableImpl=78, CfirClassImpl=58, CfirInterfaceImpl=19, CfirStructImpl=14, CfirEnumImpl=6, CfirBuiltInDeclaration=5, CfirTypeAliasImpl=3
+textLength=106951
+containsExtend=true
+containsArrayExtend=false
+arrayDeclIdx=2012
+--- Array decl ---
+struct Array<T> {
+    internal let rawptr: std.core.Array<T>
+
+    internal let start: Int64
+
+    internal let len: Int64
+
+    @Frozen
+    internal func toRawArray(): std.core.Array<T> { /* compiled code */ }
+
+    @Frozen
+    init() { /* compiled code */ }
+
+    @Frozen
+    init(size: Int64, repeat!: T) { /* compiled code */ }
+
+    @Frozen
+    init(elements: std.core.Collection<T>) { /* compiled code */ }
+
+    @Frozen
+    init(size: Int64, initElement: (Int64) -> T) { /* compiled code */ }
+
+    @Frozen
+    init(data: std.core.Array<T>, start: Int64, len: Int64) { /* compiled code */ }
+
+    @Froz
+extends(first 40)=extend std.core.Array | extend std.core.Array | extend std.core.Array | extend std.core.Array | extend std.core.Array | extend std.core.Box | extend std.core.Box | extend std.core.Box | extend std.core.Byte | extend std.core.CPointer | extend CString | extend Rune | extend Rune | extend std.core.Ordering | extend std.core.Ordering | extend IntNative | extend Int64 | extend Int32 | extend Int16 | extend Int8 | extend UIntNative | extend UInt64 | extend UInt32 | extend UInt16 | extend UInt8 | extend Float16 | extend Float32 | extend Float64 | extend IntNative | extend Int64 | extend Int32 | extend Int16 | extend Int8 | extend UIntNative | extend UInt64 | extend UInt32 | extend UInt16 | extend UInt8 | extend Rune | extend Int64
+--- first 600 chars ---
+// IntelliJ API Decompiler stub source generated from a .cjo file
+// Implementation of declarations is not available
+
+package std.core
+
+import std.core
+
+@Frozen
+private func arrayInitByCollection<T>(array: std.core.Array<T>, elements: std.core.Collection<T>): std.core.Array<T> { /* compiled code */ }
+
+public interface Collection<T> <: std.core.Iterable<T> {
+    public open prop size: Int64
+
+    public open func isEmpty(): Bool
+
+    public open func toArray(): std.core.Array<T> { /* compiled code */ }
+}
+
+public abstract class Iterator<T> <: std.core.Object & std.core.Iterable<T> {
+    public fu

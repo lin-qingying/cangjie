@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test
  */
 @OptIn(CaExperimentalApi::class)
 class CangJieMemberGenerationServiceImplTest : AbstractAnalysisApiExecutionTest(
-    "code-insight/override-implement/testData/members",
+    "code-insight/code-actions/testData/override-implement/members",
 ) {
     override val configurator = CaCfirStandaloneAnalysisApiTestConfigurator
 

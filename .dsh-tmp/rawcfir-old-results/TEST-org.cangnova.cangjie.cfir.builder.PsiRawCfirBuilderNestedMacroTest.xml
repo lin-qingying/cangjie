@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilderNestedMacroTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-11-01T10:01:28.012Z" hostname="LIN" time="0.084">
+  <properties/>
+  <testcase name="testForcedAnnotationMacroSurfaceStopsAtInvalidArgumentSyntax" classname="org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilderNestedMacroTest" time="0.005"/>
+  <testcase name="testNestedCustomAnnotationSurfaceUsesPhysicalAttrPayloadEdge" classname="org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilderNestedMacroTest" time="0.064"/>
+  <testcase name="testDeclarationMacroSurfaceCapturesPayloadWithoutWrapperDelimiters" classname="org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilderNestedMacroTest" time="0.003"/>
+  <testcase name="testExpressionMacroSurfaceCapturesOnlyBracketContentsAndPreservesHostOffsets" classname="org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilderNestedMacroTest" time="0.003"/>
+  <testcase name="testExpressionMacroSurfaceRejectsInvalidEscapeAndKeepsOnlyAcceptedInputPrefix" classname="org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilderNestedMacroTest" time="0.002"/>
+  <testcase name="testForcedAnnotationMacroSurfaceCapturesBracketArgumentContentsOnly" classname="org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilderNestedMacroTest" time="0.002"/>
+  <testcase name="testNestedClassMemberMacrosBuildOneClassAndAllMacroSurfaces" classname="org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilderNestedMacroTest" time="0.003"/>
+  <testcase name="testExpressionMacroSurfaceDistinguishesEmptyPayloadsAndIncompleteParentheses" classname="org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilderNestedMacroTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

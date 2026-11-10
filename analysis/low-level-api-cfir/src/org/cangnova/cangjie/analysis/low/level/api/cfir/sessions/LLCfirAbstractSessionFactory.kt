@@ -32,6 +32,8 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.providers.LLCfirIdeRegis
 import org.cangnova.cangjie.analysis.low.level.api.cfir.providers.LLCfirLibrarySessionProvider
 import org.cangnova.cangjie.analysis.low.level.api.cfir.providers.LLCfirProvider
 import org.cangnova.cangjie.analysis.low.level.api.cfir.providers.LLCfirSessionExtendProvider
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLExtendPsiMaterializer
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLPsiBackedExtendProvider
 import org.cangnova.cangjie.analysis.low.level.api.cfir.providers.LLNameConflictsTracker
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.*
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.combined.LLCombinedCangJieSymbolProvider
@@ -159,7 +161,6 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
             // 平台侧补充注册必须从这里进入；否则它的能力集会与其它 session 不一致。
             registerNotUnderContentRootComponents()
 
-
             val provider = LLCfirProvider(
                 this,
                 components,
@@ -179,27 +180,11 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
             }
 
             /*
-             * extend 元数据只能来自 `.cjo` 反序列化：STUBS 模式下依赖/builtins 的 symbol provider
-             * 是 stub 形态，不携带 `CfirExtend`，因此 `extend Int8 <: ToString` 这类库 extend
-             * 成员在源码里完全不可见（`this.toString()` 的候选集合为空）。
-             * 这里在 STUBS 模式下为 builtins 与库依赖补上二进制 extend 来源；BINARIES 模式下
-             * 依赖 provider 本身已是反序列化 provider，无需重复注册。
+             * own 源码 extend 索引 + builtins/依赖会话的 extend provider 组合。
+             * 依赖侧的 `.cjo` extend 由各 session 自己的 provider 提供：
+             * STUBS 下是反序列化来源，BINARIES 下是 composite/反序列化 provider。
              */
-            val stubOrigin = CaPlatformSettings.getInstance(project).deserializedDeclarationsOrigin ==
-                CaDeserializedDeclarationsOrigin.STUBS
-            registerLLCfirExtendProvider {
-                buildList {
-                    addAll(dependencyProvider.providers)
-                    if (stubOrigin) {
-                        add(LLBinaryOriginLibrarySymbolProviderFactory.createBuiltinsExtendProvider(builtinsSession))
-                        computeDependencySessions(module).forEach { dependencySession ->
-                            if (dependencySession.caModule is CaLibraryModule) {
-                                add(LLBinaryOriginLibrarySymbolProviderFactory.createLibraryExtendProvider(dependencySession))
-                            }
-                        }
-                    }
-                }
-            }
+            registerLLCfirExtendProviderFromSessions(module, builtinsSession)
 
             register(
                 CfirSymbolProvider::class,
@@ -295,7 +280,12 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
                 }
             }
 
-            registerLLCfirExtendProvider { dependencyProvider.providers }
+            /*
+             * own 源码 extend 索引 + builtins/依赖会话的 extend provider 组合。
+             * 依赖侧的 `.cjo` extend 由各 session 自己的 provider 提供：
+             * STUBS 下是反序列化来源，BINARIES 下是 composite/反序列化 provider。
+             */
+            registerLLCfirExtendProviderFromSessions(module, builtinsSession)
 
             register(DEPENDENCIES_SYMBOL_PROVIDER_QUALIFIED_KEY, dependencyProvider)
 
@@ -414,7 +404,12 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
                 }
             }
 
-            registerLLCfirExtendProvider { dependencyProvider.providers }
+            /*
+             * own 源码 extend 索引 + builtins/依赖会话的 extend provider 组合。
+             * 依赖侧的 `.cjo` extend 由各 session 自己的 provider 提供：
+             * STUBS 下是反序列化来源，BINARIES 下是 composite/反序列化 provider。
+             */
+            registerLLCfirExtendProviderFromSessions(module, builtinsSession)
 
             register(DEPENDENCIES_SYMBOL_PROVIDER_QUALIFIED_KEY, dependencyProvider)
 
@@ -487,6 +482,40 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
 
             register(CfirProvider::class, LLCfirLibrarySessionProvider(symbolProvider))
             register(CfirSymbolProvider::class, symbolProvider)
+
+            /*
+             * P2-5：二进制库 session 的声明 moduleData 指向本 session；extend provider 必须挂在
+             * 这里，否则库 extend 成员（`Array.isEmpty`、库内 `extend X <: Y`）的
+             * `getContainingExtend/getDeclarationPackage` 恒为 null。
+             */
+            val binaryExtendProvider =
+                org.cangnova.cangjie.cfir.serialization.provider.CfirExtendProviderComposer.lazyFromSymbolProviders {
+                    val origin = CaPlatformSettings.getInstance(project).deserializedDeclarationsOrigin
+                    if (origin == CaDeserializedDeclarationsOrigin.STUBS) {
+                        listOf(LLBinaryOriginLibrarySymbolProviderFactory.createLibraryExtendProvider(session))
+                    } else {
+                        // `LLModuleWithDependenciesSymbolProvider` 不是反序列化 provider，
+                        // `flattenDeserializedProviders` 会过滤掉它；必须传它组合的底层 provider 列表。
+                        symbolProvider.providers
+                    }
+                }
+            val extendProvider = if (CaPlatformSettings.getInstance(project).deserializedDeclarationsOrigin ==
+                CaDeserializedDeclarationsOrigin.STUBS
+            ) {
+                val materializer = LLExtendPsiMaterializer(project) { extend ->
+                    binaryExtendProvider.getPackageFqName(extend)
+                }
+                LLPsiBackedExtendProvider(binaryExtendProvider) { extend ->
+                    if (extend.source != null) {
+                        extend
+                    } else {
+                        materializer.materialize(extend) ?: extend
+                    }
+                }
+            } else {
+                binaryExtendProvider
+            }
+            register(org.cangnova.cangjie.cfir.resolve.providers.CfirExtendProvider::class, extendProvider)
 
             val context = BinaryLibrarySessionCreationContext()
             additionalSessionConfiguration(context)
@@ -602,7 +631,12 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
                 }
             }
 
-            registerLLCfirExtendProvider { dependencyProvider.providers }
+            /*
+             * own 源码 extend 索引 + builtins/依赖会话的 extend provider 组合。
+             * 依赖侧的 `.cjo` extend 由各 session 自己的 provider 提供：
+             * STUBS 下是反序列化来源，BINARIES 下是 composite/反序列化 provider。
+             */
+            registerLLCfirExtendProviderFromSessions(module, builtinsSession)
 
             register(DEPENDENCIES_SYMBOL_PROVIDER_QUALIFIED_KEY, dependencyProvider)
 
@@ -794,29 +828,74 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
         register(CfirNameConflictsTracker::class, LLNameConflictsTracker(this))
     }
 
+
     /**
-     * 注册低阶源码类 session 的组合 extend provider。
+     * 注册源码/库/dangling session 的 extend provider。
      *
-     * 装配语义与主编译器 `CfirAbstractSessionFactory` 完全一致（共用
-     * [CfirExtendProviderComposer]）：own 部分覆盖当前 session 缓存文件中的源码 extend，
-     * 依赖部分惰性提取反序列化 provider 的 extend 元数据。若只注册 own 部分，二进制依赖
-     * （std.core 等 .cjo 包）中的 extend 声明不可见，例如 `extend Int64 <: Hashable`
-     * 不成立，公共超类型交集退化为 `Any`。
+     * 与主编译器同构：own 源码 extend 索引 + builtins 与依赖会话的 `extendProviderOrNull` 组合；
+     * 依赖会话的 extend provider 由各自工厂注册（builtins、binary library、resolvable library）。
+     * 循环模块依赖由 [CfirExtendProviderComposer] 的重入防护终止
+     * （见 `CfirExtendProviderComposerCycleTest`）。依赖会话自身若已被 builtins 根完全覆盖
+     * （`isCoveredByBuiltins`），组合时跳过，避免同一批 `.cjo` 产生两份 extend。
      *
-     * [dependencyProvidersRef] 惰性捕获依赖符号 provider 集合：extend provider 注册早于
-     * 依赖 provider 创建，只能在首次 extend 查询时求值。
+     * 历史备注：早期实现按 symbol provider 扁平装配；该路径无法让
+     * `moduleData.session.extendProviderOrNull` 对库 extend 成员可查，故已移除。
      */
-    protected fun LLCfirResolvableModuleSession.registerLLCfirExtendProvider(
-        dependencyProvidersRef: () -> List<CfirSymbolProvider>,
+    private fun LLCfirResolvableModuleSession.registerLLCfirExtendProviderFromSessions(
+        module: CaModule,
+        builtinsSession: LLCfirSession,
     ) {
+        /*
+         * 与主编译器同构：own 源码 extend 索引 + 依赖会话（builtins/refinement/普通依赖）的
+         * extend provider 组合。依赖会话的 extend provider 由各自工厂注册（builtins、binary
+         * library、resolvable library），这里只做组合，避免每个 session 重复构造
+         * `CfirDeserializedSymbolProvider`/`CjoManager`。
+         *
+         * 循环模块依赖由 `CfirExtendProviderComposer` 的重入防护终止（见
+         * `CfirExtendProviderComposerCycleTest`）。
+         */
         val ownProvider = LLCfirSessionExtendProvider(this, extendIndexStore)
-        val deserializedProvider = CfirExtendProviderComposer.lazyFromSymbolProviders(dependencyProvidersRef)
-        register(
-            CfirExtendProvider::class,
-            CfirExtendProviderComposer.lazyCombine(ownProvider) {
-                moduleData.allRefinementDependencies.mapNotNull { it.session.extendProviderOrNull } + deserializedProvider
-            },
-        )
+        val combinedProvider = CfirExtendProviderComposer.lazyCombine(ownProvider) {
+            buildList {
+                if (module !is CaBuiltinsModule) {
+                    builtinsSession.extendProviderOrNull?.let(::add)
+                }
+
+                computeDependencySessions(module)
+                    .filterNot { dependencySession -> dependencySession.isCoveredByBuiltins() }
+                    .mapNotNull { dependencySession -> dependencySession.extendProviderOrNull }
+                    .forEach(::add)
+            }
+        }
+
+        /*
+         * 物化只在「拥有该库的 session」内做一次（builtins session / binary library session），
+         * 这里只组合依赖会话的 provider。若在组合层再次包装，会把同一 extend 物化成两份实例，
+         * 触发 `CFIR_EXTEND_MEMBER_CANNOT_SHADOW` 等重复成员诊断。
+         */
+        register(CfirExtendProvider::class, combinedProvider)
+    }
+
+    /**
+     * 依赖 session 的库模块是否已被 builtins 根完全覆盖（覆盖时它的 extend 由 builtins 来源提供，
+     * 不再重复组合，避免同一批 `.cjo` 产生两份 `CfirExtend`）。
+     */
+    private fun LLCfirSession.isCoveredByBuiltins(): Boolean {
+        val dependencyModule = caModule
+        return dependencyModule is CaLibraryModule && isLibraryCoveredByBuiltins(dependencyModule)
+    }
+
+    /**
+     * 库的二进制根是否已被 builtins 根完全覆盖。
+     *
+     * SDK stdlib 可能同时经 builtins 与项目库两个通道暴露；已被覆盖时再建一份库 extend provider
+     * 会对同一批 `.cjo` 产生两份 `CfirExtend` 实例（同名成员出现重复候选）。
+     */
+    private fun isLibraryCoveredByBuiltins(libraryModule: CaLibraryModule): Boolean {
+        val roots = libraryModule.binaryRoots.mapNotNull { item -> item.virtualFile }
+        if (roots.isEmpty()) return false
+        return org.cangnova.cangjie.analysis.decompiled.psi.BuiltinsVirtualFileProvider.getInstance()
+            .areAllInBuiltinRoot(roots, project)
     }
 
     /**

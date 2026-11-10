@@ -32,8 +32,8 @@ import java.nio.file.Path
  * 1. `std.io.ByteBuffer` 的签名里不得出现 `std.core.Any`。`Byte` 是 std.core 的 typealias，
  *    `.cjo` 用 `TypeKind.Type` 记录它；一旦反序列化把 typealias 当错误类型，反编译文本就会把
  *    `Array<Byte>` 渲染成 `Array<Any>`（症状：使用点报 RETURN_TYPE_MISMATCH）。
- * 2. `std.core` 的泛型 extend（如 `Array<T>` 上的 `size`）必须出现在反编译文本里，
- *    否则 STUBS 模式下 `array.size` 会报 not-a-member。
+ * 2. `std.core` 的 `extend Array<T> <: Collection<T>`（其中实现 `size`）必须出现在反编译文本里，
+ *    否则 STUBS 模式下 `array.size` 会报 not-a-member、反编译视图也看不到 `size`。
  */
 class RealSdkDecompiledSignatureTest {
     /**
@@ -65,7 +65,11 @@ class RealSdkDecompiledSignatureTest {
     }
 
     /**
-     * `std.core` 的 `Array<T>` 泛型 extend（提供 `size` 等成员）必须出现在反编译文本里。
+     * `std.core` 的 `extend Array<T> <: Collection<T>` 必须出现在反编译文本里，且带 `size` 成员。
+     *
+     * `Array` 自身只声明 `rawptr/start/len/first`；`size` 声明在 `Collection<T>` 接口上，
+     * 由 `extend Array<T> <: Collection<T> { prop size }` 实现。文本丢失该 extend（或丢超类型/成员）
+     * 时，IDE 里 `array.size` 会报 not-a-member，且反编译视图里看不到 `size`。
      */
     @Test
     fun arrayExtendMembersAreDecompiled() = withCoreEnvironment {

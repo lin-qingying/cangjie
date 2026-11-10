@@ -1,0 +1,872 @@
+receiver=std.core.Array<std.core.Array<T>>
+supers=[]
+text=extend std.core.Array<std.core.Array<T>> {
+    @Frozen
+    public func flatten(): std.core.Array<T> { /* compiled code */ }
+}
+=====
+receiver=std.core.Array<T>
+supers=[Collection]
+text=extend std.core.Array<T> <: Collection {
+    @Frozen
+    public func iterator(): std.core.Iterator<T> { /* compiled code */ }
+
+    @Frozen
+    public prop size: Int64 {
+        get() { /* compiled code */ }
+    }
+
+    @Frozen
+    public func isEmpty(): Bool { /* compiled code */ }
+
+    @Frozen
+    p
+=====
+receiver=std.core.Array<T>
+supers=[ToString]
+text=extend std.core.Array<T> <: ToString {
+    @Frozen
+    public func toString(): std.core.String { /* compiled code */ }
+}
+=====
+receiver=std.core.Array<T>
+supers=[Equatable]
+text=extend std.core.Array<T> <: Equatable {
+    @Frozen
+    public operator func ==(that: std.core.Array<T>): Bool { /* compiled code */ }
+
+    @Frozen
+    public operator func !=(that: std.core.Array<T>): Bool { /* compiled code */ }
+
+    @Frozen
+    public func contains(element: T): Bool { /* compiled
+=====
+receiver=std.core.Box<T>
+supers=[Hashable]
+text=extend std.core.Box<T> <: Hashable {
+    public func hashCode(): Int64 { /* compiled code */ }
+}
+=====
+receiver=std.core.Box<T>
+supers=[Comparable]
+text=extend std.core.Box<T> <: Comparable {
+    public operator func ==(that: std.core.Box<T>): Bool { /* compiled code */ }
+
+    public operator func !=(that: std.core.Box<T>): Bool { /* compiled code */ }
+
+    public operator func >(that: std.core.Box<T>): Bool { /* compiled code */ }
+
+    public opera
+=====
+receiver=std.core.Box<T>
+supers=[ToString]
+text=extend std.core.Box<T> <: ToString {
+    public func toString(): std.core.String { /* compiled code */ }
+}
+=====
+receiver=UInt8
+supers=[]
+text=extend UInt8 {
+    public func isAsciiLetter(): Bool { /* compiled code */ }
+
+    public func isAsciiNumber(): Bool { /* compiled code */ }
+
+    public func isAsciiHex(): Bool { /* compiled code */ }
+
+    public func isAsciiOct(): Bool { /* compiled code */ }
+
+    public func isAsciiPunctuation(): B
+=====
+receiver=std.core.CPointer<T>
+supers=[]
+text=extend std.core.CPointer<T> {
+    public func isNull(): Bool { /* compiled code */ }
+
+    public func isNotNull(): Bool { /* compiled code */ }
+
+    public func toUIntNative(): UIntNative { /* compiled code */ }
+
+    @Frozen
+    public func read(): T { /* compiled code */ }
+
+    @Frozen
+    public f
+=====
+receiver=CString
+supers=[ToString]
+text=extend CString <: ToString {
+    public func getChars(): std.core.CPointer<UInt8> { /* compiled code */ }
+
+    public func isNull(): Bool { /* compiled code */ }
+
+    public func size(): Int64 { /* compiled code */ }
+
+    public func isEmpty(): Bool { /* compiled code */ }
+
+    public func isNotEmpt
+=====
+receiver=Rune
+supers=[]
+text=extend Rune {
+    public func isAsciiLetter(): Bool { /* compiled code */ }
+
+    public func isAsciiNumber(): Bool { /* compiled code */ }
+
+    public func isAsciiHex(): Bool { /* compiled code */ }
+
+    public func isAsciiOct(): Bool { /* compiled code */ }
+
+    public func isAsciiPunctuation(): Bo
+=====
+receiver=Rune
+supers=[Comparable]
+text=extend Rune <: Comparable {
+    public func compare(rhs: Rune): std.core.Ordering { /* compiled code */ }
+}
+=====
+receiver=std.core.Ordering
+supers=[ToString]
+text=extend std.core.Ordering <: ToString {
+    public func toString(): std.core.String { /* compiled code */ }
+}
+=====
+receiver=std.core.Ordering
+supers=[Comparable]
+text=extend std.core.Ordering <: Comparable {
+    public func compare(that: std.core.Ordering): std.core.Ordering { /* compiled code */ }
+}
+=====
+receiver=IntNative
+supers=[Comparable]
+text=extend IntNative <: Comparable {
+    public func compare(rhs: IntNative): std.core.Ordering { /* compiled code */ }
+}
+=====
+receiver=Int64
+supers=[Comparable]
+text=extend Int64 <: Comparable {
+    public func compare(rhs: Int64): std.core.Ordering { /* compiled code */ }
+
+    @Frozen
+    public operator func <(rhs: Int64): Bool { /* compiled code */ }
+
+    @Frozen
+    public operator func >(rhs: Int64): Bool { /* compiled code */ }
+
+    @Frozen
+    public oper
+=====
+receiver=Int32
+supers=[Comparable]
+text=extend Int32 <: Comparable {
+    public func compare(rhs: Int32): std.core.Ordering { /* compiled code */ }
+
+    @Frozen
+    public operator func <(rhs: Int32): Bool { /* compiled code */ }
+
+    @Frozen
+    public operator func >(rhs: Int32): Bool { /* compiled code */ }
+
+    @Frozen
+    public oper
+=====
+receiver=Int16
+supers=[Comparable]
+text=extend Int16 <: Comparable {
+    public func compare(rhs: Int16): std.core.Ordering { /* compiled code */ }
+
+    @Frozen
+    public operator func <(rhs: Int16): Bool { /* compiled code */ }
+
+    @Frozen
+    public operator func >(rhs: Int16): Bool { /* compiled code */ }
+
+    @Frozen
+    public oper
+=====
+receiver=Int8
+supers=[Comparable]
+text=extend Int8 <: Comparable {
+    public func compare(rhs: Int8): std.core.Ordering { /* compiled code */ }
+
+    @Frozen
+    public operator func <(rhs: Int8): Bool { /* compiled code */ }
+
+    @Frozen
+    public operator func >(rhs: Int8): Bool { /* compiled code */ }
+
+    @Frozen
+    public operator
+=====
+receiver=UIntNative
+supers=[Comparable]
+text=extend UIntNative <: Comparable {
+    public func compare(rhs: UIntNative): std.core.Ordering { /* compiled code */ }
+}
+=====
+receiver=UInt64
+supers=[Comparable]
+text=extend UInt64 <: Comparable {
+    public func compare(rhs: UInt64): std.core.Ordering { /* compiled code */ }
+
+    @Frozen
+    public operator func <(rhs: UInt64): Bool { /* compiled code */ }
+
+    @Frozen
+    public operator func >(rhs: UInt64): Bool { /* compiled code */ }
+
+    @Frozen
+    public 
+=====
+receiver=UInt32
+supers=[Comparable]
+text=extend UInt32 <: Comparable {
+    public func compare(rhs: UInt32): std.core.Ordering { /* compiled code */ }
+
+    @Frozen
+    public operator func <(rhs: UInt32): Bool { /* compiled code */ }
+
+    @Frozen
+    public operator func >(rhs: UInt32): Bool { /* compiled code */ }
+
+    @Frozen
+    public 
+=====
+receiver=UInt16
+supers=[Comparable]
+text=extend UInt16 <: Comparable {
+    public func compare(rhs: UInt16): std.core.Ordering { /* compiled code */ }
+
+    @Frozen
+    public operator func <(rhs: UInt16): Bool { /* compiled code */ }
+
+    @Frozen
+    public operator func >(rhs: UInt16): Bool { /* compiled code */ }
+
+    @Frozen
+    public 
+=====
+receiver=UInt8
+supers=[Comparable]
+text=extend UInt8 <: Comparable {
+    public func compare(rhs: UInt8): std.core.Ordering { /* compiled code */ }
+
+    @Frozen
+    public operator func <(rhs: UInt8): Bool { /* compiled code */ }
+
+    @Frozen
+    public operator func >(rhs: UInt8): Bool { /* compiled code */ }
+
+    @Frozen
+    public oper
+=====
+receiver=Float16
+supers=[Comparable]
+text=extend Float16 <: Comparable {
+    public func compare(rhs: Float16): std.core.Ordering { /* compiled code */ }
+
+    @Frozen
+    public operator func <(rhs: Float16): Bool { /* compiled code */ }
+
+    @Frozen
+    public operator func >(rhs: Float16): Bool { /* compiled code */ }
+
+    @Frozen
+    pub
+=====
+receiver=Float32
+supers=[Comparable]
+text=extend Float32 <: Comparable {
+    public func compare(rhs: Float32): std.core.Ordering { /* compiled code */ }
+
+    @Frozen
+    public operator func <(rhs: Float32): Bool { /* compiled code */ }
+
+    @Frozen
+    public operator func >(rhs: Float32): Bool { /* compiled code */ }
+
+    @Frozen
+    pub
+=====
+receiver=Float64
+supers=[Comparable]
+text=extend Float64 <: Comparable {
+    public func compare(rhs: Float64): std.core.Ordering { /* compiled code */ }
+
+    @Frozen
+    public operator func <(rhs: Float64): Bool { /* compiled code */ }
+
+    @Frozen
+    public operator func >(rhs: Float64): Bool { /* compiled code */ }
+
+    @Frozen
+    pub
+=====
+receiver=IntNative
+supers=[Countable]
+text=extend IntNative <: Countable {
+    public func position(): Int64 { /* compiled code */ }
+
+    public func next(right: Int64): IntNative { /* compiled code */ }
+}
+=====
+receiver=Int64
+supers=[Countable]
+text=extend Int64 <: Countable {
+    public func position(): Int64 { /* compiled code */ }
+
+    public func next(right: Int64): Int64 { /* compiled code */ }
+}
+=====
+receiver=Int32
+supers=[Countable]
+text=extend Int32 <: Countable {
+    public func position(): Int64 { /* compiled code */ }
+
+    public func next(right: Int64): Int32 { /* compiled code */ }
+}
+=====
+receiver=Int16
+supers=[Countable]
+text=extend Int16 <: Countable {
+    public func position(): Int64 { /* compiled code */ }
+
+    public func next(right: Int64): Int16 { /* compiled code */ }
+}
+=====
+receiver=Int8
+supers=[Countable]
+text=extend Int8 <: Countable {
+    public func position(): Int64 { /* compiled code */ }
+
+    public func next(right: Int64): Int8 { /* compiled code */ }
+}
+=====
+receiver=UIntNative
+supers=[Countable]
+text=extend UIntNative <: Countable {
+    public func position(): Int64 { /* compiled code */ }
+
+    public func next(right: Int64): UIntNative { /* compiled code */ }
+}
+=====
+receiver=UInt64
+supers=[Countable]
+text=extend UInt64 <: Countable {
+    public func position(): Int64 { /* compiled code */ }
+
+    public func next(right: Int64): UInt64 { /* compiled code */ }
+}
+=====
+receiver=UInt32
+supers=[Countable]
+text=extend UInt32 <: Countable {
+    public func position(): Int64 { /* compiled code */ }
+
+    public func next(right: Int64): UInt32 { /* compiled code */ }
+}
+=====
+receiver=UInt16
+supers=[Countable]
+text=extend UInt16 <: Countable {
+    public func position(): Int64 { /* compiled code */ }
+
+    public func next(right: Int64): UInt16 { /* compiled code */ }
+}
+=====
+receiver=UInt8
+supers=[Countable]
+text=extend UInt8 <: Countable {
+    public func position(): Int64 { /* compiled code */ }
+
+    public func next(right: Int64): UInt8 { /* compiled code */ }
+}
+=====
+receiver=Rune
+supers=[Countable]
+text=extend Rune <: Countable {
+    public func position(): Int64 { /* compiled code */ }
+
+    public func next(right: Int64): Rune { /* compiled code */ }
+}
+=====
+receiver=Int64
+supers=[]
+text=extend Int64 {
+    public operator func *(r: std.core.Duration): std.core.Duration { /* compiled code */ }
+}
+=====
+receiver=Int64
+supers=[]
+text=extend Int64 {
+    internal operator func -(r: UInt32): Int64 { /* compiled code */ }
+}
+=====
+receiver=UInt64
+supers=[]
+text=extend UInt64 {
+    internal operator func *(r: UInt32): UInt64 { /* compiled code */ }
+
+    internal operator func /(r: UInt32): UInt64 { /* compiled code */ }
+
+    internal operator func %(r: UInt32): UInt32 { /* compiled code */ }
+}
+=====
+receiver=UInt32
+supers=[]
+text=extend UInt32 {
+    internal operator func *(r: UInt64): UInt64 { /* compiled code */ }
+}
+=====
+receiver=Float64
+supers=[]
+text=extend Float64 {
+    public operator func *(r: std.core.Duration): std.core.Duration { /* compiled code */ }
+}
+=====
+receiver=std.core.StringBuilder
+supers=[]
+text=extend std.core.StringBuilder {
+    internal func append(num: Int64, unit: std.core.String): std.core.StringBuilder { /* compiled code */ }
+}
+=====
+receiver=Bool
+supers=[Equatable]
+text=extend Bool <: Equatable {
+    public operator func ==(right: Bool): Bool { /* compiled code */ }
+}
+=====
+receiver=Unit
+supers=[Equatable]
+text=extend Unit <: Equatable {
+    public operator func ==(right: Unit): Bool { /* compiled code */ }
+}
+=====
+receiver=std.core.Range<T>
+supers=[Equatable]
+text=extend std.core.Range<T> <: Equatable {
+    public operator func ==(that: std.core.Range<T>): Bool { /* compiled code */ }
+}
+=====
+receiver=Float64
+supers=[]
+text=extend Float64 {
+    public static func fromBits(bits: UInt64): Float64 { /* compiled code */ }
+
+    public func toBits(): UInt64 { /* compiled code */ }
+}
+=====
+receiver=Float32
+supers=[]
+text=extend Float32 {
+    public static func fromBits(bits: UInt32): Float32 { /* compiled code */ }
+
+    public func toBits(): UInt32 { /* compiled code */ }
+}
+=====
+receiver=Float16
+supers=[]
+text=extend Float16 {
+    public static func fromBits(bits: UInt16): Float16 { /* compiled code */ }
+
+    public func toBits(): UInt16 { /* compiled code */ }
+}
+=====
+receiver=UInt64
+supers=[BitCastRange]
+text=extend UInt64 <: BitCastRange {
+}
+=====
+receiver=Float64
+supers=[BitCastRange]
+text=extend Float64 <: BitCastRange {
+}
+=====
+receiver=UInt32
+supers=[BitCastRange]
+text=extend UInt32 <: BitCastRange {
+}
+=====
+receiver=Float32
+supers=[BitCastRange]
+text=extend Float32 <: BitCastRange {
+}
+=====
+receiver=UInt16
+supers=[BitCastRange]
+text=extend UInt16 <: BitCastRange {
+}
+=====
+receiver=Float16
+supers=[BitCastRange]
+text=extend Float16 <: BitCastRange {
+}
+=====
+receiver=std.core.Ordering
+supers=[Hashable]
+text=extend std.core.Ordering <: Hashable {
+    public func hashCode(): Int64 { /* compiled code */ }
+}
+=====
+receiver=Unit
+supers=[Hashable]
+text=extend Unit <: Hashable {
+    public func hashCode(): Int64 { /* compiled code */ }
+}
+=====
+receiver=Bool
+supers=[Hashable]
+text=extend Bool <: Hashable {
+    public func hashCode(): Int64 { /* compiled code */ }
+}
+=====
+receiver=Rune
+supers=[Hashable]
+text=extend Rune <: Hashable {
+    public func hashCode(): Int64 { /* compiled code */ }
+}
+=====
+receiver=IntNative
+supers=[Hashable]
+text=extend IntNative <: Hashable {
+    public func hashCode(): Int64 { /* compiled code */ }
+
+    public static prop Max: IntNative {
+        get() { /* compiled code */ }
+    }
+
+    public static prop Min: IntNative {
+        get() { /* compiled code */ }
+    }
+}
+=====
+receiver=Int64
+supers=[Hashable]
+text=extend Int64 <: Hashable {
+    public func hashCode(): Int64 { /* compiled code */ }
+
+    public static prop Max: Int64 {
+        get() { /* compiled code */ }
+    }
+
+    public static prop Min: Int64 {
+        get() { /* compiled code */ }
+    }
+}
+=====
+receiver=Int32
+supers=[Hashable]
+text=extend Int32 <: Hashable {
+    public func hashCode(): Int64 { /* compiled code */ }
+
+    public static prop Max: Int32 {
+        get() { /* compiled code */ }
+    }
+
+    public static prop Min: Int32 {
+        get() { /* compiled code */ }
+    }
+}
+=====
+receiver=Int16
+supers=[Hashable]
+text=extend Int16 <: Hashable {
+    public func hashCode(): Int64 { /* compiled code */ }
+
+    public static prop Max: Int16 {
+        get() { /* compiled code */ }
+    }
+
+    public static prop Min: Int16 {
+        get() { /* compiled code */ }
+    }
+}
+=====
+receiver=Int8
+supers=[Hashable]
+text=extend Int8 <: Hashable {
+    public func hashCode(): Int64 { /* compiled code */ }
+
+    public static prop Max: Int8 {
+        get() { /* compiled code */ }
+    }
+
+    public static prop Min: Int8 {
+        get() { /* compiled code */ }
+    }
+}
+=====
+receiver=UIntNative
+supers=[Hashable]
+text=extend UIntNative <: Hashable {
+    public func hashCode(): Int64 { /* compiled code */ }
+
+    public static prop Max: UIntNative {
+        get() { /* compiled code */ }
+    }
+
+    public static prop Min: UIntNative {
+        get() { /* compiled code */ }
+    }
+}
+=====
+receiver=UInt64
+supers=[Hashable]
+text=extend UInt64 <: Hashable {
+    public func hashCode(): Int64 { /* compiled code */ }
+
+    public static prop Max: UInt64 {
+        get() { /* compiled code */ }
+    }
+
+    public static prop Min: UInt64 {
+        get() { /* compiled code */ }
+    }
+}
+=====
+receiver=UInt32
+supers=[Hashable]
+text=extend UInt32 <: Hashable {
+    public func hashCode(): Int64 { /* compiled code */ }
+
+    public static prop Max: UInt32 {
+        get() { /* compiled code */ }
+    }
+
+    public static prop Min: UInt32 {
+        get() { /* compiled code */ }
+    }
+}
+=====
+receiver=UInt16
+supers=[Hashable]
+text=extend UInt16 <: Hashable {
+    public func hashCode(): Int64 { /* compiled code */ }
+
+    public static prop Max: UInt16 {
+        get() { /* compiled code */ }
+    }
+
+    public static prop Min: UInt16 {
+        get() { /* compiled code */ }
+    }
+}
+=====
+receiver=UInt8
+supers=[Hashable]
+text=extend UInt8 <: Hashable {
+    public func hashCode(): Int64 { /* compiled code */ }
+
+    public static prop Max: UInt8 {
+        get() { /* compiled code */ }
+    }
+
+    public static prop Min: UInt8 {
+        get() { /* compiled code */ }
+    }
+}
+=====
+receiver=Float64
+supers=[Hashable]
+text=extend Float64 <: Hashable {
+    public func hashCode(): Int64 { /* compiled code */ }
+
+    public static prop NaN: Float64 {
+        get() { /* compiled code */ }
+    }
+
+    public static prop Inf: Float64 {
+        get() { /* compiled code */ }
+    }
+
+    public static prop Max: Float64 {
+        
+=====
+receiver=Float32
+supers=[Hashable]
+text=extend Float32 <: Hashable {
+    public func hashCode(): Int64 { /* compiled code */ }
+
+    public static prop NaN: Float32 {
+        get() { /* compiled code */ }
+    }
+
+    public static prop Inf: Float32 {
+        get() { /* compiled code */ }
+    }
+
+    public static prop Max: Float32 {
+        
+=====
+receiver=Float16
+supers=[Hashable]
+text=extend Float16 <: Hashable {
+    public func hashCode(): Int64 { /* compiled code */ }
+
+    public static prop NaN: Float16 {
+        get() { /* compiled code */ }
+    }
+
+    public static prop Inf: Float16 {
+        get() { /* compiled code */ }
+    }
+
+    public static prop Max: Float16 {
+        
+=====
+receiver=std.core.Range<T>
+supers=[Hashable]
+text=extend std.core.Range<T> <: Hashable {
+    public func hashCode(): Int64 { /* compiled code */ }
+}
+=====
+receiver=std.core.Iterator<T>
+supers=[]
+text=extend std.core.Iterator<T> {
+    @Frozen
+    public func contains(element: T): Bool { /* compiled code */ }
+}
+=====
+receiver=std.core.Iterator<T>
+supers=[]
+text=extend std.core.Iterator<T> {
+    public func max(): std.core.Option<T> { /* compiled code */ }
+
+    public func min(): std.core.Option<T> { /* compiled code */ }
+}
+=====
+receiver=std.core.Iterator<T>
+supers=[]
+text=extend std.core.Iterator<T> {
+    @Frozen
+    public func zip<R>(it: std.core.Iterator<R>): std.core.Iterator<(T, R)> { /* compiled code */ }
+
+    @Frozen
+    public func enumerate(): std.core.Iterator<(Int64, T)> { /* compiled code */ }
+
+    @Frozen
+    public func filter(predicate: (T) -> Bool): s
+=====
+receiver=std.core.Option<T>
+supers=[Equatable]
+text=extend std.core.Option<T> <: Equatable {
+    @Frozen
+    public operator func ==(that: std.core.Option<T>): Bool { /* compiled code */ }
+
+    @Frozen
+    public operator func !=(that: std.core.Option<T>): Bool { /* compiled code */ }
+}
+=====
+receiver=std.core.Option<T>
+supers=[ToString]
+text=extend std.core.Option<T> <: ToString {
+    public func toString(): std.core.String { /* compiled code */ }
+}
+=====
+receiver=std.core.Option<T>
+supers=[Hashable]
+text=extend std.core.Option<T> <: Hashable {
+    public func hashCode(): Int64 { /* compiled code */ }
+}
+=====
+receiver=std.core.Option<std.core.Option<T>>
+supers=[]
+text=extend std.core.Option<std.core.Option<T>> {
+    public func flatten(): std.core.Option<T> { /* compiled code */ }
+}
+=====
+receiver=Int64
+supers=[ToString]
+text=extend Int64 <: ToString {
+    public func toString(): std.core.String { /* compiled code */ }
+}
+=====
+receiver=IntNative
+supers=[ToString]
+text=extend IntNative <: ToString {
+    public func toString(): std.core.String { /* compiled code */ }
+}
+=====
+receiver=Int32
+supers=[ToString]
+text=extend Int32 <: ToString {
+    public func toString(): std.core.String { /* compiled code */ }
+}
+=====
+receiver=Int16
+supers=[ToString]
+text=extend Int16 <: ToString {
+    public func toString(): std.core.String { /* compiled code */ }
+}
+=====
+receiver=Int8
+supers=[ToString]
+text=extend Int8 <: ToString {
+    public func toString(): std.core.String { /* compiled code */ }
+}
+=====
+receiver=UInt64
+supers=[ToString]
+text=extend UInt64 <: ToString {
+    public func toString(): std.core.String { /* compiled code */ }
+}
+=====
+receiver=UIntNative
+supers=[ToString]
+text=extend UIntNative <: ToString {
+    public func toString(): std.core.String { /* compiled code */ }
+}
+=====
+receiver=UInt32
+supers=[ToString]
+text=extend UInt32 <: ToString {
+    public func toString(): std.core.String { /* compiled code */ }
+}
+=====
+receiver=UInt16
+supers=[ToString]
+text=extend UInt16 <: ToString {
+    public func toString(): std.core.String { /* compiled code */ }
+}
+=====
+receiver=UInt8
+supers=[ToString]
+text=extend UInt8 <: ToString {
+    public func toString(): std.core.String { /* compiled code */ }
+}
+=====
+receiver=Float64
+supers=[ToString]
+text=extend Float64 <: ToString {
+    public func toString(): std.core.String { /* compiled code */ }
+}
+=====
+receiver=Float32
+supers=[ToString]
+text=extend Float32 <: ToString {
+    public func toString(): std.core.String { /* compiled code */ }
+}
+=====
+receiver=Float16
+supers=[ToString]
+text=extend Float16 <: ToString {
+    public func toString(): std.core.String { /* compiled code */ }
+}
+=====
+receiver=Bool
+supers=[ToString]
+text=extend Bool <: ToString {
+    public func toString(): std.core.String { /* compiled code */ }
+}
+=====
+receiver=Rune
+supers=[ToString]
+text=extend Rune <: ToString {
+    public func toString(): std.core.String { /* compiled code */ }
+}
+=====
+receiver=Unit
+supers=[ToString]
+text=extend Unit <: ToString {
+    public func toString(): std.core.String { /* compiled code */ }
+}

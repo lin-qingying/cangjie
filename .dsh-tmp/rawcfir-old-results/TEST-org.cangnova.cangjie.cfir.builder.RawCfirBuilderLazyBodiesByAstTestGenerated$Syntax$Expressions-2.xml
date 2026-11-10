@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Expressions" tests="38" skipped="0" failures="0" errors="0" timestamp="2026-11-01T10:00:52.234Z" hostname="LIN" time="0.77">
+  <properties/>
+  <testcase name="testThisTypeReturns" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Expressions" time="0.004"/>
+  <testcase name="testIfWhileForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Expressions" time="0.011"/>
+  <testcase name="testTryForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Expressions" time="0.006"/>
+  <testcase name="testThisSuperQualified" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Expressions" time="0.011"/>
+  <testcase name="testTryCatchForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Expressions" time="0.004"/>
+  <testcase name="testOperatorForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Expressions" time="0.005"/>
+  <testcase name="testSubscriptOperatorForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Expressions" time="0.022"/>
+  <testcase name="testIndexAndSliceForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Expressions" time="0.004"/>
+  <testcase name="testLambdaCallForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Expressions" time="0.004"/>
+  <testcase name="testBitwiseCompoundAssignForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Expressions" time="0.002"/>
+  <testcase name="testPowerOperatorForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Expressions" time="0.005"/>
+  <testcase name="testMatchCaseBodyForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Expressions" time="0.021"/>
+  <testcase name="testQuestForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Expressions" time="0.01"/>
+  <testcase name="testUnsafeAndForeignCall" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Expressions" time="0.005"/>
+  <testcase name="testSynchronizedForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Expressions" time="0.004"/>
+  <testcase name="testRangeStepForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Expressions" time="0.003"/>
+  <testcase name="testSynchronizedExprForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Expressions" time="0.006"/>
+  <testcase name="testLetPatternForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Expressions" time="0.002"/>
+  <testcase name="testConstructionForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Expressions" time="0.01"/>
+  <testcase name="testArrayOfInterfaceTypes" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Expressions" time="0.043"/>
+  <testcase name="testTypeConvForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Expressions" time="0.005"/>
+  <testcase name="testAllFilesPresentInExpressions" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Expressions" time="0.459"/>
+  <testcase name="testNumericConversionForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Expressions" time="0.004"/>
+  <testcase name="testLambdaTypedForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Expressions" time="0.008"/>
+  <testcase name="testStringTemplateForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Expressions" time="0.005"/>
+  <testcase name="testTryResourceForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Expressions" time="0.009"/>
+  <testcase name="testMemberAccessForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Expressions" time="0.026"/>
+  <testcase name="testTypeCheckForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Expressions" time="0.007"/>
+  <testcase name="testMatchForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Expressions" time="0.006"/>
+  <testcase name="testControlFlowExprForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Expressions" time="0.004"/>
+  <testcase name="testBlockAndParenForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Expressions" time="0.006"/>
+  <testcase name="testExceptionThrowForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Expressions" time="0.006"/>
+  <testcase name="testAssignmentForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Expressions" time="0.003"/>
+  <testcase name="testGenericCallForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Expressions" time="0.008"/>
+  <testcase name="testNestedTypeRefForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Expressions" time="0.007"/>
+  <testcase name="testIncDecForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Expressions" time="0.008"/>
+  <testcase name="testMultipleAssignForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Expressions" time="0.002"/>
+  <testcase name="testLambdaForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Expressions" time="0.009"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

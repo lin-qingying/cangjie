@@ -31,10 +31,15 @@ object DeclarationSuggestionTestServiceRegistrar : AnalysisApiTestServiceRegistr
 
 /**
  * 固定的生成服务：无论问哪个类型都返回同一条成员。
+ *
+ * 写入路径留空：本区段只消费「收集」结果来渲染候选，插入行为由
+ * `CangJieMemberGenerationServiceImplTest` 覆盖。
  */
 private object FakeGenerationService : CangJieMemberGenerationService {
     override fun collectUnimplementedMembers(typeStatement: CjTypeStatement): List<CangJieGeneratableMember> =
         listOf(FakeMember)
+
+    override fun generateMembers(typeStatement: CjTypeStatement, members: List<CangJieGeneratableMember>) = Unit
 }
 
 /**

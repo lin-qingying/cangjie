@@ -1,0 +1,675 @@
+{
+ "per_task": {
+  ":analysis:analysis-api-cfir:test": {
+   "tests": 1694,
+   "passed": 1694
+  },
+  ":analysis:analysis-api-standalone:test": {
+   "tests": 720,
+   "passed": 720
+  },
+  ":analysis:analysis-performance-test:test": {
+   "tests": 32,
+   "passed": 32
+  },
+  ":analysis:analysis-real-project-test:test": {
+   "tests": 14,
+   "passed": 13,
+   "failure": 1
+  },
+  ":analysis:cj-references:test": {
+   "tests": 5,
+   "passed": 5
+  },
+  ":analysis:decompiled:decompiler-to-file-stubs:test": {
+   "tests": 6,
+   "passed": 6
+  },
+  ":analysis:decompiled:decompiler-to-psi:test": {
+   "tests": 43,
+   "passed": 43
+  },
+  ":analysis:decompiled:decompiler-to-stubs:test": {
+   "tests": 10,
+   "passed": 10
+  },
+  ":analysis:light-declarations:test": {
+   "tests": 3,
+   "passed": 3
+  },
+  ":analysis:low-level-api-cfir:test": {
+   "tests": 1,
+   "failure": 1
+  },
+  ":analysis:macro-expansion:test": {
+   "tests": 10,
+   "passed": 10
+  },
+  ":analysis:stubs:test": {
+   "tests": 8,
+   "passed": 8
+  },
+  ":analysis:symbol-light-declarations:test": {
+   "tests": 8,
+   "passed": 8
+  },
+  ":cfir:analysis-tests:test": {
+   "tests": 9305,
+   "passed": 8778,
+   "failure": 59,
+   "skipped": 468
+  },
+  ":cfir:cfir-common:test": {
+   "tests": 4,
+   "passed": 4
+  },
+  ":cfir:cfir-cones:test": {
+   "tests": 21,
+   "passed": 21
+  },
+  ":cfir:cfir-serialization:test": {
+   "tests": 125,
+   "passed": 120,
+   "skipped": 5
+  },
+  ":cfir:cfir-tree:test": {
+   "tests": 8,
+   "passed": 8
+  },
+  ":cfir:providers:test": {
+   "tests": 43,
+   "passed": 43
+  },
+  ":cfir:raw-cfir:light-tree2cfir:test": {
+   "tests": 1131,
+   "passed": 1131
+  },
+  ":cfir:raw-cfir:psi2cfir:test": {
+   "tests": 3232,
+   "passed": 3232
+  },
+  ":cfir:resolve:test": {
+   "tests": 153,
+   "passed": 153
+  },
+  ":chir:cfir2chir:test": {
+   "tests": 28,
+   "passed": 28
+  },
+  ":chir:chir-tree:test": {
+   "tests": 41,
+   "passed": 40,
+   "skipped": 1
+  },
+  ":code-insight:completion:impl-shared:test": {
+   "tests": 85,
+   "passed": 85
+  },
+  ":code-insight:folding:test": {
+   "tests": 5,
+   "passed": 5
+  },
+  ":code-insight:formatting:test": {
+   "tests": 1,
+   "passed": 1
+  },
+  ":code-insight:highlighting:test": {
+   "tests": 16,
+   "passed": 16
+  },
+  ":code-insight:override-implement:test": {
+   "tests": 1,
+   "passed": 1
+  },
+  ":common:test": {
+   "tests": 44,
+   "passed": 44
+  },
+  ":compiler:cli:test": {
+   "tests": 2,
+   "passed": 2
+  },
+  ":compiler:codegen:test": {
+   "tests": 78,
+   "passed": 74,
+   "skipped": 4
+  },
+  ":compiler:config:test": {
+   "tests": 11,
+   "passed": 11
+  },
+  ":compiler:frontend:test": {
+   "tests": 130,
+   "passed": 130
+  },
+  ":compiler:jvm-codegen:test": {
+   "tests": 66,
+   "passed": 66
+  },
+  ":compiler:phaser:test": {
+   "tests": 6,
+   "passed": 6
+  },
+  ":llvm-interop:llvm-interop-api:test": {
+   "tests": 8,
+   "passed": 8
+  },
+  ":llvm-interop:llvm-interop-jni:test": {
+   "tests": 15,
+   "passed": 15
+  },
+  ":lsp:test": {
+   "tests": 121,
+   "skipped": 7,
+   "passed": 114
+  },
+  ":macro:macro-process:test": {
+   "tests": 22,
+   "skipped": 1,
+   "passed": 21
+  },
+  ":macro:macro-stub:test": {
+   "tests": 7,
+   "passed": 7
+  },
+  ":psi:test": {
+   "tests": 285,
+   "passed": 285
+  },
+  ":resolution.common:test": {
+   "tests": 14,
+   "passed": 14
+  }
+ },
+ "failures": [
+  {
+   "task": ":analysis:analysis-real-project-test:test",
+   "class": "org.cangnova.cangjie.analysis.realproject.RealProjectAnalysisTest",
+   "name": "realProject(CjFile, CjTestModule)",
+   "kind": "failure",
+   "type": "org.opentest4j.AssertionFailedError",
+   "msg": "org.opentest4j.AssertionFailedError: 1/3 个真实项目分析失败:"
+  },
+  {
+   "task": ":analysis:low-level-api-cfir:test",
+   "class": "org.cangnova.cangjie.analysis.low.level.api.cfir.BuiltinConstructorParameterCompiledSymbolTest",
+   "name": "builtinConstructorParameterCompiledSymbol(CjFile)",
+   "kind": "failure",
+   "type": "java.util.NoSuchElementException",
+   "msg": "java.util.NoSuchElementException: Collection is empty."
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroPsiTestGenerated$Llt$APILevelChecker$Hide",
+   "name": "testMixMacro1()",
+   "kind": "failure",
+   "type": "org.opentest4j.MultipleFailuresError",
+   "msg": "org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)"
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroPsiTestGenerated$Llt$APILevelChecker$Hide",
+   "name": "testMixMacro2()",
+   "kind": "failure",
+   "type": "org.opentest4j.MultipleFailuresError",
+   "msg": "org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)"
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroPsiTestGenerated$Llt$APILevelChecker$Hide",
+   "name": "testMixMacro1Use()",
+   "kind": "failure",
+   "type": "org.opentest4j.MultipleFailuresError",
+   "msg": "org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)"
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroPsiTestGenerated$Llt$APILevelChecker$Hide",
+   "name": "testMixMacro2Use()",
+   "kind": "failure",
+   "type": "org.opentest4j.MultipleFailuresError",
+   "msg": "org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)"
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroPsiTestGenerated$Llt$UnusedImport$UnusedImport005",
+   "name": "testUnused002()",
+   "kind": "failure",
+   "type": "java.lang.IllegalStateException",
+   "msg": "java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced."
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroPsiTestGenerated$Llt$UnusedImport$UnusedImport002",
+   "name": "testUnused012()",
+   "kind": "failure",
+   "type": "java.lang.IllegalStateException",
+   "msg": "java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced."
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroTestGenerated$Llt$UnusedImport$UnusedImport005$Unused003",
+   "name": "testUnused003()",
+   "kind": "failure",
+   "type": "org.opentest4j.MultipleFailuresError",
+   "msg": "org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)"
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroTestGenerated$Llt$UnusedImport$UnusedImport001$Unused014",
+   "name": "testUnused()",
+   "kind": "failure",
+   "type": "java.lang.IllegalStateException",
+   "msg": "java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced."
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroTestGenerated$Llt$UnusedImport$UnusedImport005$Unused004",
+   "name": "testUnused004()",
+   "kind": "failure",
+   "type": "java.lang.IllegalStateException",
+   "msg": "java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced."
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroTestGenerated$Llt$UnusedImport$UnusedImport005$Unused006",
+   "name": "testUnused006()",
+   "kind": "failure",
+   "type": "java.lang.IllegalStateException",
+   "msg": "java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced."
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroPsiTestGenerated$Llt$Typealias$ImportMacroAlias",
+   "name": "testTypeaslias()",
+   "kind": "failure",
+   "type": "java.lang.IllegalStateException",
+   "msg": "java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced."
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroPsiTestGenerated$Llt$UnusedImport$UnusedImport005$Unused006",
+   "name": "testUnused006()",
+   "kind": "failure",
+   "type": "java.lang.IllegalStateException",
+   "msg": "java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced."
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroTestGenerated$Llt$UnusedImport$UnusedImport002",
+   "name": "testUnused012()",
+   "kind": "failure",
+   "type": "java.lang.IllegalStateException",
+   "msg": "java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced."
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroPsiTestGenerated$Llt$UnusedImport$UnusedImport001$Unused014",
+   "name": "testUnused()",
+   "kind": "failure",
+   "type": "java.lang.IllegalStateException",
+   "msg": "java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced."
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroPsiTestGenerated$Llt$UnusedImport$UnusedImport005$Unused004",
+   "name": "testUnused004()",
+   "kind": "failure",
+   "type": "java.lang.IllegalStateException",
+   "msg": "java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced."
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroTestGenerated$Llt$UnusedImport$UnusedImport005",
+   "name": "testUnused002()",
+   "kind": "failure",
+   "type": "java.lang.IllegalStateException",
+   "msg": "java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced."
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroPsiTestGenerated$Llt$UnusedImport$UnusedImport005$Unused003",
+   "name": "testUnused003()",
+   "kind": "failure",
+   "type": "org.opentest4j.MultipleFailuresError",
+   "msg": "org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)"
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroTestGenerated$Llt$Typealias$ImportMacroAlias",
+   "name": "testTypeaslias()",
+   "kind": "failure",
+   "type": "java.lang.IllegalStateException",
+   "msg": "java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced."
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisDiagnostics2PsiTestGenerated$Enum",
+   "name": "testEnumEntryShadowedByTypeName()",
+   "kind": "failure",
+   "type": "org.opentest4j.AssertionFailedError",
+   "msg": "org.opentest4j.AssertionFailedError: Actual data differs from file content: enumEntryShadowedByTypeName.cj "
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisDiagnostics2PsiTestGenerated$Modifier",
+   "name": "testPackageAccessModifier()",
+   "kind": "failure",
+   "type": "org.opentest4j.AssertionFailedError",
+   "msg": "org.opentest4j.AssertionFailedError: Actual data differs from file content: packageAccessModifier.cj "
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisDiagnostics2TestGenerated$Enum",
+   "name": "testEnumEntryShadowedByTypeName()",
+   "kind": "failure",
+   "type": "org.opentest4j.AssertionFailedError",
+   "msg": "org.opentest4j.AssertionFailedError: Actual data differs from file content: enumEntryShadowedByTypeName.cj "
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroPsiTestGenerated$Llt$Annotation$Globals",
+   "name": "testDerive()",
+   "kind": "failure",
+   "type": "java.lang.IllegalStateException",
+   "msg": "java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced."
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroPsiTestGenerated",
+   "name": "testSameProjectMacroPackageDeclarationReference()",
+   "kind": "failure",
+   "type": "java.lang.IllegalStateException",
+   "msg": "java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced."
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroPsiTestGenerated",
+   "name": "testSameProjectMacroPackageExpressionRootPackage()",
+   "kind": "failure",
+   "type": "java.lang.IllegalStateException",
+   "msg": "java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced."
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroPsiTestGenerated",
+   "name": "testSameProjectMacroGeneratedAlphaEquivalentGenericConflict()",
+   "kind": "failure",
+   "type": "org.opentest4j.MultipleFailuresError",
+   "msg": "org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)"
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroPsiTestGenerated",
+   "name": "testSameProjectMacroGeneratedReferenceDoesNotConflict()",
+   "kind": "failure",
+   "type": "java.lang.IllegalStateException",
+   "msg": "java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced."
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroPsiTestGenerated",
+   "name": "testSameProjectMacroGroupConflict()",
+   "kind": "failure",
+   "type": "org.opentest4j.MultipleFailuresError",
+   "msg": "org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)"
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroPsiTestGenerated",
+   "name": "testSameProjectMacroReturnTypeOnlyConflict()",
+   "kind": "failure",
+   "type": "org.opentest4j.MultipleFailuresError",
+   "msg": "org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)"
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroPsiTestGenerated",
+   "name": "testSameProjectMacroPackageExpressionAliasImport()",
+   "kind": "failure",
+   "type": "java.lang.IllegalStateException",
+   "msg": "java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced."
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroPsiTestGenerated",
+   "name": "testSameProjectMacroPackageImportOnly()",
+   "kind": "failure",
+   "type": "java.lang.IllegalStateException",
+   "msg": "java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced."
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroPsiTestGenerated",
+   "name": "testSameProjectMacroPackageExpressionAllUnderImport()",
+   "kind": "failure",
+   "type": "java.lang.IllegalStateException",
+   "msg": "java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced."
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroPsiTestGenerated",
+   "name": "testSameProjectMacroExpressionBodySemantics()",
+   "kind": "failure",
+   "type": "java.lang.IllegalStateException",
+   "msg": "java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced."
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroPsiTestGenerated",
+   "name": "testSameProjectMacroPackageExpression()",
+   "kind": "failure",
+   "type": "java.lang.IllegalStateException",
+   "msg": "java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced."
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroPsiTestGenerated",
+   "name": "testSameProjectGeneratedDeclarationConflict()",
+   "kind": "failure",
+   "type": "org.opentest4j.MultipleFailuresError",
+   "msg": "org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)"
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroPsiTestGenerated",
+   "name": "testSameProjectMacroGeneratedTypeAliasConflict()",
+   "kind": "failure",
+   "type": "org.opentest4j.MultipleFailuresError",
+   "msg": "org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)"
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroPsiTestGenerated",
+   "name": "testSamePackageCrossFileGeneratedDeclarationConflict()",
+   "kind": "failure",
+   "type": "org.opentest4j.MultipleFailuresError",
+   "msg": "org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)"
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroPsiTestGenerated",
+   "name": "testSameProjectMacroPackagePublicImportExpression()",
+   "kind": "failure",
+   "type": "java.lang.IllegalStateException",
+   "msg": "java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced."
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroPsiTestGenerated",
+   "name": "testSameProjectMacroGeneratedParameterOverload()",
+   "kind": "failure",
+   "type": "java.lang.IllegalStateException",
+   "msg": "java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced."
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroTestGenerated$Llt$Annotation$Globals",
+   "name": "testDerive()",
+   "kind": "failure",
+   "type": "java.lang.IllegalStateException",
+   "msg": "java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced."
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroTestGenerated$Llt$APILevelChecker$Hide",
+   "name": "testMixMacro1()",
+   "kind": "failure",
+   "type": "org.opentest4j.MultipleFailuresError",
+   "msg": "org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)"
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroTestGenerated$Llt$APILevelChecker$Hide",
+   "name": "testMixMacro2()",
+   "kind": "failure",
+   "type": "org.opentest4j.MultipleFailuresError",
+   "msg": "org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)"
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroTestGenerated$Llt$APILevelChecker$Hide",
+   "name": "testMixMacro1Use()",
+   "kind": "failure",
+   "type": "org.opentest4j.MultipleFailuresError",
+   "msg": "org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)"
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroTestGenerated$Llt$APILevelChecker$Hide",
+   "name": "testMixMacro2Use()",
+   "kind": "failure",
+   "type": "org.opentest4j.MultipleFailuresError",
+   "msg": "org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)"
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroTestGenerated",
+   "name": "testSameProjectMacroPackageDeclarationReference()",
+   "kind": "failure",
+   "type": "java.lang.IllegalStateException",
+   "msg": "java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced."
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroTestGenerated",
+   "name": "testSameProjectMacroPackageExpressionRootPackage()",
+   "kind": "failure",
+   "type": "java.lang.IllegalStateException",
+   "msg": "java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced."
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroTestGenerated",
+   "name": "testSameProjectMacroGeneratedAlphaEquivalentGenericConflict()",
+   "kind": "failure",
+   "type": "org.opentest4j.MultipleFailuresError",
+   "msg": "org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)"
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroTestGenerated",
+   "name": "testSameProjectMacroGeneratedReferenceDoesNotConflict()",
+   "kind": "failure",
+   "type": "java.lang.IllegalStateException",
+   "msg": "java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced."
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroTestGenerated",
+   "name": "testSameProjectMacroGroupConflict()",
+   "kind": "failure",
+   "type": "org.opentest4j.MultipleFailuresError",
+   "msg": "org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)"
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroTestGenerated",
+   "name": "testSameProjectMacroReturnTypeOnlyConflict()",
+   "kind": "failure",
+   "type": "org.opentest4j.MultipleFailuresError",
+   "msg": "org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)"
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroTestGenerated",
+   "name": "testSameProjectMacroPackageExpressionAliasImport()",
+   "kind": "failure",
+   "type": "java.lang.IllegalStateException",
+   "msg": "java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced."
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroTestGenerated",
+   "name": "testSameProjectMacroPackageImportOnly()",
+   "kind": "failure",
+   "type": "java.lang.IllegalStateException",
+   "msg": "java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced."
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroTestGenerated",
+   "name": "testSameProjectMacroPackageExpressionAllUnderImport()",
+   "kind": "failure",
+   "type": "java.lang.IllegalStateException",
+   "msg": "java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced."
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroTestGenerated",
+   "name": "testSameProjectMacroExpressionBodySemantics()",
+   "kind": "failure",
+   "type": "java.lang.IllegalStateException",
+   "msg": "java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced."
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroTestGenerated",
+   "name": "testSameProjectMacroPackageExpression()",
+   "kind": "failure",
+   "type": "java.lang.IllegalStateException",
+   "msg": "java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced."
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroTestGenerated",
+   "name": "testSameProjectGeneratedDeclarationConflict()",
+   "kind": "failure",
+   "type": "org.opentest4j.MultipleFailuresError",
+   "msg": "org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)"
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroTestGenerated",
+   "name": "testSameProjectMacroGeneratedTypeAliasConflict()",
+   "kind": "failure",
+   "type": "org.opentest4j.MultipleFailuresError",
+   "msg": "org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)"
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroTestGenerated",
+   "name": "testSamePackageCrossFileGeneratedDeclarationConflict()",
+   "kind": "failure",
+   "type": "org.opentest4j.MultipleFailuresError",
+   "msg": "org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)"
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroTestGenerated",
+   "name": "testSameProjectMacroPackagePublicImportExpression()",
+   "kind": "failure",
+   "type": "java.lang.IllegalStateException",
+   "msg": "java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced."
+  },
+  {
+   "task": ":cfir:analysis-tests:test",
+   "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroTestGenerated",
+   "name": "testSameProjectMacroGeneratedParameterOverload()",
+   "kind": "failure",
+   "type": "java.lang.IllegalStateException",
+   "msg": "java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced."
+  }
+ ],
+ "stale_xml": 17
+}

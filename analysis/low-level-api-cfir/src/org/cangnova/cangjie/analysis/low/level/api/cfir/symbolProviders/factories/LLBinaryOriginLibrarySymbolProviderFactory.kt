@@ -121,6 +121,17 @@ internal object LLBinaryOriginLibrarySymbolProviderFactory : LLLibrarySymbolProv
             .map(::toCjoSearchRoot)
             .distinctCjoSearchRoots()
 
+        /*
+         * builtins `.cjo` roots 为空是“静默失明”的源头：builtins 的 extend 元数据（如
+         * `extend Array<T> <: Collection<T> { prop size }`）全部来自 `.cjo` 反序列化，
+         * roots 为空时 `Array` 仍可能由 `CfirBuiltinSymbolProvider` 合成（无成员），
+         * 表现就是 `'size' is not a member of 'Array'` 这类“类型在、成员不在”。
+         * 这里只告警一次（按 project 去重），不改变行为、不做兜底。
+         */
+        if (builtinsRoots.isEmpty()) {
+            BuiltinsRootsDiagnostics.warnOnce(session.project)
+        }
+
         return CfirDeserializedSymbolProvider(
             session = session,
             cjoManager = CjoManager(CjoSearchPath.forRoots(builtinsRoots)),
@@ -133,3 +144,28 @@ internal object LLBinaryOriginLibrarySymbolProviderFactory : LLLibrarySymbolProv
 /** 将 library 二进制根统一为 CJO 搜索目录。 */
 private fun VirtualFile.asCjoSearchRoot(): File? =
     normalizeCjoSearchRoot(File(path)).takeIf(File::isDirectory)
+
+/**
+ * builtins `.cjo` roots 为空的诊断（每个 project 只告警一次）。
+ *
+ * 不改行为，只把“静默失明”变成 idea.log 里可见的一条 warn，便于现场定位
+ * `'size' is not a member of 'Array'` 这类由 extend 元数据缺失引起的问题。
+ */
+private object BuiltinsRootsDiagnostics {
+    private val log = com.intellij.openapi.diagnostic.logger<LLBinaryOriginLibrarySymbolProviderFactory>()
+
+    /**
+     * 已告警的 project（弱引用，避免 IDE 长期运行/多 project 时泄漏）。
+     */
+    private val warned: MutableSet<com.intellij.openapi.project.Project> =
+        java.util.Collections.synchronizedSet(java.util.Collections.newSetFromMap(java.util.WeakHashMap()))
+
+    fun warnOnce(project: com.intellij.openapi.project.Project) {
+        if (!warned.add(project)) return
+        log.warn(
+            "Cangjie builtins .cjo roots are empty; std.core extend metadata " +
+                "(e.g. extend Array<T> <: Collection<T> { prop size }) will be invisible. " +
+                "Check the project SDK stdlib path (CjSdk.stdlibPath / <home>/modules).",
+        )
+    }
+}
