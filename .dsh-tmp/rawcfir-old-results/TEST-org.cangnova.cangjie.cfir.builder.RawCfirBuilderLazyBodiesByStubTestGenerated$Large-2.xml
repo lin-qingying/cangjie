@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Large" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-11-01T10:01:40.473Z" hostname="LIN" time="0.332">
+  <properties/>
+  <testcase name="testDeepGenerics" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Large" time="0.016"/>
+  <testcase name="testManyMatchCases" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Large" time="0.045"/>
+  <testcase name="testLargeComments" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Large" time="0.004"/>
+  <testcase name="testWideArrayLiterals" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Large" time="0.01"/>
+  <testcase name="testAllFilesPresentInLarge" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Large" time="0.144"/>
+  <testcase name="testManyDeclarations" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Large" time="0.087"/>
+  <testcase name="testLongStrings" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Large" time="0.006"/>
+  <testcase name="testDeepNesting" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Large" time="0.005"/>
+  <testcase name="testLargeLineComment" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Large" time="0.004"/>
+  <testcase name="testLongOperatorChain" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Large" time="0.011"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

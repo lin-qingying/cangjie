@@ -1,0 +1,2 @@
+error: could not load the dynamic library: C:\Users\lin17\.cangjie\sdks\cangjie-1.0.5\bin\..\runtime\lib\windows_x86_64_cjnative\libcangjie-runtime.dll
+error: could not find the create task method: RunCJTask

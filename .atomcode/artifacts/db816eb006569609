@@ -1,0 +1,42 @@
+total 256
+drwxr-xr-x 1 lin17 197609      0 Nov  7 20:39 .
+drwxr-xr-x 1 lin17 197609      0 Sep 30 17:26 ..
+-rw-r--r-- 1 lin17 197609      9 Oct  1 15:35 .gitignore
+-rwxr-xr-x 1 lin17 197609 241152 Sep 30 17:26 LSPServer.exe
+-rw-r--r-- 1 lin17 197609    142 Nov  7 20:34 e2e_err.txt
+-rw-r--r-- 1 lin17 197609    155 Nov  7 20:34 e2e_out.bin
+-rw-r--r-- 1 lin17 197609   2298 Nov  7 20:33 fake.jar
+drwxr-xr-x 1 lin17 197609      0 Nov  7 20:33 fakecls
+-rw-r--r-- 1 lin17 197609    263 Nov  7 20:39 java_query.ps1
+-rw-r--r-- 1 lin17 197609     80 Sep 30 17:29 msg1.bin
+-rw-r--r-- 1 lin17 197609     78 Sep 30 17:29 msg2.bin
+-rw-r--r-- 1 lin17 197609     67 Sep 30 17:29 msg3.bin
+-rw-r--r-- 1 lin17 197609     24 Nov  7 20:37 orphan_err.txt
+-rw-r--r-- 1 lin17 197609      0 Nov  7 20:37 orphan_out.bin
+-rwxr-xr-x 1 lin17 197609   1474 Nov  7 20:39 orphan_test.sh
+lsp/wrapper/test/build/orphan_test.sh: Bourne-Again shell script, Unicode text, UTF-8 text executable
++ set -u
+++ dirname lsp/wrapper/test/build/orphan_test.sh
++ cd lsp/wrapper/test/build/..
++ PIPE=/tmp/lsp_test_pipe
++ rm -f /tmp/lsp_test_pipe
++ mkfifo /tmp/lsp_test_pipe
++ WRITER=730
++ sleep 60
++ SHIM=731
++ LSPSERVER_SHIM_JAR=/d/code/intellij/cangjie/lsp/wrapper/test/test/build/fake.jar
++ sleep 6
++ LSPSERVER_SHIM_MAIN=FakeLsp
++ ./target/release/LSPServer.exe
+lsp/wrapper/test/build/orphan_test.sh: line 14: test/build/orphan_out.bin: No such file or directory
++ powershell -NoProfile -File test/build/java_query.ps1
+lsp/wrapper/test/build/orphan_test.sh: line 21: test/build/java_before.txt: No such file or directory
+++ tr -d '\r'
+lsp/wrapper/test/build/orphan_test.sh: line 22: test/build/java_before.txt: No such file or directory
++ BEFORE=
++ echo 'shim pid: 731'
+shim pid: 731
++ echo 'shim java before kill: <none>'
+shim java before kill: <none>
++ '[' -z '' ']'
++ echo 'RESULT: INCONCLUSIVE — shim java never started'

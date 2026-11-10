@@ -20,25 +20,21 @@ dependencies {
     implementation(project(":analysis:macro-expansion"))
     implementation(project(":analysis:cj-references"))
     /*
-     * 补全三模块：LSP 与 IDE **共用同一份候选生成实现**（规格 L1）。
+     * 补全：LSP 与 IDE **共用同一份候选生成实现**（规格 L1）。
      * 分支 B（见 tasks.md 15.1 的结论）下 LSP 直接调用 `CangJieCompletionService`，
      * 不注册 `completion.contributor`，因此这里只加依赖，不 prime 平台补全扩展点。
      */
-    implementation(project(":code-insight:completion:contracts"))
-    implementation(project(":code-insight:completion:impl-shared"))
-    implementation(project(":code-insight:completion:impl-cfir"))
+    implementation(project(":code-insight:completion"))
+    implementation(project(":code-insight:editor"))
+    implementation(project(":code-insight:code-actions"))
+    implementation(project(":code-insight:hints"))
+    implementation(project(":code-insight:refactoring"))
     // 请求级统计与 analysis 侧共用同一个 OpenTelemetry 后端实例，因此只需要 API。
     implementation(libs.opentelemetry.api)
-    implementation(project(":code-insight:formatting"))
-    implementation(project(":code-insight:folding"))
-    implementation(project(":code-insight:hints"))
     implementation(project(":code-insight:highlighting"))
-    implementation(project(":code-insight:refactoring"))
     // codeAction：quick-fix 注册表（协议侧标题与存在性）与成员生成（headless 应用）。
-    // api 模块必须显式声明：fixes/override-implement 用 implementation 引它，不透传。
+    // api 模块必须显式声明：analysis-features 用 implementation 引它，不透传。
     implementation(project(":code-insight:api"))
-    implementation(project(":code-insight:fixes"))
-    implementation(project(":code-insight:override-implement"))
     implementation(project(":compiler:config"))
     // LSP 的进程内宏展开：完整宏引擎只在 compiler:frontend；执行器在 macro:macro-process。
     implementation(project(":compiler:frontend"))
@@ -65,16 +61,12 @@ dependencies {
     testImplementation(project(":analysis:analysis-api-impl-base"))
     testImplementation(project(":analysis:analysis-api-standalone"))
     testImplementation(project(":analysis:cj-references"))
-    testImplementation(project(":code-insight:completion:contracts"))
-    testImplementation(project(":code-insight:completion:impl-shared"))
-    testImplementation(project(":code-insight:completion:impl-cfir"))
-    testImplementation(project(":code-insight:formatting"))
-    testImplementation(project(":code-insight:folding"))
+    testImplementation(project(":code-insight:completion"))
+    testImplementation(project(":code-insight:editor"))
+    testImplementation(project(":code-insight:code-actions"))
     testImplementation(project(":code-insight:hints"))
-    testImplementation(project(":code-insight:highlighting"))
     testImplementation(project(":code-insight:refactoring"))
-    testImplementation(project(":code-insight:fixes"))
-    testImplementation(project(":code-insight:override-implement"))
+    testImplementation(project(":code-insight:highlighting"))
     testImplementation(project(":compiler:config"))
     // Phase 2 容器探针与后续宏展开用例复用 fake 环境 / 引擎。
     testImplementation(testFixtures(project(":analysis:macro-expansion")))
@@ -90,9 +82,8 @@ dependencies {
     testFixturesApi(project(":analysis:analysis-api-impl-base"))
     testFixturesApi(project(":analysis:analysis-api-standalone"))
     testFixturesApi(project(":analysis:cj-references"))
-    testFixturesApi(project(":code-insight:formatting"))
+    testFixturesApi(project(":code-insight:editor"))
     testFixturesApi(project(":code-insight:highlighting"))
-    testFixturesApi(project(":code-insight:refactoring"))
     testFixturesApi(project(":compiler:config"))
     testFixturesApi("com.jetbrains.intellij.platform:analysis:$intellijVersion") { isTransitive = false }
     testFixturesApi("com.jetbrains.intellij.platform:code-style:$intellijVersion") { isTransitive = false }

@@ -1,0 +1,50 @@
+FILE: macroCallForms.cj
+    package macrocalls
+    import std.ast.*
+    <element: CfirMacroDeclaration>
+    <element: CfirMacroDeclaration>
+    internal? func macroCalls(): R|Int64| {
+        local? let a: <implicit> = ...
+            initializer:
+                ERROR_EXPR(Macro expression `@echo(1)` is a construction-only surface and must be replaced before final provider registration.)
+        local? let b: <implicit> = ...
+            initializer:
+                ERROR_EXPR(Macro expression `@echo(@echo(2))` is a construction-only surface and must be replaced before final provider registration.)
+        local? let c: <implicit> = ...
+            initializer:
+                ERROR_EXPR(Macro expression `@echo(@pair(3, 4))` is a construction-only surface and must be replaced before final provider registration.)
+        local? let d: <implicit> = ...
+            initializer:
+                ERROR_EXPR(Macro expression `@pair(@echo(5), 6)` is a construction-only surface and must be replaced before final provider registration.)
+        local? let e: <implicit> = ...
+            initializer:
+                ERROR_EXPR(Macro expression `@echo(1)` is a construction-only surface and must be replaced before final provider registration.)
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            FUNCTION_CALL(*operator_plus) {
+                                receiver:
+                                    FUNCTION_CALL(*operator_plus) {
+                                        receiver:
+                                            NAMED_ACCESS(a)
+                                        arguments:
+                                            NAMED_ACCESS(b)
+                                    }
+                                arguments:
+                                    NAMED_ACCESS(c)
+                            }
+                        arguments:
+                            NAMED_ACCESS(d)
+                    }
+                arguments:
+                    NAMED_ACCESS(e)
+            }
+        }
+    }
+    @R|echo|(1, 2) internal? func attributed(): R|Int64| {
+        RETURN {
+            INT(1)
+        }
+    }

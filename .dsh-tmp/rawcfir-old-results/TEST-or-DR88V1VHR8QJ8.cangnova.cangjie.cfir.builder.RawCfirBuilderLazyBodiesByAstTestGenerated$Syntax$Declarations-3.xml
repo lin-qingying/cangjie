@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Declarations" tests="36" skipped="0" failures="0" errors="0" timestamp="2026-11-01T10:01:35.333Z" hostname="LIN" time="0.321">
+  <properties/>
+  <testcase name="testVarDeclForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Declarations" time="0.002"/>
+  <testcase name="testMacroDeclVariants" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Declarations" time="0.003"/>
+  <testcase name="testConstAndForeign" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Declarations" time="0.003"/>
+  <testcase name="testMacroCallForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Declarations" time="0.004"/>
+  <testcase name="testExtendForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Declarations" time="0.005"/>
+  <testcase name="testConstructorForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Declarations" time="0.002"/>
+  <testcase name="testGenericDeclarationForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Declarations" time="0.004"/>
+  <testcase name="testLocalFunctionForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Declarations" time="0.004"/>
+  <testcase name="testAllFilesPresentInDeclarations" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Declarations" time="0.175"/>
+  <testcase name="testRedefMemberForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Declarations" time="0.003"/>
+  <testcase name="testMemberInitForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Declarations" time="0.006"/>
+  <testcase name="testTypeAliasSignatureForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Declarations" time="0.006"/>
+  <testcase name="testPackageAndImportVariants" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Declarations" time="0.003"/>
+  <testcase name="testMacroQuoteForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Declarations" time="0.003"/>
+  <testcase name="testStaticMemberForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Declarations" time="0.004"/>
+  <testcase name="testOperatorOverloadForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Declarations" time="0.005"/>
+  <testcase name="testTypeAliasForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Declarations" time="0.002"/>
+  <testcase name="testClassBodyForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Declarations" time="0.004"/>
+  <testcase name="testCInteropForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Declarations" time="0.003"/>
+  <testcase name="testConstExpressions" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Declarations" time="0.003"/>
+  <testcase name="testExtendStructForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Declarations" time="0.003"/>
+  <testcase name="testExtendBuiltinForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Declarations" time="0.004"/>
+  <testcase name="testStructForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Declarations" time="0.004"/>
+  <testcase name="testGenericForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Declarations" time="0.003"/>
+  <testcase name="testEnumForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Declarations" time="0.004"/>
+  <testcase name="testMemberModifierForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Declarations" time="0.007"/>
+  <testcase name="testBuiltinAnnotationForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Declarations" time="0.012"/>
+  <testcase name="testAnnotationForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Declarations" time="0.004"/>
+  <testcase name="testImportGroupForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Declarations" time="0.003"/>
+  <testcase name="testFunctionParams" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Declarations" time="0.004"/>
+  <testcase name="testInterfaceForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Declarations" time="0.003"/>
+  <testcase name="testFunctionModifiers" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Declarations" time="0.004"/>
+  <testcase name="testPropAccessorForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Declarations" time="0.004"/>
+  <testcase name="testStaticInitAndFinalizer" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Declarations" time="0.004"/>
+  <testcase name="testWhereConstraints" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Declarations" time="0.004"/>
+  <testcase name="testPrimaryConstructorForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Declarations" time="0.007"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

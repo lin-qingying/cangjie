@@ -220,6 +220,44 @@ class LLCfirBuiltinsSessionFactory(private val project: Project) {
                 register(CfirSymbolProvider::class, symbolProvider)
                 register(CfirProvider::class, LLCfirBuiltinsSessionProvider(symbolProvider))
 
+                /*
+                 * P2-5：extend provider 归属“拥有反序列化声明的 session”。
+                 *
+                 * builtins 合成的声明（`Array`、`Int64` 等）moduleData 指向本 session，
+                 * `getContainingExtend`/`getDeclarationPackage` 经
+                 * `symbol.moduleData.session.extendProviderOrNull` 查询；缺了这一步，
+                 * `Array.isEmpty`、`Int64.toString` 等 extend 成员的声明归属恒为 null。
+                 */
+                val binaryExtendProvider =
+                    org.cangnova.cangjie.cfir.serialization.provider.CfirExtendProviderComposer.lazyFromSymbolProviders {
+                        val origin = org.cangnova.cangjie.analysis.api.platform.CaPlatformSettings
+                            .getInstance(project).deserializedDeclarationsOrigin
+                        if (origin == org.cangnova.cangjie.analysis.api.platform.CaDeserializedDeclarationsOrigin.STUBS) {
+                            listOf(
+                                org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.factories
+                                    .LLBinaryOriginLibrarySymbolProviderFactory.createBuiltinsExtendProvider(session),
+                            )
+                        } else {
+                            // 原因同 binary session：composite provider 本身不是反序列化 provider。
+                            val composite = symbolProvider
+                                as? org.cangnova.cangjie.cfir.resolve.providers.CfirCompositeSymbolProvider
+                            composite?.providers ?: listOf(symbolProvider)
+                        }
+                    }
+                val extendProvider = if (org.cangnova.cangjie.analysis.api.platform.CaPlatformSettings
+                        .getInstance(project).deserializedDeclarationsOrigin ==
+                    org.cangnova.cangjie.analysis.api.platform.CaDeserializedDeclarationsOrigin.STUBS
+                ) {
+                    val materializer = org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders
+                        .LLExtendPsiMaterializer(project) { extend -> binaryExtendProvider.getPackageFqName(extend) }
+                    org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLPsiBackedExtendProvider(
+                        binaryExtendProvider,
+                    ) { extend -> if (extend.source != null) extend else materializer.materialize(extend) ?: extend }
+                } else {
+                    binaryExtendProvider
+                }
+                register(org.cangnova.cangjie.cfir.resolve.providers.CfirExtendProvider::class, extendProvider)
+
                 // 组件齐了，半成品标记摘掉；之后的重入不再命中守卫。
                 markConstructionCompleted()
             }

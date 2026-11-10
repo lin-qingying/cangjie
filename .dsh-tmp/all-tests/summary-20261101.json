@@ -1,0 +1,1250 @@
+{
+  "total": {
+    "modules": 44,
+    "tasks": 44,
+    "tests": 17683,
+    "failures": 123,
+    "errors": 0,
+    "skipped": 478,
+    "timeSec": 2211.3,
+    "staleModules": {}
+  },
+  "rows": [
+    {
+      "module": "analysis\\analysis-api-cfir",
+      "task": "test",
+      "tests": 1678,
+      "failures": 37,
+      "errors": 0,
+      "skipped": 0,
+      "timeSec": 183.1,
+      "staleXml": 0,
+      "failed": [
+        {
+          "class": "org.cangnova.cangjie.analysis.api.cfir.test.cases.generated.cases.components.diagnosticProvider.CfirIdeNormalAnalysisSourceModuleDanglingFileCollectDiagnosticsTestGenerated",
+          "name": "testDanglingUnresolvedReferencePreferSelf()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Actual data differs from file content: danglingUnresolvedReferencePreferSelf.txt =====预期====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (5,5-20) UNRESOLVED_REFERENCE text ranges: [(66,81)] PSI: CjNameReferenceExpression at (5,5-20) =====得到====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (5,5-20) UNRESOLVED_REFERENCE text ranges: [(66,81)] PSI: CjNameReferenceExpression at (5,5-20) for PSI "
+        },
+        {
+          "class": "org.cangnova.cangjie.analysis.api.cfir.test.cases.generated.cases.components.diagnosticProvider.CfirIdeNormalAnalysisSourceModuleDanglingFileCollectDiagnosticsTestGenerated",
+          "name": "testUnresolvedReturnType()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Actual data differs from file content: unresolvedReturnType.txt =====预期====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (3,11-15) UNDECLARED_TYPE_NAME text ranges: [(38,42)] PSI: CjNameReferenceExpression at (3,11-15) =====得到====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (3,11-15) UNDECLARED_TYPE_NAME text ranges: [(38,42)] PSI: CjNameReferenceExpression at (3,11-15) for PSI element of ty"
+        },
+        {
+          "class": "org.cangnova.cangjie.analysis.api.cfir.test.cases.generated.cases.components.diagnosticProvider.CfirIdeNormalAnalysisSourceModuleDanglingFileCollectDiagnosticsTestGenerated",
+          "name": "testUnresolvedReference()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Actual data differs from file content: unresolvedReference.txt =====预期====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (4,5-16) UNRESOLVED_REFERENCE text ranges: [(46,57)] PSI: CjNameReferenceExpression at (4,5-16) =====得到====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (4,5-16) UNRESOLVED_REFERENCE text ranges: [(46,57)] PSI: CjNameReferenceExpression at (4,5-16) for PSI element of type Cj"
+        },
+        {
+          "class": "org.cangnova.cangjie.analysis.api.cfir.test.cases.generated.cases.components.diagnosticProvider.CfirIdeNormalAnalysisSourceModuleDanglingFileCollectDiagnosticsTestGenerated",
+          "name": "testDanglingUnresolvedReference()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Actual data differs from file content: danglingUnresolvedReference.txt =====预期====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (4,5-20) UNRESOLVED_REFERENCE text ranges: [(46,61)] PSI: CjNameReferenceExpression at (4,5-20) =====得到====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (4,5-20) UNRESOLVED_REFERENCE text ranges: [(46,61)] PSI: CjNameReferenceExpression at (4,5-20) for PSI element of"
+        },
+        {
+          "class": "org.cangnova.cangjie.analysis.api.cfir.test.cases.generated.cases.components.typeProvider.CfirIdeDependentAnalysisSourceModuleVarargArrayTypeTestGenerated",
+          "name": "testIntVarargParameter()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Actual data differs from file content: intVarargParameter.txt =====预期====== Array<Int64> =====得到====== NOT_VARARG"
+        },
+        {
+          "class": "org.cangnova.cangjie.analysis.api.cfir.test.cases.generated.cases.components.typeProvider.CfirIdeDependentAnalysisCodeFragmentModuleVarargArrayTypeTestGenerated",
+          "name": "testIntVarargParameter()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Actual data differs from file content: intVarargParameter.txt =====预期====== Array<Int64> =====得到====== NOT_VARARG"
+        },
+        {
+          "class": "org.cangnova.cangjie.analysis.api.cfir.test.cases.generated.cases.components.diagnosticProvider.CfirIdeNormalAnalysisLibraryBinaryDecompiledModuleDanglingFileCollectDiagnosticsTestGenerated",
+          "name": "testDanglingUnresolvedReferencePreferSelf()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Actual data differs from file content: danglingUnresolvedReferencePreferSelf.txt =====预期====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (5,5-20) UNRESOLVED_REFERENCE text ranges: [(66,81)] PSI: CjNameReferenceExpression at (5,5-20) =====得到====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (5,5-20) UNRESOLVED_REFERENCE text ranges: [(66,81)] PSI: CjNameReferenceExpression at (5,5-20) for PSI "
+        },
+        {
+          "class": "org.cangnova.cangjie.analysis.api.cfir.test.cases.generated.cases.components.diagnosticProvider.CfirIdeNormalAnalysisLibraryBinaryDecompiledModuleDanglingFileCollectDiagnosticsTestGenerated",
+          "name": "testUnresolvedReturnType()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Actual data differs from file content: unresolvedReturnType.txt =====预期====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (3,11-15) UNDECLARED_TYPE_NAME text ranges: [(38,42)] PSI: CjNameReferenceExpression at (3,11-15) =====得到====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (3,11-15) UNDECLARED_TYPE_NAME text ranges: [(38,42)] PSI: CjNameReferenceExpression at (3,11-15) for PSI element of ty"
+        },
+        {
+          "class": "org.cangnova.cangjie.analysis.api.cfir.test.cases.generated.cases.components.diagnosticProvider.CfirIdeNormalAnalysisLibraryBinaryDecompiledModuleDanglingFileCollectDiagnosticsTestGenerated",
+          "name": "testUnresolvedReference()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Actual data differs from file content: unresolvedReference.txt =====预期====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (4,5-16) UNRESOLVED_REFERENCE text ranges: [(46,57)] PSI: CjNameReferenceExpression at (4,5-16) =====得到====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (4,5-16) UNRESOLVED_REFERENCE text ranges: [(46,57)] PSI: CjNameReferenceExpression at (4,5-16) for PSI element of type Cj"
+        },
+        {
+          "class": "org.cangnova.cangjie.analysis.api.cfir.test.cases.generated.cases.components.diagnosticProvider.CfirIdeNormalAnalysisLibraryBinaryDecompiledModuleDanglingFileCollectDiagnosticsTestGenerated",
+          "name": "testDanglingUnresolvedReference()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Actual data differs from file content: danglingUnresolvedReference.txt =====预期====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (4,5-20) UNRESOLVED_REFERENCE text ranges: [(46,61)] PSI: CjNameReferenceExpression at (4,5-20) =====得到====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (4,5-20) UNRESOLVED_REFERENCE text ranges: [(46,61)] PSI: CjNameReferenceExpression at (4,5-20) for PSI element of"
+        },
+        {
+          "class": "org.cangnova.cangjie.analysis.api.cfir.test.cases.generated.cases.components.typeProvider.CfirIdeNormalAnalysisLibrarySourceModuleVarargArrayTypeTestGenerated",
+          "name": "testIntVarargParameter()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Actual data differs from file content: intVarargParameter.txt =====预期====== Array<Int64> =====得到====== NOT_VARARG"
+        },
+        {
+          "class": "org.cangnova.cangjie.analysis.api.cfir.test.cases.generated.cases.components.typeProvider.CfirIdeNormalAnalysisLibraryBinaryModuleVarargArrayTypeTestGenerated",
+          "name": "testIntVarargParameter()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Actual data differs from file content: intVarargParameter.txt =====预期====== Array<Int64> =====得到====== NOT_VARARG"
+        },
+        {
+          "class": "org.cangnova.cangjie.analysis.api.cfir.test.cases.generated.cases.components.typeProvider.CfirIdeNormalAnalysisLibraryBinaryDecompiledModuleVarargArrayTypeTestGenerated",
+          "name": "testIntVarargParameter()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Actual data differs from file content: intVarargParameter.txt =====预期====== Array<Int64> =====得到====== NOT_VARARG"
+        },
+        {
+          "class": "org.cangnova.cangjie.analysis.api.cfir.test.cases.generated.cases.components.typeProvider.CfirIdeNormalAnalysisSourceModuleVarargArrayTypeTestGenerated",
+          "name": "testIntVarargParameter()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Actual data differs from file content: intVarargParameter.txt =====预期====== Array<Int64> =====得到====== NOT_VARARG"
+        },
+        {
+          "class": "org.cangnova.cangjie.analysis.api.cfir.test.cases.generated.cases.components.typeProvider.CfirIdeNormalAnalysisCodeFragmentModuleVarargArrayTypeTestGenerated",
+          "name": "testIntVarargParameter()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Actual data differs from file content: intVarargParameter.txt =====预期====== Array<Int64> =====得到====== NOT_VARARG"
+        },
+        {
+          "class": "org.cangnova.cangjie.analysis.api.cfir.test.cases.generated.cases.components.diagnosticProvider.CfirIdeDependentAnalysisCodeFragmentModuleDanglingFileCollectDiagnosticsTestGenerated",
+          "name": "testDanglingUnresolvedReferencePreferSelf()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Actual data differs from file content: danglingUnresolvedReferencePreferSelf.txt =====预期====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (5,5-20) UNRESOLVED_REFERENCE text ranges: [(66,81)] PSI: CjNameReferenceExpression at (5,5-20) =====得到====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (5,5-20) UNRESOLVED_REFERENCE text ranges: [(66,81)] PSI: CjNameReferenceExpression at (5,5-20) for PSI "
+        },
+        {
+          "class": "org.cangnova.cangjie.analysis.api.cfir.test.cases.generated.cases.components.diagnosticProvider.CfirIdeDependentAnalysisCodeFragmentModuleDanglingFileCollectDiagnosticsTestGenerated",
+          "name": "testUnresolvedReturnType()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Actual data differs from file content: unresolvedReturnType.txt =====预期====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (3,11-15) UNDECLARED_TYPE_NAME text ranges: [(38,42)] PSI: CjNameReferenceExpression at (3,11-15) =====得到====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (3,11-15) UNDECLARED_TYPE_NAME text ranges: [(38,42)] PSI: CjNameReferenceExpression at (3,11-15) for PSI element of ty"
+        },
+        {
+          "class": "org.cangnova.cangjie.analysis.api.cfir.test.cases.generated.cases.components.diagnosticProvider.CfirIdeDependentAnalysisCodeFragmentModuleDanglingFileCollectDiagnosticsTestGenerated",
+          "name": "testUnresolvedReference()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Actual data differs from file content: unresolvedReference.txt =====预期====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (4,5-16) UNRESOLVED_REFERENCE text ranges: [(46,57)] PSI: CjNameReferenceExpression at (4,5-16) =====得到====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (4,5-16) UNRESOLVED_REFERENCE text ranges: [(46,57)] PSI: CjNameReferenceExpression at (4,5-16) for PSI element of type Cj"
+        },
+        {
+          "class": "org.cangnova.cangjie.analysis.api.cfir.test.cases.generated.cases.components.diagnosticProvider.CfirIdeDependentAnalysisCodeFragmentModuleDanglingFileCollectDiagnosticsTestGenerated",
+          "name": "testDanglingUnresolvedReference()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Actual data differs from file content: danglingUnresolvedReference.txt =====预期====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (4,5-20) UNRESOLVED_REFERENCE text ranges: [(46,61)] PSI: CjNameReferenceExpression at (4,5-20) =====得到====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (4,5-20) UNRESOLVED_REFERENCE text ranges: [(46,61)] PSI: CjNameReferenceExpression at (4,5-20) for PSI element of"
+        },
+        {
+          "class": "org.cangnova.cangjie.analysis.api.cfir.test.cases.generated.cases.components.diagnosticProvider.CfirIdeNormalAnalysisLibraryBinaryModuleDanglingFileCollectDiagnosticsTestGenerated",
+          "name": "testDanglingUnresolvedReferencePreferSelf()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Actual data differs from file content: danglingUnresolvedReferencePreferSelf.txt =====预期====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (5,5-20) UNRESOLVED_REFERENCE text ranges: [(66,81)] PSI: CjNameReferenceExpression at (5,5-20) =====得到====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (5,5-20) UNRESOLVED_REFERENCE text ranges: [(66,81)] PSI: CjNameReferenceExpression at (5,5-20) for PSI "
+        },
+        {
+          "class": "org.cangnova.cangjie.analysis.api.cfir.test.cases.generated.cases.components.diagnosticProvider.CfirIdeNormalAnalysisLibraryBinaryModuleDanglingFileCollectDiagnosticsTestGenerated",
+          "name": "testUnresolvedReturnType()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Actual data differs from file content: unresolvedReturnType.txt =====预期====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (3,11-15) UNDECLARED_TYPE_NAME text ranges: [(38,42)] PSI: CjNameReferenceExpression at (3,11-15) =====得到====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (3,11-15) UNDECLARED_TYPE_NAME text ranges: [(38,42)] PSI: CjNameReferenceExpression at (3,11-15) for PSI element of ty"
+        },
+        {
+          "class": "org.cangnova.cangjie.analysis.api.cfir.test.cases.generated.cases.components.diagnosticProvider.CfirIdeNormalAnalysisLibraryBinaryModuleDanglingFileCollectDiagnosticsTestGenerated",
+          "name": "testUnresolvedReference()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Actual data differs from file content: unresolvedReference.txt =====预期====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (4,5-16) UNRESOLVED_REFERENCE text ranges: [(46,57)] PSI: CjNameReferenceExpression at (4,5-16) =====得到====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (4,5-16) UNRESOLVED_REFERENCE text ranges: [(46,57)] PSI: CjNameReferenceExpression at (4,5-16) for PSI element of type Cj"
+        },
+        {
+          "class": "org.cangnova.cangjie.analysis.api.cfir.test.cases.generated.cases.components.diagnosticProvider.CfirIdeNormalAnalysisLibraryBinaryModuleDanglingFileCollectDiagnosticsTestGenerated",
+          "name": "testDanglingUnresolvedReference()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Actual data differs from file content: danglingUnresolvedReference.txt =====预期====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (4,5-20) UNRESOLVED_REFERENCE text ranges: [(46,61)] PSI: CjNameReferenceExpression at (4,5-20) =====得到====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (4,5-20) UNRESOLVED_REFERENCE text ranges: [(46,61)] PSI: CjNameReferenceExpression at (4,5-20) for PSI element of"
+        },
+        {
+          "class": "org.cangnova.cangjie.analysis.api.cfir.test.cases.generated.cases.components.diagnosticProvider.CfirIdeNormalAnalysisLibrarySourceModuleDanglingFileCollectDiagnosticsTestGenerated",
+          "name": "testDanglingUnresolvedReferencePreferSelf()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Actual data differs from file content: danglingUnresolvedReferencePreferSelf.txt =====预期====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (5,5-20) UNRESOLVED_REFERENCE text ranges: [(66,81)] PSI: CjNameReferenceExpression at (5,5-20) =====得到====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (5,5-20) UNRESOLVED_REFERENCE text ranges: [(66,81)] PSI: CjNameReferenceExpression at (5,5-20) for PSI "
+        },
+        {
+          "class": "org.cangnova.cangjie.analysis.api.cfir.test.cases.generated.cases.components.diagnosticProvider.CfirIdeNormalAnalysisLibrarySourceModuleDanglingFileCollectDiagnosticsTestGenerated",
+          "name": "testUnresolvedReturnType()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Actual data differs from file content: unresolvedReturnType.txt =====预期====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (3,11-15) UNDECLARED_TYPE_NAME text ranges: [(38,42)] PSI: CjNameReferenceExpression at (3,11-15) =====得到====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (3,11-15) UNDECLARED_TYPE_NAME text ranges: [(38,42)] PSI: CjNameReferenceExpression at (3,11-15) for PSI element of ty"
+        },
+        {
+          "class": "org.cangnova.cangjie.analysis.api.cfir.test.cases.generated.cases.components.diagnosticProvider.CfirIdeNormalAnalysisLibrarySourceModuleDanglingFileCollectDiagnosticsTestGenerated",
+          "name": "testUnresolvedReference()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Actual data differs from file content: unresolvedReference.txt =====预期====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (4,5-16) UNRESOLVED_REFERENCE text ranges: [(46,57)] PSI: CjNameReferenceExpression at (4,5-16) =====得到====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (4,5-16) UNRESOLVED_REFERENCE text ranges: [(46,57)] PSI: CjNameReferenceExpression at (4,5-16) for PSI element of type Cj"
+        },
+        {
+          "class": "org.cangnova.cangjie.analysis.api.cfir.test.cases.generated.cases.components.diagnosticProvider.CfirIdeNormalAnalysisLibrarySourceModuleDanglingFileCollectDiagnosticsTestGenerated",
+          "name": "testDanglingUnresolvedReference()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Actual data differs from file content: danglingUnresolvedReference.txt =====预期====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (4,5-20) UNRESOLVED_REFERENCE text ranges: [(46,61)] PSI: CjNameReferenceExpression at (4,5-20) =====得到====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (4,5-20) UNRESOLVED_REFERENCE text ranges: [(46,61)] PSI: CjNameReferenceExpression at (4,5-20) for PSI element of"
+        },
+        {
+          "class": "org.cangnova.cangjie.analysis.api.cfir.test.cases.generated.cases.components.diagnosticProvider.CfirIdeNormalAnalysisCodeFragmentModuleDanglingFileCollectDiagnosticsTestGenerated",
+          "name": "testDanglingUnresolvedReferencePreferSelf()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Actual data differs from file content: danglingUnresolvedReferencePreferSelf.txt =====预期====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (5,5-20) UNRESOLVED_REFERENCE text ranges: [(66,81)] PSI: CjNameReferenceExpression at (5,5-20) =====得到====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (5,5-20) UNRESOLVED_REFERENCE text ranges: [(66,81)] PSI: CjNameReferenceExpression at (5,5-20) for PSI "
+        },
+        {
+          "class": "org.cangnova.cangjie.analysis.api.cfir.test.cases.generated.cases.components.diagnosticProvider.CfirIdeNormalAnalysisCodeFragmentModuleDanglingFileCollectDiagnosticsTestGenerated",
+          "name": "testUnresolvedReturnType()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Actual data differs from file content: unresolvedReturnType.txt =====预期====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (3,11-15) UNDECLARED_TYPE_NAME text ranges: [(38,42)] PSI: CjNameReferenceExpression at (3,11-15) =====得到====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (3,11-15) UNDECLARED_TYPE_NAME text ranges: [(38,42)] PSI: CjNameReferenceExpression at (3,11-15) for PSI element of ty"
+        },
+        {
+          "class": "org.cangnova.cangjie.analysis.api.cfir.test.cases.generated.cases.components.diagnosticProvider.CfirIdeNormalAnalysisCodeFragmentModuleDanglingFileCollectDiagnosticsTestGenerated",
+          "name": "testUnresolvedReference()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Actual data differs from file content: unresolvedReference.txt =====预期====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (4,5-16) UNRESOLVED_REFERENCE text ranges: [(46,57)] PSI: CjNameReferenceExpression at (4,5-16) =====得到====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (4,5-16) UNRESOLVED_REFERENCE text ranges: [(46,57)] PSI: CjNameReferenceExpression at (4,5-16) for PSI element of type Cj"
+        },
+        {
+          "class": "org.cangnova.cangjie.analysis.api.cfir.test.cases.generated.cases.components.diagnosticProvider.CfirIdeNormalAnalysisCodeFragmentModuleDanglingFileCollectDiagnosticsTestGenerated",
+          "name": "testDanglingUnresolvedReference()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Actual data differs from file content: danglingUnresolvedReference.txt =====预期====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (4,5-20) UNRESOLVED_REFERENCE text ranges: [(46,61)] PSI: CjNameReferenceExpression at (4,5-20) =====得到====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (4,5-20) UNRESOLVED_REFERENCE text ranges: [(46,61)] PSI: CjNameReferenceExpression at (4,5-20) for PSI element of"
+        },
+        {
+          "class": "org.cangnova.cangjie.analysis.api.cfir.test.cases.generated.cases.components.diagnosticProvider.CfirIdeDependentAnalysisSourceModuleDanglingFileCollectDiagnosticsTestGenerated",
+          "name": "testDanglingUnresolvedReferencePreferSelf()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Actual data differs from file content: danglingUnresolvedReferencePreferSelf.txt =====预期====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (5,5-20) UNRESOLVED_REFERENCE text ranges: [(66,81)] PSI: CjNameReferenceExpression at (5,5-20) =====得到====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (5,5-20) UNRESOLVED_REFERENCE text ranges: [(66,81)] PSI: CjNameReferenceExpression at (5,5-20) for PSI "
+        },
+        {
+          "class": "org.cangnova.cangjie.analysis.api.cfir.test.cases.generated.cases.components.diagnosticProvider.CfirIdeDependentAnalysisSourceModuleDanglingFileCollectDiagnosticsTestGenerated",
+          "name": "testUnresolvedReturnType()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Actual data differs from file content: unresolvedReturnType.txt =====预期====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (3,11-15) UNDECLARED_TYPE_NAME text ranges: [(38,42)] PSI: CjNameReferenceExpression at (3,11-15) =====得到====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (3,11-15) UNDECLARED_TYPE_NAME text ranges: [(38,42)] PSI: CjNameReferenceExpression at (3,11-15) for PSI element of ty"
+        },
+        {
+          "class": "org.cangnova.cangjie.analysis.api.cfir.test.cases.generated.cases.components.diagnosticProvider.CfirIdeDependentAnalysisSourceModuleDanglingFileCollectDiagnosticsTestGenerated",
+          "name": "testUnresolvedReference()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Actual data differs from file content: unresolvedReference.txt =====预期====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (4,5-16) UNRESOLVED_REFERENCE text ranges: [(46,57)] PSI: CjNameReferenceExpression at (4,5-16) =====得到====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (4,5-16) UNRESOLVED_REFERENCE text ranges: [(46,57)] PSI: CjNameReferenceExpression at (4,5-16) for PSI element of type Cj"
+        },
+        {
+          "class": "org.cangnova.cangjie.analysis.api.cfir.test.cases.generated.cases.components.diagnosticProvider.CfirIdeDependentAnalysisSourceModuleDanglingFileCollectDiagnosticsTestGenerated",
+          "name": "testDanglingUnresolvedReference()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Actual data differs from file content: danglingUnresolvedReference.txt =====预期====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (4,5-20) UNRESOLVED_REFERENCE text ranges: [(46,61)] PSI: CjNameReferenceExpression at (4,5-20) =====得到====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (4,5-20) UNRESOLVED_REFERENCE text ranges: [(46,61)] PSI: CjNameReferenceExpression at (4,5-20) for PSI element of"
+        },
+        {
+          "class": "org.cangnova.cangjie.analysis.api.cfir.test.AnalysisApiCfirComponentExecutionTest",
+          "name": "packageQualifierTypeResolution(CjFile)",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: CANNOT_REF_TO_PKG_NAME@completion.provider.ProviderType ==> expected: <[completion]> but was: <[]>"
+        },
+        {
+          "class": "org.cangnova.cangjie.analysis.api.cfir.test.AnalysisApiImportPackageNavigationTest",
+          "name": "organizationDirectoriesAndRename(CjFile)",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: expected: <shared.changed> but was: <shared.lib>"
+        }
+      ]
+    },
+    {
+      "module": "analysis\\analysis-api-standalone",
+      "task": "test",
+      "tests": 720,
+      "failures": 15,
+      "errors": 0,
+      "skipped": 0,
+      "timeSec": 59.7,
+      "staleXml": 0,
+      "failed": [
+        {
+          "class": "org.cangnova.cangjie.analysis.api.standalone.cfir.test.cases.generated.cases.components.typeProvider.CfirStandaloneNormalAnalysisSourceModuleVarargArrayTypeTestGenerated",
+          "name": "testIntVarargParameter()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Actual data differs from file content: intVarargParameter.txt =====预期====== Array<Int64> =====得到====== NOT_VARARG"
+        },
+        {
+          "class": "org.cangnova.cangjie.analysis.api.standalone.cfir.test.cases.generated.cases.components.diagnosticProvider.CfirStandaloneNormalAnalysisLibraryBinaryModuleDanglingFileCollectDiagnosticsTestGenerated",
+          "name": "testDanglingUnresolvedReferencePreferSelf()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Actual data differs from file content: danglingUnresolvedReferencePreferSelf.txt =====预期====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (5,5-20) UNRESOLVED_REFERENCE text ranges: [(66,81)] PSI: CjNameReferenceExpression at (5,5-20) =====得到====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (5,5-20) UNRESOLVED_REFERENCE text ranges: [(66,81)] PSI: CjNameReferenceExpression at (5,5-20) for PSI "
+        },
+        {
+          "class": "org.cangnova.cangjie.analysis.api.standalone.cfir.test.cases.generated.cases.components.diagnosticProvider.CfirStandaloneNormalAnalysisLibraryBinaryModuleDanglingFileCollectDiagnosticsTestGenerated",
+          "name": "testUnresolvedReturnType()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Actual data differs from file content: unresolvedReturnType.txt =====预期====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (3,11-15) UNDECLARED_TYPE_NAME text ranges: [(38,42)] PSI: CjNameReferenceExpression at (3,11-15) =====得到====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (3,11-15) UNDECLARED_TYPE_NAME text ranges: [(38,42)] PSI: CjNameReferenceExpression at (3,11-15) for PSI element of ty"
+        },
+        {
+          "class": "org.cangnova.cangjie.analysis.api.standalone.cfir.test.cases.generated.cases.components.diagnosticProvider.CfirStandaloneNormalAnalysisLibraryBinaryModuleDanglingFileCollectDiagnosticsTestGenerated",
+          "name": "testUnresolvedReference()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Actual data differs from file content: unresolvedReference.txt =====预期====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (4,5-16) UNRESOLVED_REFERENCE text ranges: [(46,57)] PSI: CjNameReferenceExpression at (4,5-16) =====得到====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (4,5-16) UNRESOLVED_REFERENCE text ranges: [(46,57)] PSI: CjNameReferenceExpression at (4,5-16) for PSI element of type Cj"
+        },
+        {
+          "class": "org.cangnova.cangjie.analysis.api.standalone.cfir.test.cases.generated.cases.components.diagnosticProvider.CfirStandaloneNormalAnalysisLibraryBinaryModuleDanglingFileCollectDiagnosticsTestGenerated",
+          "name": "testDanglingUnresolvedReference()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Actual data differs from file content: danglingUnresolvedReference.txt =====预期====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (4,5-20) UNRESOLVED_REFERENCE text ranges: [(46,61)] PSI: CjNameReferenceExpression at (4,5-20) =====得到====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (4,5-20) UNRESOLVED_REFERENCE text ranges: [(46,61)] PSI: CjNameReferenceExpression at (4,5-20) for PSI element of"
+        },
+        {
+          "class": "org.cangnova.cangjie.analysis.api.standalone.cfir.test.cases.generated.cases.components.diagnosticProvider.CfirStandaloneNormalAnalysisCodeFragmentModuleDanglingFileCollectDiagnosticsTestGenerated",
+          "name": "testDanglingUnresolvedReferencePreferSelf()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Actual data differs from file content: danglingUnresolvedReferencePreferSelf.txt =====预期====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (5,5-20) UNRESOLVED_REFERENCE text ranges: [(66,81)] PSI: CjNameReferenceExpression at (5,5-20) =====得到====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (5,5-20) UNRESOLVED_REFERENCE text ranges: [(66,81)] PSI: CjNameReferenceExpression at (5,5-20) for PSI "
+        },
+        {
+          "class": "org.cangnova.cangjie.analysis.api.standalone.cfir.test.cases.generated.cases.components.diagnosticProvider.CfirStandaloneNormalAnalysisCodeFragmentModuleDanglingFileCollectDiagnosticsTestGenerated",
+          "name": "testUnresolvedReturnType()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Actual data differs from file content: unresolvedReturnType.txt =====预期====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (3,11-15) UNDECLARED_TYPE_NAME text ranges: [(38,42)] PSI: CjNameReferenceExpression at (3,11-15) =====得到====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (3,11-15) UNDECLARED_TYPE_NAME text ranges: [(38,42)] PSI: CjNameReferenceExpression at (3,11-15) for PSI element of ty"
+        },
+        {
+          "class": "org.cangnova.cangjie.analysis.api.standalone.cfir.test.cases.generated.cases.components.diagnosticProvider.CfirStandaloneNormalAnalysisCodeFragmentModuleDanglingFileCollectDiagnosticsTestGenerated",
+          "name": "testUnresolvedReference()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Actual data differs from file content: unresolvedReference.txt =====预期====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (4,5-16) UNRESOLVED_REFERENCE text ranges: [(46,57)] PSI: CjNameReferenceExpression at (4,5-16) =====得到====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (4,5-16) UNRESOLVED_REFERENCE text ranges: [(46,57)] PSI: CjNameReferenceExpression at (4,5-16) for PSI element of type Cj"
+        },
+        {
+          "class": "org.cangnova.cangjie.analysis.api.standalone.cfir.test.cases.generated.cases.components.diagnosticProvider.CfirStandaloneNormalAnalysisCodeFragmentModuleDanglingFileCollectDiagnosticsTestGenerated",
+          "name": "testDanglingUnresolvedReference()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Actual data differs from file content: danglingUnresolvedReference.txt =====预期====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (4,5-20) UNRESOLVED_REFERENCE text ranges: [(46,61)] PSI: CjNameReferenceExpression at (4,5-20) =====得到====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (4,5-20) UNRESOLVED_REFERENCE text ranges: [(46,61)] PSI: CjNameReferenceExpression at (4,5-20) for PSI element of"
+        },
+        {
+          "class": "org.cangnova.cangjie.analysis.api.standalone.cfir.test.cases.generated.cases.components.typeProvider.CfirStandaloneNormalAnalysisLibraryBinaryModuleVarargArrayTypeTestGenerated",
+          "name": "testIntVarargParameter()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Actual data differs from file content: intVarargParameter.txt =====预期====== Array<Int64> =====得到====== NOT_VARARG"
+        },
+        {
+          "class": "org.cangnova.cangjie.analysis.api.standalone.cfir.test.cases.generated.cases.components.typeProvider.CfirStandaloneNormalAnalysisCodeFragmentModuleVarargArrayTypeTestGenerated",
+          "name": "testIntVarargParameter()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Actual data differs from file content: intVarargParameter.txt =====预期====== Array<Int64> =====得到====== NOT_VARARG"
+        },
+        {
+          "class": "org.cangnova.cangjie.analysis.api.standalone.cfir.test.cases.generated.cases.components.diagnosticProvider.CfirStandaloneNormalAnalysisSourceModuleDanglingFileCollectDiagnosticsTestGenerated",
+          "name": "testDanglingUnresolvedReferencePreferSelf()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Actual data differs from file content: danglingUnresolvedReferencePreferSelf.txt =====预期====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (5,5-20) UNRESOLVED_REFERENCE text ranges: [(66,81)] PSI: CjNameReferenceExpression at (5,5-20) =====得到====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (5,5-20) UNRESOLVED_REFERENCE text ranges: [(66,81)] PSI: CjNameReferenceExpression at (5,5-20) for PSI "
+        },
+        {
+          "class": "org.cangnova.cangjie.analysis.api.standalone.cfir.test.cases.generated.cases.components.diagnosticProvider.CfirStandaloneNormalAnalysisSourceModuleDanglingFileCollectDiagnosticsTestGenerated",
+          "name": "testUnresolvedReturnType()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Actual data differs from file content: unresolvedReturnType.txt =====预期====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (3,11-15) UNDECLARED_TYPE_NAME text ranges: [(38,42)] PSI: CjNameReferenceExpression at (3,11-15) =====得到====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (3,11-15) UNDECLARED_TYPE_NAME text ranges: [(38,42)] PSI: CjNameReferenceExpression at (3,11-15) for PSI element of ty"
+        },
+        {
+          "class": "org.cangnova.cangjie.analysis.api.standalone.cfir.test.cases.generated.cases.components.diagnosticProvider.CfirStandaloneNormalAnalysisSourceModuleDanglingFileCollectDiagnosticsTestGenerated",
+          "name": "testUnresolvedReference()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Actual data differs from file content: unresolvedReference.txt =====预期====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (4,5-16) UNRESOLVED_REFERENCE text ranges: [(46,57)] PSI: CjNameReferenceExpression at (4,5-16) =====得到====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (4,5-16) UNRESOLVED_REFERENCE text ranges: [(46,57)] PSI: CjNameReferenceExpression at (4,5-16) for PSI element of type Cj"
+        },
+        {
+          "class": "org.cangnova.cangjie.analysis.api.standalone.cfir.test.cases.generated.cases.components.diagnosticProvider.CfirStandaloneNormalAnalysisSourceModuleDanglingFileCollectDiagnosticsTestGenerated",
+          "name": "testDanglingUnresolvedReference()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Actual data differs from file content: danglingUnresolvedReference.txt =====预期====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (4,5-20) UNRESOLVED_REFERENCE text ranges: [(46,61)] PSI: CjNameReferenceExpression at (4,5-20) =====得到====== Diagnostics from file: for PSI element of type CjNameReferenceExpression at (4,5-20) UNRESOLVED_REFERENCE text ranges: [(46,61)] PSI: CjNameReferenceExpression at (4,5-20) for PSI element of"
+        }
+      ]
+    },
+    {
+      "module": "analysis\\analysis-performance-test",
+      "task": "test",
+      "tests": 32,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timeSec": 61.5,
+      "staleXml": 0,
+      "failed": []
+    },
+    {
+      "module": "analysis\\analysis-real-project-test",
+      "task": "test",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timeSec": 136.7,
+      "staleXml": 0,
+      "failed": []
+    },
+    {
+      "module": "analysis\\cj-references",
+      "task": "test",
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timeSec": 13.3,
+      "staleXml": 0,
+      "failed": []
+    },
+    {
+      "module": "analysis\\decompiled\\decompiler-to-file-stubs",
+      "task": "test",
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timeSec": 0.5,
+      "staleXml": 0,
+      "failed": []
+    },
+    {
+      "module": "analysis\\decompiled\\decompiler-to-psi",
+      "task": "test",
+      "tests": 22,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timeSec": 13.1,
+      "staleXml": 0,
+      "failed": []
+    },
+    {
+      "module": "analysis\\decompiled\\decompiler-to-stubs",
+      "task": "test",
+      "tests": 8,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timeSec": 13,
+      "staleXml": 0,
+      "failed": []
+    },
+    {
+      "module": "analysis\\light-declarations",
+      "task": "test",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timeSec": 2.1,
+      "staleXml": 0,
+      "failed": []
+    },
+    {
+      "module": "analysis\\low-level-api-cfir",
+      "task": "test",
+      "tests": 183,
+      "failures": 3,
+      "errors": 0,
+      "skipped": 0,
+      "timeSec": 30.4,
+      "staleXml": 0,
+      "failed": [
+        {
+          "class": "org.cangnova.cangjie.analysis.low.level.api.cfir.ContextCollectorSourceTestGenerated",
+          "name": "testLocalPatternVariableInitializerRebuild()",
+          "type": "failure",
+          "message": "java.util.NoSuchElementException: Found no element of type CjElement inside <expr>"
+        },
+        {
+          "class": "org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostic.CfirCjmpCallerFirstDiagnosticsTest",
+          "name": "defaultArgumentInferredCallerFirst(CjFile, CjTestModule, TestServices)",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: expected: <[]> but was: <[CFIR_NOT_MATCHED]>"
+        },
+        {
+          "class": "org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostic.CfirCjmpCallerFirstDiagnosticsTest",
+          "name": "defaultArgumentCallerFirst(CjFile, CjTestModule, TestServices)",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: expected: <[]> but was: <[CFIR_NOT_MATCHED]>"
+        }
+      ]
+    },
+    {
+      "module": "analysis\\macro-expansion",
+      "task": "test",
+      "tests": 10,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timeSec": 0.4,
+      "staleXml": 0,
+      "failed": []
+    },
+    {
+      "module": "analysis\\stubs",
+      "task": "test",
+      "tests": 8,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0,
+      "timeSec": 65,
+      "staleXml": 0,
+      "failed": [
+        {
+          "class": "org.cangnova.cangjie.analysis.stubs.BuiltinsStubsTest",
+          "name": "builtinsStubsAndDecompiledText()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Mismatch in std.ast.cjo.stubs.txt ==> expected: <CangJieFileStubImpl[MultifileClass[packageFqName=std.ast, facadeFqName=std.ast, facadePartSimpleNames=[NodeFormat_generated, common, decls, decode, diag_report, exception, exprs, ffi, flatbuffer_object, nodes, parse_decl, parse_expr, parse_node, parse_pattern, parse_type, patterns, position, table, to_bytes, token, token_kind, tokens, totokens, types, visit]]] CangJieStub$PACKAGE_DIRECTIVE[isMacroPackage=false]"
+        }
+      ]
+    },
+    {
+      "module": "analysis\\symbol-light-declarations",
+      "task": "test",
+      "tests": 8,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timeSec": 33.3,
+      "staleXml": 0,
+      "failed": []
+    },
+    {
+      "module": "cfir\\analysis-tests",
+      "task": "test",
+      "tests": 9260,
+      "failures": 3,
+      "errors": 0,
+      "skipped": 460,
+      "timeSec": 1022.5,
+      "staleXml": 0,
+      "failed": [
+        {
+          "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroPsiTestGenerated$Llt$Annotation$Globals",
+          "name": "testAllkinds()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Actual data differs from file content: allkinds.cj =====预期====== @Annotation public class APILevel { let a: UInt8 const init(v: UInt8) { a = v } } @APILevel[11] var x = 10 @APILevel[11] func f(@APILevel[11] v: Int64): Int64 { 11 } @APILevel[11] struct S { @APILevel[11] let x: Int64 = 1 @APILevel[11] static let y: Int64 = 1 @APILevel[11] init(@APILevel[11] v: Int64) { c = 8 } @APILevel[12] S(@APILevel[12] let c!: Int32 = 9) {} } @APILevel[11] enum E { @APILev"
+        },
+        {
+          "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirMacroAnnotationSourceModuleTest",
+          "name": "lightTreeMacroTokensKeepTheirSourceModuleThroughTypes()",
+          "type": "failure",
+          "message": "java.lang.ClassCastException: class java.util.ArrayList cannot be cast to class org.cangnova.cangjie.cfir.declarations.CfirNamedFunction (java.util.ArrayList is in module java.base of loader 'bootstrap'; org.cangnova.cangjie.cfir.declarations.CfirNamedFunction is in unnamed module of loader 'app')"
+        },
+        {
+          "class": "org.cangnova.cangjie.cfir.analysis.tests.CfirMacroAnnotationSourceModuleTest",
+          "name": "psiMacroTokensKeepTheirSourceModuleThroughTypes()",
+          "type": "failure",
+          "message": "java.lang.ClassCastException: class kotlin.collections.builders.ListBuilder cannot be cast to class org.cangnova.cangjie.cfir.declarations.CfirNamedFunction (kotlin.collections.builders.ListBuilder and org.cangnova.cangjie.cfir.declarations.CfirNamedFunction are in unnamed module of loader 'app')"
+        }
+      ]
+    },
+    {
+      "module": "cfir\\cfir-common",
+      "task": "test",
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timeSec": 0.4,
+      "staleXml": 0,
+      "failed": []
+    },
+    {
+      "module": "cfir\\cfir-cones",
+      "task": "test",
+      "tests": 18,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timeSec": 0.2,
+      "staleXml": 0,
+      "failed": []
+    },
+    {
+      "module": "cfir\\cfir-serialization",
+      "task": "test",
+      "tests": 121,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 5,
+      "timeSec": 34.8,
+      "staleXml": 0,
+      "failed": []
+    },
+    {
+      "module": "cfir\\cfir-tree",
+      "task": "test",
+      "tests": 8,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timeSec": 1.5,
+      "staleXml": 0,
+      "failed": []
+    },
+    {
+      "module": "cfir\\providers",
+      "task": "test",
+      "tests": 43,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0,
+      "timeSec": 18.5,
+      "staleXml": 0,
+      "failed": [
+        {
+          "class": "org.cangnova.cangjie.cfir.analysis.diagnostics.CfirOffsetsOnlyDiagnosticAnchorGuardTest",
+          "name": "knownOffsetsOnlySitesRemainReferenced()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: These files no longer construct CjOffsetsOnlySourceElement; remove them from knownOffsetsOnlySites so the exemption set cannot grow stale: cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirClassifierAsExpressionChecker.kt cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/diagnostics/coneDiagnosticToCfirDiagnostic.kt cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/stages/CfirMapArguments.kt ==> expected: <true> but was: <"
+        }
+      ]
+    },
+    {
+      "module": "cfir\\raw-cfir\\light-tree2cfir",
+      "task": "test",
+      "tests": 1121,
+      "failures": 15,
+      "errors": 0,
+      "skipped": 0,
+      "timeSec": 40.9,
+      "staleXml": 0,
+      "failed": [
+        {
+          "class": "org.cangnova.cangjie.cfir.lightTree.LightTree2CfirConverterTestGenerated$Syntax$Declarations",
+          "name": "testMacroCallForms",
+          "type": "failure",
+          "message": "java.lang.AssertionError: Golden file mismatch: cfir\\raw-cfir\\psi2cfir\\testData\\rawBuilder\\syntax\\declarations\\macroCallForms.txt Run with -Dupdate.test.data=true to update golden files. === Expected === FILE: macroCallForms.cj package macrocalls import std.ast.* <element: CfirMacroDeclaration> <element: CfirMacroDeclaration> internal? func macroCalls(): R|Int64| { local? let a: <implicit> = ... initializer: ERROR_EXPR(Macro expression `@echo(1)` is a construction-only surface and must be replac"
+        },
+        {
+          "class": "org.cangnova.cangjie.cfir.lightTree.LightTree2CfirConverterTestGenerated$Syntax$Declarations",
+          "name": "testBuiltinAnnotationForms",
+          "type": "failure",
+          "message": "java.lang.AssertionError: Golden file mismatch: cfir\\raw-cfir\\psi2cfir\\testData\\rawBuilder\\syntax\\declarations\\builtinAnnotationForms.txt Run with -Dupdate.test.data=true to update golden files. === Expected === FILE: builtinAnnotationForms.cj @R|Attribute|(\"a\", \"b\", \"s\") internal? class BuiltinAnnoClass { init() } @R|Attribute|(\"State\") internal? var builtinAnnoVarA: R|Int64| = ... initializer: INT(0) @R|Attribute|(\"Binding\") internal? var builtinAnnoVarB: R|Int64| = ... initializer: INT(0) @R|"
+        },
+        {
+          "class": "org.cangnova.cangjie.cfir.lightTree.LightTree2CfirConverterTestGenerated$Syntax$Declarations",
+          "name": "testMacroCallForms",
+          "type": "failure",
+          "message": "java.lang.AssertionError: Golden file mismatch: cfir\\raw-cfir\\psi2cfir\\testData\\rawBuilder\\syntax\\declarations\\macroCallForms.txt Run with -Dupdate.test.data=true to update golden files. === Expected === FILE: macroCallForms.cj package macrocalls import std.ast.* <element: CfirMacroDeclaration> <element: CfirMacroDeclaration> internal? func macroCalls(): R|Int64| { local? let a: <implicit> = ... initializer: ERROR_EXPR(Macro expression `@echo(1)` is a construction-only surface and must be replac"
+        },
+        {
+          "class": "org.cangnova.cangjie.cfir.lightTree.LightTree2CfirConverterTestGenerated$Syntax$Declarations",
+          "name": "testBuiltinAnnotationForms",
+          "type": "failure",
+          "message": "java.lang.AssertionError: Golden file mismatch: cfir\\raw-cfir\\psi2cfir\\testData\\rawBuilder\\syntax\\declarations\\builtinAnnotationForms.txt Run with -Dupdate.test.data=true to update golden files. === Expected === FILE: builtinAnnotationForms.cj @R|Attribute|(\"a\", \"b\", \"s\") internal? class BuiltinAnnoClass { init() } @R|Attribute|(\"State\") internal? var builtinAnnoVarA: R|Int64| = ... initializer: INT(0) @R|Attribute|(\"Binding\") internal? var builtinAnnoVarB: R|Int64| = ... initializer: INT(0) @R|"
+        },
+        {
+          "class": "org.cangnova.cangjie.cfir.lightTree.LightTree2CfirConverterTestGenerated$Syntax$Declarations",
+          "name": "testMacroCallForms",
+          "type": "failure",
+          "message": "java.lang.AssertionError: Golden file mismatch: cfir\\raw-cfir\\psi2cfir\\testData\\rawBuilder\\syntax\\declarations\\macroCallForms.txt Run with -Dupdate.test.data=true to update golden files. === Expected === FILE: macroCallForms.cj package macrocalls import std.ast.* <element: CfirMacroDeclaration> <element: CfirMacroDeclaration> internal? func macroCalls(): R|Int64| { local? let a: <implicit> = ... initializer: ERROR_EXPR(Macro expression `@echo(1)` is a construction-only surface and must be replac"
+        },
+        {
+          "class": "org.cangnova.cangjie.cfir.lightTree.LightTree2CfirConverterTestGenerated$Syntax$Declarations",
+          "name": "testBuiltinAnnotationForms",
+          "type": "failure",
+          "message": "java.lang.AssertionError: Golden file mismatch: cfir\\raw-cfir\\psi2cfir\\testData\\rawBuilder\\syntax\\declarations\\builtinAnnotationForms.txt Run with -Dupdate.test.data=true to update golden files. === Expected === FILE: builtinAnnotationForms.cj @R|Attribute|(\"a\", \"b\", \"s\") internal? class BuiltinAnnoClass { init() } @R|Attribute|(\"State\") internal? var builtinAnnoVarA: R|Int64| = ... initializer: INT(0) @R|Attribute|(\"Binding\") internal? var builtinAnnoVarB: R|Int64| = ... initializer: INT(0) @R|"
+        },
+        {
+          "class": "org.cangnova.cangjie.cfir.lightTree.LightTree2CfirConverterTestGenerated$Syntax$Recovery",
+          "name": "testFunctionTypeMixedParamNames",
+          "type": "failure",
+          "message": "java.lang.AssertionError: Golden file mismatch: cfir\\raw-cfir\\psi2cfir\\testData\\rawBuilder\\syntax\\recovery\\functionTypeMixedParamNames.txt Run with -Dupdate.test.data=true to update golden files. === Expected === FILE: functionTypeMixedParamNames.cj internal? func mixed(g: R|() -> R|Bool||): R|Bool| { RETURN { FUNCTION_CALL(g) { INT(1) STRING(\"x\") } } } internal? typealias MixedTuple = R|(R|Int64|, R|x|)| === Actual === FILE: functionTypeMixedParamNames.cj internal? func mixed(g: R|() -> R|Bool|"
+        },
+        {
+          "class": "org.cangnova.cangjie.cfir.lightTree.LightTree2CfirConverterTestGenerated$Syntax$Recovery",
+          "name": "testFunctionTypeParamDefault",
+          "type": "failure",
+          "message": "java.lang.AssertionError: Golden file mismatch: cfir\\raw-cfir\\psi2cfir\\testData\\rawBuilder\\syntax\\recovery\\functionTypeParamDefault.txt Run with -Dupdate.test.data=true to update golden files. === Expected === FILE: functionTypeParamDefault.cj internal? func withDefault(g: R|x|): <implicit> === Actual === FILE: functionTypeParamDefault.cj internal? func withDefault(g: R|Int64|): <implicit>"
+        },
+        {
+          "class": "org.cangnova.cangjie.cfir.lightTree.LightTree2CfirConverterTestGenerated$Syntax$Recovery",
+          "name": "testFunctionTypeMixedParamNames",
+          "type": "failure",
+          "message": "java.lang.AssertionError: Golden file mismatch: cfir\\raw-cfir\\psi2cfir\\testData\\rawBuilder\\syntax\\recovery\\functionTypeMixedParamNames.txt Run with -Dupdate.test.data=true to update golden files. === Expected === FILE: functionTypeMixedParamNames.cj internal? func mixed(g: R|() -> R|Bool||): R|Bool| { RETURN { FUNCTION_CALL(g) { INT(1) STRING(\"x\") } } } internal? typealias MixedTuple = R|(R|Int64|, R|x|)| === Actual === FILE: functionTypeMixedParamNames.cj internal? func mixed(g: R|() -> R|Bool|"
+        },
+        {
+          "class": "org.cangnova.cangjie.cfir.lightTree.LightTree2CfirConverterTestGenerated$Syntax$Recovery",
+          "name": "testFunctionTypeParamDefault",
+          "type": "failure",
+          "message": "java.lang.AssertionError: Golden file mismatch: cfir\\raw-cfir\\psi2cfir\\testData\\rawBuilder\\syntax\\recovery\\functionTypeParamDefault.txt Run with -Dupdate.test.data=true to update golden files. === Expected === FILE: functionTypeParamDefault.cj internal? func withDefault(g: R|x|): <implicit> === Actual === FILE: functionTypeParamDefault.cj internal? func withDefault(g: R|Int64|): <implicit>"
+        },
+        {
+          "class": "org.cangnova.cangjie.cfir.lightTree.LightTree2CfirConverterTestGenerated$Syntax$Recovery",
+          "name": "testFunctionTypeMixedParamNames",
+          "type": "failure",
+          "message": "java.lang.AssertionError: Golden file mismatch: cfir\\raw-cfir\\psi2cfir\\testData\\rawBuilder\\syntax\\recovery\\functionTypeMixedParamNames.txt Run with -Dupdate.test.data=true to update golden files. === Expected === FILE: functionTypeMixedParamNames.cj internal? func mixed(g: R|() -> R|Bool||): R|Bool| { RETURN { FUNCTION_CALL(g) { INT(1) STRING(\"x\") } } } internal? typealias MixedTuple = R|(R|Int64|, R|x|)| === Actual === FILE: functionTypeMixedParamNames.cj internal? func mixed(g: R|() -> R|Bool|"
+        },
+        {
+          "class": "org.cangnova.cangjie.cfir.lightTree.LightTree2CfirConverterTestGenerated$Syntax$Recovery",
+          "name": "testFunctionTypeParamDefault",
+          "type": "failure",
+          "message": "java.lang.AssertionError: Golden file mismatch: cfir\\raw-cfir\\psi2cfir\\testData\\rawBuilder\\syntax\\recovery\\functionTypeParamDefault.txt Run with -Dupdate.test.data=true to update golden files. === Expected === FILE: functionTypeParamDefault.cj internal? func withDefault(g: R|x|): <implicit> === Actual === FILE: functionTypeParamDefault.cj internal? func withDefault(g: R|Int64|): <implicit>"
+        },
+        {
+          "class": "org.cangnova.cangjie.cfir.lightTree.LightTree2CfirConverterTestGenerated$Syntax$Types",
+          "name": "testFunctionTypeRefs",
+          "type": "failure",
+          "message": "java.lang.AssertionError: Golden file mismatch: cfir\\raw-cfir\\psi2cfir\\testData\\rawBuilder\\syntax\\types\\functionTypeRefs.txt Run with -Dupdate.test.data=true to update golden files. === Expected === FILE: functionTypeRefs.cj internal? func noArgs(f: R|() -> R|Unit||): R|Unit| { FUNCTION_CALL(f) { } } internal? func oneArg(f: R|(R|Int64|) -> R|Int64||): R|Int64| { RETURN { FUNCTION_CALL(f) { INT(1) } } } internal? func twoArgs(f: R|(R|Int64|, R|String|) -> R|Bool||): R|Bool| { RETURN { FUNCTION_C"
+        },
+        {
+          "class": "org.cangnova.cangjie.cfir.lightTree.LightTree2CfirConverterTestGenerated$Syntax$Types",
+          "name": "testFunctionTypeRefs",
+          "type": "failure",
+          "message": "java.lang.AssertionError: Golden file mismatch: cfir\\raw-cfir\\psi2cfir\\testData\\rawBuilder\\syntax\\types\\functionTypeRefs.txt Run with -Dupdate.test.data=true to update golden files. === Expected === FILE: functionTypeRefs.cj internal? func noArgs(f: R|() -> R|Unit||): R|Unit| { FUNCTION_CALL(f) { } } internal? func oneArg(f: R|(R|Int64|) -> R|Int64||): R|Int64| { RETURN { FUNCTION_CALL(f) { INT(1) } } } internal? func twoArgs(f: R|(R|Int64|, R|String|) -> R|Bool||): R|Bool| { RETURN { FUNCTION_C"
+        },
+        {
+          "class": "org.cangnova.cangjie.cfir.lightTree.LightTree2CfirConverterTestGenerated$Syntax$Types",
+          "name": "testFunctionTypeRefs",
+          "type": "failure",
+          "message": "java.lang.AssertionError: Golden file mismatch: cfir\\raw-cfir\\psi2cfir\\testData\\rawBuilder\\syntax\\types\\functionTypeRefs.txt Run with -Dupdate.test.data=true to update golden files. === Expected === FILE: functionTypeRefs.cj internal? func noArgs(f: R|() -> R|Unit||): R|Unit| { FUNCTION_CALL(f) { } } internal? func oneArg(f: R|(R|Int64|) -> R|Int64||): R|Int64| { RETURN { FUNCTION_CALL(f) { INT(1) } } } internal? func twoArgs(f: R|(R|Int64|, R|String|) -> R|Bool||): R|Bool| { RETURN { FUNCTION_C"
+        }
+      ]
+    },
+    {
+      "module": "cfir\\raw-cfir\\psi2cfir",
+      "task": "test",
+      "tests": 3231,
+      "failures": 33,
+      "errors": 0,
+      "skipped": 0,
+      "timeSec": 101.8,
+      "staleXml": 0,
+      "failed": [
+        {
+          "class": "org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Recovery",
+          "name": "testFunctionTypeMixedParamNames",
+          "type": "failure",
+          "message": "java.lang.AssertionError: Golden file mismatch: cfir\\raw-cfir\\psi2cfir\\testData\\rawBuilder\\syntax\\recovery\\functionTypeMixedParamNames.lazyBodies.txt Run with -Dupdate.test.data=true to update golden files. === Expected === FILE: functionTypeMixedParamNames.cj internal? func mixed(g: R|() -> R|Bool||): R|Bool| { <element: CfirLazyBlock> } internal? typealias MixedTuple = R|(R|Int64|, R|x|)| === Actual === FILE: functionTypeMixedParamNames.cj internal? func mixed(g: R|() -> R|Bool||): R|Bool| { <"
+        },
+        {
+          "class": "org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Recovery",
+          "name": "testFunctionTypeParamDefault",
+          "type": "failure",
+          "message": "java.lang.AssertionError: Golden file mismatch: cfir\\raw-cfir\\psi2cfir\\testData\\rawBuilder\\syntax\\recovery\\functionTypeParamDefault.lazyBodies.txt Run with -Dupdate.test.data=true to update golden files. === Expected === FILE: functionTypeParamDefault.cj internal? func withDefault(g: R|x|): <implicit> === Actual === FILE: functionTypeParamDefault.cj internal? func withDefault(g: R|Int64|): <implicit>"
+        },
+        {
+          "class": "org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Recovery",
+          "name": "testFunctionTypeMixedParamNames",
+          "type": "failure",
+          "message": "java.lang.AssertionError: Golden file mismatch: cfir\\raw-cfir\\psi2cfir\\testData\\rawBuilder\\syntax\\recovery\\functionTypeMixedParamNames.lazyBodies.txt Run with -Dupdate.test.data=true to update golden files. === Expected === FILE: functionTypeMixedParamNames.cj internal? func mixed(g: R|() -> R|Bool||): R|Bool| { <element: CfirLazyBlock> } internal? typealias MixedTuple = R|(R|Int64|, R|x|)| === Actual === FILE: functionTypeMixedParamNames.cj internal? func mixed(g: R|() -> R|Bool||): R|Bool| { <"
+        },
+        {
+          "class": "org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Recovery",
+          "name": "testFunctionTypeParamDefault",
+          "type": "failure",
+          "message": "java.lang.AssertionError: Golden file mismatch: cfir\\raw-cfir\\psi2cfir\\testData\\rawBuilder\\syntax\\recovery\\functionTypeParamDefault.lazyBodies.txt Run with -Dupdate.test.data=true to update golden files. === Expected === FILE: functionTypeParamDefault.cj internal? func withDefault(g: R|x|): <implicit> === Actual === FILE: functionTypeParamDefault.cj internal? func withDefault(g: R|Int64|): <implicit>"
+        },
+        {
+          "class": "org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Recovery",
+          "name": "testFunctionTypeMixedParamNames",
+          "type": "failure",
+          "message": "java.lang.AssertionError: Golden file mismatch: cfir\\raw-cfir\\psi2cfir\\testData\\rawBuilder\\syntax\\recovery\\functionTypeMixedParamNames.lazyBodies.txt Run with -Dupdate.test.data=true to update golden files. === Expected === FILE: functionTypeMixedParamNames.cj internal? func mixed(g: R|() -> R|Bool||): R|Bool| { <element: CfirLazyBlock> } internal? typealias MixedTuple = R|(R|Int64|, R|x|)| === Actual === FILE: functionTypeMixedParamNames.cj internal? func mixed(g: R|() -> R|Bool||): R|Bool| { <"
+        },
+        {
+          "class": "org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Recovery",
+          "name": "testFunctionTypeParamDefault",
+          "type": "failure",
+          "message": "java.lang.AssertionError: Golden file mismatch: cfir\\raw-cfir\\psi2cfir\\testData\\rawBuilder\\syntax\\recovery\\functionTypeParamDefault.lazyBodies.txt Run with -Dupdate.test.data=true to update golden files. === Expected === FILE: functionTypeParamDefault.cj internal? func withDefault(g: R|x|): <implicit> === Actual === FILE: functionTypeParamDefault.cj internal? func withDefault(g: R|Int64|): <implicit>"
+        },
+        {
+          "class": "org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Types",
+          "name": "testFunctionTypeRefs",
+          "type": "failure",
+          "message": "java.lang.AssertionError: Golden file mismatch: cfir\\raw-cfir\\psi2cfir\\testData\\rawBuilder\\syntax\\types\\functionTypeRefs.lazyBodies.txt Run with -Dupdate.test.data=true to update golden files. === Expected === FILE: functionTypeRefs.cj internal? func noArgs(f: R|() -> R|Unit||): R|Unit| { <element: CfirLazyBlock> } internal? func oneArg(f: R|(R|Int64|) -> R|Int64||): R|Int64| { <element: CfirLazyBlock> } internal? func twoArgs(f: R|(R|Int64|, R|String|) -> R|Bool||): R|Bool| { <element: CfirLazy"
+        },
+        {
+          "class": "org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Types",
+          "name": "testFunctionTypeRefs",
+          "type": "failure",
+          "message": "java.lang.AssertionError: Golden file mismatch: cfir\\raw-cfir\\psi2cfir\\testData\\rawBuilder\\syntax\\types\\functionTypeRefs.lazyBodies.txt Run with -Dupdate.test.data=true to update golden files. === Expected === FILE: functionTypeRefs.cj internal? func noArgs(f: R|() -> R|Unit||): R|Unit| { <element: CfirLazyBlock> } internal? func oneArg(f: R|(R|Int64|) -> R|Int64||): R|Int64| { <element: CfirLazyBlock> } internal? func twoArgs(f: R|(R|Int64|, R|String|) -> R|Bool||): R|Bool| { <element: CfirLazy"
+        },
+        {
+          "class": "org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Syntax$Types",
+          "name": "testFunctionTypeRefs",
+          "type": "failure",
+          "message": "java.lang.AssertionError: Golden file mismatch: cfir\\raw-cfir\\psi2cfir\\testData\\rawBuilder\\syntax\\types\\functionTypeRefs.lazyBodies.txt Run with -Dupdate.test.data=true to update golden files. === Expected === FILE: functionTypeRefs.cj internal? func noArgs(f: R|() -> R|Unit||): R|Unit| { <element: CfirLazyBlock> } internal? func oneArg(f: R|(R|Int64|) -> R|Int64||): R|Int64| { <element: CfirLazyBlock> } internal? func twoArgs(f: R|(R|Int64|, R|String|) -> R|Bool||): R|Bool| { <element: CfirLazy"
+        },
+        {
+          "class": "org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery",
+          "name": "testFunctionTypeMixedParamNames",
+          "type": "failure",
+          "message": "java.lang.AssertionError: Golden file mismatch: cfir\\raw-cfir\\psi2cfir\\testData\\rawBuilder\\syntax\\recovery\\functionTypeMixedParamNames.lazyBodies.txt Run with -Dupdate.test.data=true to update golden files. === Expected === FILE: functionTypeMixedParamNames.cj internal? func mixed(g: R|() -> R|Bool||): R|Bool| { <element: CfirLazyBlock> } internal? typealias MixedTuple = R|(R|Int64|, R|x|)| === Actual === FILE: functionTypeMixedParamNames.cj internal? func mixed(g: R|() -> R|Bool||): R|Bool| { <"
+        },
+        {
+          "class": "org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery",
+          "name": "testFunctionTypeParamDefault",
+          "type": "failure",
+          "message": "java.lang.AssertionError: Golden file mismatch: cfir\\raw-cfir\\psi2cfir\\testData\\rawBuilder\\syntax\\recovery\\functionTypeParamDefault.lazyBodies.txt Run with -Dupdate.test.data=true to update golden files. === Expected === FILE: functionTypeParamDefault.cj internal? func withDefault(g: R|x|): <implicit> === Actual === FILE: functionTypeParamDefault.cj internal? func withDefault(g: R|Int64|): <implicit>"
+        },
+        {
+          "class": "org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery",
+          "name": "testFunctionTypeMixedParamNames",
+          "type": "failure",
+          "message": "java.lang.AssertionError: Golden file mismatch: cfir\\raw-cfir\\psi2cfir\\testData\\rawBuilder\\syntax\\recovery\\functionTypeMixedParamNames.lazyBodies.txt Run with -Dupdate.test.data=true to update golden files. === Expected === FILE: functionTypeMixedParamNames.cj internal? func mixed(g: R|() -> R|Bool||): R|Bool| { <element: CfirLazyBlock> } internal? typealias MixedTuple = R|(R|Int64|, R|x|)| === Actual === FILE: functionTypeMixedParamNames.cj internal? func mixed(g: R|() -> R|Bool||): R|Bool| { <"
+        },
+        {
+          "class": "org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery",
+          "name": "testFunctionTypeParamDefault",
+          "type": "failure",
+          "message": "java.lang.AssertionError: Golden file mismatch: cfir\\raw-cfir\\psi2cfir\\testData\\rawBuilder\\syntax\\recovery\\functionTypeParamDefault.lazyBodies.txt Run with -Dupdate.test.data=true to update golden files. === Expected === FILE: functionTypeParamDefault.cj internal? func withDefault(g: R|x|): <implicit> === Actual === FILE: functionTypeParamDefault.cj internal? func withDefault(g: R|Int64|): <implicit>"
+        },
+        {
+          "class": "org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery",
+          "name": "testFunctionTypeMixedParamNames",
+          "type": "failure",
+          "message": "java.lang.AssertionError: Golden file mismatch: cfir\\raw-cfir\\psi2cfir\\testData\\rawBuilder\\syntax\\recovery\\functionTypeMixedParamNames.lazyBodies.txt Run with -Dupdate.test.data=true to update golden files. === Expected === FILE: functionTypeMixedParamNames.cj internal? func mixed(g: R|() -> R|Bool||): R|Bool| { <element: CfirLazyBlock> } internal? typealias MixedTuple = R|(R|Int64|, R|x|)| === Actual === FILE: functionTypeMixedParamNames.cj internal? func mixed(g: R|() -> R|Bool||): R|Bool| { <"
+        },
+        {
+          "class": "org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Recovery",
+          "name": "testFunctionTypeParamDefault",
+          "type": "failure",
+          "message": "java.lang.AssertionError: Golden file mismatch: cfir\\raw-cfir\\psi2cfir\\testData\\rawBuilder\\syntax\\recovery\\functionTypeParamDefault.lazyBodies.txt Run with -Dupdate.test.data=true to update golden files. === Expected === FILE: functionTypeParamDefault.cj internal? func withDefault(g: R|x|): <implicit> === Actual === FILE: functionTypeParamDefault.cj internal? func withDefault(g: R|Int64|): <implicit>"
+        },
+        {
+          "class": "org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Types",
+          "name": "testFunctionTypeRefs",
+          "type": "failure",
+          "message": "java.lang.AssertionError: Golden file mismatch: cfir\\raw-cfir\\psi2cfir\\testData\\rawBuilder\\syntax\\types\\functionTypeRefs.lazyBodies.txt Run with -Dupdate.test.data=true to update golden files. === Expected === FILE: functionTypeRefs.cj internal? func noArgs(f: R|() -> R|Unit||): R|Unit| { <element: CfirLazyBlock> } internal? func oneArg(f: R|(R|Int64|) -> R|Int64||): R|Int64| { <element: CfirLazyBlock> } internal? func twoArgs(f: R|(R|Int64|, R|String|) -> R|Bool||): R|Bool| { <element: CfirLazy"
+        },
+        {
+          "class": "org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Types",
+          "name": "testFunctionTypeRefs",
+          "type": "failure",
+          "message": "java.lang.AssertionError: Golden file mismatch: cfir\\raw-cfir\\psi2cfir\\testData\\rawBuilder\\syntax\\types\\functionTypeRefs.lazyBodies.txt Run with -Dupdate.test.data=true to update golden files. === Expected === FILE: functionTypeRefs.cj internal? func noArgs(f: R|() -> R|Unit||): R|Unit| { <element: CfirLazyBlock> } internal? func oneArg(f: R|(R|Int64|) -> R|Int64||): R|Int64| { <element: CfirLazyBlock> } internal? func twoArgs(f: R|(R|Int64|, R|String|) -> R|Bool||): R|Bool| { <element: CfirLazy"
+        },
+        {
+          "class": "org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Syntax$Types",
+          "name": "testFunctionTypeRefs",
+          "type": "failure",
+          "message": "java.lang.AssertionError: Golden file mismatch: cfir\\raw-cfir\\psi2cfir\\testData\\rawBuilder\\syntax\\types\\functionTypeRefs.lazyBodies.txt Run with -Dupdate.test.data=true to update golden files. === Expected === FILE: functionTypeRefs.cj internal? func noArgs(f: R|() -> R|Unit||): R|Unit| { <element: CfirLazyBlock> } internal? func oneArg(f: R|(R|Int64|) -> R|Int64||): R|Int64| { <element: CfirLazyBlock> } internal? func twoArgs(f: R|(R|Int64|, R|String|) -> R|Bool||): R|Bool| { <element: CfirLazy"
+        },
+        {
+          "class": "org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Declarations",
+          "name": "testMacroCallForms",
+          "type": "failure",
+          "message": "java.lang.AssertionError: Golden file mismatch: cfir\\raw-cfir\\psi2cfir\\testData\\rawBuilder\\syntax\\declarations\\macroCallForms.txt Run with -Dupdate.test.data=true to update golden files. === Expected === FILE: macroCallForms.cj package macrocalls import std.ast.* <element: CfirMacroDeclaration> <element: CfirMacroDeclaration> internal? func macroCalls(): R|Int64| { local? let a: <implicit> = ... initializer: ERROR_EXPR(Macro expression `@echo(1)` is a construction-only surface and must be replac"
+        },
+        {
+          "class": "org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Declarations",
+          "name": "testBuiltinAnnotationForms",
+          "type": "failure",
+          "message": "java.lang.AssertionError: Golden file mismatch: cfir\\raw-cfir\\psi2cfir\\testData\\rawBuilder\\syntax\\declarations\\builtinAnnotationForms.txt Run with -Dupdate.test.data=true to update golden files. === Expected === FILE: builtinAnnotationForms.cj @R|Attribute|(\"a\", \"b\", \"s\") internal? class BuiltinAnnoClass { init() } @R|Attribute|(\"State\") internal? var builtinAnnoVarA: R|Int64| = ... initializer: INT(0) @R|Attribute|(\"Binding\") internal? var builtinAnnoVarB: R|Int64| = ... initializer: INT(0) @R|"
+        },
+        {
+          "class": "org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Declarations",
+          "name": "testMacroCallForms",
+          "type": "failure",
+          "message": "java.lang.AssertionError: Golden file mismatch: cfir\\raw-cfir\\psi2cfir\\testData\\rawBuilder\\syntax\\declarations\\macroCallForms.txt Run with -Dupdate.test.data=true to update golden files. === Expected === FILE: macroCallForms.cj package macrocalls import std.ast.* <element: CfirMacroDeclaration> <element: CfirMacroDeclaration> internal? func macroCalls(): R|Int64| { local? let a: <implicit> = ... initializer: ERROR_EXPR(Macro expression `@echo(1)` is a construction-only surface and must be replac"
+        },
+        {
+          "class": "org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Declarations",
+          "name": "testBuiltinAnnotationForms",
+          "type": "failure",
+          "message": "java.lang.AssertionError: Golden file mismatch: cfir\\raw-cfir\\psi2cfir\\testData\\rawBuilder\\syntax\\declarations\\builtinAnnotationForms.txt Run with -Dupdate.test.data=true to update golden files. === Expected === FILE: builtinAnnotationForms.cj @R|Attribute|(\"a\", \"b\", \"s\") internal? class BuiltinAnnoClass { init() } @R|Attribute|(\"State\") internal? var builtinAnnoVarA: R|Int64| = ... initializer: INT(0) @R|Attribute|(\"Binding\") internal? var builtinAnnoVarB: R|Int64| = ... initializer: INT(0) @R|"
+        },
+        {
+          "class": "org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Declarations",
+          "name": "testMacroCallForms",
+          "type": "failure",
+          "message": "java.lang.AssertionError: Golden file mismatch: cfir\\raw-cfir\\psi2cfir\\testData\\rawBuilder\\syntax\\declarations\\macroCallForms.txt Run with -Dupdate.test.data=true to update golden files. === Expected === FILE: macroCallForms.cj package macrocalls import std.ast.* <element: CfirMacroDeclaration> <element: CfirMacroDeclaration> internal? func macroCalls(): R|Int64| { local? let a: <implicit> = ... initializer: ERROR_EXPR(Macro expression `@echo(1)` is a construction-only surface and must be replac"
+        },
+        {
+          "class": "org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Declarations",
+          "name": "testBuiltinAnnotationForms",
+          "type": "failure",
+          "message": "java.lang.AssertionError: Golden file mismatch: cfir\\raw-cfir\\psi2cfir\\testData\\rawBuilder\\syntax\\declarations\\builtinAnnotationForms.txt Run with -Dupdate.test.data=true to update golden files. === Expected === FILE: builtinAnnotationForms.cj @R|Attribute|(\"a\", \"b\", \"s\") internal? class BuiltinAnnoClass { init() } @R|Attribute|(\"State\") internal? var builtinAnnoVarA: R|Int64| = ... initializer: INT(0) @R|Attribute|(\"Binding\") internal? var builtinAnnoVarB: R|Int64| = ... initializer: INT(0) @R|"
+        },
+        {
+          "class": "org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery",
+          "name": "testFunctionTypeMixedParamNames",
+          "type": "failure",
+          "message": "java.lang.AssertionError: Golden file mismatch: cfir\\raw-cfir\\psi2cfir\\testData\\rawBuilder\\syntax\\recovery\\functionTypeMixedParamNames.txt Run with -Dupdate.test.data=true to update golden files. === Expected === FILE: functionTypeMixedParamNames.cj internal? func mixed(g: R|() -> R|Bool||): R|Bool| { RETURN { FUNCTION_CALL(g) { INT(1) STRING(\"x\") } } } internal? typealias MixedTuple = R|(R|Int64|, R|x|)| === Actual === FILE: functionTypeMixedParamNames.cj internal? func mixed(g: R|() -> R|Bool|"
+        },
+        {
+          "class": "org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery",
+          "name": "testFunctionTypeParamDefault",
+          "type": "failure",
+          "message": "java.lang.AssertionError: Golden file mismatch: cfir\\raw-cfir\\psi2cfir\\testData\\rawBuilder\\syntax\\recovery\\functionTypeParamDefault.txt Run with -Dupdate.test.data=true to update golden files. === Expected === FILE: functionTypeParamDefault.cj internal? func withDefault(g: R|x|): <implicit> === Actual === FILE: functionTypeParamDefault.cj internal? func withDefault(g: R|Int64|): <implicit>"
+        },
+        {
+          "class": "org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery",
+          "name": "testFunctionTypeMixedParamNames",
+          "type": "failure",
+          "message": "java.lang.AssertionError: Golden file mismatch: cfir\\raw-cfir\\psi2cfir\\testData\\rawBuilder\\syntax\\recovery\\functionTypeMixedParamNames.txt Run with -Dupdate.test.data=true to update golden files. === Expected === FILE: functionTypeMixedParamNames.cj internal? func mixed(g: R|() -> R|Bool||): R|Bool| { RETURN { FUNCTION_CALL(g) { INT(1) STRING(\"x\") } } } internal? typealias MixedTuple = R|(R|Int64|, R|x|)| === Actual === FILE: functionTypeMixedParamNames.cj internal? func mixed(g: R|() -> R|Bool|"
+        },
+        {
+          "class": "org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery",
+          "name": "testFunctionTypeParamDefault",
+          "type": "failure",
+          "message": "java.lang.AssertionError: Golden file mismatch: cfir\\raw-cfir\\psi2cfir\\testData\\rawBuilder\\syntax\\recovery\\functionTypeParamDefault.txt Run with -Dupdate.test.data=true to update golden files. === Expected === FILE: functionTypeParamDefault.cj internal? func withDefault(g: R|x|): <implicit> === Actual === FILE: functionTypeParamDefault.cj internal? func withDefault(g: R|Int64|): <implicit>"
+        },
+        {
+          "class": "org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery",
+          "name": "testFunctionTypeMixedParamNames",
+          "type": "failure",
+          "message": "java.lang.AssertionError: Golden file mismatch: cfir\\raw-cfir\\psi2cfir\\testData\\rawBuilder\\syntax\\recovery\\functionTypeMixedParamNames.txt Run with -Dupdate.test.data=true to update golden files. === Expected === FILE: functionTypeMixedParamNames.cj internal? func mixed(g: R|() -> R|Bool||): R|Bool| { RETURN { FUNCTION_CALL(g) { INT(1) STRING(\"x\") } } } internal? typealias MixedTuple = R|(R|Int64|, R|x|)| === Actual === FILE: functionTypeMixedParamNames.cj internal? func mixed(g: R|() -> R|Bool|"
+        },
+        {
+          "class": "org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery",
+          "name": "testFunctionTypeParamDefault",
+          "type": "failure",
+          "message": "java.lang.AssertionError: Golden file mismatch: cfir\\raw-cfir\\psi2cfir\\testData\\rawBuilder\\syntax\\recovery\\functionTypeParamDefault.txt Run with -Dupdate.test.data=true to update golden files. === Expected === FILE: functionTypeParamDefault.cj internal? func withDefault(g: R|x|): <implicit> === Actual === FILE: functionTypeParamDefault.cj internal? func withDefault(g: R|Int64|): <implicit>"
+        },
+        {
+          "class": "org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Types",
+          "name": "testFunctionTypeRefs",
+          "type": "failure",
+          "message": "java.lang.AssertionError: Golden file mismatch: cfir\\raw-cfir\\psi2cfir\\testData\\rawBuilder\\syntax\\types\\functionTypeRefs.txt Run with -Dupdate.test.data=true to update golden files. === Expected === FILE: functionTypeRefs.cj internal? func noArgs(f: R|() -> R|Unit||): R|Unit| { FUNCTION_CALL(f) { } } internal? func oneArg(f: R|(R|Int64|) -> R|Int64||): R|Int64| { RETURN { FUNCTION_CALL(f) { INT(1) } } } internal? func twoArgs(f: R|(R|Int64|, R|String|) -> R|Bool||): R|Bool| { RETURN { FUNCTION_C"
+        },
+        {
+          "class": "org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Types",
+          "name": "testFunctionTypeRefs",
+          "type": "failure",
+          "message": "java.lang.AssertionError: Golden file mismatch: cfir\\raw-cfir\\psi2cfir\\testData\\rawBuilder\\syntax\\types\\functionTypeRefs.txt Run with -Dupdate.test.data=true to update golden files. === Expected === FILE: functionTypeRefs.cj internal? func noArgs(f: R|() -> R|Unit||): R|Unit| { FUNCTION_CALL(f) { } } internal? func oneArg(f: R|(R|Int64|) -> R|Int64||): R|Int64| { RETURN { FUNCTION_CALL(f) { INT(1) } } } internal? func twoArgs(f: R|(R|Int64|, R|String|) -> R|Bool||): R|Bool| { RETURN { FUNCTION_C"
+        },
+        {
+          "class": "org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Types",
+          "name": "testFunctionTypeRefs",
+          "type": "failure",
+          "message": "java.lang.AssertionError: Golden file mismatch: cfir\\raw-cfir\\psi2cfir\\testData\\rawBuilder\\syntax\\types\\functionTypeRefs.txt Run with -Dupdate.test.data=true to update golden files. === Expected === FILE: functionTypeRefs.cj internal? func noArgs(f: R|() -> R|Unit||): R|Unit| { FUNCTION_CALL(f) { } } internal? func oneArg(f: R|(R|Int64|) -> R|Int64||): R|Int64| { RETURN { FUNCTION_CALL(f) { INT(1) } } } internal? func twoArgs(f: R|(R|Int64|, R|String|) -> R|Bool||): R|Bool| { RETURN { FUNCTION_C"
+        }
+      ]
+    },
+    {
+      "module": "cfir\\resolve",
+      "task": "test",
+      "tests": 153,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0,
+      "timeSec": 5.7,
+      "staleXml": 0,
+      "failed": [
+        {
+          "class": "org.cangnova.cangjie.cfir.resolve.calls.stages.CfirMapArgumentsTest$Defaults",
+          "name": "number of default arguments is counted()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: expected: <RESOLVED> but was: <INAPPLICABLE_ARGUMENTS_MAPPING_ERROR>"
+        }
+      ]
+    },
+    {
+      "module": "chir\\cfir2chir",
+      "task": "test",
+      "tests": 28,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timeSec": 1.6,
+      "staleXml": 0,
+      "failed": []
+    },
+    {
+      "module": "chir\\chir-tree",
+      "task": "test",
+      "tests": 41,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 1,
+      "timeSec": 2.1,
+      "staleXml": 0,
+      "failed": []
+    },
+    {
+      "module": "code-insight\\completion\\impl-cfir",
+      "task": "test",
+      "tests": 75,
+      "failures": 2,
+      "errors": 0,
+      "skipped": 0,
+      "timeSec": 65.5,
+      "staleXml": 0,
+      "failed": [
+        {
+          "class": "org.cangnova.cangjie.ide.completion.impl.cfir.sections.CfirIndexCompletionSectionTest",
+          "name": "indexSectionSuppressesShadowedCandidate(CjFile)",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: 被本文件声明遮蔽的索引候选不得存活，实际 [indexSite, shadowedByFile, ArgOpt, ArgumentMode, ArgumentSpec, ParsedArguments, ArgumentParseException, parseArguments, NodeFormat_MatchCase, NodeFormat_NodeBase, NodeFormat_Pattern, NodeFormat_Expr, NodeFormat_Block, FlatBufferObject, NodeFormat_MatchCaseOther, NodeFormat_ConstPattern, NodeFormat_WildcardPattern, NodeFormat_VarPattern, NodeFormat_ExceptTypePattern, NodeFormat_TypePattern, NodeFormat_EnumPattern, NodeFormat_Va"
+        },
+        {
+          "class": "org.cangnova.cangjie.ide.completion.impl.cfir.sections.CfirInsertionIntegrationTest",
+          "name": "insertsUnimportedCandidateAndReportsImport(CjFile)",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: expected: <insertion.dependency> but was: <insertion.dependency.insertionTarget>"
+        }
+      ]
+    },
+    {
+      "module": "code-insight\\completion\\impl-shared",
+      "task": "test",
+      "tests": 85,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timeSec": 8.9,
+      "staleXml": 0,
+      "failed": []
+    },
+    {
+      "module": "code-insight\\folding",
+      "task": "test",
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timeSec": 5.4,
+      "staleXml": 0,
+      "failed": []
+    },
+    {
+      "module": "code-insight\\formatting",
+      "task": "test",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timeSec": 7.3,
+      "staleXml": 0,
+      "failed": []
+    },
+    {
+      "module": "code-insight\\highlighting",
+      "task": "test",
+      "tests": 16,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0,
+      "timeSec": 6.7,
+      "staleXml": 0,
+      "failed": [
+        {
+          "class": "org.cangnova.cangjie.lexer.cdoc.CDocRendererTest",
+          "name": "sectionsWithLinkSubjectsAreRendered()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: 应渲染参数分�? <div class='content'><p style='margin-top:0;padding-top:0;'>Greets the caller.</p></div><table class='sections'><tr><td valign='top' class='section'><p>Params:</td><td valign='top'><p><code><a href=\"psi_element://value\"><code><span style=\"color:#000000;\">value</span></code></a></code> - input value</td><tr><td valign='top' class='section'><p>See Also:</td><td valign='top'><a href=\"psi_element://Document\"><code><span style=\"color:#000000;\">Document"
+        }
+      ]
+    },
+    {
+      "module": "code-insight\\override-implement",
+      "task": "test",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timeSec": 14.6,
+      "staleXml": 0,
+      "failed": []
+    },
+    {
+      "module": "common",
+      "task": "test",
+      "tests": 44,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timeSec": 0.9,
+      "staleXml": 0,
+      "failed": []
+    },
+    {
+      "module": "compiler\\cli",
+      "task": "test",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timeSec": 0.5,
+      "staleXml": 0,
+      "failed": []
+    },
+    {
+      "module": "compiler\\codegen",
+      "task": "test",
+      "tests": 78,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 4,
+      "timeSec": 3.6,
+      "staleXml": 0,
+      "failed": []
+    },
+    {
+      "module": "compiler\\config",
+      "task": "test",
+      "tests": 11,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timeSec": 4.3,
+      "staleXml": 0,
+      "failed": []
+    },
+    {
+      "module": "compiler\\frontend",
+      "task": "test",
+      "tests": 130,
+      "failures": 6,
+      "errors": 0,
+      "skipped": 0,
+      "timeSec": 126.6,
+      "staleXml": 0,
+      "failed": [
+        {
+          "class": "org.cangnova.cangjie.frontend.pipeline.CjmpTwoPhaseCompilationTest",
+          "name": "deserialized generic extend peers honor target substitutions and bounds()",
+          "type": "failure",
+          "message": "java.lang.NullPointerException: Cannot invoke \"com.intellij.openapi.application.Application.assertReadAccessAllowed()\" because the return value of \"com.intellij.openapi.application.ApplicationManager.getApplication()\" is null"
+        },
+        {
+          "class": "org.cangnova.cangjie.frontend.pipeline.FrontendMacroConstructionExecutionTest",
+          "name": "defaultStableSplicerReplacesDeclarationCarrierWithParsedDeclarationPayload()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Construction failed: Failed(registry=org.cangnova.cangjie.cfir.resolve.providers.macro.MacroExpansionRegistry@492fa72a); diagnostics=[MacroConstructionDiagnostic(severity=ERROR, message=Macro fragment for `macros.GenerateDeclaration` did not produce a MacroDeclarationFragment payload., originSurfaceId=3100, originSource=null, kind=MACRO_EXPANSION_FAILED, artifactPackage=null, artifactPath=null, macroLibraryPath=null, diagnosticOrigin=CONSTRUCTION, compileInvo"
+        },
+        {
+          "class": "org.cangnova.cangjie.frontend.pipeline.FrontendMacroConstructionExecutionTest",
+          "name": "parentDeclarationExpansionConsumesNestedMacroCarriers()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Construction failed: Failed(registry=org.cangnova.cangjie.cfir.resolve.providers.macro.MacroExpansionRegistry@8ce3f27); diagnostics=[MacroConstructionDiagnostic(severity=ERROR, message=Macro fragment for `macros.ReplaceClass` did not produce a MacroDeclarationFragment payload., originSurfaceId=3109, originSource=null, kind=MACRO_EXPANSION_FAILED, artifactPackage=null, artifactPath=null, macroLibraryPath=null, diagnosticOrigin=CONSTRUCTION, compileInvocationId"
+        },
+        {
+          "class": "org.cangnova.cangjie.frontend.pipeline.FrontendMacroConstructionExecutionTest",
+          "name": "constructionCacheSeparatesParserContextForIdenticalSourceAndSurface()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Construction failed: Failed(registry=org.cangnova.cangjie.cfir.resolve.providers.macro.MacroExpansionRegistry@14ca88bc); diagnostics=[MacroConstructionDiagnostic(severity=ERROR, message=Macro fragment for `macros.Generated` did not produce a MacroDeclarationFragment payload., originSurfaceId=3090, originSource=null, kind=MACRO_EXPANSION_FAILED, artifactPackage=null, artifactPath=null, macroLibraryPath=null, diagnosticOrigin=CONSTRUCTION, compileInvocationId=n"
+        },
+        {
+          "class": "org.cangnova.cangjie.frontend.pipeline.MacroArtifactLocatorTest",
+          "name": "locatesAndResolvesFixedSdkStdMacroArtifact()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: Unexpected diagnostics: [MacroConstructionDiagnostic(severity=ERROR, message=Re-exported macro `std.unittest.mock.mockmacro.enumerate` resolves to `std.collection.enumerate`, but the executable macro artifact package `std.collection` was not found., originSurfaceId=null, originSource=null, kind=MACRO_UNDEFINED_PACKAGE, artifactPackage=std.unittest.mock.mockmacro, artifactPath=null, macroLibraryPath=null, diagnosticOrigin=ARTIFACT_RESOLVER, compileInvocationId"
+        },
+        {
+          "class": "org.cangnova.cangjie.frontend.pipeline.MacroConstructionArchitectureGuardTest",
+          "name": "rawBuildersCoverAllMacroSurfaceShapes()",
+          "type": "failure",
+          "message": "org.opentest4j.AssertionFailedError: PSI and LightTree raw builders must not diverge in macro surface coverage: PSI raw builder: missing explicit IfAvailableSurface construction or BuiltinNonMacroSurface branch LightTree raw builder: missing explicit IfAvailableSurface construction or BuiltinNonMacroSurface branch ==> expected: <true> but was: <false>"
+        }
+      ]
+    },
+    {
+      "module": "compiler\\jvm-codegen",
+      "task": "test",
+      "tests": 66,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timeSec": 4.1,
+      "staleXml": 0,
+      "failed": []
+    },
+    {
+      "module": "compiler\\phaser",
+      "task": "test",
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timeSec": 0.4,
+      "staleXml": 0,
+      "failed": []
+    },
+    {
+      "module": "llvm-interop\\llvm-interop-api",
+      "task": "test",
+      "tests": 8,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timeSec": 0.4,
+      "staleXml": 0,
+      "failed": []
+    },
+    {
+      "module": "llvm-interop\\llvm-interop-jni",
+      "task": "test",
+      "tests": 15,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timeSec": 1.5,
+      "staleXml": 0,
+      "failed": []
+    },
+    {
+      "module": "lsp",
+      "task": "test",
+      "tests": 112,
+      "failures": 4,
+      "errors": 0,
+      "skipped": 7,
+      "timeSec": 84.1,
+      "staleXml": 0,
+      "failed": [
+        {
+          "class": "org.cangnova.cangjie.lsp.completion.LspCompletionResolveTest",
+          "name": "resolveToleratesExpiredSession()",
+          "type": "failure",
+          "message": "java.util.concurrent.ExecutionException: org.eclipse.lsp4j.jsonrpc.ResponseErrorException: Internal error."
+        },
+        {
+          "class": "org.cangnova.cangjie.lsp.completion.LspCompletionResolveTest",
+          "name": "resolveLeavesItemUnchangedWhenNoCDoc()",
+          "type": "failure",
+          "message": "java.util.concurrent.ExecutionException: org.eclipse.lsp4j.jsonrpc.ResponseErrorException: Internal error."
+        },
+        {
+          "class": "org.cangnova.cangjie.lsp.completion.LspCompletionResolveTest",
+          "name": "resolveFillsDocumentationForDocumentedCandidate()",
+          "type": "failure",
+          "message": "java.util.concurrent.ExecutionException: org.eclipse.lsp4j.jsonrpc.ResponseErrorException: Internal error."
+        },
+        {
+          "class": "org.cangnova.cangjie.lsp.completion.LspCompletionStatisticsTest",
+          "name": "resolveRecordsItsOwnStage()",
+          "type": "failure",
+          "message": "java.util.concurrent.ExecutionException: org.eclipse.lsp4j.jsonrpc.ResponseErrorException: Internal error."
+        }
+      ]
+    },
+    {
+      "module": "macro\\macro-process",
+      "task": "test",
+      "tests": 22,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 1,
+      "timeSec": 4.2,
+      "staleXml": 0,
+      "failed": []
+    },
+    {
+      "module": "macro\\macro-stub",
+      "task": "test",
+      "tests": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timeSec": 0.2,
+      "staleXml": 0,
+      "failed": []
+    },
+    {
+      "module": "psi",
+      "task": "test",
+      "tests": 273,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0,
+      "timeSec": 29.7,
+      "staleXml": 0,
+      "failed": [
+        {
+          "class": "org.cangnova.cangjie.psi.ForeignAndAnnotationParsingTest",
+          "name": "platformAnnotationSurfaceIsRetainedWithoutBuiltinKindFacade()",
+          "type": "failure",
+          "message": "junit.framework.AssertionFailedError"
+        }
+      ]
+    },
+    {
+      "module": "resolution.common",
+      "task": "test",
+      "tests": 14,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timeSec": 0.3,
+      "staleXml": 0,
+      "failed": []
+    }
+  ]
+}

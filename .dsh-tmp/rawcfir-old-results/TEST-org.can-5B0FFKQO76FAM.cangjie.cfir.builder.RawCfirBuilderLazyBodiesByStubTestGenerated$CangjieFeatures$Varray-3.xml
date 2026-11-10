@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$CangjieFeatures$Varray" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-01T10:01:37.815Z" hostname="LIN" time="0.115">
+  <properties/>
+  <testcase name="testVarrayBraceInit" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$CangjieFeatures$Varray" time="0.008"/>
+  <testcase name="testVarrayTypeRef" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$CangjieFeatures$Varray" time="0.003"/>
+  <testcase name="testAllFilesPresentInVarray" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$CangjieFeatures$Varray" time="0.104"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

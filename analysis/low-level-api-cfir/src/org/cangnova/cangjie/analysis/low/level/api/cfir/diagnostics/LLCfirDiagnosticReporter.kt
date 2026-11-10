@@ -10,6 +10,7 @@ import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.addValueFor
 import org.cangnova.cangjie.cfir.diagnostics.*
 import org.cangnova.cangjie.cfir.diagnostics.PendingDiagnosticReporter
+import org.cangnova.cangjie.cfir.diagnostics.impl.CfirDiagnosticCommitPolicy
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 import org.cangnova.cangjie.source.CjFakePsiSourceElement
 import org.cangnova.cangjie.source.CjLightSourceElement
@@ -25,6 +26,11 @@ internal class LLCfirDiagnosticReporter(
      * 将宏展开等生成源码位置映射回原始源码位置的函数。
      */
     private val sourceMapper: (AbstractCjSourceElement) -> AbstractCjSourceElement? = { null },
+    /**
+     * 提交期裁决策略；必须与编译管线的 `PendingDiagnosticsReporterImpl` 保持一致，
+     * 否则同一源码在 IDE 与 CLI 中得到不同的诊断集合。
+     */
+    private val commitPolicy: DiagnosticCommitPolicy = CfirDiagnosticCommitPolicy,
 ) : PendingDiagnosticReporter() {
     /**
      * 尚未提交到最终结果的 diagnostics，按 PSI 元素归组。
@@ -141,12 +147,39 @@ internal class LLCfirDiagnosticReporter(
                     }
                     diagnostic.element == element || commitEverything -> {
                         iterator.remove()
+                        val coreDiagnostic = diagnostic as CjDiagnostic
+                        if (commitPolicy.isSupersededByMoreSpecific(
+                                diagnostic = coreDiagnostic,
+                                pending = pendingDiagnostics.diagnosticsInFileOf(diagnosticElement),
+                                committed = _committedDiagnostics.diagnosticsInFileOf(diagnosticElement),
+                            )
+                        ) {
+                            continue
+                        }
+                        if (commitPolicy.isDuplicateOfCommitted(
+                                diagnostic = coreDiagnostic,
+                                committed = _committedDiagnostics.diagnosticsInFileOf(diagnosticElement),
+                            )
+                        ) {
+                            continue
+                        }
                         committedList += diagnostic
                     }
                 }
             }
         }
     }
+}
+
+/**
+ * 返回与 [anchor] 同一 PSI 文件的诊断序列；与编译管线一致，提交期裁决按文件进行。
+ */
+private fun Map<PsiElement, List<CjPsiDiagnostic>>.diagnosticsInFileOf(anchor: PsiElement): Sequence<CjDiagnostic> {
+    val file = anchor.containingFile
+    return asSequence()
+        .filter { (element, _) -> element.containingFile == file }
+        .flatMap { (_, diagnostics) -> diagnostics.asSequence() }
+        .map { it as CjDiagnostic }
 }
 
 /**

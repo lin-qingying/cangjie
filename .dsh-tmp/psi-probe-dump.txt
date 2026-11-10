@@ -1,0 +1,512 @@
+========== mixedFuncType ==========
+CangJie File: mixedFuncType.cj
+  PACKAGE_DIRECTIVE
+    <empty list>
+  IMPORT_LIST
+    <empty list>
+  TYPEALIAS
+    ANNOTATIONS
+      <empty list>
+    MODIFIER_LIST
+      <empty list>
+    PsiElement(type)('type')
+    PsiWhiteSpace(' ')
+    PsiElement(IDENTIFIER)('F')
+    PsiWhiteSpace(' ')
+    PsiElement(EQ)('=')
+    PsiWhiteSpace(' ')
+    TYPE_REFERENCE
+      FUNCTION_TYPE
+        VALUE_PARAMETER_LIST
+          PsiElement(LPAR)('(')
+          VALUE_PARAMETER
+            TYPE_REFERENCE
+              BASIC_TYPE
+                PsiElement(Int64)('Int64')
+          PsiElement(COMMA)(',')
+          PsiWhiteSpace(' ')
+          VALUE_PARAMETER
+            PsiElement(IDENTIFIER)('x')
+            PsiElement(COLON)(':')
+            PsiWhiteSpace(' ')
+            TYPE_REFERENCE
+              USER_TYPE
+                REFERENCE_EXPRESSION
+                  PsiElement(IDENTIFIER)('String')
+          PsiErrorElement:In a parameter type list, either all parameters must be named, or none of them; mixed is not allowed
+            <empty list>
+          PsiElement(RPAR)(')')
+        PsiWhiteSpace(' ')
+        PsiElement(ARROW)('->')
+        PsiWhiteSpace(' ')
+        TYPE_REFERENCE
+          BASIC_TYPE
+            PsiElement(Bool)('Bool')
+
+========== end mixedFuncType ==========
+========== trailingCommaTuple ==========
+CangJie File: trailingCommaTuple.cj
+  PACKAGE_DIRECTIVE
+    <empty list>
+  IMPORT_LIST
+    <empty list>
+  TYPEALIAS
+    ANNOTATIONS
+      <empty list>
+    MODIFIER_LIST
+      <empty list>
+    PsiElement(type)('type')
+    PsiWhiteSpace(' ')
+    PsiElement(IDENTIFIER)('T')
+    PsiWhiteSpace(' ')
+    PsiElement(EQ)('=')
+    PsiWhiteSpace(' ')
+    TYPE_REFERENCE
+      PARENTHESIZED_TYPE
+        PsiElement(LPAR)('(')
+        TYPE_REFERENCE
+          BASIC_TYPE
+            PsiElement(Int64)('Int64')
+        PsiElement(COMMA)(',')
+        PsiElement(RPAR)(')')
+
+========== end trailingCommaTuple ==========
+========== mixedTuple ==========
+CangJie File: mixedTuple.cj
+  PACKAGE_DIRECTIVE
+    <empty list>
+  IMPORT_LIST
+    <empty list>
+  TYPEALIAS
+    ANNOTATIONS
+      <empty list>
+    MODIFIER_LIST
+      <empty list>
+    PsiElement(type)('type')
+    PsiWhiteSpace(' ')
+    PsiElement(IDENTIFIER)('MixedTuple')
+    PsiWhiteSpace(' ')
+    PsiElement(EQ)('=')
+    PsiWhiteSpace(' ')
+    TYPE_REFERENCE
+      TUPLE_TYPE
+        PsiElement(LPAR)('(')
+        TYPE_REFERENCE
+          BASIC_TYPE
+            PsiElement(Int64)('Int64')
+        PsiElement(COMMA)(',')
+        PsiWhiteSpace(' ')
+        PsiElement(IDENTIFIER)('x')
+        PsiElement(COLON)(':')
+        PsiWhiteSpace(' ')
+        TYPE_REFERENCE
+          USER_TYPE
+            REFERENCE_EXPRESSION
+              PsiElement(IDENTIFIER)('String')
+        PsiErrorElement:In a parameter type list, either all parameters must be named, or none of them; mixed is not allowed
+          <empty list>
+        PsiElement(RPAR)(')')
+
+========== end mixedTuple ==========
+========== unclosedParenType ==========
+CangJie File: unclosedParenType.cj
+  PACKAGE_DIRECTIVE
+    <empty list>
+  IMPORT_LIST
+    <empty list>
+  FUNC: f
+    ANNOTATIONS
+      <empty list>
+    MODIFIER_LIST
+      <empty list>
+    PsiElement(func)('func')
+    PsiWhiteSpace(' ')
+    PsiElement(IDENTIFIER)('f')
+    VALUE_PARAMETER_LIST
+      PsiElement(LPAR)('(')
+      VALUE_PARAMETER
+        PsiElement(IDENTIFIER)('g')
+        PsiElement(COLON)(':')
+        PsiWhiteSpace(' ')
+        TYPE_REFERENCE
+          FUNCTION_TYPE
+            VALUE_PARAMETER_LIST
+              PsiElement(LPAR)('(')
+              VALUE_PARAMETER
+                TYPE_REFERENCE
+                  BASIC_TYPE
+                    PsiElement(Int64)('Int64')
+              PsiElement(RPAR)(')')
+            PsiErrorElement:Expecting '->' to specify return type of a function type
+              PsiElement(COLON)(':')
+            PsiWhiteSpace(' ')
+            TYPE_REFERENCE
+              BASIC_TYPE
+                PsiElement(Int64)('Int64')
+      PsiWhiteSpace(' ')
+      PsiErrorElement:Expecting ',' or ')', found '{'
+        PsiElement(LBRACE)('{')
+      PsiWhiteSpace(' ')
+      PsiErrorElement:Unclosed delimiter: '('
+        PsiElement(return)('return')
+    PsiErrorElement:Function body expected
+      <empty list>
+  PsiWhiteSpace(' ')
+  ANNOTATIONS
+    <empty list>
+  MODIFIER_LIST
+    <empty list>
+  PsiErrorElement:Expecting a top level declaration
+    PsiElement(INTEGER_LITERAL)('1')
+  PsiWhiteSpace(' ')
+  ANNOTATIONS
+    <empty list>
+  MODIFIER_LIST
+    <empty list>
+  PsiErrorElement:Expecting a top level declaration
+    PsiElement(RBRACE)('}')
+
+========== end unclosedParenType ==========
+========== namedTuple ==========
+CangJie File: namedTuple.cj
+  PACKAGE_DIRECTIVE
+    <empty list>
+  IMPORT_LIST
+    <empty list>
+  TYPEALIAS
+    ANNOTATIONS
+      <empty list>
+    MODIFIER_LIST
+      <empty list>
+    PsiElement(type)('type')
+    PsiWhiteSpace(' ')
+    PsiElement(IDENTIFIER)('NamedTuple')
+    PsiWhiteSpace(' ')
+    PsiElement(EQ)('=')
+    PsiWhiteSpace(' ')
+    TYPE_REFERENCE
+      TUPLE_TYPE
+        PsiElement(LPAR)('(')
+        PsiElement(IDENTIFIER)('x')
+        PsiElement(COLON)(':')
+        PsiWhiteSpace(' ')
+        TYPE_REFERENCE
+          BASIC_TYPE
+            PsiElement(Int64)('Int64')
+        PsiElement(COMMA)(',')
+        PsiWhiteSpace(' ')
+        PsiElement(IDENTIFIER)('y')
+        PsiElement(COLON)(':')
+        PsiWhiteSpace(' ')
+        TYPE_REFERENCE
+          USER_TYPE
+            REFERENCE_EXPRESSION
+              PsiElement(IDENTIFIER)('String')
+        PsiElement(RPAR)(')')
+
+========== end namedTuple ==========
+========== emptyParen ==========
+CangJie File: emptyParen.cj
+  PACKAGE_DIRECTIVE
+    <empty list>
+  IMPORT_LIST
+    <empty list>
+  TYPEALIAS
+    ANNOTATIONS
+      <empty list>
+    MODIFIER_LIST
+      <empty list>
+    PsiElement(type)('type')
+    PsiWhiteSpace(' ')
+    PsiElement(IDENTIFIER)('E')
+    PsiWhiteSpace(' ')
+    PsiElement(EQ)('=')
+    PsiWhiteSpace(' ')
+    TYPE_REFERENCE
+      FUNCTION_TYPE
+        PsiElement(LPAR)('(')
+        PsiElement(RPAR)(')')
+        PsiErrorElement:Expected '->' in function type
+          <empty list>
+        TYPE_REFERENCE
+          PsiErrorElement:Expecting type name, found 'null'
+            <empty list>
+
+========== end emptyParen ==========
+========== badCommaFuncType ==========
+CangJie File: badCommaFuncType.cj
+  PACKAGE_DIRECTIVE
+    <empty list>
+  IMPORT_LIST
+    <empty list>
+  TYPEALIAS
+    ANNOTATIONS
+      <empty list>
+    MODIFIER_LIST
+      <empty list>
+    PsiElement(type)('type')
+    PsiWhiteSpace(' ')
+    PsiElement(IDENTIFIER)('F')
+    PsiWhiteSpace(' ')
+    PsiElement(EQ)('=')
+    PsiWhiteSpace(' ')
+    TYPE_REFERENCE
+      FUNCTION_TYPE
+        VALUE_PARAMETER_LIST
+          PsiElement(LPAR)('(')
+          VALUE_PARAMETER
+            TYPE_REFERENCE
+              BASIC_TYPE
+                PsiElement(Int64)('Int64')
+          PsiElement(COMMA)(',')
+          PsiWhiteSpace(' ')
+          PsiErrorElement:Expecting parameter declaration
+            PsiElement(COMMA)(',')
+          PsiWhiteSpace(' ')
+          VALUE_PARAMETER
+            TYPE_REFERENCE
+              USER_TYPE
+                REFERENCE_EXPRESSION
+                  PsiElement(IDENTIFIER)('String')
+          PsiElement(RPAR)(')')
+        PsiWhiteSpace(' ')
+        PsiElement(ARROW)('->')
+        PsiWhiteSpace(' ')
+        TYPE_REFERENCE
+          BASIC_TYPE
+            PsiElement(Bool)('Bool')
+
+========== end badCommaFuncType ==========
+========== funcTypeDefault ==========
+CangJie File: funcTypeDefault.cj
+  PACKAGE_DIRECTIVE
+    <empty list>
+  IMPORT_LIST
+    <empty list>
+  FUNC: withDefault
+    ANNOTATIONS
+      <empty list>
+    MODIFIER_LIST
+      <empty list>
+    PsiElement(func)('func')
+    PsiWhiteSpace(' ')
+    PsiElement(IDENTIFIER)('withDefault')
+    VALUE_PARAMETER_LIST
+      PsiElement(LPAR)('(')
+      VALUE_PARAMETER
+        PsiElement(IDENTIFIER)('g')
+        PsiElement(COLON)(':')
+        PsiWhiteSpace(' ')
+        TYPE_REFERENCE
+          PsiErrorElement:Unclosed delimiter: '('
+            PsiElement(LPAR)('(')
+            PsiElement(IDENTIFIER)('x')
+            PsiElement(COLON)(':')
+            PsiWhiteSpace(' ')
+            TYPE_REFERENCE
+              BASIC_TYPE
+                PsiElement(Int64)('Int64')
+        PsiErrorElement:The default value cannot be set for non-named parameters
+          <empty list>
+        PsiWhiteSpace(' ')
+        PsiErrorElement:Expecting ',' or ')', found '=''
+          PsiElement(EQ)('=')
+        PsiWhiteSpace(' ')
+        INTEGER_CONSTANT
+          PsiElement(INTEGER_LITERAL)('1')
+      PsiElement(RPAR)(')')
+    PsiErrorElement:Function body expected
+      <empty list>
+  PsiWhiteSpace(' ')
+  ANNOTATIONS
+    <empty list>
+  MODIFIER_LIST
+    <empty list>
+  PsiErrorElement:Expecting a top level declaration
+    PsiElement(ARROW)('->')
+  PsiWhiteSpace(' ')
+  ANNOTATIONS
+    <empty list>
+  MODIFIER_LIST
+    <empty list>
+  PsiErrorElement:Expecting a top level declaration
+    PsiElement(Bool)('Bool')
+  ANNOTATIONS
+    <empty list>
+  MODIFIER_LIST
+    <empty list>
+  PsiErrorElement:Expecting a top level declaration
+    PsiElement(RPAR)(')')
+  ANNOTATIONS
+    <empty list>
+  MODIFIER_LIST
+    <empty list>
+  PsiErrorElement:Expecting a top level declaration
+    PsiElement(COLON)(':')
+  PsiWhiteSpace(' ')
+  ANNOTATIONS
+    <empty list>
+  MODIFIER_LIST
+    <empty list>
+  PsiErrorElement:Expecting a top level declaration
+    PsiElement(Bool)('Bool')
+  PsiWhiteSpace(' ')
+  ANNOTATIONS
+    <empty list>
+  MODIFIER_LIST
+    <empty list>
+  PsiErrorElement:Expecting a top level declaration
+    PsiElement(LBRACE)('{')
+  PsiWhiteSpace('\n    ')
+  ANNOTATIONS
+    <empty list>
+  MODIFIER_LIST
+    <empty list>
+  PsiErrorElement:Expecting a top level declaration
+    PsiElement(return)('return')
+  PsiWhiteSpace(' ')
+  ANNOTATIONS
+    <empty list>
+  MODIFIER_LIST
+    <empty list>
+  PsiErrorElement:Expecting a top level declaration
+    PsiElement(IDENTIFIER)('g')
+  ANNOTATIONS
+    <empty list>
+  MODIFIER_LIST
+    <empty list>
+  PsiErrorElement:Expecting a top level declaration
+    PsiElement(LPAR)('(')
+  ANNOTATIONS
+    <empty list>
+  MODIFIER_LIST
+    <empty list>
+  PsiErrorElement:Expecting a top level declaration
+    PsiElement(INTEGER_LITERAL)('1')
+  ANNOTATIONS
+    <empty list>
+  MODIFIER_LIST
+    <empty list>
+  PsiErrorElement:Expecting a top level declaration
+    PsiElement(RPAR)(')')
+  PsiWhiteSpace('\n')
+  ANNOTATIONS
+    <empty list>
+  MODIFIER_LIST
+    <empty list>
+  PsiErrorElement:Expecting a top level declaration
+    PsiElement(RBRACE)('}')
+
+========== end funcTypeDefault ==========
+========== parenNamed ==========
+CangJie File: parenNamed.cj
+  PACKAGE_DIRECTIVE
+    <empty list>
+  IMPORT_LIST
+    <empty list>
+  TYPEALIAS
+    ANNOTATIONS
+      <empty list>
+    MODIFIER_LIST
+      <empty list>
+    PsiElement(type)('type')
+    PsiWhiteSpace(' ')
+    PsiElement(IDENTIFIER)('P')
+    PsiWhiteSpace(' ')
+    PsiElement(EQ)('=')
+    PsiWhiteSpace(' ')
+    TYPE_REFERENCE
+      PARENTHESIZED_TYPE
+        PsiElement(LPAR)('(')
+        PsiElement(IDENTIFIER)('x')
+        PsiElement(COLON)(':')
+        PsiWhiteSpace(' ')
+        TYPE_REFERENCE
+          BASIC_TYPE
+            PsiElement(Int64)('Int64')
+        PsiElement(RPAR)(')')
+        PsiErrorElement:Type parameter names are only allowed in tuple and function types
+          <empty list>
+
+========== end parenNamed ==========
+========== dupRawNamed ==========
+CangJie File: dupRawNamed.cj
+  PACKAGE_DIRECTIVE
+    <empty list>
+  IMPORT_LIST
+    <empty list>
+  TYPEALIAS
+    ANNOTATIONS
+      <empty list>
+    MODIFIER_LIST
+      <empty list>
+    PsiElement(type)('type')
+    PsiWhiteSpace(' ')
+    PsiElement(IDENTIFIER)('D')
+    PsiWhiteSpace(' ')
+    PsiElement(EQ)('=')
+    PsiWhiteSpace(' ')
+    TYPE_REFERENCE
+      TUPLE_TYPE
+        PsiElement(LPAR)('(')
+        PsiElement(IDENTIFIER)('x')
+        PsiElement(COLON)(':')
+        PsiWhiteSpace(' ')
+        TYPE_REFERENCE
+          BASIC_TYPE
+            PsiElement(Int64)('Int64')
+        PsiElement(COMMA)(',')
+        PsiWhiteSpace(' ')
+        PsiElement(IDENTIFIER)('`x`')
+        PsiElement(COLON)(':')
+        PsiWhiteSpace(' ')
+        TYPE_REFERENCE
+          USER_TYPE
+            REFERENCE_EXPRESSION
+              PsiElement(IDENTIFIER)('String')
+        PsiErrorElement:Duplicated type parameter name: 'x'
+          <empty list>
+        PsiElement(RPAR)(')')
+
+========== end dupRawNamed ==========
+========== dupNamed ==========
+CangJie File: dupNamed.cj
+  PACKAGE_DIRECTIVE
+    <empty list>
+  IMPORT_LIST
+    <empty list>
+  TYPEALIAS
+    ANNOTATIONS
+      <empty list>
+    MODIFIER_LIST
+      <empty list>
+    PsiElement(type)('type')
+    PsiWhiteSpace(' ')
+    PsiElement(IDENTIFIER)('D')
+    PsiWhiteSpace(' ')
+    PsiElement(EQ)('=')
+    PsiWhiteSpace(' ')
+    TYPE_REFERENCE
+      TUPLE_TYPE
+        PsiElement(LPAR)('(')
+        PsiElement(IDENTIFIER)('x')
+        PsiElement(COLON)(':')
+        PsiWhiteSpace(' ')
+        TYPE_REFERENCE
+          BASIC_TYPE
+            PsiElement(Int64)('Int64')
+        PsiElement(COMMA)(',')
+        PsiWhiteSpace(' ')
+        PsiElement(IDENTIFIER)('x')
+        PsiElement(COLON)(':')
+        PsiWhiteSpace(' ')
+        TYPE_REFERENCE
+          USER_TYPE
+            REFERENCE_EXPRESSION
+              PsiElement(IDENTIFIER)('String')
+        PsiErrorElement:Duplicated type parameter name: 'x'
+          <empty list>
+        PsiElement(RPAR)(')')
+
+========== end dupNamed ==========
+

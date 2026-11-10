@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$CangjieFeatures$Match" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-01T10:00:42.468Z" hostname="LIN" time="0.318">
+  <properties/>
+  <testcase name="testAllFilesPresentInMatch" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$CangjieFeatures$Match" time="0.295"/>
+  <testcase name="testMatchExpressionOfficial" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$CangjieFeatures$Match" time="0.006"/>
+  <testcase name="testMatchVarOrEnumPatternOfficial" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$CangjieFeatures$Match" time="0.011"/>
+  <testcase name="testMatchRichPatternsOfficial" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$CangjieFeatures$Match" time="0.004"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

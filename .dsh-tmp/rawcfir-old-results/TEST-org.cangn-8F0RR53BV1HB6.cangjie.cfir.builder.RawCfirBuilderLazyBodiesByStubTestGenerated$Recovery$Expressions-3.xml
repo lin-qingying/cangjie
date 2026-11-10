@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Recovery$Expressions" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-01T10:01:41.769Z" hostname="LIN" time="0.106">
+  <properties/>
+  <testcase name="testPrefixMissingOperand" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Recovery$Expressions" time="0.002"/>
+  <testcase name="testBinaryMissingRightOperand" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Recovery$Expressions" time="0.002"/>
+  <testcase name="testAllFilesPresentInExpressions" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$Recovery$Expressions" time="0.102"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

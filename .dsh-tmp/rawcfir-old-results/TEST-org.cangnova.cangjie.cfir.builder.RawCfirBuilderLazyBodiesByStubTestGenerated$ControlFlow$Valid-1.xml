@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$ControlFlow$Valid" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-11-01T10:01:05.168Z" hostname="LIN" time="0.257">
+  <properties/>
+  <testcase name="testContinueInDoWhile" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$ControlFlow$Valid" time="0.01"/>
+  <testcase name="testIfLetWithGuard" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$ControlFlow$Valid" time="0.044"/>
+  <testcase name="testIfElseIfChain" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$ControlFlow$Valid" time="0.006"/>
+  <testcase name="testDoWhileLoop" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$ControlFlow$Valid" time="0.004"/>
+  <testcase name="testAllFilesPresentInValid" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$ControlFlow$Valid" time="0.152"/>
+  <testcase name="testCatchTypedFinally" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$ControlFlow$Valid" time="0.008"/>
+  <testcase name="testTryNestedFinally" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$ControlFlow$Valid" time="0.006"/>
+  <testcase name="testBreakAndContinue" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$ControlFlow$Valid" time="0.005"/>
+  <testcase name="testNestedLoopsAndGuards" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$ControlFlow$Valid" time="0.006"/>
+  <testcase name="testForWithPatternGuard" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$ControlFlow$Valid" time="0.006"/>
+  <testcase name="testControlFlow" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$ControlFlow$Valid" time="0.004"/>
+  <testcase name="testForWithWhereGuard" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByStubTestGenerated$ControlFlow$Valid" time="0.004"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

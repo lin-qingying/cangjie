@@ -7,6 +7,14 @@ sourceSets {
     "test" { projectDefault() }
 }
 
+val intellijVersion = property("intellijSdkVersion") as String
+
+/*
+ * 高亮：词法着色、结构规则、语义着色入口、属性 key 与 CDoc 渲染。
+ *
+ * 属性 key 也是 ide/lsp（semantic tokens）与 ide/macro 的消费面，
+ * 因此本模块对外暴露的是「key + 收集器」，而不是编辑器动作。
+ */
 dependencies {
     compileOnly(intellijCore())
 
@@ -22,8 +30,8 @@ dependencies {
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.markdown)
     // 渲染测试需要 MockApplication 注册服务，以及 editor-ex 的 EditorColorsScheme 实现。
-    testImplementation("com.jetbrains.intellij.platform:editor-ex:${property("intellijSdkVersion")}") { isTransitive = false }
-    testImplementation("com.jetbrains.intellij.platform:editor-ui:${property("intellijSdkVersion")}") { isTransitive = false }
+    testImplementation("com.jetbrains.intellij.platform:editor-ex:$intellijVersion") { isTransitive = false }
+    testImplementation("com.jetbrains.intellij.platform:editor-ui:$intellijVersion") { isTransitive = false }
     testRuntimeOnly(libs.junit.platform.launcher)
 }
 

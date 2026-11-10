@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" tests="106" skipped="0" failures="2" errors="0" timestamp="2026-11-01T10:01:26.659Z" hostname="LIN" time="0.839">
+  <properties/>
+  <testcase name="testForeignCArrayType" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.003"/>
+  <testcase name="testArraySingleArgConstruction" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.003"/>
+  <testcase name="testInitCallingInit" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.004"/>
+  <testcase name="testVarrayConstructorArgForm" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.004"/>
+  <testcase name="testVarrayConstructorArgName" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.003"/>
+  <testcase name="testPowerOperatorRightOperand" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.002"/>
+  <testcase name="testWithExpression" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.006"/>
+  <testcase name="testNonPublicMacroDecl" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.005"/>
+  <testcase name="testInterfaceInit" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.003"/>
+  <testcase name="testMissingBodyInFunc" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.003"/>
+  <testcase name="testSubscriptSetUnnamedParameter" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.003"/>
+  <testcase name="testCollectionTypeNoImport" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.003"/>
+  <testcase name="testBareArrowType" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.003"/>
+  <testcase name="testLambdaNamedParameter" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.002"/>
+  <testcase name="testEnumInterfaceUnimplemented" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.003"/>
+  <testcase name="testQuoteDollarIdentifier" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.003"/>
+  <testcase name="testEnumTrailingPipe" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.005"/>
+  <testcase name="testEnumDuplicateConstructor" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.002"/>
+  <testcase name="testStaticInitInEnum" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.003"/>
+  <testcase name="testCfuncValueTypeName" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.003"/>
+  <testcase name="testFlatNestedArrayLiteral" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.004"/>
+  <testcase name="testCfuncUnitTypeName" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.004"/>
+  <testcase name="testInvalidModifierMutFunc" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.004"/>
+  <testcase name="testVarrayNestedArray" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.005"/>
+  <testcase name="testRedefInstanceMember" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.009"/>
+  <testcase name="testTryResourceWithoutResourceInterface" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.006"/>
+  <testcase name="testArrayPattern" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.006"/>
+  <testcase name="testCoalescingAssign" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.003"/>
+  <testcase name="testEnumCtorWithoutPipe" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.003"/>
+  <testcase name="testLambdaWithoutArrow" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.003"/>
+  <testcase name="testMacroQuoteInterpolation" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.004"/>
+  <testcase name="testOperatorNotOverloadable" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.005"/>
+  <testcase name="testImmutablePropSetter" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.005"/>
+  <testcase name="testEmptyWhenCondition" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.003"/>
+  <testcase name="testInoutParameter" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.003"/>
+  <testcase name="testExtendBuiltinOperator" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.002"/>
+  <testcase name="testForeignNamedParam" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.006"/>
+  <testcase name="testJstringLowerCase" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.008"/>
+  <testcase name="testVarrayTypeArgumentWithoutDollar" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.008"/>
+  <testcase name="testRangeStringOperands" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.007"/>
+  <testcase name="testFunctionTypeMixedParamNames" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.013">
+    <failure message="java.lang.AssertionError: Golden file mismatch: cfir\raw-cfir\psi2cfir\testData\rawBuilder\syntax\recovery\functionTypeMixedParamNames.txt&#10;Run with -Dupdate.test.data=true to update golden files.&#10;=== Expected ===&#10;FILE: functionTypeMixedParamNames.cj&#10;    internal? func mixed(g: R|() -&gt; R|Bool||): R|Bool| {&#10;        RETURN {&#10;            FUNCTION_CALL(g) {&#10;                INT(1)&#10;                STRING(&quot;x&quot;)&#10;            }&#10;        }&#10;    }&#10;    internal? typealias MixedTuple = R|(R|Int64|, R|x|)|&#10;=== Actual ===&#10;FILE: functionTypeMixedParamNames.cj&#10;    internal? func mixed(g: R|() -&gt; R|Bool||): R|Bool| {&#10;        RETURN {&#10;            FUNCTION_CALL(g) {&#10;                INT(1)&#10;                STRING(&quot;x&quot;)&#10;            }&#10;        }&#10;    }&#10;    internal? typealias MixedTuple = R|(R|Int64|, R|String|)|" type="java.lang.AssertionError">java.lang.AssertionError: Golden file mismatch: cfir\raw-cfir\psi2cfir\testData\rawBuilder\syntax\recovery\functionTypeMixedParamNames.txt
+Run with -Dupdate.test.data=true to update golden files.
+=== Expected ===
+FILE: functionTypeMixedParamNames.cj
+    internal? func mixed(g: R|() -&gt; R|Bool||): R|Bool| {
+        RETURN {
+            FUNCTION_CALL(g) {
+                INT(1)
+                STRING(&quot;x&quot;)
+            }
+        }
+    }
+    internal? typealias MixedTuple = R|(R|Int64|, R|x|)|
+=== Actual ===
+FILE: functionTypeMixedParamNames.cj
+    internal? func mixed(g: R|() -&gt; R|Bool||): R|Bool| {
+        RETURN {
+            FUNCTION_CALL(g) {
+                INT(1)
+                STRING(&quot;x&quot;)
+            }
+        }
+    }
+    internal? typealias MixedTuple = R|(R|Int64|, R|String|)|
+	at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilderTestCase$Companion.assertEqualsToFile(AbstractRawCfirBuilderTestCase.kt:401)
+	at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilderTestCase.doRawCfirTest(AbstractRawCfirBuilderTestCase.kt:357)
+	at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilderTestCase.runTest(AbstractRawCfirBuilderTestCase.kt:46)
+	at org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery.testFunctionTypeMixedParamNames(RawCfirBuilderTestCaseGenerated.kt:1558)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at junit.framework.TestCase.runTest(TestCase.java:177)
+	at junit.framework.TestCase.runBare(TestCase.java:142)
+	at junit.framework.TestResult$1.protect(TestResult.java:122)
+	at junit.framework.TestResult.runProtected(TestResult.java:142)
+	at junit.framework.TestResult.run(TestResult.java:125)
+	at junit.framework.TestCase.run(TestCase.java:130)
+	at junit.framework.TestSuite.runTest(TestSuite.java:241)
+	at junit.framework.TestSuite.run(TestSuite.java:236)
+	at org.junit.internal.runners.JUnit38ClassRunner.run(JUnit38ClassRunner.java:90)
+	at org.cangnova.cangjie.test.JUnit3RunnerWithInners.run(JUnit3RunnerWithInners.kt:44)
+	at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
+	at org.junit.runner.JUnitCore.run(JUnitCore.java:115)
+	at org.gradle.api.internal.tasks.testing.junit.JUnitTestExecutor.runRequest(JUnitTestExecutor.java:175)
+	at org.gradle.api.internal.tasks.testing.junit.JUnitTestExecutor.accept(JUnitTestExecutor.java:84)
+	at org.gradle.api.internal.tasks.testing.junit.JUnitTestExecutor.accept(JUnitTestExecutor.java:47)
+	at org.gradle.api.internal.tasks.testing.junit.AbstractJUnitTestDefinitionProcessor.processTestDefinition(AbstractJUnitTestDefinitionProcessor.java:65)
+	at org.gradle.api.internal.tasks.testing.SuiteTestDefinitionProcessor.processTestDefinition(SuiteTestDefinitionProcessor.java:53)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.gradle.internal.dispatch.MethodInvocation.invokeOn(MethodInvocation.java:77)
+	at org.gradle.internal.dispatch.ReflectionDispatch.dispatch(ReflectionDispatch.java:28)
+	at org.gradle.internal.dispatch.ReflectionDispatch.dispatch(ReflectionDispatch.java:19)
+	at org.gradle.internal.dispatch.ContextClassLoaderDispatch.dispatch(ContextClassLoaderDispatch.java:33)
+	at org.gradle.internal.dispatch.ProxyDispatchAdapter$DispatchingInvocationHandler.invoke(ProxyDispatchAdapter.java:88)
+	at jdk.proxy1/jdk.proxy1.$Proxy4.processTestDefinition(Unknown Source)
+	at org.gradle.api.internal.tasks.testing.worker.TestWorker$2.run(TestWorker.java:178)
+	at org.gradle.api.internal.tasks.testing.worker.TestWorker.executeAndMaintainThreadName(TestWorker.java:126)
+	at org.gradle.api.internal.tasks.testing.worker.TestWorker.execute(TestWorker.java:103)
+	at org.gradle.api.internal.tasks.testing.worker.TestWorker.execute(TestWorker.java:63)
+	at org.gradle.process.internal.worker.child.ActionExecutionWorker.execute(ActionExecutionWorker.java:56)
+	at org.gradle.process.internal.worker.child.SystemApplicationClassLoaderWorker.call(SystemApplicationClassLoaderWorker.java:122)
+	at org.gradle.process.internal.worker.child.SystemApplicationClassLoaderWorker.call(SystemApplicationClassLoaderWorker.java:72)
+	at worker.org.gradle.process.internal.worker.GradleWorkerMain.run(GradleWorkerMain.java:69)
+	at worker.org.gradle.process.internal.worker.GradleWorkerMain.main(GradleWorkerMain.java:74)
+</failure>
+  </testcase>
+  <testcase name="testResultTypeUndeclared" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.005"/>
+  <testcase name="testUnclosedBrace" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.003"/>
+  <testcase name="testFunctionTypeNamedParamBang" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.003"/>
+  <testcase name="testUnclosedParen" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.003"/>
+  <testcase name="testUnterminatedMultilineString" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.003"/>
+  <testcase name="testPowerOperatorChain" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.002"/>
+  <testcase name="testVarPatternInMatch" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.005"/>
+  <testcase name="testMatchRangePattern" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.003"/>
+  <testcase name="testNestedClassDecl" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.003"/>
+  <testcase name="testTryResourceAsValue" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.003"/>
+  <testcase name="testAnnotationDeclaration" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.002"/>
+  <testcase name="testRangeChainedOperators" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.003"/>
+  <testcase name="testWhereOnTypeAlias" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.002"/>
+  <testcase name="testUnterminatedRawString" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.004"/>
+  <testcase name="testCfuncNamedParam" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.004"/>
+  <testcase name="testUnterminatedString" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.003"/>
+  <testcase name="testMacroNamedParams" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.002"/>
+  <testcase name="testMainBadParameterType" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.003"/>
+  <testcase name="testJstringUpperCase" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.002"/>
+  <testcase name="testLambdaDefaultValue" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.003"/>
+  <testcase name="testDefaultParamOnUnnamed" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.004"/>
+  <testcase name="testIfAvailableBracketForm" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.005"/>
+  <testcase name="testDoWhileWithoutBrace" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.011"/>
+  <testcase name="testWhereWithoutTypeParams" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.003"/>
+  <testcase name="testConstructorMemberParams" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.003"/>
+  <testcase name="testConstArrayInitializer" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.002"/>
+  <testcase name="testStrayCloseBrace" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.002"/>
+  <testcase name="testThisTypeAsParameter" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.002"/>
+  <testcase name="testEmptyMultilineString" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.003"/>
+  <testcase name="testTryResourceExpressionOnly" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.003"/>
+  <testcase name="testVarrayRefTypeArg" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.003"/>
+  <testcase name="testGenericVarianceMarker" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.002"/>
+  <testcase name="testEnumEllipsisNotSupported" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.003"/>
+  <testcase name="testStructFinalizer" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.003"/>
+  <testcase name="testAllFilesPresentInRecovery" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.383"/>
+  <testcase name="testStepFunctionCall" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.004"/>
+  <testcase name="testNamedArgumentInFuncValueCall" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.004"/>
+  <testcase name="testMissingTypeInVar" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.005"/>
+  <testcase name="testMacroOutsideMacroPackage" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.005"/>
+  <testcase name="testPrefixIncDec" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.007"/>
+  <testcase name="testForWithLetPattern" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.005"/>
+  <testcase name="testPrivateInitCalledOutside" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.003"/>
+  <testcase name="testCcharTypeUndeclared" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.002"/>
+  <testcase name="testMainVariadicArgs" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.004"/>
+  <testcase name="testFunctionTypeParamDefault" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.003">
+    <failure message="java.lang.AssertionError: Golden file mismatch: cfir\raw-cfir\psi2cfir\testData\rawBuilder\syntax\recovery\functionTypeParamDefault.txt&#10;Run with -Dupdate.test.data=true to update golden files.&#10;=== Expected ===&#10;FILE: functionTypeParamDefault.cj&#10;    internal? func withDefault(g: R|x|): &lt;implicit&gt;&#10;=== Actual ===&#10;FILE: functionTypeParamDefault.cj&#10;    internal? func withDefault(g: R|Int64|): &lt;implicit&gt;" type="java.lang.AssertionError">java.lang.AssertionError: Golden file mismatch: cfir\raw-cfir\psi2cfir\testData\rawBuilder\syntax\recovery\functionTypeParamDefault.txt
+Run with -Dupdate.test.data=true to update golden files.
+=== Expected ===
+FILE: functionTypeParamDefault.cj
+    internal? func withDefault(g: R|x|): &lt;implicit&gt;
+=== Actual ===
+FILE: functionTypeParamDefault.cj
+    internal? func withDefault(g: R|Int64|): &lt;implicit&gt;
+	at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilderTestCase$Companion.assertEqualsToFile(AbstractRawCfirBuilderTestCase.kt:401)
+	at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilderTestCase.doRawCfirTest(AbstractRawCfirBuilderTestCase.kt:357)
+	at org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilderTestCase.runTest(AbstractRawCfirBuilderTestCase.kt:46)
+	at org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery.testFunctionTypeParamDefault(RawCfirBuilderTestCaseGenerated.kt:1568)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at junit.framework.TestCase.runTest(TestCase.java:177)
+	at junit.framework.TestCase.runBare(TestCase.java:142)
+	at junit.framework.TestResult$1.protect(TestResult.java:122)
+	at junit.framework.TestResult.runProtected(TestResult.java:142)
+	at junit.framework.TestResult.run(TestResult.java:125)
+	at junit.framework.TestCase.run(TestCase.java:130)
+	at junit.framework.TestSuite.runTest(TestSuite.java:241)
+	at junit.framework.TestSuite.run(TestSuite.java:236)
+	at org.junit.internal.runners.JUnit38ClassRunner.run(JUnit38ClassRunner.java:90)
+	at org.cangnova.cangjie.test.JUnit3RunnerWithInners.run(JUnit3RunnerWithInners.kt:44)
+	at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
+	at org.junit.runner.JUnitCore.run(JUnitCore.java:115)
+	at org.gradle.api.internal.tasks.testing.junit.JUnitTestExecutor.runRequest(JUnitTestExecutor.java:175)
+	at org.gradle.api.internal.tasks.testing.junit.JUnitTestExecutor.accept(JUnitTestExecutor.java:84)
+	at org.gradle.api.internal.tasks.testing.junit.JUnitTestExecutor.accept(JUnitTestExecutor.java:47)
+	at org.gradle.api.internal.tasks.testing.junit.AbstractJUnitTestDefinitionProcessor.processTestDefinition(AbstractJUnitTestDefinitionProcessor.java:65)
+	at org.gradle.api.internal.tasks.testing.SuiteTestDefinitionProcessor.processTestDefinition(SuiteTestDefinitionProcessor.java:53)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.gradle.internal.dispatch.MethodInvocation.invokeOn(MethodInvocation.java:77)
+	at org.gradle.internal.dispatch.ReflectionDispatch.dispatch(ReflectionDispatch.java:28)
+	at org.gradle.internal.dispatch.ReflectionDispatch.dispatch(ReflectionDispatch.java:19)
+	at org.gradle.internal.dispatch.ContextClassLoaderDispatch.dispatch(ContextClassLoaderDispatch.java:33)
+	at org.gradle.internal.dispatch.ProxyDispatchAdapter$DispatchingInvocationHandler.invoke(ProxyDispatchAdapter.java:88)
+	at jdk.proxy1/jdk.proxy1.$Proxy4.processTestDefinition(Unknown Source)
+	at org.gradle.api.internal.tasks.testing.worker.TestWorker$2.run(TestWorker.java:178)
+	at org.gradle.api.internal.tasks.testing.worker.TestWorker.executeAndMaintainThreadName(TestWorker.java:126)
+	at org.gradle.api.internal.tasks.testing.worker.TestWorker.execute(TestWorker.java:103)
+	at org.gradle.api.internal.tasks.testing.worker.TestWorker.execute(TestWorker.java:63)
+	at org.gradle.process.internal.worker.child.ActionExecutionWorker.execute(ActionExecutionWorker.java:56)
+	at org.gradle.process.internal.worker.child.SystemApplicationClassLoaderWorker.call(SystemApplicationClassLoaderWorker.java:122)
+	at org.gradle.process.internal.worker.child.SystemApplicationClassLoaderWorker.call(SystemApplicationClassLoaderWorker.java:72)
+	at worker.org.gradle.process.internal.worker.GradleWorkerMain.run(GradleWorkerMain.java:69)
+	at worker.org.gradle.process.internal.worker.GradleWorkerMain.main(GradleWorkerMain.java:74)
+</failure>
+  </testcase>
+  <testcase name="testMainCurriedParameterList" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.006"/>
+  <testcase name="testBitwiseNotPrefix" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.005"/>
+  <testcase name="testHexOverflow" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.002"/>
+  <testcase name="testQuoteOutsideMacroPackage" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.004"/>
+  <testcase name="testExtendWhereNonGeneric" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.004"/>
+  <testcase name="testEnumCtorParenEmpty" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.004"/>
+  <testcase name="testForLetPattern" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.003"/>
+  <testcase name="testTryResourceMissingBlock" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.005"/>
+  <testcase name="testSynchronizedWithoutLock" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.007"/>
+  <testcase name="testMissingNameInFunc" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.004"/>
+  <testcase name="testAbstractPropInClass" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.004"/>
+  <testcase name="testIntegerOverflow" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.004"/>
+  <testcase name="testVarraySliceNotSupported" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.004"/>
+  <testcase name="testFuncMainKeyword" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.003"/>
+  <testcase name="testFunctionExpressionBody" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.012"/>
+  <testcase name="testMainWithModifier" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.005"/>
+  <testcase name="testThisTypeInStruct" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.005"/>
+  <testcase name="testLogicalOperatorOverload" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.013"/>
+  <testcase name="testExtendGenericUnused" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.013"/>
+  <testcase name="testRangeMissingOperands" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderTestCaseGenerated$Syntax$Recovery" time="0.007"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

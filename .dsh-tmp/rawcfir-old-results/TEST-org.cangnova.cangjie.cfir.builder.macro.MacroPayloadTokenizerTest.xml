@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.cangnova.cangjie.cfir.builder.macro.MacroPayloadTokenizerTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-01T10:01:52.806Z" hostname="LIN" time="0.034">
+  <properties/>
+  <testcase name="hash string is encoded as multiline raw string" classname="org.cangnova.cangjie.cfir.builder.macro.MacroPayloadTokenizerTest" time="0.009"/>
+  <testcase name="string token keeps host offsets and neighbor tokens" classname="org.cangnova.cangjie.cfir.builder.macro.MacroPayloadTokenizerTest" time="0.0"/>
+  <testcase name="unterminated string collapses into a single illegal token" classname="org.cangnova.cangjie.cfir.builder.macro.MacroPayloadTokenizerTest" time="0.001"/>
+  <testcase name="single line string is merged into one string literal token" classname="org.cangnova.cangjie.cfir.builder.macro.MacroPayloadTokenizerTest" time="0.0"/>
+  <testcase name="multiline string keeps raw text and uses multiline kind" classname="org.cangnova.cangjie.cfir.builder.macro.MacroPayloadTokenizerTest" time="0.0"/>
+  <testcase name="string interpolation is merged with surrounding parts" classname="org.cangnova.cangjie.cfir.builder.macro.MacroPayloadTokenizerTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

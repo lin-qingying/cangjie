@@ -1,0 +1,4 @@
+package pkgmodprivate
+
+class PrivatePkgMarked {
+}

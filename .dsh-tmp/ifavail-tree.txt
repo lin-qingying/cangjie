@@ -1,0 +1,102 @@
+PROBE-BRACKET annotations=[] exprs=0
+PROBE-BRACKET-TREE CangJie File: ifAvailDecl.cj
+  PACKAGE_DIRECTIVE
+    <empty list>
+  IMPORT_LIST
+    <empty list>
+  MACRO_EXPRESSION
+    PsiElement(AT)('@')
+    REFERENCE_EXPRESSION
+      PsiElement(IDENTIFIER)('IfAvailable')
+    MACRO_ATTR
+      PsiElement(LBRACKET)('[')
+      QUOTE_TOKENS
+        PsiElement(IDENTIFIER)('level')
+        PsiElement(COLON)(':')
+        PsiWhiteSpace(' ')
+        PsiElement(INTEGER_LITERAL)('19')
+      PsiElement(RBRACKET)(']')
+    PsiWhiteSpace('\n')
+    MACRO_INPUT
+      FUNC: f
+        ANNOTATIONS
+          <empty list>
+        MODIFIER_LIST
+          <empty list>
+        PsiElement(func)('func')
+        PsiWhiteSpace(' ')
+        PsiElement(IDENTIFIER)('f')
+        VALUE_PARAMETER_LIST
+          PsiElement(LPAR)('(')
+          PsiElement(RPAR)(')')
+        PsiElement(COLON)(':')
+        PsiWhiteSpace(' ')
+        TYPE_REFERENCE
+          BASIC_TYPE
+            PsiElement(Unit)('Unit')
+        PsiWhiteSpace(' ')
+        BLOCK
+          PsiElement(LBRACE)('{')
+          PsiWhiteSpace(' ')
+          PsiElement(RBRACE)('}')
+
+PROBE-PAREN annotations=[] exprs=0
+PROBE-PAREN-TREE CangJie File: ifAvailDeclParen.cj
+  PACKAGE_DIRECTIVE
+    <empty list>
+  IMPORT_LIST
+    <empty list>
+  MACRO_EXPRESSION
+    PsiElement(AT)('@')
+    REFERENCE_EXPRESSION
+      PsiElement(IDENTIFIER)('IfAvailable')
+    MACRO_INPUT
+      PsiElement(LPAR)('(')
+      QUOTE_TOKENS
+        PsiElement(IDENTIFIER)('level')
+        PsiElement(COLON)(':')
+        PsiWhiteSpace(' ')
+        PsiElement(INTEGER_LITERAL)('19')
+        PsiElement(COMMA)(',')
+        PsiWhiteSpace(' ')
+        PsiElement(LBRACE)('{')
+        PsiWhiteSpace(' ')
+        PsiElement(DOUBLE_ARROW)('=>')
+        PsiWhiteSpace(' ')
+        PsiElement(INTEGER_LITERAL)('1')
+        PsiWhiteSpace(' ')
+        PsiElement(RBRACE)('}')
+        PsiElement(COMMA)(',')
+        PsiWhiteSpace(' ')
+        PsiElement(LBRACE)('{')
+        PsiWhiteSpace(' ')
+        PsiElement(DOUBLE_ARROW)('=>')
+        PsiWhiteSpace(' ')
+        PsiElement(INTEGER_LITERAL)('2')
+        PsiWhiteSpace(' ')
+        PsiElement(RBRACE)('}')
+      PsiElement(RPAR)(')')
+  PsiWhiteSpace('\n')
+  FUNC: f
+    ANNOTATIONS
+      <empty list>
+    MODIFIER_LIST
+      <empty list>
+    PsiElement(func)('func')
+    PsiWhiteSpace(' ')
+    PsiElement(IDENTIFIER)('f')
+    VALUE_PARAMETER_LIST
+      PsiElement(LPAR)('(')
+      PsiElement(RPAR)(')')
+    PsiElement(COLON)(':')
+    PsiWhiteSpace(' ')
+    TYPE_REFERENCE
+      BASIC_TYPE
+        PsiElement(Unit)('Unit')
+    PsiWhiteSpace(' ')
+    BLOCK
+      PsiElement(LBRACE)('{')
+      PsiWhiteSpace(' ')
+      PsiElement(RBRACE)('}')
+
+

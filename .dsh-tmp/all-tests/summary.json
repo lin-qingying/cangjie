@@ -1,0 +1,645 @@
+{
+    "total":  {
+                  "modules":  44,
+                  "tasks":  44,
+                  "tests":  17693,
+                  "failures":  11,
+                  "errors":  0,
+                  "skipped":  478,
+                  "timeSec":  2215.6
+              },
+    "rows":  [
+                 {
+                     "module":  "analysis\\analysis-api-cfir",
+                     "task":  "test",
+                     "tests":  1678,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  182.4,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "analysis\\analysis-api-standalone",
+                     "task":  "test",
+                     "tests":  720,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  60,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "analysis\\analysis-performance-test",
+                     "task":  "test",
+                     "tests":  32,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  76.2,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "analysis\\analysis-real-project-test",
+                     "task":  "test",
+                     "tests":  1,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  143.5,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "analysis\\cj-references",
+                     "task":  "test",
+                     "tests":  5,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  19.7,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "analysis\\decompiled\\decompiler-to-file-stubs",
+                     "task":  "test",
+                     "tests":  6,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  1.1,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "analysis\\decompiled\\decompiler-to-psi",
+                     "task":  "test",
+                     "tests":  22,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  15.8,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "analysis\\decompiled\\decompiler-to-stubs",
+                     "task":  "test",
+                     "tests":  8,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  14.2,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "analysis\\light-declarations",
+                     "task":  "test",
+                     "tests":  3,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  4.1,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "analysis\\low-level-api-cfir",
+                     "task":  "test",
+                     "tests":  183,
+                     "failures":  3,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  31.5,
+                     "staleXml":  0,
+                     "failed":  [
+                                    {
+                                        "class":  "org.cangnova.cangjie.analysis.low.level.api.cfir.ContextCollectorSourceTestGenerated",
+                                        "name":  "testLocalPatternVariableInitializerRebuild()",
+                                        "type":  "failure",
+                                        "message":  "java.util.NoSuchElementException: Found no element of type CjElement inside \u003cexpr\u003e"
+                                    },
+                                    {
+                                        "class":  "org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostic.CfirCjmpCallerFirstDiagnosticsTest",
+                                        "name":  "defaultArgumentInferredCallerFirst(CjFile, CjTestModule, TestServices)",
+                                        "type":  "failure",
+                                        "message":  "org.opentest4j.AssertionFailedError: expected: \u003c[]\u003e but was: \u003c[CFIR_NOT_MATCHED]\u003e"
+                                    },
+                                    {
+                                        "class":  "org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostic.CfirCjmpCallerFirstDiagnosticsTest",
+                                        "name":  "defaultArgumentCallerFirst(CjFile, CjTestModule, TestServices)",
+                                        "type":  "failure",
+                                        "message":  "org.opentest4j.AssertionFailedError: expected: \u003c[]\u003e but was: \u003c[CFIR_NOT_MATCHED]\u003e"
+                                    }
+                                ]
+                 },
+                 {
+                     "module":  "analysis\\macro-expansion",
+                     "task":  "test",
+                     "tests":  10,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  0.6,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "analysis\\stubs",
+                     "task":  "test",
+                     "tests":  8,
+                     "failures":  1,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  79,
+                     "staleXml":  0,
+                     "failed":  [
+                                    {
+                                        "class":  "org.cangnova.cangjie.analysis.stubs.BuiltinsStubsTest",
+                                        "name":  "builtinsStubsAndDecompiledText()",
+                                        "type":  "failure",
+                                        "message":  "org.opentest4j.AssertionFailedError: Mismatch in std.ast.cjo.stubs.txt ==\u003e expected: \u003cCangJieFileStubImpl[MultifileClass[packageFqName=std.ast, facadeFqName=std.ast, facadePartSimpleNames=[NodeFormat_generated, common, decls, decode, diag_report, exception, exprs, ffi, flatbuffer_object, nodes, parse_decl, parse_expr, parse_node, parse_pattern, parse_type, patterns, position, table, to_bytes, token, token_kind, tokens, totokens, types, visit]]] CangJieStub$PACKAGE_DIRECTIVE[isMacroPackage=false]"
+                                    }
+                                ]
+                 },
+                 {
+                     "module":  "analysis\\symbol-light-declarations",
+                     "task":  "test",
+                     "tests":  8,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  44.1,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "cfir\\analysis-tests",
+                     "task":  "test",
+                     "tests":  9260,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  460,
+                     "timeSec":  973.1,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "cfir\\cfir-common",
+                     "task":  "test",
+                     "tests":  4,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  0.5,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "cfir\\cfir-cones",
+                     "task":  "test",
+                     "tests":  18,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  0.8,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "cfir\\cfir-serialization",
+                     "task":  "test",
+                     "tests":  121,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  5,
+                     "timeSec":  31.3,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "cfir\\cfir-tree",
+                     "task":  "test",
+                     "tests":  8,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  1.7,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "cfir\\providers",
+                     "task":  "test",
+                     "tests":  43,
+                     "failures":  1,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  32,
+                     "staleXml":  0,
+                     "failed":  [
+                                    {
+                                        "class":  "org.cangnova.cangjie.cfir.analysis.diagnostics.CfirOffsetsOnlyDiagnosticAnchorGuardTest",
+                                        "name":  "knownOffsetsOnlySitesRemainReferenced()",
+                                        "type":  "failure",
+                                        "message":  "org.opentest4j.AssertionFailedError: These files no longer construct CjOffsetsOnlySourceElement; remove them from knownOffsetsOnlySites so the exemption set cannot grow stale: cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirClassifierAsExpressionChecker.kt cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/diagnostics/coneDiagnosticToCfirDiagnostic.kt cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/stages/CfirMapArguments.kt ==\u003e expected: \u003ctrue\u003e but was: \u003c"
+                                    }
+                                ]
+                 },
+                 {
+                     "module":  "cfir\\raw-cfir\\light-tree2cfir",
+                     "task":  "test",
+                     "tests":  1122,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  44,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "cfir\\raw-cfir\\psi2cfir",
+                     "task":  "test",
+                     "tests":  3232,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  109.5,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "cfir\\resolve",
+                     "task":  "test",
+                     "tests":  153,
+                     "failures":  1,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  4.1,
+                     "staleXml":  0,
+                     "failed":  [
+                                    {
+                                        "class":  "org.cangnova.cangjie.cfir.resolve.calls.stages.CfirMapArgumentsTest$Defaults",
+                                        "name":  "number of default arguments is counted()",
+                                        "type":  "failure",
+                                        "message":  "org.opentest4j.AssertionFailedError: expected: \u003cRESOLVED\u003e but was: \u003cINAPPLICABLE_ARGUMENTS_MAPPING_ERROR\u003e"
+                                    }
+                                ]
+                 },
+                 {
+                     "module":  "chir\\cfir2chir",
+                     "task":  "test",
+                     "tests":  28,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  1.3,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "chir\\chir-tree",
+                     "task":  "test",
+                     "tests":  41,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  1,
+                     "timeSec":  2,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "code-insight\\completion\\impl-cfir",
+                     "task":  "test",
+                     "tests":  75,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  76.2,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "code-insight\\completion\\impl-shared",
+                     "task":  "test",
+                     "tests":  85,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  9.9,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "code-insight\\folding",
+                     "task":  "test",
+                     "tests":  5,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  3.7,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "code-insight\\formatting",
+                     "task":  "test",
+                     "tests":  1,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  8.3,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "code-insight\\highlighting",
+                     "task":  "test",
+                     "tests":  16,
+                     "failures":  1,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  6.8,
+                     "staleXml":  0,
+                     "failed":  [
+                                    {
+                                        "class":  "org.cangnova.cangjie.lexer.cdoc.CDocRendererTest",
+                                        "name":  "sectionsWithLinkSubjectsAreRendered()",
+                                        "type":  "failure",
+                                        "message":  "org.opentest4j.AssertionFailedError: 应渲染参数分区: \u003cdiv class=\u0027content\u0027\u003e\u003cp style=\u0027margin-top:0;padding-top:0;\u0027\u003eGreets the caller.\u003c/p\u003e\u003c/div\u003e\u003ctable class=\u0027sections\u0027\u003e\u003ctr\u003e\u003ctd valign=\u0027top\u0027 class=\u0027section\u0027\u003e\u003cp\u003eParams:\u003c/td\u003e\u003ctd valign=\u0027top\u0027\u003e\u003cp\u003e\u003ccode\u003e\u003ca href=\"psi_element://value\"\u003e\u003ccode\u003e\u003cspan style=\"color:#000000;\"\u003evalue\u003c/span\u003e\u003c/code\u003e\u003c/a\u003e\u003c/code\u003e - input value\u003c/td\u003e\u003ctr\u003e\u003ctd valign=\u0027top\u0027 class=\u0027section\u0027\u003e\u003cp\u003eSee Also:\u003c/td\u003e\u003ctd valign=\u0027top\u0027\u003e\u003ca href=\"psi_element://Document\"\u003e\u003ccode\u003e\u003cspan style=\"color:#000000;\"\u003eDocument\u003c/s"
+                                    }
+                                ]
+                 },
+                 {
+                     "module":  "code-insight\\override-implement",
+                     "task":  "test",
+                     "tests":  1,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  19.8,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "common",
+                     "task":  "test",
+                     "tests":  44,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  0.8,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "compiler\\cli",
+                     "task":  "test",
+                     "tests":  2,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  0.9,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "compiler\\codegen",
+                     "task":  "test",
+                     "tests":  78,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  4,
+                     "timeSec":  2.5,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "compiler\\config",
+                     "task":  "test",
+                     "tests":  11,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  4.1,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "compiler\\frontend",
+                     "task":  "test",
+                     "tests":  130,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  74.5,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "compiler\\jvm-codegen",
+                     "task":  "test",
+                     "tests":  66,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  3.5,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "compiler\\phaser",
+                     "task":  "test",
+                     "tests":  6,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  0.8,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "llvm-interop\\llvm-interop-api",
+                     "task":  "test",
+                     "tests":  8,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  0.5,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "llvm-interop\\llvm-interop-jni",
+                     "task":  "test",
+                     "tests":  15,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  1.1,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "lsp",
+                     "task":  "test",
+                     "tests":  112,
+                     "failures":  4,
+                     "errors":  0,
+                     "skipped":  7,
+                     "timeSec":  90.8,
+                     "staleXml":  0,
+                     "failed":  [
+                                    {
+                                        "class":  "org.cangnova.cangjie.lsp.completion.LspCompletionResolveTest",
+                                        "name":  "resolveToleratesExpiredSession()",
+                                        "type":  "failure",
+                                        "message":  "java.util.concurrent.ExecutionException: org.eclipse.lsp4j.jsonrpc.ResponseErrorException: Internal error."
+                                    },
+                                    {
+                                        "class":  "org.cangnova.cangjie.lsp.completion.LspCompletionResolveTest",
+                                        "name":  "resolveLeavesItemUnchangedWhenNoCDoc()",
+                                        "type":  "failure",
+                                        "message":  "java.util.concurrent.ExecutionException: org.eclipse.lsp4j.jsonrpc.ResponseErrorException: Internal error."
+                                    },
+                                    {
+                                        "class":  "org.cangnova.cangjie.lsp.completion.LspCompletionResolveTest",
+                                        "name":  "resolveFillsDocumentationForDocumentedCandidate()",
+                                        "type":  "failure",
+                                        "message":  "java.util.concurrent.ExecutionException: org.eclipse.lsp4j.jsonrpc.ResponseErrorException: Internal error."
+                                    },
+                                    {
+                                        "class":  "org.cangnova.cangjie.lsp.completion.LspCompletionStatisticsTest",
+                                        "name":  "resolveRecordsItsOwnStage()",
+                                        "type":  "failure",
+                                        "message":  "java.util.concurrent.ExecutionException: org.eclipse.lsp4j.jsonrpc.ResponseErrorException: Internal error."
+                                    }
+                                ]
+                 },
+                 {
+                     "module":  "macro\\macro-process",
+                     "task":  "test",
+                     "tests":  22,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  1,
+                     "timeSec":  1.5,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "macro\\macro-stub",
+                     "task":  "test",
+                     "tests":  7,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  0.3,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "psi",
+                     "task":  "test",
+                     "tests":  281,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  36.5,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "resolution.common",
+                     "task":  "test",
+                     "tests":  14,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  0.6,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 }
+             ]
+}

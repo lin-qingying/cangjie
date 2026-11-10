@@ -99,6 +99,11 @@ object CfirFunctionBodyTypeMismatchChecker : CfirBasicExpressionChecker() {
         val tailExpression = tailStatement as? CfirExpression
         if (tailExpression?.isTerminatingFunctionBodyTail() == true) return
 
+        // 复合尾表达式（block/if/match/try）由共享 owner 下钻到真实结果位置，叶子自身的错误类型
+        // 在下钻中逐个裁决；不能先按整个尾表达式的错误类型或子树错误短路，否则 match 某个分支失败
+        // 后其余合法分支的类型义务会丢失（官方 ChkMatchExpr 逐 case 独立检查）。
+        if (tailExpression != null && checkTargetTypedExpression(tailExpression, expectedType).isHandled) return
+
         // 空函数体或以声明结尾的函数体会正常流出 Unit，仍然必须参与显式返回类型检查。
         // 属性 getter 尤其依赖这一规则：`get() {}` 不能因为没有尾表达式而绕过属性类型约束。
         val actualType = when (tailExpression) {
@@ -134,8 +139,6 @@ object CfirFunctionBodyTypeMismatchChecker : CfirBasicExpressionChecker() {
         // 声明不是 block 的结果表达式，但官方仍把“声明导致 Unit 流出”的类型错误
         // 定位在该尾声明本身；只有真正的空 body 才定位到整个 block。
         val resultSource = tailStatement?.source ?: block.source ?: return
-
-        if (tailExpression != null && checkTargetTypedExpression(tailExpression, expectedType).isHandled) return
 
         // 目标类型直接检查字面量时，显式 return 与隐式尾表达式都使用同一专用诊断。
         literalConversionDiagnostic(

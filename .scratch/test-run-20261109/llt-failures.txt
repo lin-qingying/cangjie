@@ -1,0 +1,59 @@
+CfirAnalysisMacroPsiTestGenerated$Llt$APILevelChecker$Hide | testMixMacro1() | org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)
+CfirAnalysisMacroPsiTestGenerated$Llt$APILevelChecker$Hide | testMixMacro2() | org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)
+CfirAnalysisMacroPsiTestGenerated$Llt$APILevelChecker$Hide | testMixMacro1Use() | org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)
+CfirAnalysisMacroPsiTestGenerated$Llt$APILevelChecker$Hide | testMixMacro2Use() | org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)
+CfirAnalysisMacroPsiTestGenerated$Llt$UnusedImport$UnusedImport005 | testUnused002() | java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced.
+CfirAnalysisMacroPsiTestGenerated$Llt$UnusedImport$UnusedImport002 | testUnused012() | java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced.
+CfirAnalysisMacroTestGenerated$Llt$UnusedImport$UnusedImport005$Unused003 | testUnused003() | org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)
+CfirAnalysisMacroTestGenerated$Llt$UnusedImport$UnusedImport001$Unused014 | testUnused() | java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced.
+CfirAnalysisMacroTestGenerated$Llt$UnusedImport$UnusedImport005$Unused004 | testUnused004() | java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced.
+CfirAnalysisMacroTestGenerated$Llt$UnusedImport$UnusedImport005$Unused006 | testUnused006() | java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced.
+CfirAnalysisMacroPsiTestGenerated$Llt$Typealias$ImportMacroAlias | testTypeaslias() | java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced.
+CfirAnalysisMacroPsiTestGenerated$Llt$UnusedImport$UnusedImport005$Unused006 | testUnused006() | java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced.
+CfirAnalysisMacroTestGenerated$Llt$UnusedImport$UnusedImport002 | testUnused012() | java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced.
+CfirAnalysisMacroPsiTestGenerated$Llt$UnusedImport$UnusedImport001$Unused014 | testUnused() | java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced.
+CfirAnalysisMacroPsiTestGenerated$Llt$UnusedImport$UnusedImport005$Unused004 | testUnused004() | java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced.
+CfirAnalysisMacroTestGenerated$Llt$UnusedImport$UnusedImport005 | testUnused002() | java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced.
+CfirAnalysisMacroPsiTestGenerated$Llt$UnusedImport$UnusedImport005$Unused003 | testUnused003() | org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)
+CfirAnalysisMacroTestGenerated$Llt$Typealias$ImportMacroAlias | testTypeaslias() | java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced.
+CfirAnalysisDiagnostics2PsiTestGenerated$Enum | testEnumEntryShadowedByTypeName() | org.opentest4j.AssertionFailedError: Actual data differs from file content: enumEntryShadowedByTypeName.cj 
+CfirAnalysisDiagnostics2PsiTestGenerated$Modifier | testPackageAccessModifier() | org.opentest4j.AssertionFailedError: Actual data differs from file content: packageAccessModifier.cj 
+CfirAnalysisDiagnostics2TestGenerated$Enum | testEnumEntryShadowedByTypeName() | org.opentest4j.AssertionFailedError: Actual data differs from file content: enumEntryShadowedByTypeName.cj 
+CfirAnalysisMacroPsiTestGenerated$Llt$Annotation$Globals | testDerive() | java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced.
+CfirAnalysisMacroPsiTestGenerated | testSameProjectMacroPackageDeclarationReference() | java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced.
+CfirAnalysisMacroPsiTestGenerated | testSameProjectMacroPackageExpressionRootPackage() | java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced.
+CfirAnalysisMacroPsiTestGenerated | testSameProjectMacroGeneratedAlphaEquivalentGenericConflict( | org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)
+CfirAnalysisMacroPsiTestGenerated | testSameProjectMacroGeneratedReferenceDoesNotConflict() | java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced.
+CfirAnalysisMacroPsiTestGenerated | testSameProjectMacroGroupConflict() | org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)
+CfirAnalysisMacroPsiTestGenerated | testSameProjectMacroReturnTypeOnlyConflict() | org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)
+CfirAnalysisMacroPsiTestGenerated | testSameProjectMacroPackageExpressionAliasImport() | java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced.
+CfirAnalysisMacroPsiTestGenerated | testSameProjectMacroPackageImportOnly() | java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced.
+CfirAnalysisMacroPsiTestGenerated | testSameProjectMacroPackageExpressionAllUnderImport() | java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced.
+CfirAnalysisMacroPsiTestGenerated | testSameProjectMacroExpressionBodySemantics() | java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced.
+CfirAnalysisMacroPsiTestGenerated | testSameProjectMacroPackageExpression() | java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced.
+CfirAnalysisMacroPsiTestGenerated | testSameProjectGeneratedDeclarationConflict() | org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)
+CfirAnalysisMacroPsiTestGenerated | testSameProjectMacroGeneratedTypeAliasConflict() | org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)
+CfirAnalysisMacroPsiTestGenerated | testSamePackageCrossFileGeneratedDeclarationConflict() | org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)
+CfirAnalysisMacroPsiTestGenerated | testSameProjectMacroPackagePublicImportExpression() | java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced.
+CfirAnalysisMacroPsiTestGenerated | testSameProjectMacroGeneratedParameterOverload() | java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced.
+CfirAnalysisMacroTestGenerated$Llt$Annotation$Globals | testDerive() | java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced.
+CfirAnalysisMacroTestGenerated$Llt$APILevelChecker$Hide | testMixMacro1() | org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)
+CfirAnalysisMacroTestGenerated$Llt$APILevelChecker$Hide | testMixMacro2() | org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)
+CfirAnalysisMacroTestGenerated$Llt$APILevelChecker$Hide | testMixMacro1Use() | org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)
+CfirAnalysisMacroTestGenerated$Llt$APILevelChecker$Hide | testMixMacro2Use() | org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)
+CfirAnalysisMacroTestGenerated | testSameProjectMacroPackageDeclarationReference() | java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced.
+CfirAnalysisMacroTestGenerated | testSameProjectMacroPackageExpressionRootPackage() | java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced.
+CfirAnalysisMacroTestGenerated | testSameProjectMacroGeneratedAlphaEquivalentGenericConflict( | org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)
+CfirAnalysisMacroTestGenerated | testSameProjectMacroGeneratedReferenceDoesNotConflict() | java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced.
+CfirAnalysisMacroTestGenerated | testSameProjectMacroGroupConflict() | org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)
+CfirAnalysisMacroTestGenerated | testSameProjectMacroReturnTypeOnlyConflict() | org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)
+CfirAnalysisMacroTestGenerated | testSameProjectMacroPackageExpressionAliasImport() | java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced.
+CfirAnalysisMacroTestGenerated | testSameProjectMacroPackageImportOnly() | java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced.
+CfirAnalysisMacroTestGenerated | testSameProjectMacroPackageExpressionAllUnderImport() | java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced.
+CfirAnalysisMacroTestGenerated | testSameProjectMacroExpressionBodySemantics() | java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced.
+CfirAnalysisMacroTestGenerated | testSameProjectMacroPackageExpression() | java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced.
+CfirAnalysisMacroTestGenerated | testSameProjectGeneratedDeclarationConflict() | org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)
+CfirAnalysisMacroTestGenerated | testSameProjectMacroGeneratedTypeAliasConflict() | org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)
+CfirAnalysisMacroTestGenerated | testSamePackageCrossFileGeneratedDeclarationConflict() | org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)
+CfirAnalysisMacroTestGenerated | testSameProjectMacroPackagePublicImportExpression() | java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced.
+CfirAnalysisMacroTestGenerated | testSameProjectMacroGeneratedParameterOverload() | java.lang.IllegalStateException: Macro construction failed before CFIR test frontend output was produced.

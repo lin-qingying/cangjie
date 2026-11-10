@@ -993,13 +993,7 @@ val idePublicationArtifacts = linkedMapOf(
         **IDE plugin dependency:** packages :psi (with :common, :util) into a single fat jar.
     """)),
     ":prepare:ide-plugin-dependencies:cangjie-frontend-code-insight-for-ide" to ("cangjie-frontend-code-insight-for-ide" to md("""
-        **IDE plugin dependency:** packages :code-insight:api quick-fix API (with :analysis:analysis-api) into a single fat jar.
-    """)),
-    ":prepare:ide-plugin-dependencies:cangjie-frontend-code-insight-formatting-for-ide" to ("cangjie-frontend-code-insight-formatting-for-ide" to md("""
-        **IDE plugin dependency:** packages :code-insight:formatting (with :psi, :common, :util) into a single fat jar.
-    """)),
-    ":prepare:ide-plugin-dependencies:cangjie-frontend-code-insight-folding-for-ide" to ("cangjie-frontend-code-insight-folding-for-ide" to md("""
-        **IDE plugin dependency:** packages :code-insight:folding (with :psi, :common, :util) into a single fat jar.
+        **IDE plugin dependency:** packages the whole :code-insight surface (api, editor, highlighting, completion, code-actions, hints, refactoring) with :psi, :common, :util, :analysis:analysis-api and :analysis:analysis-api-cfir into a single fat jar.
     """)),
     ":prepare:ide-plugin-dependencies:cangjie-frontend-cfir-for-ide" to ("cangjie-frontend-cfir-for-ide" to md("""
         **IDE plugin dependency:** packages :cfir:* full series and :common:diagnostics into a single fat jar.

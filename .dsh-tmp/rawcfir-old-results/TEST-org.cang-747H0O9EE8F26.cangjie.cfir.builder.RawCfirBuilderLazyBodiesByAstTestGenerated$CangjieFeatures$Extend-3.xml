@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$CangjieFeatures$Extend" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-01T10:01:29.522Z" hostname="LIN" time="0.226">
+  <properties/>
+  <testcase name="testExtendGenericStdlibType" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$CangjieFeatures$Extend" time="0.002"/>
+  <testcase name="testAllFilesPresentInExtend" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$CangjieFeatures$Extend" time="0.214"/>
+  <testcase name="testExtendAliasAndStdlibType" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$CangjieFeatures$Extend" time="0.002"/>
+  <testcase name="testExtendWithWhereOfficial" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$CangjieFeatures$Extend" time="0.003"/>
+  <testcase name="testExtendGenericWhereChain" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$CangjieFeatures$Extend" time="0.002"/>
+  <testcase name="testExtendDeclaration" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$CangjieFeatures$Extend" time="0.003"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

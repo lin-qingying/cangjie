@@ -1192,7 +1192,7 @@ index c93d45b7..0f3ea018 100644
 +++ b/product/idea-plugin/src/main/resources/META-INF/plugin.xml
 @@ -1,15 +1,11 @@
  <idea-plugin xmlns:xi="http://www.w3.org/2001/XInclude">
--    <id>cn.cangnova.cangjie</id>
+-    <id>org.cangnova.cangjie</id>
 -    <name>CangJie</name>
 -    <vendor email="lin17624294976@outlook.com" url="https://github.com/lin-qingying">Lin_Qing_Ying</vendor>
 -

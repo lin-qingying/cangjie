@@ -1,0 +1,5 @@
+FILE: cfuncNamedParam.cj
+    internal? func cfuncNamedParam(g: R|CFunc<R|<ERROR:Invalid type>|>|): <implicit>
+    internal? let _: <implicit> = ...
+        initializer:
+            NAMED_ACCESS(g)

@@ -120,7 +120,7 @@ index c26c9532..f9309121 100644
      autoReload = false
  
      pluginConfiguration {
-+        id = "cn.cangnova.cangjie"
++        id = "org.cangnova.cangjie"
          name = "CangJie"
 +        version = provider { project.version.toString() }
 +        description = provider {

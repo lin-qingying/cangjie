@@ -1,0 +1,40 @@
+first6=text=extend std.core.Array<std.core.Array<T>> supers=0 tparams=0
+---
+text=extend std.core.Array<T> supers=0 tparams=0
+---
+text=extend std.core.Array<T> supers=0 tparams=0
+---
+text=extend std.core.Array<T> supers=0 tparams=0
+---
+text=extend std.core.Box<T> supers=0 tparams=0
+---
+text=extend std.core.Box<T> supers=0 tparams=0
+count=97
+collectionExtends=0
+binary=supers=1 typeParams=[T] members=CfirNamedFunctionImpl source=false
+---
+supers=0 typeParams=[T] members=CfirNamedFunctionImpl source=false
+---
+supers=1 typeParams=[T] members=CfirNamedFunctionImpl,CfirPropertyImpl,CfirNamedFunctionImpl,CfirNamedFunctionImpl source=false
+---
+supers=1 typeParams=[T] members=CfirNamedFunctionImpl source=false
+---
+supers=1 typeParams=[T] members=CfirNamedFunctionImpl,CfirNamedFunctionImpl,CfirNamedFunctionImpl,CfirNamedFunctionImpl,CfirNamedFunctionImpl,CfirNamedFunctionImpl,CfirNamedFunctionImpl,CfirNamedFunctionImpl,CfirNamedFunctionImpl,CfirNamedFunctionImpl,CfirNamedFunctionImpl,CfirNamedFunctionImpl,CfirNamedFunctionImpl,CfirNamedFunctionImpl,CfirNamedFunctionImpl,CfirNamedFunctionImpl,CfirNamedFunctionImpl source=false
+---
+supers=1 typeParams=[T] members=CfirNamedFunctionImpl,CfirNamedFunctionImpl source=false
+---
+supers=1 typeParams=[T] members=CfirNamedFunctionImpl,CfirNamedFunctionImpl,CfirNamedFunctionImpl,CfirNamedFunctionImpl source=false
+---
+supers=1 typeParams=[T] members=CfirNamedFunctionImpl source=false
+---
+supers=2 typeParams=[T] members=CfirNamedFunctionImpl,CfirPropertyImpl,CfirNamedFunctionImpl source=false
+---
+supers=1 typeParams=[T] members=CfirNamedFunctionImpl source=false
+---
+supers=1 typeParams=[T] members=CfirNamedFunctionImpl,CfirNamedFunctionImpl source=false
+---
+supers=1 typeParams=[T] members=CfirNamedFunctionImpl source=false
+---
+supers=1 typeParams=[T] members=CfirNamedFunctionImpl source=false
+---
+supers=1 typeParams=[T] members=CfirNamedFunctionImpl source=false

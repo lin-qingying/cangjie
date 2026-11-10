@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Recovery" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-11-01T10:01:34.923Z" hostname="LIN" time="0.093">
+  <properties/>
+  <testcase name="testAllFilesPresentInRecovery" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Recovery" time="0.093"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

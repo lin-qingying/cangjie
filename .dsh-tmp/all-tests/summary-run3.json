@@ -1,0 +1,595 @@
+{
+    "total":  {
+                  "modules":  44,
+                  "tasks":  44,
+                  "tests":  17731,
+                  "failures":  2,
+                  "errors":  0,
+                  "skipped":  478,
+                  "timeSec":  2132.4
+              },
+    "rows":  [
+                 {
+                     "module":  "analysis\\analysis-api-cfir",
+                     "task":  "test",
+                     "tests":  1681,
+                     "failures":  1,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  184.1,
+                     "staleXml":  0,
+                     "failed":  [
+                                    {
+                                        "class":  "org.cangnova.cangjie.analysis.api.cfir.test.AnalysisApiRendererPresetTest",
+                                        "name":  "presetRendering(CjFile, CjTestModule)",
+                                        "type":  "failure",
+                                        "message":  "org.cangnova.cangjie.utils.exceptions.CangJieIllegalArgumentExceptionWithAttachments: Unexpected status. Expected is CfirResolvedDeclarationStatus, but was CfirDeclarationStatusImpl"
+                                    }
+                                ]
+                 },
+                 {
+                     "module":  "analysis\\analysis-api-standalone",
+                     "task":  "test",
+                     "tests":  720,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  49.1,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "analysis\\analysis-performance-test",
+                     "task":  "test",
+                     "tests":  32,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  35,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "analysis\\analysis-real-project-test",
+                     "task":  "test",
+                     "tests":  1,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  197.7,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "analysis\\cj-references",
+                     "task":  "test",
+                     "tests":  5,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  19.3,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "analysis\\decompiled\\decompiler-to-file-stubs",
+                     "task":  "test",
+                     "tests":  6,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  0.5,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "analysis\\decompiled\\decompiler-to-psi",
+                     "task":  "test",
+                     "tests":  38,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  15.5,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "analysis\\decompiled\\decompiler-to-stubs",
+                     "task":  "test",
+                     "tests":  8,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  6.3,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "analysis\\light-declarations",
+                     "task":  "test",
+                     "tests":  3,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  0.9,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "analysis\\low-level-api-cfir",
+                     "task":  "test",
+                     "tests":  183,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  27.1,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "analysis\\macro-expansion",
+                     "task":  "test",
+                     "tests":  10,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  0.6,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "analysis\\stubs",
+                     "task":  "test",
+                     "tests":  8,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  92.1,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "analysis\\symbol-light-declarations",
+                     "task":  "test",
+                     "tests":  8,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  29.6,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "cfir\\analysis-tests",
+                     "task":  "test",
+                     "tests":  9266,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  460,
+                     "timeSec":  1083,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "cfir\\cfir-common",
+                     "task":  "test",
+                     "tests":  4,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  0.3,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "cfir\\cfir-cones",
+                     "task":  "test",
+                     "tests":  18,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  2.6,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "cfir\\cfir-serialization",
+                     "task":  "test",
+                     "tests":  121,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  5,
+                     "timeSec":  22.1,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "cfir\\cfir-tree",
+                     "task":  "test",
+                     "tests":  8,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  1.2,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "cfir\\providers",
+                     "task":  "test",
+                     "tests":  43,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  19.2,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "cfir\\raw-cfir\\light-tree2cfir",
+                     "task":  "test",
+                     "tests":  1131,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  14.5,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "cfir\\raw-cfir\\psi2cfir",
+                     "task":  "test",
+                     "tests":  3232,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  57.3,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "cfir\\resolve",
+                     "task":  "test",
+                     "tests":  153,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  6.4,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "chir\\cfir2chir",
+                     "task":  "test",
+                     "tests":  28,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  1.3,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "chir\\chir-tree",
+                     "task":  "test",
+                     "tests":  41,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  1,
+                     "timeSec":  2.3,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "code-insight\\completion\\impl-cfir",
+                     "task":  "test",
+                     "tests":  75,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  49.7,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "code-insight\\completion\\impl-shared",
+                     "task":  "test",
+                     "tests":  85,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  6.1,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "code-insight\\folding",
+                     "task":  "test",
+                     "tests":  5,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  2.3,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "code-insight\\formatting",
+                     "task":  "test",
+                     "tests":  1,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  10.2,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "code-insight\\highlighting",
+                     "task":  "test",
+                     "tests":  16,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  5.8,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "code-insight\\override-implement",
+                     "task":  "test",
+                     "tests":  1,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  16.6,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "common",
+                     "task":  "test",
+                     "tests":  44,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  0.9,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "compiler\\cli",
+                     "task":  "test",
+                     "tests":  2,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  1.6,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "compiler\\codegen",
+                     "task":  "test",
+                     "tests":  78,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  4,
+                     "timeSec":  2.6,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "compiler\\config",
+                     "task":  "test",
+                     "tests":  11,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  4.4,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "compiler\\frontend",
+                     "task":  "test",
+                     "tests":  130,
+                     "failures":  1,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  52.5,
+                     "staleXml":  0,
+                     "failed":  [
+                                    {
+                                        "class":  "org.cangnova.cangjie.frontend.pipeline.CjmpTwoPhaseCompilationTest",
+                                        "name":  "common part without serialized options warns but continues through the pipeline()",
+                                        "type":  "failure",
+                                        "message":  "org.opentest4j.AssertionFailedError: matching common declaration loads ==\u003e expected: \u003c[]\u003e but was: \u003c[CFIR_SPECIFIC_HAS_DIFFERENT_MODIFIER]\u003e"
+                                    }
+                                ]
+                 },
+                 {
+                     "module":  "compiler\\jvm-codegen",
+                     "task":  "test",
+                     "tests":  66,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  2.6,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "compiler\\phaser",
+                     "task":  "test",
+                     "tests":  6,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  1,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "llvm-interop\\llvm-interop-api",
+                     "task":  "test",
+                     "tests":  8,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  0.3,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "llvm-interop\\llvm-interop-jni",
+                     "task":  "test",
+                     "tests":  15,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  1.6,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "lsp",
+                     "task":  "test",
+                     "tests":  112,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  7,
+                     "timeSec":  87.1,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "macro\\macro-process",
+                     "task":  "test",
+                     "tests":  22,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  1,
+                     "timeSec":  0.6,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "macro\\macro-stub",
+                     "task":  "test",
+                     "tests":  7,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  0.2,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "psi",
+                     "task":  "test",
+                     "tests":  285,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  17.8,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 },
+                 {
+                     "module":  "resolution.common",
+                     "task":  "test",
+                     "tests":  14,
+                     "failures":  0,
+                     "errors":  0,
+                     "skipped":  0,
+                     "timeSec":  0.5,
+                     "staleXml":  0,
+                     "failed":  [
+
+                                ]
+                 }
+             ]
+}

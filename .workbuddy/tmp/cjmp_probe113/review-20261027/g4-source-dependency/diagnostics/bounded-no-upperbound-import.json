@@ -1,0 +1,61 @@
+{
+    "Diags":[
+            {
+                "DiagKind": "sema_not_member_of",
+                "Severity": "error",
+                "WarnGroup": "none",
+                "DiagCategory": "sema",
+                "Message": "'boundedValue' is not a member of class 'ProbeBox<Class-Fits>'",
+                "Location": {
+                    "File": "bounded-no-upperbound-import\\Use.cj",
+                    "Line": 6,
+                    "Column": 22
+                },
+                "MainHint": {
+                    "Content": "",
+                    "Range": {
+                        "Begin": {
+                            "File": "bounded-no-upperbound-import\\Use.cj",
+                            "Line": 6,
+                            "Column": 22
+                        },
+                        "End": {
+                            "File": "bounded-no-upperbound-import\\Use.cj",
+                            "Line": 6,
+                            "Column": 34
+                        }
+                    }
+                },
+                "OtherHints": [],
+                "Notes": [
+                    {
+                        "Message": "to use the following extension, import 'Interface-Bound'",
+                        "MainHint": {
+                            "Content": "",
+                            "Range": {
+                                "Begin": {
+                                    "File": "(package g4provider)Declarations.cj",
+                                    "Line": 31,
+                                    "Column": 1
+                                },
+                                "End": {
+                                    "File": "(package g4provider)Declarations.cj",
+                                    "Line": 35,
+                                    "Column": 2
+                                }
+                            }
+                        },
+                        "OtherHints": [],
+                        "Help": null
+                    }
+                ],
+                "Helps": []
+            }
+    ],
+    "Num":{
+        "Errors": 1,
+        "PrintedErrors": 1,
+        "Warnings": 0,
+        "PrintedWarnings": 0
+    }
+}

@@ -9,7 +9,7 @@ plugins {
 description = "Low-level CFIR support layer for the Cangjie Analysis API."
 
 dependencies {
-    compileOnly("org.jetbrains.kotlin:kotlin-reflect") {
+    compileOnly(libs.kotlin.reflect) {
         isTransitive = false
     }
 
@@ -39,8 +39,8 @@ dependencies {
     implementation(project(":analysis:light-declarations"))
     implementation(project(":analysis:symbol-light-declarations"))
 
-    implementation("com.github.ben-manes.caffeine:caffeine:3.1.8")
-    implementation("io.opentelemetry:opentelemetry-api:1.39.0")
+    implementation(libs.caffeine)
+    implementation(libs.opentelemetry.api)
 
     compileOnly(intellijCore())
 
@@ -53,7 +53,7 @@ dependencies {
     testFixturesApi(testFixtures(project(":cfir:analysis-tests")))
     testFixturesApi(testFixtures(project(":tests:test-infrastructure")))
     testFixturesApi(project(":psi"))
-    testFixturesApi("org.opentest4j:opentest4j:1.3.0")
+    testFixturesApi(libs.opentest4j)
     testFixturesApi(libs.junit.jupiter)
     testFixturesRuntimeOnly(libs.junit.platform.launcher)
     testFixturesCompileOnly(intellijTestFramework()) {

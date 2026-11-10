@@ -23,8 +23,8 @@ dependencies {
     api(project(":compiler:config"))
     // 对齐 Kotlin analysis-api-platform-interface：OpenTelemetry API 以 implementation 引入，
     // 这样打包给 IDE 的 fat jar 自带 API 类，IDE 运行时的 CangJieGlobalOpenTelemetryProvider 不会 NoClassDefFoundError。
-    implementation("io.opentelemetry:opentelemetry-api:1.39.0")
-    compileOnly("org.checkerframework:checker-qual:3.42.0")
+    implementation(libs.opentelemetry.api)
+    compileOnly(libs.checker.qual)
 }
 
 /**

@@ -179,7 +179,7 @@ BODY_RESOLVE:
             RETURN {
                 FUNCTION_CALL(*operator_plus) {
                     receiver:
-                        FUNCTION_CALL(toString) {
+                        FUNCTION_CALL(toString -> CfirNamedFunctionSymbol(toString)) {
                             receiver:
                                 FUNCTION_CALL(size -> CfirNamedFunctionSymbol(size)) {
                                     receiver:
@@ -212,7 +212,7 @@ FILE RAW TO BODY:
             RETURN {
                 FUNCTION_CALL(*operator_plus) {
                     receiver:
-                        FUNCTION_CALL(toString) {
+                        FUNCTION_CALL(toString -> CfirNamedFunctionSymbol(toString)) {
                             receiver:
                                 FUNCTION_CALL(size -> CfirNamedFunctionSymbol(size)) {
                                     receiver:

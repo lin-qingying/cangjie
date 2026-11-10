@@ -19,7 +19,7 @@ description = "Public Cangjie frontend analysis API."
 
 dependencies {
     compileOnly(intellijCore())
-    implementation("org.jetbrains.kotlinx:kotlinx-collections-immutable:0.3.8")
+    implementation(libs.kotlinx.collections.immutable)
     api(project(":common"))
     api(project(":psi"))
     api(project(":util"))

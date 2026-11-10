@@ -1,0 +1,46 @@
+   --> src\main.rs:159:36
+    |
+159 |                 return ExitStatus::from_raw(1);
+    |                                    ^^^^^^^^ function or associated item not found in `ExitStatus`
+    |
+    = help: items from traits can only be used if the trait is in scope
+help: trait `ExitStatusExt` which provides `from_raw` is implemented but not in scope; perhaps you want to import it
+    |
+31  + use std::os::windows::process::ExitStatusExt;
+    |
+help: there is an associated function `from` with a similar name
+    |
+159 -                 return ExitStatus::from_raw(1);
+159 +                 return ExitStatus::from(1);
+    |
+
+Some errors have detailed explanations: E0599, E0658.
+For more information about an error, try `rustc --explain E0599`.
+warning: `lspserver-shim` (bin "LSPServer") generated 1 warning
+error: could not compile `lspserver-shim` (bin "LSPServer") due to 3 previous errors; 1 warning emitted
+--- WIN OK ---
+   Compiling lspserver-shim v0.1.0 (D:\code\intellij\cangjie\lsp\wrapper)
+error[E0599]: no function or associated item named `from_raw` found for struct `ExitStatus` in the current scope
+   --> src\main.rs:159:36
+    |
+159 |                 return ExitStatus::from_raw(1);
+    |                                    ^^^^^^^^ function or associated item not found in `ExitStatus`
+    |
+    = help: items from traits can only be used if the trait is in scope
+help: trait `ExitStatusExt` which provides `from_raw` is implemented but not in scope; perhaps you want to import it
+    |
+31  + use std::os::unix::process::ExitStatusExt;
+    |
+help: there is an associated function `from` with a similar name
+    |
+159 -                 return ExitStatus::from_raw(1);
+159 +                 return ExitStatus::from(1);
+    |
+
+For more information about this error, try `rustc --explain E0599`.
+error: could not compile `lspserver-shim` (bin "LSPServer") due to 1 previous error
+--- MUSL OK ---
+-rw-r--r-- 1 lin17 197609     121 Sep 30 17:26 lspserver-shim.d
+-rwxr-xr-x 2 lin17 197609  241152 Sep 30 17:26 lspserver-shim.exe
+-rw-r--r-- 2 lin17 197609 1560576 Sep 30 17:26 lspserver_shim.pdb
+[exit code 1]

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Lexical" tests="19" skipped="0" failures="0" errors="0" timestamp="2026-11-01T10:00:48.067Z" hostname="LIN" time="0.513">
+  <properties/>
+  <testcase name="testRunes" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Lexical" time="0.007"/>
+  <testcase name="testNumericEdges" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Lexical" time="0.013"/>
+  <testcase name="testWhenConditions" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Lexical" time="0.016"/>
+  <testcase name="testEscapeForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Lexical" time="0.004"/>
+  <testcase name="testRawIdentifiers" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Lexical" time="0.003"/>
+  <testcase name="testIntegerLiteralForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Lexical" time="0.002"/>
+  <testcase name="testComments" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Lexical" time="0.024"/>
+  <testcase name="testRawStrings" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Lexical" time="0.003"/>
+  <testcase name="testMultilineStrings" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Lexical" time="0.003"/>
+  <testcase name="testBoolsAndUnit" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Lexical" time="0.003"/>
+  <testcase name="testByteLiterals" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Lexical" time="0.003"/>
+  <testcase name="testIdentifiers" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Lexical" time="0.003"/>
+  <testcase name="testImportForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Lexical" time="0.007"/>
+  <testcase name="testAllFilesPresentInLexical" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Lexical" time="0.244"/>
+  <testcase name="testIntegers" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Lexical" time="0.014"/>
+  <testcase name="testStringInterpolation" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Lexical" time="0.006"/>
+  <testcase name="testFloats" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Lexical" time="0.003"/>
+  <testcase name="testCommentForms" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Lexical" time="0.145"/>
+  <testcase name="testStrings" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$Lexical" time="0.007"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

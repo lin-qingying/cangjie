@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$ControlFlow" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-11-01T10:00:43.563Z" hostname="LIN" time="0.278">
+  <properties/>
+  <testcase name="testAllFilesPresentInControlFlow" classname="org.cangnova.cangjie.cfir.builder.RawCfirBuilderLazyBodiesByAstTestGenerated$ControlFlow" time="0.278"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

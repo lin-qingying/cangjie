@@ -121,15 +121,19 @@ class SourcePostSemaDiagnosticsTest : AbstractAnalysisApiExecutionTest(
     }
 
     /**
-     * 枚举项与同名类型共存时，值位置必须解析成枚举项。
+     * 枚举项与可见的同名类型共存时，裸引用解析成类型，不会回退到枚举项。
      *
-     * 官方 `Sema/EnumSugarTargetsFinder.cpp` 的 `RefineTargets` 只保留 owner enum 与
-     * target type 一致的枚举项，同名 class/struct（含默认导入的 `std.core.String`）被淘汰；
-     * CFIR 若先落回 classifier 就会报 `REF_NOT_BE_TYPE` + 连带 `TYPE_MISMATCH`。
+     * 官方 `Sema/TypeCheckExpr/NameReferenceExpr.cpp` 的 `InferRefExpr` 先做普通 `Lookup`，
+     * 只有结果为空（或全是宏函数）时才进入 `EnumSugarChecker`；`EnumSugarTargetsFinder::RefineTargets`
+     * 只在枚举项候选之间筛选。cjc 1.0.0 / 1.0.5 / 1.1.3 实测：`AuthMoreData`、`Error`（`std.core.Error`）、
+     * `String`（`std.core.String`）三处各报一条 `sema_ref_not_be_type` 与一条 `sema_mismatched_types`。
      */
     @Test
     fun enumEntryShadowedByTypeName(mainFile: CjFile) {
-        assertNoDiagnostics(mainFile)
+        assertDiagnosticNames(
+            mainFile,
+            List(3) { CfirErrors.REF_NOT_BE_TYPE.name } + List(3) { CfirErrors.TYPE_MISMATCH.name },
+        )
     }
 
     /**
