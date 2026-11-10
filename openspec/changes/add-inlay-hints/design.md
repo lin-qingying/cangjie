@@ -172,12 +172,24 @@ class CangJieInlayHintsProvider : InlayHintsProvider {
 
 §1.1 八处接线归属：**P0 只做第 1、4 项**（根 include + hints build.gradle.kts，LSP 可编译即可）；**P2 做其余 6 项**（第 2、3、5、6 项 prepare 打包链 + 第 7、8 项 intellij-ide 侧）。
 
-| 期 | 内容 | 验证 |
-|---|---|---|
-| P0 | §1.1 第 1、4 项 + 数据模型/`CjTypeHintsCollector`（类型 hint）+ LSP 实装 + `RESOLVE_INLAY_HINT` 枚举与 `resolveInlayHint` 兜底 override + **`CangjieLspRequestCoverageTest` 白名单加 `"inlayHint"`** + capabilities 切 `InlayHintRegistrationOptions(resolveProvider=true)` | `gradlew-queue.bat :code-insight:hints:test` + `:lsp:test` 契约用例 |
-| P1 | 参数名 hint（`CjParameterNameHintsCollector`，exclude-list 预留扩展点） | 同上 |
-| P2 | §1.1 第 2、3、5、6、7、8 项（prepare 打包链 + intellij-ide substitution/catalog/依赖）+ IDE 声明式 provider + providerId 对齐 §5 | intellij-ide 构建 + IDE hint 测试 |
-| P3 | resolve 会话存储实装（含协商层 resolveSupport 检查）、设置下发（descriptor flag / didChangeConfiguration）、lambda/链式/values hint | 增量 |
+| 期 | 内容 | 验证 | 状态 |
+|---|---|---|---|
+| P0 | §1.1 第 1、4 项 + 数据模型/`CjTypeHintsCollector`（类型 hint）+ LSP 实装 + `RESOLVE_INLAY_HINT` 枚举与 `resolveInlayHint` 兜底 override + **`CangjieLspRequestCoverageTest` 白名单加 `"inlayHint"`** + capabilities 切 `InlayHintRegistrationOptions(resolveProvider=true)` | `gradlew-queue.bat :code-insight:hints:test` + `:lsp:test` 契约用例 | 完成（§10） |
+| P1 | 参数名 hint（`CjParameterNameHintsCollector`，exclude-list 预留扩展点） | 同上 | 完成（§11） |
+| P2 | §1.1 第 2、3、5、6、7、8 项（prepare 打包链 + intellij-ide substitution/catalog/依赖）+ IDE 声明式 provider + providerId 对齐 §5 | intellij-ide 构建 + IDE hint 测试 | 完成（§12） |
+| P3 | resolve 会话存储实装（含协商层 resolveSupport 检查）、设置下发（descriptor flag / didChangeConfiguration）、lambda/链式/values hint | 增量 | 提示三类**完成**（P4/P5/P6）；resolve 会话存储与设置下发**未做**，理由见下 |
+| P4 | 区间开闭性提示（`cangjie.values.ranges`） | hints + LSP golden + IDE | 完成（§14） |
+| P5 | lambda 隐式返回类型（`hints.lambda.return`） | 同上 | 完成（§15），接收者项阻塞见 D48 |
+| P6 | 链式调用各环节类型（`cangjie.call.chains.hints`） | 同上 | 完成（§16） |
+
+P3 两项未做，都是有意的：
+
+- **resolve 会话存储**：P0 已按协议给出「原样返回」的兜底（`CangjieAnalysisFacade.resolveInlayHint` 直接 `return hint`），
+  客户端不会拿不到响应。真正的懒导航（点击提示跳转目标）需要跨请求存 PSI 指针，
+  而共享层硬约束是「不得持有 lifetime owner」，两者要做必须先在协议层设计指针表，收益低于成本。
+- **LSP 侧设置下发**：按评审 E3 的结论，LSP 侧 `options` 固定全开，**不做** optionId 映射；
+  要演进就走 `CangjieLanguageServerDescriptor` 级 flag（`useLegacyCompletion` 先例）或 `didChangeConfiguration`，
+  属于宿主级配置能力，不阻塞提示本身。
 
 ## 7. 评审修正记录
 
@@ -352,4 +364,179 @@ P3 第一批完成 **逐项 optionId 开关**（4 项，见 D29）。
 
 - D31（补充）：`CangJieBundle_zh_CN.properties` 里 `inlay.cangjie.references.types.hints.hints.type.pattern.variabl`
   少一个 `e`（key 打错，对应选项文案会退化为 key 本身），已顺手修正。
+
+
+## 13. 后续批次的前置调研（第十一轮，v12）
+
+在独立工作树 `feature/inlay-hints-next` 上继续。动工前先核实了两个「下一项」的真实前置条件，
+结论与本提案早期评估有出入，记录在此以免重复踩：
+
+- D39（已查清，非阻塞）：注解**语义入口其实存在**——`CaAnnotatedSymbol.annotations: CaAnnotationList`
+  （`CaAnnotationList : List<CaAnnotation>`），配合 `CaAnnotation.arguments: List<CaNamedAnnotationValue>`
+  （形参名）与 `CaAnnotationValue.sourcePsi`（实参表达式），足以把「源码位置实参 → 形参名」建起来，
+  **不需要**改 analysis 层。真正卡住的是 PSI 层（见 D41）。
+- D40（待确认：区间值提示）：PSI 侧完备（`CjRangeExpressionBase.startExpression/stopExpression/isInclusive`），
+  但仓库里的预览 `inlayProviders/cangjie.values.hints/preview.cj` 写的是
+  `0/*<# ≤ #>*/../*<# ≤ #>*/10`，在 `..` **前后各插一个全角 `≤`**。这不是 Kotlin 的 value hint 形态，
+  语义上也没区分 `..`（左闭右开）与 `..=`（含右端）。落地前需要先定标：是标端点可读性（`0 ≤ .. ≤ 10`），
+  还是标开闭性（`[0, 10)`）。**不建议照抄预览**。
+- D41（阻塞，实测）：**`@X` 在 PSI 层普遍被解析成 `MACRO_EXPRESSION`，不是 `CjAnnotation`**。
+  用三个位置的探针实测（`collectDescendantsOfType<CjAnnotation>()` 计数 / `MACRO_EXPRESSION` 计数）：
+
+  | 源码 | CjAnnotation | MACRO_EXPRESSION |
+  |---|---|---|
+  | `@Ann(1, 2)` + `func demo()` | 0 | 1 |
+  | `@Ann[1, 2]` + `func demo()` | 0 | 1 |
+  | `@Ann` + `func demo()` | 0 | 1 |
+  | `class C { @Ann prop x: Int64 }` | 0 | 1 |
+  | `func f(@Ann a: Int64)` | **1** | 0 |
+  | `@C` + `foreign func g()` | **1** | 0 |
+
+  即：声明前缀位置的 `@X` 先被宏语法吃掉，只有参数位置与部分 `foreign` 前才产出真正的注解节点。
+  注解实参名提示因此**覆盖不完整**，已实现一版后回退（`CjAnnotationParameterNameHintsCollector`
+  与接入点均已删除，不留死代码）。
+  要恢复这条线，前置是**消解 `@X` 与宏声明的语法歧义**（解析器层改动，独立提案），
+  不是提示层的活。
+- D56（D41 的更新，第十三轮探针实测）：**不必改解析器也能做**，但成本在「实参重建」。
+  探针打印 `@Ann(1, 2)` + `func demo()` 的 PSI 树，结论有两条：
+
+  ```
+  FILE
+    MACRO_EXPRESSION `@Ann(1, 2)`
+      AT `@`
+      REFERENCE_EXPRESSION `Ann`
+      MACRO_INPUT `(1, 2)`
+        LPAR / QUOTE_TOKENS / RPAR            ← 实参是原始 token，不是表达式节点
+    FUNC `func demo() {}`                     ← 声明是**兄弟**节点，没被宏吞掉
+  ```
+
+  ① **声明没被吞**：D41 早前测到的「只有 1 个 `CjAnnotation`」是因为注解节点不存在，
+  而不是整段声明被吃进宏输入——`func demo()` 始终是 `MACRO_EXPRESSION` 的兄弟。
+  ② **实参降级成 token**：`(1, 2)` 落在 `MACRO_INPUT/QUOTE_TOKENS` 里，只有 `INTEGER_LITERAL` /
+  `COMMA` 这类叶子，**没有**带类型的表达式节点。
+
+  因此注解实参名提示的可行路径是：收集 `CjMacroExpression` → 取 callee 文本 →
+  **把 `MACRO_INPUT` 的 token 区间按逗号切分后重新 parse 成表达式** → 用注解符号声明的形参名配对。
+  第二步是唯一的脏活（要绕过 PSI 的「宏输入不当表达式」约定），此前回退的那版实现只走
+  `CjAnnotation`，所以在声明前缀位置覆盖为 0。
+  若要重启这条线，建议单开变更：先做 `CjMacroInput` → 表达式列表的重建工具并单独测试，
+  再谈提示。
+- D57（D41 落地，第十四轮后半）：按 D56 的路径实现完成，`CjAnnotationArgumentHintsCollector`
+  + `CjAnnotationArgumentHints` 已进共享层，LSP 侧自动生效（golden `annotationArgs.cj`）。
+  实现中撞到三件事，都记在这里：
+
+  1. **`CjPsiFactory.createCallArguments("(1, 2)")` 可以直接重建实参**，返回的
+     `CjValueArgumentList` 里就是带类型的表达式（探针输出 `args=[1, 2]`），
+     偏移按 `input.start + 1 + (arg.start - list.start - 1)` 换回源码即可。
+  2. **`CjAnnotation` 之外还有一条路走不通**：`CjSimpleNameExpression.reference` 在悬空会话里是
+     `null`；改用 `with(session) { ref.resolveSymbol() }` 也一样返回 `null`——
+     Analysis API 不建模宏表达式 callee 的符号。最终退化为「先符号、失败则同文件按名查
+     `CjTypeStatement`」，因此**跨文件/跨包的注解暂时没有提示**，这是有意的降级。
+  3. **不能套 `isInsideMacroExpansion`**：注解本身就是宏表达式，它的区间会被算进宏展开，
+     套上去整类提示永远为空（实测 candidates=1、hints=0 就是这么来的）。
+
+  宿主接线：IDE 侧新增 provider `cangjie.annotations.hints`（`group=PARAMETERS_GROUP`），
+  逐项开关 `hints.annotation.parameter.name`；bundle 补了 en/zh 两条文案与两套预览资源，
+  由 `testProviderResourcesAreConsistent` 兜底校验。
+
+
+## 14. P4 实施记录：区间开闭性提示（第十二轮，v13）
+
+D40 的定标问题在本轮解决，并已落地共享层与 LSP 宿主。
+
+- D42（定标，取代 D40 的待定项）：采用**不等式标记**而非区间记法。
+  起点恒为闭（`..` 与 `..=` 都包含起点），故左端一律 `≤`；右端按 `..  => <`、`..= => ≤`。
+  渲染结果 `0 ≤ .. < 10` / `0 ≤ .. ≤ 10`。
+  否决 `[0, 10)` 的理由：切片 `a[0..10]` 自带方括号，补方括号会渲染成 `a[[0..10)]`；
+  不等式形式与宿主上下文无关，切片与普通范围可共用同一套文本。
+  预览资源 `inlayProviders/cangjie.values.hints/preview.cj` 原写 `≤ .. ≤`，对 `..` 是错误的，
+  IDE 侧接线时须同步改成 `≤ .. <`（该文件属 `intellij-ide` 仓库，见 D44）。
+- D43（实现）：`CjRangeValueHintsCollector` 复用「候选（纯 PSI）+ 解析（`analyze` 内）」两层结构。
+  候选同时覆盖 `CjRangeExpression`（`0..10`、含步长 `0..10:2`）与 `CjSliceExpression`（`a[0..10]`、`a[..10]`）；
+  缺端点时只提示存在的一端。`session` 仅用于宏展开过滤，本类提示不依赖类型信息。
+  端点判定顺序有硬约束：`hasErrorAncestor` 必须在读 `rangeOperatorNode` 之前，
+  因为残缺节点取运算符会直接 `error(...)`。
+- D44（已完成）：IDE 侧接线落在 `intellij-ide` 仓库的独立工作树
+  `cangjie-wt-hints/intellij-ide`（分支 `feature/inlay-hints-next`）：
+  ①`optionIdOf` 增加 `RANGE_VALUE -> "cangjie.values.ranges"`；
+  ②新增 provider `cangjie.values.hints`（`CangJieValueInlayHintsProvider`，`group=VALUES_GROUP`）+ EP `<option>`；
+  ③预览改成 `0/*<# ≤ #>*/../*<# < #>*/10`，并按约定新增逐项预览 `cangjie.values.hints/cangjie.values.ranges.cj`；
+  ④类型/参数名 provider 显式 `showRangeValues = false`，否则同一区间会被三个 provider 重复提示；
+  ⑤补 zh_CN 文案（含此前缺失的 `hints.type.property`）。
+  该仓库改动引用 `RANGE_VALUE`，`-Pcangjie.upstream.root=<根工作树>` 指向上游即可在本分支上独立编译。
+
+验证：
+- `:code-insight:hints:test` → **22/22**（新增 `CjRangeValueHintsCollectorCandidatesTest` 6 例）
+- `:lsp:test --tests "*CangjieInlayHintIntegrationTest*"` → **8/8**（新增 `rangeValues.cj` golden）
+- golden 只比对 `kind == null`（协议里 `OTHER` 无对应类别）的提示，同文件的类型提示不参与
+- `intellij-ide`：`:modules:ide:base:compileKotlin` **BUILD SUCCESSFUL**；
+  `CangJieInlayHintsProviderTest` **9/9**（新增值 provider 两例 + 更新 EP 注册断言）
+
+环境约束（复现时先看这三条，否则会误判成代码问题）：
+- D45（工作树布局）：IDE 测试基类 `CangJiePluginTestCaseBase.locateRepositoryRoot` 靠**向上**找
+  `cfir/cfir-serialization/testResources/cjo-sdk/*/std.cjo` 定位仓库根。因此 `intellij-ide` 的
+  worktree 必须位于根工作树**内部**（`cangjie-wt-hints/intellij-ide`，正好命中根 `.gitignore`
+  的 `/intellij-ide/`），放在兄弟目录会 `Cannot locate repository root`。
+  放进去后 `includeBuild("..")` 自然指向根工作树，无需再传 `-Pcangjie.upstream.root`。
+- D46（沙箱）：IDE 构建要读根工作树的 `psi/build/classes/**`，agent 沙箱默认拒绝跨目录 file-read，
+  表现为 **Gradle daemon 无故消失**（不是 OOM）。跨工作树构建必须在沙箱外执行。
+- D47（磁盘）：C 盘曾被 Gradle daemon 日志占满到 0 字节，同样表现为 daemon 猝死；
+  `~/.gradle/daemon/*/*.log` 可安全清理。
+
+## 15. P5 实施记录：lambda 返回类型提示（第十三轮，v14）
+
+P3 剩余的 `cangjie.lambdas.hints` 只落地了 `hints.lambda.return`，接收者那一项被证伪后搁置。
+
+- D48（阻塞，实测）：**`hints.lambda.receivers.parameters` 取不到接收者类型**。
+  `CaFunctionType` 只暴露 `parameterTypes` / `returnType`，没有 receiver 槽位；
+  `expression.expectedType` 拿到的同样是函数类型，无法还原 `this: String` 里的 `String`
+  （仓颉的接收者写在 `CjFunctionTypeReceiver`，但那是**类型注解**侧的 PSI，
+  调用点推断出的 `CaFunctionType` 已经把它抹平）。要恢复这条线，前置是 Analysis API
+  在函数类型上暴露接收者，属于 analysis 层改动，不在提示层做。
+- D49（实现）：`CjLambdaHintsCollector` 沿用「候选（纯 PSI）+ 解析（`analyze` 内）」两层结构。
+  候选 = 无显式返回类型 + 有函数体 + 末语句不是 `return`；返回值类型取
+  `bodyExpression.lastStatement.expressionType`。`Unit` 与类型错误一律不产出
+  （`forEach { println(it) }` 这类噪音占绝大多数）。
+  文本沿用类型提示的 `: Type` 形态，锚在末表达式之后（`i + 20: Int64`）。
+- D50（测试夹具坑）：`values.forEach { value -> ... }` 在 LSP 集成夹具里产不出提示——
+  `forEach` 在该 SDK 夹具下解析不到，`hasErrorAncestor` 把整个 lambda 过滤掉了。
+  这不是收集器的缺陷，而是夹具的 stdlib 覆盖不全。golden 改用**不依赖成员解析**的写法：
+  `let f: (Int64) -> Int64 = { i: Int64 => i + 1 }`。顺带记录：golden 标记里**不写空格**
+  （`<#: Int64#>`），否则逐字符比对必然不合。
+- D51（环境，非本变更缺陷）：①`gradlew-queue.bat` 在新建的工作树里首跑 bootstrap 会
+  构建出 shadowJar 却起不来（`ClassNotFoundException: GradleQueueMainKt`），直连
+  `gradlew.bat` 即可；②agent 的 Bash 沙箱在 C 盘吃紧时会整体不可用（连自身二进制都被拒），
+  改用 PowerShell 传参数时 `-D` 开头的参数必须放进**字符串数组**，否则会被吞掉前缀。
+
+验证：
+- `:code-insight:hints:test` → **28/28**（新增 `CjLambdaHintsCollectorCandidatesTest` 6 例）
+- `:lsp:test --tests "*CangjieInlayHintIntegrationTest*"` → **9/9**（新增 `lambdaReturns.cj` golden）
+- `intellij-ide`：`CangJieInlayHintsProviderTest` → **11/11**（新增 lambda 行为与 option 声明两例）
+- IDE 侧 EP 新增 `providerId=cangjie.lambdas.hints`（`group=TYPES_GROUP`），
+  逐项开关 `hints.lambda.return`；其余三个 provider 显式 `showLambdaReturns = false`
+
+## 16. P6 实施记录：链式调用类型提示（第十四轮，v15）
+
+P3 的最后一项，`cangjie.call.chains.hints`。
+
+- D52（定标）：只处理**多行链**（至少一个 `.` / `?.` 另起一行），且链长 ≥ 2；
+  单行链一眼能读完，逐环节加提示纯噪声。只标**调用环节**（`a.b()`），纯属性链
+  （`a.b.c`）不标——属性访问的类型通常已由声明侧提示覆盖。
+  每个换行的调用环节后标该环节的结果类型（`: List<Int64>`），`Unit` 结尾（`forEach`）不标。
+- D53（实现）：`CjCallChainHintsCollector` 先取链**根**（父节点不是限定表达式，或父节点接收者不是自己），
+  再沿 `receiverExpression` 由外到内拆链——链内部每个环节都会被 `collectDescendantsOfType` 收到，
+  不按根过滤会把同一条链反复处理。换行判定用 `operationTokenNode` 与接收者起始行的行号差，
+  需要 document，因此必须在有 `PsiDocumentManager` 的环境里跑（IDE 与 LSP 都满足）。
+  拆分顺序是「由外到内」，产出前按 offset 排序还原成源码顺序。
+- D54（golden 坑）：链式调用 golden 里 `demo` 没有显式返回类型、函数体末表达式是链，
+  因此会额外产出一条**函数返回类型**提示（`: Box`）——golden 必须把它也写进去，
+  否则逐字符比对必挂。同类文件的构造原则：要么显式写返回类型，要么把这条提示算进期望。
+- D55（命名对齐）：预览目录 `inlayProviders/cangjie.method.chains/` 已按 D8 的建议
+  改名为 `cangjie.call.chains.hints/`，与 bundle key 和 providerId 一致。
+
+验证：
+- `:code-insight:hints:test` → **34/34**（新增 `CjCallChainHintsCollectorCandidatesTest` 6 例）
+- `:lsp:test --tests "*CangjieInlayHintIntegrationTest*"` → **10/10**（新增 `callChains.cj` golden）
+- `intellij-ide`：`CangJieInlayHintsProviderTest` → **12/12**（新增链式调用行为用例）
+- IDE 侧该 provider **没有** `<option>`：bundle 未预置逐项 key，`optionIdOf` 返回 `null`
 
