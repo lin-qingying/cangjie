@@ -3,8 +3,9 @@
 // FILE: enumEntryShadowedDecl.cj
 package test
 
-// 枚举项与同名类型共存：值位置必须解析成枚举项（官方 `Sema/EnumSugarTargetsFinder.cpp`
-// 的 `RefineTargets` 按 target type 保留 owner enum 一致的枚举项，同名 class 被淘汰）。
+// 枚举项与可见的同名类型共存：裸引用解析成类型，不会回退到枚举项（官方
+// `Sema/TypeCheckExpr/NameReferenceExpr.cpp` 的 `InferRefExpr` 只在普通 `Lookup` 为空时才走枚举语法糖；
+// cjc 1.0.0 / 1.0.5 / 1.1.3 实测三处各报 `sema_ref_not_be_type` + `sema_mismatched_types`）。
 enum ResponseCode {
     | Ok
     | AuthMoreData

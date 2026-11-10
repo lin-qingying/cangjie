@@ -1,7 +1,9 @@
 // FILE: enumEntryShadowedDecl.cj
-// 枚举项与同名类型共存：值位置必须解析成枚举项。
-// 官方 `Sema/EnumSugarTargetsFinder.cpp` 的 `RefineTargets` 在 ref 有 target type 且不是
-// call/pattern 时，只保留 owner enum 与 target type 一致的枚举项候选，同名 class/struct 被淘汰。
+// 枚举项与可见的同名类型共存：裸引用解析成类型，不会回退到枚举项。
+// 官方 `Sema/TypeCheckExpr/NameReferenceExpr.cpp` 的 `InferRefExpr` 先做普通 `Lookup`，只有结果为空
+// （或全是宏函数）时才进入 `EnumSugarChecker`；`EnumSugarTargetsFinder::RefineTargets` 只在枚举项候选之间
+// 按 target type 筛选，不参与与同名类型的竞争。同名 class/struct 命中后按类型引用处理，报
+// `sema_ref_not_be_type` 与 `sema_mismatched_types`。cjc 1.0.0 / 1.0.5 / 1.1.3 实测一致：三处各报这两条。
 enum ResponseCode {
     | Ok
     | AuthMoreData
@@ -22,8 +24,8 @@ enum ColumnType {
 func ofCode(value: UInt8): ResponseCode {
     match (value) {
         case 0x00 => Ok
-        case 0x01 => AuthMoreData
-        case 0xFF => Error
+        case 0x01 => <!REF_NOT_BE_TYPE, TYPE_MISMATCH!>AuthMoreData<!>
+        case 0xFF => <!REF_NOT_BE_TYPE, TYPE_MISMATCH!>Error<!>
         case _ => Ok
     }
 }
@@ -31,7 +33,7 @@ func ofCode(value: UInt8): ResponseCode {
 func ofColumn(value: UInt8): ColumnType {
     match (value) {
         case 0x01 => Tiny
-        case 0xFE => String
+        case 0xFE => <!REF_NOT_BE_TYPE, TYPE_MISMATCH!>String<!>
         case _ => Tiny
     }
 }

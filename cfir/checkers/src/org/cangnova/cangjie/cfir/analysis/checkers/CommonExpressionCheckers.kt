@@ -60,12 +60,15 @@ object CommonExpressionCheckers : ExpressionCheckers() {
     override val errorExpressionCheckers: Set<CfirErrorExpressionChecker>
         get() = emptySet()
 
-    /** 对 `match` 表达式的 case 类型、模式合法性、穷尽性和可达性执行的 checker 集合。 */
+    /**
+     * 对 `match` 表达式的 case 类型、模式合法性、穷尽性和可达性执行的 checker 集合。
+     *
+     * target-typed 分支体检查不在这里：它由根位置 checker 经 `checkTargetTypedExpression` 统一下钻。
+     */
     override val matchExpressionCheckers: Set<CfirMatchExpressionChecker>
         get() = setOf(
             CfirMatchCaseTypeChecker,
             CfirMatchConditionTypeChecker,
-            CfirMatchTargetTypeMismatchChecker,
             CfirMatchPatternLegalityChecker,
             CfirMatchExhaustivenessChecker,
             CfirOrPatternVariableChecker,
@@ -165,11 +168,14 @@ object CommonExpressionCheckers : ExpressionCheckers() {
             CfirCFuncCaptureSuperChecker,
         )
 
-    /** 对 `try` 表达式返回、目标类型和已解析 catch 覆盖规则执行的 checker 集合。 */
+    /**
+     * 对 `try` 表达式返回和已解析 catch 覆盖规则执行的 checker 集合。
+     *
+     * target-typed try/catch 尾表达式检查由根位置 checker 经 `checkTargetTypedExpression` 统一下钻。
+     */
     override val tryExpressionCheckers: Set<CfirTryExpressionChecker>
         get() = setOf(
             CfirTryHandleReturnChecker,
-            org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirTryTargetTypeMismatchChecker,
             org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirCatchTypeChecker,
         )
 

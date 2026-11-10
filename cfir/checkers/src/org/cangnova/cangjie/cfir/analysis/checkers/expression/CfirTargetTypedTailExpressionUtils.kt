@@ -99,6 +99,9 @@ internal fun CfirVariable.explicitDeclaredTypeOrNull(): ConeCangJieType? {
  * 该入口只接管 block/双分支 if/match/普通 try 这类会把结果藏在子结构里的复合表达式。
  * 普通叶子表达式返回 [TargetTypedCheckOutcome.NotHandled]，让 return、assignment、
  * initializer 等调用方继续使用各自的根级诊断类型。
+ *
+ * 这是 target-typed 复合表达式的唯一 owner：对齐官方 `Check(ctx, target, expr)` 自根位置一次递归下推，
+ * 复合表达式内部不再由独立 checker 重复下钻。
  */
 context(context: CheckerContext, reporter: DiagnosticReporter)
 internal fun checkTargetTypedExpression(
@@ -106,9 +109,9 @@ internal fun checkTargetTypedExpression(
     expectedType: ConeCangJieType,
 ): TargetTypedCheckOutcome {
     val unwrapped = expression.unwrapForTargetTyping()
-    if (expectedType is ConeErrorType || unwrapped.coneTypeOrNull is ConeErrorType) {
-        return TargetTypedCheckOutcome.Handled(reported = false)
-    }
+    if (expectedType is ConeErrorType) return TargetTypedCheckOutcome.Handled(reported = false)
+    if (unwrapped is CfirMatchExpression) return checkTargetTypedMatchExpression(unwrapped, expectedType)
+    if (unwrapped.coneTypeOrNull is ConeErrorType) return TargetTypedCheckOutcome.Handled(reported = false)
 
     return when (unwrapped) {
         is CfirAnonymousFunctionExpression -> {
@@ -131,7 +134,6 @@ internal fun checkTargetTypedExpression(
                 checkTargetTypedIfExpression(unwrapped, expectedType)
             }
         }
-        is CfirMatchExpression -> checkTargetTypedMatchExpression(unwrapped, expectedType)
         is CfirTryExpression -> {
             if (unwrapped.resources.isNotEmpty()) {
                 TargetTypedCheckOutcome.NotHandled
@@ -203,9 +205,9 @@ internal fun checkTargetTypedTailExpression(
     expectedType: ConeCangJieType,
 ): TargetTypedCheckOutcome {
     val unwrapped = expression.unwrapForTargetTyping()
-    if (expectedType is ConeErrorType || unwrapped.coneTypeOrNull is ConeErrorType) {
-        return TargetTypedCheckOutcome.Handled(reported = false)
-    }
+    if (expectedType is ConeErrorType) return TargetTypedCheckOutcome.Handled(reported = false)
+    if (unwrapped is CfirMatchExpression) return checkTargetTypedMatchExpression(unwrapped, expectedType)
+    if (unwrapped.coneTypeOrNull is ConeErrorType) return TargetTypedCheckOutcome.Handled(reported = false)
 
     return when (unwrapped) {
         is CfirBlock -> checkTargetTypedBlockTail(unwrapped, expectedType)
@@ -216,7 +218,6 @@ internal fun checkTargetTypedTailExpression(
                 checkTargetTypedIfExpression(unwrapped, expectedType)
             }
         }
-        is CfirMatchExpression -> checkTargetTypedMatchExpression(unwrapped, expectedType)
         is CfirTryExpression -> {
             if (unwrapped.resources.isNotEmpty()) {
                 checkTargetTypedLeaf(unwrapped, expectedType)
@@ -243,9 +244,14 @@ private fun checkTargetTypedIfExpression(
     ).combineTargetTypedOutcomes()
 }
 
-/** 检查 `match` 每个分支 body 的尾结果表达式。 */
+/**
+ * 检查 `match` 每个分支 body 的尾结果表达式。
+ *
+ * 官方 `ChkMatchExpr` 带目标类型时对每个 case action 独立执行 `Check(ctx, target, action)`：某个分支或模式
+ * 失败使 match 整体成为错误类型时，其余合法分支仍须检查，因此调用方不能因 match 自身的错误类型短路。
+ */
 context(context: CheckerContext, reporter: DiagnosticReporter)
-internal fun checkTargetTypedMatchExpression(
+private fun checkTargetTypedMatchExpression(
     expression: CfirMatchExpression,
     expectedType: ConeCangJieType,
 ): TargetTypedCheckOutcome {
