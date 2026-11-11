@@ -28,6 +28,24 @@ abstract class CfirCache<in K : Any, out V, in CONTEXT> {
     abstract fun getValue(key: K, context: CONTEXT): V
 
     /**
+     * 读取 [key] 对应的值；缺失时计算，但只按 [shouldCache] 决定是否写入缓存。
+     *
+     * 用于「结果可能暂时为空、而这个空结果不应被持久化」的场景：典型例子是按 [K]
+     * 查询本模块尚未建好索引的符号——缓存了 null 就等于把「索引还没就绪」冻结成
+     * 「这个符号永远不存在」，而会话通常不会因此重建。
+     *
+     * 这是**必须由实现显式给出语义的抽象方法**，不提供「忽略 [shouldCache]」的默认实现：
+     * 默认实现会让「换一个缓存工厂」静默退化成「缓存否定结果」，而这种违约没有任何
+     * 编译期或运行期信号，只会在索引未就绪时表现为「符号永久缺失」。
+     *
+     * 与 Kotlin 的偏离（显式记录）：Kotlin `FirCache` **没有**对应 API，它照常缓存 null（`NullValue` 哨兵），
+     * 靠 session 失效（`LLFirSessionInvalidationService` + PSI/ProjectRoot modification tracker）
+     * 让否定结果自然过期。仓颉 session 只在模块修改事件时重建，不因 dumb 模式结束而重建，
+     * 单靠失效会把「索引还没就绪」冻结到会话结束，因此额外提供按次裁决是否写回的入口。
+     */
+    abstract fun getValueCachingIf(key: K, context: CONTEXT, shouldCache: (Any?) -> Boolean): V
+
+    /**
      * 只在 [key] 已经计算过时返回缓存值。
      */
     abstract fun getValueIfComputed(key: K): V?

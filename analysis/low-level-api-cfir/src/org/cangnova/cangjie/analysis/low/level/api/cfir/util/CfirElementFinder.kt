@@ -491,6 +491,7 @@ private sealed class CfirFileStructureNode(val element: CfirDeclaration) {
             is CfirEnumConstructor -> declaration.name
             is CfirTypeAlias -> declaration.name
             is CfirCodeFragment -> SpecialNames.NO_NAME_PROVIDED
+            is CfirInvalidDeclaration -> SpecialNames.NO_NAME_PROVIDED
 
             is CfirFile,
             is CfirAnonymousFunction,

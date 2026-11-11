@@ -112,7 +112,7 @@ internal class CaCfirFieldSymbol private constructor(
      * 字段显式 receiver 类型。
      */
     override val receiverType: CaType?
-        get() = analysisSession.getExplicitCallableReceiverType(backingPsi = null, builder) { cfirSymbol }
+        get() = analysisSession.getExplicitCallableReceiverType(backingPsi = null, builder) { cfirSymbolOrNull }
 
     /**
      * 字段类型。
@@ -292,7 +292,7 @@ internal class CaCfirEnumConstructorSymbol private constructor(
      * enum constructor 显式 receiver 类型。
      */
     override val receiverType: CaType?
-        get() = analysisSession.getExplicitCallableReceiverType(backingPsi = null, builder) { cfirSymbol }
+        get() = analysisSession.getExplicitCallableReceiverType(backingPsi = null, builder) { cfirSymbolOrNull }
 
     /**
      * enum constructor 返回类型。

@@ -76,7 +76,7 @@ internal open class CaCfirLocalVariableSymbol(
      * 局部变量显式 receiver 类型。
      */
     override val receiverType: CaType?
-        get() = analysisSession.getExplicitCallableReceiverType(backingPsi = null, builder) { cfirSymbol }
+        get() = analysisSession.getExplicitCallableReceiverType(backingPsi = null, builder) { cfirSymbolOrNull as? CfirCallableSymbol<*> }
 
     /**
      * 局部变量类型。
@@ -210,7 +210,7 @@ internal class CaCfirPatternVariableSymbol private constructor(
      * pattern variable 显式 receiver 类型。
      */
     override val receiverType: CaType?
-        get() = analysisSession.getExplicitCallableReceiverType(backingPsi = null, builder) { cfirSymbol }
+        get() = analysisSession.getExplicitCallableReceiverType(backingPsi = null, builder) { cfirSymbolOrNull as? CfirCallableSymbol<*> }
 
     /**
      * pattern variable 类型。
@@ -354,7 +354,7 @@ internal class CaCfirPatternBindingSymbol private constructor(
      * pattern binding 显式 receiver 类型。
      */
     override val receiverType: CaType?
-        get() = analysisSession.getExplicitCallableReceiverType(backingPsi = null, builder) { cfirSymbol }
+        get() = analysisSession.getExplicitCallableReceiverType(backingPsi = null, builder) { cfirSymbolOrNull as? CfirCallableSymbol<*> }
 
     /**
      * pattern binding 类型。

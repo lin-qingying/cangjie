@@ -38,6 +38,7 @@ import org.cangnova.cangjie.cfir.containingClassLookupTag
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
+import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirMacroDeclarationSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirMainFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
@@ -153,7 +154,7 @@ internal class CaCfirNamedFunctionSymbol private constructor(
      * 函数显式 receiver 类型。
      */
     override val receiverType: CaType?
-        get() = withValidityAssertion { analysisSession.getExplicitCallableReceiverType(backingPsi, builder) { cfirSymbol } }
+        get() = withValidityAssertion { analysisSession.getExplicitCallableReceiverType(backingPsi, builder) { cfirSymbolOrNull as? CfirCallableSymbol<*> } }
 
     /**
      * 函数返回类型。
@@ -354,7 +355,7 @@ internal class CaCfirMainFunctionSymbol(
      * main 函数显式 receiver 类型。
      */
     override val receiverType: CaType?
-        get() = analysisSession.getExplicitCallableReceiverType(backingPsi = null, builder) { cfirSymbol }
+        get() = analysisSession.getExplicitCallableReceiverType(backingPsi = null, builder) { cfirSymbolOrNull as? CfirCallableSymbol<*> }
 
     /**
      * main 函数返回类型。
@@ -550,7 +551,7 @@ internal class CaCfirMacroSymbol private constructor(
      * macro 显式 receiver 类型。
      */
     override val receiverType: CaType?
-        get() = withValidityAssertion { analysisSession.getExplicitCallableReceiverType(backingPsi, builder) { cfirSymbol } }
+        get() = withValidityAssertion { analysisSession.getExplicitCallableReceiverType(backingPsi, builder) { cfirSymbolOrNull as? CfirCallableSymbol<*> } }
 
     /**
      * macro 返回类型。

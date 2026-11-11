@@ -107,6 +107,9 @@ internal object LLCfirResolveDesignationCollector {
      * 非 lazy-resolvable origin 必须已经处于 body resolve 阶段，否则说明调用方试图解析不可惰性推进的声明。
      */
     private fun CfirDeclaration.shouldBeResolved(): Boolean {
+        // invalid declaration 是诊断叶节点，不进入 imports / body lazy resolve。
+        if (this is CfirInvalidDeclaration) return false
+
         if (!origin.isLazyResolvable) {
             @OptIn(ResolveStateAccess::class)
             check(resolvePhase == CfirResolvePhase.BODY_RESOLVE) {

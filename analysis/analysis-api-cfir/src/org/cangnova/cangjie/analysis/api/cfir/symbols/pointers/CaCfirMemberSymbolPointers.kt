@@ -79,7 +79,7 @@ internal class CaCfirMemberFunctionSymbolPointer(
         return candidates
             .filterIsInstance<CaNamedFunctionSymbol>()
             .singleOrNull { candidate ->
-                val backingSymbol = (candidate as? CaCfirSymbol<*>)?.cfirSymbol
+                val backingSymbol = (candidate as? CaCfirSymbol<*>)?.cfirSymbolOrNull
                 signature.hasTheSameSignature(
                     backingSymbol as? org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol<*> ?: return@singleOrNull false
                 )

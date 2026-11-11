@@ -37,20 +37,21 @@ import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.platform.CangJiePlatforms
 import org.cangnova.cangjie.platform.isCommon
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 @OptIn(CompilerConfiguration.Internals::class)
 /**
- * 覆盖前端宏构造服务在 strict/degraded 模式下的表面占位行为。
+ * 覆盖前端宏构造服务在 strict/degraded 模式下的声明恢复行为。
  */
 class FrontendMacroConstructionServiceTest {
     /**
-     * 验证 degraded 模式会为声明宏表面登记原始 surface 占位映射。
+     * 验证 degraded 模式保留声明 carrier，并通过 registry 保留失败诊断而不登记占位节点。
      */
     @Test
-    fun degradedModeRegistersDeclarationSurfacePlaceholderWithoutFinalSurfaceNode() {
+    fun degradedModePreservesDeclarationAndDiagnosticWithoutPlaceholder() {
         val fixture = macroDeclarationSurfaceFixture()
 
         val result = FrontendMacroConstructionService(CompilerConfiguration()).expandWithClassification(
@@ -62,8 +63,10 @@ class FrontendMacroConstructionServiceTest {
         assertTrue(result is MacroConstructionResult.Degraded)
         val degraded = result as MacroConstructionResult.Degraded
         assertSame(fixture.file, degraded.recordableFiles.files.single())
-        assertEquals(fixture.surface.surfaceId, degraded.registry.placeholderOriginById[fixture.surface.surfaceId])
-        assertSame(fixture.surface, degraded.registry.originSurfaceForPlaceholder(fixture.surface.surfaceId))
+        assertEquals(1, degraded.recordableFiles.files.single().declarations.size)
+        assertSame(fixture.file.declarations.single(), degraded.recordableFiles.files.single().declarations.single())
+        assertNull(degraded.registry.placeholderOriginById[fixture.surface.surfaceId])
+        assertNull(degraded.registry.originSurfaceForPlaceholder(fixture.surface.surfaceId))
         assertTrue(
             degraded.registry.diagnostics.any { it.originSurfaceId == fixture.surface.surfaceId },
             "surface-only degraded diagnostics must keep original macro surface id",

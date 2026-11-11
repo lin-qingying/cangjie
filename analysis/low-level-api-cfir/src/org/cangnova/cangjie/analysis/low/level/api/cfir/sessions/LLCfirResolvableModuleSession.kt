@@ -17,6 +17,7 @@ import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionResult
 import org.cangnova.cangjie.cfir.resolve.providers.macro.PreMacroRawBuildResult
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.cfir.session.CfirBuiltinTypes
+import org.cangnova.cangjie.cfir.session.extendIndexStoreOrNull
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.source.psiOrNull
 
@@ -145,6 +146,8 @@ abstract class LLCfirResolvableModuleSession(
 
         val published = moduleComponents.macroSemanticSnapshotStore.publish(preparedSnapshot)
         if (published) {
+            // checker 阶段消费的是快照文件；同步刷新其 extend owner/package 索引，避免索引仍指向旧 raw 声明。
+            extendIndexStoreOrNull?.recordDeclarationSources(preparedSnapshot.files)
             // 写访问屏障阻止分析读者跨过此视图切换；释放屏障前同时淘汰所有旧语义缓存。
             moduleComponents.cache.invalidateRawCfirFiles()
             moduleComponents.fileStructureCache.clear()

@@ -27,6 +27,18 @@ internal interface CaCfirSymbol<out S : CfirBasedSymbol<*>> : CaSymbol, CaLifeti
     val cfirSymbol: S
 
     /**
+     * 底层 CFIR 符号；符号不可恢复时返回 `null`。
+     *
+     * 这是符号层**唯一**的降级入口。Kotlin `KaFirSymbol` 只有一个非空 `firSymbol`，
+     * 因为 FIR 由 PSI 构建、每个声明必有符号；CFIR 不同——库声明可能尚未进入索引、
+     * 反编译 PSI 可能失效，恢复会真的失败。
+     *
+     * 默认实现返回 [cfirSymbol]：只持有符号、不会恢复失败的实现（合成/局部符号）无需覆写。
+     * PSI 承载的符号在 [CaCfirPsiSymbol] 覆写为带记忆化的真实实现。
+     */
+    val cfirSymbolOrNull: S? get() = cfirSymbol
+
+    /**
      * 当前符号绑定的 CFIR Analysis session。
      */
     val analysisSession: CaCfirSession

@@ -437,7 +437,7 @@ private fun CaSymbol.shortNameForBinding(): Name? = when (this) {
  * 将可独立导入的顶层符号转换为精确导入路径。
  */
 private fun CaSymbol.asTopLevelImportPath(): ImportPath? {
-    val organizationName = (this as? CaCfirSymbol<*>)?.cfirSymbol
+    val organizationName = (this as? CaCfirSymbol<*>)?.cfirSymbolOrNull
         ?.getContainingFile()?.packageDirective?.organizationName
     return when (this) {
         is CaClassLikeSymbol -> classId?.let { ImportPath(it.asSingleFqName(), false, organizationName = organizationName) }

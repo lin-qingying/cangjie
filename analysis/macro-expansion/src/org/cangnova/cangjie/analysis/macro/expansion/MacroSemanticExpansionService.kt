@@ -136,6 +136,7 @@ internal class MacroSemanticExpansionServiceImpl(private val project: Project) :
         val environment = MacroSemanticExpansionEnvironment.getInstance(project) ?: return
         val revision = environment.revision(module)
         val state = stateFor(module)
+        var snapshotInvalidated = false
 
         state.lock.withLock {
             // 同一 revision 已经失败过：不再重复整模块构建，等输入变化后再试。
@@ -160,17 +161,26 @@ internal class MacroSemanticExpansionServiceImpl(private val project: Project) :
                 )
                 session.invalidateMacroSemanticSnapshot()
                 state.publishedRevision = null
+                snapshotInvalidated = true
             }
         }
 
+        if (snapshotInvalidated) {
+            environment.onSnapshotInvalidated(module)
+        }
         submit(session, module, state, environment, revision)
     }
 
     override fun invalidate(module: CaSourceModule) {
         val state = stateFor(module)
-        state.lock.withLock {
+        val snapshotInvalidated = state.lock.withLock {
+            val wasPublished = state.publishedRevision != null
             state.publishedRevision = null
             state.failedRevision = null
+            wasPublished
+        }
+        if (snapshotInvalidated) {
+            MacroSemanticExpansionEnvironment.getInstance(project)?.onSnapshotInvalidated(module)
         }
     }
 

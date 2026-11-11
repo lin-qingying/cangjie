@@ -40,6 +40,30 @@ internal class CfirThreadSafeCacheWithPostCompute<K : Any, V, CONTEXT, DATA>(
         }.getValue()
 
     /**
+     * 取得缓存值；缺失时计算并执行 post-compute，但只有 [shouldCache] 通过时才把结果留在缓存里。
+     *
+     * 空结果必须被移除：[ValueWithPostCompute] 的状态机无法区分「未计算」与「已计算为 null」
+     * （[ValueWithPostCompute.getValueIfComputed] 两者都返回 null），留着空条目就等于把
+     * 「索引还未就绪」冻结成「这个符号永远不存在」。post-compute 本身已经执行，不受影响。
+     */
+    override fun getValueCachingIf(key: K, context: CONTEXT, shouldCache: (Any?) -> Boolean): V {
+        map[key]?.getValueIfComputed()?.let { return it }
+
+        val entry = map.getOrPut(key) {
+            ValueWithPostCompute(
+                key,
+                calculate = { createValue(it, context) },
+                postCompute = postCompute
+            )
+        }
+        val value = entry.getValue()
+        if (!shouldCache(value)) {
+            map.remove(key, entry)
+        }
+        return value
+    }
+
+    /**
      * 在值已经完整计算并完成 post-compute 后返回缓存值。
      */
     override fun getValueIfComputed(key: K): V? =

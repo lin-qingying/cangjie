@@ -36,7 +36,9 @@ import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
+import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.symbols.CfirPropertyAccessorSymbol
+import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.psi.CjProperty
 import org.cangnova.cangjie.psi.CjPropertyAccessor
 
@@ -142,13 +144,23 @@ internal sealed interface CaCfirBasePropertyAccessorSymbol :
      * 访问器显式 receiver 类型。
      */
     val receiverTypeImpl: CaType?
-        get() = withValidityAssertion { analysisSession.getExplicitCallableReceiverType(backingPsi, builder) { cfirSymbol } }
+        get() = withValidityAssertion { analysisSession.getExplicitCallableReceiverType(backingPsi, builder) { cfirSymbolOrNull } }
 
     /**
      * 访问器返回类型。
+     *
+     * 符号不可恢复时返回错误类型而不是抛异常——与
+     * [org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirValueParameterSymbol] 的
+     * `returnType`、`CaCfirConstructorSymbol.returnType` 保持同一策略：
+     * 对外非空 `CaType` 属性用「可传染的错误类型」表达未知。
      */
     val returnTypeImpl: CaType
-        get() = withValidityAssertion { cfirSymbol.returnType(builder) }
+        get() = withValidityAssertion {
+            cfirSymbolOrNull?.returnType(builder)
+                ?: builder.typeBuilder.buildType(
+                    ConeErrorType(ConeSimpleDiagnostic("property accessor return type is unavailable")),
+                )
+        }
 
     /**
      * 访问器在公开符号位置上归类为属性位置。

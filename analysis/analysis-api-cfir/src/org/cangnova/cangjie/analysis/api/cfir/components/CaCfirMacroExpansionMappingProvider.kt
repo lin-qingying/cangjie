@@ -98,7 +98,17 @@ internal class CaCfirMacroExpansionMappingProvider(
         }.distinctBy { it.surfaceId }
     }
 
-    /** 取得该 PSI 文件对应的 CFIR 文件；未构建时按需构建（surface 只在构建后存在）。 */
+    /**
+     * 取得该 PSI 文件对应的 CFIR 文件；未构建时按需构建。
+     *
+     * 这里必须取**已解析**的 CFIR：macro surface 由表达式解析阶段写入
+     * [org.cangnova.cangjie.cfir.resolve.providers.macro.CfirRawMacroSurfaceUsageStore]，
+     * 只构建 raw 文件时 store 里没有可查询的 surface，判定会退化成「无展开」。
+     *
+     * 代价是该入口服务于「当前位置是否在宏展开内」这类装饰性判定（inlay hints 每条提示都会问一次），
+     * 会触发整文件解析。若要降低这个代价，正确做法是把 surface 记录前移到 raw 构建阶段，
+     * 而不是在这里砍解析深度——后者会改变判定结论。
+     */
     private fun cfirFileOf(file: CjFile): CfirFile? =
         with(analysisSession) { file.getOrBuildCfir(resolutionFacade) as? CfirFile }
 

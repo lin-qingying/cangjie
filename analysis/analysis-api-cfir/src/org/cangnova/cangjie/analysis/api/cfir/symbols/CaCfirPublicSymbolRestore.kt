@@ -187,7 +187,7 @@ private fun CaCallableSymbol.matchesStableCallable(
 ): Boolean {
     if (this.callableId != callableId) return false
     if (signature != null) {
-        val cfirCallable = (this as? CaCfirSymbol<*>)?.cfirSymbol as? CfirCallableSymbol<*> ?: return false
+        val cfirCallable = (this as? CaCfirSymbol<*>)?.cfirSymbolOrNull as? CfirCallableSymbol<*> ?: return false
         if (!signature.hasTheSameSignature(cfirCallable)) return false
     }
     return when (kind) {

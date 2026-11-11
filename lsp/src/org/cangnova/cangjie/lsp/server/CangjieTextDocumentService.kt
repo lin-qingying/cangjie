@@ -317,7 +317,7 @@ class CangjieTextDocumentService(
             ?: return completed(emptyList())
         if (!serverContext.enabledFeatures.codeAction) return completed(emptyList())
         return serverContext.requestExecutor.compute(CangjieLspRequest.CODE_ACTION) {
-            serverContext.analysisFacade.codeActions(serverContext.requestContext(), document, params)
+            serverContext.codeActions(document, params)
         }.also { it.thenAccept { logger.info("<==== codeAction") } }
     }
 
@@ -347,11 +347,7 @@ class CangjieTextDocumentService(
             return completed(params)
         }
         return serverContext.requestExecutor.compute(CangjieLspRequest.RESOLVE_CODE_ACTION) {
-            serverContext.analysisFacade.resolveCodeAction(
-                serverContext.requestContext(),
-                document,
-                params,
-            )
+            serverContext.resolveCodeAction(document, params)
         }.also { it.thenAccept { logger.info("<==== codeAction/resolve") } }
     }
 

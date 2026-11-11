@@ -125,6 +125,27 @@ class CfirExtendIndexStoreTest {
 
     /**
      * 楠岃瘉 typealias 鐩爣涓庣湡瀹炵洰鏍囧叡浜悓涓€绱㈠紩鍜屾帴鍙ｈ涔夌瓑浠风被锛屽悓鏃朵繚鐣?alias 澹版槑鍏冩暟鎹€?     */
+    /**
+     * 查询不在当前语义索引实例中的 extend 时，包归属由组合 provider 按声明 owner 提供。
+     */
+    @Test
+    fun `query service resolves package through owning extend provider`() {
+        val (ownerSession, moduleData) = ExtendTestFixtures.newSessionAndModule()
+        val (querySession, _) = ExtendTestFixtures.newSessionAndModule()
+        val packageFqName = FqName("sample.owner")
+        val targetClassId = ClassId(packageFqName, Name.identifier("Target"))
+        val extend = ExtendTestFixtures.newExtend(
+            moduleData = moduleData,
+            extendedTypeRef = ExtendTestFixtures.classTypeRef(targetClassId),
+            superTypeRefs = emptyList(),
+        )
+        ownerSession.register(CfirExtendProvider::class, TestExtendProvider(mapOf(extend to packageFqName)))
+
+        val query = CfirExtendRuleQueryServiceImpl(querySession, CfirExtendIndexStore())
+
+        assertEquals(packageFqName, query.packageFqNameOf(extend))
+    }
+
     @Test
     fun `type alias targets are indexed by expanded semantic identity`() {
         val (_, moduleData) = ExtendTestFixtures.newSessionAndModule()

@@ -8,7 +8,6 @@ import org.cangnova.cangjie.cfir.common.CfirPlatform
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAttributes
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
-import org.cangnova.cangjie.cfir.declarations.CfirErrorFunction
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
@@ -446,10 +445,10 @@ class FrontendMacroConstructionExecutionTest {
     }
 
     /**
-     * 验证 parser 不可用时 DEGRADED 模式会构造声明和参数占位符。
+     * 验证 parser 不可用时 DEGRADED 模式保留声明 carrier，并为参数构造类型化占位符。
      */
     @Test
-    fun degradedModeBuildsTypedDeclarationAndParameterPlaceholdersWhenParserIsUnavailable() {
+    fun degradedModePreservesDeclarationAndBuildsParameterPlaceholderWhenParserIsUnavailable() {
         val session = object : CfirSession(CfirSession.Kind.Source) {}
         val moduleData = TestModuleData(session)
         session.register(CfirModuleData::class, moduleData)
@@ -472,11 +471,12 @@ class FrontendMacroConstructionExecutionTest {
         )
 
         assertTrue(result is MacroConstructionResult.Degraded)
-        assertInstanceOf(CfirErrorFunction::class.java, file.declarations.first())
+        assertSame(declarationCarrier, file.declarations.first())
+        assertInstanceOf(CfirNamedFunction::class.java, file.declarations.first())
         val parameterPlaceholder = (file.declarations[1] as CfirNamedFunction).valueParameters.single()
         assertInstanceOf(CfirErrorExpression::class.java, parameterPlaceholder.defaultValue)
         assertEquals(
-            surfaces.map { it.surfaceId }.toSet(),
+            setOf(surfaces.last().surfaceId),
             (result as MacroConstructionResult.Degraded).registry.placeholderOriginById.keys,
         )
     }

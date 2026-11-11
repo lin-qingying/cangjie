@@ -10,6 +10,7 @@ import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassifierSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaConstructorSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaSymbolUnavailableException
 import org.cangnova.cangjie.analysis.api.symbols.markers.CaNamedSymbol
 import org.cangnova.cangjie.ide.completion.api.CompletionItemKind
 import org.cangnova.cangjie.ide.completion.api.CompletionRequest
@@ -63,15 +64,18 @@ class CfirTopLevelCompletionSection : CfirCompletionSection(
                     }
                     for (callable in entry.scope.callables { true }) {
                         if (!callable.matchesPrefix(prefix)) continue
-                        add(
+                        // 与分类器候选同等对待：单个 callable 的符号不可恢复时只丢该候选，
+                        // 不能让一条坏声明把整个区段（以及后续区段）带走。
+                        val snapshot = completionSnapshotOrNull {
                             callableSnapshot(
                                 callable,
                                 CompletionItemKind.TOP_LEVEL,
                                 origin,
                                 ImportCost.DIRECT,
                                 documentStamp = request.documentStamp,
-                            ),
-                        )
+                            )
+                        } ?: continue
+                        add(snapshot)
                     }
                 }
             }.distinctByIdentity()
@@ -106,6 +110,11 @@ class CfirTopLevelCompletionSection : CfirCompletionSection(
      *
      * 一个类有多个构造器时逐个给：它们共享同一个 ClassId，靠尾文本区分。
      * 只给一个会让用户无从选择调用哪一种，而「参数组合」正是这里要传达的信息。
+     *
+     * **单候选失败不影响区段**：库声明的符号可能在本会话不可恢复，此时丢弃该构造器候选；
+     * 若全部构造器都不可用，则退回不带括号的类型候选，保证该类仍然可见。
+     * 区段级失败仍必须上抛（见 [CfirCompletionSection.compute] 契约），
+     * 这里的隔离只针对“候选数据缺失”这一类可预期失败。
      */
     private fun CaSession.classifierCandidates(
         classifier: CaClassifierSymbol,
@@ -115,29 +124,49 @@ class CfirTopLevelCompletionSection : CfirCompletionSection(
     ): List<CompletionSnapshot> {
         val classLike = classifier as? CaClassLikeSymbol
         if (classLike != null && positionKind in CONSTRUCTIBLE_POSITIONS) {
-            val constructors = constructorsOf(classLike)
+            val constructors = try {
+                constructorsOf(classLike)
+            } catch (unavailable: CaSymbolUnavailableException) {
+                unavailable.logCompletionDegradation("classifier constructors")
+                emptyList()
+            }
             if (constructors.isNotEmpty()) {
-                return constructors.map { constructor ->
-                    classifierSnapshot(
-                        classifier,
-                        CompletionItemKind.TOP_LEVEL,
-                        origin,
-                        ImportCost.DIRECT,
-                        documentStamp = request.documentStamp,
-                        constructor = constructor,
-                    )
+                val constructorSnapshots = constructors.mapIndexedNotNull { ordinal, constructor ->
+                    completionSnapshotOrNull {
+                        classifierSnapshot(
+                            classifier,
+                            CompletionItemKind.TOP_LEVEL,
+                            origin,
+                            ImportCost.DIRECT,
+                            documentStamp = request.documentStamp,
+                            constructor = ConstructorCompletionCandidate(constructor, ordinal),
+                        )
+                    }
                 }
+                if (constructorSnapshots.isNotEmpty()) return constructorSnapshots
             }
         }
-        return listOf(
-            classifierSnapshot(
-                classifier,
-                CompletionItemKind.TOP_LEVEL,
-                origin,
-                ImportCost.DIRECT,
-                documentStamp = request.documentStamp,
-            ),
+        return listOfNotNull(
+            completionSnapshotOrNull {
+                classifierSnapshot(
+                    classifier,
+                    CompletionItemKind.TOP_LEVEL,
+                    origin,
+                    ImportCost.DIRECT,
+                    documentStamp = request.documentStamp,
+                )
+            },
         )
+    }
+
+    /**
+     * 渲染单个候选；符号不可用时丢弃该候选，其余候选照常产出。
+     */
+    private inline fun completionSnapshotOrNull(render: () -> CompletionSnapshot): CompletionSnapshot? = try {
+        render()
+    } catch (unavailable: CaSymbolUnavailableException) {
+        unavailable.logCompletionDegradation("classifier candidate")
+        null
     }
 
     /**

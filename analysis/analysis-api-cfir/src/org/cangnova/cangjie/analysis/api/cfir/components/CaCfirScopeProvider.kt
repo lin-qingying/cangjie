@@ -6,6 +6,7 @@ import org.cangnova.cangjie.analysis.api.cfir.*
 import org.cangnova.cangjie.analysis.api.cfir.scopes.CaCfirCompositeScope
 import org.cangnova.cangjie.analysis.api.cfir.scopes.CaCfirDeclaredMemberScope
 import org.cangnova.cangjie.analysis.api.cfir.scopes.CaCfirDelegatingNamesAwareScope
+import org.cangnova.cangjie.analysis.api.cfir.scopes.CaCfirEmptyScope
 import org.cangnova.cangjie.analysis.api.cfir.scopes.CaCfirFileScope
 import org.cangnova.cangjie.analysis.api.cfir.scopes.CaCfirPackageScope
 import org.cangnova.cangjie.analysis.api.cfir.scopes.CaCfirScopeContext
@@ -128,8 +129,12 @@ internal class CaCfirScopeProvider(
             when (this@combinedDeclaredMemberScope) {
                 is CaClassLikeSymbol -> {
                     val classSymbol = requireClassLikeSymbol(this@combinedDeclaredMemberScope)
+                    // 符号不可恢复时返回空作用域（借用 KaFirEmptyScope 的类型；Kotlin 不用它表达符号缺失），
+                    // 让「暂时看不到成员」保持可消费，而不是把缺失变成异常。
+                    val cfirClassSymbol = classSymbol.cfirSymbolOrNull as? CfirClassLikeSymbol<*>
+                        ?: return@withValidityAssertion CaCfirEmptyScope(analysisSession.token)
                     CaCfirDeclaredMemberScope(
-                        CfirClassDeclaredMemberScope(classSymbol.cfirSymbol),
+                        CfirClassDeclaredMemberScope(cfirClassSymbol),
                         analysisSession.cfirSymbolBuilder,
                     )
                 }
@@ -143,6 +148,10 @@ internal class CaCfirScopeProvider(
     override val CaClassLikeSymbol.declaredMemberScope: CaScope
         get() = withValidityAssertion {
             val classSymbol = requireClassLikeSymbol(this@declaredMemberScope)
+            // 这里保持 fail-fast（不用空作用域降级）：`declaredMemberScope` 的语义是「成员集合」，
+            // 返回空作用域等于断言「这个类型没有成员」，会把「暂时未知」渲染成确定结论。
+            // Kotlin 在同一位置也没有降级分支（`KaFirScopeProvider.kt:98-135` 直接 `firSymbol.fir`），
+            // 其 `KaFirEmptyScope` 只用于「作用域对象缺席」。
             CaCfirDeclaredMemberScope(
                 CfirClassDeclaredMemberScope(classSymbol.cfirSymbol),
                 analysisSession.cfirSymbolBuilder,
@@ -156,8 +165,10 @@ internal class CaCfirScopeProvider(
         get() = withValidityAssertion {
             val extendSymbol = this@declaredMemberScope as? CaCfirExtendSymbol
                 ?: error("Only CFIR extend symbols can expose declared-member scope: ${this@declaredMemberScope::class.simpleName}")
+            val cfirExtend = extendSymbol.cfirSymbolOrNull?.cfir
+                ?: return@withValidityAssertion CaCfirEmptyScope(analysisSession.token)
             CaCfirDeclaredMemberScope(
-                CfirSingleExtendDeclaredMemberScope(extendSymbol.cfirSymbol.cfir),
+                CfirSingleExtendDeclaredMemberScope(cfirExtend),
                 analysisSession.cfirSymbolBuilder,
             )
         }
@@ -168,6 +179,7 @@ internal class CaCfirScopeProvider(
     override val CaClassLikeSymbol.memberScope: CaScope
         get() = withValidityAssertion {
             val classSymbol = requireClassLikeSymbol(this@memberScope)
+            // 同 `declaredMemberScope`：成员集合不能用空作用域表达「未知」。
             val cfirScope = classSymbol.cfirSymbol.cfir.unsubstitutedScope(
                 analysisSession.cfirSession,
                 getScopeSession(),
@@ -386,6 +398,8 @@ internal fun CaCfirSession.declarationSiteMemberScope(symbol: CaClassSymbol): Ca
     val classSymbol = symbol as? CaCfirClassSymbol
         ?: error("仅 CFIR class symbol 支持声明站点成员作用域：${symbol::class.simpleName}")
     val lowLevelSession = cfirSession
-    val cfirScope = lowLevelSession.cangjieScopeProvider.getDeclarationSiteMemberScope(classSymbol.cfirSymbol, lowLevelSession)
+    val cfirClassSymbol = classSymbol.cfirSymbolOrNull as? CfirClassLikeSymbol<*>
+        ?: return@withValidityAssertion CaCfirEmptyScope(token)
+    val cfirScope = lowLevelSession.cangjieScopeProvider.getDeclarationSiteMemberScope(cfirClassSymbol, lowLevelSession)
     CaCfirDelegatingNamesAwareScope(cfirScope, cfirSymbolBuilder)
 }

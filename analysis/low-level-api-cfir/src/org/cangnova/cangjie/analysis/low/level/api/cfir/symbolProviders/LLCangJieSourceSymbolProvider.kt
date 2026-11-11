@@ -34,7 +34,6 @@ import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.*
-import org.cangnova.cangjie.utils.exceptions.ExceptionAttachmentBuilder
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 
 /**
@@ -136,6 +135,10 @@ internal class LLCangJieSourceSymbolProvider(
 
     /**
      * 统一按 [classId] 与可选 PSI 上下文查询 class-like 缓存。
+     *
+     * 有精确声明时走 PSI 键，而不是把声明塞进 ClassId 查询的 context：
+     * [org.cangnova.cangjie.cfir.caches.CfirCache] 的命中只看 key，context 只参与首次计算，
+     * 用 ClassId 键承载「必须精确到这个声明」的要求，只会命中同一 ClassId 的任意声明。
      */
     @OptIn(LLModuleSpecificSymbolProviderAccess::class)
     private fun getClassLikeSymbolByClassIdAndDeclaration(
@@ -143,11 +146,11 @@ internal class LLCangJieSourceSymbolProvider(
         classLikeDeclaration: CjClassLikeDeclaration?,
     ): CfirClassLikeSymbol<*>? {
         return tolerateMissingCachedSymbol(classId) {
-            classLikeCache.getSymbolByClassId(
-                classId,
-                classLikeDeclaration,
-                buildAdditionalAttachments = buildAdditionalAttachmentsForClassLikeSymbol,
-            )
+            if (classLikeDeclaration == null) {
+                classLikeCache.getSymbolByClassId(classId, classLikeDeclaration)
+            } else {
+                classLikeCache.getSymbolByPsi<CjClassLikeDeclaration>(classId, classLikeDeclaration) { it }
+            }
         }
     }
 
@@ -163,33 +166,9 @@ internal class LLCangJieSourceSymbolProvider(
             return sourceClassifiers.singleOrNull()?.symbol
         }
         return tolerateMissingCachedSymbol(classId) {
-            classLikeCache.getSymbolByPsi<CjClassLikeDeclaration>(
-                classId,
-                declaration,
-                buildAdditionalAttachments = buildAdditionalAttachmentsForClassLikeSymbol,
-            ) { it }
+            classLikeCache.getSymbolByPsi<CjClassLikeDeclaration>(classId, declaration) { it }
         }
     }
-
-    /**
-     * 为 class-like 缓存异常补充声明索引与内容范围诊断信息。
-     *
-     * 这里会记录指定 class ID 当前是否仍能从 [declarationProvider] 找到声明，以及给定上下文 PSI 是否位于当前符号提供器的
-     * [searchScope] 内，用于定位缓存失效或模块归属异常。
-     */
-    private val buildAdditionalAttachmentsForClassLikeSymbol: ExceptionAttachmentBuilder.(ClassId, CjClassLikeDeclaration?) -> Unit =
-        { classId, context ->
-            val declaration = declarationProvider.getClassLikeDeclarationByClassId(classId)
-            withPsiEntry("declarationFromDeclarationProvider", declaration)
-
-            val virtualFile = context?.containingFile?.virtualFile
-            withVirtualFileEntry("contextVirtualFile", virtualFile)
-
-            if (virtualFile != null) {
-                val isInContentScope = searchScope.contains(virtualFile)
-                withEntry("isContextInScope", isInContentScope.toString())
-            }
-        }
 
     /**
      * 查询 [classId] 对应的全部 class-like 符号。

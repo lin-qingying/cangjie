@@ -89,6 +89,9 @@ interface MacroSemanticExpansionEnvironment {
      */
     fun onPublished(session: LLCfirResolvableModuleSession, files: Set<VirtualFile>)
 
+    /** 已发布快照因输入 revision 变化而失效。 */
+    fun onSnapshotInvalidated(module: CaSourceModule) {}
+
     /** 本次构造未发布快照；[outcome] 说明原因。 */
     fun onAbandoned(session: LLCfirResolvableModuleSession, outcome: MacroExpansionOutcome)
 

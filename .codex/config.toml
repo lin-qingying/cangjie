@@ -1,2 +1,5 @@
 approval_policy = "never"
 sandbox_mode = "danger-full-access"
+
+  [mcp_servers.idea]
+    url = "http://127.0.0.1:64685/stream"

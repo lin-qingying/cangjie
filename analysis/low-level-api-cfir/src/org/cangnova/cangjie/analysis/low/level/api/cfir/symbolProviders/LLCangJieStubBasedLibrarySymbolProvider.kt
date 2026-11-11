@@ -539,14 +539,17 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
 
     /**
      * 根据已知 [classLikeDeclaration] 精确查询或反序列化 [classId] 对应的 class-like 符号。
+     *
+     * 已知精确声明时必须按 PSI 键查询：同一个 [ClassId] 可能对应多处声明（重声明、
+     * 源码/宏展开双视图），而 ClassId 键只保证「任意命中」，用它当命中会返回**另一处**
+     * 声明对应的符号。精度要求必须体现在 key 上，不能只体现在 context 上。
      */
     @LLModuleSpecificSymbolProviderAccess
     override fun getClassLikeSymbolByClassId(classId: ClassId, classLikeDeclaration: CjClassLikeDeclaration): CfirClassLikeSymbol<*>? {
         val cache = if (classLikeDeclaration is CjTypeStatement) classCache else typeAliasCache
-        cache.getCachedSymbolByClassId(classId)?.let { return it }
 
         return tolerateMissingCachedSymbol(classId) {
-            cache.getSymbolByClassId(classId, createClassLikeDeserializationContext(classId, classLikeDeclaration))
+            cache.getSymbolByPsi(classId, classLikeDeclaration, createClassLikeDeserializationContext(classId, classLikeDeclaration))
         }
     }
 
