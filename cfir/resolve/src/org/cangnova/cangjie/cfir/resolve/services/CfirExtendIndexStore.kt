@@ -1,4 +1,6 @@
-﻿package org.cangnova.cangjie.cfir.resolve.services
+package org.cangnova.cangjie.cfir.resolve.services
+
+import com.intellij.openapi.progress.ProcessCanceledException
 
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
@@ -45,6 +47,7 @@ import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.type.model.TypeConstructorMarker
 
 /**
@@ -62,6 +65,16 @@ class CfirExtendIndexStore(
     var modificationCount: Long = 0
         private set
 
+    /** 最近一次 rebuild 中逐条建模失败的声明数量。 */
+    @Volatile
+    var lastRebuildFailureCount: Int = 0
+        private set
+
+    /** 最近一次 rebuild 中首个建模失败的异常，供调用方记录日志。 */
+    @Volatile
+    var lastRebuildFailure: Exception? = null
+        private set
+
     /** 当前 session 内所有 extend 语义模型，按稳定比较器排序。 */
     private var models: List<CfirExtendSemanticModel> = emptyList()
     /** 按被扩展目标键分组的 extend 模型。 */
@@ -76,9 +89,14 @@ class CfirExtendIndexStore(
     private var modelsByOrigin: Map<CfirExtendSemanticOrigin, List<CfirExtendSemanticModel>> = emptyMap()
     /** extend 声明节点到其语义模型的索引。 */
     private var modelByDeclaration: Map<CfirExtend, CfirExtendSemanticModel> = emptyMap()
-    /** extend 声明到其结构性源码文件的索引，在类型与继承语义完成前即可使用。 */
+    /** 声明节点与其稳定源码锚点对应的结构性文件索引，在类型与继承语义完成前即可使用。 */
+    private data class DeclarationSourceIndex(
+        val fileByDeclaration: Map<CfirExtend, CfirFile>,
+        val fileBySource: Map<CjSourceElement, CfirFile>,
+    )
+
     @Volatile
-    private var sourceFileByDeclaration: Map<CfirExtend, CfirFile> = emptyMap()
+    private var declarationSourceIndex = DeclarationSourceIndex(emptyMap(), emptyMap())
     /** extend 成员符号到 owner extend 声明的索引。 */
     private var containingExtendByCallableSymbol: Map<CfirCallableSymbol<*>, CfirExtend> = emptyMap()
     /** 最近一次重建索引使用的类型解析器，查询接口成员的最终签名时继续复用。 */
@@ -93,25 +111,40 @@ class CfirExtendIndexStore(
      */
     @Synchronized
     fun recordDeclarationSources(files: List<CfirFile>) {
-        sourceFileByDeclaration = buildMap {
+        val fileByDeclaration = buildMap<CfirExtend, CfirFile> {
             for (file in files) {
                 for (declaration in file.declarations) {
                     if (declaration is CfirExtend) put(declaration, file)
                 }
             }
         }
+        val fileBySource = buildMap<CjSourceElement, CfirFile> {
+            for (file in files) {
+                for (declaration in file.declarations) {
+                    if (declaration is CfirExtend) {
+                        declaration.source?.let { put(it, file) }
+                    }
+                }
+            }
+        }
+        declarationSourceIndex = DeclarationSourceIndex(fileByDeclaration, fileBySource)
     }
 
     /** 返回 extend 声明对应的源码文件。 */
     fun containingFileOf(declaration: Any): CfirFile? {
         val extend = declaration as? CfirExtend ?: return modelForDeclaration(declaration)?.containingFile
-        return sourceFileByDeclaration[extend] ?: modelByDeclaration[extend]?.containingFile
+        val sourceIndex = declarationSourceIndex
+        return sourceIndex.fileByDeclaration[extend]
+            ?: extend.source?.let(sourceIndex.fileBySource::get)
+            ?: modelByDeclaration[extend]?.containingFile
     }
 
     /** 返回 extend 声明的 package；类型解析期间也可由结构性文件 owner 得到。 */
     fun packageFqNameOf(declaration: Any): FqName? {
         val extend = declaration as? CfirExtend ?: return modelForDeclaration(declaration)?.packageFqName
-        return sourceFileByDeclaration[extend]?.packageDirective?.packageFqName
+        val sourceIndex = declarationSourceIndex
+        return (sourceIndex.fileByDeclaration[extend]
+            ?: extend.source?.let(sourceIndex.fileBySource::get))?.packageDirective?.packageFqName
             ?: modelByDeclaration[extend]?.packageFqName
     }
 
@@ -119,18 +152,37 @@ class CfirExtendIndexStore(
      * 基于当前文件集合重建所有 extend 语义索引。
      *
      * 该方法是同步入口，保证模型列表与各类派生索引在同一批文件快照下更新。
+     *
+     * 失败粒度是**单条 extend 声明**：官方 `UpdateExtendMap` 对一条坏 extend 只 `continue`
+     * （`external/cangjie_compiler/src/Sema/TypeCheckExtend.cpp:358-407`），其余声明照常入表；
+     * 这里同样跳过失败的声明而不是让整批重建失败——整批失败会让调用方在每次查询时重试并再次抛错。
+     * 失败信息由 [lastRebuildFailureCount] / [lastRebuildFailure] 暴露给 provider 记录日志，
+     * 存储层本身不依赖日志设施。
      */
     @Synchronized
     fun rebuild(files: List<CfirFile>, resolver: CfirTypeResolver) {
         recordDeclarationSources(files)
         typeResolver = resolver
         val collected = buildList {
+            var failures = 0
+            var firstFailure: Exception? = null
             for (file in files) {
                 for ((declarationIndex, declaration) in file.declarations.withIndex()) {
                     if (declaration !is CfirExtend) continue
-                    add(declaration.toSemanticModel(file, declarationIndex, resolver))
+                    val model = try {
+                        declaration.toSemanticModel(file, declarationIndex, resolver)
+                    } catch (cancelled: ProcessCanceledException) {
+                        throw cancelled
+                    } catch (failure: Exception) {
+                        failures++
+                        if (firstFailure == null) firstFailure = failure
+                        null
+                    }
+                    if (model != null) add(model)
                 }
             }
+            lastRebuildFailureCount = failures
+            lastRebuildFailure = firstFailure
         }
         val next = collected.sortedWith(semanticModelComparator)
 
@@ -403,6 +455,12 @@ class CfirExtendIndexStore(
         )
         val targetClassId = extendedTypeRef.toClassIdOrNull(resolver)
         val targetClass = targetClassId?.let(resolver::resolveClass)
+        // 目标键是「这条 extend 属于哪个被扩展类型」的唯一身份。目标未解析时它的语义键
+        // 只能由类型文本渲染而来，那不是确定签名——因此不进语义键索引，
+        // 与 `modelsByTargetKey` 的 `targetKey != null` 门禁保持一致
+        // （官方 `UpdateExtendMap` 对目标不正确的 extend 直接 `continue`，
+        // `external/cangjie_compiler/src/Sema/TypeCheckExtend.cpp:371-373`）。
+        val targetKey = extendedTypeRef.toExtendTargetKeyOrNull(resolver)
         val inheritedInterfaces = superTypeRefs.map { superTypeRef ->
             CfirExtendInheritedInterfaceSemantic(
                 classId = superTypeRef.toDirectInterfaceClassIdOrNull(resolver),
@@ -421,9 +479,9 @@ class CfirExtendIndexStore(
             packageFqName = file.packageDirective.packageFqName,
             fileName = file.name,
             declarationIndexInFile = declarationIndexInFile,
-            targetKey = extendedTypeRef.toExtendTargetKeyOrNull(resolver),
-            targetSemanticKey = semanticNormalizer.semanticKeyOrNull(extendedTypeRef),
-            duplicateTargetSemanticKey = duplicateSemanticNormalizer.semanticKeyOrNull(extendedTypeRef),
+            targetKey = targetKey,
+            targetSemanticKey = targetKey?.let { semanticNormalizer.semanticKeyOrNull(extendedTypeRef) },
+            duplicateTargetSemanticKey = targetKey?.let { duplicateSemanticNormalizer.semanticKeyOrNull(extendedTypeRef) },
             declaredTargetKey = extendedTypeRef.toDeclaredExtendTargetKeyOrNull(),
             targetClassId = targetClassId,
             declaredTargetClassId = extendedTypeRef.toDeclaredClassIdOrNull(),
@@ -458,6 +516,12 @@ class CfirExtendIndexStore(
 
         val occurrencesByTarget = linkedMapOf<String, MutableList<IndexedOccurrence>>()
         for (model in models) {
+            // 官方 duplicate-interface 检查只遍历 extend 关系表里的条目（目标类型有效）
+            // （`external/cangjie_compiler/src/Sema/TypeCheckExtend.cpp:286-323`）；
+            // 目标类型错误的 extend 在 `UpdateExtendMap` 里已被跳过，不会参与重复判定。
+            // 这里同一门禁：没有目标键的 extend（含头部未解析）不产生 occurrence，
+            // 避免两条诊断文本相同的错误目标被误判成「重复实现同一接口」。
+            if (model.targetKey == null) continue
             val duplicateTargetKey = model.duplicateTargetSemanticKey ?: continue
             for ((index, inheritedInterface) in model.inheritedInterfaces.withIndex()) {
                 val classId = inheritedInterface.classId ?: continue

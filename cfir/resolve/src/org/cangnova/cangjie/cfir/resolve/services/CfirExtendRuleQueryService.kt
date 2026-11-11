@@ -20,6 +20,7 @@ import org.cangnova.cangjie.cfir.session.services.CfirExtendTargetInterfaceView
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.session.typeResolver
 import org.cangnova.cangjie.cfir.session.extendProvider
+import org.cangnova.cangjie.cfir.session.extendProviderOrNull
 import org.cangnova.cangjie.cfir.session.typeAwareSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
@@ -110,10 +111,22 @@ class CfirExtendRuleQueryServiceImpl(
     /**
      * 返回声明所在包名。
      */
-    override fun packageFqNameOf(declaration: Any): FqName =
-        requireNotNull(indexStore.packageFqNameOf(declaration)) {
+    override fun packageFqNameOf(declaration: Any): FqName {
+        val extend = declaration as? CfirExtend
+        val ownerProviderPackage = extend?.let { owner ->
+            owner.moduleData.session.extendProviderOrNull?.getPackageFqName(owner)
+        }
+        val currentSessionProviderPackage = extend?.let { current ->
+            session.extendProviderOrNull?.getPackageFqName(current)
+        }
+        return requireNotNull(
+            ownerProviderPackage
+                ?: currentSessionProviderPackage
+                ?: indexStore.packageFqNameOf(declaration)
+        ) {
             "Extend declaration package is not indexed: $declaration"
         }
+    }
 
     /**
      * 返回声明继承的 interface 语义项。
