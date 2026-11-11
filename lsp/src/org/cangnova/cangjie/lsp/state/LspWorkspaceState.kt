@@ -24,6 +24,7 @@ class LspWorkspaceState {
         workspaceModules = emptyList(),
         stdlibSearchPaths = emptyList(),
         librarySearchPaths = emptyList(),
+        showDiagnosticFactoryNames = false,
     )
 
     /**

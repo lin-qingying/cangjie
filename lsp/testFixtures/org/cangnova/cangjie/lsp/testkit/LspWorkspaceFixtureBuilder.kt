@@ -47,6 +47,7 @@ class LspWorkspaceFixtureBuilder {
         sourceRoots: List<String> = listOf("src"),
         outputRelativePath: String = "target",
         packageSearchPaths: List<String> = emptyList(),
+        requiredModuleNames: List<String> = emptyList(),
     ): LspWorkspaceFixtureBuilder {
         modules[normalizeRelative(rootRelativePath)] = ModuleSpec(
             name = name,
@@ -54,6 +55,7 @@ class LspWorkspaceFixtureBuilder {
             sourceRoots = sourceRoots.map(::normalizeRelative),
             outputRelativePath = normalizeRelative(outputRelativePath),
             packageSearchPaths = packageSearchPaths,
+            requiredModuleNames = requiredModuleNames,
         )
         return this
     }
@@ -253,14 +255,17 @@ class LspWorkspaceFixture internal constructor(
         workspaceFolders: List<WorkspaceFolder>,
         includeMultiModuleOption: Boolean,
     ): Map<String, Any> {
+        val moduleRootPathsByName = modules.associate { module ->
+            module.name to workspaceRoot.resolve(module.rootRelativePath.ifBlank { "." }).normalize()
+        }
         val options = linkedMapOf<String, Any>(
             "targetLib" to cacheRoot.toString(),
         )
         stdlibRoot?.let { options["stdLibPathOption"] = it.toString() }
         if (includeMultiModuleOption) {
             options["multiModuleOption"] = modules.associate { module ->
-                val moduleRoot = workspaceRoot.resolve(module.rootRelativePath.ifBlank { "." }).normalize()
-                moduleRoot.toUri().toString() to mapOf(
+                val moduleRoot = moduleRootPathsByName.getValue(module.name)
+                val definition = linkedMapOf<String, Any>(
                     "name" to module.name,
                     "package_requires" to mapOf(
                         "path_option" to module.packageSearchPaths,
@@ -279,6 +284,12 @@ class LspWorkspaceFixture internal constructor(
                         ),
                     ),
                 )
+                if (module.requiredModuleNames.isNotEmpty()) {
+                    definition["requires"] = module.requiredModuleNames.associateWith { requiredName ->
+                        mapOf("path" to moduleRootPathsByName.getValue(requiredName).toUri().toString())
+                    }
+                }
+                moduleRoot.toUri().toString() to definition
             }
         } else if (workspaceFolders.isEmpty()) {
             options.remove("targetLib")
@@ -315,4 +326,9 @@ internal data class ModuleSpec(
      * 模块 package 依赖搜索路径。
      */
     val packageSearchPaths: List<String>,
+
+    /**
+     * 该模块依赖的其它工作区模块名称。
+     */
+    val requiredModuleNames: List<String>,
 )

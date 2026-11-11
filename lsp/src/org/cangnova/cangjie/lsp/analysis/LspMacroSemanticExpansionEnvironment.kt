@@ -42,6 +42,8 @@ data class LspMacroExpansionOptions(
     val externalMacroPackagesProvider: (CaSourceModule) -> Set<FqName> = { emptySet() },
     /** 快照发布后的刷新钩子（diagnostics / semantic tokens）。 */
     val publishListener: (LLCfirResolvableModuleSession, Set<VirtualFile>) -> Unit = { _, _ -> },
+    /** 已发布快照因输入变化而失效后的刷新钩子。 */
+    val invalidationListener: (CaSourceModule) -> Unit = {},
     /** 构造开始 / 放弃钩子，供遥测或宿主状态展示。 */
     val constructionStartedListener: (LLCfirResolvableModuleSession) -> Unit = {},
     val abandonedListener: (LLCfirResolvableModuleSession, MacroExpansionOutcome) -> Unit = { _, _ -> },
@@ -63,8 +65,43 @@ data class LspMacroExpansionOptions(
  */
 class LspMacroSemanticExpansionEnvironment(
     private val project: Project,
-    private val options: LspMacroExpansionOptions,
+    options: LspMacroExpansionOptions,
 ) : MacroSemanticExpansionEnvironment {
+    @Volatile
+    private var options: LspMacroExpansionOptions = options
+
+    /** 保留产品壳回调，并叠加语言服务器所需的诊断刷新回调。 */
+    @Synchronized
+    internal fun addLifecycleListeners(
+        publishListener: (LLCfirResolvableModuleSession, Set<VirtualFile>) -> Unit,
+        invalidationListener: (CaSourceModule) -> Unit,
+        abandonedListener: (LLCfirResolvableModuleSession, MacroExpansionOutcome) -> Unit,
+    ) {
+        val existing = options
+        options = existing.copy(
+            publishListener = { session, files ->
+                try {
+                    existing.publishListener(session, files)
+                } finally {
+                    publishListener(session, files)
+                }
+            },
+            invalidationListener = { module ->
+                try {
+                    existing.invalidationListener(module)
+                } finally {
+                    invalidationListener(module)
+                }
+            },
+            abandonedListener = { session, outcome ->
+                try {
+                    existing.abandonedListener(session, outcome)
+                } finally {
+                    abandonedListener(session, outcome)
+                }
+            },
+        )
+    }
 
     override fun sdk(module: CaSourceModule): SdkHandle? = options.sdkProvider(module)
 
@@ -121,6 +158,10 @@ class LspMacroSemanticExpansionEnvironment(
 
     override fun onPublished(session: LLCfirResolvableModuleSession, files: Set<VirtualFile>) {
         options.publishListener(session, files)
+    }
+
+    override fun onSnapshotInvalidated(module: CaSourceModule) {
+        options.invalidationListener(module)
     }
 
     override fun onAbandoned(session: LLCfirResolvableModuleSession, outcome: MacroExpansionOutcome) {

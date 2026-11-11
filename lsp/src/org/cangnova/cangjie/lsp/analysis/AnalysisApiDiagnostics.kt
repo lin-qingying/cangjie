@@ -22,12 +22,19 @@ internal object AnalysisApiDiagnostics {
         document: LspTextDocument,
         source: String,
         diagnostics: Collection<CaDiagnosticWithPsi<*>>,
+        showDiagnosticFactoryNames: Boolean = false,
     ): List<Diagnostic> {
         return diagnostics.flatMap { diagnostic ->
             diagnostic.lspRanges(document).map { range ->
                 Diagnostic().apply {
                     this.range = range
-                    this.message = Either.forLeft(diagnostic.getDefaultMessageWithFactoryName())
+                    this.message = Either.forLeft(
+                        if (showDiagnosticFactoryNames) {
+                            diagnostic.getDefaultMessageWithFactoryName()
+                        } else {
+                            diagnostic.defaultMessage
+                        },
+                    )
                     this.severity = diagnostic.severity.toLspSeverity()
                     this.source = source
                     this.code = Either.forLeft(diagnostic.factoryName)

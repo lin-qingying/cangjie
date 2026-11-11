@@ -15,6 +15,7 @@ import org.cangnova.cangjie.frontend.pipeline.macroConstructionMode
 import org.cangnova.cangjie.frontend.pipeline.macroExecutorFactory
 import org.cangnova.cangjie.frontend.pipeline.macroExpansionDemandAutoCompilationEnabled
 import org.cangnova.cangjie.frontend.pipeline.macroFragmentParserFactory
+import org.cangnova.cangjie.frontend.pipeline.macroPackageCompilationOrchestrator
 import org.cangnova.cangjie.frontend.pipeline.macroSdkHome
 import org.cangnova.cangjie.lsp.state.LspWorkspaceState
 import org.cangnova.cangjie.lsp.testkit.LspWorkspaceFixtureBuilder
@@ -23,7 +24,6 @@ import org.cangnova.cangjie.macro.expansion.MacroConstructionReadAccess
 import org.cangnova.cangjie.macro.expansion.SdkHandle
 import org.cangnova.cangjie.psi.CjFile
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
@@ -142,7 +142,10 @@ class LspMacroSemanticExpansionEnvironmentTest {
             stdlibPath = "/fake/sdk/modules/plat",
             macroServerPath = "/fake/sdk/tools/bin/LSPMacroServer",
         )
-        val options = frontendMacroExpansionOptions(sdk)
+        var invalidatedModule: CaSourceModule? = null
+        val options = frontendMacroExpansionOptions(sdk).copy(
+            invalidationListener = { invalidatedModule = it },
+        )
         ServiceLoadedLspTestEnvironment.create(
             mode = CangJieCoreEnvironmentMode.UnitTest,
             macroExpansion = options,
@@ -173,12 +176,15 @@ class LspMacroSemanticExpansionEnvironmentTest {
 
                     assertTrue(registered.engine() is FrontendMacroSemanticExpansionEngine)
                     assertEquals(sdk, registered.sdk(module))
+                    registered.onSnapshotInvalidated(module)
+                    assertEquals(module, invalidatedModule)
 
                     val roots = registered.roots(module)
                     val configuration = registered.compilerConfiguration(module, roots, sdk)
                     assertEquals(sdk.homePath, configuration.macroSdkHome)
                     assertEquals(MacroConstructionService.Mode.DEGRADED, configuration.macroConstructionMode)
-                    assertFalse(configuration.macroExpansionDemandAutoCompilationEnabled)
+                    assertTrue(configuration.macroExpansionDemandAutoCompilationEnabled)
+                    assertNotNull(configuration.macroPackageCompilationOrchestrator)
                     assertNotNull(configuration.macroExecutorFactory)
                     assertTrue(
                         configuration.cangjieSourceRoots.any { it.path.replace('\\', '/').endsWith("/src") },

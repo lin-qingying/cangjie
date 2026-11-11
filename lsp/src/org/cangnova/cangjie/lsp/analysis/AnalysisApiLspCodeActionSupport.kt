@@ -55,6 +55,7 @@ internal class AnalysisApiLspCodeActionSupport(
      */
     private val applicableDiagnosticClasses: Set<KClass<out CaDiagnosticWithPsi<*>>> = setOf(
         CaCfirDiagnostic.AbstractMemberNotImplemented::class,
+        CaCfirDiagnostic.InterfaceMemberMustBeImplemented::class,
     )
 
     /**
@@ -73,7 +74,7 @@ internal class AnalysisApiLspCodeActionSupport(
                 return@analyzeSnapshot emptyList()
             }
 
-            val actions = mutableListOf<Either<Command, CodeAction>>()
+            val actions = mutableListOf<Pair<String, CodeAction>>()
             for (diagnostic in diagnostics) {
                 if (diagnostic.diagnosticClass !in applicableDiagnosticClasses) continue
 
@@ -85,7 +86,9 @@ internal class AnalysisApiLspCodeActionSupport(
                  * `ProcessCanceledException` 仍向上传播由请求层处理。
                  */
                 val fixes = with(quickFixService) {
-                    getQuickFixesWithCatchingFor(diagnostic).mapNotNull { result -> result.getOrNull() }.toList()
+                    getAvailableQuickFixesWithCatchingFor(diagnostic)
+                        .mapNotNull { result -> result.getOrNull() }
+                        .toList()
                 }
                 if (fixes.isEmpty()) continue
 
@@ -93,15 +96,12 @@ internal class AnalysisApiLspCodeActionSupport(
                     document = document,
                     source = context.descriptor.diagnosticIdentifier,
                     diagnostics = listOf(diagnostic),
+                    showDiagnosticFactoryNames =
+                        context.workspaceState.projectConfiguration().showDiagnosticFactoryNames,
                 ).firstOrNull()
 
                 fixes.forEach { intention ->
-                    // 显式接收者构造，避免简单名 `diagnostics` 被 CaSession 的同名属性遮蔽。
-                    val action = CodeAction()
-                    action.title = intention.text
-                    action.kind = CodeActionKind.QuickFix
-                    if (lspDiagnostic != null) action.setDiagnostics(listOf(lspDiagnostic))
-                    action.data = LspCodeActionData(
+                    val actionData = LspCodeActionData(
                         documentUri = document.uri,
                         diagnosticFactoryName = diagnostic.factoryName,
                         startLine = primaryRange.start.line,
@@ -109,10 +109,16 @@ internal class AnalysisApiLspCodeActionSupport(
                         endLine = primaryRange.end.line,
                         endCharacter = primaryRange.end.character,
                     )
-                    actions.add(Either.forRight(action))
+                    // 显式接收者构造，避免简单名 `diagnostics` 被 CaSession 的同名属性遮蔽。
+                    val action = CodeAction()
+                    action.title = intention.text
+                    action.kind = CodeActionKind.QuickFix
+                    if (lspDiagnostic != null) action.setDiagnostics(listOf(lspDiagnostic))
+                    action.data = actionData
+                    actions += intention.javaClass.name to action
                 }
             }
-            actions
+            LspCodeActionDeduplicator.deduplicate(actions)
         }
     }
 
@@ -139,9 +145,10 @@ internal class AnalysisApiLspCodeActionSupport(
                 LOG.info("codeAction/resolve 跳过：按 factory=${data.diagnosticFactoryName} 未重新定位到诊断")
                 return@analyzeSnapshot null
             }
-            val typeStatement = diagnostic.psi as? CjTypeStatement
+            val typeStatement = generateSequence(diagnostic.psi) { element -> element.parent }
+                .firstOrNull { it is CjTypeStatement } as? CjTypeStatement
             if (typeStatement == null) {
-                LOG.info("codeAction/resolve 跳过：诊断 PSI 不是类型声明（${diagnostic.psi?.javaClass?.name}）")
+                LOG.info("codeAction/resolve 跳过：诊断 PSI 的祖先中没有类型声明（${diagnostic.psi?.javaClass?.name}）")
                 return@analyzeSnapshot null
             }
 
@@ -323,5 +330,37 @@ internal class AnalysisApiLspCodeActionSupport(
      */
     private companion object {
         private val LOG: Logger = Logger.getLogger(AnalysisApiLspCodeActionSupport::class.java.name)
+    }
+}
+
+/**
+ * 合并同一诊断位置、同一 intention 产生的重复 LSP quick-fix，并保留其关联诊断。
+ *
+ * 按成员逐条上报的诊断可能共用一个类型 PSI；成员实现 factory 为每条诊断收集到的是同一组待实现成员，
+ * 因此协议层应只返回一个可解析动作。
+ */
+internal object LspCodeActionDeduplicator {
+    private data class Key(
+        val intentionClassName: String,
+        val title: String?,
+        val kind: String?,
+        val data: Any?,
+    )
+
+    /** 保序去重，并把重复动作关联的诊断并入首个动作。 */
+    fun deduplicate(candidates: List<Pair<String, CodeAction>>): List<Either<Command, CodeAction>> {
+        val actionsByKey = linkedMapOf<Key, CodeAction>()
+        for ((intentionClassName, action) in candidates) {
+            val key = Key(intentionClassName, action.title, action.kind, action.data)
+            val existing = actionsByKey[key]
+            if (existing == null) {
+                actionsByKey[key] = action
+                continue
+            }
+
+            val relatedDiagnostics = (existing.diagnostics.orEmpty() + action.diagnostics.orEmpty()).distinct()
+            if (relatedDiagnostics.isNotEmpty()) existing.setDiagnostics(relatedDiagnostics)
+        }
+        return actionsByKey.values.map { action -> Either.forRight(action) }
     }
 }

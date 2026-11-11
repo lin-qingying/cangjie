@@ -1,7 +1,10 @@
 package org.cangnova.cangjie.lsp.server
 
 import com.intellij.openapi.application.ApplicationManager
+import org.cangnova.cangjie.CangJieCoreEnvironmentMode
+import org.cangnova.cangjie.analysis.macro.expansion.MacroSemanticExpansionEnvironment
 import org.cangnova.cangjie.lsp.CangjieLspServerOptions
+import org.cangnova.cangjie.lsp.analysis.LspMacroSemanticExpansionEnvironment
 import org.cangnova.cangjie.lsp.capabilities.CangjieClientCapabilityNegotiator
 import org.cangnova.cangjie.lsp.capabilities.CangjieServerCapabilitiesFactory
 import org.cangnova.cangjie.lsp.state.LspProjectConfiguration
@@ -37,29 +40,22 @@ class CangjieLanguageServer(
     /**
      * 生效的启动选项。
      *
-     * 宏快照发布后需要把新的诊断推给客户端；这里在保留宿主配置的前提下挂接
-     * [CangjieServerContext.republishOpenDiagnostics]，避免每个宿主重复实现刷新。
+     * 宏快照发布或失效后需要把新的诊断推给客户端；这里在保留宿主配置的前提下挂接
+     * [CangjieServerContext.republishMacroDiagnostics]，避免每个宿主重复实现刷新。
      */
-    private val options: CangjieLspServerOptions = initialOptions.withMacroPublishRefresh()
+    private val options: CangjieLspServerOptions = initialOptions
 
-    /**
-     * 为宏快照发布挂接诊断刷新。
-     *
-     * 发布回调运行在写屏障内，不能同步等待分析请求；因此转交后台线程，
-     * 等屏障释放后再统一重发打开文档的诊断。
-     */
-    private fun CangjieLspServerOptions.withMacroPublishRefresh(): CangjieLspServerOptions {
-        val expansion = macroExpansion ?: return this
-        return copy(
-            macroExpansion = expansion.copy(
-                publishListener = { _, _ ->
-                    ApplicationManager.getApplication().executeOnPooledThread {
-                        runCatching { serverContext.republishOpenDiagnostics() }
-                    }
-                },
-            ),
-        )
+    /** 宏发布/失效回调运行在构造线程，诊断刷新必须等写屏障释放后执行。 */
+    private fun scheduleMacroDiagnosticsRefresh() {
+        ApplicationManager.getApplication().executeOnPooledThread {
+            try {
+                serverContext.republishMacroDiagnostics()
+            } catch (failure: Throwable) {
+                logger.log(Level.SEVERE, "Failed to refresh LSP diagnostics after macro snapshot change", failure)
+            }
+        }
     }
+
     /**
      * 语言服务器主日志记录器。
      */
@@ -97,7 +93,16 @@ class CangjieLanguageServer(
      * 只有 initialize 成功进入上下文创建路径时才会触发环境构造。
      */
     private val environmentLazy = lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
-        options.environmentFactory()
+        options.environmentFactory().also { environment ->
+            if (options.macroExpansion != null) {
+                val macroEnvironment = MacroSemanticExpansionEnvironment.getInstance(environment.project)
+                (macroEnvironment as? LspMacroSemanticExpansionEnvironment)?.addLifecycleListeners(
+                    publishListener = { _, _ -> scheduleMacroDiagnosticsRefresh() },
+                    invalidationListener = { scheduleMacroDiagnosticsRefresh() },
+                    abandonedListener = { _, _ -> scheduleMacroDiagnosticsRefresh() },
+                )
+            }
+        }
     }
 
     /**
@@ -112,6 +117,7 @@ class CangjieLanguageServer(
         CangjieServerContext(
             descriptor = options.descriptor,
             environment = environment,
+            retainDiagnosticCollectionFailures = options.environmentMode == CangJieCoreEnvironmentMode.UnitTest,
             analysisFacadeFactory = options.analysisFacadeFactory,
         )
     }

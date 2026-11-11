@@ -33,6 +33,9 @@ data class LspProjectConfiguration(
      * 三方库或 package 依赖搜索路径。
      */
     val librarySearchPaths: List<String>,
+
+    /** 是否在 LSP 诊断消息中显示诊断工厂名。 */
+    val showDiagnosticFactoryNames: Boolean,
 ) {
     /**
      * CFIR `.cjo` 搜索路径在当前仓库中通过环境变量语义建模。
@@ -55,6 +58,9 @@ data class LspProjectConfiguration(
          * 三方库搜索路径写入的系统属性名。
          */
         const val LIBRARY_PROPERTY: String = "cangjie.library"
+
+        /** LSP 初始化选项：控制诊断消息是否附带诊断定义名。 */
+        const val SHOW_DIAGNOSTIC_FACTORY_NAMES_OPTION: String = "showDiagnosticFactoryNames"
 
         /**
          * 从 LSP initialize 参数构造工程配置。
@@ -93,10 +99,14 @@ data class LspProjectConfiguration(
                 }
             }.distinct()
 
+            val showDiagnosticFactoryNames =
+                initializationOptions[SHOW_DIAGNOSTIC_FACTORY_NAMES_OPTION] as? Boolean ?: false
+
             return LspProjectConfiguration(
                 workspaceModules = workspaceModules,
                 stdlibSearchPaths = stdlibSearchPaths,
                 librarySearchPaths = librarySearchPaths,
+                showDiagnosticFactoryNames = showDiagnosticFactoryNames,
             )
         }
 

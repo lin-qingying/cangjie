@@ -190,6 +190,8 @@ class AnalysisApiCangjieAnalysisFacade(
             document = document,
             source = context.descriptor.diagnosticIdentifier,
             diagnostics = diagnostics,
+            showDiagnosticFactoryNames =
+                context.workspaceState.projectConfiguration().showDiagnosticFactoryNames,
         )
     }
 
@@ -209,6 +211,8 @@ class AnalysisApiCangjieAnalysisFacade(
                         document = workspaceFile.analysisDocument,
                         source = context.descriptor.diagnosticIdentifier,
                         diagnostics = collected,
+                        showDiagnosticFactoryNames =
+                            context.workspaceState.projectConfiguration().showDiagnosticFactoryNames,
                     )
                 }
             }

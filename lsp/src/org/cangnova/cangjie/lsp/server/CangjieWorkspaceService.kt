@@ -135,7 +135,7 @@ class CangjieWorkspaceService(
         }
         return serverContext.requestExecutor.compute(CangjieLspRequest.WORKSPACE_DIAGNOSTIC) {
             val context = serverContext.requestContext()
-            WorkspaceDiagnosticReport(serverContext.analysisFacade.collectWorkspaceDiagnostics(context))
+            WorkspaceDiagnosticReport(serverContext.collectWorkspaceDiagnostics(context))
         }.also { it.thenAccept { logger.info("<==== diagnostic (workspace)") } }
     }
 

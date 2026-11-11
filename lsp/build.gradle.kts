@@ -108,3 +108,11 @@ application {
         "-Dsun.stderr.encoding=UTF-8"
     )
 }
+
+distributions {
+    main {
+        contents {
+            eachFile(org.cangnova.gradle.DisambiguateIntellijRuntimeJarNames())
+        }
+    }
+}

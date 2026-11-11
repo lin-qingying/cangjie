@@ -11,13 +11,13 @@ import org.cangnova.cangjie.config.useLightTree
 import org.cangnova.cangjie.frontend.pipeline.FrontendMacroSemanticExpansionEngine
 import org.cangnova.cangjie.frontend.pipeline.MacroCompilationCacheContext
 import org.cangnova.cangjie.frontend.pipeline.MacroExecutorFactory
+import org.cangnova.cangjie.frontend.pipeline.initializeCfirFrontendMacroCompilationConfiguration
 import org.cangnova.cangjie.frontend.pipeline.installDefaultMacroFragmentParserFactory
 import org.cangnova.cangjie.frontend.pipeline.macroCompilationCacheContext
 import org.cangnova.cangjie.frontend.pipeline.macroCompilerEnvironment
 import org.cangnova.cangjie.frontend.pipeline.macroConstructionMode
 import org.cangnova.cangjie.frontend.pipeline.macroConstructionReadAccess
 import org.cangnova.cangjie.frontend.pipeline.macroExecutorFactory
-import org.cangnova.cangjie.frontend.pipeline.macroExpansionDemandAutoCompilationEnabled
 import org.cangnova.cangjie.frontend.pipeline.macroSdkHome
 import org.cangnova.cangjie.macro.expansion.MacroConstructionReadAccess
 import org.cangnova.cangjie.macro.expansion.ModuleRoots
@@ -33,8 +33,7 @@ import org.cangnova.cangjie.macro.process.LspMacroServerMacroExecutor
  *   符号索引、import 绑定、CFIR stable splice 全在该模块；`macro:macro-process` 只提供执行器。
  * - LSP 没有工具链模型：HOME、环境变量、标准库路径、`LSPMacroServer` 路径全部来自宿主传入的
  *   [SdkHandle]，本文件不推导 SDK 目录布局。
- * - LSP 没有宏包编译编排器（`ExternalCjcMacroPackageCompilationOrchestrator` 需要 cjc 命令执行器），
- *   因此显式关闭 demand 自动编译，只消费已编译好的宏 artifact。
+ * - 宏包编译复用 frontend 的共享初始化入口；SDK 缺少 `cjc` 时由编译编排器产生结构化诊断。
  *
  * 通过 [LspMacroExpansionOptions] 注入；未配置时 LSP 不注册 environment，行为与之前一致。
  */
@@ -68,11 +67,10 @@ private fun buildFrontendMacroConfiguration(
     targetPlatform = module.targetPlatform
     moduleName = module.name
     useLightTree = false
+    initializeCfirFrontendMacroCompilationConfiguration()
     macroConstructionMode = org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionService.Mode.DEGRADED
     macroSdkHome = sdk.homePath
     macroCompilerEnvironment = sdk.environment
-    // 没有 cjc 宏包编译编排器：只使用已编译 artifact，不假装能自动编译。
-    macroExpansionDemandAutoCompilationEnabled = false
     macroCompilationCacheContext = MacroCompilationCacheContext(
         targetPlatform = module.targetPlatform,
         runtimeLoaderEnvironmentFingerprint = "${sdk.id}@${sdk.homePath}",
