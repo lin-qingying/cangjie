@@ -9,6 +9,7 @@ import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassifierSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaEnumConstructorSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaSymbolUnavailableException
 import org.cangnova.cangjie.analysis.api.symbols.name
 import org.cangnova.cangjie.ide.completion.api.CompletionItemKind
 import org.cangnova.cangjie.ide.completion.api.CompletionRequest
@@ -77,37 +78,47 @@ class CfirIndexCompletionSection : CfirCompletionSection(
                     val name = symbol.name?.asString() ?: continue
                     val own = ownDeclarations
                         ?: file.declarations
-                            // 补全发生在未完成源码上：个别声明恢复不出符号时跳过该条，
-                            // 不能让整个索引区段因为一条坏声明而失败。
-                            .mapNotNull { declaration -> runCatching { declaration.symbol }.getOrNull() }
+                            // 补全发生在未完成源码上：个别声明恢复不出符号时跳过该条。
+                            // 只捕获「符号不可用」这一预期失败类型——其它异常仍是缺陷，
+                            // 不能被这条降级路径顺手吞掉（否则真问题永远只表现为「少一个候选」）。
+                            .mapNotNull { declaration ->
+                                try {
+                                    declaration.symbol
+                                } catch (unavailable: CaSymbolUnavailableException) {
+                                    unavailable.logCompletionDegradation("index declaration")
+                                    null
+                                }
+                            }
                             .also { ownDeclarations = it }
                     if (own.any { declaration -> declaration.isEquivalentTo(symbol) }) continue
-                    // 统一判定器负责访问权限、位置遮蔽、默认导入和精确导入路径；
-                    // 索引只负责找出名字，不能在这里另造一套可达性与 import 规则。
-                    val decision = symbol.checkCompletionCandidate(position)
-                    val importResolution = when (decision.status) {
-                        CaCompletionCandidateStatus.DIRECT -> ImportResolution.NoImport
-                        CaCompletionCandidateStatus.REQUIRES_IMPORT -> ImportResolution(
-                            CompletionImportPlan.AddImport(
-                                CompletionImportTargetData(
-                                    importPath = checkNotNull(decision.requiredImport) {
-                                        "REQUIRES_IMPORT 候选必须提供 requiredImport: ${decision.symbol}"
-                                    },
-                                    expressionText = name,
+                    // 单个符号的判定与渲染整体隔离：索引里只要有一条符号在本会话不可恢复，
+                    // 就不能让它把整段索引候选带走（与顶层区段同一策略）。
+                    val candidate = candidateOrNull {
+                        // 统一判定器负责访问权限、位置遮蔽、默认导入和精确导入路径；
+                        // 索引只负责找出名字，不能在这里另造一套可达性与 import 规则。
+                        val decision = symbol.checkCompletionCandidate(position)
+                        val importResolution = when (decision.status) {
+                            CaCompletionCandidateStatus.DIRECT -> ImportResolution.NoImport
+                            CaCompletionCandidateStatus.REQUIRES_IMPORT -> ImportResolution(
+                                CompletionImportPlan.AddImport(
+                                    CompletionImportTargetData(
+                                        importPath = checkNotNull(decision.requiredImport) {
+                                            "REQUIRES_IMPORT 候选必须提供 requiredImport: ${decision.symbol}"
+                                        },
+                                        expressionText = name,
+                                    ),
                                 ),
-                            ),
-                        )
-                        CaCompletionCandidateStatus.HIDDEN,
-                        CaCompletionCandidateStatus.NOT_APPLICABLE,
-                        CaCompletionCandidateStatus.UNKNOWN,
-                        -> continue
-                    }
-                    val importCost = if (decision.status == CaCompletionCandidateStatus.DIRECT) {
-                        ImportCost.DIRECT
-                    } else {
-                        ImportCost.ADD_IMPORT
-                    }
-                    add(
+                            )
+                            CaCompletionCandidateStatus.HIDDEN,
+                            CaCompletionCandidateStatus.NOT_APPLICABLE,
+                            CaCompletionCandidateStatus.UNKNOWN,
+                            -> return@candidateOrNull null
+                        }
+                        val importCost = if (decision.status == CaCompletionCandidateStatus.DIRECT) {
+                            ImportCost.DIRECT
+                        } else {
+                            ImportCost.ADD_IMPORT
+                        }
                         when (symbol) {
                             is CaClassifierSymbol -> classifierSnapshot(
                                 symbol,
@@ -128,9 +139,10 @@ class CfirIndexCompletionSection : CfirCompletionSection(
                                 importResolution,
                             )
 
-                            else -> continue
-                        },
-                    )
+                            else -> null
+                        }
+                    }
+                    if (candidate != null) add(candidate)
                 }
             }
         }.also {
@@ -169,4 +181,17 @@ class CfirIndexCompletionSection : CfirCompletionSection(
             CompletionPositionKind.CODE_FRAGMENT_BLOCK,
         )
     }
+}
+
+/**
+ * 渲染单个索引候选；符号不可用时丢弃该候选，其余候选照常产出。
+ *
+ * 只捕获 [CaSymbolUnavailableException]：判定器或渲染链其它异常仍是缺陷，必须暴露，
+ * 不能被这条降级路径顺手吞成「少一个候选」。
+ */
+private inline fun candidateOrNull(render: () -> CompletionSnapshot?): CompletionSnapshot? = try {
+    render()
+} catch (unavailable: CaSymbolUnavailableException) {
+    unavailable.logCompletionDegradation("index candidate")
+    null
 }

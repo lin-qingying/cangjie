@@ -47,6 +47,23 @@ class CangJieQuickFixService {
         with(list) { getQuickFixesWithCatchingFor(diagnostic) }
 
     /**
+     * 在当前 analysis session 中为诊断创建延迟 quick fix，并保留单个 factory 的失败信息。
+     */
+    fun CaSession.getLazyQuickFixesWithCatchingFor(diagnostic: CaDiagnosticWithPsi<*>): Sequence<Result<IntentionAction>> =
+        with(lazyList) { getQuickFixesWithCatchingFor(diagnostic) }
+
+    /**
+     * 返回协议客户端可直接展示的普通与延迟 quick fix。
+     *
+     * Import-on-the-fly 是 IDE 高亮消费的旁路，并且相应 factory 已同时注册在普通列表中，
+     * 因此不并入这里，避免同一修复重复出现。
+     */
+    fun CaSession.getAvailableQuickFixesWithCatchingFor(
+        diagnostic: CaDiagnosticWithPsi<*>,
+    ): Sequence<Result<IntentionAction>> =
+        getQuickFixesWithCatchingFor(diagnostic) + getLazyQuickFixesWithCatchingFor(diagnostic)
+
+    /**
      * 判断诊断是否存在可延迟创建的 quick fix。
      */
     fun CaSession.canProduceLazyQuickFixesFor(diagnostic: CaDiagnosticWithPsi<*>): Boolean =

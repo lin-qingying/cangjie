@@ -1028,10 +1028,8 @@ class FrontendMacroConstructionService(
     }
 
     /**
-     * 声明 / 参数 / builtin non-macro surface 不会以 macro construction surface 形态进入 final CFIR。
-     * DEGRADED 模式下用 registry 记录原始 surface 与占位 id 的映射，由 IDE/LSP
-     * 按 original macro site 渲染诊断；不创建 `CfirMacroErrorPlaceholder`，
-     * 也不把 construction surface 放进 final tree。
+     * 未展开的声明宏保留原始 CFIR carrier；参数和表达式宏继续替换为类型化错误节点。
+     * registry 记录仍需恢复的错误节点与原始 macro site 的映射。
      */
     private fun replaceSurfaceOnlyDegradedPlaceholders(
         pre: PreMacroRawBuildResult,
@@ -1045,6 +1043,7 @@ class FrontendMacroConstructionService(
             .mapNotNullTo(linkedSetOf()) { it.originSurfaceId }
         for (surface in pre.allSurfaces) {
             if (surface.surfaceId !in diagnosticSurfaceIds) continue
+            if (surface is MacroSurfaceDecl) continue
             registry.registerPlaceholder(
                 placeholderId = surface.surfaceId,
                 originSurfaceId = surface.surfaceId,
