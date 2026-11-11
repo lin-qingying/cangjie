@@ -470,7 +470,7 @@ internal class CaCfirPropertySymbol private constructor(
      * 属性显式 receiver 类型。
      */
     override val receiverType: CaType?
-        get() = withValidityAssertion { analysisSession.getExplicitCallableReceiverType(backingPsi, builder) { cfirSymbol } }
+        get() = withValidityAssertion { analysisSession.getExplicitCallableReceiverType(backingPsi, builder) { cfirSymbolOrNull } }
 
     /**
      * 属性返回类型。

@@ -55,7 +55,7 @@ internal class CaCfirCompletionExtensionCandidateChecker(
         receiver: CaType,
         position: CjElement,
     ): CaExtensionApplicabilityResult = withValidityAssertion {
-        val extend = (extendSymbol as? CaCfirExtendSymbol)?.cfirSymbol?.cfir
+        val extend = (extendSymbol as? CaCfirExtendSymbol)?.cfirSymbolOrNull?.cfir
             ?: return@withValidityAssertion CaExtensionApplicabilityResult.Unknown(token)
         val extendDeclaration = extend as? CfirExtend
             ?: return@withValidityAssertion CaExtensionApplicabilityResult.Unknown(token)

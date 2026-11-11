@@ -173,13 +173,20 @@ class CaDeclarationRenderer private constructor(
                 { annotationRenderer.renderAnnotations(analysisSession, symbol, this) },
                 {
                     when (symbol) {
-                        is CaClassSymbol -> classLikeRenderer.renderSymbol(
-                            analysisSession,
-                            symbol,
-                            symbol.classKind.keyword(),
-                            this@CaDeclarationRenderer,
-                            this,
-                        )
+                        is CaClassSymbol -> {
+                            // 类别不可判定（库符号本会话不可恢复）时跳过渲染，而不是让
+                            // `classKind` 抛异常把整段声明渲染带崩。
+                            val kind = symbol.classKindOrNull
+                            if (kind != null) {
+                                classLikeRenderer.renderSymbol(
+                                    analysisSession,
+                                    symbol,
+                                    kind.keyword(),
+                                    this@CaDeclarationRenderer,
+                                    this,
+                                )
+                            }
+                        }
 
                         is CaTypeAliasSymbol -> typeAliasRenderer.renderSymbol(analysisSession, symbol, this@CaDeclarationRenderer, this)
                         is CaExtendSymbol -> extendRenderer.renderSymbol(analysisSession, symbol, this@CaDeclarationRenderer, this)

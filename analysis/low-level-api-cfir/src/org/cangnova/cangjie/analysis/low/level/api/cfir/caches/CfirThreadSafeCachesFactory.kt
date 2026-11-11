@@ -114,7 +114,7 @@ internal class CfirThreadSafeCachesFactory(
 /**
  * 使用 Caffeine 实现的受限 CFIR cache 包装。
  */
-private class CfirCaffeineCache<K : Any, V, CONTEXT>(
+internal class CfirCaffeineCache<K : Any, V, CONTEXT>(
     /**
      * 持有实际缓存条目的 Caffeine cache。
      */
@@ -130,6 +130,24 @@ private class CfirCaffeineCache<K : Any, V, CONTEXT>(
      */
     override fun getValue(key: K, context: CONTEXT): V = cache.getOrPutWithNullableValue(key) {
         createValue(it, context)
+    }
+
+    /**
+     * 取得缓存值；未命中时计算，但只有 [shouldCache] 通过时才写入 Caffeine。
+     *
+     * 与 [CfirThreadSafeCache.getValueCachingIf] 同一契约：空结果不写回，
+     * 非空结果是否写回由调用方决定。这里必须显式实现——否则 `getValue` 的
+     * 「计算即写入」会让「索引未就绪」被冻结成永久缺失。
+     */
+    override fun getValueCachingIf(key: K, context: CONTEXT, shouldCache: (Any?) -> Boolean): V {
+        cache.getIfPresent(key)?.let { return it.nullValueToNull() }
+
+        val value = createValue(key, context)
+        if (value != null && shouldCache(value)) {
+            @Suppress("UNCHECKED_CAST")
+            cache.put(key, value as Any)
+        }
+        return value
     }
 
     /**

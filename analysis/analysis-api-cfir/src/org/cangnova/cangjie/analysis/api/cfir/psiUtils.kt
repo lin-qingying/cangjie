@@ -210,14 +210,14 @@ internal inline fun CaCfirSession.getCallableSymbolLocation(
 internal fun CaCfirSession.getExplicitCallableReceiverType(
     backingPsi: CjDeclaration?,
     builder: CaSymbolByCfirBuilder,
-    cfirSymbolProvider: () -> CfirCallableSymbol<*>,
+    cfirSymbolProvider: () -> CfirCallableSymbol<*>?,
 ): CaType? {
     val psiLocation = backingPsi?.location
     if (psiLocation != null && psiLocation != CaSymbolLocation.EXTEND) {
         return null
     }
 
-    val cfirSymbol = cfirSymbolProvider()
+    val cfirSymbol = cfirSymbolProvider() ?: return null
     if (psiLocation == null && getCallableSymbolLocation(backingPsi = null) { cfirSymbol } != CaSymbolLocation.EXTEND) {
         return null
     }
@@ -342,7 +342,7 @@ internal fun CaCfirSymbol<*>.findLibraryPsi(receiverHint: String? = null): PsiEl
             val extendSymbol = this as? CaCfirExtendSymbol ?: return null
             val cfirSession = extendSymbol.analysisSession.resolutionFacade.useSiteCfirSession
             val extendProvider = cfirSession.extendProviderOrNull ?: return null
-            val signature = extendSymbol.cfirSymbol.cfir.extensionSignatureKey()
+            val signature = extendSymbol.cfirSymbolOrNull?.cfir?.extensionSignatureKey() ?: return null
             val providerExtend = extendProvider.getExtendByStructuralKey(signature) ?: return null
             val packageFqName = extendProvider.getPackageFqName(providerExtend) ?: return null
             val file = decompiledFile(packageFqName) ?: return null

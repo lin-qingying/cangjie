@@ -1312,6 +1312,7 @@ CaClassLikeSymbol.public val classId: ClassId?
 package org.cangnova.cangjie.analysis.api.symbols
 public interface CaClassSymbol : CaClassLikeSymbol, CaDeclarationContainerSymbol
 CaClassSymbol.public val classKind: CaClassKind
+CaClassSymbol.public val classKindOrNull: CaClassKind?
 CaClassSymbol.public val superTypes: List<CaType>
 ## org/cangnova/cangjie/analysis/api/symbols/CaClassifierSymbol.kt
 package org.cangnova.cangjie.analysis.api.symbols
@@ -1491,6 +1492,12 @@ CaSymbolProvider.public fun getExtendSymbols(receiverType: CaType): List<CaExten
 CaSymbolProvider.public fun getDeclarationsByNamePrefix( namePrefix: String, isRepeatedInvocation: Boolean = false, ): List<CaDeclarationSymbol>
 public val CjElement.symbol: CaDeclarationSymbol
 public class.simpleName}")
+## org/cangnova/cangjie/analysis/api/symbols/CaSymbolUnavailableException.kt
+package org.cangnova.cangjie.analysis.api.symbols
+public open class CaSymbolUnavailableException( val reason: CaSymbolUnavailabilityReason, message: String, cause: Throwable? = null, ) : CangJieRuntimeExceptionWithAttachments(message, cause)
+public enum class CaSymbolUnavailabilityReason
+CaSymbolUnavailabilityReason.public val isExpectedAbsence: Boolean
+CaSymbolUnavailabilityReason.public val mayRecoverLater: Boolean
 ## org/cangnova/cangjie/analysis/api/symbols/CaSymbolVisibility.kt
 package org.cangnova.cangjie.analysis.api.symbols
 public enum class CaSymbolVisibility

@@ -1,10 +1,8 @@
-
-
 package org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.caches
 
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.psi.PsiElement
-import org.cangnova.cangjie.analysis.low.level.api.cfir.caches.getNotNullValueForNotNullContext
+import org.cangnova.cangjie.analysis.api.symbols.CaSymbolUnavailableException
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsOnlyApi
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLKnownClassDeclarationSymbolProvider
@@ -15,37 +13,42 @@ import org.cangnova.cangjie.cfir.caches.CfirCacheInternals
 import org.cangnova.cangjie.cfir.caches.cfirCachesFactory
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.name.ClassId
-import org.cangnova.cangjie.utils.exceptions.CangJieIllegalStateExceptionWithAttachments
-import org.cangnova.cangjie.utils.exceptions.ExceptionAttachmentBuilder
 
 /**
  * A cache for [CfirClassLikeSymbol]s which is able to provide an exact symbol for a given PSI declaration, even if the symbol's [ClassId] is
  * ambiguous.
  *
- * The cache achieves this preciseness by using a *fallback cache*. Consisting of two separate [CfirCache]s, the cache first tries to
- * retrieve the class-like symbol from the [mainCache]. If there is truly an ambiguity for a given [ClassId], the cache is able to compute,
- * store, and provide an alternative symbol for the exact PSI declaration from the [ambiguityCache].
+ * ## 两个精度，两个缓存，键不混用
  *
- * If no specific PSI declaration is requested, the cache is also able to fulfill [ClassId]-based requests, which do not have any
- * requirements about the originating PSI declaration. The only requirement is that one symbol is consistently returned for the same class
- * ID once it has been cached.
+ * [CfirCache] 的契约是「命中只看 key，context 只参与首次计算」。因此**正确性约束必须进 key**：
  *
- * Using two separate caches optimizes requests not only for the frequent [ClassId]-based accesses, but also PSI-based accesses, as there
- * should be no ambiguities in >99.9% of all cases. So even when requesting a symbol for a declaration, we can benefit from faster
- * [ClassId] hash code and equality functions compared to the PSI. In ideal cases, [ambiguityCache] will be empty.
+ * - [byClassIdCache] 的 key 是 [ClassId]，语义是「任意命中即可」；
+ * - [byPsiCache] 的 key 是 PSI 声明，语义是「必须精确命中这个声明」——它只服务精确查询。
  *
- * The cache is used by symbol providers to implement [LLPsiAwareSymbolProvider][org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLPsiAwareSymbolProvider].
+ * 二者绝不共享条目：按 ClassId 的查询得到什么都只影响它自己的键，精确查询不会把
+ * 「这个 ClassId 查不到」当成「这个声明对应的符号是 null」。这正是旧实现里
+ * `getNotNullValueForNotNullContext` / `fixInconsistentValue` 试图在运行期纠正、
+ * 却只能以「cache inconsistency」错误日志收场的那类契约冲突。
+ *
+ * ## 否定结果不持久化
+ *
+ * 两条路径都**不**把空结果写进缓存：空的成因绝大多数是「索引尚未就绪」，
+ * 而 session 不会因为 dumb 模式结束而重建，缓存空值等于把它冻结成永久缺失。
+ * 重算成本由符号层的 `MemoizedResolutionLazy` 用短 TTL 吸收，不在这一层重复做。
+ *
+ * 该缓存由 symbol provider 用于实现
+ * [LLPsiAwareSymbolProvider][org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLPsiAwareSymbolProvider]。
  */
 internal open class LLPsiAwareClassLikeSymbolCache<E : PsiElement, V : CfirClassLikeSymbol<*>?, CONTEXT>(
     /**
      * 按 class id 缓存的主 class-like symbol cache。
      */
-    private val mainCache: CfirCache<ClassId, V, CONTEXT>,
+    private val byClassIdCache: CfirCache<ClassId, V, CONTEXT>,
 
     /**
-     * 按 PSI 声明缓存的歧义兜正 cache。
+     * 按 PSI 声明缓存的精确 cache。
      */
-    private val ambiguityCache: CfirCache<E, V, CONTEXT>,
+    private val byPsiCache: CfirCache<E, V, CONTEXT>,
 ) {
     constructor(
         session: LLCfirSession,
@@ -63,24 +66,25 @@ internal open class LLPsiAwareClassLikeSymbolCache<E : PsiElement, V : CfirClass
     /**
      * Returns the already cached or newly computed symbol for the given [classId].
      *
-     * The function does not query the ambiguity cache because any symbol corresponding to [classId] is acceptable. The given [context] is
-     * only used to compute a symbol if it's not already cached. Furthermore, [getSymbolByClassId] must follow the contracts of
-     * [LLKnownClassDeclarationSymbolProvider.getClassLikeSymbolByClassId].
+     * 允许返回 `null`：调用方传入的 [context] 可能为空（只要求「任意命中」），
+     * 此时「查不到」是合法结果而不是缓存不一致。
+     *
+     * **否定结果不写入缓存**：这里的 miss 大多是「索引尚未就绪」这类可自愈状态，
+     * 一旦持久化就会在同一 session 里退化成永久缺失（session 只在模块修改事件时重建）。
+     * 空值因此只作为本次查询的返回值，下一次查询会重新尝试。
      */
     @LLModuleSpecificSymbolProviderAccess
     fun getSymbolByClassId(
         classId: ClassId,
         context: CONTEXT,
-        buildAdditionalAttachments: (ExceptionAttachmentBuilder.(ClassId, CONTEXT) -> Unit)? = null,
-    ): V =
-        mainCache.getNotNullValueForNotNullContext(classId, context, buildAdditionalAttachments)
+    ): V = byClassIdCache.getValueCachingIf(classId, context) { it != null }
 
     /**
      * Returns the symbol for the given [classId] if it's already cached.
      *
      * The function does not query the ambiguity cache because any symbol corresponding to [classId] is acceptable.
      */
-    fun getCachedSymbolByClassId(classId: ClassId): V? = mainCache.getValueIfComputed(classId)
+    fun getCachedSymbolByClassId(classId: ClassId): V? = byClassIdCache.getValueIfComputed(classId)
 
     /**
      * Returns the already cached or newly computed symbol for exactly the given [declaration], after ensuring that it is of type [T].
@@ -91,7 +95,6 @@ internal open class LLPsiAwareClassLikeSymbolCache<E : PsiElement, V : CfirClass
     inline fun <reified T : E> getSymbolByPsi(
         classId: ClassId,
         declaration: PsiElement,
-        noinline buildAdditionalAttachments: (ExceptionAttachmentBuilder.(ClassId, CONTEXT) -> Unit)? = null,
         createContext: (T) -> CONTEXT,
     ): V? {
         if (declaration !is T) return null
@@ -99,46 +102,37 @@ internal open class LLPsiAwareClassLikeSymbolCache<E : PsiElement, V : CfirClass
         // Avoid the creation of the context if the symbol is already cached.
         getCachedSymbolByPsi(classId, declaration)?.let { return it }
 
-        return getSymbolByPsi(classId, declaration, createContext(declaration), buildAdditionalAttachments)
+        return getSymbolByPsi(classId, declaration, createContext(declaration))
     }
 
     /**
      * Returns the already cached or newly computed symbol for exactly the given [declaration].
      *
-     * In contrast to [getSymbolByPsi], this function skips [getCachedSymbolByPsi] and the [declaration] type check, allowing more
-     * flexibility on the client side.
+     * 查找顺序：PSI 精确缓存 → ClassId 缓存（且必须 PSI 匹配）→ 以 [declaration] 为上下文计算。
+     * 第三步的结果写入 [byPsiCache]，因此不会与 [byClassIdCache] 里的否定结果冲突。
      */
     @LLModuleSpecificSymbolProviderAccess
     fun getSymbolByPsi(
         classId: ClassId,
         declaration: E,
         context: CONTEXT,
-        buildAdditionalAttachments: (ExceptionAttachmentBuilder.(ClassId, CONTEXT) -> Unit)? = null,
     ): V? {
-        // Fast path: Query the cache normally. The *vast majority* of class IDs will not have ambiguities, hence most symbols will be
-        // contained in the main cache.
-        val symbol = getSymbolByClassId(classId, context, buildAdditionalAttachments)
-            ?: return null // If we cannot find any symbol, there is no point in checking the ambiguity cache.
+        byPsiCache.getValueIfComputed(declaration)?.let { return it }
 
-        if (symbol.hasPsi(declaration)) {
-            return symbol
-        }
+        // 快速路径：绝大多数 ClassId 没有歧义，按 ClassId 命中的符号就是这个声明对应的符号。
+        byClassIdCache.getValueIfComputed(classId)?.takeIf { it.hasPsi(declaration) }?.let { return it }
 
-        // Edge case: Access the fallback cache to provide an alternative symbol for `declaration`.
-        return ambiguityCache.getNotNullValueForNotNullContext(declaration, context) { _, _ ->
-            if (buildAdditionalAttachments != null) {
-                buildAdditionalAttachments(classId, context)
-            }
-        }
+        // 精确路径：以声明自身为上下文计算，并缓存在 PSI 键下。
+        // 与 ClassId 路径同样不缓存否定结果：同一声明在索引就绪后应当能恢复出来。
+        return byPsiCache.getValueCachingIf(declaration, context) { it != null }
     }
 
     /**
      * Returns the symbol for exactly the given [declaration] if it's already cached.
      */
     fun getCachedSymbolByPsi(classId: ClassId, declaration: E): V? =
-        getCachedSymbolByClassId(classId)
-            ?.takeIf { it.hasPsi(declaration) }
-            ?: ambiguityCache.getValueIfComputed(declaration)
+        byPsiCache.getValueIfComputed(declaration)
+            ?: getCachedSymbolByClassId(classId)?.takeIf { it.hasPsi(declaration) }
 
     @OptIn(CfirCacheInternals::class)
     @LLStatisticsOnlyApi
@@ -146,25 +140,25 @@ internal open class LLPsiAwareClassLikeSymbolCache<E : PsiElement, V : CfirClass
      * 当前两个底层 cache 中已经缓存的 symbol 值。
      */
     internal val cachedValues: List<V>
-        get() = mainCache.cachedValues + ambiguityCache.cachedValues
+        get() = byClassIdCache.cachedValues + byPsiCache.cachedValues
 }
 
 /**
- * 把“非空 context 必返回非空”的缓存契约失败降级为“未找到”。
+ * 把「符号不可用」降级为「未找到」。
  *
- * 未知 classId（stub 里引用了不在依赖中的类型）会让缓存修复路径重算后仍为 null 并抛异常；
- * 若直接向上传播，一次缺失的类会被放大成整次类型解析/诊断失败。Kotlin 侧通过“只查询索引中
- * 已知的 classId”避免走到这里，Cangjie 需要这层兜底。
+ * 只捕获 Analysis API 公共层的 [CaSymbolUnavailableException]：它携带封闭的缺失原因分类，
+ * 上层据此判断是否属于可预期缺失。这里不做任何异常消息文本匹配——
+ * 分类必须由类型系统承载，否则新增原因时会静默漏判。
  */
 internal fun <T> tolerateMissingCachedSymbol(classId: ClassId, action: () -> T?): T? =
     try {
         action()
-    } catch (failure: CangJieIllegalStateExceptionWithAttachments) {
-        if (failure.message?.contains("must not be null due to the contract") == true) {
-            LOG.debug("Class-like symbol for $classId is absent; treating it as unresolved", failure)
+    } catch (unavailable: CaSymbolUnavailableException) {
+        if (unavailable.reason.isExpectedAbsence) {
+            LOG.debug("Class-like symbol for $classId is unavailable (${unavailable.reason.name})")
             null
         } else {
-            throw failure
+            throw unavailable
         }
     }
 

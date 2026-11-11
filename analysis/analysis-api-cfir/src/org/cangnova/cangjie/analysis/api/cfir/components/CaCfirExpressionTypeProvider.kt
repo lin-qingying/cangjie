@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.analysis.api.cfir.components
 
+import com.intellij.openapi.diagnostic.Logger
 import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.api.CaImplementationDetail
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
@@ -16,7 +17,8 @@ import org.cangnova.cangjie.analysis.api.resolution.successfulFunctionCallOrNull
 import org.cangnova.cangjie.analysis.api.symbols.CaValueParameterSymbol
 import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getOrBuildCfir
-import org.cangnova.cangjie.analysis.low.level.api.cfir.api.resolveToCfirSymbol
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.resolveToCfirSymbolOrUnresolved
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbols.CfirResolution
 import org.cangnova.cangjie.analysis.utils.errors.unexpectedElementError
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
@@ -153,15 +155,27 @@ internal class CaCfirExpressionTypeProvider(
     @OptIn(CaImplementationDetail::class)
     /**
      * 返回 callable 声明的公开返回类型。
+     *
+     * 符号不可恢复时返回 `null`（「类型未知」），而不是抛异常：本属性的返回类型本就是可空的，
+     * 提示/检查等调用方对 `null` 已有跳过语义；一次库符号缺失不应让整次类型查询失败。
      */
     override val CjCallableDeclaration.returnType: CaType?
         get() = with(this@CaCfirExpressionTypeProvider as CaBaseSessionComponent<CaCfirSession>) {
             this@returnType.withPsiValidityAssertion {
                 this@returnType.inferReturnTypeByPsi()?.let { return it }
-                val cfirDeclaration = this@returnType.resolveToCfirSymbol(
-                    resolutionFacade = resolutionFacade,
-                    phase = CfirResolvePhase.TYPES,
-                ).cfir
+
+                val cfirDeclaration = when (
+                    val resolution = this@returnType.resolveToCfirSymbolOrUnresolved(
+                        resolutionFacade = resolutionFacade,
+                        phase = CfirResolvePhase.TYPES,
+                    )
+                ) {
+                    is CfirResolution.Resolved -> resolution.value.cfir
+                    is CfirResolution.Unresolved -> {
+                        resolution.diagnostics.log(LOG, resolution.reason)
+                        return null
+                    }
+                }
 
                 return when (cfirDeclaration) {
                     is CfirCallableDeclaration -> cfirDeclaration.symbol.resolvedReturnType.asCaType()
@@ -475,3 +489,10 @@ internal class CaCfirExpressionTypeProvider(
         else -> this
     }
 }
+
+/**
+ * 表达式类型查询的日志对象。
+ *
+ * 符号不可恢复时按原因分级记录：可预期缺失走 debug，代码缺陷/PSI 失效走 warn。
+ */
+private val LOG: Logger = Logger.getInstance("org.cangnova.cangjie.analysis.api.cfir.components.CaCfirExpressionTypeProvider")

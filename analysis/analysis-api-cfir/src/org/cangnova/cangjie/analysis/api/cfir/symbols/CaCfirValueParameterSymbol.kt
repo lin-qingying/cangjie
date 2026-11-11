@@ -20,11 +20,14 @@ import org.cangnova.cangjie.builtins.StandardNames
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
+import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.resolve.calls.cangjieVariadicParameterOrNull
 import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
+import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.isArray
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.name.SpecialNames
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.source.psi
 
@@ -95,10 +98,13 @@ internal class CaCfirValueParameterSymbol private constructor(
         get() = analysisSession.useSiteModule
 
     /**
-     * 值参数底层 CFIR 声明。
+     * 值参数底层 CFIR 声明；符号不可恢复时为 `null`。
+     *
+     * 所有从 CFIR 派生的属性都必须经这里取值并给出安全默认值：
+     * 缺符号是环境状态，不是编程错误，属性层不允许把它变成异常。
      */
-    private val parameterDeclaration: CfirValueParameter
-        get() = cfirSymbol.cfir
+    private val parameterDeclarationOrNull: CfirValueParameter?
+        get() = cfirSymbolOrNull?.cfir
 
     /**
      * 值参数公开注解列表。
@@ -132,9 +138,19 @@ internal class CaCfirValueParameterSymbol private constructor(
 
     /**
      * 值参数类型。
+     *
+     * 符号不可恢复时返回错误类型而不是抛异常：调用方（补全、提示、检查）据此跳过该候选，
+     * 而不是让一次库符号缺失把整段分析带崩。
      */
     override val returnType: CaType
-        get() = withValidityAssertion { cfirSymbol.returnType(builder) }
+        get() = withValidityAssertion {
+            val symbol = cfirSymbolOrNull
+            if (symbol == null) {
+                builder.typeBuilder.buildType(ConeErrorType(ConeSimpleDiagnostic("value parameter type is unavailable")))
+            } else {
+                symbol.returnType(builder)
+            }
+        }
 
     /**
      * 值参数公开符号位置固定为 local。
@@ -155,21 +171,30 @@ internal class CaCfirValueParameterSymbol private constructor(
 
     /**
      * 值参数名称。
+     *
+     * 优先取 PSI 名；符号不可恢复时退化为无名占位，而不是抛异常——
+     * 缺符号是环境状态，展示层只需知道「这个名字拿不到」。
      */
     override val name: Name
-        get() = withValidityAssertion { backingPsi?.nameAsSafeName ?: cfirSymbol.name }
+        get() = withValidityAssertion {
+            backingPsi?.nameAsSafeName ?: cfirSymbolOrNull?.name ?: SpecialNames.NO_NAME_PROVIDED
+        }
 
     /**
      * 值参数是否不可变。
+     *
+     * 符号不可恢复时按「不可变」这一默认形态给出，而不是抛异常。
      */
     override val isLet: Boolean
-        get() = !parameterDeclaration.isVar
+        get() = parameterDeclarationOrNull?.let { !it.isVar } ?: true
 
     /**
      * 值参数是否为命名参数。
+     *
+     * 符号不可恢复时返回 `false`（不可判定的调用形态不应被猜成命名实参）。
      */
     override val isNamed: Boolean
-        get() = parameterDeclaration.isNamed
+        get() = parameterDeclarationOrNull?.isNamed ?: false
 
     /**
      * 值参数是否为变长（variadic）参数。
@@ -182,23 +207,25 @@ internal class CaCfirValueParameterSymbol private constructor(
      *
      * 该规则读取的是形参**已定型**的类型（官方 `IsFuncDeclPossibleVariadic` 以
      * `Ty::IsTyCorrect(param->GetTy())` 为前提，
-     * 见 `external/cangjie_compiler/src/Sema/TypeCheckCall.cpp:342-359`），而分析层拿到的
+     * 见 `external/cangjie_compiler/src/Sema/TypeCheckCall.cpp:385-402`），而分析层拿到的
      * CFIR 符号默认只解析到 [org.cangnova.cangjie.cfir.declarations.CfirResolvePhase.RAW_CFIR]：
      * 不先推进阶段时形参类型引用尚未定型，
      * 规则会把真实变参静默判成非变参（因此本属性此前只有被 `returnType` 抢先推进后才正确）。
      */
     override val isVararg: Boolean
         get() = withValidityAssertion {
-            cfirSymbol.ensureReturnTypeIsResolvable()
-            val owner = cfirSymbol.containingDeclarationSymbol.cfir as? CfirDeclaration ?: return false
-            owner.cangjieVariadicParameterOrNull() === parameterDeclaration
+            val symbol = cfirSymbolOrNull ?: return@withValidityAssertion false
+            symbol.ensureReturnTypeIsResolvable()
+            val owner = symbol.containingDeclarationSymbol.cfir as? CfirDeclaration ?: return@withValidityAssertion false
+            val declaration = parameterDeclarationOrNull ?: return@withValidityAssertion false
+            owner.cangjieVariadicParameterOrNull() === declaration
         }
 
     /**
      * 值参数是否声明默认值。
      */
     override val hasDefaultValue: Boolean
-        get() = parameterDeclaration.defaultValue != null || resolvedParameterPsi?.defaultValue != null
+        get() = parameterDeclarationOrNull?.defaultValue != null || resolvedParameterPsi?.defaultValue != null
 
     /**
      * 值参数可见性固定为 local。
@@ -230,7 +257,7 @@ internal class CaCfirValueParameterSymbol private constructor(
     private val resolvedParameterPsi: org.cangnova.cangjie.psi.CjParameter?
         get() = explicitParameterPsi
             ?: backingPsi
-            ?: parameterDeclaration.source?.psi as? org.cangnova.cangjie.psi.CjParameter
+            ?: parameterDeclarationOrNull?.source?.psi as? org.cangnova.cangjie.psi.CjParameter
             ?: psi as? org.cangnova.cangjie.psi.CjParameter
 
     private companion object {

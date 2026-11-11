@@ -206,7 +206,7 @@ internal class FileStructure private constructor(
      * 收集整个文件所有 structure element 的 diagnostics。
      */
     fun getAllDiagnosticsForFile(diagnosticCheckerFilter: DiagnosticCheckerFilter): List<CjPsiDiagnostic> {
-        // 每次顶层收集前重置隔离异常记录，避免 IDE 长生命周期线程累积上一次收集的 Throwable。
+        // 每次顶层收集前重置当前 worker 的记录，避免混入该 worker 上一次收集的异常。
         DiagnosticCollectionFailures.clear()
         val structureElements = getAllStructureElements()
         return buildList {

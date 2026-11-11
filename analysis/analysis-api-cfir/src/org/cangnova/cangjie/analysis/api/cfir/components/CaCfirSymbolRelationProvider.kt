@@ -97,7 +97,7 @@ internal class CaCfirSymbolRelationProvider(
 
             getContainingDeclarationForDependentDeclaration(this@containingDeclaration)?.let { return@withValidityAssertion it }
 
-            val cfirSymbol = (this@containingDeclaration as? CaCfirSymbol<*>)?.cfirSymbol ?: return@withValidityAssertion null
+            val cfirSymbol = (this@containingDeclaration as? CaCfirSymbol<*>)?.cfirSymbolOrNull ?: return@withValidityAssertion null
             val symbolModule = cfirSymbol.llCfirModuleData.caModule
 
             if (symbolModule is CaDanglingFileModule && symbolModule.resolutionMode == CaDanglingFileResolutionMode.IGNORE_SELF) {
@@ -155,10 +155,14 @@ internal class CaCfirSymbolRelationProvider(
 
             is CaCfirValueParameterSymbol ->
                 symbol.ownerSymbol as? CaDeclarationSymbol
-                    ?: analysisSession.cfirSymbolBuilder.buildSymbol(symbol.cfirSymbol.containingDeclarationSymbol) as? CaDeclarationSymbol
+                    ?: symbol.cfirSymbolOrNull?.let {
+                        analysisSession.cfirSymbolBuilder.buildSymbol(it.containingDeclarationSymbol) as? CaDeclarationSymbol
+                    }
 
             is CaCfirTypeParameterSymbol ->
-                analysisSession.cfirSymbolBuilder.buildSymbol(symbol.cfirSymbol.containingDeclarationSymbol) as? CaDeclarationSymbol
+                symbol.cfirSymbolOrNull?.let {
+                    analysisSession.cfirSymbolBuilder.buildSymbol(it.containingDeclarationSymbol) as? CaDeclarationSymbol
+                }
 
             else -> null
         }
@@ -188,9 +192,14 @@ internal class CaCfirSymbolRelationProvider(
 
     /**
      * 从 CFIR source 信息中取得用于推导包含关系的 PSI 声明。
+     *
+     * 两类情况必须分开：「符号不可恢复」是可预期缺失，降级为 `null`；
+     * 「符号可恢复但 CFIR 没有 source」是框架契约被破坏（源码声明必有 source），
+     * 仍然要带附件上抛，否则包含关系会被静默当成顶层。
      */
     private fun getContainingPsi(symbol: CaSymbol): CjDeclaration? {
-        val source = (symbol as? CaCfirSymbol<*>)?.cfirSymbol?.cfir?.source
+        val cfirSymbol = (symbol as? CaCfirSymbol<*>)?.cfirSymbolOrNull ?: return null
+        val source = cfirSymbol.cfir.source
             ?: errorWithAttachment("PSI should present for declaration built by CangJie code") {
                 withPsiEntry("symbolPsi", (symbol as? CaDeclarationSymbol)?.psi)
             }
@@ -246,7 +255,7 @@ internal class CaCfirSymbolRelationProvider(
      * 判断符号是否携带足够的 PSI 信息来恢复父级声明。
      */
     private fun hasParentPsi(symbol: CaSymbol): Boolean {
-        val source = (symbol as? CaCfirSymbol<*>)?.cfirSymbol?.cfir?.source?.takeIf { it.psi is CjElement } ?: return false
+        val source = (symbol as? CaCfirSymbol<*>)?.cfirSymbolOrNull?.cfir?.source?.takeIf { it.psi is CjElement } ?: return false
 
         return getContainingPsiForFakeSource(source) != null ||
             isSyntheticSymbolWithParentSource(symbol) ||
@@ -329,7 +338,7 @@ internal class CaCfirSymbolRelationProvider(
             }
 
             val backingSymbol = (this@directlyOverriddenSymbols as? CaCfirSymbol<*>)
-                ?.cfirSymbol as? org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol<*>
+                ?.cfirSymbolOrNull as? org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol<*>
                 ?: return@withValidityAssertion emptySequence()
 
             analysisSession.collectDirectlyOverriddenCallableSymbols(backingSymbol)
@@ -354,7 +363,7 @@ internal class CaCfirSymbolRelationProvider(
             }
 
             val backingSymbol = (this@allOverriddenSymbols as? CaCfirSymbol<*>)
-                ?.cfirSymbol as? CfirCallableSymbol<*>
+                ?.cfirSymbolOrNull as? CfirCallableSymbol<*>
                 ?: return@withValidityAssertion emptySequence()
 
             analysisSession.collectAllOverriddenCallableSymbols(backingSymbol)

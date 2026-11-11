@@ -491,6 +491,9 @@ internal object CfirCDocReferenceResolver {
         val receiverTypeParameters = receiverClassSymbol.typeParameters.map { parameter ->
             val cfirParameter = parameter as? CaCfirTypeParameterSymbol
                 ?: error("CFIR class-like type parameter must retain its CFIR symbol")
+            // 符号不可恢复时保持类型化上抛（不返回 false）：返回 false 等于断言
+            // 「这个 receiver 不适用」，而「未知」与「不适用」在 cdoc 候选里必须可区分
+            // （HANDOVER 设计决策 7：未知不得渲染成确定）；由候选级隔离处理该异常。
             cfirParameter.cfirSymbol.lazyResolveToPhase(CfirResolvePhase.TYPES)
             cfirParameter.cfirSymbol.toLookupTag()
         }

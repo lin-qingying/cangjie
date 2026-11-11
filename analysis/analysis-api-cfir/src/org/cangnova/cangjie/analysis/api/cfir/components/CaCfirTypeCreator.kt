@@ -21,6 +21,7 @@ import org.cangnova.cangjie.analysis.api.types.CaTypeParameterType
 import org.cangnova.cangjie.analysis.api.types.CaUnionType
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedSymbolError
+import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirBuiltInTypeSymbol
@@ -185,7 +186,14 @@ internal class CaCfirTypeCreator(
                 analysisSession.cfirSession.symbolProvider.getClassLikeSymbolByClassId(builder.classId)
                     ?: return ConeErrorType(ConeUnresolvedSymbolError(builder.classId)).asPublicType()
 
-            is CaBaseClassTypeBuilder.BySymbol -> builder.symbol.requireCfirClassLikeSymbol()
+            // 与 `ByClassId` 分支同一语义：符号不可恢复时给出可传染的错误类型，
+            // 而不是让一次类型构造把整条分析链打断。
+            is CaBaseClassTypeBuilder.BySymbol -> {
+                val classSymbol = (builder.symbol as? CaCfirSymbol<*>)?.cfirSymbolOrNull as? CfirClassLikeSymbolBase<*>
+                classSymbol ?: return builder.symbol.classId
+                    ?.let { ConeErrorType(ConeUnresolvedSymbolError(it)).asPublicType() }
+                    ?: ConeErrorType(ConeSimpleDiagnostic("class type is unavailable for an unnamed symbol")).asPublicType()
+            }
         }
 
         return symbol.createResolvedClassLikeType(typeArguments).asPublicType()

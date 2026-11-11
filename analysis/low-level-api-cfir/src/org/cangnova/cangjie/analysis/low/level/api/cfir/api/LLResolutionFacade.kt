@@ -35,6 +35,9 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirModuleResolveCompo
 import org.cangnova.cangjie.analysis.low.level.api.cfir.element.builder.getNonLocalContainingOrThisElement
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
 import org.cangnova.cangjie.analysis.low.level.api.cfir.state.*
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbols.CfirResolution
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbols.getOrThrow
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbols.map
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.*
 import org.cangnova.cangjie.analysis.utils.errors.requireIsInstance
 import org.cangnova.cangjie.cfir.diagnostics.CjPsiDiagnostic
@@ -167,13 +170,31 @@ class LLResolutionFacade internal constructor(
 
     /**
      * 将仓颉声明 PSI 解析为对应 CFIR symbol，并按请求推进到指定 resolve phase。
+     *
+     * 该重载面向“符号必须存在”的调用点。缺失时抛出携带 [org.cangnova.cangjie.analysis.low.level.api.cfir.symbols.UnresolvedReason]
+     * 的异常，调用方应优先改用 [resolveToCfirSymbolOrUnresolved] 以按原因降级。
      */
     internal fun resolveToCfirSymbol(cjDeclaration: CjDeclaration, phase: CfirResolvePhase): CfirBasedSymbol<*> {
+        return resolveToCfirSymbolOrUnresolved(cjDeclaration, phase).getOrThrow()
+    }
+
+    /**
+     * 将仓颉声明 PSI 解析为对应 CFIR symbol；无法恢复时返回结构化缺失原因。
+     *
+     * 符号恢复是部分函数：库声明可能尚未进入索引、反编译 PSI 可能失效、局部声明没有全局身份。
+     * 这些情况以 [CfirResolution.Unresolved] 返回，而不是异常。
+     */
+    internal fun resolveToCfirSymbolOrUnresolved(
+        cjDeclaration: CjDeclaration,
+        phase: CfirResolvePhase,
+    ): CfirResolution<CfirBasedSymbol<*>> {
         val containingCjFile = cjDeclaration.containingCjFile
         val module = getModule(containingCjFile)
 
         return when (getModuleResolutionStrategy(module)) {
-            LLModuleResolutionStrategy.LAZY -> findSourceCfirSymbol(cjDeclaration).also { it.cfir.lazyResolveToPhase(phase) }
+            LLModuleResolutionStrategy.LAZY ->
+                CfirResolution.Resolved(findSourceCfirSymbol(cjDeclaration).also { it.cfir.lazyResolveToPhase(phase) })
+
             LLModuleResolutionStrategy.STATIC -> findCompiledCfirSymbol(cjDeclaration, module)
         }
     }
@@ -249,8 +270,10 @@ class LLResolutionFacade internal constructor(
 
     /**
      * 在 compiled/static 模块中通过反编译声明搜索器恢复 CFIR symbol。
+     *
+     * 缺失不是异常：搜索器返回结构化原因，由 Analysis API 边界决定降级方式。
      */
-    private fun findCompiledCfirSymbol(cjDeclaration: CjDeclaration, module: CaModule): CfirBasedSymbol<*> {
+    private fun findCompiledCfirSymbol(cjDeclaration: CjDeclaration, module: CaModule): CfirResolution<CfirBasedSymbol<*>> {
         requireWithAttachment(
             cjDeclaration.containingCjFile.isCompiled,
             { "`findCfirCompiledSymbol` only works on compiled declarations, but the given declaration is not compiled." },
@@ -263,8 +286,7 @@ class LLResolutionFacade internal constructor(
         val owningModule = CangJieProjectStructureProvider.getModule(project, cjDeclaration, useSiteModule = null)
         val session = getSessionFor(owningModule)
         val searcher = CfirDeclarationForCompiledElementSearcher(session)
-        val cfirDeclaration = searcher.findNonLocalDeclaration(cjDeclaration)
-        return cfirDeclaration.symbol
+        return searcher.findNonLocalDeclaration(cjDeclaration).map { it.symbol }
     }
 
 }

@@ -10,7 +10,8 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics
 import com.intellij.openapi.diagnostic.thisLogger
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getResolutionFacade
-import org.cangnova.cangjie.analysis.low.level.api.cfir.api.resolveToCfirSymbol
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.resolveToCfirSymbolOrUnresolved
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbols.valueOrNull
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.checkCanceled
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.forEachDeclaration
 import org.cangnova.cangjie.analysis.utils.printer.parentsOfType
@@ -91,9 +92,13 @@ internal open class LLCfirDiagnosticVisitor(
             val module = CangJieProjectStructureProvider.getModule(project, contextElement, useSiteModule = null)
             val resolutionFacade = module.getResolutionFacade(project)
 
-            // Register containing declarations of a context element
+            // Register containing declarations of a context element.
+            // 符号不可恢复的祖先声明跳过：诊断要能为其余祖先继续收集，
+            // 不能因为一个库符号缺失让整份文件的诊断变成空。
             contextElement.parentsOfType<CjDeclaration>().toList().asReversed()
-                .map { declaration: CjDeclaration -> declaration.resolveToCfirSymbol(resolutionFacade).cfir }
+                .mapNotNull { declaration: CjDeclaration ->
+                    declaration.resolveToCfirSymbolOrUnresolved(resolutionFacade).valueOrNull?.cfir
+                }
                 .run(::process)
 
             return

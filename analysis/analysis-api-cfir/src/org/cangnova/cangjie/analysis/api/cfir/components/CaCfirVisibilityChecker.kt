@@ -90,8 +90,10 @@ internal class CaCfirVisibilityChecker(
         require(this@isVisibleInClass is CaCfirSymbol<*>)
         require(classSymbol is CaCfirSymbol<*>)
 
-        val candidateDeclaration = cfirSymbol.cfir as? CfirMemberDeclaration ?: return false
-        val classDeclaration = classSymbol.cfirSymbol.cfir as? CfirClassLikeDeclaration ?: return false
+        val candidateDeclaration = (this@isVisibleInClass as CaCfirSymbol<*>).cfirSymbolOrNull?.cfir as? CfirMemberDeclaration
+            ?: return false
+        val classDeclaration = (classSymbol as CaCfirSymbol<*>).cfirSymbolOrNull?.cfir as? CfirClassLikeDeclaration
+            ?: return false
         val useSiteFile = classDeclaration.symbol.getContainingFile() ?: return false
 
         analysisSession.isDeclarationVisibleAtUseSite(
@@ -146,7 +148,13 @@ private class CaCfirUseSiteVisibilityChecker(
     override fun isVisible(candidateSymbol: CaDeclarationSymbol): Boolean = withValidityAssertion {
         require(candidateSymbol is CaCfirSymbol<*>)
 
-        val candidateDeclaration = candidateSymbol.cfirSymbol.cfir as? CfirMemberDeclaration ?: return true
+        // 候选符号不可恢复时按**不可见**处理：官方可访问性判定没有「未知 ⇒ 可见」分支，
+        // 兜底方向是拒绝（`external/cangjie_compiler/src/Sema/TypeCheckUtil.cpp:1672-1735`：
+        // 除 IN_CORE/IN_MACRO/PUBLIC/局部声明外按包关系精确判定，最后默认 `return false`）。
+        // 「一次索引缺失不要隐藏整批成员」的正确落点是展示层的候选级隔离，不是放宽访问控制——
+        // 放宽会把 private 成员泄漏到补全与导入规划里。
+        val candidateDeclaration = (candidateSymbol as CaCfirSymbol<*>).cfirSymbolOrNull?.cfir as? CfirMemberDeclaration
+            ?: return false
         analysisSession.isDeclarationVisibleAtUseSite(
             candidateDeclaration = candidateDeclaration,
             useSiteFile = useSiteFile.file.getOrBuildCfirFile(analysisSession.resolutionFacade),

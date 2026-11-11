@@ -105,7 +105,7 @@ internal class CaCfirAnonymousFunctionSymbol private constructor(
      * 匿名函数显式 receiver 类型。
      */
     override val receiverType: CaType?
-        get() = withValidityAssertion { analysisSession.getExplicitCallableReceiverType(backingPsi, builder) { cfirSymbol } }
+        get() = withValidityAssertion { analysisSession.getExplicitCallableReceiverType(backingPsi, builder) { cfirSymbolOrNull } }
 
     /**
      * 匿名函数返回类型。
@@ -311,7 +311,7 @@ internal class CaCfirFinalizerSymbol private constructor(
      * finalizer 显式 receiver 类型。
      */
     override val receiverType: CaType?
-        get() = withValidityAssertion { analysisSession.getExplicitCallableReceiverType(backingPsi, builder) { cfirSymbol } }
+        get() = withValidityAssertion { analysisSession.getExplicitCallableReceiverType(backingPsi, builder) { cfirSymbolOrNull } }
 
     /**
      * finalizer 返回类型。

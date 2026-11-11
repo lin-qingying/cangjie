@@ -56,8 +56,13 @@ internal class CaCfirSubstitutorProvider(
 
         val cfirMappings = buildMap<TypeConstructorMarker, org.cangnova.cangjie.cfir.types.ConeCangJieType> {
             mappings.forEach { (typeParameterSymbol, type) ->
-                val cfirSymbol = (typeParameterSymbol as? CaCfirSymbol<*>)?.cfirSymbol as? CfirTypeParameterSymbol
+                // 两类失败必须分开：**符号种类不对**（调用方给错东西）是契约破坏，
+                // **符号暂时不可恢复**是环境状态（HANDOVER 设计决策 1/8）。
+                // 后者若也走 error()，会把一次索引未就绪升级成假的「类型参数种类错误」。
+                val caSymbol = typeParameterSymbol as? CaCfirSymbol<*>
                     ?: error("Only CFIR type parameter symbols can be used to build a CFIR substitutor")
+                val cfirSymbol = caSymbol.cfirSymbolOrNull as? CfirTypeParameterSymbol
+                    ?: return@withValidityAssertion CaSubstitutor.Empty(token)
                 val cfirType = (type as? CaCfirType)?.coneType
                     ?: error("Only CFIR types can be used to build a CFIR substitutor")
                 put(cfirSymbol.toLookupTag(), cfirType)

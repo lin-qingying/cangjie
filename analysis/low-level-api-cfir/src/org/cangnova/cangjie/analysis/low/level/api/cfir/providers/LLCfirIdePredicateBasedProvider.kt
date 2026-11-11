@@ -113,6 +113,17 @@ internal class LLCfirIdePredicateBasedProvider(
         if (CjPsiUtil.isLocal(this)) return null
 
         val moduleForFile = projectStructureProvider.getModule(this, session.caModule)
+
+        // 对齐 Kotlin `LLFirIdePredicateBasedProvider.kt:86-87`：只解析属于当前 session 模块的声明。
+        // 跨模块解析会取到别的模块的 resolution facade——现场崩溃正是「在 source module 的 session 里
+        // 查库声明」。与其在错误的 session 里冒泡一个无法归因的失败，不如像 Kotlin 一样直接判为不匹配。
+        //
+        // 这里的符号恢复**保持抛异常**（不降级成 null）：Kotlin 在同一位置也是
+        // `resolveToFirSymbol(...).fir` 且全文无 catch，缺失意味着「无法确定判定目标」，
+        // 静默跳过会作用在错误的候选集合上（HANDOVER 设计决策 8）。抛出的仍是可分类的
+        // `CaSymbolUnavailableException`，由调用方的候选粒度隔离处理。
+        if (moduleForFile != session.caModule) return null
+
         val resolutionFacadeForFile = moduleForFile.getResolutionFacade(project)
         return this.resolveToCfirSymbol(resolutionFacadeForFile).cfir
     }
