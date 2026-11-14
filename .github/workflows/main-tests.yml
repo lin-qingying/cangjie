@@ -19,9 +19,96 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test:
+  discover_sdks:
     runs-on: ubuntu-24.04
+    outputs:
+      matrix_json: ${{ steps.discover.outputs.matrix_json }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Discover Cangjie SDK versions
+        id: discover
+        uses: ./.github/actions/discover-cangjie-sdk-versions
+
+  build_llvm_jni:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ensure Gradle wrapper is executable
+        shell: bash
+        run: chmod +x ./gradlew
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Install LLVM development files
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends llvm-14-dev
+          mkdir -p /tmp/llvm-jni/lib
+          ln -s /usr/lib/llvm-14/include /tmp/llvm-jni/include
+          ln -s /usr/lib/llvm-14/bin /tmp/llvm-jni/bin
+          ln -s /usr/lib/llvm-14/lib/libLLVM-14.so /tmp/llvm-jni/lib/libLLVM-14.so
+
+      - name: Build LLVM JNI native library
+        shell: bash
+        env:
+          LLVM_DIR: /tmp/llvm-jni
+        run: |
+          llvm_config="$LLVM_DIR/bin/llvm-config"
+          llvm_lib_dir="$("$llvm_config" --libdir)"
+          llvm_link_flags="$("$llvm_config" --link-shared --ldflags --libs all --system-libs all | tr '\n' ' ')"
+          read -r -a llvm_link_args <<< "$llvm_link_flags"
+          ./gradlew :llvm-interop:llvm-interop-jni:aggregateNativeArtifacts --no-daemon
+
+          if command -v clang++ >/dev/null 2>&1; then
+            native_compiler=clang++
+          else
+            native_compiler=g++
+          fi
+          "$native_compiler" -std=c++17 -fPIC -shared \
+            -I"$JAVA_HOME/include" \
+            -I"$JAVA_HOME/include/linux" \
+            -I"$LLVM_DIR/include" \
+            llvm-interop/llvm-interop-jni/native/*.cpp \
+            -Wl,--no-as-needed \
+            "${llvm_link_args[@]}" \
+            -o llvm-interop/llvm-interop-jni/build/native/libcangjie_llvm_jni.so
+          cp llvm-interop/llvm-interop-jni/build/native/libcangjie_llvm_jni.so \
+            llvm-interop/llvm-interop-jni/build/native/linux-x86_64/libcangjie_llvm_jni.so
+          test -s llvm-interop/llvm-interop-jni/build/native/libcangjie_llvm_jni.so
+          test -s llvm-interop/llvm-interop-jni/build/native/linux-x86_64/libcangjie_llvm_jni.so
+          LD_LIBRARY_PATH="$llvm_lib_dir" \
+            ldd -r llvm-interop/llvm-interop-jni/build/native/libcangjie_llvm_jni.so \
+            | tee /tmp/cangjie-llvm-jni-dependencies.txt
+          if grep -Eq 'not found|undefined symbol' /tmp/cangjie-llvm-jni-dependencies.txt; then
+            echo "LLVM JNI shared library has unresolved runtime dependencies."
+            exit 1
+          fi
+
+      - name: Upload LLVM JNI native library
+        uses: actions/upload-artifact@v4
+        with:
+          name: llvm-jni-linux-x86_64
+          path: llvm-interop/llvm-interop-jni/build/native/
+          if-no-files-found: error
+          retention-days: 1
+
+  test:
+    needs: [discover_sdks, build_llvm_jni]
+    runs-on: ubuntu-22.04
     timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix: ${{ fromJSON(needs.discover_sdks.outputs.matrix_json) }}
 
     steps:
       - uses: actions/checkout@v4
@@ -39,9 +126,33 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Install legacy Cangjie SDK runtime library
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends libncurses5 libllvm14
+
+      - name: Set up Cangjie SDK
+        uses: ./.github/actions/setup-cangjie-sdk
+        with:
+          version: ${{ matrix.sdk_version }}
+          package: ${{ matrix.sdk_package }}
+
+      - name: Download LLVM JNI native library
+        uses: actions/download-artifact@v4
+        with:
+          name: llvm-jni-linux-x86_64
+          path: llvm-interop/llvm-interop-jni/build/prebuilt-native
+
       - name: Run main repository tests
         shell: bash
         run: |
+          source "$CANGJIE_HOME/envsetup.sh"
+          export LD_LIBRARY_PATH="/usr/lib/llvm-14/lib:${LD_LIBRARY_PATH:-}"
+          export CANGJIE_LLVM_JNI_INTEGRATION=true
+          export CANGJIE_LLVM_JNI_LIBRARY_PATH="$GITHUB_WORKSPACE/llvm-interop/llvm-interop-jni/build/prebuilt-native/libcangjie_llvm_jni.so"
+          test -s "$CANGJIE_LLVM_JNI_LIBRARY_PATH"
+          cjc -v
           ./gradlew \
             test \
             --continue \
@@ -52,7 +163,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: main-test-results
+          name: main-test-results-${{ matrix.sdk_version }}
           if-no-files-found: warn
           retention-days: 14
           path: |
