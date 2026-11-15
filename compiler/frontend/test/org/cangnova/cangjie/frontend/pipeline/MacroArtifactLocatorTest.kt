@@ -38,12 +38,12 @@ class MacroArtifactLocatorTest {
         val cjo = writeFile(packageDir.resolve("macros.pkg.cjo"))
         val dylib = writeFile(packageDir.resolve("lib-macro_macros.pkg.${dynamicLibraryExtension()}"))
 
-        val artifact = MacroArtifactLocator(sdkHome = tempDir.resolve("sdk").toString())
-            .locate(
-                packageDemands = setOf(FqName("macros.pkg")),
-                searchRoots = listOf(root.toString()),
-            )
-            .single()
+        val artifact =
+            MacroArtifactLocator(sdkHome = tempDir.resolve("sdk").toString())
+                .locate(
+                    packageDemands = setOf(FqName("macros.pkg")),
+                    searchRoots = listOf(root.toString()),
+                ).single()
 
         assertEquals(cjo.toString(), artifact.cjoPath)
         assertEquals(dylib.toString(), artifact.dynamicLibPath)
@@ -59,12 +59,12 @@ class MacroArtifactLocatorTest {
         val cjo = writeFile(root.resolve("macros.pkg.cjo"))
         val dylib = writeFile(root.resolve("lib-macro_macros.pkg.${dynamicLibraryExtension()}"))
 
-        val artifact = MacroArtifactLocator(sdkHome = tempDir.resolve("sdk").toString())
-            .locate(
-                packageDemands = setOf(FqName("macros.pkg")),
-                searchRoots = listOf(root.toString()),
-            )
-            .single()
+        val artifact =
+            MacroArtifactLocator(sdkHome = tempDir.resolve("sdk").toString())
+                .locate(
+                    packageDemands = setOf(FqName("macros.pkg")),
+                    searchRoots = listOf(root.toString()),
+                ).single()
 
         assertEquals(cjo.toString(), artifact.cjoPath)
         assertEquals(dylib.toString(), artifact.dynamicLibPath)
@@ -79,21 +79,30 @@ class MacroArtifactLocatorTest {
         val root = Files.createDirectories(tempDir.resolve("search"))
         writeFile(root.resolve("macros.pkg.cjo"))
         writeFile(root.resolve("lib-macro_macros.pkg.${dynamicLibraryExtension()}"))
-        val explicit = MacroArtifactPackage(
-            packageFqName = FqName("macros.pkg"),
-            kind = MacroArtifactPackage.Kind.MACRO,
-            cjoPath = tempDir.resolve("explicit").resolve("macros.pkg.cjo").toString(),
-            dynamicLibPath = tempDir.resolve("explicit").resolve("lib-macro_macros.pkg.${dynamicLibraryExtension()}").toString(),
-            origin = MacroArtifactPackage.Origin.ORCHESTRATION,
-        )
-
-        val artifact = MacroArtifactLocator(sdkHome = tempDir.resolve("sdk").toString())
-            .locate(
-                packageDemands = setOf(FqName("macros.pkg")),
-                searchRoots = listOf(root.toString()),
-                explicitArtifacts = listOf(explicit),
+        val explicit =
+            MacroArtifactPackage(
+                packageFqName = FqName("macros.pkg"),
+                kind = MacroArtifactPackage.Kind.MACRO,
+                cjoPath =
+                    tempDir
+                        .resolve("explicit")
+                        .resolve("macros.pkg.cjo")
+                        .toString(),
+                dynamicLibPath =
+                    tempDir
+                        .resolve("explicit")
+                        .resolve("lib-macro_macros.pkg.${dynamicLibraryExtension()}")
+                        .toString(),
+                origin = MacroArtifactPackage.Origin.ORCHESTRATION,
             )
-            .single()
+
+        val artifact =
+            MacroArtifactLocator(sdkHome = tempDir.resolve("sdk").toString())
+                .locate(
+                    packageDemands = setOf(FqName("macros.pkg")),
+                    searchRoots = listOf(root.toString()),
+                    explicitArtifacts = listOf(explicit),
+                ).single()
 
         assertEquals(explicit, artifact)
         assertEquals(MacroArtifactPackage.Origin.ORCHESTRATION, artifact.origin)
@@ -110,13 +119,14 @@ class MacroArtifactLocatorTest {
         val cjo = writeFile(modulesDir.resolve("std.core.cjo"))
         val dylib = writeFile(runtimeDir.resolve("libcangjie-std-core.${dynamicLibraryExtension()}"))
 
-        val artifact = MacroArtifactLocator(
-            sdkHome = sdkHome.toString(),
-            host = "windows_x86_64_cjnative",
-        ).locate(
-            packageDemands = setOf(FqName("std.core")),
-            searchRoots = emptyList(),
-        ).single()
+        val artifact =
+            MacroArtifactLocator(
+                sdkHome = sdkHome.toString(),
+                host = "windows_x86_64_cjnative",
+            ).locate(
+                packageDemands = setOf(FqName("std.core")),
+                searchRoots = emptyList(),
+            ).single()
 
         assertEquals(cjo.toString(), artifact.cjoPath)
         assertEquals(dylib.toString(), artifact.dynamicLibPath)
@@ -128,14 +138,18 @@ class MacroArtifactLocatorTest {
      */
     @Test
     fun locatesAndResolvesFixedSdkStdMacroArtifact() {
-        val sdkHome = DefaultMacroCompilerExecutableResolver.resolve().parent.parent.toString()
-        val artifact = MacroArtifactLocator(
-            sdkHome = sdkHome,
-            host = "windows_x86_64_cjnative",
-        ).locate(
-            packageDemands = setOf(FqName("std.unittest.mock.mockmacro")),
-            searchRoots = emptyList(),
-        ).single()
+        val sdkHome =
+            DefaultMacroCompilerExecutableResolver
+                .resolve()
+                .parent
+                .parent
+                .toString()
+        val artifact =
+            MacroArtifactLocator(sdkHome = sdkHome)
+                .locate(
+                    packageDemands = setOf(FqName("std.unittest.mock.mockmacro")),
+                    searchRoots = emptyList(),
+                ).single()
 
         assertEquals(MacroArtifactPackage.Origin.SDK_STDLIB, artifact.origin)
         assertTrue(artifact.cjoPath.endsWith("std.unittest.mock.mockmacro.cjo"))
@@ -158,13 +172,14 @@ class MacroArtifactLocatorTest {
         writeFile(modulesDir.resolve("std.unknown.cjo"))
         writeFile(runtimeDir.resolve("libcangjie-std-unknown.${dynamicLibraryExtension()}"))
 
-        val artifacts = MacroArtifactLocator(
-            sdkHome = sdkHome.toString(),
-            host = "windows_x86_64_cjnative",
-        ).locate(
-            packageDemands = setOf(FqName("std.unknown")),
-            searchRoots = emptyList(),
-        )
+        val artifacts =
+            MacroArtifactLocator(
+                sdkHome = sdkHome.toString(),
+                host = "windows_x86_64_cjnative",
+            ).locate(
+                packageDemands = setOf(FqName("std.unknown")),
+                searchRoots = emptyList(),
+            )
 
         assertEquals(emptyList<MacroArtifactPackage>(), artifacts)
     }
@@ -177,11 +192,12 @@ class MacroArtifactLocatorTest {
         val root = Files.createDirectories(tempDir.resolve("missing-lib"))
         writeFile(root.resolve("macros.pkg.cjo"))
 
-        val artifacts = MacroArtifactLocator(sdkHome = tempDir.resolve("sdk").toString())
-            .locate(
-                packageDemands = setOf(FqName("macros.pkg")),
-                searchRoots = listOf(root.toString()),
-            )
+        val artifacts =
+            MacroArtifactLocator(sdkHome = tempDir.resolve("sdk").toString())
+                .locate(
+                    packageDemands = setOf(FqName("macros.pkg")),
+                    searchRoots = listOf(root.toString()),
+                )
 
         assertEquals(emptyList<MacroArtifactPackage>(), artifacts)
     }

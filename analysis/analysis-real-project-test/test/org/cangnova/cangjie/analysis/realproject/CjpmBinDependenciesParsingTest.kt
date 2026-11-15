@@ -1,13 +1,13 @@
 package org.cangnova.cangjie.analysis.realproject
 
-import java.nio.file.Files
-import java.nio.file.Path
-import kotlin.io.path.createDirectory
-import kotlin.io.path.writeText
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
+import java.nio.file.Files
+import java.nio.file.Path
+import kotlin.io.path.createDirectory
+import kotlin.io.path.writeText
 
 /**
  * [CjpmProjectModel] 解析 `[target.<triple>.bin-dependencies]` 的单元测试。
@@ -17,20 +17,23 @@ import org.junit.jupiter.api.io.TempDir
  * 真实项目测试基建必须自己解析出目录根并挂载，否则 `import stdx.*` 无法解析。
  */
 class CjpmBinDependenciesParsingTest {
+    private val currentTargetTriple: String
+        get() =
+            CjpmProjectModel.currentTargetTriples.firstOrNull()
+                ?: error("当前测试平台没有可识别的仓颉 target triple")
 
     @TempDir
     lateinit var projectDir: Path
 
     /** 环境变量注入桩：模拟 `${CANGJIE_STDX_PATH}` 等占位符解析。 */
-    private fun envProvider(vararg entries: Pair<String, String>): (String) -> String? =
-        entries.toMap()::get
+    private fun envProvider(vararg entries: Pair<String, String>): (String) -> String? = entries.toMap()::get
 
     @Test
     fun `env placeholder expands to existing directory`() {
         val stdxRoot = Files.createDirectories(projectDir.resolve("stdx-root"))
         writeCjpmToml(
             """
-            [target.x86_64-w64-mingw32.bin-dependencies]
+            [target.$currentTargetTriple.bin-dependencies]
               path-option = [ "${'$'}{CANGJIE_STDX_PATH}" ]
             """.trimIndent(),
         )
@@ -44,7 +47,7 @@ class CjpmBinDependenciesParsingTest {
     fun `unresolvable env placeholder drops the entry`() {
         writeCjpmToml(
             """
-            [target.x86_64-w64-mingw32.bin-dependencies]
+            [target.$currentTargetTriple.bin-dependencies]
               path-option = [ "${'$'}{CANGJIE_STDX_PATH}" ]
             """.trimIndent(),
         )
@@ -58,16 +61,17 @@ class CjpmBinDependenciesParsingTest {
     fun `nonexistent directory is filtered out`() {
         writeCjpmToml(
             """
-            [target.x86_64-w64-mingw32.bin-dependencies]
+            [target.$currentTargetTriple.bin-dependencies]
               path-option = [ "${'$'}{CANGJIE_STDX_PATH}" ]
             """.trimIndent(),
         )
 
         // 环境变量指向不存在的目录：解析成功但被存在性过滤。
-        val model = CjpmProjectModel.read(
-            projectDir,
-            envProvider("CANGJIE_STDX_PATH" to projectDir.resolve("missing").toString()),
-        )
+        val model =
+            CjpmProjectModel.read(
+                projectDir,
+                envProvider("CANGJIE_STDX_PATH" to projectDir.resolve("missing").toString()),
+            )
 
         assertTrue(model.binDependencyRoots.isEmpty())
     }
@@ -75,12 +79,8 @@ class CjpmBinDependenciesParsingTest {
     @Test
     fun `other target triples are ignored`() {
         val stdxRoot = Files.createDirectories(projectDir.resolve("stdx-root"))
-        // 与当前平台必然不同的 triple：Windows 上用 darwin，否则用 mingw。
-        val foreignTriple = if ("x86_64-w64-mingw32" in CjpmProjectModel.currentTargetTriples) {
-            "aarch64-apple-darwin"
-        } else {
-            "x86_64-w64-mingw32"
-        }
+        val foreignArch = if (currentTargetTriple.startsWith("x86_64-")) "aarch64" else "x86_64"
+        val foreignTriple = currentTargetTriple.replaceFirst(Regex("^(x86_64|aarch64)"), foreignArch)
         writeCjpmToml(
             """
             [target.$foreignTriple.bin-dependencies]
@@ -88,10 +88,11 @@ class CjpmBinDependenciesParsingTest {
             """.trimIndent(),
         )
 
-        val model = CjpmProjectModel.read(
-            projectDir,
-            envProvider("CANGJIE_STDX_PATH" to stdxRoot.toString()),
-        )
+        val model =
+            CjpmProjectModel.read(
+                projectDir,
+                envProvider("CANGJIE_STDX_PATH" to stdxRoot.toString()),
+            )
 
         assertTrue(model.binDependencyRoots.isEmpty())
     }
@@ -101,7 +102,7 @@ class CjpmBinDependenciesParsingTest {
         val stdxRoot = Files.createDirectories(projectDir.resolve("stdx-root"))
         writeCjpmToml(
             """
-            [target.x86_64-w64-mingw32.bin-dependencies]
+            [target.$currentTargetTriple.bin-dependencies]
               path-option = [ "${stdxRoot.toAbsolutePath().normalize().toString().replace('\\', '/')}" ]
             """.trimIndent(),
         )
@@ -118,15 +119,16 @@ class CjpmBinDependenciesParsingTest {
         val rootB = Files.createDirectories(projectDir.resolve("root-b"))
         writeCjpmToml(
             """
-            [target.x86_64-w64-mingw32.bin-dependencies]
+            [target.$currentTargetTriple.bin-dependencies]
               path-option = [ "${'$'}{STDX_A}", "${'$'}{STDX_B}", "${'$'}{STDX_A}" ]
             """.trimIndent(),
         )
 
-        val model = CjpmProjectModel.read(
-            projectDir,
-            envProvider("STDX_A" to rootA.toString(), "STDX_B" to rootB.toString()),
-        )
+        val model =
+            CjpmProjectModel.read(
+                projectDir,
+                envProvider("STDX_A" to rootA.toString(), "STDX_B" to rootB.toString()),
+            )
 
         assertEquals(listOf(rootA, rootB), model.binDependencyRoots)
     }
@@ -140,19 +142,26 @@ class CjpmBinDependenciesParsingTest {
             [package]
               name = "mariadb"
               src-dir = "src"
-            [target.x86_64-w64-mingw32]
-              [target.x86_64-w64-mingw32.bin-dependencies]
+            [target.$currentTargetTriple]
+              [target.$currentTargetTriple.bin-dependencies]
                 path-option = [ "${'$'}{CANGJIE_STDX_PATH}" ]
             """.trimIndent(),
         )
 
-        val model = CjpmProjectModel.read(
-            projectDir,
-            envProvider("CANGJIE_STDX_PATH" to stdxRoot.toString()),
-        )
+        val model =
+            CjpmProjectModel.read(
+                projectDir,
+                envProvider("CANGJIE_STDX_PATH" to stdxRoot.toString()),
+            )
 
         assertEquals("mariadb", model.name)
-        assertEquals("src", model.sourceRoots.single().fileName.toString())
+        assertEquals(
+            "src",
+            model.sourceRoots
+                .single()
+                .fileName
+                .toString(),
+        )
         assertEquals(listOf(stdxRoot), model.binDependencyRoots)
     }
 

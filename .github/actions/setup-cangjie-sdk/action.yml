@@ -1,0 +1,81 @@
+name: Set up Cangjie SDK
+description: Download and configure a Linux x64 Cangjie SDK from HuaweiCloud.
+
+inputs:
+  version:
+    description: Version directory in the HuaweiCloud mirror.
+    required: true
+  package:
+    description: Exact Linux x64 SDK archive filename discovered from the mirror.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Restore Cangjie SDK cache
+      id: cache
+      uses: actions/cache/restore@v4
+      with:
+        path: ${{ runner.temp }}/cangjie-sdk/${{ inputs.version }}
+        key: ${{ runner.os }}-${{ runner.arch }}-cangjie-sdk-${{ inputs.version }}-${{ inputs.package }}
+
+    - name: Download and extract Cangjie SDK
+      if: steps.cache.outputs.cache-hit != 'true'
+      shell: bash
+      env:
+        SDK_VERSION: ${{ inputs.version }}
+        SDK_PACKAGE: ${{ inputs.package }}
+      run: |
+        set -euo pipefail
+
+        base_url="https://repo.huaweicloud.com/openharmony/compiler/cangjie/${SDK_VERSION}"
+        archive="${RUNNER_TEMP}/${SDK_PACKAGE}"
+        checksum_file="${archive}.sha256"
+        install_root="${RUNNER_TEMP}/cangjie-sdk/${SDK_VERSION}"
+
+        mkdir -p "$install_root"
+        curl -fsSL --retry 3 --retry-delay 2 "${base_url}/${SDK_PACKAGE}" -o "$archive"
+        curl -fsSL --retry 3 --retry-delay 2 "${base_url}/${SDK_PACKAGE}.sha256" -o "$checksum_file"
+
+        expected_sha256="$(awk '{print $1}' "$checksum_file")"
+        actual_sha256="$(sha256sum "$archive" | awk '{print $1}')"
+        if [[ -z "$expected_sha256" || "${expected_sha256,,}" != "$actual_sha256" ]]; then
+          echo "SHA-256 verification failed for ${SDK_PACKAGE}" >&2
+          exit 1
+        fi
+
+        unzip -q "$archive" -d "$install_root"
+        rm -f "$archive" "$checksum_file"
+
+    - name: Configure Cangjie SDK
+      shell: bash
+      env:
+        SDK_VERSION: ${{ inputs.version }}
+      run: |
+        set -euo pipefail
+        sdk_root="${RUNNER_TEMP}/cangjie-sdk/${SDK_VERSION}"
+        sdk_home=""
+
+        while IFS= read -r -d '' envsetup; do
+          candidate="${envsetup%/envsetup.sh}"
+          if [[ -x "${candidate}/bin/cjc" ]]; then
+            sdk_home="$candidate"
+            break
+          fi
+        done < <(find "$sdk_root" -type f -name envsetup.sh -print0)
+
+        if [[ -z "$sdk_home" ]]; then
+          echo "Could not find envsetup.sh beside bin/cjc in ${sdk_root}" >&2
+          find "$sdk_root" -maxdepth 4 -type f \( -name envsetup.sh -o -path '*/bin/cjc' \) -print >&2
+          exit 1
+        fi
+
+        printf 'CANGJIE_HOME=%s\n' "$sdk_home" >> "$GITHUB_ENV"
+        printf '%s\n' "${sdk_home}/bin" >> "$GITHUB_PATH"
+
+    - name: Save Cangjie SDK cache
+      if: steps.cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        path: ${{ runner.temp }}/cangjie-sdk/${{ inputs.version }}
+        key: ${{ runner.os }}-${{ runner.arch }}-cangjie-sdk-${{ inputs.version }}-${{ inputs.package }}
