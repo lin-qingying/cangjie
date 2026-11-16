@@ -55,6 +55,7 @@ object CfirGenericBareClassifierAccessChecker : CfirQualifiedAccessChecker() {
                 call is CfirFunctionCall && call.explicitReceiver === expression
             }) return
         if (expression.isQualifierOfEnumConstructorWithFixedOwner()) return
+        if (expression.isEnumPatternOwnerQualifier()) return
 
         val resolvedReference = expression.calleeReference as? CfirResolvedNamedReference ?: return
         val classLikeSymbol = resolvedSymbol as? CfirClassLikeSymbol<*> ?: return

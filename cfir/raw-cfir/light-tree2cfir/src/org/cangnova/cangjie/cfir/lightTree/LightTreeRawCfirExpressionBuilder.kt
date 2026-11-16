@@ -1703,11 +1703,31 @@ class LightTreeRawCfirExpressionBuilder(
                     subPatterns.add(convertPattern(child, ownerStatus, ownerIsLocal, ownerIsVar))
                 }
             }
-            val refText = refExpr?.asText() ?: "<enum-pattern>"
+            /*
+             * 限定名模式 `E.A` / `Alias<Int64>.B(x)`：`.` 之前是类型限定符，按普通表达式转换，
+             * 由 resolve 阶段作为 receiver 解析；constructor 引用只承载 `.` 之后的短名。
+             * 裸名字模式没有限定符。与 PSI builder 保持同一拆分。
+             */
+            var qualifierNode: LighterASTNode? = null
+            var constructorNameNode: LighterASTNode? = refExpr
+            if (refExpr?.tokenType == CjNodeTypes.DOT_QUALIFIED_EXPRESSION) {
+                constructorNameNode = null
+                var afterDot = false
+                tree.forEachChildren(refExpr) { child ->
+                    val tokenType = child.tokenType
+                    when {
+                        tokenType == CjTokens.DOT -> afterDot = true
+                        !afterDot && isSemanticToken(tokenType) -> qualifierNode = child
+                        afterDot && constructorNameNode == null && isSemanticToken(tokenType) -> constructorNameNode = child
+                    }
+                }
+            }
+            val constructorText = constructorNameNode?.asText()
             buildEnumPattern {
                 source = node.toSource()
+                ownerQualifier = qualifierNode?.let { qualifier -> convertExpression(qualifier) }
                 constructorReference = buildNamedReference(
-                    if (refText.startsWith("<")) Name.special(refText) else Name.identifier(refText),
+                    if (constructorText.isNullOrEmpty()) Name.special("<enum-pattern>") else Name.identifier(constructorText),
                     refExpr?.toSource() ?: node.toSource(),
                 )
                 arguments.addAll(subPatterns)

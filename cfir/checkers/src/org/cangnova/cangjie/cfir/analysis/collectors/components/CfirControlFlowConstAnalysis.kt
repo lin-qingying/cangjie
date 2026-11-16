@@ -5,7 +5,7 @@ import kotlinx.collections.immutable.persistentMapOf
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirEnum
-import org.cangnova.cangjie.cfir.declarations.enumPatternConstructorAccessOrNull
+import org.cangnova.cangjie.cfir.declarations.constructorNameOrNull
 import org.cangnova.cangjie.cfir.declarations.payloadArity
 import org.cangnova.cangjie.cfir.expressions.CfirAssignment
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
@@ -64,6 +64,7 @@ import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
 import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.isIntegerType
+import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
 import org.cangnova.cangjie.cfir.resolve.match.constantPatternLiteral
 import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
 import org.cangnova.cangjie.name.OperatorNameConventions
@@ -351,10 +352,7 @@ internal class CfirControlFlowConstAnalysis {
                 val enumValue = value as? ConstValue.Enum ?: return null
                 val resolvedConstructor = constructorReference.resolvedEnumConstructorSymbolOrNull()
                 if (resolvedConstructor != null && resolvedConstructor != enumValue.constructor) return false
-                if (resolvedConstructor == null &&
-                    constructorReference.enumPatternConstructorAccessOrNull()?.constructorName != enumValue.constructor.name
-                ) return false
-                if (resolvedConstructor == null && constructorReference.enumPatternConstructorAccessOrNull() == null) return null
+                if (resolvedConstructor == null && constructorNameOrNull() != enumValue.constructor.name) return false
                 true
             }
 
@@ -578,9 +576,18 @@ internal class CfirControlFlowConstAnalysis {
         else -> null
     }
 
-    /** 读取完成前后引用中已确定的 enum constructor。 */
-    private fun CfirReference.resolvedEnumConstructorSymbolOrNull(): CfirEnumConstructorSymbol? =
-        resolvedSymbolOrNull() as? CfirEnumConstructorSymbol
+    /**
+     * 读取完成前后引用中已确定的 enum constructor，并归一到 enum 声明处的原始符号。
+     *
+     * 泛型 enum 的 use-site（`E<Int64>.A(1)`）经 substitution scope 解析到的是 substitution override
+     * 副本，而 pattern 的 constructor 引用指向 enum 声明里的原始符号。常量域按 constructor 符号身份
+     * 比较 tag，表达式与 pattern 两侧必须落在同一个符号上，否则同一个 constructor 会被判成不匹配、
+     * 把可达分支误报为 unreachable。
+     */
+    private fun CfirReference.resolvedEnumConstructorSymbolOrNull(): CfirEnumConstructorSymbol? {
+        val symbol = resolvedSymbolOrNull() as? CfirEnumConstructorSymbol ?: return null
+        return if (symbol.isBound) symbol.unwrapSubstitutionOverrides() else symbol
+    }
 
     /** CFG 传播使用的常量抽象域。 */
     private sealed interface ConstValue {
