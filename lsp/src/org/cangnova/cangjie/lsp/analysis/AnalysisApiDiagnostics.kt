@@ -25,6 +25,7 @@ internal object AnalysisApiDiagnostics {
         showDiagnosticFactoryNames: Boolean = false,
     ): List<Diagnostic> {
         return diagnostics.flatMap { diagnostic ->
+            val diagnosticData = CangjieLspDiagnosticData.create(document, diagnostic)
             diagnostic.lspRanges(document).map { range ->
                 Diagnostic().apply {
                     this.range = range
@@ -38,6 +39,7 @@ internal object AnalysisApiDiagnostics {
                     this.severity = diagnostic.severity.toLspSeverity()
                     this.source = source
                     this.code = Either.forLeft(diagnostic.factoryName)
+                    this.data = diagnosticData.toJson()
                 }
             }
         }

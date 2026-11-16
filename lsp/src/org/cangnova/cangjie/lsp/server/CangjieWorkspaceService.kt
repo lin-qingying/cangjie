@@ -2,6 +2,8 @@ package org.cangnova.cangjie.lsp.server
 
 import org.cangnova.cangjie.lsp.completion.LspCompletionCommandHandler
 import org.cangnova.cangjie.lsp.completion.LspCompletionCommands
+import org.cangnova.cangjie.lsp.quickfix.LspQuickFixCommandHandler
+import org.cangnova.cangjie.lsp.quickfix.LspQuickFixCommands
 import org.eclipse.lsp4j.DidChangeConfigurationParams
 import org.eclipse.lsp4j.DidChangeWatchedFilesParams
 import org.eclipse.lsp4j.DidChangeWorkspaceFoldersParams
@@ -76,16 +78,19 @@ class CangjieWorkspaceService(
     /**
      * 处理 workspace/executeCommand 请求。
      *
-     * 目前只路由补全的 `applyCompletion`：候选带空 `textEdit`，客户端接受候选后自动执行该命令，
-     * 服务端据此算出编辑并**请求** `workspace/applyEdit` 让客户端落盘。
+     * 路由补全插入和 quick-fix ModCommand 两类命令；客户端接受动作后，服务端通过
+     * workspace/applyEdit 请求客户端应用编辑。
      *
      * 未识别的命令仍返回空对象作为协议占位（客户端可能发送别处声明的命令），
-     * 但补全命令的失败路径一律返回**明确错误**，不静默成功。
+     * 补全和 quick-fix 命令的失败路径均返回明确错误，不静默成功。
      */
     override fun executeCommand(params: ExecuteCommandParams): CompletableFuture<Any> {
         logger.info("====> executeCommand: ${params.command}")
         if (params.command == LspCompletionCommands.APPLY_COMPLETION) {
             return completionCommands.applyCompletion(params.arguments ?: emptyList())
+        }
+        if (params.command == LspQuickFixCommands.APPLY_MOD_COMMAND) {
+            return quickFixCommands.applyModCommand(params.arguments ?: emptyList())
         }
         return CompletableFuture.completedFuture(Any()).also {
             it.thenAccept { logger.info("<==== executeCommand") }
@@ -105,6 +110,25 @@ class CangjieWorkspaceService(
         // 补全插入靠客户端应用编辑：客户端能力在 initialize 时记进 workspaceState。
         supportsApplyEdit = {
             serverContext.workspaceState.initializeParams()?.capabilities?.workspace?.applyEdit == true
+        },
+    )
+
+    /**
+     * Quick-fix command handler; the client owns the resulting document edit and undo step.
+     */
+    private val quickFixCommands = LspQuickFixCommandHandler(
+        documentStore = serverContext.documentStore,
+        clientProvider = { serverContext.client },
+        supportsApplyEdit = {
+            serverContext.workspaceState.initializeParams()?.capabilities?.workspace?.applyEdit == true
+        },
+        supportsDocumentChanges = {
+            serverContext.workspaceState.initializeParams()
+                ?.capabilities?.workspace?.workspaceEdit?.documentChanges == true
+        },
+        supportsResourceOperation = { operation ->
+            operation in serverContext.workspaceState.initializeParams()
+                ?.capabilities?.workspace?.workspaceEdit?.resourceOperations.orEmpty()
         },
     )
 
