@@ -27,12 +27,18 @@
 | `analysis-api-cfir` | 基于 CFIR 的 analysis 后端，含 `analysis-api-cfir-generator` |
 | `low-level-api-cfir` | 低层分析 API 的 CFIR 实现 |
 
+### 宏语义展开
+
+| 子模块 | 职责 |
+|---|---|
+| `macro-expansion` | 宏语义展开的宿主无关编排：环境 SPI、服务与触发（Analysis 层一等能力） |
+
 ### 工具与基础设施
 
 | 子模块 | 职责 |
 |---|---|
 | `analysis-internal-utils` | 模块内部工具 |
-| `cj-references` | 跨语言引用支持 |
+| `cj-references` | 仓颉引用与查找（引用解析、查找用法） |
 | `analysis-tools` | 分析工具集 |
 
 ### Stubs / Decompiled / Light Declarations
@@ -49,6 +55,7 @@
 | 子模块 | 职责 |
 |---|---|
 | `analysis-test-framework` | 分析 API 测试框架（对齐 Kotlin `analysis-api-impl-base` testFixtures） |
+| `analysis-real-project-test` | 真实项目对照测试：先用 cjpm 编译确认真实项目无错误，再在同一项目上运行 CFIR 分析 |
 | `analysis-performance-test` | 性能统计测试入口：指标断言、报表产出、OTLP 导出；用法见 `docs/analysis-performance-statistics.md` |
 
 ## 设计原则

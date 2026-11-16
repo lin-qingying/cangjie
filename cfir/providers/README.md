@@ -23,8 +23,8 @@ CFIR 中的 Symbol / Extension / Call providers，对齐 Kotlin K2 `compiler/fir
 
 ## 依赖
 
-- `:cfir:cfir-tree`、`:cfir:cfir-cones`、`:cfir:cfir-common`、`:cfir:semantics`
-- `:common`
+- `:cfir:cfir-tree`、`:cfir:cfir-cones`
+- `:common`、`:util`、`:resolution.common`
 
 ## 命令
 

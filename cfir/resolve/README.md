@@ -12,6 +12,7 @@ RAW_CFIR
   → STATUS          声明状态（public / private / open / abstract / mut / static）
   → EXTENSIONS      extend 声明（仓颉特有）
   → IMPLICIT_TYPES  隐式类型推断
+  → CJMP_MATCHING   CJMP（common/specific）配对
   → BODY_RESOLVE    方法体推断、重载解析
 ```
 
@@ -30,7 +31,6 @@ RAW_CFIR
 | `cfir.resolve.inference` | 类型推断 |
 | `cfir.resolve.providers` | 解析阶段使用的 providers |
 | `cfir.resolve.dfa` | 数据流分析（DFA） |
-| `cfir.constraints` | 约束系统 |
 
 ## 设计要点
 
@@ -41,7 +41,7 @@ RAW_CFIR
 
 ## 依赖
 
-- `:cfir:cfir-tree`、`:cfir:cfir-cones`、`:cfir:cfir-common`、`:cfir:semantics`、`:cfir:providers`、`:cfir:checkers`
+- `:cfir:cfir-tree`、`:cfir:cfir-cones`、`:cfir:cfir-common`、`:cfir:semantics`、`:cfir:providers`
 - `:resolution.common`（类型推断 / 约束公共层）
 - `:common`、`:common:diagnostics`、`:util`
 

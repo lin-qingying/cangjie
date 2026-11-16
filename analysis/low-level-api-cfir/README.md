@@ -15,9 +15,11 @@
 
 ## 依赖
 
-- `:cfir:entrypoint`、`:cfir:resolve`、`:cfir:checkers`、`:cfir:cfir-tree`、`:cfir:cfir-cones`
-- `:analysis:analysis-api`、`:analysis:analysis-api-platform-interface`、`:analysis:analysis-api-impl-base`
-- `:psi`
+- `:cfir:cfir-common`、`:cfir:cfir-cones`、`:cfir:cfir-tree`、`:cfir:resolve`、`:cfir:providers`、`:cfir:semantics`、`:cfir:checkers`、`:cfir:entrypoint`、`:cfir:raw-cfir:raw-cfir-common`
+- `:analysis:analysis-api`、`:analysis:analysis-api-platform-interface`、`:analysis:analysis-api-impl-base`、`:analysis:analysis-internal-utils`
+- `:analysis:decompiled:decompiler-to-stubs`、`:analysis:decompiled:decompiler-to-file-stubs`、`:analysis:decompiled:decompiler-to-psi`
+- `:analysis:stubs`、`:analysis:light-declarations`、`:analysis:symbol-light-declarations`
+- `:common`、`:common:diagnostics`、`:util`、`:psi`
 
 ## 命令
 

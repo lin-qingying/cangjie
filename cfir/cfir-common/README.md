@@ -17,7 +17,7 @@ CFIR 树与处理链共享的最底层抽象。对齐 Kotlin K2 `compiler/fir/fi
 
 ## 依赖
 
-- `:common`、`:common:diagnostics`、`:util`、`:compiler:config`
+- `:common`、`:util`、`:compiler:config`
 
 不依赖 `:psi` 与 `:cfir:cfir-tree`。
 

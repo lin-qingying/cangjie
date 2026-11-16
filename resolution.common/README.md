@@ -53,9 +53,3 @@
 ## 调用方
 
 主要被 `:cfir:resolve` 依赖；其它解析阶段如有跨阶段约束 / 推断需求，亦应优先复用本模块抽象。
-
-## 相关文档
-
-- `../docs/type-inference-four-systems-comparison.md` — 四套类型推断对照
-- `../docs/cfir-body-resolve-constraint-system-design.md` — BODY_RESOLVE 约束系统
-- `../docs/plan-conflicting-type-constraints.md`、`../docs/plan-operator-overload-numeric-widening.md`

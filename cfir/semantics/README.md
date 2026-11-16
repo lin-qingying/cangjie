@@ -22,8 +22,8 @@
 
 ## 依赖
 
-- `:cfir:cfir-tree`、`:cfir:cfir-cones`、`:cfir:cfir-common`
-- `:common`、`:common:diagnostics`
+- `:cfir:cfir-tree`、`:cfir:cfir-common`、`:cfir:providers`
+- `:common`、`:resolution.common`
 
 ## 命令
 

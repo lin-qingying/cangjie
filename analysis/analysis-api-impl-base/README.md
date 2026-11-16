@@ -18,6 +18,8 @@
 ## 依赖
 
 - `:analysis:analysis-api`、`:analysis:analysis-api-platform-interface`
+- `:analysis:cj-references`、`:analysis:decompiled:decompiler-to-psi`
+- `:common`、`:psi`
 
 ## 命令
 

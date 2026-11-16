@@ -9,11 +9,9 @@
 
 ## 典型索引
 
-- 类短名索引
-- 函数短名索引
-- 包级声明索引
-- 继承关系索引
-- 注解使用索引
+- 文件级：stub 种类、顶级 classifier 名称、顶级 callable 名称（`CaStubFileProvider`）
+- 包级：已知包 FqName 集合、包下顶级 classifier / callable 名称（`CaStubPackageIndex`）
+- 类级：类成员名集合（`CaStubIndexFacade.getClassMemberNames`）
 
 ## 测试
 
@@ -32,8 +30,8 @@
 
 ## 依赖
 
-- `:psi`
-- `:analysis:analysis-api`、`:analysis:analysis-api-platform-interface`、`:analysis:analysis-api-impl-base`
+- `:psi`、`:common`
+- `:analysis:analysis-api`、`:analysis:analysis-api-platform-interface`、`:analysis:analysis-internal-utils`
 
 ## 命令
 

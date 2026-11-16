@@ -14,8 +14,7 @@
 
 ## 依赖
 
-- `:macro:macro-common`
-- `:util`、`:common`
+- `:macro:macro-common`（`api`；`:common` 等经其传递）
 
 ## 命令
 

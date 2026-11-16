@@ -18,15 +18,27 @@
 | `:code-insight:highlighting` | 高亮 | 词法/结构/语义着色、属性 key、CDoc 渲染 |
 | `:code-insight:completion` | 补全 | contributor、section、lookup、排序、插入、恢复、统计 |
 | `:code-insight:code-actions` | 快速修复、生成成员 | quick fixes、override/implement |
-| `:code-insight:hints` | 内联提示 | 类型、参数名、lambda、调用链、注解参数 |
+| `:code-insight:hints` | 内联提示 | 类型、参数名、lambda、调用链、注解参数、区间开闭性 |
 | `:code-insight:refactoring` | 重命名与重构 | rename 处理器、headless renamer、名字校验、安全删除 |
+
+## Quick Documentation
+
+`:code-insight:highlighting` owns the shared documentation pipeline under `org.cangnova.cangjie.documentation`:
+
+- `api` defines PSI-free content and renderer contracts.
+- `cdoc` converts CDoc descriptors and PSI ownership into the content model.
+- `resolve` maps platform targets to Analysis API symbols and documentation content.
+- `html` renders IntelliJ Quick Documentation and accepts host-provided links and sample lookup.
+- `markdown` renders the same content for LSP and other Markdown consumers.
+
+IDE and LSP supply their output-specific presentation and context; neither host enumerates CDoc tags or decides section order.
 
 依赖关系（结果，不是判据）：
 
 ```
-api           ← editor / highlighting / completion / code-actions / hints / refactoring
+api           ← completion / code-actions
 completion    ← code-actions（复用 CompletionImportPlan 的 PSI 应用器）
-editor / highlighting / hints / refactoring 之间无依赖
+editor / highlighting / hints / refactoring 不依赖 api，彼此之间也无依赖
 ```
 
 ## 发布制品

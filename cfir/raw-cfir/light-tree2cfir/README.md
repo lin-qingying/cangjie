@@ -14,7 +14,7 @@
 ## 设计要点
 
 - 与 `psi2cfir` 共享 `:cfir:raw-cfir:raw-cfir-common` 的泛型基类 `AbstractRawCfirBuilder<T>`
-- 不依赖 `:psi`——直接处理 LightTree
+- 对 `:psi` 有 `api` 依赖（用于共享 PSI 类型定义），但主转换逻辑直接处理 LightTree
 - 产物与 `psi2cfir` 等价（同一份 Raw CFIR 节点定义）
 
 ## testFixtures
@@ -39,4 +39,3 @@
 ## 相关文档
 
 - `../README.md` — Raw CFIR 聚合说明
-- `../../../docs/psi-cfir-ast-chir-alignment.md` — 节点对照
