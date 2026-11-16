@@ -19,6 +19,7 @@ dependencies {
     compileOnly("com.jetbrains.intellij.platform:core-ui:$intellijVersion") { isTransitive = false }
 
     implementation(project(":code-insight:api"))
+    implementation(project(":code-insight:editor"))
     // import 族 quick fix 复用补全链路的导入计划契约与写入应用器。
     implementation(project(":code-insight:completion"))
     implementation(project(":analysis:analysis-api"))

@@ -22,13 +22,20 @@ object CangJieHighlightingLexicalKeys {
     private val keys2: MutableMap<IElementType, TextAttributesKey> = HashMap()
 
     init {
-        SyntaxHighlighterBase.fillMap(keys1, CjTokens.KEYWORDS, CangJieHighlightingColors.KEYWORD)
-        SyntaxHighlighterBase.fillMap(keys1, CjTokens.BASICTYPES, CangJieHighlightingColors.KEYWORD)
+        SyntaxHighlighterBase.fillMap(
+            keys1,
+            TokenSet.andNot(CjTokens.KEYWORDALL, CjTokens.BASICTYPES),
+            CangJieHighlightingColors.KEYWORD,
+        )
+        SyntaxHighlighterBase.fillMap(keys1, CjTokens.BASICTYPES, CangJieHighlightingColors.BASIC_TYPE_REFERENCE)
 
         keys1[CjTokens.LET_KEYWORD] = CangJieHighlightingColors.LET_KEYWORD
         keys1[CjTokens.VAR_KEYWORD] = CangJieHighlightingColors.VAR_KEYWORD
         keys1[CjTokens.CONST_KEYWORD] = CangJieHighlightingColors.CONST_KEYWORD
         keys1[CjTokens.QUOTE_KEYWORD] = CangJieHighlightingColors.QUOTE_KEYWORD
+        keys1[CjTokens.MUT_KEYWORD] = CangJieHighlightingColors.MUT_KEYWORD
+        keys1[CjTokens.PROP_KEYWORD] = CangJieHighlightingColors.PROP_KEYWORD
+        keys1[CjTokens.STATIC_KEYWORD] = CangJieHighlightingColors.STATIC_KEYWORD
 
         keys1[CjTokens.INTEGER_LITERAL] = CangJieHighlightingColors.NUMBER
         keys1[CjTokens.FLOAT_LITERAL] = CangJieHighlightingColors.NUMBER
@@ -57,6 +64,9 @@ object CangJieHighlightingLexicalKeys {
         keys1[CjTokens.QUEST] = CangJieHighlightingColors.QUEST
         keys1[CjTokens.DOT] = CangJieHighlightingColors.DOT
         keys1[CjTokens.ARROW] = CangJieHighlightingColors.ARROW
+        keys1[CjTokens.DOUBLE_ARROW] = CangJieHighlightingColors.DOUBLE_ARROW
+        keys1[CjTokens.DOUBLE_COLON] = CangJieHighlightingColors.DOUBLE_COLON
+        keys1[CjTokens.LTCOLON] = CangJieHighlightingColors.LT_COLON
 
         keys1[CjTokens.OPEN_QUOTE] = CangJieHighlightingColors.STRING
         keys1[CjTokens.CLOSING_QUOTE] = CangJieHighlightingColors.STRING

@@ -18,48 +18,48 @@ object ModifierQuickFixFactories {
     /**
      * `RepeatedModifier`：重复修饰符（如 `public public`），删除重复项。
      */
-    val repeatedModifier: CangJieQuickFixFactory.IntentionBased<CaCfirDiagnostic.RepeatedModifier> =
-        CangJieQuickFixFactory.IntentionBased { diagnostic ->
+    val repeatedModifier: CangJieQuickFixFactory.ModCommandBased<CaCfirDiagnostic.RepeatedModifier> =
+        CangJieQuickFixFactory.ModCommandBased { diagnostic ->
             listOf(RemoveModifierQuickFix(diagnostic.psi, diagnostic.modifier, removeText(diagnostic.modifier)))
         }
 
     /**
      * `RedundantModifier`：被另一修饰符冗余（如 `open abstract`），删除冗余项。
      */
-    val redundantModifier: CangJieQuickFixFactory.IntentionBased<CaCfirDiagnostic.RedundantModifier> =
-        CangJieQuickFixFactory.IntentionBased { diagnostic ->
+    val redundantModifier: CangJieQuickFixFactory.ModCommandBased<CaCfirDiagnostic.RedundantModifier> =
+        CangJieQuickFixFactory.ModCommandBased { diagnostic ->
             listOf(RemoveModifierQuickFix(diagnostic.psi, diagnostic.modifier, removeText(diagnostic.modifier)))
         }
 
     /**
      * `WrongModifierTarget`：修饰符不适用于目标声明，删除该修饰符。
      */
-    val wrongModifierTarget: CangJieQuickFixFactory.IntentionBased<CaCfirDiagnostic.WrongModifierTarget> =
-        CangJieQuickFixFactory.IntentionBased { diagnostic ->
+    val wrongModifierTarget: CangJieQuickFixFactory.ModCommandBased<CaCfirDiagnostic.WrongModifierTarget> =
+        CangJieQuickFixFactory.ModCommandBased { diagnostic ->
             listOf(RemoveModifierQuickFix(diagnostic.psi, diagnostic.modifier, removeText(diagnostic.modifier)))
         }
 
     /**
      * `WrongModifierContainingDeclaration`：修饰符不适用于所在容器，删除该修饰符。
      */
-    val wrongModifierContainingDeclaration: CangJieQuickFixFactory.IntentionBased<CaCfirDiagnostic.WrongModifierContainingDeclaration> =
-        CangJieQuickFixFactory.IntentionBased { diagnostic ->
+    val wrongModifierContainingDeclaration: CangJieQuickFixFactory.ModCommandBased<CaCfirDiagnostic.WrongModifierContainingDeclaration> =
+        CangJieQuickFixFactory.ModCommandBased { diagnostic ->
             listOf(RemoveModifierQuickFix(diagnostic.psi, diagnostic.modifier, removeText(diagnostic.modifier)))
         }
 
     /**
      * `RedundantModifierForTarget`：对目标冗余的修饰符，删除。
      */
-    val redundantModifierForTarget: CangJieQuickFixFactory.IntentionBased<CaCfirDiagnostic.RedundantModifierForTarget> =
-        CangJieQuickFixFactory.IntentionBased { diagnostic ->
+    val redundantModifierForTarget: CangJieQuickFixFactory.ModCommandBased<CaCfirDiagnostic.RedundantModifierForTarget> =
+        CangJieQuickFixFactory.ModCommandBased { diagnostic ->
             listOf(RemoveModifierQuickFix(diagnostic.psi, diagnostic.modifier, removeText(diagnostic.modifier)))
         }
 
     /**
      * `DeprecatedModifierForTarget`：已废弃的修饰符用法，删除。
      */
-    val deprecatedModifierForTarget: CangJieQuickFixFactory.IntentionBased<CaCfirDiagnostic.DeprecatedModifierForTarget> =
-        CangJieQuickFixFactory.IntentionBased { diagnostic ->
+    val deprecatedModifierForTarget: CangJieQuickFixFactory.ModCommandBased<CaCfirDiagnostic.DeprecatedModifierForTarget> =
+        CangJieQuickFixFactory.ModCommandBased { diagnostic ->
             listOf(RemoveModifierQuickFix(diagnostic.psi, diagnostic.modifier, removeText(diagnostic.modifier)))
         }
 
@@ -67,8 +67,8 @@ object ModifierQuickFixFactories {
      * `IncompatibleModifiers`：两个互斥修饰符。诊断不指明删哪个，
      * 保守地为每个修饰符各产出一条修复，由用户选择。
      */
-    val incompatibleModifiers: CangJieQuickFixFactory.IntentionBased<CaCfirDiagnostic.IncompatibleModifiers> =
-        CangJieQuickFixFactory.IntentionBased { diagnostic ->
+    val incompatibleModifiers: CangJieQuickFixFactory.ModCommandBased<CaCfirDiagnostic.IncompatibleModifiers> =
+        CangJieQuickFixFactory.ModCommandBased { diagnostic ->
             listOf(
                 RemoveModifierQuickFix(diagnostic.psi, diagnostic.modifier1, removeText(diagnostic.modifier1)),
                 RemoveModifierQuickFix(diagnostic.psi, diagnostic.modifier2, removeText(diagnostic.modifier2)),
@@ -85,8 +85,8 @@ object P1QuickFixFactories {
      *
      * 诊断 PSI 是 [CjImportItem]；分组 import 中只删叶项，独立语句整句删除。
      */
-    val unusedImport: CangJieQuickFixFactory.IntentionBased<CaCfirDiagnostic.UnusedImport> =
-        CangJieQuickFixFactory.IntentionBased { diagnostic ->
+    val unusedImport: CangJieQuickFixFactory.ModCommandBased<CaCfirDiagnostic.UnusedImport> =
+        CangJieQuickFixFactory.ModCommandBased { diagnostic ->
             listOf(RemoveImportQuickFix(diagnostic.psi))
         }
 
@@ -96,11 +96,11 @@ object P1QuickFixFactories {
      * 缺失文本来自穷尽性分析器的规范化模式（如枚举构造器 `A`、通配 `_`），
      * 每个文本产出一条「补 `case => ()` 分支」修复。
      */
-    val nonExhaustiveMatch: CangJieQuickFixFactory.IntentionBased<CaCfirDiagnostic.NonExhaustiveMatch> =
-        CangJieQuickFixFactory.IntentionBased { diagnostic ->
+    val nonExhaustiveMatch: CangJieQuickFixFactory.ModCommandBased<CaCfirDiagnostic.NonExhaustiveMatch> =
+        CangJieQuickFixFactory.ModCommandBased { diagnostic ->
             val matchExpression = diagnostic.psi as? CjMatchExpression
                 ?: diagnostic.psi.psiTreeMatchExpression()
-            val expression = matchExpression ?: return@IntentionBased emptyList()
+            val expression = matchExpression ?: return@ModCommandBased emptyList()
             diagnostic.missingCases.map { missingCase ->
                 AddMatchBranchQuickFix(expression, missingCase)
             }
@@ -112,10 +112,10 @@ object P1QuickFixFactories {
      * replacement 为空（注解未写 replacement）时不产出修复——
      * 「替换成什么」只能由声明方给出，猜测替换是危险的。
      */
-    val deprecatedWarning: CangJieQuickFixFactory.IntentionBased<CaCfirDiagnostic.DeprecatedWarning> =
-        CangJieQuickFixFactory.IntentionBased { diagnostic ->
+    val deprecatedWarning: CangJieQuickFixFactory.ModCommandBased<CaCfirDiagnostic.DeprecatedWarning> =
+        CangJieQuickFixFactory.ModCommandBased { diagnostic ->
             val replacement = diagnostic.replacement.trim()
-            if (replacement.isEmpty()) return@IntentionBased emptyList()
+            if (replacement.isEmpty()) return@ModCommandBased emptyList()
             listOf(ReplaceWithQuickFix(diagnostic.psi, diagnostic.name.asString(), replacement))
         }
 

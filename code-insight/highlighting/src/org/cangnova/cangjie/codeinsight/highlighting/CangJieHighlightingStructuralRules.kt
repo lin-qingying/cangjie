@@ -27,7 +27,9 @@ package org.cangnova.cangjie.codeinsight.highlighting
 import com.intellij.codeInsight.daemon.impl.HighlightInfoType
 import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.psi.CjFieldVariable
+import org.cangnova.cangjie.psi.CjExtend
 import org.cangnova.cangjie.psi.CjFunction
+import org.cangnova.cangjie.psi.CjLambdaExpression
 import org.cangnova.cangjie.psi.CjParameter
 import org.cangnova.cangjie.psi.CjPatternVariable
 import org.cangnova.cangjie.psi.CjProperty
@@ -35,7 +37,9 @@ import org.cangnova.cangjie.psi.CjTypeAlias
 import org.cangnova.cangjie.psi.CjTypeParameter
 import org.cangnova.cangjie.psi.CjTypeStatement
 import org.cangnova.cangjie.psi.CjVariable
+import org.cangnova.cangjie.psi.CjBlockExpression
 import org.cangnova.cangjie.psi.psiUtil.isAbstract
+import org.cangnova.cangjie.psi.psiUtil.getStrictParentOfType
 
 /**
  * 仓颉 PSI 结构元素到 HighlightInfoType 的共享规则。
@@ -62,19 +66,38 @@ object CangJieHighlightingStructuralRules {
             else -> CangJieHighlightInfoTypeSemanticNames.INSTANCE_PROPERTY
         }
 
-        is CjFieldVariable -> CangJieHighlightInfoTypeSemanticNames.INSTANCE_PROPERTY
+        is CjFieldVariable -> if (variable.isStatic) {
+            CangJieHighlightInfoTypeSemanticNames.STATIC_VARIABLE
+        } else {
+            CangJieHighlightInfoTypeSemanticNames.INSTANCE_VARIABLE
+        }
         else -> CangJieHighlightInfoTypeSemanticNames.INSTANCE_PROPERTY
     }
 
     /**
      * 为属性声明选择语义高亮信息类型。
      */
-    fun highlightInfoTypeForPropertyDeclaration(property: CjProperty): HighlightInfoType = when {
-        property.isLocal -> CangJieHighlightInfoTypeSemanticNames.LOCAL_VARIABLE
-        property.isCustomPropertyDeclaration() ->
-            CangJieHighlightInfoTypeSemanticNames.INSTANCE_PROPERTY_CUSTOM_PROPERTY_DECLARATION
+    fun highlightInfoTypeForPropertyDeclaration(property: CjProperty): HighlightInfoType? {
+        val containingType = property.getStrictParentOfType<CjTypeStatement>()
+        val hasCustomAccessor = property.isCustomPropertyDeclaration()
+        return when {
+            containingType is CjExtend -> CangJieHighlightInfoTypeSemanticNames.EXTENSION_PROPERTY
+            property.getStrictParentOfType<CjFunction>() != null ||
+                property.getStrictParentOfType<CjLambdaExpression>() != null ||
+                property.getStrictParentOfType<CjBlockExpression>() != null ->
+                CangJieHighlightInfoTypeSemanticNames.LOCAL_VARIABLE
 
-        else -> CangJieHighlightInfoTypeSemanticNames.INSTANCE_PROPERTY
+            containingType == null -> null
+
+            property.isStatic -> if (hasCustomAccessor) {
+                CangJieHighlightInfoTypeSemanticNames.STATIC_PROPERTY_CUSTOM_PROPERTY_DECLARATION
+            } else {
+                CangJieHighlightInfoTypeSemanticNames.PROPERTY
+            }
+
+            hasCustomAccessor -> CangJieHighlightInfoTypeSemanticNames.INSTANCE_PROPERTY_CUSTOM_PROPERTY_DECLARATION
+            else -> CangJieHighlightInfoTypeSemanticNames.INSTANCE_PROPERTY
+        }
     }
 
     /**
@@ -146,7 +169,7 @@ fun textAttributesForCjVariableDeclaration(variable: CjVariable<*>): HighlightIn
 /**
  * 兼容旧调用点的属性声明高亮入口。
  */
-fun textAttributesForCjPropertyDeclaration(property: CjProperty): HighlightInfoType =
+fun textAttributesForCjPropertyDeclaration(property: CjProperty): HighlightInfoType? =
     CangJieHighlightingStructuralRules.highlightInfoTypeForPropertyDeclaration(property)
 
 /**

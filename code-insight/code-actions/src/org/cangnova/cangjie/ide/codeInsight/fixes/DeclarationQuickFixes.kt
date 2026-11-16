@@ -1,12 +1,9 @@
 package org.cangnova.cangjie.ide.codeInsight.fixes
 
-import com.intellij.codeInsight.intention.IntentionAction
-import com.intellij.openapi.command.WriteCommandAction
-import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.project.Project
+import com.intellij.modcommand.ActionContext
+import com.intellij.modcommand.ModPsiUpdater
+import com.intellij.modcommand.Presentation
 import com.intellij.psi.PsiElement
-import com.intellij.psi.PsiFile
-import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjImportDirective
 import org.cangnova.cangjie.psi.CjImportItem
 import org.cangnova.cangjie.psi.CjMatchEntry
@@ -22,21 +19,12 @@ import org.cangnova.cangjie.psi.CjPsiFactory
 internal class RemoveImportQuickFix(
     /** 要移除的导入叶项。 */
     private val importItem: CjImportItem,
-) : IntentionAction {
-    override fun startInWriteAction(): Boolean = true
+) : CangJiePsiUpdateQuickFix<CjImportItem>(importItem, FAMILY_NAME) {
+    override fun getPresentation(context: ActionContext, element: CjImportItem): Presentation =
+        Presentation.of("Remove unused import")
 
-    override fun getFamilyName(): String = FAMILY_NAME
-
-    override fun getText(): String = "Remove unused import"
-
-    override fun isAvailable(project: Project, editor: Editor?, file: PsiFile?): Boolean =
-        file is CjFile && importItem.isValid
-
-    override fun invoke(project: Project, editor: Editor?, file: PsiFile?) {
-        if (!importItem.isValid) return
-        WriteCommandAction.runWriteCommandAction(project, FAMILY_NAME, null, Runnable {
-            importItem.delete()
-        })
+    override fun invoke(context: ActionContext, element: CjImportItem, updater: ModPsiUpdater) {
+        element.delete()
     }
 
     companion object {
@@ -58,34 +46,23 @@ internal class AddMatchBranchQuickFix(
     private val matchExpression: CjMatchExpression,
     /** 缺失的模式文本。 */
     private val missingCaseText: String,
-) : IntentionAction {
-    override fun startInWriteAction(): Boolean = true
+) : CangJiePsiUpdateQuickFix<CjMatchExpression>(matchExpression, FAMILY_NAME) {
+    override fun getPresentation(context: ActionContext, element: CjMatchExpression): Presentation =
+        Presentation.of("Add match branch for '$missingCaseText'")
 
-    override fun getFamilyName(): String = FAMILY_NAME
-
-    override fun getText(): String = "Add match branch for '$missingCaseText'"
-
-    override fun isAvailable(project: Project, editor: Editor?, file: PsiFile?): Boolean =
-        file is CjFile && matchExpression.isValid
-
-    override fun invoke(project: Project, editor: Editor?, file: PsiFile?) {
-        if (!matchExpression.isValid) return
-        WriteCommandAction.runWriteCommandAction(project, FAMILY_NAME, null, Runnable {
-            val entry = CjPsiFactory(project).createMatchEntry("$missingCaseText => ()")
-            val anchor = matchExpression.entries.lastOrNull() ?: return@Runnable
-            val newEntry = matchExpression.addAfter(entry, anchor) as CjMatchEntry
-            // 与上一分支之间补一个换行，保持分支逐行排布。
-            val previousText = anchor.text
-            if (!previousText.endsWith("\n") && anchor.nextSibling is com.intellij.psi.PsiWhiteSpace) {
-                // 既有空白已存在时不重复添加。
-            } else if (!previousText.endsWith("\n")) {
-                matchExpression.addAfter(CjPsiFactory(project).createNewLine(), anchor)
-            }
-            // 移动到分支体，方便用户直接输入实现。
-            (newEntry.body ?: newEntry.expression)?.let { body ->
-                (editor ?: return@let).caretModel.moveToOffset(body.textRange.startOffset + 1)
-            }
-        })
+    override fun invoke(context: ActionContext, element: CjMatchExpression, updater: ModPsiUpdater) {
+        val entry = CjPsiFactory(context.project).createMatchEntry("$missingCaseText => ()")
+        val anchor = element.entries.lastOrNull() ?: return
+        val newEntry = element.addAfter(entry, anchor) as CjMatchEntry
+        // 与上一分支之间补一个换行，保持分支逐行排布。
+        val previousText = anchor.text
+        if (!previousText.endsWith("\n") && anchor.nextSibling !is com.intellij.psi.PsiWhiteSpace) {
+            element.addAfter(CjPsiFactory(context.project).createNewLine(), anchor)
+        }
+        // 光标位置作为 ModCommand 的导航副作用记录，由 IDE/LSP host 各自消费。
+        (newEntry.body ?: newEntry.expression)?.let { body ->
+            updater.moveCaretTo(body.textRange.startOffset + 1)
+        }
     }
 
     companion object {
@@ -107,21 +84,12 @@ internal class ReplaceWithQuickFix(
     private val deprecatedName: String,
     /** 注解给出的替换片段。 */
     private val replacement: String,
-) : IntentionAction {
-    override fun startInWriteAction(): Boolean = true
+) : CangJiePsiUpdateQuickFix<PsiElement>(usageElement, FAMILY_NAME) {
+    override fun getPresentation(context: ActionContext, element: PsiElement): Presentation =
+        Presentation.of("Replace deprecated '$deprecatedName' with '$replacement'")
 
-    override fun getFamilyName(): String = FAMILY_NAME
-
-    override fun getText(): String = "Replace deprecated '$deprecatedName' with '$replacement'"
-
-    override fun isAvailable(project: Project, editor: Editor?, file: PsiFile?): Boolean =
-        file != null && usageElement.isValid
-
-    override fun invoke(project: Project, editor: Editor?, file: PsiFile?) {
-        if (!usageElement.isValid) return
-        WriteCommandAction.runWriteCommandAction(project, FAMILY_NAME, null, Runnable {
-            usageElement.replace(CjPsiFactory(project).createExpression(replacement))
-        })
+    override fun invoke(context: ActionContext, element: PsiElement, updater: ModPsiUpdater) {
+        element.replace(CjPsiFactory(context.project).createExpression(replacement))
     }
 
     companion object {

@@ -1,11 +1,9 @@
 package org.cangnova.cangjie.ide.codeInsight.fixes
 
-import com.intellij.codeInsight.intention.IntentionAction
-import com.intellij.openapi.command.WriteCommandAction
-import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.project.Project
+import com.intellij.modcommand.ActionContext
+import com.intellij.modcommand.ModPsiUpdater
+import com.intellij.modcommand.Presentation
 import com.intellij.psi.PsiElement
-import com.intellij.psi.PsiFile
 import org.cangnova.cangjie.ImportPath
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.cfir.diagnostics.CaCfirDiagnostic
@@ -28,9 +26,9 @@ object ImportQuickFixFactories {
      * `UseExprWithoutImport`：诊断已携带 [CaCfirDiagnostic.UseExprWithoutImport.importPath]，
      * 直接为该路径补一条声明级 import。
      */
-    val useExprWithoutImport: CangJieQuickFixFactory.IntentionBased<CaCfirDiagnostic.UseExprWithoutImport> =
-        CangJieQuickFixFactory.IntentionBased { diagnostic ->
-            val file = diagnostic.psi.containingFile as? CjFile ?: return@IntentionBased emptyList()
+    val useExprWithoutImport: CangJieQuickFixFactory.ModCommandBased<CaCfirDiagnostic.UseExprWithoutImport> =
+        CangJieQuickFixFactory.ModCommandBased { diagnostic ->
+            val file = diagnostic.psi.containingFile as? CjFile ?: return@ModCommandBased emptyList()
             val path = ImportPath(diagnostic.importPath, isAllUnder = false)
             listOf(AddImportQuickFix(file, path))
         }
@@ -41,10 +39,10 @@ object ImportQuickFixFactories {
      * 分组 import（`import a.{b, c}`）中只删未解析的叶项（[CjImportItem.delete] 会维护逗号分隔符），
      * 其余可解析成员不受影响；独立 import 语句则整句删除。
      */
-    val unresolvedImport: CangJieQuickFixFactory.IntentionBased<CaCfirDiagnostic.UnresolvedImport> =
-        CangJieQuickFixFactory.IntentionBased { diagnostic ->
+    val unresolvedImport: CangJieQuickFixFactory.ModCommandBased<CaCfirDiagnostic.UnresolvedImport> =
+        CangJieQuickFixFactory.ModCommandBased { diagnostic ->
             val container = diagnostic.psi.containingImportEntry()
-            if (!container.isValid) return@IntentionBased emptyList()
+            if (!container.isValid) return@ModCommandBased emptyList()
             listOf(RemoveUnresolvedImportQuickFix(container))
         }
 
@@ -70,26 +68,16 @@ internal class AddImportQuickFix(
     private val targetFile: CjFile,
     /** 要追加的导入路径。 */
     private val importPath: ImportPath,
-) : IntentionAction {
-    override fun startInWriteAction(): Boolean = true
+) : CangJiePsiUpdateQuickFix<CjFile>(targetFile, FAMILY_NAME) {
+    override fun getPresentation(context: ActionContext, element: CjFile): Presentation =
+        Presentation.of("Add import '$importPath'")
 
-    override fun getFamilyName(): String = FAMILY_NAME
-
-    override fun getText(): String = "Add import '$importPath'"
-
-    override fun isAvailable(project: Project, editor: Editor?, file: PsiFile?): Boolean =
-        file is CjFile && file.isValid
-
-    override fun invoke(project: Project, editor: Editor?, file: PsiFile?) {
-        val cjFile = file as? CjFile ?: return
-        // 与补全链路一致：导入写入必须在写命令内，保证一次撤销覆盖整条修复。
-        WriteCommandAction.runWriteCommandAction(project, FAMILY_NAME, null, Runnable {
-            val plan = CompletionImportPlan.AddImport(
-                // 表达式文本与本修复无关（不改使用点），填短名仅为满足契约。
-                CompletionImportTargetData(importPath, importPath.importedName?.asString().orEmpty()),
-            )
-            PsiImportPlanApplier(project).apply(cjFile, mapOf(importPath.toString() to plan))
-        })
+    override fun invoke(context: ActionContext, element: CjFile, updater: ModPsiUpdater) {
+        val plan = CompletionImportPlan.AddImport(
+            // 表达式文本与本修复无关（不改使用点），填短名仅为满足契约。
+            CompletionImportTargetData(importPath, importPath.importedName?.asString().orEmpty()),
+        )
+        PsiImportPlanApplier(context.project).apply(element, mapOf(importPath.toString() to plan))
     }
 
     companion object {
@@ -104,21 +92,12 @@ internal class AddImportQuickFix(
 internal class RemoveUnresolvedImportQuickFix(
     /** 要移除的导入叶项或整句导入容器。 */
     private val importEntry: PsiElement,
-) : IntentionAction {
-    override fun startInWriteAction(): Boolean = true
+) : CangJiePsiUpdateQuickFix<PsiElement>(importEntry, FAMILY_NAME) {
+    override fun getPresentation(context: ActionContext, element: PsiElement): Presentation =
+        Presentation.of("Remove unresolved import")
 
-    override fun getFamilyName(): String = FAMILY_NAME
-
-    override fun getText(): String = "Remove unresolved import"
-
-    override fun isAvailable(project: Project, editor: Editor?, file: PsiFile?): Boolean =
-        file is CjFile && importEntry.isValid
-
-    override fun invoke(project: Project, editor: Editor?, file: PsiFile?) {
-        if (!importEntry.isValid) return
-        WriteCommandAction.runWriteCommandAction(project, FAMILY_NAME, null, Runnable {
-            importEntry.delete()
-        })
+    override fun invoke(context: ActionContext, element: PsiElement, updater: ModPsiUpdater) {
+        element.delete()
     }
 
     companion object {

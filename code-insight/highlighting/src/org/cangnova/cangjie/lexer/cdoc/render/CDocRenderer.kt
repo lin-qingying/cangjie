@@ -22,12 +22,14 @@
  *
  */
 
+@file:OptIn(
+    org.cangnova.cangjie.psi.CjNonPublicApi::class,
+    org.cangnova.cangjie.psi.CjImplementationDetail::class,
+)
+
 package org.cangnova.cangjie.lexer.cdoc.render
 
 import com.intellij.codeInsight.documentation.DocumentationManagerUtil
-import com.intellij.lang.documentation.DocumentationMarkup.SECTION_END
-import com.intellij.lang.documentation.DocumentationMarkup.SECTION_HEADER_START
-import com.intellij.lang.documentation.DocumentationMarkup.SECTION_SEPARATOR
 import com.intellij.lang.documentation.QuickDocHighlightingHelper
 import com.intellij.lang.documentation.QuickDocHighlightingHelper.appendStyledCodeBlock
 import com.intellij.lang.documentation.QuickDocHighlightingHelper.appendStyledFragment
@@ -39,10 +41,17 @@ import com.intellij.openapi.editor.colors.CodeInsightColors
 import com.intellij.openapi.editor.colors.EditorColorsManager
 import com.intellij.openapi.editor.colors.TextAttributesKey
 import com.intellij.openapi.editor.markup.TextAttributes
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.DumbService
 import com.intellij.psi.PsiElement
 import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.codeinsight.highlighting.textAttributesKeyForCjElement
+import org.cangnova.cangjie.documentation.api.DocumentationBody
+import org.cangnova.cangjie.documentation.api.DocumentationLink
+import org.cangnova.cangjie.documentation.html.DocumentationLinkSupport
+import org.cangnova.cangjie.documentation.html.HtmlDocumentationRenderer
+import org.cangnova.cangjie.documentation.cdoc.buildDocumentationDescription
+import org.cangnova.cangjie.documentation.cdoc.buildDocumentationModel
 import org.cangnova.cangjie.idea.references.CDocReference
 import org.cangnova.cangjie.lang.CangJieLanguage
 import org.cangnova.cangjie.lexer.cdoc.CDocTemplate
@@ -51,13 +60,13 @@ import org.cangnova.cangjie.lexer.cdoc.psi.impl.CDocLink
 import org.cangnova.cangjie.lexer.cdoc.psi.impl.CDocName
 import org.cangnova.cangjie.lexer.cdoc.psi.impl.CDocSection
 import org.cangnova.cangjie.lexer.cdoc.psi.impl.CDocTag
+import org.cangnova.cangjie.lexer.cdoc.psi.impl.CDocCommentDescriptorImpl
 import org.cangnova.cangjie.psi.CjBlockExpression
 import org.cangnova.cangjie.psi.CjDeclaration
 import org.cangnova.cangjie.psi.CjDeclarationWithBody
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjImplementationDetail
 import org.cangnova.cangjie.psi.CjNonPublicApi
-import org.cangnova.cangjie.psi.CjPsiBundle
 import org.cangnova.cangjie.psi.CjTypeParameterListOwner
 import org.cangnova.cangjie.psi.psiUtil.findDescendantOfType
 import org.cangnova.cangjie.psi.psiUtil.getChildrenOfType
@@ -109,73 +118,30 @@ object CDocRenderer {
         contentTag: CDocTag,
         sections: List<CDocSection> = if (contentTag is CDocSection) listOf(contentTag) else emptyList(),
     ) {
-        insert(CDocTemplate.DescriptionBodyTemplate.CangJie()) {
-            content {
-                appendCDocContent(contentTag)
-            }
-            sections {
-                appendCDocSections(sections)
-            }
+        val descriptor = CDocCommentDescriptorImpl(contentTag, sections)
+        val firstSection = sections.firstOrNull()
+        val declaration = firstSection?.let {
+            PsiTreeUtil.getParentOfType(it, CjDeclaration::class.java, false, CjFile::class.java)
         }
+        val typeParameterNames = (declaration as? CjTypeParameterListOwner)
+            ?.typeParameterList
+            ?.parameters
+            ?.mapNotNull { it.name }
+            ?.toSet()
+            .orEmpty()
+        val body = DocumentationBody(
+            sections = buildDocumentationModel(descriptor, typeParameterNames),
+            description = buildDocumentationDescription(descriptor),
+        )
+        append(
+            HtmlDocumentationRenderer(
+                contentTag.project,
+                linkSupport = CDocRendererLinkSupport(contentTag, sections),
+            ).renderBody(body),
+        )
     }
 
-    private fun StringBuilder.appendCDocContent(docComment: CDocTag): StringBuilder =
-        append(markdownToHtml(docComment, allowSingleParagraph = true))
-
-    private fun StringBuilder.appendCDocSections(sections: List<CDocSection>) {
-        val firstSection = sections.firstOrNull() ?: return
-        val namedDeclaration = PsiTreeUtil.getParentOfType(
-            firstSection, CjDeclaration::class.java, /* strict = */ false, CjFile::class.java
-        )
-
-        fun findTagsByName(name: String) =
-            sequence { sections.forEach { yieldAll(it.findTagsByName(name)) } }
-
-        fun findTagByName(name: String) = findTagsByName(name).firstOrNull()
-
-        val typeParameterNames =
-            (namedDeclaration as? CjTypeParameterListOwner)?.typeParameterList?.parameters
-                ?.mapNotNull { it.name }
-                ?.toSet() ?: emptySet()
-
-        val paramTags = findTagsByName("param").filter { it.getSubjectName() != null }
-        appendTagList(
-            paramTags.filter { it.getSubjectName() !in typeParameterNames },
-            CjPsiBundle.message("kdoc.section.title.parameters"),
-            DefaultLanguageHighlighterColors.PARAMETER,
-        )
-        appendTagList(
-            paramTags.filter { it.getSubjectName() in typeParameterNames },
-            CjPsiBundle.message("kdoc.section.title.type.parameters"),
-            DefaultLanguageHighlighterColors.PARAMETER,
-        )
-
-        val propertyTags = findTagsByName("property").filter { it.getSubjectName() != null }
-        appendTagList(
-            propertyTags,
-            CjPsiBundle.message("kdoc.section.title.properties"),
-            DefaultLanguageHighlighterColors.INSTANCE_FIELD,
-        )
-
-        appendTag(findTagByName("constructor"), CjPsiBundle.message("kdoc.section.title.constructor"))
-
-        appendTag(findTagByName("return"), CjPsiBundle.message("kdoc.section.title.returns"))
-
-        val throwTags = findTagsByName("throws").filter { it.getSubjectName() != null }
-        val exceptionTags = findTagsByName("exception").filter { it.getSubjectName() != null }
-        appendThrows(throwTags, exceptionTags)
-
-        appendAuthors(findTagsByName("author"))
-        appendTag(findTagByName("since"), CjPsiBundle.message("kdoc.section.title.since"))
-        appendTag(findTagByName("suppress"), CjPsiBundle.message("kdoc.section.title.suppress"))
-
-        appendSeeAlso(findTagsByName("see"))
-
-        val sampleTags = findTagsByName("sample").filter { it.getSubjectLink() != null }
-        appendSamplesList(sampleTags)
-    }
-
-    private fun StringBuilder.appendHyperlink(cDocLink: CDocLink) {
+    internal fun StringBuilder.appendHyperlink(cDocLink: CDocLink) {
         val linkText = cDocLink.getLinkText()
         if (DumbService.isDumb(cDocLink.project)) {
             append(linkText)
@@ -195,7 +161,7 @@ object CDocRenderer {
     /**
      * 链接目标的行内属性（对位上游 `textAttributesKeyForKtElement(element)?.attributesKey`）。
      */
-    private fun getTargetLinkElementAttributes(element: PsiElement?): TextAttributes {
+    internal fun getTargetLinkElementAttributes(element: PsiElement?): TextAttributes {
         return element
             ?.let { textAttributesKeyForCjElement(it)?.attributesKey }
             ?.let { getTargetLinkElementAttributes(it) }
@@ -205,11 +171,11 @@ object CDocRenderer {
             }
     }
 
-    private fun getTargetLinkElementAttributes(key: TextAttributesKey): TextAttributes {
+    internal fun getTargetLinkElementAttributes(key: TextAttributesKey): TextAttributes {
         return tuneAttributesForLink(EditorColorsManager.getInstance().globalScheme.getAttributes(key))
     }
 
-    private fun highlightQualifiedName(qualifiedName: String, lastSegmentAttributes: TextAttributes): String {
+    internal fun highlightQualifiedName(qualifiedName: String, lastSegmentAttributes: TextAttributes): String {
         val linkComponents = qualifiedName.split(".")
         val qualifiedPath = linkComponents.subList(0, linkComponents.lastIndex)
         val elementName = linkComponents.last()
@@ -226,7 +192,7 @@ object CDocRenderer {
         }
     }
 
-    private fun CDocLink.getTargetElement(): PsiElement? {
+    internal fun CDocLink.getTargetElement(): PsiElement? {
         return getChildrenOfType<CDocName>().last()
             .references
             .filterIsInstance<CDocReference>()
@@ -234,7 +200,7 @@ object CDocRenderer {
             ?.resolveToElement()
     }
 
-    private fun PsiElement.extractExampleText() = when (this) {
+    internal fun PsiElement.extractExampleText() = when (this) {
         is CjDeclarationWithBody -> {
             when (val body = bodyExpression) {
                 is CjBlockExpression -> body.text.removeSurrounding("{", "}")
@@ -245,7 +211,7 @@ object CDocRenderer {
         else -> text
     }
 
-    private fun trimCommonIndent(text: String): String {
+    internal fun trimCommonIndent(text: String): String {
         fun String.leadingIndent() = indexOfFirst { !it.isWhitespace() }
 
         val lines = text.split('\n')
@@ -253,138 +219,28 @@ object CDocRenderer {
         return lines.joinToString("\n") { it.drop(minIndent) }
     }
 
-    private fun StringBuilder.appendSection(title: String, content: StringBuilder.() -> Unit) {
-        append(SECTION_HEADER_START, title, ":", SECTION_SEPARATOR)
-        content()
-        append(SECTION_END)
-    }
+    internal fun markdownToHtml(text: String, project: Project, allowSingleParagraph: Boolean): String =
+        markdownToHtml(text, project, allowSingleParagraph, linkSupport = null, comment = null)
 
-    private fun StringBuilder.appendSamplesList(sampleTags: Sequence<CDocTag>) {
-        if (!sampleTags.any()) return
+    internal fun markdownToHtml(
+        text: String,
+        project: Project,
+        allowSingleParagraph: Boolean,
+        linkSupport: DocumentationLinkSupport?,
+    ): String = markdownToHtml(text, project, allowSingleParagraph, linkSupport, comment = null)
 
-        appendSection(CjPsiBundle.message("kdoc.section.title.samples")) {
-            sampleTags.forEach {
-                it.getSubjectLink()?.let { subjectLink ->
-                    append("<p>")
-                    this@appendSamplesList.appendHyperlink(subjectLink)
-                    this@appendSamplesList.appendStyledCodeBlock(
-                        subjectLink.project,
-                        CangJieLanguage,
-                        if (DumbService.isDumb(subjectLink.project))
-                            "// " + CjPsiBundle.message("kdoc.comment.unresolved")
-                        else when (val target = subjectLink.getTargetElement()) {
-                            null -> "// " + CjPsiBundle.message("kdoc.comment.unresolved")
-                            else -> trimCommonIndent(target.extractExampleText()).htmlEscape()
-                        }
-                    )
-                }
-            }
-        }
-    }
+    private fun markdownToHtml(comment: CDocTag, allowSingleParagraph: Boolean = false): String =
+        markdownToHtml(comment.getContent(), comment.project, allowSingleParagraph, linkSupport = null, comment = comment)
 
-    private fun StringBuilder.appendSeeAlso(seeTags: Sequence<CDocTag>) {
-        if (!seeTags.any()) return
-
-        val iterator = seeTags.iterator()
-
-        appendSection(CjPsiBundle.message("kdoc.section.title.see.also")) {
-            while (iterator.hasNext()) {
-                val tag = iterator.next()
-                val subjectName = tag.getSubjectName()
-                val link = tag.getChildrenOfType<CDocLink>().lastOrNull()
-                when {
-                    link != null -> this.appendHyperlink(link)
-                    subjectName != null -> DocumentationManagerUtil.createHyperlink(this, subjectName, subjectName, false)
-                    else -> append(tag.getContent())
-                }
-                if (iterator.hasNext()) {
-                    append(",<br>")
-                }
-            }
-        }
-    }
-
-    private fun StringBuilder.appendAuthors(authorTags: Sequence<CDocTag>) {
-        if (!authorTags.any()) return
-
-        val iterator = authorTags.iterator()
-
-        appendSection(CjPsiBundle.message("kdoc.section.title.author")) {
-            while (iterator.hasNext()) {
-                append(iterator.next().getContent())
-                if (iterator.hasNext()) {
-                    append(", ")
-                }
-            }
-        }
-    }
-
-    private fun StringBuilder.appendThrows(throwsTags: Sequence<CDocTag>, exceptionsTags: Sequence<CDocTag>) {
-        if (!throwsTags.any() && !exceptionsTags.any()) return
-
-        appendSection(CjPsiBundle.message("kdoc.section.title.throws")) {
-
-            fun CDocTag.append() {
-                val subjectName = getSubjectName()
-                if (subjectName != null) {
-                    append("<p><code>")
-                    val highlightedLinkLabel = highlightQualifiedName(
-                        subjectName,
-                        getTargetLinkElementAttributes(DefaultLanguageHighlighterColors.CLASS_NAME),
-                    )
-                    DocumentationManagerUtil.createHyperlink(this@appendSection, subjectName, highlightedLinkLabel, false)
-                    append("</code>")
-                    val exceptionDescription = markdownToHtml(this)
-                    if (exceptionDescription.isNotBlank()) {
-                        append(" - $exceptionDescription")
-                    }
-                }
-            }
-
-            throwsTags.forEach { it.append() }
-            exceptionsTags.forEach { it.append() }
-        }
-    }
-
-    private fun StringBuilder.appendTagList(
-        tags: Sequence<CDocTag>,
-        title: String,
-        titleAttributes: TextAttributesKey,
-    ) {
-        if (!tags.any()) {
-            return
-        }
-
-        appendSection(title) {
-            tags.forEach {
-                val subjectName = it.getSubjectName() ?: return@forEach
-
-                append("<p><code>")
-                when (val link = it.getChildrenOfType<CDocLink>().firstOrNull()) {
-                    null -> appendStyledLinkFragment(subjectName, titleAttributes)
-                    else -> appendHyperlink(link)
-                }
-
-                append("</code>")
-                val elementDescription = markdownToHtml(it)
-                if (elementDescription.isNotBlank()) {
-                    append(" - $elementDescription")
-                }
-            }
-        }
-    }
-
-    private fun StringBuilder.appendTag(tag: CDocTag?, title: String) {
-        if (tag != null) {
-            appendSection(title) {
-                append(markdownToHtml(tag))
-            }
-        }
-    }
-
-    private fun markdownToHtml(comment: CDocTag, allowSingleParagraph: Boolean = false): String {
-        val markdownTree = MarkdownParser(GFMFlavourDescriptor()).buildMarkdownTreeFromString(comment.getContent())
-        val markdownNode = MarkdownNode(markdownTree, null, comment)
+    private fun markdownToHtml(
+        text: String,
+        project: Project,
+        allowSingleParagraph: Boolean,
+        linkSupport: DocumentationLinkSupport?,
+        comment: CDocTag?,
+    ): String {
+        val markdownTree = MarkdownParser(GFMFlavourDescriptor()).buildMarkdownTreeFromString(text)
+        val markdownNode = MarkdownNode(text, markdownTree, null, project, linkSupport, comment)
 
         // Avoid wrapping the entire converted contents in a <p> tag if it's just a single paragraph
         val maybeSingleParagraph = markdownNode.children.singleOrNull { it.type != MarkdownTokenTypes.EOL }
@@ -407,12 +263,22 @@ object CDocRenderer {
         return topMarginOmitted
     }
 
-    class MarkdownNode(val node: ASTNode, val parent: MarkdownNode?, val comment: CDocTag) {
-        val children: List<MarkdownNode> = node.children.map { MarkdownNode(it, this, comment) }
+    internal class MarkdownNode(
+        text: String,
+        val node: ASTNode,
+        val parent: MarkdownNode?,
+        val project: Project,
+        val linkSupport: DocumentationLinkSupport?,
+        val comment: CDocTag?,
+    ) {
+        private val sourceText = text
+        val children: List<MarkdownNode> = node.children.map {
+            MarkdownNode(sourceText, it, this, project, linkSupport, comment)
+        }
         val endOffset: Int get() = node.endOffset
         val startOffset: Int get() = node.startOffset
         val type: IElementType get() = node.type
-        val text: String get() = comment.getContent().substring(startOffset, endOffset)
+        val text: String get() = sourceText.substring(startOffset, endOffset)
         fun child(type: IElementType): MarkdownNode? = children.firstOrNull { it.type == type }
     }
 
@@ -463,7 +329,7 @@ object CDocRenderer {
                     val startDelimiter = node.child(MarkdownTokenTypes.BACKTICK)?.text
                     if (startDelimiter != null) {
                         val text = node.text.substring(startDelimiter.length).removeSuffix(startDelimiter)
-                        sb.appendStyledInlineCode(comment.project, CangJieLanguage, text)
+                    sb.appendStyledInlineCode(project, CangJieLanguage, text)
                     }
                 }
 
@@ -482,7 +348,7 @@ object CDocRenderer {
                         }
                     }
                     sb.appendStyledCodeBlock(
-                        project = comment.project,
+                        project = project,
                         language = QuickDocHighlightingHelper.guessLanguage(language) ?: CangJieLanguage,
                         code = contents,
                     )
@@ -503,10 +369,10 @@ object CDocRenderer {
                     if (linkLabelContent != null) {
                         val label = linkLabelContent.joinToString(separator = "") { it.text }
                         val linkText = node.child(MarkdownElementTypes.LINK_TEXT)?.toHtml() ?: label
-                        if (DumbService.isDumb(comment.project)) {
+                        if (DumbService.isDumb(project)) {
                             sb.append(linkText)
                         } else {
-                            comment.findDescendantOfType<CDocName> { it.text == label }
+                            comment?.findDescendantOfType<CDocName> { it.text == label }
                                 ?.references
                                 ?.filterIsInstance<CDocReference>()
                                 ?.firstOrNull()
@@ -519,7 +385,15 @@ object CDocRenderer {
                                         false,
                                     )
                                 }
-                                ?: sb.appendStyledFragment(label, CodeInsightColors.WRONG_REFERENCES_ATTRIBUTES)
+                                ?: run {
+                                    val link = DocumentationLink(label, label.takeIf { '.' in it })
+                                    val rendered = linkSupport?.hyperlink(link, label)
+                                    when {
+                                        rendered != null -> sb.append(rendered)
+                                        comment == null -> sb.append(label)
+                                        else -> sb.appendStyledFragment(label, CodeInsightColors.WRONG_REFERENCES_ATTRIBUTES)
+                                    }
+                                }
                         }
                     } else {
                         sb.append(node.text)
@@ -619,9 +493,9 @@ object CDocRenderer {
         }
     }
 
-    private fun String.htmlEscape(): String = replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    internal fun String.htmlEscape(): String = replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
-    private fun processTableRow(sb: StringBuilder, node: MarkdownNode, cellTag: String, alignment: List<String>) {
+    internal fun processTableRow(sb: StringBuilder, node: MarkdownNode, cellTag: String, alignment: List<String>) {
         sb.append("<tr>")
         for ((i, child) in node.children.filter { it.type == GFMTokenTypes.CELL }.withIndex()) {
             val alignValue = alignment.getOrElse(i) { "" }
@@ -633,7 +507,7 @@ object CDocRenderer {
         sb.append("</tr>")
     }
 
-    private fun getTableAlignment(node: MarkdownNode): List<String> {
+    internal fun getTableAlignment(node: MarkdownNode): List<String> {
         val separatorRow = node.child(GFMTokenTypes.TABLE_SEPARATOR)
             ?: return emptyList()
 
@@ -662,5 +536,33 @@ object CDocRenderer {
             return tuned
         }
         return attributes
+    }
+}
+
+/** 保留 CDoc PSI 中既有链接与示例目标，供旧 renderCDoc 签名桥接到共享 HTML renderer。 */
+private class CDocRendererLinkSupport(
+    root: CDocTag,
+    sections: List<CDocSection>,
+) : DocumentationLinkSupport {
+    private val roots: List<CDocTag> = listOf(root) + sections
+
+    private fun findLink(link: DocumentationLink): CDocLink? =
+        roots.asSequence()
+            .mapNotNull { root -> root.findDescendantOfType<CDocLink> { it.getLinkText() == link.label } }
+            .firstOrNull()
+
+    override fun hyperlink(link: DocumentationLink, label: String): String? {
+        val target = findLink(link) ?: return null
+        return with(CDocRenderer) {
+            buildString { appendHyperlink(target) }
+        }
+    }
+
+    override fun sampleCode(link: DocumentationLink): String? {
+        if (roots.firstOrNull()?.project?.let { project -> DumbService.isDumb(project) } == true) return null
+        val target = findLink(link)
+            ?.let { with(CDocRenderer) { it.getTargetElement() } }
+            ?: return null
+        return with(CDocRenderer) { target.extractExampleText() }
     }
 }

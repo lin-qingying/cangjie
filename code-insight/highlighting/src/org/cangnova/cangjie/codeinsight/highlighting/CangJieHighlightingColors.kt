@@ -89,11 +89,6 @@ object CangJieHighlightingColors {
         "CANGJIE_MACRO_ESCAPE",
         DefaultLanguageHighlighterColors.VALID_STRING_ESCAPE,
     )
-    /** 非法字符串转义序列高亮属性。 */
-    val INVALID_STRING_ESCAPE: TextAttributesKey = TextAttributesKey.createTextAttributesKey(
-        "CANGJIE_INVALID_STRING_ESCAPE",
-        DefaultLanguageHighlighterColors.INVALID_STRING_ESCAPE,
-    )
 
     /** 运算符符号高亮属性。 */
     val OPERATOR_SIGN: TextAttributesKey = TextAttributesKey.createTextAttributesKey(
@@ -120,9 +115,9 @@ object CangJieHighlightingColors {
     /** 点号高亮属性。 */
     val DOT: TextAttributesKey =
         TextAttributesKey.createTextAttributesKey("CANGJIE_DOT", DefaultLanguageHighlighterColors.DOT)
-    /** 安全访问运算符高亮属性。 */
+    /** Option 可选链访问中的问号标记；词法层 QUEST key 仍用于类型前缀。 */
     val SAFE_ACCESS: TextAttributesKey =
-        TextAttributesKey.createTextAttributesKey("CANGJIE_SAFE_ACCESS", DefaultLanguageHighlighterColors.DOT)
+        TextAttributesKey.createTextAttributesKey("CANGJIE_SAFE_ACCESS", DOT)
     /** 问号符号高亮属性。 */
     val QUEST: TextAttributesKey = TextAttributesKey.createTextAttributesKey("CANGJIE_QUEST")
     /** 单箭头符号高亮属性。 */
@@ -133,9 +128,12 @@ object CangJieHighlightingColors {
     /** 类型定义名称的基础高亮属性。 */
     val TYPE_DEFINED: TextAttributesKey =
         TextAttributesKey.createTextAttributesKey("CANGJIE_TYPE_DEFINED", DefaultLanguageHighlighterColors.CLASS_NAME)
-    /** 类型引用名称高亮属性。 */
+    /** 用户定义类型引用的高亮属性；保留既有 key 名以兼容已保存的配色方案。 */
     val TYPE_REFERENCE: TextAttributesKey =
         TextAttributesKey.createTextAttributesKey("CANGJIE_TYPE_REFERENCE", DefaultLanguageHighlighterColors.CLASS_NAME)
+    /** 仓颉基本类型引用高亮属性，可在配色方案中独立于用户类型引用设置。 */
+    val BASIC_TYPE_REFERENCE: TextAttributesKey =
+        TextAttributesKey.createTextAttributesKey("CANGJIE_BASIC_TYPE_REFERENCE", TYPE_REFERENCE)
     /** class 声明名称高亮属性。 */
     val CLASS: TextAttributesKey =
         TextAttributesKey.createTextAttributesKey("CANGJIE_CLASS", TYPE_DEFINED)
@@ -170,12 +168,19 @@ object CangJieHighlightingColors {
         "CANGJIE_LOCAL_VARIABLE",
         DefaultLanguageHighlighterColors.LOCAL_VARIABLE,
     )
-    /** 普通属性高亮属性。 */
+    /** 静态成员属性高亮属性。 */
     val PROPERTY: TextAttributesKey =
-        TextAttributesKey.createTextAttributesKey("CANGJIE_PROPERTY", LOCAL_VARIABLE)
+        TextAttributesKey.createTextAttributesKey("CANGJIE_PROPERTY", DefaultLanguageHighlighterColors.STATIC_FIELD)
+    /** 静态成员属性的语义名称；复用既有 key 以兼容已保存的配色方案。 */
+    val STATIC_PROPERTY: TextAttributesKey = PROPERTY
     /** 包级变量高亮属性。 */
     val PACKAGE_VARIABLE: TextAttributesKey = TextAttributesKey.createTextAttributesKey(
         "CANGJIE_PACKAGE_VARIABLE",
+        DefaultLanguageHighlighterColors.STATIC_FIELD,
+    )
+    /** 静态成员变量高亮属性。 */
+    val STATIC_VARIABLE: TextAttributesKey = TextAttributesKey.createTextAttributesKey(
+        "CANGJIE_STATIC_VARIABLE",
         DefaultLanguageHighlighterColors.STATIC_FIELD,
     )
     /** 函数参数高亮属性。 */
@@ -191,14 +196,6 @@ object CangJieHighlightingColors {
         "CANGJIE_INSTANCE_VARIABLE",
         DefaultLanguageHighlighterColors.INSTANCE_FIELD,
     )
-    /** 被包装到引用对象中的变量高亮属性。 */
-    val WRAPPED_INTO_REF: TextAttributesKey = TextAttributesKey.createTextAttributesKey(
-        "CANGJIE_WRAPPED_INTO_REF",
-        DefaultLanguageHighlighterColors.CLASS_NAME,
-    )
-    /** backing field 变量高亮属性。 */
-    val BACKING_FIELD_VARIABLE: TextAttributesKey =
-        TextAttributesKey.createTextAttributesKey("CANGJIE_BACKING_FIELD_VARIABLE")
     /** 扩展属性高亮属性。 */
     val EXTENSION_PROPERTY: TextAttributesKey = TextAttributesKey.createTextAttributesKey(
         "CANGJIE_EXTENSION_PROPERTY",
@@ -215,6 +212,16 @@ object CangJieHighlightingColors {
         "CANGJIE_FUNCTION_CALL",
         DefaultLanguageHighlighterColors.FUNCTION_CALL,
     )
+    /** 实例成员函数调用名称高亮属性。 */
+    val INSTANCE_FUNCTION_CALL: TextAttributesKey = TextAttributesKey.createTextAttributesKey(
+        "CANGJIE_INSTANCE_FUNCTION_CALL",
+        DefaultLanguageHighlighterColors.FUNCTION_CALL,
+    )
+    /** 静态成员函数调用名称高亮属性。 */
+    val STATIC_FUNCTION_CALL: TextAttributesKey = TextAttributesKey.createTextAttributesKey(
+        "CANGJIE_STATIC_FUNCTION_CALL",
+        DefaultLanguageHighlighterColors.STATIC_METHOD,
+    )
     /** 包级函数调用名称高亮属性。 */
     val PACKAGE_FUNCTION_CALL: TextAttributesKey = TextAttributesKey.createTextAttributesKey(
         "CANGJIE_PACKAGE_FUNCTION_CALL",
@@ -228,12 +235,19 @@ object CangJieHighlightingColors {
     /** 构造调用高亮属性。 */
     val CONSTRUCTOR_CALL: TextAttributesKey =
         TextAttributesKey.createTextAttributesKey("CANGJIE_CONSTRUCTOR", DefaultLanguageHighlighterColors.FUNCTION_CALL)
+    /** class 构造调用高亮属性。 */
+    val CLASS_CONSTRUCTOR_CALL: TextAttributesKey = TextAttributesKey.createTextAttributesKey(
+        "CANGJIE_CLASS_CONSTRUCTOR_CALL",
+        CONSTRUCTOR_CALL,
+    )
+    /** struct 构造调用高亮属性。 */
+    val STRUCT_CONSTRUCTOR_CALL: TextAttributesKey = TextAttributesKey.createTextAttributesKey(
+        "CANGJIE_STRUCT_CONSTRUCTOR_CALL",
+        CONSTRUCTOR_CALL,
+    )
     /** 变量作为函数调用时的高亮属性。 */
     val VARIABLE_AS_FUNCTION_CALL: TextAttributesKey =
         TextAttributesKey.createTextAttributesKey("CANGJIE_VARIABLE_AS_FUNCTION")
-    /** 类函数对象调用形态的高亮属性。 */
-    val VARIABLE_AS_FUNCTION_LIKE_CALL: TextAttributesKey =
-        TextAttributesKey.createTextAttributesKey("CANGJIE_VARIABLE_AS_FUNCTION_LIKE")
     /** 函数字面量花括号和箭头高亮属性。 */
     val FUNCTION_LITERAL_BRACES_AND_ARROW: TextAttributesKey =
         TextAttributesKey.createTextAttributesKey("CANGJIE_FUNCTION_LITERAL_BRACES_AND_ARROW")
@@ -252,22 +266,9 @@ object CangJieHighlightingColors {
     /** 宏调用名称高亮属性。 */
     val MACRO_CALL: TextAttributesKey = TextAttributesKey.createTextAttributesKey("CANGJIE_MACRO_CALL")
 
-    /** 智能转换后的值高亮属性。 */
-    val SMART_CAST_VALUE: TextAttributesKey = TextAttributesKey.createTextAttributesKey("CANGJIE_SMART_CAST_VALUE")
-    /** 智能常量高亮属性。 */
-    val SMART_CONSTANT: TextAttributesKey = TextAttributesKey.createTextAttributesKey("CANGJIE_SMART_CONSTANT")
-    /** 智能转换 receiver 高亮属性。 */
-    val SMART_CAST_RECEIVER: TextAttributesKey =
-        TextAttributesKey.createTextAttributesKey("CANGJIE_SMART_CAST_RECEIVER")
-    /** 调试信息高亮属性。 */
-    val DEBUG_INFO: TextAttributesKey = TextAttributesKey.createTextAttributesKey("CANGJIE_DEBUG_INFO")
-
     /** 非法字符高亮属性。 */
     val BAD_CHARACTER: TextAttributesKey =
         TextAttributesKey.createTextAttributesKey("CANGJIE_BAD_CHARACTER", HighlighterColors.BAD_CHARACTER)
-    /** 标签高亮属性。 */
-    val LABEL: TextAttributesKey =
-        TextAttributesKey.createTextAttributesKey("CANGJIE_LABEL", DefaultLanguageHighlighterColors.LABEL)
     /** 解析到错误符号时的高亮属性。 */
     val RESOLVED_TO_ERROR: TextAttributesKey = TextAttributesKey.createTextAttributesKey("CANGJIE_RESOLVED_TO_ERROR")
     /** 命名实参高亮属性。 */
@@ -278,6 +279,11 @@ object CangJieHighlightingColors {
     val INSTANCE_PROPERTY_CUSTOM_PROPERTY_DECLARATION: TextAttributesKey = TextAttributesKey.createTextAttributesKey(
         "CANGJIE_INSTANCE_PROPERTY_CUSTOM_PROPERTY_DECLARATION",
         INSTANCE_PROPERTY,
+    )
+    /** 带自定义访问器的静态成员属性高亮属性。 */
+    val STATIC_PROPERTY_CUSTOM_PROPERTY_DECLARATION: TextAttributesKey = TextAttributesKey.createTextAttributesKey(
+        "CANGJIE_STATIC_PROPERTY_CUSTOM_PROPERTY_DECLARATION",
+        PROPERTY,
     )
     /** 双冒号符号高亮属性。 */
     val DOUBLE_COLON: TextAttributesKey = TextAttributesKey.createTextAttributesKey("CANGJIE_DOUBLE_COLON")
