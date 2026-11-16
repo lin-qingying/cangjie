@@ -166,11 +166,6 @@ enum class NamedValueAccessPurpose {
 
     /** 隐式 `invoke` 改写中只用于构造临时 receiver 的值访问。 */
     ImplicitInvokeReceiver,
-
-    /**
-     * 模式裸名字的枚举构造器探测。探测失败表示普通绑定变量，不能产生最终诊断。
-     */
-    PatternConstructorProbe,
 }
 
 /**
@@ -829,6 +824,42 @@ class CfirCallResolver(
         )
 
     /**
+     * 裸名字模式的 enum constructor 分类探测。
+     *
+     * 对齐官方 `ASTContext::IsEnumConstructor`（`external/cangjie_compiler/src/AST/ASTContext.cpp`，
+     * 由 `ChkVarOrEnumPattern` 调用）：只回答「当前作用域里有哪些名为 [patternName] 的
+     * enum constructor」。它不是一次值访问解析：
+     * - 同名局部变量、形参、顶层变量或函数不遮蔽 constructor，普通值查找不参与；
+     * - 多个 enum 声明同名 constructor、或同一 enum 按 payload 个数重载，都不构成歧义。
+     *
+     * 探测只经 tower 的 [CallKind.EnumConstructorCall] 入口收集候选，不创建 callee reference，
+     * 因此不会向 body 诊断写入任何结果。返回空表示该名字是绑定变量；非空时 pattern 的构造器目标
+     * 由调用方按 subject enum 定位，这里的候选只承担分类（以及 subject 不是 enum 时的导航目标）。
+     */
+    fun collectEnumConstructorsForBareNamePattern(
+        patternName: Name,
+        patternSource: org.cangnova.cangjie.source.CjSourceElement?,
+    ): List<CfirEnumConstructorSymbol> {
+        val probe = buildNamedAccessExpression {
+            source = patternSource
+            calleeReference = buildNamedReference {
+                source = patternSource
+                name = patternName
+            }
+        }
+        val result = collectCandidates(
+            qualifiedAccess = probe,
+            name = patternName,
+            forceCallKind = CallKind.EnumConstructorCall,
+            callSite = probe,
+            resolutionMode = ResolutionMode.ContextIndependent,
+        )
+        return result.candidates.mapNotNullTo(linkedSetOf()) { candidate ->
+            (candidate.symbol as? CfirEnumConstructorSymbol)?.takeIf { symbol -> symbol.isBound }
+        }.toList()
+    }
+
+    /**
      * 命名值访问解析的实际实现。
      *
      * 这里统一处理显式 receiver、package qualifier、VArray.size、classifier/type parameter
@@ -930,7 +961,13 @@ class CfirCallResolver(
                 }
             }
 
-            if (!result.isSuccess || (isUsedAsReceiver && result.candidates.all { it.symbol is CfirClassLikeSymbol<*> })) {
+            val hasLexicalEnumConstructorValue = result.candidates.any { candidate ->
+                candidate.symbol is CfirEnumConstructorSymbol
+            }
+            if (
+                (!result.isSuccess && !hasLexicalEnumConstructorValue) ||
+                (isUsedAsReceiver && result.candidates.all { it.symbol is CfirClassLikeSymbol<*> })
+            ) {
                 val classifier = towerResolver.findClassifiers(callee.name)
                     .firstOrNull { it.isValidClassifierExpression(isUsedAsReceiver) }
                 if (classifier != null) {
@@ -996,8 +1033,6 @@ class CfirCallResolver(
                             ?.valueParameters
                             ?.isEmpty() == true
                     }
-
-                NamedValueAccessPurpose.PatternConstructorProbe -> enumConstructorCandidates
             }
             if (enumValueCandidates.isNotEmpty()) {
                 result = enumResult.withCandidates(enumValueCandidates)
@@ -1018,15 +1053,6 @@ class CfirCallResolver(
         }
 
         val reducedCandidates = result.candidates
-        if (purpose == NamedValueAccessPurpose.PatternConstructorProbe &&
-            reducedCandidates.none { candidate ->
-                candidate.symbol.takeIf { it.isBound }?.cfir is CfirEnumConstructor
-            }
-        ) {
-            // `case Day(x)` 中的 x 先按裸模式名探测；没有枚举构造器时它是绑定，
-            // 该次临时访问的 unresolved 结果不能污染最终 body diagnostics。
-            return transformedAccess
-        }
         transformedAccess.resolveEnumConstructorAsImplicitInvokeReceiver(
             callee = callee,
             candidates = reducedCandidates,

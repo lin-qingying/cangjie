@@ -7,6 +7,11 @@
         <compositeConfiguration>
           <compositeBuild compositeDefinitionSource="SCRIPT">
             <builds>
+              <build path="$PROJECT_DIR$/buildSrc" name="buildSrc">
+                <projects>
+                  <project path="$PROJECT_DIR$/buildSrc" />
+                </projects>
+              </build>
               <build path="$PROJECT_DIR$/repo/gradle-build-conventions" name="gradle-build-conventions">
                 <projects>
                   <project path="$PROJECT_DIR$/repo/gradle-build-conventions" />
@@ -55,6 +60,7 @@
             <option value="$PROJECT_DIR$/analysis/macro-expansion" />
             <option value="$PROJECT_DIR$/analysis/stubs" />
             <option value="$PROJECT_DIR$/analysis/symbol-light-declarations" />
+            <option value="$PROJECT_DIR$/buildSrc" />
             <option value="$PROJECT_DIR$/cfir" />
             <option value="$PROJECT_DIR$/cfir/analysis-tests" />
             <option value="$PROJECT_DIR$/cfir/cfir-common" />
@@ -97,6 +103,10 @@
             <option value="$PROJECT_DIR$/compiler/jvm-codegen" />
             <option value="$PROJECT_DIR$/compiler/phaser" />
             <option value="$PROJECT_DIR$/compiler/plugin" />
+            <option value="$PROJECT_DIR$/compiler/wasm" />
+            <option value="$PROJECT_DIR$/compiler/wasm/wasm-codegen" />
+            <option value="$PROJECT_DIR$/compiler/wasm/wasm-common" />
+            <option value="$PROJECT_DIR$/compiler/wasm/wasm-ir" />
             <option value="$PROJECT_DIR$/dependencies" />
             <option value="$PROJECT_DIR$/dependencies/intellij-core" />
             <option value="$PROJECT_DIR$/flatbuffers-gen" />
@@ -255,6 +265,10 @@
                   <project path="$PROJECT_DIR$/compiler/jvm-codegen" />
                   <project path="$PROJECT_DIR$/compiler/phaser" />
                   <project path="$PROJECT_DIR$/compiler/plugin" />
+                  <project path="$PROJECT_DIR$/compiler/wasm" />
+                  <project path="$PROJECT_DIR$/compiler/wasm/wasm-codegen" />
+                  <project path="$PROJECT_DIR$/compiler/wasm/wasm-common" />
+                  <project path="$PROJECT_DIR$/compiler/wasm/wasm-ir" />
                   <project path="$PROJECT_DIR$/dependencies" />
                   <project path="$PROJECT_DIR$/dependencies/intellij-core" />
                   <project path="$PROJECT_DIR$/flatbuffers-gen" />
@@ -294,6 +308,11 @@
                   <project path="$PROJECT_DIR$/tests" />
                   <project path="$PROJECT_DIR$/tests/test-infrastructure" />
                   <project path="$PROJECT_DIR$/util" />
+                </projects>
+              </build>
+              <build path="$PROJECT_DIR$/buildSrc" name="buildSrc">
+                <projects>
+                  <project path="$PROJECT_DIR$/buildSrc" />
                 </projects>
               </build>
               <build path="$PROJECT_DIR$/repo/gradle-build-conventions" name="gradle-build-conventions">
@@ -344,6 +363,7 @@
             <option value="$PROJECT_DIR$/analysis/macro-expansion" />
             <option value="$PROJECT_DIR$/analysis/stubs" />
             <option value="$PROJECT_DIR$/analysis/symbol-light-declarations" />
+            <option value="$PROJECT_DIR$/buildSrc" />
             <option value="$PROJECT_DIR$/cfir" />
             <option value="$PROJECT_DIR$/cfir/analysis-tests" />
             <option value="$PROJECT_DIR$/cfir/cfir-common" />
@@ -386,6 +406,10 @@
             <option value="$PROJECT_DIR$/compiler/jvm-codegen" />
             <option value="$PROJECT_DIR$/compiler/phaser" />
             <option value="$PROJECT_DIR$/compiler/plugin" />
+            <option value="$PROJECT_DIR$/compiler/wasm" />
+            <option value="$PROJECT_DIR$/compiler/wasm/wasm-codegen" />
+            <option value="$PROJECT_DIR$/compiler/wasm/wasm-common" />
+            <option value="$PROJECT_DIR$/compiler/wasm/wasm-ir" />
             <option value="$PROJECT_DIR$/dependencies" />
             <option value="$PROJECT_DIR$/dependencies/intellij-core" />
             <option value="$PROJECT_DIR$/flatbuffers-gen" />

@@ -109,6 +109,31 @@ application {
     )
 }
 
+tasks.named<Test>("test") {
+    /*
+     * 进程级用例要 fork 真实 JVM 启动服务端。child 的 classpath 不能依赖 test worker 的
+     * `java.class.path`（Gradle 可能用 classpath jar 传递，直接透传会找不到测试类），
+     * 但也不能当成 -D 属性传下去——Windows 命令行长度放不下完整 classpath。
+     * 因此落盘到 build/ 下的文本文件，只把文件路径传给测试。
+     */
+    val runtimeClasspathPath = sourceSets["test"].runtimeClasspath.asPath
+    val classpathFile = layout.buildDirectory.file("lsp-test-classpath.txt")
+    inputs.property("lspTestRuntimeClasspath", runtimeClasspathPath)
+    outputs.file(classpathFile)
+    doFirst {
+        classpathFile.get().asFile.writeText(runtimeClasspathPath)
+    }
+    systemProperty("lsp.test.classpath.file", classpathFile.get().asFile.absolutePath)
+
+    /*
+     * 本地默认保留「已知缺陷」红灯（`known-defect` 标签），这样缺陷不会因为测试全绿而消失。
+     * 需要绿构建的 CI 加 `-PexcludeKnownDefects` 显式排除——排除是**显式动作**，不是默认。
+     */
+    if (providers.gradleProperty("excludeKnownDefects").isPresent) {
+        useJUnitPlatform { excludeTags("known-defect") }
+    }
+}
+
 distributions {
     main {
         contents {

@@ -2,7 +2,7 @@ package org.cangnova.cangjie.analysis.api.renderer.declarations.bodies
 
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.renderer.base.PrettyPrinter
-import org.cangnova.cangjie.analysis.api.renderer.base.prettyPrintWithSettingsFrom
+import org.cangnova.cangjie.analysis.api.renderer.base.prettyPrintAnnotatedWithSettingsFrom
 import org.cangnova.cangjie.analysis.api.renderer.declarations.CaDeclarationRenderer
 import org.cangnova.cangjie.analysis.api.symbols.CaClassSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaConstructorSymbol
@@ -78,10 +78,10 @@ fun interface CaClassifierBodyWithMembersRenderer : CaClassifierBodyRenderer {
             .let { declarationRenderer.bodyMemberScopeSorter.sortMembers(analysisSession, it, symbol) }
 
         val membersToPrint = members.mapNotNull { member ->
-            val rendered = prettyPrintWithSettingsFrom(printer) {
+            val rendered = prettyPrintAnnotatedWithSettingsFrom(printer) {
                 declarationRenderer.renderDeclaration(analysisSession, member, this)
             }
-            if (rendered.isNotEmpty()) member to rendered else null
+            if (rendered.text.isNotEmpty()) member to rendered else null
         }
 
         if (membersToPrint.isEmpty() && !renderEmptyBodyForEmptyMemberScope(symbol)) return
@@ -99,7 +99,7 @@ fun interface CaClassifierBodyWithMembersRenderer : CaClassifierBodyRenderer {
                     )
                 }
                 previous = member
-                printer.append(rendered)
+                printer.appendAnnotatedText(rendered)
             }
         }
     }

@@ -2,11 +2,11 @@
 
 ## Input
 - `ChirCodegenInput.chirPackage`: CHIR package model (`:chir:chir-tree`) as the only backend source.
-- `ChirCodegenInput.options`: backend behavior toggles, partition mode, post-processing order.
+- `ChirCodegenInput.options`: backend behavior toggles, partition mode, LLVM target parameters and artifact options.
 
 ## Output
 - `ChirCodegenOutput.modules`: generated LLVM module artifacts.
-- `LlvmModuleArtifact.module`: in-memory LLVM module representation.
+- `LlvmModuleArtifact.ir`: in-memory LLVM module representation (full LLVM IR text).
 - `LlvmModuleArtifact.bitcode`: bitcode bytes when `emitBitcode=true`; otherwise `null`.
 
 ## Safety Contract

@@ -1,11 +1,11 @@
 # flatbuffers-gen/ — FlatBuffers Schema 与生成产物
 
-为仓颉编译器的二进制序列化（`.cjo` 文件、宏协议）提供 FlatBuffers schema 与生成的 Java 代码。
+为仓颉编译器的二进制序列化（`.cjo` 文件、宏协议）提供 FlatBuffers schema 与生成的 Kotlin 代码。
 
 ## 内容
 
-- `flatbuffers/` — FlatBuffers 源文件（含上游 `StyleGuide.md` 等参考）
-- `src/org/cangnova/cangjie/metadata` — 生成的 Java 代码（FlatBuffers `flatc` 产物）
+- `flatbuffers/` — FlatBuffers schema 源文件（`.fbs`，含上游 `StyleGuide.md` 等参考）
+- `gen/` — 生成的 Kotlin 代码（`flatc --kotlin` 产物，构建时生成）
 
 ## Schema 用途
 
@@ -14,6 +14,7 @@
 | Schema | 用途 |
 |---|---|
 | `PackageFormat.fbs` | CHIR Package 序列化 |
+| `BCHIRFormat.fbs` | CHIR 二进制序列化 |
 | `NodeFormat.fbs` | AST 节点序列化 |
 | `ModuleFormat.fbs` | 模块 / 包头信息 |
 | `CachedASTFormat.fbs` | 增量编译 AST 缓存 |
@@ -26,7 +27,7 @@
 
 ## 构建
 
-`flatc` 编译产物已纳入 `src/`，构建时不重新生成（避免每次构建依赖 `flatc` 工具链）。如需重新生成，在本模块构建脚本中触发 `flatc`，详见模块 `build.gradle.kts`。
+`flatc` 生成的 Kotlin 代码输出到 `gen/` 并作为源集纳入编译（`generatedDir()`）。`compileKotlin` 会触发 `generateKotlinFlatBuffers`：先经 `locateFlatc` 定位（缺失则自动下载 `flatc` v25.2.10），再以 `--kotlin --gen-mutable --gen-object-api` 重新生成；任务为 `@CacheableTask`，输入不变时走 Gradle 缓存。详见模块 `build.gradle.kts`。
 
 ## 命令
 

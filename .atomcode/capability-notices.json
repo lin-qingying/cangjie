@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "seen": {
+    "ast-grep": 1,
+    "context7": 1,
+    "lsp-java": 1
+  }
+}

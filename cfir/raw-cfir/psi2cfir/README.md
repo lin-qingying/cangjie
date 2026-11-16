@@ -36,5 +36,4 @@
 ## 相关文档
 
 - `../README.md` — Raw CFIR 聚合说明
-- `../../../docs/psi-cfir-ast-chir-alignment.md` — PSI ↔ CFIR ↔ 官方 AST ↔ CHIR 节点对照
 - `testData/rawBuilder/coverage-matrix.md` — 当前覆盖矩阵

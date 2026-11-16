@@ -9,7 +9,7 @@
 ## 设计要点
 
 - 纯模型，不持有 session / project
-- 与 stub 索引协同：从 stub 构造，避免完整 PSI 解析
+- 由 `:analysis:symbol-light-declarations` 从 PSI（经 Symbol 投影）构造，避免完整声明体解析
 - 可对应反编译声明（与 `:analysis:decompiled` 的 `light-declarations-for-decompiled` 协同）
 
 ## 测试
@@ -21,8 +21,8 @@
 
 ## 依赖
 
-- `:analysis:analysis-api`、`:analysis:analysis-api-platform-interface`
-- `:cfir:cfir-tree`、`:cfir:cfir-cones`
+- `:analysis:analysis-api`、`:analysis:analysis-internal-utils`
+- `:psi`、`:common`
 
 ## 命令
 

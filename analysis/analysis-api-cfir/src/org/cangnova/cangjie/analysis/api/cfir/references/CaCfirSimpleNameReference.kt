@@ -4,12 +4,11 @@ import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.api.analyze
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
+import org.cangnova.cangjie.analysis.api.cfir.components.resolver.resolveAnnotationCall
 import org.cangnova.cangjie.analysis.api.impl.base.references.CaBaseSimpleNameReference
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getOrBuildCfir
 import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
-import org.cangnova.cangjie.cfir.CfirAnnotationContainer
-import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 import org.cangnova.cangjie.cfir.expressions.CfirLoopJump
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
@@ -24,7 +23,6 @@ import org.cangnova.cangjie.psi.CjThisExpression
 import org.cangnova.cangjie.psi.CjParameter
 import org.cangnova.cangjie.psi.CjProperty
 import org.cangnova.cangjie.psi.CjVariable
-import org.cangnova.cangjie.psi.CjDeclaration
 import org.cangnova.cangjie.psi.CjImportAlias
 import org.cangnova.cangjie.psi.CjLabelReferenceExpression
 import org.cangnova.cangjie.psi.CjMacroExpression
@@ -73,7 +71,8 @@ internal class CaCfirSimpleNameReference(
         if (resultsToFix.isEmpty() || !isAnnotationCall) return resultsToFix
 
         val cfirSession = this as? CaCfirSession ?: return resultsToFix
-        val annotationCall = cfirSession.resolveAnnotationCall() ?: return resultsToFix
+        val annotation = expression.parentOfType<CjAnnotation>() ?: return resultsToFix
+        val annotationCall = cfirSession.resolveAnnotationCall(annotation) ?: return resultsToFix
         val constructor = (annotationCall.calleeReference as? CfirResolvedNamedReference)
             ?.resolvedSymbol as? CfirConstructorSymbol
             ?: return resultsToFix
@@ -83,18 +82,6 @@ internal class CaCfirSimpleNameReference(
         return resultsToFix.map { symbol ->
             if (symbol is CaClassLikeSymbol && symbol.classId == annotationClassId) constructorSymbol else symbol
         }
-    }
-
-    /**
-     * 从注解所属声明中读取解析完成的 CFIR 注解调用，以复用调用解析选中的构造器。
-     */
-    private fun CaCfirSession.resolveAnnotationCall(): CfirAnnotationCall? {
-        val annotation = expression.parentOfType<CjAnnotation>() ?: return null
-        val declaration = annotation.getStrictParentOfType<CjDeclaration>() ?: return null
-        val annotationContainer = declaration.getOrBuildCfir(resolutionFacade) as? CfirAnnotationContainer ?: return null
-        return annotationContainer.annotations
-            .filterIsInstance<CfirAnnotationCall>()
-            .firstOrNull { it.psi === annotation }
     }
 
     /**

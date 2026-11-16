@@ -12,8 +12,7 @@
 | `cfir.entrypoint.configuration` | Session / Pipeline 配置 |
 | `cfir.entrypoint.checkers` | 默认 checkers 装配（`CheckersContainers`） |
 | `cfir.pipeline` | 普通 resolve 与诊断调用编排；完整入口按“宏准备 → ordinary resolve → check”组织 |
-| `cfir.extensions` | 前端扩展点 |
-| `cfir.deserialization` | 反序列化接入（与 `:cfir:cfir-serialization` 协作） |
+| `cfir.session` | Session 组件容器与结构化 provider 装配（`ComponentsContainers`、`StructuredProviders`） |
 
 ## 调用方
 
@@ -25,8 +24,8 @@
 
 - `:cfir:resolve`、`:cfir:checkers`、`:cfir:cfir-serialization`
 - `:cfir:raw-cfir:psi2cfir`、`:cfir:raw-cfir:light-tree2cfir`
-- `:cfir:cfir-tree`、`:cfir:cfir-cones`、`:cfir:cfir-common`、`:cfir:semantics`、`:cfir:providers`
-- `:common`、`:common:diagnostics`、`:util`、`:compiler:config`
+- `:cfir:cfir-tree`、`:cfir:cfir-common`、`:cfir:providers`
+- `:common`、`:common:diagnostics`、`:util`、`:compiler:config`、`:psi`
 
 ## 命令
 

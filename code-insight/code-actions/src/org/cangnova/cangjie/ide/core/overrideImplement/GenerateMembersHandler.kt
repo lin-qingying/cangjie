@@ -24,7 +24,7 @@ import org.cangnova.cangjie.analysis.api.symbols.CaPropertySymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolModality
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolVisibility
 import org.cangnova.cangjie.analysis.api.symbols.pointers.CaSymbolPointer
-import org.cangnova.cangjie.psi.CjDeclaration
+import org.cangnova.cangjie.codeinsight.api.members.CangJieGeneratableMember
 import org.cangnova.cangjie.psi.CjPsiFactory
 import org.cangnova.cangjie.psi.CjTypeStatement
 
@@ -79,12 +79,10 @@ internal abstract class GenerateMembersHandler(
             CangJieOverrideImplementBundle.message("implement.members.handler.title"),
             null,
             {
-                val psiFactory = CjPsiFactory(project)
-                var lastInserted: PsiElement? = null
-                generatedMembers.forEach { member ->
-                    val declaration = member.toDeclaration(psiFactory)
-                    lastInserted = typeStatement.addDeclaration(declaration)
-                }
+                val lastInserted = insertRenderedMembers(
+                    typeStatement,
+                    generatedMembers.map { member -> member.kind to member.text },
+                )
 
                 CodeStyleManager.getInstance(project).reformat(typeStatement.containingFile)
                 lastInserted?.textRange?.startOffset?.let { offset ->
@@ -121,29 +119,23 @@ internal abstract class GenerateMembersHandler(
      * 可插入到 PSI 的生成成员文本模型。
      */
     private sealed interface GeneratedMember {
-        /**
-         * 使用 PSI factory 把成员文本解析为声明。
-         */
-        fun toDeclaration(factory: CjPsiFactory): CjDeclaration
+        val text: String
+        val kind: CangJieGeneratableMember.Kind
 
         /**
          * 函数成员文本。
          */
-        data class Function(private val text: String) : GeneratedMember {
-            /**
-             * 将函数文本解析为函数声明。
-             */
-            override fun toDeclaration(factory: CjPsiFactory): CjDeclaration = factory.createFunction(text)
+        data class Function(override val text: String) : GeneratedMember {
+            override val kind: CangJieGeneratableMember.Kind
+                get() = CangJieGeneratableMember.Kind.FUNCTION
         }
 
         /**
          * 属性成员文本。
          */
-        data class Property(private val text: String) : GeneratedMember {
-            /**
-             * 将属性文本解析为属性声明。
-             */
-            override fun toDeclaration(factory: CjPsiFactory): CjDeclaration = factory.createProperty(text)
+        data class Property(override val text: String) : GeneratedMember {
+            override val kind: CangJieGeneratableMember.Kind
+                get() = CangJieGeneratableMember.Kind.PROPERTY
         }
     }
 
@@ -154,6 +146,25 @@ internal abstract class GenerateMembersHandler(
          */
         const val UNIMPLEMENTED_BODY_TEXT = "throw Exception(\"Not yet implemented\")"
     }
+}
+
+/**
+ * 把已渲染的成员声明插入类型体；IDE、headless 服务和 ModCommand 共用这一 PSI 操作。
+ */
+internal fun insertRenderedMembers(
+    typeStatement: CjTypeStatement,
+    members: List<Pair<CangJieGeneratableMember.Kind, String>>,
+): PsiElement? {
+    val psiFactory = CjPsiFactory(typeStatement.project)
+    var lastInserted: PsiElement? = null
+    members.forEach { (kind, text) ->
+        val declaration = when (kind) {
+            CangJieGeneratableMember.Kind.FUNCTION -> psiFactory.createFunction(text)
+            CangJieGeneratableMember.Kind.PROPERTY -> psiFactory.createProperty(text)
+        }
+        lastInserted = typeStatement.addDeclaration(declaration)
+    }
+    return lastInserted
 }
 
 /**

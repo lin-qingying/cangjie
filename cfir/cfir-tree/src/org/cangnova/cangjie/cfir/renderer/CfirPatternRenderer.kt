@@ -51,9 +51,12 @@ open class CfirPatternRenderer(
             pattern.nestedPattern?.let { append(" @ ${render(it)}") }
         }
         is CfirTuplePattern -> "(${pattern.elements.joinToString { render(it) }})"
-        is CfirEnumPattern -> "${referenceRenderer.render(pattern.constructorReference)}(${
-            pattern.arguments.joinToString { render(it) }
-        })"
+        is CfirEnumPattern -> buildString {
+            // 限定名模式把 owner 限定符渲染在 constructor 之前：`E.A(...)`。
+            pattern.ownerQualifier?.let { qualifier -> append(inlineExpressionRenderer.render(qualifier)).append('.') }
+            append(referenceRenderer.render(pattern.constructorReference))
+            append(pattern.arguments.joinToString(prefix = "(", postfix = ")") { render(it) })
+        }
         is CfirTypePattern -> buildString {
             append("is ${renderTypeRefForDebug(pattern.typeRef, typeRenderer)}")
             pattern.bindingName?.let { append(" ${it.asString()}") }

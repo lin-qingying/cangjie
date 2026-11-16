@@ -7,7 +7,6 @@ import org.cangnova.cangjie.analysis.api.symbols.CaPropertySymbol
 import org.cangnova.cangjie.analysis.api.symbols.markers.CaNamedSymbol
 import org.cangnova.cangjie.codeinsight.api.members.CangJieGeneratableMember
 import org.cangnova.cangjie.codeinsight.api.members.CangJieMemberGenerationService
-import org.cangnova.cangjie.psi.CjPsiFactory
 import org.cangnova.cangjie.psi.CjTypeStatement
 
 /**
@@ -65,14 +64,10 @@ internal class CangJieMemberGenerationServiceImpl : CangJieMemberGenerationServi
 
         // 接口契约：本方法只做插入，不带写事务、不做重排（见接口 KDoc）。
         // 与 IDE 动作处理器一致，插入锚点取类型体末尾；宿主随后自行重排或 diff。
-        val psiFactory = CjPsiFactory(typeStatement.project)
-        members.forEach { member ->
-            val declaration = when (member.kind) {
-                CangJieGeneratableMember.Kind.FUNCTION -> psiFactory.createFunction(member.renderedText)
-                CangJieGeneratableMember.Kind.PROPERTY -> psiFactory.createProperty(member.renderedText)
-            }
-            typeStatement.addDeclaration(declaration)
-        }
+        insertRenderedMembers(
+            typeStatement,
+            members.map { member -> member.kind to member.renderedText },
+        )
     }
 }
 

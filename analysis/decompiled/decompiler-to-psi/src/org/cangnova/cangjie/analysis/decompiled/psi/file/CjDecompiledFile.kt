@@ -7,12 +7,14 @@ package org.cangnova.cangjie.analysis.decompiled.psi.file
 
 import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiFile
+import com.intellij.openapi.fileTypes.FileType
 import com.intellij.psi.StubBuilder
 import com.intellij.psi.stubs.StubTreeLoader
 import org.cangnova.cangjie.annotations.BuiltInAnnotationRegistry
 import org.cangnova.cangjie.analysis.api.util.requireIsInstance
 import org.cangnova.cangjie.analysis.decompiled.psi.CangJieDecompiledFileViewProvider
 import org.cangnova.cangjie.analysis.decompiled.psi.text.buildDecompiledText
+import org.cangnova.cangjie.lang.CangJieFileType
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjImplementationDetail
 import org.cangnova.cangjie.psi.CjParserLanguageModuleNameProvider
@@ -59,6 +61,14 @@ abstract class CjDecompiledFile(
     /** 从 binary stub package 中提取 parser 所需模块名，避免反解析刚生成的文本求 package。 */
     override fun parserLanguageModuleName(): String =
         BuiltInAnnotationRegistry.sourceModuleName(compiledFileStub.get().getPackageFqName())
+
+    /**
+     * 反编译视图展示的是仓颉源码文本，必须使用源码 FileType 才能启用语法/语义高亮。
+     *
+     * 底层 `.cjo` 是二进制文件；若沿用它的 FileType，编辑器会按 binary/plain text 打开，
+     * 反编译文本虽然可读，但 lexer、annotator 与 Quick Doc 的 PSI 语义全部失效。
+     */
+    override fun getFileType(): FileType = CangJieFileType.INSTANCE
 
     /**
      * 返回由 compiled stub 渲染出的反编译源码文本。

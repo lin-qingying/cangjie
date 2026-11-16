@@ -32,6 +32,7 @@ import org.cangnova.cangjie.frontend.pipeline.macroExecutorFactory
 import org.cangnova.cangjie.frontend.pipeline.macroExpansionDemandAutoCompilationEnabled
 import org.cangnova.cangjie.frontend.pipeline.macroSdkHome
 import org.cangnova.cangjie.lsp.state.LspWorkspaceState
+import org.cangnova.cangjie.lsp.testkit.CangjieSdkFixture
 import org.cangnova.cangjie.lsp.testkit.LspWorkspaceFixtureBuilder
 import org.cangnova.cangjie.lsp.testkit.ServiceLoadedLspTestEnvironment
 import org.cangnova.cangjie.macro.expansion.MacroConstructionReadAccess
@@ -42,7 +43,6 @@ import org.cangnova.cangjie.psi.CjFile
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledOnOs
 import org.junit.jupiter.api.condition.OS
@@ -53,16 +53,18 @@ import java.io.File
  * LSP 真实宏展开端到端：预编译宏包 artifact + 真实 `LSPMacroServer` + 进程内 frontend 引擎。
  *
  * 只在 Linux 运行；Windows 的服务端初始化问题见计划 2.5。
+ *
+ * SDK 缺失时**作业失败**而不是跳过：宏展开端到端是本能力的唯一真实验证，
+ * 静默跳过会让覆盖在 CI 上悄悄变成 0 个用例而报告仍然全绿。
  */
 @EnabledOnOs(OS.LINUX)
 class LspMacroExpansionRealEngineTest {
     @Test
     fun `real sdk macro expands inside lsp workspace`(@TempDir root: File) {
-        val sdkHome = System.getenv("CANGJIE_HOME")
-        assumeTrue(sdkHome != null && File(sdkHome).isDirectory, "需要 CANGJIE_HOME 指向 Linux SDK")
-        val sdk = File(sdkHome)
-        val macroServer = File(sdk, "tools/bin/LSPMacroServer")
-        assumeTrue(macroServer.isFile, "SDK 缺少 LSPMacroServer")
+        val sdkRoot = CangjieSdkFixture.requireSdkHome("LSP 宏展开端到端")
+        CangjieSdkFixture.requireMacroServer(sdkRoot)
+        val sdk = sdkRoot.toFile()
+        val cjc = CangjieSdkFixture.requireCompiler(sdkRoot)
 
         val macroSource = File(root, "macro-src").apply { mkdirs() }
         File(macroSource, "macros.cj").writeText(
@@ -78,7 +80,7 @@ class LspMacroExpansionRealEngineTest {
         )
         val macroOut = File(root, "macro-out").apply { mkdirs() }
         val compile = ProcessBuilder(
-            File(sdk, "bin/cjc").absolutePath,
+            cjc.toAbsolutePath().toString(),
             "-p", macroSource.absolutePath,
             "--compile-macro",
         ).directory(macroOut)
@@ -86,7 +88,7 @@ class LspMacroExpansionRealEngineTest {
             .also { it.environment()["CANGJIE_HOME"] = sdk.absolutePath }
             .start()
         val compileOutput = compile.inputStream.bufferedReader().readText()
-        assumeTrue(compile.waitFor() == 0, "宏包编译失败: $compileOutput")
+        assertEquals(0, compile.waitFor(), "宏包编译失败: $compileOutput")
 
         val options = LspMacroExpansionOptions(
             engine = FrontendMacroSemanticExpansionEngine(),

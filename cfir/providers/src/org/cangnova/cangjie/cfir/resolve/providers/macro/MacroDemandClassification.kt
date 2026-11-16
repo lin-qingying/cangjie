@@ -423,7 +423,7 @@ private fun MacroSurface.collectImportCandidatePackages(
         if (packageFqName.isRoot || packageFqName == scopeContext.packageFqName) continue
         val canBind = import.isAllUnder ||
             import.aliasName == name ||
-            importedFqName.shortName() == name
+            (import.aliasName == null && importedFqName.shortName() == name)
         if (canBind) result += packageFqName
     }
     return result.toList()

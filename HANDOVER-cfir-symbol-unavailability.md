@@ -319,7 +319,17 @@ rg "\.cfirSymbol\b" analysis/analysis-api-cfir/src
 `:analysis:analysis-api-cfir:compileTestKotlin` 和定向 `CompiledDeclarationUnavailableTest` 通过。
 `:analysis:low-level-api-cfir:test --tests "*DiagnosticCollectionIsolationTest"` 与
 `:lsp:test --tests "*CangjieCodeActionFailureRetentionTest"` 通过。
-`:analysis:analysis-api-cfir:test`、`:analysis:low-level-api-cfir:test` 与 `:lsp:test` 全量测试尚未执行。
+全仓库 `:test --continue` 已执行，最终有两个失败任务：
+
+- `:cfir:analysis-tests:test`：9,304 例中 57 例失败、467 例跳过。多数失败报告 SDK 的
+  `libcangjie-runtime.dll` / `RunCJTask` 无法加载，随后宏 DLL 加载失败；另有
+  `CfirAnalysisDiagnostics2PsiTestGenerated.Modifier.testPackageAccessModifier` 的 inline fixture
+  与实际诊断标记不一致。
+- `:analysis:analysis-real-project-test:test`：`RealProjectAnalysisTest` 报告 mariadb 项目有 49 个
+  被隔离的 declaration checker 异常，0 个文件级异常。
+
+全仓库运行中的 `:analysis:analysis-api-cfir:test`、`:analysis:low-level-api-cfir:test` 与
+`:lsp:test` 均完成，未列为失败任务；G6/G7 新增定向用例通过。
 
 ---
 

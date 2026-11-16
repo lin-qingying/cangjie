@@ -1,14 +1,17 @@
 package org.cangnova.cangjie.lsp.server
 
 import org.cangnova.cangjie.lsp.framework.AbstractLspIntegrationTest
+import org.cangnova.cangjie.lsp.quickfix.LspQuickFixCommands
 import org.cangnova.cangjie.lsp.state.LspTextDocument
 import org.cangnova.cangjie.lsp.testkit.LspWorkspaceFixture
 import org.cangnova.cangjie.lsp.testkit.LspWorkspaceFixtureBuilder
 import org.eclipse.lsp4j.CodeActionContext
 import org.eclipse.lsp4j.CodeActionKind
 import org.eclipse.lsp4j.CodeActionParams
+import org.eclipse.lsp4j.ExecuteCommandParams
 import org.eclipse.lsp4j.Range
 import org.eclipse.lsp4j.TextDocumentIdentifier
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
@@ -19,8 +22,8 @@ import org.junit.jupiter.api.Test
  * 校验 LSP codeAction 两段链路的集成行为。
  *
  * 覆盖：
- * 1. 列表阶段按 quick-fix 框架给出「实现成员」动作，且不携带编辑；
- * 2. resolve 阶段经 headless 成员生成产出真实插入编辑；
+ * 1. 列表阶段按 quick-fix 框架给出「实现成员」ModCommand；
+ * 2. workspace/executeCommand 经 LSP command adapter 产出真实插入编辑；
  * 3. 无可修复诊断的文档返回空列表。
  */
 class CangjieCodeActionIntegrationTest : AbstractLspIntegrationTest() {
@@ -30,21 +33,22 @@ class CangjieCodeActionIntegrationTest : AbstractLspIntegrationTest() {
     override val autoCreateDefaultSession: Boolean = false
 
     /**
-     * 校验「列表不携带编辑、resolve 产出 override 成员插入」两段契约。
+     * 校验「列表携带 ModCommand、命令执行产出 override 成员编辑」两段契约。
      */
     @Test
-    fun `codeAction lists quickfix and resolve produces implement-member edits`() {
+    fun `codeAction command produces implement-member edits`() {
         quickFixWorkspace().use { fixture ->
             createSession(fixture.initializeParams()).use { testSession ->
                 val uri = fixture.uri("src/host.cj")
                 testSession.openDocument(uri, fixture.text("src/host.cj"))
+                val publishedDiagnostics = testSession.awaitPublishedDiagnostics(uri).diagnostics
 
                 val classRange = rangeOf(fixture, "src/host.cj", "class Host")
                 val actions = testSession.codeAction(
                     CodeActionParams(
                         TextDocumentIdentifier(uri),
                         classRange,
-                        CodeActionContext(emptyList()),
+                        CodeActionContext(publishedDiagnostics),
                     ),
                 )
 
@@ -55,13 +59,15 @@ class CangjieCodeActionIntegrationTest : AbstractLspIntegrationTest() {
                     "未实现成员的诊断必须给出 quick fix，实际 $actions",
                 )
                 quickFixes.forEach { action ->
-                    assertNull(action.edit, "codeAction 列表阶段不得携带编辑，编辑应延迟到 resolve。")
-                    assertNotNull(action.data, "resolve 需要 data 携带诊断定位信息。")
+                    assertNull(action.edit, "quick fix 使用 command 执行，列表不直接携带 WorkspaceEdit。")
+                    assertNotNull(action.command, "quick fix 必须携带可执行的 ModCommand command。")
+                    assertEquals(LspQuickFixCommands.APPLY_MOD_COMMAND, action.command?.command)
                 }
 
-                val resolved = testSession.resolveCodeAction(quickFixes.first())
-                val edits = resolved.edit?.changes?.get(uri).orEmpty()
-                assertTrue(edits.isNotEmpty(), "resolve 必须产出真实编辑。")
+                val command = requireNotNull(quickFixes.first().command)
+                testSession.executeCommand(ExecuteCommandParams(command.command, command.arguments))
+                val edits = testSession.appliedEdits().last().edit.changes[uri].orEmpty()
+                assertTrue(edits.isNotEmpty(), "ModCommand command 必须产出真实编辑。")
                 assertTrue(
                     edits.any { it.newText.contains("override func greet") },
                     "插入编辑必须包含 override 成员声明，实际 ${edits.map { it.newText }}",

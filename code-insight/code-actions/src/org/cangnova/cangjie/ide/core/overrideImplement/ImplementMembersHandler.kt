@@ -1,14 +1,27 @@
 package org.cangnova.cangjie.ide.core.overrideImplement
 
-import com.intellij.codeInsight.intention.IntentionAction
-import com.intellij.openapi.editor.Editor
+import com.intellij.codeInspection.options.OptMultiSelector
+import com.intellij.modcommand.ActionContext
+import com.intellij.modcommand.ModCommand
+import com.intellij.modcommand.ModCommandAction
+import com.intellij.modcommand.Presentation
+import com.intellij.modcommand.PsiBasedModCommandAction
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
-import com.intellij.psi.PsiFile
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.cfir.diagnostics.CaCfirDiagnostic
+import org.cangnova.cangjie.analysis.api.components.containingDeclaration
+import org.cangnova.cangjie.analysis.api.components.render
+import org.cangnova.cangjie.analysis.api.CaExperimentalApi
 import org.cangnova.cangjie.analysis.api.symbols.CaClassSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaNamedFunctionSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaPropertySymbol
+import org.cangnova.cangjie.analysis.api.renderer.declarations.impl.CaDeclarationRendererForSource
 import org.cangnova.cangjie.codeinsight.api.applicators.fixes.CangJieQuickFixFactory
+import org.cangnova.cangjie.codeinsight.api.members.CangJieGeneratableMember
+import org.cangnova.cangjie.formatter.CangJieFormatter
+import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjTypeStatement
 
 /**
@@ -43,42 +56,54 @@ internal open class ImplementMembersHandler : GenerateMembersHandler(true) {
 }
 
 /**
- * “抽象成员未实现”诊断对应的 intention action。
+ * “抽象成员未实现”诊断对应的 ModCommand action。
  */
-internal class ImplementMembersQuickfix(
-    /**
-     * 诊断处已经收集好的待实现成员候选。
-     */
-    private val members: Collection<CangJieOverrideMemberChooserObject>,
-) : ImplementMembersHandler(), IntentionAction {
-    /**
-     * intention 展示文本。
-     */
-    override fun getText(): String = familyName
+private class ImplementMembersQuickfix(
+    typeStatement: CjTypeStatement,
+    private val members: List<ImplementMembersOption>,
+) : PsiBasedModCommandAction<CjTypeStatement>(typeStatement) {
+    override fun getFamilyName(): String =
+        CangJieOverrideImplementBundle.message("implement.members.handler.family")
 
-    /**
-     * intention family 名称。
-     */
-    override fun getFamilyName(): String = CangJieOverrideImplementBundle.message("implement.members.handler.family")
+    override fun getPresentation(context: ActionContext, element: CjTypeStatement): Presentation =
+        Presentation.of(getFamilyName())
 
-    /**
-     * 诊断产生的 quick-fix 始终可用，实际候选已由 factory 过滤。
-     */
-    override fun isAvailable(project: Project, editor: Editor?, file: PsiFile): Boolean = true
-
-    /**
-     * 从已保存的 symbol pointer 恢复最新候选成员。
-     */
-    context(session: CaSession)
-    override fun collectMembersToGenerate(
-        classSymbol: CaClassSymbol,
-        project: Project,
-    ): Collection<CangJieOverrideMemberChooserObject> {
-        return members.mapNotNull { chooserObject ->
-            chooserObject.symbolPointer.restoreSymbol(session)?.toChooserObject()
+    override fun perform(context: ActionContext, element: CjTypeStatement): ModCommand =
+        ModCommand.chooseMultipleMembers(
+            CangJieOverrideImplementBundle.message("implement.members.handler.title"),
+            members,
+            members,
+        ) { selectedOptions ->
+            val selectedMembers = selectedOptions.map { (it as ImplementMembersOption).member }
+            ModCommand.psiUpdate(element) { writableType, updater ->
+                val lastInserted = insertRenderedMembers(
+                    writableType,
+                    selectedMembers.map { member -> member.kind to member.renderedText },
+                )
+                CangJieFormatter.reformatInPlace(writableType.containingFile as CjFile)
+                lastInserted?.let(updater::moveCaretTo)
+            }
         }
-    }
 }
+
+/**
+ * ModCommand chooser 项：展示签名，同时携带已由 Analysis session 渲染的生成声明。
+ */
+private data class ImplementMembersOption(
+    val displayText: String,
+    val parentTypeText: String?,
+    val member: CangJieGeneratableMember,
+) : OptMultiSelector.OptElement {
+    override fun getText(): String = displayText
+
+    override fun getSecondaryText(): String? = parentTypeText
+}
+
+private data class ImplementMembersMember(
+    override val name: String,
+    override val renderedText: String,
+    override val kind: CangJieGeneratableMember.Kind,
+) : CangJieGeneratableMember
 
 /**
  * “抽象成员未实现”诊断的 K2 quick-fix factory。
@@ -91,9 +116,9 @@ object MemberNotImplementedQuickfixFactories {
     /**
      * 为 `AbstractMemberNotImplemented` 诊断创建“实现成员” quick-fix。
      */
-    val abstractMemberNotImplemented: CangJieQuickFixFactory.IntentionBased<CaCfirDiagnostic.AbstractMemberNotImplemented> =
-        CangJieQuickFixFactory.IntentionBased { diagnostic ->
-            val typeStatement = diagnostic.psi as? CjTypeStatement ?: return@IntentionBased emptyList()
+    val abstractMemberNotImplemented: CangJieQuickFixFactory.ModCommandBased<CaCfirDiagnostic.AbstractMemberNotImplemented> =
+        CangJieQuickFixFactory.ModCommandBased { diagnostic ->
+            val typeStatement = diagnostic.psi as? CjTypeStatement ?: return@ModCommandBased emptyList()
             getUnimplementedMemberFixes(typeStatement)
         }
 
@@ -103,15 +128,15 @@ object MemberNotImplementedQuickfixFactories {
      * 该诊断有两个上报场景：类实现接口缺成员（PSI 挂在类型声明上，可收集成员）
      * 与 extend 父接口义务（PSI 挂在 extend 上，符号模型不同不在此处理）。
      */
-    val interfaceMemberMustBeImplemented: CangJieQuickFixFactory.IntentionBased<CaCfirDiagnostic.InterfaceMemberMustBeImplemented> =
-        CangJieQuickFixFactory.IntentionBased { diagnostic ->
+    val interfaceMemberMustBeImplemented: CangJieQuickFixFactory.ModCommandBased<CaCfirDiagnostic.InterfaceMemberMustBeImplemented> =
+        CangJieQuickFixFactory.ModCommandBased { diagnostic ->
             fixesForAncestorTypeStatement(diagnostic.psi)
         }
 
     /**
      * 从诊断 PSI 向上找最近的类型声明并生成修复。
      */
-    private fun CaSession.fixesForAncestorTypeStatement(psi: PsiElement): List<IntentionAction> {
+    private fun CaSession.fixesForAncestorTypeStatement(psi: PsiElement): List<ModCommandAction> {
         val typeStatement = generateSequence(psi) { it.parent }
             .firstOrNull { it is CjTypeStatement } as? CjTypeStatement
             ?: return emptyList()
@@ -119,14 +144,35 @@ object MemberNotImplementedQuickfixFactories {
     }
 
     /**
-     * 根据诊断所在类型声明收集未实现成员并包装为 intention。
+     * 根据诊断所在类型声明收集未实现成员并创建 ModCommand action。
      */
-    private fun CaSession.getUnimplementedMemberFixes(typeStatement: CjTypeStatement): List<IntentionAction> {
+    private fun CaSession.getUnimplementedMemberFixes(
+        typeStatement: CjTypeStatement,
+    ): List<ModCommandAction> {
         val classSymbol = typeStatement.symbol as? CaClassSymbol ?: return emptyList()
         val unimplementedMembers = getUnimplementedMemberSymbols(classSymbol).map { symbol ->
-            symbol.toChooserObject()
+            symbol.toImplementMembersOption()
         }
         if (unimplementedMembers.isEmpty()) return emptyList()
-        return listOf(ImplementMembersQuickfix(unimplementedMembers))
+        return listOf(ImplementMembersQuickfix(typeStatement, unimplementedMembers))
+    }
+
+    @OptIn(CaExperimentalApi::class)
+    context(session: CaSession)
+    private fun CaCallableSymbol.toImplementMembersOption(): ImplementMembersOption {
+        val (name, kind, renderedText) = when (this) {
+            is CaNamedFunctionSymbol ->
+                Triple(name.asString(), CangJieGeneratableMember.Kind.FUNCTION, buildOverrideFunctionText(this))
+            is CaPropertySymbol ->
+                Triple(name.asString(), CangJieGeneratableMember.Kind.PROPERTY, buildOverridePropertyText(this))
+            else -> error("Unsupported callable for override/implement generation: " + this::class.qualifiedName)
+        }
+        val member = ImplementMembersMember(name, renderedText, kind)
+        val parentName = (containingDeclaration as? CaClassSymbol)?.name?.asString()
+        return ImplementMembersOption(
+            displayText = render(CaDeclarationRendererForSource.WITH_SHORT_NAMES),
+            parentTypeText = parentName,
+            member = member,
+        )
     }
 }

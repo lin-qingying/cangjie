@@ -3764,10 +3764,19 @@ class PsiRawCfirBuilder(
 
                 is CjEnumPattern -> buildEnumPattern {
                     source = pattern.toCjPsiSourceElement()
-                    val refText = pattern.expression?.text ?: "<enum-pattern>"
+                    /*
+                     * 限定名模式 `E.A` / `Alias<Int64>.B(x)`：`.` 之前是类型限定符，按普通表达式转换，
+                     * 由 resolve 阶段作为 receiver 解析；constructor 引用只承载 `.` 之后的短名。
+                     * 裸名字模式没有限定符。
+                     */
+                    val constructorExpression = pattern.expression
+                    val qualified = constructorExpression as? CjDotQualifiedExpression
+                    val constructorNameExpression = if (qualified != null) qualified.selectorExpression else constructorExpression
+                    ownerQualifier = qualified?.receiverExpression?.let { receiver -> convertExpression(receiver) }
+                    val constructorText = constructorNameExpression?.text
                     constructorReference = buildNamedReference(
-                        if (refText.startsWith("<")) Name.special(refText) else Name.identifier(refText),
-                        pattern.expression?.toCjPsiSourceElement() ?: pattern.toCjPsiSourceElement(),
+                        if (constructorText.isNullOrEmpty()) Name.special("<enum-pattern>") else Name.identifier(constructorText),
+                        (constructorExpression ?: pattern).toCjPsiSourceElement(),
                     )
                     arguments.addAll(
                         pattern.patterns.map {

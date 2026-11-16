@@ -28,6 +28,9 @@ import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.accessContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.calls.resolvedQualifierClassifier
+import org.cangnova.cangjie.cfir.references.CfirErrorNamedReference
+import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
@@ -160,6 +163,17 @@ object CfirMatchPatternLegalityChecker : CfirMatchExpressionChecker() {
                     return
                 }
 
+                /*
+                 * 官方把“subject enum 中不存在该 constructor 名字”归为
+                 * `sema_undeclared_identifier`（本项目诊断名 UNRESOLVED_REFERENCE），
+                 * 不能和“pattern 类型不匹配”共用 PATTERN_NOT_MATCH。
+                 *
+                 * 该诊断只有 resolver 一个生产者：裸名字与限定名两条 pattern 路径都在
+                 * subject enum 声明内定位构造器，定位失败时写入 error reference，
+                 * 再由标准错误节点收集链路上报。checker 不重复生产同一条诊断。
+                 */
+                if (resolution is EnumPatternConstructorResolution.UnknownConstructor) return
+
                 if (resolution is EnumPatternConstructorResolution.ArityMismatch) {
                     reporter.reportOn(
                         source = pattern.source ?: pattern.constructorReference.source,
@@ -278,6 +292,7 @@ internal fun CfirPattern.hasPatternLegalityProblem(
             when (val resolution = resolveEnumConstructorPattern(expectedType, context)) {
                 null,
                 EnumPatternConstructorResolution.ArityMismatch,
+                EnumPatternConstructorResolution.UnknownConstructor,
                 -> true
 
                 is EnumPatternConstructorResolution.Resolved ->
@@ -412,13 +427,17 @@ private fun ConeCangJieType.patternTypeText(): String = when (this) {
 /**
  * enum pattern 构造器解析结果。
  *
- * 参数个数不匹配必须与“subject enum 中不存在该构造器”分开，前者报告专门的
- * `ENUM_PATTERN_PARAM_SIZE_ERROR`，后者才属于 `PATTERN_NOT_MATCH`。
+ * 参数个数不匹配必须与“subject enum 中不存在该构造器”分开：前者报告专门的
+ * `ENUM_PATTERN_PARAM_SIZE_ERROR`，后者按官方语义报告 `UNRESOLVED_REFERENCE`；
+ * `PATTERN_NOT_MATCH` 只保留给 pattern 与 subject 类型本身不匹配的场景。
  */
 private sealed interface EnumPatternConstructorResolution {
     data class Resolved(val argumentTypes: List<ConeCangJieType>) : EnumPatternConstructorResolution
 
     data object ArityMismatch : EnumPatternConstructorResolution
+
+    /** subject enum 中不存在该 constructor 名字，应按 unresolved reference 上报。 */
+    data object UnknownConstructor : EnumPatternConstructorResolution
 }
 
 /**
@@ -431,7 +450,15 @@ private fun CfirEnumPattern.resolveEnumConstructorPattern(
     expectedType: ConeCangJieType,
     context: CheckerContext,
 ): EnumPatternConstructorResolution? {
-    val optionArgumentTypes = resolveStdlibOptionArgumentTypes(this, expectedType)
+    // constructor 名字或限定符已由 resolver 判定为未声明：根诊断在 error reference / 限定符上，
+    // 这里不再叠加 pattern 级诊断。
+    if (constructorReference is CfirErrorNamedReference) return EnumPatternConstructorResolution.UnknownConstructor
+    val qualifier = ownerQualifier
+    if (qualifier != null && qualifier.resolvedQualifierClassifier(context.session) == null) {
+        return EnumPatternConstructorResolution.UnknownConstructor
+    }
+
+    val optionArgumentTypes = resolveStdlibOptionArgumentTypes(this, expectedType, context.session)
     if (optionArgumentTypes != null) {
         return if (arguments.size == optionArgumentTypes.size) {
             EnumPatternConstructorResolution.Resolved(optionArgumentTypes)
@@ -443,13 +470,12 @@ private fun CfirEnumPattern.resolveEnumConstructorPattern(
     val enumType = expectedType.expandedPatternEnumType(context.session) ?: return null
     val enumDeclaration = context.session.symbolProvider.getClassLikeSymbolByClassId(enumType.classId)?.cfir as? CfirEnum
         ?: return null
-    val constructorAccess = constructorReference.enumPatternConstructorAccessOrNull() ?: return null
-    if (!constructorAccess.matchesEnumOwner(enumDeclaration, enumType)) return null
-    val constructorName = constructorAccess.constructorName
+    val constructorName = constructorNameOrNull() ?: return null
+    if (!ownerQualifierMatchesSubject(enumType, context.session)) return null
     val constructorsByName = enumDeclaration.declarations
         .filterIsInstance<CfirEnumConstructor>()
         .filter { constructor -> constructor.name == constructorName }
-    if (constructorsByName.isEmpty()) return null
+    if (constructorsByName.isEmpty()) return EnumPatternConstructorResolution.UnknownConstructor
 
     val enumConstructor = constructorsByName.firstOrNull { constructor ->
         constructor.payloadArity() == arguments.size
@@ -467,14 +493,15 @@ private fun CfirEnumPattern.resolveEnumConstructorPattern(
 private fun resolveStdlibOptionArgumentTypes(
     pattern: CfirEnumPattern,
     expectedType: ConeCangJieType,
+    session: CfirSession,
 ): List<ConeCangJieType>? {
     val optionArgumentType = expectedType.optionElementType ?: return null
 
-    val constructorAccess = pattern.constructorReference.enumPatternConstructorAccessOrNull()
-        ?.takeIf { it.matchesStdlibOptionOwner(expectedType) }
+    val constructorName = pattern.constructorNameOrNull()
+        ?.takeIf { pattern.ownerQualifierMatchesSubject(expectedType, session) }
         ?: return null
 
-    return when (constructorAccess.constructorName) {
+    return when (constructorName) {
         OPTION_SOME_CONSTRUCTOR_NAME -> listOf(optionArgumentType)
         OPTION_NONE_CONSTRUCTOR_NAME -> emptyList()
         else -> null

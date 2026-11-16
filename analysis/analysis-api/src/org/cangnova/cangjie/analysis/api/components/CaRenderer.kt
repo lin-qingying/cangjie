@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.analysis.api.components
 
 import org.cangnova.cangjie.analysis.api.CaSession
+import org.cangnova.cangjie.analysis.api.CaNonPublicApi
 import org.cangnova.cangjie.analysis.api.lifetime.CaSessionComponent
 import org.cangnova.cangjie.analysis.api.lifetime.CaSessionComponentImplementationDetail
 import org.cangnova.cangjie.analysis.api.renderer.declarations.CaDeclarationRenderer
@@ -9,6 +10,7 @@ import org.cangnova.cangjie.analysis.api.renderer.types.CaTypeRenderer
 import org.cangnova.cangjie.analysis.api.renderer.types.impl.CaTypeRendererForSource
 import org.cangnova.cangjie.analysis.api.symbols.CaDeclarationSymbol
 import org.cangnova.cangjie.analysis.api.types.CaType
+import org.cangnova.cangjie.rendering.CangJieAnnotatedText
 
 /**
  * 顶层桥接:在当前 [CaSession] 上下文中,使用给定 [renderer] 把声明符号渲染为字符串。
@@ -22,6 +24,15 @@ fun CaDeclarationSymbol.render(
             renderer = renderer,
         )
     }
+}
+
+/** 在当前 Analysis session 中渲染声明，并保留 renderer 同步产出的语义区间。 */
+@CaNonPublicApi
+context(session: CaSession)
+fun CaDeclarationSymbol.renderAnnotated(
+    renderer: CaDeclarationRenderer,
+): CangJieAnnotatedText = with(session) {
+    renderAnnotated(renderer)
 }
 
 /**
@@ -42,6 +53,10 @@ interface CaRenderer : CaSessionComponent {
     fun CaDeclarationSymbol.render(
         renderer: CaDeclarationRenderer = CaDeclarationRendererForSource.WITH_QUALIFIED_NAMES,
     ): String
+
+    /** 渲染声明并保留同一轮输出的语言语义区间。 */
+    @CaNonPublicApi
+    fun CaDeclarationSymbol.renderAnnotated(renderer: CaDeclarationRenderer): CangJieAnnotatedText
 
     /**
      * 按 [renderer] 描述的策略把类型渲染为字符串。

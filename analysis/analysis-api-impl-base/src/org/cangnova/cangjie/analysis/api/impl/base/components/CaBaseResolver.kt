@@ -19,6 +19,7 @@ import org.cangnova.cangjie.analysis.api.resolution.CaSymbolResolutionAttempt
 import org.cangnova.cangjie.analysis.api.resolution.CaSymbolResolutionSuccess
 import org.cangnova.cangjie.analysis.api.resolution.symbols
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
+import org.cangnova.cangjie.psi.CjBinaryExpression
 import org.cangnova.cangjie.psi.CjCallExpression
 import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.CjNameReferenceExpression
@@ -39,6 +40,9 @@ abstract class CaBaseResolver<S : CaSession>(
      */
     protected abstract fun CjCallExpression.tryResolveCall(): CaCallResolutionAttempt?
 
+    /** 运算符表达式复用同一调用结果协议；不参与函数调用的二元表达式返回 `null`。 */
+    protected open fun CjBinaryExpression.tryResolveCall(): CaCallResolutionAttempt? = null
+
     /**
      * 由具体前端把任意 PSI 元素解析为后端符号解析尝试。
      *
@@ -51,8 +55,12 @@ abstract class CaBaseResolver<S : CaSession>(
      * 该元素不构成调用时返回 `null`。
      */
     final override fun CjElement.resolveToCall(): CaCallInfo? = withValidityAssertion {
-        val callExpression = this as? CjCallExpression ?: return@withValidityAssertion null
-        when (val attempt = callExpression.tryResolveCall()) {
+        val attempt = when (this) {
+            is CjCallExpression -> tryResolveCall()
+            is CjBinaryExpression -> tryResolveCall()
+            else -> null
+        }
+        when (attempt) {
             null -> null
             is CaCallResolutionSuccess -> CaBaseSuccessCallInfo(attempt.call)
             is CaCallResolutionError -> CaBaseErrorCallInfo(attempt.candidateCalls, attempt.diagnostic)
@@ -69,6 +77,7 @@ abstract class CaBaseResolver<S : CaSession>(
     final override fun CjElement.tryResolveSymbols(): CaSymbolResolutionAttempt? = withValidityAssertion {
         when (this) {
             is CjCallExpression -> tryResolveSymbolsForResolvableCall()
+            is CjBinaryExpression -> tryResolveCall()?.toSymbolResolutionAttempt() ?: performSymbolResolution(this)
             is CjOperationReferenceExpression -> tryResolveSymbolsForOperationReference()
             else -> performSymbolResolution(this)
         }
@@ -106,7 +115,18 @@ abstract class CaBaseResolver<S : CaSession>(
      * 操作符引用（`+`、`[]` 等）没有独立的调用节点，语义来源是其所在调用。
      */
     private fun CjOperationReferenceExpression.tryResolveSymbolsForOperationReference(): CaSymbolResolutionAttempt? =
-        (parent as? CjCallExpression)?.tryResolveSymbolsForResolvableCall()
+        when (val operation = parent) {
+            is CjCallExpression -> operation.tryResolveSymbolsForResolvableCall()
+            is CjBinaryExpression -> operation.tryResolveCall()?.toSymbolResolutionAttempt() ?: performSymbolResolution(this)
+            else -> null
+        }
+
+    private fun CaCallResolutionAttempt.toSymbolResolutionAttempt(): CaSymbolResolutionAttempt? = when (this) {
+        is CaCallResolutionError ->
+            CaBaseSymbolResolutionError(diagnostic, candidateCalls.flatMap { it.symbols })
+
+        is CaCallResolutionSuccess -> call.symbols.toSymbolResolutionSuccessOrNull()
+    }
 
     /**
      * 非空符号集合投影为成功的元素级解析尝试。

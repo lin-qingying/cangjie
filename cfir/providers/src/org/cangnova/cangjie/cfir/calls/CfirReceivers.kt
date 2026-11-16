@@ -24,6 +24,8 @@
 
 package org.cangnova.cangjie.cfir.calls
 
+import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 
 import org.cangnova.cangjie.builtins.StandardNames
@@ -802,6 +804,8 @@ private fun CfirExpression.builtinTypeQualifierOrNull(session: CfirSession): Con
  */
 private fun CfirTypeAliasSymbol.expandedClassLikeSymbol(session: CfirSession): CfirClassLikeSymbol<*>? {
     if (!isBound) return null
+    // 惰性解析模式下别名可能尚未到 TYPES 阶段，展开类型此时还读不到；先推进再读。
+    lazyResolveToPhase(CfirResolvePhase.TYPES)
     val expandedType = (cfir as? CfirTypeAlias)?.expandedTypeRef?.coneTypeOrNull ?: return null
     val classId = expandedType.expandedClassIdOrPrimitiveClassId ?: return null
     return session.symbolProvider.getClassLikeSymbolByClassId(classId)

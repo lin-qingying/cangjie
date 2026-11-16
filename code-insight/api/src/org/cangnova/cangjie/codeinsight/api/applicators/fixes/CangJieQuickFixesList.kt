@@ -3,8 +3,10 @@ package org.cangnova.cangjie.codeinsight.api.applicators.fixes
 import com.intellij.codeInsight.intention.IntentionAction
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.progress.ProcessCanceledException
+import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.diagnostics.CaDiagnosticWithPsi
+import org.cangnova.cangjie.codeinsight.api.classic.quickfixes.QuickFixesPsiBasedFactory
 import kotlin.reflect.KClass
 
 /**
@@ -92,6 +94,23 @@ class CangJieQuickFixesListBuilder private constructor() {
         KClass<out CaDiagnosticWithPsi<*>>,
         MutableList<CangJieQuickFixFactory<out CaDiagnosticWithPsi<*>>>,
         >()
+
+    /**
+     * 注册只依赖诊断 PSI 的传统 intention factory。
+     */
+    fun <DIAGNOSTIC_PSI : PsiElement, DIAGNOSTIC : CaDiagnosticWithPsi<DIAGNOSTIC_PSI>> registerPsiQuickFixes(
+        diagnosticClass: KClass<DIAGNOSTIC>,
+        vararg factories: QuickFixesPsiBasedFactory<in DIAGNOSTIC_PSI>,
+    ) {
+        for (factory in factories) {
+            registerFactory(
+                diagnosticClass,
+                CangJieQuickFixFactory.IntentionBased<DIAGNOSTIC> { diagnostic ->
+                    diagnostic.psi.let(factory::createQuickFix)
+                },
+            )
+        }
+    }
 
     /**
      * 使用 reified 诊断类型注册 quick-fix factory。

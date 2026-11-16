@@ -7,9 +7,9 @@
 | 包 | 职责 |
 |---|---|
 | `cangjie.name` | `Name` / `FqName` / `ClassId` / `CallableId`，含路径遍历与缓存 |
-| `cangjie.descriptors` | `Visibility` / `Modality` / `Modifier` 等描述符与可见性比较 |
+| `cangjie.descriptors` | `Visibility` / `Modality` 等描述符与可见性比较 |
 | `cangjie.descriptors.annotations` | 注解描述符 |
-| `cangjie.builtins` | 内置类型（`PrimitiveType` 18 种：Int8 ~ UInt64 / Float16~Float64 / Bool / Rune / IntNative / UIntNative / Unit / Nothing） |
+| `cangjie.builtins` | 内置类型（`PrimitiveType` 17 种：Int8 ~ UInt64 / Float16~Float64 / Bool / Rune / IntNative / UIntNative / Unit / Nothing） |
 | `cangjie.constant` | 常量定义 |
 | `cangjie.messages` | `CompilerMessageSeverity` / `MessageCollector`（编译器消息系统） |
 

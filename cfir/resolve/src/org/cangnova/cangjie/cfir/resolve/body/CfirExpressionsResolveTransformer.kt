@@ -31,6 +31,7 @@ import org.cangnova.cangjie.requireFeatureSupport
 import org.cangnova.cangjie.psi.CjNodeTypes
 import org.cangnova.cangjie.cfir.*
 import org.cangnova.cangjie.cfir.calls.qualifierScopeOrNull
+import org.cangnova.cangjie.cfir.calls.resolvedQualifierClassifier
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.diagnostic.*
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
@@ -48,7 +49,6 @@ import org.cangnova.cangjie.cfir.references.builder.buildErrorNamedReference
 import org.cangnova.cangjie.cfir.references.builder.buildNamedReference
 import org.cangnova.cangjie.cfir.references.builder.buildResolvedNamedReference
 import org.cangnova.cangjie.cfir.references.impl.CfirNamedReferenceImpl
-import org.cangnova.cangjie.cfir.references.impl.CfirResolvedAppliedCallableReference
 import org.cangnova.cangjie.cfir.resolve.*
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirContextDependentNamedReference
@@ -2990,7 +2990,9 @@ open class CfirExpressionsResolveTransformer(
         return withNewLocalScope {
             components.dataFlowAnalyzer.enterMatchBranchCondition(branch)
             resolvePatternValueExpressions(branch.pattern, subjectType)
-            branch.replacePattern(resolveDeferredMatchPattern(branch.pattern, subjectType))
+            branch.replacePattern(
+                resolveDeferredMatchPattern(branch.pattern, subjectType, BareNamePatternPosition.MATCHING),
+            )
             val patternError = resolvePatternBindingTypes(branch.pattern, subjectType, specificTypeResolverTransformer)
             val bindingError = registerScopedPatternBindings(branch.pattern, CfirPatternBindingScope(branch.body), subjectType)
 
@@ -3020,21 +3022,43 @@ open class CfirExpressionsResolveTransformer(
         return ConeErrorType(ConeUnreportedDuplicateDiagnostic(ConeSimpleDiagnostic("Match guard does not have Bool type")))
     }
 
+    /** 裸名字模式（[CfirVarOrEnumPattern]）所处的语法位置，决定它如何消解。 */
+    private enum class BareNamePatternPosition {
+        /**
+         * `match` 分支与 `let` 条件：名字是可见 enum constructor 时为 enum pattern，否则为绑定变量
+         * （官方 `ChkVarOrEnumPattern`）。
+         */
+        MATCHING,
+
+        /**
+         * 声明位置（`for-in` 的循环变量模式）：名字永远是绑定变量，嵌套在 tuple / enum 模式内的
+         * 裸名字同样如此，与是否存在同名 enum constructor 无关。
+         *
+         * 官方在语法分析阶段就以 `inDecl` 直接产出 `VarPattern`
+         * （`external/cangjie_compiler/src/Parse/ParseAtom.cpp` 的 `ParseForInExpr`、
+         * `ParsePattern.cpp` 的 `ParseTypePatternOrVarOrEnumPattern`）；本项目的语法树在该位置
+         * 仍保留延迟节点，由 resolver 在这里完成同一判定。`let` / `var` 声明的模式在语法分析阶段
+         * 已经是绑定模式，不会带着延迟节点到达这里。
+         */
+        DECLARATION,
+    }
+
     /**
      * 对齐官方 `VarOrEnumPattern` 的延迟决议：
-     * 先保留裸名字歧义，进入 body resolve 后再根据当前作用域中是否可见 enum constructor
-     * 决定它究竟是 enum pattern 还是 binding pattern。
+     * 先保留裸名字歧义，进入 body resolve 后再按 [position] 与当前作用域中是否可见 enum constructor
+     * 决定它究竟是 enum pattern 还是 binding pattern。[position] 沿模式结构原样传给全部子模式。
      */
     private fun resolveDeferredMatchPattern(
         pattern: CfirPattern,
         expectedType: ConeCangJieType?,
+        position: BareNamePatternPosition,
     ): CfirPattern {
         return when (pattern) {
-            is CfirVarOrEnumPattern -> resolveVarOrEnumPattern(pattern, expectedType)
+            is CfirVarOrEnumPattern -> resolveVarOrEnumPattern(pattern, expectedType, position)
             is CfirBindingPattern -> {
                 val nestedPattern = pattern.nestedPattern ?: return pattern
                 val nestedExpectedType = (pattern.typeRef as? CfirResolvedTypeRef)?.coneType ?: expectedType
-                val resolvedNestedPattern = resolveDeferredMatchPattern(nestedPattern, nestedExpectedType)
+                val resolvedNestedPattern = resolveDeferredMatchPattern(nestedPattern, nestedExpectedType, position)
                 if (resolvedNestedPattern === nestedPattern) pattern else buildBindingPatternCopy(pattern) {
                     this.nestedPattern = resolvedNestedPattern
                 }
@@ -3043,7 +3067,7 @@ open class CfirExpressionsResolveTransformer(
             is CfirTuplePattern -> {
                 val tupleType = expectedType as? ConeTupleType
                 val resolvedElements = pattern.elements.mapIndexed { index, element ->
-                    resolveDeferredMatchPattern(element, tupleType?.elementTypes?.getOrNull(index))
+                    resolveDeferredMatchPattern(element, tupleType?.elementTypes?.getOrNull(index), position)
                 }
                 if (resolvedElements.zip(pattern.elements).all { (resolved, original) -> resolved === original }) {
                     pattern
@@ -3056,14 +3080,18 @@ open class CfirExpressionsResolveTransformer(
             }
 
             is CfirEnumPattern -> {
+                val resolvedReference = resolveEnumPatternConstructorReference(pattern, expectedType)
                 val argumentTypes = resolveEnumArgumentTypesForDeferredPattern(pattern, expectedType)
                 val resolvedArguments = pattern.arguments.mapIndexed { index, argument ->
-                    resolveDeferredMatchPattern(argument, argumentTypes.getOrNull(index))
+                    resolveDeferredMatchPattern(argument, argumentTypes.getOrNull(index), position)
                 }
-                if (resolvedArguments.zip(pattern.arguments).all { (resolved, original) -> resolved === original }) {
+                if (resolvedReference === pattern.constructorReference &&
+                    resolvedArguments.zip(pattern.arguments).all { (resolved, original) -> resolved === original }
+                ) {
                     pattern
                 } else {
                     buildEnumPatternCopy(pattern) {
+                        constructorReference = resolvedReference
                         arguments.clear()
                         arguments.addAll(resolvedArguments)
                     }
@@ -3072,7 +3100,7 @@ open class CfirExpressionsResolveTransformer(
 
             is CfirOrPattern -> {
                 val resolvedAlternatives = pattern.alternatives.map { alternative ->
-                    resolveDeferredMatchPattern(alternative, expectedType)
+                    resolveDeferredMatchPattern(alternative, expectedType, position)
                 }
                 if (resolvedAlternatives.zip(pattern.alternatives).all { (resolved, original) -> resolved === original }) {
                     pattern
@@ -3092,66 +3120,216 @@ open class CfirExpressionsResolveTransformer(
     /**
      * 将裸名字模式解析为 enum 构造模式或绑定模式。
      *
-     * 优先使用 subject expected type 中的 enum 声明消解歧义；没有 expected enum 类型时，
-     * 再走当前作用域的普通值解析以识别可见 enum constructor。
+     * 声明位置（[BareNamePatternPosition.DECLARATION]）的裸名字永远是绑定变量；匹配位置按
+     * [bareNameEnumConstructorReferenceOrNull] 判定名字是否是 enum constructor。
      */
     private fun resolveVarOrEnumPattern(
         pattern: CfirVarOrEnumPattern,
         expectedType: ConeCangJieType?,
+        position: BareNamePatternPosition,
     ): CfirPattern {
-        val expectedEnumConstructorReference = resolveExpectedEnumConstructorReferenceOrNull(pattern, expectedType)
-        if (expectedEnumConstructorReference != null) {
-            return buildEnumPattern {
+        val enumConstructorReference = when (position) {
+            BareNamePatternPosition.DECLARATION -> null
+            BareNamePatternPosition.MATCHING -> bareNameEnumConstructorReferenceOrNull(pattern, expectedType)
+        }
+        if (enumConstructorReference == null) {
+            return buildBindingPattern {
                 source = pattern.source
-                constructorReference = expectedEnumConstructorReference
+                name = pattern.name
+                bindingVariable = pattern.bindingVariable
             }
         }
-
-        val enumConstructorReference = resolveEnumConstructorReferenceOrNull(pattern)
-        if (enumConstructorReference != null) {
-            return buildEnumPattern {
-                source = pattern.source
-                constructorReference = enumConstructorReference
-            }
-        }
-
-        return buildBindingPattern {
+        return buildEnumPattern {
             source = pattern.source
-            name = pattern.name
-            bindingVariable = pattern.bindingVariable
+            constructorReference = enumConstructorReference
         }
     }
 
     /**
-     * 按 expected enum 类型查找无载荷 enum constructor，并构造已解析引用。
+     * 匹配位置的裸名字作为 enum pattern 时的 constructor 引用；名字不是 enum constructor 时返回 null，
+     * 由调用方按绑定变量处理。
      *
-     * 该路径只接受 payload arity 为 0 的构造项，因为裸名字模式不能携带 enum payload。
+     * 对齐官方 `ChkVarOrEnumPattern`（`external/cangjie_compiler/src/Sema/TypeCheckPattern.cpp`），分两步：
+     *
+     * 1. **分类**——名字是否是一个 enum constructor。subject enum 自身的无载荷构造器直接命中；
+     *    否则询问当前作用域里有没有同名 enum constructor
+     *    （[CfirCallResolver.collectEnumConstructorsForBareNamePattern]，对应官方
+     *    `ASTContext::IsEnumConstructor`）。分类只看「有没有」：同名局部变量或形参不遮蔽它，
+     *    多个 enum 声明同名构造器、或同一 enum 按 payload 个数重载也不改变结论。
+     * 2. **定位**——一旦判定为 enum pattern，构造器目标只在 subject enum 声明内查找
+     *    （官方 `FindEnumPatternTarget` → `FieldLookup`，见 [enumPatternTargetReference]）。
+     *    作用域里可见的同名构造器只参与分类，不能充当目标：`match (e: E) { case X => ... }`
+     *    中 `X` 若是另一个 enum 的构造器，官方报 `sema_undeclared_identifier`，
+     *    不能悄悄绑定到那个 enum 而把诊断吞掉。
+     *
+     * subject 不是 enum（或类型尚未确定）时没有可供定位的 enum 声明，引用落到作用域里的同名
+     * 构造器上以保持可导航；「enum pattern 与 subject 类型不匹配」由 pattern legality checker
+     * 报告 `PATTERN_NOT_MATCH`（官方 `sema_pattern_not_match`）。
+     *
+     * 已知偏差：第 1 步里「subject enum 自身的无载荷构造器直接命中」不询问作用域。subject enum
+     * 没有被当前包的任何文件 import、其类型只靠推断流入时，官方的名字表里没有它的构造器，
+     * 会把该名字当作绑定变量；这里仍按 enum pattern 处理。
      */
-    private fun resolveExpectedEnumConstructorReferenceOrNull(
+    private fun bareNameEnumConstructorReferenceOrNull(
         pattern: CfirVarOrEnumPattern,
         expectedType: ConeCangJieType?,
     ): CfirReference? {
-        if (expectedType?.optionElementType != null && pattern.name == optionNoneConstructorName) {
-            return buildNamedReference {
+        val subjectEnum = patternSubjectEnumOrNull(expectedType)
+        // 裸名字不携带 payload：下面三处的 payload 个数都是 0。
+        // subject enum 内只有无载荷构造器能直接完成分类与定位。
+        val ownConstructor = subjectEnum?.declaration
+            ?.enumConstructorsNamed(pattern.name)
+            ?.firstOrNull { constructor -> constructor.payloadArity() == 0 }
+        if (ownConstructor != null) {
+            return buildResolvedNamedReference {
                 source = pattern.source
                 name = pattern.name
+                resolvedSymbol = ownConstructor.symbol
             }
         }
 
-        val enumType = expectedType?.expandedPatternEnumType(session) ?: return null
-        val enumDeclaration = session.symbolProvider.getClassLikeSymbolByClassId(enumType.classId)?.cfir as? CfirEnum
-            ?: return null
-        val enumConstructor = enumDeclaration.declarations
-            .filterIsInstance<CfirEnumConstructor>()
-            .firstOrNull { constructor -> constructor.name == pattern.name && constructor.payloadArity() == 0 }
-            ?: return null
+        val visibleConstructors = callResolver
+            .collectEnumConstructorsForBareNamePattern(pattern.name, pattern.source)
+            .map { symbol -> symbol.cfir }
+        if (visibleConstructors.isEmpty()) return null
 
+        if (subjectEnum != null) {
+            return enumPatternTargetReference(
+                enumDeclaration = subjectEnum.declaration,
+                constructorName = pattern.name,
+                payloadCount = 0,
+                referenceSource = pattern.source,
+            )
+        }
+
+        val visibleConstructor = visibleConstructors.selectByPayloadCount(payloadCount = 0)
+            ?: return null
         return buildResolvedNamedReference {
             source = pattern.source
             name = pattern.name
-            resolvedSymbol = enumConstructor.symbol
+            resolvedSymbol = visibleConstructor.symbol
         }
     }
+
+    /** pattern 的 subject enum：use-site 类型及其声明。 */
+    private class PatternSubjectEnum(
+        /** 归一化后的 enum use-site 类型，携带类型实参。 */
+        val type: ConeEnumType,
+        /** [type] 对应的 enum 声明。 */
+        val declaration: CfirEnum,
+    )
+
+    /**
+     * 从 pattern 的 expected type 恢复 subject enum。
+     *
+     * 标准库 `Option<T>` 等类型在部分路径上以 class-like 形态流入，统一经 providers 的
+     * [expandedPatternEnumType] 归一化为 [ConeEnumType] 后再取声明。expected type 不是 enum、
+     * 或声明不可得时返回 null。
+     */
+    private fun patternSubjectEnumOrNull(expectedType: ConeCangJieType?): PatternSubjectEnum? {
+        val enumType = expectedType?.expandedPatternEnumType(session) ?: return null
+        val enumDeclaration = session.symbolProvider.getClassLikeSymbolByClassId(enumType.classId)?.cfir as? CfirEnum
+            ?: return null
+        return PatternSubjectEnum(enumType, enumDeclaration)
+    }
+
+    /** enum 声明内名为 [name] 的全部构造器；仓颉允许同名构造器按 payload 个数重载。 */
+    private fun CfirEnum.enumConstructorsNamed(name: Name): List<CfirEnumConstructor> =
+        declarations.filterIsInstance<CfirEnumConstructor>().filter { constructor -> constructor.name == name }
+
+    /**
+     * 在一组同名 enum constructor 里选出 pattern 的目标：优先 payload 个数匹配者，否则退回第一个。
+     *
+     * 对应官方 `FindEnumPatternTarget` 逐个比对目标形状的循环。个数都不匹配时仍给出一个同名
+     * constructor，让引用保持可导航；个数错误由 pattern legality checker 报告。列表为空时返回 null。
+     */
+    private fun List<CfirEnumConstructor>.selectByPayloadCount(payloadCount: Int): CfirEnumConstructor? =
+        firstOrNull { constructor -> constructor.payloadArity() == payloadCount } ?: firstOrNull()
+
+    /**
+     * 在 subject enum 声明内定位 pattern 的构造器目标，并构造 resolved / error 引用。
+     *
+     * 对齐官方 `FindEnumPatternTarget`（`external/cangjie_compiler/src/Sema/TypeCheckPattern.cpp`）：
+     * - 同名构造器存在：优先取 payload 个数匹配者；个数都不匹配时仍绑定到同名构造器，
+     *   由 pattern legality checker 报告 `ENUM_PATTERN_PARAM_SIZE_ERROR`
+     *   （官方 `sema_enum_pattern_param_size_error`）；
+     * - 同名构造器不存在：构造带 [ConeUnresolvedNameError] 的 error reference，由标准错误节点
+     *   收集链路产出 `UNRESOLVED_REFERENCE`（官方 `sema_undeclared_identifier`）。
+     *
+     * 裸名字与限定名两条 pattern 路径都必须经过这里：「owner enum 中不存在该构造器」
+     * 只有 resolver 这一个生产者，checker 不再按名字重新判定。
+     *
+     * @param enumDeclaration 查找 constructor 的 enum：裸名字模式是 subject enum，限定名模式是限定符
+     *   指向的 enum。
+     */
+    private fun enumPatternTargetReference(
+        enumDeclaration: CfirEnum,
+        constructorName: Name,
+        payloadCount: Int,
+        referenceSource: CjSourceElement?,
+    ): CfirReference {
+        val constructor = enumDeclaration.enumConstructorsNamed(constructorName).selectByPayloadCount(payloadCount)
+            ?: return unresolvedEnumPatternConstructorReference(constructorName, referenceSource)
+        return buildResolvedNamedReference {
+            source = referenceSource
+            name = constructorName
+            resolvedSymbol = constructor.symbol
+        }
+    }
+
+    /** pattern 的 constructor 名字找不到目标时的 error reference，由标准错误节点收集链路上报。 */
+    private fun unresolvedEnumPatternConstructorReference(
+        constructorName: Name,
+        referenceSource: CjSourceElement?,
+    ): CfirReference = buildErrorNamedReference {
+        source = referenceSource
+        name = constructorName
+        diagnostic = ConeUnresolvedNameError(constructorName)
+    }
+
+    /**
+     * 把 enum pattern 的 constructor 引用解析成 resolved/error 引用。
+     *
+     * pattern 与普通表达式一样需要可导航的引用目标。对齐官方 `FindEnumPatternTargets`
+     * （`external/cangjie_compiler/src/Sema/TypeCheckPattern.cpp`），constructor 在哪个 enum 里找取决于
+     * 写法：
+     * - 无限定符（`B(x)`）：在 subject enum 里找；subject 不是 enum 时保持未解析，由 pattern legality
+     *   checker 报告 `PATTERN_NOT_MATCH`。
+     * - 有限定符（`E.B(x)` / `Alias<Int64>.B(x)`）：在**限定符指向的 enum** 里找，与 subject 无关
+     *   （官方对 `MemberAccess` 走 `InferMemberAccess`）。因此 `Color.Red` 即使 subject 是别的 enum
+     *   也解析到 `Color.Red`；owner 与 subject 是否一致是之后的类型相等检查，同样由 checker 报告。
+     *   限定符指向的不是 enum（或根本不是类型）时，constructor 名字无处可找，按未声明处理。
+     *
+     * 限定符由 [resolvePatternValueExpressions] 先行解析；它自身解析失败时这里不再叠加诊断。
+     */
+    private fun resolveEnumPatternConstructorReference(
+        pattern: CfirEnumPattern,
+        expectedType: ConeCangJieType?,
+    ): CfirReference {
+        val current = pattern.constructorReference
+        if (current is CfirResolvedNamedReference || current is CfirErrorNamedReference) return current
+        val constructorName = pattern.constructorNameOrNull() ?: return current
+
+        val qualifier = pattern.ownerQualifier
+        val ownerEnum = if (qualifier == null) {
+            patternSubjectEnumOrNull(expectedType)?.declaration ?: return current
+        } else {
+            val ownerClassifier = qualifier.resolvedQualifierClassifier(session)
+            if (ownerClassifier == null && qualifier.hasUnresolvedCallee()) return current
+            ownerClassifier?.takeIf { classifier -> classifier.isBound }?.cfir as? CfirEnum
+                ?: return unresolvedEnumPatternConstructorReference(constructorName, current.source)
+        }
+        return enumPatternTargetReference(
+            enumDeclaration = ownerEnum,
+            constructorName = constructorName,
+            payloadCount = pattern.arguments.size,
+            referenceSource = current.source,
+        )
+    }
+
+    /** 限定符自身已经解析失败：根诊断在限定符上，依赖它的 constructor 查找不再报告。 */
+    private fun CfirExpression.hasUnresolvedCallee(): Boolean =
+        coneTypeOrNull is ConeErrorType || (this as? CfirResolvable)?.calleeReference is CfirDiagnosticHolder
 
     /**
      * 为延迟解析后的 enum pattern 计算每个 payload pattern 对应的 expected type。
@@ -3166,19 +3344,15 @@ open class CfirExpressionsResolveTransformer(
         val optionArgumentTypes = expectedType?.let { resolveStdlibOptionArgumentTypesForDeferredPattern(pattern, it) }
         if (optionArgumentTypes != null) return optionArgumentTypes
 
-        val enumType = expectedType?.expandedPatternEnumType(session) ?: return emptyList()
-        val enumDeclaration = session.symbolProvider.getClassLikeSymbolByClassId(enumType.classId)?.cfir as? CfirEnum
-            ?: return emptyList()
-        val constructorAccess = pattern.constructorReference.enumPatternConstructorAccessOrNull() ?: return emptyList()
-        if (!constructorAccess.matchesEnumOwner(enumDeclaration, enumType)) return emptyList()
-        val enumConstructor = enumDeclaration.declarations
-            .filterIsInstance<CfirEnumConstructor>()
-            .firstOrNull { constructor ->
-                constructor.name == constructorAccess.constructorName && constructor.payloadArity() == pattern.arguments.size
-            }
+        val subjectEnum = patternSubjectEnumOrNull(expectedType) ?: return emptyList()
+        val constructorName = pattern.constructorNameOrNull() ?: return emptyList()
+        if (!pattern.ownerQualifierMatchesSubject(subjectEnum.type, session)) return emptyList()
+        val enumConstructor = subjectEnum.declaration
+            .enumConstructorsNamed(constructorName)
+            .firstOrNull { constructor -> constructor.payloadArity() == pattern.arguments.size }
             ?: return emptyList()
 
-        return enumConstructor.substitutedPayloadParameterTypes(enumDeclaration, enumType)
+        return enumConstructor.substitutedPayloadParameterTypes(subjectEnum.declaration, subjectEnum.type)
     }
 
     /**
@@ -3192,68 +3366,13 @@ open class CfirExpressionsResolveTransformer(
         expectedType: ConeCangJieType,
     ): List<ConeCangJieType>? {
         val optionArgumentType = expectedType.optionElementType ?: return null
-        val constructorAccess = pattern.constructorReference.enumPatternConstructorAccessOrNull()
-            ?.takeIf { it.matchesStdlibOptionOwner(expectedType) }
+        val constructorName = pattern.constructorNameOrNull()
+            ?.takeIf { pattern.ownerQualifierMatchesSubject(expectedType, session) }
             ?: return null
         return when {
-            constructorAccess.constructorName == optionSomeConstructorName &&
-                    pattern.arguments.size == 1 -> listOf(optionArgumentType)
-            constructorAccess.constructorName == optionNoneConstructorName &&
-                    pattern.arguments.isEmpty() -> emptyList()
-            constructorAccess.constructorName == optionSomeConstructorName ||
-                    constructorAccess.constructorName == optionNoneConstructorName -> emptyList()
-            else -> null
-        }
-    }
-
-    /** 提取 enum pattern 构造器名称。 */
-    private fun CfirEnumPattern.constructorNameOrNull(): Name? {
-        return constructorReference.enumPatternConstructorAccessOrNull()?.constructorName
-    }
-
-    /**
-     * 在当前作用域中按普通值访问规则解析裸 enum constructor 引用。
-     *
-     * 这里复用调用解析器的候选选择结果，并把候选引用统一规整成
-     * [CfirResolvedNamedReference]，供后续 enum pattern 节点直接持有。
-     */
-    private fun resolveEnumConstructorReferenceOrNull(pattern: CfirVarOrEnumPattern): CfirReference? {
-        val temporaryAccess = buildNamedAccessExpression {
-            source = pattern.source
-            calleeReference = buildNamedReference {
-                source = pattern.source
-                name = pattern.name
-            }
-        }
-        val resolvedAccess = callResolver.resolveNamedValueAccessAndSelectCandidate(
-            qualifiedAccess = temporaryAccess,
-            isUsedAsReceiver = false,
-            isUsedAsGetClassReceiver = false,
-            callSite = temporaryAccess,
-            resolutionMode = ResolutionMode.ContextIndependent,
-            purpose = NamedValueAccessPurpose.PatternConstructorProbe,
-        ) as? CfirQualifiedAccessExpression ?: return null
-        val resolvedReference = resolvedAccess.calleeReference
-
-        return when {
-            resolvedReference is CfirResolvedNamedReference && resolvedReference.resolvedSymbol.takeIf { it.isBound }?.cfir is CfirEnumConstructor ->
-                resolvedReference
-
-            resolvedReference is CfirResolvedAppliedCallableReference && resolvedReference.resolvedSymbol.takeIf { it.isBound }?.cfir is CfirEnumConstructor ->
-                buildResolvedNamedReference {
-                    source = resolvedReference.source ?: pattern.source
-                    name = resolvedReference.name
-                    resolvedSymbol = resolvedReference.resolvedSymbol
-                }
-
-            resolvedReference is CfirNamedReferenceWithCandidate &&
-                    resolvedReference.candidate.symbol.takeIf { it.isBound }?.cfir is CfirEnumConstructor ->
-                buildResolvedNamedReference {
-                    source = resolvedReference.source ?: pattern.source
-                    name = resolvedReference.name
-                    resolvedSymbol = resolvedReference.candidate.symbol
-                }
-
+            constructorName == optionSomeConstructorName && pattern.arguments.size == 1 -> listOf(optionArgumentType)
+            constructorName == optionNoneConstructorName && pattern.arguments.isEmpty() -> emptyList()
+            constructorName == optionSomeConstructorName || constructorName == optionNoneConstructorName -> emptyList()
             else -> null
         }
     }
@@ -3524,6 +3643,7 @@ open class CfirExpressionsResolveTransformer(
             resolveDeferredMatchPattern(
                 pattern = letPatternExpression.pattern,
                 expectedType = patternExpectedType,
+                position = BareNamePatternPosition.MATCHING,
             ),
         )
         val patternError = resolvePatternBindingTypes(
@@ -5600,6 +5720,7 @@ open class CfirExpressionsResolveTransformer(
             varDecl.replacePattern(resolveDeferredMatchPattern(
                 pattern = varDecl.pattern,
                 expectedType = varDecl.returnTypeRef.coneTypeOrNull ?: iterVarType,
+                position = BareNamePatternPosition.DECLARATION,
             ))
         }
         resolvePatternBindingTypes(
