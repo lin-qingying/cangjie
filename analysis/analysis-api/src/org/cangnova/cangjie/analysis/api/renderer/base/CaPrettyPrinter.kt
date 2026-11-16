@@ -2,6 +2,9 @@ package org.cangnova.cangjie.analysis.api.renderer.base
 
 import kotlinx.collections.immutable.PersistentList
 import kotlinx.collections.immutable.persistentListOf
+import org.cangnova.cangjie.rendering.CangJieAnnotatedText
+import org.cangnova.cangjie.rendering.CangJieSemanticKind
+import org.cangnova.cangjie.rendering.CangJieTextAnnotation
 import org.cangnova.cangjie.utils.ifTrue
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
@@ -15,7 +18,7 @@ import kotlin.contracts.contract
  *
  * ## 使用场景
  * - 将类型、声明、表达式等 AST 节点格式化为人类可读字符串
- * - 在 IDE 悬停提示、代码补全、错误信息等场景中渲染结构化文本
+ * - 在悬停提示、代码补全、错误信息等场景中渲染结构化文本
  * - 需要精确控制缩进、前缀、分隔符的输出场景
  *
  * ## 基本使用示例
@@ -56,6 +59,8 @@ class PrettyPrinter(val indentSize: Int = 2) : Appendable {
     /** 当前缩进层级，每调用一次 [withIndent] 加 1，退出后减 1 */
     @PublishedApi
     internal var indent: Int = 0
+
+    private val semanticAnnotations: MutableList<CangJieTextAnnotation> = mutableListOf()
 
     /**
      * 追加字符序列，自动处理换行和缩进。
@@ -125,6 +130,56 @@ class PrettyPrinter(val indentSize: Int = 2) : Appendable {
             prefixesToPrint = persistentListOf()
         }
     }
+
+    /** 在 pretty print 中记录一次渲染产生的单个语义文本区间。 */
+    internal fun withSemanticAnnotation(kind: CangJieSemanticKind, render: PrettyPrinter.() -> Unit) {
+        val indentationLength =
+            if (builder.isEmpty() || builder[builder.lastIndex] == '\n') indentSize * indent else 0
+        val rangeStart = builder.length + prefixesToPrint.sumOf(String::length) + indentationLength
+        render()
+        var startOffset = minOf(rangeStart, builder.length)
+        var endOffset = builder.length
+        while (startOffset < endOffset && builder[startOffset].isWhitespace()) startOffset++
+        while (endOffset > startOffset && builder[endOffset - 1].isWhitespace()) endOffset--
+        if (startOffset == endOffset) return
+        require('\n' !in builder.substring(startOffset, endOffset)) {
+            "A semantic annotation must cover one rendered token"
+        }
+        semanticAnnotations += CangJieTextAnnotation(startOffset, endOffset, kind)
+    }
+
+    /** 在当前缩进与前缀规则下追加子 renderer 的标注文本，并平移子区间。 */
+    internal fun appendAnnotatedText(value: CangJieAnnotatedText): PrettyPrinter = apply {
+        if (value.text.isEmpty()) return@apply
+        printPrefixes()
+
+        var sourceLineStart = 0
+        value.text.split('\n').forEachIndexed { lineIndex, line ->
+            if (lineIndex > 0) builder.append('\n')
+            if (line.isNotEmpty()) {
+                appendIndentIfNeeded()
+                val targetLineStart = builder.length
+                builder.append(line)
+                val sourceLineEnd = sourceLineStart + line.length
+                value.annotations
+                    .asSequence()
+                    .filter { annotation ->
+                        annotation.startOffset >= sourceLineStart && annotation.endOffset <= sourceLineEnd
+                    }
+                    .forEach { annotation ->
+                        semanticAnnotations += annotation.copy(
+                            startOffset = targetLineStart + annotation.startOffset - sourceLineStart,
+                            endOffset = targetLineStart + annotation.endOffset - sourceLineStart,
+                        )
+                    }
+            }
+            sourceLineStart += line.length + 1
+        }
+    }
+
+    /** 返回当前 printer 的文本与本轮渲染收集的语义区间。 */
+    @org.cangnova.cangjie.analysis.api.CaNonPublicApi
+    fun toAnnotatedText(): CangJieAnnotatedText = CangJieAnnotatedText(builder.toString(), semanticAnnotations.toList())
 
     /**
      * 在 [block] 执行期间增加一级缩进（+1），退出后恢复。
@@ -521,4 +576,14 @@ inline fun prettyPrintWithSettingsFrom(other: PrettyPrinter, body: PrettyPrinter
         callsInPlace(body, InvocationKind.EXACTLY_ONCE)
     }
     return PrettyPrinter(other.indentSize).apply(body).toString()
+}
+
+/** 以 [other] 的排版设置渲染带语义区间的子文本。 */
+@OptIn(ExperimentalContracts::class, org.cangnova.cangjie.analysis.api.CaNonPublicApi::class)
+internal inline fun prettyPrintAnnotatedWithSettingsFrom(
+    other: PrettyPrinter,
+    body: PrettyPrinter.() -> Unit,
+): CangJieAnnotatedText {
+    contract { callsInPlace(body, InvocationKind.EXACTLY_ONCE) }
+    return PrettyPrinter(other.indentSize).apply(body).toAnnotatedText()
 }

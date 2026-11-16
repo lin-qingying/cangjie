@@ -21,14 +21,14 @@ fun interface CaTypeAliasSymbolRenderer {
 
     companion object {
         /**
-         * 预设: 输出 `typealias Name<Tp> = T` 形式。
+         * 使用仓颉源码语法输出 `type Name<Tp> = T` 形式。
          *
-         * 当 typealias 无名时回退为 `<anonymous-alias>`, 一般不会发生。
+         * `typealias` 是类型别名的语义名称，不是仓颉源码关键字。
          */
         val AS_SOURCE: CaTypeAliasSymbolRenderer = CaTypeAliasSymbolRenderer { analysisSession, symbol, declarationRenderer, printer ->
             printer {
                 declarationRenderer.modifiersRenderer.renderDeclarationModifiers(analysisSession, symbol, this)
-                append("typealias")
+                append("type")
                 append(" ")
                 symbol.name?.let { name ->
                     declarationRenderer.nameRenderer.renderName(analysisSession, name, symbol, declarationRenderer, this)

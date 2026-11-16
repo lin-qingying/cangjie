@@ -14,6 +14,7 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirResolvabl
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
 import org.cangnova.cangjie.macro.expansion.MacroExpansionOutcome
 import org.cangnova.cangjie.macro.expansion.MacroExpansionRevision
+import org.cangnova.cangjie.psi.CjMacroExpression
 import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Future
@@ -52,11 +53,35 @@ interface MacroSemanticExpansionService {
     /** 当前模块的构造次数与最近结果，用于宿主遥测。 */
     fun metrics(module: CaSourceModule): MacroSemanticExpansionMetrics
 
+    /** 查询已发布宏快照中该调用面的唯一宏/注解语义分类。 */
+    fun invocationKind(expression: CjMacroExpression): MacroInvocationSemanticKind?
+
     companion object {
         /** 取得工程级服务实例；XML 未加载的容器需要先手工注册实现。 */
         fun getInstance(project: Project): MacroSemanticExpansionService = project.service()
     }
 }
+
+/** 宏构造解析器对一个调用面的最终分类。 */
+enum class MacroInvocationSemanticKind {
+    /** 唯一解析到宏定义或内建宏。 */
+    MACRO,
+
+    /** 唯一识别到语言内建注解。 */
+    BUILTIN_ANNOTATION,
+
+    /** 被宏构造解析器识别为内建或自定义注解候选；仍需 Analysis API 验证注解目标。 */
+    ANNOTATION_CANDIDATE,
+}
+
+/** 可通过源码位置定位的宏调用解析结果。 */
+internal data class MacroCallResolutionSite(
+    val fileUrl: String,
+    val startOffset: Int,
+    val endOffset: Int,
+    val name: String,
+    val kind: MacroInvocationSemanticKind,
+)
 
 /**
  * 每模块的宏语义展开遥测快照。
@@ -93,6 +118,9 @@ internal class MacroSemanticExpansionServiceImpl(private val project: Project) :
 
         /** 最近一次构造失败的输入 revision；同一输入不再重复整模块构建。 */
         var failedRevision: MacroExpansionRevision? = null
+
+        /** 最近一次已发布快照中的成功宏解析结果。 */
+        var macroCallResolutionSites: List<MacroCallResolutionSite> = emptyList()
 
         /** 当前在途构造数量，供 [awaitIdle] 等待。 */
         var activeTasks: Int = 0
@@ -139,6 +167,12 @@ internal class MacroSemanticExpansionServiceImpl(private val project: Project) :
         var snapshotInvalidated = false
 
         state.lock.withLock {
+            if (state.failedRevision != revision) {
+                state.failedRevision = null
+                if (state.publishedRevision != revision) {
+                    state.macroCallResolutionSites = emptyList()
+                }
+            }
             // 同一 revision 已经失败过：不再重复整模块构建，等输入变化后再试。
             if (state.failedRevision == revision) {
                 LOG.info(
@@ -161,6 +195,7 @@ internal class MacroSemanticExpansionServiceImpl(private val project: Project) :
                 )
                 session.invalidateMacroSemanticSnapshot()
                 state.publishedRevision = null
+                state.macroCallResolutionSites = emptyList()
                 snapshotInvalidated = true
             }
         }
@@ -177,6 +212,7 @@ internal class MacroSemanticExpansionServiceImpl(private val project: Project) :
             val wasPublished = state.publishedRevision != null
             state.publishedRevision = null
             state.failedRevision = null
+            state.macroCallResolutionSites = emptyList()
             wasPublished
         }
         if (snapshotInvalidated) {
@@ -199,6 +235,29 @@ internal class MacroSemanticExpansionServiceImpl(private val project: Project) :
                 lastDurationMillis = state.lastDurationMillis,
             )
         }
+    }
+
+    override fun invocationKind(expression: CjMacroExpression): MacroInvocationSemanticKind? {
+        val fileUrl = expression.containingFile.virtualFile?.url ?: return null
+        val referenceName = expression.referenceExpression?.referencedNameElement ?: return null
+        val name = expression.shortName?.asString() ?: return null
+        val nameRange = referenceName.textRange
+        val candidates = moduleStates.values.flatMap { state ->
+            state.lock.withLock {
+                state.macroCallResolutionSites.filter { site ->
+                    site.fileUrl == fileUrl &&
+                        site.name == name &&
+                        site.startOffset <= nameRange.startOffset &&
+                        site.endOffset >= nameRange.endOffset
+                }
+            }
+        }
+        val smallestRange = candidates.minOfOrNull { site -> site.endOffset - site.startOffset } ?: return null
+        return candidates.asSequence()
+            .filter { site -> site.endOffset - site.startOffset == smallestRange }
+            .map(MacroCallResolutionSite::kind)
+            .distinct()
+            .singleOrNull()
     }
 
     /**
@@ -325,15 +384,18 @@ internal class MacroSemanticExpansionServiceImpl(private val project: Project) :
                     // 记录快照实际代表的输入 revision；构造/发布期间输入变化不会让新 revision 误命中旧快照。
                     state.publishedRevision = completion.publishedRevision ?: outcomeRevision
                     state.failedRevision = null
+                    state.macroCallResolutionSites = completion.macroCallResolutionSites
                 }
 
                 MacroExpansionOutcome.NO_MACRO_SURFACE -> {
                     state.publishedRevision = null
+                    state.macroCallResolutionSites = emptyList()
                 }
 
                 MacroExpansionOutcome.FAILED -> {
                     // 记录失败 revision，避免同一输入在没有变化时被反复整模块重试。
                     state.failedRevision = outcomeRevision
+                    state.macroCallResolutionSites = completion.macroCallResolutionSites
                 }
 
                 MacroExpansionOutcome.CANCELLED,

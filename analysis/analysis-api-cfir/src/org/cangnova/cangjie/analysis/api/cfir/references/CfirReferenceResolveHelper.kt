@@ -8,6 +8,7 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getOrBuildCfir
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnmatchedTypeArgumentsError
 import org.cangnova.cangjie.cfir.expressions.CfirResolvable
+import org.cangnova.cangjie.cfir.patterns.CfirEnumPattern
 import org.cangnova.cangjie.cfir.declarations.builder.buildImport
 import org.cangnova.cangjie.cfir.references.CfirErrorNamedReference
 import org.cangnova.cangjie.cfir.references.CfirReference
@@ -29,12 +30,17 @@ import org.cangnova.cangjie.cfir.types.abbreviatedTypeOrSelf
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.psi.CjCallExpression
 import org.cangnova.cangjie.psi.CjDotQualifiedExpression
+import org.cangnova.cangjie.psi.CjElement
+import org.cangnova.cangjie.psi.CjNameReferenceExpression
+import org.cangnova.cangjie.psi.CjEnumPattern
 import org.cangnova.cangjie.psi.CjImportItem
 import org.cangnova.cangjie.psi.CjImportGroup
 import org.cangnova.cangjie.psi.CjImportPathOwner
 import org.cangnova.cangjie.psi.CjSimpleNameExpression
 import org.cangnova.cangjie.psi.CjTypeReference
 import org.cangnova.cangjie.psi.CjUserType
+import org.cangnova.cangjie.psi.CjValueArgumentName
+import org.cangnova.cangjie.psi.CjVarOrEnumPattern
 import org.cangnova.cangjie.psi.psiUtil.getStrictParentOfType
 import org.cangnova.cangjie.psi.psiUtil.isImportDirectiveExpression
 
@@ -57,12 +63,30 @@ internal object CfirReferenceResolveHelper {
         val expression = ref.expression
         val symbolBuilder = analysisSession.cfirSymbolBuilder
 
+        // 命名实参标签没有独立 CFIR 节点；交给元素级 resolver 使用所属调用的参数映射。
+        if (expression is CjNameReferenceExpression && expression.parent is CjValueArgumentName) {
+            return with(analysisSession) { expression.resolveSymbols() }
+        }
+
         // 组织限定符不是包名，没有对应的声明符号；不得进入普通名称解析。
         val pathOwner = expression.getStrictParentOfType<CjImportPathOwner>()
         if (pathOwner?.organizationReference === expression) return emptyList()
 
         if (expression.isImportDirectiveExpression()) {
             return getSymbolsByImportDirective(expression, analysisSession, symbolBuilder)
+        }
+
+        /*
+         * pattern 的 constructor 名字不是普通表达式引用：它的 CFIR 锚点是 `CfirEnumPattern`，
+         * 引用目标存放在 pattern 的 `constructorReference` 上。内层 `CjSimpleNameExpression`
+         * 没有独立 CFIR 映射，因此必须先按 pattern 节点解析，再走统一的 reference → symbol 投影。
+         */
+        val patternOwner = expression.patternConstructorOwner()
+        if (patternOwner != null) {
+            val patternCfir = patternOwner.getOrBuildCfir(analysisSession.resolutionFacade)
+            if (patternCfir is CfirEnumPattern) {
+                return patternCfir.constructorReference.toCaTargetSymbols(symbolBuilder)
+            }
         }
 
         val adjustedResolutionExpression = adjustResolutionExpression(expression)
@@ -123,6 +147,32 @@ internal object CfirReferenceResolveHelper {
             currentParent = currentParent.parent
         }
         return false
+    }
+
+    /**
+     * 当简单名正好是 pattern 的 constructor 名字时，返回承载它的 pattern 节点。
+     *
+     * 只接受 constructor 位置：`CjEnumPattern.expression` 或 `CjVarOrEnumPattern.reference`；
+     * 嵌套 binding pattern 的名字不进入这条路径。
+     */
+    private fun CjSimpleNameExpression.patternConstructorOwner(): CjElement? {
+        var current: com.intellij.psi.PsiElement? = this
+        while (current != null) {
+            when (current) {
+                is CjEnumPattern -> return current.takeIf { pattern ->
+                    when (val expression = pattern.expression) {
+                        // 限定名 pattern：只有 selector 本身是 constructor 名字；receiver（`E`）
+                        // 和 selector 上类型实参里的名字都不是 constructor。
+                        is CjDotQualifiedExpression -> expression.selectorExpression === this
+                        else -> expression === this
+                    }
+                }
+
+                is CjVarOrEnumPattern -> return current.takeIf { it.reference === this }
+            }
+            current = current.parent
+        }
+        return null
     }
 
     /**

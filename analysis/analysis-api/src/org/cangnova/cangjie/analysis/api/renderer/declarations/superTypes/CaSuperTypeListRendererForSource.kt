@@ -1,7 +1,5 @@
 package org.cangnova.cangjie.analysis.api.renderer.declarations.superTypes
 
-import org.cangnova.cangjie.analysis.api.renderer.base.prettyPrint
-
 /**
  * 面向源码风格的超类型列表预设。
  *
@@ -22,17 +20,14 @@ object CaSuperTypeListRendererForSource {
         }
         if (superTypes.isEmpty()) return@CaSuperTypeListRenderer
         printer.append(" <: ")
-        printer.append(
-            superTypes.joinToString(" & ") { superType ->
-                prettyPrint {
-                    declarationRenderer.superTypeRenderer.renderSuperType(
-                        analysisSession,
-                        superType,
-                        declarationRenderer,
-                        this,
-                    )
-                }
-            },
-        )
+        // 沿用调用方 printer，保留类型 renderer 记录的语义区间。
+        printer.printCollection(superTypes, separator = " & ") { superType ->
+            declarationRenderer.superTypeRenderer.renderSuperType(
+                analysisSession,
+                superType,
+                declarationRenderer,
+                this,
+            )
+        }
     }
 }

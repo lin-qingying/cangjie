@@ -13,7 +13,9 @@ import org.cangnova.cangjie.psi.CjExtend
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjInterface
 import org.cangnova.cangjie.psi.CjNamedDeclaration
+import org.cangnova.cangjie.psi.CjParameter
 import org.cangnova.cangjie.psi.CjSimpleNameExpression
+import org.cangnova.cangjie.psi.CjValueArgumentName
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -76,6 +78,35 @@ class AnalysisApiReferenceServiceTest : AbstractAnalysisApiExecutionTest(
         val resolvedDeclaration = referenceExpression.mainReference.resolve() as? CjNamedDeclaration
         assertNotNull(resolvedDeclaration, "mainReference 应与 contributor-based 引用服务对齐并可解析到声明")
         assertEquals("greet", resolvedDeclaration?.name)
+    }
+
+    /**
+     * 命名实参标签必须解析到所属调用映射出的形参声明，包含普通函数与构造函数调用。
+     */
+    @Test
+    fun namedArgumentReference(mainFile: CjFile) {
+        val argumentNames = PsiTreeUtil.findChildrenOfType(mainFile, CjValueArgumentName::class.java)
+
+        val repeatLabel = argumentNames.single { it.asName.asString() == "repeat" }
+        val repeatParameter = repeatLabel.referenceExpression.mainReference.resolve() as? CjParameter
+        assertNotNull(repeatParameter, "命名实参 `repeat:` 必须导航到函数形参")
+        assertEquals("repeat", repeatParameter?.name)
+
+        val valueLabel = argumentNames.single { it.asName.asString() == "value" }
+        val valueParameter = valueLabel.referenceExpression.mainReference.resolve() as? CjParameter
+        assertNotNull(valueParameter, "构造函数命名实参 `value:` 必须导航到构造函数形参")
+        assertEquals("value", valueParameter?.name)
+    }
+
+    /** 自定义注解标签复用 CFIR 已发布的 annotation argument → constructor parameter 映射。 */
+    @Test
+    fun namedAnnotationArgumentReference(mainFile: CjFile) {
+        val repeatLabel = PsiTreeUtil.findChildrenOfType(mainFile, CjValueArgumentName::class.java)
+            .single { it.asName.asString() == "repeat" }
+
+        val resolvedParameter = repeatLabel.referenceExpression.mainReference.resolve() as? CjParameter
+        assertNotNull(resolvedParameter, "自定义注解标签 `repeat:` 必须导航到 const init 形参")
+        assertEquals("repeat", resolvedParameter?.name)
     }
 
     /**

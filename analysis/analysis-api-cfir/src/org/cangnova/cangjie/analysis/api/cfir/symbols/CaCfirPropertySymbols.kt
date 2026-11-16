@@ -536,7 +536,9 @@ internal class CaCfirPropertySymbol private constructor(
      * 属性是否为不可变 let 形态。
      */
     override val isLet: Boolean
-        get() = withValidityAssertion { backingPsi?.isVar != true }
+        get() = withValidityAssertion {
+            backingPsi?.let { !it.isVar } ?: (cfirSymbol.cfir.setter == null)
+        }
 
     /**
      * 属性是否为 static。

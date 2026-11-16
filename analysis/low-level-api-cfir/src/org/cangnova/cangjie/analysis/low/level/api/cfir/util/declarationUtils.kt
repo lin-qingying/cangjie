@@ -147,6 +147,7 @@ private fun CjDeclaration.findSourceNonLocalCfirDeclarationByProvider(
         is CjFinalizer,
         is CjConstructor<*>,
         is CjTypeAlias,
+        is CjEnumConstructor,
             -> firDeclarationProvider(this)
 
         is CjPropertyAccessor -> {

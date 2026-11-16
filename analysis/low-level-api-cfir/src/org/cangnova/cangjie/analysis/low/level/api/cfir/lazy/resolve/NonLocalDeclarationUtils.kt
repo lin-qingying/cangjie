@@ -33,6 +33,9 @@ internal fun elementCanBeLazilyResolved(element: CjElement?): Boolean = when (el
     }
 
     is CjPropertyAccessor -> elementCanBeLazilyResolved(element.property)
+    // enum constructor 是 enum 的独立非局部结构单元，必须能从自身建立 CFIR 映射，
+    // 否则 symbol→CFIR 恢复会回落到 enum class 结构而找不到 constructor。
+    is CjEnumConstructor -> element.parentEnum?.getClassId() != null
     // extend 不是 class-like，没有 ClassId；它仍然是合法的非局部容器（成员 owner 就是 extend 声明本身）
     is CjExtend -> true
     is CjTypeStatement -> element.getClassId() != null
