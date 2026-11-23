@@ -5,7 +5,7 @@
 
 ## 关键包（testFixtures）
 
-`org.cangnova.cangjie.analysis.test.*` — 测试 services、fixtures、handlers、test engine 装配。
+`org.cangnova.cangjie.analysis.test.framework.*` — 测试基类（`base/`）、测试 services、模块结构 fixture（`CjTestModule`）、directives 与 test configurator；另有 `org.cangnova.cangjie.analysis.test.services`（测试平台服务、builtins 虚拟文件提供器）。
 
 ## 提供的测试基类
 
@@ -25,7 +25,9 @@
 
 ## 依赖
 
-- `:analysis:analysis-api`、`:analysis:analysis-api-platform-interface`、`:analysis:analysis-api-impl-base`、`:analysis:analysis-api-cfir`
+- `:analysis:analysis-api`、`:analysis:analysis-api-impl-base`、`:analysis:analysis-api-cfir`、`:analysis:analysis-api-standalone`
+- `:analysis:decompiled:decompiler-to-psi`、`:analysis:decompiled:decompiler-to-file-stubs`
+- `:psi`、`:cfir:cfir-tree`
 - `:tests:test-infrastructure`（testFixtures）
 
 ## 使用方式

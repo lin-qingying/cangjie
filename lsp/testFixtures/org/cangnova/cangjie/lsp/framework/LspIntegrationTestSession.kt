@@ -69,6 +69,9 @@ class LspIntegrationTestSession(
     /** 发起 completion 请求。 */
     fun completion(params: CompletionParams): Either<List<CompletionItem>, CompletionList> = connection.completion(params)
 
+    /** 发起 completionItem/resolve 请求。 */
+    fun resolveCompletionItem(item: CompletionItem): CompletionItem = connection.resolveCompletionItem(item)
+
     /** 发起 hover 请求。 */
     fun hover(params: HoverParams): Hover = connection.hover(params)
 
@@ -159,6 +162,9 @@ class LspIntegrationTestSession(
 
     /** 发起 workspace/executeCommand 请求。 */
     fun executeCommand(params: ExecuteCommandParams): Any = connection.executeCommand(params)
+
+    /** 服务端已发出的 `workspace/applyEdit` 请求（补全插入的落盘侧）。 */
+    fun appliedEdits(): List<ApplyWorkspaceEditParams> = connection.appliedEdits()
 
     /** 发起 workspace/symbol 请求。 */
     fun workspaceSymbol(params: WorkspaceSymbolParams): Either<List<SymbolInformation>, List<WorkspaceSymbol>> =

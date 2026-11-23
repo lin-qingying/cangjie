@@ -1,6 +1,6 @@
 package org.cangnova.cangjie.lsp.server
 
-import org.cangnova.cangjie.lsp.analysis.AnalysisApiLspCodeActionSupport
+import org.cangnova.cangjie.lsp.analysis.LspCodeActionResolveData
 import org.cangnova.cangjie.lsp.state.LspTextDocument
 import org.eclipse.lsp4j.CodeAction
 import org.eclipse.lsp4j.CodeActionParams
@@ -324,28 +324,14 @@ class CangjieTextDocumentService(
     /**
      * 处理 code action resolve 请求（LSP `codeAction/resolve`）。
      *
-     * 协议上 resolve **不带文档 URI**：action 的 data 里携带列表阶段的文档与诊断定位信息，
-     * 这里据此反查文档存储后再转发。data 缺失或文档已关闭时原样返回——
-     * resolve 只是补编辑，失败不得让动作消失。
+     * 通用延迟 CodeAction 可通过 data 中的 URI 找回文档；ModCommand quick fix 已携带 command，
+     * 不依赖此 resolve 阶段。
      */
     override fun resolveCodeAction(params: CodeAction): CompletableFuture<CodeAction> {
         logger.info("====> codeAction/resolve: ${params.title}")
-        if (!serverContext.enabledFeatures.codeAction) {
-            logger.warning("codeAction/resolve 跳过：codeAction 特性未启用")
-            return completed(params)
-        }
-        val data = AnalysisApiLspCodeActionSupport.LspCodeActionData.parse(params.data)
-        if (data == null) {
-            logger.warning(
-                "codeAction/resolve 跳过：data 解析失败（data=${params.data}，类型=${params.data?.javaClass?.name}）",
-            )
-            return completed(params)
-        }
-        val document = serverContext.documentStore.get(data.documentUri)
-        if (document == null) {
-            logger.warning("codeAction/resolve 跳过：文档不在存储中（${data.documentUri}）")
-            return completed(params)
-        }
+        if (!serverContext.enabledFeatures.codeAction) return completed(params)
+        val data = LspCodeActionResolveData.parse(params.data) ?: return completed(params)
+        val document = serverContext.documentStore.get(data.documentUri) ?: return completed(params)
         return serverContext.requestExecutor.compute(CangjieLspRequest.RESOLVE_CODE_ACTION) {
             serverContext.resolveCodeAction(document, params)
         }.also { it.thenAccept { logger.info("<==== codeAction/resolve") } }

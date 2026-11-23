@@ -112,7 +112,7 @@ The [publication guide](prepare/README.md) lists the complete artifact set, incl
 | --- | --- |
 | `compiler/`, `psi/`, `cfir/` | Compiler configuration, source representation, CFIR construction, resolution, diagnostics, serialization, and frontend tests |
 | `analysis/`, `code-insight/`, `lsp/` | Analysis APIs and language services shared by IDE and LSP consumers |
-| `common/`, `util/`, `generators/`, `resolution.common/` | Shared model, utilities, generators, and type-inference infrastructure |
+| `common/`, `util/`, `generators/`, `resolution.common/`, `dependencies/`, `gradle-queue-cli/` | Shared model, utilities, code generators, type-inference infrastructure, the IntelliJ Platform dependency boundary, and the cross-process Gradle queue CLI |
 | `macro/`, `chir/`, `llvm-interop/`, `compiler/*-codegen` | Macro and optional backend integrations |
 | `prepare/`, `tests/` | Published-artifact assembly and reusable test infrastructure |
 | `intellij-ide/`, `deveco/` | Independently built IntelliJ Platform and DevEco Studio integrations |

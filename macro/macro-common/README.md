@@ -8,6 +8,7 @@
 |---|---|
 | `cangjie.macro` | `MacroCollector` / `MacroExecutor` / `MacroReplacer` / `MacroExpander` 接口，与宏调用 / 展开结果数据模型 |
 | `cangjie.macro.protocol` | FlatBuffers 编解码与帧格式（length-prefixed：8 字节 uint64_le + payload） |
+| `cangjie.macro.expansion` | 宏语义展开引擎 SPI（`MacroSemanticExpansionEngine`）与构造读访问 |
 
 ## 设计要点
 
@@ -17,8 +18,9 @@
 
 ## 依赖
 
-- `:util`、`:common`
-- `:flatbuffers-gen`
+- `:common`、`:flatbuffers-gen`、`:cfir:cfir-tree`、`:cfir:providers`、`:psi`（均 `api`）
+- `intellijCore()`（compileOnly）
+- `libs.flatbuffers.java`（implementation）
 
 ## 实现后端
 

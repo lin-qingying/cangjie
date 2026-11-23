@@ -23,6 +23,7 @@ import org.cangnova.cangjie.frontend.pipeline.MacroExecutorFactory
 import org.cangnova.cangjie.lsp.CangjieLspServerOptions
 import org.cangnova.cangjie.lsp.framework.AbstractLspIntegrationTest
 import org.cangnova.cangjie.lsp.state.LspTextDocument
+import org.cangnova.cangjie.lsp.testkit.CangjieSdkFixture
 import org.cangnova.cangjie.lsp.testkit.LspWorkspaceFixture
 import org.cangnova.cangjie.lsp.testkit.LspWorkspaceFixtureBuilder
 import org.cangnova.cangjie.lsp.testkit.ServiceLoadedLspTestEnvironment
@@ -35,12 +36,12 @@ import org.eclipse.lsp4j.DocumentHighlightParams
 import org.eclipse.lsp4j.Hover
 import org.eclipse.lsp4j.HoverParams
 import org.eclipse.lsp4j.Location
+import org.eclipse.lsp4j.MarkupKind
 import org.eclipse.lsp4j.Position
 import org.eclipse.lsp4j.TextDocumentIdentifier
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.condition.EnabledOnOs
@@ -53,15 +54,13 @@ import java.nio.file.Files
  */
 @EnabledOnOs(OS.LINUX)
 @Timeout(180)
-class LspMacroExpansionProtocolIntegrationTest : AbstractLspIntegrationTest() {
+class LspMacroExpansionHoverIntegrationTest : AbstractLspIntegrationTest() {
     override val autoCreateDefaultSession: Boolean = false
 
     private lateinit var macroOut: File
 
     override fun defaultServerOptions(): CangjieLspServerOptions {
-        val sdkHome = System.getenv("CANGJIE_HOME")
-        assumeTrue(sdkHome != null && File(sdkHome).isDirectory, "需要 CANGJIE_HOME 指向 Linux SDK")
-        val sdk = File(sdkHome)
+        val sdk = requireSdk()
         val options = LspMacroExpansionOptions(
             engine = FrontendMacroSemanticExpansionEngine(),
             sdkProvider = { sdkHandle(sdk) },
@@ -88,9 +87,7 @@ class LspMacroExpansionProtocolIntegrationTest : AbstractLspIntegrationTest() {
 
     @Test
     fun `definition and hover see macro generated declaration`() {
-        val sdkHome = System.getenv("CANGJIE_HOME")
-        assumeTrue(sdkHome != null && File(sdkHome).isDirectory, "需要 CANGJIE_HOME 指向 Linux SDK")
-        val sdk = File(sdkHome)
+        val sdk = requireSdk()
         macroOut = prepareMacroArtifact(sdk)
 
         LspWorkspaceFixtureBuilder()
@@ -146,8 +143,13 @@ class LspMacroExpansionProtocolIntegrationTest : AbstractLspIntegrationTest() {
                         testSession.hover(HoverParams(TextDocumentIdentifier(uri), position))
                             .takeIf { it != null && it.contents != null }
                     }
-                    // 生成函数没有 cdoc，hover 内容可能为空；这里只要求协议请求成功返回。
                     assertNotNull(hover, "hover 请求应成功返回")
+                    assertEquals(MarkupKind.MARKDOWN, hover!!.contents?.right?.kind)
+                    assertEquals(
+                        "```cangjie\npublic func generatedByMacro(): Int64\n```",
+                        hover!!.contents?.right?.value,
+                        "宏调用位置的 hover 应快照到宏生成声明定义头",
+                    )
 
                     val references = testSession.references(
                         org.eclipse.lsp4j.ReferenceParams(
@@ -209,9 +211,7 @@ class LspMacroExpansionProtocolIntegrationTest : AbstractLspIntegrationTest() {
 
     @Test
     fun `member function references keep declaration`() {
-        val sdkHome = System.getenv("CANGJIE_HOME")
-        assumeTrue(sdkHome != null && File(sdkHome).isDirectory, "需要 CANGJIE_HOME 指向 Linux SDK")
-        macroOut = prepareMacroArtifact(File(sdkHome))
+        macroOut = prepareMacroArtifact(requireSdk())
 
         LspWorkspaceFixtureBuilder()
             .source(
@@ -256,9 +256,7 @@ class LspMacroExpansionProtocolIntegrationTest : AbstractLspIntegrationTest() {
 
     @Test
     fun `same generated name in different packages does not collide`() {
-        val sdkHome = System.getenv("CANGJIE_HOME")
-        assumeTrue(sdkHome != null && File(sdkHome).isDirectory, "需要 CANGJIE_HOME 指向 Linux SDK")
-        macroOut = prepareMacroArtifact(File(sdkHome))
+        macroOut = prepareMacroArtifact(requireSdk())
 
         LspWorkspaceFixtureBuilder()
             .source(
@@ -351,8 +349,20 @@ class LspMacroExpansionProtocolIntegrationTest : AbstractLspIntegrationTest() {
             .also { it.environment()["CANGJIE_HOME"] = sdk.absolutePath }
             .start()
         val output = process.inputStream.bufferedReader().readText()
-        assumeTrue(process.waitFor() == 0, "宏包编译失败: $output")
+        assertEquals(0, process.waitFor(), "宏包编译失败: $output")
         return out
+    }
+
+    /**
+     * 解析固定 SDK；缺失时**让作业失败**而不是跳过。
+     *
+     * 宏展开是本能力唯一的真实语义来源，静默跳过会让覆盖在 CI 上变成 0 个用例而报告全绿。
+     */
+    private fun requireSdk(): File {
+        val sdkRoot = CangjieSdkFixture.requireSdkHome("LSP 宏展开协议集成")
+        CangjieSdkFixture.requireMacroServer(sdkRoot)
+        CangjieSdkFixture.requireCompiler(sdkRoot)
+        return sdkRoot.toFile()
     }
 
     private fun sdkHandle(sdk: File): SdkHandle = SdkHandle(

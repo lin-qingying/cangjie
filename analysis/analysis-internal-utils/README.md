@@ -10,6 +10,7 @@
 | `analysis.internal.projectStructure` | 项目结构内部抽象 |
 | `analysis.utils.caches` | 缓存工具 |
 | `analysis.utils.errors` | 错误处理工具 |
+| `analysis.utils.printer` | PSI 遍历工具（`parentOfType` 等） |
 
 ## 使用约束
 

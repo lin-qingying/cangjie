@@ -26,7 +26,8 @@ package org.cangnova.cangjie.cfir.resolve.match
 
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirEnum
-import org.cangnova.cangjie.cfir.declarations.enumPatternConstructorAccessOrNull
+import org.cangnova.cangjie.cfir.declarations.constructorNameOrNull
+import org.cangnova.cangjie.cfir.declarations.ownerQualifierMatchesSubject
 import org.cangnova.cangjie.cfir.declarations.expandedPatternEnumType
 import org.cangnova.cangjie.cfir.declarations.payloadArity
 import org.cangnova.cangjie.cfir.declarations.substitutedPayloadParameterTypes
@@ -585,19 +586,13 @@ fun convertPattern(
         is CfirEnumPattern -> {
             val patternType = expectedType.expandedPatternEnumType(session) ?: expectedType
             val enumClassId = patternType.patternEnumClassId()
-            val constructorAccess = pattern.constructorReference.enumPatternConstructorAccessOrNull()
-            val ownerMatches = when (patternType) {
-                is ConeEnumType -> {
-                    val enumDeclaration = session.enumDeclaration(patternType)
-                    enumDeclaration != null && constructorAccess?.matchesEnumOwner(enumDeclaration, patternType) == true
-                }
-
-                is ConeClassLikeType if patternType.classId == StdlibClassIds.Option ->
-                    constructorAccess?.matchesStdlibOptionOwner(patternType) == true
-
+            val subjectIsEnum = when (patternType) {
+                is ConeEnumType -> session.enumDeclaration(patternType) != null
+                is ConeClassLikeType -> patternType.classId == StdlibClassIds.Option
                 else -> false
             }
-            val entryName = constructorAccess?.constructorName?.asString()
+            val ownerMatches = subjectIsEnum && pattern.ownerQualifierMatchesSubject(patternType, session)
+            val entryName = pattern.constructorNameOrNull()?.asString()
             if (enumClassId == null || entryName == null || !ownerMatches) {
                 listOf(CfirMatchPattern.Error.copy(cfirPattern = pattern))
             } else {

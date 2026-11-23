@@ -46,7 +46,6 @@ import org.cangnova.cangjie.cfir.session.ProcessorAction
 import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.session.extendProvider
-import org.cangnova.cangjie.cfir.session.extendIndexStore
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.session.typeResolver
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
@@ -115,9 +114,11 @@ internal class CaCfirSymbolRelationProvider(
 
                 is CaCallableSymbol -> {
                     (cfirSymbol as? CfirCallableSymbol<*>)?.let { callableSymbol ->
-                        analysisSession.cfirSession.extendIndexStore.containingExtendOf(callableSymbol.unwrapSubstitutionOverrides())?.let { extend ->
-                            return@withValidityAssertion analysisSession.cfirSymbolBuilder.buildExtendSymbol(extend.symbol)
-                        }
+                        analysisSession.cfirSession.extendProvider
+                            .getContainingExtend(callableSymbol.unwrapSubstitutionOverrides())
+                            ?.let { extend ->
+                                return@withValidityAssertion analysisSession.cfirSymbolBuilder.buildExtendSymbol(extend.symbol)
+                            }
                     }
 
                     cfirSymbol.getContainingClassSymbol()?.let { outerClass ->

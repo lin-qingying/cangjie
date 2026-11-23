@@ -89,6 +89,9 @@ internal fun CfirPartialBodyResolveTransformer.resolvePatternValueExpressions(
             valid
         }
         is CfirEnumPattern -> {
+            // 限定符 `E` / `Alias<Int64>` 是类型限定符：与普通成员访问的 receiver 走同一条解析路径，
+            // 后续的 owner 判定与 constructor 查找都以它的解析结果为准。
+            pattern.transformOwnerQualifier(transformer, ResolutionMode.ReceiverResolution)
             pattern.transformConstructorReference(transformer, ResolutionMode.ContextIndependent)
             val argumentTypes = resolveEnumArgumentTypes(pattern, expectedType)
             var valid = true
@@ -269,12 +272,12 @@ internal fun CfirPartialBodyResolveTransformer.resolveEnumArgumentTypes(
     val enumDeclaration = (session.symbolProvider.getClassLikeSymbolByClassId(enumType.classId)?.cfir as? CfirEnum)
         ?: return emptyList()
 
-    val constructorAccess = pattern.constructorReference.enumPatternConstructorAccessOrNull() ?: return emptyList()
-    if (!constructorAccess.matchesEnumOwner(enumDeclaration, enumType)) return emptyList()
+    val constructorName = pattern.constructorNameOrNull() ?: return emptyList()
+    if (!pattern.ownerQualifierMatchesSubject(enumType, session)) return emptyList()
     val enumConstructor = enumDeclaration.declarations
         .filterIsInstance<CfirEnumConstructor>()
         .firstOrNull { candidate ->
-            candidate.name == constructorAccess.constructorName && candidate.payloadArity() == pattern.arguments.size
+            candidate.name == constructorName && candidate.payloadArity() == pattern.arguments.size
         }
         ?: return emptyList()
 
@@ -290,9 +293,8 @@ private fun resolveStdlibOptionArgumentTypes(
     expectedType: ConeCangJieType,
     session: org.cangnova.cangjie.cfir.session.CfirSession,
 ): List<ConeCangJieType>? {
-    val constructorAccess = pattern.constructorReference.enumPatternConstructorAccessOrNull()
-        ?.takeIf { it.matchesStdlibOptionOwner(expectedType) }
-    val constructorName = constructorAccess?.constructorName
+    val constructorName = pattern.constructorNameOrNull()
+        ?.takeIf { pattern.ownerQualifierMatchesSubject(expectedType, session) }
     /*
      * Option 的元素类型可能是跨文件 typealias（例如 `?MessageHandler`）。
      * 绑定类型必须投影其展开后的类型；否则 `Some(handler)` 得到的函数值仍是 alias 类型，

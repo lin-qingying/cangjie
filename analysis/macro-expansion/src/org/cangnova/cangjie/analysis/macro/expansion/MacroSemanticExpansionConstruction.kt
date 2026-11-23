@@ -15,6 +15,8 @@ import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionResult
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionService
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroDemandClassification
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFailurePolicy
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroResolution
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroResolutionContext
 import org.cangnova.cangjie.cfir.resolve.providers.macro.PreMacroRawBuildResult
 import org.cangnova.cangjie.cfir.session.beginAnnotationMetadataRegistryGeneration
 import org.cangnova.cangjie.cfir.session.ensureAnnotationMetadataRegistry
@@ -35,6 +37,8 @@ internal data class MacroExpansionCompletion(
     val publishedFiles: Set<VirtualFile> = emptySet(),
     /** 本次发布的快照实际代表的输入 revision；未发布时为 null。 */
     val publishedRevision: MacroExpansionRevision? = null,
+    /** 本次稳定输入中唯一解析成功的宏/注解 surface。 */
+    val macroCallResolutionSites: List<MacroCallResolutionSite> = emptyList(),
 )
 
 /** 单次构造尝试的推进方式；只有 [INPUT_CHANGED] 会在稳定输入后重试。 */
@@ -89,6 +93,7 @@ internal class MacroSemanticExpansionConstruction(private val project: Project) 
         var attemptIndex = 0
         var publishedFiles: Set<VirtualFile> = emptySet()
         var publishedRevision: MacroExpansionRevision? = null
+        var macroCallResolutionSites: List<MacroCallResolutionSite> = emptyList()
         var outcome = MacroExpansionOutcome.CANCELLED
 
         runMacroSemanticExpansionUntilStable(
@@ -112,13 +117,14 @@ internal class MacroSemanticExpansionConstruction(private val project: Project) 
             outcome = attempt.outcome
             publishedFiles = attempt.publishedFiles
             publishedRevision = attempt.publishedRevision
+            macroCallResolutionSites = attempt.macroCallResolutionSites
             attempt.progress
         }
 
         if (attemptIndex == 0) {
             outcome = MacroExpansionOutcome.CANCELLED
         }
-        return MacroExpansionCompletion(outcome, publishedFiles, publishedRevision)
+        return MacroExpansionCompletion(outcome, publishedFiles, publishedRevision, macroCallResolutionSites)
     }
 
     /** 单次构造尝试；异常由 [construct] 统一归类。 */
@@ -225,9 +231,13 @@ internal class MacroSemanticExpansionConstruction(private val project: Project) 
             macroArtifactDefinitions = artifactPreparation.definitions,
             failurePolicy = MacroFailurePolicy.DEGRADED,
         )
-
         val symbolIndex = engine.buildSymbolIndex(pre, artifactPreparation)
         val macroResolutionContext = engine.bindImports(pre, symbolIndex)
+        val macroCallResolutionSites = collectMacroCallResolutionSites(
+            pre,
+            classification,
+            macroResolutionContext,
+        )
         val result = engine.expand(
             pre = pre,
             context = macroResolutionContext,
@@ -239,7 +249,11 @@ internal class MacroSemanticExpansionConstruction(private val project: Project) 
 
         val recordableResult = result as? MacroConstructionResult.Recordable ?: run {
             logUnpublishableResult(session, result)
-            return AttemptResult(MacroExpansionAttempt.COMPLETED, MacroExpansionOutcome.FAILED)
+            return AttemptResult(
+                progress = MacroExpansionAttempt.COMPLETED,
+                outcome = MacroExpansionOutcome.FAILED,
+                macroCallResolutionSites = macroCallResolutionSites,
+            )
         }
         if (!readAccess.compute<Boolean> {
                 capturedInput.isCurrent(session, module, environment)
@@ -255,7 +269,11 @@ internal class MacroSemanticExpansionConstruction(private val project: Project) 
                 "Macro semantic snapshot could not be prepared for ${module.moduleDescription}; " +
                     "alreadyPublished=$alreadyPublished",
             )
-            return AttemptResult(MacroExpansionAttempt.COMPLETED, MacroExpansionOutcome.FAILED)
+            return AttemptResult(
+                progress = MacroExpansionAttempt.COMPLETED,
+                outcome = MacroExpansionOutcome.FAILED,
+                macroCallResolutionSites = macroCallResolutionSites,
+            )
         }
 
         // 预构建整模块索引已经结束；在宿主写屏障内等待现有分析读者退出，再原子切换语义视图与关联缓存。
@@ -271,7 +289,11 @@ internal class MacroSemanticExpansionConstruction(private val project: Project) 
             LOG.warn(
                 "Macro semantic snapshot did not match its source session for ${module.moduleDescription}",
             )
-            return AttemptResult(MacroExpansionAttempt.COMPLETED, MacroExpansionOutcome.FAILED)
+            return AttemptResult(
+                progress = MacroExpansionAttempt.COMPLETED,
+                outcome = MacroExpansionOutcome.FAILED,
+                macroCallResolutionSites = macroCallResolutionSites,
+            )
         }
 
         val sourceFiles = readAccess.compute<Set<VirtualFile>> {
@@ -285,7 +307,53 @@ internal class MacroSemanticExpansionConstruction(private val project: Project) 
             outcome = MacroExpansionOutcome.PUBLISHED,
             publishedFiles = sourceFiles,
             publishedRevision = capturedInput.revision,
+            macroCallResolutionSites = macroCallResolutionSites,
         )
+    }
+
+    /** 从最终宏路由结果记录每个调用面的成功类别，供 IDE 与 LSP 的语义 token 查询复用。 */
+    private fun collectMacroCallResolutionSites(
+        pre: PreMacroRawBuildResult,
+        classification: MacroDemandClassification,
+        resolutionContext: MacroResolutionContext,
+    ): List<MacroCallResolutionSite> {
+        val kindsBySurfaceId = classification.finalDecisions.mapNotNull { decision ->
+            val resolution = decision.resolution
+            val kind = when (resolution) {
+                is MacroResolution.Resolved -> {
+                    if (!resolutionContext.resolvesUniquelyTo(decision.surface, resolution.entry)) {
+                        return@mapNotNull null
+                    }
+                    MacroInvocationSemanticKind.MACRO
+                }
+
+                is MacroResolution.Builtin -> MacroInvocationSemanticKind.MACRO
+
+                is MacroResolution.BuiltinAnnotation -> MacroInvocationSemanticKind.BUILTIN_ANNOTATION
+                is MacroResolution.CustomAnnotation -> MacroInvocationSemanticKind.ANNOTATION_CANDIDATE
+
+                else -> null
+            } ?: return@mapNotNull null
+            decision.surface.surfaceId to kind
+        }.toMap()
+        if (kindsBySurfaceId.isEmpty()) return emptyList()
+
+        return pre.files.flatMap { preFile ->
+            val file = preFile.sourceFileIdentity as? CjFile ?: return@flatMap emptyList()
+            val fileUrl = file.virtualFile?.url ?: return@flatMap emptyList()
+            preFile.surfaces.mapNotNull { surface ->
+                val kind = kindsBySurfaceId[surface.surfaceId] ?: return@mapNotNull null
+                val range = surface.sourceRange ?: return@mapNotNull null
+                val name = surface.qualifiedName?.shortName()?.asString() ?: return@mapNotNull null
+                MacroCallResolutionSite(
+                    fileUrl = fileUrl,
+                    startOffset = range.startOffset,
+                    endOffset = range.endOffset,
+                    name = name,
+                    kind = kind,
+                )
+            }
+        }
     }
 
     /** 记录不可发布的结果类别与结构化诊断，便于定位"为什么没有快照"。 */
@@ -359,6 +427,7 @@ internal class MacroSemanticExpansionConstruction(private val project: Project) 
         val outcome: MacroExpansionOutcome,
         val publishedFiles: Set<VirtualFile> = emptySet(),
         val publishedRevision: MacroExpansionRevision? = null,
+        val macroCallResolutionSites: List<MacroCallResolutionSite> = emptyList(),
     )
 
     private companion object {

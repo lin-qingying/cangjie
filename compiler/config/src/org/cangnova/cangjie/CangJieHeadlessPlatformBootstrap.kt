@@ -11,8 +11,12 @@ import com.intellij.diagnostic.LoadingState
 import com.intellij.lang.ASTNode
 import com.intellij.lang.MetaLanguage
 import com.intellij.lang.LanguageExtensionPoint
+import com.intellij.lang.impl.modcommand.ModCommandBatchExecutorImpl
+import com.intellij.lang.impl.modcommand.ModCommandServiceImpl
 import com.intellij.mock.MockApplication
 import com.intellij.mock.MockProject
+import com.intellij.modcommand.ModCommandExecutor
+import com.intellij.modcommand.ModCommandService
 import com.intellij.model.psi.ImplicitReferenceProvider
 import com.intellij.model.psi.PsiSymbolDeclarationProvider
 import com.intellij.model.psi.PsiSymbolReferenceProviderBean
@@ -205,6 +209,9 @@ internal object CangJieHeadlessPlatformBootstrap {
         registerApplicationServiceIfMissing(application, AsyncExecutionService::class.java, CangJieTestAsyncExecutionService::class.java)
         registerApplicationServiceIfMissing(application, PsiSymbolService::class.java, CangJieHeadlessPsiSymbolService::class.java)
         registerApplicationServiceIfMissing(application, IndentHelper::class.java, CangJieHeadlessIndentHelper::class.java)
+        // Quick-fix list 会把 ModCommandAction 包装成 IntentionAction；LSP host 随后再还原并执行命令。
+        registerApplicationServiceIfMissing(application, ModCommandService::class.java, ModCommandServiceImpl::class.java)
+        registerApplicationServiceIfMissing(application, ModCommandExecutor::class.java, ModCommandBatchExecutorImpl::class.java)
         registerApplicationCoroutineScopeServiceIfMissing(application)
         registerStatisticsApplicationServicesIfMissing(application)
         registerApplicationServiceIfMissing(

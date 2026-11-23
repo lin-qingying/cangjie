@@ -18,9 +18,10 @@
 
 ## 依赖
 
-- `:compiler:config`、`:compiler:phaser`、`:compiler:arguments`
-- `:common`、`:common:diagnostics`、`:util`
-- `:psi`、`:cfir:cfir-common`、`:cfir:entrypoint`（按需）
+- `:compiler:phaser`（api）、`:compiler:config`
+- `:cfir:entrypoint`、`:macro:macro-common`、`:chir:cfir2chir`、`:compiler:jvm-codegen`
+- `:dependencies:intellij-core`（compileOnly）
+- 前端参数类由 `:compiler:frontend-arguments-generator` 生成到 `gen/`（`generateFrontendArguments` 任务）
 
 ## 命令
 
@@ -31,8 +32,7 @@
 
 ## 测试
 
-- 接入 `:tests:test-infrastructure`
-- 测试入口基类 `AbstractCangjieCompilerTest`，支持通过 `-Dcangjie.slow.assertions=true` 启用 `resolution.common` 的 slow assertions
+- 当前测试为普通 JUnit 测试（`pipeline` / `sources` 包），未接入 `:tests:test-infrastructure`
 
 ## 上游接入
 

@@ -21,6 +21,11 @@ class CangJieHighlightingLexicalKeysTest {
         assertKeys(CjTokens.LET_KEYWORD, CangJieHighlightingColors.LET_KEYWORD)
         assertKeys(CjTokens.VAR_KEYWORD, CangJieHighlightingColors.VAR_KEYWORD)
         assertKeys(CjTokens.CONST_KEYWORD, CangJieHighlightingColors.CONST_KEYWORD)
+        assertKeys(CjTokens.MUT_KEYWORD, CangJieHighlightingColors.MUT_KEYWORD)
+        assertKeys(CjTokens.PROP_KEYWORD, CangJieHighlightingColors.PROP_KEYWORD)
+        assertKeys(CjTokens.STATIC_KEYWORD, CangJieHighlightingColors.STATIC_KEYWORD)
+        assertKeys(CjTokens.QUOTE_KEYWORD, CangJieHighlightingColors.QUOTE_KEYWORD)
+        assertKeys(CjTokens.INT64_KEYWORD, CangJieHighlightingColors.BASIC_TYPE_REFERENCE)
         assertKeys(CjTokens.INTEGER_LITERAL, CangJieHighlightingColors.NUMBER)
         assertKeys(CjTokens.FLOAT_LITERAL, CangJieHighlightingColors.NUMBER)
         assertKeys(CjTokens.REGULAR_STRING_PART, CangJieHighlightingColors.STRING)
@@ -61,6 +66,9 @@ class CangJieHighlightingLexicalKeysTest {
         assertKeys(CjTokens.DOT, CangJieHighlightingColors.DOT)
         assertKeys(CjTokens.QUEST, CangJieHighlightingColors.QUEST)
         assertKeys(CjTokens.ARROW, CangJieHighlightingColors.ARROW)
+        assertKeys(CjTokens.DOUBLE_ARROW, CangJieHighlightingColors.DOUBLE_ARROW)
+        assertKeys(CjTokens.DOUBLE_COLON, CangJieHighlightingColors.DOUBLE_COLON)
+        assertKeys(CjTokens.LTCOLON, CangJieHighlightingColors.LT_COLON)
         assertKeys(TokenType.BAD_CHARACTER, CangJieHighlightingColors.BAD_CHARACTER)
     }
 

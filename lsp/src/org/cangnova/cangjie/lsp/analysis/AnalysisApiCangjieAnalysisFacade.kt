@@ -15,10 +15,20 @@ import org.cangnova.cangjie.analysis.api.CaNonPublicApi
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.components.CaDiagnosticCheckerFilter
 import org.cangnova.cangjie.analysis.api.components.isSubClassOf
+import org.cangnova.cangjie.analysis.api.components.findCDoc
 import org.cangnova.cangjie.analysis.api.resolution.*
 import org.cangnova.cangjie.analysis.api.session.restoreSymbol
 import org.cangnova.cangjie.analysis.api.symbols.*
+import org.cangnova.cangjie.analysis.api.symbols.markers.CaTypeParameterOwnerSymbol
 import org.cangnova.cangjie.analysis.api.symbols.markers.CaNamedSymbol
+import org.cangnova.cangjie.documentation.api.DocumentationBody
+import org.cangnova.cangjie.documentation.cdoc.buildDocumentationDescription
+import org.cangnova.cangjie.documentation.cdoc.buildDocumentationModel
+import org.cangnova.cangjie.documentation.markdown.MarkdownDocumentationRenderer
+import org.cangnova.cangjie.documentation.resolve.DefaultDocumentationService
+import org.cangnova.cangjie.documentation.resolve.DocumentationMode
+import org.cangnova.cangjie.documentation.resolve.DocumentationRequest
+import org.cangnova.cangjie.documentation.resolve.DocumentationResolution
 import org.cangnova.cangjie.codeinsight.folding.CangJieFoldingKind
 import org.cangnova.cangjie.codeinsight.folding.CangJieFoldingRangeCollector
 import org.cangnova.cangjie.codeinsight.hints.CangJieInlayHintCollector
@@ -34,9 +44,6 @@ import org.cangnova.cangjie.ide.completion.impl.cfir.cfirCompletionServiceOrNull
 import org.cangnova.cangjie.ide.completion.impl.shared.PlatformCompletionRequest
 import org.cangnova.cangjie.ide.completion.impl.shared.dummy.CompletionDummyIdentifierProvider
 import org.cangnova.cangjie.ide.completion.impl.shared.resolve.completionDeclarationResolverOrNull
-import org.cangnova.cangjie.lexer.cdoc.psi.api.CDocCommentDescriptor
-import org.cangnova.cangjie.lexer.cdoc.psi.impl.CDocSection
-import org.cangnova.cangjie.lexer.cdoc.psi.impl.CDocTag
 import org.cangnova.cangjie.lsp.capabilities.CangjieLspFeatureSet
 import org.cangnova.cangjie.lsp.completion.LspCompletionCommands
 import org.cangnova.cangjie.lsp.completion.LspCompletionItemConverter
@@ -562,24 +569,25 @@ class AnalysisApiCangjieAnalysisFacade(
         params: HoverParams,
     ): Hover? = semanticSupport.analyzeSnapshot(document) { snapshot ->
         val target = semanticSupport.findPrimaryTarget(document, snapshot.psiFile, params.position)
+            ?: semanticSupport.findSemanticLeaf(document, snapshot.psiFile, params.position)
             ?: return@analyzeSnapshot null
-        val declarationSymbol = target.toPublicSymbol(this, snapshot.psiFile) as? CaDeclarationSymbol
-            ?: return@analyzeSnapshot null
-
-        val rendered = declarationSymbol.render()
-        val documentation = documentationOf(declarationSymbol)
-        val hoverText = buildString {
-            append("```cangjie\n")
-            append(rendered)
-            append("\n```")
-            if (!documentation.isNullOrBlank()) {
-                append("\n\n")
-                append(documentation)
-            }
+        val request = DocumentationRequest(
+            element = target,
+            origin = semanticSupport.findSemanticLeaf(document, snapshot.psiFile, params.position),
+            useSiteFile = snapshot.psiFile,
+            mode = DocumentationMode.FULL,
+        )
+        val content = when (val resolution = DefaultDocumentationService.resolve(request)) {
+            is DocumentationResolution.Resolved -> resolution.content
+            DocumentationResolution.NotTarget -> return@analyzeSnapshot null
+            DocumentationResolution.MissingUseSiteContext -> return@analyzeSnapshot null
+            DocumentationResolution.SymbolRecoveryFailed -> return@analyzeSnapshot null
         }
 
         Hover().apply {
-            contents = Either.forRight(MarkupContent(MarkupKind.MARKDOWN, hoverText))
+            contents = Either.forRight(
+                MarkupContent(MarkupKind.MARKDOWN, MarkdownDocumentationRenderer().render(content)),
+            )
             range = semanticSupport.hoverRange(document, snapshot.psiFile, params.position)
         }
     }
@@ -960,7 +968,7 @@ class AnalysisApiCangjieAnalysisFacade(
         document: LspTextDocument,
         params: SemanticTokensParams,
     ): SemanticTokens? = semanticSupport.analyzeSnapshot(document) { snapshot ->
-        val tokens = CangJieSemanticTokenCollector.collect(snapshot.psiFile)
+        val tokens = CangJieSemanticTokenCollector.collect(snapshot.psiFile, this)
         SemanticTokens(encodeSemanticTokens(document, tokens))
     }
 
@@ -974,7 +982,11 @@ class AnalysisApiCangjieAnalysisFacade(
     ): SemanticTokens? = semanticSupport.analyzeSnapshot(document) { snapshot ->
         val startOffset = document.analysisOffsetAt(params.range.start)
         val endOffset = document.analysisOffsetAt(params.range.end)
-        val tokens = CangJieSemanticTokenCollector.collect(snapshot.psiFile, TextRange(startOffset, endOffset))
+        val tokens = CangJieSemanticTokenCollector.collect(
+            snapshot.psiFile,
+            this,
+            TextRange(startOffset, endOffset),
+        )
         SemanticTokens(encodeSemanticTokens(document, tokens))
     }
 
@@ -1457,72 +1469,17 @@ class AnalysisApiCangjieAnalysisFacade(
      */
     @OptIn(CjNonPublicApi::class, CaNonPublicApi::class)
     private fun CaSession.documentationOf(symbol: CaDeclarationSymbol): String? {
-        val declaration = symbol.psiSafe<CjDeclaration>() ?: return null
-        return declaration.findCDoc()?.renderToDocumentationString()
-    }
-
-    /**
-     * 将 CDoc 描述渲染为 LSP hover 可使用的 Markdown 文本。
-     */
-    @OptIn(CjNonPublicApi::class)
-    private fun CDocCommentDescriptor.renderToDocumentationString(): String? {
-        val rendered = buildString {
-            val primaryContent = primaryTag.getContent().trim()
-            if (primaryContent.isNotEmpty()) {
-                append(primaryContent)
-            }
-
-            collectRenderableTags().forEach { tag ->
-                val renderedTag = tag.renderTagLine()
-                if (renderedTag.isNotEmpty()) {
-                    if (isNotEmpty()) appendLine()
-                    append(renderedTag)
-                }
-            }
-        }
-
-        return rendered.ifBlank { null }
-    }
-
-    /**
-     * 收集可以渲染到 hover 文档中的 CDoc 标签。
-     */
-    @OptIn(CjNonPublicApi::class)
-    private fun CDocCommentDescriptor.collectRenderableTags(): List<CDocTag> {
-        return buildList {
-            (primaryTag as? CDocSection)
-                ?.getChildrenOfType<CDocTag>()
-                ?.filterTo(this) { tag -> tag.name != null }
-
-            additionalSections
-                .filterNot { section -> section == primaryTag }
-                .forEach { section ->
-                    section.getChildrenOfType<CDocTag>()
-                        .filterTo(this) { tag -> tag.name != null }
-                }
-        }
-    }
-
-    /**
-     * 将单个 CDoc 标签渲染为一行文档文本。
-     */
-    private fun CDocTag.renderTagLine(): String {
-        val tagName = name ?: return ""
-        val content = getContent().trim()
-        val subjectName = getSubjectName()
-
-        return buildString {
-            append("@")
-            append(tagName)
-            if (!subjectName.isNullOrBlank()) {
-                append(" ")
-                append(subjectName)
-            }
-            if (content.isNotEmpty()) {
-                append(" ")
-                append(content)
-            }
-        }
+        val descriptor = symbol.findCDoc() ?: return null
+        val typeParameterNames = (symbol as? CaTypeParameterOwnerSymbol)
+            ?.typeParameters
+            ?.map { it.name.asString() }
+            ?.toSet()
+            .orEmpty()
+        val body = DocumentationBody(
+            sections = buildDocumentationModel(descriptor, typeParameterNames),
+            description = buildDocumentationDescription(descriptor),
+        )
+        return MarkdownDocumentationRenderer().renderBody(body).takeIf(String::isNotBlank)
     }
 }
 

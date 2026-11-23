@@ -6,18 +6,19 @@
 
 ## 关键包
 
-`org.cangnova.cangjie.analysis.light.declarations.*` — Symbol → light declaration 适配。
+`org.cangnova.cangjie.analysis.light.declarations.symbol` — Symbol → light declaration 适配（`CaSymbolLightDeclarationProvider`）。
 
 ## 设计要点
 
 - 不重复 `:analysis:light-declarations` 的模型，复用其类型
-- 入口是 Analysis API Symbol 抽象（`KaSymbol` 等）
+- 入口是 Analysis API Symbol 抽象（`CaSymbol` 等）
 - 服务于 navigation / refactor / refactor preview 等需要轻量视图的场景
 
 ## 依赖
 
-- `:analysis:light-declarations`
-- `:analysis:analysis-api`、`:analysis:analysis-api-platform-interface`、`:analysis:analysis-api-impl-base`
+- `:analysis:light-declarations`、`:analysis:decompiled:light-declarations-for-decompiled`
+- `:analysis:analysis-api`、`:analysis:analysis-api-platform-interface`、`:analysis:analysis-internal-utils`
+- `:analysis:stubs`、`:psi`、`:common`
 
 ## 命令
 

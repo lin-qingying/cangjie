@@ -76,6 +76,21 @@ class LspWorkspaceFixtureBuilder {
     }
 
     /**
+     * 从 `lsp/testData` 读取源码并放到默认 `src` 源码根下。
+     *
+     * 测试源码属于**数据**：放在 testData 里才能被编辑器按 `.cj` 高亮/检查、能被多个用例复用、
+     * 也能给同一份输入配 sidecar 期望文件。内联多行字符串做不到这三点。
+     */
+    fun sourceFromTestData(relativePath: String, testDataPath: String): LspWorkspaceFixtureBuilder =
+        source(relativePath, LspTestData.text(testDataPath))
+
+    /**
+     * 从 `lsp/testData` 读取任意相对路径文件（可放到 `src` 之外，例如资源或配置）。
+     */
+    fun fileFromTestData(relativePath: String, testDataPath: String): LspWorkspaceFixtureBuilder =
+        file(relativePath, LspTestData.text(testDataPath))
+
+    /**
      * 禁用标准库 cjo 夹具复制。
      */
     fun withoutStdlib(): LspWorkspaceFixtureBuilder {
@@ -332,3 +347,49 @@ internal data class ModuleSpec(
      */
     val requiredModuleNames: List<String>,
 )
+
+
+/**
+ * `lsp/testData` 的读取入口。
+ *
+ * 只负责「定位仓库内的测试数据 + 原样读取」，不做换行规范化：
+ * CRLF 与空文件都是被测输入，必须保持字节原样（`readText` 保留 `\r`，空文件读到空串）。
+ */
+object LspTestData {
+    /**
+     * `lsp/testData` 根目录。
+     */
+    val root: Path by lazy {
+        var current = Path.of("").toAbsolutePath()
+        while (current != current.root) {
+            if (current.resolve("settings.gradle.kts").exists()) {
+                return@lazy current.resolve("lsp").resolve("testData")
+            }
+            current = current.parent
+        }
+        error("Cannot locate repository root from ${Path.of("").toAbsolutePath().invariantSeparatorsPathString}")
+    }
+
+    /**
+     * 测试数据文件的绝对路径。
+     */
+    fun path(relativePath: String): Path {
+        val file = root.resolve(relativePath.replace('\\', '/'))
+        check(file.exists()) { "缺少测试数据：$file（相对路径 $relativePath）" }
+        return file
+    }
+
+    /**
+     * 原样读取测试数据文本。
+     */
+    fun text(relativePath: String): String = path(relativePath).readText()
+
+    /**
+     * 把测试数据文件拷贝到指定位置（用于「运行期新建文件」类用例）。
+     */
+    fun copyTo(relativePath: String, target: Path): Path {
+        target.parent?.createDirectories()
+        Files.copy(path(relativePath), target, StandardCopyOption.REPLACE_EXISTING)
+        return target
+    }
+}

@@ -1,9 +1,10 @@
-# Wasm 目标实现计划
+# Wasm 目标实现计划（已被后续设计取代）
 
-- 状态：草案（待评审）
+- 状态：历史草案；路线 A 与仅 WASI 的范围不再适用
 - 日期：2026-11-03
-- 范围：`wasm` 通用层（wasm-generic）+ `wasm-wasi` 目标
-- 明确不在本期范围：`wasm-js`、JS 运行时、浏览器调试（见 §8）
+- 替代设计：`compiler/wasm/docs/implementation-plan.md` 与 `openspec/changes/add-wasm-wasi-and-unknown-targets/`
+
+> 2026-11-14 的任务指示要求按 Kotlin Wasm 采用独立 IR 与二进制发射器，并实现 `wasm-wasi` 和 `wasm32-unknown-unknown`。本文后续内容保留为背景调查记录，不作为实现路线、范围或验收依据。
 
 ## 1. 背景与目标
 

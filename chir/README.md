@@ -4,7 +4,7 @@ The `chir/` subtree contains the Cangjie High-level IR boundary. It is a Gradle 
 
 | Module | Responsibility |
 | --- | --- |
-| `:chir` | Aggregates the CHIR tree and frontend IR dependencies for consumers |
+| `:chir` | Gradle aggregation namespace (no sources, no dependencies) |
 | `:chir:chir-tree` | CHIR model, builder, validation, passes, serialization, printing, and inspection |
 | `:chir:cfir2chir` | Lowers CFIR into the CHIR model |
 

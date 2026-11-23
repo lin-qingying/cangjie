@@ -6,6 +6,7 @@
 package org.cangnova.cangjie.cfir.patterns
 
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
@@ -20,6 +21,7 @@ abstract class CfirEnumPattern : CfirPattern() {
      * 该 pattern 节点所属的唯一模式树宿主；反向 owner 不属于 CFIR 子树。
      */
     abstract override val patternTreeOwner: CfirPatternTreeOwner?
+    abstract val ownerQualifier: CfirExpression?
     abstract val constructorReference: CfirReference
     abstract val arguments: List<CfirPattern>
 
@@ -32,7 +34,11 @@ abstract class CfirEnumPattern : CfirPattern() {
 
     abstract override fun replacePatternTreeOwner(newPatternTreeOwner: CfirPatternTreeOwner?)
 
+    abstract fun replaceOwnerQualifier(newOwnerQualifier: CfirExpression?)
+
     abstract fun replaceArguments(newArguments: List<CfirPattern>)
+
+    abstract fun <D> transformOwnerQualifier(transformer: CfirTransformer<D>, data: D): CfirEnumPattern
 
     abstract fun <D> transformConstructorReference(transformer: CfirTransformer<D>, data: D): CfirEnumPattern
 

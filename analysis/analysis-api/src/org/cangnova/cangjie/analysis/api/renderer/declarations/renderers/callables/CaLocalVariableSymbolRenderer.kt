@@ -25,7 +25,15 @@ fun interface CaLocalVariableSymbolRenderer {
         /** 预设: 按源码顺序输出修饰符、`let`/`var`、名字、类型与初始化器。 */
         val AS_SOURCE: CaLocalVariableSymbolRenderer = CaLocalVariableSymbolRenderer { analysisSession, symbol, declarationRenderer, printer ->
             printer {
+                val modifiersStartOffset = builder.length
                 declarationRenderer.modifiersRenderer.renderDeclarationModifiers(analysisSession, symbol, this)
+                // 不同 modifier renderer 的尾随空白约定不同；这里保证与 let/var 之间恰好有分隔。
+                if (
+                    builder.length > modifiersStartOffset &&
+                    builder.lastOrNull()?.isWhitespace() != true
+                ) {
+                    append(" ")
+                }
                 append(if (symbol.isLet) "let" else "var")
                 append(" ")
                 declarationRenderer.nameRenderer.renderName(analysisSession, symbol, declarationRenderer, this)

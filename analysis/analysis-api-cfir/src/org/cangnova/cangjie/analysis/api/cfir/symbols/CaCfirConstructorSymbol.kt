@@ -5,17 +5,9 @@ import org.cangnova.cangjie.analysis.api.annotations.CaAnnotationList
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.findPsi
 import org.cangnova.cangjie.analysis.api.cfir.getExplicitCallableReceiverType
-import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
-import org.cangnova.cangjie.analysis.api.symbols.CaConstructorSymbol
-import org.cangnova.cangjie.analysis.api.symbols.CaModifierExplicitness
-import org.cangnova.cangjie.analysis.api.symbols.CaSymbolLocation
-import org.cangnova.cangjie.analysis.api.symbols.CaSymbolVisibility
-import org.cangnova.cangjie.analysis.api.symbols.CaSymbolUnavailableException
-import org.cangnova.cangjie.analysis.api.symbols.CaSymbolUnavailabilityReason
-import org.cangnova.cangjie.analysis.api.symbols.CaTypeParameterSymbol
-import org.cangnova.cangjie.analysis.api.symbols.CaValueParameterSymbol
+import org.cangnova.cangjie.analysis.api.symbols.*
 import org.cangnova.cangjie.analysis.api.symbols.markers.CaTypeParameterOwnerSymbol
 import org.cangnova.cangjie.analysis.api.symbols.pointers.CaSymbolPointer
 import org.cangnova.cangjie.analysis.api.types.CaType
@@ -28,7 +20,6 @@ import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.psi.CjConstructor
 import org.cangnova.cangjie.psi.CjPrimaryConstructor
-import org.cangnova.cangjie.psi.psiUtil.getStrictParentOfType
 
 /**
  * 构造器叶子实现。
@@ -119,6 +110,11 @@ internal class CaCfirConstructorSymbol private constructor(
     /**
      * 构造器可见性是否显式声明。
      */
+    @Deprecated("Use visibilityExplicitness to distinguish implicit from unknown visibility.", ReplaceWith(
+        "visibilityExplicitness == CaModifierExplicitness.EXPLICIT",
+        "org.cangnova.cangjie.analysis.api.symbols.CaModifierExplicitness"
+    )
+    )
     override val isVisibilityExplicit: Boolean
         get() = visibilityExplicitness == CaModifierExplicitness.EXPLICIT
 
@@ -128,6 +124,11 @@ internal class CaCfirConstructorSymbol private constructor(
     /**
      * 构造器不显式暴露 modality。
      */
+    @Deprecated("Use modalityExplicitness to distinguish implicit from unknown modality.", ReplaceWith(
+        "withValidityAssertion { false }",
+        "org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion"
+    )
+    )
     override val isModalityExplicit: Boolean
         get() = withValidityAssertion { false }
 

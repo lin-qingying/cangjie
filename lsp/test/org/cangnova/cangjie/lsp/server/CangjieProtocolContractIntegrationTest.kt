@@ -96,7 +96,9 @@ class CangjieProtocolContractIntegrationTest : AbstractLspIntegrationTest() {
             assertEquals("contractDocumentSymbol", documentSymbols.single().right.name)
             assertEquals("contractCodeAction", codeActions.single().right.title)
             assertEquals("contractFormat", formatting.single().newText)
-            assertTrue(rangeFormatting.isEmpty(), "rangeFormatting 当前仍是服务层中性返回，不应抛异常")
+            // 范围格式化的契约断言在 CangjieCapabilityMatrixContractTest（已知缺陷：已宣告却返回空编辑）。
+            // 本用例只要求请求不抛错——不能在这里把缺陷固化成「期望空」。
+            assertNotNull(rangeFormatting)
             assertEquals("renamedValue", rename.changes[uri]!!.single().newText)
             assertTrue(prepareRename.toString().contains("Position"))
             assertEquals(FoldingRangeKind.Region, foldingRanges.single().kind)

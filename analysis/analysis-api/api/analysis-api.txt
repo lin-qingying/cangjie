@@ -248,8 +248,10 @@ CaReferenceShortener.public fun CjElement.collectReferenceShorteningsInElement()
 ## org/cangnova/cangjie/analysis/api/components/CaRenderer.kt
 package org.cangnova.cangjie.analysis.api.components
 public fun CaDeclarationSymbol.render( renderer: CaDeclarationRenderer = CaDeclarationRendererForSource.WITH_QUALIFIED_NAMES, ): String
+public fun CaDeclarationSymbol.renderAnnotated( renderer: CaDeclarationRenderer, ): CangJieAnnotatedText
 public interface CaRenderer : CaSessionComponent
 CaRenderer.public fun CaDeclarationSymbol.render( renderer: CaDeclarationRenderer = CaDeclarationRendererForSource.WITH_QUALIFIED_NAMES, ): String
+CaRenderer.public fun CaDeclarationSymbol.renderAnnotated(renderer: CaDeclarationRenderer): CangJieAnnotatedText
 CaRenderer.public fun CaType.render( renderer: CaTypeRenderer = CaTypeRendererForSource.WITH_QUALIFIED_NAMES, ): String
 ## org/cangnova/cangjie/analysis/api/components/CaResolver.kt
 package org.cangnova.cangjie.analysis.api.components
@@ -753,6 +755,7 @@ public class PrettyPrinter(val indentSize: Int = 2) : Appendable
 PrettyPrinter.public override fun append(nullableSeq: CharSequence?): Appendable
 PrettyPrinter.public override fun append(nullableSeq: CharSequence?, start: Int, end: Int): Appendable
 PrettyPrinter.public override fun append(c: Char): Appendable
+PrettyPrinter.public fun toAnnotatedText(): CangJieAnnotatedText
 PrettyPrinter.public inline fun withIndent(block: PrettyPrinter.() -> Unit)
 PrettyPrinter.public inline fun withIndents(indentCount: Int, block: PrettyPrinter.() -> Unit)
 PrettyPrinter.public inline fun withIndentInBraces(block: PrettyPrinter.() -> Unit)
@@ -799,6 +802,9 @@ public fun interface CaCallableReturnTypeFilter
 ## org/cangnova/cangjie/analysis/api/renderer/declarations/CaDeclarationNameRenderer.kt
 package org.cangnova.cangjie.analysis.api.renderer.declarations
 public fun interface CaDeclarationNameRenderer
+## org/cangnova/cangjie/analysis/api/renderer/declarations/CaDeclarationRendererSemanticAnnotations.kt
+package org.cangnova.cangjie.analysis.api.renderer.declarations
+public fun CaDeclarationRenderer.withSemanticAnnotations(): CaDeclarationRenderer
 ## org/cangnova/cangjie/analysis/api/renderer/declarations/CaRecommendedRendererCodeStyle.kt
 package org.cangnova.cangjie.analysis.api.renderer.declarations
 public object CaRecommendedRendererCodeStyle : CaRendererCodeStyle
@@ -871,6 +877,10 @@ CaDeclarationRendererForDebug.public val WITH_SHORT_NAMES_WITH_PLACEHOLDER_DETAI
 CaDeclarationRendererForDebug.public val WITH_SHORT_NAMES_RAW_SIGNATURES: CaDeclarationRenderer
 CaDeclarationRendererForDebug.public val WITH_SHORT_NAMES_WITHOUT_SUPER_TYPES: CaDeclarationRenderer
 CaDeclarationRendererForDebug.public val WITH_SHORT_NAMES_WITHOUT_TYPE_PARAMETERS: CaDeclarationRenderer
+## org/cangnova/cangjie/analysis/api/renderer/declarations/impl/CaDeclarationRendererForQuickDocumentation.kt
+package org.cangnova.cangjie.analysis.api.renderer.declarations.impl
+public object CaDeclarationRendererForQuickDocumentation
+CaDeclarationRendererForQuickDocumentation.public val WITH_SHORT_NAMES: CaDeclarationRenderer
 ## org/cangnova/cangjie/analysis/api/renderer/declarations/impl/CaDeclarationRendererForSource.kt
 package org.cangnova.cangjie.analysis.api.renderer.declarations.impl
 public object CaDeclarationRendererForSource
@@ -911,6 +921,14 @@ public fun interface CaModifierListRenderer
 ## org/cangnova/cangjie/analysis/api/renderer/declarations/modifiers/CaModifiersSorter.kt
 package org.cangnova.cangjie.analysis.api.renderer.declarations.modifiers
 public fun interface CaModifiersSorter
+## org/cangnova/cangjie/analysis/api/renderer/declarations/modifiers/CaQuickDocumentationModalityModifierProvider.kt
+package org.cangnova.cangjie.analysis.api.renderer.declarations.modifiers
+public object CaQuickDocumentationModalityModifierProvider : CaRendererModalityModifierProvider
+CaQuickDocumentationModalityModifierProvider.public override fun getModalityModifier(symbol: CaDeclarationSymbol): String?
+## org/cangnova/cangjie/analysis/api/renderer/declarations/modifiers/CaQuickDocumentationModifierPolicy.kt
+package org.cangnova.cangjie.analysis.api.renderer.declarations.modifiers
+public object CaQuickDocumentationModifierPolicy
+CaQuickDocumentationModifierPolicy.public fun localModifier(symbol: CaDeclarationSymbol): String?
 ## org/cangnova/cangjie/analysis/api/renderer/declarations/modifiers/CaRendererModalityModifierProvider.kt
 package org.cangnova.cangjie.analysis.api.renderer.declarations.modifiers
 public fun interface CaRendererModalityModifierProvider
@@ -1095,6 +1113,7 @@ CaFunctionalTypeRendererForSource.public val WITHOUT_KIND_KEYWORDS: CaFunctional
 ## org/cangnova/cangjie/analysis/api/resolution/CaCall.kt
 package org.cangnova.cangjie.analysis.api.resolution
 public sealed interface CaCall : CaLifetimeOwner
+CaCall.public val isFunctionValueCall: Boolean
 public sealed interface CaCallableMemberCall<S : CaCallableSymbol, C : CaCallableSignature<S>> : CaCall
 CaCallableMemberCall.public val partiallyAppliedSymbol: CaPartiallyAppliedSymbol<S, C>
 CaCallableMemberCall.public val typeArgumentsMapping: Map<CaTypeParameterSymbol, CaType>
@@ -1159,6 +1178,11 @@ CaCallResolutionError.public val candidateCalls: List<CaCall>
 public interface CaCallResolutionSuccess : CaCallResolutionAttempt
 CaCallResolutionSuccess.public val call: CaCall
 public val CaCallResolutionAttempt.calls: List<CaCall>
+## org/cangnova/cangjie/analysis/api/resolution/CaFunctionValueCall.kt
+package org.cangnova.cangjie.analysis.api.resolution
+public interface CaFunctionValueCall : CaCall
+CaFunctionValueCall.public val calleeSymbol: CaVariableSymbol
+CaFunctionValueCall.public val functionType: CaFunctionType
 ## org/cangnova/cangjie/analysis/api/resolution/CaPartiallyAppliedSymbol.kt
 package org.cangnova.cangjie.analysis.api.resolution
 public interface CaPartiallyAppliedSymbol<out S : CaCallableSymbol, out C : CaCallableSignature<S>> : CaLifetimeOwner

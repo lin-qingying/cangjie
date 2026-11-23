@@ -48,6 +48,23 @@ class ProtocolContractAnalysisFacade(
         private set
 
     /**
+     * facade 被关闭的次数。
+     *
+     * 资源释放类断言需要它：`exit`/`close`/`shutdown` 有多条路径会走到关闭，
+     * 「释放且只释放一次」只能靠计数验证。
+     */
+    @Volatile
+    var closeCount: Int = 0
+        private set
+
+    /**
+     * 记录一次关闭，用于验证资源释放的幂等性。
+     */
+    override fun close() {
+        closeCount += 1
+    }
+
+    /**
      * facade 对外声明支持的 LSP 功能集合。
      */
     override val supportedFeatures: CangjieLspFeatureSet = configuration.supportedFeatures
@@ -464,10 +481,60 @@ class ProtocolContractAnalysisFacade(
     }
 
     /**
+     * 补齐候选文档：填入固定文档标记，用来证明 `completionItem/resolve` 真的进了 facade。
+     *
+     * 默认实现是「原样返回」，那样契约测试无法区分「路由到了 facade」和「服务端提前返回」。
+     */
+    override fun resolveCompletionItem(
+        context: CangjieAnalysisRequestContext,
+        item: CompletionItem,
+    ): CompletionItem {
+        record("resolveCompletionItem")
+        return item.apply {
+            documentation = Either.forRight(MarkupContent(MarkupKind.PLAINTEXT, "contractCompletionDocumentation"))
+        }
+    }
+
+    /**
+     * 补齐 code action 编辑：填入固定编辑，用来证明 `codeAction/resolve` 的 data 反查链路通了。
+     */
+    override fun resolveCodeAction(
+        context: CangjieAnalysisRequestContext,
+        document: LspTextDocument,
+        params: CodeAction,
+    ): CodeAction {
+        record("resolveCodeAction", document.uri)
+        return params.apply {
+            edit = WorkspaceEdit().apply {
+                changes = mapOf(document.uri to listOf(TextEdit(primaryRange(document), "contractResolved")))
+            }
+        }
+    }
+
+    /**
+     * 补齐内联提示悬浮文本：填入固定 tooltip，用来证明 `inlayHint/resolve` 真的进了 facade。
+     */
+    override fun resolveInlayHint(
+        context: CangjieAnalysisRequestContext,
+        hint: InlayHint,
+    ): InlayHint {
+        record("resolveInlayHint")
+        return hint.apply {
+            tooltip = Either.forLeft("contractHintTooltip")
+        }
+    }
+
+    /**
      * 记录一次协议入口调用，统一保存入口名称和可选文档 URI。
+     *
+     * 失败注入放在这里：所有入口都先经过 `record`，契约测试因此可以用**同一份** facade
+     * 覆盖「入口抛错」这类场景，而不必为每个入口各写一个失败替身。
      */
     private fun record(name: String, documentUri: String? = null) {
         _invocations += ProtocolInvocation(name = name, documentUri = documentUri)
+        if (configuration.failRequestEntries && name in REQUEST_ENTRIES) {
+            throw IllegalStateException("injected failure: $name")
+        }
     }
 
     /**
@@ -514,6 +581,43 @@ data class ProtocolContractConfiguration(
      * 当前测试声明支持的 LSP 功能集合。
      */
     val supportedFeatures: CangjieLspFeatureSet = ProtocolContractFeatures.all(),
+
+    /**
+     * 是否让「请求类入口」抛错。
+     *
+     * 文档生命周期与诊断收集入口不受影响：能力开关类用例仍需要它们正常工作，
+     * 否则失败注入会把「请求错误」和「诊断管线错误」混在一起。
+     */
+    val failRequestEntries: Boolean = false,
+)
+
+/**
+ * 会被失败注入命中的入口：只包含由客户端请求驱动的语义入口。
+ */
+private val REQUEST_ENTRIES: Set<String> = setOf(
+    "completion",
+    "resolveCompletionItem",
+    "hover",
+    "signatureHelp",
+    "declaration",
+    "definition",
+    "typeDefinition",
+    "implementation",
+    "references",
+    "documentHighlight",
+    "documentSymbol",
+    "workspaceSymbol",
+    "codeAction",
+    "resolveCodeAction",
+    "formatting",
+    "rename",
+    "prepareRename",
+    "foldingRange",
+    "selectionRange",
+    "semanticTokensFull",
+    "semanticTokensRange",
+    "inlayHint",
+    "resolveInlayHint",
 )
 
 /**

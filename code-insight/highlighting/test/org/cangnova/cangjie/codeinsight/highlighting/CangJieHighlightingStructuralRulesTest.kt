@@ -12,6 +12,7 @@ import org.cangnova.cangjie.psi.CjInterface
 import org.cangnova.cangjie.psi.CjNamedFunction
 import org.cangnova.cangjie.psi.CjParameter
 import org.cangnova.cangjie.psi.CjPatternVariable
+import org.cangnova.cangjie.psi.CjProperty
 import org.cangnova.cangjie.psi.CjStruct
 import org.cangnova.cangjie.psi.CjTypeAlias
 import org.cangnova.cangjie.psi.CjTypeParameter
@@ -103,7 +104,7 @@ class CangJieHighlightingStructuralRulesTest : CjParsingTestCase(
             CangJieHighlightingStructuralRules.highlightInfoTypeForFunction(file.singleDescendant<CjNamedFunction>()),
         )
         assertEquals(
-            CangJieHighlightInfoTypeSemanticNames.INSTANCE_PROPERTY,
+            CangJieHighlightInfoTypeSemanticNames.INSTANCE_VARIABLE,
             CangJieHighlightingStructuralRules.highlightInfoTypeForPropertyDeclaration(file.singleDescendant<CjFieldVariable>()),
         )
         assertEquals(
@@ -140,10 +141,24 @@ class CangJieHighlightingStructuralRulesTest : CjParsingTestCase(
         val variable = file.singleDescendant<CjPatternVariable>()
 
         assertEquals(CangJieHighlightInfoTypeSemanticNames.CLASS, textAttributesForClass(cclass))
-        assertEquals(CangJieHighlightInfoTypeSemanticNames.INSTANCE_PROPERTY, textAttributesKeyForPropertyDeclaration(field))
+        assertEquals(CangJieHighlightInfoTypeSemanticNames.INSTANCE_VARIABLE, textAttributesKeyForPropertyDeclaration(field))
         assertEquals(CangJieHighlightInfoTypeSemanticNames.FUNCTION_DECLARATION, textAttributesKeyForCjFunction(function))
         assertEquals(CangJieHighlightInfoTypeSemanticNames.PARAMETER, textAttributesForCjParameterDeclaration(parameter))
         assertEquals(CangJieHighlightInfoTypeSemanticNames.LOCAL_VARIABLE, textAttributesForCjVariableDeclaration(variable))
+    }
+
+    /** 顶层 prop 不属于仓颉有效声明作用域，不能套用包级属性成功类别。 */
+    @Test
+    fun testTopLevelPropertyIsRejectedByTheDeclarationGrammar() {
+        val file = parse(
+            """
+            prop globalTitle: String {
+                get() { return "title" }
+            }
+            """.trimIndent(),
+        )
+
+        assertTrue(file.collectDescendantsOfType<CjProperty>().isEmpty())
     }
 
     /**

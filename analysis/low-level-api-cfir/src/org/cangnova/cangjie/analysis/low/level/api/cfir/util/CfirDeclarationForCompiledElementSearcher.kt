@@ -14,6 +14,7 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.llCfirM
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLModuleWithDependenciesSymbolProvider
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLModuleSpecificSymbolProviderAccess
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLExtendStructuralKeys
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.getClassLikeSymbolByClassIdWithoutDependencies
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.getClassLikeSymbolByPsiWithoutDependencies
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbols.CfirResolution
@@ -23,6 +24,7 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.symbols.flatMap
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbols.map
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.session.extendProviderOrNull
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
@@ -65,6 +67,7 @@ internal class CfirDeclarationForCompiledElementSearcher(private val session: LL
      * 查找 [cjDeclaration] 对应的非局部 CFIR 声明。
      */
     fun findNonLocalDeclaration(cjDeclaration: CjDeclaration): CfirResolution<CfirDeclaration> = when (cjDeclaration) {
+        is CjExtend -> findNonLocalExtendDeclaration(cjDeclaration)
         is CjClassLikeDeclaration -> findNonLocalClassLikeDeclaration(cjDeclaration)
         is CjConstructor<*> -> findConstructorOfNonLocalClass(cjDeclaration)
         is CjNamedFunction -> findNonLocalFunction(cjDeclaration)
@@ -124,18 +127,24 @@ internal class CfirDeclarationForCompiledElementSearcher(private val session: LL
 
         // 非顶层 callable 必然有外层类型：这里为空说明调用方传入了局部声明，
         // 而上游 `findNonLocalDeclaration` 只接受非局部声明。属于编程错误，不降级。
-        val containingClass = requireNotNull(declaration.containingTypeStatement) {
+        val containingType = requireNotNull(declaration.containingTypeStatement) {
             "Non-top-level callable must have a containing type statement: ${declaration::class.simpleName}"
         }
 
-        return findNonLocalClassLikeDeclaration(containingClass).map { cfirClass ->
+        val ownerDeclarations = if (containingType is CjExtend) {
+            findNonLocalExtendDeclaration(containingType).map { it.declarations }
+        } else {
+            findNonLocalClassLikeDeclaration(containingType).map { it.declarations }
+        }
+
+        return ownerDeclarations.map { cfirDeclarations ->
             when (declaration) {
-                is CjProperty -> cfirClass.declarations
+                is CjProperty -> cfirDeclarations
                     .filterIsInstance<CfirProperty>()
                     .filter { it.name == shortName }
                     .mapTo(mutableListOf<CfirCallableSymbol<*>>()) { it.symbol }
 
-                is CjNamedFunction -> cfirClass.declarations
+                is CjNamedFunction -> cfirDeclarations
                     .filterIsInstance<CfirFunction>()
                     .filter { it.symbol.name == shortName }
                     .mapTo(mutableListOf<CfirCallableSymbol<*>>()) { it.symbol }
@@ -143,6 +152,26 @@ internal class CfirDeclarationForCompiledElementSearcher(private val session: LL
                 else -> error("Unexpected callable ${declaration::class.simpleName}")
             }
         }
+    }
+
+    /** 按包和完整 extend 结构键恢复 compiled PSI 对应的 CFIR 扩展声明。 */
+    private fun findNonLocalExtendDeclaration(declaration: CjExtend): CfirResolution<CfirExtend> {
+        val packageFqName = declaration.containingCjFile.packageFqName
+        val structuralKey = LLExtendStructuralKeys.of(declaration)
+        val extend = session.extendProviderOrNull
+            ?.getExtendsInPackage(packageFqName)
+            ?.singleOrNull { candidate -> LLExtendStructuralKeys.of(candidate) == structuralKey }
+            ?: return unresolved(
+                reason = UnresolvedReason.MISSING_DECLARATION,
+                message = "We should be able to find a compiled extend declaration",
+                psi = declaration,
+                entries = listOf(
+                    "packageFqName" to packageFqName.asString(),
+                    "extendStructuralKey" to structuralKey,
+                ),
+            )
+
+        return CfirResolution.Resolved(extend)
     }
 
     /**

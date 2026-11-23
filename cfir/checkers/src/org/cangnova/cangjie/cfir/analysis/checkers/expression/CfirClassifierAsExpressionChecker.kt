@@ -12,6 +12,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCallOrigin
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
+import org.cangnova.cangjie.cfir.patterns.CfirEnumPattern
 import org.cangnova.cangjie.cfir.expressions.CfirSubscriptExpression
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
@@ -44,6 +45,7 @@ object CfirClassifierAsExpressionChecker : CfirQualifiedAccessChecker() {
         val resolvedReference = expression.calleeReference as? CfirResolvedNamedReference ?: return
         val source = resolvedReference.source ?: expression.source ?: return
         if (expression.isUsedAsOuterReceiver()) return
+        if (expression.isEnumPatternOwnerQualifier()) return
         if (expression.isUsedAsSubscriptReceiver()) return
         if (resolvedReference.resolvedSymbol is CfirClassLikeSymbol<*> && expression.isAssignmentExpectedTypeOperand()) return
 
@@ -139,6 +141,16 @@ object CfirClassifierAsExpressionChecker : CfirQualifiedAccessChecker() {
         }
     }
 }
+
+/**
+ * 判断当前访问是否是限定名 enum pattern 的 owner 限定符（`case E.A` 里的 `E`）。
+ *
+ * 它与成员访问的显式接收者一样只承担限定名结构，不是把类型名当作运行时值读取；
+ * 裸泛型限定符（`case Slot.Used(x)`）的类型实参也由 subject 补全，不需要显式书写。
+ */
+context(context: CheckerContext)
+internal fun CfirQualifiedAccessExpression.isEnumPatternOwnerQualifier(): Boolean =
+    (context.containingElements.lastOrNull { element -> element !== this } as? CfirEnumPattern)?.ownerQualifier === this
 
 /** 判断表达式是否为解析到 class / struct / enum 等声明的裸类型名值引用。 */
 internal fun CfirExpression.isResolvedClassLikeValueReference(): Boolean {

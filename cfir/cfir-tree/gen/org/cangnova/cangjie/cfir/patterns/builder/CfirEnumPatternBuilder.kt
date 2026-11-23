@@ -10,6 +10,7 @@ package org.cangnova.cangjie.cfir.patterns.builder
 import kotlin.contracts.*
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.patterns.CfirEnumPattern
 import org.cangnova.cangjie.cfir.patterns.CfirPattern
 import org.cangnova.cangjie.cfir.patterns.impl.CfirEnumPatternImpl
@@ -19,6 +20,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 @CfirBuilderDsl
 class CfirEnumPatternBuilder {
     var source: CjSourceElement? = null
+    var ownerQualifier: CfirExpression? = null
     lateinit var constructorReference: CfirReference
     val arguments: MutableList<CfirPattern> = mutableListOf()
 
@@ -26,6 +28,7 @@ class CfirEnumPatternBuilder {
     fun build(): CfirEnumPattern {
         return CfirEnumPatternImpl(
             source,
+            ownerQualifier,
             constructorReference,
             arguments,
         )
@@ -48,6 +51,7 @@ inline fun buildEnumPatternCopy(original: CfirEnumPattern, init: CfirEnumPattern
     }
     val copyBuilder = CfirEnumPatternBuilder()
     copyBuilder.source = original.source
+    copyBuilder.ownerQualifier = original.ownerQualifier
     copyBuilder.constructorReference = original.constructorReference
     copyBuilder.arguments.addAll(original.arguments)
     return copyBuilder.apply(init).build()

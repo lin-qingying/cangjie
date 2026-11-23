@@ -1,5 +1,8 @@
 package org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.classifiers
 
+import org.cangnova.cangjie.analysis.api.types.CaClassLikeType
+import org.cangnova.cangjie.analysis.api.types.CaType
+
 /**
  * 面向源码风格的类型形参 renderer 预设。
  *
@@ -17,7 +20,13 @@ object CaTypeParametersRendererForSource {
         }
         if (renderedTypeParameters.isEmpty()) return@CaTypeParametersRenderer
 
-        val boundedParameters = renderedTypeParameters.filter { it.upperBounds.isNotEmpty() }
+        // 类型形参没有显式上界时，符号层会补一个隐式 `Any` 上界；源码渲染不应把它展开成
+        // `where T <: Any`。否则 renderer 会去解析 `std/core/Any`，在库/反编译声明上失败，
+        // 导致整个声明（以及引用该声明的 Quick Doc）退化为空。
+        val boundedParameters = renderedTypeParameters.mapNotNull { typeParameter ->
+            val explicitBounds = typeParameter.upperBounds.filterNot { bound -> bound.isImplicitAnyUpperBound() }
+            if (explicitBounds.isEmpty()) null else typeParameter to explicitBounds
+        }
         printer {
             printCollection(
                 renderedTypeParameters,
@@ -54,11 +63,11 @@ object CaTypeParametersRendererForSource {
                 append(" where ")
                 printCollection(
                     boundedParameters,
-                ) { typeParameter ->
+                ) { (typeParameter, explicitBounds) ->
                     append(typeParameter.name.asString())
                     append(" <: ")
                     printCollection(
-                        typeParameter.upperBounds,
+                        explicitBounds,
                         separator = " & ",
                     ) { upperBound ->
                         declarationRenderer.typeRenderer.renderType(
@@ -75,3 +84,11 @@ object CaTypeParametersRendererForSource {
         }
     }
 }
+
+/**
+ * 隐式 `Any` 上界：符号层为每个无显式约束的类型形参补的默认上界。
+ */
+private fun CaType.isImplicitAnyUpperBound(): Boolean =
+    this is CaClassLikeType &&
+        classId.packageFqName.asString() == "std.core" &&
+        classId.shortClassName.asString() == "Any"

@@ -1812,9 +1812,15 @@ val forInExpression: Element by element(Expression, name = "ForInExpression") {
 
     /**
      * enum 构造器模式节点。
+     *
+     * `ownerQualifier` 是限定名模式（`E.A` / `Alias<Int64>.B(x)`）里 constructor 前面的类型限定符，
+     * 以普通表达式建模并按 receiver 解析：它指向 enum 或 typealias 本身，owner 是否与 subject 一致
+     * 由解析后的类型判定。裸名字模式（`A` / `B(x)`）没有限定符。对应官方 `EnumPattern::constructor`
+     * 为 `MemberAccess` 时的 `baseExpr`。
      */
     val enumPattern: Element by element(Pattern, name = "EnumPattern") {
         parent(pattern)
+        +field("ownerQualifier", expression, nullable = true, withTransform = true, withReplace = true)
         +field("constructorReference", reference, withTransform = true)
         +listField("arguments", pattern, withReplace = true, withTransform = true)
     }

@@ -3,3 +3,4 @@
 - cangjie 仓库提交历史可能被 IntelliJ IDEA Git 插件自动 amend（reflog 显示 "改写 <sha> by IntelliJ IDEA Git plugin"），对比提交历史时先看 reflog 确认
 - 补 KDoc 等纯注释改动不需要 gradle 编译验证（用户明确纠正过）；用扫描器确认缺口清零即可，构建验证只留给真正改代码的变更。
 - 纯注释（KDoc）变更的验证流程：扫描器确认缺口清零 + git diff 逐行核对全部为注释插入（无删除行、无代码行），不做编译验证。
+- intellij-ide 独立构建经 includeBuild(cangjieUpstreamRoot) 会触发主仓库上游编译；codex/analysis-cfir-lsp-batch 分支上 :cangjie:macro:macro-common 的 MacroMsgCodec.kt 存在既有编译错误（Position/assertParents 未解析引用），挡住 :modules:ide:project:compileKotlin——ide 模块编译验证会先失败于该处，报错属上游而非 ide 改动。 <!-- atomcode-memory:v1 {"id":"m-58185299-e1d9-41b3-9407-3ac25b1a4dad","created_at":"2026-11-14T11:22:42.220Z","updated_at":"2026-11-14T11:22:42.230Z","topic":"构建/验证","status":"active","pinned":false} -->

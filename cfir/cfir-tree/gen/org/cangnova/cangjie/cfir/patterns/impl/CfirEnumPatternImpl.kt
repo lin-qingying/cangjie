@@ -8,6 +8,7 @@
 package org.cangnova.cangjie.cfir.patterns.impl
 
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.patterns.CfirEnumPattern
 import org.cangnova.cangjie.cfir.patterns.CfirPattern
 import org.cangnova.cangjie.cfir.patterns.CfirPatternTreeOwner
@@ -18,6 +19,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 
 class CfirEnumPatternImpl @CfirImplementationDetail constructor(
     override val source: CjSourceElement?,
+    override var ownerQualifier: CfirExpression?,
     override var constructorReference: CfirReference,
     arguments: List<CfirPattern>,
 ) : CfirEnumPattern() {
@@ -49,13 +51,20 @@ class CfirEnumPatternImpl @CfirImplementationDetail constructor(
         }
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
+        ownerQualifier?.accept(visitor, data)
         constructorReference.accept(visitor, data)
         arguments.forEach { it.accept(visitor, data) }
     }
 
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirEnumPatternImpl {
+        transformOwnerQualifier(transformer, data)
         transformConstructorReference(transformer, data)
         transformArguments(transformer, data)
+        return this
+    }
+
+    override fun <D> transformOwnerQualifier(transformer: CfirTransformer<D>, data: D): CfirEnumPatternImpl {
+        ownerQualifier = ownerQualifier?.transform(transformer, data)
         return this
     }
 
@@ -81,6 +90,10 @@ class CfirEnumPatternImpl @CfirImplementationDetail constructor(
 
     override fun replacePatternTreeOwner(newPatternTreeOwner: CfirPatternTreeOwner?) {
         patternTreeOwner = newPatternTreeOwner
+    }
+
+    override fun replaceOwnerQualifier(newOwnerQualifier: CfirExpression?) {
+        ownerQualifier = newOwnerQualifier
     }
 
     override fun replaceArguments(newArguments: List<CfirPattern>) {

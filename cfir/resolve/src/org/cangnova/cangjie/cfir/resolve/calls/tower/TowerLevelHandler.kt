@@ -261,11 +261,24 @@ internal class ScopeBasedTowerLevel(
         var result = ProcessResult.SCOPE_EMPTY
         scope.processCallablesByNameWithLookupProvenance(info.name) { candidate ->
             val symbol = candidate.symbol
-            // 仓颉 enum constructor 在普通名字访问中不是普通 callable。
-            // 裸 enum 值访问由 CfirCallResolver 的 EnumConstructorCall fallback 单独进入，
-            // 否则同名顶层变量/函数会被错误地与 enum constructor 合并成歧义。
+            // 官方 enum body scope 会把本 enum 的 constructor 当作成员名优先查找。
+            // 普通裸值访问只接纳当前 lexical enum 的无参 constructor；其它 enum sugar
+            // 仍由 CfirCallResolver 的 EnumConstructorCall fallback 处理，避免全局同名项
+            // 越过局部变量、classifier 的名称优先级。
             if (info.callKind == CallKind.NamedValueAccess && symbol is CfirEnumConstructorSymbol) {
-                return@processCallablesByNameWithLookupProvenance
+                val lexicalOwnerClassId = lexicalEnumOwnerClassId(info)
+                if (
+                    lexicalOwnerClassId == null ||
+                    !symbol.isBound ||
+                    symbol.enumOwnerClassId() != lexicalOwnerClassId
+                ) {
+                    return@processCallablesByNameWithLookupProvenance
+                }
+
+                symbol.lazyResolveToPhase(CfirResolvePhase.TYPES)
+                if (!symbol.isBound || symbol.cfir.valueParameters.isNotEmpty()) {
+                    return@processCallablesByNameWithLookupProvenance
+                }
             }
             if (consumeCallableCandidate(symbol, processor, candidate.provenance).isFoundByThisLevel) {
                 result = ProcessResult.FOUND
