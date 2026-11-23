@@ -23,15 +23,18 @@ import com.intellij.model.psi.PsiSymbolReferenceProviderBean
 import com.intellij.model.psi.PsiSymbolReferenceService
 import com.intellij.model.psi.PsiSymbolService
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.AccessToken
 import com.intellij.openapi.application.AsyncExecutionService
 import com.intellij.openapi.application.AppUIExecutor
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ExpirableExecutor
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.NonBlockingReadAction
+import com.intellij.openapi.application.ThreadingSupport
 import com.intellij.openapi.application.TransactionGuard
 import com.intellij.openapi.application.TransactionGuardImpl
 import com.intellij.openapi.extensions.ExtensionsArea
+import com.intellij.openapi.fileTypes.FileTypeExtensionPoint
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
@@ -40,6 +43,7 @@ import com.intellij.openapi.util.ThrowableComputable
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileSet
 import com.intellij.openapi.vfs.VirtualFileSetFactory
+import com.intellij.platform.locking.impl.NestedLocksThreadingSupport
 import com.intellij.pom.PomModel
 import com.intellij.pom.core.impl.PomModelImpl
 import com.intellij.pom.tree.TreeAspect
@@ -167,6 +171,11 @@ internal object CangJieHeadlessPlatformBootstrap {
         registerExtensionPoint(area, "com.intellij.fileContextProvider", FileContextProvider::class.java)
         registerExtensionPoint(area, "com.intellij.psi.metaDataContributor", MetaDataContributor::class.java)
         registerExtensionPoint(area, "com.intellij.containerProvider", ContainerProvider::class.java)
+        // 二进制 PSI view 使用平台 FileTypeExtension bean；先建立 EP，随后由现有 XML 装配 full factory。
+        registerExtensionPoint(area, "com.intellij.fileType.fileViewProviderFactory", FileTypeExtensionPoint::class.java)
+        // compiled PSI 的 stub 与二进制文本沿现有 XML dispatcher 装配，不能绕过平台 loader。
+        registerExtensionPoint(area, "com.intellij.filetype.stubBuilder", FileTypeExtensionPoint::class.java)
+        registerExtensionPoint(area, "com.intellij.filetype.decompiler", FileTypeExtensionPoint::class.java)
         registerExtensionPoint(area, "com.intellij.metaLanguage", MetaLanguage::class.java)
         registerExtensionPoint(area, "com.intellij.smartPointer.anchorProvider", SmartPointerAnchorProvider::class.java)
         registerExtensionPoint(area, TreeCopyHandler.EP_NAME.name, TreeCopyHandler::class.java)
@@ -374,81 +383,81 @@ internal object CangJieHeadlessPlatformBootstrap {
 }
 
 /**
- * 对齐 Kotlin headless 环境的写动作约束。
+ * Core headless 宿主使用 IntelliJ 自身的读写锁协议。
  *
- * 默认 MockApplication 会把写权限视为恒成立，这会掩盖 Analysis API 在写动作约束上的真实行为。
- * 这里改成仅在 `runWriteAction` 作用域内开放写权限。
+ * Kotlin CoreUnitTestApplication 只跟踪写权限；仓颉的真实 native 宏构造会在后台发布
+ * 替换语义视图，因此两个 Core 模式的显式 ReadAction/WriteAction 必须共用实际平台锁。
+ * 这里与 ApplicationImpl 一样把动作委托给 ThreadingSupport，不自行实现 mutex 或重试。
  */
-internal class CangJieCoreUnitTestApplication(
+internal open class CangJieCoreHeadlessApplication(
     parentDisposable: Disposable,
+    private val unitTestMode: Boolean,
 ) : MockApplication(parentDisposable) {
-    /**
-     * 单测核心环境固定报告 unit-test 模式。
-     */
-    override fun isUnitTestMode(): Boolean = true
+    private val threadingSupport = NestedLocksThreadingSupport()
 
-    /**
-     * 根据当前线程写动作标记返回写权限状态。
-     */
-    override fun isWriteAccessAllowed(): Boolean = CangJieWriteAccessSupport.isWriteAccessAllowed()
+    init {
+        // 显式 Application 动作和按 ThreadingSupport 取值的入口使用同一实例。
+        registerService(ThreadingSupport::class.java, threadingSupport)
+    }
 
-    /**
-     * 在当前线程临时开放写权限并执行写动作。
-     */
+    override fun isUnitTestMode(): Boolean = unitTestMode
+
+    override fun isWriteAccessAllowed(): Boolean = threadingSupport.isWriteAccessAllowed()
+
+    override fun holdsReadLock(): Boolean = threadingSupport.isReadLockedByThisThread()
+
+    override fun isWriteIntentLockAcquired(): Boolean = threadingSupport.isWriteIntentLocked()
+
+    override fun isWriteActionInProgress(): Boolean = threadingSupport.isWriteActionInProgress()
+
+    override fun isWriteActionPending(): Boolean = threadingSupport.isWriteActionPending()
+
+    override fun hasWriteAction(actionClass: Class<*>): Boolean = threadingSupport.hasWriteAction(actionClass)
+
+    /** 三种公开读动作均覆盖整个计算；nested read 和异常收尾由平台处理。 */
+    override fun runReadAction(action: Runnable) {
+        threadingSupport.runReadAction(action.javaClass) { action.run() }
+    }
+
+    override fun <T : Any?> runReadAction(computation: Computable<T?>): T? =
+        threadingSupport.runReadAction(computation.javaClass) { computation.compute() }
+
+    override fun <T : Any?, E : Throwable?> runReadAction(computation: ThrowableComputable<T?, E?>): T? =
+        threadingSupport.runReadAction(computation.javaClass) { computation.compute() }
+
+    override fun tryRunReadAction(runnable: Runnable): Boolean = threadingSupport.tryRunReadAction(runnable)
+
+    /** 写动作排除已有读者；平台拒绝 ReadAction 内的写升级，不释放读锁制造交错。 */
     override fun runWriteAction(action: Runnable) {
-        CangJieWriteAccessSupport.withWriteAccessAllowedInThread {
-            action.run()
+        threadingSupport.runWriteAction(action.javaClass) { action.run() }
+    }
+
+    override fun <T : Any?> runWriteAction(computation: Computable<T?>): T? =
+        threadingSupport.runWriteAction(computation.javaClass) { computation.compute() }
+
+    override fun <T : Any?, E : Throwable?> runWriteAction(computation: ThrowableComputable<T?, E?>): T? =
+        threadingSupport.runWriteAction(computation.javaClass) { computation.compute() }
+
+    @Deprecated("Use runReadAction instead")
+    override fun acquireReadActionLock(): AccessToken {
+        val release = threadingSupport.acquireReadActionLock()
+        return object : AccessToken() {
+            override fun finish() = release()
         }
     }
 
-    /**
-     * 在当前线程临时开放写权限并执行可返回值的写动作。
-     */
-    override fun <T : Any?> runWriteAction(computation: Computable<T?>): T? {
-        return CangJieWriteAccessSupport.withWriteAccessAllowedInThread {
-            computation.compute()
-        }
-    }
-
-    /**
-     * 在当前线程临时开放写权限并执行可抛异常的写动作。
-     */
-    override fun <T : Any?, E : Throwable?> runWriteAction(
-        computation: ThrowableComputable<T?, E?>,
-    ): T? {
-        return CangJieWriteAccessSupport.withWriteAccessAllowedInThread {
-            computation.compute()
-        }
-    }
-}
-
-/**
- * 写权限状态按线程隔离，避免共享 application 时不同任务相互污染。
- */
-private object CangJieWriteAccessSupport {
-    /**
-     * 当前线程是否处于仓颉 core 写动作作用域。
-     */
-    private val isWriteAccessAllowedInThread = ThreadLocal.withInitial { false }
-
-    /**
-     * 返回当前线程是否允许写访问。
-     */
-    fun isWriteAccessAllowed(): Boolean = isWriteAccessAllowedInThread.get()
-
-    /**
-     * 在当前线程临时打开写访问标记并执行回调，结束后恢复为关闭状态。
-     */
-    inline fun <T> withWriteAccessAllowedInThread(action: () -> T): T {
-        isWriteAccessAllowedInThread.set(true)
-        try {
-            return action
-                .invoke()
-        } finally {
-            isWriteAccessAllowedInThread.set(false)
+    @Deprecated("Use runWriteAction instead")
+    override fun acquireWriteActionLock(marker: Class<*>): AccessToken {
+        val release = threadingSupport.acquireWriteActionLock(marker)
+        return object : AccessToken() {
+            override fun finish() = release()
         }
     }
 }
+
+/** 保留 Kotlin 对应的单测 application 角色，读写行为与 Production 共享同一个实现。 */
+internal class CangJieCoreUnitTestApplication(parentDisposable: Disposable) :
+    CangJieCoreHeadlessApplication(parentDisposable, unitTestMode = true)
 
 /**
  * Headless 测试/服务宿主下的异步执行语义统一降为同步执行。
@@ -757,7 +766,7 @@ private class CangJieImmediateNonBlockingReadAction<T>(
      */
     override fun executeSynchronously(): T {
         try {
-            val result = computation.call()
+            val result = ApplicationManager.getApplication().runReadAction(Computable { computation.call() })
             uiCallback?.accept(result)
             return result
         } catch (e: ProcessCanceledException) {

@@ -15,6 +15,8 @@ enum class CangJieSemanticKind {
     LOCAL_VARIABLE,
     PACKAGE,
     OTHER,
+    KEYWORD,
+    PACKAGE_VARIABLE,
 }
 
 /** 使用 UTF-16 半开区间表示的语义标注。 */

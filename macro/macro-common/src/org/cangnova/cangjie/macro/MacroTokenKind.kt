@@ -160,7 +160,40 @@ object MacroTokenKind {
             // 未知 lexer token 降级为协议里的 ILLEGAL：单个 token 没有映射不应让整模块宏快照
             // 构造失败（宏执行器会把它当作非法 token 处理）。已确认的映射仍走上面的别名表。
             ?: return EncodedMacroToken(cjcKindByName.getValue("ILLEGAL"), text)
-        return EncodedMacroToken(kind, text)
+        return when (cjcName) {
+            "STRING_LITERAL" -> EncodedMacroToken(kind, literalContent(text, 0, 1))
+            "JSTRING_LITERAL" -> EncodedMacroToken(kind, literalContent(text, 1, 1))
+            "RUNE_LITERAL" -> EncodedMacroToken(kind, literalContent(text, 1, 1))
+            "MULTILINE_STRING" -> {
+                val content = literalContent(text, 0, 3)
+                val lineEndSize = when {
+                    content.startsWith("\r\n") -> 2
+                    content.startsWith("\n") || content.startsWith("\r") -> 1
+                    else -> error("A multiline macro string must start with a line terminator")
+                }
+                EncodedMacroToken(kind, content.substring(lineEndSize))
+            }
+            "MULTILINE_RAW_STRING" -> {
+                val delimiters = text.takeWhile { it == '#' }.length
+                require(delimiters > 0 && text.endsWith("#".repeat(delimiters)))
+                val quoted = text.substring(delimiters, text.length - delimiters)
+                EncodedMacroToken(kind, literalContent(quoted, 0, 1), delimiters)
+            }
+            else -> EncodedMacroToken(kind, text)
+        }
+    }
+
+    /**
+     * 官方 Lexer 的 Token.Value 不含字符串/rune 的界定符，保留原内容中的转义与插值。
+     * 外层界定符由协议的 kind/delimiterNum 在重建时恢复，不能作为 value 再发送一次。
+     */
+    private fun literalContent(text: String, prefixSize: Int, quoteSize: Int): String {
+        require(text.length >= prefixSize + quoteSize * 2)
+        val quote = text[prefixSize]
+        require(quote == '"' || quote == '\'')
+        val delimiter = quote.toString().repeat(quoteSize)
+        require(text.startsWith(delimiter, prefixSize) && text.endsWith(delimiter))
+        return text.substring(prefixSize + quoteSize, text.length - quoteSize)
     }
 
     /** 已映射到 CJC TokenKind 的 token。 */
@@ -169,5 +202,7 @@ object MacroTokenKind {
         val kind: UByte,
         /** CJC token 的原始或规范化文本。 */
         val value: String,
+        /** 官方 Token/TokenSerialization 将非 raw token 的该字段固定为 1；raw 使用真实 # 数量。 */
+        val delimiterNum: Int = 1,
     )
 }

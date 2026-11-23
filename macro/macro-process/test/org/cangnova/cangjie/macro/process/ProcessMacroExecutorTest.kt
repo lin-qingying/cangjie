@@ -507,6 +507,8 @@ class ProcessMacroExecutorTest {
         startedExecutor.close()
 
         assertTrue(startedExecutor.closed)
+        assertTrue(startedExecutor.shutdownRequested)
+        assertTrue(startedExecutor.exitTaskSent)
         assertEquals(MacroMsgCodec.TYPE_EXIT_TASK, MacroMsgCodec.getMsgType(startedExecutor.transport.sent.last()))
     }
 
@@ -535,6 +537,8 @@ class ProcessMacroExecutorTest {
          * 模拟后端连接存活状态。
          */
         private var alive: Boolean = false
+        var shutdownRequested: Boolean = false
+        var exitTaskSent: Boolean = false
 
         /**
          * 测试替身始终声明后端可用。
@@ -549,6 +553,8 @@ class ProcessMacroExecutorTest {
             return ProcessMacroConnection(
                 transport = transport,
                 isAlive = { alive },
+                beginClose = { shutdownRequested = true },
+                finishCloseRequest = { sent -> check(shutdownRequested); exitTaskSent = sent },
                 close = {
                     closed = true
                     alive = false
