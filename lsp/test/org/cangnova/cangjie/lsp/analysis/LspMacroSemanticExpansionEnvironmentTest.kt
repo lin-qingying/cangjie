@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.lsp.analysis
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.psi.PsiManager
 import org.cangnova.cangjie.CangJieCoreEnvironmentMode
@@ -20,7 +21,6 @@ import org.cangnova.cangjie.frontend.pipeline.macroSdkHome
 import org.cangnova.cangjie.lsp.state.LspWorkspaceState
 import org.cangnova.cangjie.lsp.testkit.LspWorkspaceFixtureBuilder
 import org.cangnova.cangjie.lsp.testkit.ServiceLoadedLspTestEnvironment
-import org.cangnova.cangjie.macro.expansion.MacroConstructionReadAccess
 import org.cangnova.cangjie.macro.expansion.SdkHandle
 import org.cangnova.cangjie.psi.CjFile
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -62,7 +62,9 @@ class LspMacroSemanticExpansionEnvironmentTest {
                 "LSP 必须注册自己的 environment 实现",
             )
             assertEquals(engine, registered.engine())
-            assertEquals(MacroConstructionReadAccess.Direct, registered.readAccess())
+            registered.readAccess().compute {
+                assertTrue(ApplicationManager.getApplication().holdsReadLock(), "宏 PSI 短读必须进入实际平台读动作")
+            }
 
             // 发布屏障在 headless 容器内可用，并透传 block 的结果。
             assertEquals(7, registered.barrier().publish { 7 })

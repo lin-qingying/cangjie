@@ -84,14 +84,16 @@ class CangjieTextDocumentService(
      * 方法写入文档存储、通知分析层、刷新项目结构，并在诊断启用时重发打开文档诊断。
      */
     override fun didOpen(params: DidOpenTextDocumentParams) {
-        logger.info("====> didOpen: ${params.textDocument.uri}")
-        val document = serverContext.documentStore.open(params.textDocument)
-        val context = serverContext.requestContext()
-        serverContext.analysisFacade.didOpen(context, document)
-        serverContext.refreshProjectStructure()
-        if (serverContext.enabledFeatures.diagnostics) {
-            serverContext.republishOpenDiagnostics()
-        }
+        serverContext.requestExecutor.executeNotification {
+            logger.info("====> didOpen: ${params.textDocument.uri}")
+            val document = serverContext.documentStore.open(params.textDocument)
+            val context = serverContext.requestContext()
+            serverContext.analysisFacade.didOpen(context, document)
+            serverContext.refreshProjectStructure()
+            if (serverContext.enabledFeatures.diagnostics) {
+                serverContext.republishOpenDiagnostics()
+            }
+        }.join()
     }
 
     /**
@@ -100,14 +102,16 @@ class CangjieTextDocumentService(
      * 方法按 LSP 变更列表更新文档快照，并刷新依赖该文档的语义状态。
      */
     override fun didChange(params: DidChangeTextDocumentParams) {
-        logger.info("====> didChange: ${params.textDocument.uri}")
-        val document = serverContext.documentStore.applyChanges(params)
-        val context = serverContext.requestContext()
-        serverContext.analysisFacade.didChange(context, document)
-        serverContext.refreshProjectStructure()
-        if (serverContext.enabledFeatures.diagnostics) {
-            serverContext.republishOpenDiagnostics()
-        }
+        serverContext.requestExecutor.executeNotification {
+            logger.info("====> didChange: ${params.textDocument.uri}")
+            val document = serverContext.documentStore.applyChanges(params)
+            val context = serverContext.requestContext()
+            serverContext.analysisFacade.didChange(context, document)
+            serverContext.refreshProjectStructure()
+            if (serverContext.enabledFeatures.diagnostics) {
+                serverContext.republishOpenDiagnostics()
+            }
+        }.join()
     }
 
     /**
@@ -116,15 +120,17 @@ class CangjieTextDocumentService(
      * 方法移除文档快照，向客户端清空该文档诊断，并重发其他打开文档诊断。
      */
     override fun didClose(params: DidCloseTextDocumentParams) {
-        logger.info("====> didClose: ${params.textDocument.uri}")
-        val document = serverContext.documentStore.close(params.textDocument.uri) ?: return
-        val context = serverContext.requestContext()
-        serverContext.analysisFacade.didClose(context, document)
-        serverContext.refreshProjectStructure()
-        if (serverContext.enabledFeatures.diagnostics) {
-            serverContext.publishDiagnostics(document, emptyList())
-            serverContext.republishOpenDiagnostics()
-        }
+        serverContext.requestExecutor.executeNotification {
+            logger.info("====> didClose: ${params.textDocument.uri}")
+            val document = serverContext.documentStore.close(params.textDocument.uri) ?: return@executeNotification
+            val context = serverContext.requestContext()
+            serverContext.analysisFacade.didClose(context, document)
+            serverContext.refreshProjectStructure()
+            if (serverContext.enabledFeatures.diagnostics) {
+                serverContext.publishDiagnostics(document, emptyList())
+                serverContext.republishOpenDiagnostics()
+            }
+        }.join()
     }
 
     /**
@@ -133,14 +139,16 @@ class CangjieTextDocumentService(
      * 保存不会改变内存文本，但会通知分析层并刷新项目结构相关诊断。
      */
     override fun didSave(params: DidSaveTextDocumentParams) {
-        logger.info("====> didSave: ${params.textDocument.uri}")
-        val document = serverContext.documentStore.get(params.textDocument.uri) ?: return
-        val context = serverContext.requestContext()
-        serverContext.analysisFacade.didSave(context, document)
-        serverContext.refreshProjectStructure()
-        if (serverContext.enabledFeatures.diagnostics) {
-            serverContext.republishOpenDiagnostics()
-        }
+        serverContext.requestExecutor.executeNotification {
+            logger.info("====> didSave: ${params.textDocument.uri}")
+            val document = serverContext.documentStore.get(params.textDocument.uri) ?: return@executeNotification
+            val context = serverContext.requestContext()
+            serverContext.analysisFacade.didSave(context, document)
+            serverContext.refreshProjectStructure()
+            if (serverContext.enabledFeatures.diagnostics) {
+                serverContext.republishOpenDiagnostics()
+            }
+        }.join()
     }
 
     /**

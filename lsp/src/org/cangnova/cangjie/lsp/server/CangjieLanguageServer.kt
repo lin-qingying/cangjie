@@ -47,7 +47,10 @@ class CangjieLanguageServer(
 
     /** 宏发布/失效回调运行在构造线程，诊断刷新必须等写屏障释放后执行。 */
     private fun scheduleMacroDiagnosticsRefresh() {
-        ApplicationManager.getApplication().executeOnPooledThread {
+        // 终态 listener 仍记录取消/失败；实际关闭的宿主不再提交新的 PSI 分析任务。
+        if (closed.get() || (environmentLazy.isInitialized() && environment.project.isDisposed)) return
+        ApplicationManager.getApplication().executeOnPooledThread refresh@ {
+            if (closed.get() || (environmentLazy.isInitialized() && environment.project.isDisposed)) return@refresh
             try {
                 serverContext.republishMacroDiagnostics()
             } catch (failure: Throwable) {

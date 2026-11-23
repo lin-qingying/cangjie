@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.lsp.analysis
 
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.application.WriteAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
@@ -55,11 +56,9 @@ data class LspMacroExpansionOptions(
  * 只负责 LSP 特有的取值与屏障：
  * - roots 来自 [CaSourceModule] 的 PSI 根与依赖库二进制根；
  * - revision 来自 LSP 的 [CaModificationTracker]（见 [revision] 的事实说明）；
- * - 读访问直接执行：LSP 现有分析路径（`CangjieAnalysisFacade` 及其实现）没有任何 `ReadAction`
- *   包装，全部在请求线程直接读写 PSI；因此这里沿用 [MacroConstructionReadAccess.Direct]，
- *   不额外引入 LSP 运行时并不存在的读锁语义；
- * - 发布屏障使用与本容器实测可用的 `invokeAndWait + WriteAction`（见
- *   `MacroExpansionHostContainerProbeTest`）。
+ * - 宏 PSI 短读与普通 LSP Analysis API 请求共用 Application 的 ReadAction；
+ * - 发布屏障使用同一 Application 的 WriteAction，等待已开始的读动作完成后切换快照和缓存。
+ *   native 编译/执行在这些短读动作之外，发布回调在写动作退出后执行。
  *
  * 引擎、SDK 与编译器配置装配全部来自 [options]，因此本类不引入 `compiler:frontend` 依赖。
  */
@@ -136,7 +135,7 @@ class LspMacroSemanticExpansionEnvironment(
         )
     }
 
-    override fun readAccess(): MacroConstructionReadAccess = MacroConstructionReadAccess.Direct
+    override fun readAccess(): MacroConstructionReadAccess = LspMacroConstructionReadAccess
 
     override fun barrier(): MacroExpansionBarrier = LspMacroExpansionBarrier
 
@@ -210,8 +209,13 @@ class LspMacroSemanticExpansionEnvironment(
         return ModuleRoots(sourceRoots.toList(), classpathRoots.toList())
     }
 
+    /** 宏 PSI 短读与分析请求使用同一实际 Application 读动作。 */
+    private object LspMacroConstructionReadAccess : MacroConstructionReadAccess {
+        override fun <T> compute(action: () -> T): T = ReadAction.compute<T, RuntimeException> { action() }
+    }
+
     /**
-     * LSP 发布屏障：与本容器实测可用的 `invokeAndWait + WriteAction` 形态一致。
+     * LSP 发布屏障：整个快照发布与 raw/file-structure 失效都在实际平台写互斥中执行。
      *
      * 返回 `null` 表示屏障被放弃（例如容器不可用），框架按输入已变处理。
      */

@@ -41,8 +41,10 @@ class CangjieWorkspaceService(
      * 配置变更可能影响项目结构和诊断，因此统一触发工作区语义刷新。
      */
     override fun didChangeConfiguration(params: DidChangeConfigurationParams) {
-        logger.info("====> didChangeConfiguration")
-        refreshWorkspaceSemantics()
+        serverContext.requestExecutor.executeNotification {
+            logger.info("====> didChangeConfiguration")
+            refreshWorkspaceSemantics()
+        }.join()
     }
 
     /**
@@ -51,8 +53,10 @@ class CangjieWorkspaceService(
      * 磁盘文件变化会影响 unopened 文件和依赖关系，必须刷新项目结构并重发打开文档诊断。
      */
     override fun didChangeWatchedFiles(params: DidChangeWatchedFilesParams) {
-        logger.info("====> didChangeWatchedFiles")
-        refreshWorkspaceSemantics()
+        serverContext.requestExecutor.executeNotification {
+            logger.info("====> didChangeWatchedFiles")
+            refreshWorkspaceSemantics()
+        }.join()
     }
 
     /**
@@ -61,18 +65,20 @@ class CangjieWorkspaceService(
      * 方法同步 workspace folder 状态、刷新 Analysis API 项目结构，并通知 analysis facade 执行语义层更新。
      */
     override fun didChangeWorkspaceFolders(params: DidChangeWorkspaceFoldersParams) {
-        logger.info("====> didChangeWorkspaceFolders")
-        serverContext.workspaceState.updateWorkspaceFolders(
-            added = params.event.added,
-            removed = params.event.removed,
-        )
-        serverContext.refreshProjectStructure()
-        serverContext.analysisFacade.didChangeWorkspaceFolders(
-            context = serverContext.requestContext(),
-            added = params.event.added,
-            removed = params.event.removed,
-        )
-        serverContext.republishOpenDiagnostics()
+        serverContext.requestExecutor.executeNotification {
+            logger.info("====> didChangeWorkspaceFolders")
+            serverContext.workspaceState.updateWorkspaceFolders(
+                added = params.event.added,
+                removed = params.event.removed,
+            )
+            serverContext.refreshProjectStructure()
+            serverContext.analysisFacade.didChangeWorkspaceFolders(
+                context = serverContext.requestContext(),
+                added = params.event.added,
+                removed = params.event.removed,
+            )
+            serverContext.republishOpenDiagnostics()
+        }.join()
     }
 
     /**

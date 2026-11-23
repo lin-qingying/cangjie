@@ -8,6 +8,7 @@ import org.cangnova.cangjie.analysis.api.platform.declarations.CangJieAnnotation
 import org.cangnova.cangjie.analysis.api.platform.declarations.CangJieDeclarationProviderFactory
 import org.cangnova.cangjie.analysis.api.platform.declarations.CangJieDeclarationProviderMerger
 import org.cangnova.cangjie.analysis.api.platform.modification.CaModificationTracker
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieModuleDependentsProvider
 import org.cangnova.cangjie.analysis.api.platform.CaPlatformSettings
 import org.cangnova.cangjie.analysis.api.platform.index.CaSymbolIndexQueryService
 import org.cangnova.cangjie.analysis.api.platform.permissions.CaAnalysisPermissionChecker
@@ -114,6 +115,8 @@ internal object AnalysisApiLspServiceRegistrar {
         )
         // 成员生成服务（quick fix 的 headless 应用路径）。
         CangJieMemberGenerationHeadlessRegistrar.registerProjectServices(project)
+        // ModCommand.psiUpdate 在生成编辑时已查询 POM postprocess aspect，必须在列表动作之前完成装配。
+        org.cangnova.cangjie.formatter.CangJieFormatter.ensureModifiablePsiServicesRegistered(project)
 
         /*
          * LSP 运行时要保留自己的 project structure / modification 服务实现，
@@ -204,6 +207,10 @@ internal object AnalysisApiLspServiceRegistrar {
         project.registerService(
             CaModuleProvider::class.java,
             AnalysisApiLspModuleProvider::class.java,
+        )
+        project.registerService(
+            CangJieModuleDependentsProvider::class.java,
+            AnalysisApiLspModuleDependentsProvider::class.java,
         )
         project.registerService(
             CaModificationTracker::class.java,

@@ -52,7 +52,7 @@ object CangjieSdkFixture {
      * 返回宏服务端可执行文件；缺失时让当前作业失败。
      */
     fun requireMacroServer(sdkHome: Path): Path {
-        val macroServer = sdkHome.resolve("tools").resolve("bin").resolve("LSPMacroServer")
+        val macroServer = sdkExecutable(sdkHome, "tools/bin", "LSPMacroServer")
         if (!Files.isRegularFile(macroServer)) {
             fail<Path>("SDK $sdkHome 缺少宏服务端 tools/bin/LSPMacroServer，无法执行宏展开用例。")
         }
@@ -63,11 +63,17 @@ object CangjieSdkFixture {
      * 返回仓颉编译器可执行文件；缺失时让当前作业失败。
      */
     fun requireCompiler(sdkHome: Path): Path {
-        val compiler = sdkHome.resolve("bin").resolve("cjc")
+        val compiler = sdkExecutable(sdkHome, "bin", "cjc")
         if (!Files.isRegularFile(compiler)) {
             fail<Path>("SDK $sdkHome 缺少编译器 bin/cjc，无法编译宏包。")
         }
         return compiler
+    }
+
+    /** 按实际宿主平台选择官方 SDK 的文件名，不探测候选文件作为替代路径。 */
+    private fun sdkExecutable(sdkHome: Path, directory: String, name: String): Path {
+        val fileName = if (System.getProperty("os.name").startsWith("Windows")) "$name.exe" else name
+        return sdkHome.resolve(directory).resolve(fileName)
     }
 
     /**

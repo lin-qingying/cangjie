@@ -16,6 +16,8 @@ dependencies {
     implementation(project(":analysis:analysis-api-impl-base"))
     implementation(project(":analysis:analysis-api-standalone"))
     implementation(project(":analysis:analysis-api-platform-interface"))
+    // 平台模块恢复直接消费内建库根协议，依赖由该 provider 所属模块明确提供。
+    implementation(project(":analysis:decompiled:decompiler-to-psi"))
     // 宏语义展开的宿主无关编排；LSP 通过它注册环境并触发快照构造。
     implementation(project(":analysis:macro-expansion"))
     implementation(project(":analysis:cj-references"))
@@ -60,6 +62,8 @@ dependencies {
     testImplementation(project(":analysis:analysis-api-cfir"))
     testImplementation(project(":analysis:analysis-api-impl-base"))
     testImplementation(project(":analysis:analysis-api-standalone"))
+    // 真实 CJO 协议直接核验平台 file-stub builder 的类型、包头与 PSI view，显式依赖其所属模块。
+    testImplementation(project(":analysis:decompiled:decompiler-to-file-stubs"))
     testImplementation(project(":analysis:cj-references"))
     testImplementation(project(":code-insight:completion"))
     testImplementation(project(":code-insight:editor"))
@@ -116,12 +120,15 @@ tasks.named<Test>("test") {
      * 但也不能当成 -D 属性传下去——Windows 命令行长度放不下完整 classpath。
      * 因此落盘到 build/ 下的文本文件，只把文件路径传给测试。
      */
-    val runtimeClasspathPath = sourceSets["test"].runtimeClasspath.asPath
+    val runtimeClasspath = sourceSets["test"].runtimeClasspath
     val classpathFile = layout.buildDirectory.file("lsp-test-classpath.txt")
-    inputs.property("lspTestRuntimeClasspath", runtimeClasspathPath)
+    inputs.files(runtimeClasspath)
+        .withPropertyName("lspTestRuntimeClasspath")
+        .withNormalizer(ClasspathNormalizer::class.java)
     outputs.file(classpathFile)
     doFirst {
-        classpathFile.get().asFile.writeText(runtimeClasspathPath)
+        // 执行期由 Gradle 持项目锁解析依赖，配置期只登记 FileCollection。
+        classpathFile.get().asFile.writeText(runtimeClasspath.asPath, Charsets.UTF_8)
     }
     systemProperty("lsp.test.classpath.file", classpathFile.get().asFile.absolutePath)
 

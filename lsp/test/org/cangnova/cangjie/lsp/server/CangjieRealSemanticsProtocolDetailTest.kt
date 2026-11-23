@@ -146,6 +146,75 @@ class CangjieRealSemanticsProtocolDetailTest : AbstractLspIntegrationTest() {
         }
     }
 
+    /** 类型模式的名称子节点属于声明，两个分支内用法才是引用。 */
+    @Test
+    fun `type pattern references contain exactly the binder uses`() {
+        patternReferencesWorkspace().use { fixture ->
+            createSession(fixture.initializeParams()).use { session ->
+                session.openDocument(fixture.uri(PATTERNS), fixture.text(PATTERNS))
+                assertExactPatternReferences(
+                    session, fixture,
+                    declaration = tokenLocation(fixture, PATTERNS, "case typeBound", "typeBound"),
+                    uses = listOf(
+                        tokenLocation(fixture, PATTERNS, "=> typeBound +", "typeBound"),
+                        tokenLocation(fixture, PATTERNS, "+ typeBound", "typeBound"),
+                    ),
+                )
+            }
+        }
+    }
+
+    /** VarOrEnum 决议为绑定后，查询声明或用法都必须获得同一个精确引用集合。 */
+    @Test
+    fun `bare binder references contain exactly the binder uses`() {
+        patternReferencesWorkspace().use { fixture ->
+            createSession(fixture.initializeParams()).use { session ->
+                session.openDocument(fixture.uri(PATTERNS), fixture.text(PATTERNS))
+                assertExactPatternReferences(
+                    session, fixture,
+                    declaration = tokenLocation(fixture, PATTERNS, "case bound", "bound"),
+                    uses = listOf(
+                        tokenLocation(fixture, PATTERNS, "=> bound +", "bound"),
+                        tokenLocation(fixture, PATTERNS, "+ bound", "bound"),
+                    ),
+                )
+            }
+        }
+    }
+
+    /** 全局 tuple 叶子独立发布声明身份；原名及多个导入别名都保持相同目标。 */
+    @Test
+    fun `global tuple leaf references include all aliases and exactly one declaration`() {
+        patternReferencesWorkspace().use { fixture ->
+            createSession(fixture.initializeParams()).use { session ->
+                listOf(PATTERN_PROVIDER, PATTERN_CONSUMER).forEach { path ->
+                    session.openDocument(fixture.uri(path), fixture.text(path))
+                }
+                assertExactPatternReferences(
+                    session, fixture,
+                    declaration = tokenLocation(fixture, PATTERN_PROVIDER, "(globalLeaf,", "globalLeaf"),
+                    uses = listOf(
+                        tokenLocation(fixture, PATTERN_PROVIDER, "return globalLeaf", "globalLeaf"),
+                        tokenLocation(fixture, PATTERN_CONSUMER, "globalLeaf as firstAlias", "globalLeaf"),
+                        tokenLocation(fixture, PATTERN_CONSUMER, "globalLeaf as secondAlias", "globalLeaf"),
+                        tokenLocation(fixture, PATTERN_CONSUMER, "import sample.patternprovider.globalLeaf\n", "globalLeaf"),
+                        tokenLocation(fixture, PATTERN_CONSUMER, "return firstAlias +", "firstAlias"),
+                        tokenLocation(fixture, PATTERN_CONSUMER, "+ secondAlias", "secondAlias"),
+                        tokenLocation(fixture, PATTERN_CONSUMER, "+ globalLeaf", "globalLeaf"),
+                    ),
+                )
+                assertExactPatternReferences(
+                    session, fixture,
+                    declaration = tokenLocation(fixture, PATTERN_PROVIDER, ", sibling)", "sibling"),
+                    uses = listOf(
+                        tokenLocation(fixture, PATTERN_CONSUMER, "import sample.patternprovider.sibling", "sibling"),
+                        tokenLocation(fixture, PATTERN_CONSUMER, "return sibling", "sibling"),
+                    ),
+                )
+            }
+        }
+    }
+
     /**
      * 引用列表不得出现重复位置。
      *
@@ -309,6 +378,9 @@ class CangjieRealSemanticsProtocolDetailTest : AbstractLspIntegrationTest() {
         const val USE: String = "src/use.cj"
         const val STRUCTURE: String = "src/structure.cj"
         const val HOST: String = "src/host.cj"
+        const val PATTERNS: String = "src/patterns.cj"
+        const val PATTERN_PROVIDER: String = "src/provider.cj"
+        const val PATTERN_CONSUMER: String = "src/consumer.cj"
     }
 
     /** 两文件语义工作区（与其它真实语义用例共用同一份 testData）。 */
@@ -322,6 +394,13 @@ class CangjieRealSemanticsProtocolDetailTest : AbstractLspIntegrationTest() {
         .sourceFromTestData("structure.cj", "realSemantics/structure.cj")
         .build()
 
+    /** 模式引用协议专用工作区，源码均来自已用官方编译器核实的 testData。 */
+    private fun patternReferencesWorkspace(): LspWorkspaceFixture = LspWorkspaceFixtureBuilder()
+        .sourceFromTestData("patterns.cj", "realSemantics/protocolDetail/patterns.cj")
+        .sourceFromTestData("provider.cj", "realSemantics/protocolDetail/provider.cj")
+        .sourceFromTestData("consumer.cj", "realSemantics/protocolDetail/consumer.cj")
+        .build()
+
     /** 由 testData 单文件构造的工作区。 */
     private fun testDataWorkspace(targetRelativePath: String, testDataPath: String): LspWorkspaceFixture =
         LspWorkspaceFixtureBuilder()
@@ -329,6 +408,38 @@ class CangjieRealSemanticsProtocolDetailTest : AbstractLspIntegrationTest() {
             .build()
 
     // ---------------------------------------------------------------- 断言辅助
+
+    /** 用完整 URI/Range 集合校验每个查询入口；计数另行锁住重复位置。 */
+    private fun assertExactPatternReferences(
+        session: org.cangnova.cangjie.lsp.framework.LspIntegrationTestSession,
+        fixture: LspWorkspaceFixture,
+        declaration: Location,
+        uses: List<Location>,
+    ) {
+        (listOf(declaration) + uses).forEach { query ->
+            listOf(false, true).forEach { includeDeclaration ->
+                val expected = if (includeDeclaration) uses + declaration else uses
+                val actual = session.references(
+                    ReferenceParams(TextDocumentIdentifier(query.uri), query.range.start, ReferenceContext(includeDeclaration)),
+                )
+                val context = "query=$query, includeDeclaration=$includeDeclaration, workspace=${fixture.workspaceRoot}"
+                assertEquals(expected.size, actual.size, "声明或引用数量不正确：$context")
+                assertEquals(expected.toSet(), actual.toSet(), "必须精确匹配规范叶子的全部位置：$context")
+            }
+        }
+    }
+
+    /** 用唯一源码片段定位其中的标识符，不依赖 PSI 或产品侧 target key 算法生成期望。 */
+    private fun tokenLocation(fixture: LspWorkspaceFixture, path: String, anchor: String, token: String): Location {
+        val text = fixture.text(path).replace("\r\n", "\n")
+        val anchorOffset = text.indexOf(anchor)
+        check(anchorOffset >= 0 && text.indexOf(anchor, anchorOffset + 1) < 0) { "源码片段必须唯一：$path: $anchor" }
+        val tokenOffset = anchor.indexOf(token)
+        check(tokenOffset >= 0) { "源码片段缺少标识符：$anchor: $token" }
+        val document = LspTextDocument(fixture.uri(path), "cangjie", 1, text)
+        val start = anchorOffset + tokenOffset
+        return Location(fixture.uri(path), Range(document.positionAt(start), document.positionAt(start + token.length)))
+    }
 
     /** 解码后的 token。 */
     private data class DecodedToken(

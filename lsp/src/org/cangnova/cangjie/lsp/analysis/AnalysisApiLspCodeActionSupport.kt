@@ -1,11 +1,16 @@
 package org.cangnova.cangjie.lsp.analysis
 
 import com.intellij.modcommand.ActionContext
+import com.intellij.modcommand.ModCommandAction
+import com.intellij.openapi.application.WriteAction
+import com.intellij.openapi.command.CommandProcessor
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.util.TextRange
+import com.intellij.psi.PsiFile
+import com.intellij.psi.codeStyle.CodeStyleSettingsManager
 import org.cangnova.cangjie.analysis.api.components.CaDiagnosticCheckerFilter
-import org.cangnova.cangjie.analysis.api.diagnostics.CaDiagnosticWithPsi
 import org.cangnova.cangjie.codeinsight.api.applicators.fixes.CangJieQuickFixService
+import org.cangnova.cangjie.formatter.CangJieCodeStyleSettingsFactory
 import org.cangnova.cangjie.lsp.quickfix.LspQuickFixCommands
 import org.cangnova.cangjie.lsp.quickfix.ModCommandData
 import org.cangnova.cangjie.lsp.quickfix.combinedPresentationNames
@@ -16,7 +21,10 @@ import org.eclipse.lsp4j.CodeAction
 import org.eclipse.lsp4j.CodeActionKind
 import org.eclipse.lsp4j.CodeActionParams
 import org.eclipse.lsp4j.Command
+import org.eclipse.lsp4j.Diagnostic
 import org.eclipse.lsp4j.jsonrpc.messages.Either
+import java.awt.EventQueue
+import java.lang.reflect.InvocationTargetException
 import java.util.logging.Level
 import java.util.logging.Logger
 
@@ -39,11 +47,10 @@ internal class AnalysisApiLspCodeActionSupport(
         val requestedDiagnostics = params.context.diagnostics.orEmpty().mapNotNull { lspDiagnostic ->
             CangjieLspDiagnosticData.parse(lspDiagnostic.data)?.let { data -> data to lspDiagnostic }
         }
-        if (requestedDiagnostics.isEmpty()) return emptyList()
+        if (params.context.diagnostics.orEmpty().isNotEmpty() && requestedDiagnostics.isEmpty()) return emptyList()
         val workspaceCapabilities = context.workspaceState.initializeParams()?.capabilities?.workspace
 
-        return semanticSupport.analyzeSnapshot(document) { snapshot ->
-            val workspaceEditCapabilities = workspaceCapabilities?.workspaceEdit
+        val prepared = semanticSupport.analyzeSnapshot(document) { snapshot ->
             val quickFixService = try {
                 CangJieQuickFixService.getInstance()
             } catch (cancelled: ProcessCanceledException) {
@@ -52,11 +59,25 @@ internal class AnalysisApiLspCodeActionSupport(
                 LOG.log(Level.WARNING, "Could not obtain the Cangjie quick-fix service", failure)
                 return@analyzeSnapshot emptyList()
             }
-            val actions = mutableListOf<Pair<String, CodeAction>>()
+            val preparedActions = mutableListOf<PreparedAction>()
             val diagnostics = snapshot.psiFile.collectDiagnostics(CaDiagnosticCheckerFilter.EXTENDED_AND_COMMON_CHECKERS)
-            for ((diagnosticData, lspDiagnostic) in requestedDiagnostics) {
-                val diagnostic = diagnostics.firstOrNull { candidate -> diagnosticData.matches(document, candidate) }
-                    ?: continue
+            // 空 context.diagnostics 是合法的主动请求：从同一当前快照生成正式诊断，不补造错误。
+            val diagnosticTargets = if (params.context.diagnostics.orEmpty().isEmpty()) {
+                diagnostics.flatMap { diagnostic ->
+                    AnalysisApiDiagnostics.toLspDiagnostics(
+                        document,
+                        context.descriptor.diagnosticIdentifier,
+                        listOf(diagnostic),
+                        context.workspaceState.projectConfiguration().showDiagnosticFactoryNames,
+                    ).map { lspDiagnostic -> diagnostic to lspDiagnostic }
+                }
+            } else {
+                requestedDiagnostics.mapNotNull { (data, lspDiagnostic) ->
+                    diagnostics.firstOrNull { candidate -> data.matches(document, candidate) }
+                        ?.let { diagnostic -> diagnostic to lspDiagnostic }
+                }
+            }
+            for ((diagnostic, lspDiagnostic) in diagnosticTargets) {
                 val primaryRange = with(AnalysisApiDiagnostics) { diagnostic.lspRanges(document) }
                     .firstOrNull { it == lspDiagnostic.range && overlaps(it, params.range) }
                     ?: continue
@@ -89,40 +110,75 @@ internal class AnalysisApiLspCodeActionSupport(
                         continue
                     }
 
-                    for (chain in modCommandAction.flattenChoiceActions(actionContext)) {
+                    preparedActions += PreparedAction(modCommandAction, actionContext, lspDiagnostic, snapshot.psiFile)
+                }
+            }
+            preparedActions
+        }
+        // 分析读访问已经退出。平台 ModCommand 仅在真实 EDT 写访问中更新自己的 PSI 副本，
+        // 不能持有分析 ReadAction 再同步请求 EDT 写动作。
+        if (prepared.isEmpty()) return emptyList()
+        return onEdtWrite {
+            // ModCommand 的延期 postprocess 也必须使用同一仓颉代码风格；设置作用域覆盖整个副本编辑。
+            CodeStyleSettingsManager.getInstance(prepared.first().file.project).computeWithLocalSettings(
+                CangJieCodeStyleSettingsFactory.createDefaultSettings(),
+            ) {
+                val workspaceEditCapabilities = workspaceCapabilities?.workspaceEdit
+                val actions = mutableListOf<Pair<String, CodeAction>>()
+                for (candidate in prepared) {
+                    for (chain in candidate.action.flattenChoiceActions(candidate.context)) {
                         val command = chain.leaf.command.resolveLspDefaultOptions() ?: continue
-                        val commandData =
-                            ModCommandData.from(command, document, snapshot.psiFile, context.documentStore) ?: continue
-                        if (!commandData.hasEffect() || !commandData.isApplicableTo(context.documentStore)) {
-                            continue
-                        }
+                        val commandData = ModCommandData.from(command, document, candidate.file, context.documentStore) ?: continue
+                        if (!commandData.hasEffect() || !commandData.isApplicableTo(context.documentStore)) continue
                         if (!commandData.isLspExecutable()) continue
                         if (commandData.requiresApplyEdit() && workspaceCapabilities?.applyEdit != true) continue
-                        if (commandData.requiresDocumentChanges() && workspaceEditCapabilities?.documentChanges != true) {
-                            continue
-                        }
-                        if (
-                            commandData.requiredResourceOperations()
-                                .any { operation -> operation !in workspaceEditCapabilities?.resourceOperations.orEmpty() }
-                        ) {
-                            continue
-                        }
-
+                        if (commandData.requiresDocumentChanges() && workspaceEditCapabilities?.documentChanges != true) continue
+                        if (commandData.requiredResourceOperations().any {
+                                it !in workspaceEditCapabilities?.resourceOperations.orEmpty()
+                            }) continue
                         val codeAction = CodeAction()
                         codeAction.title = chain.combinedPresentationNames()
                         codeAction.kind = CodeActionKind.QuickFix
-                        codeAction.setDiagnostics(listOf(lspDiagnostic))
-                        codeAction.command = Command(
-                            chain.combinedPresentationNames(),
-                            LspQuickFixCommands.APPLY_MOD_COMMAND,
-                            listOf(commandData.toJson()),
-                        )
-                        actions += modCommandAction.javaClass.name to codeAction
+                        codeAction.setDiagnostics(listOf(candidate.diagnostic))
+                        codeAction.command = Command(chain.combinedPresentationNames(), LspQuickFixCommands.APPLY_MOD_COMMAND,
+                            listOf(commandData.toJson()))
+                        actions += candidate.action.javaClass.name to codeAction
                     }
                 }
+                LspCodeActionDeduplicator.deduplicate(actions)
             }
-            LspCodeActionDeduplicator.deduplicate(actions)
         }
+    }
+
+    /** 这里只保留已渲染动作和协议诊断，不能把 Analysis session/symbol 带入写阶段。 */
+    private data class PreparedAction(
+        val action: ModCommandAction,
+        val context: ActionContext,
+        val diagnostic: Diagnostic,
+        val file: PsiFile,
+    )
+
+    /** 使用实际 AWT EDT；MockApplication.invokeAndWait 不能替代 Document 的 EDT 合同。 */
+    private fun <T : Any> onEdtWrite(action: () -> T): T {
+        var result: T? = null
+        val runnable = Runnable {
+            CommandProcessor.getInstance().runUndoTransparentAction {
+                result = WriteAction.compute<T, RuntimeException> { action() }
+            }
+        }
+        if (EventQueue.isDispatchThread()) {
+            runnable.run()
+        } else {
+            try {
+                EventQueue.invokeAndWait(runnable)
+            } catch (failure: InvocationTargetException) {
+                throw failure.targetException
+            } catch (interrupted: InterruptedException) {
+                Thread.currentThread().interrupt()
+                throw interrupted
+            }
+        }
+        return checkNotNull(result)
     }
 
     /** quick-fix 编辑已随列表阶段生成的 command 传输，resolve 不再二次选择动作。 */
