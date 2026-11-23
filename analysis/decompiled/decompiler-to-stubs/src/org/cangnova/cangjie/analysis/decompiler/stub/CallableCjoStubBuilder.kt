@@ -29,6 +29,7 @@ import com.intellij.util.io.StringRef
 import org.cangnova.cangjie.builtins.StandardNames.MAIN
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.utils.hasSerializedInitializer
+import org.cangnova.cangjie.cfir.patterns.bindingVariables
 import org.cangnova.cangjie.cfir.patterns.*
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.psi.CjEnumConstructorTypeEntry
@@ -96,7 +97,11 @@ internal fun createErrorFunctionStub(
         hasTypeParameterListBeforeFunctionName = false,
         origin = context.packageFacadeOrigin.takeIf { parent is CangJieFileStubImpl },
     )
-    createEmptyDeclarationHeaderStubs(functionStub, declaration = declaration)
+    createEmptyDeclarationHeaderStubs(
+        functionStub,
+        createDeclarationModifierMask(declaration, context = context, isCallable = true),
+        declaration,
+    )
 }
 
 /**
@@ -114,7 +119,11 @@ internal fun createErrorNamedValueStub(
         fqName = callableFqName(parent, context, declaration.name),
         origin = context.packageFacadeOrigin.takeIf { parent is CangJieFileStubImpl },
     )
-    createEmptyDeclarationHeaderStubs(propertyStub, declaration = declaration)
+    createEmptyDeclarationHeaderStubs(
+        propertyStub,
+        createDeclarationModifierMask(declaration, context = context, isCallable = true),
+        declaration,
+    )
 }
 
 /**
@@ -133,7 +142,7 @@ internal fun createFinalizerStub(
         containingClassName = StringRef.fromString(context.owningClassSimpleName ?: "finalizer"),
         hasBody = compiledCallableHasBody(declaration, context),
     )
-    createEmptyDeclarationHeaderStubs(finalizerStub, declaration = declaration)
+    createEmptyDeclarationHeaderStubs(finalizerStub, modifierMask = 0, declaration = declaration)
     context.typeStubBuilder.createCallableParameterListStub(
         parent = finalizerStub,
         valueParameters = emptyList(),
@@ -159,7 +168,7 @@ internal fun createFunctionStub(
             containingClassName = StringRef.fromString(context.owningClassSimpleName),
             hasBody = compiledCallableHasBody(declaration, context),
         )
-        createEmptyDeclarationHeaderStubs(finalizerStub, declaration = declaration)
+        createEmptyDeclarationHeaderStubs(finalizerStub, modifierMask = 0, declaration = declaration)
         context.typeStubBuilder.createCallableParameterListStub(
             parent = finalizerStub,
             valueParameters = emptyList(),
@@ -176,7 +185,11 @@ internal fun createFunctionStub(
             hasBody = compiledCallableHasBody(declaration, context),
             isPrimary = false,
         )
-        createEmptyDeclarationHeaderStubs(constructorStub, declaration = declaration)
+        createEmptyDeclarationHeaderStubs(
+            constructorStub,
+            createConstructorModifierMask(declaration, isPrimary = false),
+            declaration,
+        )
         context.typeStubBuilder.createCallableParameterListStub(
             parent = constructorStub,
             valueParameters = declaration.valueParameters,
@@ -288,7 +301,11 @@ internal fun createFieldStub(
             hasReturnTypeRef = declaration.returnTypeRef !is CfirImplicitTypeRef,
             origin = context.packageFacadeOrigin,
         )
-        createEmptyDeclarationHeaderStubs(variableStub, declaration = declaration)
+        createEmptyDeclarationHeaderStubs(
+            variableStub,
+            createDeclarationModifierMask(declaration, context = context),
+            declaration,
+        )
         val bindingPatternStub = CangJieBindingPatternStubImpl(
             parent = variableStub,
             nameRef = StringRef.fromString(declaration.name.asString()),
@@ -329,7 +346,7 @@ internal fun createPatternVariableStub(
     declaration: CfirPatternVariable,
     context: CjoStubBuilderContext,
 ) {
-    val hasInitializer = declaration.initializer != null
+    val hasInitializer = declaration.initializer != null || declaration.pattern.bindingVariables().any { it.hasSerializedInitializer }
     val variableStub = CangJieVariableStubImpl(
         parent = parent,
         patternKind = declaration.pattern.toPatternKind(),
@@ -340,7 +357,11 @@ internal fun createPatternVariableStub(
         hasReturnTypeRef = declaration.returnTypeRef !is CfirImplicitTypeRef,
         origin = context.packageFacadeOrigin.takeIf { parent is CangJieFileStubImpl },
     )
-    createEmptyDeclarationHeaderStubs(variableStub, declaration = declaration)
+    createEmptyDeclarationHeaderStubs(
+        variableStub,
+        createDeclarationModifierMask(declaration, context = context),
+        declaration,
+    )
     createPatternStub(declaration.pattern, variableStub)
     context.typeStubBuilder.createDeclaredTypeReferenceStub(variableStub, declaration.returnTypeRef)
     if (hasInitializer) createCompiledInitializerReferenceStub(variableStub)
@@ -375,7 +396,11 @@ internal fun createConstructorStub(
             hasBody = compiledCallableHasBody(declaration, context),
             isPrimary = true,
         )
-        createEmptyDeclarationHeaderStubs(constructorStub, declaration = declaration)
+        createEmptyDeclarationHeaderStubs(
+            constructorStub,
+            createConstructorModifierMask(declaration, isPrimary = true),
+            declaration,
+        )
         context.typeStubBuilder.createCallableParameterListStub(
             parent = constructorStub,
             valueParameters = declaration.valueParameters,
@@ -390,7 +415,11 @@ internal fun createConstructorStub(
             hasBody = compiledCallableHasBody(declaration, context),
             isPrimary = false,
         )
-        createEmptyDeclarationHeaderStubs(constructorStub, declaration = declaration)
+        createEmptyDeclarationHeaderStubs(
+            constructorStub,
+            createConstructorModifierMask(declaration, isPrimary = false),
+            declaration,
+        )
         context.typeStubBuilder.createCallableParameterListStub(
             parent = constructorStub,
             valueParameters = declaration.valueParameters,
@@ -418,7 +447,7 @@ internal fun createEnumConstructorStub(
     )
     // 对齐其它声明 stub 入口：parser 解析 enum 构造项时稳定生成空 ANNOTATIONS 与空 MODIFIER_LIST，
     // 缺失会导致 stub 数与 AST 节点数不对账，在 calcStubTree reconcile 时抛 AssertionError。
-    createEmptyDeclarationHeaderStubs(enumConstructorStub, declaration = declaration)
+    createEmptyDeclarationHeaderStubs(enumConstructorStub, modifierMask = 0, declaration = declaration)
     if (declaration.valueParameters.isNotEmpty()) {
         val typeListStub = CangJiePlaceHolderStubImpl<CjEnumConstructorTypeEntry>(
             enumConstructorStub,

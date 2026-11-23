@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.analysis.decompiled.psi.text
 
+import org.cangnova.cangjie.test.bindCjoFixture
 import PackageFormat.Package as CjoPackage
 import com.intellij.testFramework.LightVirtualFile
 import org.cangnova.cangjie.AnalysisFlags
@@ -142,7 +143,7 @@ class TypeAliasCjoRoundTripTest : AbstractCfirAnalysisResolveTest() {
 
     private fun serializeAndLoad(file: CjFile): Pair<CfirFile, LoadedCjoPackage> {
         val cfirFile = resolveSource(file)
-        return cfirFile to loadMetadata(CfirCjoPackageMetadataProducer.produce(listOf(cfirFile)))
+        return cfirFile to loadMetadata(CfirCjoPackageMetadataProducer.produce(listOf(cfirFile)), cfirFile.moduleData)
     }
 
     private fun resolveSource(file: CjFile): CfirFile {
@@ -152,15 +153,17 @@ class TypeAliasCjoRoundTripTest : AbstractCfirAnalysisResolveTest() {
         return cfirFile
     }
 
-    private fun loadMetadata(metadata: CjoPackageMetadata): LoadedCjoPackage {
+    private fun loadMetadata(metadata: CjoPackageMetadata, moduleData: org.cangnova.cangjie.cfir.common.CfirModuleData): LoadedCjoPackage {
         val bytes = CjoPackageWriter.toByteArray(metadata)
         val pkg = CjoPackage.getRootAsPackage(ByteBuffer.wrap(bytes))
+        val manager = CjoManager(CjoSearchPath { null })
+        bindCjoFixture(moduleData, manager, emptySet())
         return LoadedCjoPackage(
             binaryFile = LightVirtualFile("roundtrip.cjo"),
             packageFqName = FqName("roundtrip"),
             pkg = pkg,
             header = CjoPackageHeader.fromPackage(pkg),
-            cjoManager = CjoManager(CjoSearchPath { null }),
+            cjoManager = manager,
             isVersionSupported = true,
         )
     }

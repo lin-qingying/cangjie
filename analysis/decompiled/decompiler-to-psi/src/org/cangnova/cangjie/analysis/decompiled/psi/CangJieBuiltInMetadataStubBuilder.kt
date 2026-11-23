@@ -55,12 +55,15 @@ object CangJieBuiltInMetadataStubBuilder : CangJieMetadataStubBuilder() {
         project: Project?,
     ): FileWithMetadata? {
         project ?: return null
-        val loadedPackage = project.getService(DecompiledPackageDataFinder::class.java).loadPackageData(virtualFile) ?: return null
+        val bytes = content ?: virtualFile.contentsToByteArray(false)
+        val pkg = PackageFormat.Package.getRootAsPackage(java.nio.ByteBuffer.wrap(bytes))
+        if (!CjoBinaryFileReader.isSupportedVersion(pkg)) return FileWithMetadata.Incompatible()
+        val loadedPackage = project.getService(DecompiledPackageDataFinder::class.java).loadPackageData(virtualFile, bytes) ?: return null
         if (!loadedPackage.isVersionSupported) {
             return FileWithMetadata.Incompatible()
         }
 
-        val moduleData = CjoModuleDataProvider.getInstance(project).getModuleData(virtualFile)
+        val moduleData = checkNotNull(loadedPackage.deserializationContext) { "Actual CJO reader has no binding" }.moduleData
 
         return FileWithMetadata.Compatible(loadedPackage, moduleData)
     }

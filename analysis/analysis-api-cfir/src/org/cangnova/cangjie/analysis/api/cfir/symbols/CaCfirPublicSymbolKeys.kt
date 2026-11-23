@@ -183,7 +183,6 @@ internal enum class CaCfirCallableSymbolKind {
     CONSTRUCTOR,
     PROPERTY,
     FIELD,
-    PATTERN_VARIABLE,
     PATTERN_BINDING,
     ENUM_CONSTRUCTOR,
 }

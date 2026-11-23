@@ -8,6 +8,7 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirModuleResolveComponents
+import org.cangnova.cangjie.analysis.low.level.api.cfir.file.builder.LLCfirSourcePsiGeneration
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.DiagnosticCheckerFilter
 import org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics.DiagnosticCollectionFailures
 import org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics.LLCfirDiagnosticVisitor
@@ -91,9 +92,15 @@ internal class FileStructure private constructor(
     /**
      * 当前 PSI 文件在统一语义视图中的 CFIR；快照发布后，文件级和声明级结构都必须使用同一棵展开树。
      */
-    private fun semanticCfirFile(): CfirFile = moduleComponents.macroSemanticSnapshotStore.snapshot
-        ?.fileForSource(cjFile)
-        ?: cfirFile
+    private val sourceGeneration = LLCfirSourcePsiGeneration.capture(listOf(cjFile), compareModificationStamps = false)
+
+    private fun semanticCfirFile(): CfirFile {
+        sourceGeneration.requireCurrent()
+        val snapshot = moduleComponents.macroSemanticSnapshotStore.snapshot ?: return cfirFile
+        return checkNotNull(snapshot.fileForSource(cjFile)) {
+            "The current source PSI generation must belong to the published macro snapshot"
+        }
+    }
 
     /**
      * PSI 容器到 structure element 的缓存。
@@ -116,10 +123,14 @@ internal class FileStructure private constructor(
     /**
      * @return [FileStructureElement] for the closest non-local element which contains this [element].
      */
-    fun getStructureElementFor(
-        element: CjElement,
-        nonLocalContainer: CjElement? = findNonLocalContainer(element),
-    ): FileStructureElement {
+    fun getStructureElementFor(element: CjElement): FileStructureElement {
+        // Kotlin 的默认参数在进入函数前求值；父链读取必须发生在当前 source generation 校验之后。
+        sourceGeneration.requireCurrent()
+        return getStructureElementFor(element, findNonLocalContainer(element))
+    }
+
+    fun getStructureElementFor(element: CjElement, nonLocalContainer: CjElement?): FileStructureElement {
+        sourceGeneration.requireCurrent()
         val container = getContainerCjElement(element, nonLocalContainer)
         return structureElements.getOrPut(container) { createStructureElement(container) }
     }
@@ -237,6 +248,7 @@ internal class FileStructure private constructor(
      * 返回文件中所有可独立收集 diagnostics 的 structure element。
      */
     fun getAllStructureElements(): Collection<FileStructureElement> {
+        sourceGeneration.requireCurrent()
         val structureElements = mutableSetOf<FileStructureElement>()
         addStructureElementForTo(cjFile, structureElements)
 

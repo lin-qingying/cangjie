@@ -127,6 +127,10 @@ private fun CaCall.parameterForArgument(argumentExpression: CjExpression): CaVal
  */
 private fun CfirElement.toCaSymbolResolutionAttempt(analysisSession: CaCfirSession): CaSymbolResolutionAttempt? = when (this) {
     is CfirDiagnosticHolder -> toCaSymbolResolutionError(analysisSession)
+    is org.cangnova.cangjie.cfir.declarations.CfirDeclaration ->
+        analysisSession.cfirSymbolBuilder.buildSymbol(symbol).toSymbolResolutionSuccessOrNull()
+    is org.cangnova.cangjie.cfir.patterns.CfirEnumPattern ->
+        constructorReference.toCaSymbolResolutionAttempt(analysisSession)
     is CfirAssignment -> lValue.toCaSymbolResolutionAttempt(analysisSession)
     is CfirResolvable -> calleeReference.toCaSymbolResolutionAttempt(analysisSession)
     is CfirReference -> toCaTargetSymbols(analysisSession.cfirSymbolBuilder).toSymbolResolutionSuccessOrNull()

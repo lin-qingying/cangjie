@@ -14,6 +14,8 @@ import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
 import org.cangnova.cangjie.cfir.psi
 import org.cangnova.cangjie.idea.references.mainReference
+import org.cangnova.cangjie.idea.references.CjReferenceRole
+import org.cangnova.cangjie.psi.CangJieResolveResult
 import org.cangnova.cangjie.psi.CjAnnotation
 import org.cangnova.cangjie.psi.CjCallExpression
 import org.cangnova.cangjie.psi.CjConstructorCalleeExpression
@@ -52,6 +54,9 @@ internal class CaCfirSimpleNameReference(
      * 当前引用使用的 CFIR resolver。
      */
     override val resolver get() = CaCfirReferenceResolver
+
+    override val referenceRole: CjReferenceRole
+        get() = if (isRead) CjReferenceRole.READ else CjReferenceRole.WRITE
 
     /**
      * 当前简单名是否位于注解构造调用位置。
@@ -103,15 +108,15 @@ internal class CaCfirSimpleNameReference(
     /**
      * 解析当前简单名引用对应的 PSI 目标。
      */
-    override fun getResolvedToPsi(analysisSession: CaSession): Collection<PsiElement> = with(analysisSession) {
+    override fun getResolveResults(analysisSession: CaSession): Collection<CangJieResolveResult> = with(analysisSession) {
         if (expression is CjLabelReferenceExpression) {
             val fir = expression.getOrBuildCfir((analysisSession as CaCfirSession).resolutionFacade)
             if (fir is CfirLoopJump) {
-                return listOfNotNull(fir.target.labeledElement.psi)
+                return listOfNotNull(fir.target.labeledElement.psi?.let { CangJieResolveResult(it) })
             }
         }
         val referenceTargetSymbols = resolveToSymbols()
-        return super.getResolvedToPsi(analysisSession, referenceTargetSymbols, expression.libraryReceiverHint())
+        return super.getResolveResults(analysisSession, referenceTargetSymbols, expression.libraryReceiverHint())
     }
 
     /**

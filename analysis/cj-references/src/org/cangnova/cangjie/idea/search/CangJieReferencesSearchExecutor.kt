@@ -9,7 +9,9 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFileSystemItem
 import com.intellij.psi.PsiManager
 import com.intellij.psi.PsiReference
-import com.intellij.psi.PsiReferenceBase
+import com.intellij.psi.PsiPolyVariantReferenceBase
+import com.intellij.psi.ResolveResult
+import org.cangnova.cangjie.psi.CangJieResolveResult
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.search.LocalSearchScope
 import com.intellij.psi.search.SearchScope
@@ -95,9 +97,9 @@ class CangJieReferencesSearchExecutor :
                 if (!CangJieReferenceSearchSupport.mayResolveByName(generated.reference, searchNames)) {
                     return@processGeneratedReferences true
                 }
-                val matchesTarget = generated.resolvedTarget?.let { resolvedTarget ->
-                    CangJieReferenceSearchSupport.matchesResolvedTargets(setOf(resolvedTarget), target)
-                } ?: CangJieReferenceSearchSupport.matchesTarget(generated.reference, target)
+                val matchesTarget = CangJieReferenceSearchSupport.matchesResolvedTargets(
+                    setOf(generated.resolveResult.canonicalTarget), target,
+                )
                 if (!matchesTarget) {
                     return@processGeneratedReferences true
                 }
@@ -106,7 +108,7 @@ class CangJieReferencesSearchExecutor :
                     MacroGeneratedUsageReference(
                         generated.reference,
                         generated.navigationElement,
-                        generated.resolvedTarget,
+                        generated.resolveResult,
                     ),
                 )
             }
@@ -231,20 +233,20 @@ class CangJieReferencesSearchExecutor :
 private class MacroGeneratedUsageReference(
     private val generatedReference: PsiReference,
     navigationElement: PsiElement,
-    private val resolvedTarget: PsiElement?,
-) : PsiReferenceBase<PsiElement>(
+    private val resolveResult: CangJieResolveResult,
+) : PsiPolyVariantReferenceBase<PsiElement>(
     navigationElement,
     TextRange(0, navigationElement.textLength),
     true,
 ) {
-    override fun resolve(): PsiElement? = resolvedTarget ?: generatedReference.resolve()
+    override fun multiResolve(incompleteCode: Boolean): Array<ResolveResult> = arrayOf(resolveResult)
+
+    override fun resolve(): PsiElement? = resolveResult.element
 
     override fun getCanonicalText(): String = generatedReference.canonicalText
 
     override fun isReferenceTo(element: PsiElement): Boolean =
-        resolvedTarget?.let { target ->
-            CangJieReferenceSearchSupport.matchesResolvedTargets(setOf(target), element)
-        } ?: CangJieReferenceSearchSupport.matchesTarget(generatedReference, element)
+        CangJieReferenceSearchSupport.matchesResolvedTargets(setOf(resolveResult.canonicalTarget), element)
 
     override fun getVariants(): Array<Any> = generatedReference.variants
 

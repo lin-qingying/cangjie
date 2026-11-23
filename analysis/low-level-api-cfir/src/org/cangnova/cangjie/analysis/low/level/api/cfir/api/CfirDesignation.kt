@@ -163,11 +163,7 @@ private fun tryCollectDesignation(providedFile: CfirFile?, target: CfirElementWi
 
             // class-like 容器：优先用 CFIR lookup tag（Kotlin containingClassLookupTag()?.classId 的形状），
             // 缺失时回退到 PSI class-like 容器；extend 不是 class-like，已在上面按前缀处理。
-            val containingClassId = target.containingClassLookupTag()?.toClassSymbol(target.moduleData.session)?.classId
-                ?: (target.psi as? CjDeclaration)
-                    ?.containingTypeStatement
-                    ?.takeUnless { it is CjExtend }
-                    ?.getClassId()
+            val containingClassId = target.containingClassLookupTag()?.classId
             collectDesignationPathWithContainingClass(providedFile, target, containingClassId)
         }
 
@@ -270,7 +266,7 @@ private fun collectDesignationPathWithContainingClassFallback(
 ): List<CfirDeclaration> {
     val useSiteSession by lazy(LazyThreadSafetyMode.NONE) { getTargetSession(target) }
 
-    fun resolveChunk(classId: ClassId): CfirDeclaration {
+    fun resolveChunk(classId: ClassId): CfirClassLikeDeclaration {
         val declaration = if (useSiteSession.requiresDependenciesSearch) {
             useSiteSession.symbolProvider.getClassLikeSymbolByClassId(classId)?.cfir
         } else {
@@ -279,9 +275,9 @@ private fun collectDesignationPathWithContainingClassFallback(
         }
 
         checkWithAttachment(
-            declaration is CfirClassLikeDeclaration || declaration is CfirExtend,
+            declaration is CfirClassLikeDeclaration,
             {
-                "'${CfirClassLikeDeclaration::class.simpleName}' or '${CfirExtend::class.simpleName}' expected as a containing declaration, " +
+                "'${CfirClassLikeDeclaration::class.simpleName}' expected as a containing declaration, " +
                         "got '${declaration?.javaClass?.simpleName}'. " +
                         "Module: ${useSiteSession.caModule::class.simpleName}"
             },

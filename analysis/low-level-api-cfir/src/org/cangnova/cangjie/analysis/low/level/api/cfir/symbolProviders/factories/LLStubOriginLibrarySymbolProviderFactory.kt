@@ -5,6 +5,7 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.factori
 import com.intellij.psi.search.GlobalSearchScope
 import org.cangnova.cangjie.analysis.decompiled.psi.BuiltinsVirtualFileProvider
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
+import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.moduleData
 import org.cangnova.cangjie.analysis.low.level.api.cfir.stubBased.deserialization.BuiltinsDeserializedContainerSourceProvider
 import org.cangnova.cangjie.analysis.low.level.api.cfir.stubBased.deserialization.NullDeserializedContainerSourceProvider
 import org.cangnova.cangjie.analysis.low.level.api.cfir.stubBased.deserialization.StubAndBuiltinsDeserializedContainerSourceProvider
@@ -62,7 +63,7 @@ internal object LLStubOriginLibrarySymbolProviderFactory : LLLibrarySymbolProvid
                 // builtins 搜索作用域每次访问都会重新遍历 SDK 目录，只能在首次查询声明时创建。
                 { BuiltinsVirtualFileProvider.getInstance().createBuiltinsScope(session.project) },
             ),
-            CfirBuiltinSymbolProvider(session),
+            CfirBuiltinSymbolProvider(session, session.moduleData),
         )
     }
 }

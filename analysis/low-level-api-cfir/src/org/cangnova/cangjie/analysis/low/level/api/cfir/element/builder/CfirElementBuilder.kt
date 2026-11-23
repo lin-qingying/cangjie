@@ -94,7 +94,10 @@ internal class CfirElementBuilder(private val moduleComponents: LLCfirModuleReso
      * 构建或读取整个仓颉文件的 raw CFIR，并递归解析到 body resolve。
      */
     private fun getOrBuildCfirForCjFile(cjFile: CjFile): CfirFile {
-        val cfirFile = moduleComponents.cfirFileBuilder.buildRawCfirFileWithCaching(cjFile)
+        val snapshot = moduleComponents.macroSemanticSnapshotStore.snapshot
+        val cfirFile = if (snapshot?.ownsReparsedPsi(cjFile) == true) {
+            checkNotNull(snapshot.fileForReparsedPsi(cjFile))
+        } else moduleComponents.cfirFileBuilder.buildRawCfirFileWithCaching(cjFile)
         cfirFile.lazyResolveToPhaseRecursively(CfirResolvePhase.BODY_RESOLVE)
         return cfirFile
     }
@@ -107,6 +110,15 @@ internal class CfirElementBuilder(private val moduleComponents: LLCfirModuleReso
 
         if (!doCjElementHasCorrespondingCfirElement(element)) {
             return null
+        }
+
+        val snapshot = moduleComponents.macroSemanticSnapshotStore.snapshot
+        if (snapshot?.ownsReparsedPsi(element) == true) {
+            val owner = snapshot.declarationForReparsedPsi(element) ?: return null
+            owner.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE)
+            val canonicalPsi = snapshot.canonicalPsiForReparsedPsi(element) ?: return null
+            if (owner.psi === canonicalPsi) return owner
+            return findElementInside(owner, canonicalPsi)
         }
 
         // 文件头的语法容器没有声明级 CFIR，不能依赖普通声明映射或 BODY_RESOLVE 短路。

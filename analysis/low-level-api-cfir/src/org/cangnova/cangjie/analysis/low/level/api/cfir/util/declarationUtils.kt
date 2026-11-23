@@ -22,6 +22,7 @@ import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
+import org.cangnova.cangjie.cfir.patterns.bindingVariables
 import org.cangnova.cangjie.cfir.psi
 import org.cangnova.cangjie.cfir.realPsi
 import org.cangnova.cangjie.cfir.resolve.providers.CfirProvider
@@ -268,7 +269,7 @@ internal inline fun CfirFile.forEachDeclaration(action: (CfirDeclaration) -> Uni
  * 判断声明是否能作为直接声明容器。
  */
 internal val CfirDeclaration.isDeclarationContainer: Boolean
-    get() = this is CfirClassLikeDeclaration || this is CfirExtend || this is CfirFile
+    get() = this is CfirClassLikeDeclaration || this is CfirExtend || this is CfirFile || this is CfirPatternVariable
 
 /**
  * 根据声明容器类型遍历其直接子声明。
@@ -278,6 +279,7 @@ internal inline fun CfirDeclaration.forEachDeclaration(action: (CfirDeclaration)
         is CfirClassLikeDeclaration -> forEachDeclaration(action)
         is CfirExtend -> forEachDeclaration(action)
         is CfirFile -> forEachDeclaration(action)
+        is CfirPatternVariable -> pattern.bindingVariables().forEach(action)
         else -> errorWithCfirSpecificEntries("Unsupported declarations container", cfir = this)
     }
 }

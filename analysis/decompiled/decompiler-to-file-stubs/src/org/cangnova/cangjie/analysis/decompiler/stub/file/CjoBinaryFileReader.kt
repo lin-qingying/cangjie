@@ -28,14 +28,21 @@ object CjoBinaryFileReader {
      * 调用方只能看到一个与“文件不是 `.cjo`”无法区分的 `null`。控制流异常（取消、索引未就绪）
      * 不属于失败输入，必须原样重抛。
      */
-    fun readPackageFqName(binaryFile: VirtualFile): FqName? {
+    fun readPackageFqName(binaryFile: VirtualFile): FqName? =
+        readPackageFqName(binaryFile) { binaryFile.contentsToByteArray() }
+
+    /** FileContent 的包名与后续 body 必须消费同一字节快照。 */
+    fun readPackageFqName(binaryFile: VirtualFile, content: ByteArray): FqName? =
+        readPackageFqName(binaryFile) { content }
+
+    private fun readPackageFqName(binaryFile: VirtualFile, content: () -> ByteArray): FqName? {
         if (!isCjoBinaryFile(binaryFile)) {
             LOG.warn("CangJie `.cjo` header read skipped: not a CangJie binary file, path=${binaryFile.path}")
             return null
         }
 
         val pkg: CjoPackage? = try {
-            CjoPackage.getRootAsPackage(ByteBuffer.wrap(binaryFile.contentsToByteArray()))
+            CjoPackage.getRootAsPackage(ByteBuffer.wrap(content()))
         } catch (t: Throwable) {
             if (shouldIjPlatformExceptionBeRethrown(t)) throw t
 

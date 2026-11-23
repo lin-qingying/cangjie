@@ -4,6 +4,7 @@ import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.renderer.base.PrettyPrinter
 import org.cangnova.cangjie.analysis.api.renderer.declarations.CaDeclarationRenderer
 import org.cangnova.cangjie.analysis.api.symbols.CaVariableSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaPatternBindingSymbol
 
 /**
  * 局部变量 renderer。
@@ -34,7 +35,11 @@ fun interface CaLocalVariableSymbolRenderer {
                 ) {
                     append(" ")
                 }
-                append(if (symbol.isLet) "let" else "var")
+                append(when {
+                    symbol is CaPatternBindingSymbol && symbol.isConst -> "const"
+                    symbol.isLet -> "let"
+                    else -> "var"
+                })
                 append(" ")
                 declarationRenderer.nameRenderer.renderName(analysisSession, symbol, declarationRenderer, this)
                 withPrefix(": ") {

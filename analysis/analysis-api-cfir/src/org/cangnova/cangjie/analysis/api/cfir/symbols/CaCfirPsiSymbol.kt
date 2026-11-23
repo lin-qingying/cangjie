@@ -306,7 +306,7 @@ internal fun CaCfirPsiSymbol<*, *>.psiOrSymbolHashCode(): Int =
  *
  * 缺失时的判定规则是「不猜相等」：没有 PSI 也没有符号就没有可比对的声明身份，
  * 此时返回 `false`——把两个不同声明折叠成一个，比多出一条候选危险得多；
- * 唯一的例外是两侧确是同一个库 PSI 对象（同一个反编译声明），那本身就足以证明相等。
+ * 库 PSI 可以被不同模块视图复用，因此还必须核验两侧 CFIR 身份；缺失时不制造相等结果。
  */
 internal fun CaCfirPsiSymbol<*, *>.psiOrSymbolEquals(other: Any?): Boolean {
     if (this === other) return true
@@ -320,9 +320,8 @@ internal fun CaCfirPsiSymbol<*, *>.psiOrSymbolEquals(other: Any?): Boolean {
         backingPsi !== otherBackingPsi -> false
         backingPsi !is CjElement -> sameSymbolIdentity(otherSymbol)
         !backingPsi.cameFromCangJieLibrary -> true
-        // 两侧是同一个库 PSI 对象：能比较符号时比较符号，符号不可恢复时对象身份本身
-        // 就足以证明相等（哈希同源为 backingPsi，契约仍然成立）。
-        else -> cfirSymbolOrNull?.let { identity -> identity == otherSymbol.cfirSymbolOrNull } ?: true
+        // 库 PSI 可对应不同模块视图，必须比较两侧真实 CFIR 身份，且缺失判定保持对称。
+        else -> sameSymbolIdentity(otherSymbol)
     }
 }
 

@@ -1,10 +1,14 @@
 package org.cangnova.cangjie.analysis.api.cfir.test
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.psi.PsiDocumentManager
 
 import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
+import org.cangnova.cangjie.analysis.test.framework.services.expressionMarkerProvider
+import org.cangnova.cangjie.analysis.api.permissions.allowAnalysisOnEdt
+import org.cangnova.cangjie.analysis.api.permissions.forbidAnalysis
 import org.cangnova.cangjie.analysis.api.standalone.cfir.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
 import org.cangnova.cangjie.idea.references.mainReference
 import org.cangnova.cangjie.psi.CangJieReferenceProvidersService
@@ -13,13 +17,16 @@ import org.cangnova.cangjie.psi.CjExtend
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjInterface
 import org.cangnova.cangjie.psi.CjNamedDeclaration
+import org.cangnova.cangjie.psi.CjNamedFunction
 import org.cangnova.cangjie.psi.CjParameter
 import org.cangnova.cangjie.psi.CjSimpleNameExpression
 import org.cangnova.cangjie.psi.CjValueArgumentName
+import org.cangnova.cangjie.test.services.TestServices
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -78,6 +85,35 @@ class AnalysisApiReferenceServiceTest : AbstractAnalysisApiExecutionTest(
         val resolvedDeclaration = referenceExpression.mainReference.resolve() as? CjNamedDeclaration
         assertNotNull(resolvedDeclaration, "mainReference 应与 contributor-based 引用服务对齐并可解析到声明")
         assertEquals("greet", resolvedDeclaration?.name)
+    }
+
+    /** 两种解析顺序在显式许可的 EDT 上共享缓存；缓存命中不得重新进入语义分析。 */
+    @Test
+    fun resolveAndMultiResolveShareCacheOnPermittedEdt(mainFile: CjFile, testServices: TestServices) {
+        val target = mainFile.declarations.filterIsInstance<CjNamedFunction>().single { it.name == "greet" }
+        val markers = testServices.expressionMarkerProvider
+        val multiFirst = markers.getBottommostElementOfTypeAtCaret<CjSimpleNameExpression>(mainFile, "multiFirst").mainReference
+        val singleFirst = markers.getBottommostElementOfTypeAtCaret<CjSimpleNameExpression>(mainFile, "singleFirst").mainReference
+        val application = ApplicationManager.getApplication()
+
+        application.invokeAndWait {
+            assertTrue(application.isDispatchThread, "该用例必须实际进入 EDT")
+            ReadAction.run<RuntimeException> {
+                allowAnalysisOnEdt {
+                    assertSame(target, multiFirst.multiResolve(false).single().element)
+                    forbidAnalysis("multiResolve 已缓存该引用；resolve 必须直接复用缓存") {
+                        assertSame(target, multiFirst.resolve())
+                        assertSame(target, multiFirst.multiResolve(false).single().element)
+                    }
+
+                    assertSame(target, singleFirst.resolve())
+                    forbidAnalysis("resolve 已缓存该引用；multiResolve 必须直接复用缓存") {
+                        assertSame(target, singleFirst.multiResolve(false).single().element)
+                        assertSame(target, singleFirst.resolve())
+                    }
+                }
+            }
+        }
     }
 
     /**

@@ -33,6 +33,7 @@ import org.cangnova.cangjie.cfir.resolve.body.CfirAbstractBodyResolveTransformer
 import org.cangnova.cangjie.cfir.resolve.body.CfirDataFlowAnalyzerContext
 import org.cangnova.cangjie.cfir.resolve.body.CfirDeclarationsResolveTransformer
 import org.cangnova.cangjie.cfir.resolve.body.CfirExpressionsResolveTransformer
+import org.cangnova.cangjie.cfir.resolve.body.ImplicitBodyResolveComputationSession
 import org.cangnova.cangjie.cfir.resolve.body.CfirTowerDataElement
 import org.cangnova.cangjie.cfir.resolve.body.CfirTowerDataContext
 import org.cangnova.cangjie.cfir.resolve.body.SnapshotCfirMapper
@@ -57,7 +58,6 @@ import org.cangnova.cangjie.utils.exceptions.withPsiEntry
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
-import kotlin.reflect.KProperty1
 
 /**
  * BODY_RESOLVE 阶段的低阶懒解析入口。
@@ -596,6 +596,9 @@ private class CfirPartialBodyExpressionResolveTransformer(
  * @see CfirResolvePhase.BODY_RESOLVE
  */
 private class LLCfirBodyTargetResolver(target: LLCfirResolveTarget) : LLCfirAbstractBodyTargetResolver(target, CfirResolvePhase.BODY_RESOLVE) {
+    /** 整体递归请求中的当前独立声明目标；阶段发布仍由该声明自己的锁负责。 */
+    private var targetBeingResolved: CfirElementWithResolveState? = null
+
     /**
      * 推进 class-like 声明自身的注解实参绑定。
      *
@@ -618,6 +621,10 @@ private class LLCfirBodyTargetResolver(target: LLCfirResolveTarget) : LLCfirAbst
      * low-level body 解析 dispatcher，接入局部 body 分析专用的声明和表达式 transformer。
      */
     inner class BodyTransformerDispatcher : CfirAbstractBodyResolveTransformerDispatcher(resolverPhase, false) {
+        /** LL 正式 body dispatcher 不缓存局部声明变换，局部分析状态由声明及其 state keeper 持有。 */
+        override val implicitBodyResolveComputationSession: ImplicitBodyResolveComputationSession?
+            get() = null
+
         /**
          * body 解析上下文，持有返回类型计算器和数据流分析上下文。
          */
@@ -649,6 +656,17 @@ private class LLCfirBodyTargetResolver(target: LLCfirResolveTarget) : LLCfirAbst
          */
         override val declarationsTransformer: CfirDeclarationsResolveTransformer =
             CfirPartialBodyDeclarationResolveTransformer(this)
+
+        /** 非局部模式叶子是独立解析目标，owner 遍历只完成共享模式投影。 */
+        override fun transformPatternBindingVariable(
+            patternBindingVariable: CfirPatternBindingVariable,
+            data: ResolutionMode,
+        ): CfirPatternBindingVariable {
+            if (!patternBindingVariable.isLocal && targetBeingResolved !== patternBindingVariable) {
+                return patternBindingVariable
+            }
+            return super.transformPatternBindingVariable(patternBindingVariable, data)
+        }
 
         /**
          * low-level body 解析不复用类 CFG。
@@ -908,12 +926,16 @@ private class LLCfirBodyTargetResolver(target: LLCfirResolveTarget) : LLCfirAbst
      * 执行 raw body 解析，并在完整或局部成功时通知声明修改服务。
      */
     override fun rawResolve(target: CfirElementWithResolveState) {
+        val previousTarget = targetBeingResolved
+        targetBeingResolved = target
         try {
             super.rawResolve(target)
         } catch (e: PartialBodyAnalysisSuspendedException) {
             // We successfully analyzed some part of the body so need to keep track of it
             LLCfirDeclarationModificationService.bodyResolved(target, resolverPhase)
             throw e
+        } finally {
+            targetBeingResolved = previousTarget
         }
 
         LLCfirDeclarationModificationService.bodyResolved(target, resolverPhase)
@@ -927,8 +949,13 @@ internal object BodyStateKeepers {
     /**
      * code fragment block 状态保持器。
      */
-    val CODE_FRAGMENT: StateKeeper<CfirCodeFragment, CfirDesignation> = stateKeeper { builder, _, _ ->
-        builder.add(CfirCodeFragment::block, CfirCodeFragment::replaceBlock, ::blockGuard)
+    val CODE_FRAGMENT: StateKeeper<CfirCodeFragment, CfirDesignation> = stateKeeper { builder, codeFragment, _ ->
+        builder.add(CfirCodeFragment::block, CfirCodeFragment::replaceBlock)
+        val snapshot = org.cangnova.cangjie.cfir.resolve.CfirResolutionSnapshot.capture(codeFragment)
+        builder.register(object : PreservedState {
+            override fun restore() = snapshot.restore()
+            override fun postProcess() {}
+        })
     }
 
     /**
@@ -956,7 +983,13 @@ internal object BodyStateKeepers {
             builder.add(PARTIAL_BODY_RESOLVABLE, designation)
             preserveResolvedState(builder, function)
 
-            builder.add(CfirFunction::body, CfirFunction::replaceBody, ::blockGuard)
+            // 仓颉模式叶子可独立发起阶段查询；已构建正文必须保留绑定身份，失败时恢复完整解析快照。
+            builder.add(CfirFunction::body, CfirFunction::replaceBody)
+            val snapshot = org.cangnova.cangjie.cfir.resolve.CfirResolutionSnapshot.capture(function)
+            builder.register(object : PreservedState {
+                override fun restore() = snapshot.restore()
+                override fun postProcess() {}
+            })
             builder.entityList(function.valueParameters, VALUE_PARAMETER, designation)
         }
 
@@ -982,9 +1015,8 @@ internal object BodyStateKeepers {
          * 会违反模式树所有权不变量。
          */
         if (variable !is CfirPatternBindingVariable && !isCallableWithSpecialBody(variable)) {
-            variable.initializerGetterIfUnresolved?.let {
-                builder.add(it, CfirVariable::replaceInitializer, ::expressionGuard)
-            }
+            // CfirProperty 是独立 callable，已由 PROPERTY/FUNCTION 的 phase guard 处理。
+            builder.add(CfirVariable::initializer, CfirVariable::replaceInitializer, ::expressionGuard)
         }
     }
 
@@ -1102,12 +1134,6 @@ private val CfirFunction.isCertainlyResolved: Boolean
         val body = this.body ?: return false // Not completely sure
         return body !is CfirLazyBlock && body.hasResolvedType
     }
-
-/**
- * 返回尚未解析 initializer 的变量 initializer 属性访问器。
- */
-private val CfirVariable.initializerGetterIfUnresolved: KProperty1<CfirVariable, CfirExpression?>?
-    get() = CfirVariable::initializer.takeUnless { this is CfirProperty && bodyResolveState >= CfirPropertyBodyResolveState.INITIALIZER_RESOLVED }
 
 /**
  * 返回尚未解析 getter body 的属性访问器。

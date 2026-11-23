@@ -21,9 +21,7 @@ import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.decompiler.stub.file.CjoBinaryFileReader
-import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.LLCfirBuiltinsSessionFactory
 import org.cangnova.cangjie.name.FqName
-import org.cangnova.cangjie.platform.CangJiePlatforms
 import org.cangnova.cangjie.platform.TargetPlatform
 import java.util.concurrent.ConcurrentHashMap
 
@@ -48,7 +46,12 @@ class DecompiledBinaryIndexImpl(
     /**
      * Library module 对应的 `.cjo` binary index 缓存。
      */
-    private val libraryIndexes = ConcurrentHashMap<String, ModuleBinaryIndex>()
+    /** 名字不代表模块身份；同名模块及其根代不能共享文件索引。 */
+    private class LibraryIndexKey(val module: CaLibraryModule, val roots: List<String>) {
+        override fun equals(other: Any?): Boolean = other is LibraryIndexKey && module === other.module && roots == other.roots
+        override fun hashCode(): Int = 31 * System.identityHashCode(module) + roots.hashCode()
+    }
+    private val libraryIndexes = ConcurrentHashMap<LibraryIndexKey, ModuleBinaryIndex>()
 
     /**
      * Builtins 目标平台与根列表摘要对应的 `.cjo` binary index 缓存。
@@ -94,7 +97,6 @@ class DecompiledBinaryIndexImpl(
         val targetPlatforms = knownBuiltinsModules(CaModuleProvider.getInstance(project))
             .map { module -> module.targetPlatform }
             .toList()
-            .ifEmpty { listOf(CangJiePlatforms.defaultCangJiePlatform) }
 
         return buildMap {
             targetPlatforms.forEach { targetPlatform ->
@@ -180,7 +182,7 @@ class DecompiledBinaryIndexImpl(
     }
 
     /**
-     * 在当前项目已知 builtins modules 和默认平台 builtins 中查找目标包的 `.cjo` 文件。
+     * 在初始模块图明确装配的 builtins modules 中查找目标包的 `.cjo` 文件。
      */
     override fun findBuiltinsBinaryFile(packageFqName: FqName): VirtualFile? {
         refreshIfNeeded()
@@ -188,40 +190,35 @@ class DecompiledBinaryIndexImpl(
         knownBuiltinsModules(projectStructure).forEach { module ->
             builtinsIndex(module.targetPlatform).packageFiles[packageFqName]?.let { return it }
         }
-        return builtinsIndex(CangJiePlatforms.defaultCangJiePlatform).packageFiles[packageFqName]
+        return null
     }
 
     /**
      * 查找指定 `.cjo` 文件归属的分析模块。
      *
-     * Builtins 优先按项目结构中的目标平台匹配；无法确认平台时回退到默认平台 builtins module；
-     * library 文件再按所有 library module 的 binary index 搜索。
+     * 平台身份只能来自已创建的 module；不从二进制文件或包名选择默认平台。
+     * 无上下文入口必须有唯一 owner；跨平台共享同一资源时由带 owner 的 actual reader 指定模块。
      */
     override fun findOwningModule(binaryFile: VirtualFile): CaModule? {
         refreshIfNeeded()
         val projectStructure = CaModuleProvider.getInstance(project)
-        knownBuiltinsModules(projectStructure).firstOrNull { module ->
+        val builtinOwners = knownBuiltinsModules(projectStructure).filter { module ->
             builtinsIndex(module.targetPlatform).files.any { it.url == binaryFile.url }
-        }?.let { return it }
+        }.toList()
+        check(builtinOwners.size <= 1) { "Multiple builtins platform owners for " + binaryFile.url }
+        builtinOwners.singleOrNull()?.let { return it }
 
-        if (builtinsIndex(CangJiePlatforms.defaultCangJiePlatform).files.any { it.url == binaryFile.url }) {
-            // 当前 builtins 二进制索引本身不携带高层 targetPlatform 身份，因此这里只能退回默认平台。
-            // 一旦 decompiled/index 层能区分 builtins 文件归属的平台，再把这里接成真实 targetPlatform。
-            return LLCfirBuiltinsSessionFactory.getInstance(project).getBuiltinsModule(CangJiePlatforms.defaultCangJiePlatform)
-        }
-
-        projectStructure.allModules.filterIsInstance<CaLibraryModule>()
-            .firstOrNull { module -> indexFor(module).files.any { it.url == binaryFile.url } }
-            ?.let { return it }
-
-        return null
+        val owners = projectStructure.allModules.filterIsInstance<CaLibraryModule>()
+            .filter { module -> indexFor(module).files.any { it.url == binaryFile.url } }
+        check(owners.size <= 1) { "Multiple binary module owners for " + binaryFile.url }
+        return owners.singleOrNull()
     }
 
     /**
      * 返回或构建指定 library module 的 binary index。
      */
     private fun indexFor(module: CaLibraryModule): ModuleBinaryIndex {
-        val key = module.stableModuleName ?: module.moduleDescription
+        val key = LibraryIndexKey(module, module.binaryRoots.mapNotNull { it.virtualFile?.url }.sorted())
         return libraryIndexes.computeIfAbsent(key) {
             buildIndex(collectBinaryFiles(module.binaryRoots))
         }
@@ -247,13 +244,14 @@ class DecompiledBinaryIndexImpl(
         builtinsFiles.mapTo(sortedSetOf()) { file -> file.parent?.url ?: file.url }.toList()
 
     /**
-     * 返回项目结构中按目标平台去重后的 builtins modules。
+     * 返回项目结构实际 builtins module 身份；同平台不同对象不能在歧义检查前折叠。
      */
-    private fun knownBuiltinsModules(projectStructure: CaModuleProvider): Sequence<CaBuiltinsModule> =
-        projectStructure.allModules
-            .asSequence()
+    private fun knownBuiltinsModules(projectStructure: CaModuleProvider): Sequence<CaBuiltinsModule> {
+        val seen = java.util.Collections.newSetFromMap(java.util.IdentityHashMap<CaBuiltinsModule, Boolean>())
+        return projectStructure.snapshot.allModules.asSequence()
             .filterIsInstance<CaBuiltinsModule>()
-            .distinctBy { module -> module.targetPlatform }
+            .filter(seen::add)
+    }
 
     /**
      * 根据 `.cjo` 文件集合构建包名到文件的索引。
@@ -266,7 +264,7 @@ class DecompiledBinaryIndexImpl(
             val packageFqName = readPackageFqName(file) ?: return@forEach
             packageFiles.putIfAbsent(packageFqName, file)
         }
-        return ModuleBinaryIndex(packageFiles.values.toList(), packageFiles)
+        return ModuleBinaryIndex(files, packageFiles)
     }
 
     /**

@@ -5,6 +5,7 @@ import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.findPsi
 import org.cangnova.cangjie.analysis.api.cfir.getExplicitCallableReceiverType
 import org.cangnova.cangjie.analysis.api.cfir.location
+import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.llCfirModuleData
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
@@ -76,7 +77,7 @@ internal class CaCfirFieldSymbol private constructor(
      * 字段所在的 use-site 模块。
      */
     override val containingModule: CaModule
-        get() = analysisSession.useSiteModule
+        get() = withValidityAssertion { cfirSymbol.llCfirModuleData.caModule }
 
     /**
      * 字段 CFIR member 状态。
@@ -256,7 +257,7 @@ internal class CaCfirEnumConstructorSymbol private constructor(
      * enum constructor 所在的 use-site 模块。
      */
     override val containingModule: CaModule
-        get() = analysisSession.useSiteModule
+        get() = withValidityAssertion { cfirSymbol.llCfirModuleData.caModule }
 
     /**
      * enum constructor CFIR member 状态。
@@ -340,7 +341,12 @@ internal class CaCfirEnumConstructorSymbol private constructor(
      * enum constructor 当前没有稳定 pointer。
      */
     override fun createPointer(): CaSymbolPointer<CaCallableSymbol> = withValidityAssertion {
-        error("Enum constructor symbol cannot create a stable pointer")
+        val key = checkNotNull(cfirSymbol.publicSymbolCacheKeyOrNull(analysisSession) as? CaCfirCallableSymbolCacheKey) {
+            "Enum constructor must have a stable callable identity"
+        }
+        org.cangnova.cangjie.analysis.api.cfir.symbols.pointers.CaCfirCallableSymbolPointer(
+            key, CaCallableSymbol::class.java,
+        )
     }
 
     /**

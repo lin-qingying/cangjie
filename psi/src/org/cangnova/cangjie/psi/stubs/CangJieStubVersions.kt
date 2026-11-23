@@ -89,7 +89,12 @@ object CangJieStubVersions {
      * - extend stub 显式持久化稳定 extendId
      * - decompiled compiled stub 与 source stub 统一使用同一套 extend identity 协议
      */
-    const val SOURCE_STUB_VERSION = 217
+    /**
+     * 220：追加同 binary declaration index 与真实 setter 参数事实。
+     * 219：modifier-list 追加 CJO 完整语义状态及真实访问器状态，source/binary/builtins 索引共同重建。
+     * 218：追加 const 修饰符编码位，并恢复 CJO 声明头的合法状态投影。
+     */
+    const val SOURCE_STUB_VERSION = 220
 
     /**
      * 保存 `BINARY_STUB_VERSION`，供PSI Stub流程读取节点结构或语义信息。

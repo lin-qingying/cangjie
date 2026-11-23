@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.analysis.decompiled.psi.text
 
+import org.cangnova.cangjie.test.bindCjoFixture
 import PackageFormat.Package as CjoPackage
 import com.intellij.testFramework.LightVirtualFile
 import com.intellij.openapi.application.ApplicationManager
@@ -129,6 +130,7 @@ class RealSdkDecompiledSignatureTest {
             fqName,
             DetachedCjoSession(fqName, LanguageVersionSettingsImpl.DEFAULT),
         )
+        bindCjoFixture(moduleData, loaded.cjoManager, setOf(root.toPath()))
         return buildDecompiledText(CjoFileStubBuilder.buildFileStub(loaded, moduleData))
     }
 

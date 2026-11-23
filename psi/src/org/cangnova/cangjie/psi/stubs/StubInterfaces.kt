@@ -167,7 +167,7 @@ interface CangJieFeaturesDirectiveStub : StubElement<CjFeaturesDirective> {
 /**
  * 定义 `CangJieModifierListStub` 接口，约束PSI Stub节点或服务需要暴露的结构能力。
  */
-interface CangJieModifierListStub : StubElement<CjDeclarationModifierList> {
+interface CangJieModifierListStub : StubElement<CjDeclarationModifierList>, CangJieCompiledDeclarationMetadataOwner {
     /**
      * 提供 `hasModifier` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
      */

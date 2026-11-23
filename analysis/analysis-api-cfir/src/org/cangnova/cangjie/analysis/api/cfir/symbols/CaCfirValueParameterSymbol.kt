@@ -1,5 +1,7 @@
 package org.cangnova.cangjie.analysis.api.cfir.symbols
 
+import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.llCfirModuleData
+
 import org.cangnova.cangjie.analysis.api.annotations.CaAnnotationList
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.findPsi
@@ -92,10 +94,10 @@ internal class CaCfirValueParameterSymbol private constructor(
     )
 
     /**
-     * 值参数所在的 use-site 模块。
+     * 值参数实际声明所属的模块。
      */
     override val containingModule: CaModule
-        get() = analysisSession.useSiteModule
+        get() = withValidityAssertion { cfirSymbol.llCfirModuleData.caModule }
 
     /**
      * 值参数底层 CFIR 声明；符号不可恢复时为 `null`。
@@ -162,6 +164,9 @@ internal class CaCfirValueParameterSymbol private constructor(
      * 创建基于 owner pointer、参数名和稳定下标的值参数 pointer。
      */
     override fun createPointer(): CaSymbolPointer<CaCallableSymbol> = withValidityAssertion {
+        psiBasedSymbolPointerOfTypeIfSource<CaValueParameterSymbol> { element ->
+            (element as? org.cangnova.cangjie.psi.CjParameter)?.symbol
+        }?.let { return@withValidityAssertion it }
         val owner = ownerSymbol ?: builder.buildSymbol(cfirSymbol.containingDeclarationSymbol)
             ?: error("Value parameter `${name}` is missing pointer-restorable owner")
         val parameterIndex = stableParameterIndex
@@ -259,6 +264,11 @@ internal class CaCfirValueParameterSymbol private constructor(
             ?: backingPsi
             ?: parameterDeclarationOrNull?.source?.psi as? org.cangnova.cangjie.psi.CjParameter
             ?: psi as? org.cangnova.cangjie.psi.CjParameter
+
+    /** 声明与使用包装必须按规范 PSI/CFIR 符号身份比较，不能按包装对象比较。 */
+    override fun equals(other: Any?): Boolean = psiOrSymbolEquals(other)
+
+    override fun hashCode(): Int = psiOrSymbolHashCode()
 
     private companion object {
         val ARRAY_CLASS_ID = ClassId(StandardNames.FqNames.core, StandardNames.ARRAY)

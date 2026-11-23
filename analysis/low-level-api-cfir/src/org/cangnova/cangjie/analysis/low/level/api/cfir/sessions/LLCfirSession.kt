@@ -78,6 +78,45 @@ abstract class LLCfirSession(
      */
     abstract fun getScopeSession(): ScopeSession
 
+    /** named binary provider、extend 读取与 imported FullId 共用本 session 的唯一 metadata provider。 */
+    internal val cjoSymbolProvider: org.cangnova.cangjie.cfir.serialization.provider.CfirDeserializedSymbolProvider by lazy {
+        org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.factories.LLBinaryOriginLibrarySymbolProviderFactory
+            .createCjoSymbolProvider(this)
+    }
+
+    /** 跨模块正式 metadata 入口；不暴露或查询 session 的 PSI/组合 symbol provider。 */
+    @org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirInternals
+    fun getOwnCjoPackageContext(
+        packageName: String,
+        mode: org.cangnova.cangjie.cfir.serialization.deserialize.CjoDeserializationMode,
+    ): org.cangnova.cangjie.cfir.serialization.deserialize.CfirDeserializationContext? {
+        check(isValid) { "CJO reader uses an invalid library session" }
+        return cjoSymbolProvider.getOwnPackageContext(packageName, mode)
+    }
+
+    /** actual-file 与 named 查询共享本 session 的原 binding 与 snapshot manager。 */
+    @org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirInternals
+    fun getOwnCjoPackageContext(
+        packageName: String,
+        sourcePath: java.nio.file.Path,
+        content: ByteArray,
+        mode: org.cangnova.cangjie.cfir.serialization.deserialize.CjoDeserializationMode,
+    ): org.cangnova.cangjie.cfir.serialization.deserialize.CfirDeserializationContext {
+        check(isValid) { "CJO reader uses an invalid library session" }
+        return cjoSymbolProvider.getOwnPackageContext(packageName, sourcePath, content, mode)
+    }
+
+    companion object {
+        /** 结构外 reader 的 manager 同样使用项目 metadata 图事务，不创建独立锁。 */
+        @org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirInternals
+        fun createCjoDeclarationManager(
+            project: Project,
+            searchPath: org.cangnova.cangjie.cfir.serialization.cjo.CjoSearchPath,
+        ): org.cangnova.cangjie.cfir.serialization.cjo.CjoManager =
+            org.cangnova.cangjie.cfir.serialization.cjo.CjoManager(searchPath,
+                org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirGlobalResolveComponents.getInstance(project).cjoMaterialization)
+    }
+
     /**
      * 当前 session 所属工程。
      */

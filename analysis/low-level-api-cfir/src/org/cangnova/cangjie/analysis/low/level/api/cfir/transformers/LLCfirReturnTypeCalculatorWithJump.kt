@@ -10,6 +10,7 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.api.targets.asResolveTar
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.checkCanceled
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.patterns.bindingVariables
 import org.cangnova.cangjie.cfir.resolve.body.ReturnTypeCalculatorWithJump
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
@@ -33,6 +34,8 @@ internal class LLCfirReturnTypeCalculatorWithJump(
     override fun resolveDeclaration(declaration: CfirCallableDeclaration): CfirResolvedTypeRef {
         val hasSomethingToResolveOnImplicitTypePhase = when (declaration) {
             is CfirProperty -> declaration.shouldBeResolvedOnImplicitTypePhase
+            is CfirPatternVariable -> declaration.returnTypeRef is CfirImplicitTypeRef ||
+                declaration.pattern.bindingVariables().any { it.returnTypeRef is CfirImplicitTypeRef }
             else -> declaration.returnTypeRef is CfirImplicitTypeRef
         }
 
@@ -66,4 +69,5 @@ internal class LLCfirReturnTypeCalculatorWithJump(
         checkCanceled()
         return super.tryCalculateReturnTypeOrNull(declaration)
     }
+
 }

@@ -4,10 +4,11 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.psi.PsiInvalidElementAccessException
 import org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule
 import org.cangnova.cangjie.analysis.low.level.api.cfir.macro.MacroSemanticSnapshotContract
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirResolvableModuleSession
+import org.cangnova.cangjie.analysis.low.level.api.cfir.file.builder.LLCfirSourcePsiInvalidatedException
+import org.cangnova.cangjie.analysis.low.level.api.cfir.file.builder.LLCfirSourcePsiGeneration
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.buildPreMacroRawBuildResultForModule
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.hasMacroCallCandidateForModule
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroBuiltinRegistries
@@ -21,6 +22,7 @@ import org.cangnova.cangjie.cfir.resolve.providers.macro.PreMacroRawBuildResult
 import org.cangnova.cangjie.cfir.session.beginAnnotationMetadataRegistryGeneration
 import org.cangnova.cangjie.cfir.session.ensureAnnotationMetadataRegistry
 import org.cangnova.cangjie.macro.expansion.MacroExpansionOutcome
+import org.cangnova.cangjie.macro.expansion.MacroConstructionReadAccess
 import org.cangnova.cangjie.macro.expansion.MacroExpansionRevision
 import org.cangnova.cangjie.macro.expansion.ModuleRoots
 import org.cangnova.cangjie.macro.expansion.SdkHandle
@@ -134,14 +136,8 @@ internal class MacroSemanticExpansionConstruction(private val project: Project) 
         environment: MacroSemanticExpansionEnvironment,
     ): AttemptResult = try {
         runAttemptBody(session, module, environment)
-    } catch (invalidPsi: PsiInvalidElementAccessException) {
-        // 逐文件读访问允许写动作在整模块构建期间替换 PSI；这是可恢复的"输入已变"，
-        // 交给重试循环重新捕获 revision，而不是判为构造失败。
-        LOG.debug(
-            "Macro semantic snapshot PSI was invalidated during construction for " +
-                session.caModule.moduleDescription,
-            invalidPsi,
-        )
+    } catch (_: LLCfirSourcePsiInvalidatedException) {
+        // 只有明确撤销的 generation 进入既有重捕获协议；未预期的 stale PSI 异常仍按正式失败传播。
         INPUT_CHANGED
     }
 
@@ -196,21 +192,42 @@ internal class MacroSemanticExpansionConstruction(private val project: Project) 
             if (!session.isValid || project.isDisposed) {
                 null
             } else {
+                val sourceGeneration = LLCfirSourcePsiGeneration.capture(pre.files.map { file ->
+                    checkNotNull(file.sourceFileIdentity as? CjFile) { "LL macro input must retain its actual source PSI file" }
+                })
                 CapturedInput(
                     roots = environment.roots(module),
                     sdk = environment.sdk(module),
                     revision = environment.revision(module),
+                    sourceGeneration = sourceGeneration,
+                    sourceFiles = sourceGeneration.files.mapNotNullTo(linkedSetOf()) { it.virtualFile },
+                    sourcePaths = sourceGeneration.files.map { it.virtualFile?.path ?: it.name },
                 )
             }
         } ?: return AttemptResult(MacroExpansionAttempt.COMPLETED, MacroExpansionOutcome.CANCELLED)
 
         // 构建期间插入的写动作会改变 revision，此时本次快照输入已不完整，需要重新捕获。
         if (revisionBeforeBuild != capturedInput.revision || Thread.currentThread().isInterrupted) {
+            LOG.info(
+                "Macro semantic input changed while building pre-macro CFIR for ${module.moduleDescription}; " +
+                    "before=$revisionBeforeBuild; after=${capturedInput.revision}; " +
+                    "interrupted=${Thread.currentThread().isInterrupted}",
+            )
             return INPUT_CHANGED
         }
 
         val configuration = environment.compilerConfiguration(module, capturedInput.roots, capturedInput.sdk)
-        environment.installFragmentParser(module, configuration)
+        // 短读访问调度属于宏编排；通用 source generation 所有者不依赖 macro 模块。
+        val sourceReadAccess = object : MacroConstructionReadAccess {
+            override fun <T> compute(action: () -> T): T = readAccess.compute {
+                capturedInput.sourceGeneration.requireCurrent()
+                val value = action()
+                capturedInput.sourceGeneration.requireCurrent()
+                value
+            }
+        }
+        sourceReadAccess.compute { environment.installFragmentParser(module, configuration) }
+        configuration.put(MacroConstructionReadAccess.CONFIGURATION_KEY, sourceReadAccess)
         session.ensureAnnotationMetadataRegistry()
 
         val classification = MacroDemandClassification.create(
@@ -231,13 +248,11 @@ internal class MacroSemanticExpansionConstruction(private val project: Project) 
             macroArtifactDefinitions = artifactPreparation.definitions,
             failurePolicy = MacroFailurePolicy.DEGRADED,
         )
-        val symbolIndex = engine.buildSymbolIndex(pre, artifactPreparation)
-        val macroResolutionContext = engine.bindImports(pre, symbolIndex)
-        val macroCallResolutionSites = collectMacroCallResolutionSites(
-            pre,
-            classification,
-            macroResolutionContext,
-        )
+        val symbolIndex = sourceReadAccess.compute { engine.buildSymbolIndex(pre, artifactPreparation) }
+        val macroResolutionContext = sourceReadAccess.compute { engine.bindImports(pre, symbolIndex) }
+        val macroCallResolutionSites = sourceReadAccess.compute {
+            collectMacroCallResolutionSites(pre, classification, macroResolutionContext)
+        }
         val result = engine.expand(
             pre = pre,
             context = macroResolutionContext,
@@ -262,7 +277,10 @@ internal class MacroSemanticExpansionConstruction(private val project: Project) 
             return INPUT_CHANGED
         }
 
-        val preparedSnapshot = session.prepareMacroSemanticSnapshot(pre, recordableResult)
+        val preparedSnapshot = sourceReadAccess.compute {
+            session.prepareMacroSemanticSnapshot(pre, recordableResult)
+        }
+        if (!capturedInput.isCurrent(session, module, environment)) return INPUT_CHANGED
         if (preparedSnapshot == null) {
             val alreadyPublished = session.macroSemanticSnapshot != null
             LOG.warn(
@@ -296,16 +314,11 @@ internal class MacroSemanticExpansionConstruction(private val project: Project) 
             )
         }
 
-        val sourceFiles = readAccess.compute<Set<VirtualFile>> {
-            pre.files.mapNotNullTo(linkedSetOf()) { file ->
-                (file.sourceFileIdentity as? CjFile)?.virtualFile
-            }
-        }
-        logPublished(session, module, pre, result, recordableResult)
+        logPublished(session, module, pre, result, recordableResult, capturedInput.sourcePaths)
         return AttemptResult(
             progress = MacroExpansionAttempt.COMPLETED,
             outcome = MacroExpansionOutcome.PUBLISHED,
-            publishedFiles = sourceFiles,
+            publishedFiles = capturedInput.sourceFiles,
             publishedRevision = capturedInput.revision,
             macroCallResolutionSites = macroCallResolutionSites,
         )
@@ -386,12 +399,8 @@ internal class MacroSemanticExpansionConstruction(private val project: Project) 
         pre: PreMacroRawBuildResult,
         result: MacroConstructionResult,
         recordableResult: MacroConstructionResult.Recordable,
+        sourcePaths: List<String>,
     ) {
-        val sourcePaths = pre.files.mapNotNull { file ->
-            (file.sourceFileIdentity as? CjFile)?.let { sourceFile ->
-                sourceFile.virtualFile?.path ?: sourceFile.name
-            }
-        }
         val macroSurfaces = pre.allSurfaces.joinToString { surface ->
             "${surface.qualifiedName?.asString() ?: "<unresolved>"}@${surface.sourceRange?.startOffset}"
         }
@@ -410,6 +419,10 @@ internal class MacroSemanticExpansionConstruction(private val project: Project) 
         val roots: ModuleRoots,
         val sdk: SdkHandle?,
         val revision: MacroExpansionRevision,
+        val sourceGeneration: LLCfirSourcePsiGeneration,
+        // 仅在捕获时读取 PSI；发布后调度和日志使用真实文件身份与当时的不可变展示信息。
+        val sourceFiles: Set<VirtualFile>,
+        val sourcePaths: List<String>,
     ) {
         fun isCurrent(
             session: LLCfirResolvableModuleSession,
@@ -417,7 +430,14 @@ internal class MacroSemanticExpansionConstruction(private val project: Project) 
             environment: MacroSemanticExpansionEnvironment,
         ): Boolean {
             if (!session.isValid || session.project.isDisposed) return false
-            return revision == environment.revision(module)
+            if (!sourceGeneration.isCurrent()) return false
+            val currentRevision = environment.revision(module)
+            if (revision == currentRevision) return true
+            LOG.info(
+                "Macro semantic input revision changed for ${module.moduleDescription}; " +
+                    "captured=$revision; current=$currentRevision",
+            )
+            return false
         }
     }
 

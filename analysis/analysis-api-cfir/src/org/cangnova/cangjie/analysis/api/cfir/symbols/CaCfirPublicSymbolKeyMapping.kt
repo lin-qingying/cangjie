@@ -4,6 +4,7 @@ package org.cangnova.cangjie.analysis.api.cfir.symbols
 
 import org.cangnova.cangjie.analysis.api.CaImplementationDetail
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
+import org.cangnova.cangjie.analysis.api.cfir.getAllowedPsi
 import org.cangnova.cangjie.analysis.low.level.api.cfir.providers.CfirCallableSignature
 import org.cangnova.cangjie.analysis.api.symbols.CaPropertyGetterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPropertySetterSymbol
@@ -77,7 +78,7 @@ internal fun CfirTypeParameterSymbol.stableTypeParameterIndex(): Int? {
  * `extend` 成员不再依赖 PSI 父链，而是通过 `extendIndexStore` 的 owner 语义索引恢复。
  */
 internal fun CfirCallableSymbol<*>.publicSymbolCacheKeyOrNull(session: CaCfirSession): CaCfirPublicSymbolCacheKey? {
-    val psi = backingPsiIfApplicable
+    val psi = if (this is CfirPatternBindingSymbol) cfir.getAllowedPsi(session.project) else backingPsiIfApplicable
     if ((cfir as? CfirCallableDeclaration)?.isLocal == true) {
         return psi?.let { localPsi ->
             when (this) {
@@ -87,7 +88,11 @@ internal fun CfirCallableSymbol<*>.publicSymbolCacheKeyOrNull(session: CaCfirSes
                 )
 
                 is CfirPatternVariableSymbol -> CaCfirPsiSymbolCacheKey(localPsi, CaCfirPsiSymbolKind.PATTERN_VARIABLE)
-                is CfirPatternBindingSymbol -> CaCfirPsiSymbolCacheKey(localPsi, CaCfirPsiSymbolKind.PATTERN_BINDING)
+                is CfirPatternBindingSymbol -> CaCfirPsiSymbolCacheKey(localPsi,
+                    if (cfir.patternTreeOwner is org.cangnova.cangjie.cfir.expressions.CfirCatch ||
+                        cfir.patternTreeOwner is org.cangnova.cangjie.cfir.expressions.CfirHandleClause
+                    ) CaCfirPsiSymbolKind.LOCAL_VARIABLE else CaCfirPsiSymbolKind.PATTERN_BINDING,
+                )
                 else -> CaCfirPsiSymbolCacheKey(localPsi, CaCfirPsiSymbolKind.LOCAL_VARIABLE)
             }
         }
@@ -124,7 +129,7 @@ internal fun CfirCallableSymbol<*>.publicSymbolCacheKeyOrNull(session: CaCfirSes
         is CfirConstructorSymbol -> CaCfirCallableSymbolCacheKey(callableId, CaCfirCallableSymbolKind.CONSTRUCTOR, signature)
         is CfirPropertySymbol -> CaCfirCallableSymbolCacheKey(callableId, CaCfirCallableSymbolKind.PROPERTY, signature)
         is CfirFieldVariableSymbol -> CaCfirCallableSymbolCacheKey(callableId, CaCfirCallableSymbolKind.FIELD, signature)
-        is CfirPatternVariableSymbol -> CaCfirCallableSymbolCacheKey(callableId, CaCfirCallableSymbolKind.PATTERN_VARIABLE, signature)
+        is CfirPatternVariableSymbol -> psi?.let { CaCfirPsiSymbolCacheKey(it, CaCfirPsiSymbolKind.PATTERN_VARIABLE) }
         is CfirPatternBindingSymbol -> CaCfirCallableSymbolCacheKey(callableId, CaCfirCallableSymbolKind.PATTERN_BINDING, signature)
         is CfirEnumConstructorSymbol -> CaCfirCallableSymbolCacheKey(callableId, CaCfirCallableSymbolKind.ENUM_CONSTRUCTOR, signature)
         is CfirValueParameterSymbol -> null
@@ -178,9 +183,7 @@ internal fun CaSymbol.publicSymbolCacheKeyOrNull(): CaCfirPublicSymbolCacheKey? 
         CaCfirPsiSymbolCacheKey(localPsi, CaCfirPsiSymbolKind.PATTERN_VARIABLE)
     }
 
-    is CaCfirPatternBindingSymbol -> psi?.let { localPsi ->
-        CaCfirPsiSymbolCacheKey(localPsi, CaCfirPsiSymbolKind.PATTERN_BINDING)
-    }
+    is CaCfirPatternBindingSymbol -> cfirSymbol.publicSymbolCacheKeyOrNull(analysisSession)
 
     is CaCfirSymbol<*> -> (cfirSymbol as? CfirCallableSymbol<*>)?.publicSymbolCacheKeyOrNull(analysisSession)
     else -> null

@@ -18,6 +18,7 @@ import org.cangnova.cangjie.psi.CjFinalizer
 import org.cangnova.cangjie.psi.CjFunctionLiteral
 import org.cangnova.cangjie.psi.CjMacroDeclaration
 import org.cangnova.cangjie.psi.CjNamedFunction
+import org.cangnova.cangjie.psi.CjNamedPattern
 import org.cangnova.cangjie.psi.CjParameter
 import org.cangnova.cangjie.psi.CjPatternVariable
 import org.cangnova.cangjie.psi.CjProperty
@@ -117,6 +118,14 @@ interface CaSymbolProvider : CaLifetimeOwner {
      * 从绑定模式 PSI 恢复模式绑定符号。
      */
     val CjBindingPattern.symbol: CaPatternBindingSymbol
+
+    /** 仅发布语义解析后仍为 active binder 的具名模式；wildcard 和 constructor 返回 null。 */
+    val CjNamedPattern.bindingSymbol: CaPatternBindingSymbol?
+
+    /** 专用宿主的可空绑定入口，wildcard 或已删除的声明没有变量符号。 */
+    val org.cangnova.cangjie.psi.CjCatchParameter.bindingSymbol: CaLocalVariableSymbol?
+    val org.cangnova.cangjie.psi.CjCommandTypePattern.bindingSymbol: CaLocalVariableSymbol?
+    val org.cangnova.cangjie.psi.CjTryResource.bindingSymbol: CaLocalVariableSymbol?
 
     /**
      * 从形参 PSI 恢复对应的变量符号。
@@ -234,5 +243,10 @@ val CjElement.symbol: CaDeclarationSymbol
             else -> error("Unsupported PSI element for symbol resolution: ${this::class.simpleName}")
         }
     }
+
+/** 上下文形式的可空模式绑定入口，供文档、导航和 pointer 消费真实语义声明。 */
+context(session: CaSession)
+val CjNamedPattern.bindingSymbol: CaPatternBindingSymbol?
+    get() = with(session) { bindingSymbol }
 
 

@@ -25,9 +25,8 @@ object CaDeclarationRendererForQuickDocumentation {
                     " ".separated(
                         {
                             CaQuickDocumentationModifierPolicy.localModifier(symbol)?.let { localModifier ->
-                                // `local` 也是可见性语义的一部分，必须进入语义标注，
-                                // 否则 Quick Doc 里只有后面的名字有颜色，前缀 `local` 是黑色。
-                                printer.withSemanticAnnotation(CangJieSemanticKind.LOCAL_VARIABLE) {
+                                // 对齐 Kotlin Quick Doc：local 是可见性修饰词，绑定名字另行标注。
+                                printer.withSemanticAnnotation(CangJieSemanticKind.KEYWORD) {
                                     append(localModifier)
                                 }
                             }

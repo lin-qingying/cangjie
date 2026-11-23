@@ -1,9 +1,9 @@
 package org.cangnova.cangjie.idea.references
 
 import com.intellij.psi.PsiElement
-import com.intellij.psi.PsiPolyVariantReference
 import com.intellij.psi.PsiReference
 import org.cangnova.cangjie.lexer.cdoc.psi.impl.CDocName
+import org.cangnova.cangjie.psi.cangJieCanonicalTargets
 import org.cangnova.cangjie.psi.CjBasicType
 import org.cangnova.cangjie.psi.CjCallExpression
 import org.cangnova.cangjie.psi.CjElement
@@ -31,9 +31,10 @@ val CjSimpleNameExpression.mainReference: CjSimpleNameReference
  */
 val CjReferenceExpression.mainReference: CjReference?
     get() = when (this) {
-        is CjSimpleNameExpression -> mainReference
+        // 声明名同样使用 simple-name PSI，但没有使用处 reference；可空入口必须保留这种正常缺失。
+        is CjSimpleNameExpression -> references.firstIsInstanceOrNull<CjSimpleNameReference>()
         is CjCallExpression -> (calleeExpression as? CjReferenceExpression)?.mainReference
-        else -> references.firstIsInstance()
+        else -> references.firstIsInstanceOrNull()
     }
 
 /**
@@ -75,7 +76,4 @@ val CDocName.mainReference: CDocReference
  * 解包 reference 的解析目标集合。
  */
 val PsiReference.unwrappedTargets: Set<PsiElement>
-    get() = when (this) {
-        is PsiPolyVariantReference -> multiResolve(false).mapNotNullTo(linkedSetOf()) { result -> result.element }
-        else -> listOfNotNull(resolve()).toSet()
-    }
+    get() = cangJieCanonicalTargets()

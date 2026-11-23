@@ -23,6 +23,7 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.symbols.UnresolvedReason
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbols.flatMap
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbols.map
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.realPsi
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.session.extendProviderOrNull
 import org.cangnova.cangjie.cfir.session.symbolProvider
@@ -31,6 +32,8 @@ import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
+import org.cangnova.cangjie.cfir.symbols.CfirPatternBindingSymbol
+import org.cangnova.cangjie.psi.psiUtil.getStrictParentOfType
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.psi.*
 import org.cangnova.cangjie.psi.psiUtil.containingTypeStatement
@@ -67,6 +70,13 @@ internal class CfirDeclarationForCompiledElementSearcher(private val session: LL
      * 查找 [cjDeclaration] 对应的非局部 CFIR 声明。
      */
     fun findNonLocalDeclaration(cjDeclaration: CjDeclaration): CfirResolution<CfirDeclaration> = when (cjDeclaration) {
+        is CjNamedPattern -> findNonLocalPatternBinding(cjDeclaration)
+        is CjPatternVariable -> {
+            val binding = checkNotNull(cjDeclaration.pattern as? CjNamedPattern) { "CJO pattern containers must have one named leaf" }
+            findNonLocalPatternBinding(binding).map { (it as CfirPatternBindingVariable).patternTreeOwner as CfirPatternVariable }
+        }
+        is CjFieldVariable -> findNonLocalField(cjDeclaration)
+        is CjEnumConstructor -> findNonLocalEnumConstructor(cjDeclaration)
         is CjExtend -> findNonLocalExtendDeclaration(cjDeclaration)
         is CjClassLikeDeclaration -> findNonLocalClassLikeDeclaration(cjDeclaration)
         is CjConstructor<*> -> findConstructorOfNonLocalClass(cjDeclaration)
@@ -81,6 +91,39 @@ internal class CfirDeclarationForCompiledElementSearcher(private val session: LL
             message = "Unsupported compiled declaration of type ${cjDeclaration::class.simpleName}",
             psi = cjDeclaration,
         )
+    }
+
+    fun findNonLocalPatternBinding(binding: CjNamedPattern): CfirResolution<CfirDeclaration> {
+        val owner = checkNotNull(binding.getStrictParentOfType<CjPatternVariable>())
+        check(owner.isTopLevel)
+        val name = org.cangnova.cangjie.name.Name.identifier(checkNotNull(binding.name))
+        val symbols = when (val provider = session.symbolProvider) {
+            is LLModuleWithDependenciesSymbolProvider -> provider.getTopLevelDeserializedCallableSymbolsWithoutDependencies(
+                owner.containingCjFile.packageFqName, name, owner,
+            )
+            else -> provider.getTopLevelCallableSymbols(owner.containingCjFile.packageFqName, name)
+        }
+        val symbol = symbols.filterIsInstance<CfirPatternBindingSymbol>().singleOrNull { it.cfir.realPsi === binding }
+            ?: return unresolved(UnresolvedReason.MISSING_DECLARATION, "No compiled pattern binding found", psi = binding)
+        return CfirResolution.Resolved(symbol.cfir)
+    }
+
+    private fun findNonLocalField(field: CjFieldVariable): CfirResolution<CfirDeclaration> {
+        val owner = checkNotNull(field.containingTypeStatement)
+        return findNonLocalClassLikeDeclaration(owner).flatMap { declaration ->
+            val result = declaration.declarations.filterIsInstance<CfirFieldVariable>().singleOrNull { it.realPsi === field }
+                ?: return@flatMap unresolved(UnresolvedReason.MISSING_DECLARATION, "No compiled field found", psi = field)
+            CfirResolution.Resolved(result)
+        }
+    }
+
+    private fun findNonLocalEnumConstructor(constructor: CjEnumConstructor): CfirResolution<CfirDeclaration> {
+        val owner = checkNotNull(constructor.parentEnum)
+        return findNonLocalClassLikeDeclaration(owner).flatMap { declaration ->
+            val result = declaration.declarations.filterIsInstance<CfirEnumConstructor>().singleOrNull { it.realPsi === constructor }
+                ?: return@flatMap unresolved(UnresolvedReason.MISSING_DECLARATION, "No compiled enum constructor found", psi = constructor)
+            CfirResolution.Resolved(result)
+        }
     }
 
     /**

@@ -36,6 +36,7 @@ import org.cangnova.cangjie.psi.CjPrimaryConstructor
 import org.cangnova.cangjie.psi.CjProperty
 import org.cangnova.cangjie.psi.CjPropertyAccessor
 import org.cangnova.cangjie.psi.CjSecondaryConstructor
+import org.cangnova.cangjie.psi.stubs.impl.ModifierMaskUtils
 import org.cangnova.cangjie.psi.CjTypeAlias
 import org.cangnova.cangjie.psi.CjTypeConstraint
 import org.cangnova.cangjie.psi.CjTypeConstraintList
@@ -487,7 +488,11 @@ internal fun buildDecompiledText(fileStub: CangJieFileStubImpl): String = Pretty
         override fun visitPatternVariable(variable: CjPatternVariable) {
             renderAnnotations(variable)
             withSuffix(" ") { variable.modifierList?.accept(this) }
-            append(if (variable.isVar) "var " else "let ")
+            append(when {
+                variable.isConst -> "const "
+                variable.isVar -> "var "
+                else -> "let "
+            })
             append((variable.pattern as? CjBindingPattern)?.name?.let(::renderIdentifier) ?: "_")
             withPrefix(": ") { variable.typeReference?.getTypeText()?.takeIf(String::isNotBlank)?.let(::append) }
             if (variable.hasInitializer()) {
@@ -590,14 +595,10 @@ internal fun buildDecompiledText(fileStub: CangJieFileStubImpl): String = Pretty
             list: CjModifierList,
             excludedModifiers: Set<CjKeywordToken> = emptySet(),
         ): String {
-            val modifiers = CjTokens.MODIFIER_KEYWORDS_ARRAY
+            return ModifierMaskUtils.modifierKeywords
                 .filter { modifier -> modifier !in excludedModifiers && list.hasModifier(modifier) }
                 .map { modifier -> modifier.value }
-                .toMutableList()
-            if (CjTokens.FOREIGN_KEYWORD !in excludedModifiers && list.hasModifier(CjTokens.FOREIGN_KEYWORD)) {
-                modifiers += CjTokens.FOREIGN_KEYWORD.value
-            }
-            return modifiers.joinToString(" ")
+                .joinToString(" ")
         }
     }
 

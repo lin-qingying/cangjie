@@ -17,6 +17,14 @@ import com.intellij.util.containers.MultiMap
 import org.cangnova.cangjie.psi.CangJieReferenceProvidersService
 import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.CjSimpleNameExpression
+import org.cangnova.cangjie.psi.CjNamedPattern
+import org.cangnova.cangjie.analysis.api.analyze
+import org.cangnova.cangjie.analysis.api.CaAllowAnalysisOnEdt
+import org.cangnova.cangjie.analysis.api.CaAllowAnalysisFromWriteAction
+import org.cangnova.cangjie.analysis.api.permissions.allowAnalysisOnEdt
+import org.cangnova.cangjie.analysis.api.permissions.allowAnalysisFromWriteAction
+import org.cangnova.cangjie.analysis.api.resolution.CaSymbolResolutionSuccess
+import org.cangnova.cangjie.analysis.api.symbols.CaPatternBindingSymbol
 import org.cangnova.cangjie.references.CangJiePsiReferenceProviderContributor
 import org.cangnova.cangjie.references.CangJiePsiReferenceProviderContributor.ReferenceProvider
 import org.cangnova.cangjie.psi.psiUtil.parentOfType
@@ -72,7 +80,7 @@ internal class CangJieReferenceProvidersServiceImpl(
      * 修改文件才会失效，否则一次加载期的失败会让导航一直为空，直到用户重新输入。
      */
     private fun doGetCangJieReferencesFromProviders(context: CjElement): Array<PsiReference>? {
-        if (context is CjSimpleNameExpression && context.isDeclarationNameExpression()) {
+        if (context is CjSimpleNameExpression && isDeclarationNameExpression(context)) {
             return PsiReference.EMPTY_ARRAY
         }
 
@@ -94,6 +102,57 @@ internal class CangJieReferenceProvidersServiceImpl(
 
         if (failed) return null
         return if (result.isEmpty()) PsiReference.EMPTY_ARRAY else result.toTypedArray()
+    }
+
+    /** 成功解析结果中的当前 active binder 才是声明；constructor 保留引用使用身份。 */
+    @OptIn(CaAllowAnalysisOnEdt::class, CaAllowAnalysisFromWriteAction::class)
+    override fun getNamedDeclarationTarget(psiElement: PsiElement): PsiNameIdentifierOwner? {
+        val namedOwner = psiElement.parentOfType<PsiNameIdentifierOwner>(withSelf = true) ?: return null
+        val owner = if (namedOwner is org.cangnova.cangjie.psi.CjParameter && namedOwner.parent is org.cangnova.cangjie.psi.CjTryResource) {
+            namedOwner.parent as PsiNameIdentifierOwner
+        } else namedOwner
+        val name = owner.nameIdentifier ?: return null
+        if (psiElement !== owner && !name.textRange.contains(psiElement.textRange)) return null
+        val semanticOwner = when (owner) {
+            is CjNamedPattern -> owner
+            is org.cangnova.cangjie.psi.CjCatchParameter -> owner
+            is org.cangnova.cangjie.psi.CjCommandTypePattern -> owner
+            is org.cangnova.cangjie.psi.CjTryResource -> owner
+            else -> return owner
+        }
+        return allowAnalysisOnEdt {
+            allowAnalysisFromWriteAction {
+                analyze(semanticOwner) {
+                    val success = semanticOwner.tryResolveSymbols() as? CaSymbolResolutionSuccess ?: return@analyze null
+                    success.symbols.singleOrNull { symbol ->
+                        (symbol is CaPatternBindingSymbol || symbol is org.cangnova.cangjie.analysis.api.symbols.CaLocalVariableSymbol) && symbol.psi === owner
+                    }?.let { owner }
+                }
+            }
+        }
+    }
+
+    /** 导入别名使用真实 CallableId/ClassId，生成 fragment 的 PSI 包名不能替代声明身份。 */
+    @OptIn(CaAllowAnalysisOnEdt::class, CaAllowAnalysisFromWriteAction::class)
+    override fun getDeclarationFqName(declaration: PsiNameIdentifierOwner): org.cangnova.cangjie.name.FqName? {
+        val element = declaration as? CjElement ?: return null
+        return allowAnalysisOnEdt {
+            allowAnalysisFromWriteAction {
+                analyze(element) {
+                    val success = element.tryResolveSymbols() as? CaSymbolResolutionSuccess ?: return@analyze null
+                    when (val symbol = success.symbols.singleOrNull()) {
+                        is org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol -> symbol.callableId?.asSingleFqName()
+                        is org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol -> symbol.classId?.asSingleFqName()
+                        else -> null
+                    }
+                }
+            }
+        }
+    }
+
+    private fun isDeclarationNameExpression(expression: CjSimpleNameExpression): Boolean {
+        val owner = getNamedDeclarationTarget(expression) ?: return false
+        return expression.referencedNameElement == owner.nameIdentifier
     }
 
     /**
@@ -158,8 +217,3 @@ internal class CangJieReferenceProvidersServiceImpl(
  * `extend` 没有声明名（[org.cangnova.cangjie.psi.CjExtend.getNameIdentifier] 返回 null），
  * 其接收者类型名是普通引用位置，不会被这里过滤。
  */
-private fun CjSimpleNameExpression.isDeclarationNameExpression(): Boolean {
-    val owner = parentOfType<PsiNameIdentifierOwner>(withSelf = true) ?: return false
-    val nameIdentifier = owner.nameIdentifier ?: return false
-    return referencedNameElement == nameIdentifier
-}

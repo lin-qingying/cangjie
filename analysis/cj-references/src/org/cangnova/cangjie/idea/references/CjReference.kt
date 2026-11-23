@@ -13,6 +13,7 @@ import com.intellij.util.IncorrectOperationException
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.lexer.CjTokens
+import org.cangnova.cangjie.psi.CangJieResolveResult
 import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.CjImportAlias
 import org.cangnova.cangjie.psi.CjSimpleNameExpression
@@ -27,7 +28,14 @@ import org.cangnova.cangjie.psi.psiUtil.startOffset
  * 2. rename / bind；
  * 3. 后续 references / rename / usages 的共同协议。
  */
+/** 同一名称 PSI 的读写引用角色；复合赋值保留两次正式 reference 生产。 */
+enum class CjReferenceRole { READ, WRITE, OTHER }
+
+/** 平台缓存中的多值引用；声明身份与导航位置由正式 ResolveResult 保存。 */
 interface CjReference : PsiPolyVariantReference {
+    val referenceRole: CjReferenceRole
+        get() = CjReferenceRole.OTHER
+
     /**
      * 当前引用使用的 IntelliJ resolve cache resolver。
      */
@@ -64,7 +72,14 @@ abstract class AbstractCjReference<T : CjElement>(
      * 通过 IntelliJ resolve cache 执行多目标解析。
      */
     final override fun multiResolve(incompleteCode: Boolean): Array<ResolveResult> {
-        return ResolveCache.getInstance(expression.project).resolveWithCaching(this, resolver, false, incompleteCode)
+        val cache = ResolveCache.getInstance(expression.project)
+        val results = cache.resolveWithCaching(this, resolver, false, incompleteCode)
+        if (results.any { it is CangJieResolveResult && !it.isCurrent }) {
+            // 显式 LL invalidation 不一定修改 PSI；丢弃已失效的正式结果并经同一 resolver 重建。
+            cache.clearCache(true)
+            return cache.resolveWithCaching(this, resolver, false, incompleteCode)
+        }
+        return results
     }
 
     /**
@@ -145,7 +160,7 @@ abstract class AbstractCjReference<T : CjElement>(
     /**
      * 将多目标解析结果收敛为单目标 resolve。
      */
-      override fun resolve(): PsiElement? = resolveTargetElements().singleOrNull()
+    override fun resolve(): PsiElement? = multiResolve(false).singleOrNull()?.element
 
     /**
      * 基于 [resolveTargetElements] 的默认 resolve cache resolver。

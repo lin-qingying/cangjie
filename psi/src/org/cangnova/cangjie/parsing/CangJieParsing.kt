@@ -1450,7 +1450,7 @@ class CangJieParsing private constructor(
         if (parseMacro && !parseContext.disableMacroParsing && at(AT) &&
             !isBuiltInAnnotation() && !isPlatformAnnotationSurface()
         ) {
-            expressionParsing.parseMacroExpression()
+            expressionParsing.parseMacroExpression(DeclarationParsingMode.TOPLEVEL, CjScopeKind.TOPLEVEL)
             decl.drop()
             return
         }
@@ -2278,7 +2278,7 @@ class CangJieParsing private constructor(
     ): IElementType? {
         return when (getTokenId()) {
             AT_Id -> with(parseContext.copy(backToken = true)) {
-                expressionParsing.parseMacroExpression()
+                expressionParsing.parseMacroExpression(DeclarationParsingMode.MEMBER, scopeKind)
             }
 
             FUNC_KEYWORD_Id -> parseFunction(detector = detector, scopeKind = scopeKind)
@@ -2772,7 +2772,7 @@ class CangJieParsing private constructor(
 
 
             return with(parseContext.copy(backToken = true)) {
-                expressionParsing.parseMacroExpression()
+                expressionParsing.parseMacroExpression(scope)
             }
         }
     }

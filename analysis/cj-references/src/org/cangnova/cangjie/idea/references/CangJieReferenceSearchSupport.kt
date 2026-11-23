@@ -3,8 +3,8 @@ package org.cangnova.cangjie.idea.references
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiNamedElement
 import com.intellij.psi.PsiReference
+import org.cangnova.cangjie.psi.CangJieReferenceProvidersService
 import org.cangnova.cangjie.psi.CjFile
-import org.cangnova.cangjie.psi.CjNamedDeclaration
 
 /**
  * 仓颉 references / find usages / navigation 共享的目标匹配协议。
@@ -15,20 +15,19 @@ import org.cangnova.cangjie.psi.CjNamedDeclaration
  * 3. usages 搜索与引用解析共用同一套 target identity。
  *
  * 仓颉没有 Java PSI / light classes，但依然需要把 source-backed navigation、
- * import alias、original/navigation element 这些语义统一到一个位置，避免
+ * import alias、canonical/original declaration 这些语义统一到一个位置，避免
  * search executor、reference 基类、测试各自维护一份“目标相等性”逻辑。
  */
 internal object CangJieReferenceSearchSupport {
     /**
      * 计算目标元素在 usages 搜索中应使用的基础名称集合。
      *
-     * 同时考虑元素本身、original element 和 navigation element，覆盖 source-backed 与 wrapper-backed 目标。
+     * 只枚举规范声明及其 original element 的名字；导航终点不参与变量身份。
      */
     fun baseSearchNames(target: PsiElement): Set<String> {
         return linkedSetOf<String>().apply {
             addNamedElement(target)
             addNamedElement(target.originalElement.takeIf { it != target })
-            addNamedElement(target.navigationElement.takeIf { it != target })
         }
     }
 
@@ -43,19 +42,14 @@ internal object CangJieReferenceSearchSupport {
         target: PsiElement,
         baseNames: Set<String>,
     ): Set<String> {
-        if (target !is CjNamedDeclaration) {
-            return baseNames
-        }
-
-        val fqName = target.fqName ?: return baseNames
-        val aliasName = file.findAliasByFqName(fqName)?.name
-        if (aliasName.isNullOrBlank()) {
-            return baseNames
-        }
+        val declaration = CangJieReferenceProvidersService.getInstance(target.project)
+            .getNamedDeclarationTarget(target) ?: return baseNames
+        val fqName = CangJieReferenceProvidersService.getInstance(target.project)
+            .getDeclarationFqName(declaration) ?: return baseNames
 
         return linkedSetOf<String>().apply {
             addAll(baseNames)
-            add(aliasName)
+            file.findAliasesByFqName(fqName).mapNotNullTo(this) { it.name?.takeIf(String::isNotBlank) }
         }
     }
 
@@ -82,11 +76,7 @@ internal object CangJieReferenceSearchSupport {
         reference: PsiReference,
         target: PsiElement,
     ): Boolean {
-        if (reference.isReferenceTo(target)) {
-            return true
-        }
-
-        return matchesResolvedTargets(reference.unwrappedTargets, target)
+        return reference.isReferenceTo(target)
     }
 
     /**
@@ -123,10 +113,6 @@ internal object CangJieReferenceSearchSupport {
                 collect(original)
             }
 
-            val navigation = element.navigationElement
-            if (navigation != element) {
-                collect(navigation)
-            }
         }
 
         collect(this)
@@ -144,13 +130,7 @@ internal object CangJieReferenceSearchSupport {
             return true
         }
 
-        if (left.manager == right.manager && left.manager.areElementsEquivalent(left, right)) {
-            return true
-        }
-
-        return left.containingFile == right.containingFile &&
-            left.textRange == right.textRange &&
-            left::class == right::class
+        return left.manager == right.manager && left.manager.areElementsEquivalent(left, right)
     }
 
     /**

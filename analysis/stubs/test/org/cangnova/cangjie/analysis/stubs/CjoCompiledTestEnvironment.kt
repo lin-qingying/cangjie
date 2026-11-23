@@ -9,13 +9,16 @@ import com.intellij.psi.search.GlobalSearchScope
 import org.cangnova.cangjie.analysis.api.decompiled.CaDecompiledBinaryIndex
 import org.cangnova.cangjie.analysis.api.impl.base.test.configurators.CaAnalysisApiDecompiledTestServiceRegistrar
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaModuleBase
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaModuleProvider
 import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
+import org.cangnova.cangjie.analysis.api.standalone.cfir.test.cases.session.builder.StandaloneBuilderPlatformTestServiceRegistrar
 import org.cangnova.cangjie.analysis.api.standalone.platform.CaStandalonePlatformState
 import org.cangnova.cangjie.analysis.api.standalone.projectStructure.CaStandaloneProjectStructure
 import org.cangnova.cangjie.analysis.api.standalone.projectStructure.PluginStructureProvider
 import org.cangnova.cangjie.analysis.decompiled.psi.BuiltinsVirtualFileProvider
 import org.cangnova.cangjie.platform.CangJiePlatforms
 import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisApiTestServiceRegistrar
+import org.cangnova.cangjie.analysis.test.framework.projectStructure.cjTestModuleStructure
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.test.services.TestServices
 import java.nio.file.Files
@@ -45,6 +48,9 @@ internal object CjoCompiledTestEnvironment {
         }
         val projectStructure = CaStandaloneProjectStructure(listOf(builtinsModule))
         project.getService(CaStandalonePlatformState::class.java).install(projectStructure)
+        check(CaModuleProvider.getInstance(project).snapshot === projectStructure.snapshot) {
+            "CJO fixture 的 builtins 图未提交到正式 ModuleProvider"
+        }
         return builtinsModule
     }
 
@@ -154,7 +160,14 @@ internal object CjoCompiledStubsTestServiceRegistrar : AnalysisApiTestServiceReg
      * 注册 project 级服务，包括 standalone platform state、插件服务和 decompiled 测试服务。
      */
     override fun registerProjectServices(project: MockProject, testServices: TestServices) {
-        project.registerService(CaStandalonePlatformState::class.java, CaStandalonePlatformState::class.java)
+        // 与正式 standalone 宿主共用平台服务；CJO 服务创建前装入 base 已注册的真实模块图。
+        StandaloneBuilderPlatformTestServiceRegistrar.registerProjectServices(project, testServices)
+        val structure = CaStandaloneProjectStructure(testServices.cjTestModuleStructure.allCaModules)
+        val state = CaStandalonePlatformState.getInstance(project)
+        state.install(structure)
+        check(CaModuleProvider.getInstance(project).snapshot === state.snapshot && state.snapshot === structure.snapshot) {
+            "CJO fixture 的初始模块图与正式平台服务不一致"
+        }
         pluginXmls.forEach { pluginXmlPath ->
             PluginStructureProvider.registerProjectServices(project, pluginXmlPath)
         }

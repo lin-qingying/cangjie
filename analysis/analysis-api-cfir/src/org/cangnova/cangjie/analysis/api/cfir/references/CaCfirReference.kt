@@ -3,18 +3,23 @@ package org.cangnova.cangjie.analysis.api.cfir.references
 import com.intellij.psi.PsiElement
 import com.intellij.psi.search.GlobalSearchScope
 import org.cangnova.cangjie.analysis.api.CaPlatformInterface
+import org.cangnova.cangjie.analysis.api.CaImplementationDetail
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.findLibraryPsi
 import org.cangnova.cangjie.analysis.api.cfir.findReferencePsi
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirSymbol
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
-import org.cangnova.cangjie.analysis.api.platform.caches.getOrPut
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolOrigin
 import org.cangnova.cangjie.idea.references.CjReference
 import org.cangnova.cangjie.idea.references.mainReference
+import org.cangnova.cangjie.psi.CangJieResolveResult
+import org.cangnova.cangjie.psi.cangJieCanonicalTarget
+import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.llCfirModuleData
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
 import org.cangnova.cangjie.psi.CjDotQualifiedExpression
 import org.cangnova.cangjie.psi.CjImportAlias
 import org.cangnova.cangjie.psi.CjImportInfo
@@ -49,8 +54,8 @@ internal sealed interface CaCfirReference : CjReference {
                 is CjSimpleNameExpression -> importedReference.mainReference.multiResolve(false)
                 else -> null
             } ?: return null
-        val targets = multiResolve(false).mapNotNull { it.element }
-        val adjustedImportTargets = importResults.mapNotNull { it.element }
+        val targets = multiResolve(false).filter { it.isValidResult }.mapNotNull { it.cangJieCanonicalTarget }
+        val adjustedImportTargets = importResults.filter { it.isValidResult }.mapNotNull { it.cangJieCanonicalTarget }
         val manager = importItem.manager
         if (adjustedImportTargets.any { importTarget ->
                 targets.any { target ->
@@ -74,16 +79,16 @@ internal sealed interface CaCfirReference : CjReference {
      * 或显式接收者的声明类型）。库 `extend` 成员没有 classId，只能靠它把同名成员
      * 收敛到唯一 extend。
      */
-    fun getResolvedToPsi(
+    fun getResolveResults(
         analysisSession: CaSession,
         referenceTargetSymbols: Collection<CaSymbol>,
         receiverHint: String? = null,
-    ): Collection<PsiElement> =
+    ): Collection<CangJieResolveResult> =
         with(analysisSession) {
             referenceTargetSymbols.flatMap { symbol ->
                 when (symbol) {
                     is CaCfirSymbol<*> -> getPsiDeclarations(symbol, receiverHint)
-                    else -> listOfNotNull(symbol.psi)
+                    else -> listOfNotNull(symbol.psi?.let { CangJieResolveResult(it) })
                 }
             }
         }
@@ -91,10 +96,14 @@ internal sealed interface CaCfirReference : CjReference {
     /**
      * 解析当前引用并返回 PSI 目标集合。
      */
-    fun getResolvedToPsi(analysisSession: CaSession): Collection<PsiElement> =
+    fun getResolveResults(analysisSession: CaSession): Collection<CangJieResolveResult> =
         with(analysisSession) {
-            getResolvedToPsi(analysisSession, resolveToSymbols())
+            getResolveResults(analysisSession, resolveToSymbols())
         }
+
+    /** 既有 resolveTargetElements 抽象只投影导航 PSI，不执行第二次符号解析。 */
+    fun getResolvedToPsi(analysisSession: CaSession): Collection<PsiElement> =
+        getResolveResults(analysisSession).map { it.element }
 
     /**
      * 在 CFIR session 缓存中解析当前引用对应的公开符号集合。
@@ -150,19 +159,41 @@ internal data class CaResolvedSymbolsCacheEntry(
 internal val CaCfirReference.fileModificationStamp: Long?
     get() = element.containingFile?.modificationStamp
 
+/** 已解析 CFIR reference 的正式 PSI 结果；生成 usages 与普通 resolver 使用同一投影。 */
+@CaImplementationDetail
+fun CaSession.getCfirReferenceResolveResults(symbol: CfirBasedSymbol<*>): Collection<CangJieResolveResult> {
+    check(this is CaCfirSession) { "CFIR reference results require a CFIR-backed analysis session." }
+    val publicSymbol = cfirSymbolBuilder.buildSymbol(symbol)
+    check(publicSymbol is CaCfirSymbol<*>) { "A CFIR reference target must retain its CFIR-backed declaration." }
+    return getPsiDeclarations(publicSymbol)
+}
+
 /**
  * 将 CFIR 公开符号恢复为 reference resolve 可用的 PSI 声明集合。
  */
 internal fun CaSession.getPsiDeclarations(
     symbol: CaCfirSymbol<*>,
     receiverHint: String? = null,
-): Collection<PsiElement> {
+): Collection<CangJieResolveResult> {
     val intersectionOverriddenSymbolsOrSingle = when {
         symbol.origin == CaSymbolOrigin.INTERSECTION_OVERRIDE && symbol is CaCallableSymbol -> symbol.intersectionOverriddenSymbols
         else -> listOf(symbol)
     }
     return intersectionOverriddenSymbolsOrSingle.mapNotNull {
-        it.findPsiForReferenceResolve(analysisScope, receiverHint)
+        val navigationTarget = it.findPsiForReferenceResolve(analysisScope, receiverHint) ?: return@mapNotNull null
+        val cfirSymbol = it as? CaCfirSymbol<*> ?: return@mapNotNull null
+        val declaration = cfirSymbol.cfirSymbol.cfir
+        val snapshot = (declaration.moduleData.session as? org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirResolvableModuleSession)
+            ?.macroSemanticSnapshot
+        val macroOutput = snapshot?.macroSurfaceIdsForDeclaration(declaration) != null ||
+            declaration.source?.let { source -> snapshot?.isGeneratedSource(source) } == true
+        val canonicalTarget = if (macroOutput) it.psi ?: return@mapNotNull null else navigationTarget
+        val owningSession = cfirSymbol.cfirSymbol.llCfirModuleData.session
+        CangJieResolveResult(canonicalTarget, navigationTarget) {
+            owningSession.isValid && (!macroOutput ||
+                (owningSession as? org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirResolvableModuleSession)
+                    ?.macroSemanticSnapshot === snapshot)
+        }
     }
 }
 

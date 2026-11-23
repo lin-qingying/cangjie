@@ -1,4 +1,4 @@
-package org.cangnova.cangjie.analysis.decompiler.stub
+package org.cangnova.cangjie.analysis.decompiler.stubimport org.cangnova.cangjie.test.bindCjoFixture
 
 import com.intellij.testFramework.LightVirtualFile
 import org.cangnova.cangjie.LanguageVersionSettingsImpl
@@ -86,7 +86,7 @@ class CjoDeclarationLoaderSymbolProviderIsolationTest :
             isVersionSupported = true,
             sourcePath = loaded.sourcePath,
         )
-        val module = Module()
+        val module = Module()        bindCjoFixture(module, manager, setOf(fixtureRoot))
 
         val declarations = CjoDeclarationLoader.loadDeclarations(input, module)
         assertTrue(declarations.isNotEmpty(), "fixture package must deserialize into declarations")

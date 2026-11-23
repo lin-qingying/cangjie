@@ -18,6 +18,7 @@ import org.cangnova.cangjie.psi.CjMacroDeclaration
 import org.cangnova.cangjie.psi.CjNamedDeclaration
 import org.cangnova.cangjie.psi.CjNamedFunction
 import org.cangnova.cangjie.psi.CjPatternVariable
+import org.cangnova.cangjie.psi.CjNamedPattern
 import org.cangnova.cangjie.psi.CjProperty
 import org.cangnova.cangjie.psi.CjTypeAlias
 import org.cangnova.cangjie.psi.CjTypeStatement
@@ -33,7 +34,7 @@ class CangJieFileBasedDeclarationProvider private constructor(
     /**
      * 作为声明查询来源的仓颉文件。
      */
-    val cangjieFile: CjFile,
+    private val initialCangJieFile: CjFile,
     /** 为当前 file PSI 返回稳定 package 身份的函数。 */
     private val packageFqNameProvider: (CjFile) -> FqName,
 ) : CangJieDeclarationProvider {
@@ -46,25 +47,31 @@ class CangJieFileBasedDeclarationProvider private constructor(
     /**
      * 用于从 VirtualFile 恢复最新 PSI 的 PSI manager。
      */
-    private val psiManager: PsiManager = PsiManager.getInstance(cangjieFile.project)
+    private val psiManager: PsiManager = PsiManager.getInstance(initialCangJieFile.project)
+
+    /** 在 provider 创建的读访问中保存文件身份；后续查询不再读取旧 PSI 的属性。 */
+    private val physicalFile = if (initialCangJieFile.isPhysical || initialCangJieFile.isCompiled) {
+        checkNotNull(initialCangJieFile.virtualFile) { "Physical/compiled declaration-provider PSI must have a virtual file" }
+    } else {
+        null
+    }
+
+    /** 单文件 provider 的源码入口始终属于当前 FileViewProvider generation。 */
+    val cangjieFile: CjFile get() = currentCangJieFile
 
     /**
-     * decompiled `.cjo` 的 PSI provider 在 IDE 生命周期中可能被重建。
+     * 源码与 compiled PSI provider 都可能在 IDE 生命周期中被重建。
      *
-     * declaration provider 不能长期持有第一次收集到的 compiled PSI，
+     * declaration provider 不能长期持有第一次收集到的物理 PSI，
      * 否则后续再命中同一 VirtualFile 时就会落到 “different providers” 的陈旧 PSI。
      */
     private val currentCangJieFile: CjFile
         get() {
-            if (!cangjieFile.isCompiled) {
-                return cangjieFile
-            }
-
-            val virtualFile = checkNotNull(cangjieFile.virtualFile) {
-                "Compiled CangJie file should always have a virtual file: $cangjieFile"
+            val virtualFile = physicalFile ?: return initialCangJieFile.also {
+                check(it.isValid) { "The non-physical declaration-provider source PSI is no longer valid" }
             }
             return checkNotNull(psiManager.findFile(virtualFile) as? CjFile) {
-                "Cannot restore compiled CangJie PSI for ${virtualFile.path}"
+                "Cannot restore current CangJie PSI for ${virtualFile.path}"
             }
         }
 
@@ -181,6 +188,15 @@ class CangJieFileBasedDeclarationProvider private constructor(
      */
     override fun getTopLevelProperties(callableId: CallableId): Collection<CjProperty> {
         return getTopLevelCallables(callableId)
+    }
+
+    override fun getTopLevelPatternBindings(callableId: CallableId): Collection<CjNamedPattern> {
+        if (filePackageFqName != callableId.packageName || callableId.classId != null) return emptyList()
+        return topLevelDeclarations.filterIsInstance<CjPatternVariable>()
+            .flatMap { it.pattern.getAllPatternDeclarations() }
+            .filterIsInstance<CjNamedPattern>()
+            .filter { it.nameAsName == callableId.callableName }
+            .toList()
     }
 
     /**

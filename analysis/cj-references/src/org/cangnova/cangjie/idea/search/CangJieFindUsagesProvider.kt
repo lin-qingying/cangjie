@@ -10,6 +10,7 @@ import org.cangnova.cangjie.lang.CangJieLanguage
 import org.cangnova.cangjie.lexer.CangJieLexer
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.psi.CjBindingPattern
+import org.cangnova.cangjie.psi.CangJieReferenceProvidersService
 import org.cangnova.cangjie.psi.CjExtend
 import org.cangnova.cangjie.psi.CjImportAlias
 import org.cangnova.cangjie.psi.CjNamedDeclaration
@@ -43,7 +44,12 @@ class CangJieFindUsagesProvider : FindUsagesProvider {
      * 判断目标 PSI 是否支持 find usages。
      */
     override fun canFindUsagesFor(psiElement: PsiElement): Boolean {
-        return psiElement.language == CangJieLanguage && psiElement is PsiNamedElement && !psiElement.name.isNullOrBlank()
+        if (psiElement.language != CangJieLanguage || psiElement !is PsiNamedElement || psiElement.name.isNullOrBlank()) {
+            return false
+        }
+        // 模式名称的变量/constructor/wildcard 决议与声明发布、导航使用同一语义入口。
+        return CangJieReferenceProvidersService.getInstance(psiElement.project)
+            .getNamedDeclarationTarget(psiElement) === psiElement
     }
 
     /**

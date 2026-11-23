@@ -8,6 +8,8 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.file.builder
 import com.google.common.collect.MapMaker
 import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirModuleResolveComponents
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsOnlyApi
+import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.psi
@@ -93,9 +95,32 @@ internal class ModuleFileCacheImpl(override val moduleComponents: LLCfirModuleRe
      * 通过声明 PSI 所在文件定位包含它的已缓存 CFIR 文件。
      */
     override fun getContainerCfirFile(declaration: CfirDeclaration): CfirFile? {
-        moduleComponents.macroSemanticSnapshotStore.snapshot?.containerFile(declaration)?.let { return it }
+        moduleComponents.macroSemanticSnapshotStore.snapshot?.let { snapshot ->
+            return snapshot.containerFile(declaration)
+        }
         val cjFile = declaration.psi?.containingFile as? CjFile ?: return null
-        return getCachedCfirFile(cjFile)
+        val cfirFile = getCachedCfirFile(cjFile) ?: return null
+        return cfirFile.takeIf { it.containsDeclarationIdentity(declaration) }
+    }
+
+    /**
+     * 同一 PSI 可同时作为 live raw 与未发布 construction 的 source。
+     * container 查询必须确认声明实际位于当前树中，不能由相同 PSI 文件替另一棵树授予 source 身份。
+     * 读取当前树而非缓存成员索引，使正式 body reanalysis 后的节点替换继续遵守同一所有权。
+     */
+    private fun CfirFile.containsDeclarationIdentity(declaration: CfirDeclaration): Boolean {
+        var found = false
+        accept(object : CfirVisitorVoid() {
+            override fun visitElement(element: CfirElement) {
+                if (found) return
+                if (element === declaration) {
+                    found = true
+                } else {
+                    element.acceptChildren(this)
+                }
+            }
+        })
+        return found
     }
 
     @LLStatisticsOnlyApi

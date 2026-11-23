@@ -57,6 +57,7 @@ import org.cangnova.cangjie.analysis.api.symbols.CaTypeAliasSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaTypeParameterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaValueParameterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaVariableSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaPatternVariableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.name
 
 /**
@@ -200,6 +201,21 @@ class CaDeclarationRenderer private constructor(
                         is CaPropertySetterSymbol -> setterRenderer.renderSymbol(analysisSession, symbol, this@CaDeclarationRenderer, this)
                         is CaFieldSymbol -> fieldRenderer.renderSymbol(analysisSession, symbol, this@CaDeclarationRenderer, this)
                         is CaValueParameterSymbol -> valueParameterRenderer.renderSymbol(analysisSession, symbol, this@CaDeclarationRenderer, this)
+                        is CaPatternVariableSymbol -> {
+                            append(when {
+                                symbol.isConst -> "const"
+                                symbol.isVar -> "var"
+                                else -> "let"
+                            })
+                            append(" (")
+                            symbol.entries.forEachIndexed { index, entry ->
+                                if (index != 0) append(", ")
+                                nameRenderer.renderName(analysisSession, entry, this@CaDeclarationRenderer, this)
+                                append(": ")
+                                returnTypeRenderer.renderReturnType(analysisSession, entry, this@CaDeclarationRenderer, this)
+                            }
+                            append(")")
+                        }
                         is CaVariableSymbol -> localVariableRenderer.renderSymbol(analysisSession, symbol, this@CaDeclarationRenderer, this)
                         is CaTypeParameterSymbol -> typeParameterRenderer.renderSymbol(analysisSession, symbol, this@CaDeclarationRenderer, this)
                         is CaFunctionSymbol -> functionLikeKeywordRenderer.renderFunctionLike(analysisSession, symbol, "func", this@CaDeclarationRenderer, this)

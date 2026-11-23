@@ -1,5 +1,7 @@
 package org.cangnova.cangjie.analysis.api.cfir.symbols
 
+import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.llCfirModuleData
+
 import org.cangnova.cangjie.analysis.api.annotations.CaAnnotationList
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.findPsi
@@ -66,10 +68,10 @@ internal class CaCfirTypeParameterSymbol private constructor(
     )
 
     /**
-     * 类型参数所在的 use-site 模块。
+     * 类型参数实际声明所属的模块，保持与 owner 的模块身份一致。
      */
     override val containingModule: CaModule
-        get() = analysisSession.useSiteModule
+        get() = withValidityAssertion { cfirSymbol.llCfirModuleData.caModule }
 
     /**
      * 类型参数对应的 PSI。
@@ -146,4 +148,7 @@ internal class CaCfirTypeParameterSymbol private constructor(
         val ownerPointer: CaSymbolPointer<CaSymbol> = owner.createPointer()
         CaCfirTypeParameterSymbolPointer(ownerPointer, name, parameterIndex)
     }
+
+    override fun equals(other: Any?): Boolean = psiOrSymbolEquals(other)
+    override fun hashCode(): Int = psiOrSymbolHashCode()
 }

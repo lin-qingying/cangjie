@@ -8,10 +8,10 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getOrBuildCfir
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnmatchedTypeArgumentsError
 import org.cangnova.cangjie.cfir.expressions.CfirResolvable
-import org.cangnova.cangjie.cfir.patterns.CfirEnumPattern
 import org.cangnova.cangjie.cfir.declarations.builder.buildImport
 import org.cangnova.cangjie.cfir.references.CfirErrorNamedReference
 import org.cangnova.cangjie.cfir.references.CfirReference
+import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.references.CfirSuperReference
 import org.cangnova.cangjie.cfir.references.CfirThisReference
@@ -76,27 +76,25 @@ internal object CfirReferenceResolveHelper {
             return getSymbolsByImportDirective(expression, analysisSession, symbolBuilder)
         }
 
-        /*
-         * pattern 的 constructor 名字不是普通表达式引用：它的 CFIR 锚点是 `CfirEnumPattern`，
-         * 引用目标存放在 pattern 的 `constructorReference` 上。内层 `CjSimpleNameExpression`
-         * 没有独立 CFIR 映射，因此必须先按 pattern 节点解析，再走统一的 reference → symbol 投影。
-         */
-        val patternOwner = expression.patternConstructorOwner()
-        if (patternOwner != null) {
-            val patternCfir = patternOwner.getOrBuildCfir(analysisSession.resolutionFacade)
-            if (patternCfir is CfirEnumPattern) {
-                return patternCfir.constructorReference.toCaTargetSymbols(symbolBuilder)
-            }
-        }
-
         val adjustedResolutionExpression = adjustResolutionExpression(expression)
         val cfir = adjustedResolutionExpression.getOrBuildCfir(analysisSession.resolutionFacade)
+
+        if (expression.patternConstructorOwner() != null) {
+            // 名字位置由正式 LL mapping 给出实际引用；失败候选不能变成 constructor 使用身份。
+            val reference = cfir as? CfirResolvedNamedReference ?: return emptyList()
+            if (reference is CfirDiagnosticHolder) return emptyList()
+            return reference.toCaTargetSymbols(symbolBuilder)
+        }
 
         if (cfir is CfirQualifierPart) {
             return getSymbolsByUserTypeQualifierPart(expression, analysisSession, symbolBuilder)
         }
 
         val result = when (cfir) {
+            is org.cangnova.cangjie.cfir.expressions.CfirAssignment ->
+                if (expression is org.cangnova.cangjie.psi.CjOperationReferenceExpression) emptyList()
+                else (cfir.lValue as? org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression)
+                    ?.calleeReference?.toCaTargetSymbols(symbolBuilder).orEmpty()
             is CfirResolvedTypeRef -> listOfNotNull(cfir.toTargetSymbol(analysisSession, symbolBuilder))
             is CfirTypeParameter -> listOf(symbolBuilder.buildSymbol(cfir.symbol))
             is CfirResolvable -> getSymbolsByResolvable(cfir, symbolBuilder)

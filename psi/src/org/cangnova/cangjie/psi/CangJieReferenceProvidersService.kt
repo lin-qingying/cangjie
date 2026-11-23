@@ -27,6 +27,8 @@ package org.cangnova.cangjie.psi
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiReference
+import com.intellij.psi.PsiNameIdentifierOwner
+import org.cangnova.cangjie.name.FqName
 
 /**
  * 表示 `CangJieReferenceProvidersService`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
@@ -36,6 +38,18 @@ open class CangJieReferenceProvidersService {
      * 提供 `getReferences` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
      */
     open fun getReferences(psiElement: PsiElement): Array<PsiReference> = PsiReference.EMPTY_ARRAY
+
+    /**
+     * 返回声明名称的规范目标。模式名称需要语义核验，PSI 模块本身不发布未确认的 binder。
+     * 实现不得调用 references 或 getOwnDeclarations，以免声明发布与引用分派递归。
+     */
+    open fun getNamedDeclarationTarget(psiElement: PsiElement): PsiNameIdentifierOwner? =
+        if (psiElement is CjNamedPattern || psiElement is CjCatchParameter ||
+            psiElement is CjCommandTypePattern || psiElement is CjTryResource
+        ) null else psiElement as? PsiNameIdentifierOwner
+
+    /** 解析声明的正式全限定身份；局部或没有成功声明身份的节点返回 null。 */
+    open fun getDeclarationFqName(declaration: PsiNameIdentifierOwner): FqName? = null
 
     companion object {
         private val NO_REFERENCES_SERVICE = CangJieReferenceProvidersService()

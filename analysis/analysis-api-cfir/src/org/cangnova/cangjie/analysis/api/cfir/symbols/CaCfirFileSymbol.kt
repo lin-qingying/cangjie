@@ -1,8 +1,11 @@
 package org.cangnova.cangjie.analysis.api.cfir.symbols
 
+import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.llCfirModuleData
+
 import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.symbols.CaFileSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolLocation
@@ -51,10 +54,10 @@ internal class CaCfirFileSymbol private constructor(
     )
 
     /**
-     * 文件符号所在的 use-site 模块。
+     * 文件实际声明所属的模块。
      */
-    override val containingModule
-        get() = analysisSession.useSiteModule
+    override val containingModule: CaModule
+        get() = withValidityAssertion { cfirSymbol.llCfirModuleData.caModule }
 
     /**
      * 当前符号代表的仓颉文件。
@@ -94,4 +97,7 @@ internal class CaCfirFileSymbol private constructor(
     override fun createPointer(): CaSymbolPointer<CaSymbol> = withValidityAssertion {
         CaCfirFileSymbolPointer(CaCfirFileSymbolCacheKey(file))
     }
+
+    override fun equals(other: Any?): Boolean = psiOrSymbolEquals(other)
+    override fun hashCode(): Int = psiOrSymbolHashCode()
 }

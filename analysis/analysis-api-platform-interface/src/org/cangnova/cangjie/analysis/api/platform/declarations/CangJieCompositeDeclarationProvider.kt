@@ -12,6 +12,7 @@ import org.cangnova.cangjie.psi.CjExtend
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjMacroDeclaration
 import org.cangnova.cangjie.psi.CjNamedFunction
+import org.cangnova.cangjie.psi.CjNamedPattern
 import org.cangnova.cangjie.psi.CjProperty
 import org.cangnova.cangjie.psi.CjTypeAlias
 import org.cangnova.cangjie.psi.CjTypeStatement
@@ -61,6 +62,9 @@ class CangJieCompositeDeclarationProvider private constructor(
     override fun getTopLevelProperties(callableId: CallableId): Collection<CjProperty> {
         return providers.flatMapTo(mutableListOf()) { it.getTopLevelProperties(callableId) }
     }
+
+    override fun getTopLevelPatternBindings(callableId: CallableId): Collection<CjNamedPattern> =
+        providers.flatMap { it.getTopLevelPatternBindings(callableId) }
 
     /**
      * 汇总指定 callable id 的顶层函数。

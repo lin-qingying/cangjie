@@ -5,6 +5,7 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.psi.util.PsiTreeUtil
+import org.cangnova.cangjie.analysis.low.level.api.cfir.file.builder.LLCfirSourcePsiGeneration
 import org.cangnova.cangjie.CjSourceKind
 import org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLCangJieSymbolProvider
@@ -46,18 +47,22 @@ fun LLCfirSession.buildPreMacroRawBuildResultForModule(): PreMacroRawBuildResult
      */
     val surfaceStore = ensureRawMacroSurfaceUsageStore()
 
-    val sourceFiles = collectModuleSourceFiles() ?: emptyList()
+    val sourceFiles = collectModuleSourceFiles() ?: return null
     if (sourceFiles.isEmpty()) {
         return buildPreMacroRawFiles(session = this, rawCfirFiles = emptyList())
     }
 
     val fileBuilder = resolvableSession.moduleComponents.cfirFileBuilder
+    val sourceGeneration = ReadAction.compute<LLCfirSourcePsiGeneration, RuntimeException> {
+        LLCfirSourcePsiGeneration.capture(sourceFiles)
+    }
     val buildCounter = ensurePreMacroRawBuildCounter()
     val cfirFiles = ArrayList<CfirFile>(sourceFiles.size)
     val fileSurfaces = ArrayList<List<MacroSurface>>(sourceFiles.size)
     for (file in sourceFiles) {
         ProgressManager.checkCanceled()
         val built = ReadAction.compute<Pair<CfirFile, List<MacroSurface>>, RuntimeException> {
+            sourceGeneration.requireCurrent()
             val cfirFile = fileBuilder.buildRawCfirFileUncached(file)
             cfirFile to surfaceStore.surfaces(cfirFile).orEmpty()
         }
@@ -65,6 +70,9 @@ fun LLCfirSession.buildPreMacroRawBuildResultForModule(): PreMacroRawBuildResult
         fileSurfaces += built.second
         buildCounter.increment()
     }
+
+    // 较早文件的 PSI 可能在下一文件的读访问前被替换；不可把两个 generation 合并成一批输入。
+    sourceGeneration.requireCurrent()
 
     return buildPreMacroRawFiles(
         session = this,
@@ -87,14 +95,19 @@ fun LLCfirSession.buildPreMacroRawBuildResultForModule(): PreMacroRawBuildResult
 fun LLCfirSession.hasMacroCallCandidateForModule(): Boolean {
     if (caModule !is CaSourceModule) return false
     val sourceFiles = collectModuleSourceFiles() ?: return true
+    val sourceGeneration = ReadAction.compute<LLCfirSourcePsiGeneration, RuntimeException> {
+        LLCfirSourcePsiGeneration.capture(sourceFiles)
+    }
     for (file in sourceFiles) {
         ProgressManager.checkCanceled()
         val hasCandidate = ReadAction.compute<Boolean, RuntimeException> {
+            sourceGeneration.requireCurrent()
             PsiTreeUtil.findChildOfType(file, CjAnnotation::class.java) != null ||
                 PsiTreeUtil.findChildOfType(file, CjMacroExpression::class.java) != null
         }
         if (hasCandidate) return true
     }
+    sourceGeneration.requireCurrent()
     return false
 }
 

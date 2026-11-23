@@ -58,6 +58,9 @@ import org.cangnova.cangjie.psi.CjFinalizer
 import org.cangnova.cangjie.psi.CjFunctionLiteral
 import org.cangnova.cangjie.psi.CjMacroDeclaration
 import org.cangnova.cangjie.psi.CjNamedFunction
+import org.cangnova.cangjie.psi.CjNamedPattern
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getOrBuildCfir
+import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
 import org.cangnova.cangjie.psi.CjParameter
 import org.cangnova.cangjie.psi.CjPatternVariable
 import org.cangnova.cangjie.psi.CjProperty
@@ -84,6 +87,8 @@ internal class CaCfirSymbolProvider(
      */
     override val CjParameter.symbol: CaVariableSymbol
         get() = withPsiValidityAssertion {
+            val resource = parent as? org.cangnova.cangjie.psi.CjTryResource
+            if (resource != null) return@withPsiValidityAssertion checkNotNull(resource.bindingSymbol)
             when {
                 isFunctionTypeParameter() -> errorWithCfirSpecificEntries(
                     "Creating ${CaVariableSymbol::class.simpleName} for function type parameter is not possible. " +
@@ -212,6 +217,28 @@ internal class CaCfirSymbolProvider(
             CaCfirPatternBindingSymbol(this@symbol, analysisSession)
         }
 
+    override val CjNamedPattern.bindingSymbol: CaPatternBindingSymbol?
+        get() = withPsiValidityAssertion {
+            val binding = getOrBuildCfir(analysisSession.resolutionFacade) as? CfirPatternBindingVariable
+                ?: return@withPsiValidityAssertion null
+            analysisSession.cfirSymbolBuilder.variableBuilder.buildVariableSymbol(binding.symbol) as CaPatternBindingSymbol
+        }
+
+    override val org.cangnova.cangjie.psi.CjCatchParameter.bindingSymbol: org.cangnova.cangjie.analysis.api.symbols.CaLocalVariableSymbol?
+        get() = resolveHostBinding(this)
+    override val org.cangnova.cangjie.psi.CjCommandTypePattern.bindingSymbol: org.cangnova.cangjie.analysis.api.symbols.CaLocalVariableSymbol?
+        get() = resolveHostBinding(this)
+    override val org.cangnova.cangjie.psi.CjTryResource.bindingSymbol: org.cangnova.cangjie.analysis.api.symbols.CaLocalVariableSymbol?
+        get() = resolveHostBinding(this)
+
+    private fun resolveHostBinding(element: org.cangnova.cangjie.psi.CjElement): org.cangnova.cangjie.analysis.api.symbols.CaLocalVariableSymbol? =
+        withValidityAssertion {
+            val success = with(analysisSession) { element.tryResolveSymbols() }
+                as? org.cangnova.cangjie.analysis.api.resolution.CaSymbolResolutionSuccess ?: return@withValidityAssertion null
+            success.symbols.singleOrNull { it is org.cangnova.cangjie.analysis.api.symbols.CaLocalVariableSymbol && it.psi === element }
+                as? org.cangnova.cangjie.analysis.api.symbols.CaLocalVariableSymbol
+        }
+
     /**
      * 将 extend PSI 转换为公开 extend 符号。
      */
@@ -243,12 +270,10 @@ internal class CaCfirSymbolProvider(
     }
 
     /**
-     * 按 classId 查询公开类符号。
+     * 按 classId 查询 class、interface、struct 或 enum 的公开类型声明符号。
      */
     override fun getClassSymbol(classId: ClassId): CaClassSymbol? = withValidityAssertion {
-        val symbol = analysisSession.cfirSession.symbolProvider.getClassLikeSymbolByClassId(classId) as? CfirClassSymbol
-            ?: return@withValidityAssertion null
-        analysisSession.cfirSymbolBuilder.classifierBuilder.buildClassSymbol(symbol)
+        getClassLikeSymbol(classId) as? CaClassSymbol
     }
 
     /**
