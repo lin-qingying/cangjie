@@ -56,6 +56,10 @@ abstract class ControlFlowGraphVisitorVoid : ControlFlowGraphVisitor<Unit, Nothi
     open fun visitFieldInitializerEnterNode(node: FieldInitializerEnterNode) = visitNode(node)
     /** 访问字段初始化出口节点。 */
     open fun visitFieldInitializerExitNode(node: FieldInitializerExitNode) = visitNode(node)
+    /** 访问资源 initializer 执行根入口。 */
+    open fun visitResourceInitializerEnterNode(node: ResourceInitializerEnterNode) = visitNode(node)
+    /** 访问资源 initializer 执行根出口。 */
+    open fun visitResourceInitializerExitNode(node: ResourceInitializerExitNode) = visitNode(node)
 
     /** 访问 spawn 表达式节点。 */
     open fun visitSpawnExpressionNode(node: SpawnExpressionNode) = visitNode(node)
@@ -94,6 +98,12 @@ abstract class ControlFlowGraphVisitorVoid : ControlFlowGraphVisitor<Unit, Nothi
     open fun visitMatchSyntheticElseBranchNode(node: MatchSyntheticElseBranchNode) = visitNode(node)
     /** 访问 if 入口节点。 */
     open fun visitIfEnterNode(node: IfEnterNode) = visitNode(node)
+    /** 访问 if 条件分叉。 */
+    open fun visitIfConditionExitNode(node: IfConditionExitNode) = visitNode(node)
+    /** 访问 if 的独立分支入口。 */
+    open fun visitIfBranchResultEnterNode(node: IfBranchResultEnterNode) = visitNode(node)
+    /** 访问 if 的独立分支出口。 */
+    open fun visitIfBranchResultExitNode(node: IfBranchResultExitNode) = visitNode(node)
     /** 访问 if 出口节点。 */
     open fun visitIfExitNode(node: IfExitNode) = visitNode(node)
 
@@ -119,6 +129,16 @@ abstract class ControlFlowGraphVisitorVoid : ControlFlowGraphVisitor<Unit, Nothi
     /** 访问 catch 子句入口节点。 */
     open fun visitCatchClauseEnterNode(node: CatchClauseEnterNode) = visitNode(node)
     /** 访问 catch 子句出口节点。 */
+    open fun visitCompletionOverrideNode(node: CompletionOverrideNode) = visitNode(node)
+
+    open fun visitExceptionExitNode(node: ExceptionExitNode) = visitNode(node)
+
+    open fun visitExceptionTransferNode(node: ExceptionTransferNode) = visitNode(node)
+
+    open fun visitExceptionDispatchNode(node: ExceptionDispatchNode) = visitNode(node)
+
+    open fun visitResourceCleanupNode(node: ResourceCleanupNode) = visitNode(node)
+
     open fun visitCatchClauseExitNode(node: CatchClauseExitNode) = visitNode(node)
     /** 访问 handle 子句入口节点。 */
     open fun visitHandleClauseEnterNode(node: HandleClauseEnterNode) = visitNode(node)
@@ -224,6 +244,8 @@ abstract class ControlFlowGraphVisitorVoid : ControlFlowGraphVisitor<Unit, Nothi
     final override fun visitFieldInitializerEnterNode(node: FieldInitializerEnterNode, data: Nothing?) = visitFieldInitializerEnterNode(node)
     /** 桥接字段初始化出口节点的双参数访问到无 data 访问。 */
     final override fun visitFieldInitializerExitNode(node: FieldInitializerExitNode, data: Nothing?) = visitFieldInitializerExitNode(node)
+    final override fun visitResourceInitializerEnterNode(node: ResourceInitializerEnterNode, data: Nothing?) = visitResourceInitializerEnterNode(node)
+    final override fun visitResourceInitializerExitNode(node: ResourceInitializerExitNode, data: Nothing?) = visitResourceInitializerExitNode(node)
 
     /** 桥接 spawn 表达式节点的双参数访问到无 data 访问。 */
     final override fun visitSpawnExpressionNode(node: SpawnExpressionNode, data: Nothing?) = visitSpawnExpressionNode(node)
@@ -260,6 +282,12 @@ abstract class ControlFlowGraphVisitorVoid : ControlFlowGraphVisitor<Unit, Nothi
     final override fun visitMatchSyntheticElseBranchNode(node: MatchSyntheticElseBranchNode, data: Nothing?) = visitMatchSyntheticElseBranchNode(node)
     /** 桥接 if 入口节点的双参数访问到无 data 访问。 */
     final override fun visitIfEnterNode(node: IfEnterNode, data: Nothing?) = visitIfEnterNode(node)
+    /** 桥接 if 条件分叉。 */
+    final override fun visitIfConditionExitNode(node: IfConditionExitNode, data: Nothing?) = visitIfConditionExitNode(node)
+    /** 桥接 if 的独立分支入口。 */
+    final override fun visitIfBranchResultEnterNode(node: IfBranchResultEnterNode, data: Nothing?) = visitIfBranchResultEnterNode(node)
+    /** 桥接 if 的独立分支出口。 */
+    final override fun visitIfBranchResultExitNode(node: IfBranchResultExitNode, data: Nothing?) = visitIfBranchResultExitNode(node)
     /** 桥接 if 出口节点的双参数访问到无 data 访问。 */
     final override fun visitIfExitNode(node: IfExitNode, data: Nothing?) = visitIfExitNode(node)
     /** 桥接循环入口节点的双参数访问到无 data 访问。 */
@@ -283,6 +311,16 @@ abstract class ControlFlowGraphVisitorVoid : ControlFlowGraphVisitor<Unit, Nothi
     /** 桥接 catch 子句入口节点的双参数访问到无 data 访问。 */
     final override fun visitCatchClauseEnterNode(node: CatchClauseEnterNode, data: Nothing?) = visitCatchClauseEnterNode(node)
     /** 桥接 catch 子句出口节点的双参数访问到无 data 访问。 */
+    final override fun visitCompletionOverrideNode(node: CompletionOverrideNode, data: Nothing?) = visitCompletionOverrideNode(node)
+
+    final override fun visitExceptionExitNode(node: ExceptionExitNode, data: Nothing?) = visitExceptionExitNode(node)
+
+    final override fun visitExceptionTransferNode(node: ExceptionTransferNode, data: Nothing?) = visitExceptionTransferNode(node)
+
+    final override fun visitExceptionDispatchNode(node: ExceptionDispatchNode, data: Nothing?) = visitExceptionDispatchNode(node)
+
+    final override fun visitResourceCleanupNode(node: ResourceCleanupNode, data: Nothing?) = visitResourceCleanupNode(node)
+
     final override fun visitCatchClauseExitNode(node: CatchClauseExitNode, data: Nothing?) = visitCatchClauseExitNode(node)
     /** 桥接 handle 子句入口节点的双参数访问到无 data 访问。 */
     final override fun visitHandleClauseEnterNode(node: HandleClauseEnterNode, data: Nothing?) = visitHandleClauseEnterNode(node)

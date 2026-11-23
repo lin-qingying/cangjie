@@ -344,6 +344,14 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
         visitElement(fieldVariable)
     }
 
+    final override fun visitResourceVariable(resourceVariable: CfirResourceVariable, data: Nothing?) {
+        visitResourceVariable(resourceVariable)
+    }
+
+    open fun visitResourceVariable(resourceVariable: CfirResourceVariable) {
+        visitElement(resourceVariable)
+    }
+
     final override fun visitPatternVariable(patternVariable: CfirPatternVariable, data: Nothing?) {
         visitPatternVariable(patternVariable)
     }
@@ -374,6 +382,14 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
 
     open fun visitTypeParameter(typeParameter: CfirTypeParameter) {
         visitElement(typeParameter)
+    }
+
+    final override fun visitConstructedClassTypeParameterRef(constructedClassTypeParameterRef: CfirConstructedClassTypeParameterRef, data: Nothing?) {
+        visitConstructedClassTypeParameterRef(constructedClassTypeParameterRef)
+    }
+
+    open fun visitConstructedClassTypeParameterRef(constructedClassTypeParameterRef: CfirConstructedClassTypeParameterRef) {
+        visitElement(constructedClassTypeParameterRef)
     }
 
     final override fun visitDeclarationStatus(declarationStatus: CfirDeclarationStatus, data: Nothing?) {

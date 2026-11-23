@@ -51,7 +51,8 @@ import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessKind
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityResult
 import org.cangnova.cangjie.cfir.resolve.constants.CfirIntConstantEvalUtils
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeExpectedTypeConstraintPosition
-import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.CfirPCLAInferenceSession
+import org.cangnova.cangjie.cfir.resolve.inference.CfirPCLAInferenceSession
+import org.cangnova.cangjie.cfir.resolve.inference.CfirInferenceVariableRole
 import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.session.inferenceLogger
 import org.cangnova.cangjie.cfir.symbols.*
@@ -381,14 +382,18 @@ class CandidateFactory(
         val parameterTypes = callInfo.arguments.mapIndexed { index, argument ->
             argument.coneTypeOrNull
                 ?.let(IdealTypeResolver::resolveIfIdeal)
-                ?: ConeTypeVariableForLambdaParameterType("InvokeParameter$index")
+                ?: context.bodyResolveContext.createInferenceVariable(
+                    callInfo.callSite, CfirInferenceVariableRole.INVOKE_PARAMETER, index,
+                ) { ConeTypeVariableForLambdaParameterType("InvokeParameter$index") }
                     .also { freshVariable ->
                         createdVariables += freshVariable
                         pclaSession.registerInferenceVariable(freshVariable)
                     }
                     .defaultType
         }
-        val returnVariable = ConeTypeVariableForPostponedAtom("InvokeReturn")
+        val returnVariable = context.bodyResolveContext.createInferenceVariable(
+            callInfo.callSite, CfirInferenceVariableRole.INVOKE_RETURN,
+        ) { ConeTypeVariableForPostponedAtom("InvokeReturn") }
             .also { freshVariable ->
                 createdVariables += freshVariable
                 pclaSession.registerInferenceVariable(freshVariable)
@@ -397,7 +402,7 @@ class CandidateFactory(
             parameterTypes = parameterTypes,
             returnType = returnVariable.defaultType,
         )
-        pclaSession.addSubtypeConstraintIfCompatible(receiverType, functionType)
+        pclaSession.addSubtypeConstraintIfCompatible(receiverType, functionType, callInfo.callSite)
         return FreshValueParameterInvokeShape(
             receiverType = receiverType,
             functionType = functionType,
@@ -543,6 +548,21 @@ class CandidateFactory(
                 receiverExpression,
             ),
         )
+        context.bodyResolveContext.implicitTypeComputationScope?.let { scope ->
+            scope.graph.registerSyntheticSymbol(scope, callInfo.callSite, symbol,
+                org.cangnova.cangjie.cfir.resolve.inference.CfirSyntheticCallRole.FUNCTION_TYPE_INVOKE)
+            // 真实 synthetic invoke 使用的就是这份参数/返回签名；具体类型阶段仍执行该消费点。
+            functionType.parameterTypes.forEachIndexed { index, type ->
+                scope.graph.consumeExpressionType(scope, receiverExpression, CfirInferenceVariableRole.INVOKE_PARAMETER,
+                    index, type, candidate.system)
+                scope.graph.consumeExpressionType(scope, callInfo.callSite, CfirInferenceVariableRole.INVOKE_PARAMETER,
+                    index, type, candidate.system)
+            }
+            scope.graph.consumeExpressionType(scope, receiverExpression, CfirInferenceVariableRole.INVOKE_RETURN,
+                0, functionType.returnType, candidate.system)
+            scope.graph.consumeExpressionType(scope, callInfo.callSite, CfirInferenceVariableRole.INVOKE_RETURN,
+                0, functionType.returnType, candidate.system)
+        }
         candidate.registerFunctionTypeInvokeCompletionVariables(functionType)
         return candidate
     }
@@ -1121,6 +1141,7 @@ class CandidateFactory(
     fun createErrorCandidate(callInfo: CallInfo, diagnostic: ConeDiagnostic): Candidate {
         val errorSymbol = when(callInfo.callKind) {
             is CallKind.Function,
+            CallKind.SyntheticSelect,
             CallKind.DelegatingConstructorCall,
                 ->  createErrorFunctionSymbol(diagnostic)
 

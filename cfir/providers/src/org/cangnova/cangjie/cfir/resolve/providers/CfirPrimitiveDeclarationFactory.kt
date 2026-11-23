@@ -1,21 +1,19 @@
 package org.cangnova.cangjie.cfir.resolve.providers
 
-import org.cangnova.cangjie.cfir.common.CfirBinaryDependenciesModuleData
 import org.cangnova.cangjie.cfir.common.CfirModuleData
-import org.cangnova.cangjie.cfir.common.nullableModuleData
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAttributes
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirPrimitiveTypeDeclaration
 import org.cangnova.cangjie.cfir.declarations.initDefaultResolveState
 import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.CfirSessionComponent
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
 import org.cangnova.cangjie.cfir.symbols.CfirPrimitiveTypeSymbol
 import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
 import org.cangnova.cangjie.cfir.types.classId
 import org.cangnova.cangjie.cfir.types.isExposedBuiltinClassifier
 import org.cangnova.cangjie.name.ClassId
-import org.cangnova.cangjie.name.Name
 
 /**
  * primitive 类型合成声明的**会话级单例工厂**。
@@ -37,27 +35,33 @@ import org.cangnova.cangjie.name.Name
  * 声明合成本身不依赖 base 组件，但声明所属 session 在被 checkers / resolve 触达时
  * 必须已具备分析基础组件集。
  */
-class CfirPrimitiveDeclarationFactory(
-    /**
-     * 合成声明所属的会话。
-     */
+class CfirPrimitiveDeclarationFactory private constructor(
+    /** canonical primitive 所属的实际会话。 */
     private val session: CfirSession,
-) {
-    /**
-     * 合成 builtin 声明的宿主 module data。
-     *
-     * 若 session 已经绑定 module data，则沿用当前 module；否则创建二进制依赖
-     * module data 作为合成 builtin 宿主，与 [CfirBuiltinSymbolProvider] 保持一致。
-     */
-    private val builtinModuleData: CfirModuleData by lazy(LazyThreadSafetyMode.PUBLICATION) {
-        session.nullableModuleData
-            ?: CfirBinaryDependenciesModuleData(Name.identifier("<builtins>")).also { it.bindSession(session) }
+    /** 调用方明确提供实际 builtin owner；CJO 读取不能制造 consumer/default module 副本。 */
+    private val builtinModuleData: CfirModuleData,
+) : CfirSessionComponent {
+    companion object {
+        /** provider 与 metadata reader 共用会话组件；不同 facade 不得创建第二套 primitive symbol。 */
+        fun getInstance(session: CfirSession, moduleData: CfirModuleData): CfirPrimitiveDeclarationFactory =
+            synchronized(session) {
+                require(moduleData.session === session) { "Primitive owner is bound to a different session" }
+                val existing = session.primitiveDeclarationFactoryOrNull
+                if (existing != null) {
+                    check(existing.builtinModuleData == moduleData) { "Primitive session has conflicting module owners" }
+                    existing
+                } else {
+                    CfirPrimitiveDeclarationFactory(session, moduleData).also {
+                        session.register(CfirPrimitiveDeclarationFactory::class, it)
+                    }
+                }
+            }
     }
 
     /**
      * primitive 声明缓存：classId → 已合成的 class-like 声明。
      */
-    private val declarationsByClassId: Map<ClassId, CfirPrimitiveTypeDeclaration> by lazy(LazyThreadSafetyMode.PUBLICATION) {
+    private val declarationsByClassId: Map<ClassId, CfirPrimitiveTypeDeclaration> by lazy {
         PrimitiveTypeKind.entries.associateBy(
             keySelector = { kind -> kind.classId },
             valueTransform = ::buildPrimitiveDeclaration,
@@ -121,3 +125,7 @@ class CfirPrimitiveDeclarationFactory(
         return declaration
     }
 }
+
+/** 注册表只用于获取正式 primitive factory；不进入 session 的组合/source symbol provider。 */
+private val CfirSession.primitiveDeclarationFactoryOrNull: CfirPrimitiveDeclarationFactory?
+    by CfirSession.nullableSessionComponentAccessor()

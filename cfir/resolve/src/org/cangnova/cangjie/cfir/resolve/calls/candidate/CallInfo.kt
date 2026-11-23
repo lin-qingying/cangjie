@@ -113,7 +113,7 @@ open class CallInfo(
      */
     override val semanticCallKind: AbstractCallKind
         get() = when (callKind) {
-            CallKind.Function -> AbstractCallKind.Function
+            CallKind.Function, CallKind.SyntheticSelect -> AbstractCallKind.Function
             CallKind.DelegatingConstructorCall -> AbstractCallKind.DelegatingConstructorCall
             CallKind.NamedValueAccess -> AbstractCallKind.NamedValueAccess
             CallKind.EnumConstructorCall -> AbstractCallKind.EnumConstructorCall

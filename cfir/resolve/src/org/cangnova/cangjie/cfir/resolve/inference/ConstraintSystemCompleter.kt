@@ -262,6 +262,14 @@ class ConstraintSystemCompleter(
         val variableForFixation = variableFixationFinder.findFirstVariableForFixation(
             allTypeVariables, postponedArguments, completionMode, topLevelType,
         )
+        if (java.lang.Boolean.getBoolean("cangjie.debug.resourceSource")) {
+            println("FIXATION ORDER mode=$completionMode candidates=" + allTypeVariables.joinToString {
+                "${System.identityHashCode(it)}:$it"
+            } + " chosen=${variableForFixation?.variable?.let(System::identityHashCode)} " +
+                "ready=${variableForFixation?.isReady} pending=" + notFixedTypeVariables.keys.joinToString {
+                    "${System.identityHashCode(it)}:$it"
+                })
+        }
         return variableForFixation
     }
 
@@ -317,7 +325,7 @@ class ConstraintSystemCompleter(
      * 仅处理 lambda（[ConeLambdaWithTypeVariableAsExpectedTypeAtom]），
      * 可调用引用（[ConeResolvedCallableReferenceAtom]）暂不支持转换。
      *
-     * 仓颉函数类型通过 argumentsCount() > 0 判断。
+     * 仓颉函数类型使用类型系统的显式函数种类协议；参数个数不代表类型种类。
      */
     private fun transformToAtomWithNewFunctionExpectedType(
         c: ConstraintSystemCompletionContext,
@@ -325,7 +333,7 @@ class ConstraintSystemCompleter(
         argument: PostponedAtomWithRevisableExpectedType,
     ): Boolean = with(c) {
         val revisedExpectedType = argument.revisedExpectedType
-            ?.takeIf { it.argumentsCount() > 0 }?.asCone()
+            ?.takeIf { it.isFunctionType() }?.asCone()
             ?: return false
 
         when (argument) {
@@ -481,14 +489,14 @@ class ConstraintSystemCompleter(
         fun ConeTypeVariable?.toTypeConstructor(): TypeConstructorMarker? =
             this?.typeConstructor?.takeIf { it in notFixedTypeVariables.keys }
 
-        fun ConeCangJieType.collectInputTypeVariables() {
-            typeConstructor()
-                ?.takeIf { it in notFixedTypeVariables }
-                ?.let(result::add)
-            for (constructor in extractTypeVariables()) {
+        fun ConeCangJieType.collectBoundaryTypeVariables() {
+            // 仓颉函数/元组的 typeArguments 为空；完成边界必须遍历真实语义组成类型。
+            contains { type ->
+                val constructor = type.typeConstructor()
                 if (constructor in notFixedTypeVariables) {
                     result.add(constructor)
                 }
+                false
             }
         }
 
@@ -521,13 +529,16 @@ class ConstraintSystemCompleter(
                     candidate.additionalCompletionVariables.filterTo(result) { typeConstructor ->
                         typeConstructor in notFixedTypeVariables
                     }
+                    // 仓颉构造器的 scope 可以已经实例化 owner，签名中的实际变量不再
+                    // 属于本候选的 freshVariables。按真实返回签名保留这些完成边界变量。
+                    candidate.substitutedReturnType().collectBoundaryTypeVariables()
                 }
             ) { postponedAtom ->
                 when (postponedAtom) {
                     is ConeResolvedLambdaAtom -> {
                         result.addIfNotNull(postponedAtom.typeVariableForLambdaReturnType.toTypeConstructor())
                         postponedAtom.inputTypes.forEach { inputType ->
-                            inputType.collectInputTypeVariables()
+                            inputType.collectBoundaryTypeVariables()
                         }
                     }
                     is ConeLambdaWithTypeVariableAsExpectedTypeAtom -> {
@@ -548,6 +559,20 @@ class ConstraintSystemCompleter(
 
         for (topLevelAtom in topLevelAtoms) {
             topLevelAtom.collectAllTypeVariables()
+        }
+
+        // 已记录的返回约束可以依赖 scope 产生的变量，而其调用 carrier 已被暂定写回。
+        // 完成边界沿当前 CS 的真实约束取得传递依赖；未注册或无关的变量不进入求解集合。
+        val dependencies = ArrayDeque(result)
+        while (dependencies.isNotEmpty()) {
+            val variable = dependencies.removeFirst()
+            for (constraint in notFixedTypeVariables.getValue(variable).constraints) {
+                constraint.type.contains { type ->
+                    val constructor = type.typeConstructor()
+                    if (constructor in notFixedTypeVariables && result.add(constructor)) dependencies.addLast(constructor)
+                    false
+                }
+            }
         }
 
         return result.toList()

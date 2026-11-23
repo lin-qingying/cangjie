@@ -242,6 +242,7 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
      * 模式绑定变量符号类型引用。
      */
     val patternBindingVariableSymbolType = type("symbols", "CfirPatternBindingSymbol")
+    val resourceVariableSymbolType = type("symbols", "CfirResourceVariableSymbol")
     /**
      * enum 构造器符号类型引用。
      */
@@ -746,7 +747,7 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
         parent(callableDeclaration)
         +declaredSymbol(enumConstructorSymbolType)
         +field("status", declarationStatusType, withReplace = true, withTransform = true)
-        +FieldSets.typeParameters
+        +listField("typeParameters", typeParameterRef, withTransform = true)
         +field("returnTypeRef", typeRef, withReplace = true, withTransform = true)
         +listField("valueParameters", valueParameter, withTransform = true)
         +field("name", nameType)
@@ -909,6 +910,15 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
     /**
      * 模式变量声明容器节点。
      */
+    /** try 资源直接拥有 initializer，是专用局部变量声明，不属于字段成员。 */
+    val resourceVariable: Element by element(Declaration, name = "ResourceVariable") {
+        parent(variable)
+        +declaredSymbol(resourceVariableSymbolType)
+        +FieldSets.typeParameters
+        +field("returnTypeRef", typeRef, withReplace = true, withTransform = true)
+        +field("name", nameType)
+    }
+
     val patternVariable: Element by element(Declaration, name = "PatternVariable") {
         parent(variable)
         parent(patternTreeOwnerType)
@@ -1000,6 +1010,15 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
         +declaredSymbol(typeParameterSymbolType)
         +field("name", nameType)
         +listField("bounds", typeRef, withTransform = true)
+    }
+
+    /**
+     * 构造后类型的参数引用；参数声明和 symbol 仍由实际 class-like owner 唯一持有。
+     *
+     * 对齐 Kotlin FirConstructedClassTypeParameterRef，不能在 constructor 下重复声明 owner 参数。
+     */
+    val constructedClassTypeParameterRef: Element by element(Declaration) {
+        parent(typeParameterRef)
     }
 
     /**
@@ -1364,6 +1383,8 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
      */
     val ifExpression: Element by element(Expression, name = "IfExpression") {
         parent(expression)
+        // 与 Kotlin when 相同，分支 select 的实际候选由表达式本身承载。
+        parent(resolvable)
         +field("condition", expression, withTransform = true)
         +field("thenBranch", block, withTransform = true)
         +field("elseBranch", expression, nullable = true, withTransform = true)
@@ -1374,6 +1395,8 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
      */
     val matchExpression: Element by element(Expression, name = "MatchExpression") {
         parent(expression)
+        // 对位 Kotlin when/try：分支 select 的引用由真实表达式持有。
+        parent(resolvable)
         +field("subject", expression, withTransform = true, nullable = true)
         +listField("branches", matchBranch, withTransform = true)
         +field("exhaustiveness", matchExhaustivenessStatusType, withReplace = true) {
@@ -1472,6 +1495,8 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
         }
         +field("bindingName", nameType, nullable = true)
         +field("isWildcard", booleanType)
+        +field("resolvedTypeRef", resolvedTypeRef, nullable = true, withReplace = true, withTransform = true)
+        +field("bindingVariable", patternBindingVariable, nullable = true, withReplace = true, withTransform = true)
         +listField("typeRefs", typeRef, withReplace = true, withTransform = true) {
             isOverride = true
             replaceOverride = true
@@ -1522,7 +1547,9 @@ val forInExpression: Element by element(Expression, name = "ForInExpression") {
      */
     val tryExpression: Element by element(Expression, name = "TryExpression") {
         parent(expression)
-        +listField("resources", fieldVariable, withReplace = true, withTransform = true)
+        // 对位 Kotlin when/try：分支 select 的引用由真实表达式持有。
+        parent(resolvable)
+        +listField("resources", resourceVariable, withReplace = true, withTransform = true)
         +field("tryBlock", block, withTransform = true)
         +listField("handlers", handleClause, withTransform = true)
         +listField("catches", catchClause, withTransform = true)
@@ -1977,7 +2004,10 @@ val forInExpression: Element by element(Expression, name = "ForInExpression") {
      */
     val resolvedNamedReference: Element by element(Reference, name = "ResolvedNamedReference") {
         parent(namedReference)
-        +field("resolvedSymbol", symbolType)
+        +field("resolvedSymbol", symbolType) {
+            symbolFieldRole = AbstractField.SymbolFieldRole.REFERENCED
+            withBindThis = false
+        }
     }
 
     /**

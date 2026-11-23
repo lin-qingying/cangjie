@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.cfir.serialization.deserialize
 
+import org.cangnova.cangjie.test.bindCjoFixture
 import PackageFormat.ClassInfo
 import PackageFormat.CjoVersion
 import PackageFormat.CompositeTyInfo
@@ -217,13 +218,15 @@ class CjoFullIdResolverTest {
                 val pkg = requireNotNull(cjoManager.loadPackage("main.pkg"))
                 val header = requireNotNull(cjoManager.loadPackageHeader("main.pkg"))
 
+                val metadataBinding = bindCjoFixture(TestModuleData, cjoManager, setOf(tempDir.toPath()))
                 return FullIdTestFixture(
                     CfirDeserializationContext(
                         pkg = pkg,
                         header = header,
                         moduleData = TestModuleData,
                         cjoManager = cjoManager,
-                        classSymbolLookup = cjoManager.deserializedSymbolLookups.forModuleData(TestModuleData),
+                        classSymbolLookup = cjoManager.deserializedSymbolLookups.forBinding(metadataBinding, TestModuleData,
+                            CjoDeserializationMode.FULL),
                     ),
                 )
             }
@@ -281,13 +284,15 @@ class CjoFullIdResolverTest {
                 val pkg = requireNotNull(cjoManager.loadPackage("main.pkg"))
                 val header = requireNotNull(cjoManager.loadPackageHeader("main.pkg"))
 
+                val metadataBinding = bindCjoFixture(TestModuleData, cjoManager, setOf(tempDir.toPath()))
                 return FullIdTestFixture(
                     CfirDeserializationContext(
                         pkg = pkg,
                         header = header,
                         moduleData = TestModuleData,
                         cjoManager = cjoManager,
-                        classSymbolLookup = cjoManager.deserializedSymbolLookups.forModuleData(TestModuleData),
+                        classSymbolLookup = cjoManager.deserializedSymbolLookups.forBinding(metadataBinding, TestModuleData,
+                            CjoDeserializationMode.FULL),
                     ),
                 )
             }
@@ -454,6 +459,10 @@ class CjoFullIdResolverTest {
          * FullId 测试使用的库 session。
          */
         private object TestSession : CfirSession(Kind.Library) {
+            init {
+                register(org.cangnova.cangjie.cfir.session.CfirLanguageSettingsComponent::class,
+                    org.cangnova.cangjie.cfir.session.CfirLanguageSettingsComponent(org.cangnova.cangjie.LanguageVersionSettingsImpl.DEFAULT))
+            }
             /**
              * 返回稳定的测试 session 名称，便于断言失败时定位。
              */

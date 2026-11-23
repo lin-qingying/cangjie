@@ -239,6 +239,16 @@ internal class ControlFlowGraphCopier : ControlFlowGraphVisitor<CFGNode<*>, Unit
     override fun visitIfEnterNode(node: IfEnterNode, data: Unit): CFGNode<*> =
         IfEnterNode(get(node.owner), node.fir, node.level)
 
+    /** 复制真实 if 条件及分支角色。 */
+    override fun visitIfConditionExitNode(node: IfConditionExitNode, data: Unit): CFGNode<*> =
+        IfConditionExitNode(get(node.owner), node.fir, node.level)
+
+    override fun visitIfBranchResultEnterNode(node: IfBranchResultEnterNode, data: Unit): CFGNode<*> =
+        IfBranchResultEnterNode(get(node.owner), node.fir, node.isThen, node.level)
+
+    override fun visitIfBranchResultExitNode(node: IfBranchResultExitNode, data: Unit): CFGNode<*> =
+        IfBranchResultExitNode(get(node.owner), node.fir, node.isThen, node.level)
+
     /** 复制 if 出口节点。 */
     override fun visitIfExitNode(node: IfExitNode, data: Unit): CFGNode<*> =
         IfExitNode(get(node.owner), node.fir, node.level)
@@ -282,6 +292,22 @@ internal class ControlFlowGraphCopier : ControlFlowGraphVisitor<CFGNode<*>, Unit
     /** 复制 catch 子句入口节点。 */
     override fun visitCatchClauseEnterNode(node: CatchClauseEnterNode, data: Unit): CFGNode<*> =
         CatchClauseEnterNode(get(node.owner), node.fir, node.level)
+
+    /** 异常出口和 continuation 均映射到复制后的图和真实源节点。 */
+    override fun visitCompletionOverrideNode(node: CompletionOverrideNode, data: Unit): CFGNode<*> =
+        CompletionOverrideNode(get(node.owner), get(node.sourceNode), node.level)
+
+    override fun visitExceptionExitNode(node: ExceptionExitNode, data: Unit): CFGNode<*> =
+        ExceptionExitNode(get(node.owner), node.fir, node.level)
+
+    override fun visitExceptionTransferNode(node: ExceptionTransferNode, data: Unit): CFGNode<*> =
+        ExceptionTransferNode(get(node.owner), get(node.sourceNode), node.level)
+
+    override fun visitExceptionDispatchNode(node: ExceptionDispatchNode, data: Unit): CFGNode<*> =
+        ExceptionDispatchNode(get(node.owner), node.fir, get(node.transfer), node.precedingCatches.map(::get), node.level)
+
+    override fun visitResourceCleanupNode(node: ResourceCleanupNode, data: Unit): CFGNode<*> =
+        ResourceCleanupNode(get(node.owner), node.fir, node.level)
 
     /** 复制 catch 子句出口节点。 */
     override fun visitCatchClauseExitNode(node: CatchClauseExitNode, data: Unit): CFGNode<*> =
@@ -398,6 +424,10 @@ internal class ControlFlowGraphCopier : ControlFlowGraphVisitor<CFGNode<*>, Unit
     /** 复制字段初始化器出口节点。 */
     override fun visitFieldInitializerExitNode(node: FieldInitializerExitNode, data: Unit): CFGNode<*> =
         FieldInitializerExitNode(get(node.owner), node.fir, node.level)
+    override fun visitResourceInitializerEnterNode(node: ResourceInitializerEnterNode, data: Unit): CFGNode<*> =
+        ResourceInitializerEnterNode(get(node.owner), node.fir, node.level)
+    override fun visitResourceInitializerExitNode(node: ResourceInitializerExitNode, data: Unit): CFGNode<*> =
+        ResourceInitializerExitNode(get(node.owner), node.fir, node.level)
 
     /** 复制 spawn 表达式节点。 */
     override fun visitSpawnExpressionNode(node: SpawnExpressionNode, data: Unit): CFGNode<*> =

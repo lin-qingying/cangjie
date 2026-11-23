@@ -2399,6 +2399,12 @@ class CfirAnalysisDiagnostics2TestGenerated : AbstractCfirLightTreeDiagnosticsTe
         fun testTypeReferenceRules() {
             runTest("cfir/analysis-tests/testData/diagnostics2/type-mismatch/typeReferenceRules.cj")
         }
+
+        @TestMetadata("varargArrayByteLiteral.cj")
+        @Test
+        fun testVarargArrayByteLiteral() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/type-mismatch/varargArrayByteLiteral.cj")
+        }
     }
 
     @TestMetadata("typealias")

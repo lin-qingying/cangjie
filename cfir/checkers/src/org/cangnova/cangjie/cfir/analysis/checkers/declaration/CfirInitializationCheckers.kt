@@ -878,6 +878,7 @@ private class CfirInitializationFlowAnalyzer(
     ): InitializationState = when (statement) {
         is CfirPatternVariable -> analyzePatternVariable(statement, state)
         is CfirFieldVariable -> analyzeFieldVariable(statement, state)
+        is CfirResourceVariable -> analyzeResourceVariable(statement, state)
         is CfirFunction -> analyzeNestedFunctionDeclaration(statement, state)
         is CfirExpression -> analyzeExpression(statement, state)
         else -> state
@@ -1397,7 +1398,17 @@ private class CfirInitializationFlowAnalyzer(
         expression: CfirTryExpression,
         state: InitializationState,
     ): InitializationState {
-        val tryState = analyzeScopedBlock(expression.tryBlock, state)
+        // 资源名字同时可见，初始化状态仍按源码顺序推进；前向读取必须命中未初始化的真实资源。
+        val declaredResources = state.declareAll(
+            trackedVariables = expression.resources.map { resource ->
+                TrackedVariableInfo(resource.symbol, resource.name, TrackedVariableKind.LOCAL_VARIABLE)
+            },
+            initializedSymbols = emptySet(),
+        )
+        val resourceState = expression.resources.fold(declaredResources) { current, resource ->
+            analyzeResourceInitializer(resource, current)
+        }
+        val tryState = analyzeScopedBlock(expression.tryBlock, resourceState).retainOnly(state.tracked.keys)
         // 官方 `CheckInitInTryExpr` 先分析 try 块再分析 catch 块：try 块中已全路径初始化的
         // `let` 变量在 catch 块中再次赋值属于重复赋值（CANNOT_ASSIGN_TO_IMMUTABLE），
         // 因此 catch 块的入口状态必须是 try 块分析后的状态，而不是 try 之前的状态。
@@ -1407,10 +1418,13 @@ private class CfirInitializationFlowAnalyzer(
         // 之后 use(c) 报 sema_used_before_initialization）。
         val catchEntryState = tryState.withoutTermination()
         val catchStates = expression.catches.map { catchClause ->
-            analyzeScopedBlock(catchClause.body, catchEntryState)
+            analyzePatternHostBody(catchClause.body, catchClause.pattern.bindingVariable, catchEntryState)
+        }
+        val handleStates = expression.handlers.map { handler ->
+            analyzePatternHostBody(handler.body, handler.commandPattern.bindingVariable, catchEntryState)
         }
 
-        val mergedWithoutFinally = (listOf(tryState) + catchStates).reduce(::mergeBranchStates)
+        val mergedWithoutFinally = (listOf(tryState) + catchStates + handleStates).reduce(::mergeBranchStates)
         val finallyBlock = expression.finallyBlock ?: return mergedWithoutFinally
         val afterFinally = analyzeScopedBlock(finallyBlock, mergedWithoutFinally.withoutTermination())
         return if (mergedWithoutFinally.terminated) afterFinally.terminate() else afterFinally
@@ -1419,6 +1433,38 @@ private class CfirInitializationFlowAnalyzer(
     /**
      * 分析循环表达式。
      */
+    /** 在语句入口登记资源身份，再分析其 initializer；try 宿主使用批量登记入口。 */
+    private fun analyzeResourceVariable(variable: CfirResourceVariable, state: InitializationState): InitializationState {
+        val declared = state.declare(
+            TrackedVariableInfo(variable.symbol, variable.name, TrackedVariableKind.LOCAL_VARIABLE),
+            initialized = false,
+        )
+        return analyzeResourceInitializer(variable, declared)
+    }
+
+    /** initializer 按源码顺序求值，完成后才将当前资源标记为已初始化。 */
+    private fun analyzeResourceInitializer(variable: CfirResourceVariable, state: InitializationState): InitializationState {
+        val hasTypeMismatch = with(context) {
+            with(EmptyDiagnosticReporter) { checkVariableInitializerTypeMismatch(variable) }
+        }
+        val afterInitializer = if (hasTypeMismatch) state
+        else variable.initializer?.let { analyzeExpression(it, state) } ?: state
+        return if (variable.initializer != null) afterInitializer.markInitialized(variable.symbol) else afterInitializer
+    }
+
+    /** catch/command 在进入正文之前已初始化，退出子句后移除该宿主绑定。 */
+    private fun analyzePatternHostBody(
+        body: CfirBlock,
+        binding: CfirPatternBindingVariable?,
+        state: InitializationState,
+    ): InitializationState {
+        val entryState = if (binding == null) state else state.declare(
+            TrackedVariableInfo(binding.symbol, binding.name, TrackedVariableKind.LOCAL_VARIABLE),
+            initialized = true,
+        )
+        return analyzeScopedBlock(body, entryState).retainOnly(state.tracked.keys)
+    }
+
     private fun analyzeLoopExpression(
         expression: CfirLoopExpression,
         state: InitializationState,
@@ -2750,6 +2796,9 @@ private data class TrackedVariableInfo(
      * 线性遍历尚未看到第二个语法赋值，也必须按重复赋值处理。
      */
     val declarationRepeatableDepth: Int = 0,
+
+    /** 局部存储声明所属的函数层级；同一函数内的前向读取不属于闭包捕获。 */
+    val declarationFunctionDepth: Int = 0,
 ) {
     /**
      * 是否为实例字段或主构造成员属性。
@@ -2830,6 +2879,9 @@ private data class InitializationState(
      */
     val inNestedFunction: Boolean,
 
+    /** 每次进入嵌套 callable 都建立独立层级，不能把已有嵌套状态复用为同一捕获边界。 */
+    val functionDepth: Int,
+
     /**
      * 当前是否处于 static 字段初始化器求值上下文。
      *
@@ -2861,6 +2913,7 @@ private data class InitializationState(
             inMemberInitializer = false,
             memberInitializerOwner = null,
             inNestedFunction = false,
+            functionDepth = 0,
             inStaticFieldInitializer = false,
             repeatableDepth = 0,
         )
@@ -2877,6 +2930,7 @@ private data class InitializationState(
         val normalizedTrackedVariable = trackedVariable.copy(
             symbol = normalizedSymbol,
             declarationRepeatableDepth = repeatableDepth,
+            declarationFunctionDepth = functionDepth,
         )
         val nextTracked = tracked + (normalizedSymbol to normalizedTrackedVariable)
         val nextInitialized = if (initialized) {
@@ -3048,6 +3102,8 @@ private data class InitializationState(
         val variableInfo = tracked[normalizedSymbol] ?: return false
         return inNestedFunction &&
                 variableInfo.kind.canBeCapturedBeforeInitialization &&
+                (variableInfo.kind != TrackedVariableKind.LOCAL_VARIABLE ||
+                        variableInfo.declarationFunctionDepth < functionDepth) &&
                 normalizedSymbol !in initialized
     }
 
@@ -3083,12 +3139,13 @@ private data class InitializationState(
      * 进入嵌套函数体上下文。
      */
     fun withNestedFunctionContext(): InitializationState =
-        if (inNestedFunction) this else copy(inNestedFunction = true)
+        copy(inNestedFunction = true, functionDepth = functionDepth + 1)
 
     /**
      * 取两个分支状态的交集。
      */
     fun intersect(other: InitializationState): InitializationState {
+        check(functionDepth == other.functionDepth) { "Initialization flows from different functions cannot be merged" }
         val sharedTrackedSymbols = tracked.keys.intersect(other.tracked.keys)
         return InitializationState(
             tracked = tracked.filterKeys { symbol -> symbol in sharedTrackedSymbols },
@@ -3104,6 +3161,7 @@ private data class InitializationState(
             inMemberInitializer = inMemberInitializer && other.inMemberInitializer,
             memberInitializerOwner = commonMemberInitializerOwner(other),
             inNestedFunction = inNestedFunction && other.inNestedFunction,
+            functionDepth = functionDepth,
             inStaticFieldInitializer = inStaticFieldInitializer && other.inStaticFieldInitializer,
             repeatableDepth = minOf(repeatableDepth, other.repeatableDepth),
         )

@@ -2,9 +2,14 @@ package org.cangnova.cangjie.cfir
 
 import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.declarations.CfirDeclarationStatus
 import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirResolvedDeclarationStatus
+import org.cangnova.cangjie.cfir.declarations.builder.buildResolvedDeclarationStatus
+import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
+import org.cangnova.cangjie.descriptors.Modality
+import org.cangnova.cangjie.descriptors.Visibility
 import org.cangnova.cangjie.cfir.renderer.CfirRenderer
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.CfirSessionComponent
@@ -246,4 +251,85 @@ internal fun CfirMemberDeclaration.resolvedStatus(): CfirResolvedDeclarationStat
     }
 
     return status
+}
+
+/** 复制声明状态并保留 resolved 身份；签名副本不能共享仍可变的源码状态。 */
+fun CfirDeclarationStatus.copy(
+    visibility: Visibility? = this.visibility,
+    modality: Modality? = this.modality,
+    isOverride: Boolean = this.isOverride,
+    isOperator: Boolean = this.isOperator,
+    isStatic: Boolean = this.isStatic,
+    isConst: Boolean = this.isConst,
+    isMut: Boolean = this.isMut,
+    isUnsafe: Boolean = this.isUnsafe,
+    isForeign: Boolean = this.isForeign,
+    isC: Boolean = this.isC,
+    isCommon: Boolean = this.isCommon,
+    isFromCommonPart: Boolean = this.isFromCommonPart,
+    isSpecific: Boolean = this.isSpecific,
+    isCommonWithDefault: Boolean = this.isCommonWithDefault,
+    isRedef: Boolean = this.isRedef,
+    isDefault: Boolean = this.isDefault,
+    isAbstract: Boolean = this.isAbstract,
+    isOpen: Boolean = this.isOpen,
+    isSealed: Boolean = this.isSealed,
+): CfirDeclarationStatus {
+    val newVisibility = visibility ?: this.visibility
+    val newModality = modality ?: this.modality
+    if (this is CfirResolvedDeclarationStatus) {
+        return buildResolvedDeclarationStatus {
+            source = this@copy.source
+            this.visibility = newVisibility
+            this.modality = checkNotNull(newModality)
+            visibilityExplicitness = this@copy.visibilityExplicitness
+            modalityExplicitness = this@copy.modalityExplicitness
+            bodyPresence = this@copy.bodyPresence
+            isDeclarationFile = this@copy.isDeclarationFile
+            isVisibilityExplicit = this@copy.isVisibilityExplicit
+            isModalityExplicit = this@copy.isModalityExplicit
+            isAbstractExplicit = this@copy.isAbstractExplicit
+            this.isOverride = isOverride
+            this.isOperator = isOperator
+            this.isStatic = isStatic
+            this.isConst = isConst
+            this.isMut = isMut
+            this.isUnsafe = isUnsafe
+            this.isForeign = isForeign
+            this.isC = isC
+            this.isCommon = isCommon
+            this.isFromCommonPart = isFromCommonPart
+            this.isSpecific = isSpecific
+            this.isCommonWithDefault = isCommonWithDefault
+            this.isRedef = isRedef
+            this.isDefault = isDefault
+            this.isAbstract = isAbstract
+            this.isOpen = isOpen
+            this.isSealed = isSealed
+        }
+    }
+    return CfirDeclarationStatusImpl(newVisibility, newModality).apply {
+        visibilityExplicitness = this@copy.visibilityExplicitness
+        modalityExplicitness = this@copy.modalityExplicitness
+        bodyPresence = this@copy.bodyPresence
+        isDeclarationFile = this@copy.isDeclarationFile
+        isAbstractExplicit = this@copy.isAbstractExplicit
+        this.isOverride = isOverride
+        this.isOperator = isOperator
+        this.isStatic = isStatic
+        this.isConst = isConst
+        this.isMut = isMut
+        this.isUnsafe = isUnsafe
+        this.isForeign = isForeign
+        this.isC = isC
+        this.isCommon = isCommon
+        this.isFromCommonPart = isFromCommonPart
+        this.isSpecific = isSpecific
+        this.isCommonWithDefault = isCommonWithDefault
+        this.isRedef = isRedef
+        this.isDefault = isDefault
+        this.isAbstract = isAbstract
+        this.isOpen = isOpen
+        this.isSealed = isSealed
+    }
 }

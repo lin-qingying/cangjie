@@ -691,6 +691,13 @@ class CfirFieldVariableSymbol(
         if (isBound) "CfirFieldVariableSymbol(${cfir.name})" else "CfirFieldVariableSymbol(unbound)"
 }
 
+/** try-with-resource 的专用局部变量符号，类型与 initializer 由资源声明本身持有。 */
+class CfirResourceVariableSymbol(
+    override val callableId: CallableId,
+) : CfirVariableSymbol<CfirResourceVariable>(callableId) {
+    override val name: Name get() = callableId.callableName
+}
+
 /** 模式变量符号，对应模式匹配中绑定的变量，如 `case Foo(x) =>` 中的 `x`。 */
 class CfirPatternVariableSymbol(
   callableId: CallableId,

@@ -79,6 +79,11 @@ object ImplementationConfigurator : AbstractCfirTreeImplementationConfigurator()
 
         // ---------- Lazy 节点：访问任何字段时抛错 ----------
 
+        // 对齐 Kotlin 的 ExpressionStub 具名实现；它沿用 Expression visitor，不引入新的树节点种类。
+        impl(expression, "CfirExpressionStub") {
+            publicImplementation()
+        }
+
         impl(lazyBlock) {
             val error = """error("CfirLazyBlock should be resolved before accessing")"""
             default("source") { value = error; withGetter = true }
@@ -439,10 +444,12 @@ object ImplementationConfigurator : AbstractCfirTreeImplementationConfigurator()
         property,
         propertyAccessor,
         fieldVariable,
+        resourceVariable,
         patternVariable,
         patternBindingVariable,
         valueParameter,
         typeParameter,
+        constructedClassTypeParameterRef,
 
         // -------- 语句 / 表达式节点 --------
         ifAvailableExpression,

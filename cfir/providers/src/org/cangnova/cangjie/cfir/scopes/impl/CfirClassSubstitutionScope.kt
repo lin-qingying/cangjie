@@ -28,7 +28,6 @@ import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.builder.*
 import org.cangnova.cangjie.cfir.originalForSubstitutionOverride
-import org.cangnova.cangjie.cfir.originalForSubstitutionOverrideAttr
 import org.cangnova.cangjie.cfir.resolve.providers.createCallableOwnerUseSiteSubstitutor
 import org.cangnova.cangjie.cfir.resolve.providers.getContainingClass
 import org.cangnova.cangjie.cfir.resolve.providers.getContainingExtend
@@ -471,24 +470,18 @@ class CfirClassSubstitutionScope(
         val ownerSubstitutor = computeCallableSubstitutor(symbol)
         if (ownerSubstitutor === ConeSubstitutor.Empty || ownerSubstitutor == null) return symbol
 
-        symbol.lazyResolveToPhase(CfirResolvePhase.TYPES)
-        val declaration = symbol.cfir as? CfirNamedFunction ?: return symbol
+        symbol.lazyResolveToPhase(CfirResolvePhase.STATUS)
+        val declaration = symbol.cfir
         val copiedSymbol = CfirNamedFunctionSymbol(symbol.callableId)
         val typeParameterSubstitution = declaration.createSubstitutedTypeParameters(copiedSymbol, ownerSubstitutor)
         val substitutor = typeParameterSubstitution.substitutor
         val returnTypeData = declaration.substitutedReturnTypeData(symbol, substitutor)
-        val copiedDeclaration = buildNamedFunctionCopy(declaration) {
-            origin = substitutionOverrideOrigin(symbol)
-            this.symbol = copiedSymbol
-            dispatchReceiverType = substituteDispatchReceiverType(declaration.dispatchReceiverType, substitutor)
-            typeParameters.clear()
-            typeParameters += typeParameterSubstitution.typeParameters
-            returnTypeRef = returnTypeData.typeRef
-            valueParameters.clear()
-            valueParameters += substituteValueParameters(declaration.valueParameters, substitutor)
-        }
-        copiedDeclaration.attributes.deferredCallableCopyReturnType = returnTypeData.deferredReturnType
-        copiedDeclaration.originalForSubstitutionOverrideAttr = declaration
+        CfirFakeOverrideGenerator.createCopyForCfirFunction(
+            copiedSymbol, declaration, session, substitutionOverrideOrigin(symbol),
+            substituteDispatchReceiverType(declaration.dispatchReceiverType, substitutor),
+            declaration.valueParameters.map { substituteTypeRef(it.returnTypeRef, substitutor) },
+            typeParameterSubstitution.typeParameters, returnTypeData.typeRef, returnTypeData.deferredReturnType,
+        )
         return copiedSymbol
     }
 
@@ -499,24 +492,20 @@ class CfirClassSubstitutionScope(
         val ownerSubstitutor = computeCallableSubstitutor(symbol)
         if (ownerSubstitutor === ConeSubstitutor.Empty || ownerSubstitutor == null) return symbol
 
-        symbol.lazyResolveToPhase(CfirResolvePhase.TYPES)
+        symbol.lazyResolveToPhase(CfirResolvePhase.STATUS)
         val declaration = symbol.cfir
         val copiedSymbol = CfirPropertySymbol(symbol.callableId)
         val typeParameterSubstitution = declaration.createSubstitutedTypeParameters(copiedSymbol, ownerSubstitutor)
         val substitutor = typeParameterSubstitution.substitutor
         val returnTypeData = declaration.substitutedReturnTypeData(symbol, substitutor)
-        val copiedDeclaration = buildPropertyCopy(declaration) {
-            origin = substitutionOverrideOrigin(symbol)
-            this.symbol = copiedSymbol
-            dispatchReceiverType = substituteDispatchReceiverType(declaration.dispatchReceiverType, substitutor)
-            typeParameters.clear()
-            typeParameters += typeParameterSubstitution.typeParameters
-            returnTypeRef = returnTypeData.typeRef
-            getter = substituteAccessorFunction(declaration.getter, substitutor)
-            setter = substituteAccessorFunction(declaration.setter, substitutor)
-        }
-        copiedDeclaration.attributes.deferredCallableCopyReturnType = returnTypeData.deferredReturnType
-        copiedDeclaration.originalForSubstitutionOverrideAttr = declaration
+        CfirFakeOverrideGenerator.createCopyForCfirProperty(
+            copiedSymbol, declaration, session, substitutionOverrideOrigin(symbol),
+            substituteDispatchReceiverType(declaration.dispatchReceiverType, substitutor),
+            typeParameterSubstitution.typeParameters, returnTypeData.typeRef,
+            substituteAccessorFunction(declaration.getter, substitutor, copiedSymbol),
+            substituteAccessorFunction(declaration.setter, substitutor, copiedSymbol),
+            returnTypeData.deferredReturnType,
+        )
         return copiedSymbol
     }
 
@@ -527,22 +516,17 @@ class CfirClassSubstitutionScope(
         val ownerSubstitutor = computeCallableSubstitutor(symbol)
         if (ownerSubstitutor === ConeSubstitutor.Empty || ownerSubstitutor == null) return symbol
 
-        symbol.lazyResolveToPhase(CfirResolvePhase.TYPES)
+        symbol.lazyResolveToPhase(CfirResolvePhase.STATUS)
         val declaration = symbol.cfir
         val copiedSymbol = CfirFieldVariableSymbol(symbol.callableId)
         val typeParameterSubstitution = declaration.createSubstitutedTypeParameters(copiedSymbol, ownerSubstitutor)
         val substitutor = typeParameterSubstitution.substitutor
         val returnTypeData = declaration.substitutedReturnTypeData(symbol, substitutor)
-        val copiedDeclaration = buildFieldVariableCopy(declaration) {
-            origin = substitutionOverrideOrigin(symbol)
-            this.symbol = copiedSymbol
-            dispatchReceiverType = substituteDispatchReceiverType(declaration.dispatchReceiverType, substitutor)
-            typeParameters.clear()
-            typeParameters += typeParameterSubstitution.typeParameters
-            returnTypeRef = returnTypeData.typeRef
-        }
-        copiedDeclaration.attributes.deferredCallableCopyReturnType = returnTypeData.deferredReturnType
-        copiedDeclaration.originalForSubstitutionOverrideAttr = declaration
+        CfirFakeOverrideGenerator.createCopyForCfirField(
+            copiedSymbol, declaration, session, substitutionOverrideOrigin(symbol),
+            substituteDispatchReceiverType(declaration.dispatchReceiverType, substitutor),
+            typeParameterSubstitution.typeParameters, returnTypeData.typeRef, returnTypeData.deferredReturnType,
+        )
         return copiedSymbol
     }
 
@@ -553,24 +537,18 @@ class CfirClassSubstitutionScope(
         val ownerSubstitutor = computeCallableSubstitutor(symbol)
         if (ownerSubstitutor === ConeSubstitutor.Empty || ownerSubstitutor == null) return symbol
 
-        symbol.lazyResolveToPhase(CfirResolvePhase.TYPES)
+        symbol.lazyResolveToPhase(CfirResolvePhase.STATUS)
         val declaration = symbol.cfir
         val copiedSymbol = CfirConstructorSymbol(symbol.callableId)
         val typeParameterSubstitution = declaration.createSubstitutedTypeParameters(copiedSymbol, ownerSubstitutor)
         val substitutor = typeParameterSubstitution.substitutor
         val returnTypeData = declaration.substitutedReturnTypeData(symbol, substitutor)
-        val copiedDeclaration = buildConstructorCopy(declaration) {
-            origin = substitutionOverrideOrigin(symbol)
-            this.symbol = copiedSymbol
-            dispatchReceiverType = substituteDispatchReceiverType(declaration.dispatchReceiverType, substitutor)
-            typeParameters.clear()
-            typeParameters += typeParameterSubstitution.typeParameters
-            returnTypeRef = returnTypeData.typeRef
-            valueParameters.clear()
-            valueParameters += substituteValueParameters(declaration.valueParameters, substitutor)
-        }
-        copiedDeclaration.attributes.deferredCallableCopyReturnType = returnTypeData.deferredReturnType
-        copiedDeclaration.originalForSubstitutionOverrideAttr = declaration
+        CfirFakeOverrideGenerator.createCopyForCfirConstructor(
+            copiedSymbol, declaration, session, substitutionOverrideOrigin(symbol),
+            substituteDispatchReceiverType(declaration.dispatchReceiverType, substitutor),
+            declaration.valueParameters.map { substituteTypeRef(it.returnTypeRef, substitutor) },
+            typeParameterSubstitution.typeParameters, returnTypeData.typeRef, returnTypeData.deferredReturnType,
+        )
         return copiedSymbol
     }
 
@@ -581,66 +559,43 @@ class CfirClassSubstitutionScope(
         val ownerSubstitutor = computeCallableSubstitutor(symbol)
         if (ownerSubstitutor === ConeSubstitutor.Empty || ownerSubstitutor == null) return symbol
 
-        symbol.lazyResolveToPhase(CfirResolvePhase.TYPES)
+        symbol.lazyResolveToPhase(CfirResolvePhase.STATUS)
         val declaration = symbol.cfir
         val copiedSymbol = CfirEnumConstructorSymbol(symbol.callableId)
-        val typeParameterSubstitution = declaration.createSubstitutedTypeParameters(copiedSymbol, ownerSubstitutor)
-        val substitutor = typeParameterSubstitution.substitutor
+        // 仓颉 enum constructor 没有独立泛型声明：refs 仍归 actual enum owner，
+        // 签名视图只应用 owner substitution，不把 owner 参数克隆为 constructor 的新声明。
+        val substitutor = ownerSubstitutor
         val returnTypeData = declaration.substitutedReturnTypeData(symbol, substitutor)
-        val copiedDeclaration = buildEnumConstructorCopy(declaration) {
-            origin = substitutionOverrideOrigin(symbol)
-            this.symbol = copiedSymbol
-            dispatchReceiverType = substituteDispatchReceiverType(declaration.dispatchReceiverType, substitutor)
-            typeParameters.clear()
-            typeParameters += typeParameterSubstitution.typeParameters
-            returnTypeRef = returnTypeData.typeRef
-            valueParameters.clear()
-            valueParameters += substituteValueParameters(declaration.valueParameters, substitutor)
-        }
-        copiedDeclaration.attributes.deferredCallableCopyReturnType = returnTypeData.deferredReturnType
-        copiedDeclaration.originalForSubstitutionOverrideAttr = declaration
+        CfirFakeOverrideGenerator.createCopyForCfirEnumConstructor(
+            copiedSymbol, declaration, session, substitutionOverrideOrigin(symbol),
+            substituteDispatchReceiverType(declaration.dispatchReceiverType, substitutor),
+            declaration.valueParameters.map { substituteTypeRef(it.returnTypeRef, substitutor) },
+            declaration.typeParameters, returnTypeData.typeRef, returnTypeData.deferredReturnType,
+        )
         return copiedSymbol
     }
 
     /**
      * 替换属性访问器函数。
      */
-    private fun substituteAccessorFunction(function: CfirPropertyAccessor?, substitutor: ConeSubstitutor): CfirPropertyAccessor? {
+    private fun substituteAccessorFunction(
+        function: CfirPropertyAccessor?,
+        substitutor: ConeSubstitutor,
+        propertySymbol: CfirPropertySymbol,
+    ): CfirPropertyAccessor? {
         function ?: return null
         val symbol = function.symbol
+        symbol.lazyResolveToPhase(CfirResolvePhase.STATUS)
         val copiedSymbol = CfirPropertyAccessorSymbol()
         val typeParameterSubstitution = function.createSubstitutedTypeParameters(copiedSymbol, substitutor)
         val accessorSubstitutor = typeParameterSubstitution.substitutor
         val returnTypeData = function.substitutedReturnTypeData(symbol, accessorSubstitutor)
-        val copiedDeclaration = buildPropertyAccessorCopy(function) {
-            origin = substitutionOverrideOrigin(symbol)
-            this.symbol = copiedSymbol
-            dispatchReceiverType = substituteDispatchReceiverType(function.dispatchReceiverType, accessorSubstitutor)
-            typeParameters.clear()
-            typeParameters += typeParameterSubstitution.typeParameters
-            returnTypeRef = returnTypeData.typeRef
-            valueParameters.clear()
-            valueParameters += substituteValueParameters(function.valueParameters, accessorSubstitutor)
-        }
-        copiedDeclaration.attributes.deferredCallableCopyReturnType = returnTypeData.deferredReturnType
-        copiedDeclaration.originalForSubstitutionOverrideAttr = function
-        return copiedDeclaration
-    }
-
-    /**
-     * 替换 value parameter 列表。
-     */
-    private fun substituteValueParameters(
-        valueParameters: List<CfirValueParameter>,
-        substitutor: ConeSubstitutor,
-    ): List<CfirValueParameter> {
-        return valueParameters.map { valueParameter ->
-            val copiedSymbol = org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol(valueParameter.symbol.callableId)
-            buildValueParameterCopy(valueParameter) {
-                symbol = copiedSymbol
-                returnTypeRef = substituteTypeRef(valueParameter.returnTypeRef, substitutor)
-            }
-        }
+        return CfirFakeOverrideGenerator.createCopyForCfirPropertyAccessor(
+            copiedSymbol, propertySymbol, function, session, substitutionOverrideOrigin(symbol),
+            substituteDispatchReceiverType(function.dispatchReceiverType, accessorSubstitutor),
+            function.valueParameters.map { substituteTypeRef(it.returnTypeRef, accessorSubstitutor) },
+            typeParameterSubstitution.typeParameters, returnTypeData.typeRef, returnTypeData.deferredReturnType,
+        )
     }
 
     /**
@@ -701,6 +656,7 @@ class CfirClassSubstitutionScope(
         val newTypeParameters = typeParameterDeclarations.zip(newSymbols).map { (typeParameter, newSymbol) ->
             buildTypeParameterCopy(typeParameter) {
                 origin = substitutionOverrideOrigin(this@createSubstitutedTypeParameters.symbol)
+                resolvePhase = CfirResolvePhase.STATUS
                 containingDeclarationSymbol = copiedSymbol
                 symbol = newSymbol
                 bounds.clear()
@@ -737,7 +693,7 @@ class CfirClassSubstitutionScope(
         substitutor: ConeSubstitutor,
     ): ConeSimpleCangJieType? {
         if (type == null) return null
-        return substitutor.substituteOrSelf(type) as? ConeSimpleCangJieType ?: type
+        return substitutor.substituteOrSelf(type) as ConeSimpleCangJieType
     }
 
     /**

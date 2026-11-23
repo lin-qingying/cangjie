@@ -46,7 +46,7 @@ open class CfirImplicitAwareBodyResolveTransformer(
      *
      * 该状态负责缓存已计算声明并阻断递归 implicit type 解析。
      */
-    private val implicitBodyResolveComputationSession: ImplicitBodyResolveComputationSession,
+    override val implicitBodyResolveComputationSession: ImplicitBodyResolveComputationSession,
     phase: CfirResolvePhase,
     implicitTypeOnly: Boolean,
     returnTypeCalculator: ReturnTypeCalculator,
@@ -189,6 +189,8 @@ open class CfirImplicitAwareBodyResolveTransformer(
                 // 已缓存，直接返回
                 status.transformedDeclaration
             }
+            // 类型试算没有转换原声明，正式声明遍历仍必须解析 initializer 并构造 CFG。
+            is CfirImplicitBodyResolveComputationStatus.ComputedType -> transformation()
             is CfirImplicitBodyResolveComputationStatus.Computing -> {
                 // 递归访问时直接返回原声明
                 declaration

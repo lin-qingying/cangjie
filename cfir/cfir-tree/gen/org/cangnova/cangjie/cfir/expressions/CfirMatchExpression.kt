@@ -6,6 +6,7 @@
 package org.cangnova.cangjie.cfir.expressions
 
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
@@ -14,10 +15,11 @@ import org.cangnova.cangjie.source.CjSourceElement
 /**
  * Generated from: [org.cangnova.cangjie.cfir.tree.generator.CfirTree.matchExpression]
  */
-abstract class CfirMatchExpression : CfirExpression() {
+abstract class CfirMatchExpression : CfirExpression(), CfirResolvable {
     abstract override val source: CjSourceElement?
     abstract override val annotations: List<CfirAnnotation>
     abstract override val coneTypeOrNull: ConeCangJieType?
+    abstract override val calleeReference: CfirReference
     abstract val subject: CfirExpression?
     abstract val branches: List<CfirMatchBranch>
     abstract val exhaustiveness: CfirMatchExhaustivenessStatus
@@ -33,9 +35,13 @@ abstract class CfirMatchExpression : CfirExpression() {
 
     abstract override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?)
 
+    abstract override fun replaceCalleeReference(newCalleeReference: CfirReference)
+
     abstract fun replaceExhaustiveness(newExhaustiveness: CfirMatchExhaustivenessStatus)
 
     abstract override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirMatchExpression
+
+    abstract override fun <D> transformCalleeReference(transformer: CfirTransformer<D>, data: D): CfirMatchExpression
 
     abstract fun <D> transformSubject(transformer: CfirTransformer<D>, data: D): CfirMatchExpression
 

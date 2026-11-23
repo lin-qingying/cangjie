@@ -33,6 +33,9 @@ import org.cangnova.cangjie.cfir.builder.macro.MacroPayloadTokenizer
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.builder.buildAnonymousFunction
 import org.cangnova.cangjie.cfir.declarations.builder.buildFieldVariable
+import org.cangnova.cangjie.cfir.declarations.builder.buildResourceVariable
+import org.cangnova.cangjie.cfir.declarations.CfirResourceVariable
+import org.cangnova.cangjie.cfir.symbols.CfirResourceVariableSymbol
 import org.cangnova.cangjie.cfir.declarations.builder.buildPatternVariable
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
@@ -47,6 +50,7 @@ import org.cangnova.cangjie.cfir.references.builder.buildThisReference
 import org.cangnova.cangjie.cfir.resolve.constants.CfirFloatConstantEvalUtils
 import org.cangnova.cangjie.cfir.resolve.providers.macro.*
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.builder.CfirRawSourceElementFactory
 import org.cangnova.cangjie.cfir.symbols.CfirAnonymousFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFieldVariableSymbol
@@ -84,7 +88,7 @@ class LightTreeRawCfirExpressionBuilder(
     context: Context<LighterASTNode>,
     /** 声明转换器，用于 block 内声明和 pattern binding 等场景。 */
     private val declarationBuilder: LightTreeRawCfirDeclarationBuilder,
-) : AbstractLightTreeRawCfirBuilder(session, tree, source, context) {
+) : AbstractLightTreeRawCfirBuilder(session, tree, source, context, declarationBuilder.sourceElementFactory) {
 
     private data class MacroSurfacePayloadSource(
         val text: String,
@@ -908,7 +912,7 @@ class LightTreeRawCfirExpressionBuilder(
     ): CjSourceElement {
         val callSource = toSource()
         val firstLambda = lambdaArgNodes.firstOrNull() ?: return callSource
-        val startOffset = callSource.startOffset
+        val startOffset = tree.getStartOffset(this)
         val callEndOffset = callSource.endOffset
         var endOffset = tree.getStartOffset(firstLambda)
 
@@ -921,7 +925,7 @@ class LightTreeRawCfirExpressionBuilder(
         }
         if (endOffset <= startOffset) return callSource
 
-        return callSource.fakeElement(
+        return toCjSourceElement(
             CjFakeSourceElementKind.SyntheticCall,
             CjSourceElementOffsetStrategy.Custom.Initialized(startOffset, endOffset),
         )
@@ -1673,7 +1677,13 @@ class LightTreeRawCfirExpressionBuilder(
                 this.bindingName = bindingName
                 bindingVariable = bindingName?.let { name ->
                     declarationBuilder.createPatternBindingVariable(
-                        source = (nameNode ?: node).toSource(),
+                        source = node.toCjSourceElement(
+                            CjFakeSourceElementKind.PatternBindingVariable,
+                            CjSourceElementOffsetStrategy.Custom.Initialized(
+                                tree.getStartOffset(requireNotNull(nameNode)),
+                                tree.getEndOffset(requireNotNull(nameNode)),
+                            ),
+                        ),
                         name = name,
                         status = ownerStatus,
                         isLocal = ownerIsLocal,
@@ -1926,11 +1936,21 @@ class LightTreeRawCfirExpressionBuilder(
             this.bindingName = bindingName
             this.isWildcard = isWildcard
             this.typeRefs.addAll(typeRefs)
+            bindingVariable = bindingName?.let { name ->
+                declarationBuilder.createPatternBindingVariable(
+                    source = node.toSource(),
+                    name = name,
+                    status = CfirDeclarationStatusImpl(Visibilities.Local, Modality.FINAL),
+                    isLocal = true,
+                    isVar = false,
+                    returnTypeRef = buildImplicitTypeRef(),
+                )
+            }
         }
     }
 
     /** 转换 try-with-resource 资源声明。 */
-    private fun convertTryResource(node: LighterASTNode): CfirFieldVariable {
+    private fun convertTryResource(node: LighterASTNode): CfirResourceVariable {
         val parameterNode = tree.findChildByType(node, CjNodeTypes.VALUE_PARAMETER)
         val nameText = parameterNode?.let { tree.findChildByType(it, CjTokens.IDENTIFIER)?.asText() }
         val resourceName = nameText?.let(Name::identifier) ?: Name.special("<error>")
@@ -1946,8 +1966,8 @@ class LightTreeRawCfirExpressionBuilder(
             }
         }
         val resourceStatus = declarationBuilder.cloneDeclarationStatus(CfirDeclarationStatusImpl(Visibilities.Local, Modality.FINAL))
-        return buildSourceDeclaration(CfirFieldVariableSymbol(callableIdFor(resourceName))) { symbol ->
-            buildFieldVariable {
+        return buildSourceDeclaration(CfirResourceVariableSymbol(callableIdFor(resourceName))) { symbol ->
+            buildResourceVariable {
                 resolvePhase = CfirResolvePhase.RAW_CFIR
                 source = node.toSource()
                 this.symbol = symbol
@@ -2384,9 +2404,11 @@ class LightTreeRawCfirExpressionBuilder(
                 val nodeSource = exprNode.toSource()
                 // 诊断 range 锚在去掉 `$` 之后的标识符本身（cjc undeclared identifier 的
                 // 锚点是名字，`$` 只是插值 sigil）。
-                val nameSource = nodeSource.fakeElement(
+                val nameSource = exprNode.toCjSourceElement(
                     CjFakeSourceElementKind.QuoteIdentifierInterpolation,
-                    CjSourceElementOffsetStrategy.Custom.Initialized(nodeSource.startOffset + 1, nodeSource.endOffset),
+                    CjSourceElementOffsetStrategy.Custom.Initialized(
+                        tree.getStartOffset(exprNode) + 1, tree.getEndOffset(exprNode),
+                    ),
                 )
                 return buildNamedAccessExpression {
                     source = nodeSource
@@ -2458,14 +2480,14 @@ class LightTreeRawCfirExpressionBuilder(
             attrTokens = MacroPayloadTokenizer.tokenize(
                 attrPayload?.text,
                 attrPayload?.startOffset ?: 0,
-            ).toMacroSurfaceTokens(),
+            ).toMacroSurfaceTokens(node.toUnmappedCjSourceElement(), rawSourceElementFactory),
             hasAttr = attrNode != null,
             inputTokens = MacroPayloadTokenizer.tokenize(
                 inputPayload?.text,
                 inputPayload?.startOffset ?: 0,
-            ).toMacroSurfaceTokens(),
+            ).toMacroSurfaceTokens(node.toUnmappedCjSourceElement(), rawSourceElementFactory),
             sourceRange = MacroSurfaceSourceRange(
-                source = node.toSource(),
+                source = node.toUnmappedCjSourceElement(),
                 startOffset = node.startOffset,
                 endOffset = node.endOffset,
             ),
@@ -2630,13 +2652,18 @@ class LightTreeRawCfirExpressionBuilder(
 }
 
     /** 将 raw-cfir-common 的 macro payload token 映射为 providers 层 macro surface token。 */
-    private fun List<org.cangnova.cangjie.cfir.builder.macro.MacroPayloadToken>.toMacroSurfaceTokens(): List<MacroSurfaceToken> {
-    return map { token ->
+    private fun List<org.cangnova.cangjie.cfir.builder.macro.MacroPayloadToken>.toMacroSurfaceTokens(
+    source: CjSourceElement,
+    sourceFactory: CfirRawSourceElementFactory,
+): List<MacroSurfaceToken> = map { token ->
+    sourceFactory.createMacroToken(
         MacroSurfaceToken(
             text = token.text,
             startOffset = token.startOffset,
             endOffset = token.endOffset,
             kindName = token.kindName,
-        )
-    }
+            isTrivia = token.kindName in CfirRawSourceElementFactory.TRIVIA_KINDS,
+        ),
+        source,
+    )
 }

@@ -14,13 +14,17 @@ import java.util.concurrent.ConcurrentHashMap
  */
 class CjoManager(
     private val searchPath: CjoSearchPath,
+    /** 同一 metadata 依赖图共用事务；包快照与 record 缓存仍各归本 manager。 */
+    internal val declarationMaterialization: org.cangnova.cangjie.cfir.serialization.deserialize.CjoDeclarationMaterialization =
+        org.cangnova.cangjie.cfir.serialization.deserialize.CjoDeclarationMaterialization(),
 ) : CjoLoadedPackageProvider {
-    private class Snapshot(
-        private val buffer: ByteBuffer,
-        override val sourcePath: Path,
-    ) : CjoLoadedPackage {
+    private class Snapshot(content: ByteArray, override val sourcePath: Path) : CjoLoadedPackage {
+        /** 来源字节与可编辑 wire 声明池分开；wire mutator 不改变代来源核验事实。 */
+        private val sourceContent = content.copyOf()
+        private val buffer = ByteBuffer.wrap(sourceContent.copyOf())
         override val header: CjoPackageHeader = CjoPackageHeader.fromPackage(Package.getRootAsPackage(buffer.duplicate()))
         override val pkg: Package get() = Package.getRootAsPackage(buffer.duplicate())
+        fun hasContent(content: ByteArray): Boolean = sourceContent.contentEquals(content)
     }
 
     /**
@@ -30,6 +34,46 @@ class CjoManager(
 
     private val snapshots = ConcurrentHashMap<String, CjoLoadedPackage>()
     private val missingPackages = ConcurrentHashMap.newKeySet<String>()
+    private val exactSnapshots = ConcurrentHashMap<Path, Snapshot>()
+
+    internal fun loadedSnapshotIdentity(header: CjoPackageHeader, path: Path?): CjoLoadedPackage? =
+        path?.toAbsolutePath()?.normalize()?.let { exactSnapshots[it] }?.takeIf { it.header === header }
+
+    /** 两个公开入口共用同一 manager 监视器和实际来源记录。 */
+    @Synchronized
+    fun loadPackageSnapshot(fullPkgName: String, sourcePath: Path, content: ByteArray): CjoLoadedPackage {
+        val snapshot = sourceSnapshot(sourcePath, content)
+        val diagnostics = validateSnapshot(fullPkgName, snapshot)
+        check(diagnostics.isEmpty()) { "Rejected actual CJO " + snapshot.sourcePath + ": " + diagnostics }
+        publishSourceSnapshot(snapshot)
+        return snapshot
+    }
+
+    /** 只能在同一代的装载事务内选择来源对象；不能产生第二个同 source 对象。 */
+    private fun sourceSnapshot(sourcePath: Path, content: ByteArray): Snapshot {
+        check(Thread.holdsLock(this)) { "CJO source selection requires the manager load transaction" }
+        val path = sourcePath.toAbsolutePath().normalize()
+        val existing = exactSnapshots[path]
+        if (existing != null) {
+            check(existing.hasContent(content)) { "CJO content changed inside a metadata generation: $path" }
+            return existing
+        }
+        return Snapshot(content, path)
+    }
+
+    private fun validateSnapshot(fullPkgName: String, snapshot: Snapshot): List<CfirCjmpLoadDiagnostic> =
+        buildList {
+            CjmpCommonPartLoadGate.checkFormatVersion(fullPkgName, snapshot.header.cjoVersion)?.let(::add)
+            CjmpCommonPartLoadGate.checkPackageName(fullPkgName, snapshot.header.fullPkgName)?.let(::add)
+        }
+
+    /** package/source cache 只能发布同一个已接受对象；不同对象是装载合同错误。 */
+    private fun publishSourceSnapshot(snapshot: Snapshot) {
+        check(Thread.holdsLock(this))
+        val existing = exactSnapshots[snapshot.sourcePath]
+        check(existing == null || existing === snapshot) { "A different CJO snapshot already owns this source" }
+        exactSnapshots[snapshot.sourcePath] = snapshot
+    }
 
     /**
      * 加载门诊断（版本 / 包名）按包名记录，供 session 层的收集器取走。
@@ -57,24 +101,20 @@ class CjoManager(
             missingPackages += fullPkgName
             return null
         }
-        val snapshot = Snapshot(
-            ByteBuffer.wrap(file.readBytes()),
-            file.toPath().toAbsolutePath().normalize(),
-        )
+        val path = file.toPath().toAbsolutePath().normalize()
+        // named 首次读取也核对实际来源字节；name cache 命中仍保持本代稳定，不重读。
+        val snapshot = sourceSnapshot(path, file.readBytes())
         // 加载门①版本 / ②包名：违反即拒绝装载（官方 PreloadCommonPartOfPackage 的 return false 对位），
         // 但诊断仍记录，供装配层外显——静默地把包当"不存在"会让调用方难以定位问题。
-        val diagnostics = buildList {
-            CjmpCommonPartLoadGate.checkFormatVersion(fullPkgName, snapshot.header.cjoVersion)?.let(::add)
-            CjmpCommonPartLoadGate.checkPackageName(fullPkgName, snapshot.header.fullPkgName)?.let(::add)
-        }
+        val diagnostics = validateSnapshot(fullPkgName, snapshot)
         if (diagnostics.isNotEmpty()) {
             loadDiagnostics[fullPkgName] = diagnostics
             missingPackages += fullPkgName
             return null
         }
-        return snapshot.also {
-            snapshots[fullPkgName] = it
-        }
+        publishSourceSnapshot(snapshot)
+        snapshots[fullPkgName] = snapshot
+        return snapshot
     }
 
     fun loadPackageHeader(fullPkgName: String): CjoPackageHeader? = loadPackageSnapshot(fullPkgName)?.header

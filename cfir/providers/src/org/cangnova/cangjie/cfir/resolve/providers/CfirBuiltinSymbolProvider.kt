@@ -2,9 +2,7 @@ package org.cangnova.cangjie.cfir.resolve.providers
 
 import org.cangnova.cangjie.builtins.StandardNames
 import org.cangnova.cangjie.cfir.toCfirResolvedTypeRef
-import org.cangnova.cangjie.cfir.common.CfirBinaryDependenciesModuleData
-import org.cangnova.cangjie.cfir.common.moduleData
-import org.cangnova.cangjie.cfir.common.nullableModuleData
+import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirBuiltInDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirBuiltInTypeKind
@@ -53,23 +51,19 @@ import org.cangnova.cangjie.name.Name
  */
 class CfirBuiltinSymbolProvider(
     session: CfirSession,
+    /** primitive 与合成 builtin 的实际 owner 由会话/metadata 装配入口显式提供。 */
+    private val builtinModuleData: CfirModuleData,
 ) : CfirSymbolProvider(session) {
 
-    /**
-     * builtin 声明使用的 module data。
-     *
-     * 若 session 已经绑定 module data，则沿用当前 module；否则创建二进制依赖 module data 作为合成 builtin 宿主。
-     */
-    private val builtinModuleData by lazy(LazyThreadSafetyMode.PUBLICATION) {
-        session.nullableModuleData
-            ?: CfirBinaryDependenciesModuleData(Name.identifier("<builtins>")).also { it.bindSession(session) }
+    init {
+        require(builtinModuleData.session === session) { "Builtin owner is bound to a different session" }
     }
 
     /**
      * primitive 声明的会话级单例工厂；provider 只是其名称解析外观，
      * 声明与 symbol 的唯一构造来源是 [primitiveFactory]。
      */
-    private val primitiveFactory = CfirPrimitiveDeclarationFactory(session)
+    private val primitiveFactory by lazy { CfirPrimitiveDeclarationFactory.getInstance(session, builtinModuleData) }
 
     /** 官方 BuiltInDecl ClassId 到合成声明的缓存。 */
     private val builtInDeclarationsByClassId: Map<ClassId, CfirBuiltInDeclaration> by lazy(LazyThreadSafetyMode.PUBLICATION) {

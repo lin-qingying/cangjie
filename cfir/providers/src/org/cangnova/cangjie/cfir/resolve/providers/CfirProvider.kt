@@ -93,7 +93,8 @@ abstract class CfirProvider : CfirSessionComponent {
      * 仓颉的名字解析暴露的是 `let (a, b) = ...` 中的 binding symbol，
      * 但隐式类型推断入口属于携带 initializer 的外层 pattern variable。
      */
-    open fun getCfirPatternVariableForBinding(symbol: CfirPatternBindingSymbol): CfirPatternVariable? = null
+    open fun getCfirPatternVariableForBinding(symbol: CfirPatternBindingSymbol): CfirPatternVariable? =
+        symbol.cfir.patternTreeOwner as? CfirPatternVariable
 
     /**
      * 返回指定包下由该 provider 管理的 CFIR 文件。

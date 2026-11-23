@@ -71,8 +71,8 @@ import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirCreateFreshTypeVariabl
 import org.cangnova.cangjie.cfir.resolve.calls.stages.ResolutionStageRunner
 import org.cangnova.cangjie.cfir.resolve.calls.stages.fullyProcessCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.tower.CfirTowerGroup
-import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.CfirPCLAInferenceSession
-import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.FreshReceiverMemberAccessShape
+import org.cangnova.cangjie.cfir.resolve.inference.CfirPCLAInferenceSession
+import org.cangnova.cangjie.cfir.resolve.inference.FreshReceiverMemberAccessShape
 import org.cangnova.cangjie.cfir.resolve.providers.findExtendDeclarationSubstitution
 import org.cangnova.cangjie.cfir.resolve.findCorrespondingClassLikeSupertype
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessContext
@@ -263,6 +263,7 @@ class CfirCallResolver(
         resolutionMode: ResolutionMode,
     ): CallArgumentPrecheckFailure? {
         val probe = buildFunctionCallCopy(functionCall) {}
+        transformer.context.implicitTypeComputationScope?.registerDerivedElement(functionCall, probe)
         val callee = probe.calleeReference as? CfirNamedReference ?: return null
         val collected = transformer.resolutionContext.withCandidateProcessingMode(CandidateProcessingMode.ARGUMENT_SHAPE) {
             collectFunctionCallCandidates(probe, callee, resolutionMode, collectionLiteralContext = null)

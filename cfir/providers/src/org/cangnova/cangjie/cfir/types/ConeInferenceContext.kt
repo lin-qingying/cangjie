@@ -902,10 +902,15 @@ interface ConeInferenceContext : TypeSystemInferenceExtensionContext, ConeTypeCo
     /**
      * 创建从子类型检查 stub type 到类型变量的替换。
      */
-    override fun createSubstitutionFromSubtypingStubTypesToTypeVariables(): TypeSubstitutorMarker {
-        // 默认返回空替换器，具体实现在约束系统求解时由调用方提供
-        return ConeEmptySubstitutor
-    }
+    override fun createSubstitutionFromSubtypingStubTypesToTypeVariables(): AbstractConeSubstitutor =
+        object : AbstractConeSubstitutor(this@ConeInferenceContext) {
+            /** PCLA 的子类型占位必须恢复同一借用变量，不能被近似成 Any。 */
+            override fun substituteType(type: ConeCangJieType): ConeCangJieType? {
+                val stub = type as? ConeStubType ?: return null
+                if (stub.kind != ConeStubType.Kind.FOR_SUBTYPING) return null
+                return ConeTypeVariableType(stub.constructor, stub.attributes)
+            }
+        }
 
     /**
      * 为 [baseType] 的父类型实例化创建替换器。

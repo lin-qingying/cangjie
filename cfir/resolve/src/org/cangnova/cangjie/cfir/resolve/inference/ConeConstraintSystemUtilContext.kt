@@ -2,9 +2,12 @@ package org.cangnova.cangjie.cfir.resolve.inference
 
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeVariableForLambdaParameterType
+import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeVariableForLambdaReturnType
 import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeVariableForPostponedAtom
 import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeParameterBasedTypeVariable
 import org.cangnova.cangjie.cfir.resolve.calls.ConeLambdaWithTypeVariableAsExpectedTypeAtom
+import org.cangnova.cangjie.cfir.resolve.calls.ConeResolvedCallableReferenceAtom
+import org.cangnova.cangjie.cfir.resolve.inference.CfirInferenceVariableRole
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeArgumentConstraintPosition
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeFixVariableConstraintPosition
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
@@ -118,42 +121,73 @@ object ConeConstraintSystemUtilContext : ConstraintSystemUtilContext {
         return this is ConeLambdaWithTypeVariableAsExpectedTypeAtom && anonymousFunction.isLambda
     }
 
-    /**
-     * 创建 lambda 返回类型的临时类型变量。
-     */
-    override fun createTypeVariableForLambdaReturnType(): TypeVariableMarker {
-        return ConeTypeVariableForPostponedAtom(PostponedArgumentInputTypesResolver.TYPE_VARIABLE_NAME_FOR_LAMBDA_RETURN_TYPE)
+    /** 由真实 lambda atom 的 candidate/owner 取得共同返回变量槽。 */
+    override fun createTypeVariableForLambdaReturnType(
+        argument: PostponedAtomWithRevisableExpectedType,
+    ): TypeVariableMarker {
+        val atom = argument as? ConeLambdaWithTypeVariableAsExpectedTypeAtom
+            ?: error("Unsupported lambda atom for return type variable: ${argument::class}")
+        return atom.candidateOfOuterCall.createInferenceVariable(
+            owner = atom.anonymousFunction,
+            role = CfirInferenceVariableRole.COMMON_LAMBDA_RETURN,
+        ) {
+            ConeTypeVariableForLambdaReturnType(
+                atom.anonymousFunction,
+                PostponedArgumentInputTypesResolver.TYPE_VARIABLE_NAME_FOR_LAMBDA_RETURN_TYPE,
+            )
+        }.also { variable ->
+            check(variable.argument === atom.anonymousFunction) { "Common lambda return variable has a different declaration origin" }
+        }
     }
 
-    /**
-     * 创建 lambda 指定参数位置的临时类型变量。
-     */
+    /** 参数位置属于当前 atom 的真实匿名函数，不能按调试名重新分配变量。 */
     override fun createTypeVariableForLambdaParameterType(
         argument: PostponedAtomWithRevisableExpectedType,
         index: Int,
     ): TypeVariableMarker {
-        return ConeTypeVariableForLambdaParameterType(
-            PostponedArgumentInputTypesResolver.TYPE_VARIABLE_NAME_PREFIX_FOR_LAMBDA_PARAMETER_TYPE + index,
-        )
+        val atom = argument as? ConeLambdaWithTypeVariableAsExpectedTypeAtom
+            ?: error("Unsupported lambda atom for parameter type variable: ${argument::class}")
+        return atom.candidateOfOuterCall.createInferenceVariable(
+            owner = atom.anonymousFunction,
+            role = CfirInferenceVariableRole.COMMON_LAMBDA_PARAMETER,
+            index = index,
+        ) {
+            ConeTypeVariableForLambdaParameterType(
+                PostponedArgumentInputTypesResolver.TYPE_VARIABLE_NAME_PREFIX_FOR_LAMBDA_PARAMETER_TYPE + index,
+            )
+        }
     }
 
-    /**
-     * 创建 callable reference 返回类型的临时类型变量。
-     */
-    override fun createTypeVariableForCallableReferenceReturnType(): TypeVariableMarker {
-        return ConeTypeVariableForPostponedAtom(PostponedArgumentInputTypesResolver.TYPE_VARIABLE_NAME_FOR_CR_RETURN_TYPE)
+    /** callable reference 的共同返回变量归属于当前 atom.expression。 */
+    override fun createTypeVariableForCallableReferenceReturnType(
+        argument: PostponedAtomWithRevisableExpectedType,
+    ): TypeVariableMarker {
+        val atom = argument as? ConeResolvedCallableReferenceAtom
+            ?: error("Unsupported callable-reference atom for return type variable: ${argument::class}")
+        return atom.candidateOfOuterCall.createInferenceVariable(
+            owner = atom.expression,
+            role = CfirInferenceVariableRole.CALLABLE_REFERENCE_RETURN,
+        ) {
+            ConeTypeVariableForPostponedAtom(PostponedArgumentInputTypesResolver.TYPE_VARIABLE_NAME_FOR_CR_RETURN_TYPE)
+        }
     }
 
-    /**
-     * 创建 callable reference 指定参数位置的临时类型变量。
-     */
+    /** callable reference 的参数变量以真实表达式 owner 和参数位置索引取得。 */
     override fun createTypeVariableForCallableReferenceParameterType(
         argument: PostponedAtomWithRevisableExpectedType,
         index: Int,
     ): TypeVariableMarker {
-        return ConeTypeVariableForPostponedAtom(
-            PostponedArgumentInputTypesResolver.TYPE_VARIABLE_NAME_PREFIX_FOR_CR_PARAMETER_TYPE + index,
-        )
+        val atom = argument as? ConeResolvedCallableReferenceAtom
+            ?: error("Unsupported callable-reference atom for parameter type variable: ${argument::class}")
+        return atom.candidateOfOuterCall.createInferenceVariable(
+            owner = atom.expression,
+            role = CfirInferenceVariableRole.CALLABLE_REFERENCE_PARAMETER,
+            index = index,
+        ) {
+            ConeTypeVariableForPostponedAtom(
+                PostponedArgumentInputTypesResolver.TYPE_VARIABLE_NAME_PREFIX_FOR_CR_PARAMETER_TYPE + index,
+            )
+        }
     }
 
     /**

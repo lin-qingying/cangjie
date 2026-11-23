@@ -71,6 +71,9 @@ sealed class Field : AbstractField<Field>() {
         copy.needTransformInOtherChildren = needTransformInOtherChildren
         copy.customInitializationCall = customInitializationCall
         copy.skippedInCopy = skippedInCopy
+        // 深复制生成器需要声明/引用 symbol 的真实角色，所有字段副本都必须保留。
+        copy.symbolFieldRole = symbolFieldRole
+        copy.withBindThis = withBindThis
     }
 
     /**

@@ -9,8 +9,10 @@ package org.cangnova.cangjie.cfir.patterns.builder
 
 import kotlin.contracts.*
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
+import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
 import org.cangnova.cangjie.cfir.patterns.CfirCommandTypePattern
 import org.cangnova.cangjie.cfir.patterns.impl.CfirCommandTypePatternImpl
+import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.CjSourceElement
@@ -20,6 +22,8 @@ class CfirCommandTypePatternBuilder {
     var source: CjSourceElement? = null
     var bindingName: Name? = null
     var isWildcard: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
+    var resolvedTypeRef: CfirResolvedTypeRef? = null
+    var bindingVariable: CfirPatternBindingVariable? = null
     val typeRefs: MutableList<CfirTypeRef> = mutableListOf()
 
     fun build(): CfirCommandTypePattern {
@@ -27,6 +31,8 @@ class CfirCommandTypePatternBuilder {
             source,
             bindingName,
             isWildcard,
+            resolvedTypeRef,
+            bindingVariable,
             typeRefs,
         )
     }

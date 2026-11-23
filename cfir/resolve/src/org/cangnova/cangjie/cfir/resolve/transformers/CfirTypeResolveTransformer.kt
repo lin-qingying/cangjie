@@ -460,21 +460,9 @@ class CfirTypeResolveTransformer(
     ): CfirEnumConstructor {
         val configuration = data
             .withTopContainer(enumConstructor)
-            .withAdditionalTypeParameters(enumConstructor.typeParameters)
+            .withAdditionalTypeParameters(enumConstructor.typeParameters.filterIsInstance<CfirTypeParameter>())
         enumConstructor.transformTypeParameters(this, configuration)
-        if (enumConstructor.returnTypeRef is CfirImplicitTypeRef) {
-            val ownerEnum = data.topContainer as? CfirEnum
-            val ownerType = ownerEnum?.let(::buildConstructedTypeForConstructorOwner)
-                ?: ConeErrorType(ConeSimpleDiagnostic("cannot resolve enum constructor owner type"))
-            enumConstructor.replaceReturnTypeRef(
-                enumConstructor.returnTypeRef.resolvedTypeFromPrototype(
-                    ownerType,
-                    enumConstructor.returnTypeRef.source,
-                ),
-            )
-        } else {
-            enumConstructor.transformReturnTypeRef(this, configuration)
-        }
+        enumConstructor.transformReturnTypeRef(this, configuration)
         enumConstructor.transformValueParameters(this, configuration)
         enumConstructor.transformAnnotations(this, configuration)
         bumpPhase(enumConstructor)

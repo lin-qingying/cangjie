@@ -20,6 +20,9 @@ import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
 import org.cangnova.cangjie.cfir.declarations.CfirControlFlowGraphOwner
+import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
+import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
+import org.cangnova.cangjie.cfir.declarations.CfirResourceVariable
 import org.cangnova.cangjie.cfir.declarations.CfirResolveState
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.declarations.ResolveStateAccess
@@ -27,10 +30,14 @@ import org.cangnova.cangjie.cfir.declarations.lambdaParameterShapeExpectedFuncti
 import org.cangnova.cangjie.cfir.declarations.isInsideFailedArgumentMapping
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirArgumentList
+import org.cangnova.cangjie.cfir.expressions.CfirArgumentListMutableState
+import org.cangnova.cangjie.cfir.expressions.CfirResolvedArgumentList
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirErrorExpression
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
+import org.cangnova.cangjie.cfir.expressions.CfirLazyBlock
+import org.cangnova.cangjie.cfir.expressions.CfirLazyExpression
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirResolvable
 import org.cangnova.cangjie.cfir.expressions.CfirStatement
@@ -48,7 +55,17 @@ import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
+import org.cangnova.cangjie.cfir.visitors.CfirTransformer
+import org.cangnova.cangjie.cfir.resolve.body.CfirResourceSourceSnapshot
+import org.cangnova.cangjie.cfir.resolve.body.captureResourceSourceStates
+import org.cangnova.cangjie.cfir.resolve.body.restoreResourceSourceStates
 import java.util.IdentityHashMap
+import org.cangnova.cangjie.cfir.resolve.dfa.controlFlowGraph
+import org.cangnova.cangjie.cfir.resolve.dfa.cfg.ControlFlowGraph
+import org.cangnova.cangjie.cfir.resolve.dfa.cfg.CfgInternals
+import org.cangnova.cangjie.cfir.resolve.dfa.cfg.RevisableFunctionCallNode
+import org.cangnova.cangjie.cfir.resolve.dfa.cfg.RevisableFunctionCallNodeSnapshot
+import org.cangnova.cangjie.cfir.expressions.CfirTryExpression
 
 /**
  * CFIR 树可变解析状态快照。
@@ -57,7 +74,9 @@ import java.util.IdentityHashMap
  * 快照负责恢复所有会被 body resolve 改写的类型、引用、body、pattern、CFG 和 resolve state，
  * 使后续重算从结构化 CFIR 状态出发，而不是继续消费上一轮的错误候选或 resolved reference。
  */
-internal class CfirResolutionSnapshot private constructor(
+class CfirResolutionSnapshot private constructor(
+    /** 原 AST 根用于确定试跑新建、即将被恢复移除的子声明；不沿 resolved symbol 访问外部声明。 */
+    private val root: CfirElement,
     /** 带 resolve state 元素的阶段状态快照。 */
     private val resolveStates: IdentityHashMap<CfirElementWithResolveState, CfirResolveState>,
     /** 只捕获可写的表达式类型；代理到子节点或诊断的派生类型由其真实 owner 恢复。 */
@@ -78,8 +97,14 @@ internal class CfirResolutionSnapshot private constructor(
     private val anonymousFunctionBodies: IdentityHashMap<CfirAnonymousFunction, CfirBlock?>,
     /** 变量返回类型引用快照。 */
     private val variableTypes: IdentityHashMap<CfirVariable, CfirTypeRef>,
+    /** 与资源 source/cache/回调队列同代次；source 自持的 initializer memento 不再递归持有该列表。 */
+    private val resourceSources: List<CfirResourceSourceSnapshot>?,
+    /** 只保存真正拥有 initializer 的声明槽，模式叶子的派生 initializer 不参与写回。 */
+    private val variableInitializers: IdentityHashMap<CfirVariable, CfirExpression?>,
     /** block 语句列表快照。 */
     private val blockStatements: IdentityHashMap<CfirBlock, List<CfirStatement>>,
+    /** 资源声明列表可在试算中物化；先恢复列表形状，再按正式 child 协议恢复槽位。 */
+    private val tryResources: IdentityHashMap<CfirTryExpression, List<CfirResourceVariable>>,
     /** 所有模式宿主当前根节点快照，覆盖声明、表达式、match、catch 与 handle。 */
     private val patternTreeRoots: List<Pair<CfirPatternTreeOwner, CfirElement>>,
     /** pattern 内部可变状态快照。 */
@@ -88,20 +113,93 @@ internal class CfirResolutionSnapshot private constructor(
     private val patternTypeReferences: IdentityHashMap<CfirPatternTypeReferences, List<CfirTypeRef>>,
     /** catch 模式整体语义类型必须和源码类型引用一起回滚。 */
     private val catchPatternResolvedTypes: IdentityHashMap<CfirCatchPattern, CfirResolvedTypeRef?>,
+    private val commandPatternResolvedTypes: IdentityHashMap<org.cangnova.cangjie.cfir.patterns.CfirCommandTypePattern, CfirResolvedTypeRef?>,
     /** 下标语法节点与已解析 get/set 调用的关联必须随候选试跑一起回滚。 */
     private val subscriptCallStates: IdentityHashMap<CfirSubscriptExpression, SubscriptCallState>,
     /** qualified access 接收者与类型实参快照。 */
     private val qualifiedAccessStates: IdentityHashMap<CfirQualifiedAccessExpression, QualifiedAccessState>,
     /** 函数调用实参列表快照。 */
     private val functionCallArgumentLists: IdentityHashMap<CfirFunctionCall, CfirArgumentList>,
+    /** 实参列表元素与形参映射的独立存储快照。 */
+    private val argumentListStates: IdentityHashMap<CfirArgumentList, CfirArgumentListMutableState>,
+    /** 由正式 child-transform 协议记录的直接子节点槽；覆盖 wrapper、literal 容器和嵌套声明。 */
+    private val childSlots: List<ChildSlots>,
     /** CFG owner 到 CFG reference 的快照。 */
     private val controlFlowGraphReferences: IdentityHashMap<CfirControlFlowGraphOwner, CfirControlFlowGraphReference?>,
+    /** 完整 AST 回滚保存实际 fir/index 状态；类型重放保留正在被遍历的当前 AST/CFG。 */
+    private val callNodeFirStates: List<RevisableFunctionCallNodeSnapshot>,
 ) {
+    internal val callableSymbols: Set<org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol<*>>
+        get() = resolveStates.keys.filterIsInstance<org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration>()
+            .mapTo(linkedSetOf()) { it.symbol }
+
+    /** 缓存范围直接来自同一 AST 捕获，不按 locality、名称或 offset 猜测。 */
+    internal fun captureImplicitBodyCache(owner: org.cangnova.cangjie.cfir.resolve.body.ImplicitBodyResolveComputationSession?):
+        org.cangnova.cangjie.cfir.resolve.body.CfirImplicitBodyResolveComputationSessionSnapshot? = owner?.capture(callableSymbols)
+
+    /** AST 和其 scoped cache 同步重放；先验证 owner/父栈，再改写任一状态。 */
+    internal fun restoreWithImplicitBodyCache(
+        cache: org.cangnova.cangjie.cfir.resolve.body.CfirImplicitBodyResolveComputationSessionSnapshot?,
+        owner: org.cangnova.cangjie.cfir.resolve.body.ImplicitBodyResolveComputationSession?,
+    ) {
+        check((cache == null) == (owner == null)) { "Implicit body cache snapshot/owner mismatch" }
+        if (cache != null) {
+            check(cache.symbols == callableSymbols) { "Implicit body cache/AST scope mismatch" }
+            checkNotNull(owner).validateRestore(cache)
+        }
+        // lazy body 首轮物化可能创建全新的局部 symbols，恢复旧 body 前必须把它们纳入失效范围。
+        val affectedSymbols = if (cache == null) emptySet() else callableSymbols + capture(root).callableSymbols
+        restore()
+        if (cache != null) checkNotNull(owner).restore(cache, affectedSymbols)
+    }
+
+    /** 终选采用同时发布实际 CFG read dependency；probe/类型重放不取得这份正式图资格。 */
+    @OptIn(CfgInternals::class)
+    internal fun restoreForSelectedCandidate(
+        cache: org.cangnova.cangjie.cfir.resolve.body.CfirImplicitBodyResolveComputationSessionSnapshot?,
+        cacheOwner: org.cangnova.cangjie.cfir.resolve.body.ImplicitBodyResolveComputationSession?,
+        dataFlowContext: org.cangnova.cangjie.cfir.resolve.body.CfirDataFlowAnalyzerContext,
+    ) {
+        val graphs = controlFlowGraphReferences.mapNotNull { (owner, reference) ->
+            reference?.controlFlowGraph?.let { owner to it }
+        }
+        dataFlowContext.graphBuilder.validateControlFlowGraphAdoption(graphs)
+        restoreWithImplicitBodyCache(cache, cacheOwner)
+        dataFlowContext.graphBuilder.adoptControlFlowGraphs(graphs)
+    }
+
+    /**
+     * 恢复类型推断写回的语义槽，保留正在被调用者遍历的 body、实参和普通 child 存储。
+     * PCLA 入口之外的声明只会被类型/模式投影回调改写，不能对其执行整树重放。
+     */
+    @OptIn(ResolveStateAccess::class)
+    fun restoreTypeResolutionState() {
+        resourceSources?.forEach { it.validateRestore() }
+        resourceSources?.forEach { it.restoreTypeResolutionState() }
+        resolveStates.forEach { (element, state) -> element.resolveState = state }
+        variableTypes.forEach { (variable, type) -> variable.replaceReturnTypeRef(type) }
+        anonymousFunctionReturnTypes.forEach { (function, type) -> function.replaceReturnTypeRef(type) }
+        anonymousFunctionTypes.forEach { (function, type) -> function.replaceTypeRef(type) }
+        anonymousFunctionMatchingTypes.forEach { (function, type) -> function.replaceMatchingParameterFunctionType(type) }
+        anonymousFunctionShapeExpectedTypes.forEach { (function, type) -> function.lambdaParameterShapeExpectedFunctionType = type }
+        anonymousFunctionArgumentMappingFailures.forEach { (function, failed) -> function.isInsideFailedArgumentMapping = failed }
+        restorePatternTreeRoots(patternTreeRoots)
+        patternStates.values.forEach { it.restore() }
+        patternTypeReferences.forEach { (pattern, types) -> pattern.replaceTypeRefs(types) }
+        catchPatternResolvedTypes.forEach { (pattern, type) -> pattern.replaceResolvedTypeRef(type) }
+        commandPatternResolvedTypes.forEach { (pattern, type) -> pattern.replaceResolvedTypeRef(type) }
+        calleeReferences.forEach { (expression, reference) -> expression.replaceCalleeReference(reference) }
+        expressionTypes.forEach { (expression, type) -> expression.replaceConeTypeOrNull(type) }
+    }
+
     /**
      * 把快照中的全部 CFIR 可变状态恢复到原对象上。
      */
-    @OptIn(ResolveStateAccess::class)
+    @OptIn(ResolveStateAccess::class, CfgInternals::class)
     fun restore() {
+        callNodeFirStates.forEach { it.validateRestore() }
+        resourceSources?.let { restoreResourceSourceStates(root, it) }
+        callNodeFirStates.forEach { it.restore() }
         for ((element, state) in resolveStates) {
             element.resolveState = state
         }
@@ -110,6 +208,9 @@ internal class CfirResolutionSnapshot private constructor(
         }
         for ((variable, typeRef) in variableTypes) {
             variable.replaceReturnTypeRef(typeRef)
+        }
+        for ((variable, initializer) in variableInitializers) {
+            variable.replaceInitializer(initializer)
         }
         for ((function, typeRef) in anonymousFunctionReturnTypes) {
             function.replaceReturnTypeRef(typeRef)
@@ -139,6 +240,9 @@ internal class CfirResolutionSnapshot private constructor(
         for ((pattern, resolvedTypeRef) in catchPatternResolvedTypes) {
             pattern.replaceResolvedTypeRef(resolvedTypeRef)
         }
+        for ((pattern, resolvedTypeRef) in commandPatternResolvedTypes) {
+            pattern.replaceResolvedTypeRef(resolvedTypeRef)
+        }
         for ((subscript, state) in subscriptCallStates) {
             subscript.replaceResolvedGetCall(state.getCall)
             subscript.replaceResolvedSetCall(state.setCall)
@@ -149,13 +253,24 @@ internal class CfirResolutionSnapshot private constructor(
             mutableStatements.clear()
             mutableStatements.addAll(statements)
         }
+        for ((expression, resources) in tryResources) expression.replaceResources(resources)
         for ((call, argumentList) in functionCallArgumentLists) {
             call.replaceArgumentList(argumentList)
         }
+        for ((_, state) in argumentListStates) {
+            state.restore()
+        }
         for ((access, state) in qualifiedAccessStates) {
+            // 该槽与 Kotlin FIR 一样仅暴露 child transform；null 槽不会产生可变子节点。
+            state.explicitReceiver?.let { receiver ->
+                access.transformExplicitReceiver(ExplicitReceiverRestoringTransformer, receiver)
+            }
             access.replaceDispatchReceiver(state.dispatchReceiver)
             access.replaceTypeArguments(state.typeArguments)
         }
+        // 先恢复会改变子节点数量或 nullable/receiver alias 形状的独立存储，再恢复普通 child 槽。
+        // acceptChildren 与 transformChildren 的 receiver 去重和访问顺序不同，不能混用两套协议。
+        childSlots.forEach { it.restore() }
         for ((resolvable, reference) in calleeReferences) {
             resolvable.replaceCalleeReference(reference)
         }
@@ -168,6 +283,8 @@ internal class CfirResolutionSnapshot private constructor(
      * qualified access 的可变状态。
      */
     private data class QualifiedAccessState(
+        /** 源码显式 receiver 的原节点；转换可以替换该子节点。 */
+        val explicitReceiver: CfirExpression?,
         /** 当前 dispatch receiver。 */
         val dispatchReceiver: CfirExpression?,
         /** 当前类型实参列表。 */
@@ -179,11 +296,48 @@ internal class CfirResolutionSnapshot private constructor(
         val setCall: CfirFunctionCall?,
     )
 
+    /** 用正式 child transform 恢复原 receiver，保留公共树模型的只读字段契约。 */
+    private object ExplicitReceiverRestoringTransformer : CfirTransformer<CfirExpression>() {
+        @Suppress("UNCHECKED_CAST")
+        override fun <E : CfirElement> transformElement(element: E, data: CfirExpression): E = data as E
+    }
+
+    /** 子树转换只替换当前槽，绝不在捕获或恢复时解析该子树。 */
+    private class ChildSlots(val owner: CfirElement, val children: List<CfirElement>) {
+        fun restore() {
+            val iterator = children.iterator()
+            owner.transformChildren(ChildSlotRestoringTransformer, iterator)
+            check(!iterator.hasNext()) { "Unrestored child slots in ${owner.javaClass.simpleName}" }
+        }
+    }
+
+    private object ChildSlotCollectingTransformer : CfirTransformer<MutableList<CfirElement>>() {
+        override fun <E : CfirElement> transformElement(element: E, data: MutableList<CfirElement>): E {
+            data += element
+            return element
+        }
+    }
+
+    private object ChildSlotRestoringTransformer : CfirTransformer<Iterator<CfirElement>>() {
+        @Suppress("UNCHECKED_CAST")
+        override fun <E : CfirElement> transformElement(element: E, data: Iterator<CfirElement>): E = data.next() as E
+    }
+
     companion object {
         /**
          * 从根元素遍历并捕获后续 body resolve 可恢复状态。
          */
-        fun capture(root: CfirElement): CfirResolutionSnapshot {
+        fun capture(root: CfirElement): CfirResolutionSnapshot = captureState(
+            root, captureResourceSourceStates(root),
+        )
+
+        /** Source slot 自己保存 cache/task；initializer 的标准 AST 状态不递归捕获同一协议。 */
+        internal fun captureResourceInitializer(root: CfirElement): CfirResolutionSnapshot = captureState(root, null)
+
+        private fun captureState(
+            root: CfirElement,
+            resourceSources: List<CfirResourceSourceSnapshot>?,
+        ): CfirResolutionSnapshot {
             val resolveStates = IdentityHashMap<CfirElementWithResolveState, CfirResolveState>()
             val expressionTypes = IdentityHashMap<CfirExpression, ConeCangJieType?>()
             val calleeReferences = IdentityHashMap<CfirResolvable, CfirReference>()
@@ -194,16 +348,29 @@ internal class CfirResolutionSnapshot private constructor(
             val anonymousFunctionArgumentMappingFailures = IdentityHashMap<CfirAnonymousFunction, Boolean>()
             val anonymousFunctionBodies = IdentityHashMap<CfirAnonymousFunction, CfirBlock?>()
             val variableTypes = IdentityHashMap<CfirVariable, CfirTypeRef>()
+            val variableInitializers = IdentityHashMap<CfirVariable, CfirExpression?>()
             val blockStatements = IdentityHashMap<CfirBlock, List<CfirStatement>>()
+            val tryResources = IdentityHashMap<CfirTryExpression, List<CfirResourceVariable>>()
             val patternTreeRoots = mutableListOf<Pair<CfirPatternTreeOwner, CfirElement>>()
             val patternStates = IdentityHashMap<CfirPattern, CfirPatternMutableState>()
             val patternTypeReferences = IdentityHashMap<CfirPatternTypeReferences, List<CfirTypeRef>>()
             val catchPatternResolvedTypes = IdentityHashMap<CfirCatchPattern, CfirResolvedTypeRef?>()
+            val commandPatternResolvedTypes = IdentityHashMap<org.cangnova.cangjie.cfir.patterns.CfirCommandTypePattern, CfirResolvedTypeRef?>()
             val subscriptCallStates = IdentityHashMap<CfirSubscriptExpression, SubscriptCallState>()
             // set 的 RHS 可以引用同一个 get 节点；语义调用引用因此形成共享图而非纯树。
             val visitedElements = java.util.Collections.newSetFromMap(IdentityHashMap<CfirElement, Boolean>())
             val qualifiedAccessStates = IdentityHashMap<CfirQualifiedAccessExpression, QualifiedAccessState>()
             val functionCallArgumentLists = IdentityHashMap<CfirFunctionCall, CfirArgumentList>()
+            val argumentListStates = IdentityHashMap<CfirArgumentList, CfirArgumentListMutableState>()
+            val childSlots = mutableListOf<ChildSlots>()
+            val callNodeFirStates = mutableListOf<RevisableFunctionCallNodeSnapshot>()
+            val capturedGraphs = java.util.Collections.newSetFromMap(IdentityHashMap<ControlFlowGraph, Boolean>())
+            @OptIn(CfgInternals::class)
+            fun captureCallNodeFirs(graph: ControlFlowGraph) {
+                if (!capturedGraphs.add(graph)) return
+                graph.nodes.filterIsInstance<RevisableFunctionCallNode>().forEach { callNodeFirStates += it.captureFirState() }
+                graph.subGraphs.forEach(::captureCallNodeFirs)
+            }
             val controlFlowGraphReferences =
                 IdentityHashMap<CfirControlFlowGraphOwner, CfirControlFlowGraphReference?>()
 
@@ -215,6 +382,9 @@ internal class CfirResolutionSnapshot private constructor(
                     @OptIn(ResolveStateAccess::class)
                     override fun visitElement(element: CfirElement) {
                         if (!visitedElements.add(element)) return
+                        // 惰性节点只标记尚未物化的槽位，没有可读取的类型或子结构。
+                        // 拥有该槽的声明/块保存节点引用，不能为捕获快照而提前物化正文。
+                        if (element is CfirLazyBlock || element is CfirLazyExpression) return
                         if (element is CfirElementWithResolveState) {
                             resolveStates[element] = element.resolveState
                         }
@@ -239,10 +409,22 @@ internal class CfirResolutionSnapshot private constructor(
                         }
                         if (element is CfirVariable) {
                             variableTypes[element] = element.returnTypeRef
+                            if (element is CfirFieldVariable || element is CfirPatternVariable || element is CfirResourceVariable) {
+                                variableInitializers[element] = element.initializer
+                            }
+                        }
+                        if (element is CfirArgumentList) {
+                            argumentListStates[element] = CfirArgumentListMutableState.capture(element)
+                            if (element is CfirResolvedArgumentList) {
+                                // 原始列表与 context 实参不是 arguments 视图的完整子树。
+                                element.originalArgumentList?.accept(this, null)
+                                element.mappingIncludingContextArguments.keys.forEach { it.accept(this, null) }
+                            }
                         }
                         if (element is CfirBlock) {
                             blockStatements[element] = element.statements.toList()
                         }
+                        if (element is CfirTryExpression) tryResources[element] = element.resources.toList()
                         if (element is CfirPatternTreeOwner) {
                             patternTreeRoots += element to element.patternTreeRoot()
                         }
@@ -257,6 +439,9 @@ internal class CfirResolutionSnapshot private constructor(
                         if (element is CfirCatchPattern) {
                             catchPatternResolvedTypes[element] = element.resolvedTypeRef
                         }
+                        if (element is org.cangnova.cangjie.cfir.patterns.CfirCommandTypePattern) {
+                            commandPatternResolvedTypes[element] = element.resolvedTypeRef
+                        }
                         if (element is CfirSubscriptExpression) {
                             subscriptCallStates[element] = SubscriptCallState(element.resolvedGetCall, element.resolvedSetCall)
                             element.resolvedGetCall?.accept(this, null)
@@ -264,6 +449,7 @@ internal class CfirResolutionSnapshot private constructor(
                         }
                         if (element is CfirQualifiedAccessExpression) {
                             qualifiedAccessStates[element] = QualifiedAccessState(
+                                explicitReceiver = element.explicitReceiver,
                                 dispatchReceiver = element.dispatchReceiver,
                                 typeArguments = element.typeArguments.toList(),
                             )
@@ -273,6 +459,14 @@ internal class CfirResolutionSnapshot private constructor(
                         }
                         if (element is CfirControlFlowGraphOwner) {
                             controlFlowGraphReferences[element] = element.controlFlowGraphReference
+                            element.controlFlowGraphReference?.controlFlowGraph?.let(::captureCallNodeFirs)
+                        }
+                        // 模式图由 ownership-aware 状态恢复，实参列表由其独立存储协议恢复。
+                        // 其他元素使用自身的正式 transformChildren，完整记录可以被转换替换的直接槽。
+                        if (element !is CfirPattern && element !is CfirArgumentList) {
+                            val children = mutableListOf<CfirElement>()
+                            element.transformChildren(ChildSlotCollectingTransformer, children)
+                            childSlots += ChildSlots(element, children)
                         }
                         element.acceptChildren(this, null)
                     }
@@ -281,6 +475,7 @@ internal class CfirResolutionSnapshot private constructor(
             )
 
             return CfirResolutionSnapshot(
+                root,
                 resolveStates,
                 expressionTypes,
                 calleeReferences,
@@ -291,15 +486,22 @@ internal class CfirResolutionSnapshot private constructor(
                 anonymousFunctionArgumentMappingFailures,
                 anonymousFunctionBodies,
                 variableTypes,
+                resourceSources,
+                variableInitializers,
                 blockStatements,
+                tryResources,
                 patternTreeRoots,
                 patternStates,
                 patternTypeReferences,
                 catchPatternResolvedTypes,
+                commandPatternResolvedTypes,
                 subscriptCallStates,
                 qualifiedAccessStates,
                 functionCallArgumentLists,
+                argumentListStates,
+                childSlots,
                 controlFlowGraphReferences,
+                callNodeFirStates,
             )
         }
     }

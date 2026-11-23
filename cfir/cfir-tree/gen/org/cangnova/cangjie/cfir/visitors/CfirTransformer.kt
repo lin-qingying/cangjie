@@ -344,6 +344,14 @@ abstract class CfirTransformer<in D> : CfirVisitor<CfirElement, D>() {
         return transformFieldVariable(fieldVariable, data)
     }
 
+    open fun transformResourceVariable(resourceVariable: CfirResourceVariable, data: D): CfirStatement {
+        return transformElement(resourceVariable, data)
+    }
+
+    final override fun visitResourceVariable(resourceVariable: CfirResourceVariable, data: D): CfirStatement {
+        return transformResourceVariable(resourceVariable, data)
+    }
+
     open fun transformPatternVariable(patternVariable: CfirPatternVariable, data: D): CfirStatement {
         return transformElement(patternVariable, data)
     }
@@ -374,6 +382,14 @@ abstract class CfirTransformer<in D> : CfirVisitor<CfirElement, D>() {
 
     final override fun visitTypeParameter(typeParameter: CfirTypeParameter, data: D): CfirTypeParameterRef {
         return transformTypeParameter(typeParameter, data)
+    }
+
+    open fun transformConstructedClassTypeParameterRef(constructedClassTypeParameterRef: CfirConstructedClassTypeParameterRef, data: D): CfirTypeParameterRef {
+        return transformElement(constructedClassTypeParameterRef, data)
+    }
+
+    final override fun visitConstructedClassTypeParameterRef(constructedClassTypeParameterRef: CfirConstructedClassTypeParameterRef, data: D): CfirTypeParameterRef {
+        return transformConstructedClassTypeParameterRef(constructedClassTypeParameterRef, data)
     }
 
     open fun transformDeclarationStatus(declarationStatus: CfirDeclarationStatus, data: D): CfirDeclarationStatus {

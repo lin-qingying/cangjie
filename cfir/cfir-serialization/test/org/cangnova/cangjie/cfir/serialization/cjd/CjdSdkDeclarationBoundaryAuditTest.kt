@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.cfir.serialization.cjd
 
+import org.cangnova.cangjie.test.bindCjoFixture
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.common.CfirPlatform
 import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
@@ -82,13 +83,15 @@ class CjdSdkDeclarationBoundaryAuditTest :
                 manager.loadPackageSnapshot(sidecar.annotationContext.packageFqName),
                 "$path: no CJO for ${sidecar.annotationContext.packageFqName}",
             )
-            val module = Module()
+            val module = Module(setOf(FqName("ohos.labels.APILevel")))
+            val metadataBinding = bindCjoFixture(module, manager, setOf(Path.of(directory!!)))
             val context = CfirDeserializationContext(
                 loaded.pkg,
                 loaded.header,
                 module,
                 manager,
-                manager.deserializedSymbolLookups.forModuleData(module),
+                manager.deserializedSymbolLookups.forBinding(metadataBinding, module,
+                    org.cangnova.cangjie.cfir.serialization.deserialize.CjoDeserializationMode.FULL),
                 loaded.sourcePath,
                 setOf(FqName("ohos.labels.APILevel")),
             )
@@ -225,7 +228,7 @@ class CjdSdkDeclarationBoundaryAuditTest :
             "Every unmerged annotation must fall into exactly one disposition bucket")
     }
 
-    private class Module : CfirModuleData() {
+    private class Module(implicitAnnotations: Set<FqName>) : CfirModuleData() {
         override val name = Name.identifier("cjd-audit")
         override val dependencies = emptyList<CfirModuleData>()
         override val refinementDependencies = emptyList<CfirModuleData>()
@@ -236,6 +239,10 @@ class CjdSdkDeclarationBoundaryAuditTest :
         override val stableModuleName = "cjd-audit"
         override val session = object : CfirSession(CfirSession.Kind.Library) {}.also {
             it.register(CfirCangJieScopeProvider::class, CfirCangJieScopeProvider())
+            it.register(org.cangnova.cangjie.cfir.session.CfirLanguageSettingsComponent::class,
+                org.cangnova.cangjie.cfir.session.CfirLanguageSettingsComponent(org.cangnova.cangjie.LanguageVersionSettingsImpl.DEFAULT))
+            it.register(org.cangnova.cangjie.cfir.session.CfirImplicitSystemAnnotationsProvider::class,
+                org.cangnova.cangjie.cfir.session.ConfiguredCfirImplicitSystemAnnotationsProvider(implicitAnnotations))
         }
         init { bindSession(session) }
     }

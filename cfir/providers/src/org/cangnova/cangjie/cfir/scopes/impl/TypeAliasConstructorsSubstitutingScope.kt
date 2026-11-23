@@ -32,7 +32,9 @@ import org.cangnova.cangjie.cfir.types.withAbbreviation
 /**
  * typealias 构造器合成信息属性 key。
  */
-private object TypeAliasConstructorInfoKey : CfirDeclarationDataKey()
+private object TypeAliasConstructorInfoKey : CfirDeclarationDataKey() {
+    override val rawCopyPolicy get() = org.cangnova.cangjie.cfir.CfirRawDeclarationDataPolicies.forbidden<TypeAliasConstructorInfo<*>>("typealias scope substitutor")
+}
 
 /**
  * typealias 构造器合成信息。

@@ -7,6 +7,7 @@ import com.intellij.psi.tree.IElementType
 import com.intellij.psi.tree.TokenSet
 import com.intellij.util.diff.FlyweightCapableTreeStructure
 import org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilder
+import org.cangnova.cangjie.cfir.builder.CfirRawSourceElementFactory
 import org.cangnova.cangjie.cfir.builder.Context
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.lexer.CjTokens
@@ -17,6 +18,10 @@ import org.cangnova.cangjie.source.CjLightSourceElement
 import org.cangnova.cangjie.source.CjRealSourceElementKind
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.source.CjSourceElementKind
+import org.cangnova.cangjie.source.CjFakeSourceElementKind
+import org.cangnova.cangjie.source.CjSourceElementOffsetStrategy
+import org.cangnova.cangjie.source.withRange
+import org.cangnova.cangjie.source.fakeElement as unprojectedFakeElement
 import org.cangnova.cangjie.source.toCjLightSourceElement
 
 /**
@@ -35,7 +40,11 @@ abstract class AbstractLightTreeRawCfirBuilder(
     /** 当前源码文本。 */
     protected val source: CharSequence,
     context: Context<LighterASTNode> = Context(),
+    sourceElementFactory: CfirRawSourceElementFactory = CfirRawSourceElementFactory.Original(),
 ) : AbstractRawCfirBuilder<LighterASTNode>(baseSession, context) {
+    /** 声明和表达式 builder 共享同一个来源工厂。 */
+    protected val rawSourceElementFactory: CfirRawSourceElementFactory = sourceElementFactory
+
     /** LightTree builder 共享常量。 */
     companion object {
         /** 遍历子节点时忽略的空白、注释和错误 token。 */
@@ -45,22 +54,34 @@ abstract class AbstractLightTreeRawCfirBuilder(
         )
     }
 
-    /** 将当前 LightTree 节点映射为 [CjLightSourceElement]。 */
+    /** 元数据/token 捕获读取未投影树；CFIR source 通过同一 source 工厂创建。 */
+    protected fun LighterASTNode.toUnmappedCjSourceElement(
+        kind: CjSourceElementKind = CjRealSourceElementKind,
+    ): CjLightSourceElement = toCjLightSourceElement(
+        tree, kind, tree.getStartOffset(this), tree.getEndOffset(this),
+    )
+
     protected fun LighterASTNode.toCjSourceElement(
         kind: CjSourceElementKind = CjRealSourceElementKind,
-    ): CjLightSourceElement {
-        val startOffset = tree.getStartOffset(this)
-        val endOffset = tree.getEndOffset(this)
-        return toCjLightSourceElement(tree, kind, startOffset, endOffset)
+        offsetStrategy: CjSourceElementOffsetStrategy = CjSourceElementOffsetStrategy.Default,
+    ): CjSourceElement {
+        val raw = toUnmappedCjSourceElement(kind)
+        val ranged = if (offsetStrategy is CjSourceElementOffsetStrategy.Custom) {
+            raw.withRange(offsetStrategy.startOffset, offsetStrategy.endOffset)
+        } else raw
+        return rawSourceElementFactory.createSource(ranged)
     }
 
-    /** 将当前 LightTree 节点映射为 CFIR 可用的 [CjSourceElement]。 */
-    protected fun LighterASTNode.toSource(): CjSourceElement =
-        toSourceElement() as CjSourceElement
+    protected fun LighterASTNode.toSource(): CjSourceElement = toCjSourceElement()
 
-    /** 实现 raw builder source element 抽象。 */
-    override fun LighterASTNode.toSourceElement(): AbstractCjSourceElement =
-        toCjSourceElement()
+    override fun LighterASTNode.toSourceElement(): CjSourceElement = toCjSourceElement()
+
+    protected fun CjSourceElement.fakeElement(
+        kind: CjFakeSourceElementKind,
+        offsetStrategy: CjSourceElementOffsetStrategy = CjSourceElementOffsetStrategy.Default,
+    ): CjSourceElement = rawSourceElementFactory.createDerivedSource(
+        this, unprojectedFakeElement(kind, offsetStrategy),
+    )
 
     /** 返回 LightTree 节点 token type。 */
     override fun LighterASTNode.elementType(): IElementType = tokenType

@@ -48,6 +48,7 @@ import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.LoopJumpScope
 import org.cangnova.cangjie.cfir.resolve.withExpectedType
 import org.cangnova.cangjie.cfir.resolvedTypeFromPrototype
 import org.cangnova.cangjie.cfir.patterns.visibleBindingVariables
+import org.cangnova.cangjie.cfir.patterns.bindingVariables
 import org.cangnova.cangjie.cfir.scopes.impl.*
 import org.cangnova.cangjie.cfir.session.builtinTypes
 import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagImpl
@@ -503,16 +504,18 @@ dataFlowAnalyzer.enterFunction(constructor)
         data: ResolutionMode,
     ): CfirEnumConstructor {
         val savedContext = context.towerDataContext
+        // constructed-class refs 不重声明 owner 参数；与 Kotlin member type-parameter scope 保持同一边界。
+        val declaredTypeParameters = enumConstructor.typeParameters.filterIsInstance<CfirTypeParameter>()
 
         context.withContainer(enumConstructor) {
-            if (enumConstructor.typeParameters.isNotEmpty()) {
-                context.addNonLocalScope(CfirTypeParameterScopeImpl(enumConstructor.typeParameters))
+            if (declaredTypeParameters.isNotEmpty()) {
+                context.addNonLocalScope(CfirTypeParameterScopeImpl(declaredTypeParameters))
             }
             resolveDeclarationAnnotations(enumConstructor, data)
 
             enumConstructor.valueParameters.forEach { parameter ->
                 parameter.replaceReturnTypeRef(
-                    resolveExplicitTypeRefIfNeeded(parameter.returnTypeRef, enumConstructor.typeParameters),
+                    resolveExplicitTypeRefIfNeeded(parameter.returnTypeRef, declaredTypeParameters),
                 )
             }
 
@@ -526,7 +529,7 @@ dataFlowAnalyzer.enterFunction(constructor)
                 )
             } else {
                 enumConstructor.replaceReturnTypeRef(
-                    resolveExplicitTypeRefIfNeeded(returnTypeRef, enumConstructor.typeParameters),
+                    resolveExplicitTypeRefIfNeeded(returnTypeRef, declaredTypeParameters),
                 )
             }
         }
@@ -681,13 +684,15 @@ dataFlowAnalyzer.enterFunction(constructor)
             }
         }
 
-        // 局部变量在 initializer 完成解析后才进入作用域。
-        // 这样同名引用会继续查找外层变量、分类器或 enum constructor，
-        // 而真正不存在外层声明的递归自引用仍由普通名称解析报告 unresolved。
-        context.storeVariable(variable, session)
+        // 资源绑定已由 try 宿主统一发布；普通局部变量在 initializer 完成后进入作用域。
+        // 两者的自身 initializer 都由 withVariableInitializer 排除当前声明后继续查找外层。
+        if (variable !is CfirResourceVariable) {
+            context.storeVariable(variable, session)
+        }
         dataFlowAnalyzer.exitVariableDeclaration(variable)
 
-        bumpPhase(variable)
+        // Resource 的 source phase 由正式类型/回调完成协议发布；preview 不推进 BODY_RESOLVE。
+        if (variable !is CfirResourceVariable) bumpPhase(variable)
         return variable
     }
 
@@ -916,7 +921,10 @@ dataFlowAnalyzer.enterFunction(constructor)
     }
 
     /**
-     * 解析模式绑定变量显式类型并推进 phase。
+     * 解析模式绑定变量的显式类型与声明注解。
+     *
+     * 叶子可能在 owner 的模式遍历中被访问，不能在这里发布独立声明的解析阶段。
+     * 非局部叶子由自己的目标锁发布，局部叶子随完整正文的阶段更新统一发布。
      */
     protected open fun transformPatternBindingVariableContent(
         patternBindingVariable: CfirPatternBindingVariable,
@@ -928,7 +936,6 @@ dataFlowAnalyzer.enterFunction(constructor)
         context.withContainer(patternBindingVariable) {
             resolveDeclarationAnnotations(patternBindingVariable, data)
         }
-        bumpPhase(patternBindingVariable)
         return patternBindingVariable
     }
 
@@ -989,17 +996,18 @@ dataFlowAnalyzer.enterFunction(constructor)
 
             patternVariable.resolveImplicitReturnTypeFromInitializer()
             resolvePatternValueExpressions(patternVariable.pattern, patternVariable.returnTypeRef.coneTypeOrNull)
-            resolvePatternBindingTypes(
-                pattern = patternVariable.pattern,
-                expectedType = patternVariable.returnTypeRef.coneTypeOrNull,
-                typeResolver = specificTypeResolverTransformer,
+            transformer.expressionsTransformer.completePatternBindingProjection(
+                owner = patternVariable,
+                expectedType = patternVariable.returnTypeRef.coneType,
             )
             registerPatternBindings(patternVariable.pattern)
         } finally {
             bindingVariables.forEach(dataFlowAnalyzer::exitVariableDeclaration)
         }
 
-        bumpPhase(patternVariable)
+        if (patternVariable.pattern.bindingVariables().all { it.returnTypeRef is CfirResolvedTypeRef }) {
+            bumpPhase(patternVariable)
+        }
         return patternVariable
     }
 
@@ -1042,21 +1050,26 @@ dataFlowAnalyzer.enterFunction(constructor)
      * 后续隐式类型缓存或 checker 继续看到裸 `CfirImplicitTypeRef`。
      */
     private fun CfirVariable.resolveImplicitReturnTypeFromInitializer() {
-        val implicitTypeRef = returnTypeRef as? CfirImplicitTypeRef ?: return
+        if (returnTypeRef !is CfirImplicitTypeRef) return
+        replaceReturnTypeRef(inferVariableTypeFromInitializer(this, initializer))
+    }
+
+    /** 推断 initializer 的声明类型；类型试算调用该纯结果入口，不向原声明发布阶段或类型。 */
+    internal fun inferVariableTypeFromInitializer(variable: CfirVariable, initializer: CfirExpression?): CfirResolvedTypeRef {
+        val implicitTypeRef = variable.returnTypeRef as CfirImplicitTypeRef
         val initType = initializer?.coneTypeOrNull
-        val resolvedTypeRef = if (initType != null) {
+        return if (initType != null) {
             val resolvedType = IdealTypeResolver.replaceIdealTypes(initType).approximateThisTypeForDeclaration()
             implicitTypeRef.resolvedTypeFromPrototype(resolvedType, implicitTypeRef.source)
         } else {
             buildErrorTypeRef {
-                source = implicitTypeRef.source ?: this@resolveImplicitReturnTypeFromInitializer.source
+                source = implicitTypeRef.source ?: variable.source
                 diagnostic = ConeSimpleDiagnostic(
                     "Cannot infer variable type without an initializer",
                     DiagnosticKind.InferenceError,
                 )
             }
         }
-        replaceReturnTypeRef(resolvedTypeRef)
     }
 
     // ── Named function ────────────────────────────────────────────────────
@@ -1546,7 +1559,7 @@ dataFlowAnalyzer.enterFunction(constructor)
             is CfirFinalizer -> declaration.typeParameters
             is CfirFunction -> declaration.typeParameters
 
-            is CfirEnumConstructor -> declaration.typeParameters
+            is CfirEnumConstructor -> declaration.typeParameters.filterIsInstance<CfirTypeParameter>()
             else -> emptyList()
         }
     }

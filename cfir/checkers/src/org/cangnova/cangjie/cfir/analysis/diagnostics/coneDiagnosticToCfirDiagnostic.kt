@@ -405,6 +405,7 @@ private fun ConeConstraintSystemHasContradiction.mapSystemHasContradictionError(
             session,
             source,
             qualifiedAccessSource,
+            candidate = candidate,
             preferCallSourceForTooManyArguments = candidate.prefersCallSourceForTooManyArguments(),
         )
         .takeIf { it.isNotEmpty() }
@@ -416,6 +417,7 @@ private fun ConeConstraintSystemHasContradiction.mapSystemHasContradictionError(
             session,
             source,
             qualifiedAccessSource,
+            candidate = candidate,
             preferCallSourceForTooManyArguments = candidate.prefersCallSourceForTooManyArguments(),
         )
         .takeIf { it.isNotEmpty() }
@@ -662,6 +664,7 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
             session,
             source,
             qualifiedAccessSource,
+            candidate = candidate,
             preferCallSourceForTooManyArguments = candidate.prefersCallSourceForTooManyArguments(),
         )
         .takeIf { it.isNotEmpty() }
@@ -775,6 +778,13 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
             is CStructCannotAutobox -> CfirErrors.CSTRUCT_CANNOT_AUTOBOX.on(
                 rootCause.argument.source ?: source ?: return@mapNotNull null,
                 rootCause.expectedType.substituteTypeVariableTypes(candidate, session),
+                session,
+            )
+
+            is LiteralNumericOverflow -> CfirErrors.LITERAL_NUMERIC_OVERFLOW.on(
+                rootCause.literal.source ?: source ?: return@mapNotNull null,
+                rootCause.literalText,
+                rootCause.targetType,
                 session,
             )
 
@@ -1115,15 +1125,28 @@ private fun CfirExpression.hasPrimaryErrorInCallableReferenceReceiver(): Boolean
 }
 
 /**
- * 映射仓颉普通可变参数调用中的参数映射诊断。
+ * 映射仓颉变参尝试失败后保留的普通调用诊断，包含参数形状和正常类型检查。
  */
 private fun List<ResolutionDiagnostic>.mapCangjieVariadicRegularCallDiagnostics(
     session: CfirSession,
     source: CjSourceElement?,
     qualifiedAccessSource: CjSourceElement?,
+    candidate: AbstractCallCandidate<*>,
     preferCallSourceForTooManyArguments: Boolean = false,
 ): List<CjDiagnostic> = coalesceArgumentMappingDiagnostics().mapNotNull { diagnostic ->
     when (diagnostic) {
+        is ArgumentTypeMismatch -> argumentTypeMismatch(
+            source = diagnostic.argument.source ?: source,
+            argument = diagnostic.argument,
+            expectedType = diagnostic.expectedType.substituteTypeVariableTypes(candidate, session),
+            actualType = diagnostic.actualType.substituteTypeVariableTypes(candidate, session),
+            isMismatchDueToNullability = diagnostic.isMismatchDueToNullability,
+            isInoutArgument = diagnostic.isInoutArgument,
+            anonymousFunction = diagnostic.anonymousFunctionIfReturnExpression,
+            candidate = candidate,
+            session = session,
+        )
+
         is ArgumentPassedTwice -> CfirErrors.ARGUMENT_PASSED_TWICE.on(
             diagnostic.source,
             session,
@@ -2557,6 +2580,11 @@ private fun ConeDiagnostic.mapOtherDiagnostic(
             session,
         )
 
+        is ConePostponedInferenceDiagnostic -> CfirErrors.NEW_INFERENCE_ERROR.on(
+            diagnosticSource,
+            reason,
+            session,
+        )
         is ConeSimpleDiagnostic -> when (kind) {
             DiagnosticKind.CannotInferParameterType -> {
                 if (genericCallDiagnosticSource != null) {

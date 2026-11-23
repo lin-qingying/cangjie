@@ -139,6 +139,10 @@ data class MacroSurfaceToken(
     val endOffset: Int,
     /** lexer token type 的字符串名。 */
     val kindName: String? = null,
+    /** 相对于 token.text 的分段来源；原输入树和区间不能由 startOffset/endOffset 替代。 */
+    val sourceSpans: List<MacroTokenSourceSpan> = emptyList(),
+    /** 由真实 lexer 确认的空白/注释，不参与规范 AST 锚点的来源证明。 */
+    val isTrivia: Boolean = false,
 )
 
 /**

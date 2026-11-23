@@ -6,7 +6,6 @@ import org.cangnova.cangjie.cfir.expressions.CfirResolvable
 import org.cangnova.cangjie.cfir.resolve.CfirResolutionSnapshot
 import org.cangnova.cangjie.cfir.resolve.body.CfirAbstractBodyResolveTransformer
 import org.cangnova.cangjie.cfir.resolve.body.CfirImplicitBodyResolveComputationSessionSnapshot
-import org.cangnova.cangjie.cfir.resolve.body.ReturnTypeCalculatorWithJump
 import org.cangnova.cangjie.cfir.resolve.calls.ConeAtomWithCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.ConeContextSensitiveAlternativeForQualifierAtom
 import org.cangnova.cangjie.cfir.resolve.calls.ConeLambdaWithTypeVariableAsExpectedTypeAtom
@@ -104,9 +103,8 @@ class CfirOverloadByLambdaBodyResolver(
                 val selectedState = successfulCandidateStates[selectedCandidate]
                 if (selectedState != null) {
                     val implicitBodyResolveComputationSession =
-                        (components.returnTypeCalculator as? ReturnTypeCalculatorWithJump)
-                            ?.implicitBodyResolveComputationSession
-                    selectedState.restore(selectedCandidate, implicitBodyResolveComputationSession)
+                        components.transformer.implicitBodyResolveComputationSession
+                    selectedState.restore(selectedCandidate, implicitBodyResolveComputationSession, components.context.dataFlowAnalyzerContext)
                 } else {
                     analyzeCandidateLambda(call, selectedCandidate, selectedLambda, analyzer, rollback = false)
                 }
@@ -168,12 +166,20 @@ class CfirOverloadByLambdaBodyResolver(
             null
         }
         val implicitBodyResolveComputationSession =
-            (components.returnTypeCalculator as? ReturnTypeCalculatorWithJump)?.implicitBodyResolveComputationSession
+            components.transformer.implicitBodyResolveComputationSession
+        val bodySnapshot = if (rollback) CfirResolutionSnapshot.capture(call) else null
         val implicitBodyResolveSnapshot = if (rollback) {
-            implicitBodyResolveComputationSession?.capture()
+            checkNotNull(bodySnapshot).captureImplicitBodyCache(implicitBodyResolveComputationSession)
         } else {
             null
         }
+        val retainedSnapshot = if (rollback) components.context.implicitTypeComputationScope?.let { scope ->
+            scope.graph.captureReplayState(scope, call)
+        } else null
+        val retainedOwner = components.context.implicitTypeComputationScope?.graph?.constraintSystemOwner
+        val retainedTransaction = if (rollback && retainedOwner != null && retainedOwner !== candidate.system) {
+            retainedOwner.prepareTransaction()
+        } else null
         val transaction = if (rollback) candidate.system.prepareTransaction() else null
         try {
             val analyze = {
@@ -206,11 +212,21 @@ class CfirOverloadByLambdaBodyResolver(
             }
             val successful = candidate.isSuccessful
             val successfulState = if (rollback && successful) {
+                val successfulBody = CfirResolutionSnapshot.capture(call)
                 SuccessfulCandidateAnalysis(
-                    resolutionSnapshot = CfirResolutionSnapshot.capture(call),
+                    resolutionSnapshot = successfulBody,
                     postponedAtomStates = setOf(candidate).capturePostponedAtomStates(),
                     candidateState = CandidatePostState.capture(candidate, components),
-                    implicitBodyResolveSnapshot = implicitBodyResolveComputationSession?.capture(),
+                    implicitBodyResolveSnapshot = successfulBody.captureImplicitBodyCache(implicitBodyResolveComputationSession),
+                    retainedSnapshot = components.context.implicitTypeComputationScope?.let { scope ->
+                        scope.graph.captureReplayState(scope, call)
+                    },
+                    retainedOwner = retainedOwner,
+                    retainedStorage = retainedOwner?.let { owner ->
+                        components.session.inferenceComponents.createConstraintSystem().apply {
+                            setBaseSystem(owner.currentStorage())
+                        }.currentStorage()
+                    },
                 )
             } else {
                 null
@@ -219,11 +235,11 @@ class CfirOverloadByLambdaBodyResolver(
         } finally {
             if (transaction != null) {
                 transaction.rollbackTransaction()
+                retainedTransaction?.rollbackTransaction()
                 mutableState.restore(candidate)
                 components.context.restorePostponedAtomsResolutionContexts(postponedContextSnapshot!!)
-                if (implicitBodyResolveSnapshot != null) {
-                    implicitBodyResolveComputationSession!!.restore(implicitBodyResolveSnapshot)
-                }
+                checkNotNull(bodySnapshot).restoreWithImplicitBodyCache(implicitBodyResolveSnapshot, implicitBodyResolveComputationSession)
+                retainedSnapshot?.restoreForRollback()
             }
         }
     }
@@ -331,6 +347,9 @@ class CfirOverloadByLambdaBodyResolver(
         private val candidateState: CandidatePostState,
         /** 隐式 body resolve session 的快照。 */
         private val implicitBodyResolveSnapshot: CfirImplicitBodyResolveComputationSessionSnapshot?,
+        private val retainedSnapshot: org.cangnova.cangjie.cfir.resolve.inference.CfirImplicitTypeReplaySnapshot?,
+        private val retainedOwner: org.cangnova.cangjie.resolve.calls.inference.model.ConstraintSystemImpl?,
+        private val retainedStorage: ConstraintStorage?,
     ) {
         /**
          * 把成功分析后的状态恢复到当前候选和隐式 body resolve session 上。
@@ -338,13 +357,13 @@ class CfirOverloadByLambdaBodyResolver(
         fun restore(
             candidate: Candidate,
             implicitBodyResolveComputationSession: org.cangnova.cangjie.cfir.resolve.body.ImplicitBodyResolveComputationSession?,
+            dataFlowContext: org.cangnova.cangjie.cfir.resolve.body.CfirDataFlowAnalyzerContext,
         ) {
-            resolutionSnapshot.restore()
+            resolutionSnapshot.restoreForSelectedCandidate(implicitBodyResolveSnapshot, implicitBodyResolveComputationSession, dataFlowContext)
             postponedAtomStates.restore()
             candidateState.restore(candidate)
-            if (implicitBodyResolveSnapshot != null) {
-                implicitBodyResolveComputationSession?.restore(implicitBodyResolveSnapshot)
-            }
+            if (retainedOwner != null) retainedOwner.replaceContentWith(checkNotNull(retainedStorage))
+            retainedSnapshot?.restoreForRollback()
         }
     }
 
@@ -366,6 +385,7 @@ class CfirOverloadByLambdaBodyResolver(
         private val lambdasAnalyzedWithPCLA: List<CfirDeclaration>,
         /** PCLA 完成结果写回回调列表副本。 */
         private val completionCallbacks: List<(ConeSubstitutor) -> Unit>,
+        private val pclaState: org.cangnova.cangjie.cfir.resolve.calls.candidate.CandidatePCLACompletionState,
     ) {
         /**
          * 将捕获的候选后置状态写回候选。
@@ -383,6 +403,7 @@ class CfirOverloadByLambdaBodyResolver(
             candidate.lambdasAnalyzedWithPCLA.addAll(lambdasAnalyzedWithPCLA)
             candidate.onPCLACompletionResultsWritingCallbacks.clear()
             candidate.onPCLACompletionResultsWritingCallbacks.addAll(completionCallbacks)
+            candidate.restorePCLACompletionState(pclaState)
         }
 
         /**
@@ -407,6 +428,7 @@ class CfirOverloadByLambdaBodyResolver(
                     postponedPCLACalls = candidate.postponedPCLACalls.toList(),
                     lambdasAnalyzedWithPCLA = candidate.lambdasAnalyzedWithPCLA.toList(),
                     completionCallbacks = candidate.onPCLACompletionResultsWritingCallbacks.toList(),
+                    pclaState = candidate.capturePCLACompletionState(),
                 )
             }
         }
@@ -464,6 +486,7 @@ class CfirOverloadByLambdaBodyResolver(
         /** 捕获时局部 lambda initializer completion 列表长度。 */
         /** 捕获时 PCLA completion 回调列表长度。 */
         private val completionCallbacksSize: Int,
+        private val pclaState: org.cangnova.cangjie.cfir.resolve.calls.candidate.CandidatePCLACompletionState,
     ) {
         /**
          * 回滚候选分析过程中新增的增量状态。
@@ -475,6 +498,7 @@ class CfirOverloadByLambdaBodyResolver(
             candidate.postponedPCLACalls.removeTail(postponedPCLACallsSize)
             candidate.lambdasAnalyzedWithPCLA.removeTail(lambdasAnalyzedWithPCLASize)
             candidate.onPCLACompletionResultsWritingCallbacks.removeTail(completionCallbacksSize)
+            candidate.restorePCLACompletionState(pclaState)
         }
 
         /**
@@ -491,6 +515,7 @@ class CfirOverloadByLambdaBodyResolver(
                 postponedPCLACallsSize = candidate.postponedPCLACalls.size,
                 lambdasAnalyzedWithPCLASize = candidate.lambdasAnalyzedWithPCLA.size,
                 completionCallbacksSize = candidate.onPCLACompletionResultsWritingCallbacks.size,
+                pclaState = candidate.capturePCLACompletionState(),
             )
         }
     }

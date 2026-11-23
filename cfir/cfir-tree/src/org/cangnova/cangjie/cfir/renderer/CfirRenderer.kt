@@ -279,6 +279,9 @@ open class CfirReferenceRenderer {
         is CfirSuperReference -> "super"
         is CfirErrorReference -> "ERROR_REF(${reference.reason})"
         is CfirControlFlowGraphReference -> "<cfg-ref>"
+        // select 尚未建立候选时的正式无状态引用，不包含可渲染的声明目标。
+        CfirStubReference -> "<stub-ref>"
+
     }
 }
 
@@ -1280,9 +1283,8 @@ class CfirRenderer(
          * 渲染匿名函数表达式。
          */
         override fun visitAnonymousFunctionExpression(anonymousFunctionExpression: CfirAnonymousFunctionExpression) {
-            val lambda = anonymousFunctionExpression
             print("LAMBDA(")
-            lambda.anonymousFunction.valueParameters.forEachIndexed { index, param ->
+            anonymousFunctionExpression.anonymousFunction.valueParameters.forEachIndexed { index, param ->
                 if (index > 0) print(", ")
                 print(param.name.asString())
                 print(": ")
@@ -1290,7 +1292,7 @@ class CfirRenderer(
             }
             println(") {")
             printer.pushIndent()
-            lambda.anonymousFunction.body?.accept(this)
+            anonymousFunctionExpression.anonymousFunction.body?.accept(this)
             printer.popIndent()
             println("}")
         }

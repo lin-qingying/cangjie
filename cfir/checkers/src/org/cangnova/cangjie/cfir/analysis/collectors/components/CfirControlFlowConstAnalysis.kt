@@ -38,6 +38,8 @@ import org.cangnova.cangjie.cfir.references.impl.CfirResolvedAppliedCallableRefe
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.CFGNode
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.BlockExitNode
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.ControlFlowGraph
+import org.cangnova.cangjie.cfir.resolve.dfa.cfg.ControlFlowGraphCompletionPath
+import org.cangnova.cangjie.cfir.resolve.dfa.cfg.ControlFlowGraphCompletionTraversal
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.EdgeLabel
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.IncrementDecrementNode
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.MatchBranchConditionEnterNode
@@ -45,6 +47,9 @@ import org.cangnova.cangjie.cfir.resolve.dfa.cfg.MatchBranchGuardEnterNode
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.MatchBranchFailure
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.MatchBranchFailureNode
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.MatchBranchSuccess
+import org.cangnova.cangjie.cfir.resolve.dfa.cfg.IfBranchTrue
+import org.cangnova.cangjie.cfir.resolve.dfa.cfg.IfBranchFalse
+import org.cangnova.cangjie.cfir.resolve.dfa.cfg.IfConditionExitNode
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.MatchBranchResultExitNode
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.MatchEnterNode
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.MatchExitNode
@@ -88,6 +93,9 @@ import java.util.IdentityHashMap
  * 两者都因此退化为未知。故本分析只跟踪"存在带参构造器"的 enum 的外层 tag。
  */
 internal class CfirControlFlowConstAnalysis {
+    /** 临时取证只观察实际状态和节点身份，不参与常量选择、诊断来源或写入权限。 */
+    private val traceEnabled = java.lang.Boolean.getBoolean("cangjie.debug.controlFlowConst")
+
     /** 缓存 enum 是否在官方常量域中保留 constructor tag，避免重复查询宿主声明。 */
     private val constructorTagTracking = IdentityHashMap<CfirEnumConstructorSymbol, Boolean>()
     /** Option-like 的 Bool tag 转 UInt64 后未知，其它 enum 的 UInt32 tag 可以用于 MultiBranch。 */
@@ -98,30 +106,28 @@ internal class CfirControlFlowConstAnalysis {
 
     /** 返回由 CFG 常量分支效应证明不可达的 pattern source。 */
     fun collectUnreachablePatterns(graph: ControlFlowGraph): Set<CfirPattern> {
-        val incomingStates = IdentityHashMap<CFGNode<*>, ConstState>()
-        val worklist = ArrayDeque<CFGNode<*>>()
-        incomingStates[graph.enterNode] = ConstState.EMPTY
-        worklist += graph.enterNode
-
-        while (worklist.isNotEmpty()) {
-            val node = worklist.removeFirst()
-            val input = incomingStates[node] ?: continue
-            val output = input.transfer(node)
-            val target = node.constantTargetSuccessor(output)
-
-            for (successor in node.followingNodes) {
-                val edge = node.edgeTo(successor)
-                if (!edge.kind.usedInCfa || edge.kind.isDead) continue
-
-                if (target != null && successor !== target) {
-                    continue
+        val traversal = ControlFlowGraphCompletionTraversal(graph)
+        val incomingStates = traversal.collect(
+            initial = ConstState.EMPTY,
+            transfer = { node, input ->
+                val output = input.transfer(node)
+                if (traceEnabled) traceState("TRANSFER", node, input, output)
+                output
+            },
+            join = ConstState::join,
+            selectSuccessor = { node, output ->
+                val selected = node.constantTargetSuccessor(output)
+                if (traceEnabled) {
+                    System.err.println("CFIR_CFA_SELECT node=" + traceIdentity(node) + " selected=" + traceIdentity(selected))
                 }
+                selected
+            },
+        )
 
-                val merged = incomingStates[successor]?.join(output) ?: output
-                if (incomingStates[successor] != merged) {
-                    incomingStates[successor] = merged
-                    worklist += successor
-                }
+        if (traceEnabled) {
+            System.err.println("CFIR_CFA_GRAPH declaration=" + traceIdentity(graph.declaration))
+            for ((path, input) in incomingStates) {
+                traceState("STABLE", path.node, input, null)
             }
         }
 
@@ -132,21 +138,45 @@ internal class CfirControlFlowConstAnalysis {
          * 消费最终 CFG 常量事实。
          */
         val unreachablePatterns = Collections.newSetFromMap(IdentityHashMap<CfirPattern, Boolean>())
-        for ((node, input) in incomingStates) {
-            val target = node.constantTargetSuccessor(input.transfer(node)) ?: continue
+        // 一个 source 在不同 completion 下可执行；只有所有可达状态都拒绝该边才报告。
+        for ((node, paths) in incomingStates.entries.groupBy { it.key.node }) {
             val decisionNode = node as? MatchPatternDecisionNode ?: continue
+            val targets = paths.map { (_, input) -> node.constantTargetSuccessor(input.transfer(node)) }
             for (successor in node.followingNodes) {
                 val edge = node.edgeTo(successor)
-                if (!edge.kind.usedInCfa || edge.kind.isDead || successor === target) continue
-                decisionNode.recordRejectedSuccessor(
-                    edgeLabel = edge.label,
-                    rejectedSuccessor = successor,
-                    destination = unreachablePatterns,
-                )
+                if (!edge.kind.usedInCfa || edge.kind.isDead) continue
+                if (targets.any { it == null || it === successor }) continue
+                for ((path, _) in paths) {
+                    val rejected = traversal.successors(path).singleOrNull { it.node === successor } ?: continue
+                    decisionNode.recordRejectedSuccessor(
+                        edgeLabel = edge.label,
+                        rejectedSuccessor = rejected,
+                        traversal = traversal,
+                        destination = unreachablePatterns,
+                    )
+                }
             }
         }
         return unreachablePatterns
     }
+
+    /** 临时回执保留实际 graph/CFIR/edge 对象，不以源码名或坐标推断相同身份。 */
+    private fun traceState(stage: String, node: CFGNode<*>, input: ConstState, output: ConstState?) {
+        val decision = node as? MatchPatternDecisionNode
+        val edges = node.followingNodes.joinToString { next ->
+            val edge = node.edgeTo(next)
+            traceIdentity(next) + ":" + edge.kind + ":" + edge.label
+        }
+        System.err.println("CFIR_CFA_" + stage + " node=" + traceIdentity(node) +
+            " fir=" + traceIdentity(node.fir) + " graph=" + traceIdentity(node.owner) +
+            " pattern=" + traceIdentity(decision?.pattern) + " report=" + traceIdentity(decision?.reportSource) +
+            " selector=" + traceIdentity(decision?.matchExpression?.subject) +
+            " path=" + decision?.subjectPath + " edges=[" + edges + "] input={" + input.trace() +
+            "} output={" + output?.trace() + "}")
+    }
+
+    private fun traceIdentity(value: Any?): String = if (value == null) "absent" else
+        value.javaClass.simpleName + "@" + Integer.toHexString(System.identityHashCode(value))
 
     /**
      * 仅在 CFG 明确标记了原子模式判定的 success/failure 对时选择唯一后继。
@@ -157,6 +187,11 @@ internal class CfirControlFlowConstAnalysis {
     private fun CFGNode<*>.constantTargetSuccessor(
         state: ConstState,
     ): CFGNode<*>? {
+        if (this is IfConditionExitNode) {
+            val condition = fir.condition.constantBoolean(state) ?: return null
+            val label = if (condition) IfBranchTrue else IfBranchFalse
+            return followingNodes.singleOrNull { edgeTo(it).label == label }
+        }
         val decisionNode = this as? MatchPatternDecisionNode ?: return null
         val guard = decisionNode.guard
         val decision = if (guard != null) {
@@ -194,17 +229,18 @@ internal class CfirControlFlowConstAnalysis {
      */
     private fun MatchPatternDecisionNode.recordRejectedSuccessor(
         edgeLabel: EdgeLabel,
-        rejectedSuccessor: CFGNode<*>,
+        rejectedSuccessor: ControlFlowGraphCompletionPath,
+        traversal: ControlFlowGraphCompletionTraversal,
         destination: MutableSet<CfirPattern>,
     ) {
         if (edgeLabel == MatchBranchSuccess) {
             successReportSource?.let { destination += it }
         }
-        rejectedSuccessor.collectDeadRegionPatterns(matchExpression, destination, patternOrigin = guard == null)
+        rejectedSuccessor.collectDeadRegionPatterns(matchExpression, traversal, destination, patternOrigin = guard == null)
     }
 
     /** 前驱终结符决定当前块是否属于 pattern 警告；guard 的 Branch 来源是 OTHER。 */
-    private data class DeadRegionStep(val node: CFGNode<*>, val patternOrigin: Boolean)
+    private data class DeadRegionStep(val path: ControlFlowGraphCompletionPath, val patternOrigin: Boolean)
 
     /**
      * 从被杀死的 successor 出发收集死区内承载模式位置的节点。
@@ -214,36 +250,38 @@ internal class CfirControlFlowConstAnalysis {
      * 与 match 出口都由无条件跳转进入，递归到此为止，因此不会把仍可执行的分支体误判
      * 为不可达。
      */
-    private fun CFGNode<*>.collectDeadRegionPatterns(
+    private fun ControlFlowGraphCompletionPath.collectDeadRegionPatterns(
         owner: CfirMatchExpression,
+        traversal: ControlFlowGraphCompletionTraversal,
         destination: MutableSet<CfirPattern>,
         patternOrigin: Boolean,
     ) {
-        val visited = Collections.newSetFromMap(IdentityHashMap<CFGNode<*>, Boolean>())
+        val visited = mutableSetOf<ControlFlowGraphCompletionPath>()
         val worklist = ArrayDeque<DeadRegionStep>()
         worklist += DeadRegionStep(this, patternOrigin)
         while (worklist.isNotEmpty()) {
-            val (node, reportPattern) = worklist.removeLast()
-            if (!visited.add(node)) continue
+            val (path, reportPattern) = worklist.removeLast()
+            if (!visited.add(path)) continue
+            val node = path.node
             if (reportPattern) node.deadRegionPatternOrNull(owner)?.let { pattern -> destination += pattern }
             if (!node.continuesDeadRegion(owner)) continue
             val decision = node as? MatchPatternDecisionNode
             val successorPatternOrigin = decision?.let { it.guard == null } ?: reportPattern
-            node.followingNodes.asReversed().forEach { successor ->
+            traversal.successors(path, includeDead = true).asReversed().forEach { successorPath ->
+                val successor = successorPath.node
                 val edge = node.edgeTo(successor)
-                if (!edge.kind.usedInCfa) return@forEach
                 if (decision?.isAlwaysSuccessful == true) {
                     // 中间 wildcard 不生成指令；最后一个 wildcard/binding 通过 GoTo 进入无位置的成功块。
                     if (edge.label == MatchBranchSuccess && successor is MatchPatternDecisionNode &&
                         successor.guard == null && successor.reportSource === decision.reportSource
                     ) {
-                        worklist += DeadRegionStep(successor, reportPattern)
+                        worklist += DeadRegionStep(successorPath, reportPattern)
                     }
                 } else {
                     if (edge.label == MatchBranchSuccess && successorPatternOrigin) {
                         decision?.successReportSource?.let { destination += it }
                     }
-                    worklist += DeadRegionStep(successor, successorPatternOrigin)
+                    worklist += DeadRegionStep(successorPath, successorPatternOrigin)
                 }
             }
         }
@@ -653,6 +691,13 @@ internal class CfirControlFlowConstAnalysis {
         operator fun get(variable: CfirVariableSymbol<*>): ConstValue? = values[variable]
 
         fun result(expression: CfirExpression): ConstValue? = results[expression]
+
+        /** 临时日志仅遍历已存在的 immutable facts；不读取 provider、phase 或再次求值。 */
+        fun trace(): String = "variables=[" + values.entries.joinToString { (key, value) ->
+            key.javaClass.simpleName + "@" + Integer.toHexString(System.identityHashCode(key)) + "=" + value
+        } + "] results=[" + results.entries.joinToString { (key, value) ->
+            key.javaClass.simpleName + "@" + Integer.toHexString(System.identityHashCode(key)) + "=" + value
+        } + "]"
 
         fun withVariable(variable: CfirVariableSymbol<*>, value: ConstValue?): ConstState =
             copy(values = values.withValue(variable, value))

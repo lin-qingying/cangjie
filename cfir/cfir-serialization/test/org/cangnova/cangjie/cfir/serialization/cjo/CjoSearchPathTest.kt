@@ -12,6 +12,49 @@ import kotlin.test.assertNull
  * 验证 CJO 搜索路径对标准库目录和普通库目录的优先级规则。
  */
 class CjoSearchPathTest {
+    /** 实际 SDK 包头相同也不能替换显式模块根中的资源；文件名不参与包身份推断。 */
+    @Test
+    fun `explicit own std package precedes environment SDK header index`() {
+        val directory = Files.createTempDirectory("cjo-own-stdlib-")
+        try {
+            val ownRoot = directory.resolve("own").createDirectories()
+            val sdkRoot = directory.resolve("sdk").createDirectories()
+            val bytes = checkNotNull(javaClass.classLoader.getResourceAsStream(
+                "cjo-sdk/windows_x86_64_cjnative/std/std.core.cjo",
+            )).use { it.readBytes() }
+            val ownFile = Files.write(ownRoot.resolve("module-owned.cjo"), bytes)
+            Files.write(sdkRoot.resolve("sdk-owned.cjo"), bytes)
+            val search = CjoSearchPath(additionalLibrarySearchPaths = listOf(ownRoot.toFile()),
+                envProvider = { key -> if (key == "CANGJIE_STDLIB_MODULE") sdkRoot.toString() else null })
+            assertEquals(ownFile.toFile().absolutePath, search.findCjoFile("std.core")?.absolutePath)
+            assertEquals(ownFile.toFile().absolutePath, search.findCjoFile("std.core")?.absolutePath)
+        } finally {
+            directory.toFile().deleteRecursively()
+        }
+    }
+
+    /** 当前显式文件的读取失败不能让后面的 SDK 同名包代替它。 */
+    @Test
+    fun `explicit own standard path precedes later readable SDK header`() {
+        val directory = Files.createTempDirectory("cjo-own-standard-path-")
+        try {
+            val ownRoot = directory.resolve("own").createDirectories()
+            val sdkRoot = directory.resolve("sdk").createDirectories()
+            val ownFile = ownRoot.resolve(CjoConstants.packageNameToPath("std.core"))
+            ownFile.parent.createDirectories()
+            Files.write(ownFile, byteArrayOf(1))
+            val bytes = checkNotNull(javaClass.classLoader.getResourceAsStream(
+                "cjo-sdk/windows_x86_64_cjnative/std/std.core.cjo",
+            )).use { it.readBytes() }
+            Files.write(sdkRoot.resolve("sdk-owned.cjo"), bytes)
+            val search = CjoSearchPath(additionalLibrarySearchPaths = listOf(ownRoot.toFile()),
+                envProvider = { key -> if (key == "CANGJIE_STDLIB_MODULE") sdkRoot.toString() else null })
+            assertEquals(ownFile.toFile().absolutePath, search.findCjoFile("std.core")?.absolutePath)
+        } finally {
+            directory.toFile().deleteRecursively()
+        }
+    }
+
     /**
      * 验证非 std 包不能从 CANGJIE_STDLIB_MODULE 路径加载。
      */

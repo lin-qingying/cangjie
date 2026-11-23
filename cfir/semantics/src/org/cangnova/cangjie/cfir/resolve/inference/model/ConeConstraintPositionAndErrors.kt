@@ -27,6 +27,7 @@ package org.cangnova.cangjie.cfir.resolve.inference.model
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.ConeTypeVariable
 import org.cangnova.cangjie.resolve.calls.inference.model.*
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.type.model.TypeVariableMarker
@@ -39,6 +40,13 @@ import org.cangnova.cangjie.type.model.TypeVariableMarker
 class ConeFixVariableConstraintPosition(
     variable: TypeVariableMarker,
 ) : FixVariableConstraintPosition<Nothing?>(variable, null)
+
+/** 半固定只登记代表类型的 equality，变量仍由所属推断会话最终完成。 */
+class ConeSemiFixVariableConstraintPosition(
+    variable: TypeVariableMarker,
+) : SemiFixVariableConstraintPosition(variable) {
+    override fun toString(): String = "Fix variable ${(variable as ConeTypeVariable).typeConstructor.debugName}"
+}
 
 /**
  * 普通调用实参产生的约束位置。

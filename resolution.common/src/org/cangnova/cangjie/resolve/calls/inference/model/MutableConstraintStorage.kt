@@ -331,6 +331,23 @@ class MutableVariableWithConstraints private constructor(
     /**
      * 返回便于调试的约束集合描述。
      */
+    internal fun rawConstraintsSnapshot(): List<Constraint> = mutableConstraints.toList()
+
+    /** 事务恢复原 row 对象和 raw 列表，避免 incorporation 持有过期 row。 */
+    internal fun restoreConstraintsFrom(snapshot: MutableVariableWithConstraints) {
+        require(typeVariable === snapshot.typeVariable)
+        mutableConstraints.clear()
+        mutableConstraints.addAll(snapshot.mutableConstraints)
+        simplifiedConstraints = null
+        clearGroupedConstraintCaches()
+    }
+
+    /** 回滚保留完整 raw row 身份，不能把已经简化的列表当成事务前状态。 */
+    internal fun snapshot(context: Context): MutableVariableWithConstraints =
+        MutableVariableWithConstraints(context, typeVariable, mutableConstraints.toList()).also {
+            it.simplifiedConstraints = null
+        }
+
     override fun toString(): String {
         return "Constraints for $typeVariable"
     }
@@ -339,6 +356,12 @@ class MutableVariableWithConstraints private constructor(
 
 /** 约束系统的可变存储，持有所有类型变量及其约束、错误、固定结果等信息 */
 internal class MutableConstraintStorage : ConstraintStorage {
+    /** 实际可变 owner、派生基线与源操作身份；不使用 session 临时视图或任意版本计数。 */
+    internal lateinit var owner: ConstraintSystemImpl
+    internal var parentBaseline: ConstraintSystemBaseline? = null
+    internal var unrestrictedBuilderInference: Boolean = false
+    internal val mutations = mutableListOf<ConstraintSystemMutation>()
+    internal val resolvedForks = mutableListOf<ConstraintSystemForkOutcome>()
     /** 所有类型变量（包括已固定和未固定），以类型构造器为键 */
     override val allTypeVariables: MutableMap<TypeConstructorMarker, TypeVariableMarker> = LinkedHashMap()
 

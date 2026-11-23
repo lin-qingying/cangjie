@@ -16,6 +16,7 @@ import org.cangnova.cangjie.cfir.diagnostic.ConeConstraintSystemHasContradiction
 import org.cangnova.cangjie.cfir.diagnostic.CStructCannotAutobox
 import org.cangnova.cangjie.cfir.diagnostic.InapplicableWrongReceiver
 import org.cangnova.cangjie.cfir.diagnostic.LambdaParameterTypeMismatch
+import org.cangnova.cangjie.cfir.diagnostic.LiteralNumericOverflow
 import org.cangnova.cangjie.cfir.diagnostic.NamedParameterNotFound
 import org.cangnova.cangjie.cfir.diagnostic.UnsuccessfulCallableReferenceArgument
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
@@ -46,7 +47,11 @@ import org.cangnova.cangjie.cfir.resolve.expectedType
 import org.cangnova.cangjie.cfir.resolve.ResolutionMode
 import org.cangnova.cangjie.cfir.resolve.CfirResolutionSnapshot
 import org.cangnova.cangjie.cfir.resolve.calls.*
+import org.cangnova.cangjie.cfir.resolve.constants.CfirIntConstantEvalUtils
+import org.cangnova.cangjie.cfir.resolve.constants.explicitNumericLiteralType
+import org.cangnova.cangjie.cfir.resolve.constants.numericLiteralBoxTargetType
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
+import org.cangnova.cangjie.cfir.resolve.inference.CfirInferenceVariableRole
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallKind
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CheckerSink
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithCandidate
@@ -84,6 +89,7 @@ import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
 import org.cangnova.cangjie.cfir.types.ConeTupleType
 import org.cangnova.cangjie.cfir.types.ConeUnreportedDuplicateDiagnostic
 import org.cangnova.cangjie.cfir.types.ConeVArrayType
+import org.cangnova.cangjie.cfir.types.ConeTypeVariable
 import org.cangnova.cangjie.cfir.types.IdealTypeResolver
 import org.cangnova.cangjie.cfir.types.arrayLiteralElementType
 import org.cangnova.cangjie.cfir.types.asCone
@@ -322,6 +328,7 @@ internal object ArgumentCheckingProcessor {
         val postponedAtom = ConeResolvedCallableReferenceAtom(
             expression = expression,
             expectedType = targetExpectedType,
+            candidateOfOuterCall = candidate,
         )
         atom.setPostponedSubAtom(postponedAtom)
         candidate.addPostponedAtom(postponedAtom)
@@ -346,6 +353,7 @@ internal object ArgumentCheckingProcessor {
         val postponedAtom = ConeResolvedCallableReferenceAtom(
             expression = expression,
             expectedType = targetExpectedType,
+            candidateOfOuterCall = candidate,
         )
         candidate.addPostponedAtom(postponedAtom)
         return true
@@ -516,6 +524,9 @@ internal object ArgumentCheckingProcessor {
                         // 无法在返回类型下产生推断失败（如 returnTypeInferenceMismatch 的 `produce(true)`）。
                         typeArguments.retainAll { it.source != null }
                     }
+                    // probe 与最终实参替换由这条真实调用产生；保留精确原节点关系，
+                    // 不通过 source 文本、范围或 callee 名称恢复实例化身份。
+                    context.bodyResolveContext.implicitTypeComputationScope?.registerDerivedElement(functionCall, isolatedCall)
                     // 名字查找结果不依赖 outer expected type。已有 callable ambiguity 能被目标返回类型
                     // 唯一规约时，只从 discovery 字段创建 fresh candidate 并重跑正常 stages；泛型或
                     // 仍有多个 survivor 的情况继续走完整 tower resolver。
@@ -557,6 +568,16 @@ internal object ArgumentCheckingProcessor {
             return NestedCallResolutionResult(atom)
         }
         val (resolvedCandidate, resolvedCall) = resolvedProbe
+        if (java.lang.Boolean.getBoolean("cangjie.debug.formalCallIdentity")) {
+            System.err.println("NESTED_EXPECTED_PROBE old=" + System.identityHashCode(functionCall).toString(16) +
+                    " new=" + System.identityHashCode(resolvedCall).toString(16) +
+                    " candidate=" + System.identityHashCode(resolvedCandidate).toString(16) +
+                    " target=" + System.identityHashCode(resolvedCandidate.symbol).toString(16) +
+                    " oldSource=" + System.identityHashCode(functionCall.source).toString(16) +
+                    " newSource=" + System.identityHashCode(resolvedCall.source).toString(16) +
+                    " oldArguments=" + functionCall.argumentList.arguments.map { System.identityHashCode(it).toString(16) } +
+                    " newArguments=" + resolvedCall.argumentList.arguments.map { System.identityHashCode(it).toString(16) })
+        }
         if (!resolvedCandidate.isSuccessful) {
             /*
              * 嵌套泛型调用在期望类型下无法推断类型实参（约束系统矛盾/信息不足）时，
@@ -973,27 +994,45 @@ internal object ArgumentCheckingProcessor {
         ) return
         if (addNoArgEnumConstructorShapeConstraintForCurrentInferenceVariable(expression, argumentType, expectedType, position)) return
         if (addLocalLambdaParameterShapeConstraint(argumentType, expectedType, position)) return
-// IdealInt/IdealFloat 在具体形参类型下按候选局部目标类型参与适用性检查。
+        var unwrappedExpression = expression
+        while (unwrappedExpression is CfirWrappedExpression) {
+            unwrappedExpression = unwrappedExpression.expression
+        }
+        val literalArgument = unwrappedExpression as? CfirLiteralExpression
+        // IdealInt/IdealFloat 在具体形参类型下按候选局部目标类型参与适用性检查。
         // 嵌套调用的共享字面量节点可能已被先前候选具体化，因此从不可变 literal kind 重建
         // candidate-local ideal 类型；这里只替换约束输入，最终 winner 仍由 completion writer 写回类型。
         // 重建只适用于数值字面量：非数值实参（class-like/函数/字符串等）即使落在字面量表达式
         // 节点上（如测试夹具构造的类型化表达式）也必须保留原类型参与检查。
-        val candidateLocalArgumentType = when (argumentType) {
-            is ConePrimitiveType -> when (argumentType.kind) {
-                PrimitiveTypeKind.IDEAL_INT -> ConePrimitiveType.IDEAL_INT
-                PrimitiveTypeKind.IDEAL_FLOAT -> ConePrimitiveType.IDEAL_FLOAT
-                else -> when ((expression as? CfirLiteralExpression)?.kind) {
-                    CfirLiteralKind.INT -> ConePrimitiveType.IDEAL_INT
-                    CfirLiteralKind.FLOAT -> ConePrimitiveType.IDEAL_FLOAT
-                    else -> argumentType
-                }
+        val boxedNumericType = literalArgument?.numericLiteralBoxTargetType(expectedType, session)
+        val candidateLocalArgumentType = when {
+            boxedNumericType != null -> boxedNumericType
+            argumentType is ConePrimitiveType && argumentType.kind.isNumeric -> when (literalArgument?.kind) {
+                CfirLiteralKind.INT -> literalArgument.explicitNumericLiteralType() ?: ConePrimitiveType.IDEAL_INT
+                CfirLiteralKind.FLOAT -> literalArgument.explicitNumericLiteralType() ?: ConePrimitiveType.IDEAL_FLOAT
+                else -> argumentType
             }
             else -> argumentType
         }
         val argumentTypeForSubtypeCheck = if (csBuilder.isProperType(expectedType)) {
-            IdealTypeResolver.resolveIfIdeal(candidateLocalArgumentType, expectedType)
+            IdealTypeResolver.resolveIfIdeal(candidateLocalArgumentType, expectedType.fullyExpandedType(session))
         } else {
             candidateLocalArgumentType
+        }
+        // 仓颉的 possibleTypes 表示整数种类；值域由候选自己的 CheckWithCache 语义检查。
+        // 先保证字面量种类可转换，再验证目标值域，保留显式后缀不匹配的转换诊断。
+        if (literalArgument != null && csBuilder.isProperType(expectedType)) {
+            val rangeTargetType = literalArgument.numericLiteralBoxTargetType(expectedType, session)
+                ?: argumentTypeForSubtypeCheck as? ConePrimitiveType
+            if (
+                rangeTargetType != null &&
+                AbstractTypeChecker.isSubtypeOf(session.typeContext, argumentTypeForSubtypeCheck, expectedType) &&
+                CfirIntConstantEvalUtils.isOutOfRangeForExpectedType(literalArgument, rangeTargetType)
+            ) {
+                val parsed = requireNotNull(CfirIntConstantEvalUtils.parseIntLiteral(literalArgument))
+                reportDiagnostic(LiteralNumericOverflow(literalArgument, parsed.originalText, rangeTargetType))
+                return
+            }
         }
         // 官方 LocalTypeArgumentSynthesis 在求解类型参数后会把 IdealInt/IdealFloat
         // 归一化为默认具体类型。当前候选 fresh variable 若先接收原始 ideal lower bound，
@@ -1484,7 +1523,7 @@ internal object ArgumentCheckingProcessor {
             }
             ?.type as? ConeCangJieType
 
-        if (explicitTypeArgument != null && explicitTypeArgument.typeArguments.isEmpty()) {
+        if (explicitTypeArgument != null && explicitTypeArgument.fullyExpandedType(session) !is ConeFunctionType) {
             return false
         }
 
@@ -1544,6 +1583,47 @@ internal object ArgumentCheckingProcessor {
             .firstOrNull()
     }
 
+    /** 同一 owner/role/index 的变量由 candidate 槽复用；只向当前 CS 注册一次。 */
+    private fun ArgumentContext.createLambdaParameterVariable(
+        anonymousFunction: CfirAnonymousFunction,
+        index: Int,
+    ): ConeTypeVariableForLambdaParameterType {
+        val variable = candidate.createInferenceVariable(
+            owner = anonymousFunction,
+            role = CfirInferenceVariableRole.LAMBDA_PARAMETER,
+            index = index,
+        ) {
+            ConeTypeVariableForLambdaParameterType(TYPE_VARIABLE_NAME_PREFIX_FOR_LAMBDA_PARAMETER_TYPE + index)
+        }
+        registerInferenceVariableIfAbsent(variable)
+        return variable
+    }
+
+    /** 返回变量的 argument 必须是当前 owned anonymousFunction，origin 重定位由 retained graph 完成。 */
+    private fun ArgumentContext.createLambdaReturnVariable(
+        anonymousFunction: CfirAnonymousFunction,
+    ): ConeTypeVariableForLambdaReturnType {
+        val variable = candidate.createInferenceVariable(
+            owner = anonymousFunction,
+            role = CfirInferenceVariableRole.LAMBDA_RETURN,
+        ) {
+            ConeTypeVariableForLambdaReturnType(anonymousFunction, TYPE_VARIABLE_NAME_FOR_LAMBDA_RETURN_TYPE)
+        }
+        check(variable.argument === anonymousFunction) { "Lambda return variable has a different declaration origin" }
+        registerInferenceVariableIfAbsent(variable)
+        return variable
+    }
+
+    /** allTypeVariables 包括已固定变量；同 constructor 存在时必须仍是同一 TV。 */
+    private fun ArgumentContext.registerInferenceVariableIfAbsent(variable: ConeTypeVariable) {
+        val registered = csBuilder.currentStorage().allTypeVariables[variable.typeConstructor]
+        if (registered == null) {
+            csBuilder.registerVariable(variable)
+        } else {
+            check(registered === variable) { "Current constraint system contains a different variable for this constructor" }
+        }
+    }
+
     /**
      * expected type 仍是类型变量时，先把 lambda 自身的函数值形状登记进约束系统。
      *
@@ -1556,15 +1636,10 @@ internal object ArgumentCheckingProcessor {
         val anonymousFunction = expression.anonymousFunction
         val parameterTypes = anonymousFunction.valueParameters.mapIndexed { index, parameter ->
             parameter.returnTypeRef.coneTypeOrNull
-                ?: ConeTypeVariableForLambdaParameterType(
-                    TYPE_VARIABLE_NAME_PREFIX_FOR_LAMBDA_PARAMETER_TYPE + index,
-                ).also(csBuilder::registerVariable).defaultType
+                ?: createLambdaParameterVariable(anonymousFunction, index).defaultType
         }
         val returnType = anonymousFunction.returnTypeRef.coneTypeOrNull
-            ?: ConeTypeVariableForLambdaReturnType(
-                anonymousFunction,
-                TYPE_VARIABLE_NAME_FOR_LAMBDA_RETURN_TYPE,
-            ).also(csBuilder::registerVariable).defaultType
+            ?: createLambdaReturnVariable(anonymousFunction).defaultType
         return ConeFunctionType(
             parameterTypes = parameterTypes,
             returnType = returnType,
@@ -1582,15 +1657,17 @@ internal object ArgumentCheckingProcessor {
     ): ConeResolvedLambdaAtom {
         val expression = atom.lambdaExpression
         val anonymousFunction = expression.anonymousFunction
+        returnTypeVariable?.let { variable ->
+            check(variable.argument === anonymousFunction) { "Supplied lambda return variable has a different declaration origin" }
+            registerInferenceVariableIfAbsent(variable)
+        }
         val expectedFunctionType = recoveryExpectedFunctionType
             ?: expectedType?.fullyExpandedType(session) as? ConeFunctionType
 
         val declaredParameterTypes = anonymousFunction.valueParameters.mapIndexed { index, parameter ->
             parameter.returnTypeRef.coneTypeOrNull
                 ?: expectedFunctionType?.parameterTypes?.getOrNull(index)
-                ?: ConeTypeVariableForLambdaParameterType(
-                    TYPE_VARIABLE_NAME_PREFIX_FOR_LAMBDA_PARAMETER_TYPE + index,
-                ).also(csBuilder::registerVariable).defaultType
+                ?: createLambdaParameterVariable(anonymousFunction, index).defaultType
         }
         val shapeDiagnostic = expectedFunctionType
             ?.let { anonymousFunction.lambdaParameterTypingFailure(session, it)?.diagnostic }
@@ -1609,11 +1686,16 @@ internal object ArgumentCheckingProcessor {
             returnTypeVariable == null &&
             expectedFunctionType == null
         ) {
-            ConeTypeVariableForLambdaReturnType(anonymousFunction, TYPE_VARIABLE_NAME_FOR_LAMBDA_RETURN_TYPE)
-                .also(csBuilder::registerVariable)
+            createLambdaReturnVariable(anonymousFunction)
         } else {
             null
         }
+
+        // 可修订函数形状已登记其返回变量；转换 atom 时必须保留同一变量的完成归属。
+        // FuncTy 的返回值不是 typeArguments，不能依赖普通泛型实参遍历再次发现它。
+        val expectedReturnVariable = (expectedFunctionType?.returnType as? ConeTypeVariableType)
+            ?.typeConstructor?.let { constructor -> csBuilder.currentStorage().allTypeVariables[constructor] }
+            as? ConeTypeVariableForLambdaReturnType
 
         val lambdaReturnType = expectedFunctionType?.returnType
             ?: returnTypeVariable?.defaultType
@@ -1623,10 +1705,11 @@ internal object ArgumentCheckingProcessor {
         val resolvedAtom = ConeResolvedLambdaAtom(
             expression = expression,
             anonymousFunction = anonymousFunction,
+            candidateOfOuterCall = candidate,
             expectedType = expectedType,
             parameterTypes = parameterTypes,
             returnType = lambdaReturnType,
-            typeVariableForLambdaReturnType = returnTypeVariable ?: createdReturnTypeVariable,
+            typeVariableForLambdaReturnType = returnTypeVariable ?: expectedReturnVariable ?: createdReturnTypeVariable,
         )
         atom.setPostponedSubAtom(resolvedAtom)
         candidate.addPostponedAtom(resolvedAtom)

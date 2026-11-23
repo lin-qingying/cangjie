@@ -7,8 +7,10 @@
 
 package org.cangnova.cangjie.cfir.patterns.impl
 
+import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
 import org.cangnova.cangjie.cfir.patterns.CfirCommandTypePattern
 import org.cangnova.cangjie.cfir.patterns.CfirPatternTreeOwner
+import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
@@ -20,6 +22,8 @@ internal class CfirCommandTypePatternImpl(
     override val source: CjSourceElement?,
     override val bindingName: Name?,
     override val isWildcard: Boolean,
+    override var resolvedTypeRef: CfirResolvedTypeRef?,
+    override var bindingVariable: CfirPatternBindingVariable?,
     override val typeRefs: MutableList<CfirTypeRef>,
 ) : CfirCommandTypePattern() {
     override var patternTreeOwner: CfirPatternTreeOwner? = null
@@ -33,11 +37,25 @@ internal class CfirCommandTypePatternImpl(
         }
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
+        resolvedTypeRef?.accept(visitor, data)
+        bindingVariable?.accept(visitor, data)
         typeRefs.forEach { it.accept(visitor, data) }
     }
 
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirCommandTypePatternImpl {
+        transformResolvedTypeRef(transformer, data)
+        transformBindingVariable(transformer, data)
         transformTypeRefs(transformer, data)
+        return this
+    }
+
+    override fun <D> transformResolvedTypeRef(transformer: CfirTransformer<D>, data: D): CfirCommandTypePatternImpl {
+        resolvedTypeRef = resolvedTypeRef?.transform(transformer, data)
+        return this
+    }
+
+    override fun <D> transformBindingVariable(transformer: CfirTransformer<D>, data: D): CfirCommandTypePatternImpl {
+        bindingVariable = bindingVariable?.transform(transformer, data)
         return this
     }
 
@@ -48,6 +66,14 @@ internal class CfirCommandTypePatternImpl(
 
     override fun replacePatternTreeOwner(newPatternTreeOwner: CfirPatternTreeOwner?) {
         patternTreeOwner = newPatternTreeOwner
+    }
+
+    override fun replaceResolvedTypeRef(newResolvedTypeRef: CfirResolvedTypeRef?) {
+        resolvedTypeRef = newResolvedTypeRef
+    }
+
+    override fun replaceBindingVariable(newBindingVariable: CfirPatternBindingVariable?) {
+        bindingVariable = newBindingVariable
     }
 
     override fun replaceTypeRefs(newTypeRefs: List<CfirTypeRef>) {

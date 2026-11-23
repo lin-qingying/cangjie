@@ -34,7 +34,7 @@ class CfirEnumConstructorBuilder {
     var dispatchReceiverType: ConeSimpleCangJieType? = null
     lateinit var symbol: CfirEnumConstructorSymbol
     lateinit var status: CfirDeclarationStatus
-    val typeParameters: MutableList<CfirTypeParameter> = mutableListOf()
+    val typeParameters: MutableList<CfirTypeParameterRef> = mutableListOf()
     lateinit var returnTypeRef: CfirTypeRef
     val valueParameters: MutableList<CfirValueParameter> = mutableListOf()
     lateinit var name: Name
