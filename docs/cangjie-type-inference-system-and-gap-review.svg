@@ -1,0 +1,272 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="3385" viewBox="0 0 1800 3385" role="img" aria-labelledby="title desc">
+  <title id="title">仓颉类型推断系统与架构差距审查</title>
+  <desc id="desc">单张全系统图：官方语义证据、候选试跑与选择、胜出候选 completion、共同约束系统、隐式 body/resource 路径和 cjc 差分。</desc>
+  <defs>
+    <marker id="arrow" markerWidth="14" markerHeight="14" refX="11" refY="7" orient="auto" markerUnits="strokeWidth">
+      <path d="M1,1 L12,7 L1,13 Z" fill="#526174" />
+    </marker>
+    <marker id="arrowPurple" markerWidth="14" markerHeight="14" refX="11" refY="7" orient="auto" markerUnits="strokeWidth">
+      <path d="M1,1 L12,7 L1,13 Z" fill="#7652b5" />
+    </marker>
+    <style>
+      text { font-family: "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; fill: #172033; }
+      .title { font-size: 40px; font-weight: 700; }
+      .subtitle { font-size: 22px; fill: #49566a; }
+      .section { font-size: 29px; font-weight: 700; fill: #24344d; }
+      .nodeTitle { font-size: 25px; font-weight: 700; }
+      .body { font-size: 22px; }
+      .small { font-size: 18px; }
+      .sourceBox { fill: #fff6d9; stroke: #bd8c25; stroke-width: 3px; }
+      .runtimeBox { fill: #edf4ff; stroke: #5278bd; stroke-width: 3px; }
+      .candidateBox { fill: #f3edff; stroke: #8062bf; stroke-width: 3px; }
+      .solverBox { fill: #eaf7f0; stroke: #4c8b69; stroke-width: 3px; }
+      .scopeBox { fill: #fff1e7; stroke: #c77b48; stroke-width: 3px; }
+      .testBox { fill: #e8f7f6; stroke: #378b84; stroke-width: 3px; }
+      .edge { fill: none; stroke: #526174; stroke-width: 3px; marker-end: url(#arrow); }
+      .edgeDashed { fill: none; stroke: #7652b5; stroke-width: 3px; stroke-dasharray: 11 8; marker-end: url(#arrowPurple); }
+      .mini { fill: #ffffff; stroke: #c77b48; stroke-width: 2px; }
+    </style>
+  </defs>
+
+  <rect x="0" y="0" width="1800" height="3385" fill="#f7f9fc" />
+  <text class="title" x="70" y="66">仓颉类型推断：官方语义基线与架构差距审查</text>
+  <text class="subtitle" x="70" y="108">一张完整系统图 · 先验证语言行为，再判断是否需要改框架</text>
+
+  <text class="section" x="70" y="158">A. 官方语义证据与可执行规范</text>
+  <path class="edge" d="M490 235 C525 235 530 280 565 300" />
+  <path class="edge" d="M490 400 C525 400 530 355 565 340" />
+  <path class="edge" d="M1035 325 H1120" />
+  <rect class="sourceBox" x="70" y="180" width="420" height="125" rx="18" />
+  <text class="nodeTitle" x="95" y="218">官方 C++ 实现</text>
+  <text class="body" x="95" y="253">
+    <tspan x="95" dy="0">追踪调用、Lambda、owner 和</tspan>
+    <tspan x="95" dy="29">候选试探的实际控制流</tspan>
+  </text>
+  <rect class="sourceBox" x="70" y="335" width="420" height="145" rx="18" />
+  <text class="nodeTitle" x="95" y="374">官方 cjc 观测</text>
+  <text class="body" x="95" y="410">
+    <tspan x="95" dy="0">本机 cjc 1.1.3；Gradle 版本属性 1.1.1</tspan>
+    <tspan x="95" dy="29">语义目标待定；源码/二进制未证明同源</tspan>
+  </text>
+  <rect class="sourceBox" x="565" y="235" width="470" height="180" rx="18" />
+  <text class="nodeTitle" x="590" y="276">系统性语义矩阵</text>
+  <text class="body" x="590" y="313">
+    <tspan x="590" dy="0">正例 / 负例 / 边界例</tspan>
+    <tspan x="590" dy="29">泛型、上下文、重载、Lambda、owner</tspan>
+    <tspan x="590" dy="29">operator、pattern、隐式类型、资源</tspan>
+  </text>
+  <rect class="sourceBox" x="1120" y="235" width="610" height="180" rx="18" />
+  <text class="nodeTitle" x="1145" y="276">可执行语义规范</text>
+  <text class="body" x="1145" y="313">
+    <tspan x="1145" dy="0">版本化 .cj 用例与官方源码 revision</tspan>
+    <tspan x="1145" dy="29">成功类型见证、诊断 kind 与位置</tspan>
+    <tspan x="1145" dy="29">版本不匹配时停止，不自动换 SDK</tspan>
+  </text>
+
+  <path class="edge" d="M1425 415 V520 H900 V560" />
+  <text class="section" x="70" y="520">B. CFIR 编译期推断主路径</text>
+  <rect class="runtimeBox" x="70" y="555" width="1660" height="150" rx="18" />
+  <text class="nodeTitle" x="100" y="594">源程序与推断上下文</text>
+  <text class="body" x="100" y="632">
+    <tspan x="100" dy="0">声明签名 / 泛型上下界 / expected type；调用实参 / receiver / 重载候选</tspan>
+    <tspan x="100" dy="29">literal / operator / constructor / collection / member / subscript；Lambda / function value / pattern / match</tspan>
+    <tspan x="100" dy="29">隐式 local / return body 与 resource initializer 走各自作用域</tspan>
+  </text>
+
+  <path class="edge" d="M450 705 V750" />
+  <path class="edge" d="M1320 705 V750" />
+  <path class="edge" d="M870 705 V1110" />
+  <path class="edge" d="M445 1005 V1110" />
+  <path class="edge" d="M1315 1085 V1110" />
+  <rect class="scopeBox" x="70" y="750" width="760" height="255" rx="18" />
+  <text class="nodeTitle" x="95" y="790">隐式 callable body 状态</text>
+  <text class="body" x="95" y="829">
+    <tspan x="95" dy="0">ImplicitBodyResolveComputationSession</tspan>
+    <tspan x="95" dy="29">管理 callable local/return body 的隐式类型状态、cache、递归保护</tspan>
+    <tspan x="95" dy="29">候选试跑按受影响的 callable symbols 捕获与恢复</tspan>
+    <tspan x="95" dy="29">body 中的调用进入普通候选解析</tspan>
+  </text>
+
+  <rect class="scopeBox" x="900" y="750" width="830" height="335" rx="18" />
+  <text class="nodeTitle" x="925" y="790">ResourceVariableReturnTypeCalculator</text>
+  <text class="small" x="925" y="820">owns resource cache: ImplicitBodyResolveComputationSession</text>
+  <text class="small" x="925" y="850">CfirImplicitTypeComputation 仅表示 resource initializer 图</text>
+  <rect class="mini" x="925" y="866" width="360" height="62" rx="10" />
+  <text class="small" x="940" y="891">
+    <tspan x="940" dy="0">PRIVATE · 有 parent PCLA：</tspan>
+    <tspan x="940" dy="22">copy initializer + child session</tspan>
+  </text>
+  <rect class="mini" x="1335" y="866" width="370" height="62" rx="10" />
+  <text class="small" x="1350" y="891">
+    <tspan x="1350" dy="0">PRIVATE · 无 parent PCLA：</tspan>
+    <tspan x="1350" dy="22">独立 closed constraint forest</tspan>
+  </text>
+  <rect class="mini" x="925" y="958" width="360" height="62" rx="10" />
+  <text class="small" x="940" y="983">
+    <tspan x="940" dy="0">FORMAL · 此阶段有 parent：</tspan>
+    <tspan x="940" dy="22">register callback → final writer</tspan>
+  </text>
+  <rect class="mini" x="1335" y="958" width="370" height="62" rx="10" />
+  <text class="small" x="1350" y="983">
+    <tspan x="1350" dy="0">FORMAL · 此阶段无 parent：</tspan>
+    <tspan x="1350" dy="22">立即 complete；按 target scope retire</tspan>
+  </text>
+  <text class="small" x="925" y="1059">FORMAL 阶段重新读取 parent context；initializer 调用进入候选解析</text>
+
+  <rect class="runtimeBox" x="70" y="1110" width="1660" height="145" rx="18" />
+  <text class="nodeTitle" x="100" y="1150">约束生成与候选发现</text>
+  <text class="body" x="100" y="1190">
+    <tspan x="100" dy="0">CfirCallResolver / TowerResolver / CandidateFactory</tspan>
+    <tspan x="100" dy="29">ArgumentCheckingProcessor / ResolutionStageRunner：参数映射、约束生成与阶段推进</tspan>
+  </text>
+
+  <path class="edge" d="M900 1255 V1300" />
+  <path class="edge" d="M900 1495 V1510" />
+  <path class="edge" d="M900 1685 V1720" />
+  <path class="edge" d="M900 1980 V2015" />
+  <path class="edge" d="M900 2120 V2170" />
+  <path class="edge" d="M480 2360 H570" />
+  <path class="edge" d="M1325 2565 V2630" />
+  <path class="edge" d="M900 2845 V2885" />
+  <path class="edge" d="M450 3020 V3040" />
+  <path class="edge" d="M1320 3020 V3040" />
+  <path class="edge" d="M390 3312 H420" />
+  <path class="edge" d="M780 3312 H810" />
+  <path class="edge" d="M1070 3312 H1100" />
+  <path class="edge" d="M1350 3145 V3188 H1415 V3240" />
+  <path class="edge" d="M1730 1380 H1760 V2070 H1730" />
+  <path class="edgeDashed" d="M1730 920 H1785 V2945 H1730" />
+  <path class="edgeDashed" d="M180 2750 H35 V2600 H1760 V2470 H1700" />
+  <path class="edgeDashed" d="M60 3312 H28 V635 H70" />
+
+  <rect class="candidateBox" x="70" y="1300" width="1660" height="195" rx="18" />
+  <text class="nodeTitle" x="100" y="1340">候选收集与初步规约</text>
+  <text class="body" x="100" y="1379">
+    <tspan x="100" dy="0">每个 Candidate 拥有自己的 ConstraintSystemImpl 实例</tspan>
+    <tspan x="100" dy="29">Storage 可 parent-linked、rebase 或合并；对象局部不等于完全隔离</tspan>
+    <tspan x="100" dy="29">未验收分支：ConstraintStorage child/forest replay 与 owner 重跑比较</tspan>
+    <tspan x="100" dy="29">上下界 / fork points / fixation；body trial 与 winner completion 共用该 CS</tspan>
+  </text>
+
+  <rect class="candidateBox" x="70" y="1510" width="1660" height="175" rx="18" />
+  <text class="nodeTitle" x="100" y="1550">候选选择前的部分完成（可选 Lambda body 试跑）</text>
+  <text class="body" x="100" y="1590">
+    <tspan x="100" dy="0">每个候选的本地 system 调用 CfirCallCompleter.runCompletionForCall(UNTIL_FIRST_LAMBDA)</tspan>
+    <tspan x="100" dy="29">ConstraintSystemCompleter 遇首个待分析 Lambda 时暂停，随后 resolver 检查 body</tspan>
+    <tspan x="100" dy="29">仅适用的多候选同 Lambda 形态进入该路径；其他候选直接规约</tspan>
+  </text>
+
+  <rect class="candidateBox" x="70" y="1720" width="1660" height="260" rx="18" />
+  <text class="nodeTitle" x="100" y="1760">CfirOverloadByLambdaBodyResolver：body 试跑结果分支</text>
+  <text class="body" x="100" y="1800">
+    <tspan x="100" dy="0">同一个 Lambda 按各候选期望函数类型重检；约束/atom/CFIR/data-flow/cache 由多种快照协作</tspan>
+    <tspan x="100" dy="31">全成功：恢复基线并返回候选集合；全失败：重放首候选以保留诊断</tspan>
+    <tspan x="100" dy="31">部分成功：在成功子集中做最具体规约；唯一赢家恢复其成功后置状态</tspan>
+    <tspan x="100" dy="31">多个最大候选留待歧义决议；PCLA owner/shape/projection/queue 覆盖仍需审计</tspan>
+  </text>
+
+  <rect class="candidateBox" x="70" y="2015" width="1660" height="105" rx="18" />
+  <text class="nodeTitle" x="100" y="2056">候选最终规约</text>
+  <text class="body" x="100" y="2093">CfirCallResolver 写入 winner reference，或发布歧义 / 失败诊断；无 body trial 时从候选集直达此阶段</text>
+
+  <rect class="runtimeBox" x="70" y="2170" width="1660" height="395" rx="18" />
+  <text class="nodeTitle" x="100" y="2210">胜出候选的调用完成：CfirCallCompleter.completeCall 选择 mode 并驱动既有 Candidate.system</text>
+  <rect class="solverBox" x="95" y="2290" width="760" height="240" rx="16" />
+  <text class="nodeTitle" x="120" y="2325">共同求解内核</text>
+  <text class="body" x="120" y="2365">
+    <tspan x="120" dy="0">ConstraintSystemImpl / ConstraintStorage</tspan>
+    <tspan x="120" dy="29">Candidate CS 对象局部；storage 可 parent-linked</tspan>
+    <tspan x="120" dy="29">ConstraintStorage rebase/integration · owner rerun 待审</tspan>
+    <tspan x="120" dy="29">等式/子类型/上下界 · fork points</tspan>
+    <tspan x="120" dy="29">substitutor / fixation / transaction</tspan>
+  </text>
+  <rect class="solverBox" x="920" y="2290" width="780" height="240" rx="16" />
+  <text class="nodeTitle" x="945" y="2325">ConstraintSystemCompleter</text>
+  <text class="body" x="945" y="2365">
+    <tspan x="945" dy="0">readiness 与变量 fixation</tspan>
+    <tspan x="945" dy="29">postponed worklist 与诊断恢复</tspan>
+    <tspan x="945" dy="29">FULL / PARTIAL / PCLA 作用于现有实例</tspan>
+    <tspan x="945" dy="29">candidate selection 不在 completion 中重新进行</tspan>
+  </text>
+
+  <rect class="candidateBox" x="180" y="2630" width="1440" height="215" rx="18" />
+  <text class="nodeTitle" x="210" y="2670">PostponedArgumentsAnalyzer 与候选延迟状态</text>
+  <text class="body" x="210" y="2710">
+    <tspan x="210" dy="0">Lambda / callable reference / nested calls；Definition 与 Contextual 参数按变量所有权区分</tspan>
+    <tspan x="210" dy="29">CfirPCLAInferenceSession：owner 过滤 / pattern projection；新约束重新进入所属 worklist</tspan>
+    <tspan x="210" dy="29">usedOuterCs=false：只更新可见返回类型；true：整合 derived storage</tspan>
+    <tspan x="210" dy="29">只有 usedOuterCs=true 且 mode=PCLA_POSTPONED_CALL/PARTIAL 才去重入队</tspan>
+  </text>
+
+  <rect class="runtimeBox" x="70" y="2885" width="1660" height="135" rx="18" />
+  <text class="nodeTitle" x="100" y="2925">结果发布</text>
+  <text class="body" x="100" y="2965">
+    <tspan x="100" dy="0">调用由 CfirCallCompletionResultsWriterTransformer 写回</tspan>
+    <tspan x="100" dy="29">callable body/resource source 的最终类型与诊断由各自 owner/callback 发布</tspan>
+  </text>
+
+  <rect class="runtimeBox" x="70" y="3040" width="780" height="105" rx="18" />
+  <text class="nodeTitle" x="100" y="3083">下游消费者</text>
+  <text class="body" x="100" y="3115">CFIR checkers · Analysis API / Low Level API · CHIR/backend</text>
+
+  <rect class="testBox" x="900" y="3040" width="830" height="105" rx="18" />
+  <text class="nodeTitle" x="930" y="3083">CFIR 可观察结果</text>
+  <text class="body" x="930" y="3115">成功类型见证 · 候选结果 · 诊断 kind / span</text>
+
+  <text class="section" x="70" y="3210">C. 独立调用的官方差分任务（显式版本硬校验）</text>
+  <rect class="testBox" x="60" y="3240" width="330" height="145" rx="18" />
+  <text class="nodeTitle" x="85" y="3280">精选 .cj cases</text>
+  <text class="small" x="85" y="3315">
+    <tspan x="85" dy="0">同一程序用于 cjc 与 CFIR</tspan>
+    <tspan x="85" dy="25">成功见证与负例诊断</tspan>
+  </text>
+
+  <rect class="testBox" x="420" y="3240" width="360" height="145" rx="18" />
+  <text class="nodeTitle" x="445" y="3280">CJC runner</text>
+  <text class="small" x="445" y="3315">
+    <tspan x="445" dy="0">CjcProcessRunner：启动/超时/temp 输出</tspan>
+    <tspan x="445" dy="25">checker / JSON parser：诊断解析</tspan>
+    <tspan x="445" dy="25">显式 SDK 版本不符即失败</tspan>
+  </text>
+
+  <rect class="testBox" x="810" y="3240" width="260" height="145" rx="18" />
+  <text class="nodeTitle" x="835" y="3280">CJC 结果</text>
+  <text class="small" x="835" y="3315">
+    <tspan x="835" dy="0">exit code</tspan>
+    <tspan x="835" dy="25">JSON errors / span</tspan>
+  </text>
+
+  <rect class="testBox" x="1100" y="3240" width="630" height="145" rx="18" />
+  <text class="nodeTitle" x="1125" y="3280">语义差分审阅</text>
+  <text class="small" x="1125" y="3315">
+    <tspan x="1125" dy="0">对照版本化契约</tspan>
+    <tspan x="1125" dy="25">审阅差异并补边界例</tspan>
+  </text>
+
+  <path class="edge" d="M490 235 C525 235 530 280 565 300" />
+  <path class="edge" d="M490 400 C525 400 530 355 565 340" />
+  <path class="edge" d="M1035 325 H1120" />
+  <path class="edge" d="M1425 415 V555" />
+  <path class="edge" d="M450 705 V750" />
+  <path class="edge" d="M1320 705 V750" />
+  <path class="edge" d="M870 705 V1110" />
+  <path class="edge" d="M445 1005 V1110" />
+  <path class="edge" d="M1315 1085 V1110" />
+  <path class="edge" d="M900 1255 V1300" />
+  <path class="edge" d="M900 1470 V1510" />
+  <path class="edge" d="M900 1685 V1720" />
+  <path class="edge" d="M900 1980 V2015" />
+  <path class="edge" d="M900 2120 V2170" />
+  <path class="edge" d="M855 2410 H920" />
+  <path class="edge" d="M1325 2530 V2630" />
+  <path class="edge" d="M900 2845 V2885" />
+  <path class="edge" d="M450 3020 V3040" />
+  <path class="edge" d="M1320 3020 V3040" />
+  <path class="edge" d="M390 3312 H420" />
+  <path class="edge" d="M780 3312 H810" />
+  <path class="edge" d="M1070 3312 H1100" />
+  <path class="edge" d="M1350 3145 V3188 H1415 V3240" />
+  <path class="edgeDashed" d="M1730 920 H1760 V2945 H1730" />
+  <path class="edgeDashed" d="M180 2750 H35 V2600 H1750 V2470 H1730" />
+  <path class="edgeDashed" d="M60 3312 H28 V635 H70" />
+</svg>
