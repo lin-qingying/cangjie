@@ -192,8 +192,9 @@ internal class CjoFrozenSourceInputs private constructor(
 
         fun run(): CjoFrozenSourceInputs {
             analysis.capturedDeclarations().forEach { declaration ->
-                val canonical = if (declaration is CfirTypeParameter) declaration.symbol.cfir
+                val symbolDeclaration = if (declaration is CfirTypeParameter) declaration.symbol.cfir
                     else if (declaration is CfirCallableDeclaration) declaration.unwrapSubstitutionOverrides() else declaration
+                val canonical = savedPackageVariableRoot(symbolDeclaration) ?: symbolDeclaration
                 canonicalDeclarations[declaration] = canonical
                 val origin = canonical.cjoDeclarationOrigin ?: return@forEach
                 check(declaration.cjoDeclarationOrigin?.let { it == origin } != false) {
@@ -294,6 +295,20 @@ internal class CjoFrozenSourceInputs private constructor(
                 immutable(typeTargets), immutable(constantDomains), immutable(invalidTypeInputs.mapValues { (_, inputs) ->
                     Collections.unmodifiableSet(Collections.newSetFromMap(IdentityHashMap<ConeCangJieType, Boolean>()).apply { addAll(inputs) })
                 }))
+        }
+
+        /** 包变量的可查找 binding 与保存 initializer/value 的真实 d owner 共用同一已发布记录。 */
+        private fun savedPackageVariableRoot(declaration: CfirDeclaration): CfirPatternVariable? {
+            if (declaration !is CfirPatternBindingVariable) return null
+            val origin = declaration.cjoDeclarationOrigin ?: return null
+            val root = analysis.simplePatternOwnerOf(declaration) ?: return null
+            if (root.cjoDeclarationOrigin != origin) return null
+            val snapshot = sourcesByDeclaration[root] ?: return null
+            check(snapshot.declarations[origin.declarationIndex] === root &&
+                snapshot.source.pkg.allDecls(origin.declarationIndex)?.kind == PackageFormat.DeclKind.VarDecl) {
+                "A saved package variable requires its actual published VarDecl owner"
+            }
+            return root
         }
 
         /** 只为 SOURCE 已证明的表示完成 storage；未知布局在本次 typed 输出准备期明确拒绝。 */

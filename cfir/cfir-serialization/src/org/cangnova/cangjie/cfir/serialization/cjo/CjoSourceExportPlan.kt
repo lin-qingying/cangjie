@@ -6,7 +6,7 @@ import org.cangnova.cangjie.cfir.session.CfirCjmpFamilySnapshot
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.source.*
 import org.cangnova.cangjie.cfir.types.*
-import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
+import PackageFormat.DeclKind
 import java.util.Collections
 import java.util.IdentityHashMap
 
@@ -237,8 +237,7 @@ internal class CjoSourceExportPlan private constructor(
         }
 
         private fun canonical(declaration: CfirDeclaration): CfirDeclaration =
-            if (declaration is CfirTypeParameter) declaration.symbol.cfir
-            else if (declaration is CfirCallableDeclaration) declaration.unwrapSubstitutionOverrides() else declaration
+            sources.canonicalDeclarations.getValue(declaration)
 
         private fun projected(declaration: CfirDeclaration): CfirDeclaration {
             if (declaration !is CfirPatternVariable || !analysis.isSourceDeclaration(declaration)) return declaration
@@ -328,22 +327,23 @@ internal class CjoSourceExportPlan private constructor(
                 is CfirProperty -> if (!options.analysisSettings.compileCjd) {
                     analysis.accessorsOf(declaration).forEach { saveDeclaration(it, stage) }
                 }
-                is CfirPatternVariable -> {
-                    canonicalDefinitions += declaration
-                    initializer(declaration)?.let { saveExpression(it, stage) }
-                    savePattern(analysis.canonicalSourceGraphOf(declaration).declarationPatterns.getValue(declaration), declaration, stage)
-                }
                 is CfirValueParameter -> contents.getValue(declaration)?.root?.let { saveExpression(it, stage) }
                 is CfirVariable -> {
-                    initializer(declaration)?.let { saveExpression(it, stage) }
                     val saved = sources.formats[declaration]
-                    val value = analysis.constantValueOf(declaration)
-                    val hasValue = saved?.hasConstantValue ?: (options.sourceEncodingContract == CjoSourceEncodingContract.TYPED_SCHEMA && value != null)
-                    if (hasValue) {
-                        check(options.sourceEncodingContract == CjoSourceEncodingContract.TYPED_SCHEMA) {
-                            "A saved VarInfo value requires explicit typed-schema re-export"
+                    if (declaration is CfirPatternVariable && saved?.kind != DeclKind.VarDecl) {
+                        canonicalDefinitions += declaration
+                        initializer(declaration)?.let { saveExpression(it, stage) }
+                        savePattern(analysis.canonicalSourceGraphOf(declaration).declarationPatterns.getValue(declaration), declaration, stage)
+                    } else {
+                        initializer(declaration)?.let { saveExpression(it, stage) }
+                        val value = analysis.constantValueOf(declaration)
+                        val hasValue = saved?.hasConstantValue ?: (options.sourceEncodingContract == CjoSourceEncodingContract.TYPED_SCHEMA && value != null)
+                        if (hasValue) {
+                            check(options.sourceEncodingContract == CjoSourceEncodingContract.TYPED_SCHEMA) {
+                                "A saved VarInfo value requires explicit typed-schema re-export"
+                            }
+                            saveConstant(checkNotNull(value), declaration)
                         }
-                        saveConstant(checkNotNull(value), declaration)
                     }
                 }
                 is CfirTypeParameter, is CfirBuiltInDeclaration -> Unit

@@ -947,12 +947,11 @@ object CfirCjoPackageMetadataProducer {
                     defaultValue = exportPlan.sourceContent(declaration)?.root?.let(canonicalEncoder::expression) ?: 0u,
                 )
                 is CfirTypeParameter -> null
-                is CfirPatternVariable -> {
+                is CfirVariable -> if (declaration is CfirPatternVariable && format?.kind != DeclKind.VarDecl) {
                     check(exportAnalysis.hasCanonicalSourceOf(declaration) && declaration in canonicalDefinitions)
                     CjoVarWithPatternInfo(format?.isVar ?: sourceFormats.declarations.getValue(declaration).isVar, format?.isConst ?: exportAnalysis.statusOf(declaration).isConst,
                         canonicalEncoder.declarationPattern(declaration), declarationInitializer(declaration))
-                }
-                is CfirVariable -> CjoVariableInfo(
+                } else CjoVariableInfo(
                     isVar = format?.isVar ?: sourceFormats.declarations.getValue(declaration).isVar,
                     isConst = format?.isConst ?: exportAnalysis.statusOf(declaration).isConst,
                     isMemberParam = format?.isMemberParameter ?: sourceFormats.declarations.getValue(declaration).isMember,
