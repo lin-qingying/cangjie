@@ -240,30 +240,17 @@ class CfirDeclDeserializer private constructor(
             context.pkg.allDecls(declIndex)?.kind == DeclKind.VarDecl && declaration.hasSerializedInitializer &&
             context.publishedContentSource.snapshot().initializer(declaration) == null
         ) {
-            val newHeader = previouslyBound == null
-            val queued = context.enqueueNormalReferenceInitializer(declIndex) {
+            context.enqueueNormalReferenceInitializer(declIndex) {
                 context.materialize {
                     ensureNormalHeaderFamily((declIndex + 1).toUInt(), includeInitializers = true)
                 }
-                if (newHeader) {
-                    declaration.replaceResolvePhase(CfirResolvePhase.BODY_RESOLVE)
-                    wire.cfir.replaceResolvePhase(CfirResolvePhase.BODY_RESOLVE)
-                }
-            }
-            if (queued && newHeader) {
-                declaration.replaceResolvePhase(CfirResolvePhase.TYPES)
-                wire.cfir.replaceResolvePhase(CfirResolvePhase.TYPES)
             }
         }
         wire
     }
 
     private fun CfirDeclaration.wireSymbol(declIndex: Int): CfirBasedSymbol<*> =
-        if (this is CfirPatternVariable && context.pkg.allDecls(declIndex)?.kind == DeclKind.VarDecl) {
-            pattern.bindingVariables().single().symbol
-        } else {
-            symbol
-        }
+        cjoWireDeclaration(context.pkg.allDecls(declIndex)?.kind).symbol
 
     /** 正常header按真实owning槽选择自己的参数、TP、成员及helper；引用的classifier不获得内容授权。 */
     internal fun deserializeHeaderContents(declaration: CfirDeclaration) = context.materialize {
@@ -2490,7 +2477,7 @@ class CfirDeclDeserializer private constructor(
         val binding = CfirPatternBindingVariableImpl(
             source = null,
             moduleData = context.moduleData,
-            resolvePhase = CfirResolvePhase.BODY_RESOLVE,
+            resolvePhase = CfirResolvePhase.TYPES,
             annotations = MutableOrEmptyList.empty(),
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,
@@ -2516,7 +2503,7 @@ class CfirDeclDeserializer private constructor(
         val result = CfirPatternVariableImpl(
             source = null,
             moduleData = context.moduleData,
-            resolvePhase = CfirResolvePhase.BODY_RESOLVE,
+            resolvePhase = CfirResolvePhase.TYPES,
             annotations = MutableOrEmptyList.empty(),
             origin = CfirDeclarationOrigin.Library,
             attributes = CfirDeclarationAttributes.EMPTY,

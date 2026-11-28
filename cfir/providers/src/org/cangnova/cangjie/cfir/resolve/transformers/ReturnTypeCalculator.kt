@@ -53,7 +53,8 @@ abstract class ReturnTypeCalculator {
 
     companion object {
         /** 未注入分阶段计算器时，共享正式 body resolve 返回类型计算器。 */
-        val Default: ReturnTypeCalculator = ReturnTypeCalculatorForFullBodyResolve.Default
+        val Default: ReturnTypeCalculator
+            get() = ReturnTypeCalculatorForFullBodyResolve.Default
     }
 }
 

@@ -20,7 +20,6 @@ import org.cangnova.cangjie.cfir.serialization.cjo.PackageIndex
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
-import org.cangnova.cangjie.cfir.types.StdlibClassIds
 
 /**
  * 官方 C++ 编译器 `ASTLoader::GetDeclFromIndex` 的 Kotlin 等价实现。
@@ -142,13 +141,8 @@ internal class CjoFullIdResolver(
 
     /** 将 [FullId] 解析为 class-like 声明的 [ClassId]；非 class-like 或非法引用返回 null。 */
     fun resolveClassId(fullId: FullId): ClassId? {
-        val resolved = resolve(fullId)
-        if (resolved is ResolvedFullId.Declaration) {
-            return resolved.packageIndex.resolveClassId(resolved.declaration.zeroBasedIndex)
-        }
-        // 仅 ClassId 展示查询可识别官方稳定的 Any 键，真实 FullId 消费仍需要已绑定的声明。
-        val pkg = context.header.imports.getOrNull(fullId.pkgId)
-        return StdlibClassIds.Any.takeIf { pkg == it.packageFqName.asString() && fullId.decl == "_CNat3AnyE" }
+        val resolved = resolve(fullId) as? ResolvedFullId.Declaration ?: return null
+        return resolved.packageIndex.resolveClassId(resolved.declaration.zeroBasedIndex)
     }
 
     /** 将 [FullId] 解析为声明名称；非法或非声明引用返回 null。 */

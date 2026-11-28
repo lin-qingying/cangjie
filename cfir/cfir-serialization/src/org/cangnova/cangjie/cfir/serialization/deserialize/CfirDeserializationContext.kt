@@ -6,6 +6,9 @@ import PackageFormat.Position
 import org.cangnova.cangjie.LanguageVersionSettings
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.declarations.replaceResolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.declarations.cjoDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.cjoDeclarationIndex
@@ -865,7 +868,14 @@ class CfirDeserializationContext(
         }
         declarationEntries[index] = CjoDeclarationCacheEntry.Header(record)
         materialization.onCompletion(
-            publish = { declarationEntries[index] = CjoDeclarationCacheEntry.Ready(record) },
+            publish = {
+                if (root is CfirPatternVariable && wireSymbol !== root.symbol) {
+                    // 普通 VarDecl 的真实拥有根及绑定 leaf 随共享事务完成一起前进。
+                    root.replaceResolvePhase(CfirResolvePhase.BODY_RESOLVE)
+                    wireSymbol.cfir.replaceResolvePhase(CfirResolvePhase.BODY_RESOLVE)
+                }
+                declarationEntries[index] = CjoDeclarationCacheEntry.Ready(record)
+            },
             fail = { failure -> recordWireFailure(index, failure) },
         )
     }
@@ -898,15 +908,14 @@ class CfirDeserializationContext(
         index in pendingNormalReferenceInitializers
 
     /** 只有普通 FULL wire reference 才请求该变量自己的 initializer。 */
-    internal fun enqueueNormalReferenceInitializer(index: Int, complete: () -> Unit): Boolean {
+    internal fun enqueueNormalReferenceInitializer(index: Int, complete: () -> Unit) {
         check(materialization.lock.isHeldByCurrentThread)
-        if (!pendingNormalReferenceInitializers.add(index)) return false
+        if (!pendingNormalReferenceInitializers.add(index)) return
         materialization.postCompute(complete)
         materialization.onCompletion(
             publish = { pendingNormalReferenceInitializers.remove(index) },
             fail = { pendingNormalReferenceInitializers.remove(index) },
         )
-        return true
     }
 
     internal fun headerRecordOrNull(index: Int): CfirDeserializedDeclaration? = when (val entry = declarationEntries[index]) {

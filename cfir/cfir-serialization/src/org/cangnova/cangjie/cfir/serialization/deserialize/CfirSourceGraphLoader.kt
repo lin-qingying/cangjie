@@ -7,6 +7,7 @@ import org.cangnova.cangjie.cfir.serialization.cjo.CjoDefinitionContentSlot
 
 import PackageFormat.*
 import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.patterns.bindingVariables
 import org.cangnova.cangjie.cfir.source.CfirSourceImportedPosition
 import org.cangnova.cangjie.cfir.source.CfirSourceReferenceTarget
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
@@ -15,6 +16,10 @@ import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRefOrigin
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
 import org.cangnova.cangjie.cfir.expressions.CfirConstantValue
+
+/** VarDecl 的引用使用唯一 wire binding，声明树和初始化器仍由实际模式根拥有。 */
+internal fun CfirDeclaration.cjoWireDeclaration(kind: DeclKind?): CfirDeclaration =
+    if (this is CfirPatternVariable && kind == DeclKind.VarDecl) pattern.bindingVariables().single() else this
 
 /** 正式库 context 的 SOURCE 能力：同一 snapshot/header/type binder，完整图完成后才发布。 */
 internal class CfirSourceGraphLoader(private val context: CfirDeserializationContext,
@@ -362,8 +367,15 @@ internal class CfirSourceGraphLoader(private val context: CfirDeserializationCon
         }
 
         override fun referenceTarget(reference: FullId?): CfirSourceReferenceTarget = when (val target = context.fullIdResolver.resolveSourceReferenceTarget(reference)) {
-            is ResolvedSourceReferenceTarget.Declaration -> CfirSourceReferenceTarget.Declaration(if (target.value.source == ResolvedFullId.Declaration.Source.CURRENT_PACKAGE)
-                declaration(target.value.declaration.formattedIndex) else checkNotNull(context.materializeExternalDeclaration(target.value)))
+            is ResolvedSourceReferenceTarget.Declaration -> {
+                val resolved = target.value
+                val owner = if (resolved.source == ResolvedFullId.Declaration.Source.CURRENT_PACKAGE) {
+                    declaration(resolved.declaration.formattedIndex)
+                } else {
+                    checkNotNull(context.materializeExternalDeclaration(resolved))
+                }
+                CfirSourceReferenceTarget.Declaration(owner.cjoWireDeclaration(resolved.declaration.decl.kind))
+            }
             is ResolvedSourceReferenceTarget.Package -> CfirSourceReferenceTarget.Package(target.name)
             is ResolvedSourceReferenceTarget.Absent -> CfirSourceReferenceTarget.Absent(target.reason)
         }
