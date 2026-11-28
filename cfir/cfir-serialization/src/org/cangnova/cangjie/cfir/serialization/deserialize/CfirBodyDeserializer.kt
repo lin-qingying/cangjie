@@ -35,6 +35,16 @@ import java.util.IdentityHashMap
  * Native 的 F/P、map、FuncArg 和四种字符串形态是已考证的格式差异。
  */
 internal class CfirBodyDeserializer(private val context: CfirDeserializationContext, private val declarations: CfirDeclDeserializer) {
+    /** SOURCE 目标保持实际模式根；普通引用消费与根共享原 wire d 记录的绑定。 */
+    private fun CfirDeclaration.ordinaryReferenceDeclaration(): CfirDeclaration {
+        if (this !is CfirPatternVariable) return this
+        val index = cjoDeclarationIndex ?: return this
+        val binding = pattern.bindingVariables().singleOrNull() ?: return this
+        return binding.takeIf {
+            it.cjoDeclarationIndex == index && it.contentSource === contentSource && it.patternTreeOwner === this
+        } ?: this
+    }
+
     fun deserializeExpression(reference: UInt, root: CjoSourceContentRoot): CfirExpression = context.materialize {
         check(reference != 0u && reference <= context.pkg.allExprsLength.toUInt()) { "Required CJO expression has an invalid saved reference: $reference" }
         // 缓存只能复用完成产品，不能替代此次原保存槽的授权。
@@ -405,7 +415,11 @@ internal class CfirBodyDeserializer(private val context: CfirDeserializationCont
                     typeArguments += value.instantiatedTypes.map(::typeRef)
                 } else buildNamedAccessExpression {
                     this.source = source
-                    calleeReference = buildResolvedNamedReference { this.source = source; name = value.name; resolvedSymbol = target.declaration.symbol }
+                    calleeReference = buildResolvedNamedReference {
+                        this.source = source
+                        name = value.name
+                        resolvedSymbol = target.declaration.ordinaryReferenceDeclaration().symbol
+                    }
                     typeArguments += value.instantiatedTypes.map(::typeRef)
                 }
                 is CfirSourceReferenceTarget.Package -> buildResolvedQualifier {

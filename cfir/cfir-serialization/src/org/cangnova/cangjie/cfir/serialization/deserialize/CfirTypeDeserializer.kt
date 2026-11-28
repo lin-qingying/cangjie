@@ -65,18 +65,7 @@ class CfirTypeDeserializer(
      * 该入口负责缓存复用与包事务；合法 Generic 回边先登记身份，结构循环明确拒绝。
      */
     fun deserializeType(typeIndex: Int): ConeCangJieType {
-        if (context.currentSourceSelection == null) {
-            val selection = context.metadataDemand(CjoSourceContentRoot.TypeMetadata((typeIndex + 1).toUInt()))
-            context.typeCache[typeIndex]?.let { value ->
-                check((typeIndex + 1).toUInt() in selection.types)
-                check(selection.borrowedContexts.declarations.keys.all { it.toInt() - 1 in context.declCache })
-                return value
-            }
-            return context.materialize {
-                context.registerSourceSelection(selection)
-                context.withSourceSelection(selection) { deserializeType(typeIndex) }
-            }
-        }
+        if (context.currentSourceSelection == null) return deserializeOrdinaryType(typeIndex)
         context.requireSourceTypeIdentity(typeIndex)
         context.typeCache[typeIndex]?.let { return it }
         return context.materialize {
@@ -94,6 +83,42 @@ class CfirTypeDeserializer(
                 typesUnderDeserialization.remove(typeIndex)
             }
         }
+    }
+
+    /** 普通零基查询先遵循原读取合同，再进入有效 metadata 的严格 SOURCE 域。 */
+    private fun deserializeOrdinaryType(typeIndex: Int): ConeCangJieType = context.materialization.read {
+        val typeCount = context.pkg.allTypesLength
+        if (typeCount == 0) return@read errorType("Cannot read type index $typeIndex")
+        if (typeIndex !in 0 until typeCount) throw IndexOutOfBoundsException("Invalid CJO type index $typeIndex")
+        val wire = context.pkg.allTypes(typeIndex) ?: return@read errorType("Cannot read type index $typeIndex")
+        if (wire.kind == TypeKind.Generic) {
+            val failure = ordinaryGenericTargetError(wire)
+            if (failure != null) return@read failure
+        }
+
+        val reference = (typeIndex + 1).toUInt()
+        val selection = context.metadataDemand(CjoSourceContentRoot.TypeMetadata(reference))
+        context.typeCache[typeIndex]?.let { value ->
+            check(reference in selection.types)
+            check(selection.borrowedContexts.declarations.keys.all { it.toInt() - 1 in context.declCache })
+            return@read value
+        }
+        context.materialize {
+            context.registerSourceSelection(selection)
+            context.withSourceSelection(selection) { deserializeType(typeIndex) }
+        }
+    }
+
+    /** 只核对 FullId 的真实 wire 声明种类。损坏的普通查询不能物化声明或保存错误类型。 */
+    private fun ordinaryGenericTargetError(wire: SemaTy): ConeCangJieType? {
+        if (wire.infoType != SemaTyInfo.GenericTyInfo) return errorType("Generic has the wrong info union")
+        val info = wire.info(GenericTyInfo()) as? GenericTyInfo ?: return errorType("Generic missing GenericTyInfo")
+        val fullId = info.declPtr ?: return errorType("GenericTyInfo missing declPtr")
+        val resolved = context.fullIdResolver.resolve(fullId)
+        if (resolved !is ResolvedFullId.Declaration || resolved.declaration.decl.kind != DeclKind.GenericParamDecl) {
+            return errorType("GenericTyInfo target is not a GenericParamDecl: $resolved")
+        }
+        return null
     }
 
     /**

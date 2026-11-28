@@ -374,7 +374,7 @@ internal class CfirSourceGraphLoader(private val context: CfirDeserializationCon
                 } else {
                     checkNotNull(context.materializeExternalDeclaration(resolved))
                 }
-                CfirSourceReferenceTarget.Declaration(owner.cjoWireDeclaration(resolved.declaration.decl.kind))
+                CfirSourceReferenceTarget.Declaration(owner)
             }
             is ResolvedSourceReferenceTarget.Package -> CfirSourceReferenceTarget.Package(target.name)
             is ResolvedSourceReferenceTarget.Absent -> CfirSourceReferenceTarget.Absent(target.reason)
