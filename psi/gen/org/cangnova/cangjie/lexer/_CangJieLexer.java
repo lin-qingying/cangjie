@@ -1260,9 +1260,19 @@ class _CangJieLexer implements FlexLexer {
   private boolean zzEOFDone;
 
   /* user code: */
- public _CangJieLexer() {
-    this((java.io.Reader)null);
- }
+    private boolean coalesceMacroEscapes;
+
+    public _CangJieLexer(boolean coalesceMacroEscapes) {
+        this((java.io.Reader) null);
+        this.coalesceMacroEscapes = coalesceMacroEscapes;
+    }
+
+    private IElementType macroEscape(IElementType combinedType) {
+        if (coalesceMacroEscapes) return combinedType;
+        // Source parsing sees a one-character escape prefix and scans the target independently.
+        yypushback(1);
+        return TokenType.BAD_CHARACTER;
+    }
     private static final class State {
         final int lBraceCount;
         final int requiredInterpolationPrefix;
@@ -2009,27 +2019,27 @@ class _CangJieLexer implements FlexLexer {
           // fall through
           case 255: break;
           case 73:
-            { return CjTokens.ESCAPE_LPAR;
+            { return macroEscape(CjTokens.ESCAPE_LPAR);
             }
           // fall through
           case 256: break;
           case 74:
-            { return CjTokens.ESCAPE_RPAR;
+            { return macroEscape(CjTokens.ESCAPE_RPAR);
             }
           // fall through
           case 257: break;
           case 75:
-            { return CjTokens.ESCAPE_AT;
+            { return macroEscape(CjTokens.ESCAPE_AT);
             }
           // fall through
           case 258: break;
           case 76:
-            { return CjTokens.ESCAPE_LBRACKET;
+            { return macroEscape(CjTokens.ESCAPE_LBRACKET);
             }
           // fall through
           case 259: break;
           case 77:
-            { return CjTokens.ESCAPE_RBRACKET;
+            { return macroEscape(CjTokens.ESCAPE_RBRACKET);
             }
           // fall through
           case 260: break;

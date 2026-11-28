@@ -111,9 +111,19 @@ import com.intellij.lexer.FlexLexer;
 %implements FlexLexer
 
 %{
- public _CangJieLexer() {
-    this((java.io.Reader)null);
- }
+    private boolean coalesceMacroEscapes;
+
+    public _CangJieLexer(boolean coalesceMacroEscapes) {
+        this((java.io.Reader) null);
+        this.coalesceMacroEscapes = coalesceMacroEscapes;
+    }
+
+    private IElementType macroEscape(IElementType combinedType) {
+        if (coalesceMacroEscapes) return combinedType;
+        // Source parsing sees a one-character escape prefix and scans the target independently.
+        yypushback(1);
+        return TokenType.BAD_CHARACTER;
+    }
 %}
 
 %{
@@ -910,11 +920,11 @@ EXPONENT_PART=[Ee][-]?{DIGITS_WITH_TRAILING_UNDERSCORE}      // 科学计数法�
 "?"          { return CjTokens.QUEST; }
 "..."        { return CjTokens.ELLIPSIS; }
 // 分隔符
-"\\("        { return CjTokens.ESCAPE_LPAR; }
-"\\)"        { return CjTokens.ESCAPE_RPAR; }
-"\\["        { return CjTokens.ESCAPE_LBRACKET; }
-"\\]"        { return CjTokens.ESCAPE_RBRACKET; }
-"\\@"        { return CjTokens.ESCAPE_AT; }
+"\\("        { return macroEscape(CjTokens.ESCAPE_LPAR); }
+"\\)"        { return macroEscape(CjTokens.ESCAPE_RPAR); }
+"\\["        { return macroEscape(CjTokens.ESCAPE_LBRACKET); }
+"\\]"        { return macroEscape(CjTokens.ESCAPE_RBRACKET); }
+"\\@"        { return macroEscape(CjTokens.ESCAPE_AT); }
 "["          { return CjTokens.LBRACKET; }
 "]"          { return CjTokens.RBRACKET; }
 "{"          { return CjTokens.LBRACE; }
