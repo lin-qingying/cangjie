@@ -65,10 +65,9 @@ private fun prepareFunction(owner: CfirFunction, metadata: CfirAnnotationMetadat
     if (owner.status.isOperator || owner.status.isOpen || owner.status.isAbstract || owner.status.isDefault) return
     owner.valueParameters.forEachIndexed { index, parameter ->
         val assignment = parameter.defaultValue ?: return@forEachIndexed
-        if (parameter.defaultValueMetadata?.hasInitial == true && parameter.defaultValueMetadata?.function == null) {
-            return@forEachIndexed
-        }
-        parameter.defaultValueMetadata?.function?.let {
+        val defaultMetadata = parameter.defaultValueMetadata
+        if (defaultMetadata != null && defaultMetadata.function == null) return@forEachIndexed
+        defaultMetadata?.function?.let {
             check(it.defaultParameterHelperInfo == CfirDefaultParameterHelperInfo(owner, index))
             return@forEachIndexed
         }

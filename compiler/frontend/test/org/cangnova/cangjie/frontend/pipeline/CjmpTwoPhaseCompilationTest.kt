@@ -1708,7 +1708,14 @@ class CjmpTwoPhaseCompilationTest {
                             Attribute.COMMON,
                             Attribute.FROM_COMMON_PART,
                         ),
-                        info = CjoFunctionInfo(hasFunctionBody = false),
+                        // A bodyless declaration still carries its real signature table.
+                        info = CjoFunctionInfo(
+                            body = CjoFunctionBodyInfo(
+                                parameterLists = listOf(emptyList()),
+                                desugaredParameterLists = listOf(emptyList()),
+                                returnType = 4u,
+                            ),
+                        ),
                     ),
                     CjoPackageDeclaration(
                         identifier = "identity",
@@ -5380,8 +5387,7 @@ class CjmpTwoPhaseCompilationTest {
         val completed = CjmpArgumentProbePipeline().execute(arguments, configuration)
 
         assertFalse(completed)
-        assertInstanceOf(CjmpCommonPartInputResolution.Invalid::class.java, configuration.cjmpCommonPartInputResolution)
-        assertThrows(IllegalStateException::class.java) { configuration.requireCjmpCommonPartInputs() }
+        assertTrue(configuration.requireCjmpCommonPartInputs().parents.isEmpty(), "The original driver configuration remains reusable.")
         assertTrue(
             collector.messages.any {
                 it.first.isError && it.second ==

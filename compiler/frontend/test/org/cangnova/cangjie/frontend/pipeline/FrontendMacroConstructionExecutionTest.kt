@@ -23,6 +23,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
+import org.cangnova.cangjie.cfir.declarations.hasInitialDefaultValue
 import org.cangnova.cangjie.cfir.declarations.EmptyDeprecationsProvider
 import org.cangnova.cangjie.cfir.declarations.builder.buildFile
 import org.cangnova.cangjie.cfir.declarations.builder.buildFileCopy
@@ -115,6 +116,7 @@ import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.parsing.CangJieLightParser
 import org.cangnova.cangjie.parsing.CjParameterGrammar
 import org.cangnova.cangjie.parsing.CjParserSourceContext
 import org.cangnova.cangjie.parsing.cjmpParsingContext
@@ -1003,20 +1005,8 @@ class FrontendMacroConstructionExecutionTest {
     /** 空的 `[]` 仍选择 attribute wrapper，并通过 executor 协议保留属性存在标志。 */
     @Test
     fun emptyAttributeDelimiterUsesAttributeMacroWrapper() {
-        val fixture = macroExpressionCarrierFixture()
-        val surface = (fixture.pre.allSurfaces.single() as MacroSurfaceExpr).copy(hasAttr = true)
-        val file = fixture.pre.files.single()
-        val pre = buildPreMacroRawFiles(
-            session = fixture.pre.session,
-            files = listOf(PreMacroCfirFile(
-                cfirFile = file.cfirFile,
-                surfaces = listOf(surface),
-                annotationMetadata = file.annotationMetadata,
-                parsingDiagnosticPublication = file.parsingDiagnosticPublication,
-                parserSettings = file.parserSettings,
-                sourceFileIdentity = file.sourceFileIdentity,
-            )),
-        )
+        val fixture = macroExpressionCarrierFixture(hasAttr = true)
+        val pre = fixture.pre
         val executor = RecordingExecutor(
             MacroExpansionResult.Success(
                 tokens = listOf(org.cangnova.cangjie.macro.TokenInfo(0u.toUByte(), "expanded")),
@@ -1260,7 +1250,11 @@ class FrontendMacroConstructionExecutionTest {
             packageFqName = packageFqName,
             carrier = original,
         )
-        val pre = buildPreMacroRawFiles(session, listOf(PreMacroCfirFile(file, listOf(surface), CfirAnnotationMetadataBuilder())))
+        val host = CjInMemoryTextSourceFile(
+            "sample.cj", "testdata/sample.cj",
+            "package sample\nfunc useMacro(@macros.GenerateParameter(before: Int64)) {}\n",
+        )
+        val pre = buildPreMacroRawFiles(session, listOf(freezeFixtureParserInput(file, host, listOf(surface))))
         val configuration = CompilerConfiguration().apply {
             macroExecutorFactory = MacroExecutorFactory {
                 RecordingExecutor(MacroExpansionResult.Success(listOf(tokenInfo("after: Int")), "after: Int"))
@@ -1463,6 +1457,7 @@ class FrontendMacroConstructionExecutionTest {
         assertInstanceOf(CfirNamedFunction::class.java, file.declarations.first())
         val parameterPlaceholder = (file.declarations[1] as CfirNamedFunction).valueParameters.single()
         assertInstanceOf(CfirErrorExpression::class.java, parameterPlaceholder.defaultValue)
+        assertFalse(parameterPlaceholder.hasInitialDefaultValue)
         assertEquals(
             setOf(surfaces.last().surfaceId),
             (result as MacroConstructionResult.Degraded).registry.placeholderOriginById.keys,
@@ -2369,7 +2364,10 @@ class FrontendMacroConstructionExecutionTest {
      * 该 fixture 将待替换的错误表达式放入函数体中，并把同一表达式登记为宏 surface，
      * 使测试能够验证 stable splice 是否精确替换原始 CFIR 载体。
      */
-    private fun macroExpressionCarrierFixture(macroName: String = "Generated"): MacroExpressionCarrierFixture {
+    private fun macroExpressionCarrierFixture(
+        macroName: String = "Generated",
+        hasAttr: Boolean = false,
+    ): MacroExpressionCarrierFixture {
         val session = object : CfirSession(CfirSession.Kind.Source) {}
         val moduleData = TestModuleData(session)
         session.register(CfirModuleData::class, moduleData)
@@ -2393,11 +2391,18 @@ class FrontendMacroConstructionExecutionTest {
                 statements += carrier
             }
         }
+        val rawSyntax = "@macros.$macroName" + (if (hasAttr) "[]" else "") + "(arg)"
+        val sourceText = "package sample\nfunc useMacro() { $rawSyntax }\n"
+        val sourceFile = CjInMemoryTextSourceFile("sample.cj", "testdata/sample.cj", sourceText)
+        val start = sourceText.indexOf(rawSyntax)
         val surface = expressionSurface(
             surfaceId = 3000L,
             qualifiedName = FqName("macros").child(Name.identifier(macroName)),
             packageFqName = packageFqName,
+            sourceRange = MacroSurfaceSourceRange(null, start, start + rawSyntax.length),
         ).copy(
+            hasAttr = hasAttr,
+            capturedRawSyntax = rawSyntax,
             replaceHandle = CfirReplaceHandle(3000L, functionBodyMacroOwnerSnapshot(packageFqName, function), carrier),
         )
         val file = buildFile {
@@ -2406,7 +2411,9 @@ class FrontendMacroConstructionExecutionTest {
             origin = CfirDeclarationOrigin.Synthetic.Error
             attributes = CfirDeclarationAttributes.EMPTY
             symbol = CfirFileSymbol()
-            name = "sample.cj"
+            name = sourceFile.name
+            this.sourceFile = sourceFile
+            sourceFileLinesMapping = sourceText.toSourceLinesMapping()
             packageDirective = buildPackageDirective {
                 this.packageFqName = packageFqName
                 isMacroPackage = false
@@ -2415,7 +2422,7 @@ class FrontendMacroConstructionExecutionTest {
         }
         return MacroExpressionCarrierFixture(
             function = function,
-            pre = buildPreMacroRawFiles(session, listOf(PreMacroCfirFile(file, listOf(surface), CfirAnnotationMetadataBuilder()))),
+            pre = buildPreMacroRawFiles(session, listOf(freezeFixtureParserInput(file, sourceFile, listOf(surface)))),
         )
     }
 
@@ -2476,7 +2483,9 @@ class FrontendMacroConstructionExecutionTest {
      * 基于单个宏 surface 构造默认源码文件 fixture。
      */
     private fun macroSurfaceFixture(surface: MacroSurface): MacroSurfaceFixture {
-        return macroSurfaceFixture(listOf(surface))
+        val sourceText = "package ${surface.scopeContext.packageFqName}\n" +
+                "func useMacro() { ${surface.capturedRawSyntax} }\n"
+        return macroSurfaceFixture(listOf(surface), sourceText)
     }
 
     /**
@@ -2512,8 +2521,28 @@ class FrontendMacroConstructionExecutionTest {
         return MacroSurfaceFixture(
             file = file,
             surface = surfaces.singleOrNull() ?: surfaces.first(),
-            pre = buildPreMacroRawFiles(session, listOf(PreMacroCfirFile(file, surfaces, CfirAnnotationMetadataBuilder()))),
+            pre = buildPreMacroRawFiles(session, listOf(freezeFixtureParserInput(file, sourceFile, surfaces))),
         )
+    }
+
+    private fun freezeFixtureParserInput(
+        file: CfirFile,
+        sourceFile: CjInMemoryTextSourceFile,
+        surfaces: List<MacroSurface>,
+        metadata: CfirAnnotationMetadataBuilder = CfirAnnotationMetadataBuilder(),
+    ): PreMacroCfirFile {
+        val disposable = com.intellij.openapi.util.Disposer.newDisposable("macro-execution-host")
+        try {
+            org.cangnova.cangjie.CangJieCoreEnvironment.create(
+                disposable, org.cangnova.cangjie.CangJieCoreEnvironmentMode.Production,
+            )
+            val parsed = CangJieLightParser.parse(CangJieLightParser.createBuilder(sourceFile.text), sourceFile = sourceFile)
+            parsed.requireConsistentInput()
+            file.publishParsingFileFacts(parsed.fileFacts, parsed.sourceContext)
+            return PreMacroCfirFile(file, surfaces, metadata, parsed.diagnosticPublication, parsed.settings)
+        } finally {
+            com.intellij.openapi.util.Disposer.dispose(disposable)
+        }
     }
 
     /**

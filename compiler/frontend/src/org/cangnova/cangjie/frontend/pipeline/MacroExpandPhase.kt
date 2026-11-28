@@ -14,7 +14,9 @@ import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
+import org.cangnova.cangjie.cfir.declarations.CfirParameterDefaultValueMetadata
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
+import org.cangnova.cangjie.cfir.declarations.defaultValueMetadata
 import org.cangnova.cangjie.cfir.declarations.builder.buildErrorFunction
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
@@ -1337,9 +1339,14 @@ class FrontendMacroConstructionService(
             typeParameters.addAll(parameter.typeParameters)
             returnTypeRef = parameter.returnTypeRef
             name = parameter.name
-            defaultValue = buildErrorExpression {
+            defaultValue = parameter.defaultValue ?: buildErrorExpression {
                 this.source = source
                 this.diagnostic = diagnostic
+            }
+        }.also { placeholder ->
+            // A recovery expression represents the failed macro, not a source default assignment.
+            if (parameter.defaultValue == null) {
+                placeholder.defaultValueMetadata = CfirParameterDefaultValueMetadata(hasInitial = false, function = null)
             }
         }
     }
