@@ -455,3 +455,7 @@ data class IfAvailableSurface(
     /** 条件分支主体 token，用于 desugar 前的简单评估。 */
     val branchTokens: List<MacroSurfaceToken>,
 ) : BuiltinNonMacroSurface()
+
+/** 方括号形式的错误恢复保留真实声明；此分支 token 只用于父宏输入与展示。 */
+fun MacroSurface.recoveredBuiltinDeclarationBranchTokens(): List<MacroSurfaceToken>? =
+    (this as? IfAvailableSurface)?.branchTokens

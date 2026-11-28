@@ -199,6 +199,10 @@ class FrontendMacroConstructionExecutionTest {
                 assertInstanceOf(MacroConstructionResult.Success::class.java, result, "LightTree=$lightTree")
                 assertEquals(0, executorCreations, "IfAvailable must not initialize the user macro executor; LightTree=$lightTree")
                 assertTrue(executor.calls.isEmpty(), "IfAvailable must not execute as a user macro; LightTree=$lightTree")
+                assertEquals(
+                    sourceSurface.capturedRawSyntax,
+                    result.registry.generatedDisplayText.getValue(sourceSurface.surfaceId),
+                )
                 val function = preFile.cfirFile.declarations.filterIsInstance<CfirNamedFunction>().single()
                 val expression = function.body!!.statements.single() as CfirIfAvailableExpression
                 assertEquals(Name.identifier("level"), expression.conditionName)

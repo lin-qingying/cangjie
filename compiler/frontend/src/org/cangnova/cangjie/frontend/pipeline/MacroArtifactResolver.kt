@@ -363,10 +363,10 @@ class MacroArtifactResolver {
      */
     private fun createArtifactLocator(
         packages: List<MacroArtifactPackage>,
-        sdkHome: String,
+        sdkHome: String?,
     ): MacroArtifactLocator {
-        if (sdkHome.isNotBlank()) return MacroArtifactLocator(sdkHome = sdkHome)
-        val derived = packages.firstNotNullOfOrNull { it.deriveSdkArtifactRoot() }
+        if (!sdkHome.isNullOrBlank()) return MacroArtifactLocator(sdkHome = sdkHome)
+        val derived = packages.mapNotNull { it.deriveSdkArtifactRoot() }.distinct().singleOrNull()
             ?: return MacroArtifactLocator(sdkHome = sdkHome)
         return MacroArtifactLocator(sdkHome = derived.home, host = derived.host)
     }

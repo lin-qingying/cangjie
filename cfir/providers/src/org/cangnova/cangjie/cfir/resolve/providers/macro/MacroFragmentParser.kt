@@ -68,7 +68,8 @@ interface MacroFragmentParser {
         // v53：原生根通过实际CharTable在POM事务完成后交接；PSI来源视图原子安装并响应元数据变化。
         // v54：静态构造器先完成自身CJMP检查，再由父容器检查直接成员，保持官方producer先报。
         // v55：原生AST adoption撤销SDK旧根查表key，正式effective table与当前FileElement字段保持同代。
-        const val VERSION: Int = 57
+        // v58：声明片段重解析保留注解原始模块和 token 来源，同时发布 parser 诊断映射。
+        const val VERSION: Int = 58
     }
 }
 

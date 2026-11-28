@@ -12,7 +12,7 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLCangJi
 import org.cangnova.cangjie.cfir.resolve.providers.macro.PreMacroCfirFile
 import org.cangnova.cangjie.cfir.resolve.providers.macro.PreMacroRawBuildResult
 import org.cangnova.cangjie.cfir.resolve.providers.macro.buildPreMacroRawFiles
-import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.resolve.providers.cfirProvider
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.psi.CjAnnotation

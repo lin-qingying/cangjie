@@ -302,26 +302,6 @@ val cangjieCompilerArguments = compilerArguments {
             }
 
             compilerArgument {
-                name = "warn-on"
-                compilerName = "warnOn"
-                description = "Report a specific group of warning".asReleaseDependent()
-                argumentType = StringArrayType()
-                valueType = StringArrayType()
-                delimiter = CangJieCompilerArgument.Delimiter.Semicolon
-                lifecycle(CangJieReleaseVersion.V_1_0_0)
-            }
-
-            compilerArgument {
-                name = "warn-off"
-                compilerName = "warnOff"
-                description = "Suppress a specific group of warning".asReleaseDependent()
-                argumentType = StringArrayType()
-                valueType = StringArrayType()
-                delimiter = CangJieCompilerArgument.Delimiter.Semicolon
-                lifecycle(CangJieReleaseVersion.V_1_0_0)
-            }
-
-            compilerArgument {
                 name = "error-count-limit"
                 compilerName = "errorCountLimit"
                 description =

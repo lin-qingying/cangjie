@@ -20,7 +20,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.psi
-import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.resolve.providers.cfirProvider
 import org.cangnova.cangjie.psi.CjClass
 import org.cangnova.cangjie.psi.CjFieldVariable
 import org.cangnova.cangjie.psi.CjFile

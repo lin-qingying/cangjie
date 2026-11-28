@@ -261,12 +261,12 @@ internal open class CfirElementsRecorder : CfirVisitor<Unit, MutableMap<CjElemen
 
     override fun visitCatchPattern(catchPattern: org.cangnova.cangjie.cfir.patterns.CfirCatchPattern, data: MutableMap<CjElement, CfirElement>) {
         catchPattern.acceptChildren(this, data)
-        recordPatternBindingVariable(catchPattern, catchPattern.bindingVariable, data)
+        recordPatternBindingVariable(catchPattern, catchPattern.nestedPattern.simpleVariableBindingOrNull(), data)
     }
 
     override fun visitCommandTypePattern(commandTypePattern: org.cangnova.cangjie.cfir.patterns.CfirCommandTypePattern, data: MutableMap<CjElement, CfirElement>) {
         commandTypePattern.acceptChildren(this, data)
-        recordPatternBindingVariable(commandTypePattern, commandTypePattern.bindingVariable, data)
+        recordPatternBindingVariable(commandTypePattern, commandTypePattern.nestedPattern.simpleVariableBindingOrNull(), data)
     }
 
     override fun visitResourceVariable(resourceVariable: org.cangnova.cangjie.cfir.declarations.CfirResourceVariable, data: MutableMap<CjElement, CfirElement>) {

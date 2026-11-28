@@ -70,6 +70,7 @@ import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceParam
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceToken
 import org.cangnova.cangjie.cfir.resolve.providers.macro.PreMacroCfirFile
 import org.cangnova.cangjie.cfir.resolve.providers.macro.PreMacroRawBuildResult
+import org.cangnova.cangjie.cfir.resolve.providers.macro.recoveredBuiltinDeclarationBranchTokens
 import org.cangnova.cangjie.cfir.resolve.providers.macro.registerConstructionSurfaceUsage
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationMetadata
@@ -80,11 +81,13 @@ import org.cangnova.cangjie.cfir.resolve.providers.macro.finalizeImplicitConstru
 import org.cangnova.cangjie.cfir.symbols.CfirErrorFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirMacroDeclarationSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
+import org.cangnova.cangjie.cfir.types.CfirUserTypeRef
 import org.cangnova.cangjie.cfir.visitors.CfirDefaultTransformer
 import org.cangnova.cangjie.config.CompilerConfiguration
 import org.cangnova.cangjie.config.CompilerConfigurationKey
 import org.cangnova.cangjie.config.languageVersionSettings
 import org.cangnova.cangjie.config.moduleName
+import org.cangnova.cangjie.config.parallelMacroExpansion
 import org.cangnova.cangjie.config.targetPlatform
 import org.cangnova.cangjie.config.useLightTree
 import org.cangnova.cangjie.macro.MacroCallInfo
@@ -563,6 +566,15 @@ class FrontendMacroConstructionService(
                             return@evaluate null
                         }
                         val refreshedTokens = node.refreshTokensWithChildResults(childResults)
+                        if (decision.resolution is MacroResolution.BuiltinNonMacro) {
+                            surface.recoveredBuiltinDeclarationBranchTokens()?.let { branch ->
+                                // 声明与其语法诊断已归属原始文件；只把保留的分支交给父宏。
+                                val visibleTokens = if (branch.isEmpty()) refreshedTokens.inputTokens else
+                                    branch.replaceChildMacroRanges(childResults, MacroPayloadChannel.INPUT)
+                                registry.registerGeneratedDisplayText(surface.surfaceId, visibleTokens.joinToString("") { it.text })
+                                return@evaluate visibleTokens
+                            }
+                        }
                         val expandedTokens = expandResolvedSurface(
                             pre = pre,
                             surface = surface,
@@ -613,8 +625,9 @@ class FrontendMacroConstructionService(
                             else -> Unit
                         }
                         val parentVisibleTokens = fragment.parentVisibleTokens(refreshedTokens)
-                        registry.registerGeneratedDisplayText(surface.surfaceId, parentVisibleTokens.joinToString("") { it.text })
-                        if (surface is BuiltinNonMacroSurface) return@evaluate parentVisibleTokens
+                        if (decision.resolution is MacroResolution.BuiltinNonMacro) {
+                            registry.registerGeneratedDisplayText(surface.surfaceId, parentVisibleTokens.joinToString("") { it.text })
+                        }
                         slots += MacroReplaceSlot(
                             handle = surface.replaceHandle,
                             origin = surface,
@@ -1697,6 +1710,8 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
                         unsupportedSlots += slot
                     }
                 }
+
+                else -> unsupportedSlots += slot
             }
         }
 

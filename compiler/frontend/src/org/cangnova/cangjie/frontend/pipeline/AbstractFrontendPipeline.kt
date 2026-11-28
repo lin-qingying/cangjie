@@ -38,7 +38,6 @@ import org.cangnova.cangjie.config.mockSupportKind
 import org.cangnova.cangjie.config.moduleName
 import org.cangnova.cangjie.config.parallelMacroExpansion
 import org.cangnova.cangjie.config.typecheckOnly
-import org.cangnova.cangjie.config.warningGroupsEnabled
 import org.cangnova.cangjie.messages.CangJieParsingBundle
 import org.cangnova.cangjie.messages.CompilerMessageSeverity
 import org.cangnova.cangjie.messages.MessageCollector
@@ -221,8 +220,7 @@ abstract class AbstractFrontendPipeline<A : CommonCompilerArguments> {
     /**
      * 把诊断控制选项落到配置上。
      *
-     * `--diagnostic-format` 只接受官方两种模式；warn 开关按“后者生效”的官方语义
-     * 计算最终启用的告警组集合；`--error-count-limit` 保存原始文本，由诊断报告端解释。
+     * `--diagnostic-format` 只接受官方两种模式。`--error-count-limit` 保存原始文本，由诊断报告端解释。
      */
     private fun configureDiagnosticsOptions(arguments: A, configuration: CompilerConfiguration): Boolean {
         val format = arguments.diagnosticFormat?.lowercase()
@@ -236,8 +234,6 @@ abstract class AbstractFrontendPipeline<A : CommonCompilerArguments> {
         }
         configuration.diagnosticFormat = arguments.diagnosticFormat
         configuration.errorCountLimit = arguments.errorCountLimit
-        val enabledGroups = arguments.warnOn.toSet() - arguments.warnOff.toSet()
-        configuration.warningGroupsEnabled = enabledGroups
         return true
     }
 

@@ -164,7 +164,11 @@ internal fun createEmptyDeclarationHeaderStubs(
     declaration: CfirDeclaration? = null,
 ) {
     val annotationsStub = CangJiePlaceHolderStubImpl<CjAnnotations>(parent, CjStubElementTypes.ANNOTATIONS)
-    val annotationCalls = declaration?.annotations.orEmpty().filterIsInstance<CfirAnnotationCall>()
+    if (declaration == null) {
+        CangJieModifierListStubImpl(parent, modifierMask, CjStubElementTypes.MODIFIER_LIST)
+        return
+    }
+    val annotationCalls = declaration.annotations.filterIsInstance<CfirAnnotationCall>()
     annotationCalls.forEach { annotation ->
         val platformIdentity = annotation.annotationIdentity as? CangjieAnnotationIdentity.PlatformDerived
         val name = annotation.annotationSourceName
@@ -194,9 +198,9 @@ internal fun createEmptyDeclarationHeaderStubs(
     }
     // CJO 的属性位也是注解身份的来源；恢复语法需要的 marker，避免重解析丢失宿主规则。
     // Mirror 属性还会继承到成员上，只有对应源码目标可恢复成显式注解。
-    val serialized = declaration?.serializedInteropFacts
+    val serialized = declaration.serializedInteropFacts
     val attributeAnnotations = buildList {
-        if (declaration?.annotationInfo?.isIntrinsic == true || serialized?.isIntrinsic == true) {
+        if (declaration.annotationInfo?.isIntrinsic == true || serialized?.isIntrinsic == true) {
             add(BuiltInAnnotationKind.INTRINSIC)
         }
         if (declaration is CfirClassLikeDeclaration && serialized?.isJavaMirror == true) {

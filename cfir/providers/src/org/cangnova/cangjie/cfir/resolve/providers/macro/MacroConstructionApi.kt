@@ -880,6 +880,11 @@ class MacroExpansionRegistry : org.cangnova.cangjie.cfir.session.CfirSessionComp
         )
     }
 
+    /** 记录 surface 展开后的展示文本，供 IDE / debug pass 使用。 */
+    fun registerGeneratedDisplayText(surfaceId: Long, text: String) {
+        _generatedDisplayText[surfaceId] = text
+    }
+
     /**
      * 注册某 `CfirFile` 的 cache key（baseline 第 11 节）。
      *

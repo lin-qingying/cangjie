@@ -15,7 +15,7 @@ import org.cangnova.cangjie.analysis.test.framework.projectStructure.cjTestModul
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.patterns.bindingVariables
 import org.cangnova.cangjie.cfir.psi
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.name.CallableId

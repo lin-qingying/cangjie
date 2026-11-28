@@ -19,7 +19,7 @@ import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.name.ClassId

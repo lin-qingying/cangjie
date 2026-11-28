@@ -179,18 +179,6 @@ abstract class CommonCompilerArguments : CommonToolArguments() {
             field = if (value.isNullOrEmpty()) null else value
         }
 
-    var warnOn: Array<String> = emptyArray()
-        set(value) {
-            checkFrozen()
-            field = value
-        }
-
-    var warnOff: Array<String> = emptyArray()
-        set(value) {
-            checkFrozen()
-            field = value
-        }
-
     var errorCountLimit: String? = null
         set(value) {
             checkFrozen()

@@ -44,7 +44,7 @@ import org.cangnova.cangjie.cfir.resolve.dfa.CfirControlFlowGraphReferenceImpl
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.*
 import org.cangnova.cangjie.cfir.resolve.toSymbol
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.cfir.types.impl.ResolvedImplicitTypeRef

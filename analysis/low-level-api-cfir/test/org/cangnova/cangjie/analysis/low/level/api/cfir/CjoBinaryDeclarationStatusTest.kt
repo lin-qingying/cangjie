@@ -29,7 +29,7 @@ import org.cangnova.cangjie.cfir.serialization.provider.CfirExtendProviderCompos
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.ProcessorAction
 import org.cangnova.cangjie.cfir.session.extendProviderOrNull
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.descriptors.Modality

@@ -3,6 +3,7 @@ package org.cangnova.cangjie.frontend.arguments
 import org.cangnova.cangjie.config.CompilerConfiguration
 import org.cangnova.cangjie.config.messageCollector
 import org.cangnova.cangjie.config.parsingDiagnosticSettings
+import org.cangnova.cangjie.config.warningGroupsEnabled
 import org.cangnova.cangjie.messages.CompilerMessageSeverity
 import org.cangnova.cangjie.messages.ParsingDiagnosticSettings
 import org.cangnova.cangjie.messages.WarningGroup
@@ -20,14 +21,22 @@ fun CompilerConfiguration.configureWarningOptions(arguments: CommonCompilerArgum
         return false
     }
     val suppressedGroups = mutableSetOf<WarningGroup>()
+    val enabledGroups = mutableSetOf<WarningGroup>()
     for ((name, value) in occurrences) {
         if (value !in WarningGroup.commandLineValues) {
             messageCollector.report(CompilerMessageSeverity.ERROR, "Invalid value for argument '--$name': '$value'.")
             return false
         }
         val groups = if (value == "all") WarningGroup.entries else listOf(checkNotNull(WarningGroup.fromOptionName(value)))
-        if (name == "warn-off") suppressedGroups.addAll(groups) else suppressedGroups.removeAll(groups.toSet())
+        if (name == "warn-off") {
+            suppressedGroups.addAll(groups)
+            enabledGroups.removeAll(groups)
+        } else {
+            suppressedGroups.removeAll(groups)
+            enabledGroups.addAll(groups)
+        }
     }
     parsingDiagnosticSettings = ParsingDiagnosticSettings(parsingDiagnosticSettings.disableWarnings, suppressedGroups)
+    warningGroupsEnabled = enabledGroups.mapNotNullTo(linkedSetOf(), WarningGroup::optionName)
     return true
 }
