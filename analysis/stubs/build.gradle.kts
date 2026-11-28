@@ -18,6 +18,10 @@ dependencies {
     testImplementation(project(":analysis:analysis-api-standalone"))
     testImplementation(project(":analysis:cj-references"))
     testImplementation(project(":analysis:decompiled"))
+    // 真实 CJO 读取集成测试直接使用 LL producer、加载记录及 Kotlin 断言。
+    testImplementation(project(":analysis:low-level-api-cfir"))
+    testImplementation(project(":analysis:decompiled:decompiler-to-stubs"))
+    testImplementation(kotlin("test"))
     testImplementation(testFixtures(project(":analysis:analysis-test-framework")))
     testImplementation(testFixtures(project(":analysis:analysis-api-impl-base")))
     testImplementation(testFixtures(project(":analysis:analysis-api-cfir")))
