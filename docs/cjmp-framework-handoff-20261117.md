@@ -19,10 +19,15 @@ Linux 本地验证环境为 Ubuntu 22.04.5、Gradle 9.4.0、Temurin 21.0.13+9、
 | Linux 定向第 4 轮 | `d23cc86fd6c6466b0c42ee7bb85c0d4237fd2ec3` | 已报告 185 项，124 通过、60 失败、1 跳过。Frontend worker 在宏 token 循环失去进度后被停止。CJO 受 Analysis API 编译阻塞 |
 | Linux 定向第 6 轮 | `21c16e5cb4997b6d92e896293c1fba2342a8b150` | 执行 223 项，201 通过、22 失败。Providers 84/84，导出输入快照 64/64。PSI、Resolve 与 CJO 的测试编译进入下一轮 |
 | Linux 定向第 7 轮 | `39950914612e1ee6bc19d16c893c296d1fa7d0d4` | 执行 550 项，501 通过、49 失败。Providers 84/84、Resolve 106/111、Frontend 57/69、PSI 254/286。CJO 测试编译卡在 FullId 夹具的断言函数名，已在后续提交修正 |
-| Linux 定向第 8 轮 | `167f90ae7062190870a14f72f3caeb12f7360c07` | 开始复验 CJO、限定快照、Core 输入、CFG、Providers 和正式消费。Frontend 与 CJO 本地测试 worker 使用 2 GiB 堆 |
-| 主分支回归 | `39950914612e1ee6bc19d16c893c296d1fa7d0d4` | GitHub SDK 发现及 LLVM JNI 构建通过。首批 SDK 作业已进入 `Run main repository tests`，矩阵仍在执行。[运行记录](https://github.com/lin-qingying/cangjie/actions/runs/46134914684) |
+| Linux 定向第 8 轮 | `167f90ae7062190870a14f72f3caeb12f7360c07` | 执行 347 项，289 通过、58 失败。Frontend 48/48、Providers 76/76、Resolve 85/86、CJO 80/137。Frontend 与 CJO 本地测试 worker 使用 2 GiB 堆 |
+| 本地主分支回归 | `02f270f4bc405a091fefaff852f045fa2592c92c` | 已启动 `test --continue`，使用相同的 Linux 工具链及真实 SDK。首次尝试在执行测试前结束，两个输入各有独立日志 |
+| GitHub 主分支回归 | `39950914612e1ee6bc19d16c893c296d1fa7d0d4` | SDK 发现及 LLVM JNI 构建通过。首批 SDK 作业已进入 `Run main repository tests`，后续推送触发新矩阵。[运行记录](https://github.com/lin-qingying/cangjie/actions/runs/46134914684) |
 
 第 7 轮实际验证了三项 SOURCE FullId、导入泛型正文、泛型 enum 配对及 payload 不匹配负例、两种前端的配对注解和源位置。后续补丁在隔离运行中通过 46 项宏构造与告警测试、49 项异常及 if CFG 测试，以及 73 项宏转义和词法测试。完整提交的 Gradle 复验继续进行。
+
+第 8 轮的限定定义快照 11/11、SOURCE 包图 10/10、来源身份快照 8/8、异常及 if CFG 49/49。一次 JVM 类初始化循环影响了 22 个 CJO 测试。改为按需读取同一真实解析器后，单独复验了三种类加载顺序，初始化依赖 suite 通过 10/11。原 R41 Core 用例仍在 `metadata.imports.isEmpty()` 失败。FullId 的正常读取、隔离作用域、重入、精确路径及不同 manager 的八个原用例已通过补丁覆盖层的隔离复验。CJO SOURCE 保存的实际声明根与公开 wire binding 继续按各自身份验证。
+
+合入前 `200142275d824efcb4d24f5f835e0376b0a357ad` 的 GitHub 矩阵 20 个 SDK 测试作业均失败。同版本 SDK 1.1.0 作业记录了 12 个失败的 Gradle 任务，已保存具体测试名及编译错误用于对照。[主分支基线](https://github.com/lin-qingying/cangjie/actions/runs/46109990741)
 
 第 6 轮已复验 R42 alias 装配。R41 的 Core 定义输入失败仍有原测试入口 `CfirInitializationDependencySerializationTest.stdCoreProducerInjectsProviderBuiltinsAsPackageRoots`。该用例需要作用域内的真实当前定义产品。已记录的 CJMP 历史分歧包括普通有界 extend 的私有成员导出、Common 静态调用初始化器以及 Common const 和 tuple 的 CJO 槽。SDK 1.1.0 的独立消费端实际执行 Common 静态初始化器，且输出随 specific 对应函数更新。原始断言继续保留。
 
