@@ -93,9 +93,6 @@ import java.util.IdentityHashMap
  * 两者都因此退化为未知。故本分析只跟踪"存在带参构造器"的 enum 的外层 tag。
  */
 internal class CfirControlFlowConstAnalysis {
-    /** 临时取证只观察实际状态和节点身份，不参与常量选择、诊断来源或写入权限。 */
-    private val traceEnabled = java.lang.Boolean.getBoolean("cangjie.debug.controlFlowConst")
-
     /** 缓存 enum 是否在官方常量域中保留 constructor tag，避免重复查询宿主声明。 */
     private val constructorTagTracking = IdentityHashMap<CfirEnumConstructorSymbol, Boolean>()
     /** Option-like 的 Bool tag 转 UInt64 后未知，其它 enum 的 UInt32 tag 可以用于 MultiBranch。 */
@@ -109,27 +106,10 @@ internal class CfirControlFlowConstAnalysis {
         val traversal = ControlFlowGraphCompletionTraversal(graph)
         val incomingStates = traversal.collect(
             initial = ConstState.EMPTY,
-            transfer = { node, input ->
-                val output = input.transfer(node)
-                if (traceEnabled) traceState("TRANSFER", node, input, output)
-                output
-            },
+            transfer = { node, input -> input.transfer(node) },
             join = ConstState::join,
-            selectSuccessor = { node, output ->
-                val selected = node.constantTargetSuccessor(output)
-                if (traceEnabled) {
-                    System.err.println("CFIR_CFA_SELECT node=" + traceIdentity(node) + " selected=" + traceIdentity(selected))
-                }
-                selected
-            },
+            selectSuccessor = { node, output -> node.constantTargetSuccessor(output) },
         )
-
-        if (traceEnabled) {
-            System.err.println("CFIR_CFA_GRAPH declaration=" + traceIdentity(graph.declaration))
-            for ((path, input) in incomingStates) {
-                traceState("STABLE", path.node, input, null)
-            }
-        }
 
         /*
          * 先求到不动点，再读取被拒绝边。循环首轮可能用 `i = 0` 暂时裁掉一个 case，
@@ -159,24 +139,6 @@ internal class CfirControlFlowConstAnalysis {
         }
         return unreachablePatterns
     }
-
-    /** 临时回执保留实际 graph/CFIR/edge 对象，不以源码名或坐标推断相同身份。 */
-    private fun traceState(stage: String, node: CFGNode<*>, input: ConstState, output: ConstState?) {
-        val decision = node as? MatchPatternDecisionNode
-        val edges = node.followingNodes.joinToString { next ->
-            val edge = node.edgeTo(next)
-            traceIdentity(next) + ":" + edge.kind + ":" + edge.label
-        }
-        System.err.println("CFIR_CFA_" + stage + " node=" + traceIdentity(node) +
-            " fir=" + traceIdentity(node.fir) + " graph=" + traceIdentity(node.owner) +
-            " pattern=" + traceIdentity(decision?.pattern) + " report=" + traceIdentity(decision?.reportSource) +
-            " selector=" + traceIdentity(decision?.matchExpression?.subject) +
-            " path=" + decision?.subjectPath + " edges=[" + edges + "] input={" + input.trace() +
-            "} output={" + output?.trace() + "}")
-    }
-
-    private fun traceIdentity(value: Any?): String = if (value == null) "absent" else
-        value.javaClass.simpleName + "@" + Integer.toHexString(System.identityHashCode(value))
 
     /**
      * 仅在 CFG 明确标记了原子模式判定的 success/failure 对时选择唯一后继。
@@ -691,13 +653,6 @@ internal class CfirControlFlowConstAnalysis {
         operator fun get(variable: CfirVariableSymbol<*>): ConstValue? = values[variable]
 
         fun result(expression: CfirExpression): ConstValue? = results[expression]
-
-        /** 临时日志仅遍历已存在的 immutable facts；不读取 provider、phase 或再次求值。 */
-        fun trace(): String = "variables=[" + values.entries.joinToString { (key, value) ->
-            key.javaClass.simpleName + "@" + Integer.toHexString(System.identityHashCode(key)) + "=" + value
-        } + "] results=[" + results.entries.joinToString { (key, value) ->
-            key.javaClass.simpleName + "@" + Integer.toHexString(System.identityHashCode(key)) + "=" + value
-        } + "]"
 
         fun withVariable(variable: CfirVariableSymbol<*>, value: ConstValue?): ConstState =
             copy(values = values.withValue(variable, value))

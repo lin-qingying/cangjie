@@ -414,6 +414,11 @@ private fun resolveStdlibOptionArgumentTypes(
 /**
  * 将推导出的绑定类型写回 pattern binding variable。
  */
+/** 选择器检查失败时只完成现有绑定类型，case 模式和正文仍保留其未检查的源码树。 */
+internal fun CfirPattern.completeBindingsAfterSelectorFailure(error: ConeErrorType) {
+    bindingVariables().forEach { it.replaceBindingType(error) }
+}
+
 private fun CfirPatternBindingVariable.replaceBindingType(type: ConeCangJieType?) {
     if (type == null) return
     val currentTypeRef = returnTypeRef

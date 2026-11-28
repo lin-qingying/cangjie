@@ -50,6 +50,7 @@ import org.cangnova.cangjie.cfir.resolve.inference.CfirInferenceVariableRole
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityResult
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.BodyResolveContext
+import org.cangnova.cangjie.cfir.resolve.transformers.ReturnTypeCalculator
 import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.scopes.CfirCallableLookupProvenance
 import org.cangnova.cangjie.cfir.semantics.AbstractCallCandidate
@@ -132,7 +133,8 @@ internal class CfirUnscopedCompletionEntry(val pass: CfirUnscopedCompletionPass,
     fun matchesCandidate(): Boolean =
         !candidate.isSourceCompletionWithdrawn && candidateSystem.withParentRebaseSuspended {
             atom.candidate === candidate && atom.expression === carrier && candidate.implicitTypeComputationScope == null &&
-                candidate.callInfo.callSite === callSite && candidate.symbol === target && candidate.system === candidateSystem &&
+                candidate.callInfo.callSite === callSite && candidate.symbol === target &&
+                candidate.withExistingConstraintSystemForCompletionResults { it === candidateSystem } == true &&
                 candidate.unscopedCompletionGeneration === candidateGeneration && candidate.substitutor === substitutor &&
                 candidate.freshVariables.size == freshVariables.size &&
                 candidate.freshVariables.zip(freshVariables).all { (a, b) -> a === b } &&
@@ -195,7 +197,7 @@ internal class CfirUnscopedCompletionReceipt(
             if (owner.isSourceCompletionWithdrawn || entry.pass.owner !== owner || entry.atom !== atom || entry.pass.system !== system ||
                 entry.pass.ownerSystem !== owner.withConstraintSystemForCompletionResults { it } || entry.pass.ownerGeneration !== owner.unscopedCompletionGeneration || !entry.pass.matchesProducerFact() ||
                 owner.implicitTypeComputationScope?.graph?.isCandidateWithdrawn(owner) == true || !entry.matchesCandidate() ||
-                reference.resolvedSymbol !== entry.target || !entry.candidate.isSuccessful ||
+                reference.resolvedSymbol !== entry.target || !entry.candidate.hasSuccessfulSourceResult(type) ||
                 entry.candidate.arguments.size != candidateArguments.size ||
                 !entry.candidate.arguments.zip(candidateArguments).all { (a, b) -> a === b } ||
                 entry.candidate.argumentMapping.size != mapping.size ||
@@ -234,6 +236,8 @@ internal class CandidatePCLACompletionState(
     var unscopedAnalysisGeneration: Any = Any(),
     var unscopedPass: CfirUnscopedCompletionPass? = null,
     val unscopedReceipts: IdentityHashMap<ConeAtomWithCandidate, CfirUnscopedCompletionReceipt> = IdentityHashMap(),
+    /** 原正式消费入口成功删除 exact atom 后保存的 immutable 完成事实，不携带 writer 权限。 */
+    val consumedUnscopedReceipts: IdentityHashMap<ConeAtomWithCandidate, CfirUnscopedCompletionReceipt> = IdentityHashMap(),
     var processedCallsCount: Int = 0,
 ) {
     /** 复制任务和 immutable 完成事实；writer pass 不进入成功/回滚 memento。 */
@@ -242,6 +246,7 @@ internal class CandidatePCLACompletionState(
         IdentityHashMap(callWriters), childSessions.toMutableList(),
         unscopedAnalysisGeneration = unscopedAnalysisGeneration,
         unscopedReceipts = IdentityHashMap(unscopedReceipts),
+        consumedUnscopedReceipts = IdentityHashMap(consumedUnscopedReceipts),
         processedCallsCount = processedCallsCount,
     )
 }
@@ -292,6 +297,8 @@ class Candidate(
 ) : AbstractCallCandidate<ConeResolutionAtom>() {
 
     private var pclaCompletionState = CandidatePCLACompletionState()
+    /** 返回签名消费沿候选的实际创建入口，不能借用后来切换的资源计算器。 */
+    private val returnTypeCalculator: ReturnTypeCalculator = bodyResolveContext.returnTypeCalculator
     /** writer capability 单调撤销且不进入快照；分析代次和事实由 PCLA memento 恢复。 */
     private var unscopedCompletionEpoch: Any = Any()
     /** 已被成功重查替换的 source producer 永久撤权；与 writer epoch 一样不参与语义 memento。 */
@@ -318,6 +325,8 @@ class Candidate(
         pclaCompletionState.unscopedAnalysisGeneration = state.unscopedAnalysisGeneration
         pclaCompletionState.unscopedReceipts.clear()
         pclaCompletionState.unscopedReceipts.putAll(state.unscopedReceipts)
+        pclaCompletionState.consumedUnscopedReceipts.clear()
+        pclaCompletionState.consumedUnscopedReceipts.putAll(state.consumedUnscopedReceipts)
         processedPostponedCallsCount = state.processedCallsCount
     }
 
@@ -365,7 +374,13 @@ class Candidate(
             system.setBaseSystem(baseSystem)
             system.synchronizeWithOwner(activeConstraintSystemOwner(system))
         } else if (baseCSFromInferenceSession != null) {
-            system.setBaseSystem(baseCSFromInferenceSession)
+            // PCLA 的 common system 是共享父 owner；独立试算会话提供普通 base，
+            // 其 anchor 变量由试算自身完成。存储继承的 usesOuterCs 不决定会话的固定权。
+            if (bodyResolveContext.inferenceSession is org.cangnova.cangjie.cfir.resolve.inference.CfirPCLAInferenceSession) {
+                system.addOuterSystem(baseCSFromInferenceSession)
+            } else {
+                system.setBaseSystem(baseCSFromInferenceSession)
+            }
             system.integrateInferenceForest(listOf(baseSystem), requireClosed = false)
         } else {
             system.setBaseSystem(baseSystem)
@@ -462,6 +477,46 @@ class Candidate(
     internal fun <R> withConstraintSystemForCompletionResults(action: (ConstraintSystemImpl) -> R): R {
         val completionSystem = candidateSystem
         return completionSystem.withParentRebaseSuspended { action(completionSystem) }
+    }
+
+    /** source 准入与完成事实只借用已经存在的 CS；查询不能触发 lazy 初始化或 parent rebase。 */
+    internal fun <R> withExistingConstraintSystemForCompletionResults(action: (ConstraintSystemImpl) -> R): R? {
+        if (!systemInitialized || isSourceCompletionWithdrawn ||
+            implicitTypeComputationScope?.graph?.isCandidateWithdrawn(this) == true
+        ) return null
+        return withConstraintSystemForCompletionResults { system ->
+            if (isSourceCompletionWithdrawn || implicitTypeComputationScope?.graph?.isCandidateWithdrawn(this) == true) null
+            else action(system)
+        }
+    }
+
+    /** 可变入口属于实际创建 frame；文件、声明栈和捕获的资源域均不能借用另一轮正文。 */
+    internal fun isInSourceCompletionFrame(context: BodyResolveContext): Boolean {
+        if (isSourceCompletionWithdrawn || implicitTypeComputationScope?.graph?.isCandidateWithdrawn(this) == true ||
+            bodyResolveContext !== context || !argumentMappingInitialized ||
+            !this::substitutor.isInitialized || !this::freshVariables.isInitialized ||
+            callInfo.containingFile !== context.file || callInfo.containingDeclarations.size != context.containers.size ||
+            !callInfo.containingDeclarations.zip(context.containers).all { (captured, current) -> captured === current }
+        ) return false
+        val currentScope = context.implicitTypeComputationScope
+        return implicitTypeComputationScope?.graph === currentScope?.graph &&
+            implicitTypeComputationScope?.mode == currentScope?.mode
+    }
+
+    /** 成功只读 guard 是已有 binding 的佐证，不授予 FULL、terminal 或 writer 权限。 */
+    internal fun hasSuccessfulSourceResult(type: ConeCangJieType): Boolean {
+        if (isSourceCompletionWithdrawn || implicitTypeComputationScope?.graph?.isCandidateWithdrawn(this) == true) return false
+        var closed = true
+        type.forEachTypeIncludingMetadata {
+            if (it is ConeTypeVariableType || it is ConeStubType || it is ConeErrorType || it is ConeIdealLiteralType ||
+                it is ConePrimitiveType && it.kind.isIdeal
+            ) closed = false
+        }
+        if (!closed) return false
+        return withExistingConstraintSystemForCompletionResults { system ->
+            val storage = system.captureStorage()
+            diagnostics.all { it.isSuccess } && !storage.hasContradiction && storage.constraintsFromAllForkPoints.isEmpty()
+        } == true
     }
 
     /** 当前候选约束系统中已经记录的约束错误。 */
@@ -955,6 +1010,21 @@ class Candidate(
     internal fun unscopedCompletionReceipt(atom: ConeAtomWithCandidate, system: ConstraintSystemImpl): CfirUnscopedCompletionReceipt? =
         pclaCompletionState.unscopedReceipts[atom]?.takeIf { it.isValidFor(this, atom, system) }
 
+    /** 只读原 FULL 写回或正式消费事实；不创建 receipt、不消费队列、不恢复 writer 权限。 */
+    internal fun hasCompletedUnscopedSourceCall(call: CfirExpression, system: ConstraintSystemImpl): Boolean {
+        if (isSourceCompletionWithdrawn || implicitTypeComputationScope?.graph?.isCandidateWithdrawn(this) == true) return false
+        if (pclaCompletionState.unscopedReceipts.any { (atom, receipt) ->
+            atom.expression === call && receipt.isValidFor(this, atom, system) &&
+                receipt.matchesCurrentResult() && receipt.canConsume(this, system)
+        }) return true
+        // 新的 actual pending 义务不能继承已消费 atom 的历史事实。
+        if (postponedPCLACalls.any { it.expression === call }) return false
+        return pclaCompletionState.consumedUnscopedReceipts.any { (atom, receipt) ->
+            atom.expression === call && receipt.isValidFor(this, atom, system) &&
+                receipt.matchesCurrentResult()
+        }
+    }
+
     internal fun hasActualUnscopedReplacement(expression: CfirExpression, previous: Candidate, system: ConstraintSystemImpl): Boolean {
         val atoms = postponedPCLACalls.filterIsInstance<ConeAtomWithCandidate>().filter {
             it.expression === expression && pclaCallWriters[it] == null
@@ -966,22 +1036,28 @@ class Candidate(
                 live.size == 1 && live.single().candidate === actual
         }
         // 新 atom 先运行时，只有其真正 FULL receipt 能证明当前 resolved 结果；不能按 symbol/type 认领。
-        return live.isEmpty() && atoms.any { atom ->
+        return live.isEmpty() && (atoms.any { atom ->
             atom.candidate !== previous && unscopedCompletionReceipt(atom, system)?.matchesCurrentResult() == true
-        }
+        } || pclaCompletionState.consumedUnscopedReceipts.any { (atom, receipt) ->
+            atom.expression === expression && atom.candidate !== previous &&
+                receipt.isValidFor(this, atom, system) && receipt.matchesCurrentResult()
+        })
     }
 
     /** 只消耗这一 owner 的确切已完成 atom；不撤销 candidate，也不向新 candidate 转交 receipt。 */
     internal fun consumeUnscopedCompletionReceipt(atom: ConeAtomWithCandidate, receipt: CfirUnscopedCompletionReceipt) {
         check(pclaCompletionState.unscopedReceipts[atom] === receipt && receipt.entry.pass.owner === this)
+        check(removePostponedCall(atom)) { "Unscoped receipt has no actual pending atom to consume" }
         pclaCompletionState.unscopedReceipts.remove(atom)
-        removePostponedCall(atom)
+        pclaCompletionState.consumedUnscopedReceipts[atom] = receipt
     }
 
     internal fun publishUnscopedCompletionReceipt(receipt: CfirUnscopedCompletionReceipt) {
         val entry = receipt.entry
         check(isUnscopedCompletionPassActive(entry.pass) && entry.pass.owner === this)
         check(postponedPCLACalls.any { it === entry.atom } && pclaCallWriters[entry.atom] == null)
+        // 同 atom 的后到正式发布不能继承上一轮的已消费状态。
+        pclaCompletionState.consumedUnscopedReceipts.remove(entry.atom)
         pclaCompletionState.unscopedReceipts[entry.atom] = receipt
     }
 
@@ -1014,6 +1090,7 @@ class Candidate(
         revokeUnscopedWriter()
         pclaCompletionState.unscopedAnalysisGeneration = Any()
         pclaCompletionState.unscopedReceipts.clear()
+        pclaCompletionState.consumedUnscopedReceipts.clear()
         processedPostponedCallsCount = 0
         lambdasAnalyzedWithPCLA += lambda.anonymousFunction
     }
@@ -1245,6 +1322,20 @@ class Candidate(
         } else {
             bindThisTypeToCallSite(substituted)
         }
+    }
+
+    /**
+     * 正式参数检查与完成消费实际计算出的返回签名，保留候选代换及 This 投影。
+     * 只读 discovery 继续使用显式声明头，延迟签名不能退化成未解析头部。
+     */
+    fun substitutedReturnTypeFromCalculator(): ConeCangJieType {
+        val declaration = symbol.cfir
+        val declaredType = if (declaration is CfirFunction || declaration is CfirEnumConstructor) {
+            returnTypeCalculator.tryCalculateReturnType(declaration).coneType
+        } else {
+            null
+        }
+        return substitutedReturnType(declaredType)
     }
 
     /**

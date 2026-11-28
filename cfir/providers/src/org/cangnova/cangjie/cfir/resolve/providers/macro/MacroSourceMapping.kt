@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.resolve.providers.macro
 
 import java.util.IdentityHashMap
+import java.util.Collections
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 import org.cangnova.cangjie.source.CjBinarySourceElement
 import org.cangnova.cangjie.source.CjLightSourceElement
@@ -90,6 +91,15 @@ class MacroFragmentSourceMapping(
     private val origins = IdentityHashMap<AbstractCjSourceElement, MacroCfirSourceOrigin>()
     private val originalsByDerived = IdentityHashMap<AbstractCjSourceElement, AbstractCjSourceElement>()
     private val reparsedSourcesByCreated = IdentityHashMap<AbstractCjSourceElement, MutableList<CjSourceElement>>()
+    /** 原始 token 投影只读取冻结 sourceMap，供后续修饰符等子节点诊断消费。 */
+    private val diagnosticProjectors = IdentityHashMap<Any, (CjSourceElement) -> CjSourceElement>()
+
+    fun registerDiagnosticProjector(source: CjSourceElement, projector: (CjSourceElement) -> CjSourceElement) {
+        diagnosticProjectors[source.macroSourceTreeIdentity()] = projector
+    }
+
+    fun diagnosticProjectors(): Map<Any, (CjSourceElement) -> CjSourceElement> =
+        Collections.unmodifiableMap(IdentityHashMap(diagnosticProjectors))
 
     /** raw factory 实际创建关系；与 provenance 分类分开，绝不按坐标恢复 PSI 身份。 */
     fun registerCreatedSource(reparsed: CjSourceElement, created: CjSourceElement) {

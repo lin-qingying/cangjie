@@ -25,6 +25,16 @@ import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeInferenceContext
 import org.cangnova.cangjie.type.AbstractTypeChecker
+import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.source.CjFakeSourceElementKind
+import org.cangnova.cangjie.source.CjSourceElement
+
+/** 完成阶段写回的实参不是源码泛型语法；对位 Kotlin 的同名 source 判定。 */
+fun isExplicitTypeArgumentSource(source: CjSourceElement?): Boolean =
+    source != null && source.kind !is CjFakeSourceElementKind.ImplicitTypeArgument
+
+/** 仓颉调用/限定符以 type ref 承载类型实参，按来源区分显式与推断实参。 */
+val CfirTypeRef.isExplicit: Boolean get() = isExplicitTypeArgumentSource(source)
 
 /**
  * 类型不匹配诊断专用的子类型判断。

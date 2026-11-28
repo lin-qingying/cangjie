@@ -1,18 +1,11 @@
 package org.cangnova.cangjie.cfir.resolve.body
 
-import java.util.Collections
 import java.util.IdentityHashMap
-import org.cangnova.cangjie.cfir.CfirDefaultRawCopyContext
-import org.cangnova.cangjie.cfir.CfirElement
-import org.cangnova.cangjie.cfir.CfirRawCopyState
 import org.cangnova.cangjie.cfir.DeepCopyCfirTreeWithSymbols
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirTryExpression
-import org.cangnova.cangjie.cfir.patterns.bindingVariables
-import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
-import org.cangnova.cangjie.cfir.references.CfirThisReference
 import org.cangnova.cangjie.cfir.resolve.ResolutionMode
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallInfo
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallKind
@@ -21,14 +14,9 @@ import org.cangnova.cangjie.cfir.resolve.inference.*
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.resolve.transformers.ReturnTypeCalculator
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.BodyResolveContext
-import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.LoopJumpScope
 import org.cangnova.cangjie.cfir.scopes.CallableCopyTypeCalculator
-import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
-import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagImpl
-import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.toCfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.*
-import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
 import org.cangnova.cangjie.cfir.visitors.transformSingle
 import org.cangnova.cangjie.resolve.calls.inference.model.UnstableSystemMergeMode
 import org.cangnova.cangjie.resolve.calls.tasks.ExplicitReceiverKind
@@ -123,7 +111,7 @@ internal class ResourceVariableReturnTypeCalculator(
         val incomingNotFixed = parentBaseline?.storage?.notFixedTypeVariables?.keys?.toSet().orEmpty()
         val context = preparationContext.createLocalDeclarationContext(this)
         context.inferenceSession = activeInference
-        val copyContext = createRawCopyContext(resource, sourceInitializer, context, incoming)
+        val copyContext = createRawExpressionCopyContext(sourceInitializer, context, incoming, resources + resource)
         val copiedInitializer = DeepCopyCfirTreeWithSymbols(copyContext).copyRoot(sourceInitializer)
         val canonical = canonicalResource(resource)
         val graph = CfirImplicitTypeComputation(
@@ -255,69 +243,6 @@ internal class ResourceVariableReturnTypeCalculator(
         }
     }
 
-    /** 环境借用仅取真实词法声明、显式引用及 metadata 句柄，绝不按名字查找 clone。 */
-    private fun createRawCopyContext(
-        resource: CfirResourceVariable,
-        initializer: CfirExpression,
-        context: BodyResolveContext,
-        incoming: Set<TypeConstructorMarker>,
-    ): CfirDefaultRawCopyContext {
-        val borrowedElements = identitySet<CfirElement>()
-        val borrowedSymbols = identitySet<CfirBasedSymbol<*>>()
-        val handles = identitySet<Any>()
-        val ownedSymbols = identitySet<CfirBasedSymbol<*>>()
-        fun borrow(declaration: CfirDeclaration) {
-            borrowedElements += declaration
-            borrowedSymbols += declaration.symbol
-            handles += declaration.moduleData
-            if (declaration is CfirTypeParameterRefsOwner) declaration.typeParameters.forEach { borrowedSymbols += it.symbol }
-            if (declaration is CfirFunction) declaration.valueParameters.forEach { borrowedSymbols += it.symbol }
-            if (declaration is CfirClassLikeDeclaration) handles += declaration.scopeProvider
-            if (declaration is CfirPatternVariable) declaration.pattern.bindingVariables().forEach { borrowedSymbols += it.symbol }
-        }
-        context.containers.forEach(::borrow)
-        context.file.declarations.forEach(::borrow)
-        resources.forEach(::borrow)
-        borrow(resource)
-        context.towerDataContext.localScopes.forEach { scope ->
-            borrowedSymbols += scope.variables.values
-            borrowedSymbols += scope.properties.values
-            borrowedSymbols += scope.classLikeSymbols.values
-        }
-        context.implicitValueStorage.implicitValues.forEach { borrowedSymbols += it.boundSymbol }
-        context.loopJumpScopes.forEach { scope ->
-            when (scope) {
-                is LoopJumpScope.Body -> borrowedElements += scope.loop
-                is LoopJumpScope.ConditionPart -> borrowedElements += scope.loop
-                LoopJumpScope.FunctionBoundary -> Unit
-            }
-        }
-        initializer.accept(object : CfirVisitorVoid() {
-            override fun visitElement(element: CfirElement) {
-                if (element is CfirDeclaration) {
-                    ownedSymbols += element.symbol
-                    handles += element.moduleData
-                    if (element is CfirClassLikeDeclaration) handles += element.scopeProvider
-                }
-                if (element is CfirResolvedNamedReference) borrowedSymbols += element.resolvedSymbol
-                if (element is CfirThisReference) element.boundSymbol?.let(borrowedSymbols::add)
-                if (element is CfirResolvedTypeRef) element.coneType.forEachTypeIncludingMetadata { type ->
-                    when (type) {
-                        is ConeTypeParameterType -> borrowedSymbols += type.lookupTag.typeParameterSymbol
-                        is ConeLookupTagBasedType -> (type.lookupTag as? ConeClassLikeLookupTagImpl)?.boundSymbol?.second
-                            ?.let(borrowedSymbols::add)
-                        // 其余类型不携带这两类 symbol 句柄；未知 RAW 类型仍由 copier policy 拒绝。
-                        else -> Unit
-                    }
-                }
-                element.acceptChildren(this)
-            }
-        })
-        borrowedSymbols.removeAll(ownedSymbols)
-        handles.addAll(incoming)
-        return CfirDefaultRawCopyContext(CfirRawCopyState(borrowedElements, borrowedSymbols), handles)
-    }
-
     /** 局部资源循环的主诊断来自初始化检查；失败类型沿既有 duplicate 诊断通道传播。 */
     private fun recursiveResourceType(resource: CfirResourceVariable): CfirResolvedTypeRef {
         computationSession.calculateAndStoreNonTrivialLoop(resource.symbol)
@@ -325,5 +250,4 @@ internal class ResourceVariableReturnTypeCalculator(
             .toCfirResolvedTypeRef(resource.returnTypeRef.source)
     }
 
-    private fun <T : Any> identitySet(): MutableSet<T> = Collections.newSetFromMap(IdentityHashMap<T, Boolean>())
 }

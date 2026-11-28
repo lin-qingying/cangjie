@@ -8,6 +8,8 @@ package org.cangnova.cangjie.documentation.resolve
 
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiFile
+import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.components.containingDeclaration
 import org.cangnova.cangjie.analysis.api.components.declaredMemberScope
@@ -35,12 +37,14 @@ import org.cangnova.cangjie.documentation.cdoc.buildDocumentationDescription
 import org.cangnova.cangjie.documentation.cdoc.buildDocumentationModel
 import org.cangnova.cangjie.documentation.cdoc.findCDocByPsi
 import org.cangnova.cangjie.idea.references.CjSimpleNameReference
+import org.cangnova.cangjie.lang.CangJieLanguage
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.lexer.cdoc.psi.api.CDocCommentDescriptor
 import org.cangnova.cangjie.lexer.cdoc.psi.impl.CDocCommentDescriptorImpl
 import org.cangnova.cangjie.lexer.cdoc.psi.impl.CDocSection
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjAbstractClassBody
+import org.cangnova.cangjie.psi.CangJieReferenceProvidersService
 import org.cangnova.cangjie.psi.CjBindingPattern
 import org.cangnova.cangjie.psi.CjNamedPattern
 import org.cangnova.cangjie.psi.CjBasicType
@@ -71,6 +75,24 @@ import java.util.concurrent.CancellationException
 enum class DocumentationMode {
     FULL,
     HINT,
+}
+
+/**
+ * 从文档请求的实际光标选取目标。使用处保留引用节点，由 use-site 会话解析其符号，
+ * 因此反编译声明和宏生成 fragment 的 PSI 不会被误当成当前文件中的声明。
+ */
+fun findCangJieDocumentationTarget(file: PsiFile, element: PsiElement): PsiElement? {
+    if (!file.language.`is`(CangJieLanguage)) return null
+    if (element.isCangJieModifier()) return element
+    val basicType = PsiTreeUtil.getParentOfType(element, CjBasicType::class.java, false)
+        ?: PsiTreeUtil.getParentOfType(element, CjNameBasicReferenceExpression::class.java, false)
+    if (basicType != null) return basicType
+
+    val declaration = CangJieReferenceProvidersService.getInstance(file.project).getNamedDeclarationTarget(element)
+    if (declaration != null) return declaration
+
+    return PsiTreeUtil.getParentOfType(element, CjReferenceExpression::class.java, false)
+        ?: PsiTreeUtil.getParentOfType(element, CjCallExpression::class.java, false)
 }
 
 /** 一次文档请求携带的目标与 use-site 上下文。 */

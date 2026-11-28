@@ -33,6 +33,7 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
         get() = setOf(
             CfirBuiltInAnnotationDeclarationChecker,
             CfirAnnotationTargetChecker,
+            CfirCustomAnnotationPlaceChecker,
             CfirCAnnotationChecker,
             CfirForeignVariableChecker,
             CfirDeprecatedAnnotationChecker,
@@ -66,7 +67,6 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
             CfirVArrayExtraChecker,
             CfirDeprecatedDeclarationChecker,
             org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirJavaInteropTypePropagationChecker,
-            org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirCustomAnnotationPlaceChecker,
             org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirAnnotationArgNumberCallableChecker,
         )
 

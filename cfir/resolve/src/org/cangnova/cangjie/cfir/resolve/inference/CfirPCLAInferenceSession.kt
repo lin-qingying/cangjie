@@ -148,6 +148,31 @@ class CfirPCLAInferenceSession(
     /** 外层候选是本会话 common system 的源 owner，不能反过来把自己的派生系统当父系统。 */
     internal fun isOuterCandidate(candidate: Candidate): Boolean = outerCandidate === candidate
 
+    /** 此 infer owner 的实际待完成 atom；不从函数名或已完成类型寻找另一 owner。 */
+    internal fun ownsMutableSourceCall(candidate: Candidate, call: CfirExpression): Boolean {
+        if (outerCandidate.isSourceCompletionWithdrawn ||
+            outerCandidate.implicitTypeComputationScope?.graph?.isCandidateWithdrawn(outerCandidate) == true
+        ) return false
+        return outerCandidate === candidate || outerCandidate.postponedPCLACalls.any { atom ->
+            atom is ConeAtomWithCandidate && atom.candidate === candidate && atom.expression === call
+        }
+    }
+
+    /** 原 owner 的 FULL ledger 与已注册 child graph；读取完成事实不消耗队列或继承 writer capability。 */
+    internal fun hasCompletedSourceCallResult(call: CfirExpression): Boolean {
+        val ownResult = outerCandidate.withExistingConstraintSystemForCompletionResults { system ->
+            outerCandidate.hasCompletedUnscopedSourceCall(call, system)
+        } == true
+        if (ownResult) return true
+        if (outerCandidate.isSourceCompletionWithdrawn ||
+            outerCandidate.implicitTypeComputationScope?.graph?.isCandidateWithdrawn(outerCandidate) == true
+        ) return false
+        return outerCandidate.retainedChildSessions.any { graph ->
+            graph.inferenceOwner === this && graph.completionOwnerCandidate === outerCandidate &&
+                graph.hasCompletedSourceCallResult(call)
+        }
+    }
+
     /** 待 completion 的模式投影以真实 owner 去重，不能按绑定名称或源码文本合并。 */
     private val patternBindingProjections
         get() = computationState.projections
@@ -184,12 +209,6 @@ class CfirPCLAInferenceSession(
             }
         } ?: return null
         val variable = constraints.typeVariable
-        if (java.lang.Boolean.getBoolean("cangjie.debug.resourceSource")) {
-            println("PCLA SEMIFIX constructor=${System.identityHashCode(constructor)}:$constructor " +
-                "variable=${System.identityHashCode(variable)} result=$result system=${System.identityHashCode(myCs)} " +
-                "owner=${outerCandidate.callInfo.name}@${System.identityHashCode(outerCandidate)} " +
-                "constraints=" + constraints.constraints.joinToString { "${it.kind}:${it.type}" })
-        }
         with(myCs) {
             addEqualityConstraint(variable.defaultType(), result, ConeSemiFixVariableConstraintPosition(variable))
         }
@@ -478,45 +497,19 @@ class CfirPCLAInferenceSession(
         graph.retainVariableOrigins(childCandidate.system.currentStorage(), dependencies)
 
         graph.writeCall = { call, substitutor ->
-            val retainedTrace = CfirRetainedCompletionTrace.enter("RETAINED_WRITE_CALL") {
-                "graph=" + CfirRetainedCompletionTrace.identity(graph) +
-                    " parentSession=" + CfirRetainedCompletionTrace.identity(this) +
-                    " childSession=" + CfirRetainedCompletionTrace.identity(child) +
-                    " parentCandidate=" + CfirRetainedCompletionTrace.candidate(outerCandidate) +
-                    " childCandidate=" + CfirRetainedCompletionTrace.candidate(childCandidate) +
-                    " completionOwner=" + CfirRetainedCompletionTrace.candidate(graph.completionOwnerCandidate) +
-                    " atom=" + CfirRetainedCompletionTrace.identity(call) +
-                    " candidate=" + CfirRetainedCompletionTrace.candidate((call as? ConeAtomWithCandidate)?.candidate)
-            }
-            try {
             val actualSystem = checkNotNull(graph.completionOwnerCandidate).system
             // metadata 与 child context 同时指向真实最终 owner；VM/fixed binding 仍由 writer 严格核验。
             graph.constraintSystemOwner = actualSystem
             graph.withPrivateOrigins {
                 child.withActualCompletionSystem(actualSystem) { writeCall(call, substitutor) }
             }
-            } finally {
-                CfirRetainedCompletionTrace.leave(retainedTrace)
-            }
         }
         val completionWriter:
                 (List<(ConeSubstitutor) -> Unit>, List<CfirDeclaration>, ConeSubstitutor) -> Unit = { callbacks, lambdas, substitutor ->
-            val retainedTrace = CfirRetainedCompletionTrace.enter("RETAINED_ADDITIONAL_RESULTS") {
-                "graph=" + CfirRetainedCompletionTrace.identity(graph) +
-                    " parentCandidate=" + CfirRetainedCompletionTrace.candidate(outerCandidate) +
-                    " childCandidate=" + CfirRetainedCompletionTrace.candidate(childCandidate) +
-                    " completionOwner=" + CfirRetainedCompletionTrace.candidate(graph.completionOwnerCandidate) +
-                    " callbacks=" + graph.ownCallbacks.joinToString { CfirRetainedCompletionTrace.identity(it) } +
-                    " lambdas=" + graph.ownLambdas.joinToString { CfirRetainedCompletionTrace.identity(it) }
-            }
-            try {
             graph.withPrivateOrigins {
                 child.withActualCompletionSystem(checkNotNull(graph.completionOwnerCandidate).withConstraintSystemForCompletionResults { it }) {
                     writeAdditionalResults(callbacks, lambdas, substitutor)
                 }
-            }
-            } finally {
-                CfirRetainedCompletionTrace.leave(retainedTrace)
             }
         }
         val completion = graph.registerPrivateAdditionalResultsProducer(outerCandidate, completionWriter)
@@ -532,17 +525,6 @@ class CfirPCLAInferenceSession(
             retained.constraintSystemOwner = currentCommonSystem
             retained.completionOwnerCandidate = outerCandidate
             retained.rebindPrivateAdditionalResultsProducerOwner(outerCandidate)
-        }
-        CfirRetainedCompletionTrace.event("RETAINED_CHILD_REGISTERED") {
-            "graph=" + CfirRetainedCompletionTrace.identity(graph) +
-                " parentSession=" + CfirRetainedCompletionTrace.identity(this) +
-                " parentCandidate=" + CfirRetainedCompletionTrace.candidate(outerCandidate) +
-                " childSession=" + CfirRetainedCompletionTrace.identity(child) +
-                " childCandidate=" + CfirRetainedCompletionTrace.candidate(childCandidate) +
-                " calls=" + calls.joinToString { CfirRetainedCompletionTrace.identity(it) } +
-                " writeCall=" + CfirRetainedCompletionTrace.identity(graph.writeCall) +
-                " completionCallback=" + CfirRetainedCompletionTrace.identity(completion) +
-                " dependencies=" + dependencies.joinToString { CfirRetainedCompletionTrace.identity(it) }
         }
         outerCandidate.additionalCompletionVariables += graph.ownVariableConstructors
         computationState.semiFixedVariables.putAll(child.computationState.semiFixedVariables)
@@ -1141,9 +1123,13 @@ class CfirPCLAInferenceSession(
     /** 判断表达式是否是不会向 PCLA common system 注入新约束的简单实参。 */
     private fun CfirExpression.isTrivialArgument(): Boolean = when (this) {
         is CfirArrayLiteral -> false
-        is CfirResolvable -> when (val candidate = candidate()) {
-            null -> coneTypeOrNull?.containsNotFixedTypeVariables() != true
-            else -> !candidate.usedOuterCs
+        is CfirResolvable -> {
+            // 多 owner 成员的错误结果仍依赖真实 receiver，外层参数约束必须进入共享推断。
+            if ((this as? CfirQualifiedAccessExpression)?.explicitReceiver?.isReceiverPostponed() == true) false
+            else when (val candidate = candidate()) {
+                null -> coneTypeOrNull?.containsNotFixedTypeVariables() != true
+                else -> !candidate.usedOuterCs
+            }
         }
 
         is CfirWrappedExpression -> expression.isTrivialArgument()

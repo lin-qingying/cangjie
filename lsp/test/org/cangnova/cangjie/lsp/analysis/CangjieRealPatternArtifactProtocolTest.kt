@@ -284,6 +284,14 @@ class CangjieRealPatternArtifactProtocolTest : AbstractLspIntegrationTest() {
                                 assertEquals(3, leaves.map { it.psi }.toSet().size, "每个 generated binder 必须拥有独立当前 PSI")
                             }
                             uses.values.forEach { assertProtocol(session, it, producer, producer) }
+                            val expectedTypes = mapOf(
+                                "generatedCount" to "Int64",
+                                "generatedLabel" to "String",
+                                "generatedFlag" to "Bool",
+                            )
+                            uses.forEach { (name, locations) ->
+                                assertBindingHover(session, locations.last(), name, expectedTypes.getValue(name), uses.keys - name)
+                            }
                         } finally {
                             awaitStartedNativeConstructions()
                         }
@@ -548,6 +556,19 @@ class CangjieRealPatternArtifactProtocolTest : AbstractLspIntegrationTest() {
             val locations = if (actual.isLeft) actual.left else actual.right.map { Location(it.targetUri, it.targetRange) }
             assertEquals(listOf(definition), locations, "definition 与 reference 声明位置来自同一 canonical leaf")
         }
+    }
+
+    /** 从跨模块真实使用处查询宏生成叶子的文档，兄弟叶子不能混进同一结果。 */
+    private fun assertBindingHover(
+        session: LspIntegrationTestSession,
+        use: Location,
+        name: String,
+        type: String,
+        siblings: Set<String>,
+    ) {
+        val hover = session.hover(HoverParams(TextDocumentIdentifier(use.uri), use.range.start))
+        val markdown = requireNotNull(hover.contents?.right?.value) { "No documentation for $name at $use" }
+        assertTrue(name in markdown && type in markdown && siblings.none(markdown::contains), markdown)
     }
 
     private fun binaryUses(f: LspWorkspaceFixture): Map<String, List<Location>> = linkedMapOf(

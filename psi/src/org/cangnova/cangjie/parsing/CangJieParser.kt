@@ -163,6 +163,7 @@ class CangJieParser(project: Project) : PsiParser {
             if (PARSER_DEBUG) {
                 psiBuilder.setDebugMode(true)
             }
+            psiBuilder.putUserData(ANNOTATION_MODULE_PROVENANCE, psiFile.getUserData(ANNOTATION_MODULE_PROVENANCE))
 
             // 当前文件的 AST 尚未建立，不能在这里读取它自己的 packageFqName。
             // factory 已从外部 context 写入片段 seed；真实 package 由 parser 随后覆盖。

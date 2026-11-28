@@ -12,11 +12,42 @@ import org.cangnova.cangjie.annotations.requiredLanguageFeature
 import org.cangnova.cangjie.annotations.supportsBuiltinAnnotationKind
 import org.cangnova.cangjie.annotations.versionSupport
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroResolution
+import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.annotationMetadataRegistryOrNull
+import org.cangnova.cangjie.cfir.session.macroDemandClassificationOrNull
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
 import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.name.Name
+
+/**
+ * 使用已发布内置身份及最终宏决议识别 callee，供解析错误传播与诊断收集共同消费。
+ * 宏 callee 的普通类型引用仅保存构造期信息，其实参仍属于各自的源码检查域。
+ */
+public fun CfirAnnotationCall.isMacroOrBuiltinAnnotation(session: CfirSession): Boolean {
+    if (annotationIdentity is CangjieAnnotationIdentity.LanguageBuiltIn) return true
+    val snapshot = session.annotationMetadataRegistryOrNull?.snapshot(this) ?: return false
+    val classification = session.macroDemandClassificationOrNull?.takeIf { it.isFinalFrozen } ?: return false
+    val decision = classification.finalDecisions.firstOrNull { decision ->
+        val carrier = decision.annotationCarrier ?: return@firstOrNull false
+        carrier.owner === snapshot.owner && carrier.annotationIndex == snapshot.annotationIndex
+    } ?: return false
+    return when (decision.resolution) {
+        is MacroResolution.Builtin,
+        is MacroResolution.BuiltinNonMacro,
+        is MacroResolution.Resolved,
+        -> true
+
+        is MacroResolution.BuiltinAnnotation,
+        is MacroResolution.CustomAnnotation,
+        is MacroResolution.KindMismatch,
+        is MacroResolution.SamePackage,
+        is MacroResolution.Unresolved,
+        -> false
+    }
+}
 
 /** 已解析内置身份到静态描述符的投影；不扫描 PSI，也不把 custom 短名升级为 builtin。 */
 public val CfirAnnotationCall.builtInDescriptor: BuiltInAnnotationDescriptor?

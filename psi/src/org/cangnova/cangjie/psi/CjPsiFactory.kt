@@ -786,6 +786,7 @@ class CjPsiFactory private constructor(
         @NonNls fileName: String,
         @NonNls text: String,
         fileType: com.intellij.openapi.fileTypes.FileType = CangJieFileType.INSTANCE,
+        annotationModuleProvenance: ((Int) -> String?)? = null,
     ): CjFile {
         // 先读取外部 context，再创建新文件，避免新文件解析时回入自己的 package PSI。
         val parserModuleName = if (inheritLanguageModuleFromContext && context != null) {
@@ -802,6 +803,7 @@ class CjPsiFactory private constructor(
             false,
         ) as CjFile
         file.parserLanguageModuleName = parserModuleName
+        file.putUserData(org.cangnova.cangjie.parsing.ANNOTATION_MODULE_PROVENANCE, annotationModuleProvenance)
         // 平台 markGenerated 会先展开 AST；解析输入必须在它之前发布。
         if (markGenerated) PsiFileFactoryImpl.markGenerated(file)
         return file
@@ -810,12 +812,12 @@ class CjPsiFactory private constructor(
     /**
      * 使用 annotation-only 入口创建 PSI 文件，供自定义注解和宏属性重解析；保留输入文本的偏移。
      */
-    fun createAnnotationOnlyFile(@NonNls text: String): CjFile {
+    fun createAnnotationOnlyFile(@NonNls text: String, annotationModuleProvenance: ((Int) -> String?)? = null): CjFile {
         // 这里是 parser mode 契约，不是文件名提示：宏调用 FileType 必须配套
         // 注册宏调用语言的 ParserDefinition，才能创建 CjMacroCallFile，并由
         // source kind 选择 annotation-only grammar、保留自定义注解的 [] 参数。
         ensureMacroCallParserDefinition()
-        val file = doCreateFile("dummy.cj.macrocall", text, CangJieMacroCallFileType)
+        val file = doCreateFile("dummy.cj.macrocall", text, CangJieMacroCallFileType, annotationModuleProvenance)
 
         val elementContext = this@CjPsiFactory.context
         if (elementContext != null) {

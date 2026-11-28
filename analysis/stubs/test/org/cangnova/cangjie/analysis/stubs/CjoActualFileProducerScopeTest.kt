@@ -50,6 +50,7 @@ import org.junit.jupiter.api.Test
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
+import java.nio.file.attribute.FileTime
 import java.util.Base64
 import java.util.concurrent.CyclicBarrier
 import java.util.concurrent.Executors
@@ -176,7 +177,13 @@ class CjoActualFileProducerScopeTest : AbstractAnalysisApiBasedTest() {
             val service = CjoModuleDataProvider.getInstance(project)
             val bytes = file.contentsToByteArray(false)
             val old = service.getPackageContext(file, bytes, CjoDeserializationMode.FULL)
-            ApplicationManager.getApplication().runWriteAction { file.setBinaryContent(bytes) }
+            val previousFileTime = Files.getLastModifiedTime(path)
+            ApplicationManager.getApplication().runWriteAction {
+                // CoreLocalVirtualFile 只读且 modificationStamp 恒为零；修改真实文件版本验证原服务的 generation。
+                Files.write(path, bytes)
+                Files.setLastModifiedTime(path, FileTime.fromMillis(previousFileTime.toMillis() + 1_000))
+            }
+            assertContentEquals(bytes, file.contentsToByteArray(false))
             val fresh = service.getPackageContext(file, file.contentsToByteArray(false), CjoDeserializationMode.FULL)
             assertNotSame(old.moduleData, fresh.moduleData)
             assertNotSame(old.binding, fresh.binding)

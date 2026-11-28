@@ -2,6 +2,7 @@
 
 import org.cangnova.cangjie.cfir.CfirFunctionTarget
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroRawScopeSnapshot
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.types.ConeSimpleCangJieType
 import org.cangnova.cangjie.name.FqName
@@ -60,6 +61,30 @@ class Context<T> {
 
     /** 可强制替换最外层容器符号的入口，供特殊 raw build 场景复用上下文。 */
     var forcedContainerSymbol: CfirBasedSymbol<*>? = null
+
+    /** 捕获当前宏位置的完整词法事实，外层目标和符号不复制或重新绑定。 */
+    fun captureMacroScope(): MacroRawScopeSnapshot = MacroRawScopeSnapshot(
+        inLocalContext,
+        containerSymbolStack.toList(),
+        dispatchReceiverTypesStack.toList(),
+        functionTargets.toList(),
+        labelNames.toList(),
+        forcedContainerSymbol,
+    )
+
+    /** 宏重解析入口恢复词法环境，新 token 的 parser 模块仍由新解析树确定。 */
+    fun restoreMacroScope(snapshot: MacroRawScopeSnapshot) {
+        inLocalContext = snapshot.inLocalContext
+        containerSymbolStack.clear()
+        containerSymbolStack.addAll(snapshot.containerSymbols)
+        dispatchReceiverTypesStack.clear()
+        dispatchReceiverTypesStack.addAll(snapshot.dispatchReceiverTypes)
+        functionTargets.clear()
+        functionTargets.addAll(snapshot.functionTargets)
+        labelNames.clear()
+        labelNames.addAll(snapshot.labels)
+        forcedContainerSymbol = snapshot.forcedContainerSymbol
+    }
 
     /** 在 [fqName] 包上下文中执行 [block]，结束后恢复先前包名。 */
     fun <R> withPackage(fqName: FqName, block: () -> R): R {

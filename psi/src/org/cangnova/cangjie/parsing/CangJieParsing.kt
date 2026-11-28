@@ -1780,7 +1780,14 @@ class CangJieParsing private constructor(
     context(parseContext: ParsingContext)
     fun parseAnnotations(detector: ModifierDetector? = null) {
         val mark = mark()
+        val builtInNames = mutableSetOf<String>()
         while (isAnnotationStart()) {
+            // 原前置注解和生成 token 共用解析序列，重复 builtin 仍保留节点并报告语法错误。
+            val identifier = annotationIdentifierAtCurrentToken()
+            if (identifier in builtInNames) {
+                error("Duplicated built-in annotation")
+            }
+            languageBuiltInAnnotationAtCurrentToken()?.sourceName?.let(builtInNames::add)
             parseAnnotation(detector)
         }
         mark.done(ANNOTATIONS)
@@ -1841,13 +1848,31 @@ class CangJieParsing private constructor(
     }
 
     /** 语法分派与 @! 保留名检查共享模块约束；显式限定名称属于自定义注解。 */
+    private fun annotationModuleNameAtCurrentToken(): String {
+        val provider = builder.getUserData(ANNOTATION_MODULE_PROVENANCE)
+        return provider?.invoke(builder.currentOffset) ?: languageModuleName
+    }
+
+    /** 注解的完整语法 identifier，限定 custom 名称不冒充同名语言 builtin。 */
+    private fun annotationIdentifierAtCurrentToken(): String {
+        val name = StringBuilder()
+        var index = 1
+        while (lookahead(index) == IDENTIFIER) {
+            name.append(rawTokenText(builder, index))
+            if (lookahead(index + 1) != DOT) break
+            name.append('.')
+            index += 2
+        }
+        return name.toString()
+    }
+
     private fun languageBuiltInAnnotationAtCurrentToken(): BuiltInAnnotationDescriptor? {
         if (!_atSet(AT, ATEXCL) || lookahead(1) != IDENTIFIER || lookahead(2) == DOT) return null
         val sourceName = rawTokenText(builder, 1).toString()
         return BuiltInAnnotationRegistry.resolveLanguageBuiltIn(
             sourceName = sourceName,
             forcedCustom = _at(ATEXCL),
-            moduleName = languageModuleName,
+            moduleName = annotationModuleNameAtCurrentToken(),
         )
     }
 
@@ -1866,7 +1891,7 @@ class CangJieParsing private constructor(
         return BuiltInAnnotationRegistry.resolveLanguageBuiltIn(
             sourceName = rawTokenText(builder, 1).toString(),
             forcedCustom = false,
-            moduleName = languageModuleName,
+            moduleName = annotationModuleNameAtCurrentToken(),
         )
     }
 

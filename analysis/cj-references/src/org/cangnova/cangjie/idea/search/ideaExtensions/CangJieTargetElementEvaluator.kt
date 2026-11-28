@@ -9,11 +9,6 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiReference
 import org.cangnova.cangjie.idea.references.CjReference
 import org.cangnova.cangjie.idea.references.unwrappedTargets
-import org.cangnova.cangjie.idea.references.mainReference
-import org.cangnova.cangjie.psi.CangJieResolveResult
-import org.cangnova.cangjie.psi.CjReferenceExpression
-import org.cangnova.cangjie.psi.psiUtil.parentOfType
-import com.intellij.psi.PsiPolyVariantReference
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.psi.CangJieReferenceProvidersService
 import org.cangnova.cangjie.psi.CjNamedPattern
@@ -50,17 +45,6 @@ class CangJieTargetElementEvaluator : TargetElementEvaluatorEx2(), TargetElement
 
     override fun getTargetCandidates(ref: PsiReference): Collection<PsiElement>? =
         if (ref is CjReference) ref.unwrappedTargets else super.getTargetCandidates(ref)
-
-    /** Go to Declaration 使用已选定声明对应的导航位置，Find Usages 仍保留声明身份。 */
-    override fun getGotoDeclarationTarget(sourceElement: PsiElement, targetElement: PsiElement?): PsiElement? {
-        val target = targetElement ?: return null
-        val expression = sourceElement.parentOfType<CjReferenceExpression>(withSelf = true) ?: return null
-        val reference = expression.mainReference as? PsiPolyVariantReference ?: return null
-        return reference.multiResolve(false).filterIsInstance<CangJieResolveResult>()
-            .singleOrNull { result ->
-                result.isValidResult && target.manager.areElementsEquivalent(result.canonicalTarget, target)
-            }?.element
-    }
 
     override fun isIdentifierPart(file: PsiFile, text: CharSequence, offset: Int): Boolean =
         file.findElementAt(offset)?.node?.elementType in setOf(CjTokens.IDENTIFIER, CjTokens.FIELD_IDENTIFIER)

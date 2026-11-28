@@ -576,7 +576,7 @@ class CfirClassSubstitutionScope(
     }
 
     /**
-     * 替换属性访问器函数。
+     * 替换属性访问器函数；访问器状态由所属属性的 STATUS 解析统一发布。
      */
     private fun substituteAccessorFunction(
         function: CfirPropertyAccessor?,
@@ -585,7 +585,6 @@ class CfirClassSubstitutionScope(
     ): CfirPropertyAccessor? {
         function ?: return null
         val symbol = function.symbol
-        symbol.lazyResolveToPhase(CfirResolvePhase.STATUS)
         val copiedSymbol = CfirPropertyAccessorSymbol()
         val typeParameterSubstitution = function.createSubstitutedTypeParameters(copiedSymbol, substitutor)
         val accessorSubstitutor = typeParameterSubstitution.substitutor

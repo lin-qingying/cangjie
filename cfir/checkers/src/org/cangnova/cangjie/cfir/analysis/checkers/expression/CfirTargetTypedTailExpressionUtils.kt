@@ -111,6 +111,13 @@ internal fun checkTargetTypedExpression(
     val unwrapped = expression.unwrapForTargetTyping()
     if (expectedType is ConeErrorType) return TargetTypedCheckOutcome.Handled(reported = false)
     if (unwrapped is CfirMatchExpression) return checkTargetTypedMatchExpression(unwrapped, expectedType)
+    // 明确目标的复合 source 检查独立消费真实 tail；根的内部 select 错误不替代叶子诊断。
+    if (unwrapped is CfirIfExpression && !unwrapped.isIfExpressionWithoutEndingElse()) {
+        return checkTargetTypedIfExpression(unwrapped, expectedType)
+    }
+    if (unwrapped is CfirTryExpression && unwrapped.resources.isEmpty()) {
+        return checkTargetTypedTryExpression(unwrapped, expectedType)
+    }
     if (unwrapped.coneTypeOrNull is ConeErrorType) return TargetTypedCheckOutcome.Handled(reported = false)
 
     return when (unwrapped) {
@@ -207,6 +214,13 @@ internal fun checkTargetTypedTailExpression(
     val unwrapped = expression.unwrapForTargetTyping()
     if (expectedType is ConeErrorType) return TargetTypedCheckOutcome.Handled(reported = false)
     if (unwrapped is CfirMatchExpression) return checkTargetTypedMatchExpression(unwrapped, expectedType)
+    // 嵌套 tail 使用同一正式消费协议，保持 source generic/error 叶子的原短路规则。
+    if (unwrapped is CfirIfExpression && !unwrapped.isIfExpressionWithoutEndingElse()) {
+        return checkTargetTypedIfExpression(unwrapped, expectedType)
+    }
+    if (unwrapped is CfirTryExpression && unwrapped.resources.isEmpty()) {
+        return checkTargetTypedTryExpression(unwrapped, expectedType)
+    }
     if (unwrapped.coneTypeOrNull is ConeErrorType) return TargetTypedCheckOutcome.Handled(reported = false)
 
     return when (unwrapped) {

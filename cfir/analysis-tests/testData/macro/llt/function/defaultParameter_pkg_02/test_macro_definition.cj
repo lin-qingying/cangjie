@@ -1,6 +1,6 @@
 
 
-macro package define
+macro package default.define
 
 import std.ast.*
 

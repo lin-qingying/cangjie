@@ -1137,6 +1137,7 @@ class ConeInvalidNodeAfterCheckError : ConeDiagnostic {
  *
  * @property expectedType 语义上下文期望类型。
  * @property actualType 实际解析到的类型。
+ * @property origin 区分表达式类型检查失败与仅使资源声明无效的协议检查。
  */
 data class ConeTypeMismatchError(
     /**
@@ -1147,7 +1148,10 @@ data class ConeTypeMismatchError(
      * 实际解析到的类型。
      */
     val actualType: ConeCangJieType,
+    val origin: Origin = Origin.TYPE_CHECK,
 ) : ConeDiagnostic {
+    enum class Origin { TYPE_CHECK, RESOURCE_PROTOCOL }
+
     /** 面向普通诊断渲染的失败原因。 */
     override val reason: String get() = "type mismatch: expected $expectedType but got $actualType"
 }

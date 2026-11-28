@@ -1,12 +1,17 @@
 package org.cangnova.cangjie.psi
 
 import com.intellij.psi.impl.DebugUtil
+import com.intellij.psi.PsiErrorElement
+import com.intellij.psi.util.PsiTreeUtil
+import org.cangnova.cangjie.lexer.CangJieLexer
+import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.lang.CangJieFileType
 import org.cangnova.cangjie.parsing.CangJieParserDefinition
 import org.cangnova.cangjie.test.testFramework.CjParsingTestCase
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.fail
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
@@ -76,6 +81,47 @@ class LineEndingEquivalenceParsingTest : CjParsingTestCase(
                     "LF  : ...${lfDump.substring(from, until)}...\n" +
                     "CRLF: ...${crlfDump.substring(from, until)}..."
             )
+        }
+    }
+
+    /** 原始和哈希字符串内的完整换行序列不能吞掉字符串之后的类型检查表达式。 */
+    @Test
+    fun multilineStringStatesPreserveFollowingExpressions() {
+        val delimiters = listOf("'''" to "'''", "\"\"\"" to "\"\"\"", "#'" to "'#", "##\"" to "\"##")
+        for ((opening, closing) in delimiters) {
+            for (lineBreak in listOf("\n", "\r\n")) {
+                val source = "func check() { let value = ($opening${lineBreak}first${lineBreak}second${lineBreak}$closing is Unit); let after = 1 }"
+                val file = createPsiFile("multilineStringLineBreak", source) as CjFile
+                assertTrue(PsiTreeUtil.findChildrenOfType(file, PsiErrorElement::class.java).isEmpty())
+                val declarations = PsiTreeUtil.findChildrenOfType(file, CjPatternVariable::class.java)
+                assertEquals(listOf("value", "after"), declarations.map { it.pattern?.text })
+                assertTrue(declarations.first().initializer!!.text.endsWith("is Unit)"))
+            }
+        }
+    }
+
+    /** 普通字符串的 dangling newline 退回完整 CRLF，后续声明仍由根词法状态处理。 */
+    @Test
+    fun danglingStringNewlinePreservesTheWholeLineBreak() {
+        for (quote in listOf("'", "\"")) {
+            for (lineBreak in listOf("\n", "\r\n")) {
+                val lexer = CangJieLexer()
+                lexer.start(quote + "broken" + lineBreak + "let after = 1")
+                val lineBreaks = mutableListOf<String>()
+                var danglingNewlines = 0
+                var declarations = 0
+                while (lexer.tokenType != null) {
+                    if (lexer.tokenType == CjTokens.DANGLING_NEWLINE) danglingNewlines++
+                    if (lexer.tokenType == CjTokens.WHITE_SPACE && lexer.tokenText.contains(lineBreak)) {
+                        lineBreaks += lexer.tokenText
+                    }
+                    if (lexer.tokenType == CjTokens.LET_KEYWORD) declarations++
+                    lexer.advance()
+                }
+                assertEquals(1, danglingNewlines)
+                assertEquals(listOf(lineBreak), lineBreaks)
+                assertEquals(1, declarations)
+            }
         }
     }
 

@@ -4,12 +4,17 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiManager
 import com.intellij.psi.search.GlobalSearchScope
+import org.cangnova.cangjie.analysis.api.CaExperimentalApi
+import org.cangnova.cangjie.analysis.api.CaImplementationDetail
 import org.cangnova.cangjie.analysis.api.cfir.diagnostics.CJ_DIAGNOSTIC_CONVERTER
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirSymbol
 import org.cangnova.cangjie.analysis.api.decompiled.CaDecompiledBinaryIndex
 import org.cangnova.cangjie.analysis.api.diagnostics.CaDiagnosticWithPsi
 import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
+import org.cangnova.cangjie.analysis.api.projectStructure.contextModule
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getPublishedMacroSemanticSnapshot
+import org.cangnova.cangjie.analysis.low.level.api.cfir.macro.LLCfirMacroSemanticSnapshot
 import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.llCfirModuleData
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirResolvableModuleSession
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolLocation
@@ -478,14 +483,8 @@ internal fun CfirDeclaration.findReferencePsi(scope: GlobalSearchScope, preferre
     val macroSurfaceIds = macroSnapshot?.macroSurfaceIdsForDeclaration(this)
     val isGeneratedSource = declarationSource != null && macroSnapshot?.isGeneratedSource(declarationSource) == true
     if (macroSurfaceIds != null || isGeneratedSource) {
-        val surfaceId = macroSurfaceIds?.singleOrNull() ?: return null
-        val macroOrigin = macroSnapshot?.originSurface(surfaceId)?.sourceRange?.source
-            ?: return null
-        return macroOrigin.psiOrNull
-            ?.restoreCurrentCompiledPsi(preferredProject)
-            ?.takeIf { psi ->
-                psi.isValid && psi.isPhysical && psi.containingFile?.virtualFile?.let(scope::contains) == true
-            }
+        return macroSnapshot?.findPhysicalMacroOrigin(this, preferredProject)
+            ?.takeIf { psi -> psi.containingFile?.virtualFile?.let(scope::contains) == true }
     }
 
     if (this is org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable) {
@@ -497,4 +496,25 @@ internal fun CfirDeclaration.findReferencePsi(scope: GlobalSearchScope, preferre
     } else {
         psi
     })?.restoreCurrentCompiledPsi(preferredProject)
+}
+
+private fun LLCfirMacroSemanticSnapshot.findPhysicalMacroOrigin(
+    declaration: CfirDeclaration,
+    preferredProject: Project?,
+): PsiElement? {
+    val surfaceId = macroSurfaceIdsForDeclaration(declaration)?.singleOrNull() ?: return null
+    return originSurface(surfaceId)?.sourceRange?.source?.psiOrNull
+        ?.restoreCurrentCompiledPsi(preferredProject)
+        ?.takeIf { it.isValid && it.isPhysical }
+}
+
+/** 从生成声明所在的源模块快照取得平台导航使用的物理调用位置。 */
+@OptIn(CaExperimentalApi::class)
+@CaImplementationDetail
+fun CjElement.findPublishedMacroNavigationElement(): CjElement? {
+    val snapshot = containingCjFile.contextModule?.getPublishedMacroSemanticSnapshot() ?: return null
+    val declaration = snapshot.generatedDeclarationForPsi(this) ?: return null
+    val origin = snapshot.findPhysicalMacroOrigin(declaration, project) as? CjElement ?: return null
+    val originFile = snapshot.fileForSource(origin.containingCjFile) ?: return null
+    return origin.takeIf { originFile === snapshot.containerFile(declaration) }
 }

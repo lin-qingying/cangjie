@@ -5,7 +5,6 @@ import org.cangnova.cangjie.cfir.*
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.diagnostic.ConeTypeMismatchError
 import org.cangnova.cangjie.cfir.expressions.*
-import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.resolve.CfirResolutionSnapshot
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
@@ -13,48 +12,74 @@ import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithC
 import org.cangnova.cangjie.cfir.resolve.inference.*
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeArgumentConstraintPosition
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
+import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.firstErrorTypeOrNull
+import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.firstSourceErrorOrPending
+import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.isPostponedInference
+import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.isResourceProtocolMismatch
+import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
 import org.cangnova.cangjie.cfir.visitors.transformSingle
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintSystemImpl
 import org.cangnova.cangjie.type.AbstractTypeChecker
 
-/** 资源说明的结果分开表示未定型和确定失败，pending 不是诊断。 */
-internal enum class CfirResourceTypeCheck { VALID, PENDING, REJECTED }
+/** 资源说明的协议判断以声明综合成功为前提，未完成的综合允许加入实际推断约束。 */
+internal enum class CfirResourceTypeCheck { VALID, PENDING, SYNTHESIS_FAILED, REJECTED }
 
 internal fun checkResourceSpecification(
     resource: CfirResourceVariable,
     resourceType: ConeCangJieType,
-    session: org.cangnova.cangjie.cfir.session.CfirSession,
+    session: CfirSession,
     actualSystem: ConstraintSystemImpl?,
 ): CfirResourceTypeCheck {
     val sourceType = checkNotNull(resource.returnTypeRef.coneTypeOrNull)
     val actual = sourceType.fullyExpandedType(session)
-    if (actual is ConeErrorType) return CfirResourceTypeCheck.REJECTED
+    val synthesisError = resource.resourceSynthesisError
+    if (synthesisError != null && !synthesisError.isPostponedInference) {
+        // 显式类型仍由原注解拥有；隐式绑定必须向后续资源发布 initializer 的真实失败。
+        if (resource.isTypeImplicit && sourceType !is ConeErrorType) {
+            resource.replaceReturnTypeRef(resource.returnTypeRef.resolvedTypeFromPrototype(synthesisError, resource.source))
+        }
+        return CfirResourceTypeCheck.SYNTHESIS_FAILED
+    }
+    if (actual is ConeErrorType) {
+        return if (actual.diagnostic.isResourceProtocolMismatch) CfirResourceTypeCheck.REJECTED else CfirResourceTypeCheck.PENDING
+    }
     if (actual.contains { it is ConeTypeVariableType }) {
         val system = checkNotNull(actualSystem) { "Pending Resource type has no actual inference owner" }
         actual.forEachTypeIncludingMetadata { type ->
             if (type is ConeTypeVariableType) check(type.typeConstructor in system.allTypeVariables)
         }
-        if (java.lang.Boolean.getBoolean("cangjie.debug.resourceSource")) {
-            println("RESOURCE SOURCE CONSTRAINT resource=${resource.name}@${System.identityHashCode(resource)} " +
-                "type=$actual system=${System.identityHashCode(system)} " +
-                "fixed=${system.fixedTypeVariables} pending=" + system.notFixedTypeVariables.entries.joinToString { (key, value) ->
-                    "${System.identityHashCode(key)}:$key=" + value.constraints.joinToString { "${it.kind}:${it.type}" }
-                })
-        }
         // 对齐官方 IsPlaceholderSubtype/Unify：加入真实约束，等待实际 completion 的固定结果。
         system.addSubtypeConstraint(actual, resourceType, ConeArgumentConstraintPosition(resource))
         return CfirResourceTypeCheck.PENDING
     }
+    if (synthesisError != null) return CfirResourceTypeCheck.PENDING
     if (!actual.isNothing && AbstractTypeChecker.isSubtypeOf(session.typeContext, actual, resourceType)) {
         return CfirResourceTypeCheck.VALID
     }
     resource.replaceReturnTypeRef(resource.returnTypeRef.resolvedTypeFromPrototype(
-        ConeErrorType(ConeTypeMismatchError(resourceType, actual)), resource.source,
+        ConeErrorType(ConeTypeMismatchError(resourceType, actual, ConeTypeMismatchError.Origin.RESOURCE_PROTOCOL)),
+        resource.source,
     ))
     return CfirResourceTypeCheck.REJECTED
 }
+
+/** 资源协议失败使资源绑定无效。只有资源声明综合失败才使外层 try 无效。 */
+internal val CfirResourceVariable.resourceSynthesisError: ConeErrorType?
+    get() = sequenceOf(
+        (returnTypeRef.coneTypeOrNull as? ConeErrorType)?.takeUnless { it.diagnostic.isResourceProtocolMismatch },
+        initializer?.firstErrorTypeOrNull(moduleData.session),
+    ).firstSourceErrorOrPending()
+
+/** 资源 try 的即时解析和最终写回按同一顺序消费声明综合与各子句的错误。 */
+internal fun CfirTryExpression.resourceTryInputError(session: CfirSession): ConeErrorType? =
+    (resources.asSequence().map { it.resourceSynthesisError } +
+        sequenceOf(tryBlock.firstErrorTypeOrNull(session)) +
+        catches.asSequence().map { it.pattern.resolvedTypeRef?.coneType as? ConeErrorType } +
+        catches.asSequence().map { it.body.firstErrorTypeOrNull(session) } +
+        handlers.asSequence().map { it.firstErrorTypeOrNull(session) } +
+        sequenceOf(finallyBlock?.firstErrorTypeOrNull(session))).firstSourceErrorOrPending()
 
 /** RAW 复制只复制语法，source/cache/回调能力必须由复制后的实际 owner 重新建立。 */
 private inline fun <reified V : Any> transientSourceData(description: String): CfirRawDeclarationDataPolicy<V> =
@@ -113,20 +138,13 @@ internal class CfirResourceSourceCompletion(
         graph?.validateResourceSourceOwner(this)
         graph?.validatePrivateAdditionalResultsCompletion(system)
         resource.transformSingle(CfirTypeVariablesAfterPCLATransformer(substitutor), null)
-        check(!hasPendingResourceSourceTypes(resource, writerOwner, system)) { "Final Resource source still has unresolved types or calls" }
+        check(!hasPendingResourceSourceTypes(resource)) { "Final Resource source still has unresolved types or calls" }
         val outcome = checkResourceSpecification(resource, resourceType, resource.moduleData.session, system)
         check(outcome != CfirResourceTypeCheck.PENDING)
-        val initializerError = firstSourceError(resource.initializer)
-        // 显式声明类型属于绑定自身；initializer 的根错误仍传播到 try，不能覆盖合法类型注解。
-        if (initializerError != null && resource.isTypeImplicit && resource.returnTypeRef.coneTypeOrNull !is ConeErrorType) {
-            resource.replaceReturnTypeRef(resource.returnTypeRef.resolvedTypeFromPrototype(initializerError, resource.source))
-        }
-        val sourceError = resource.returnTypeRef.coneTypeOrNull as? ConeErrorType ?: initializerError
-        if (sourceError != null && tryExpression.coneTypeOrNull !is ConeErrorType) {
-            tryExpression.replaceConeTypeOrNull(ConeErrorType(ConeUnreportedDuplicateDiagnostic(sourceError.diagnostic)))
-        }
         if (targetScope?.privateTreeScope() == null) {
-            graph?.validatePrivateResultsRetirement(sourceRejected = sourceError != null)
+            graph?.validatePrivateResultsRetirement(
+                sourceRejected = outcome != CfirResourceTypeCheck.VALID,
+            )
         }
         graph?.finishPrivateInitializerRoot()
         cache.publishResourceSource(resource)
@@ -134,8 +152,26 @@ internal class CfirResourceSourceCompletion(
             resource.replaceResolvePhase(CfirResolvePhase.BODY_RESOLVE)
         }
         completed = true
+        updateTryResultAfterResourceCompletion()
         graph?.publishFormalResourceType(this, checkNotNull(resource.returnTypeRef as? CfirResolvedTypeRef))
         owner?.onPCLACompletionResultsWritingCallbacks?.removeAll { it === this }
+    }
+
+    /** 仅替换旧 pending 或传播本次声明的新错误；已确定的外层错误仍由原子句拥有。 */
+    private fun updateTryResultAfterResourceCompletion() {
+        val current = tryExpression.coneTypeOrNull ?: return
+        val session = resource.moduleData.session
+        val error = if (current is ConeErrorType) {
+            if (!current.isPostponedInference) return
+            tryExpression.resourceTryInputError(session)
+        } else resource.resourceSynthesisError
+        if (error != null) {
+            tryExpression.replaceConeTypeOrNull(ConeErrorType(ConeUnreportedDuplicateDiagnostic(error.diagnostic)))
+        } else if (current is ConeErrorType &&
+            tryExpression.resources.none { it.resourceSourceCompletion?.isCompleted == false }
+        ) {
+            tryExpression.replaceConeTypeOrNull(ConePrimitiveType.UNIT)
+        }
     }
 
     /** 返回实际退休结果；PRIVATE 槽完成不消费 canonical graph 的退休资格。 */
@@ -144,7 +180,7 @@ internal class CfirResourceSourceCompletion(
         val sourceGraph = graph ?: return false
         sourceGraph.retirePrivateResults(
             targetScope,
-            sourceRejected = resource.returnTypeRef.coneTypeOrNull is ConeErrorType || firstSourceError(resource.initializer) != null,
+            sourceRejected = resource.returnTypeRef.coneTypeOrNull is ConeErrorType || resource.resourceSynthesisError != null,
         )
         return true
     }
@@ -179,74 +215,30 @@ internal class CfirResourceSourceCompletion(
 /** 当前 source slot 的类型与候选状态；结构性无类型节点不冒充推断失败。 */
 private fun hasPendingResourceSourceTypes(
     root: CfirElement,
-    writerOwner: Candidate?,
-    completionSystem: ConstraintSystemImpl?,
 ): Boolean {
     var pending = false
-    // 仅沿实际 AST 记录包含声明，不能通过名字、offset 或可变 BodyResolveContext 反查 owner。
-    val declarations = ArrayDeque<CfirCallableDeclaration>()
     root.accept(object : CfirVisitorVoid() {
         override fun visitElement(element: CfirElement) {
-            if (element is CfirCallableDeclaration) declarations.addLast(element)
             val type = when (element) {
                 is CfirResourceVariable -> element.returnTypeRef.coneTypeOrNull
                 is CfirResolvedTypeRef -> element.coneType
                 is CfirExpression -> element.coneTypeOrNull
                 else -> null
             }
-            val pendingType = type != null && type !is ConeErrorType &&
-                type.contains { it is ConeTypeVariableType || it is ConeStubType }
+            val pendingType = type?.contains {
+                it is ConeTypeVariableType || it is ConeStubType || it is ConeErrorType && it.isPostponedInference
+            } == true
             val reference = (element as? CfirResolvable)?.calleeReference
             val pendingCall = reference is CfirNamedReferenceWithCandidate && !reference.isError
             if (pendingType || pendingCall) {
                 pending = true
-                CfirRetainedCompletionTrace.event("SOURCE_PENDING_ELEMENT") {
-                    val completionStorage = completionSystem?.captureStorage()
-                    val declaration = declarations.lastOrNull()
-                    val variables = mutableListOf<ConeTypeVariableType>()
-                    type?.forEachType { if (it is ConeTypeVariableType) variables += it }
-                    "root=" + CfirRetainedCompletionTrace.identity(root) +
-                        " element=" + CfirRetainedCompletionTrace.identity(element) +
-                        " source=" + CfirRetainedCompletionTrace.identity(element.source) +
-                        " declaration=" + CfirRetainedCompletionTrace.identity(declaration) +
-                        " declarationSymbol=" + CfirRetainedCompletionTrace.identity(declaration?.symbol) +
-                        " declarationTypeRef=" + CfirRetainedCompletionTrace.identity(declaration?.returnTypeRef) +
-                        " declarationPhase=" + declaration?.resolvePhase +
-                        " declarationPath=" + declarations.joinToString("/") { CfirRetainedCompletionTrace.identity(it) } +
-                        " writerOwner=" + CfirRetainedCompletionTrace.candidate(writerOwner) +
-                        " completionSystem=" + CfirRetainedCompletionTrace.identity(completionSystem) +
-                        " pendingType=" + pendingType + " pendingCall=" + pendingCall +
-                        " type=" + type + " typeIdentity=" + CfirRetainedCompletionTrace.identity(type) +
-                        " reference=" + CfirRetainedCompletionTrace.identity(reference) +
-                        " actualTarget=" + CfirRetainedCompletionTrace.identity((reference as? CfirResolvedNamedReference)?.resolvedSymbol) +
-                        " candidate=" + CfirRetainedCompletionTrace.candidate((reference as? CfirNamedReferenceWithCandidate)?.candidate) +
-                        " variables=" + variables.joinToString { variableType ->
-                            val constructor = variableType.typeConstructor
-                            "constructor=" + CfirRetainedCompletionTrace.identity(constructor) +
-                                ",variable=" + CfirRetainedCompletionTrace.identity(completionStorage?.allTypeVariables?.get(constructor)) +
-                                ",fixed=" + completionStorage?.fixedTypeVariables?.get(constructor) +
-                                ",notFixed=" + (completionStorage?.notFixedTypeVariables?.containsKey(constructor) == true)
-                        } +
-                        " stack=" + Throwable().stackTrace.joinToString(" <- ")
-                }
             }
             element.acceptChildren(this)
-            if (element is CfirCallableDeclaration) declarations.removeLast()
         }
     })
     return pending
 }
 
-private fun firstSourceError(root: CfirElement?): ConeErrorType? {
-    var error: ConeErrorType? = null
-    root?.accept(object : CfirVisitorVoid() {
-        override fun visitElement(element: CfirElement) {
-            if (error == null) error = (element as? CfirExpression)?.coneTypeOrNull as? ConeErrorType
-            element.acceptChildren(this)
-        }
-    })
-    return error
-}
 
 /** 资源的私有类型 cache 和 source task 与同一 AST 快照原位恢复。 */
 internal class CfirResourceSourceSnapshot private constructor(

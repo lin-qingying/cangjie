@@ -69,6 +69,8 @@ import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.symbols.constructType
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.cfir.types.*
+import org.cangnova.cangjie.cfir.declarations.instantiatedQualifierOwnerType
+import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.cfir.resolve.toSymbol
 import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
 import org.cangnova.cangjie.resolve.calls.inference.ConstraintSystemOperation
@@ -896,16 +898,28 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
         session: CfirSession,
         ownerDeclaration: CfirDeclaration,
     ): Boolean {
-        if (typeArguments.isNotEmpty()) return false
+        if (typeArguments.any { argument ->
+                argument.source?.let { it.kind !is CjFakeSourceElementKind.ImplicitTypeArgument } == true
+            }) return false
 
         val symbol = enumConstructorSymbolOrNull()
         if (symbol != null) {
             val constructor = symbol.cfir
-            val expectedOwnerClassId = (ownerDeclaration as? CfirClassLikeDeclaration)?.symbol?.classId
-                ?: return false
+            val owner = ownerDeclaration as? CfirClassLikeDeclaration ?: return false
             val constructorOwnerClassId = symbol.getContainingClass()?.classId
                 ?: return false
-            return constructor.valueParameters.isEmpty() && constructorOwnerClassId == expectedOwnerClassId
+            if (constructor.valueParameters.isNotEmpty() || constructorOwnerClassId != owner.symbol.classId) return false
+            if (symbol.instantiatedQualifierOwnerType(explicitReceiver, session) != null) return false
+            val ownerParameters = owner.typeParameters.mapTo(hashSetOf()) { it.symbol.toLookupTag() }
+            // 独立 receiver 的暂定写回可能已填入隐式实参。只有仍引用该 enum 的未完成参数时，
+            // 外层成员候选才应接管约束，已实例化的 receiver 保留原替换。
+            return coneTypeOrNull?.contains { type ->
+                when (type) {
+                    is ConeTypeVariableType -> ownerParameters.any { it == type.typeConstructor.originalTypeParameter }
+                    is ConeTypeParameterType -> type.lookupTag in ownerParameters
+                    else -> false
+                }
+            } == true
         }
 
         // 只有尚未解析 symbol 的裸名 fallback 才能依赖当前 owner 的 lexical enum scope。

@@ -14,7 +14,6 @@ import org.cangnova.cangjie.cfir.expressions.CfirReturnExpression
 import org.cangnova.cangjie.cfir.expressions.CfirResumeExpression
 import org.cangnova.cangjie.cfir.expressions.CfirStatement
 import org.cangnova.cangjie.cfir.expressions.CfirTryExpression
-import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
@@ -31,42 +30,21 @@ import org.cangnova.cangjie.type.AbstractTypeChecker
  * Effects 检查器（Effects + EffectsExtra 分组）
  *
  * 对齐 C++ TypeCheckExpr/TryExpr.cpp、PerformExpr.cpp、ResumeExpr.cpp:
- * - RESUMPTION_HANDLE_TYPE_ERROR: handle clause command pattern 类型解析失败
  * - RETURN_IN_TRY_HANDLE_BLOCK: try/handle block 中的 return
  * - RESUMPTION_INCORRECT_RETURN_TYPE: resumption 返回类型不匹配
  * - COMMAND_RESUMPTION_MISMATCH: command-resumption 类型不匹配
  */
 object CfirTryHandleReturnChecker : CfirTryExpressionChecker() {
     /**
-     * 检查 try/handle 子句的 command 类型与 handle body 类型。
-     *
-     * 每个 handler 先检查 command pattern 中的错误类型，再验证 handle body 是否可作为 try body
-     * 的替代表达式结果。
+     * 对已完成命令模式检查的 handler 校验正文类型。命令模式失败由其显式类型引用报告。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirTryExpression) {
         val tryBodyType = expression.tryBlock.coneTypeOrNull
 
         for (handler in expression.handlers) {
-            checkHandleClauseType(handler)
+            if (handler.commandPattern.resolvedTypeRef?.coneType is ConeErrorType) continue
             checkHandlerBodyTypeMatch(handler, tryBodyType)
-        }
-    }
-
-    /**
-     * 检查 handle command pattern 上解析失败的类型引用。
-     */
-    context(context: CheckerContext, reporter: DiagnosticReporter)
-    private fun checkHandleClauseType(handleClause: CfirHandleClause) {
-        val commandPattern = handleClause.commandPattern
-        for (typeRef in commandPattern.typeRefs) {
-            val resolvedType = (typeRef as? CfirResolvedTypeRef)?.coneType ?: continue
-            if (resolvedType is ConeErrorType) {
-                reporter.reportOn(
-                    source = commandPattern.source ?: handleClause.source,
-                    factory = CfirErrors.RESUMPTION_HANDLE_TYPE_ERROR,
-                )
-            }
         }
     }
 

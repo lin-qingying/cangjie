@@ -274,6 +274,8 @@ class MutableVariableWithConstraints private constructor(
      * 其余情况按 kind 判断：EQUALITY 覆盖一切；LOWER/UPPER 覆盖同方向约束。
      */
     private fun newConstraintIsUseless(old: Constraint, new: Constraint): Boolean {
+        // 普通子类型界不能覆盖同方向的类型身份关系。
+        if (new.isEqualityRelation && !old.isEqualityRelation) return false
         // 同一关系后来获得局部推导时，必须保留该来源；跨调用的旧推导不能覆盖它。
         if (new.isLocalToInferenceScope && !old.isLocalToInferenceScope) return false
         // 用户定义约束优先于 DeclaredUpperBound 约束

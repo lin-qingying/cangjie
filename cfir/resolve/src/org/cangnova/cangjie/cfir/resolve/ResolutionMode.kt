@@ -42,6 +42,9 @@ sealed class ResolutionMode(
          * 仓颉函数引用使用普通名字语法，因此必须在名字查找后区分函数引用与普通变量访问。
          */
         data object ForCallableReference : ContextDependent(hintForContextSensitiveResolution = null)
+
+        /** operator 的值操作数等待实际参数目标；不指定 primitive 类型，也不证明 builtin 角色。 */
+        data object ForOperatorOperandInference : ContextDependent(hintForContextSensitiveResolution = null)
     }
 
     /**
@@ -181,7 +184,11 @@ val ResolutionMode.expectedType: ConeCangJieType?
 
 /** 当前期望类型是否仅用于 primitive operator 操作数的推断。 */
 val ResolutionMode.isOperatorOperandInference: Boolean
-    get() = (this as? ResolutionMode.WithExpectedType)?.isOperatorOperandInference == true
+    get() = when (this) {
+        is ResolutionMode.WithExpectedType -> isOperatorOperandInference
+        ResolutionMode.ContextDependent.ForOperatorOperandInference -> true
+        else -> false
+    }
 
 /** 对位官方 DiscardedHelper 的语法结果使用状态，不给普通调用伪造 Unit 推断目标。 */
 val ResolutionMode.isValueDiscarded: Boolean
@@ -216,7 +223,8 @@ fun withExpectedType(
 ): ResolutionMode {
     return coneType?.let {
         withExpectedType(it, lastStatementInBlock, isOperatorOperandInference)
-    } ?: ResolutionMode.ContextDependent
+    } ?: if (isOperatorOperandInference) ResolutionMode.ContextDependent.ForOperatorOperandInference
+        else ResolutionMode.ContextDependent
 }
 
 /**

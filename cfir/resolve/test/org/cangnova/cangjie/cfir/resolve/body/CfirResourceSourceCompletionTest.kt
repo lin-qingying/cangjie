@@ -2,6 +2,7 @@
 
 package org.cangnova.cangjie.cfir.resolve.body
 
+import org.cangnova.cangjie.cfir.diagnostic.ConePostponedInferenceDiagnostic
 import java.util.IdentityHashMap
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.CfirDefaultRawCopyContext
@@ -114,15 +115,39 @@ class CfirResourceSourceCompletionTest {
     }
 
     @Test
-    fun nothingAndDeterminateNonResourceKeepRealMismatchDiagnostic() {
+    fun resourceProtocolRejectionKeepsDiagnosticAndDoesNotInvalidateTryResult() {
         for (type in listOf(ConePrimitiveType.NOTHING, ConePrimitiveType.INT32)) {
             val f = Fixture()
             f.resource.replaceReturnTypeRef(type.toCfirResolvedTypeRef(f.resource.source))
-            assertEquals(CfirResourceTypeCheck.REJECTED, checkResourceSpecification(f.resource, f.resourceType, f.session, null))
+            val task = f.resolveSource()
+            f.writeFull()
+            assertTrue(task.isCompleted)
             val error = f.resource.returnTypeRef.coneType as ConeErrorType
-            assertTrue(error.diagnostic is ConeTypeMismatchError)
-            assertEquals(type, (error.diagnostic as ConeTypeMismatchError).actualType)
+            val diagnostic = assertInstanceOf(ConeTypeMismatchError::class.java, error.diagnostic)
+            assertEquals(type, diagnostic.actualType)
+            assertEquals(ConeTypeMismatchError.Origin.RESOURCE_PROTOCOL, diagnostic.origin)
+            assertEquals(ConePrimitiveType.UNIT, f.tryExpression.coneTypeOrNull)
         }
+    }
+
+    @Test
+    fun resourceTypeFixedToNothingReportsProtocolMismatchDuringFinalWrite() {
+        val f = Fixture(pending = true)
+        f.tryExpression.replaceConeTypeOrNull(ConeErrorType(ConePostponedInferenceDiagnostic))
+        val task = f.resolveSource()
+        val variable = checkNotNull(f.pendingVariable)
+        assertTrue(f.resource.returnTypeRef.coneTypeOrNull is ConeTypeVariableType)
+        f.rootCandidate.system.addEqualityConstraint(
+            variable.defaultType, ConePrimitiveType.NOTHING, ConeArgumentConstraintPosition(f.resource),
+        )
+        f.completeActualSystem(ConePrimitiveType.NOTHING)
+        f.rootCall.transformSingle(f.newFinalWriter(), null)
+        assertTrue(task.isCompleted)
+        val type = assertInstanceOf(ConeErrorType::class.java, f.resource.returnTypeRef.coneTypeOrNull)
+        val diagnostic = assertInstanceOf(ConeTypeMismatchError::class.java, type.diagnostic)
+        assertEquals(ConePrimitiveType.NOTHING, diagnostic.actualType)
+        assertEquals(ConeTypeMismatchError.Origin.RESOURCE_PROTOCOL, diagnostic.origin)
+        assertEquals(ConePrimitiveType.UNIT, f.tryExpression.coneTypeOrNull)
     }
 
     @Test
@@ -171,6 +196,22 @@ class CfirResourceSourceCompletionTest {
         val propagated = f.tryExpression.coneTypeOrNull as ConeErrorType
         assertSame(diagnostic, (propagated.diagnostic as ConeUnreportedDuplicateDiagnostic).original)
         assertTrue(f.cache().getStatus(f.resource.symbol) is CfirImplicitBodyResolveComputationStatus.Computed)
+    }
+
+    @Test
+    fun initializerSynthesisFailureDoesNotCheckTheResourceProtocol() {
+        val f = Fixture(explicitType = true)
+        f.resource.replaceReturnTypeRef(ConePrimitiveType.INT32.toCfirResolvedTypeRef(f.resource.source))
+        val diagnostic = ConeSimpleDiagnostic("initializer source rejected")
+        f.resource.replaceInitializer(buildErrorExpression {
+            this.diagnostic = diagnostic
+            expression = CallResolutionTestFixtures.buildTypedExpression(ConeErrorType(diagnostic))
+        })
+        f.resolveSource()
+        f.writeFull()
+        assertEquals(ConePrimitiveType.INT32, f.resource.returnTypeRef.coneTypeOrNull)
+        val propagated = assertInstanceOf(ConeErrorType::class.java, f.tryExpression.coneTypeOrNull)
+        assertSame(diagnostic, (propagated.diagnostic as ConeUnreportedDuplicateDiagnostic).original)
     }
 
     @Test
@@ -1135,9 +1176,9 @@ class CfirResourceSourceCompletionTest {
         fun cache(): ImplicitBodyResolveComputationSession = checkNotNull(resource.resourceSourceCache)
         fun substitutor(): ConeSubstitutor = rootCandidate.system.buildCurrentSubstitutor().asCone()
 
-        fun completeActualSystem() {
+        fun completeActualSystem(inferredType: ConeCangJieType = implementationType) {
             pendingVariable?.takeIf { it.typeConstructor in rootCandidate.system.notFixedTypeVariables }?.let {
-                rootCandidate.system.addSubtypeConstraint(implementationType, it.defaultType, ConeArgumentConstraintPosition(resource))
+                rootCandidate.system.addSubtypeConstraint(inferredType, it.defaultType, ConeArgumentConstraintPosition(resource))
             }
             ConstraintSystemCompleter(transformer.components).complete(
                 rootCandidate.system.asConstraintSystemCompleterContext(), ConstraintSystemCompletionMode.FULL,

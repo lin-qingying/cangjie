@@ -9,7 +9,6 @@ import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.types.ConeInferenceContext
 import org.cangnova.cangjie.cfir.types.ConeTypeApproximator
 import org.cangnova.cangjie.cfir.types.typeContext
-import org.cangnova.cangjie.resolve.calls.inference.ConstraintSystem
 import org.cangnova.cangjie.resolve.calls.inference.components.ConstraintIncorporator
 import org.cangnova.cangjie.resolve.calls.inference.components.ConstraintInjector
 import org.cangnova.cangjie.resolve.calls.inference.components.TrivialConstraintTypeInferenceOracle
@@ -74,20 +73,20 @@ object ConstraintSystemTestHarness {
     }
 
     /**
-     * 读取变量当前挂载的约束列表。
+     * 捕获变量当前约束，不将仍在添加约束的测试系统发布为冻结存储。
      */
-    fun constraintsOf(system: ConstraintSystem, variable: ConeTypeVariable): List<Constraint> =
-        system.asReadOnlyStorage().notFixedTypeVariables.getValue(variable.typeConstructor).constraints
+    fun constraintsOf(system: ConstraintSystemImpl, variable: ConeTypeVariable): List<Constraint> =
+        system.captureStorage().notFixedTypeVariables.getValue(variable.typeConstructor).constraints
 
     /**
      * 读取变量当前的全部下界约束类型。
      */
-    fun lowerBoundsOf(system: ConstraintSystem, variable: ConeTypeVariable): List<CangJieTypeMarker> =
+    fun lowerBoundsOf(system: ConstraintSystemImpl, variable: ConeTypeVariable): List<CangJieTypeMarker> =
         constraintsOf(system, variable).filter { it.kind.isLower() }.map { it.type }
 
     /**
      * 读取变量当前的全部上界约束类型。
      */
-    fun upperBoundsOf(system: ConstraintSystem, variable: ConeTypeVariable): List<CangJieTypeMarker> =
+    fun upperBoundsOf(system: ConstraintSystemImpl, variable: ConeTypeVariable): List<CangJieTypeMarker> =
         constraintsOf(system, variable).filter { it.kind.isUpper() }.map { it.type }
 }

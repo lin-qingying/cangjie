@@ -10,6 +10,7 @@ import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentSourceMapp
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceToken
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroTokenSourceOrigin
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroTokenSourceSpan
+import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationSlotSnapshot
 import org.cangnova.cangjie.source.CjLightSourceElement
 import org.cangnova.cangjie.source.CjPsiSourceElement
 import org.cangnova.cangjie.source.CjSourceElement
@@ -28,7 +29,32 @@ internal class MacroFragmentSourceElementFactory(
     private val fragmentStartOffset: Int,
     private val surfaceId: Long,
     private val sourceMapping: MacroFragmentSourceMapping,
+    private val inheritedAnnotations: List<CfirAnnotationSlotSnapshot> = emptyList(),
 ) : CfirRawSourceElementFactory {
+    init {
+        sourceMapping.registerDiagnosticProjector(fragmentSource, ::projectDiagnosticSource)
+    }
+
+    /** 子 token 的诊断投影不修改构造期来源表，只消费已保存的原 token 区间。 */
+    private fun projectDiagnosticSource(source: CjSourceElement): CjSourceElement {
+        val start = source.startOffset - fragmentStartOffset
+        val end = source.endOffset - fragmentStartOffset
+        if (start !in 0..sourceMap.text.length || end !in start..sourceMap.text.length) return source
+        val original = sourceMap.originalRange(start, end) ?: return source
+        return projectSource(source, original, original) ?: source
+    }
+    override fun annotationSourceModuleName(source: CjSourceElement?, parserModuleName: String): String {
+        if (source == null) return parserModuleName
+        val original = if (source.isInSameSourceTree(fragmentSource)) {
+            sourceMap.originalRange(source.startOffset - fragmentStartOffset, source.endOffset - fragmentStartOffset)
+        } else source
+        if (original == null) return parserModuleName
+        val snapshot = inheritedAnnotations.singleOrNull {
+            it.annotationSource.isInSameSourceTree(original) &&
+                it.annotationSource.startOffset == original.startOffset && it.annotationSource.endOffset == original.endOffset
+        }
+        return snapshot?.originalAnnotation?.sourceModuleName ?: parserModuleName
+    }
     override fun createSource(source: CjSourceElement): CjSourceElement {
         if (!source.isInSameSourceTree(fragmentSource)) {
             val origin = checkNotNull(sourceMapping.originForSource(source)) {

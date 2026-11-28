@@ -50,6 +50,7 @@ import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeParameterBasedTypeVariabl
 import org.cangnova.cangjie.cfir.scopes.impl.typeAliasConstructorInfo
 import org.cangnova.cangjie.cfir.semantics.AbstractCallKind
 import org.cangnova.cangjie.cfir.semantics.AbstractCallCandidate
+import org.cangnova.cangjie.cfir.semantics.BareEnumConstructorInsufficientInformation
 import org.cangnova.cangjie.cfir.semantics.AmbiguousClassifierTypeInCandidateSignature
 import org.cangnova.cangjie.cfir.semantics.ErrorTypeInCandidateSignature
 import org.cangnova.cangjie.cfir.semantics.ErrorTypeInArguments
@@ -329,7 +330,7 @@ private fun ConstraintSystemError.mapConstraintSystemError(
         }
 
         is NotEnoughInformationForTypeParameter<*> ->
-            if (candidate.hasBareGenericFunctionReferencePayloadArgument()) {
+            if (belongsToBareEnumArgument(candidate) || candidate.hasBareGenericFunctionReferencePayloadArgument()) {
                 null
             } else if (candidate.hasNonCallBareStaticGenericQualifierTypeVariable(typeVariable, session)) {
                 null
@@ -446,7 +447,10 @@ private fun ConeConstraintSystemHasContradiction.mapSystemHasContradictionError(
             // 而不是把同一结构性错误继续泛化为泛型推断失败。
             return listOfNotNull(candidate.ambiguousClassifierSignatureNoMatchDiagnostic(session))
         }
-        if (errors.any { it is NotEnoughInformationForTypeParameter<*> && it.typeVariable is ConeTypeParameterBasedTypeVariable } &&
+        if (errors.any {
+                it is NotEnoughInformationForTypeParameter<*> &&
+                    it.typeVariable is ConeTypeParameterBasedTypeVariable && !it.belongsToBareEnumArgument(candidate)
+            } &&
             !candidate.hasExplicitTypeArgumentsInCall()
         ) {
             // 泛型参数被推断为失败类型且调用未提供显式实参时，即使实参子树自身含有错误
@@ -570,6 +574,11 @@ private fun ConeConstraintSystemHasContradiction.mapSystemHasContradictionError(
             }
         )
     }
+}
+
+/** 借入的裸枚举 owner 变量缺参由原实参报告，不能归为外层调用自身的推断失败。 */
+private fun NotEnoughInformationForTypeParameter<*>.belongsToBareEnumArgument(candidate: AbstractCallCandidate<*>): Boolean {
+    return this is BareEnumConstructorInsufficientInformation && origin !== candidate
 }
 
 /**
@@ -3598,24 +3607,39 @@ private fun ConeCangJieType.containsErrorType(): Boolean {
  * 判断实参表达式子树中是否已经包含错误诊断。
  */
 private fun org.cangnova.cangjie.cfir.expressions.CfirExpression.containsErrorDiagnosticInArgument(): Boolean {
-    if (coneTypeOrNull?.containsErrorType() == true) return true
-    if (this is CfirDiagnosticHolder) return true
-    if (this is CfirResolvable && calleeReference is CfirDiagnosticHolder) return true
+    if (coneTypeOrNull?.containsErrorTypeForSuppressingAmbiguityError() == true) return true
+    if (this is CfirDiagnosticHolder && diagnostic.isSourceErrorDiagnostic()) return true
+    if (this is CfirResolvable && (calleeReference as? CfirDiagnosticHolder)?.diagnostic?.isSourceErrorDiagnostic() == true) return true
 
     var hasErrorDiagnostic = false
     acceptChildren(object : CfirVisitorVoid() {
         override fun visitElement(element: org.cangnova.cangjie.cfir.CfirElement) {
             if (hasErrorDiagnostic) return
             when {
-                element is CfirDiagnosticHolder -> hasErrorDiagnostic = true
-                element is CfirResolvable && element.calleeReference is CfirDiagnosticHolder -> hasErrorDiagnostic = true
+                element is CfirDiagnosticHolder && element.diagnostic.isSourceErrorDiagnostic() -> hasErrorDiagnostic = true
+                element is CfirResolvable &&
+                    (element.calleeReference as? CfirDiagnosticHolder)?.diagnostic?.isSourceErrorDiagnostic() == true -> hasErrorDiagnostic = true
                 element is org.cangnova.cangjie.cfir.expressions.CfirExpression &&
-                    element.coneTypeOrNull?.containsErrorType() == true -> hasErrorDiagnostic = true
+                    element.coneTypeOrNull?.containsErrorTypeForSuppressingAmbiguityError() == true -> hasErrorDiagnostic = true
                 else -> element.acceptChildren(this, null)
             }
         }
     }, null)
     return hasErrorDiagnostic
+}
+
+/** postponed 表示候选尚未完成，歧义抑制只消费已经确定的源码错误。 */
+private tailrec fun ConeDiagnostic.isSourceErrorDiagnostic(): Boolean = when (this) {
+    is ConeUnreportedDuplicateDiagnostic -> original.isSourceErrorDiagnostic()
+    else -> this !== ConePostponedInferenceDiagnostic
+}
+
+/** 对位 Kotlin 的歧义抑制检查，继续遍历 postponed 分量以发现真实子树错误。 */
+private fun ConeCangJieType.containsErrorTypeForSuppressingAmbiguityError(): Boolean = contains { component ->
+    when (component) {
+        is ConeErrorType -> component.diagnostic.isSourceErrorDiagnostic()
+        else -> component.isError
+    }
 }
 
 /**
@@ -3778,6 +3802,7 @@ private fun AbstractCallCandidate<*>.hasGenericCallNotEnoughTypeInformation(sess
 
     return errors.any { error ->
         val notEnough = error as? NotEnoughInformationForTypeParameter<*> ?: return@any false
+        if (notEnough.belongsToBareEnumArgument(this)) return@any false
         val typeParameterSymbol = notEnough.typeVariable.asDeclaredTypeParameterSymbolOrNull() ?: return@any false
         typeParameterSymbol in declaredTypeParameters
     }
