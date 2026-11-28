@@ -20,7 +20,7 @@ Linux 本地验证环境为 Ubuntu 22.04.5、Gradle 9.4.0、Temurin 21.0.13+9、
 | Linux 定向第 6 轮 | `21c16e5cb4997b6d92e896293c1fba2342a8b150` | 执行 223 项，201 通过、22 失败。Providers 84/84，导出输入快照 64/64。PSI、Resolve 与 CJO 的测试编译进入下一轮 |
 | Linux 定向第 7 轮 | `39950914612e1ee6bc19d16c893c296d1fa7d0d4` | 执行 550 项，501 通过、49 失败。Providers 84/84、Resolve 106/111、Frontend 57/69、PSI 254/286。CJO 测试编译卡在 FullId 夹具的断言函数名，已在后续提交修正 |
 | Linux 定向第 8 轮 | `167f90ae7062190870a14f72f3caeb12f7360c07` | 执行 347 项，289 通过、58 失败。Frontend 48/48、Providers 76/76、Resolve 85/86、CJO 80/137。Frontend 与 CJO 本地测试 worker 使用 2 GiB 堆 |
-| 本地主分支回归 | `02f270f4bc405a091fefaff852f045fa2592c92c` | 已启动 `test --continue`，使用相同的 Linux 工具链及真实 SDK。首次尝试在执行测试前结束，两个输入各有独立日志 |
+| 本地主分支回归 | `02f270f4bc405a091fefaff852f045fa2592c92c` | 按交接要求暂停 `test --continue`。已归档 314 项测试结果，312 通过、2 跳过。Wasm 生产编译另有 12 条错误。首次尝试在执行测试前结束，两个输入各有独立日志 |
 | GitHub 主分支回归 | `39950914612e1ee6bc19d16c893c296d1fa7d0d4` | SDK 发现及 LLVM JNI 构建通过。首批 SDK 作业已进入 `Run main repository tests`，后续推送触发新矩阵。[运行记录](https://github.com/lin-qingying/cangjie/actions/runs/46134914684) |
 
 第 7 轮实际验证了三项 SOURCE FullId、导入泛型正文、泛型 enum 配对及 payload 不匹配负例、两种前端的配对注解和源位置。后续补丁在隔离运行中通过 46 项宏构造与告警测试、49 项异常及 if CFG 测试，以及 73 项宏转义和词法测试。完整提交的 Gradle 复验继续进行。
@@ -28,6 +28,13 @@ Linux 本地验证环境为 Ubuntu 22.04.5、Gradle 9.4.0、Temurin 21.0.13+9、
 第 8 轮的限定定义快照 11/11、SOURCE 包图 10/10、来源身份快照 8/8、异常及 if CFG 49/49。一次 JVM 类初始化循环影响了 22 个 CJO 测试。改为按需读取同一真实解析器后，单独复验了三种类加载顺序，初始化依赖 suite 通过 10/11。原 R41 Core 用例仍在 `metadata.imports.isEmpty()` 失败。FullId 的正常读取、隔离作用域、重入、精确路径及不同 manager 的八个原用例已通过补丁覆盖层的隔离复验。CJO SOURCE 保存的实际声明根与公开 wire binding 继续按各自身份验证。
 
 合入前 `200142275d824efcb4d24f5f835e0376b0a357ad` 的 GitHub 矩阵 20 个 SDK 测试作业均失败。同版本 SDK 1.1.0 作业记录了 12 个失败的 Gradle 任务，已保存具体测试名及编译错误用于对照。[主分支基线](https://github.com/lin-qingying/cangjie/actions/runs/46109990741)
+
+### 暂停交接
+
+- 最后一批 CJO 修复已纳入。原 SOURCE 重导出失败的 16 项在隔离补丁覆盖层通过，扩展验证另在固定 PSI 构建产物后完成。普通 FullId 和限定 SOURCE 根、类型向量边界、导出泛型键等隔离复验通过 31 项。导入 F-bound 和回滚夹具通过 6 项。这些是对应补丁覆盖层的结果，交接分支整体仍需在同一 SHA 上重跑。
+- 从 `compiler/wasm/wasm-codegen` 的 `ChirFunctionLowerer`、`WasmCodegenPlan` 和 `WasmTypeMapper` 处理主分支回归的 12 条编译错误。输入变化涉及可空 CHIR 入口及 terminator、新操作枚举、RawArray 用 rank 取代长度。保留真实入口和终结指令校验、现有支持行为和不支持操作的诊断。原 H6 后端余额继续沿原计划。
+- 7 项异常 DFA 用例在类初始化修复后到达原 `Missing analyzer flow: ExceptionTransferNode` 检查。后续从 `ControlFlowGraphBuilder.routeException` 与 `CfirDataFlowAnalyzer` 的交接处继续，保存调用成功前的实际 flow、异常经过 catch/finally/资源清理的路径与嵌套完成关系。综合设计及原用例入口保存在 `validation/exceptional-dfa/implementation-entry.md`。原 R41 Core 输入、历史 SOURCE 槽与 extend 余额见本节上文。
+- 恢复后以远端最新提交为准，先复验 PSI 与高亮、CJO SOURCE/FullId/限定快照、Providers 和 Core 输入，再完成全量 `test --continue`。本次部分回归的环境、完整 Gradle 日志、退出码和实际 XML 在 `validation/main-regression-2/`，相对于下文记录的本地证据根目录。
 
 第 6 轮已复验 R42 alias 装配。R41 的 Core 定义输入失败仍有原测试入口 `CfirInitializationDependencySerializationTest.stdCoreProducerInjectsProviderBuiltinsAsPackageRoots`。该用例需要作用域内的真实当前定义产品。已记录的 CJMP 历史分歧包括普通有界 extend 的私有成员导出、Common 静态调用初始化器以及 Common const 和 tuple 的 CJO 槽。SDK 1.1.0 的独立消费端实际执行 Common 静态初始化器，且输出随 specific 对应函数更新。原始断言继续保留。
 
