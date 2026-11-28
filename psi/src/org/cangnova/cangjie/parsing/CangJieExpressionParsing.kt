@@ -1751,28 +1751,14 @@ open class CangJieExpressionParsing(
     private fun parseCommandTypePattern() {
         val commandPattern = mark()
         when {
-            at(UNDERLINE) -> {
+            at(UNDERLINE) || at(IDENTIFIER) -> {
                 advance()
                 expect(
                     COLON,
                     CangJieParsingBundle.message("parsing.error.expected.colon.in.effect.pattern"),
                     TokenSet.create(IDENTIFIER, RPAR, LBRACE),
                 )
-                if (!at(RPAR) && !at(LBRACE)) {
-                    parseTypeReferencesByOr()
-                }
-            }
-
-            at(IDENTIFIER) -> {
-                advance()
-                expect(
-                    COLON,
-                    CangJieParsingBundle.message("parsing.error.expected.colon.in.effect.pattern"),
-                    TokenSet.create(IDENTIFIER, RPAR, LBRACE),
-                )
-                if (!at(RPAR) && !at(LBRACE)) {
-                    parseTypeReferencesByOr()
-                }
+                parseTypeReferencesByOr()
             }
 
             else -> {

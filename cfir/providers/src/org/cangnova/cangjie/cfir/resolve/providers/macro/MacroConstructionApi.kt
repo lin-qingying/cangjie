@@ -332,6 +332,11 @@ data class MacroGeneratedSourceOriginsSnapshot(
  * 多模块 build 时每个 source session 各持一份。
  */
 class MacroExpansionRegistry : org.cangnova.cangjie.cfir.session.CfirSessionComponent {
+    private val diagnosticSourceProjectors = IdentityHashMap<Any, (CjSourceElement) -> CjSourceElement>()
+
+    /** 按实际 reparse 树身份投影子 token，生成 token 继续保留自身的宏来源。 */
+    fun projectDiagnosticSource(source: CjSourceElement): CjSourceElement =
+        diagnosticSourceProjectors[source.macroSourceTreeIdentity()]?.invoke(source) ?: source
     /** construction 期间累积的宏诊断列表。 */
     private val _diagnostics: MutableList<MacroConstructionDiagnostic> = mutableListOf()
     /** `surfaceId -> MacroSurface` 反查表。 */
@@ -696,6 +701,7 @@ class MacroExpansionRegistry : org.cangnova.cangjie.cfir.session.CfirSessionComp
         originSurfaceId: Long,
         sourceMapping: MacroFragmentSourceMapping = MacroFragmentSourceMapping(),
     ) {
+        diagnosticSourceProjectors.putAll(sourceMapping.diagnosticProjectors())
         element.accept(
             object : CfirDefaultVisitor<Unit, Unit>() {
                 override fun visitElement(element: CfirElement, data: Unit) {

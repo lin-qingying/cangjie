@@ -36,6 +36,7 @@ import org.cangnova.cangjie.cfir.analysis.checkers.modifier.ModifierTargetPredic
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.lexer.CjTokens
+import org.cangnova.cangjie.cfir.session.macroExpansionRegistry
 
 /**
  * 源码修饰符目标、父声明和组合兼容性检查器。
@@ -52,7 +53,9 @@ object CfirModifierChecker : CfirBasicDeclarationChecker() {
         val source = declaration.source ?: return
         if (declaration is CfirConstructor && declaration.isPrimary && !source.isConstructorSource()) return
 
-        val modifiers = source.realSourceModifiers() ?: return
+        val modifiers = source.realSourceModifiers()?.map { modifier ->
+            modifier.copy(source = context.session.macroExpansionRegistry?.projectDiagnosticSource(modifier.source) ?: modifier.source)
+        } ?: return
         val reportedNodes = hashSetOf<SourceModifier>()
 
         checkModifiersCompatibility(declaration, modifiers, reportedNodes)

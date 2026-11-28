@@ -7,6 +7,8 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.api
 
 import com.intellij.openapi.project.Project
 import org.cangnova.cangjie.analysis.low.level.api.cfir.LLResolutionFacadeService
+import org.cangnova.cangjie.analysis.low.level.api.cfir.macro.LLCfirMacroSemanticSnapshot
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSessionCache
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbols.CfirResolution
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbols.UnresolvedReason
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbols.valueOrNull
@@ -25,6 +27,10 @@ import org.cangnova.cangjie.psi.CjFile
  */
 fun CaModule.getResolutionFacade(project: Project): LLResolutionFacade =
     LLResolutionFacadeService.getInstance(project).getResolutionFacade(this)
+
+/** 读取有效会话已发布的宏快照，查询本身不创建会话。 */
+fun CaModule.getPublishedMacroSemanticSnapshot(): LLCfirMacroSemanticSnapshot? =
+    LLCfirSessionCache.getInstance(project).getCachedResolvableSession(this)?.macroSemanticSnapshot
 
 /**
  * Resolves this [CjDeclaration] to a [CfirBasedSymbol].

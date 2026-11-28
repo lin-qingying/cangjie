@@ -101,18 +101,19 @@ class MacroConstructionEnvironmentConfigurator(testServices: TestServices) : Env
     }
 
     /**
-     * 将一个宏源码包写入测试临时目录。
+     * 将同一宏包的全部源文件直接写入 cjc 的包目录。
+     * cjc -p 不递归编译嵌套目录；编号保留不同虚拟路径下同名文件的独立身份。
      */
     private fun materializeSourcePackage(testCaseId: String, sourcePackage: SourceMacroPackage): File {
         val root = testServices.getOrCreateTempDirectory(
             "macro-source-$testCaseId-${sourcePackage.packageFqName.asString().sanitizeFileName()}",
         )
-        for (file in sourcePackage.files) {
-            val target = File(root, file.relativePath)
-            require(target.toPath().toAbsolutePath().normalize().startsWith(root.toPath().toAbsolutePath().normalize())) {
+        for ((index, file) in sourcePackage.files.withIndex()) {
+            val originalTarget = File(root, file.relativePath)
+            require(originalTarget.toPath().toAbsolutePath().normalize().startsWith(root.toPath().toAbsolutePath().normalize())) {
                 "Macro source fragment escapes its source root: ${file.relativePath}"
             }
-            target.parentFile?.mkdirs()
+            val target = File(root, "$index-${originalTarget.name}")
             target.writeText(file.content, StandardCharsets.UTF_8)
         }
         return root

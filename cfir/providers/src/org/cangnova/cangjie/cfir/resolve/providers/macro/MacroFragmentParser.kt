@@ -39,7 +39,7 @@ interface MacroFragmentParser {
          * 解析入口、custom-annotation fallback、payload 类型语义有变化时递增。
          */
         // v4: declaration fragments carry the complete zero-to-many declaration sequence.
-        const val VERSION: Int = 5
+        const val VERSION: Int = 6
     }
 }
 
@@ -75,6 +75,10 @@ data class MacroFragmentInput(
     val sourceMap: MacroFragmentSourceMap? = null,
     /** source factory 确认的来源，随后由 registry/snapshot 消费。 */
     val sourceMapping: MacroFragmentSourceMapping = MacroFragmentSourceMapping(),
+    /** 原宏位置的前置普通注解，仅供声明重解析，不能回流到父宏的 executor token 通道。 */
+    val inheritedAnnotationTokens: List<MacroSurfaceToken> = emptyList(),
+    /** 与前置 token 同一原槽位的解析模块 provenance。 */
+    val inheritedAnnotationSnapshots: List<CfirAnnotationSlotSnapshot> = emptyList(),
 ) {
     /** 从最终 routing 决策投影出的解析模式。 */
     val mode: MacroFragmentParser.Mode

@@ -162,6 +162,8 @@ data class MacroSurfaceScopeContext(
     val enclosingClassFqName: FqName?,
     /** 最近外层函数名。 */
     val enclosingFunctionName: Name?,
+    /** raw builder 在原始宏位置捕获的词法事实，重解析不按名字重建外层符号。 */
+    val rawScopeSnapshot: MacroRawScopeSnapshot = MacroRawScopeSnapshot.ROOT,
 )
 
 /**

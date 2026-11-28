@@ -48,7 +48,7 @@ object MacroPayloadTokenizer {
      *
      * v2：把 lexer 拆分出的字符串片段合并为 CJC 的整段字符串 token。
      */
-    const val VERSION: Int = 2
+    const val VERSION: Int = 3
 
     private const val OPEN_QUOTE_KIND = "OPEN_QUOTE"
     private const val CLOSING_QUOTE_KIND = "CLOSING_QUOTE"

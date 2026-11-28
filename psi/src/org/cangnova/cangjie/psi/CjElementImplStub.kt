@@ -33,6 +33,7 @@ import com.intellij.lang.Language
 import com.intellij.model.psi.PsiSymbolDeclaration
 import com.intellij.model.psi.PsiSymbolReference
 import com.intellij.psi.PsiElementVisitor
+import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiReference
 import com.intellij.psi.StubBasedPsiElement
 import com.intellij.psi.impl.source.PsiFileImpl
@@ -50,6 +51,8 @@ open class CjElementImplStub<T : StubElement<*>> :
     constructor(stub: T, nodeType: IStubElementType<*, *>, node: ASTNode?) : super(stub, nodeType, node)
 
     constructor(node: ASTNode) : super(node)
+
+    override fun getNavigationElement(): PsiElement = findMacroNavigationElement() ?: super.getNavigationElement()
 
     /**
      * 平台 2025.3 起 [StubBasedPsiElementBase.getElementType] 只允许返回真正的 stub 类型，

@@ -28,6 +28,8 @@ interface CfirRawSourceElementFactory {
     /** fake source 派生传递确证的原 source 身份，保留 retained child 的 producer。 */
     fun createDerivedSource(original: CjSourceElement, derived: CjSourceElement): CjSourceElement = createSource(derived)
     fun createMacroToken(token: MacroSurfaceToken, source: CjSourceElement): MacroSurfaceToken
+    /** 注解的模块属于其确证来源，新生成注解使用本次 parser 模块。 */
+    fun annotationSourceModuleName(source: CjSourceElement?, parserModuleName: String): String = parserModuleName
 
     /**
      * 普通源码保留自身 source。每个 builder 独占行表缓存，在 raw 构造的读访问内捕获，

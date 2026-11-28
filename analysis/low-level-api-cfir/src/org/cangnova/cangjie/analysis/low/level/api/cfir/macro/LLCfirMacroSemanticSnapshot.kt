@@ -46,7 +46,7 @@ import java.util.concurrent.atomic.AtomicReference
 internal data class LLCfirMacroSemanticSnapshotConstructionInputs(
     val declarationsByFile: IdentityHashMap<CfirFile, List<CfirDeclaration>>,
     val fileByElement: IdentityHashMap<CfirElement, CfirFile>,
-    val declarationPsiByCfir: IdentityHashMap<CfirDeclaration, CjDeclaration?>,
+    val declarationPsiByCfir: IdentityHashMap<CfirDeclaration, CjElement>,
     val reparsedPsiFiles: IdentityHashMap<CjFile, CfirFile>,
     val reparsedPsiOwners: IdentityHashMap<CjElement, CfirDeclaration>,
     val canonicalPsiByReparsedPsi: IdentityHashMap<CjElement, CjElement>,
@@ -262,6 +262,7 @@ class LLCfirMacroSemanticSnapshot internal constructor(
         Collections.unmodifiableMap(IdentityHashMap(constructionInputs.reparsedPsiOwners))
     private val canonicalPsiByReparsedPsi: Map<CjElement, CjElement> =
         Collections.unmodifiableMap(IdentityHashMap(constructionInputs.canonicalPsiByReparsedPsi))
+    private val generatedDeclarationsByPsiIdentity: Map<CjElement, List<CfirDeclaration>>
 
     fun ownsReparsedPsi(element: PsiElement): Boolean = reparsedPsiFiles.containsKey(element.containingFile)
 
@@ -349,7 +350,7 @@ class LLCfirMacroSemanticSnapshot internal constructor(
                 // PSI 身份索引表达真实源码声明的 owner 关系；synthetic/fake source（例如 implicit constructor）
                 // 可以共享 class PSI，但不能把 class 的唯一 source owner 基数扩成二。
                 if (declaration.source?.kind != CjRealSourceElementKind) continue
-                val sourcePsi = constructionInputs.declarationPsiByCfir[declaration] ?: continue
+                val sourcePsi = constructionInputs.declarationPsiByCfir[declaration] as? CjDeclaration ?: continue
                 declarationsBySource.getOrPut(sourcePsi, ::mutableListOf).addIdentity(declaration)
                 if (declaration is CfirClassLikeDeclaration && sourcePsi is CjClassLikeDeclaration) {
                     classifiersBySource.getOrPut(sourcePsi, ::mutableListOf).addIdentity(declaration)
@@ -464,6 +465,14 @@ class LLCfirMacroSemanticSnapshot internal constructor(
         macroGeneratedClassifierNamesByPackage = freezeSets(macroGeneratedClassifierNames)
         macroGeneratedCallableNamesByPackage = freezeSets(macroGeneratedCallableNames)
         containerByDeclaration = Collections.unmodifiableMap(declarationContainers)
+        val generatedDeclarationsByPsi = IdentityHashMap<CjElement, MutableList<CfirDeclaration>>()
+        for (declaration in generatedSurfaceIdsByDeclaration.keys) {
+            val sourceKind = declaration.source?.kind
+            if (sourceKind != CjRealSourceElementKind && sourceKind != CjFakeSourceElementKind.PatternBindingVariable) continue
+            val psi = constructionInputs.declarationPsiByCfir[declaration] ?: continue
+            generatedDeclarationsByPsi.getOrPut(psi, ::mutableListOf).add(declaration)
+        }
+        generatedDeclarationsByPsiIdentity = freezeIdentityLists(generatedDeclarationsByPsi)
         macroSurfaceIdsByDeclarationIdentity = Collections.unmodifiableMap(
             IdentityHashMap<CfirDeclaration, Set<Long>>().also { frozen ->
                 generatedSurfaceIdsByDeclaration.forEach { (declaration, surfaceIds) ->
@@ -494,6 +503,10 @@ class LLCfirMacroSemanticSnapshot internal constructor(
     /** 唯一语义声明查询；一对多或无输出均返回 null。 */
     fun declarationForSource(source: CjDeclaration): CfirDeclaration? =
         declarationsForSource(source).singleOrNull()
+
+    /** 按规范生成 PSI 查询唯一声明，多个生成叶子即使共享宏调用也各自拥有索引项。 */
+    fun generatedDeclarationForPsi(psi: CjElement): CfirDeclaration? =
+        generatedDeclarationsByPsiIdentity[psi]?.singleOrNull()
 
     /** 判断声明是否是 splice 注册的物理 carrier；空结果 carrier 也会返回 true。 */
     fun isDeclarationReplacementCarrier(source: CjDeclaration): Boolean = source in declarationReplacementCarriers
@@ -664,7 +677,7 @@ class LLCfirMacroSemanticSnapshotStore(private val project: Project) : Modificat
         val generatedSourceOrigins = sourceOriginsSnapshot.originsBySource
         val resolvedOriginIds = sourceOriginsSnapshot.resolvedOriginIds
         val psiSources = ReadAction.compute<LLCfirMacroPsiSources, RuntimeException> {
-            val declarationPsiByCfir = IdentityHashMap<CfirDeclaration, CjDeclaration?>()
+            val declarationPsiByCfir = IdentityHashMap<CfirDeclaration, CjElement>()
             val reparsedPsiFiles = IdentityHashMap<CjFile, CfirFile>()
             val reparsedPsiOwners = IdentityHashMap<CjElement, CfirDeclaration>()
             val canonicalPsiByReparsedPsi = IdentityHashMap<CjElement, CjElement>()
@@ -701,9 +714,10 @@ class LLCfirMacroSemanticSnapshotStore(private val project: Project) : Modificat
                 }
             }
             declarationsByFile.values.forEach { declarations ->
-                declarations.forEach { declaration ->
+                for (declaration in declarations) {
                     ProgressManager.checkCanceled()
-                    declarationPsiByCfir[declaration] = declaration.psi as? CjDeclaration
+                    val psi = declaration.psi as? CjElement ?: continue
+                    declarationPsiByCfir[declaration] = psi
                 }
             }
 
@@ -840,7 +854,7 @@ class LLCfirMacroSemanticSnapshotStore(private val project: Project) : Modificat
     }
 
     private data class LLCfirMacroPsiSources(
-        val declarationPsiByCfir: IdentityHashMap<CfirDeclaration, CjDeclaration?>,
+        val declarationPsiByCfir: IdentityHashMap<CfirDeclaration, CjElement>,
         val reparsedPsiFiles: IdentityHashMap<CjFile, CfirFile>,
         val reparsedPsiOwners: IdentityHashMap<CjElement, CfirDeclaration>,
         val canonicalPsiByReparsedPsi: IdentityHashMap<CjElement, CjElement>,

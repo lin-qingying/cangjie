@@ -1822,7 +1822,7 @@ class PsiRawCfirBuilder(
             return buildAnnotationCall {
                 source = sourceOverride?.let(sourceElementFactory::createSource) ?: annotation.toRawSourceElement()
                 typeRef = typeRefOverride ?: convertTypeRef(annotation.typeReference)
-                initializeRawAnnotationSyntax(compileTimeVisible, annotationName, context.sourceModuleName)
+                initializeRawAnnotationSyntax(compileTimeVisible, annotationName, context.sourceModuleName, sourceElementFactory)
                 argumentList = buildArgumentList {
                     source = argumentListSourceOverride?.let(sourceElementFactory::createSource) ?: annotation.valueArgumentList?.toRawSourceElement()
                     this.arguments.addAll(arguments)
@@ -2162,6 +2162,7 @@ class PsiRawCfirBuilder(
             sourceModuleName = context.sourceModuleName,
             enclosingClassFqName = (containerSymbolIfAny as? CfirClassLikeSymbol<*>)?.classId?.asSingleFqName(),
             enclosingFunctionName = enclosingFunctionName(),
+            rawScopeSnapshot = context.captureMacroScope(),
         )
 
         /** 构造 macro surface 所需的语法容器上下文。 */
@@ -3738,6 +3739,7 @@ class PsiRawCfirBuilder(
                     sourceModuleName = context.sourceModuleName,
                     enclosingClassFqName = null,
                     enclosingFunctionName = null,
+                    rawScopeSnapshot = context.captureMacroScope(),
                 ),
                 modifiers = emptyList(),
                 carriedAnnotations = emptyList(),

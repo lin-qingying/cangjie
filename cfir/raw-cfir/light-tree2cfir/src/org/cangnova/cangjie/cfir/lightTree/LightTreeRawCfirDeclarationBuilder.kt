@@ -1508,7 +1508,7 @@ class LightTreeRawCfirDeclarationBuilder(
         return buildAnnotationCall {
             source = sourceOverride?.let(sourceElementFactory::createSource) ?: annotation.toSource()
             typeRef = typeRefOverride ?: buildAnnotationTypeRef(rawName, annotation)
-            initializeRawAnnotationSyntax(compileTimeVisible, rawName, context.sourceModuleName)
+            initializeRawAnnotationSyntax(compileTimeVisible, rawName, context.sourceModuleName, sourceElementFactory)
             argumentList = buildArgumentList {
                 source = argumentListSourceOverride?.let(sourceElementFactory::createSource) ?: valueArgumentList?.toSource()
                 this.arguments.addAll(arguments)
@@ -2269,6 +2269,7 @@ class LightTreeRawCfirDeclarationBuilder(
             sourceModuleName = context.sourceModuleName,
             enclosingClassFqName = classFqName,
             enclosingFunctionName = functionName,
+            rawScopeSnapshot = context.captureMacroScope(),
         )
     }
 

@@ -35,6 +35,9 @@ import org.cangnova.cangjie.parsing.CangJieParserDefinition
 import org.cangnova.cangjie.psi.CjNodeTypes
 import org.cangnova.cangjie.psi.CjAnnotations
 import org.cangnova.cangjie.psi.CjParameter
+import org.cangnova.cangjie.psi.CjParameterList
+import org.cangnova.cangjie.parsing.ANNOTATION_MODULE_PROVENANCE
+import org.cangnova.cangjie.source.isInSameSourceTree
 import org.cangnova.cangjie.psi.CjPsiFactory
 import org.cangnova.cangjie.source.CjLightSourceElement
 import org.cangnova.cangjie.source.CjPsiSourceElement
@@ -96,8 +99,9 @@ private fun reparsePsiMacroFragment(
             sourceElementFactory = MacroFragmentSourceElementFactory(
                 checkNotNull(input.sourceMap), element.toCjPsiSourceElement(), startOffset,
                 surface.surfaceId, input.sourceMapping,
+                input.inheritedAnnotationSnapshots,
             ),
-        )
+        ).also { it.context.restoreMacroScope(surface.scopeContext.rawScopeSnapshot) }
 
     return when {
         mode == MacroFragmentParser.Mode.CUSTOM_ANNOTATION -> {
@@ -107,6 +111,7 @@ private fun reparsePsiMacroFragment(
             val annotationText = text.withAbsoluteSourceStart(surface.sourceRange?.startOffset ?: 0)
             val annotationFile = psiFactory.createAnnotationOnlyFile(
                 "$annotationText func __macro_annotation__() {}",
+                input.annotationModuleProvenance(surface.sourceRange?.startOffset ?: 0),
             )
             val annotation = PsiTreeUtil.findChildOfType(annotationFile, CjAnnotations::class.java)
                 ?.entries
@@ -115,7 +120,9 @@ private fun reparsePsiMacroFragment(
             val annotationSourceOverride: CjSourceElement? = input.annotationSnapshot?.let { snapshot ->
                 surface.annotationReparseSource(snapshot)
             }
-            PsiRawCfirBuilder(session).buildAnnotationCallInPackage(
+            PsiRawCfirBuilder(session, sourceElementFactory = input.customAnnotationSourceFactory()).also {
+                it.context.restoreMacroScope(surface.scopeContext.rawScopeSnapshot)
+            }.buildAnnotationCallInPackage(
                 annotation = annotation,
                 containingSymbol = containingSymbol,
                 packageFqName = packageFqName,
@@ -124,7 +131,7 @@ private fun reparsePsiMacroFragment(
             )
         }
         surface is MacroSurfaceParam -> {
-            val parameter = psiFactory.createSingleParameter(text) ?: return null
+            val parameter = psiFactory.createSingleParameter(text, input) ?: return null
             val original = surface.replaceHandle.carrier as? CfirValueParameter ?: return null
             builderFor(parameter, parameter.textRange.startOffset).buildValueParameterInPackage(
                 parameter = parameter,
@@ -139,7 +146,7 @@ private fun reparsePsiMacroFragment(
         else -> {
             // 官方 ReplaceEachMacro 在声明 token reparse 时开启 custom-annotation
             // 模式；否则 `@!Hide` 会被重新识别为另一个 declaration macro。
-            val fragment = psiFactory.createAnnotationOnlyFile(text)
+            val fragment = psiFactory.createAnnotationOnlyFile(text, input.annotationModuleProvenance(0))
             MacroDeclarationFragment(builderFor(fragment, 0).buildDeclarationFragmentInPackage(fragment, packageFqName))
         }
     }
@@ -317,6 +324,7 @@ private fun createParsedLightTreeFragment(
         CangJieLexer(),
         text,
     )
+    psiBuilder.putUserData(ANNOTATION_MODULE_PROVENANCE, input.annotationModuleProvenance(fragmentStartOffset))
     val lightTree = parse(psiBuilder)
     return ParsedLightTreeFragment(
         tree = lightTree,
@@ -327,25 +335,52 @@ private fun createParsedLightTreeFragment(
             source = text,
             sourceElementFactory = if (input.mode == MacroFragmentParser.Mode.CUSTOM_ANNOTATION) {
                 // 官方 custom annotation 保留显式原槽位 source override。
-                CfirRawSourceElementFactory.Original()
+                input.customAnnotationSourceFactory()
             } else {
                 MacroFragmentSourceElementFactory(
                     checkNotNull(input.sourceMap),
                     CjLightSourceElement(lightTree.root, 0, text.length, lightTree),
                     fragmentStartOffset, input.node.surface.surfaceId, input.sourceMapping,
+                    input.inheritedAnnotationSnapshots,
                 )
             },
-        ),
+        ).also { it.context.restoreMacroScope(input.node.surface.scopeContext.rawScopeSnapshot) },
     )
 }
 
 /**
  * 使用 PSI factory 从文本中解析单个参数。
  */
-private fun CjPsiFactory.createSingleParameter(text: String): CjParameter? {
-    return runCatching {
-        createParameterList("($text)").parameters.singleOrNull()
-    }.getOrNull()
+private fun CjPsiFactory.createSingleParameter(text: String, input: MacroFragmentInput): CjParameter? {
+    val prefix = "func __macro_fragment__("
+    val file = createAnnotationOnlyFile("$prefix$text) {}", input.annotationModuleProvenance(prefix.length))
+    return PsiTreeUtil.findChildOfType(file, CjParameterList::class.java)?.parameters?.singleOrNull()
+}
+
+/** 前置 annotation 的 parser 模块只来自 sourceMap 确证的原 @ token 及原槽位身份。 */
+private fun MacroFragmentInput.annotationModuleProvenance(fragmentStartOffset: Int): (Int) -> String? = { offset ->
+    val start = offset - fragmentStartOffset
+    val original = sourceMap?.takeIf { start >= 0 && start < it.text.length }?.originalRange(start, start + 1)
+    val snapshots = if (mode == MacroFragmentParser.Mode.CUSTOM_ANNOTATION) {
+        listOfNotNull(annotationSnapshot)
+    } else inheritedAnnotationSnapshots
+    snapshots.firstOrNull { snapshot ->
+        original != null && snapshot.annotationSource.isInSameSourceTree(original) &&
+            snapshot.annotationSource.startOffset == original.startOffset
+    }?.originalAnnotation?.sourceModuleName
+}
+
+/** custom payload 已由原槽位 tokens 验证，模块事实按该槽位的完整 source 身份消费。 */
+private fun MacroFragmentInput.customAnnotationSourceFactory(): CfirRawSourceElementFactory {
+    val snapshot = checkNotNull(annotationSnapshot)
+    return object : CfirRawSourceElementFactory by CfirRawSourceElementFactory.Original() {
+        override fun annotationSourceModuleName(source: CjSourceElement?, parserModuleName: String): String {
+            val original = snapshot.annotationSource
+            return if (source != null && source.isInSameSourceTree(original) &&
+                source.startOffset == original.startOffset && source.endOffset == original.endOffset
+            ) snapshot.originalAnnotation.sourceModuleName else parserModuleName
+        }
+    }
 }
 
 /**

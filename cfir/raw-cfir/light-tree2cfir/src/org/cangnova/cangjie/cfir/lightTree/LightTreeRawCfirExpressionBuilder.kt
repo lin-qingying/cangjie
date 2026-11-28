@@ -2496,6 +2496,7 @@ class LightTreeRawCfirExpressionBuilder(
                 sourceModuleName = context.sourceModuleName,
                 enclosingClassFqName = null,
                 enclosingFunctionName = null,
+                rawScopeSnapshot = context.captureMacroScope(),
             ),
             modifiers = emptyList(),
             carriedAnnotations = emptyList(),

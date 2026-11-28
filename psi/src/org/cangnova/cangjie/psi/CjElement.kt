@@ -253,6 +253,8 @@ private fun CjFile.findCompiledPsiByStubPath(path: List<CjCompiledStubPathSegmen
  */
 open class CjElementImpl(node: ASTNode) : ASTWrapperPsiElement(node), CjElement {
 
+    override fun getNavigationElement(): PsiElement = findMacroNavigationElement() ?: super.getNavigationElement()
+
     /**
      * 返回元素的字符串表示
      *

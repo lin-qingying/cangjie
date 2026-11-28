@@ -229,6 +229,7 @@ import com.intellij.lexer.FlexLexer;
  * =======
  */
 WHITE_SPACE_CHAR=[\ \r\n\t\f]          // 空格、换行、回车、制表符、换页符（\r 必须与 \n 同等视为行终止）
+LINE_BREAK=\r\n|\n                    // 官方 LF/CRLF 换行序列参与字符串状态转换
 
 /* 标识符相关定义
  * ===========
@@ -312,8 +313,8 @@ DOUBLE_QUO = \"                      // 双引号
  */
 
 // 字符串内容
-REGULAR_STRING_PART_DOUBLE=[^\\\"\r\n\$]+  // 双引号字符串内容（非转义字符，不含回车）
-REGULAR_STRING_PART_SINGLE=[^\\\'\r\n\$]+  // 单引号字符串内容（非转义字符，不含回车）
+REGULAR_STRING_PART_DOUBLE=[^\\\"\r\n\$]+  // CR 独立成段，保证完整 CRLF 使用最长换行匹配
+REGULAR_STRING_PART_SINGLE=[^\\\'\r\n\$]+  // CR 独立成段，保证完整 CRLF 使用最长换行匹配
 INTERPOLATION = \$+                      // 字符串插值标记
 
 // 字符串模板
@@ -413,7 +414,7 @@ EXPONENT_PART=[Ee][-]?{DIGITS_WITH_TRAILING_UNDERSCORE}      // 科学计数法�
 
 // 哈希字符串内容处理
 <HSAH_STRING_SINGLE> {
-    \n                { return CjTokens.REGULAR_STRING_PART; }  // 换行符处理
+    {LINE_BREAK}     { return CjTokens.REGULAR_STRING_PART; }  // 换行符处理
     \" | \'          { return CjTokens.REGULAR_STRING_PART; }  // 引号处理
     \\               { return CjTokens.REGULAR_STRING_PART; }  // 反斜杠处理
     {LONELY_DOLLAR}  { return CjTokens.REGULAR_STRING_PART; }
@@ -443,7 +444,7 @@ EXPONENT_PART=[Ee][-]?{DIGITS_WITH_TRAILING_UNDERSCORE}      // 科学计数法�
 
 // 哈希字符串（双引号）内容处理
 <HSAH_STRING_DOUBLE> {
-    \n                { return CjTokens.REGULAR_STRING_PART; }  // 换行符处理
+    {LINE_BREAK}     { return CjTokens.REGULAR_STRING_PART; }  // 换行符处理
     \" | \'          { return CjTokens.REGULAR_STRING_PART; }  // 引号处理
     \\               { return CjTokens.REGULAR_STRING_PART; }  // 反斜杠处理
     {LONELY_DOLLAR}  { return CjTokens.REGULAR_STRING_PART; }
@@ -481,7 +482,7 @@ EXPONENT_PART=[Ee][-]?{DIGITS_WITH_TRAILING_UNDERSCORE}      // 科学计数法�
 
 // 原始字符串（单引号）内容处理
 <RAW_STRING_SINGLE> {
-    \n                { return CjTokens.REGULAR_STRING_PART; }  // 换行符处理
+    {LINE_BREAK}     { return CjTokens.REGULAR_STRING_PART; }  // 换行符处理
     \" | \'          { return CjTokens.REGULAR_STRING_PART; }  // 引号处理
     \\               { return CjTokens.REGULAR_STRING_PART; }  // 反斜杠处理
     {THREE_OR_SINGLE_MORE_QUO} {  // 结束引号处理
@@ -504,7 +505,7 @@ EXPONENT_PART=[Ee][-]?{DIGITS_WITH_TRAILING_UNDERSCORE}      // 科学计数法�
 
 // 原始字符串（双引号）内容处理
 <RAW_STRING_DOUBLE> {
-    \n                { return CjTokens.REGULAR_STRING_PART; }  // 换行符处理
+    {LINE_BREAK}     { return CjTokens.REGULAR_STRING_PART; }  // 换行符处理
     \" | \'          { return CjTokens.REGULAR_STRING_PART; }  // 引号处理
     \\               { return CjTokens.REGULAR_STRING_PART; }  // 反斜杠处理
     {THREE_OR_DOUBLE_MORE_QUO} {  // 结束引号处理
@@ -529,9 +530,9 @@ EXPONENT_PART=[Ee][-]?{DIGITS_WITH_TRAILING_UNDERSCORE}      // 科学计数法�
     pushState("STRING_SINGLE",STRING_SINGLE);
     return CjTokens.OPEN_QUOTE;
 }
-<STRING_SINGLE> \n {
+<STRING_SINGLE> {LINE_BREAK} {
     popState();
-    yypushback(1);
+    yypushback(yylength());
     return CjTokens.DANGLING_NEWLINE;
 }
 <STRING_SINGLE>     {SINGLE_QUO} {
@@ -546,9 +547,9 @@ EXPONENT_PART=[Ee][-]?{DIGITS_WITH_TRAILING_UNDERSCORE}      // 科学计数法�
     pushState("STRING_DOUBLE",STRING_DOUBLE);
     return CjTokens.OPEN_QUOTE;
 }
-<STRING_DOUBLE> \n {
+<STRING_DOUBLE> {LINE_BREAK} {
     popState();
-    yypushback(1);
+    yypushback(yylength());
     return CjTokens.DANGLING_NEWLINE;
 }
 <STRING_DOUBLE>     {DOUBLE_QUO} {
@@ -557,6 +558,11 @@ EXPONENT_PART=[Ee][-]?{DIGITS_WITH_TRAILING_UNDERSCORE}      // 科学计数法�
 }
 <STRING_DOUBLE> {ESCAPE_SEQUENCE} {
     return CjTokens.ESCAPE_SEQUENCE;
+}
+
+// 孤立 CR 是内容；CRLF 的两字符换行规则优先于该单字符匹配。
+<STRING_DOUBLE,STRING_SINGLE,RAW_STRING_DOUBLE,RAW_STRING_SINGLE,HSAH_STRING_DOUBLE,HSAH_STRING_SINGLE> \r {
+    return CjTokens.REGULAR_STRING_PART;
 }
 
 

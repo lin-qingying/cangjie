@@ -78,6 +78,9 @@ data class CfirAnnotationSlotSnapshot(
  * 1. raw build 前创建；
  * 2. raw build / construction 期间可写；
  * 3. stable splice + cache snapshot 后或 failure path 返回前冻结。
+ *
+ * IDE 的实时 raw build 和后台宏构造可以并行读取同一 session。
+ * 两套索引和冻结状态共用 registry 监视器，使每次槽位变更对查询者原子可见。
  */
 class CfirAnnotationMetadataRegistry : CfirSessionComponent {
     /** 以稳定槽位身份索引的 snapshot 表，保证同一 owner/index 只记录一次。 */
@@ -89,10 +92,12 @@ class CfirAnnotationMetadataRegistry : CfirSessionComponent {
 
     /** 当前 registry 是否已进入只读状态。 */
     val isFrozen: Boolean
+        @Synchronized
         get() = frozen
 
     /** 按记录顺序返回所有 annotation 槽位 snapshot。 */
     val snapshots: List<CfirAnnotationSlotSnapshot>
+        @Synchronized
         get() = snapshotsByCarrier.values.toList()
 
     /**
@@ -101,6 +106,7 @@ class CfirAnnotationMetadataRegistry : CfirSessionComponent {
      * 本方法同时建立 carrier 与 annotation identity 两套索引，并校验
      * [CfirAnnotationSlotSnapshot.annotationIndex] 仍然指向同一个原始 annotation 对象。
      */
+    @Synchronized
     fun record(snapshot: CfirAnnotationSlotSnapshot): CfirAnnotationReplaceCarrier {
         check(!frozen) { "CfirAnnotationMetadataRegistry is frozen." }
         val carrier = CfirAnnotationReplaceCarrier(
@@ -128,6 +134,7 @@ class CfirAnnotationMetadataRegistry : CfirSessionComponent {
      *
      * 原 annotation 未登记 snapshot 表示 raw builder 生命周期被破坏，必须作为不变量失败。
      */
+    @Synchronized
     fun recordDerivedSlot(
         sourceAnnotation: CfirAnnotationCall,
         owner: CfirDeclaration,
@@ -151,10 +158,12 @@ class CfirAnnotationMetadataRegistry : CfirSessionComponent {
     }
 
     /** 通过稳定槽位身份查找 snapshot。 */
+    @Synchronized
     fun snapshot(carrier: CfirAnnotationReplaceCarrier): CfirAnnotationSlotSnapshot? =
         snapshotsByCarrier[carrier]
 
     /** 通过原始或迁移后的 annotation 对象身份查找 snapshot。 */
+    @Synchronized
     fun snapshot(annotation: CfirAnnotationCall): CfirAnnotationSlotSnapshot? =
         snapshotsByAnnotationIdentity[annotation]
 
@@ -169,6 +178,7 @@ class CfirAnnotationMetadataRegistry : CfirSessionComponent {
      *
      * 迁移只替换 annotation 对象身份；原始语法、编译期可见性与精确 source 必须保持不变。
      */
+    @Synchronized
     fun migrate(carrier: CfirAnnotationReplaceCarrier, replacement: CfirAnnotationCall) {
         check(!frozen) { "CfirAnnotationMetadataRegistry is frozen." }
         val snapshot = snapshotsByCarrier[carrier] ?: return
@@ -181,6 +191,7 @@ class CfirAnnotationMetadataRegistry : CfirSessionComponent {
     }
 
     /** 冻结 registry，阻止 construction 后续阶段继续修改 annotation 槽位元数据。 */
+    @Synchronized
     fun freeze() {
         frozen = true
     }

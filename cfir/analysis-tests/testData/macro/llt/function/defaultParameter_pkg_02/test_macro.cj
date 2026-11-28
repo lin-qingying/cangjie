@@ -683,11 +683,11 @@ public interface Interface_1731854046694_123 <: Interface_1731854046694_124 {
             case -66 | 62 | -15 | 98 =>
                 @echo let var_1731854046694_792: Int = Int64(44);
                 ((Int64(var_1731854046694_734) & 127)..=(Int64(var_1731854046694_792) & 127) : (Int64(-97) | 1));
-                var_1731854046694_797 &&= true
+                <!DEPRECATED_WARNING!>var_1731854046694_797<!> &&= true
                 UInt16(191) % ((var_1731854046694_716) | 1)
 
             case _ =>
-                var_1731854046694_697;
+                <!DEPRECATED_WARNING!>var_1731854046694_697<!>;
                 var_1731854046694_688 / ((Int32(-98)) | 1);
                 UInt16(217) + UInt16(140)
         }
@@ -1812,7 +1812,7 @@ public open class Class_1731854046694_441 <: Class_1731854046694_204 & Interface
         if (match (var_1731854046694_3578) {
             case caseVar_1731854046694_3604 => var_1731854046694_1346
 
-            case _ =>
+            case <!UNREACHABLE_PATTERN!>_<!> =>
                 @echo const var_1731854046694_3611: Bool = true;
                 var_1731854046694_3611
         }) { // block id: 3613
@@ -2314,7 +2314,7 @@ main(): Int64 {
                         var_1731854046694_2018
 
                     case 34 =>
-                        ((<!TYPE_MISMATCH!>Int64(Int64(-61)) & 127<!>)..(<!TYPE_MISMATCH!>Int64(var_1731854046694_1994) & 127<!>) : (var_1731854046694_1994 | 1));
+                        ((Int64(Int64(-61)) & 127)..(Int64(var_1731854046694_1994) & 127) : (var_1731854046694_1994 | 1));
                         var_1731854046694_51;
                         ((UInt64(var_1731854046694_2030) & 127)..=(UInt64(UInt64(13)) & 127) : (Int64(-98) | 1))
 
@@ -2371,10 +2371,10 @@ Y)/|?
                         var_1731854046694_2212, <!DEPRECATED_WARNING!>var_1731854046694_2218<!>), var_1731854046694_2221, var_1731854046694_2224,
                     var_1731854046694_1985, Float64(81.0))
             }) {
-                case (_: Rune, (caseVar_1731854046694_2230, caseVar_1731854046694_2231, _: Int8, caseVar_1731854046694_2232: Int32, _), _: Range<UInt64>, caseVar_1731854046694_2233, (caseVar_1731854046694_2234: Int8, caseVar_1731854046694_2235, caseVar_1731854046694_2236), _: (Option<Array<Range<Int8>>>, 
+                case <!UNREACHABLE_PATTERN!>(_: Rune, (caseVar_1731854046694_2230, caseVar_1731854046694_2231, _: Int8, caseVar_1731854046694_2232: Int32, _), _: Range<UInt64>, caseVar_1731854046694_2233, (caseVar_1731854046694_2234: Int8, caseVar_1731854046694_2235, caseVar_1731854046694_2236), _: (Option<Array<Range<Int8>>>,
                             (Float64, Float64, Range<Int32>, UInt32, UInt8), (String, Unit, Unit, Array<Unit>, Range<UInt32>, 
                             Range<Int64>), UInt8, ((String, Unit, Unit, Array<Unit>, Range<UInt32>, Range<Int64>), Range<UInt64>, 
-                            Option<Unit>), Array<Range<Int16>>, Range<Int64>, UInt8, Float64), _, _, caseVar_1731854046694_2237: Array<Bool>) =>
+                            Option<Unit>), Array<Range<Int16>>, Range<Int64>, UInt8, Float64), _, _, caseVar_1731854046694_2237: Array<Bool>)<!> =>
                     var_1731854046694_2224;
                     var_1731854046694_51
 

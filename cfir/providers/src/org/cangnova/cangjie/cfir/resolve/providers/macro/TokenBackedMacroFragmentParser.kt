@@ -58,7 +58,13 @@ class TokenBackedMacroFragmentParser(
         }
         // baseline Batch 8: 先按 token-stage 重组到稳定点（newTokens token-stage re-eval）
         val reEvaluatedTokens = MacroTokenReEvaluator.reTokenizeUntilStable(tokens, reTokenize)
-        val sourceMap = MacroFragmentSourceMap.materialize(reEvaluatedTokens, node.surface.surfaceId).trimmed()
+        val hasSyntaxOutput = reEvaluatedTokens.any { !it.isTrivia }
+        val parseTokens = if (mode == MacroFragmentParser.Mode.DECLARATION && hasSyntaxOutput) {
+            input.inheritedAnnotationTokens + reEvaluatedTokens
+        } else {
+            reEvaluatedTokens
+        }
+        val sourceMap = MacroFragmentSourceMap.materialize(parseTokens, node.surface.surfaceId).trimmed()
         val source = sourceMap.text
         if (mode == MacroFragmentParser.Mode.CUSTOM_ANNOTATION &&
             source != input.annotationSnapshot!!.rawSyntax.trim()
@@ -69,7 +75,7 @@ class TokenBackedMacroFragmentParser(
             )
         }
         val reparseInput = input.copy(tokens = reEvaluatedTokens, sourceMap = sourceMap)
-        if (source.isEmpty()) {
+        if (source.isEmpty() || mode == MacroFragmentParser.Mode.DECLARATION && !hasSyntaxOutput) {
             if (mode == MacroFragmentParser.Mode.DECLARATION) {
                 return MacroFragmentResult.Success(
                     originNode = node,
