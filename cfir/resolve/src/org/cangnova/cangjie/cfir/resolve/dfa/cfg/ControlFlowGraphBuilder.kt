@@ -620,6 +620,9 @@ class ControlFlowGraphBuilder private constructor(
     // ----------------------------------- Named / Constructor / Anonymous function -----------------------------------
 
     /** 进入具名函数或构造器 CFG 子图。 */
+    fun enterFunction(function: CfirFunction): Pair<LocalFunctionDeclarationNode?, FunctionEnterNode> =
+        enterFunction(function as CfirFunctionBodyOwner)
+
     fun enterFunction(function: CfirFunctionBodyOwner): Pair<LocalFunctionDeclarationNode?, FunctionEnterNode> {
         require(function !is CfirAnonymousFunction)
         val name = when (function) {
@@ -656,6 +659,9 @@ class ControlFlowGraphBuilder private constructor(
         }
         return localFunctionNode to enterNode
     }
+
+    fun exitFunction(function: CfirFunction): Pair<FunctionExitNode, ControlFlowGraph> =
+        exitFunction(function as CfirFunctionBodyOwner)
 
     /** 退出函数 CFG；postponed lambda 的出口由完成调用所属层统一收束。 */
     fun exitFunction(function: CfirFunctionBodyOwner): Pair<FunctionExitNode, ControlFlowGraph> {
@@ -825,11 +831,11 @@ class ControlFlowGraphBuilder private constructor(
 
     /** 进入默认参数 CFG 子图。 */
     fun enterDefaultArguments(parameter: CfirValueParameter): EnterDefaultArgumentsNode {
-        val outerEnter = lastNode
+        val outerEnter = lastNodeOrNull
         val enter = enterGraph(parameter, "<default>", ControlFlowGraph.Kind.DefaultArgument) {
             createEnterDefaultArgumentsNode(it) to createExitDefaultArgumentsNode(it)
         }
-        addEdge(outerEnter, enter)
+        outerEnter?.let { addEdge(it, enter) }
         return enter
     }
 

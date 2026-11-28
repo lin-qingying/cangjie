@@ -375,6 +375,12 @@ class CfirDataFlowAnalyzer(
             }
     }
 
+    /** 旧 CfirFunction JVM 签名与 CfirFunctionBodyOwner 共用同一次进入事件。 */
+    @JvmOverloads
+    fun enterFunction(function: CfirFunction, calledInPlace: Boolean = false) {
+        enterFunction(function as CfirFunctionBodyOwner, calledInPlace)
+    }
+
     /**
      * 进入函数 CFG 和局部变量赋值分析作用域。
      */
@@ -403,6 +409,10 @@ class CfirDataFlowAnalyzer(
             if (function is CfirAnonymousFunction) enterRepeatableStatement(flow, assigned)
         }
     }
+
+    /** 保留原 CfirFunction JVM 出口，由共同 owner 入口关闭实际图。 */
+    fun exitFunction(function: CfirFunction): CfirControlFlowGraphReference? =
+        exitFunction(function as CfirFunctionBodyOwner)
 
     /**
      * 退出函数 CFG 和局部变量赋值分析作用域，并返回函数 CFG 引用。
