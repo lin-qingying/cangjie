@@ -155,7 +155,8 @@ internal open class CfirElementsRecorder : CfirVisitor<Unit, MutableMap<CjElemen
             is CjVarOrEnumPattern -> psi.reference
             else -> null
         }
-        reference?.let { cache(it, enumPattern.constructorReference, data) }
+        val constructorReference = enumPattern.constructorReference
+        if (reference != null && constructorReference != null) cache(reference, constructorReference, data)
     }
 
     /**

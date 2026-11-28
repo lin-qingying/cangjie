@@ -520,7 +520,7 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
                 val materializer = LLExtendPsiMaterializer(project) { extend ->
                     binaryExtendProvider.getPackageFqName(extend)
                 }
-                LLPsiBackedExtendProvider(binaryExtendProvider) { extend ->
+                LLPsiBackedExtendProvider(binaryExtendProvider, project) { extend ->
                     if (extend.source != null) {
                         extend
                     } else {

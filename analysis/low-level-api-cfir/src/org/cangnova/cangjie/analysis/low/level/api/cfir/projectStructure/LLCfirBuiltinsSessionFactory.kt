@@ -254,6 +254,7 @@ class LLCfirBuiltinsSessionFactory(private val project: Project) {
                         .LLExtendPsiMaterializer(project) { extend -> binaryExtendProvider.getPackageFqName(extend) }
                     org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLPsiBackedExtendProvider(
                         binaryExtendProvider,
+                        project,
                     ) { extend -> if (extend.source != null) extend else materializer.materialize(extend) ?: extend }
                 } else {
                     binaryExtendProvider

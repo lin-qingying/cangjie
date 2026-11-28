@@ -20,9 +20,6 @@ import org.cangnova.cangjie.cfir.correspondingValueParameter
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.originalIfFakeOverrideOrDelegated
 import org.cangnova.cangjie.cfir.ScopeSession
-import org.cangnova.cangjie.cfir.psi
-import org.cangnova.cangjie.cfir.resolve.providers.getContainingFile
-import org.cangnova.cangjie.cfir.resolve.providers.cfirProvider
 import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
@@ -407,16 +404,3 @@ internal sealed class LLCfirTargetResolver(
         }
     }
 }
-
-/**
- * 返回 pattern binding 变量所属的外层 pattern 变量。
- *
- * pattern binding 变量的隐式类型状态由所属 pattern 变量承载，解析前需要先推进 owner。
- */
-private val CfirPatternBindingVariable.owningPatternVariable: CfirPatternVariable?
-    get() {
-        val containingFile = moduleData.session.cfirProvider.getContainingFile(symbol) ?: return null
-        val bindingPsi = psi as? CjBindingPattern ?: return null
-        val ownerPsi = PsiTreeUtil.getParentOfType(bindingPsi, CjPatternVariable::class.java, false) ?: return null
-        return CfirElementFinder.findDeclaration(containingFile, ownerPsi) as? CfirPatternVariable
-    }

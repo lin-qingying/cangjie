@@ -510,6 +510,7 @@ class CfirPreparedPublicationTest {
                 ),
                 hasParenthesis = true,
                 attrTokens = emptyList(),
+                hasAttr = false,
                 inputTokens = emptyList(),
                 sourceRange = MacroSurfaceSourceRange(call.source, 0, 4),
                 scopeContext = MacroSurfaceScopeContext(packageName, moduleName, null, if (inHeader) null else owner.name),

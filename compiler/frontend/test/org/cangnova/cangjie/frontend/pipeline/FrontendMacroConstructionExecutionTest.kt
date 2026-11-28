@@ -923,7 +923,7 @@ class FrontendMacroConstructionExecutionTest {
                     }
                 }
                 val splicer = object : MacroStableSplicer {
-                    override fun applySlices(files: List<CfirFile>, slots: List<MacroReplaceSlot>): List<CfirFile> {
+                    override fun applySlices(files: List<CfirFile>, slots: List<MacroReplaceSlot>): MacroStableSpliceResult {
                         spliceCalls++
                         assertSame(metadata, slots.single().annotationMetadata)
                         throw expected

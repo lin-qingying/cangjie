@@ -2,6 +2,10 @@ package org.cangnova.cangjie.cfir.resolve.providers.macro
 
 import org.cangnova.cangjie.annotations.BuiltInAnnotationRegistry
 import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.parsing.CjExprKind
+import org.cangnova.cangjie.parsing.CjMacroFragmentParent
+import org.cangnova.cangjie.parsing.MacroParsingFacts
+import org.cangnova.cangjie.parsing.MacroParsingScope
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
@@ -163,6 +167,9 @@ class MacroSurfaceLookupTest {
         qualifiedName = FqName(name),
         isQualifiedName = false,
         kind = MacroSurface.Kind.PLAIN,
+        parsingFacts = MacroParsingFacts(
+            MacroParsingScope.Expression(CjExprKind.UNKNOWN_EXPR), CjMacroFragmentParent.OTHER, null,
+        ),
         hasParenthesis = false,
         attrTokens = attrTokens,
         hasAttr = attrTokens.isNotEmpty(),
@@ -187,7 +194,7 @@ class MacroSurfaceLookupTest {
             isInsideEnumBody = false,
             isInsideBlock = false,
         ),
-        replaceHandle = CfirReplaceHandle(id, null),
+        replaceHandle = CfirReplaceHandle(id, topLevelMacroOwnerSnapshot(FqName("test"))),
     )
 
     /** 构造指定源码范围的测试 token。 */

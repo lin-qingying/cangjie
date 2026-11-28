@@ -40,6 +40,7 @@ import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentPayload
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentResult
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroParsingDiagnosticRecord
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroReplaceSlot
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroStableSpliceResult
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroStableSplicer
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceDecl
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceToken
@@ -362,7 +363,7 @@ class MacroParsingWarningPublicationTest {
             val configuration = configuration(project, lightTree, executor)
             var spliceCount = 0
             val splicer = object : MacroStableSplicer {
-                override fun applySlices(files: List<CfirFile>, slots: List<MacroReplaceSlot>): List<CfirFile> {
+                override fun applySlices(files: List<CfirFile>, slots: List<MacroReplaceSlot>): MacroStableSpliceResult {
                     spliceCount++
                     sameAs(fixture.files.single(), files.single())
                     val fragment = instanceOf(MacroFragmentResult.Success::class.java, slots.single().fragment)
