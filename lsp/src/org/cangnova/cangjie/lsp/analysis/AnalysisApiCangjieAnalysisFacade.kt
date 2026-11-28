@@ -29,6 +29,7 @@ import org.cangnova.cangjie.documentation.markdown.MarkdownDocumentationRenderer
 import org.cangnova.cangjie.documentation.resolve.DefaultDocumentationService
 import org.cangnova.cangjie.documentation.resolve.DocumentationMode
 import org.cangnova.cangjie.documentation.resolve.DocumentationRequest
+import org.cangnova.cangjie.documentation.resolve.findCangJieDocumentationTarget
 import org.cangnova.cangjie.documentation.resolve.DocumentationResolution
 import org.cangnova.cangjie.codeinsight.folding.CangJieFoldingKind
 import org.cangnova.cangjie.codeinsight.folding.CangJieFoldingRangeCollector
@@ -569,12 +570,11 @@ class AnalysisApiCangjieAnalysisFacade(
         document: LspTextDocument,
         params: HoverParams,
     ): Hover? = semanticSupport.analyzeSnapshot(document) { snapshot ->
-        val target = semanticSupport.findPrimaryTarget(document, snapshot.psiFile, params.position)
-            ?: semanticSupport.findSemanticLeaf(document, snapshot.psiFile, params.position)
-            ?: return@analyzeSnapshot null
+        val origin = semanticSupport.findSemanticLeaf(document, snapshot.psiFile, params.position) ?: return@analyzeSnapshot null
+        val target = findCangJieDocumentationTarget(snapshot.psiFile, origin) ?: return@analyzeSnapshot null
         val request = DocumentationRequest(
             element = target,
-            origin = semanticSupport.findSemanticLeaf(document, snapshot.psiFile, params.position),
+            origin = origin,
             useSiteFile = snapshot.psiFile,
             mode = DocumentationMode.FULL,
         )

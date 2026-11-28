@@ -10,7 +10,7 @@ func help() {
 }
 
 func help2(): Unit {
-    return <!RETURN_TYPE_MISMATCH!>0<!>
+    return <!CANNOT_CONVERT_LITERAL!>0<!>
 }
 
 func help3(): Unit {

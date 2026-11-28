@@ -7,7 +7,9 @@
 // - ChkEnumPattern：找到的 constructor 类型必须与 subject 类型相等，否则报 sema_pattern_not_match；
 //   payload 个数不符报 sema_enum_pattern_param_size_error。
 //
-// 每个函数都与文件头的类型声明一起用 cjc 1.0.5 / 1.1.3 单独编译取证，两版结论一致；标记为本项目诊断名：
+// 传统限定形式保留已有 cjc 1.0.5 / 1.1.3 取证；裸泛型别名另由 1.1.3 完整源码复核。
+// 裸别名未指定类型实参时，constructor 模式由 subject 定型；此时不能套用完整实例化别名的失配规则。
+// 以下使用本项目诊断名：
 // sema_pattern_not_match -> PATTERN_NOT_MATCH、sema_undeclared_identifier -> UNRESOLVED_REFERENCE、
 // sema_enum_pattern_param_size_error -> ENUM_PATTERN_PARAM_SIZE_ERROR。
 
@@ -138,8 +140,8 @@ func ownerAliasTypeArgumentsDiffer(slot: Slot<Int64>): Int64 {
 
 func ownerPartiallyInstantiatedAliasArgumentsDiffer(value: FixedFirstEnum<String, Int64>): Int64 {
     match (value) {
-        case <!PATTERN_NOT_MATCH!>FixedFirstAlias.Both(first, second)<!> => 0
-        case _ => 1
+        case FixedFirstAlias.Both(first, second) => 0
+        case <!UNREACHABLE_PATTERN!>_<!> => 1
     }
 }
 

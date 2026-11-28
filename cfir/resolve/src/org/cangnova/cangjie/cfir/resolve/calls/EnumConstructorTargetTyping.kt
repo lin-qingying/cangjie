@@ -9,13 +9,17 @@ import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirResolvable
 import org.cangnova.cangjie.cfir.references.CfirResolvedErrorReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
-import org.cangnova.cangjie.cfir.references.builder.buildResolvedNamedReference
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallKind
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithCandidate
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.semantics.isSuccess
 import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
+import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
+import org.cangnova.cangjie.cfir.types.ConeStubType
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.withReplacedSourceAndType
+import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
 import org.cangnova.cangjie.cfir.types.ConeLookupTagBasedType
@@ -110,6 +114,13 @@ internal fun Candidate.noArgEnumConstructorTargetType(
     expectedType: ConeCangJieType,
     session: CfirSession,
 ): ConeCangJieType? {
+    if (isSourceCompletionWithdrawn) return null
+    // FULL 写回只借用实际 CS 的快照，不经过会同步 parent 的 system getter。
+    val applicable = withConstraintSystemForCompletionResults { completionSystem ->
+        val storage = completionSystem.captureStorage()
+        diagnostics.all { it.isSuccess } && !storage.hasContradiction && storage.constraintsFromAllForkPoints.isEmpty()
+    }
+    if (!applicable) return null
     val enumConstructor = symbol.takeIf { it.isBound }?.cfir as? CfirEnumConstructor ?: return null
     if (enumConstructor.valueParameters.isNotEmpty()) return null
     if (callInfo.hasExplicitTypeArguments) return null
@@ -125,17 +136,21 @@ internal fun CfirExpression.noArgEnumConstructorTargetType(
     expectedType: ConeCangJieType,
     session: CfirSession,
 ): ConeCangJieType? {
-    if (this is CfirQualifiedAccessExpression && typeArguments.isNotEmpty()) return null
+    if (this is CfirQualifiedAccessExpression && typeArguments.any { argument ->
+            argument.source?.let { it.kind !is CjFakeSourceElementKind.ImplicitTypeArgument } == true
+        }
+    ) return null
 
     val reference = (this as? CfirResolvable)?.calleeReference
     val candidate = reference as? CfirNamedReferenceWithCandidate
     if (candidate != null) {
+        if (candidate.isError) return null
         return candidate.candidate.noArgEnumConstructorTargetType(expectedType, session)
     }
 
     val enumConstructorSymbol = when (reference) {
+        is CfirResolvedErrorReference -> return null
         is CfirResolvedNamedReference -> reference.resolvedSymbol
-        is CfirResolvedErrorReference -> reference.resolvedSymbol
         else -> null
     } as? CfirEnumConstructorSymbol ?: return null
     val qualifier = (this as? CfirQualifiedAccessExpression)?.explicitReceiver
@@ -144,34 +159,29 @@ internal fun CfirExpression.noArgEnumConstructorTargetType(
 }
 
 /**
- * 把已解析错误引用恢复成普通 resolved 引用，并写回目标类型。
+ * 为已成功解析的无参 enum 值补全目标类型与推断实参。
+ *
+ * candidate 访问保留原 atom/fresh 变量，由父候选合入子系统并正式完成；
+ * 不在这里发布 candidate、不转换错误引用，也不把未固定变量写成最终类型。
  */
 internal fun CfirExpression.applyNoArgEnumConstructorTargetType(
     expectedType: ConeCangJieType,
     session: CfirSession,
 ): ConeCangJieType? {
+    val reference = (this as? CfirResolvable)?.calleeReference
+    if (reference !is CfirResolvedNamedReference || reference is CfirResolvedErrorReference) return null
     val targetType = noArgEnumConstructorTargetType(expectedType, session) ?: return null
-    replaceConeTypeOrNull(targetType)
-
-    val resolvable = this as? CfirResolvable ?: return targetType
-    when (val reference = resolvable.calleeReference) {
-        is CfirResolvedErrorReference -> resolvable.replaceCalleeReference(
-            buildResolvedNamedReference {
-                source = reference.source
-                name = reference.name
-                resolvedSymbol = reference.resolvedSymbol
-            }
-        )
-
-        is CfirNamedReferenceWithCandidate -> resolvable.replaceCalleeReference(
-            buildResolvedNamedReference {
-                source = reference.source
-                name = reference.name
-                resolvedSymbol = reference.candidateSymbol
-            }
-        )
-
-        else -> Unit
+    if (targetType.contains { it is ConeTypeVariableType || it is ConeStubType || it is ConeErrorType }) return null
+    val access = this as? CfirQualifiedAccessExpression
+    if (access != null && access.typeArguments.isNotEmpty()) {
+        // 成功完成的推断实参与目标 owner 使用同一槽位，并保留原 source/delegate。
+        val targetArguments = targetType.typeArguments
+        val inferredArguments = access.typeArguments.filterIsInstance<CfirResolvedTypeRef>()
+        if (inferredArguments.size != access.typeArguments.size || inferredArguments.size != targetArguments.size) return null
+        access.replaceTypeArguments(inferredArguments.zip(targetArguments).map { (argument, targetArgument) ->
+            argument.withReplacedSourceAndType(argument.source, targetArgument.type)
+        })
     }
+    replaceConeTypeOrNull(targetType)
     return targetType
 }

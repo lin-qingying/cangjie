@@ -29,7 +29,6 @@ import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.patterns.CfirEnumPattern
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
-import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.session.CfirSession
@@ -42,6 +41,7 @@ import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterLookupTag
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.type.AbstractTypeChecker
 import org.cangnova.cangjie.type.model.TypeConstructorMarker
 
@@ -61,6 +61,7 @@ fun CfirEnumConstructorSymbol.noArgEnumConstructorTargetType(
     if (constructor.valueParameters.isNotEmpty()) return null
     val ownerClassId = session.cfirProvider.getContainingClass(this)?.classId ?: return null
     val expandedExpectedType = expectedType.fullyExpandedType(session)
+    if (expandedExpectedType.containsErrorType()) return null
     val expectedOwnerClassId = when (expandedExpectedType) {
         is ConeEnumType -> expandedExpectedType.classId
         is ConeClassLikeType -> expandedExpectedType.classId.takeIf { it == StdlibClassIds.Option }
@@ -98,10 +99,13 @@ fun CfirExpression.instantiatedTypeQualifierTypeOrNull(session: CfirSession): Co
     val classifier = (access.calleeReference as? CfirResolvedNamedReference)
         ?.resolvedSymbol as? CfirClassLikeSymbol<*> ?: return null
     val parameters = classifier.cfir.typeParameters
-    if (access.typeArguments.isNotEmpty() && access.typeArguments.size != parameters.size) return null
+    val explicitTypeArguments = access.typeArguments.filter { argument ->
+        argument.source?.let { it.kind !is CjFakeSourceElementKind.ImplicitTypeArgument } == true
+    }
+    if (explicitTypeArguments.isNotEmpty() && explicitTypeArguments.size != parameters.size) return null
     val qualifierType = access.coneTypeOrNull?.fullyExpandedType(session) ?: return null
     if (qualifierType.containsErrorType()) return null
-    if (access.typeArguments.isEmpty()) {
+    if (explicitTypeArguments.isEmpty()) {
         val parameterSymbols = parameters.mapTo(hashSetOf()) { it.symbol }
         if (qualifierType.contains { type ->
                 when (type) {
@@ -191,8 +195,8 @@ fun CfirEnumPattern.ownerQualifierMatchesSubject(subjectType: ConeCangJieType, s
     if (ownerClassifier.classId != subject.classIdOrPrimitiveClassId) return false
 
     val qualifierType = qualifier.instantiatedTypeQualifierTypeOrNull(session) ?: return true
-    if (qualifierType.typeArguments.size != subject.typeArguments.size) return false
-    return qualifierType.typeArguments.zip(subject.typeArguments).all { (qualifierArgument, subjectArgument) ->
-        AbstractTypeChecker.equalTypes(session.typeContext, qualifierArgument.type, subjectArgument.type)
-    }
+    return qualifierType.typeArguments.size == subject.typeArguments.size &&
+        qualifierType.typeArguments.zip(subject.typeArguments).all { (qualifierArgument, subjectArgument) ->
+            AbstractTypeChecker.equalTypes(session.typeContext, qualifierArgument.type, subjectArgument.type)
+        }
 }

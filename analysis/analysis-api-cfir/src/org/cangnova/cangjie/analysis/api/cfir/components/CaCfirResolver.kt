@@ -71,6 +71,7 @@ import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.references.impl.CfirResolvedAppliedCallableReference
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirErrorFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
@@ -82,9 +83,14 @@ import org.cangnova.cangjie.cfir.types.ConeUnreportedDuplicateDiagnostic
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeSubstitutorByMap
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeClassLikeType
+import org.cangnova.cangjie.cfir.types.ConeStubType
+import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
 import org.cangnova.cangjie.cfir.types.asCone
 import org.cangnova.cangjie.cfir.types.coneType
+import org.cangnova.cangjie.cfir.types.contains
 import org.cangnova.cangjie.cfir.types.resolvedType
+import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.idea.references.mainReference
 import org.cangnova.cangjie.resolve.calls.inference.buildCurrentSubstitutor
 import org.cangnova.cangjie.psi.*
@@ -276,7 +282,7 @@ internal class CaCfirResolver(
         resolvedSymbol: CfirEnumConstructorSymbol,
     ): CaCall {
         val publicSymbol = analysisSession.cfirSymbolBuilder.buildSymbol(resolvedSymbol) as CaEnumConstructorSymbol
-        val typeArguments = buildEnumConstructorTypeArguments(resolvedSymbol, functionCall.typeArguments)
+        val typeArguments = buildEnumConstructorTypeArguments(resolvedSymbol, functionCall.resolvedType)
         val signature = with(analysisSession) { publicSymbol.asSignature() }.let { baseSignature ->
             typeArguments.publicSubstitutor?.let(baseSignature::substitute) ?: baseSignature
         }
@@ -437,9 +443,12 @@ internal class CaCfirResolver(
                 val type = candidate.typeArgumentMapping.sourceTypeRef(index)?.coneType
                     ?: run {
                         val typeParameterType = ConeTypeParameterTypeImpl(typeParameter.symbol.toLookupTag())
-                        val typeVariable = candidate.substitutor.substituteOrNull(typeParameterType)
+                        val candidateType = candidate.substitutor.substituteOrNull(typeParameterType)
                             ?: return@forEachIndexed
-                        systemSubstitutor.substituteOrNull(typeVariable) ?: return@forEachIndexed
+                        // 显式 owner 的替换可以已经确定，不需要约束系统再固定一次。
+                        systemSubstitutor.substituteOrNull(candidateType)
+                            ?: candidateType.takeUnless { type -> type.contains { it is ConeTypeVariableType || it is ConeStubType } }
+                            ?: return@forEachIndexed
                     }
                 put(typeParameter.symbol.toLookupTag(), type)
             }
@@ -458,18 +467,24 @@ internal class CaCfirResolver(
         return CallTypeArguments(emptyMap(), publicSubstitutor)
     }
 
-    /** 枚举构造器调用的显式类型实参只参与签名替换，不暴露成命名参数映射。 */
+    /** 完成后的枚举实例承载有效的 owner 替换，成员上的非法源码实参不参与替换。 */
     private fun buildEnumConstructorTypeArguments(
         resolvedSymbol: CfirEnumConstructorSymbol,
-        typeArguments: List<CfirTypeRef>,
+        resultType: ConeCangJieType,
     ): CallTypeArguments {
         val typeParameters = resolvedSymbol.cfir.typeParameters
+        val enumType = resultType.fullyExpandedType(analysisSession.cfirSession) as? ConeClassLikeType
+            ?: return CallTypeArguments(emptyMap(), null)
+        if (enumType.lookupTag.classId != resolvedSymbol.callableId.classId) {
+            return CallTypeArguments(emptyMap(), null)
+        }
+        val typeArguments = enumType.typeArguments.map { it.type ?: return CallTypeArguments(emptyMap(), null) }
         if (typeParameters.isEmpty() || typeParameters.size != typeArguments.size) {
             return CallTypeArguments(emptyMap(), null)
         }
         val cfirMappings = buildMap<TypeConstructorMarker, ConeCangJieType>(typeArguments.size) {
             typeParameters.zip(typeArguments).forEach { (typeParameter, typeArgument) ->
-                put(typeParameter.symbol.toLookupTag(), typeArgument.coneType)
+                put(typeParameter.symbol.toLookupTag(), typeArgument)
             }
         }
         return CallTypeArguments(

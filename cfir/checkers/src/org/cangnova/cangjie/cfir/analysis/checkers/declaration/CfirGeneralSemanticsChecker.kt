@@ -484,12 +484,14 @@ object CfirGeneralSemanticsChecker : CfirFileChecker() {
      * - 成员有效访问级别不高于外层 nominal 声明；
      * - 函数检查返回类型、参数类型和泛型约束；
      * - nominal/typealias 检查泛型约束，并递归检查成员。
+     * - extend 的约束与成员由扩展语义检查处理。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkNonPrivateDeclarationAccessLevelValidity(
         declaration: CfirDeclaration,
         containingAccessLevel: Visibility?,
     ) {
+        if (declaration is CfirExtend) return
         val ownVisibility = declaration.accessLevelVisibility() ?: return
         if (Visibilities.isPrivate(ownVisibility)) return
 

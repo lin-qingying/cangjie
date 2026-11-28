@@ -49,6 +49,93 @@ import org.junit.jupiter.api.Test
  */
 class CfirUnscopedCompletionReceiptTest {
     @Test
+    fun mutableSourceCompletionUsesTheActualBodyFrame() {
+        val f = Fixture(fixed = false)
+        val child = f.child()
+        // Source 候选已经完成正常 CS 初始化；准入查询本身不得承担这一步。
+        assertSame(f.variable, child.candidate.system.captureStorage().allTypeVariables[f.variable.typeConstructor])
+        assertTrue(f.transformer.components.callCompleter.tryCompletePendingSourceCall(
+            child.call, ResolutionMode.WithExpectedType(ConePrimitiveType.INT32.toCfirResolvedTypeRef()),
+        ))
+        assertEquals(ConePrimitiveType.INT32, child.call.coneTypeOrNull)
+        assertSame(child.candidate.symbol, (child.call.calleeReference as CfirResolvedNamedReference).resolvedSymbol)
+    }
+
+    @Test
+    fun fixedFrozenSourceCandidateWithoutReceiptCannotReenterCompletion() {
+        val f = Fixture()
+        val child = f.child()
+        val system = child.candidate.system
+        system.asReadOnlyStorage()
+        val reference = child.call.calleeReference
+        val before = system.captureStorage()
+        assertFalse(f.transformer.components.callCompleter.tryCompletePendingSourceCall(
+            child.call, ResolutionMode.ContextIndependent,
+        ))
+        assertSame(reference, child.call.calleeReference)
+        val after = system.captureStorage()
+        assertSame(before.allTypeVariables[f.variable.typeConstructor], after.allTypeVariables[f.variable.typeConstructor])
+        assertEquals(before.fixedTypeVariables, after.fixedTypeVariables)
+    }
+
+    @Test
+    fun anotherBodyFrameCannotCompleteTheSourceCandidate() {
+        val f = Fixture(fixed = false)
+        val other = Fixture(fixed = false)
+        val child = f.child()
+        val reference = child.call.calleeReference
+        assertFalse(other.transformer.components.callCompleter.tryCompletePendingSourceCall(
+            child.call, ResolutionMode.ContextIndependent,
+        ))
+        assertSame(reference, child.call.calleeReference)
+        assertTrue(child.candidate.system.captureStorage().notFixedTypeVariables.containsKey(f.variable.typeConstructor))
+    }
+
+    @Test
+    fun actualFullSourceReceiptIsReadWithoutNewCompletion() {
+        val f = Fixture()
+        val child = f.child()
+        f.owner.postponedPCLACalls += child.atom
+        f.full()
+        assertEquals(1, child.writes)
+        f.context.inferenceSession = CfirPCLAInferenceSession(f.owner, f.session.inferenceComponents)
+        val reference = child.call.calleeReference
+        val before = f.system.captureStorage()
+        // FULL 写回先发布 receipt；只读查询不得替正式消费入口删除原 atom。
+        assertTrue(f.owner.postponedPCLACalls.any { it === child.atom })
+        assertTrue(f.transformer.components.callCompleter.tryCompletePendingSourceCall(
+            child.call, ResolutionMode.ContextIndependent,
+        ))
+        assertEquals(1, child.writes)
+        assertSame(reference, child.call.calleeReference)
+        assertEquals(before.fixedTypeVariables, f.system.captureStorage().fixedTypeVariables)
+        assertTrue(f.owner.postponedPCLACalls.any { it === child.atom })
+
+        // 再由既有 FULL writer 消费 exact atom，之后查询仍只读取原完成事实。
+        f.full()
+        assertEquals(1, child.writes)
+        assertTrue(f.owner.postponedPCLACalls.isEmpty())
+        assertTrue(f.transformer.components.callCompleter.tryCompletePendingSourceCall(
+            child.call, ResolutionMode.ContextIndependent,
+        ))
+        assertEquals(1, child.writes)
+        assertSame(reference, child.call.calleeReference)
+        assertEquals(before.fixedTypeVariables, f.system.captureStorage().fixedTypeVariables)
+        assertTrue(f.owner.postponedPCLACalls.isEmpty())
+
+        // 同一 candidate/carrier 的新 actual atom 不能继承上一 atom 的已消费事实。
+        val later = ConeAtomWithCandidate(child.call, child.candidate)
+        f.owner.postponedPCLACalls += later
+        assertFalse(f.transformer.components.callCompleter.tryCompletePendingSourceCall(
+            child.call, ResolutionMode.ContextIndependent,
+        ))
+        assertTrue(f.owner.postponedPCLACalls.single() === later)
+        assertSame(reference, child.call.calleeReference)
+        assertEquals(1, child.writes)
+        assertEquals(before.fixedTypeVariables, f.system.captureStorage().fixedTypeVariables)
+    }
+
+    @Test
     fun deletingProcessedMiddleBoundaryOrTailPreservesTheRemainingStatementConstraint() {
         for (deletedPosition in listOf("middle", "boundary", "tail")) {
             val f = Fixture()

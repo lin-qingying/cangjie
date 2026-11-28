@@ -9,6 +9,7 @@ import org.cangnova.cangjie.cfir.resolve.expectedType
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.initialTypeOfCandidate
 import org.cangnova.cangjie.cfir.resolve.isOperatorOperandInference
+import org.cangnova.cangjie.cfir.resolve.calls.canUseOperatorExpectedReturnType
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.hasUncertainExpectedTypeCompatibilityShape
 import org.cangnova.cangjie.cfir.resolve.calls.shouldUseExpectedTypeForEnumConstructor
@@ -77,6 +78,10 @@ object CfirCheckExpectedReturnTypeBeforeArguments : ResolutionStage() {
             // 具体返回类型的 expected-return 剪枝已移至实参检查之后，见类 KDoc。
             return
         }
+        // proper source 参数先决定返回类型；operator hint 不能把 choose(ideal, wide:Int64) 特化成 UInt8。
+        if (resolutionMode.isOperatorOperandInference &&
+            !candidate.canUseOperatorExpectedReturnType(candidateReturnType, expectedType, context.session)
+        ) return
 
         if (candidate.addBuiltinPointerExpectedPointeeConstraint(candidateReturnType, expectedType, context.session)) return
         if (candidate.addExpectedEnumOwnerConstraints(candidateReturnType, expectedType, context.session)) return

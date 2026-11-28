@@ -272,6 +272,10 @@ class Constraint(
      */
     val isLocalToInferenceScope: Boolean = true,
 ) {
+    /** 类型身份来自完整等式或结构化等式的分解，不随派生来源位置重新推断。 */
+    val isEqualityRelation: Boolean
+        get() = kind == ConstraintKind.EQUALITY || position.isEqualityRelation
+
     /**
      * 按约束方向、来源位置与约束类型判断结构相等。
      */

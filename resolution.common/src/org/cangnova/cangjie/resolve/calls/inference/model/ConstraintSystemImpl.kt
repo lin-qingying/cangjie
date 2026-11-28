@@ -688,6 +688,10 @@ class ConstraintSystemImpl(
      */
     override fun getBuilder() = apply { checkState(State.BUILDING, State.COMPLETION, State.TRANSACTION) }
 
+    /** 只读查询普通 call completion 的原 BUILDING 合同；不进入 builder、事务或解冻。 */
+    val canStartCallCompletion: Boolean
+        get() = state == State.BUILDING
+
     /**
      * 冻结当前约束系统并返回只读存储视图。
      */

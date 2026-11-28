@@ -45,7 +45,6 @@ import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.diagnostic.ConeCannotInferType
-import org.cangnova.cangjie.cfir.diagnostic.ConeCommandHandleTypeError
 import org.cangnova.cangjie.cfir.diagnostic.ConeCommandIncompatibleTypeError
 import org.cangnova.cangjie.cfir.diagnostic.ConeDiagnosticWithSingleCandidate
 import org.cangnova.cangjie.cfir.diagnostic.ConeMismatchingHandleBlockError
@@ -209,8 +208,6 @@ object CfirExpressionWithErrorTypeChecker : CfirBasicExpressionChecker() {
                 expression is CfirCatch && diagnostic is ConeMismatchingCatchBlockError -> expression.body.source ?: source
                 expression is CfirPerformExpression && diagnostic is ConeCommandIncompatibleTypeError ->
                     expression.expression.source ?: source
-                expression is CfirHandleClause && diagnostic is ConeCommandHandleTypeError ->
-                    expression.commandPattern.typeRefs.firstOrNull()?.source ?: expression.commandPattern.source ?: source
                 else -> source
             }
             ErrorNodeDiagnosticCollectorComponent.reportCfirDiagnostic(

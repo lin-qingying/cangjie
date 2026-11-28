@@ -44,9 +44,12 @@ import org.cangnova.cangjie.cfir.types.CfirCTypeSemantics
 import org.cangnova.cangjie.cfir.resolve.calls.contextualArrayLiteralTypeOrNull
 import org.cangnova.cangjie.cfir.resolve.withExpectedType
 import org.cangnova.cangjie.cfir.resolve.expectedType
+import org.cangnova.cangjie.cfir.resolve.initialTypeOfCandidate
+import org.cangnova.cangjie.cfir.resolve.isOperatorOperandInference
 import org.cangnova.cangjie.cfir.resolve.ResolutionMode
 import org.cangnova.cangjie.cfir.resolve.CfirResolutionSnapshot
 import org.cangnova.cangjie.cfir.resolve.calls.*
+import org.cangnova.cangjie.cfir.expressions.CfirFunctionCallOrigin
 import org.cangnova.cangjie.cfir.resolve.constants.CfirIntConstantEvalUtils
 import org.cangnova.cangjie.cfir.resolve.constants.explicitNumericLiteralType
 import org.cangnova.cangjie.cfir.resolve.constants.numericLiteralBoxTargetType
@@ -67,6 +70,7 @@ import org.cangnova.cangjie.cfir.semantics.AmbiguousClassifierTypeInCandidateSig
 import org.cangnova.cangjie.cfir.semantics.ErrorTypeInCandidateSignature
 import org.cangnova.cangjie.cfir.semantics.ErrorTypeInArguments
 import org.cangnova.cangjie.cfir.semantics.ResolutionDiagnostic
+import org.cangnova.cangjie.cfir.semantics.isSuccess
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterLookupTag
@@ -111,6 +115,7 @@ import org.cangnova.cangjie.resolve.calls.inference.components.PostponedArgument
 import org.cangnova.cangjie.resolve.calls.inference.model.ArgumentConstraintPosition
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintKind
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintPosition
+import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.type.AbstractTypeChecker
 
@@ -320,7 +325,11 @@ internal object ArgumentCheckingProcessor {
             return
         }
         val targetExpectedType = expectedType
-        if (targetExpectedType == null) {
+        val sourceExpectedType = (candidate.callInfo.resolutionMode as? ResolutionMode.WithExpectedType)
+            ?.takeUnless { it.fromCast }?.expectedType
+        // select 的内部结果变量本身不提供源码目标；独立综合的分支保留自己的裸名歧义。
+        val selectWithoutSourceTarget = candidate.callInfo.callKind == CallKind.SyntheticSelect && sourceExpectedType == null
+        if (targetExpectedType == null || selectWithoutSourceTarget) {
             atom.useFallbackSubAtom()
             resolveArgumentExpression(fallback)
             return
@@ -383,6 +392,7 @@ internal object ArgumentCheckingProcessor {
         val targetTypedEnumType = expectedType?.let { expected ->
             resolvedAtom.expression.applyNoArgEnumConstructorTargetType(expected, session)
                 ?: enumConstructorTargetTypeFromExpectedVariable(resolvedAtom.expression, expected)
+                    ?.let { targetType -> resolvedAtom.expression.applyNoArgEnumConstructorTargetType(targetType, session) }
         }
         val targetTypedSpawnType = expectedType?.let { expected ->
             (resolvedAtom.expression as? CfirSpawnExpression)?.applySpawnExpectedFutureType(expected, session)
@@ -443,6 +453,19 @@ internal object ArgumentCheckingProcessor {
             return NestedCallResolutionResult(atom)
         }
         val expandedExpectedType = targetExpectedType.fullyExpandedType(session)
+        val currentSourceType = functionCall.coneTypeOrNull?.fullyExpandedType(session)
+        val isPrimitiveOperatorOperand =
+            (candidate.callInfo.callSite as? CfirFunctionCall)?.origin == CfirFunctionCallOrigin.Operator &&
+                expandedExpectedType is ConePrimitiveType && currentSourceType is ConePrimitiveType
+        // 未固定的纯推断变量只接收输入约束，并不是更具体的重解析目标。
+        // 已解析且类型闭合的调用沿 Kotlin 的 resolvedType 通道参与外层求解；
+        // 保留原引用与字面量上下文，不能为未定参数重新建立一组调用候选。
+        // operator 的已确定 primitive 实参同样保持源类型，由外层适用性检查报告不兼容。
+        if (!isCallableAmbiguity && reference is CfirResolvedNamedReference &&
+            reference !is CfirDiagnosticHolder && currentSourceType?.isClosedOperatorInputType() == true &&
+            (isPrimitiveOperatorOperand || expandedExpectedType is ConeTypeVariableType &&
+                !csBuilder.isProperType(expandedExpectedType))
+        ) return NestedCallResolutionResult(atom)
         val expectedOwnerClassId = expandedExpectedType.classIdOrPrimitiveClassId
         if (!isCallableAmbiguity && atom is ConeAtomWithCandidate &&
             currentCandidate === atom.candidate && currentCandidate.isSuccessful
@@ -461,7 +484,7 @@ internal object ArgumentCheckingProcessor {
             }
         }
         if (currentSymbol is CfirEnumConstructorSymbol && expectedOwnerClassId != null && !isCallableAmbiguity) {
-            val currentReturnType = currentCandidate?.substitutedReturnType()
+            val currentReturnType = currentCandidate?.substitutedReturnTypeFromCalculator()
                 ?: (reference as? CfirResolvedAppliedCallableReference)?.substitutedReturnType
                 ?: functionCall.coneTypeOrNull
                 ?: return NestedCallResolutionResult(atom)
@@ -568,16 +591,6 @@ internal object ArgumentCheckingProcessor {
             return NestedCallResolutionResult(atom)
         }
         val (resolvedCandidate, resolvedCall) = resolvedProbe
-        if (java.lang.Boolean.getBoolean("cangjie.debug.formalCallIdentity")) {
-            System.err.println("NESTED_EXPECTED_PROBE old=" + System.identityHashCode(functionCall).toString(16) +
-                    " new=" + System.identityHashCode(resolvedCall).toString(16) +
-                    " candidate=" + System.identityHashCode(resolvedCandidate).toString(16) +
-                    " target=" + System.identityHashCode(resolvedCandidate.symbol).toString(16) +
-                    " oldSource=" + System.identityHashCode(functionCall.source).toString(16) +
-                    " newSource=" + System.identityHashCode(resolvedCall.source).toString(16) +
-                    " oldArguments=" + functionCall.argumentList.arguments.map { System.identityHashCode(it).toString(16) } +
-                    " newArguments=" + resolvedCall.argumentList.arguments.map { System.identityHashCode(it).toString(16) })
-        }
         if (!resolvedCandidate.isSuccessful) {
             /*
              * 嵌套泛型调用在期望类型下无法推断类型实参（约束系统矛盾/信息不足）时，
@@ -669,12 +682,12 @@ internal object ArgumentCheckingProcessor {
          * 让已由源码明确的类型实参优先于外层 expected type，同时保留无显式实参调用的
          * fresh variable 供正常反向推断。
          */
-        return substituteExplicitTypeArgumentConstraints(substitutedReturnType())
+        return substituteExplicitTypeArgumentConstraints(substitutedReturnTypeFromCalculator())
     }
 
     /**
      * expected type 是当前推断变量时，从该变量已经收集到的 owner 形状约束中反推
-     * 无参 enum constructor 的目标类型。
+     * 无参 enum constructor 的目标类型；这里只读形状，不发布引用或修改子候选。
      */
     private fun ArgumentContext.enumConstructorTargetTypeFromExpectedVariable(
         expression: CfirExpression,
@@ -701,7 +714,7 @@ internal object ArgumentCheckingProcessor {
             }
         }
 
-        return targetType?.let { expression.applyNoArgEnumConstructorTargetType(it, session) }
+        return targetType
     }
 
     /**
@@ -820,6 +833,24 @@ internal object ArgumentCheckingProcessor {
             .asCone()
             .substituteOrNull(argumentTypeBeforeCapturing)
             ?: argumentTypeBeforeCapturing
+        if (atom is ConeAtomWithCandidate && atom.candidate.isBareNoArgumentEnumValueAccess() &&
+            !atom.candidate.isSourceCompletionWithdrawn &&
+            atom.candidate.withConstraintSystemForCompletionResults { completionSystem ->
+                atom.candidate.diagnostics.all { it.isSuccess } && !completionSystem.captureStorage().hasContradiction
+            }
+        ) {
+            // 原子系统已合入父候选。按真实 owner 槽位约束原 fresh 变量；不能把父变量
+            // 写入孤立子系统，也不能用 Option 的表达式装箱代替 enum owner 的不变约束。
+            enumConstructorTargetTypeFromExpectedVariable(atom.expression, expectedType)?.let { targetType ->
+                val currentTargetType = csBuilder.buildCurrentSubstitutor().asCone().substituteOrSelf(targetType)
+                val actualArguments = argumentTypeAfterCurrentSubstitution.fullyExpandedType(session).typeArguments
+                val targetArguments = currentTargetType.fullyExpandedType(session).typeArguments
+                check(actualArguments.size == targetArguments.size) { "Target enum owner changed its formal slots" }
+                for ((actualArgument, targetArgument) in actualArguments.zip(targetArguments)) {
+                    csBuilder.addEqualityConstraint(actualArgument.type, targetArgument.type, position)
+                }
+            }
+        }
         val argumentType = when {
             /*
              * 当前候选系统里的 fresh type variable 必须继续作为约束目标。
@@ -992,7 +1023,11 @@ internal object ArgumentCheckingProcessor {
         if (candidate.isEnumConstructorPayloadInference() &&
             addIdealLiteralEqualityConstraintForCurrentInferenceVariable(argumentType, expectedType, position)
         ) return
-        if (addNoArgEnumConstructorShapeConstraintForCurrentInferenceVariable(expression, argumentType, expectedType, position)) return
+        // select 的形参是分支结果的共同上界。无参 enum 值与 Option 值可以共同推断该结果，
+        // 普通泛型调用对构造器形状的 equality 不能提前固定这个共同结果。
+        if (candidate.callInfo.callKind != CallKind.SyntheticSelect &&
+            addNoArgEnumConstructorShapeConstraintForCurrentInferenceVariable(expression, argumentType, expectedType, position)
+        ) return
         if (addLocalLambdaParameterShapeConstraint(argumentType, expectedType, position)) return
         var unwrappedExpression = expression
         while (unwrappedExpression is CfirWrappedExpression) {
@@ -1006,6 +1041,8 @@ internal object ArgumentCheckingProcessor {
         // 节点上（如测试夹具构造的类型化表达式）也必须保留原类型参与检查。
         val boxedNumericType = literalArgument?.numericLiteralBoxTargetType(expectedType, session)
         val candidateLocalArgumentType = when {
+            // select 消费真实分支值；不能按普通源码泛型实参把其已检查类型重建成无上下文 ideal。
+            candidate.callInfo.callKind == CallKind.SyntheticSelect -> argumentType
             boxedNumericType != null -> boxedNumericType
             argumentType is ConePrimitiveType && argumentType.kind.isNumeric -> when (literalArgument?.kind) {
                 CfirLiteralKind.INT -> literalArgument.explicitNumericLiteralType() ?: ConePrimitiveType.IDEAL_INT
@@ -1037,7 +1074,7 @@ internal object ArgumentCheckingProcessor {
         // 官方 LocalTypeArgumentSynthesis 在求解类型参数后会把 IdealInt/IdealFloat
         // 归一化为默认具体类型。当前候选 fresh variable 若先接收原始 ideal lower bound，
         // outer expected type 会继续把同一泛型调用特化成多个数值类型并制造误歧义。
-        if (addIdealLiteralConstraintForCurrentInferenceVariable(
+        if (candidate.callInfo.callKind != CallKind.SyntheticSelect && addIdealLiteralConstraintForCurrentInferenceVariable(
                 candidateLocalArgumentType,
                 expectedType,
                 position,
@@ -1370,10 +1407,20 @@ internal object ArgumentCheckingProcessor {
     /** 判断表达式是否是无显式类型实参的无参 enum constructor 访问。 */
     private fun CfirExpression.isNoArgEnumConstructorAccess(): Boolean {
         val access = this as? CfirNamedAccessExpression ?: return false
-        if (access.typeArguments.isNotEmpty()) return false
+        if (access.typeArguments.any { argument ->
+                argument.source?.let { it.kind !is CjFakeSourceElementKind.ImplicitTypeArgument } == true
+            }
+        ) return false
         val symbol = when (val reference = access.calleeReference) {
-            is CfirNamedReferenceWithCandidateBase -> reference.candidateSymbol
-            is CfirResolvedErrorReference -> reference.resolvedSymbol
+            is CfirResolvedErrorReference -> return false
+            is CfirNamedReferenceWithCandidate -> {
+                if (reference.isError || reference.candidate.isSourceCompletionWithdrawn) return false
+                if (!reference.candidate.withConstraintSystemForCompletionResults { completionSystem ->
+                        reference.candidate.diagnostics.all { it.isSuccess } && !completionSystem.captureStorage().hasContradiction
+                    }
+                ) return false
+                reference.candidateSymbol
+            }
             is CfirResolvedNamedReference -> reference.resolvedSymbol
             is CfirResolvedAppliedCallableReference -> reference.resolvedSymbol
             else -> null
@@ -1450,7 +1497,19 @@ internal object ArgumentCheckingProcessor {
          * 退化为默认 Int64/Float64；否则 `id(1): Int32` 会同时得到 `Int64 <: T` 与
          * `T <: Int32`，把本应由 expected type 定型的调用错误地判为不可推断。
          */
-        val approximatedArgumentType = contextualPrimitiveTargetForIdealLiteral(argumentType)
+        val contextualTarget = contextualPrimitiveTargetForIdealLiteral(argumentType)
+        if (contextualTarget == null && candidate.callInfo.resolutionMode.isOperatorOperandInference &&
+            !candidate.callInfo.hasExplicitTypeArguments
+        ) {
+            val returnType = context.bodyResolveComponents.initialTypeOfCandidate(candidate)
+                .fullyExpandedType(session) as? ConeTypeVariableType
+            val parameterType = expectedType as? ConeTypeVariableType
+            if (returnType != null && parameterType != null &&
+                returnType.typeConstructor === parameterType.typeConstructor &&
+                candidate.freshVariables.any { it.typeConstructor === parameterType.typeConstructor }
+            ) return false
+        }
+        val approximatedArgumentType = contextualTarget
             ?: IdealTypeResolver.resolveIfIdeal(argumentType)
         return csBuilder.addSubtypeConstraintIfCompatible(approximatedArgumentType, expectedType, position)
     }

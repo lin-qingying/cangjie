@@ -49,8 +49,7 @@ object CfirMapTypeArguments : ResolutionStage() {
     context(sink: CheckerSink, context: ResolutionContext)
     /** 解析显式类型实参并写入候选，同时检查数量是否匹配声明泛型参数。 */
     override suspend fun check(candidate: Candidate) {
-        val declaration = candidate.symbol.takeIf { it.isBound }?.cfir
-        if (candidate.isQualifiedEnumMemberWithTypeArguments(declaration)) {
+        if (candidate.isQualifiedEnumMemberWithTypeArguments()) {
             /*
              * `TimeUnit<Int32>.Year<Int64>` 中的 `Int64` 属于 enum member access，
              * 不能再次绑定 owner enum。合法性由表达式 checker 独立报告，候选仍按
@@ -137,8 +136,8 @@ object CfirMapTypeArguments : ResolutionStage() {
      * 裸 `Year<Int32>(...)` 是 enum sugar，类型实参仍用于实例化 owner；只有
      * `TimeUnit<Int32>.Year<Int64>(...)` 这种已有显式 receiver 的成员实参非法。
      */
-    private fun Candidate.isQualifiedEnumMemberWithTypeArguments(declaration: Any?): Boolean =
-        declaration is CfirEnumConstructor &&
+    internal fun Candidate.isQualifiedEnumMemberWithTypeArguments(): Boolean =
+        symbol.takeIf { it.isBound }?.cfir is CfirEnumConstructor &&
                 callInfo.explicitReceiver != null &&
                 resolvedExplicitTypeArguments().isNotEmpty()
 }

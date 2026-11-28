@@ -1751,7 +1751,7 @@ class CfirCallResolver(
     }
 
     /**
-     * 把初次 tower 名字查找的完整成功候选集冻结成 expected-return 细化描述。
+     * 把初次 tower 名字查找的词法候选集冻结成 expected-return 细化描述。
      *
      * 这里只读取已确定的声明类型，不为落选候选启动隐式返回类型计算；否则保存信息就会
      * 重入当前函数并发布伪递归错误。未确定的类型保留为空，由需要目标细化的调用走完整解析。
@@ -1761,20 +1761,24 @@ class CfirCallResolver(
         candidates: Collection<Candidate>,
     ): List<CfirCallableCandidateDiscovery> {
         if (info.callKind != CallKind.Function && info.callKind != CallKind.EnumConstructorCall) return emptyList()
-        if (candidates.isEmpty() || candidates.any { !it.isSuccessful }) return emptyList()
-        // 单个泛型调用同样可能在外层运算目标到达后重新定型；保存 discovery 而非已固定的 Candidate。
-        if (candidates.size == 1 && candidates.single().freshVariables.isEmpty()) return emptyList()
+        if (candidates.isEmpty()) return emptyList()
+        // discovery 保存词法查找身份；实参和返回目标的适用性由重检时的 fresh candidate 决定。
 
         val discoveries = ArrayList<CfirCallableCandidateDiscovery>(candidates.size)
         for (candidate in candidates) {
             val symbol = candidate.symbol as? CfirCallableSymbol<*> ?: return emptyList()
-            val returnType = if (symbol.cfir.returnTypeRef is CfirResolvedTypeRef) {
-                components.initialTypeOfCandidate(candidate).fullyExpandedType(session)
+            val declaration = symbol.cfir
+            val returnType = if (
+                declaration.returnTypeRef is CfirResolvedTypeRef && candidate.typeParameterSubstitutorOrNull != null &&
+                (declaration is CfirFunction || declaration is CfirEnumConstructor)
+            ) {
+                // 只读声明实例化及 This 投影；discovery 不消费旧候选的 CS 或 invoke 依赖。
+                candidate.substitutedReturnType().fullyExpandedType(session)
             } else {
                 null
             }
             val deterministicReturnType = returnType?.takeIf {
-                candidate.system.isProperType(it) && !it.hasUncertainExpectedTypeCompatibilityShape()
+                !it.hasUncertainExpectedTypeCompatibilityShape()
             }
             discoveries += CfirCallableCandidateDiscovery(
                 symbol = symbol,

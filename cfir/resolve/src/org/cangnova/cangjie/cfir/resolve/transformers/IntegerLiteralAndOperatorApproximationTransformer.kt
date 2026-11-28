@@ -4,9 +4,14 @@ import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.SessionAndScopeSessionHolder
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeIdealLiteralType
+import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.types.ConeStubType
+import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
+import org.cangnova.cangjie.cfir.types.contains
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.IdealTypeResolver
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
@@ -26,6 +31,20 @@ class IntegerLiteralAndOperatorApproximationTransformer(
 ) : CfirTransformer<ConeCangJieType?>(), SessionAndScopeSessionHolder {
     /** 默认不递归未知元素，保持该 transformer 只处理表达式节点。 */
     override fun <E : CfirElement> transformElement(element: E, data: ConeCangJieType?): E = element
+
+    /**
+     * 对位 Kotlin 的具体字面量入口；generated visitor 不经 transformExpression 转发。
+     * 只收敛当前字面量的 ideal 类型，保留显式后缀、已固定类型和仍未完成的目标。
+     */
+    override fun transformLiteralExpression(literalExpression: CfirLiteralExpression, data: ConeCangJieType?): CfirExpression {
+        if (data?.contains { it is ConeTypeVariableType || it is ConeStubType || it is ConeErrorType } == true) {
+            return literalExpression
+        }
+        val actualType = literalExpression.coneTypeOrNull ?: return literalExpression
+        val approximatedType = actualType.approximateIntegerLiteralType(data)
+        if (approximatedType != actualType) literalExpression.replaceConeTypeOrNull(approximatedType)
+        return literalExpression
+    }
 
     /** 递归处理表达式子节点，并按期望类型近似当前表达式结果类型。 */
     override fun transformExpression(expression: CfirExpression, data: ConeCangJieType?): CfirExpression {

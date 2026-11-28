@@ -40,9 +40,11 @@ object CfirPatternVariableInitializerTypeMismatchChecker : CfirPatternVariableCh
 
         val expectedType = declaration.explicitDeclaredTypeOrNull() ?: return
         val initializer = declaration.initializer?.takeIf { it !is CfirErrorExpression } ?: return
+        // 复合结果先消费真实声明目标；match 的模式/其它分支错误不取消独立 case action 检查。
+        // 普通叶子的解析诊断与裸 enum 规则仍由下方原抑制边界负责。
+        if (checkTargetTypedExpression(initializer, expectedType).isHandled) return
         if (initializer.hasResolutionDiagnostic()) return
         if (initializer.isBareEnumConstructorAccess()) return
-        if (checkTargetTypedExpression(initializer, expectedType).isHandled) return
         val actualType = initializer.coneTypeOrNull ?: return
         val initializerSource = initializer.source as? AbstractCjSourceElement
         val isEnumConstructorInitializer = initializer.isEnumConstructorAccess()
@@ -85,8 +87,8 @@ private fun CfirExpression.isBareEnumConstructorAccess(): Boolean {
 
     val symbol = access.calleeReference.enumConstructorSymbol() ?: return false
     val constructor = symbol.takeIf { it.isBound }?.cfir as? CfirEnumConstructor ?: return false
-    if (constructor.symbol.instantiatedQualifierOwnerType(access.explicitReceiver, context.session) != null) return false
-    return constructor.valueParameters.isEmpty()
+    return constructor.symbol.instantiatedQualifierOwnerType(access.explicitReceiver, context.session) == null &&
+        constructor.valueParameters.isEmpty()
 }
 
 /**

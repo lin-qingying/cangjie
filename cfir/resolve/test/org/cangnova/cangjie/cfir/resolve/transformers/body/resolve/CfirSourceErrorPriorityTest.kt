@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Test
 
 /** 以真实 CFIR 节点检查 pending/source-error 优先级和独立函数正文边界。 */
 class CfirSourceErrorPriorityTest {
+    private val session = CallResolutionTestFixtures.newTestSession()
     private val diagnostic = ConeUnresolvedReferenceError(Name.identifier("missingValue"))
     private val error = ConeErrorType(diagnostic)
     private val pending = ConeErrorType(ConePostponedInferenceDiagnostic)
@@ -41,13 +42,13 @@ class CfirSourceErrorPriorityTest {
 
     @Test
     fun ownPendingDoesNotHideActualChildError() {
-        assertSame(error, block(pending, block(error)).firstErrorTypeOrNull())
+        assertSame(error, block(pending, block(error)).firstErrorTypeOrNull(session))
     }
 
     @Test
     fun earlierWrappedPendingDoesNotHideLaterActualError() {
-        assertSame(error, block(ConePrimitiveType.UNIT, block(wrappedPending), block(error)).firstErrorTypeOrNull())
-        assertSame(error, block(ConePrimitiveType.UNIT, block(error), block(pending)).firstErrorTypeOrNull())
+        assertSame(error, block(ConePrimitiveType.UNIT, block(wrappedPending), block(error)).firstErrorTypeOrNull(session))
+        assertSame(error, block(ConePrimitiveType.UNIT, block(error), block(pending)).firstErrorTypeOrNull(session))
     }
 
     @Test
@@ -56,20 +57,20 @@ class CfirSourceErrorPriorityTest {
             this.diagnostic = this@CfirSourceErrorPriorityTest.diagnostic
             expression = block(pending)
         }
-        val result = checkNotNull(realHolder.firstErrorTypeOrNull())
+        val result = checkNotNull(realHolder.firstErrorTypeOrNull(session))
         assertSame(diagnostic, (result.diagnostic as ConeUnreportedDuplicateDiagnostic).original)
         val pendingHolder = buildErrorExpression {
             diagnostic = ConePostponedInferenceDiagnostic
             nonExpressionElement = block(error)
         }
-        assertSame(error, pendingHolder.firstErrorTypeOrNull())
+        assertSame(error, pendingHolder.firstErrorTypeOrNull(session))
     }
 
     @Test
     fun pendingOnlyRemainsUnfinishedAndCleanBlockHasNoError() {
-        assertSame(pending, block(pending, block(wrappedPending)).firstErrorTypeOrNull())
-        assertSame(wrappedPending, block(ConePrimitiveType.UNIT, block(wrappedPending)).firstErrorTypeOrNull())
-        assertNull(block(ConePrimitiveType.UNIT).firstErrorTypeOrNull())
+        assertSame(pending, block(pending, block(wrappedPending)).firstErrorTypeOrNull(session))
+        assertSame(wrappedPending, block(ConePrimitiveType.UNIT, block(wrappedPending)).firstErrorTypeOrNull(session))
+        assertNull(block(ConePrimitiveType.UNIT).firstErrorTypeOrNull(session))
     }
 
     @Test
@@ -81,9 +82,9 @@ class CfirSourceErrorPriorityTest {
             coneTypeOrNull = pending
             statements += function
         }
-        assertSame(pending, root.firstErrorTypeOrNull())
+        assertSame(pending, root.firstErrorTypeOrNull(session))
         function.replaceReturnTypeRef(buildErrorTypeRef { diagnostic = this@CfirSourceErrorPriorityTest.diagnostic })
-        val result = checkNotNull(root.firstErrorTypeOrNull())
+        val result = checkNotNull(root.firstErrorTypeOrNull(session))
         assertSame(diagnostic, (result.diagnostic as ConeUnreportedDuplicateDiagnostic).original)
     }
 
@@ -110,7 +111,7 @@ class CfirSourceErrorPriorityTest {
                 isLambda = true
             }
         }
-        assertSame(error, block(pending, lambda).firstErrorTypeOrNull())
+        assertSame(error, block(pending, lambda).firstErrorTypeOrNull(session))
     }
 
     @Test

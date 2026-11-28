@@ -263,9 +263,7 @@ class ConstraintInjector(
     private fun processConstraints() {
         processConstraintsIgnoringForksData()
         typeCheckerState.extractForkPointsData()?.let { allForkPointsData ->
-            allForkPointsData.mapTo(c.constraintsFromAllForkPoints) { forkPointData ->
-                typeCheckerState.position to forkPointData
-            }
+            c.constraintsFromAllForkPoints.addAll(allForkPointsData)
 
             c.onNewConstraintOrForkPoint()
 
@@ -409,7 +407,7 @@ class ConstraintInjector(
         /**
          * 当前批次收集到的 fork point 数据。
          */
-        private var forkPointsData: MutableList<ForkPointData>? = null
+        private var forkPointsData: MutableList<Pair<IncorporationConstraintPosition, ForkPointData>>? = null
 
         /**
          * 当前 fork point 中各分支约束集合的栈。
@@ -461,6 +459,11 @@ class ConstraintInjector(
         /** 当前传播消去的变量范围；无范围的传播也必须与直接输入约束区分。 */
         private var currentDependencyScope: TypeVariableInferenceScope? = null
         private var isIncorporatingConstraint = false
+        /** 当前派生关系是否来自两条完整等式的配对。 */
+        private var isIncorporatingEqualityConstraint = false
+        /** 当前有效关系随实际派生协议变化，不能从旧初始约束重新提升为等式。 */
+        private val isEqualityRelation: Boolean
+            get() = if (isIncorporatingConstraint) isIncorporatingEqualityConstraint else position.isEqualityRelation
 
         /**
          * 取出并清空当前批次普通新增约束。
@@ -497,6 +500,7 @@ class ConstraintInjector(
             if (!allowForking) {
                 return super.runForkingPoint(block)
             }
+            val forkPosition = position.copy(isEqualityRelation = isEqualityRelation)
 
             if (stackForConstraintsSetsFromCurrentForkPoint == null) {
                 stackForConstraintsSetsFromCurrentForkPoint = SmartList()
@@ -517,9 +521,7 @@ class ConstraintInjector(
                     if (forkPointsData == null) {
                         forkPointsData = SmartList()
                     }
-                    forkPointsData!!.addIfNotNull(
-                        constraintSets
-                    )
+                    forkPointsData!!.add(forkPosition to constraintSets)
                     return isThereSuccessfulFork
                 }
                 else -> {
@@ -527,7 +529,7 @@ class ConstraintInjector(
                     with(c) {
                         processGivenForkPointBranchConstraints(
                             constraintSets.single(),
-                            position,
+                            forkPosition,
                         )
                     }
                 }
@@ -588,12 +590,16 @@ class ConstraintInjector(
             val checksDeclaredUpperBound =
                 isIncorporatingConstraintFromDeclaredUpperBound ||
                     position.from is DeclaredUpperBoundConstraintPosition<*>
+            val requiresEquality = isEqualityRelation
             fun isSubtypeOf(upperType: CangJieTypeMarker) = if (checksDeclaredUpperBound) {
                 AbstractTypeChecker.isSubtypeOfForGenericArgument(
                     typeCheckerState,
                     lowerType,
                     upperType,
                 )
+            } else if (requiresEquality) {
+                // 等式及其派生关系保持类型身份，不能通过表达式装箱改变泛型映射。
+                AbstractTypeChecker.isSubtypeOfWithoutOptionBoxing(typeCheckerState, lowerType, upperType)
             } else {
                 AbstractTypeChecker.isSubtypeOf(typeCheckerState, lowerType, upperType)
             }
@@ -660,6 +666,7 @@ class ConstraintInjector(
                     isNoInfer = isNoInfer,
                     dependencyScope = currentDependencyScope,
                     isIncorporated = isIncorporatingConstraint,
+                    isEqualityRelation = kind == EQUALITY || isEqualityRelation,
                 )
             )
         }
@@ -673,6 +680,7 @@ class ConstraintInjector(
             upperType: CangJieTypeMarker,
             newDerivedFrom: Set<TypeVariableMarker>,
             isFromDeclaredUpperBound: Boolean,
+            isEquality: Boolean,
             isNoInfer: Boolean,
             dependencyScope: TypeVariableInferenceScope?,
         ) = with(c) {
@@ -682,6 +690,7 @@ class ConstraintInjector(
                 withNewConfigurationForIncorporationConstraints(
                     newDerivedFromSet = newDerivedFrom,
                     isFromDeclaredUpperBound = isFromDeclaredUpperBound,
+                    isEquality = isEquality,
                     isNoInfer = isNoInfer,
                     dependencyScope = dependencyScope,
                 ) {
@@ -696,6 +705,7 @@ class ConstraintInjector(
         private inline fun withNewConfigurationForIncorporationConstraints(
             newDerivedFromSet: Set<TypeVariableMarker>,
             isFromDeclaredUpperBound: Boolean,
+            isEquality: Boolean,
             isNoInfer: Boolean,
             dependencyScope: TypeVariableInferenceScope?,
             b: () -> Unit,
@@ -707,6 +717,7 @@ class ConstraintInjector(
                 currentDerivedFromSet = newDerivedFromSet
                 currentDependencyScope = dependencyScope
                 isIncorporatingConstraint = true
+                isIncorporatingEqualityConstraint = isEquality
                 isIncorporatingConstraintFromDeclaredUpperBound = isFromDeclaredUpperBound
                 isIncorporatingConstraintFromNoInfer = isNoInfer
                 b()
@@ -715,6 +726,7 @@ class ConstraintInjector(
                 currentDerivedFromSet = emptySet()
                 currentDependencyScope = null
                 isIncorporatingConstraint = false
+                isIncorporatingEqualityConstraint = false
                 isIncorporatingConstraintFromDeclaredUpperBound = false
                 isIncorporatingConstraintFromNoInfer = false
             }
@@ -741,7 +753,10 @@ class ConstraintInjector(
                 return
             }
 
-            val position = if (isIncorporatingConstraintFromDeclaredUpperBound) position.copy(isFromDeclaredUpperBound = true) else position
+            val position = position.copy(
+                isFromDeclaredUpperBound = position.isFromDeclaredUpperBound || isIncorporatingConstraintFromDeclaredUpperBound,
+                isEqualityRelation = constraintContext.isEqualityRelation,
+            )
 
             val newConstraint = Constraint(
                 kind, targetType, position,
@@ -833,6 +848,8 @@ data class ConstraintContext(
     val isIncorporated: Boolean = false,
     /** 传播仍可归属的局部求解范围；null 表示传播跨越了该边界。 */
     val dependencyScope: TypeVariableInferenceScope? = null,
+    /** 此次派生是否保持类型身份；两类 incorporation 都必须显式传递实际关系。 */
+    val isEqualityRelation: Boolean = kind == EQUALITY,
 )
 
 /**

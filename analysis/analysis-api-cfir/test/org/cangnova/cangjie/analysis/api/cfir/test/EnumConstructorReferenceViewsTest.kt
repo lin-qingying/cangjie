@@ -1,10 +1,13 @@
 package org.cangnova.cangjie.analysis.api.cfir.test
 
 import org.cangnova.cangjie.analysis.api.CaSession
+import org.cangnova.cangjie.analysis.api.CaExperimentalApi
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirSymbol
 import org.cangnova.cangjie.analysis.api.cfir.test.configurators.CaCfirAnalysisApiTestConfiguratorFactory
 import org.cangnova.cangjie.analysis.api.resolution.CaSymbolResolutionSuccess
+import org.cangnova.cangjie.analysis.api.resolution.CaEnumConstructorCall
+import org.cangnova.cangjie.analysis.api.resolution.successfulCallOrNull
 import org.cangnova.cangjie.analysis.api.symbols.CaEnumConstructorSymbol
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getOrBuildCfir
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getOrBuildCfirFile
@@ -14,12 +17,15 @@ import org.cangnova.cangjie.analysis.test.framework.test.configurators.*
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
+import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirResolvable
 import org.cangnova.cangjie.cfir.patterns.CfirEnumPattern
 import org.cangnova.cangjie.cfir.references.CfirErrorNamedReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.renderer.CfirRenderer
 import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.types.ConePrimitiveType
+import org.cangnova.cangjie.cfir.types.coneType
 import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
 import org.cangnova.cangjie.psi.*
 import org.cangnova.cangjie.test.services.TestServices
@@ -32,6 +38,21 @@ class EnumConstructorReferenceViewsTest : AbstractAnalysisApiExecutionTest("anal
         AnalysisApiTestConfiguratorFactoryData(FrontendKind.Cfir, TestModuleKind.Source,
             AnalysisSessionMode.Normal, AnalysisApiMode.Ide),
     )
+
+    @OptIn(CaExperimentalApi::class)
+    @Test
+    fun qualifiedMemberTypeArgumentDoesNotReplaceOwner(mainFile: CjFile, services: TestServices) {
+        val call = services.expressionMarkerProvider.getBottommostElementOfTypeAtCaret<CjCallExpression>(mainFile)
+        analyzeForTest(mainFile) {
+            val cfir = call.getOrBuildCfir((this as CaCfirSession).resolutionFacade) as CfirFunctionCall
+            val writtenArgument = cfir.typeArguments.single()
+            assertNotNull(writtenArgument.source)
+            assertEquals(ConePrimitiveType.INT64, writtenArgument.coneType)
+            val resolved = requireNotNull(call.resolveToCall()?.successfulCallOrNull<CaEnumConstructorCall<*>>())
+            val payload = resolved.payloadArgumentMapping.entries.single()
+            assertEquals(payload.key.expressionType, payload.value)
+        }
+    }
 
     @Test
     fun libraryPatternViews(mainFile: CjFile, services: TestServices) {

@@ -96,10 +96,11 @@ class ConstraintIncorporator(
         fun getConstraintsForVariable(typeVariable: TypeVariableMarker): List<Constraint>
 
         /**
-         * 注册一条由合并过程产生的新初始约束（A <: B）。
+         * 注册约束配对的派生关系；两条等式配对时保持类型身份。
          *
          * @param lowerType 下界类型 A。
          * @param upperType 上界类型 B。
+         * @param isEquality 配对的两条约束是否均保持类型身份；包括结构化等式分解的子类型界。
          * @param newDerivedFrom 新约束的推导来源，为两条原始约束 derivedFrom 的并集。
          * @param isFromDeclaredUpperBound 是否来自声明上界约束位置。
          * @param isNoInfer 是否标记为禁止推断。
@@ -109,6 +110,7 @@ class ConstraintIncorporator(
             upperType: CangJieTypeMarker,
             newDerivedFrom: Set<TypeVariableMarker>,
             isFromDeclaredUpperBound: Boolean,
+            isEquality: Boolean,
             isNoInfer: Boolean,
             dependencyScope: TypeVariableInferenceScope?,
         )
@@ -176,6 +178,7 @@ class ConstraintIncorporator(
                             upperType = constraint.type,
                             newDerivedFrom = constraint.computeNewDerivedFrom(it),
                             isFromDeclaredUpperBound = false,
+                            isEquality = constraint.isEqualityRelation && it.isEqualityRelation,
                             isNoInfer = constraint.isNoInfer || it.isNoInfer,
                             dependencyScope = localDependencyScope(typeVariable, constraint, it),
                         )
@@ -184,6 +187,7 @@ class ConstraintIncorporator(
                         upperType = constraint.type,
                         newDerivedFrom = constraint.computeNewDerivedFrom(it),
                         isFromDeclaredUpperBound = false,
+                        isEquality = constraint.isEqualityRelation && it.isEqualityRelation,
                         isNoInfer = constraint.isNoInfer || it.isNoInfer,
                         dependencyScope = localDependencyScope(typeVariable, constraint, it),
                     )
@@ -223,6 +227,7 @@ class ConstraintIncorporator(
                             upperType = it.type,
                             newDerivedFrom = constraint.computeNewDerivedFrom(it),
                             isFromDeclaredUpperBound = isFromDeclaredUpperBound,
+                            isEquality = constraint.isEqualityRelation && it.isEqualityRelation,
                             isNoInfer = constraint.isNoInfer || it.isNoInfer,
                             dependencyScope = localDependencyScope(typeVariable, constraint, it),
                         )
@@ -231,6 +236,7 @@ class ConstraintIncorporator(
                         upperType = it.type,
                         newDerivedFrom = constraint.computeNewDerivedFrom(it),
                         isFromDeclaredUpperBound = isFromDeclaredUpperBound,
+                        isEquality = constraint.isEqualityRelation && it.isEqualityRelation,
                         isNoInfer = constraint.isNoInfer || it.isNoInfer,
                         dependencyScope = localDependencyScope(typeVariable, constraint, it),
                     )
@@ -481,6 +487,7 @@ class ConstraintIncorporator(
             inputTypePositionBeforeIncorporation = inputTypePosition,
             isNoInfer = causeOfIncorporationConstraint.isNoInfer || otherConstraint.isNoInfer,
             isIncorporated = true,
+            isEqualityRelation = causeOfIncorporationConstraint.isEqualityRelation && otherConstraint.isEqualityRelation,
             dependencyScope = localDependencyScope(causeOfIncorporationVariable, causeOfIncorporationConstraint, otherConstraint)
                 ?.takeIf { it === (targetVariable as? TypeVariableWithInferenceScope)?.inferenceScope },
         )

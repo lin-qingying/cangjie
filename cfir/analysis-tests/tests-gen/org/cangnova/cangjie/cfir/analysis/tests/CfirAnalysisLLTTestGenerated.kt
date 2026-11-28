@@ -4895,6 +4895,18 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 runTest("cfir/analysis-tests/testData/llt/PatternMatching/MatchExpression/match031.cj")
             }
 
+            @TestMetadata("operator_operand_ideal_user_calls.cj")
+            @Test
+            fun testOperatorOperandIdealUserCalls() {
+                runTest("cfir/analysis-tests/testData/llt/PatternMatching/MatchExpression/operator_operand_ideal_user_calls.cj")
+            }
+
+            @TestMetadata("operator_operand_proper_inputs.cj")
+            @Test
+            fun testOperatorOperandProperInputs() {
+                runTest("cfir/analysis-tests/testData/llt/PatternMatching/MatchExpression/operator_operand_proper_inputs.cj")
+            }
+
             @TestMetadata("or_kind_diagnostics.cj")
             @Test
             fun testOrKindDiagnostics() {
@@ -18146,6 +18158,12 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testPowInferErr() {
             runTest("cfir/analysis-tests/testData/llt/operator/pow_infer_err.cj")
+        }
+
+        @TestMetadata("pow_inference_isolation.cj")
+        @Test
+        fun testPowInferenceIsolation() {
+            runTest("cfir/analysis-tests/testData/llt/operator/pow_inference_isolation.cj")
         }
 
         @TestMetadata("pow_int64_infer.cj")

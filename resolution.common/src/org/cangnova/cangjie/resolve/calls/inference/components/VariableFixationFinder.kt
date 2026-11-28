@@ -350,12 +350,16 @@ abstract class AbstractVariableReadinessCalculator<Readiness : Comparable<Readin
     }
 
     /**
-     * 判断该约束类型是否引用了所属变量之外的未固定变量。
+     * 判断约束的实际内部类型是否引用了所属变量之外的未固定变量。
+     * 仓颉函数/元组等结构类型的普通 typeArguments 为空，不能按 argumentsCount 短路。
+     * contains 由类型系统遍历语义分量；根类型变量仍属于原浅依赖策略，不计作复杂依赖。
      */
     context(c: Context)
     private fun Constraint.hasDependencyToOtherTypeVariable(ownerTypeVariable: TypeConstructorMarker): Boolean {
-        return type.argumentsCount() != 0 &&
-                type.contains { it.typeConstructor() != ownerTypeVariable && c.notFixedTypeVariables.containsKey(it.typeConstructor()) }
+        return type.contains { component ->
+            component !== type && component.typeConstructor() != ownerTypeVariable &&
+                c.notFixedTypeVariables.containsKey(component.typeConstructor())
+        }
     }
 
     // IltRelatedFlags can't be a combination of 1/0, as any non-ILT equality proper constraint is also a non-ILT proper constraint

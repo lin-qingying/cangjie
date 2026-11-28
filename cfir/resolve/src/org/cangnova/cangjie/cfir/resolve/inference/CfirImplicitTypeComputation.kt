@@ -30,6 +30,7 @@ import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.expressions.CfirResolvable
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
+import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithCandidate
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeArgumentConstraintPosition
 import org.cangnova.cangjie.resolve.calls.inference.addEqualityConstraintIfCompatible
@@ -169,7 +170,15 @@ internal class CfirImplicitTypeComputation(
     }
     private fun CandidateKey.callSlot(): CallSlot = CallSlot(callSite, kind, origin, invokeMode)
     /** 每次 PRIVATE 最终发布独立代次；sourceGeneration 只标记对应 AST/CS 快照。 */
-    private class Terminal(val generation: Generation, val sourceGeneration: Generation, val instantiation: Instantiation)
+    private class Terminal(
+        val generation: Generation,
+        val sourceGeneration: Generation,
+        val instantiation: Instantiation,
+        val candidate: Candidate,
+        val carrier: CfirExpression,
+        val reference: CfirResolvedNamedReference,
+        val type: ConeCangJieType,
+    )
     /** 创建实际 FORMAL writer 时绑定其将写回的实例与 terminal，完成证明不能追认后到代次。 */
     private class FormalCompletionBinding(
         val generation: Generation,
@@ -181,6 +190,8 @@ internal class CfirImplicitTypeComputation(
         val binding: FormalCompletionBinding,
         val candidate: Candidate,
         val carrier: CfirExpression,
+        val reference: CfirResolvedNamedReference,
+        val type: ConeCangJieType,
     )
     private data class ExpressionUse(val generation: Generation, val type: ConeCangJieType, val accepted: Boolean)
     private val terminals = mutableMapOf<CallSlot, Terminal>()
@@ -256,13 +267,6 @@ internal class CfirImplicitTypeComputation(
             completedFormalBindings.remove(site)
         }
         formalSelectedAllocations[candidate] = instance
-        CfirRetainedCompletionTrace.event("FORMAL_SELECT") {
-            "graph=" + CfirRetainedCompletionTrace.identity(this) +
-                " candidate=" + CfirRetainedCompletionTrace.candidate(candidate) +
-                " instance=" + CfirRetainedCompletionTrace.identity(instance) +
-                " terminal=" + CfirRetainedCompletionTrace.identity(terminals[site]) +
-                " completedBinding=" + CfirRetainedCompletionTrace.identity(completedFormalBindings[site])
-        }
     }
 
     /** 实际 body producer 撤销旧 candidate 的写入资格；terminal 和 VM 仍由原语义快照管理。 */
@@ -356,10 +360,6 @@ internal class CfirImplicitTypeComputation(
 
     /** 跳过、部分完成和错误都保存实际试算；它们不能建立成功终选义务。 */
     fun recordCallAttempt(scope: CfirImplicitTypeComputationScope, candidate: Candidate, outcome: CfirRetainedCallOutcome) {
-        CfirRetainedCompletionTrace.event("CALL_ATTEMPT_OUTCOME") {
-            "graph=" + CfirRetainedCompletionTrace.identity(this) +
-                " candidate=" + CfirRetainedCompletionTrace.candidate(candidate) + " outcome=" + outcome
-        }
         check(outcome != CfirRetainedCallOutcome.COMPLETED)
         check(candidate !in withdrawnCandidates) { "A withdrawn candidate was reused for a new attempt" }
         selectCompletionCandidate(scope, candidate)
@@ -413,14 +413,6 @@ internal class CfirImplicitTypeComputation(
         // 新 writer 取得该源码域的写入资格；父 writer 未受影响的源码槽继续有效。
         completionLeases.toList().forEach { previous ->
             if (previous.mode == scope.mode) {
-                CfirRetainedCompletionTrace.event("LEASE_REVOKE_SOURCES") {
-                    "graph=" + CfirRetainedCompletionTrace.identity(this) +
-                        " root=" + CfirRetainedCompletionTrace.identity(root) + " mode=" + scope.mode +
-                        " previousLease=" + CfirRetainedCompletionTrace.identity(previous) +
-                        " previousSystem=" + CfirRetainedCompletionTrace.identity(previous.system) +
-                        " newSystem=" + CfirRetainedCompletionTrace.identity(system) +
-                        " sources=" + sources.joinToString { CfirRetainedCompletionTrace.identity(it) }
-                }
                 previous.grantedSources.removeAll(sources)
             }
             if (previous.mode == scope.mode) {
@@ -433,14 +425,6 @@ internal class CfirImplicitTypeComputation(
         }
         return CfirRetainedCompletionLease(this, sources, system, scope.mode).also { lease ->
             completionLeases += lease
-            CfirRetainedCompletionTrace.event("LEASE_ISSUED") {
-                "graph=" + CfirRetainedCompletionTrace.identity(this) +
-                    " root=" + CfirRetainedCompletionTrace.identity(root) + " mode=" + scope.mode +
-                    " lease=" + CfirRetainedCompletionTrace.identity(lease) +
-                    " system=" + CfirRetainedCompletionTrace.identity(system) +
-                    " generation=" + CfirRetainedCompletionTrace.identity(generation) +
-                    " sources=" + sources.joinToString { CfirRetainedCompletionTrace.identity(it) }
-            }
             if (scope.mode == CfirImplicitTypeComputationMode.FORMAL) {
                 formalSelectedAllocations.keys.toList().filter { scope.key(it).callSite in sources }.forEach { candidate ->
                     bindFormalCompletionToLease(scope, candidate, lease)
@@ -462,15 +446,6 @@ internal class CfirImplicitTypeComputation(
         check(scope.mode == CfirImplicitTypeComputationMode.FORMAL && isCompletionLeaseActive(scope, candidate, lease))
         val bindings = formalWriterBindings.getOrPut(lease) { IdentityHashMap() }
         if (candidate in bindings) {
-            CfirRetainedCompletionTrace.event("FORMAL_BIND_REUSE") {
-                val binding = bindings[candidate]
-                "graph=" + CfirRetainedCompletionTrace.identity(this) +
-                    " candidate=" + CfirRetainedCompletionTrace.candidate(candidate) +
-                    " lease=" + CfirRetainedCompletionTrace.identity(lease) +
-                    " bindingGeneration=" + CfirRetainedCompletionTrace.identity(binding?.generation) +
-                    " boundTerminal=" + CfirRetainedCompletionTrace.identity(binding?.terminal) +
-                    " boundInstance=" + CfirRetainedCompletionTrace.identity(binding?.instantiation)
-            }
             return
         }
         val allocation = checkNotNull(formalSelectedAllocations[candidate]) { "Formal writer has no actual selected allocation" }
@@ -494,14 +469,6 @@ internal class CfirImplicitTypeComputation(
             retained
         }
         bindings[candidate] = FormalCompletionBinding(terminal?.generation ?: Generation(), bound, terminal)
-        CfirRetainedCompletionTrace.event("FORMAL_BIND_NEW") {
-            "graph=" + CfirRetainedCompletionTrace.identity(this) +
-                " candidate=" + CfirRetainedCompletionTrace.candidate(candidate) +
-                " lease=" + CfirRetainedCompletionTrace.identity(lease) +
-                " terminal=" + CfirRetainedCompletionTrace.identity(terminal) +
-                " terminalGeneration=" + CfirRetainedCompletionTrace.identity(terminal?.generation) +
-                " boundInstance=" + CfirRetainedCompletionTrace.identity(bound)
-        }
     }
 
     fun isCompletionLeaseActive(scope: CfirImplicitTypeComputationScope, candidate: Candidate, lease: CfirRetainedCompletionLease): Boolean =
@@ -509,6 +476,57 @@ internal class CfirImplicitTypeComputation(
             scope.key(candidate).callSite in lease.grantedSources && candidate !in withdrawnCandidates
 
     fun isCandidateWithdrawn(candidate: Candidate): Boolean = retired || registry[resource] !== this || candidate in withdrawnCandidates
+
+    /** 当前 source actual selection 的可变任务；PRIVATE 实例状态与 FORMAL 当前 outcome 分别核对。 */
+    internal fun isMutableSourceCallSelected(
+        scope: CfirImplicitTypeComputationScope,
+        candidate: Candidate,
+        call: CfirExpression,
+    ): Boolean {
+        if (scope.graph !== this || isCandidateWithdrawn(candidate)) return false
+        val key = scope.key(candidate)
+        if (scope.canonicalExpressionSlotOwner(call) !== key.callSite) return false
+        return when (scope.mode) {
+            CfirImplicitTypeComputationMode.PRIVATE -> {
+                val instance = privateInstantiations[candidate] ?: return false
+                candidate in privateSelectedCandidates && instance.key == key &&
+                    instance.outcome != CfirRetainedCallOutcome.COMPLETED
+            }
+            CfirImplicitTypeComputationMode.FORMAL -> {
+                val allocation = formalSelectedAllocations[candidate] ?: return false
+                allocation.key == key && formalOutcomes[key.callSlot()] in setOf(
+                    CfirRetainedCallOutcome.SKIPPED, CfirRetainedCallOutcome.PARTIAL, CfirRetainedCallOutcome.REJECTED,
+                )
+            }
+        }
+    }
+
+    /** 已执行的 source terminal/binding 只读消费；不创建 lease、分配实例或登记新的 replay。 */
+    internal fun hasCompletedSourceCallResult(call: CfirExpression): Boolean {
+        if (retired || registry[resource] !== this) return false
+        val reference = (call as? CfirResolvable)?.calleeReference as? CfirResolvedNamedReference ?: return false
+        if (reference is CfirDiagnosticHolder) return false
+        val type = call.coneTypeOrNull ?: return false
+        var formalResult = false
+        collectCompletedFormalCallCarriers(setOf(call)) { carrier, _ ->
+            if (carrier === call) formalResult = true
+        }
+        if (formalResult) return true
+        return privateSelectedCandidates.any { candidate ->
+            if (isCandidateWithdrawn(candidate)) return@any false
+            val scope = candidate.implicitTypeComputationScope ?: return@any false
+            if (scope.graph !== this || scope.mode != CfirImplicitTypeComputationMode.PRIVATE) return@any false
+            val instance = privateInstantiations[candidate] ?: return@any false
+            val terminal = terminals[instance.key.callSlot()] ?: return@any false
+            terminal.sourceGeneration === generation && terminal.instantiation === instance &&
+                terminal.candidate === candidate && terminal.carrier === call &&
+                terminal.reference === reference && terminal.type === type &&
+                selectedInstantiations[instance.key] === instance && instance.key == scope.key(candidate) &&
+                instance.outcome == CfirRetainedCallOutcome.COMPLETED && instance.terminalTarget == instance.key.target &&
+                matchesResolvedCompletionTarget(scope, candidate, reference.resolvedSymbol) &&
+                candidate.hasSuccessfulSourceResult(type)
+        }
+    }
 
     /** 已 resolved 的调用也必须使用显式 completion atom 的同一语义目标。 */
     fun matchesResolvedCompletionTarget(scope: CfirImplicitTypeComputationScope, candidate: Candidate, symbol: CfirBasedSymbol<*>): Boolean {
@@ -539,7 +557,8 @@ internal class CfirImplicitTypeComputation(
             check(scope.key(candidate).callSlot() == slot &&
                 scope.key(candidate) == completed.binding.instantiation.key &&
                 scope.canonicalExpressionSlotOwner(carrier) === slot.site &&
-                formalOutcomes[slot] == CfirRetainedCallOutcome.COMPLETED && candidate.isSuccessful
+                formalOutcomes[slot] == CfirRetainedCallOutcome.COMPLETED &&
+                candidate.hasSuccessfulSourceResult(completed.type)
             ) { "Completed formal carrier changed its actual candidate or source ownership" }
             val reference = (carrier as CfirResolvable).calleeReference
             // 未完成的新引用仍由原 AST/atom collector 处理；错误引用不发布成功 carrier。
@@ -549,6 +568,8 @@ internal class CfirImplicitTypeComputation(
             check(matchesResolvedCompletionTarget(scope, candidate, reference.resolvedSymbol)) {
                 "Completed formal carrier changed its actual resolved declaration"
             }
+            // 先核验真实声明；同一声明的新引用或类型仍不能继承旧 binding。
+            if (reference !== completed.reference || carrier.coneTypeOrNull !== completed.type) continue
             collect(carrier, candidate)
         }
     }
@@ -580,11 +601,6 @@ internal class CfirImplicitTypeComputation(
     ): Boolean {
         // 不能仅按 Candidate 是否还存在判断 writer 代次；已存在 Candidate 也能被回滚重用。
         if (!isCompletionLeaseActive(scope, candidate, lease)) {
-            CfirRetainedCompletionTrace.event("RECORD_INACTIVE_LEASE") {
-                "graph=" + CfirRetainedCompletionTrace.identity(this) +
-                    " candidate=" + CfirRetainedCompletionTrace.candidate(candidate) +
-                    " lease=" + CfirRetainedCompletionTrace.identity(lease)
-            }
             return false
         }
         check(lease.system === system) { "Completion writer changed its actual CS owner" }
@@ -657,42 +673,8 @@ internal class CfirImplicitTypeComputation(
             }
             privateInstantiations[candidate] = published
             selectedInstantiations[key] = published
-            val terminal = Terminal(Generation(), generation, published)
-            if (java.lang.Boolean.getBoolean("cangjie.debug.formalCallIdentity")) {
-                val previous = terminals[key.callSlot()]
-                if (previous != null && previous.instantiation !== published &&
-                    formalOutcomes[key.callSlot()] == CfirRetainedCallOutcome.COMPLETED
-                ) {
-                    fun identity(value: Any?): String = if (value == null) "null" else System.identityHashCode(value).toString(16)
-                    fun targetIdentity(target: CallTarget): String = when (target) {
-                        is CallTarget.Declaration -> "declaration=${identity(target.symbol)}"
-                        is CallTarget.Synthetic -> "source=${identity(target.source)},role=${target.role}"
-                    }
-                    System.err.println("PRIVATE_TERMINAL_AFTER_FORMAL_REPLAY graph=${identity(this)} resource=${identity(resource)} " +
-                            "site=${identity(key.callSite)} candidate=${identity(candidate)} previous=${identity(previous.instantiation)} " +
-                            "current=${identity(published)} keyEqual=${key == previous.instantiation.key} " +
-                            "oldTarget=${targetIdentity(previous.instantiation.key.target)} newTarget=${targetIdentity(key.target)} " +
-                            "oldGeneration=${identity(previous.generation)} currentGeneration=${identity(generation)} " +
-                            "newTerminalGeneration=${identity(terminal.generation)} " +
-                            "previousReplayed=${previous.instantiation in replayedInstantiations} " +
-                            "stack=${Throwable().stackTrace.take(22).joinToString(" <- ")}")
-                }
-            }
-            val previousForTrace = terminals[key.callSlot()]
+            val terminal = Terminal(Generation(), generation, published, candidate, call, reference, type)
             terminals[key.callSlot()] = terminal
-            CfirRetainedCompletionTrace.event("PRIVATE_PUBLISH") {
-                "graph=" + CfirRetainedCompletionTrace.identity(this) + " resource=" +
-                    CfirRetainedCompletionTrace.identity(resource) + " site=" + CfirRetainedCompletionTrace.identity(key.callSite) +
-                    " candidate=" + CfirRetainedCompletionTrace.candidate(candidate) +
-                    " lease=" + CfirRetainedCompletionTrace.identity(lease) +
-                    " previousTerminal=" + CfirRetainedCompletionTrace.identity(previousForTrace) +
-                    " previousGeneration=" + CfirRetainedCompletionTrace.identity(previousForTrace?.generation) +
-                    " terminal=" + CfirRetainedCompletionTrace.identity(terminal) +
-                    " terminalGeneration=" + CfirRetainedCompletionTrace.identity(terminal.generation) +
-                    " instance=" + CfirRetainedCompletionTrace.identity(published) +
-                    " completionOwner=" + CfirRetainedCompletionTrace.candidate(completionOwnerCandidate) +
-                    " stack=" + CfirRetainedCompletionTrace.stack()
-            }
         } else {
             val binding = checkNotNull(formalBinding)
             binding.terminal?.let { terminal ->
@@ -700,18 +682,9 @@ internal class CfirImplicitTypeComputation(
                 check(binding.instantiation === terminal.instantiation && binding.generation === terminal.generation)
                 replayedInstantiations += terminal.instantiation
             }
-            completedFormalBindings[key.callSlot()] = CompletedFormalCall(binding, candidate, call)
+            completedFormalBindings[key.callSlot()] = CompletedFormalCall(binding, candidate, call, reference, type)
             formalOutcomes[key.callSlot()] = CfirRetainedCallOutcome.COMPLETED
             formalSourceRejections.remove(key.callSite)
-            CfirRetainedCompletionTrace.event("FORMAL_CONSUMED") {
-                "graph=" + CfirRetainedCompletionTrace.identity(this) + " site=" + CfirRetainedCompletionTrace.identity(key.callSite) +
-                    " candidate=" + CfirRetainedCompletionTrace.candidate(candidate) +
-                    " lease=" + CfirRetainedCompletionTrace.identity(lease) +
-                    " terminal=" + CfirRetainedCompletionTrace.identity(binding.terminal) +
-                    " bindingGeneration=" + CfirRetainedCompletionTrace.identity(binding.generation) +
-                    " instance=" + CfirRetainedCompletionTrace.identity(binding.instantiation) +
-                    " currentTerminal=" + CfirRetainedCompletionTrace.identity(terminals[key.callSlot()])
-            }
         }
         return true
     }
@@ -1314,15 +1287,6 @@ internal class CfirImplicitTypeComputation(
         val revision = privateAdditionalResultsRevision
         val callbacks = ownCallbacks.filter { it !in completedPrivateAdditionalCallbacks }
         val lambdas = ownLambdas.toList()
-        CfirRetainedCompletionTrace.event("PRESTAGE_ADDITIONAL_WRITE") {
-            "graph=" + CfirRetainedCompletionTrace.identity(this) +
-                " producer=" + CfirRetainedCompletionTrace.identity(producer) +
-                " owner=" + CfirRetainedCompletionTrace.candidate(owner) +
-                " system=" + CfirRetainedCompletionTrace.identity(system) +
-                " revision=" + CfirRetainedCompletionTrace.identity(revision) +
-                " callbacks=" + callbacks.joinToString { CfirRetainedCompletionTrace.identity(it) } +
-                " lambdas=" + lambdas.joinToString { CfirRetainedCompletionTrace.identity(it) }
-        }
         writer(callbacks, lambdas, substitutor)
         if (privateAdditionalResultsEpoch !== producer.epoch || privateAdditionalResultsOwner !== owner ||
             privateAdditionalResultsWriter !== writer || retired || registry[resource] !== this) return
@@ -1338,12 +1302,6 @@ internal class CfirImplicitTypeComputation(
             writer, owner, system, system.captureStorage(), revision, ownCallbacks.toList(), lambdas,
         )
         removePrivateAdditionalDispatchers(owner)
-        CfirRetainedCompletionTrace.event("PRESTAGE_ADDITIONAL_COMPLETED") {
-            "graph=" + CfirRetainedCompletionTrace.identity(this) +
-                " producer=" + CfirRetainedCompletionTrace.identity(producer) +
-                " owner=" + CfirRetainedCompletionTrace.candidate(owner) +
-                " system=" + CfirRetainedCompletionTrace.identity(system)
-        }
     }
 
     private fun invalidatePrivateAdditionalResults() {
@@ -1443,14 +1401,6 @@ internal class CfirImplicitTypeComputation(
         val key = scope.key(candidate)
         val beforeTerminal = terminals[key.callSlot()]
         val registeredWriter = checkNotNull(writeCall)
-        CfirRetainedCompletionTrace.event("PRESTAGE_PRODUCER_WRITE") {
-            "graph=" + CfirRetainedCompletionTrace.identity(this) +
-                " owner=" + CfirRetainedCompletionTrace.candidate(owner) +
-                " candidate=" + CfirRetainedCompletionTrace.candidate(candidate) +
-                " atom=" + CfirRetainedCompletionTrace.identity(call) +
-                " registeredWriter=" + CfirRetainedCompletionTrace.identity(registeredWriter) +
-                " beforeTerminal=" + CfirRetainedCompletionTrace.identity(beforeTerminal)
-        }
         registeredWriter(call, substitutor)
         check(!retired && registry[resource] === this && completionOwnerCandidate === owner)
         check(owner.pclaCallWriters[call] === registeredWriter) { "PRIVATE producer changed its registered writer" }
