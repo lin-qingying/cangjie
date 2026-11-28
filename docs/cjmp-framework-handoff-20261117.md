@@ -17,10 +17,16 @@ Linux 本地验证环境为 Ubuntu 22.04.5、Gradle 9.4.0、Temurin 21.0.13+9、
 | 验证窗口 | 实际受测提交 | 已确认结果 |
 | --- | --- | --- |
 | Linux 定向第 4 轮 | `d23cc86fd6c6466b0c42ee7bb85c0d4237fd2ec3` | 已报告 185 项，124 通过、60 失败、1 跳过。Frontend worker 在宏 token 循环失去进度后被停止。CJO 受 Analysis API 编译阻塞 |
-| Linux 定向第 6 轮 | `21c16e5cb4997b6d92e896293c1fba2342a8b150` | Providers 84/84，导出输入快照 64/64。PSI、Resolve 与 CJO 的测试编译接口差异进入下一轮，相关生产模块已编译 |
-| 主分支回归 | `781891ab8db43d3f29c76d095a2170678ee569c5` | GitHub 已安排 20 个 SDK 矩阵任务。本地完整回归在下一轮定向验证后运行 |
+| Linux 定向第 6 轮 | `21c16e5cb4997b6d92e896293c1fba2342a8b150` | 执行 223 项，201 通过、22 失败。Providers 84/84，导出输入快照 64/64。PSI、Resolve 与 CJO 的测试编译进入下一轮 |
+| Linux 定向第 7 轮 | `39950914612e1ee6bc19d16c893c296d1fa7d0d4` | 执行 550 项，501 通过、49 失败。Providers 84/84、Resolve 106/111、Frontend 57/69、PSI 254/286。CJO 测试编译卡在 FullId 夹具的断言函数名，已在后续提交修正 |
+| Linux 定向第 8 轮 | `167f90ae7062190870a14f72f3caeb12f7360c07` | 开始复验 CJO、限定快照、Core 输入、CFG、Providers 和正式消费。Frontend 与 CJO 本地测试 worker 使用 2 GiB 堆 |
+| 主分支回归 | `39950914612e1ee6bc19d16c893c296d1fa7d0d4` | GitHub SDK 发现及 LLVM JNI 构建通过。首批 SDK 作业已进入 `Run main repository tests`，矩阵仍在执行。[运行记录](https://github.com/lin-qingying/cangjie/actions/runs/46134914684) |
+
+第 7 轮实际验证了三项 SOURCE FullId、导入泛型正文、泛型 enum 配对及 payload 不匹配负例、两种前端的配对注解和源位置。后续补丁在隔离运行中通过 46 项宏构造与告警测试、49 项异常及 if CFG 测试，以及 73 项宏转义和词法测试。完整提交的 Gradle 复验继续进行。
 
 第 6 轮已复验 R42 alias 装配。R41 的 Core 定义输入失败仍有原测试入口 `CfirInitializationDependencySerializationTest.stdCoreProducerInjectsProviderBuiltinsAsPackageRoots`。该用例需要作用域内的真实当前定义产品。已记录的 CJMP 历史分歧包括普通有界 extend 的私有成员导出、Common 静态调用初始化器以及 Common const 和 tuple 的 CJO 槽。SDK 1.1.0 的独立消费端实际执行 Common 静态初始化器，且输出随 specific 对应函数更新。原始断言继续保留。
+
+原有的 common extend 重载余额从 `CfirCjmpExtendKey.sameKeyAs` 的真实 nominal counterpart 和 `ResolveUtils.expectedExtensionReceiverType` 的逻辑接收者继续。隔离实验已经观察到两原例通过，并保留同名但无真实绑定的 fixed symbol 负控。完整双向分组、泛型头及低级 API 验证继续按 [11 月 24 日 Source Owner 接续](cjmp-source-owner-continuation-20261124.md) 实施。
 
 本地原始日志在 `/workspace/work/cjmp-pr17/validation`。每轮保留实际 SHA、参数、工具链与 SDK 校验值、完整 Gradle 日志、退出码和该轮生成的测试 XML。隔离的枚举、注解、同签名冲突和导入正文复验另有日志。Analysis API 使用 `CaValueParameterSymbol.correspondingField: CaFieldSymbol?` 表达主构造器 `let`／`var` 产生的实际成员字段。原 main 的 `correspondingProperty: CaPropertySymbol?` 调用方已迁移。
 
