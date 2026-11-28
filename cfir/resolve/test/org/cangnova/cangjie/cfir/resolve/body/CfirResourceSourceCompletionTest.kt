@@ -933,14 +933,13 @@ class CfirResourceSourceCompletionTest {
         val f = Fixture(retained = true)
         val host = prepareRootLifecycleParent(f)
         val parent = f.context.dataFlowAnalyzerContext.graphBuilder
-        val variable = SyntheticVariable(CallResolutionTestFixtures.buildTypedExpression(ConePrimitiveType.INT32))
-        val logic = object : LogicSystem(f.session.typeContext) {}
-        val mutable = MutableFlow()
-        val event = logic.beginExpression(mutable, variable.fir, ConePrimitiveType.INT32)
-        logic.addTypeStatement(mutable, variable typeEq ConePrimitiveType.INT32)
-        logic.completeExpression(mutable, event)
-        val flow = mutable.freeze()
-        parent.lastNode.flow = flow
+        val literal = assertInstanceOf(
+            CfirLiteralExpression::class.java,
+            CallResolutionTestFixtures.buildTypedExpression(ConePrimitiveType.INT32),
+        )
+        f.transformer.dataFlowAnalyzer.exitLiteralExpression(literal)
+        val flow = parent.lastNode.flow
+        val variable = flow.getExpressionCompletion(literal).value
         val parentGraph = parent.currentGraph
         val parentCursor = parent.lastNode
         val probe = RootLifecycleProbe(f, checkNotNull(f.graph), f.resource, f.privateCall)
