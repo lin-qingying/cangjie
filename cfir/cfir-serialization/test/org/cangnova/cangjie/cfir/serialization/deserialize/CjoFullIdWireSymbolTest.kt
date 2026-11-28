@@ -172,8 +172,8 @@ class CjoFullIdWireSymbolTest {
             val signatures = full.withMode(CjoDeserializationMode.SIGNATURE_ONLY)
             val order = if (signatureFirst) listOf(signatures, full) else listOf(full, signatures)
             order.forEach { assertIs<CfirPatternVariable>(it.createDeclDeserializer().deserializeDecl(0)) }
-            val fullRecord = assertValue(full.headerRecordOrNull(0))
-            val signatureRecord = assertValue(signatures.headerRecordOrNull(0))
+            val fullRecord = assertNotNull(full.headerRecordOrNull(0))
+            val signatureRecord = assertNotNull(signatures.headerRecordOrNull(0))
             assertSame(fullRecord.declarationRoot, full.declCache[0])
             assertSame(signatureRecord.declarationRoot, signatures.declCache[0])
             assertNotSame(fullRecord.wireSymbol, signatureRecord.wireSymbol)
