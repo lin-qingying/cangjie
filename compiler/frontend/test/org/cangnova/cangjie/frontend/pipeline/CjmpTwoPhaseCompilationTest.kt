@@ -53,7 +53,6 @@ import org.cangnova.cangjie.cfir.serialization.cjo.CjoFunctionBodyInfo
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoFunctionInfo
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoFunctionTypeInfoMetadata
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoClassInfo
-import org.cangnova.cangjie.cfir.serialization.cjo.CjoStructInfo
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoCompositeTypeInfoMetadata
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoDeclHashMetadata
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoGenericMetadata
@@ -749,52 +748,20 @@ class CjmpTwoPhaseCompilationTest {
                         kind = DeclKind.ClassDecl,
                         exportId = exportedClassKey,
                         type = 1u,
+                        attributes = cjmpAttributeWords(Attribute.PUBLIC),
                         info = CjoClassInfo(),
                     ),
                     CjoPackageDeclaration(
                         identifier = identifierFallbackKey,
                         kind = DeclKind.ClassDecl,
                         type = 2u,
+                        attributes = cjmpAttributeWords(Attribute.PUBLIC),
                         info = CjoClassInfo(),
                     ),
                 ),
                 types = listOf(
                     CjoTypeMetadata(
                         kind = PackageFormat.TypeKind.Class,
-                        semanticInfo = CjoCompositeTypeInfoMetadata(declarationIndex = 1u),
-                    ),
-                    CjoTypeMetadata(
-                        kind = PackageFormat.TypeKind.Class,
-                        semanticInfo = CjoCompositeTypeInfoMetadata(declarationIndex = 2u),
-                    ),
-                ),
-            ),
-        )
-        CjoPackageWriter.write(
-            dependencyOutput.resolve(CjoConstants.packageNameToPath("std.core")),
-            CjoPackageMetadata(
-                fullPackageName = "std.core",
-                moduleName = "std.core",
-                allFiles = listOf("std-core.cj"),
-                declarations = listOf(
-                    CjoPackageDeclaration(
-                        identifier = "String",
-                        kind = DeclKind.StructDecl,
-                        exportId = "_CNat6StringE",
-                        type = 1u,
-                        info = CjoStructInfo(),
-                    ),
-                    CjoPackageDeclaration(
-                        identifier = "Object",
-                        kind = DeclKind.ClassDecl,
-                        exportId = "_CNat6ObjectE",
-                        type = 2u,
-                        info = CjoClassInfo(),
-                    ),
-                ),
-                types = listOf(
-                    CjoTypeMetadata(
-                        kind = PackageFormat.TypeKind.Struct,
                         semanticInfo = CjoCompositeTypeInfoMetadata(declarationIndex = 1u),
                     ),
                     CjoTypeMetadata(
