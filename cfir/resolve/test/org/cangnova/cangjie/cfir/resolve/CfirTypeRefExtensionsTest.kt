@@ -10,6 +10,7 @@ import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
 import org.cangnova.cangjie.cfir.types.ConeUnionType
+import org.cangnova.cangjie.cfir.types.withReplacedConeType
 import org.cangnova.cangjie.cfir.types.impl.CfirResolvedTypeRefImpl
 import org.cangnova.cangjie.cfir.types.impl.CfirUserTypeRefImpl
 import org.cangnova.cangjie.name.ClassId
@@ -17,6 +18,7 @@ import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.CjBinarySourceElement
 import org.junit.jupiter.api.Assertions.assertNotEquals
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -28,6 +30,15 @@ import org.junit.jupiter.api.Test
  * 体现在 key 中；这些测试锁定该渲染行为，防止后续回归。
  */
 class CfirTypeRefExtensionsTest {
+    /** 共享来源迁移保留真实类型节点标记，不把显式源类型变成生成/推断类型。 */
+    @Test
+    fun sourceTypeOriginSurvivesResolvedPrototypeReplacement() {
+        val original = resolvedTypeRef(ConePrimitiveType.INT32)
+        original.replaceTypeUseOrigin(org.cangnova.cangjie.cfir.types.CfirTypeRefOrigin.SOURCE)
+        val copied = original.withReplacedConeType(ConePrimitiveType.FLOAT64)
+        assertEquals(org.cangnova.cangjie.cfir.types.CfirTypeRefOrigin.SOURCE, copied.typeUseOrigin)
+    }
+
     /**
      * 构造已解析的 type ref。
      */
@@ -36,6 +47,7 @@ class CfirTypeRefExtensionsTest {
             source = null,
             annotations = MutableOrEmptyList.empty(),
             customRenderer = false,
+            typeUseOrigin = org.cangnova.cangjie.cfir.types.CfirTypeRefOrigin.SEMANTIC,
             coneType = coneType,
             delegatedTypeRef = null,
         )
@@ -77,6 +89,7 @@ class CfirTypeRefExtensionsTest {
         val userTypeRef1 = CfirUserTypeRefImpl(
             annotations = MutableOrEmptyList.empty(),
             customRenderer = false,
+            typeUseOrigin = org.cangnova.cangjie.cfir.types.CfirTypeRefOrigin.SOURCE,
             source = TestBinarySourceElement("sample.pkg.Box"),
 qualifier = listOf(
                 buildQualifierPart {
@@ -91,6 +104,7 @@ qualifier = listOf(
         val userTypeRef2 = CfirUserTypeRefImpl(
             annotations = MutableOrEmptyList.empty(),
             customRenderer = false,
+            typeUseOrigin = org.cangnova.cangjie.cfir.types.CfirTypeRefOrigin.SOURCE,
             source = TestBinarySourceElement("sample.pkg.Box"),
             qualifier = listOf(
                 buildQualifierPart {

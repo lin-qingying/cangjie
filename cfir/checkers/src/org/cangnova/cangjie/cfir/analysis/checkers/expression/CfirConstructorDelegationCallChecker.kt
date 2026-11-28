@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
@@ -18,7 +19,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirFunctionCallOrigin
  * declaration 侧的 `CfirConstructorDelegationChecker` 负责“在构造器里是否合法”；
  * 这里负责更外层的入口约束：如果最近的函数级声明不是 constructor，就直接报非法位置。
  */
-object CfirConstructorDelegationCallChecker : CfirFunctionCallChecker() {
+object CfirConstructorDelegationCallChecker : CfirFunctionCallChecker(MppCheckerKind.Common) {
     /** 检查 `this(...)`/`super(...)` 构造器委托调用是否位于构造器声明内部。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirFunctionCall) {
@@ -48,7 +49,8 @@ object CfirConstructorDelegationCallChecker : CfirFunctionCallChecker() {
 private fun CfirFunctionCallOrigin.constructorDelegationKeyword(): String? {
     return when (this) {
         CfirFunctionCallOrigin.ConstructorDelegationThis -> "this"
-        CfirFunctionCallOrigin.ConstructorDelegationSuper -> "super"
+        CfirFunctionCallOrigin.ConstructorDelegationSuper,
+        CfirFunctionCallOrigin.ImplicitConstructorDelegationSuper -> "super"
         else -> null
     }
 }

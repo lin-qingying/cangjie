@@ -5,6 +5,18 @@
 #include <llvm-c/Support.h>
 #include <llvm-c/Target.h>
 #include <llvm-c/TargetMachine.h>
+#include <llvm/Config/llvm-config.h>
+
+extern "C" JNIEXPORT jstring JNICALL Java_org_cangnova_cangjie_llvm_jni_LlvmNative_llvmVersion(
+    JNIEnv* env,
+    jclass
+) {
+    const std::string version =
+        std::to_string(LLVM_VERSION_MAJOR) + "." +
+        std::to_string(LLVM_VERSION_MINOR) + "." +
+        std::to_string(LLVM_VERSION_PATCH);
+    return env->NewStringUTF(version.c_str());
+}
 
 extern "C" JNIEXPORT void JNICALL Java_org_cangnova_cangjie_llvm_jni_LlvmNative_targetInitializeAll(
     JNIEnv*,

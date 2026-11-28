@@ -173,14 +173,19 @@ fun InputStreamReader.readSourceFileWithMapping(): Pair<CharSequence, CjSourceFi
 /**
  * Extracts source lines to offsets mapping from text
  *
- * intended for using mainly in tests, so no care is taken about performance or possible corner cases
+ * 保留原始文本坐标，并将 CR、LF 和 CRLF 各视为一个换行。
  */
 fun CharSequence.toSourceLinesMapping(): CjSourceFileLinesMapping {
     val lineOffsets = mutableListOf(0)
     var offset = 0
-    for (c in this) {
-        offset++
-        if (c == '\n') lineOffsets.add(offset)
+    while (offset < length) {
+        val character = this[offset++]
+        if (character == '\r') {
+            if (offset < length && this[offset] == '\n') offset++
+            lineOffsets.add(offset)
+        } else if (character == '\n') {
+            lineOffsets.add(offset)
+        }
     }
     return CjSourceFileLinesMappingFromLineStartOffsets(lineOffsets.toIntArray(), offset)
 }

@@ -1,9 +1,14 @@
 package org.cangnova.cangjie.cfir.scopes.impl
 
 import org.cangnova.cangjie.cfir.ScopeSession
+import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.scopes.CfirCallableLookupProvenance
 import org.cangnova.cangjie.cfir.scopes.CfirCallableLookupProvenanceScope
 import org.cangnova.cangjie.cfir.scopes.CfirCallableWithLookupProvenance
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
+import org.cangnova.cangjie.cfir.scopes.CfirFunctionInstantiationScope
+import org.cangnova.cangjie.cfir.scopes.CfirFunctionInstantiationTable
+import org.cangnova.cangjie.cfir.scopes.CfirFunctionMemberTableKind
 import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
 import org.cangnova.cangjie.cfir.scopes.processCallablesByNameWithLookupProvenance
 import org.cangnova.cangjie.cfir.session.CfirSession
@@ -15,6 +20,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.typeContext
+import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.type.AbstractTypeChecker
 
@@ -30,7 +36,7 @@ class CfirCompositeTypeScope(
      * 类型等价判断使用的 use-site session。
      */
     private val session: CfirSession,
-) : CfirTypeScope(), CfirCallableLookupProvenanceScope {
+) : CfirTypeScope(), CfirCallableLookupProvenanceScope, CfirFunctionInheritanceScope, CfirFunctionInstantiationScope {
 
     /**
      * 在所有子 scope 中处理直接覆盖函数。
@@ -103,6 +109,121 @@ class CfirCompositeTypeScope(
         mergedBySignature.values.forEach(processor)
     }
 
+    /** 保留每个交叉分支的函数继承身份，实例化检查不能把不同泛型父边压成代表成员。 */
+    override fun processFunctionsByNameWithProvenance(
+        name: Name,
+        processor: (CfirFunctionInheritanceProvenance) -> Unit,
+    ) {
+        for (scope in scopes) {
+            val inheritanceScope = scope as? CfirFunctionInheritanceScope
+            if (inheritanceScope != null) {
+                inheritanceScope.processFunctionsByNameWithProvenance(name, processor)
+                continue
+            }
+            val lookupProvenanceByFunction = linkedMapOf<CfirNamedFunctionSymbol, CfirCallableLookupProvenance>()
+            scope.processCallablesByNameWithLookupProvenance(name) { candidate ->
+                val function = candidate.symbol as? CfirNamedFunctionSymbol ?: return@processCallablesByNameWithLookupProvenance
+                lookupProvenanceByFunction[function] = candidate.provenance
+            }
+            scope.processFunctionsByName(name) { member ->
+                val original = member.unwrapSubstitutionOverrides() as? CfirNamedFunctionSymbol ?: return@processFunctionsByName
+                processor(
+                    CfirFunctionInheritanceProvenance(
+                        member = member,
+                        identity = CfirFunctionInheritanceIdentity(original, null),
+                        baseScope = scope,
+                        lookupProvenance = lookupProvenanceByFunction[member] ?: CfirCallableLookupProvenance.None,
+                    ),
+                )
+            }
+        }
+    }
+
+    override fun publishedFunctionMemberTable(name: Name): CfirFunctionInstantiationTable =
+        combinePublishedTables { it.publishedFunctionMemberTable(name) }
+
+    override fun inheritedFunctionMemberTable(name: Name, useSiteOwner: CfirDeclaration): CfirFunctionInstantiationTable =
+        combinePublishedTables { it.inheritedFunctionMemberTable(name, useSiteOwner) }
+
+    override fun functionInstantiationTable(name: Name): CfirFunctionInstantiationTable {
+        val builder = CfirFunctionInstantiationTableBuilder(session)
+        builder.copyFrom(publishedFunctionMemberTable(name))
+        for (scope in instantiationScopes()) {
+            val table = scope.functionInstantiationTable(name)
+            table.ownDeclarations.forEach(builder::addOwnDeclaration)
+            table.members.filter { it.isPrivate && it.declaration in table.ownDeclarations }.forEach { builder.update(it) }
+        }
+        return builder.finish(CfirFunctionMemberTableKind.INSTANTIATION_COPY)
+    }
+
+    override fun constructorInstantiationTable(): CfirFunctionInstantiationTable {
+        val builder = CfirFunctionInstantiationTableBuilder(session)
+        for (scope in instantiationScopes()) {
+            val table = scope.constructorInstantiationTable()
+            table.ownDeclarations.forEach(builder::addOwnDeclaration)
+            builder.addTable(table)
+        }
+        return builder.finish(CfirFunctionMemberTableKind.INSTANTIATION_COPY)
+    }
+
+    /** 合并类别来自各分支的实际容器；接口 merge=true 只用于真实接口分支。 */
+    private fun combinePublishedTables(
+        getTable: (CfirFunctionInstantiationScope) -> CfirFunctionInstantiationTable,
+    ): CfirFunctionInstantiationTable {
+        val interfaces = CfirFunctionInstantiationTableBuilder(session)
+        val instances = CfirFunctionInstantiationTableBuilder(session)
+        val visibleExtends = CfirFunctionInstantiationTableBuilder(session)
+        val tables = instantiationScopes().map(getTable)
+        for (table in tables) {
+            table.ownDeclarations.forEach(interfaces::addOwnDeclaration)
+            when (table.kind) {
+                CfirFunctionMemberTableKind.INTERFACE -> interfaces.addTable(table, inheritedInterfaces = true)
+                CfirFunctionMemberTableKind.INSTANCE -> instances.addTable(table)
+                CfirFunctionMemberTableKind.VISIBLE_EXTEND -> visibleExtends.addTable(table)
+                CfirFunctionMemberTableKind.INSTANTIATION_COPY -> error("A published composite branch cannot contain an instantiation copy")
+            }
+        }
+        visibleExtends.addTable(instances.finish(CfirFunctionMemberTableKind.INSTANCE))
+        interfaces.addTable(visibleExtends.finish(CfirFunctionMemberTableKind.VISIBLE_EXTEND))
+        interfaces.removePrivateMembers()
+        interfaces.clearPublishedTransientState()
+        return interfaces.finish(if (tables.all { it.kind == CfirFunctionMemberTableKind.INTERFACE }) {
+            CfirFunctionMemberTableKind.INTERFACE
+        } else {
+            CfirFunctionMemberTableKind.INSTANCE
+        })
+    }
+
+    private fun instantiationScopes(): List<CfirFunctionInstantiationScope> = scopes.map { scope ->
+        checkNotNull(scope as? CfirFunctionInstantiationScope) {
+            "Composite instantiation branches must expose a stored member table: $scope"
+        }
+    }
+
+    /** 组合分支各自保留的归并前继承输入。 */
+    override fun processUnmergedInheritedFunctionsByNameWithProvenance(
+        name: Name,
+        processor: (CfirFunctionInheritanceProvenance) -> Unit,
+    ) {
+        scopes.filterIsInstance<CfirFunctionInheritanceScope>().forEach {
+            it.processUnmergedInheritedFunctionsByNameWithProvenance(name, processor)
+        }
+    }
+
+    /** 组合分支的直接 override 来源。 */
+    override fun processDirectOverriddenFunctionsWithProvenance(
+        functionSymbol: CfirNamedFunctionSymbol,
+        processor: (CfirFunctionInheritanceProvenance) -> ProcessorAction,
+    ): ProcessorAction {
+        for (scope in scopes) {
+            val inheritanceScope = scope as? CfirFunctionInheritanceScope ?: continue
+            if (inheritanceScope.processDirectOverriddenFunctionsWithProvenance(functionSymbol, processor) == ProcessorAction.STOP) {
+                return ProcessorAction.STOP
+            }
+        }
+        return ProcessorAction.NEXT
+    }
+
     /**
      * 在所有子 scope 中处理属性，并按实例化后的属性类型合并等价候选。
      *
@@ -160,13 +281,15 @@ class CfirCompositeTypeScope(
         val emitted = linkedSetOf<CfirCallableWithLookupProvenance>()
         for (scope in scopes) {
             scope.processCallablesByNameWithLookupProvenance(name) { candidate ->
-                if (candidate.symbol is CfirPropertySymbol) {
+                val candidateSymbol = candidate.symbol
+                if (candidateSymbol is CfirPropertySymbol) {
                     // Intersection 上界中的同名属性若实例化后类型等价，代表同一个属性契约。
                     // provenance 入口也必须应用与普通属性入口相同的归并，否则 tower 会把
                     // 两个接口的等价属性当成两个独立候选并报告 AMBIGUOUS_USE。
                     val equivalent = emitted.firstOrNull { previous ->
-                        previous.symbol is CfirPropertySymbol &&
-                            previous.symbol.hasEquivalentInstantiatedType(candidate.symbol)
+                        val previousSymbol = previous.symbol
+                        previousSymbol is CfirPropertySymbol &&
+                            previousSymbol.hasEquivalentInstantiatedType(candidateSymbol)
                     }
                     if (equivalent != null) {
                         return@processCallablesByNameWithLookupProvenance

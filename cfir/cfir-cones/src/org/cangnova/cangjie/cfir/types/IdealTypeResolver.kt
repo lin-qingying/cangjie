@@ -71,7 +71,7 @@ object IdealTypeResolver {
         is ConeTupleType -> type.elementTypes.defaultedTypesOrNull()
             ?.let { ConeTupleType(it, type.attributes) } ?: type
         is ConeClassLikeType -> type.typeArguments.map { it.type }.defaultedTypesOrNull()
-            ?.let { ConeClassLikeType(type.lookupTag, it, type.attributes, type.isInterface, type.isThisType) } ?: type
+            ?.let { ConeClassLikeType(type.lookupTag, it, type.attributes, type.isInterface, type.isThisType, type.rawArrayDimensions) } ?: type
         is ConeEnumType -> type.typeArguments.map { it.type }.defaultedTypesOrNull()
             ?.let { ConeEnumType(type.lookupTag, it, type.attributes, type.isRefEnum) } ?: type
         is ConeVArrayType -> replaceIdealTypes(type.elementType).let { elementType ->

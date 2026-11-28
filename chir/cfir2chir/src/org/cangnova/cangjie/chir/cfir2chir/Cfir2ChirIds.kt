@@ -4,8 +4,10 @@ import org.cangnova.cangjie.chir.core.identity.ChirSemanticId
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRefsOwner
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 
 /**
  * CFIR 到 CHIR 转换阶段生成稳定语义 ID 和 JVM 安全名称的工具。
@@ -38,6 +40,25 @@ internal object Cfir2ChirIds {
      */
     fun parameterId(parameter: CfirValueParameter): ChirSemanticId =
         ChirSemanticId("cfir:parameter:${parameter.symbol.debugName.sanitizeId()}")
+
+    /** 返回类型参数在所属声明中的位置，区分同名泛型参数。 */
+    fun typeParameterIndex(symbol: CfirTypeParameterSymbol): Int {
+        val owner = symbol.containingDeclarationSymbol.cfir as? CfirTypeParameterRefsOwner
+            ?: error("type parameter ${symbol.debugName} has no type-parameter owner")
+        return owner.typeParameters.indexOfFirst { it.symbol === symbol }
+            .takeIf { it >= 0 }
+            ?: error("type parameter ${symbol.debugName} is missing from its owner's declaration list")
+    }
+
+    /** 以声明身份、参数序号和源码锚点构造稳定的泛型参数身份。 */
+    fun typeParameterId(symbol: CfirTypeParameterSymbol): ChirSemanticId {
+        val ownerId = declarationId(symbol.containingDeclarationSymbol)
+        return elementId("type_parameter", symbol.cfir, ownerId, typeParameterIndex(symbol))
+    }
+
+    /** 根据函数身份生成稳定的隐式 dispatch receiver 参数身份。 */
+    fun dispatchReceiverId(ownerFunctionId: ChirSemanticId): ChirSemanticId =
+        generatedId("dispatch_receiver", ownerFunctionId, 0)
 
     /**
      * 在所属 ID 下生成按顺序编号的合成 ID。

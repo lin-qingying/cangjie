@@ -25,6 +25,7 @@ import org.cangnova.cangjie.resolve.calls.mpp.CjmpDeclarationSymbolMarker
 import org.cangnova.cangjie.resolve.calls.mpp.CjmpTypeParameterSymbolMarker
 import org.cangnova.cangjie.resolve.calls.mpp.CjmpValueParameterSymbolMarker
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
+import org.cangnova.cangjie.source.CjSourceElement
 
 /**
  * 符号基类。每个声明对应一个唯一的符号实例。
@@ -64,6 +65,10 @@ sealed class CfirBasedSymbol<out D : CfirDeclaration> : CjmpDeclarationSymbolMar
      */
     val origin: CfirDeclarationOrigin
         get() = cfir.origin
+
+    /** 当前绑定声明的真实来源；与 Kotlin 符号合同相同，不从 owner 或名称推断。 */
+    val source: CjSourceElement?
+        get() = cfir.source
 
     /**
      * 将符号绑定到声明实例。
@@ -105,10 +110,11 @@ sealed class CfirClassifierSymbol<D : CfirDeclaration> : CfirThisOwnerSymbol<D>(
  *
  * 仓颉只有顶层 class-like 声明拥有稳定的 [ClassId]。
  * 因此这里不再区分 Kotlin 式的嵌套或局部 class-like 变体，
- * lookup tag 统一直接由顶层 [ClassId] 派生。
+ * 普通源码 lookup tag 由 [ClassId] 派生；CJO 已选声明在创建时固定真实 symbol 身份。
  */
 sealed class CfirClassLikeSymbol<D : CfirClassLikeDeclaration>(
     classId: ClassId,
+    useFixedSymbolLookupTag: Boolean = false,
 ) : CfirClassifierSymbol<D>(), CjmpClassLikeSymbolMarker {
 
     /**
@@ -139,7 +145,7 @@ sealed class CfirClassLikeSymbol<D : CfirClassLikeDeclaration>(
      * 当前 class-like 符号对应的 lookup tag。
      */
     private val lookupTag: ConeClassLikeLookupTag =
-         classId.toLookupTag()
+        if (useFixedSymbolLookupTag) ConeClassLikeLookupTagWithFixedSymbol(classId, this) else classId.toLookupTag()
 
     /**
      * 返回 class-like lookup tag。
@@ -160,7 +166,7 @@ sealed class CfirClassLikeSymbol<D : CfirClassLikeDeclaration>(
             return null
         }
 
-        lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE)
+        lazyResolveToPhase(CfirResolvePhase.STATUS)
         return cfir.deprecationsProvider.getDeprecationsInfo(languageVersionSettings)
     }
 
@@ -191,7 +197,9 @@ class CfirClassSymbol(
      * class 声明在符号表中的稳定 class id。
      */
     override val classId: ClassId ,
-) : CfirClassLikeSymbol<CfirClass>(classId) {
+    /** CJO 在 symbol 创建时确定身份，SOURCE 默认保持其正常 ClassId 标签。 */
+    useFixedSymbolLookupTag: Boolean = false,
+) : CfirClassLikeSymbol<CfirClass>(classId, useFixedSymbolLookupTag) {
 
     /**
      * class 名称；绑定后以声明名为准。
@@ -219,7 +227,8 @@ class CfirInterfaceSymbol(
      * interface 声明在符号表中的稳定 class id。
      */
     override val classId: ClassId ,
-) : CfirClassLikeSymbol<CfirInterface>(classId) {
+    useFixedSymbolLookupTag: Boolean = false,
+) : CfirClassLikeSymbol<CfirInterface>(classId, useFixedSymbolLookupTag) {
 
     /**
      * interface 名称；绑定后以声明名为准。
@@ -245,7 +254,8 @@ class CfirStructSymbol(
      * struct 声明在符号表中的稳定 class id。
      */
     override val classId: ClassId ,
-) : CfirClassLikeSymbol<CfirStruct>(classId) {
+    useFixedSymbolLookupTag: Boolean = false,
+) : CfirClassLikeSymbol<CfirStruct>(classId, useFixedSymbolLookupTag) {
 
     /**
      * struct 名称；绑定后以声明名为准。
@@ -276,7 +286,8 @@ class CfirEnumSymbol(
      * 是否为引用枚举（RefEnumTy）。
      */
     val isRefEnum: Boolean = false,
-) : CfirClassLikeSymbol<CfirEnum>(classId) {
+    useFixedSymbolLookupTag: Boolean = false,
+) : CfirClassLikeSymbol<CfirEnum>(classId, useFixedSymbolLookupTag) {
 
     /**
      * enum 名称；绑定后以声明名为准。
@@ -466,7 +477,7 @@ fun CfirCallableSymbol<*>.getDeprecation(languageVersionSettings: LanguageVersio
         return null
     }
 
-    lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE)
+    lazyResolveToPhase(CfirResolvePhase.STATUS)
     return cfir.deprecationsProvider.getDeprecationsInfo(languageVersionSettings)
 }
 
@@ -820,4 +831,11 @@ class CfirInvalidDeclarationSymbol : CfirBasedSymbol<CfirInvalidDeclaration>() {
      */
     override fun toString(): String =
         if (isBound) "CfirInvalidDeclarationSymbol(${cfir.reason})" else "CfirInvalidDeclarationSymbol(unbound)"
+}
+
+/** 宏调用声明在 construction 期间的符号；展开后该节点随真实声明产物一并移除。 */
+class CfirMacroExpansionDeclarationSymbol : CfirBasedSymbol<CfirMacroExpansionDeclaration>() {
+    /** 返回宏调用声明符号的调试文本。 */
+    override fun toString(): String =
+        if (isBound) "CfirMacroExpansionDeclarationSymbol" else "CfirMacroExpansionDeclarationSymbol(unbound)"
 }

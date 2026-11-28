@@ -30,6 +30,7 @@ import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.patterns.CfirBindingPattern
 import org.cangnova.cangjie.cfir.patterns.CfirPattern
+import org.cangnova.cangjie.cfir.patterns.CfirCatchPattern
 import org.cangnova.cangjie.cfir.references.*
 import org.cangnova.cangjie.cfir.render.ConeTypeRenderer
 import org.cangnova.cangjie.cfir.render.ConeTypeRendererForDebugging
@@ -268,6 +269,7 @@ open class CfirReferenceRenderer {
      * 将引用渲染为单行文本。
      */
     open fun render(reference: CfirReference): String = when (reference) {
+        is CfirResolvedBuiltinOperatorReference -> "${reference.name.asString()} -> BUILTIN(${reference.signature})"
         is CfirResolvedNamedReference -> "${reference.name.asString()} -> ${reference.resolvedSymbol}"
         is CfirNamedReference -> reference.name.asString()
 
@@ -487,11 +489,12 @@ class CfirRenderer(
     }
 
     /**
-     * 输出类型参数名列表。
-     *
-     * 列表为空时不输出任何内容。
+     * 输出类型参数名列表，列表为空时不输出任何内容。
+     * 只渲染声明自身拥有的类型参数；构造器借用的 constructed-class 引用不是源码 header，
+     * 对位 Kotlin FirRenderer 仅渲染 FirTypeParameter 的做法。
      */
-    private fun printTypeParams(typeParameters: List<CfirTypeParameter>) {
+    private fun printTypeParams(typeParameterRefs: List<CfirTypeParameterRef>) {
+        val typeParameters = typeParameterRefs.filterIsInstance<CfirTypeParameter>()
         if (typeParameters.isEmpty()) return
         print("<")
         typeParameters.forEachIndexed { index, tp ->
@@ -549,7 +552,7 @@ class CfirRenderer(
             print("FILE: ")
             println(file.name)
             printer.pushIndent()
-            annotationRenderer?.render(file)
+            annotationRenderer?.render(file, trailingSpace = false)
             if (file.annotations.isNotEmpty()) {
                 printer.newLine()
             }
@@ -572,7 +575,7 @@ class CfirRenderer(
 
         /** 渲染文件前导 `features` metadata。 */
         override fun visitFeaturesDirective(featuresDirective: CfirFeaturesDirective) {
-            annotationRenderer?.render(featuresDirective)
+            annotationRenderer?.render(featuresDirective, trailingSpace = false)
             if (featuresDirective.annotations.isNotEmpty()) {
                 printer.newLine()
             }
@@ -907,6 +910,7 @@ class CfirRenderer(
         override fun visitLiteralExpression(literalExpression: CfirLiteralExpression) {
             val value = when (literalExpression.kind) {
                 CfirLiteralKind.STRING -> "\"${literalExpression.value}\""
+                CfirLiteralKind.JSTRING -> "J\"${literalExpression.value}\""
                 CfirLiteralKind.RUNE -> "'${literalExpression.value}'"
                 CfirLiteralKind.BYTE -> "b'${literalExpression.value}'"
                 CfirLiteralKind.UNIT -> "()"
@@ -966,6 +970,12 @@ class CfirRenderer(
         /**
          * 渲染具名访问表达式。
          */
+        override fun visitResolvedQualifier(resolvedQualifier: CfirResolvedQualifier) {
+            println("QUALIFIER(${resolvedQualifier.packageFqName.asString()}${resolvedQualifier.relativeClassFqName?.let { ".$it" }.orEmpty()})")
+            resolvedQualifier.explicitParent?.accept(this)
+            resolvedQualifier.typeArguments.forEach { it.accept(this) }
+        }
+
         override fun visitNamedAccessExpression(namedAccessExpression: CfirNamedAccessExpression) {
             val ref = renderReference(namedAccessExpression.calleeReference)
             if (namedAccessExpression.explicitReceiver != null) {
@@ -1176,9 +1186,10 @@ class CfirRenderer(
          * 渲染 for-in 表达式。
          */
         override fun visitForInExpression(forInExpression: CfirForInExpression) {
-            val variableName = renderPatternVariableName(forInExpression.variable)
-            print("FOR_IN($variableName: ")
-            renderType(forInExpression.variable.returnTypeRef)
+            print("FOR_IN(")
+            forInExpression.pattern.accept(this)
+            print(": ")
+            forInExpression.pattern.semanticTypeRef?.let { renderType(it) }
             println(") {")
             printer.pushIndent()
             println("iterable:")
@@ -1251,18 +1262,16 @@ class CfirRenderer(
             tryExpression.catches.forEach { catchClause ->
                 val pattern = catchClause.pattern
                 print("catch(")
-                if (pattern.isWildcard) {
-                    print("_")
-                } else {
-                    print(pattern.bindingName?.asString() ?: "<error>")
-                }
-                if (pattern.typeRefs.isNotEmpty()) {
-                    print(": ")
-                    pattern.typeRefs.forEachIndexed { index, typeRef ->
-                        if (index > 0) print(" | ")
-                        renderType(typeRef)
+                if (pattern is CfirCatchPattern) {
+                    print(renderPattern(pattern.nestedPattern))
+                    if (pattern.typeRefs.isNotEmpty()) {
+                        print(": ")
+                        pattern.typeRefs.forEachIndexed { index, typeRef ->
+                            if (index > 0) print(" | ")
+                            renderType(typeRef)
+                        }
                     }
-                }
+                } else print(renderPattern(pattern))
                 println("):")
                 printer.pushIndent()
                 catchClause.body.accept(this)

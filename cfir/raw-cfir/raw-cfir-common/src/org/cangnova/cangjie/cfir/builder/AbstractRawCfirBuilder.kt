@@ -27,11 +27,13 @@ package org.cangnova.cangjie.cfir.builder
 import com.intellij.psi.tree.IElementType
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.CfirFunctionTarget
+import org.cangnova.cangjie.cfir.CfirFunctionBodyOwner
 import org.cangnova.cangjie.cfir.CfirLoopTarget
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.common.moduleData
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.builder.buildValueParameter
+import org.cangnova.cangjie.cfir.declarations.utils.constructedClassTypeParameterRefs
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
@@ -117,6 +119,16 @@ abstract class AbstractRawCfirBuilder<T : Any>(
         }
     }
 
+    /** 恢复已经存在的 enclosing owner；与新建声明的 forced symbol 帧独立。 */
+    protected inline fun <R> withEnclosingContainerSymbol(symbol: CfirBasedSymbol<*>, block: () -> R): R {
+        context.pushEnclosingContainerSymbol(symbol)
+        return try {
+            block()
+        } finally {
+            context.popEnclosingContainerSymbol(symbol)
+        }
+    }
+
     /** 在 [type] 作为当前 dispatch receiver self type 的上下文中执行 [block]。 */
     protected inline fun <R> withDispatchReceiverType(type: ConeSimpleCangJieType, block: () -> R): R {
         context.pushDispatchReceiverType(type)
@@ -126,6 +138,68 @@ abstract class AbstractRawCfirBuilder<T : Any>(
             context.popDispatchReceiverType()
         }
     }
+
+    /**
+     * 对位 Kotlin withCapturedTypeParameters：header 已构建后进入词法捕获，finally 退出。
+     * 指定声明重建仅替换捕获输入，不能借此复用原声明节点到 fresh header。
+     */
+    protected inline fun <R> withCapturedTypeParameters(
+        status: Boolean,
+        declarationSource: CjSourceElement? = null,
+        currentCfirTypeParameters: List<CfirTypeParameterRef>,
+        block: () -> R,
+    ): R {
+        addCapturedTypeParameters(status, declarationSource, currentCfirTypeParameters)
+        return try {
+            block()
+        } finally {
+            context.popCfirTypeParameters()
+        }
+    }
+
+    /** 捕获策略的唯一覆写入口；普通 raw 构建使用当前声明参数。 */
+    protected open fun addCapturedTypeParameters(
+        status: Boolean,
+        declarationSource: CjSourceElement?,
+        currentCfirTypeParameters: List<CfirTypeParameterRef>,
+    ) {
+        context.pushCfirTypeParameters(status, currentCfirTypeParameters)
+    }
+
+    /**
+     * 名义类型成员的共享词法环境：header 捕获层、self type，以及可构造类型的 constructed-class 帧。
+     * 整文件构建与指定声明重建的祖先恢复都经此入口，保证两条路径的宏 owner 快照一致。
+     *
+     * @param selfType 成员的 dispatch receiver self type（整体副本时由 fresh symbol 构造）。
+     * @param isConstructible class/struct/enum 为 true；interface 没有构造器。
+     */
+    protected inline fun <R> withClassLikeMembers(
+        selfType: ConeSimpleCangJieType,
+        declarationSource: CjSourceElement?,
+        typeParameters: List<CfirTypeParameterRef>,
+        isConstructible: Boolean,
+        block: () -> R,
+    ): R = withCapturedTypeParameters(false, declarationSource, typeParameters) {
+        withDispatchReceiverType(selfType) {
+            if (!isConstructible) block() else {
+                val owner = context.containerSymbol
+                context.pushConstructedClass(owner, typeParameters)
+                try {
+                    block()
+                } finally {
+                    context.popConstructedClass(owner)
+                }
+            }
+        }
+    }
+
+    /**
+     * 对位 Kotlin constructorTypeParametersFromConstructedClass。
+     * 引用直接名义 owner 的参数 symbol，不创建或绑定新的类型参数声明；
+     * 须在构造器自身容器帧入栈前调用。
+     */
+    fun constructorTypeParametersFromConstructedClass(): List<CfirTypeParameterRef> =
+        constructedClassTypeParameterRefs(context.constructedClassTypeParameterSymbols())
 
     /** 进入函数 target 作用域执行 [block]，用于绑定 return 目标与函数内 loop 边界。 */
     protected inline fun <R> withFunctionTarget(target: CfirFunctionTarget, block: () -> R): R {
@@ -137,8 +211,21 @@ abstract class AbstractRawCfirBuilder<T : Any>(
         }
     }
 
-/** 将 raw builder 构造出的 [function] 绑定到已创建的 [target]。 */
-    protected open fun bindFunctionTarget(target: CfirFunctionTarget, function: CfirFunction) {
+    /**
+     * 仓颉参数及默认值不在函数正文内，不能使用 Kotlin 默认值可返回所属函数的 target 规则。
+     * 官方 Nothing 文档及 cjc 1.1.3 均禁止此处返回外层函数；保留词法边界而不清空外层栈。
+     */
+    protected inline fun <R> withNonFunctionContext(block: () -> R): R {
+        context.enterNonFunctionContext()
+        return try {
+            block()
+        } finally {
+            context.exitFunction()
+        }
+    }
+
+    /** 将 raw builder 构造出的 [function] 绑定到已创建的 [target]。 */
+    protected open fun bindFunctionTarget(target: CfirFunctionTarget, function: CfirFunctionBodyOwner) {
         target.bind(function)
     }
 
@@ -146,7 +233,7 @@ abstract class AbstractRawCfirBuilder<T : Any>(
     protected fun callableIdFor(name: Name): CallableId {
         if (context.inLocalContext) return CallableId(name)
 
-        val containingClass = containerSymbolIfAny as? CfirClassLikeSymbol<*>
+        val containingClass = context.containingClassSymbolIfAny
         return if (containingClass != null) {
             CallableId(containingClass.classId, name)
         } else {
@@ -159,7 +246,7 @@ abstract class AbstractRawCfirBuilder<T : Any>(
      * 一旦位于局部作用域或另一个 class-like 容器内，就不应再构造 `ClassId`。
      */
     protected fun canDeclareTopLevelClassLike(): Boolean {
-        return !context.inLocalContext && containerSymbolIfAny !is CfirClassLikeSymbol<*>
+        return !context.inLocalContext && context.containingClassSymbolIfAny == null
     }
 
     /**
@@ -174,6 +261,17 @@ abstract class AbstractRawCfirBuilder<T : Any>(
     }
 
     /**
+     * 判断 raw 构建阶段是否应为 class/struct 合成隐式主构造器。
+     *
+     * specific nominal 的构造器属于 CJMP 成员合并视图：此时先合并配对 common 声明，
+     * 才能判断是否需要默认构造器。PSI 与 LightTree 必须使用同一策略，避免 raw 树分叉。
+     */
+    protected fun shouldSynthesizeImplicitPrimaryConstructor(
+        isSpecific: Boolean,
+        declarations: Collection<CfirDeclaration>,
+    ): Boolean = !isSpecific && declarations.none { it is CfirConstructor && !it.status.isStatic }
+
+    /**
      * 计算当前 class-like 容器的 dispatch receiver self type。
      *
      * 局部声明没有稳定 class-like receiver；若上下文已经显式压入 self type，
@@ -183,7 +281,7 @@ abstract class AbstractRawCfirBuilder<T : Any>(
         if (context.inLocalContext) return null
         context.currentDispatchReceiverType()?.let { return it }
 
-        val containingClass = containerSymbolIfAny as? CfirClassLikeSymbol<*> ?: return null
+        val containingClass = context.containingClassSymbolIfAny ?: return null
         return when (containingClass) {
             is CfirInterfaceSymbol -> ConeClassLikeType(containingClass.classId.toLookupTag(), isInterface = true)
             is CfirStructSymbol -> ConeStructType(containingClass.classId.toLookupTag())
@@ -200,6 +298,13 @@ abstract class AbstractRawCfirBuilder<T : Any>(
         initContainingClassAttr(context)
     }
 
+    /** 片段在已完成的宿主容器中构建，extend 的实际 owner 已绑定且必须立即连接。 */
+    protected fun <D : CfirDeclaration> D.bindMacroFragmentOwner(): D {
+        val owner = containerSymbolIfAny
+        if (owner is CfirExtendSymbol) owner.cfir.bindMemberOwners(listOf(this))
+        return this
+    }
+
     /**
      * 构造 class-like 内部成员声明看到的 self type。
      *
@@ -207,7 +312,7 @@ abstract class AbstractRawCfirBuilder<T : Any>(
      * CFIR 同样必须保留这些类型实参，供成员签名和 substitution scope 使用。
      */
     protected fun CfirClassLikeSymbol<*>.rawDispatchReceiverType(
-        typeParameters: List<CfirTypeParameter>,
+        typeParameters: List<CfirTypeParameterRef>,
     ): ConeSimpleCangJieType {
         val typeArguments = typeParameters.map { ConeTypeParameterTypeImpl(it.symbol.toLookupTag()) }
         return constructType(typeArguments) as ConeSimpleCangJieType
@@ -435,7 +540,6 @@ abstract class AbstractRawCfirBuilder<T : Any>(
             isNamed = false
             dispatchReceiverType = null
             symbol = CfirValueParameterSymbol(callableIdFor(name))
-            status = CfirDeclarationStatusImpl.DEFAULT
             this.returnTypeRef = returnTypeRef
             this.name = name
             defaultValue = null

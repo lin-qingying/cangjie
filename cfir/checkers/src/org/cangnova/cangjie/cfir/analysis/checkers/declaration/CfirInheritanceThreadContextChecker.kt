@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.CfirExtendSemantics
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirClass
@@ -26,7 +27,7 @@ import org.cangnova.cangjie.source.CjSourceElement
  *   白名单（仅 std.core.ThreadContext / ohos.base.MainThreadContext）。
  * - 通过 `extend X <: ThreadContext` 引入继承时，同样对目标声明 X 施加同一约束。
  */
-object CfirInheritanceThreadContextChecker : CfirClassLikeChecker() {
+object CfirInheritanceThreadContextChecker : CfirClassLikeChecker(MppCheckerKind.Common) {
     /**
      * `ThreadContext` 类型的短名。
      */
@@ -50,7 +51,7 @@ object CfirInheritanceThreadContextChecker : CfirClassLikeChecker() {
  * 官方在 TypeCheckExtend.cpp:489 对 extendedDecl 复用同一检查，诊断锚在被扩展的目标
  * 声明源码上（本仓库仅报告 INHERIT_THREAD_CONTEXT_INVALID，白名单/not-open 不影响夹具）。
  */
-object CfirExtendThreadContextChecker : CfirExtendChecker() {
+object CfirExtendThreadContextChecker : CfirExtendChecker(MppCheckerKind.Common) {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(extend: CfirExtend) {
         val hasThreadContextSuper = extend.superTypeRefs.any { superTypeRef ->

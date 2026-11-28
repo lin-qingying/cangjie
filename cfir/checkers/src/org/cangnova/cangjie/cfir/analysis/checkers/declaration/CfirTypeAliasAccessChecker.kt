@@ -1,12 +1,13 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
@@ -32,7 +33,7 @@ import org.cangnova.cangjie.name.ClassId
  *   `public type D = C` 在 `C` 为 internal 时报 `C`，而不是 `C` 展开后的目标。
  * - 官方同一别名上最多保留一条该诊断（DiagEngine 按同类同范围去重），因此遇到首个违规即返回。
  */
-object CfirTypeAliasAccessChecker : CfirTypeAliasChecker() {
+object CfirTypeAliasAccessChecker : CfirTypeAliasChecker(MppCheckerKind.Common) {
     /**
      * 检查别名声明的访问级别是否被 RHS 类型树中访问级别更低的声明暴露。
      */

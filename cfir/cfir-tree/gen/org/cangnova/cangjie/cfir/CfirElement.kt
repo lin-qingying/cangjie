@@ -16,6 +16,14 @@ import org.cangnova.cangjie.source.CjSourceElement
 interface CfirElement {
     val source: CjSourceElement?
 
+    /** 访问本节点拥有的完整来源子图；独立于 ordinary visitor 的语法子树。 */
+    @CfirImplementationDetail
+    fun <R, D> acceptSourceChildren(visitor: CfirVisitor<R, D>, data: D) {
+    }
+
+    @CfirImplementationDetail
+    fun acceptSourceChildren(visitor: CfirVisitorVoid) = acceptSourceChildren(visitor, null)
+
     /**
      * Runs the provided [visitor] on the CFIR subtree with the root at this node.
      *
@@ -36,6 +44,9 @@ interface CfirElement {
     @Suppress("UNCHECKED_CAST")
     fun <E : CfirElement, D> transform(transformer: CfirTransformer<D>, data: D): E =
         transformer.transformElement(this, data) as E
+
+    @CfirImplementationDetail
+    fun replaceSource(newSource: CjSourceElement?)
 
     /**
      * Runs the provided [visitor] on the CFIR subtree with the root at this node.

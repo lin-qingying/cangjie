@@ -275,10 +275,6 @@ object CjPsiUtil {
      * 提供 `unquoteIdentifierOrFieldReference` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
      */
     fun unquoteIdentifierOrFieldReference(quoted: String): String {
-        if (quoted.indexOf('`') < 0) {
-            return quoted
-        }
-
         return if (quoted.startsWith("$")) {
             "$" + unquoteIdentifier(quoted.substring(1))
         } else {
@@ -513,15 +509,7 @@ object CjPsiUtil {
      * 提供 `unquoteIdentifier` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
      */
     fun unquoteIdentifier(quoted: String): String {
-        if (quoted.indexOf('`') < 0) {
-            return quoted
-        }
-
-        return if (quoted.startsWith("`") && quoted.endsWith("`") && quoted.length >= 2) {
-            quoted.substring(1, quoted.length - 1)
-        } else {
-            quoted
-        }
+        return org.cangnova.cangjie.name.CangJieUnicode.sourceIdentifier(quoted)
     }
 
     /**

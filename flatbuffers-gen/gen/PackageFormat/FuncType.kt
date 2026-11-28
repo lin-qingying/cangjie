@@ -65,6 +65,34 @@ class FuncType : Table() {
             false
         }
     }
+    val receiverType : UInt
+        get() {
+            val o = __offset(10)
+            return if(o != 0) bb.getInt(o + bb_pos).toUInt() else 0u
+        }
+    fun mutateReceiverType(receiverType: UInt) : Boolean {
+        val o = __offset(10)
+        return if (o != 0) {
+            bb.putInt(o + bb_pos, receiverType.toInt())
+            true
+        } else {
+            false
+        }
+    }
+    val throws : Boolean
+        get() {
+            val o = __offset(12)
+            return if(o != 0) 0.toByte() != bb.get(o + bb_pos) else false
+        }
+    fun mutateThrows(throws: Boolean) : Boolean {
+        val o = __offset(12)
+        return if (o != 0) {
+            bb.put(o + bb_pos, (if(throws) 1 else 0).toByte())
+            true
+        } else {
+            false
+        }
+    }
     companion object {
         fun validateVersion() = Constants.FLATBUFFERS_25_2_10()
         fun getRootAsFuncType(_bb: ByteBuffer): FuncType = getRootAsFuncType(_bb, FuncType())
@@ -72,17 +100,21 @@ class FuncType : Table() {
             _bb.order(ByteOrder.LITTLE_ENDIAN)
             return (obj.__assign(_bb.getInt(_bb.position()) + _bb.position(), _bb))
         }
-        fun createFuncType(builder: FlatBufferBuilder, baseOffset: Int, isCfuncType: Boolean, hasVarArg: Boolean) : Int {
-            builder.startTable(3)
+        fun createFuncType(builder: FlatBufferBuilder, baseOffset: Int, isCfuncType: Boolean, hasVarArg: Boolean, receiverType: UInt, throws: Boolean) : Int {
+            builder.startTable(5)
+            addReceiverType(builder, receiverType)
             addBase(builder, baseOffset)
+            addThrows(builder, throws)
             addHasVarArg(builder, hasVarArg)
             addIsCFuncType(builder, isCfuncType)
             return endFuncType(builder)
         }
-        fun startFuncType(builder: FlatBufferBuilder) = builder.startTable(3)
+        fun startFuncType(builder: FlatBufferBuilder) = builder.startTable(5)
         fun addBase(builder: FlatBufferBuilder, base: Int) = builder.addOffset(0, base, 0)
         fun addIsCFuncType(builder: FlatBufferBuilder, isCfuncType: Boolean) = builder.addBoolean(1, isCfuncType, false)
         fun addHasVarArg(builder: FlatBufferBuilder, hasVarArg: Boolean) = builder.addBoolean(2, hasVarArg, false)
+        fun addReceiverType(builder: FlatBufferBuilder, receiverType: UInt) = builder.addInt(3, receiverType.toInt(), 0)
+        fun addThrows(builder: FlatBufferBuilder, throws: Boolean) = builder.addBoolean(4, throws, false)
         fun endFuncType(builder: FlatBufferBuilder) : Int {
             val o = builder.endTable()
             return o

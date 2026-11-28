@@ -42,11 +42,14 @@ import org.cangnova.cangjie.cfir.scopes.CfirContainingNamesAwareScope
 import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
+import org.cangnova.cangjie.cfir.scopes.impl.CfirCjmpMemberScopeView
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassStaticScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirLocalScope
 import org.cangnova.cangjie.cfir.scopes.impl.staticScopeForQualifierType
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.visitors.CfirSourceVisitor
+import org.cangnova.cangjie.cfir.session.isCjmpSpecificCompilationEnabled
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.constructType
 import org.cangnova.cangjie.cfir.types.*
@@ -91,6 +94,18 @@ data class CfirTowerDataContext private constructor(
         nonLocalTowerDataElements = persistentListOf(),
         localVariableScopeStorage = LocalVariableScopeStorage(),
     )
+
+    /** partial 快照保留的 local scope、隐式值和类型缓存共同换源；不打开非局部作用域查询。 */
+    fun acceptSourceChildren(visitor: CfirSourceVisitor) {
+        localScopes.forEach { it.acceptSourceChildren(visitor) }
+        implicitValueStorage.acceptSourceChildren(visitor)
+        localVariableScopeStorage.acceptSourceChildren(visitor)
+        (towerDataElements + nonLocalTowerDataElements).forEach { element ->
+            (element.scope as? CfirLocalScope)?.acceptSourceChildren(visitor)
+            element.implicitReceiver?.acceptSourceChildren(visitor)
+            element.staticScopeOwnerSymbol?.let { visitor.visitElement(it.cfir) }
+        }
+    }
 
     /**
      * 为带实例 receiver 的上下文保存只含 static 成员的静态视图。
@@ -398,6 +413,7 @@ fun SessionAndScopeSessionHolder.collectTowerDataElementsForClass(
             scopeSession,
             defaultType,
             CfirClassMemberScopeKind.BODY_LOOKUP,
+            session.cjmpMemberScopeView(),
         ),
         superClassesStaticScopes = superClassesStatics.toList().asReversed(),
     )
@@ -417,6 +433,8 @@ fun CfirClassLikeDeclaration.staticScope(
     scopeSession: ScopeSession,
     qualifierType: ConeCangJieType? = null,
     memberScopeKind: CfirClassMemberScopeKind = CfirClassMemberScopeKind.USE_SITE,
+    memberScopeView: CfirCjmpMemberScopeView = CfirCjmpMemberScopeView.RAW,
+    memberRequiredPhase: CfirResolvePhase? = if (memberScopeView == CfirCjmpMemberScopeView.RAW) CfirResolvePhase.STATUS else CfirResolvePhase.CJMP_MATCHING,
 ): CfirContainingNamesAwareScope? {
     val symbol = symbol as? CfirClassLikeSymbol<*> ?: return null
     return symbol.staticScopeForQualifierType(
@@ -424,6 +442,8 @@ fun CfirClassLikeDeclaration.staticScope(
         scopeSession,
         qualifierType ?: symbol.constructType(),
         memberScopeKind,
+        memberScopeView,
+        memberRequiredPhase,
     )
 }
 
@@ -469,6 +489,7 @@ private fun collectSuperClassesStaticScopes(
             scopeSession,
             supertype,
             CfirClassMemberScopeKind.BODY_LOOKUP,
+            session.cjmpMemberScopeView(),
         )
             ?.asTowerDataElementForStaticScope(superSymbol)
             ?.let(result::add)
@@ -476,3 +497,7 @@ private fun collectSuperClassesStaticScopes(
         collectSuperClassesStaticScopes(superDeclaration, session, scopeSession, result, visited)
     }
 }
+
+private fun CfirSession.cjmpMemberScopeView(): CfirCjmpMemberScopeView =
+    if (isCjmpSpecificCompilationEnabled()) CfirCjmpMemberScopeView.CJMP_ACTUALIZED
+    else CfirCjmpMemberScopeView.RAW

@@ -8,6 +8,18 @@ import org.cangnova.cangjie.frontend.arguments.CommonCompilerArguments
 import org.cangnova.cangjie.frontend.environment.VfsBasedProjectEnvironment
 
 /**
+ * 前端管线执行状态及其最终产物。
+ *
+ * 阶段成功产出后，调用方可将 [artifact] 交给下游编译阶段；阶段提前终止时产物为空。
+ */
+data class FrontendPipelineExecutionResult(
+    /** 当前管线是否按既有中断策略视为成功。 */
+    val succeeded: Boolean,
+    /** 最终阶段返回的管线产物；未产生管线产物时为空。 */
+    val artifact: PipelineArtifact?,
+)
+
+/**
  * 前端参数产物。
  */
 data class ArgumentsPipelineArtifact<out A : CommonCompilerArguments>(

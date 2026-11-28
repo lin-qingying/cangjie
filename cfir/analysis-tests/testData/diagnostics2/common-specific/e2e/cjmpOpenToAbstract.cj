@@ -13,6 +13,16 @@ public common abstract class O {
     public common open func f(): Int64
 }
 
+public common open class O2 {
+    public common init()
+}
+
+public common abstract class A {
+    public common init()
+    public common abstract func f(): Int64
+    public common abstract prop p: Int64
+}
+
 // MODULE: specific()()(common)
 // CJMP_MODE: SPECIFIC
 // FILE: specific.cj
@@ -21,4 +31,16 @@ package cjmp_p
 public specific abstract class O {
     public specific init() {}
     <!OPEN_ABSTRACT_SPECIFIC_CAN_NOT_REPLACE_OPEN_COMMON!>public specific abstract func f(): Int64<!>
+}
+
+<!SPECIFIC_HAS_DIFFERENT_MODIFIER!>public specific <!REDUNDANT_MODIFIER!>open<!> abstract class O2 {
+    public specific init() {}
+}<!>
+
+public specific abstract class A {
+    public specific init() {}
+    <!EXPLICITLY_ABSTRACT_CAN_NOT_HAVE_BODY!>public specific abstract func f(): Int64 { 1 }<!>
+    <!EXPLICITLY_ABSTRACT_CAN_NOT_HAVE_BODY!>public specific abstract prop p: Int64 {
+        get() { 1 }
+    }<!>
 }

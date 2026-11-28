@@ -48,6 +48,20 @@ class Debug : Table() {
         }
     val srcCodeIdentifierAsByteBuffer : ByteBuffer get() = __vector_as_bytebuffer(6, 1)
     fun srcCodeIdentifierInByteBuffer(_bb: ByteBuffer) : ByteBuffer = __vector_in_bytebuffer(_bb, 6, 1)
+    val accurateEnvObjTy : UInt
+        get() {
+            val o = __offset(8)
+            return if(o != 0) bb.getInt(o + bb_pos).toUInt() else 0u
+        }
+    fun mutateAccurateEnvObjTy(accurateEnvObjTy: UInt) : Boolean {
+        val o = __offset(8)
+        return if (o != 0) {
+            bb.putInt(o + bb_pos, accurateEnvObjTy.toInt())
+            true
+        } else {
+            false
+        }
+    }
     companion object {
         fun validateVersion() = Constants.FLATBUFFERS_25_2_10()
         fun getRootAsDebug(_bb: ByteBuffer): Debug = getRootAsDebug(_bb, Debug())
@@ -55,15 +69,17 @@ class Debug : Table() {
             _bb.order(ByteOrder.LITTLE_ENDIAN)
             return (obj.__assign(_bb.getInt(_bb.position()) + _bb.position(), _bb))
         }
-        fun createDebug(builder: FlatBufferBuilder, baseOffset: Int, srcCodeIdentifierOffset: Int) : Int {
-            builder.startTable(2)
+        fun createDebug(builder: FlatBufferBuilder, baseOffset: Int, srcCodeIdentifierOffset: Int, accurateEnvObjTy: UInt) : Int {
+            builder.startTable(3)
+            addAccurateEnvObjTy(builder, accurateEnvObjTy)
             addSrcCodeIdentifier(builder, srcCodeIdentifierOffset)
             addBase(builder, baseOffset)
             return endDebug(builder)
         }
-        fun startDebug(builder: FlatBufferBuilder) = builder.startTable(2)
+        fun startDebug(builder: FlatBufferBuilder) = builder.startTable(3)
         fun addBase(builder: FlatBufferBuilder, base: Int) = builder.addOffset(0, base, 0)
         fun addSrcCodeIdentifier(builder: FlatBufferBuilder, srcCodeIdentifier: Int) = builder.addOffset(1, srcCodeIdentifier, 0)
+        fun addAccurateEnvObjTy(builder: FlatBufferBuilder, accurateEnvObjTy: UInt) = builder.addInt(2, accurateEnvObjTy.toInt(), 0)
         fun endDebug(builder: FlatBufferBuilder) : Int {
             val o = builder.endTable()
             return o

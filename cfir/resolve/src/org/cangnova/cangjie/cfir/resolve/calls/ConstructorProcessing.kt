@@ -1,16 +1,17 @@
 package org.cangnova.cangjie.cfir.resolve.calls
 
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirEnum
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.resolve.BodyResolveComponents
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallInfo
 import org.cangnova.cangjie.cfir.scopes.CfirScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeAliasSymbol
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
+import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
 
 /** 构造器候选过滤模式。 */
 internal enum class ConstructorFilter {
@@ -50,7 +51,7 @@ private fun CfirScope.processConstructorsByName(
 
         if (!seen.add(matchedSymbol)) return@processClassifiersByName
 
-        matchedSymbol.lazyResolveToPhase(CfirResolvePhase.TYPES)
+        matchedSymbol.lazyResolveToPhase(CfirResolvePhase.CJMP_MATCHING)
         if (matchedSymbol is CfirTypeAliasSymbol) {
             matchedSymbol.cfir.scopeProvider
                 .getTypealiasConstructorScope(
@@ -66,13 +67,15 @@ private fun CfirScope.processConstructorsByName(
         if (declaration is CfirEnum) return@processClassifiersByName
         if (!constructorFilter.accepts(declaration)) return@processClassifiersByName
 
-        declaration.declarations
-            .asSequence()
-            .filterIsInstance<CfirConstructor>()
-            // 静态初始化器（static init，官方 static.init）不是实例构造器，不能作为
-            // A<T>() 等构造调用的候选，否则会干扰隐式默认构造器的解析。
-            .filterNot { declaration -> declaration.status.isStatic }
-            .map { it.symbol }
-            .forEach(processor)
+        val constructorScope = bodyResolveComponents.session.cangjieScopeProvider.getUseSiteMemberScope(
+            classSymbol = matchedSymbol,
+            useSiteSession = bodyResolveComponents.session,
+            scopeSession = bodyResolveComponents.scopeSession,
+            ownerType = null,
+            dispatchReceiverType = null,
+            scopeKind = CfirClassMemberScopeKind.USE_SITE,
+            memberRequiredPhase = CfirResolvePhase.CJMP_MATCHING,
+        )
+        constructorScope.processDeclaredConstructors(processor)
     }
 }

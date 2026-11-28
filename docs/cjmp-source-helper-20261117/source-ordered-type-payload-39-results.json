@@ -1,0 +1,352 @@
+{
+  "before": {
+    "utc": "2026-11-18T03:36:20.254849Z",
+    "fileCount": 6845,
+    "aggregateSha256": "E76C9F0AF044D8931064BF7D2C154B4CBDB24BA70C452802441F2BDDEF33485C",
+    "roots": [
+      "common",
+      "cfir",
+      "analysis/low-level-api-cfir",
+      "analysis/analysis-api-cfir",
+      "compiler/frontend",
+      "compiler/config",
+      "compiler/phaser",
+      "compiler/arguments",
+      "psi",
+      "resolution.common",
+      "macro"
+    ],
+    "include": [
+      "*.kt",
+      "*.cj",
+      "*.kts"
+    ],
+    "exclude": "**/build/**",
+    "method": "rg --files --hidden --no-ignore, / normalized and Sort-Object -CaseSensitive; SHA256 of UTF8 LF joined path TAB length TAB uppercaseSHA256, no final LF",
+    "scope": "Ordered type payload with identity validation, abbreviation, declaration self type and independent function flags; S0 targeted39"
+  },
+  "after": {
+    "utc": "2026-11-18T03:44:39.1809553Z",
+    "fileCount": 6845,
+    "aggregateSha256": "E76C9F0AF044D8931064BF7D2C154B4CBDB24BA70C452802441F2BDDEF33485C",
+    "roots": [
+      "common",
+      "cfir",
+      "analysis/low-level-api-cfir",
+      "analysis/analysis-api-cfir",
+      "compiler/frontend",
+      "compiler/config",
+      "compiler/phaser",
+      "compiler/arguments",
+      "psi",
+      "resolution.common",
+      "macro"
+    ],
+    "include": [
+      "*.kt",
+      "*.cj",
+      "*.kts"
+    ],
+    "exclude": "**/build/**",
+    "method": "rg --files --hidden --no-ignore, / normalized and Sort-Object -CaseSensitive; SHA256 of UTF8 LF joined path TAB length TAB uppercaseSHA256, no final LF",
+    "scope": "Ordered type payload and identity-sensitive validation, S0 targeted39, no encoder/native complete claim",
+    "unchanged": true
+  },
+  "queue": {
+    "id": "daaed0bc",
+    "args": [
+      "--gradle-user-home",
+      ".gradle/cjmp-export-home",
+      ":cfir:providers:test",
+      "--rerun",
+      "--tests",
+      "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+      "--tests",
+      "org.cangnova.cangjie.cfir.resolve.providers.CfirExportSourcePayloadTest",
+      "--no-build-cache",
+      "--console=plain",
+      "--max-workers=1"
+    ],
+    "pid": 43620,
+    "owner": "pid@43620",
+    "submitAt": 1794972983034,
+    "startedAt": 1794972983113,
+    "finishedAt": 1794973377019,
+    "exitCode": 0,
+    "status": "DONE"
+  },
+  "total": 39,
+  "passed": 39,
+  "failed": 0,
+  "errors": 0,
+  "skipped": 0,
+  "allXmlWithinWindow": true,
+  "scope": "Ordered type payload and identity-sensitive validation, S0 targeted39, no encoder/native complete claim",
+  "extraPassedTasks": [],
+  "cases": [
+    {
+      "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+      "name": "publishedCjoDomainSurvivesWireOriginRemoval()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+      "name": "complexPatternBindingsDoNotAliasShellInitializer()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+      "name": "statusPhaseSourceInputWithImplicitReturnTypeRefIsRejectedDuringCapture()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+      "name": "appendingStatementInPlaceIsRejectedAndFrozenWalkKeepsOriginalStatements()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+      "name": "reorderingExistingStatementsInPlaceIsRejected()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+      "name": "cjoVariableWithOriginalImportedBitFalseRejectsSourceInitializer()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+      "name": "publishedPatternRootSurvivesEquivalentReplacement()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+      "name": "removingStatementInPlaceIsRejectedAndFrozenWalkRetainsRemovedNode()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+      "name": "replacingMemberInPlaceWithEquivalentResolvedFunctionIsRejected()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+      "name": "publishedSourceDomainSurvivesLibraryDeclarationReplacement()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+      "name": "appendingInsideNestedBlockIsRejected()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+      "name": "statusPhaseSourceInputWithUntypedBodyLiteralIsRejectedDuringCapture()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+      "name": "unchangedDefaultHelperIsCapturedAndValidatesRepeatedly()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+      "name": "publishedCjoDomainSurvivesWireOriginReplacement()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+      "name": "frozenFunctionTypeRetainsOrderedRepeatedParametersAndRejectsEqualReplacement()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+      "name": "completeResolvedSourceInputAtStatusPhaseIsAcceptedWithoutPromotingDeclarations()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+      "name": "publishedParameterVectorSurvivesLiveSignatureReplacement()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+      "name": "simpleConstBindingUsesCapturedContainerInitializer()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+      "name": "replacingDefaultHelperEdgeIsRejectedAndFrozenWalkKeepsOriginalHelper()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+      "name": "thisReceiverReferenceIsCapturedAndSourceUnboundStateIsRejected()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+      "name": "publishedComplexPatternBindingsSurviveNestedPatternReordering()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+      "name": "appendingInsideDefaultHelperBodyIsRejected()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+      "name": "publishedDefaultValueRootRemainsFrozenAndReplacementIsRejected()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+      "name": "frozenThisTypeRetainsClassifierBindingAndIndependentThisFlag()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+      "name": "publishedSourceDomainSurvivesCjoOriginAttachment()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+      "name": "publishedAnalysisWalkRetainsRemovedBodyNodeAndRejectsChangedGeneration()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+      "name": "publishedDefaultHelperIdentitySurvivesLiveMetadataReplacement()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+      "name": "replacingStatementInPlaceWithEquivalentLiteralIsRejected()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+      "name": "unchangedResolvedOwnerFunctionAndBodyValidateRepeatedly()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+      "name": "writerFrozenOverridePreservesPublishedSemanticEligibility()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+      "name": "replacingReturnTypeRefWithSameResolvedTypeIsRejected()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+      "name": "frozenTupleTypeRetainsRepeatedIdentitySlotsAndRejectsReordering()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+      "name": "frozenReturnBindingSurvivesTargetRebindingAndRejectsTheChangedGraph()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportSourcePayloadTest",
+      "name": "annotationEntryScalarsAndMatchMissingCasesAreFrozenWithoutCopyingBorrowedNodes()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportSourcePayloadTest",
+      "name": "nestedConstantFieldAndEveryElementVectorAreFrozenAgainstMutableAliases()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportSourcePayloadTest",
+      "name": "constantGraphKeepsDistinctObjectsReusesRepeatedReferencesAndClosesCycles()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportSourcePayloadTest",
+      "name": "resolvedMappingValueRebindingIsVisibleWithUnchangedKeysAndOriginalList()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportSourcePayloadTest",
+      "name": "libraryThisAndAnnotationPreserveNonNullUnboundSymbolsWithoutThrowingOrBinding()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportSourcePayloadTest",
+      "name": "appliedReferenceRetainsFunctionValueRoleEvenWhenTheFunctionReturnsAFunction()",
+      "status": "PASSED",
+      "failureMessage": null
+    }
+  ],
+  "xml": [
+    {
+      "path": "cfir/providers/build/test-results/test/TEST-org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest.xml",
+      "bytes": 6577,
+      "sha256": "45C3500EFFEFBD33C5BF12C870FE8AF1C636C02D3EF42EADD42C2581A9C03F34",
+      "timestamp": "2026-11-18T03:42:55.475Z",
+      "lastWriteUtc": "2026-11-18T03:42:56.2021611Z",
+      "withinQueueWindow": true,
+      "tests": 33,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "gzipBase64": "H4sIAAAAAAAACs1ZTXPaSBS8u8r/gdVp92ACtpNNUsYpgu0stYlNAXaqNpXDIDXwnNGM8uZJMfn1W6Mv48Ssc1nETaCvfm/6dffAyZu7WLcysCNrekG33QlaMKGNyCx6wfX04uBl8OZ0f+9E4MSlJGgZFaMXWF60Q2UWxmYqP7gltMM5cZvhrM7QTthmFIFdezAnPr9LLEvfKL1y5IYmSWViVOKWVqZwErTyF/SCo6Og5b5QkiDqBZ2gNVekU4bLP4DZcnEoFMOJipNecNg5fHHQ7R50X047R6+PD18/f94+/vP5P0FraZ0UcN8PL4t7ekGn/aLTDU7391qtk4RtAhaCe1Z84VGEylVVJulMk1siGtzaMxsrMpOUM8rgPhLjimlBZozYZkr//kfQCrVy7v/qTwn+uHMUPA42tHGicTdSImDzloxfRHdmL630NSk3WULroSEhpek7eFuIO4eHGxA7UZK60VI5TGzKIfKnfCRZDuNEU0gyhqRspqsEY8yHboxbhILoLGUyi4FKJGVsrY7Oiw11qCRB3u2JKEEMI0Mz0irEPeK+iS7Yfof5qPSXv4HEFexRur7Hba+Q4w2FMCxH8L09vyMn6xW5n0raHtyNjL+1N4pJzTQ8aaqODmP/ZERvSS6UdigAu4pi2x+Ajf2u9aUc2rG1UinM+deUMqVhZIzEd96vwtYgd7sbKRLb7NepPoYoMi4XSUSXNkLztOG8n2QWHxDPwGUBnkHrPc9fHl2kJhSypgnaP8magtEPjek9zVjx6gyhVqw89CbosxF7LZVD4yjCJZwfVG3DL7skLJuN6drIKkH01kar9yRgpXfWlVITLpVZIDrDXKVa/oJOwENXAvRzeqM0RUrgxkigBJFebU9hNjX/10LXDnF6nqtdpRRFWMlV78qbKaKquSPFKoaAXd9EpSmdf02V3qlqihgpqBRwbQD6MrkfjKHrhyESQeTnwqYyYhtbnxnWtGeLmebwaY8t23+DUCzfC2aGCS2M8kPRyEq82qRC5FdiYI2TMs1fO9TjO7DGk8z7VwOJ5klvfSA659Hil7JwcXXzVciS3BghKAOPMQfD+ISzppzFVFybmU1NlGehJvzr1ZMS+uiesKR+Yb5V9Kyjf/PO9UNIeEAl77y7FBXqVpcob5RO4XP8GN66XMH0XPBradkl/IV5TZfk1oxr4CHRnMAlZfomGpoIfllgxF99odVih8T9sSg8uLWFsPRFVLjcrqg/yZfqKT/vkjzF/U7pPiUMiiD3DgaFrzYfE37kfZkuPT1IVuvm+gGiIiVqp1JO7VM/7mMfbgN/yvjNE6iO9VVAu/pmwFX67JucPlWwbyDXb2z5N/bNLPTwKgMzRRgxHDiDG9WDjFgZofBc04JmpElWzRtSzZYHv0d6qkxUXCdl//UOSnuaaKxpe0WJelS1lbUNSRM54L8LKHpeGtGkFJap4gVkjFntTyX+6RKVWrJKltsr4mVVhFs5QXxgUzk9+e3T4Kw/7X/6/Pn05NnaifULwfz4hf7E/t7Js/q/l9P9vX8BIf/GgrEZAAA=",
+      "archiveVerified": true
+    },
+    {
+      "path": "cfir/providers/build/test-results/test/TEST-org.cangnova.cangjie.cfir.resolve.providers.CfirExportSourcePayloadTest.xml",
+      "bytes": 1529,
+      "sha256": "4C025105F263B31A92A10BAC1C7C6B0407DDD5BC306A3299A5060DFC7378CA37",
+      "timestamp": "2026-11-18T03:42:56.080Z",
+      "lastWriteUtc": "2026-11-18T03:42:56.2041617Z",
+      "withinQueueWindow": true,
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "gzipBase64": "H4sIAAAAAAAACr2UwU4bMRBA75HyD1uf2kPCJqWIoiRoCaFCkIBCAKmIg+Od7A51xquZ2cD266slBHEgt8LN9tjWe54Z9w6flj5aAQsG6ptOOzYRkAspUtY317OT1r45HDQbPQVRKVEhIruEvgmctZ2ljMLKPg8eENpugdxmkOBX0C44rDAFlvZwgTx6KgLrVSjZwaWtfLDpDERN9Hxx3+yZSP5gUUDaN7GJFhZ9ySDPE2AOvB4qLkHULou+6cbdvVan0+rsz+LvB7vdgx977Xg//m2iPIiuKc9PJ+szfRO3493vZtBsRFGv4FAAK4LsrBdqCGdlI2eJglrFQCNSrq6c9ZYloXRs1eVjFEHKhlZAEoYTDn+BblHzUOowFBVSdhSYwyOkk5CCfP1mIuetyP9+uY1X17yvQSAK6TCQqCU9QfBpQuloBVyNPCyB9AacBn6VSDKLJDou1c49JB5rxQ/Hj39u4Xcv5L/YFvkZQCHHKIrk9GL+AE5lCqWATKEAq5BOYQEM5KDO1NAHARlWzn+GwbYMvFyYjm1RIGU31pcwhTlS3V+ncoOCcw917VyTyy1lkJ5BVfNfMGZI1p+j6Mfz727h9zhny9Usx5opeW2LSwYBXsEk0KT0/prmoaT0qlrOg5eXVpjlHB6Rsgs+Wvt+vEZni4YtCo9vCmQKWhf6SUmutlmnJXgYrYBuc6BZDpvYFLRkkmQz/8RakkoUlq1Q6qD35W54nMySu/v7QW/nTeDtRmB+f2MdaDZ6O69/+KDZ+AeHntPo+QUAAA==",
+      "archiveVerified": true
+    }
+  ]
+}

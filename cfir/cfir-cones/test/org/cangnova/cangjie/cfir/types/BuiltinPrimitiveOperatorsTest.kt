@@ -16,9 +16,6 @@ class BuiltinPrimitiveOperatorsTest {
     private val unaryNames = listOf(
         OperatorNameConventions.NOT,
         OperatorNameConventions.UNARY_MINUS,
-        OperatorNameConventions.UNARY_PLUS,
-        OperatorNameConventions.INC,
-        OperatorNameConventions.DEC,
     )
 
     /**
@@ -44,6 +41,10 @@ class BuiltinPrimitiveOperatorsTest {
     fun `Nothing does not resolve names without builtin unary candidates`() {
         val nonUnaryNames = listOf(
             OperatorNameConventions.PLUS,
+            // 官方 prefix unary 只有 -/!；++/-- 是返回 Unit 的独立写回语法，不是 unary 函数候选。
+            OperatorNameConventions.UNARY_PLUS,
+            OperatorNameConventions.INC,
+            OperatorNameConventions.DEC,
             OperatorNameConventions.EQUALS,
             Name.identifier("*operator_unknown"),
         )

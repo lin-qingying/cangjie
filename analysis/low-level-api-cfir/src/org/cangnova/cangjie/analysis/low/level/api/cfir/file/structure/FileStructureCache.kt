@@ -8,6 +8,7 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure
 import com.intellij.util.containers.ContainerUtil
 import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirModuleResolveComponents
 import org.cangnova.cangjie.psi.CjFile
+import org.cangnova.cangjie.cfir.psi
 import java.util.concurrent.ConcurrentMap
 
 /**
@@ -25,12 +26,22 @@ internal class FileStructureCache(private val moduleResolveComponents: LLCfirMod
     /**
      * 返回指定 PSI 文件的 file structure，缺失时构建并缓存。
      */
-    fun getFileStructure(cjFile: CjFile): FileStructure = cache.computeIfAbsent(cjFile) {
-        FileStructure.build(cjFile, moduleResolveComponents)
+    fun getFileStructure(cjFile: CjFile): FileStructure {
+        val cfirFile = moduleResolveComponents.cfirFileBuilder.buildRawCfirFileWithCaching(cjFile)
+        val targetFile = checkNotNull(cfirFile.psi as? CjFile)
+        return cache.computeIfAbsent(targetFile) { FileStructure.build(targetFile, moduleResolveComponents) }
     }
 
     /**
      * 返回已缓存的 file structure，不触发构建。
      */
-    fun getCachedFileStructure(cjFile: CjFile): FileStructure? = cache[cjFile]
+    fun getCachedFileStructure(cjFile: CjFile): FileStructure? {
+        val cfirFile = moduleResolveComponents.cache.getCachedCfirFile(cjFile) ?: return null
+        return cache[cfirFile.psi as CjFile]
+    }
+
+    /** target 整树换代时，声明、表达式、partial mapper 和诊断均属于旧结构产品，整体淘汰。 */
+    fun invalidateFile(cjFile: CjFile) {
+        cache.remove(cjFile)
+    }
 }

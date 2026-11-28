@@ -25,6 +25,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.*
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
@@ -32,10 +33,11 @@ import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.analysis.checkers.modifier.ModifierTarget
-import org.cangnova.cangjie.cfir.analysis.checkers.modifier.ModifierTargetPredicate
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.lexer.CjTokens
+import org.cangnova.cangjie.CjmpLanguageFeature
+import org.cangnova.cangjie.supportsCjmpFeature
 
 /**
  * 源码修饰符目标、父声明和组合兼容性检查器。
@@ -43,7 +45,7 @@ import org.cangnova.cangjie.lexer.CjTokens
  * 该检查器从真实源码修饰符列表出发，统一处理修饰符目标、包含声明目标、兼容性以及
  * `redef`/`override` 相关的额外声明规则。
  */
-object CfirModifierChecker : CfirBasicDeclarationChecker() {
+object CfirModifierChecker : CfirBasicDeclarationChecker(MppCheckerKind.Common) {
     /**
      * 检查声明上的所有真实源码修饰符。
      */
@@ -53,20 +55,38 @@ object CfirModifierChecker : CfirBasicDeclarationChecker() {
         if (declaration is CfirConstructor && declaration.isPrimary && !source.isConstructorSource()) return
 
         val modifiers = source.realSourceModifiers() ?: return
+        val semanticModifiers = modifiers.filterNot { modifier ->
+            modifier.token == CjTokens.COMMON_KEYWORD || modifier.token == CjTokens.SPECIFIC_KEYWORD ||
+                    (modifier.token == CjTokens.PLATFORM_KEYWORD &&
+                            context.languageVersionSettings.supportsCjmpFeature(
+                                CjmpLanguageFeature.CommonPlatformDeclarations,
+                            ))
+        }
         val reportedNodes = hashSetOf<SourceModifier>()
-
-        checkModifiersCompatibility(declaration, modifiers, reportedNodes)
-
         val actualTargets = context.actualTargetsFor(declaration)
         // 主构造器的 `let`/`var` 参数同时代表成员属性；参数修饰符的包含声明应落到外层类型，
         // 不能把主构造器本身当作 `private`/`internal` 的父目标。
         val actualParents = context.actualParentTargets(declaration)
+        val invalidDirectTargets = semanticModifiers.filterTo(hashSetOf()) { modifier ->
+            !hasAllowedTarget(modifier, actualTargets)
+        }
 
-        for (modifier in modifiers) {
-            if (modifier in reportedNodes) continue
-            when {
-                !checkTarget(modifier, actualTargets, declaration) -> reportedNodes += modifier
-                !checkParent(modifier, actualParents) -> reportedNodes += modifier
+        for ((index, modifier) in semanticModifiers.withIndex()) {
+            if (modifier !in invalidDirectTargets) {
+                checkModifierCompatibility(
+                    declaration,
+                    semanticModifiers,
+                    index,
+                    reportedNodes,
+                    target = actualTargets.firstOrNull(),
+                    excludedModifiers = invalidDirectTargets,
+                )
+            }
+            if (modifier !in reportedNodes) {
+                when {
+                    !checkTarget(modifier, actualTargets) -> reportedNodes += modifier
+                    !checkParent(modifier, actualParents) -> reportedNodes += modifier
+                }
             }
         }
 
@@ -80,20 +100,10 @@ object CfirModifierChecker : CfirBasicDeclarationChecker() {
     private fun checkTarget(
         modifier: SourceModifier,
         actualTargets: List<ModifierTarget>,
-        declaration: CfirDeclaration,
     ): Boolean {
         val modifierToken = modifier.token
-        val possiblePredicate = possibleTargetMap[modifierToken]
 
-        val primaryConstructorCjmpModifier = declaration is CfirConstructor && declaration.isPrimary &&
-                (modifierToken == CjTokens.COMMON_KEYWORD || modifierToken == CjTokens.SPECIFIC_KEYWORD) &&
-                context.languageVersionSettings.supportsFeature(org.cangnova.cangjie.LanguageFeature.CommonSpecificDeclarations)
-
-        // 不在允许表中的修饰符视为无目标约束，直接通过。
-        val isWrongTarget = primaryConstructorCjmpModifier || possiblePredicate == null || actualTargets.none {
-            possiblePredicate.isAllowed(it, context.languageVersionSettings)
-        }
-        if (isWrongTarget) {
+        if (!hasAllowedTarget(modifier, actualTargets)) {
             reporter.reportOn(
                 modifier.source,
                 CfirErrors.WRONG_MODIFIER_TARGET,
@@ -115,17 +125,17 @@ object CfirModifierChecker : CfirBasicDeclarationChecker() {
             return true
         }
 
-        val redundantPredicate = redundantTargetMap[modifierToken]
-        if (redundantPredicate != null && actualTargets.any { redundantPredicate.isAllowed(it, context.languageVersionSettings) }) {
-            reporter.reportOn(
-                modifier.source,
-                CfirErrors.REDUNDANT_MODIFIER_FOR_TARGET,
-                modifierToken,
-                actualTargets.firstOrThisDescription(),
-            )
-        }
-
         return true
+    }
+
+    /** 在不产生诊断的情况下判断直接目标；用于在源码顺序中先筛掉非法组合成员。 */
+    context(context: CheckerContext)
+    private fun hasAllowedTarget(
+        modifier: SourceModifier,
+        actualTargets: List<ModifierTarget>,
+    ): Boolean {
+        val possiblePredicate = possibleTargetMap[modifier.token] ?: return false
+        return actualTargets.any { possiblePredicate.isAllowed(it, context.languageVersionSettings) }
     }
 
     /**

@@ -13,6 +13,8 @@ import org.cangnova.cangjie.cfir.diagnostics.PendingDiagnosticReporter
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 import org.cangnova.cangjie.source.CjFakePsiSourceElement
 import org.cangnova.cangjie.source.CjPsiSourceElement
+import org.cangnova.cangjie.source.CjLightSourceElement
+import org.cangnova.cangjie.source.CjOffsetsOnlySourceElement
 import org.cangnova.cangjie.source.SuspiciousFakeSourceCheck
 
 /**
@@ -84,13 +86,41 @@ internal class LLCfirDiagnosticReporter(
             is CjDiagnosticWithSource -> element
             else -> error("Unknown diagnostic type ${this::class.simpleName}")
         }
-        val mappedElement = sourceMapper(currentElement) as? CjPsiSourceElement
-        if (mappedElement != null && mappedElement != currentElement) {
-            return toPsiDiagnosticAt(mappedElement)
+        val mappedSource = sourceMapper(currentElement) ?: currentElement
+        if (mappedSource is CjPsiSourceElement && mappedSource != currentElement) {
+            if (this is CjOffsetsOnlyDiagnostic) {
+                val ranges = textRanges
+                val fixedRanges = object : AbstractSourceElementPositioningStrategy() {
+                    override fun markDiagnostic(diagnostic: CjDiagnosticWithSource) = ranges
+                    override fun isValid(element: AbstractCjSourceElement): Boolean = mappedSource.psi.isValid
+                }
+                return toPsiDiagnosticAt(mappedSource, fixedRanges)
+            }
+            return toPsiDiagnosticAt(mappedSource)
         }
         return when (this) {
             is CjPsiDiagnostic -> this
             is CjLightDiagnostic -> this.toPsiDiagnosticFromLight()
+            is CjOffsetsOnlyDiagnostic -> {
+                val anchor = when (currentElement) {
+                    is org.cangnova.cangjie.source.CjSourceElement -> currentElement
+                    is CjOffsetsOnlySourceElement -> checkNotNull(currentElement.sourceAnchor) {
+                        "An IDE offset diagnostic must retain its originating syntax: $factoryName"
+                    }
+                    else -> error("An IDE offset diagnostic must originate from a syntax element: $factoryName")
+                }
+                val psiAnchor = when (anchor) {
+                    is CjPsiSourceElement -> anchor
+                    is CjLightSourceElement -> checkNotNull(anchor.unwrapToCjPsiSourceElement())
+                    else -> error("An IDE offset diagnostic must originate from PSI: $factoryName")
+                }
+                val ranges = textRanges
+                val fixedRanges = object : AbstractSourceElementPositioningStrategy() {
+                    override fun markDiagnostic(diagnostic: CjDiagnosticWithSource) = ranges
+                    override fun isValid(element: AbstractCjSourceElement): Boolean = psiAnchor.psi.isValid
+                }
+                toPsiDiagnosticAt(psiAnchor, fixedRanges)
+            }
             else -> error("Unknown diagnostic type ${this::class.simpleName}")
         }
     }
@@ -99,6 +129,8 @@ internal class LLCfirDiagnosticReporter(
      * 提交指定 source element 上的 pending diagnostics，或在需要时提交全部 pending diagnostics。
      */
     override fun checkAndCommitReportsOn(element: AbstractCjSourceElement, context: DiagnosticContext, commitEverything: Boolean) {
+        // report已按真实来源导航归组，提交范围必须使用相同来源，才能在Sema结束前提交error并门控CFA。
+        val commitSource = sourceMapper(element) ?: element
         for ((diagnosticElement, pendingList) in pendingDiagnostics) {
             val committedList = _committedDiagnostics.getOrPut(diagnosticElement) { mutableListOf() }
             val iterator = pendingList.iterator()
@@ -106,13 +138,13 @@ internal class LLCfirDiagnosticReporter(
                 val diagnostic = iterator.next()
                 when {
                     context.isDiagnosticSuppressed(diagnostic as CjDiagnostic) -> {
-                        if (diagnostic.element == element ||
-                            diagnostic.element.startOffset >= element.startOffset && diagnostic.element.endOffset <= element.endOffset
+                        if (diagnostic.element == commitSource ||
+                            diagnostic.element.startOffset >= commitSource.startOffset && diagnostic.element.endOffset <= commitSource.endOffset
                         ) {
                             iterator.remove()
                         }
                     }
-                    diagnostic.element == element || commitEverything -> {
+                    diagnostic.element == commitSource || commitEverything -> {
                         iterator.remove()
                         committedList += diagnostic
                     }
@@ -145,7 +177,10 @@ private fun CjLightDiagnostic.toPsiDiagnosticFromLight(): CjPsiDiagnostic {
  * 在指定 PSI source element 上重新创建保持原 factory 和参数的 PSI diagnostic。
  */
 @Suppress("UNCHECKED_CAST")
-private fun CjDiagnostic.toPsiDiagnosticAt(psiSourceElement: CjPsiSourceElement): CjPsiDiagnostic {
+private fun CjDiagnostic.toPsiDiagnosticAt(
+    psiSourceElement: CjPsiSourceElement,
+    positioningStrategy: AbstractSourceElementPositioningStrategy = (this as CjDiagnosticWithSource).positioningStrategy,
+): CjPsiDiagnostic {
     @Suppress("UNCHECKED_CAST")
     return when (this) {
         is CjSimpleDiagnostic -> CjPsiSimpleDiagnostic(

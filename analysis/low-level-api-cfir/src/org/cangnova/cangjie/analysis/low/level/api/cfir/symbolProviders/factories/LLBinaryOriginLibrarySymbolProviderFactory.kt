@@ -13,8 +13,11 @@ import org.cangnova.cangjie.cfir.resolve.providers.CfirBuiltinSymbolProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoManager
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoSearchPath
+import org.cangnova.cangjie.cfir.serialization.cjo.CjoFormatVersionPolicy
 import org.cangnova.cangjie.cfir.serialization.provider.CfirDeserializedSymbolProvider
+import org.cangnova.cangjie.cfir.source.CfirImportedSourceGraphProvider
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
+import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import java.io.File
 
 /**
@@ -56,7 +59,8 @@ internal object LLBinaryOriginLibrarySymbolProviderFactory : LLLibrarySymbolProv
      * 创建普通 library `.cjo` 反序列化 symbol provider。
      */
     private fun createDeserializedLibrarySymbolProvider(session: LLCfirSession): CfirSymbolProvider {
-        val librarySearchPaths = (session.caModule as? CaLibraryModule)
+        val libraryModule = session.caModule as? CaLibraryModule
+        val librarySearchPaths = libraryModule
             ?.binaryRoots
             .orEmpty()
             .mapNotNull { item -> item.virtualFile }
@@ -65,10 +69,14 @@ internal object LLBinaryOriginLibrarySymbolProviderFactory : LLLibrarySymbolProv
 
         return CfirDeserializedSymbolProvider(
             session = session,
-            cjoManager = CjoManager(CjoSearchPath(additionalLibrarySearchPaths = librarySearchPaths)),
+            cjoManager = CjoManager(
+                CjoSearchPath(additionalLibrarySearchPaths = librarySearchPaths),
+                CjoFormatVersionPolicy.DeferredToConsumerSession,
+                explicitCommonPartPaths = libraryModule?.cjmpCommonPartCjoPaths.orEmpty(),
+            ),
             cangjieScopeProvider = session.cangjieScopeProvider,
             libraryModuleData = session.moduleData,
-        )
+        ).also { session.register(CfirImportedSourceGraphProvider::class, it) }
     }
 
     /**
@@ -95,10 +103,11 @@ internal object LLBinaryOriginLibrarySymbolProviderFactory : LLLibrarySymbolProv
                         else -> null
                     }
                 },
+                CjoFormatVersionPolicy.Compilation(session.languageVersionSettings),
             ),
             cangjieScopeProvider = session.cangjieScopeProvider,
             libraryModuleData = session.moduleData,
-        )
+        ).also { session.register(CfirImportedSourceGraphProvider::class, it) }
     }
 
     /**

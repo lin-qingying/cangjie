@@ -8,6 +8,7 @@
 package org.cangnova.cangjie.cfir.expressions.builder
 
 import kotlin.contracts.*
+import org.cangnova.cangjie.annotations.CangjieOverflowStrategy
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
@@ -21,6 +22,8 @@ class CfirMatchExpressionBuilder {
     var source: CjSourceElement? = null
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
     var coneTypeOrNull: ConeCangJieType? = null
+    var mappedExpression: CfirExpression? = null
+    var overflowStrategy: CangjieOverflowStrategy? = null
     var subject: CfirExpression? = null
     val branches: MutableList<CfirMatchBranch> = mutableListOf()
     var exhaustiveness: CfirMatchExhaustivenessStatus = CfirMatchExhaustivenessStatus.Unknown
@@ -31,6 +34,8 @@ class CfirMatchExpressionBuilder {
             source,
             annotations.toMutableOrEmpty(),
             coneTypeOrNull,
+            mappedExpression,
+            overflowStrategy,
             subject,
             branches,
             exhaustiveness,
@@ -56,6 +61,8 @@ inline fun buildMatchExpressionCopy(original: CfirMatchExpression, init: CfirMat
     copyBuilder.source = original.source
     copyBuilder.annotations.addAll(original.annotations)
     copyBuilder.coneTypeOrNull = original.coneTypeOrNull
+    copyBuilder.mappedExpression = original.mappedExpression
+    copyBuilder.overflowStrategy = original.overflowStrategy
     copyBuilder.subject = original.subject
     copyBuilder.branches.addAll(original.branches)
     copyBuilder.exhaustiveness = original.exhaustiveness

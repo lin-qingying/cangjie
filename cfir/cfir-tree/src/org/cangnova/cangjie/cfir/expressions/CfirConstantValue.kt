@@ -28,7 +28,7 @@ public sealed interface CfirConstantValue {
                 CfirLiteralKind.FLOAT -> value is Double
                 CfirLiteralKind.BOOLEAN -> value is Boolean
                 CfirLiteralKind.RUNE -> value is Int && value in 0..0x10ffff && value !in 0xd800..0xdfff
-                CfirLiteralKind.STRING -> value is String
+                CfirLiteralKind.STRING, CfirLiteralKind.JSTRING -> value is String
                 CfirLiteralKind.UNIT -> value === Unit
             }) { "Non-canonical constant payload for $kind: ${value::class}" }
         }
@@ -58,7 +58,7 @@ public sealed interface CfirConstantValue {
     }
 
     /**
-     * fields 只包含执行完成后的存储槽。主构造参数通过 correspondingProperty 显式关联
+     * fields 只包含执行完成后的存储槽。主构造参数通过 correspondingField 显式关联
      * 到真实成员，不能按参数名或调用实参顺序推断字段。
      *
      * 此类故意不使用 data class：两个字段内容相同的 class 对象仍有不同身份。
@@ -68,6 +68,8 @@ public sealed interface CfirConstantValue {
         override val type: ConeCangJieType,
         val fields: Map<CfirCallableSymbol<*>, CfirConstantValue>,
         val identity: Long,
+        /** 每个真实存储 use 的类型独立于子值动态类型与字段声明类型；实例化在生产阶段完成。 */
+        val storageTypes: Map<CfirCallableSymbol<*>, ConeCangJieType>,
     ) : CfirConstantValue
 
     /** 零参数与带 payload 的枚举统一保留真实 constructor symbol，避免丢失枚举身份。 */

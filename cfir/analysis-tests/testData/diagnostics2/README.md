@@ -45,7 +45,6 @@ This batch directly covers or keeps direct regression files for:
 - `NON_ABSTRACT_CLASS_CANNOT_BE_SEALED`
 - `MUT_ONLY_ON_FUNCTION`
 - `STATIC_CANNOT_BE_OPEN_ABSTRACT_OVERRIDE`
-- `COMMON_OPEN_CLASS_NO_INIT`
 - `MISMATCHING_HANDLE_BLOCK`
 - `NEW_INFERENCE_ERROR`
 - `BUILDER_INFERENCE_MULTI_LAMBDA_RESTRICTION`
@@ -128,7 +127,6 @@ This batch directly covers or keeps direct regression files for:
 - selector-less `match { ... }`: `case <bool-expr> => ...` is legal in official current `cjc`; do not invent `MATCH_CASE_HAS_NO_TYPE` merely because the `match` has no selector expression.
 - CJMP nominal kind mismatch: when common/specific declarations share the same name but differ by nominal kind, keep `NOT_MATCHED` on both sides and add `SPECIFIC_HAS_DIFFERENT_KIND` on the specific declaration.
 - the same CJMP nominal-kind rule also applies when another same-name specific declaration already exists; an extra `specific class` still gets `SPECIFIC_HAS_DIFFERENT_KIND` if the common side for that name is an interface.
-- `COMMON_OPEN_CLASS_NO_INIT`: official CJMP only uses it when a common open or abstract class without an explicit constructor is inherited by a general class in the common part; do not use it for a lone common open class.
 - interface member `private` / `internal`: official current `cjc` semantics are invalid modifier usage, not deprecated compatibility.
 - `open interface`: official current `cjc` semantics are redundant modifier, not deprecated target usage.
 

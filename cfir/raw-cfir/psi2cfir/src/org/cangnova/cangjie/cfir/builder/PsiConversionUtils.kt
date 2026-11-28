@@ -1,5 +1,7 @@
 package org.cangnova.cangjie.cfir.builder
 
+import org.cangnova.cangjie.cfir.types.builder.buildParenthesizedTypeRef
+
 import org.cangnova.cangjie.cfir.CfirQualifierPart
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.source.AbstractCjSourceElement
@@ -17,44 +19,31 @@ import org.cangnova.cangjie.cfir.types.builder.buildVArrayTypeRef
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.*
 
-/**
- * 将 PSI 声明名转换为 raw CFIR 使用的名称身份。
- *
- * PSI 的通用 `nameAsSafeName` 会去掉反引号，而 LightTree raw builder 保留 token 原文。
- * 两条 raw builder 路径必须保留相同的反引号标识符身份，避免普通标识符与语法入口混同。
- */
+/** PSI 名称接口返回语义身份；源码拼写由 source 保留。 */
 internal val CjNamedDeclaration.cfirNameAsSafeName: Name
-    get() = rawIdentifierName(nameIdentifier?.rawIdentifierTokenText())
-        ?: rawIdentifierName(nameIdentifier?.text)
-        ?: rawIdentifierName(text.trim())
-        ?: nameAsSafeName
+    get() = nameAsSafeName
 
 /** 将 PSI 名称引用转换为与声明侧一致的 raw CFIR 名称身份。 */
 internal val CjSimpleNameExpression.cfirReferencedNameAsName: Name
-    get() = rawIdentifierName(referencedNameElement.text) ?: referencedNameAsName
+    get() = referencedNameAsName
 
-/** 将绑定模式（如 `var case x`）的名称转换为 raw CFIR 名称身份，与声明侧同规则保留反引号。 */
+/** 将绑定模式名称转换为语义名称。 */
 internal val CjBindingPattern.cfirNameAsSafeName: Name
-    get() = rawIdentifierName(nameIdentifier?.rawIdentifierTokenText()) ?: nameAsSafeName
+    get() = nameAsSafeName
 
-/** 将 var/enum 模式中的绑定名转换为 raw CFIR 名称身份，同样保留反引号原始拼写。 */
+/** 将 var/enum 模式中的绑定名转换为语义名称。 */
 internal val CjVarOrEnumPattern.cfirNameAsSafeName: Name
-    get() = rawIdentifierName(nameIdentifier?.rawIdentifierTokenText()) ?: nameAsSafeName
+    get() = nameAsSafeName
 
-/** 类型通配符只有类型约束，不创建 `_` 绑定；反引号标识符仍保留独立身份。 */
+/** 类型通配符只有类型约束，不创建 `_` 绑定。 */
 internal val CjTypePattern.cfirNameAsName: Name?
-    get() = (rawIdentifierName(nameIdentifier?.rawIdentifierTokenText()) ?: nameAsName)
-        ?.takeUnless { it.asString() == "_" }
-
-/** 只把完整反引号 token 视为 raw 标识符，普通名称与操作符继续走既有归一化规则。 */
-private fun rawIdentifierName(text: String?): Name? = text
-    ?.takeIf { it.length >= 2 && it.first() == '`' && it.last() == '`' }
-    ?.let(Name::identifier)
+    get() = name?.takeIf { it.isNotEmpty() && identifierElement?.node?.elementType != org.cangnova.cangjie.lexer.CjTokens.UNDERLINE }
+        ?.let(Name::identifier)
 
 /**
  * PSI 的 IDENTIFIER 节点范围可能不包含反引号；从原文件相邻字符恢复完整 raw token。
  */
-private fun com.intellij.psi.PsiElement.rawIdentifierTokenText(): String? {
+internal fun com.intellij.psi.PsiElement.rawIdentifierTokenText(): String? {
     val range = textRange
     val fileText = containingFile?.text ?: return text
     val start = range.startOffset
@@ -84,7 +73,11 @@ internal fun CjTypeReference?.toCfirOrImplicitTypeRef(
 ): CfirTypeRef {
     if (this == null) return buildImplicitTypeRef {}
     val typeElement = typeElement
-        ?: return buildImplicitTypeRef {}
+        ?: return buildErrorTypeRef {
+            source = this@toCfirOrImplicitTypeRef.toCjSourceElementOrNull(toSource)
+            typeUseOrigin = org.cangnova.cangjie.cfir.types.CfirTypeRefOrigin.SOURCE
+            diagnostic = ConeSimpleDiagnostic("Malformed type reference: missing type element")
+        }
     return typeElement.toCfirTypeRef(this, toSource)
 }
 
@@ -105,26 +98,27 @@ private fun CjTypeElement.toCfirTypeRef(
         source = ref.toCjSourceElementOrNull(toSource)
         diagnostic =  ConeSimpleDiagnostic("Unsupported type element: ${javaClass.simpleName}")
     }
-}
+}.also { it.replaceTypeUseOrigin(org.cangnova.cangjie.cfir.types.CfirTypeRefOrigin.SOURCE) }
 
 /**
- * 括号类型不引入类型构造器；raw CFIR 保留其中唯一的类型引用，和 LightTree 转换保持同一语义。
+ * 括号不引入类型构造器，但外层节点与实际内层引用分别拥有原型和来源。
  */
 private fun CjParenthesizedType.toCfirParenthesizedTypeRef(
     ref: CjTypeReference,
     toSource: (com.intellij.psi.PsiElement) -> AbstractCjSourceElement,
 ): CfirTypeRef {
-    val innerTypeElement = getType()
-        ?: return buildErrorTypeRef {
-            source = ref.toCjSourceElementOrNull(toSource)
-            diagnostic = ConeSimpleDiagnostic("Malformed parenthesized type: missing component type")
-        }
     val innerTypeReference = getTypeReference()
         ?: return buildErrorTypeRef {
             source = ref.toCjSourceElementOrNull(toSource)
+            typeUseOrigin = org.cangnova.cangjie.cfir.types.CfirTypeRefOrigin.SOURCE
             diagnostic = ConeSimpleDiagnostic("Malformed parenthesized type: missing component type reference")
         }
-    return innerTypeElement.toCfirTypeRef(innerTypeReference, toSource)
+    return buildParenthesizedTypeRef {
+        source = ref.toCjSourceElementOrNull(toSource)
+        typeUseOrigin = org.cangnova.cangjie.cfir.types.CfirTypeRefOrigin.SOURCE
+        // 存在但损坏的必需引用走SOURCE error入口，不能因缺typeElement删除外层。
+        innerTypeRef = innerTypeReference.toCfirOrImplicitTypeRef(toSource)
+    }
 }
 
 /** 将可选类型 PSI 转换为 [CfirTypeRef]，缺少内部类型时生成 error type ref。 */
@@ -197,6 +191,7 @@ private fun buildQualifierFromUserType(
                 buildQualifierPart {
                     source = current.referenceExpression?.let(toSource) as? CjSourceElement
                     this.name = name
+                    typeUseOrigin = org.cangnova.cangjie.cfir.types.CfirTypeRefOrigin.SOURCE
                     typeArguments += current.typeArguments.map { it.typeReference.toCfirOrImplicitTypeRef(toSource) }
                 }
             )

@@ -41,6 +41,14 @@ import com.intellij.psi.tree.TokenSet
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.ArrayFactory
 import org.cangnova.cangjie.name.*
+import org.cangnova.cangjie.parsing.ROOT_PARSER_SEED_KEY
+import org.cangnova.cangjie.parsing.invalidatePsiSourceView
+import org.cangnova.cangjie.parsing.cjmpParsingContext
+import org.cangnova.cangjie.parsing.parserSourceKind
+import org.cangnova.cangjie.parsing.parsedFileFacts
+import org.cangnova.cangjie.parsing.parsedRoleSnapshot
+import org.cangnova.cangjie.parsing.publishParsedFileResult
+import org.cangnova.cangjie.parsing.parsedRoleRegion
 import org.cangnova.cangjie.psi.stubs.elements.CjTokenSets.FILE_DECLARATION_TYPES
 
 /**
@@ -405,6 +413,29 @@ abstract class CjCommonFile(viewProvider: FileViewProvider, val isCompiled: Bool
 open class CjFile(viewProvider: FileViewProvider, isCompiled: Boolean = false, val isCodeFragment: Boolean = false) :
     CjCommonFile(viewProvider, isCompiled),
     CjSourceKindCarrier {
+
+    // 新根事实由 TreeAspect 的实际事务完成通知发布；subtreeChanged 的重复缓存通知不清除已采用结果。
+
+    /** 内容失效后不再向新片段提供旧解析结果；编译调用输入和既有片段 seed 保持独立。 */
+    override fun onContentReload() {
+        invalidatePsiSourceView()
+        parsedLanguageModuleName = null
+        parsedFileFacts = null
+        parsedRoleSnapshot = null
+        parsedRoleRegion = null
+        super.onContentReload()
+    }
+
+    /** SDK 整文件重解析先设置 originalFile 再建立 AST；复制传入副本的配置，不越过其原文件链。 */
+    override fun setOriginalFile(originalFile: PsiFile) {
+        if (originalFile is CjFile) {
+            cjmpParsingContext = originalFile.cjmpParsingContext
+            parserLanguageModuleName = originalFile.parserLanguageModuleName
+            parserSourceKind = originalFile.parserSourceKind
+            putCopyableUserData(ROOT_PARSER_SEED_KEY, originalFile.getCopyableUserData(ROOT_PARSER_SEED_KEY))
+        }
+        super.setOriginalFile(originalFile)
+    }
 
     /**
      * 文件种类。

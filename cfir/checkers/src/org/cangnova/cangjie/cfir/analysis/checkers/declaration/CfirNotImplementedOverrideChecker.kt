@@ -25,6 +25,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.accessContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirClass
@@ -40,14 +41,13 @@ import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityResult
 import org.cangnova.cangjie.cfir.scopes.CfirCallableLookupProvenance
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
-import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirFunctionInheritanceScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirPropertyInheritanceScope
 import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
 import org.cangnova.cangjie.cfir.session.accessibilityChecker
 import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.session.extendProvider
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.declarations.resolvedInteropInfoOrNull
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
@@ -56,6 +56,8 @@ import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.cfir.symbols.constructType
 import org.cangnova.cangjie.cfir.symbols.toLookupTag
+import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 
 /**
  * 未实现抽象成员检查器。
@@ -65,7 +67,7 @@ import org.cangnova.cangjie.cfir.symbols.toLookupTag
  *
  * 注意：extend 引入的接口不影响本体的抽象成员实现义务，因此这里使用仅基于本体继承关系的 scope。
  */
-object CfirNotImplementedOverrideChecker : CfirClassLikeChecker() {
+object CfirNotImplementedOverrideChecker : CfirClassLikeChecker(MppCheckerKind.Platform) {
     override val requiresImplementation: Boolean get() = true
 
     /**
@@ -122,13 +124,17 @@ object CfirNotImplementedOverrideChecker : CfirClassLikeChecker() {
     context(context: CheckerContext)
     private fun createOwnMemberScope(declaration: CfirClassLikeDeclaration): CfirTypeScope {
         val classLikeSymbol = declaration.symbol as? CfirClassLikeSymbol<*> ?: return CfirTypeScope.Empty
-        return CfirClassUseSiteMemberScope(
-            session = context.session,
-            classLikeSymbol,
-            context.session.symbolProvider,
+        return context.session.cangjieScopeProvider.getUseSiteMemberScope(
+            scopeSession = context.scopeSession,
+            useSiteSession = context.session,
+
+            classSymbol = classLikeSymbol,
+
+            symbolProvider = context.session.symbolProvider,
             extendProvider = context.session.extendProvider,
             directSupertypeProvider = context.session.directSupertypeProviderOrNull,
             scopeKind = CfirClassMemberScopeKind.BODY_LOOKUP,
+            memberRequiredPhase = CfirResolvePhase.STATUS,
         )
     }
 }

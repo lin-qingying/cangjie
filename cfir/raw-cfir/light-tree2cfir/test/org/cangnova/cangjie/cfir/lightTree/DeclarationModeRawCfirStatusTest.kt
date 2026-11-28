@@ -1,15 +1,27 @@
 package org.cangnova.cangjie.cfir.lightTree
 
 import com.intellij.openapi.fileTypes.LanguageFileType
+import com.intellij.lang.PsiBuilderFactory
 import org.cangnova.cangjie.CjInMemoryTextSourceFile
 import org.cangnova.cangjie.CjSourceKind
+import org.cangnova.cangjie.LanguageVersionSettingsImpl
 import org.cangnova.cangjie.cfir.builder.BodyBuildingMode
 import org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder
+import org.cangnova.cangjie.cfir.builder.toParsingContext
+import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationMetadataBuilder
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
+import org.cangnova.cangjie.cfir.declarations.parsingFileFacts
+import org.cangnova.cangjie.parsing.CjmpFileRole
+import org.cangnova.cangjie.parsing.ParsingFileFacts
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
+import org.cangnova.cangjie.cfir.session.CfirCjmpMode
+import org.cangnova.cangjie.cfir.session.CfirCjmpSettingsComponent
+import org.cangnova.cangjie.lexer.CangJieLexer
+import org.cangnova.cangjie.parsing.CangJieLightParser
+import org.cangnova.cangjie.parsing.CangJieParserDefinition
 import org.cangnova.cangjie.lang.CangJieFileType
 import org.cangnova.cangjie.lang.declarations.CangJieDeclarationFileType
 import org.cangnova.cangjie.psi.CjFile
@@ -35,6 +47,67 @@ import kotlin.test.assertTrue
  */
 @RunWith(JUnit3RunnerWithInners::class)
 class DeclarationModeRawCfirStatusTest : AbstractLightTree2CfirConverterTestCase() {
+    /** parser 范围错误包装不能把真实 tuple/enum 根模式变成合成 wildcard。 */
+    fun testPatternRootSurvivesParserRangeErrorInBothRawBuilders() {
+        for (pattern in listOf("(a, b)", "Some(x)", "_")) {
+            val text = "common let $pattern = value"
+            val psiFile = PsiRawCfirBuilder(createTestSession(), annotationMetadata = CfirAnnotationMetadataBuilder()).buildCfirFile(createCjFile("patternError", text))
+            val session = createTestSession()
+            val lightFile = LightTree2Cfir(session, session.cangjieScopeProvider).buildPreMacroCfirFile(
+                parseLightFile(text), CjInMemoryTextSourceFile("patternError.cj", null, text), text.toSourceLinesMapping(),
+            ).cfirFile
+            for (file in listOf(psiFile, lightFile)) {
+                val root = (file.declarations.single() as org.cangnova.cangjie.cfir.declarations.CfirPatternVariable).pattern
+                when (pattern) {
+                    "(a, b)" -> kotlin.test.assertIs<org.cangnova.cangjie.cfir.patterns.CfirTuplePattern>(root)
+                    "Some(x)" -> kotlin.test.assertIs<org.cangnova.cangjie.cfir.patterns.CfirEnumPattern>(root)
+                    "_" -> kotlin.test.assertIs<org.cangnova.cangjie.cfir.patterns.CfirWildcardPattern>(root)
+                }
+                kotlin.test.assertEquals(text.indexOf(pattern), root.source?.startOffset)
+                kotlin.test.assertEquals(text.indexOf(pattern) + pattern.length, root.source?.endOffset)
+            }
+        }
+    }
+
+    /** 已解析文件入口完整发布真实角色；不能再为裸树填默认 NONE。 */
+    fun testParsedLightFilePublishesActualSourceKindAndRole() {
+        for (kind in listOf(CjSourceKind.SOURCE, CjSourceKind.DECLARATION)) {
+            for ((modifier, role) in listOf("" to CjmpFileRole.NONE, "common " to CjmpFileRole.COMMON, "specific " to CjmpFileRole.SPECIFIC)) {
+                val text = "${modifier}func generated(): Unit {}"
+                val source = CjInMemoryTextSourceFile("physical.cj", null, text)
+                val settings = LanguageVersionSettingsImpl.DEFAULT
+                val session = createTestSession(settings)
+                val mode = when (role) {
+                    CjmpFileRole.COMMON -> CfirCjmpMode.COMMON
+                    CjmpFileRole.SPECIFIC -> CfirCjmpMode.SPECIFIC
+                    else -> CfirCjmpMode.NONE
+                }
+                val cjmp = CfirCjmpSettingsComponent(explicitMode = mode)
+                session.register(CfirCjmpSettingsComponent::class, cjmp)
+                val builder = PsiBuilderFactory.getInstance().createBuilder(CangJieParserDefinition(), CangJieLexer(), text)
+                val parsed = CangJieLightParser.parse(builder, sourceKind = kind, cjmpContext = cjmp.toParsingContext(settings))
+                val file = LightTree2Cfir(session, session.cangjieScopeProvider)
+                    .buildPreMacroCfirFile(parsed, source, text.toSourceLinesMapping()).cfirFile
+                kotlin.test.assertEquals(ParsingFileFacts(kind, role), file.parsingFileFacts)
+                kotlin.test.assertSame(parsed.fileFacts, file.parsingFileFacts)
+            }
+        }
+    }
+
+    /** 文法来自已完成 parser 的源种类，物理来源路径只负责定位，不覆盖语义来源。 */
+    fun testParsedSourceKindControlsBodylessRawStatusIndependentlyOfPhysicalPath() {
+        for (kind in listOf(CjSourceKind.SOURCE, CjSourceKind.DECLARATION)) {
+            val parsed = parseLightFile(CLASS_BODYLESS_FUNC, kind)
+            val physicalKind = if (kind == CjSourceKind.SOURCE) CjSourceKind.DECLARATION else CjSourceKind.SOURCE
+            val source = CjInMemoryTextSourceFile("physical.cj", null, CLASS_BODYLESS_FUNC, explicitKind = physicalKind)
+            val session = createTestSession()
+            val file = LightTree2Cfir(session, session.cangjieScopeProvider)
+                .buildPreMacroCfirFile(parsed, source, CLASS_BODYLESS_FUNC.toSourceLinesMapping()).cfirFile
+            kotlin.test.assertEquals(kind, file.parsingFileFacts?.sourceKind)
+            kotlin.test.assertEquals(kind == CjSourceKind.SOURCE, singleFunctionIn(singleClassLike(file)).status.isAbstract)
+        }
+    }
+
 
     // ==================== 护栏 1：无体函数不被标 abstract（R3） ====================
 
@@ -60,6 +133,31 @@ class DeclarationModeRawCfirStatusTest : AbstractLightTree2CfirConverterTestCase
         val file = buildFromLightTree(CLASS_BODYLESS_FUNC, SOURCE_FILE_NAME, CjSourceKind.SOURCE)
         val status = singleFunctionIn(singleClassLike(file)).status
         assertTrue(status.isAbstract, ".cj 的无体类成员函数必须保持隐式 abstract（LightTree 路径）")
+    }
+
+    // ==================== CJMP 抽象类成员的统一模态规则（E13） ====================
+
+    fun testPsiCjmpAbstractClassOnlyKeepsExplicitAbstractMembersAbstract() {
+        val owner = singleClassLike(buildFromPsi(CJMP_ABSTRACT_CLASS_MEMBERS, SOURCE_FILE_NAME, CjSourceKind.SOURCE))
+
+        assertFalse(owner.declarations.filterIsInstance<CfirNamedFunction>().single { it.name.asString() == "implicitFunction" }.status.isAbstract)
+        assertFalse(owner.declarations.filterIsInstance<CfirProperty>().single { it.name.asString() == "implicitProperty" }.status.isAbstract)
+        assertTrue(owner.declarations.filterIsInstance<CfirNamedFunction>().single { it.name.asString() == "explicitFunction" }.status.isAbstract)
+        assertTrue(owner.declarations.filterIsInstance<CfirProperty>().single { it.name.asString() == "explicitProperty" }.status.isAbstract)
+    }
+
+    fun testLightTreeCjmpAbstractClassOnlyKeepsExplicitAbstractMembersAbstract() {
+        val session = createTestSession()
+        session.register(CfirCjmpSettingsComponent::class, CfirCjmpSettingsComponent(explicitMode = CfirCjmpMode.COMMON))
+        val source = CjInMemoryTextSourceFile(SOURCE_FILE_NAME, null, CJMP_ABSTRACT_CLASS_MEMBERS)
+        val file = LightTree2Cfir(session, session.cangjieScopeProvider)
+            .buildPreMacroCfirFile(CJMP_ABSTRACT_CLASS_MEMBERS, source, CJMP_ABSTRACT_CLASS_MEMBERS.toSourceLinesMapping()).cfirFile
+        val owner = singleClassLike(file)
+
+        assertFalse(owner.declarations.filterIsInstance<CfirNamedFunction>().single { it.name.asString() == "implicitFunction" }.status.isAbstract)
+        assertFalse(owner.declarations.filterIsInstance<CfirProperty>().single { it.name.asString() == "implicitProperty" }.status.isAbstract)
+        assertTrue(owner.declarations.filterIsInstance<CfirNamedFunction>().single { it.name.asString() == "explicitFunction" }.status.isAbstract)
+        assertTrue(owner.declarations.filterIsInstance<CfirProperty>().single { it.name.asString() == "explicitProperty" }.status.isAbstract)
     }
 
     // ==================== 护栏 1 反向：无体属性仍标 abstract（R4） ====================
@@ -113,7 +211,7 @@ class DeclarationModeRawCfirStatusTest : AbstractLightTree2CfirConverterTestCase
 
     private fun buildFromPsi(text: String, fileName: String, kind: CjSourceKind): CfirFile {
         val session = createTestSession()
-        val builder = PsiRawCfirBuilder(session, BodyBuildingMode.NORMAL)
+        val builder = PsiRawCfirBuilder(session, BodyBuildingMode.NORMAL, CfirAnnotationMetadataBuilder())
         return builder.buildCfirFile(psiFile(text, fileName, kind))
     }
 
@@ -121,8 +219,8 @@ class DeclarationModeRawCfirStatusTest : AbstractLightTree2CfirConverterTestCase
         val session = createTestSession()
         val sourceFile = CjInMemoryTextSourceFile(fileName, null, text, explicitKind = kind)
         return LightTree2Cfir(session, session.cangjieScopeProvider)
-            .buildCfirFileWithSurfaces(text, sourceFile, text.toSourceLinesMapping())
-            .first
+            .buildPreMacroCfirFile(text, sourceFile, text.toSourceLinesMapping())
+            .cfirFile
     }
 
     /** 以显式 FileType 创建 PSI 文件：fileType 是 CjFile.sourceKind 的唯一真源。 */
@@ -157,6 +255,15 @@ class DeclarationModeRawCfirStatusTest : AbstractLightTree2CfirConverterTestCase
         private val CLASS_BODYLESS_PROP = """
             class C {
                 prop p: Int64
+            }
+        """.trimIndent()
+
+        private val CJMP_ABSTRACT_CLASS_MEMBERS = """
+            common abstract class C {
+                func implicitFunction(): Int64
+                prop implicitProperty: Int64
+                abstract func explicitFunction(): Int64
+                abstract prop explicitProperty: Int64
             }
         """.trimIndent()
 

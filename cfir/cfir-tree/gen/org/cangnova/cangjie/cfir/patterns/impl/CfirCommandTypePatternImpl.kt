@@ -7,32 +7,80 @@
 
 package org.cangnova.cangjie.cfir.patterns.impl
 
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.expressions.CfirConstantValue
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.patterns.CfirCommandTypePattern
+import org.cangnova.cangjie.cfir.patterns.CfirPattern
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.cfir.visitors.transformInplace
-import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.CjSourceElement
 
-internal class CfirCommandTypePatternImpl(
-    override val source: CjSourceElement?,
-    override val bindingName: Name?,
-    override val isWildcard: Boolean,
+class CfirCommandTypePatternImpl @CfirImplementationDetail constructor(
+    override var source: CjSourceElement?,
+    override var semanticTypeRef: CfirTypeRef?,
+    override val constantValues: MutableList<CfirConstantValue>,
+    override var contextExpression: CfirExpression?,
+    override var nestedPattern: CfirPattern,
     override val typeRefs: MutableList<CfirTypeRef>,
 ) : CfirCommandTypePattern() {
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
+        semanticTypeRef?.accept(visitor, data)
+        nestedPattern.accept(visitor, data)
         typeRefs.forEach { it.accept(visitor, data) }
     }
 
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirCommandTypePatternImpl {
+        transformSemanticTypeRef(transformer, data)
+        transformNestedPattern(transformer, data)
         transformTypeRefs(transformer, data)
+        return this
+    }
+
+    override fun <D> transformSemanticTypeRef(transformer: CfirTransformer<D>, data: D): CfirCommandTypePatternImpl {
+        semanticTypeRef = semanticTypeRef?.transform(transformer, data)
+        return this
+    }
+
+    override fun <D> transformNestedPattern(transformer: CfirTransformer<D>, data: D): CfirCommandTypePatternImpl {
+        nestedPattern = nestedPattern.transform(transformer, data)
         return this
     }
 
     override fun <D> transformTypeRefs(transformer: CfirTransformer<D>, data: D): CfirCommandTypePatternImpl {
         typeRefs.transformInplace(transformer, data)
         return this
+    }
+
+    @CfirImplementationDetail
+    override fun replaceSource(newSource: CjSourceElement?) {
+        source = newSource
+    }
+
+    override fun replaceSemanticTypeRef(newSemanticTypeRef: CfirTypeRef?) {
+        semanticTypeRef = newSemanticTypeRef
+    }
+
+    override fun replaceConstantValues(newConstantValues: List<CfirConstantValue>) {
+        if (constantValues === newConstantValues) return
+        constantValues.clear()
+        constantValues.addAll(newConstantValues)
+    }
+
+    override fun replaceContextExpression(newContextExpression: CfirExpression?) {
+        contextExpression = newContextExpression
+    }
+
+    override fun replaceNestedPattern(newNestedPattern: CfirPattern) {
+        nestedPattern = newNestedPattern
+    }
+
+    override fun replaceTypeRefs(newTypeRefs: List<CfirTypeRef>) {
+        if (typeRefs === newTypeRefs) return
+        typeRefs.clear()
+        typeRefs.addAll(newTypeRefs)
     }
 }

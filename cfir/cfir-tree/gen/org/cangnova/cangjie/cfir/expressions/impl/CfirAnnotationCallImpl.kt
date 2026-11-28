@@ -7,10 +7,8 @@
 
 package org.cangnova.cangjie.cfir.expressions.impl
 
-import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
-import org.cangnova.cangjie.annotations.CangjieAnnotationIdentity
-import org.cangnova.cangjie.annotations.CangjieAnnotationOrigin
-import org.cangnova.cangjie.annotations.CangjieAnnotationTarget
+import org.cangnova.cangjie.annotations.*
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.MutableOrEmptyList
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.expressions.*
@@ -25,9 +23,11 @@ import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.source.CjSourceElement
 
 internal class CfirAnnotationCallImpl(
-    override val source: CjSourceElement?,
+    override var source: CjSourceElement?,
     override var annotations: MutableOrEmptyList<CfirAnnotation>,
     override var coneTypeOrNull: ConeCangJieType?,
+    override var mappedExpression: CfirExpression?,
+    override var overflowStrategy: CangjieOverflowStrategy?,
     override var typeRef: CfirTypeRef,
     override var argumentMapping: CfirAnnotationArgumentMapping,
     override var annotationClassId: ClassId?,
@@ -78,12 +78,25 @@ internal class CfirAnnotationCallImpl(
         return this
     }
 
+    @CfirImplementationDetail
+    override fun replaceSource(newSource: CjSourceElement?) {
+        source = newSource
+    }
+
     override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>) {
         annotations = newAnnotations.toMutableOrEmpty()
     }
 
     override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?) {
         coneTypeOrNull = newConeTypeOrNull
+    }
+
+    override fun replaceMappedExpression(newMappedExpression: CfirExpression?) {
+        mappedExpression = newMappedExpression
+    }
+
+    override fun replaceOverflowStrategy(newOverflowStrategy: CangjieOverflowStrategy?) {
+        overflowStrategy = newOverflowStrategy
     }
 
     override fun replaceTypeRef(newTypeRef: CfirTypeRef) {

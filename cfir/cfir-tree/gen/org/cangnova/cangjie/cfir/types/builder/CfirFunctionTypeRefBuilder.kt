@@ -14,6 +14,7 @@ import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.types.CfirFunctionTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.CfirTypeRefOrigin
 import org.cangnova.cangjie.cfir.types.impl.CfirFunctionTypeRefImpl
 import org.cangnova.cangjie.source.CjSourceElement
 
@@ -22,6 +23,7 @@ class CfirFunctionTypeRefBuilder {
     var source: CjSourceElement? = null
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
     var customRenderer: Boolean = false
+    var typeUseOrigin: CfirTypeRefOrigin = CfirTypeRefOrigin.SEMANTIC
     val parameterTypeRefs: MutableList<CfirTypeRef> = mutableListOf()
     lateinit var returnTypeRef: CfirTypeRef
 
@@ -31,6 +33,7 @@ class CfirFunctionTypeRefBuilder {
             source,
             annotations.toMutableOrEmpty(),
             customRenderer,
+            typeUseOrigin,
             parameterTypeRefs,
             returnTypeRef,
         )
@@ -55,6 +58,7 @@ inline fun buildFunctionTypeRefCopy(original: CfirFunctionTypeRef, init: CfirFun
     copyBuilder.source = original.source
     copyBuilder.annotations.addAll(original.annotations)
     copyBuilder.customRenderer = original.customRenderer
+    copyBuilder.typeUseOrigin = original.typeUseOrigin
     copyBuilder.parameterTypeRefs.addAll(original.parameterTypeRefs)
     copyBuilder.returnTypeRef = original.returnTypeRef
     return copyBuilder.apply(init).build()

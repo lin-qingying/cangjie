@@ -35,7 +35,10 @@ import org.cangnova.cangjie.lexer.CjToken
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.lexer.CjTokens.*
 import org.cangnova.cangjie.messages.CangJieParsingBundle
+import org.cangnova.cangjie.messages.ParsingDiagnosticHint
+import org.cangnova.cangjie.messages.ParsingDiagnostic
 import org.cangnova.cangjie.psi.CjNodeTypes
+import org.cangnova.cangjie.psi.CjRelativeErrorHint
 import org.cangnova.cangjie.utils.substringWithContext
 import org.jetbrains.annotations.Contract
 import org.jetbrains.annotations.TestOnly
@@ -101,6 +104,18 @@ abstract class AbstractCangJieParsing(
 
         /** Only the file-header features directive may consume package metadata annotations. */
         val allowPackageDirectiveAnnotations: Boolean = false,
+        /** 当前声明文法的名义成员语境；进入函数/访问器的语句体时清除。 */
+        val memberScope: CjMemberParsingContext? = null,
+        /** 正文语句的真实原生作用域；与 LOCAL 等声明分派模式分开保存。 */
+        val statementScope: CjScopeKind = CjScopeKind.UNKNOWN_SCOPE,
+        /** 语法诊断沿真实 owner 链保存范围；独立宏入口没有宿主 AST owner。 */
+        val diagnosticScopeOwner: CjParsingScopeOwner? = null,
+        /** 最近 class/struct 的词法名字；进入表达式/函数/lambda 不清除。 */
+        val primaryDeclaration: CjPrimaryParsingName? = null,
+        /** 低层表达式文法输入；与宏最终保存的 ScopeKind/ExprKind 分开。 */
+        val expressionGrammarKind: CjExprKind = CjExprKind.ALL,
+        /** token payload 可以保留编辑器结构，但不在宿主登记原生 MacroInvocation。 */
+        val recordMacroInvocations: Boolean = true,
 //        val strictMode: Boolean = false
 
         // ==================== 错误报告相关 ====================
@@ -108,6 +123,8 @@ abstract class AbstractCangJieParsing(
          * 保存 `shouldReportError`，供仓颉语法解析流程读取节点结构或语义信息。
          */
         val shouldReportError: Boolean = true,
+        /** 官方宏 token 重解析不报告依赖宿主 AST 的 modifier scope 诊断。 */
+        val ignoreScopeCheck: Boolean = false,
 
         // ==================== 表达式解析相关 ====================
         /**
@@ -237,6 +254,24 @@ abstract class AbstractCangJieParsing(
      * @return
      */
     protected fun mark(): PsiBuilder.Marker = builder.mark()
+
+    /**
+     * 对位原生 ConsumeCommon/SkipPairedBrackets：恢复只消费完整括号组，不构造语法产物。
+     * 调用者决定外层停止条件；组内关键字与换行不能提前结束恢复。
+     */
+    protected fun consumeRecoveryToken() {
+        val closingToken = when (tt()) {
+            LPAR -> RPAR
+            LBRACKET -> RBRACKET
+            LBRACE -> RBRACE
+            else -> null
+        }
+        advance()
+        if (closingToken != null) {
+            while (!eof() && !at(closingToken)) consumeRecoveryToken()
+            if (at(closingToken)) advance()
+        }
+    }
 
     /**
      * 可选标记类,用于在解析过程中创建可选的语法树标记
@@ -507,7 +542,7 @@ abstract class AbstractCangJieParsing(
         if (_atSet(set)) return true
         val token = tt()
         if (token === CjTokens.IDENTIFIER) {
-            val keywordToken = SOFT_KEYWORD_TEXTS.get(builder.getTokenText()) ?: return false
+            val keywordToken = contextualKeywordFromTokenText() ?: return false
             if (set.contains(keywordToken)) {
                 builder.remapCurrentToken(keywordToken)
                 return true
@@ -522,6 +557,11 @@ abstract class AbstractCangJieParsing(
         }
         return false
     }
+
+    /** 当前真实词元的上下文关键字分类；表示为 IDENTIFIER 的合法 remap 不改变原文法种类。 */
+    protected fun contextualKeywordFromTokenText(): CjKeywordToken? = contextualKeywordFromText(builder.tokenText)
+
+    protected fun contextualKeywordFromText(text: String?): CjKeywordToken? = SOFT_KEYWORD_TEXTS[text]
 
     /**
      * 获取当前解析上下文的字符串表示
@@ -612,6 +652,130 @@ abstract class AbstractCangJieParsing(
             builder.error(message)
         }
     }
+
+    /** 对位原生 Node/Range 诊断：保留显式源范围（含 Invalid 节点的 lookahead），不改变消费位置。 */
+    context(context: ParsingContext)
+    protected fun errorOnRange(
+        startOffset: Int,
+        endOffset: Int,
+        message: String,
+        hints: List<ParsingDiagnosticHint> = emptyList(),
+        source: CjParsingSourceSnapshot? = null,
+        category: ParsingDiagnostic.Category = ParsingDiagnostic.Category.PARSE,
+        rangeKind: ParsingDiagnostic.RangeKind = ParsingDiagnostic.RangeKind.RANGE,
+    ) {
+        if (!context.shouldReportError) return
+        val nodeOffset = builder.currentOffset
+        require(startOffset in 0..endOffset && endOffset <= (source?.text?.length ?: builder.originalText.length)) {
+            "A parser range diagnostic must refer to its declared source text."
+        }
+        mark().done(
+            CjSourceRangeErrorElementType(
+                message,
+                if (source == null) startOffset - nodeOffset else startOffset,
+                endOffset - startOffset,
+                relativeHints(nodeOffset, hints),
+                source,
+                category,
+                rangeKind,
+                builder.macroParsingJournal.nextDiagnosticOrder(),
+            ),
+        )
+    }
+
+    /** 原生 Position 报告保存真实点位；一列主提示由根 collector 完成，不截成 EOF 零宽范围。 */
+    context(context: ParsingContext)
+    protected fun errorOnPosition(position: Int, message: String, hints: List<ParsingDiagnosticHint> = emptyList()) {
+        errorOnRange(position, position, message, hints, rangeKind = ParsingDiagnostic.RangeKind.POINT)
+    }
+
+    /** 只有本 journal 捕获的事实使用节点相对坐标；继承事实显式保留其独立文件快照。 */
+    context(context: ParsingContext)
+    protected fun errorOnSourceRange(
+        origin: CjParsedSourceOrigin,
+        range: CjParsingSourceRange,
+        message: String,
+        hints: List<ParsingDiagnosticHint> = emptyList(),
+    ) {
+        val local = origin.rootIdentity == builder.macroParsingJournal.rootIdentity &&
+            range.source === builder.macroParsingJournal.sourceContext.snapshot
+        val base = if (local) builder.macroParsingJournal.sourceContext.inputStart else 0
+        errorOnRange(range.startOffset - base, range.endOffset - base, message, hints,
+            if (local) null else range.source)
+    }
+
+    protected fun sourceHint(
+        origin: CjParsedSourceOrigin,
+        range: CjParsingSourceRange,
+        label: String? = null,
+    ): ParsingDiagnosticHint {
+        val local = origin.rootIdentity == builder.macroParsingJournal.rootIdentity &&
+            range.source === builder.macroParsingJournal.sourceContext.snapshot
+        val base = if (local) builder.macroParsingJournal.sourceContext.inputStart else 0
+        return ParsingDiagnosticHint(range.startOffset - base, range.endOffset - base, label,
+            if (local) null else range.source)
+    }
+
+    /** 非错误报告沿同一可回滚 journal 发布；显式继承来源与本输入坐标分别保存。 */
+    context(context: ParsingContext)
+    protected fun warningOnSourceRange(
+        origin: CjParsedSourceOrigin,
+        range: CjParsingSourceRange,
+        warning: org.cangnova.cangjie.messages.ParsingWarning,
+        message: String,
+        mainHint: String? = null,
+        hints: List<ParsingDiagnosticHint> = emptyList(),
+        inheritedCarrier: Int? = null,
+    ) {
+        if (!context.shouldReportError) return
+        val journal = builder.macroParsingJournal
+        val local = origin.rootIdentity == journal.rootIdentity && range.source === journal.sourceContext.snapshot
+        val base = if (local) journal.sourceContext.inputStart else 0
+        journal.reportParsingWarning(
+            if (local) range.startOffset - base else checkNotNull(inheritedCarrier),
+            ParsingDiagnostic(
+                range.startOffset - base, range.endOffset - base, message,
+                hints = hints, source = if (local) null else range.source,
+                severity = ParsingDiagnostic.Severity.WARNING, warning = warning,
+                mainHint = mainHint, notes = listOf(warning.suppressionNote),
+            ),
+        )
+    }
+
+    /** 对位原生 Token 诊断重载：报告整个当前词元，不改变文法消费与错误恢复停点。 */
+    context(context: ParsingContext)
+    protected fun errorOnCurrentToken(
+        message: String,
+        hints: List<ParsingDiagnosticHint> = emptyList(),
+        operation: ParsedOperationToken? = null,
+    ) {
+        if (!context.shouldReportError) return
+        if (eof()) {
+            val nativeEofOffset = builder.lastConsumedTokenEndOffset
+            if (nativeEofOffset == null) {
+                builder.error(message)
+            } else {
+                errorOnPosition(nativeEofOffset, message, hints)
+            }
+        } else {
+            if (operation != null) check(operation.startOffset == builder.currentOffset &&
+                operation.type === getGtTokenType())
+            val width = if (operation == null) checkNotNull(builder.tokenText).length
+                else operation.endOffset - operation.startOffset
+            mark().done(CjTokenRangeErrorElementType(message, width, relativeHints(builder.currentOffset, hints),
+                diagnosticOrder = builder.macroParsingJournal.nextDiagnosticOrder()))
+        }
+    }
+
+    private fun relativeHints(nodeOffset: Int, hints: List<ParsingDiagnosticHint>): List<CjRelativeErrorHint> =
+        hints.map { hint ->
+            require(hint.startOffset in 0..hint.endOffset &&
+                hint.endOffset <= (hint.source?.text?.length ?: builder.originalText.length)) {
+                "A parser hint must refer to its declared source text."
+            }
+            val base = if (hint.source == null) nodeOffset else 0
+            CjRelativeErrorHint(hint.startOffset - base, hint.endOffset - base, hint.label, hint.source, hint.rangeKind)
+        }
 
     /**
      * 在指定标记之前报告错误
@@ -770,6 +934,35 @@ abstract class AbstractCangJieParsing(
     }
 
     /**
+     * 对位官方 `ConsumeUntilAny`：成对括号整体跳过，物理换行始终消费，其他目标按参数消费。
+     * 右花括号只有作为目标 token 时才停止恢复，不能改变调用文法指定的停止集合。
+     */
+    protected fun consumeUntilAny(tokenSet: TokenSet, targetTokenConsumed: Boolean = true) {
+        builder.withNLTokenSkipping(false) {
+            while (!eof() && !tokenSet.contains(tt())) {
+                skipPairedBrackets()
+                if (!eof()) advance()
+            }
+            if (at(CjTokens.NL) || (targetTokenConsumed && !eof() && tokenSet.contains(tt()))) advance()
+        }
+    }
+
+    /** 对位官方 `SkipPairedBrackets`；保留匹配的右括号，由外层消费程序推进。 */
+    private fun skipPairedBrackets() {
+        val closingBracket = when (tt()) {
+            CjTokens.LPAR -> CjTokens.RPAR
+            CjTokens.LBRACE -> CjTokens.RBRACE
+            CjTokens.LBRACKET -> CjTokens.RBRACKET
+            else -> return
+        }
+        advance()
+        while (!eof() && !at(closingBracket)) {
+            skipPairedBrackets()
+            if (!eof()) advance()
+        }
+    }
+
+    /**
      * 报告错误直到遇到指定的标记集合
      *
      * @param message 错误消息
@@ -830,6 +1023,29 @@ abstract class AbstractCangJieParsing(
     /**
      * 提供 `getGtTokenType` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
      */
+    /** 完整操作符由同一 raw 组合协议读取和消费，范围不由拼写长度反推。 */
+    protected data class ParsedOperationToken(
+        val type: IElementType,
+        val startOffset: Int,
+        val endOffset: Int,
+        val text: String,
+    )
+
+    protected fun currentOperationToken(type: IElementType): ParsedOperationToken {
+        check(getGtTokenType() === type)
+        val start = builder.currentOffset
+        val end = builder.rawTokenTypeStart(gtTokenCount(type))
+        require(start < end && end <= builder.originalText.length)
+        return ParsedOperationToken(type, start, end, builder.originalText.substring(start, end))
+    }
+
+    private fun gtTokenCount(type: IElementType): Int =
+        if (tt() === type) 1 else when (type) {
+            CjTokens.COALESCING, CjTokens.GTGT, CjTokens.GTEQ -> 2
+            CjTokens.GTGTEQ -> 3
+            else -> throw IllegalStateException("An operation must be the current token or a recognized raw token composition.")
+        }
+
     protected fun getGtTokenType(): IElementType? =
         when (val tokenType = tt()) {
             CjTokens.QUEST -> if (rawLookup(1) === CjTokens.QUEST) CjTokens.COALESCING else tokenType
@@ -901,27 +1117,13 @@ abstract class AbstractCangJieParsing(
      * @param type 要处理的标记类型
      */
     protected fun advanceGtToken(type: IElementType) {
-        mark().apply {
-            when (type) {
-                CjTokens.COALESCING -> {
-                    PsiBuilderUtil.advance(builder, 2)
-                    collapse(type)
-                }
-
-                CjTokens.GTGTEQ -> {
-                    PsiBuilderUtil.advance(builder, 3)
-                    collapse(type)
-                }
-
-                CjTokens.GTGT, CjTokens.GTEQ -> {
-                    PsiBuilderUtil.advance(builder, 2)
-                    collapse(type)
-                }
-
-                else -> {
-                    drop()
-                    advance()
-                }
+        val count = gtTokenCount(type)
+        if (count == 1) {
+            advance()
+        } else {
+            mark().apply {
+                repeat(count) { advance() }
+                collapse(type)
             }
         }
     }

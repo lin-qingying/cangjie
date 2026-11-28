@@ -29,6 +29,8 @@ import org.cangnova.cangjie.cfir.declarations.lambdaParameterShapeExpectedFuncti
 import org.cangnova.cangjie.cfir.declarations.isInsideFailedArgumentMapping
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirArgumentList
+import org.cangnova.cangjie.cfir.expressions.CfirArgumentListMutableState
+import org.cangnova.cangjie.cfir.expressions.CfirResolvedArgumentList
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirErrorExpression
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
@@ -58,7 +60,18 @@ import java.util.IdentityHashMap
  * 快照负责恢复所有会被 body resolve 改写的类型、引用、body、pattern、CFG 和 resolve state，
  * 使后续重算从结构化 CFIR 状态出发，而不是继续消费上一轮的错误候选或 resolved reference。
  */
-internal class CfirResolutionSnapshot private constructor(
+interface CfirResolutionSnapshot {
+    /** 恢复原有节点的解析状态，保持符号与 provider 所持声明的身份。 */
+    fun restore()
+
+    companion object {
+        /** 候选试跑与 LL 声明事务共用同一表达式图状态捕获规则。 */
+        fun capture(root: CfirElement): CfirResolutionSnapshot = CfirResolutionSnapshotImpl.capture(root)
+    }
+}
+
+/** 快照实现只在 resolve owner 内可见，调用方不接触各类可变字段的存储布局。 */
+private class CfirResolutionSnapshotImpl private constructor(
     /** 带 resolve state 元素的阶段状态快照。 */
     private val resolveStates: IdentityHashMap<CfirElementWithResolveState, CfirResolveState>,
     /** 只捕获可写的表达式类型；代理到子节点或诊断的派生类型由其真实 owner 恢复。 */
@@ -88,21 +101,22 @@ internal class CfirResolutionSnapshot private constructor(
     /** pattern 内部可变状态快照。 */
     private val patternStates: IdentityHashMap<CfirPattern, CfirPatternMutableState>,
     /** catch 模式的声明类型与整体语义类型必须一起回滚，避免候选试跑污染后续分析。 */
-    private val catchPatternStates: IdentityHashMap<CfirCatchPattern, CatchPatternState>,
     /** 下标语法节点与已解析 get/set 调用的关联必须随候选试跑一起回滚。 */
     private val subscriptCallStates: IdentityHashMap<CfirSubscriptExpression, SubscriptCallState>,
     /** qualified access 接收者与类型实参快照。 */
     private val qualifiedAccessStates: IdentityHashMap<CfirQualifiedAccessExpression, QualifiedAccessState>,
     /** 函数调用实参列表快照。 */
     private val functionCallArgumentLists: IdentityHashMap<CfirFunctionCall, CfirArgumentList>,
+    /** 实参列表对象内部的元素、映射和原始列表状态。 */
+    private val argumentListStates: IdentityHashMap<CfirArgumentList, CfirArgumentListMutableState>,
     /** CFG owner 到 CFG reference 的快照。 */
     private val controlFlowGraphReferences: IdentityHashMap<CfirControlFlowGraphOwner, CfirControlFlowGraphReference?>,
-) {
+) : CfirResolutionSnapshot {
     /**
      * 把快照中的全部 CFIR 可变状态恢复到原对象上。
      */
     @OptIn(ResolveStateAccess::class)
-    fun restore() {
+    override fun restore() {
         for ((element, state) in resolveStates) {
             element.resolveState = state
         }
@@ -143,10 +157,6 @@ internal class CfirResolutionSnapshot private constructor(
         for ((_, state) in patternStates) {
             state.restore()
         }
-        for ((pattern, state) in catchPatternStates) {
-            pattern.replaceTypeRefs(state.typeRefs)
-            pattern.replaceResolvedTypeRef(state.resolvedTypeRef)
-        }
         for ((subscript, state) in subscriptCallStates) {
             subscript.replaceResolvedGetCall(state.getCall)
             subscript.replaceResolvedSetCall(state.setCall)
@@ -160,8 +170,10 @@ internal class CfirResolutionSnapshot private constructor(
         for ((call, argumentList) in functionCallArgumentLists) {
             call.replaceArgumentList(argumentList)
         }
+        for ((_, state) in argumentListStates) state.restore()
         for ((access, state) in qualifiedAccessStates) {
             access.replaceDispatchReceiver(state.dispatchReceiver)
+            access.replaceExplicitReceiver(state.explicitReceiver)
             access.replaceTypeArguments(state.typeArguments)
         }
         for ((resolvable, reference) in calleeReferences) {
@@ -178,14 +190,12 @@ internal class CfirResolutionSnapshot private constructor(
     private data class QualifiedAccessState(
         /** 当前 dispatch receiver。 */
         val dispatchReceiver: CfirExpression?,
+        /** 解析可能替换原始显式接收者表达式。 */
+        val explicitReceiver: CfirExpression?,
         /** 当前类型实参列表。 */
         val typeArguments: List<CfirTypeRef>,
     )
 
-    private data class CatchPatternState(
-        val typeRefs: List<CfirTypeRef>,
-        val resolvedTypeRef: CfirResolvedTypeRef?,
-    )
 
     private data class SubscriptCallState(
         val getCall: CfirFunctionCall?,
@@ -211,12 +221,12 @@ internal class CfirResolutionSnapshot private constructor(
             val patternVariablePatterns = IdentityHashMap<CfirPatternVariable, CfirPattern>()
             val matchBranchPatterns = IdentityHashMap<CfirMatchBranch, CfirPattern>()
             val patternStates = IdentityHashMap<CfirPattern, CfirPatternMutableState>()
-            val catchPatternStates = IdentityHashMap<CfirCatchPattern, CatchPatternState>()
             val subscriptCallStates = IdentityHashMap<CfirSubscriptExpression, SubscriptCallState>()
             // set 的 RHS 可以引用同一个 get 节点；语义调用引用因此形成共享图而非纯树。
             val visitedElements = java.util.Collections.newSetFromMap(IdentityHashMap<CfirElement, Boolean>())
             val qualifiedAccessStates = IdentityHashMap<CfirQualifiedAccessExpression, QualifiedAccessState>()
             val functionCallArgumentLists = IdentityHashMap<CfirFunctionCall, CfirArgumentList>()
+            val argumentListStates = IdentityHashMap<CfirArgumentList, CfirArgumentListMutableState>()
             val controlFlowGraphReferences =
                 IdentityHashMap<CfirControlFlowGraphOwner, CfirControlFlowGraphReference?>()
 
@@ -263,12 +273,7 @@ internal class CfirResolutionSnapshot private constructor(
                             matchBranchPatterns[element] = element.pattern
                         }
                         if (element is CfirPattern) {
-                            CfirPatternMutableState.capture(element)?.let { patternState ->
-                                patternStates[element] = patternState
-                            }
-                        }
-                        if (element is CfirCatchPattern) {
-                            catchPatternStates[element] = CatchPatternState(element.typeRefs.toList(), element.resolvedTypeRef)
+                            patternStates[element] = CfirPatternMutableState.capture(element)
                         }
                         if (element is CfirSubscriptExpression) {
                             subscriptCallStates[element] = SubscriptCallState(element.resolvedGetCall, element.resolvedSetCall)
@@ -278,11 +283,20 @@ internal class CfirResolutionSnapshot private constructor(
                         if (element is CfirQualifiedAccessExpression) {
                             qualifiedAccessStates[element] = QualifiedAccessState(
                                 dispatchReceiver = element.dispatchReceiver,
+                                explicitReceiver = element.explicitReceiver,
                                 typeArguments = element.typeArguments.toList(),
                             )
                         }
                         if (element is CfirFunctionCall) {
                             functionCallArgumentLists[element] = element.argumentList
+                        }
+                        if (element is CfirArgumentList) {
+                            argumentListStates[element] = CfirArgumentListMutableState.capture(element)
+                            if (element is CfirResolvedArgumentList) {
+                                element.originalArgumentList?.accept(this, null)
+                                // context 实参不在 value arguments 中，但仍属于同一可恢复表达式图。
+                                element.mappingIncludingContextArguments.keys.forEach { it.accept(this, null) }
+                            }
                         }
                         if (element is CfirControlFlowGraphOwner) {
                             controlFlowGraphReferences[element] = element.controlFlowGraphReference
@@ -293,7 +307,7 @@ internal class CfirResolutionSnapshot private constructor(
                 null,
             )
 
-            return CfirResolutionSnapshot(
+            return CfirResolutionSnapshotImpl(
                 resolveStates,
                 expressionTypes,
                 calleeReferences,
@@ -308,10 +322,10 @@ internal class CfirResolutionSnapshot private constructor(
                 patternVariablePatterns,
                 matchBranchPatterns,
                 patternStates,
-                catchPatternStates,
                 subscriptCallStates,
                 qualifiedAccessStates,
                 functionCallArgumentLists,
+                argumentListStates,
                 controlFlowGraphReferences,
             )
         }

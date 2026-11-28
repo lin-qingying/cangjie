@@ -8,24 +8,30 @@ import org.cangnova.cangjie.chir.core.controlflow.ChirReturnTerminator
 import org.cangnova.cangjie.chir.core.controlflow.ChirThrowTerminator
 import org.cangnova.cangjie.chir.core.controlflow.ChirUnwindTerminator
 import org.cangnova.cangjie.chir.core.declaration.ChirFunctionDeclaration
+import org.cangnova.cangjie.chir.core.declaration.ChirClassDeclaration
 import org.cangnova.cangjie.chir.core.declaration.ChirVariableDeclaration
 import org.cangnova.cangjie.chir.core.expression.ChirBinaryExpression
 import org.cangnova.cangjie.chir.core.expression.ChirCallExpression
+import org.cangnova.cangjie.chir.core.expression.ChirConstantExpression
 import org.cangnova.cangjie.chir.core.expression.ChirExpression
 import org.cangnova.cangjie.chir.core.expression.ChirMemoryExpression
 import org.cangnova.cangjie.chir.core.expression.ChirOtherExpression
+import org.cangnova.cangjie.chir.core.expression.ChirOtherOperation
 import org.cangnova.cangjie.chir.core.expression.ChirUnaryExpression
 import org.cangnova.cangjie.chir.core.identity.ChirSemanticId
 import org.cangnova.cangjie.chir.core.model.ChirModule
+import org.cangnova.cangjie.chir.core.model.allDeclarations
 import org.cangnova.cangjie.chir.core.type.ChirCPointerType
 import org.cangnova.cangjie.chir.core.type.ChirFunctionType
 import org.cangnova.cangjie.chir.core.type.ChirPrimitiveType
 import org.cangnova.cangjie.chir.core.type.ChirRefType
 import org.cangnova.cangjie.chir.core.type.ChirResolvedTypeRef
 import org.cangnova.cangjie.chir.core.type.ChirTypeRef
+import org.cangnova.cangjie.chir.core.type.ChirTypeRelations
 import org.cangnova.cangjie.chir.core.value.ChirBlockGroupValue
 import org.cangnova.cangjie.chir.core.value.ChirBlockValue
 import org.cangnova.cangjie.chir.core.value.ChirConstantValue
+import org.cangnova.cangjie.chir.core.value.ChirConstantKind
 import org.cangnova.cangjie.chir.core.value.ChirFunctionValue
 import org.cangnova.cangjie.chir.core.value.ChirGlobalValue
 import org.cangnova.cangjie.chir.core.value.ChirImportedFunctionValue
@@ -120,6 +126,11 @@ class JvmFunctionCodegen(
      * 以规范化 CHIR 名称索引的 JVM local slot 绑定表，用于恢复按名称引用的局部值。
      */
     private val localSlotsByName = linkedMapOf<String, LocalSlot>()
+    private val resultLocalValueIdByExpressionId: Map<ChirSemanticId, ChirSemanticId> = function.blocks
+        .asSequence()
+        .flatMap { it.expressions.asSequence() }
+        .mapNotNull { expression -> expression.resultLocalValue?.let { expression.semanticId to it.semanticId } }
+        .toMap()
     /**
      * 下一个可分配 JVM local slot 下标，按 JVM 类型 size 递增。
      */
@@ -145,12 +156,12 @@ class JvmFunctionCodegen(
         if (isConstructor) {
             emitSuperConstructorCall(method)
         }
-        orderedBlocks().forEach { block ->
+        orderedBlocks().filter { it.terminator != null }.forEach { block ->
             method.visitLabel(labelFor(block.semanticId))
             block.expressions
                 .filterNot(::isPhiExpression)
                 .forEach { expression -> emitExpression(method, expression) }
-            emitTerminator(method, block, block.terminator)
+            emitTerminator(method, block, checkNotNull(block.terminator))
         }
         method.visitMaxs(0, 0)
         method.visitEnd()
@@ -210,6 +221,7 @@ class JvmFunctionCodegen(
             is ChirBinaryExpression -> emitBinaryExpression(method, expression)
             is ChirCallExpression -> emitCallExpression(method, expression)
             is ChirMemoryExpression -> emitMemoryExpression(method, expression)
+            is ChirConstantExpression -> emitConstantExpression(method, expression)
             is ChirOtherExpression -> emitOtherExpression(method, expression)
             else -> throw JvmCodegenException("unsupported expression ${expression::class.simpleName}", expression.semanticId)
         }
@@ -300,6 +312,18 @@ class JvmFunctionCodegen(
      * 调用结果会按 CHIR 目标类型进行栈值适配后写入表达式结果 slot。
      */
     private fun emitCallExpression(method: MethodVisitor, expression: ChirCallExpression) {
+        if (expression.virtualMethodContext != null) {
+            val actualStackType = emitVirtualMethodCall(method, expression)
+            val resultType = context.typeMapper.mapReturnType(expression.resultType)
+            if (resultType == Type.VOID_TYPE) {
+                popStackValue(method, actualStackType)
+                return
+            }
+            adaptStackValue(method, expression.semanticId, actualStackType, resultType)
+            storeExpressionResult(method, expression.semanticId, resultType)
+            return
+        }
+
         val callee = expression.callee
         val functionType = (callee.type as? ChirResolvedTypeRef)?.type as? ChirFunctionType
             ?: throw JvmCodegenException("JVM call callee must carry ChirFunctionType", expression.semanticId)
@@ -340,6 +364,55 @@ class JvmFunctionCodegen(
         adaptStackValue(method, expression.semanticId, actualStackType, resultType)
         storeExpressionResult(method, expression.semanticId, resultType)
     }
+
+    /** 发射 CHIR Invoke；调用符号来自方法上下文，receiver 独立压栈以保留动态分派。 */
+    private fun emitVirtualMethodCall(method: MethodVisitor, expression: ChirCallExpression): Type {
+        val methodContext = checkNotNull(expression.virtualMethodContext)
+        val receiver = expression.dispatchReceiver
+            ?: throw JvmCodegenException("JVM virtual call has no dispatch receiver", expression.semanticId)
+        val signature = methodContext.originalFunctionType
+        val declaredReceiverType = signature.parameterTypes.firstOrNull()
+            ?: throw JvmCodegenException("JVM virtual method signature has no receiver parameter", expression.semanticId)
+        val descriptor = JvmAbiAttributes.optionalString(expression.callee.attributes, JvmAbiAttributes.DESCRIPTOR)
+            ?: context.typeMapper.methodDescriptor(signature.returnType, signature.parameterTypes.drop(1))
+        val receiverJvmType = context.typeMapper.mapValueType(declaredReceiverType)
+        val ownerType = context.typeMapper.mapValueType(receiver.type)
+        val owner = JvmAbiAttributes.optionalString(expression.callee.attributes, JvmAbiAttributes.OWNER)
+            ?: objectInternalName(ownerType, expression.semanticId, "virtual call owner")
+        val invokeKind = JvmAbiAttributes.optionalString(expression.callee.attributes, JvmAbiAttributes.INVOKE_KIND)
+        val isInterface = invokeKind == "interface" || isInterfaceType(owner)
+        if (invokeKind != null && invokeKind != "interface" && invokeKind != "virtual") {
+            throw JvmCodegenException("unsupported JVM virtual invoke kind '$invokeKind'", expression.semanticId)
+        }
+        val methodName = JvmAbiAttributes.optionalString(expression.callee.attributes, JvmAbiAttributes.NAME)
+            ?: context.namePolicy.functionJvmName(methodContext.sourceCodeIdentifier)
+
+        emitReceiverAndArgumentsForDescriptor(
+            method = method,
+            receiver = receiver,
+            arguments = expression.arguments,
+            receiverType = receiverJvmType,
+            descriptor = descriptor,
+            nodeId = expression.semanticId,
+        )
+        method.visitMethodInsn(
+            if (isInterface) Opcodes.INVOKEINTERFACE else Opcodes.INVOKEVIRTUAL,
+            owner,
+            methodName,
+            descriptor,
+            isInterface,
+        )
+        return Type.getReturnType(descriptor)
+    }
+
+    /** 按输入 CHIR 声明图判定静态接收者是否为接口。 */
+    private fun isInterfaceType(ownerInternalName: String): Boolean =
+        context.inputPackage.allDeclarations.asSequence()
+            .filterIsInstance<ChirClassDeclaration>()
+            .any { declaration ->
+                declaration.isInterface &&
+                    context.namePolicy.typeInternalName(context.inputPackage, declaration) == ownerInternalName
+            }
 
     /**
      * 发射动态函数值调用。
@@ -566,16 +639,28 @@ class JvmFunctionCodegen(
                 if (expression.value != null) {
                     throw JvmCodegenException("JVM alloca must not carry a value operand", expression.semanticId)
                 }
-                if (expression.resultType == null) {
-                    ensureAddressSlot(expression.address, expression.semanticId)
-                } else {
-                    emitPointerAlloca(method, expression)
+                val resultType = expression.resultType
+                    ?: throw JvmCodegenException("JVM alloca requires an explicit result type", expression.semanticId)
+                val resultLocalValue = expression.resultLocalValue
+                    ?: throw JvmCodegenException("JVM alloca requires a result local value", expression.semanticId)
+                when ((resultType as? ChirResolvedTypeRef)?.type) {
+                    is ChirRefType -> ensureAddressSlot(
+                        resultLocalValue,
+                        expression.semanticId,
+                    )
+                    is ChirCPointerType -> emitPointerAlloca(method, expression)
+                    else -> throw JvmCodegenException(
+                        "JVM alloca result must be CHIR ref or cpointer, actual ${resultType.renderName}",
+                        expression.semanticId,
+                    )
                 }
             }
             "store" -> {
                 val value = expression.value
                     ?: throw JvmCodegenException("JVM store requires value operand", expression.semanticId)
-                if (expression.resultType != null) {
+                if (expression.resultType != null &&
+                    (expression.resultType as? ChirResolvedTypeRef)?.type != ChirPrimitiveType.UNIT
+                ) {
                     throw JvmCodegenException("JVM store must not carry result type", expression.semanticId)
                 }
                 val targetType = memoryTargetType(expression.address, expression.semanticId)
@@ -750,14 +835,63 @@ class JvmFunctionCodegen(
     }
 
     /**
+     * 将官方 CHIR 常量字面量写入表达式结果局部槽。
+     */
+    private fun emitConstantExpression(method: MethodVisitor, expression: ChirConstantExpression) {
+        if (!ChirTypeRelations.isOfficialChirTypeCompatible(expression.resultType, expression.value.type)) {
+            throw JvmCodegenException(
+                "constant result type ${expression.resultType.renderName} differs from literal type ${expression.value.type.renderName}",
+                expression.semanticId,
+            )
+        }
+        val resultType = context.typeMapper.mapValueType(expression.resultType)
+        if (expression.value.constantKind == ChirConstantKind.NULL) {
+            val literalType = (expression.value.type as? ChirResolvedTypeRef)?.type
+            val isNullType = literalType == ChirPrimitiveType.NOTHING || literalType is ChirRefType
+            if (resultType.sort != Type.OBJECT && resultType.sort != Type.ARRAY) {
+                throw JvmCodegenException(
+                    "null constant cannot be materialized as JVM type ${resultType.descriptor}",
+                    expression.semanticId,
+                )
+            }
+            if (!isNullType) {
+                throw JvmCodegenException(
+                    "null constant has incompatible CHIR type ${expression.value.type.renderName}",
+                    expression.semanticId,
+                )
+            }
+            method.visitInsn(Opcodes.ACONST_NULL)
+        } else {
+            val sourceType = expression.value.type
+            val sourceJvmType = context.typeMapper.mapValueType(sourceType)
+            val sourceIsReference = sourceJvmType.sort == Type.OBJECT || sourceJvmType.sort == Type.ARRAY
+            val resultIsReference = resultType.sort == Type.OBJECT || resultType.sort == Type.ARRAY
+            if (!ChirTypeRelations.isAssignable(sourceType, expression.resultType) ||
+                sourceIsReference != resultIsReference ||
+                !sourceIsReference && sourceJvmType != resultType
+            ) {
+                throw JvmCodegenException(
+                    "constant literal ${sourceType.renderName} cannot be represented as ${expression.resultType.renderName} " +
+                        "without a value conversion",
+                    expression.semanticId,
+                )
+            }
+            emitValue(method, expression.value)
+        }
+        storeExpressionResult(method, expression.semanticId, resultType)
+    }
+
+    /**
      * 发射 CHIR other 表达式中 JVM 后端支持的扩展操作。
      *
      * 这里覆盖 select、JVM field/array/type intrinsic、数值转换、指针整数互转等非基础表达式。
      */
     private fun emitOtherExpression(method: MethodVisitor, expression: ChirOtherExpression) {
+        if (expression.debugMetadata != null) return
         when (val operation = expression.operation.lowercase().trim()) {
             "select" -> emitSelectExpression(method, expression)
             "bitcast" -> emitJvmBitcast(method, expression)
+            ChirOtherOperation.CANGJIE_TYPE_CAST_NA.canonicalName -> emitJvmReferenceTypeCast(method, expression)
             "jvm.new" -> emitJvmNew(method, expression)
             "jvm.getfield" -> emitJvmGetField(method, expression)
             "jvm.putfield" -> emitJvmPutField(method, expression)
@@ -842,6 +976,26 @@ class JvmFunctionCodegen(
             )
         }
         emitValue(method, source)
+        storeExpressionResult(method, expression.semanticId, targetType)
+    }
+
+    /** 发射官方无溢出语义的引用类型适配；类层次转换由 JVM 引用载体承载。 */
+    private fun emitJvmReferenceTypeCast(method: MethodVisitor, expression: ChirOtherExpression) {
+        val operation = ChirOtherOperation.CANGJIE_TYPE_CAST_NA.canonicalName
+        val source = expression.singleOperand(operation)
+        val targetTypeRef = expression.resultType
+            ?: throw JvmCodegenException("Cangjie reference type cast requires a result type", expression.semanticId)
+        val sourceType = context.typeMapper.mapValueType(source.type)
+        val targetType = context.typeMapper.mapValueType(targetTypeRef)
+        if (!sourceType.isReferenceCarrier() || !targetType.isReferenceCarrier()) {
+            throw JvmCodegenException(
+                "Cangjie no-overflow type cast only supports reference adaptation in the JVM backend, " +
+                    "actual ${sourceType.descriptor} -> ${targetType.descriptor}",
+                expression.semanticId,
+            )
+        }
+        emitValue(method, source)
+        adaptStackValue(method, source.semanticId, sourceType, targetType, "reference type cast")
         storeExpressionResult(method, expression.semanticId, targetType)
     }
 
@@ -1611,14 +1765,16 @@ class JvmFunctionCodegen(
      * 首次写入会分配 slot，并额外以结果 id 的规范化名称建立查找入口。
      */
     private fun storeExpressionResult(method: MethodVisitor, id: ChirSemanticId, type: Type) {
-        val slot = localSlots.getOrPut(id) {
+        val resultLocalValueId = resultLocalValueIdByExpressionId[id]
+            ?: throw JvmCodegenException("CHIR expression ${id.value} has no result local value", id)
+        val slot = localSlots.getOrPut(resultLocalValueId) {
             LocalSlot(nextLocalSlot, type).also {
                 nextLocalSlot += type.size
             }
         }
-        localSlotsByName[resultLocalName(id)] = slot
+        localSlotsByName[resultLocalName(resultLocalValueId)] = slot
         if (slot.type != type) {
-            throw JvmCodegenException("JVM local slot type mismatch: expected ${slot.type}, actual $type", id)
+            throw JvmCodegenException("JVM local slot type mismatch: expected ${slot.type}, actual $type", resultLocalValueId)
         }
         method.visitVarInsn(type.getOpcode(Opcodes.ISTORE), slot.index)
     }
@@ -2642,9 +2798,9 @@ class JvmFunctionCodegen(
      */
     private fun orderedBlocks(): List<ChirBlock> = buildList {
         val entry = function.blocks.firstOrNull { it.semanticId == function.entryBlockId }
-        if (entry != null) add(entry)
+        if (entry != null && entry.terminator != null) add(entry)
         function.blocks.forEach { block ->
-            if (entry == null || block.semanticId != entry.semanticId) add(block)
+            if ((entry == null || block.semanticId != entry.semanticId) && block.terminator != null) add(block)
         }
     }
 
@@ -2709,6 +2865,20 @@ class JvmFunctionCodegen(
         }
         if (function.blocks.none { it.semanticId == function.entryBlockId }) {
             throw JvmCodegenException("JVM function '${function.name}' entry block is missing", function.entryBlockId)
+        }
+        val successorIds = function.blocks.flatMap { block ->
+            when (val terminator = block.terminator) {
+                is ChirBranchTerminator -> listOf(terminator.targetBlockId)
+                is ChirConditionalBranchTerminator -> listOf(terminator.trueTargetBlockId, terminator.falseTargetBlockId)
+                is ChirUnwindTerminator -> listOf(terminator.targetBlockId)
+                is ChirThrowTerminator -> listOfNotNull(terminator.unwindTargetBlockId)
+                else -> emptyList()
+            }
+        }.toSet()
+        function.blocks.firstOrNull { block ->
+            block.terminator == null && (block.semanticId == function.entryBlockId || block.semanticId in successorIds)
+        }?.let { block ->
+            throw JvmCodegenException("reachable JVM block ${block.semanticId.value} has no terminator", block.semanticId)
         }
     }
 

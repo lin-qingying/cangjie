@@ -150,7 +150,7 @@ internal class LLCfirProvider(
      * 由需要完整签名的 checker 按自身阶段契约显式推进，避免 import/extend 查找递归进入 body resolve。
      */
     override fun getCfirFilesByPackage(fqName: FqName): List<CfirFile> =
-        symbolProvider.declarationProvider.findFilesForFacadeByPackage(fqName)
+        symbolProvider.declarationProvider.getPackageFiles(fqName)
             .distinct()
             .map(moduleComponents.cfirFileBuilder::buildRawCfirFileWithCaching)
 

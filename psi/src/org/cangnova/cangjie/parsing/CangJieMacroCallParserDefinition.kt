@@ -19,7 +19,6 @@ package org.cangnova.cangjie.parsing
 import com.intellij.extapi.psi.ASTWrapperPsiElement
 import com.intellij.lang.ASTNode
 import com.intellij.lang.ParserDefinition
-import com.intellij.lang.PsiBuilderFactory
 import com.intellij.lang.PsiParser
 import com.intellij.lexer.Lexer
 import com.intellij.openapi.project.Project
@@ -57,8 +56,7 @@ internal class CangJieMacroCallParserDefinition : ParserDefinition {
             override fun doParseContents(chameleon: ASTNode, psi: PsiElement): ASTNode {
                 val project = psi.project
                 val languageForParser = getLanguageForParser(psi)
-                val builder = PsiBuilderFactory.getInstance()
-                    .createBuilder(project, chameleon, null, languageForParser, chameleon.chars)
+                val builder = createCangJiePsiBuilder(project, chameleon, languageForParser)
                 return parse(builder, psi.containingFile).firstChildNode
             }
         }

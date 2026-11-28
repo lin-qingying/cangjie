@@ -6,6 +6,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.CfirTypeRefOrigin
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeDiagnostic
 import org.cangnova.cangjie.cfir.types.ConeErrorType
@@ -31,7 +32,7 @@ class CfirErrorTypeRefImpl @CfirImplementationDetail constructor(
     /**
      * 错误类型引用在源码中的位置。
      */
-    override val source: CjSourceElement?,
+    override var source: CjSourceElement?,
     /**
      * 错误类型引用携带的类型注解。
      */
@@ -49,7 +50,16 @@ class CfirErrorTypeRefImpl @CfirImplementationDetail constructor(
      * 错误恢复过程中已经局部解析完成的类型引用。
      */
     override var partiallyResolvedTypeRef: CfirTypeRef? = null,
+    override var typeUseOrigin: CfirTypeRefOrigin = CfirTypeRefOrigin.SEMANTIC,
 ) : CfirErrorTypeRef() {
+    override fun replaceTypeUseOrigin(newTypeUseOrigin: CfirTypeRefOrigin) {
+        typeUseOrigin = newTypeUseOrigin
+    }
+    /** 迁移源槽位不会改变错误类型与其保留的委托关系。 */
+    @org.cangnova.cangjie.cfir.CfirImplementationDetail
+    override fun replaceSource(newSource: CjSourceElement?) {
+        source = newSource
+    }
 
     /**
      * 错误类型引用暴露给类型系统的 cone 类型。

@@ -14,7 +14,7 @@ import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.source.CjSourceElement
 
 class CfirErrorReferenceImpl @CfirImplementationDetail constructor(
-    override val source: CjSourceElement?,
+    override var source: CjSourceElement?,
     override val reason: String,
 ) : CfirErrorReference() {
 
@@ -22,5 +22,10 @@ class CfirErrorReferenceImpl @CfirImplementationDetail constructor(
 
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirErrorReferenceImpl {
         return this
+    }
+
+    @CfirImplementationDetail
+    override fun replaceSource(newSource: CjSourceElement?) {
+        source = newSource
     }
 }

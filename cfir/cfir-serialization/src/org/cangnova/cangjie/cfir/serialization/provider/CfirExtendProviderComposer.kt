@@ -90,10 +90,19 @@ object CfirExtendProviderComposer {
     private fun lazyProvider(providerRef: () -> CfirExtendProvider): CfirExtendProvider = object : CfirExtendProvider {
         private val delegate: CfirExtendProvider by lazy(LazyThreadSafetyMode.PUBLICATION, providerRef)
 
+        override val modificationCount: Long
+            get() = delegate.modificationCount
+
         override fun getAllExtends(): List<CfirExtend> = delegate.getAllExtends()
 
         override fun getExtendsForTarget(targetKey: CfirExtendTargetKey): List<CfirExtend> =
             delegate.getExtendsForTarget(targetKey)
+
+        override fun getExtendsForTarget(targetKey: CfirExtendTargetKey, packageFqName: FqName): List<CfirExtend> =
+            delegate.getExtendsForTarget(targetKey, packageFqName)
+
+        override fun getCjmpMatchingExtends(target: CfirExtend, packageFqName: FqName): List<CfirExtend> =
+            delegate.getCjmpMatchingExtends(target, packageFqName)
 
         override fun getExtendsForClass(classId: ClassId): List<CfirExtend> =
             delegate.getExtendsForClass(classId)

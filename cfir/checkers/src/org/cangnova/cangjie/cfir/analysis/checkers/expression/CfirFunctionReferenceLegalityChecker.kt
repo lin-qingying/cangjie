@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.firstCharacterDiagnosticSource
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
@@ -26,7 +27,7 @@ import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
  * - 普通函数调用会走 `CfirFunctionCall`，这里显式跳过，避免与调用语义重叠。
  * - 该规则只基于已经解析完成的函数符号，不做额外候选决议。
  */
-object CfirFunctionReferenceLegalityChecker : CfirQualifiedAccessChecker() {
+object CfirFunctionReferenceLegalityChecker : CfirQualifiedAccessChecker(MppCheckerKind.Common) {
     /** 检查函数名作为值访问时是否违反 mut/unsafe 或 enum 构造器参数规则。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirQualifiedAccessExpression) {

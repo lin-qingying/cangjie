@@ -47,9 +47,9 @@ fun CfirPattern.bindingOccurrences(): List<CfirPatternBindingOccurrence> = when 
     }.orEmpty()
     is CfirTuplePattern -> elements.flatMap(CfirPattern::bindingOccurrences)
     is CfirEnumPattern -> arguments.flatMap(CfirPattern::bindingOccurrences)
-    is CfirTypePattern -> bindingName?.let {
-        listOf(CfirPatternBindingOccurrence(it, bindingVariable?.source ?: source, bindingVariable))
-    }.orEmpty()
+    is CfirTypePattern -> nestedPattern.bindingOccurrences()
+    is CfirCatchPattern -> nestedPattern.bindingOccurrences()
+    is CfirCommandTypePattern -> nestedPattern.bindingOccurrences()
 
     is CfirOrPattern -> alternatives.flatMap(CfirPattern::bindingOccurrences)
     is CfirWildcardPattern, is CfirConstPattern, is CfirExpressionPattern -> emptyList()
@@ -60,6 +60,13 @@ fun CfirPattern.bindingOccurrences(): List<CfirPatternBindingOccurrence> = when 
  */
 fun CfirPattern.bindingVariables(): List<CfirPatternBindingVariable> =
     bindingOccurrences().mapNotNull(CfirPatternBindingOccurrence::variable)
+
+/** 普通具名变量的唯一绑定；带嵌套模式或解构模式不属于此声明形状。 */
+fun CfirPattern.simpleVariableBindingOrNull(): CfirPatternBindingVariable? = when (this) {
+    is CfirBindingPattern -> if (nestedPattern == null) bindingVariable else null
+    is CfirVarOrEnumPattern -> bindingVariable
+    else -> null
+}
 
 /**
  * 返回可进入局部作用域/局部重定义检查的模式绑定。
@@ -79,7 +86,9 @@ fun CfirPattern.visibleBindingVariables(): List<CfirPatternBindingVariable> = wh
  * 显式类型模式的名字在语义检查前已经声明；形状检查失败也不能撤销这些名字。
  */
 fun CfirPattern.typePatternBindingVariables(): List<CfirPatternBindingVariable> = when (this) {
-    is CfirTypePattern -> bindingVariable?.let(::listOf).orEmpty()
+    is CfirTypePattern -> nestedPattern.bindingVariables()
+    is CfirCatchPattern -> nestedPattern.typePatternBindingVariables()
+    is CfirCommandTypePattern -> nestedPattern.typePatternBindingVariables()
     is CfirTuplePattern -> elements.flatMap(CfirPattern::typePatternBindingVariables)
     is CfirEnumPattern -> arguments.flatMap(CfirPattern::typePatternBindingVariables)
     is CfirBindingPattern -> nestedPattern?.typePatternBindingVariables().orEmpty()

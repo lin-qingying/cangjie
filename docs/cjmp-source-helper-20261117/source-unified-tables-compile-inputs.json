@@ -1,0 +1,26 @@
+{
+  "utc": "2026-11-17T18:44:20.4695019Z",
+  "fileCount": 6837,
+  "aggregateSha256": "71E25976E5AC9E1FFBE29E78E31E244654B67CD9E9A270BF80115E0E2540EFBD",
+  "roots": [
+    "common",
+    "cfir",
+    "analysis/low-level-api-cfir",
+    "analysis/analysis-api-cfir",
+    "compiler/frontend",
+    "compiler/config",
+    "compiler/phaser",
+    "compiler/arguments",
+    "psi",
+    "resolution.common",
+    "macro"
+  ],
+  "include": [
+    "*.kt",
+    "*.cj",
+    "*.kts"
+  ],
+  "exclude": "**/build/**",
+  "method": "rg --files --hidden --no-ignore, / normalized and Sort-Object -CaseSensitive; SHA256 of UTF8 LF joined path TAB length TAB uppercaseSHA256, no final LF",
+  "scope": "Unified d/e/t reserve-fill production compilation before matched-parent semantic product"
+}

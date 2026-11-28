@@ -1,8 +1,14 @@
+@file:OptIn(ExperimentalUnsignedTypes::class)
+
 package org.cangnova.cangjie.cfir.serialization.cjo
 
 import PackageFormat.DeclKind
 import PackageFormat.Package
+import org.cangnova.cangjie.LanguageVersion
+import org.cangnova.cangjie.LanguageVersionSettingsImpl
 import org.cangnova.cangjie.cfir.serialization.CjoConstants
+import org.cangnova.cangjie.cfir.session.CfirCjmpLoadDiagnostic
+import org.cangnova.cangjie.cfir.session.CfirCjmpOptimizationLevel
 import org.cangnova.cangjie.metadata.model.Attribute
 import java.nio.ByteBuffer
 import java.nio.file.Files
@@ -21,7 +27,7 @@ import kotlin.test.assertTrue
  * - 写侧属性位（COMMON / FROM_COMMON_PART / COMMON_WITH_DEFAULT）与包级 CJMP 字段
  *  （`Package.options`、`FileInfo.feature`）的往返一致；
  * - 加载门四条的判定（版本 / 包名 / features 子集 / 编译选项）；
- * - 版本缺失即拒与包名不符即拒在 [CjoManager] 层的实际拒绝行为。
+ * - alpha.05 起显式 common-part 格式版本门与包名门在 [CjoManager] 层的实际拒绝行为。
  */
 class CjmpCommonPartCjoTest {
     /** 按官方 AttributePack 位布局构造属性位图。 */
@@ -124,6 +130,13 @@ class CjmpCommonPartCjoTest {
         assertNull(
             CjmpCommonPartLoadGate.checkFormatVersion("sample.cjmp", CjmpCommonPartLoadGate.supportedVersion),
         )
+        assertNull(
+            CjmpCommonPartLoadGate.checkFormatVersion(
+                "sample.cjmp",
+                CjmpCommonPartLoadGate.supportedVersion.copy(patch = UByte.MAX_VALUE),
+            ),
+            "the official format gate compares major/minor and ignores patch",
+        )
     }
 
     @Test
@@ -132,6 +145,104 @@ class CjmpCommonPartCjoTest {
         val mismatch = CjmpCommonPartLoadGate.checkPackageName("sample.cjmp", "other.pkg")
         assertNotNull(mismatch)
         assertEquals(org.cangnova.cangjie.cfir.session.CfirCjmpLoadDiagnosticKind.WRONG_PACKAGE, mismatch.kind)
+    }
+
+    @Test
+    fun `format compatibility starts at alpha five for explicit common CJO inputs`() {
+        val packageName = "sample.cjmp"
+        val root = Files.createTempDirectory("cjo-format-version-boundary")
+        try {
+            val bytes = CjoPackageWriter.toByteArray(
+                CjoPackageMetadata(
+                    fullPackageName = packageName,
+                    moduleName = "sample",
+                    cjoVersion = CjoFormatVersion(
+                        major = CjmpCommonPartLoadGate.supportedVersion.major,
+                        minor = (CjmpCommonPartLoadGate.supportedVersion.minor.toInt() + 1).toUByte(),
+                        patch = CjmpCommonPartLoadGate.supportedVersion.patch,
+                    ),
+                ),
+            )
+            val ordinaryPath = root.resolve("ordinary").resolve(CjoConstants.packageNameToPath(packageName))
+            ordinaryPath.parent.createDirectories()
+            Files.write(ordinaryPath, bytes)
+            val commonPath = root.resolve("explicit-common.cjo")
+            Files.write(commonPath, bytes)
+
+            fun manager(languageVersion: LanguageVersion, explicitCommon: Boolean): CjoManager = CjoManager(
+                searchPath = CjoSearchPath { key -> if (key == "CANGJIE_LIBRARY") root.resolve("ordinary").toString() else null },
+                formatVersionPolicy = CjoFormatVersionPolicy.Compilation(
+                    LanguageVersionSettingsImpl(languageVersion),
+                ),
+                explicitCommonPartPaths = if (explicitCommon) listOf(commonPath) else emptyList(),
+            )
+
+            val oldCommonCompiler = manager(LanguageVersion.CANGJIE_1_3_0_ALPHA_04, explicitCommon = true)
+            assertNotNull(oldCommonCompiler.loadPackageSnapshot(packageName), "alpha.04 keeps the legacy load behavior")
+            assertTrue(oldCommonCompiler.loadDiagnostics(packageName).isEmpty())
+
+            val newOrdinaryCompiler = manager(LanguageVersion.CANGJIE_1_3_0_ALPHA_05, explicitCommon = false)
+            assertNotNull(
+                newOrdinaryCompiler.loadPackageSnapshot(packageName),
+                "ordinary classpath CJO inputs do not use the common-part format gate",
+            )
+            assertTrue(newOrdinaryCompiler.loadDiagnostics(packageName).isEmpty())
+
+            val newCommonCompiler = manager(LanguageVersion.CANGJIE_1_3_0_ALPHA_05, explicitCommon = true)
+            assertNull(newCommonCompiler.loadPackageSnapshot(packageName), "alpha.05 rejects a newer common-part CJO format")
+            assertEquals(
+                org.cangnova.cangjie.cfir.session.CfirCjmpLoadDiagnosticKind.CJO_VERSION,
+                newCommonCompiler.loadDiagnostics(packageName).single().kind,
+            )
+        } finally {
+            root.toFile().deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `binary library defers common CJO format compatibility to its consumer session`() {
+        val packageName = "sample.cjmp"
+        val root = Files.createTempDirectory("cjo-format-version-consumer")
+        try {
+            val commonPath = root.resolve("explicit-common.cjo")
+            Files.write(
+                commonPath,
+                CjoPackageWriter.toByteArray(
+                    cjmpMetadata(packageName).copy(
+                        cjoVersion = CjoFormatVersion(
+                            major = CjmpCommonPartLoadGate.supportedVersion.major,
+                            minor = (CjmpCommonPartLoadGate.supportedVersion.minor.toInt() + 1).toUByte(),
+                            patch = CjmpCommonPartLoadGate.supportedVersion.patch,
+                        ),
+                    ),
+                ),
+            )
+            val manager = CjoManager(
+                searchPath = CjoSearchPath { null },
+                formatVersionPolicy = CjoFormatVersionPolicy.DeferredToConsumerSession,
+                explicitCommonPartPaths = listOf(commonPath),
+            )
+
+            assertNotNull(manager.loadPackageSnapshot(packageName))
+            assertTrue(manager.loadDiagnostics(packageName).isEmpty())
+            assertNull(
+                CjoFormatVersionPolicy.Compilation(
+                    LanguageVersionSettingsImpl(LanguageVersion.CANGJIE_1_3_0_ALPHA_04),
+                ).checkCommonPart(packageName, CjmpCommonPartLoadGate.supportedVersion.copy(minor = 2u.toUByte())),
+                "alpha.04 preserves the legacy consumer behavior",
+            )
+            assertNotNull(
+                CjoFormatVersionPolicy.Compilation(
+                    LanguageVersionSettingsImpl(LanguageVersion.CANGJIE_1_3_0_ALPHA_05),
+                ).checkCommonPart(
+                    packageName,
+                    CjmpCommonPartLoadGate.supportedVersion.copy(minor = 2u.toUByte()),
+                ),
+                "alpha.05 applies the compatibility gate in the consuming compilation",
+            )
+        } finally {
+            root.toFile().deleteRecursively()
+        }
     }
 
     @Test
@@ -148,12 +259,12 @@ class CjmpCommonPartCjoTest {
             packageName = "sample.cjmp",
             commonFileFeatures = commonFileFeatures,
             specificFeatures = setOf("Foo"),
-        ).single()
+        ).single() as CfirCjmpLoadDiagnostic.FeaturesNotSubset
         assertEquals(
             org.cangnova.cangjie.cfir.session.CfirCjmpLoadDiagnosticKind.FEATURE_NOT_SUBSET,
             notSubset.kind,
         )
-        assertTrue(notSubset.message.contains("'Bar.Baz'"), notSubset.message)
+        assertEquals(listOf("Bar.Baz"), notSubset.extraFeatures)
     }
 
     @Test
@@ -162,7 +273,7 @@ class CjmpCommonPartCjoTest {
             packageName = "sample.cjmp",
             options = null,
             debug = false,
-            optLevel = 0u,
+            optLevel = CfirCjmpOptimizationLevel.O0,
         )
         assertEquals(1, missing.size)
         assertTrue(!missing.single().isError, "missing options is a warning (module_common_cjo_no_options)")
@@ -171,7 +282,7 @@ class CjmpCommonPartCjoTest {
             packageName = "sample.cjmp",
             options = CjoModuleOptionInfo(debug = true, optLevel = 2u),
             debug = false,
-            optLevel = 1u,
+            optLevel = CfirCjmpOptimizationLevel.O1,
         )
         assertEquals(2, mismatched.size)
 
@@ -180,9 +291,28 @@ class CjmpCommonPartCjoTest {
                 packageName = "sample.cjmp",
                 options = CjoModuleOptionInfo(debug = false, optLevel = 1u),
                 debug = false,
-                optLevel = 1u,
+                optLevel = CfirCjmpOptimizationLevel.O1,
             ).isEmpty(),
         )
+
+        for (unsupportedLevel in listOf(6u.toUByte(), UByte.MAX_VALUE)) {
+            val unsupported = CjmpCommonPartLoadGate.checkOptions(
+                packageName = "sample.cjmp",
+                options = CjoModuleOptionInfo(debug = false, optLevel = unsupportedLevel),
+                debug = false,
+                optLevel = CfirCjmpOptimizationLevel.O1,
+            )
+            assertEquals(1, unsupported.size, "unknown CJO level $unsupportedLevel is rejected without throwing")
+            assertEquals(
+                org.cangnova.cangjie.cfir.session.CfirCjmpLoadDiagnosticKind.OPT_LEVEL_MISMATCH,
+                unsupported.single().kind,
+            )
+            assertEquals(
+                "unsupported CJO optimization-level value $unsupportedLevel",
+                (unsupported.single() as org.cangnova.cangjie.cfir.session.CfirCjmpLoadDiagnostic.OptLevelMismatch)
+                    .commonOptLevel,
+            )
+        }
     }
 
     @Test
@@ -199,6 +329,7 @@ class CjmpCommonPartCjoTest {
 
             val manager = CjoManager(
                 CjoSearchPath { name -> if (name == "CANGJIE_LIBRARY") root.toString() else null },
+                CjoFormatVersionPolicy.Compilation(org.cangnova.cangjie.LanguageVersionSettingsImpl.DEFAULT),
             )
             assertNull(manager.loadPackageSnapshot("sample.cjmp"), "mismatched package must be refused")
 
@@ -223,11 +354,41 @@ class CjmpCommonPartCjoTest {
 
             val manager = CjoManager(
                 CjoSearchPath { name -> if (name == "CANGJIE_LIBRARY") root.toString() else null },
+                CjoFormatVersionPolicy.Compilation(org.cangnova.cangjie.LanguageVersionSettingsImpl.DEFAULT),
             )
             val loaded = assertNotNull(manager.loadPackageSnapshot("sample.cjmp"))
             assertTrue(loaded.header.isCjmpCommonPart)
             assertEquals(CjoModuleOptionInfo(debug = true, optLevel = 2u), loaded.header.options)
             assertTrue(manager.loadDiagnostics("sample.cjmp").isEmpty())
+        } finally {
+            root.toFile().deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `missing explicit common input blocks fallback to a search path cjo`() {
+        val root = Files.createTempDirectory("cjmp-cjo-explicit-missing")
+        try {
+            val fallback = root.resolve(CjoConstants.packageNameToPath("sample.cjmp"))
+            fallback.parent.createDirectories()
+            Files.write(fallback, CjoPackageWriter.toByteArray(cjmpMetadata()))
+            val missingExplicitPath = root.resolve("missing-common.cjo")
+
+            val manager = CjoManager(
+                searchPath = CjoSearchPath { name -> if (name == "CANGJIE_LIBRARY") root.toString() else null },
+                formatVersionPolicy = CjoFormatVersionPolicy.Compilation(
+                    org.cangnova.cangjie.LanguageVersionSettingsImpl.DEFAULT,
+                ),
+                explicitCommonPartPaths = listOf(missingExplicitPath),
+            )
+            assertNull(manager.loadPackageSnapshot("sample.cjmp"))
+
+            val diagnostic = manager.loadDiagnostics("sample.cjmp").single() as CfirCjmpLoadDiagnostic.InputFileInvalid
+            assertEquals(
+                org.cangnova.cangjie.cfir.session.CfirCjmpLoadDiagnosticKind.INPUT_FILE_INVALID,
+                diagnostic.kind,
+            )
+            assertEquals(missingExplicitPath.toAbsolutePath().normalize().toString(), diagnostic.path)
         } finally {
             root.toFile().deleteRecursively()
         }

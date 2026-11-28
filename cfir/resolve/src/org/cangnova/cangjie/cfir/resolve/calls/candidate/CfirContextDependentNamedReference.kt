@@ -15,10 +15,15 @@ import org.cangnova.cangjie.source.CjSourceElement
  * 此时保留同一 tower group 的函数候选，不选择代表候选，也不产生尚未成立的歧义诊断。
  */
 internal class CfirContextDependentNamedReference(
-    override val source: CjSourceElement?,
+    override var source: CjSourceElement?,
     override val name: Name,
     val candidates: List<Candidate>,
 ) : CfirNamedReference {
+    /** 迁移源锚点不会提前选择或替换候选集合。 */
+    @org.cangnova.cangjie.cfir.CfirImplementationDetail
+    override fun replaceSource(newSource: CjSourceElement?) {
+        source = newSource
+    }
     init {
         require(candidates.isNotEmpty()) { "A context-dependent function reference must retain its candidates" }
     }

@@ -1,0 +1,128 @@
+{
+  "before": {
+    "utc": "2026-11-18T01:08:20.5269872Z",
+    "fileCount": 6841,
+    "aggregateSha256": "1559B80FBA095591C93FA3A4855F326973246890684FD21660FDFC9AE1D67F5B",
+    "roots": [
+      "common",
+      "cfir",
+      "analysis/low-level-api-cfir",
+      "analysis/analysis-api-cfir",
+      "compiler/frontend",
+      "compiler/config",
+      "compiler/phaser",
+      "compiler/arguments",
+      "psi",
+      "resolution.common",
+      "macro"
+    ],
+    "include": [
+      "*.kt",
+      "*.cj",
+      "*.kts"
+    ],
+    "exclude": "**/build/**",
+    "method": "rg --files --hidden --no-ignore, / normalized and Sort-Object -CaseSensitive; SHA256 of UTF8 LF joined path TAB length TAB uppercaseSHA256, no final LF",
+    "scope": "Official VarWithPatternDecl unnamed-container writer validation, two original SOURCE operators cases"
+  },
+  "after": {
+    "utc": "2026-11-18T01:31:14.5249143Z",
+    "fileCount": 6841,
+    "aggregateSha256": "1559B80FBA095591C93FA3A4855F326973246890684FD21660FDFC9AE1D67F5B",
+    "roots": [
+      "common",
+      "cfir",
+      "analysis/low-level-api-cfir",
+      "analysis/analysis-api-cfir",
+      "compiler/frontend",
+      "compiler/config",
+      "compiler/phaser",
+      "compiler/arguments",
+      "psi",
+      "resolution.common",
+      "macro"
+    ],
+    "include": [
+      "*.kt",
+      "*.cj",
+      "*.kts"
+    ],
+    "exclude": "**/build/**",
+    "method": "rg --files --hidden --no-ignore, / normalized and Sort-Object -CaseSensitive; SHA256 of UTF8 LF joined path TAB length TAB uppercaseSHA256, no final LF",
+    "scope": "Two original operators SOURCE cases after exact VarWithPattern identifier validation, no merged prior results",
+    "unchanged": true
+  },
+  "queue": {
+    "id": "fa93dd04",
+    "args": [
+      "--gradle-user-home",
+      ".gradle/cjmp-export-home",
+      ":cfir:analysis-tests:test",
+      "--rerun",
+      "--tests",
+      "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExport*Test.operatorsConversions",
+      "--no-build-cache",
+      "--console=plain",
+      "--max-workers=1"
+    ],
+    "pid": 61596,
+    "owner": "pid@61596",
+    "submitAt": 1794964141697,
+    "startedAt": 1794964141741,
+    "finishedAt": 1794964285832,
+    "exitCode": 0,
+    "status": "DONE"
+  },
+  "total": 2,
+  "passed": 2,
+  "failed": 0,
+  "errors": 0,
+  "skipped": 0,
+  "allXmlWithinWindow": true,
+  "scope": "Two original operators SOURCE cases after exact VarWithPattern identifier validation, no merged prior results",
+  "extraPassedTasks": [],
+  "cases": [
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportLightTreeTest",
+      "name": "operatorsConversions()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportTest",
+      "name": "operatorsConversions()",
+      "status": "PASSED",
+      "failureMessage": null
+    }
+  ],
+  "xml": [
+    {
+      "path": "cfir/analysis-tests/build/test-results/test/TEST-org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportLightTreeTest.xml",
+      "bytes": 516,
+      "sha256": "757CF5FA788A1DC29715A82CF22EB20E066346162681B77D348D6CAC6B1992B8",
+      "timestamp": "2026-11-18T01:11:16.223Z",
+      "lastWriteUtc": "2026-11-18T01:11:25.0432543Z",
+      "withinQueueWindow": true,
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "gzipBase64": "H4sIAAAAAAAACrVRwWrCQBC9B/IP2zm1h8RsCtZKEhFroSC9NL1UPCxxjNsmu8vMRvTvi4mIh157m5n3HvPmTTY7to04ILG2JgcZJyDQVHarTZ3DZ/kaTWBWhEHmkT132qMwqsUcLNVxpUxt7EH1xbfGuNppipVRzYk1x70kXuw0fdiOKlweHSGfFy2PzpJf6XrvS0IskT2Inp6DBME/2jnc5pCA2CnddITcN0hkaSi9bpG9al0OaZKOIykjOSkTOZVyKsdxmj5+gdhb9oPd1dv7oMlhHE/SZyjCQIjMkXVIXiOPhsHZRKX4eqVDUt4SL6y5hMT3DyCqRjH/WxAXm+MnCRdbfGKPbWQ7X2R368XLvJyvN5siG90At0Qk+pt4BsIgG13fWYTBL7h+btsEAgAA",
+      "archiveVerified": true
+    },
+    {
+      "path": "cfir/analysis-tests/build/test-results/test/TEST-org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportTest.xml",
+      "bytes": 757,
+      "sha256": "3BDF100B18A6DEC5428FBDD1853139B61A9A13217B226839F9D1AABCE75AF51E",
+      "timestamp": "2026-11-18T01:11:23.057Z",
+      "lastWriteUtc": "2026-11-18T01:11:25.0412532Z",
+      "withinQueueWindow": true,
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "gzipBase64": "H4sIAAAAAAAACq1SwYrbMBS8G/wPqi7bPUSx0912CbaXkG6hUPbQTSl02YOwn5PXyJJ47znEf1/sLGluC6UX8STNjGYGFffHzqkDEGPwpc5NphX4OjTot6X+sfkyu9P3VZoUAizco4DytoNSB9qa2vqtDwc7Db8RTN0iGeutGxjZTBSzbpGeQk81PBwjAY8PPRxjINkAi1YTqtS5VrzHGKEpdaZVa9H1BDxtgCjQaRTsgMV2sdSLbPFxluez/G6T5cs8Xy4+mOz20y+tdoHl5PLb18cTZ4y2uLnVVZooVUQKEUgQeH46GE3Uls/hIpCVQLwO/rUbfn+tVe0s8//Of3Z3o1/d8MAC3Sz0UhXvntefV5vV88tLVcwvLi6BQPQX+HP1/XGpViLQRVESlAu2UXsY1FVkNOwAokFvDtZhgzKYegf1/kq1gZQPogaQiQKNItgiCw1p8oYo+pqgAy/WGYJoicE0EGVnHHYo/y6ODZjduMCxdn0DjWnRAb8heNnV2E2aFPPz/63S5A/XYJER9QIAAA==",
+      "archiveVerified": true
+    }
+  ]
+}

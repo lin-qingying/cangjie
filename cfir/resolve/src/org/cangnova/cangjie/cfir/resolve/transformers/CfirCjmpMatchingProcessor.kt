@@ -1,117 +1,57 @@
-/*
- * Copyright 2026 LinQingYing. and contributors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * The software is provided "as-is", and the authors are not responsible for
- * any damages or issues arising from its use.
- *
- */
-
 package org.cangnova.cangjie.cfir.resolve.transformers
 
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.CfirElement
-import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirClass
-import org.cangnova.cangjie.cfir.declarations.CfirConstructor
-import org.cangnova.cangjie.cfir.declarations.CfirEnum
-import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
-import org.cangnova.cangjie.cfir.declarations.CfirInterface
-import org.cangnova.cangjie.cfir.declarations.CfirProperty
-import org.cangnova.cangjie.cfir.declarations.CfirStruct
-import org.cangnova.cangjie.cfir.declarations.CfirFile
-import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
-import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
-import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
-import org.cangnova.cangjie.cfir.session.CfirCjmpMappingStorage
+import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.declarations.impl.CfirClassImpl
+import org.cangnova.cangjie.cfir.declarations.impl.CfirStructImpl
 import org.cangnova.cangjie.cfir.resolve.cjmp.CfirCjmpMatchRunner
-import org.cangnova.cangjie.cfir.resolve.cjmp.CfirCjmpResolver as CfirCjmpCallableResolver
-import org.cangnova.cangjie.cfir.session.cjmpMappingStorage
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.cjmpFamilyAggregate
+import org.cangnova.cangjie.cfir.session.CfirCjmpFamilySnapshot
+import org.cangnova.cangjie.cfir.session.CfirCjmpMemberSnapshot
+import org.cangnova.cangjie.cfir.session.CfirCjmpStructureSnapshot
+import org.cangnova.cangjie.cfir.session.CfirCjmpDeclarationRole
+import org.cangnova.cangjie.cfir.session.isCjmpMatchingCandidate
 import org.cangnova.cangjie.cfir.session.isCjmpSpecificCompilationEnabled
+import org.cangnova.cangjie.cfir.session.requiresDeferredCjmpFinalMatching
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.withFileAnalysisExceptionWrapping
 
-/**
- * CFIR CJMP_MATCHING 阶段主处理器。
- *
- * 对齐 Kotlin `FirExpectActualMatcherProcessor`（mpp/FirExpectActualMatcherTransformer.kt）：
- * 逐文件驱动 [CfirCjmpMatcherTransformer]，把 specific 声明的配对结果写入
- * [CfirCjmpMappingStorage]（specific session 组件，单侧写）。
- *
- * 门禁纪律（§8.5.5，门禁管行为不止管诊断）：
- * - 版本门（`LanguageFeature.CommonSpecificDeclarations`）关闭时不进入任何配对与写存储；
- * - 模式门只允许 specific 编译执行配对，其它模式保持存储为空。
- */
-internal class CfirCjmpMatchingProcessor(
-    session: CfirSession,
-    scopeSession: ScopeSession,
-) : CfirTransformerBasedResolveProcessor(
-    session = session,
-    scopeSession = scopeSession,
-    phase = CfirResolvePhase.CJMP_MATCHING,
+/** CJMP 阶段只驱动逐声明事实发布；结果的生命周期由声明/session 失效管理，不再清空共享配对表。 */
+internal class CfirCjmpMatchingProcessor(session: CfirSession, scopeSession: ScopeSession) : CfirTransformerBasedResolveProcessor(
+    session = session, scopeSession = scopeSession, phase = CfirResolvePhase.CJMP_MATCHING,
 ) {
-    /** 配对只在 specific 编译中执行；测试/IDE 可在会话创建后注入最终模式。 */
-    private fun isCjmpMatchingEnabled(): Boolean = session.isCjmpSpecificCompilationEnabled()
-
     override val transformer: CfirTransformer<Nothing?> = CfirCjmpMatcherTransformer(session, scopeSession)
 
-    /**
-     * 相位开始前清空配对存储（每轮 CJMP_MATCHING 一次；多文件模块共享同一存储，
-     * 不能在逐文件遍历中清空）。
-     */
-    override fun beforePhase() {
-        super.beforePhase()
-        if (isCjmpMatchingEnabled()) {
-            session.cjmpMappingStorage.clear()
-        }
-    }
-
-    /**
-     * 版本门关闭或当前不是 specific 编译时整阶段早退（不遍历、不写存储）。
-     */
     override fun processFile(file: CfirFile) {
-        if (!isCjmpMatchingEnabled()) return
+        if (!session.isCjmpSpecificCompilationEnabled()) return
         super.processFile(file)
     }
 }
 
-/**
- * CJMP 配对阶段树转换器。
- *
- * 对齐 Kotlin `FirExpectActualMatcherTransformer`：
- * - 遍历模块内声明，对每个"可作为 specific 侧"的声明求 common 候选并写入存储；
- * - 兼容性由 resolution.common 的共享 matcher 执行；对齐 cjc 1.1.3 的参数类型、返回协变与双侧默认值规则；
- * - 不读写 common 侧 session 的任何声明（跨 session 单侧写，C25）。
- *
- * 候选查找由 `CfirCjmpResolver` 适配，通用兼容性算法由 resolution.common
- * `AbstractCjmpMatcher` 执行，存储由 `CfirCjmpMatchingContext` 适配。
- */
+/** alpha.66 在隐式类型阶段之后执行完整匹配；该处理器仅为该协议版本生效。 */
+internal class CfirCjmpFinalMatchingProcessor(session: CfirSession, scopeSession: ScopeSession) : CfirTransformerBasedResolveProcessor(
+    session = session, scopeSession = scopeSession, phase = CfirResolvePhase.CJMP_FINAL_MATCHING,
+) {
+    override val transformer: CfirTransformer<Nothing?> = CfirCjmpMatcherTransformer(
+        session,
+        scopeSession,
+        CfirResolvePhase.CJMP_FINAL_MATCHING,
+    )
+
+    override fun processFile(file: CfirFile) {
+        if (!session.requiresDeferredCjmpFinalMatching()) return
+        super.processFile(file)
+    }
+}
+
+/** 对位 Kotlin 的单目标发布入口；空候选同样发布，property/pattern 的子事实由当前根统一拥有。 */
 open class CfirCjmpMatcherTransformer(
     override val session: CfirSession,
     private val scopeSession: ScopeSession,
-) : CfirAbstractTreeTransformer<Nothing?>(CfirResolvePhase.CJMP_MATCHING) {
-    /** 当前 specific session 的配对结果存储。 */
-    val storage: CfirCjmpMappingStorage get() = session.cjmpMappingStorage
-
-    /**
-     * 遍历入口：文件和声明容器递归声明，非声明节点到此为止。
-     *
-     * 文件与 class-like/extend 容器只递归其声明列表；其它节点由 [transformElement] 截止。
-     */
+    private val matchingPhase: CfirResolvePhase = CfirResolvePhase.CJMP_MATCHING,
+) : CfirAbstractTreeTransformer<Nothing?>(matchingPhase) {
     override fun transformFile(file: CfirFile, data: Nothing?): CfirFile {
         checkSessionConsistency(file)
         return withFileAnalysisExceptionWrapping(file) {
@@ -120,27 +60,45 @@ open class CfirCjmpMatcherTransformer(
         }
     }
 
-    /** eager 与 LL 共同使用的声明级匹配入口。 */
     fun transformMemberDeclaration(
         memberDeclaration: CfirMemberDeclaration,
+        preparedFacts: CfirCjmpDeclarationMatchFacts? = null,
+        preparedFamilySnapshot: CfirCjmpFamilySnapshot? = null,
+        preparedStructureSnapshot: CfirCjmpStructureSnapshot? = null,
     ) {
-        when (memberDeclaration) {
-            is CfirPatternVariable ->
-                CfirCjmpCallableResolver.findSpecificTopLevelPatternVariablesInMatchOrder(memberDeclaration, session)
-                    .forEach { matchDeclaration(it) }
-
-            is CfirCallableDeclaration ->
-                CfirCjmpCallableResolver.findSpecificCallablesInMatchOrder(memberDeclaration, session)
-                    .forEach { matchDeclaration(it) }
-
-            else -> matchDeclaration(memberDeclaration)
+        if (!session.isCjmpSpecificCompilationEnabled()) return
+        if (matchingPhase == CfirResolvePhase.CJMP_MATCHING && session.requiresDeferredCjmpFinalMatching()) {
+            if (memberDeclaration is CfirClassLikeDeclaration || memberDeclaration is CfirExtend) {
+                val structure = preparedStructureSnapshot ?: session.cjmpFamilyAggregate.structureFor(memberDeclaration)
+                memberDeclaration.addSpecificDefaultConstructorAfterMerge(structure)
+            }
+            return
         }
+        val existingFacts = memberDeclaration.cjmpMatchFacts
+        val specificRoot = memberDeclaration.isCjmpMatchingCandidate(CfirCjmpDeclarationRole.SPECIFIC) &&
+                CfirCjmpMatchRunner.canHaveCommonCounterpart(memberDeclaration)
+        if (existingFacts != null && (!specificRoot || memberDeclaration.cjmpMatchResult != null)) return
+        val facts = preparedFacts ?: CfirCjmpMatchRunner.prepareDeclaration(memberDeclaration, session)
+        check(facts.rootSymbol === memberDeclaration.symbol) { "Prepared CJMP facts must belong to this phase root" }
+        val family = if (specificRoot) {
+            preparedFamilySnapshot ?: session.cjmpFamilyAggregate.matchingGroupFor(memberDeclaration, facts)
+        } else {
+            null
+        }
+        if (family != null) memberDeclaration.addSpecificDefaultConstructorAfterMerge(family)
+        val results = if (family == null) emptyList() else facts.ownedSymbols.map { ownedSymbol ->
+            val ownedDeclaration = ownedSymbol.cfir as? CfirDeclaration
+                ?: error("Every declaration-owned CJMP symbol must reference a declaration")
+            ownedDeclaration to family.declarationMatchResultFor(ownedDeclaration)
+        }
+        check(results.all { (declaration, _) -> declaration.cjmpMatchResult == null }) {
+            "CJMP declaration results must be published as one phase transaction"
+        }
+        if (existingFacts == null) memberDeclaration.publishCjmpMatchFacts(facts)
+        results.forEach { (declaration, result) -> declaration.publishCjmpMatchResult(result) }
     }
 
-    /** CJMP 匹配不进入函数体、表达式或类型节点。 */
     override fun <E : CfirElement> transformElement(element: E, data: Nothing?): E = element
-
-    // --------------------------- 声明遍历钩子 ---------------------------
 
     /** 转换 class 声明前执行配对。 */
     override fun transformClass(klass: CfirClass, data: Nothing?): CfirClass {
@@ -222,15 +180,27 @@ open class CfirCjmpMatcherTransformer(
         return patternVariable
     }
 
-    // --------------------------- 配对核心 ---------------------------
+}
 
-    /**
-     * 对单个声明执行配对并写存储。
-     *
-     * 只处理标记为 specific 的声明（官方：配对由 common/specific 标记驱动；成员独立进入此入口，
-     * 并通过已配对父容器查找 common 候选）。写入方向恒为 specific 侧（C25 单侧存储）。
-     */
-    protected open fun matchDeclaration(declaration: CfirDeclaration) {
-        CfirCjmpMatchRunner.matchDeclaration(declaration, session, storage)
-    }
+/** 官方在 common 成员并入后才为仍无实例构造器的 specific class/struct 补默认构造器。 */
+private fun CfirMemberDeclaration.addSpecificDefaultConstructorAfterMerge(family: CfirCjmpMemberSnapshot) {
+    val owner = this as? CfirClassLikeDeclaration ?: return
+    if (owner !is CfirClass && owner !is CfirStruct) return
+    if (!owner.status.isSpecific || !owner.canGenerateDefaultInstanceConstructor()) return
+
+    val mergedMembers = family.mergedDeclarationsFor(owner)
+    if (mergedMembers.any { it is CfirConstructor && !it.status.isStatic }) return
+
+    val mutableDeclarations = when (owner) {
+        is CfirClass -> (owner as? CfirClassImpl)?.declarations
+        is CfirStruct -> (owner as? CfirStructImpl)?.declarations
+        else -> null
+    } ?: return
+    if (mutableDeclarations.any { it is CfirConstructor && it.origin == CfirDeclarationOrigin.ImplicitDefault }) return
+
+    val constructor = owner.createDefaultInstanceConstructor()
+    constructor.completeConstructorReturnType(owner.constructorOwnerType())
+    // 此构造器借用的 constructed-class 参数已在 owner TYPES 完成；返回引用也必须先实际完成。
+    constructor.replaceResolvePhase(CfirResolvePhase.TYPES)
+    mutableDeclarations += constructor
 }

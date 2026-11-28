@@ -9,6 +9,7 @@ import com.intellij.util.containers.ContainerUtil
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.CfirDesignation
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.patchDesignationPathIfNeeded
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.llCfirSession
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.llCfirResolvableSession
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.patterns.bindingVariables
 import org.cangnova.cangjie.cfir.psi
@@ -80,12 +81,16 @@ internal class CfirElementFinder : CfirSessionComponent {
         fun collectDesignationPath(
             cfirFile: CfirFile,
             nonLocalDeclaration: CjDeclaration,
-        ): CfirDesignation? = collectDesignationPath(
-            cfirFile = cfirFile,
-            containerClassId = nonLocalDeclaration.containingTypeStatement?.getClassId(),
-            targetDeclarationName = CfirFileStructureNode.mappingNameByPsi(nonLocalDeclaration),
-            expectedDeclarationAcceptor = { it.psi == nonLocalDeclaration },
-        )
+        ): CfirDesignation? {
+            val cache = checkNotNull(cfirFile.llCfirResolvableSession).moduleComponents.cache
+            val targetDeclaration = cache.compilationElement(nonLocalDeclaration) as? CjDeclaration ?: return null
+            return collectDesignationPath(
+                cfirFile = cfirFile,
+                containerClassId = targetDeclaration.containingTypeStatement?.getClassId(),
+                targetDeclarationName = CfirFileStructureNode.mappingNameByPsi(targetDeclaration),
+                expectedDeclarationAcceptor = { it.psi === targetDeclaration },
+            )
+        }
 
         /**
          * 在 [container] 子树中查找满足 [predicate] 的第一个 [E] 类型元素。

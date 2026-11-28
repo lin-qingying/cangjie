@@ -1,4 +1,10 @@
 FILE: topLevelProperty.cj
-    internal? let PI: R|Float64|
-    internal? var count: R|Int64|
-    internal? var (a, b, c): <implicit>
+    internal? let PI: R|Float64| = ...
+        initializer:
+            <element: CfirLazyExpression>
+    internal? var count: R|Int64| = ...
+        initializer:
+            <element: CfirLazyExpression>
+    internal? var (a, b, c): <implicit> = ...
+        initializer:
+            <element: CfirLazyExpression>

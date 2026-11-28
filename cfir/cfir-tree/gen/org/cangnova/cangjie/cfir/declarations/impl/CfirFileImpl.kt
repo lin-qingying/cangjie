@@ -8,10 +8,7 @@
 package org.cangnova.cangjie.cfir.declarations.impl
 
 import org.cangnova.cangjie.CjSourceFile
-import org.cangnova.cangjie.cfir.CfirFeaturesDirective
-import org.cangnova.cangjie.cfir.CfirImplementationDetail
-import org.cangnova.cangjie.cfir.MutableOrEmptyList
-import org.cangnova.cangjie.cfir.toMutableOrEmpty
+import org.cangnova.cangjie.cfir.*
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
@@ -26,25 +23,48 @@ import org.cangnova.cangjie.source.CjSourceFileLinesMapping
 
 @OptIn(CfirImplementationDetail::class, ResolveStateAccess::class)
 class CfirFileImpl @CfirImplementationDetail constructor(
-    override val source: CjSourceElement?,
+    source: CjSourceElement?,
     override val moduleData: CfirModuleData,
     resolvePhase: CfirResolvePhase,
-    override var annotations: MutableOrEmptyList<CfirAnnotation>,
+    override val contentSource: CfirContentSource = CfirContentSource.Owned,
+    annotations: MutableOrEmptyList<CfirAnnotation>,
     override val origin: CfirDeclarationOrigin,
     override val attributes: CfirDeclarationAttributes,
     override val symbol: CfirFileSymbol,
     override val name: String,
-    override val sourceFile: CjSourceFile?,
+    override var sourceFile: CjSourceFile?,
     override var featuresDirective: CfirFeaturesDirective?,
     override var packageDirective: CfirPackageDirective,
     override val imports: MutableList<CfirImport>,
-    override val sourceFileLinesMapping: CjSourceFileLinesMapping?,
+    override var sourceFileLinesMapping: CjSourceFileLinesMapping?,
     override val conditionalCompilationFailures: MutableList<CfirConditionalCompilationFailure>,
     override val declarations: MutableList<CfirDeclaration>,
 ) : CfirFile() {
+    override var source: CjSourceElement? = source
+        set(value) {
+            require(value != null || origin != CfirDeclarationOrigin.Source) {
+                "A Source-origin declaration must retain its source element."
+            }
+            field = value
+        }
+    override var annotations: MutableOrEmptyList<CfirAnnotation> = annotations
+        get() = when (val selectedSource = contentSource) {
+            CfirContentSource.Owned -> field
+            is CfirContentSource.Published -> selectedSource.snapshot().annotations(this).values
+        }
+        set(value) {
+            check(contentSource === CfirContentSource.Owned) {
+                "Published Library content cannot be changed through an ordinary setter"
+            }
+            field = value
+        }
     override var controlFlowGraphReference: CfirControlFlowGraphReference? = null
 
     init {
+        if (contentSource is CfirContentSource.Published) {
+            require(origin == CfirDeclarationOrigin.Library) { "Published content requires a Library declaration" }
+            require(annotations.isEmpty()) { "Published content must be supplied by its completed snapshot" }
+        }
         symbol.bind(this)
         resolveState = resolvePhase.asResolveState()
         @Suppress("SENSELESS_COMPARISON")
@@ -61,6 +81,7 @@ class CfirFileImpl @CfirImplementationDetail constructor(
     }
 
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirFileImpl {
+        check(contentSource === CfirContentSource.Owned) { "Published Library children require an owned graph before transformation" }
         transformAnnotations(transformer, data)
         controlFlowGraphReference = controlFlowGraphReference?.transform(transformer, data)
         transformFeaturesDirective(transformer, data)
@@ -71,28 +92,38 @@ class CfirFileImpl @CfirImplementationDetail constructor(
     }
 
     override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirFileImpl {
+        check(contentSource === CfirContentSource.Owned) { "Published Library children require an owned graph before transformation" }
         annotations.transformInplace(transformer, data)
         return this
     }
 
     override fun <D> transformFeaturesDirective(transformer: CfirTransformer<D>, data: D): CfirFileImpl {
+        check(contentSource === CfirContentSource.Owned) { "Published Library children require an owned graph before transformation" }
         featuresDirective = featuresDirective?.transform(transformer, data)
         return this
     }
 
     override fun <D> transformPackageDirective(transformer: CfirTransformer<D>, data: D): CfirFileImpl {
+        check(contentSource === CfirContentSource.Owned) { "Published Library children require an owned graph before transformation" }
         packageDirective = packageDirective.transform(transformer, data)
         return this
     }
 
     override fun <D> transformImports(transformer: CfirTransformer<D>, data: D): CfirFileImpl {
+        check(contentSource === CfirContentSource.Owned) { "Published Library children require an owned graph before transformation" }
         imports.transformInplace(transformer, data)
         return this
     }
 
     override fun <D> transformDeclarations(transformer: CfirTransformer<D>, data: D): CfirFileImpl {
+        check(contentSource === CfirContentSource.Owned) { "Published Library children require an owned graph before transformation" }
         declarations.transformInplace(transformer, data)
         return this
+    }
+
+    @CfirImplementationDetail
+    override fun replaceSource(newSource: CjSourceElement?) {
+        source = newSource
     }
 
     override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>) {
@@ -103,6 +134,10 @@ class CfirFileImpl @CfirImplementationDetail constructor(
         controlFlowGraphReference = newControlFlowGraphReference
     }
 
+    override fun replaceSourceFile(newSourceFile: CjSourceFile?) {
+        sourceFile = newSourceFile
+    }
+
     override fun replaceFeaturesDirective(newFeaturesDirective: CfirFeaturesDirective?) {
         featuresDirective = newFeaturesDirective
     }
@@ -111,6 +146,10 @@ class CfirFileImpl @CfirImplementationDetail constructor(
         if (imports === newImports) return
         imports.clear()
         imports.addAll(newImports)
+    }
+
+    override fun replaceSourceFileLinesMapping(newSourceFileLinesMapping: CjSourceFileLinesMapping?) {
+        sourceFileLinesMapping = newSourceFileLinesMapping
     }
 
     override fun replaceConditionalCompilationFailures(newConditionalCompilationFailures: List<CfirConditionalCompilationFailure>) {

@@ -10,6 +10,6 @@ public common class S {
     public common init() {}
     public common static let x: Int64
     static init() {
-        <!COMMON_ASSIGN_TO_COMMON_IMMUTABLE_IN_CTOR!>x = 1<!>
+        <!COMMON_ASSIGN_TO_COMMON_IMMUTABLE_IN_CTOR!>x<!> = 1
     }
 }

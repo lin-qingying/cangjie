@@ -211,13 +211,16 @@ internal fun CaCfirCjBasedSymbol<CjAnnotated, *>.psiOrSymbolAnnotationList(): Ca
  */
 internal val CjElement.cameFromCangJieLibrary: Boolean get() = containingCjFile.isCompiled
 /**
- * 在允许使用 PSI 的 origin 下返回 CFIR 符号对应的真实 PSI。
+ * 在允许使用 PSI 的 origin 下返回 CFIR 符号对应的真实源对象。
+ *
+ * target 是独立的编译产品，公开 backingPsi 必须与 PSI 查询入口指向同一原对象，
+ * 才能保持 Kotlin 的 PSI 身份相等与 hashCode 契约；不能只在 psi getter 中导航。
  */
 internal val CfirBasedSymbol<*>.backingPsiIfApplicable: PsiElement?
     get() {
         if (origin == CfirDeclarationOrigin.Synthetic.TypeAliasConstructor) return null
 
-        return cfir.realPsi
+        return cfir.realPsi?.restoreCurrentCompiledPsi()
     }
 
 

@@ -1,0 +1,30 @@
+{
+  "utc": "2026-11-18T20:19:30.2422953Z",
+  "fileCount": 7274,
+  "aggregateSha256": "88A9FF4A8FFCD12802E4C69DC9BCCAF8AB0866A882A144F32287897639448236",
+  "roots": [
+    "common",
+    "cfir",
+    "analysis/low-level-api-cfir",
+    "analysis/analysis-api-cfir",
+    "compiler/frontend",
+    "compiler/config",
+    "compiler/phaser",
+    "compiler/arguments",
+    "compiler/compiler.version",
+    "psi",
+    "resolution.common",
+    "macro",
+    "settings.gradle.kts"
+  ],
+  "include": [
+    "*.kt",
+    "*.cj",
+    "*.kts",
+    "*.java",
+    "**/resources/META-INF/cangjie/compiler.version"
+  ],
+  "exclude": "**/build/**",
+  "method": "rg --files --hidden --no-ignore, / normalized and Sort-Object -CaseSensitive; SHA256 of UTF8 LF joined path TAB length TAB uppercaseSHA256, no final LF",
+  "scope": "New compiler-version build/resource, TypeUse T1/T3/T4/T5 and BODY generated return, C extras complete lifecycle/Unit diagnostics, ctor ordering, origin/source-copy; SOURCE original14+frozenAliasABI4+typeUseLifecycle16+Cvariadic8+copy/origin25+snapshot40. Complete compile32047 succeeded before this actual input capture."
+}

@@ -1,0 +1,94 @@
+{
+  "scope": "New PSI/LT late signature and actual OBL/PCLA four; numeric approximation function-owner boundary and identity-counted declaration domain",
+  "before": {
+    "sampleUtc": "2026-11-17T04:45:53.9056676Z",
+    "worktree": "C:\\Users\\lin17\\.codex\\worktrees\\cjmp-framework-implementation\\cangjie",
+    "fileCount": 6826,
+    "aggregateSha256": "68DB20E8C2E24DCFB6ADA602C9284CBE1ADB97499F2106E1DF1265A2C821D02A",
+    "roots": [
+      "common",
+      "cfir",
+      "analysis/low-level-api-cfir",
+      "analysis/analysis-api-cfir",
+      "compiler/frontend",
+      "compiler/config",
+      "compiler/phaser",
+      "compiler/arguments",
+      "psi",
+      "resolution.common",
+      "macro"
+    ],
+    "include": [
+      "*.kt",
+      "*.cj",
+      "*.kts"
+    ],
+    "exclude": "**/build/**",
+    "method": "rg --files --hidden --no-ignore, paths normalized / and Sort-Object -CaseSensitive; SHA256 of UTF8 LF-joined path TAB byteLength TAB uppercaseSHA256 lines, no terminal LF",
+    "scope": "New PSI/LT late signature and actual OBL/PCLA four; numeric approximation function-owner boundary and identity-counted declaration domain"
+  },
+  "queue": {
+    "id": "50ba8c79",
+    "args": [
+      "--gradle-user-home",
+      ".gradle/cjmp-export-home",
+      ":cfir:analysis-tests:test",
+      "--rerun",
+      "--tests",
+      "org.cangnova.cangjie.cfir.analysis.tests.CfirDeclarationOwnerTest.*DefaultHelpersPhase*",
+      "--no-build-cache",
+      "--console=plain",
+      "--max-workers=1",
+      "--continue"
+    ],
+    "pid": 34588,
+    "owner": "pid@34588",
+    "submitAt": 1794890754983,
+    "startedAt": 1794890755026,
+    "finishedAt": 1794891092919,
+    "exitCode": 1,
+    "status": "DONE"
+  },
+  "sessionId": 93906,
+  "evidenceBoundary": "No post-run unchanged claim: TEST-IDENTITY query migration and failure diagnostic edits occurred after this queue finished and before evidence collection; initial input sample and original XML remain separately recorded.",
+  "xml": {
+    "path": "cfir/analysis-tests/build/test-results/test/TEST-org.cangnova.cangjie.cfir.analysis.tests.CfirDeclarationOwnerTest.xml",
+    "modifiedUtc": "2026-11-17T04:51:32.1645466Z",
+    "timestamp": "2026-11-17T04:51:25.807Z",
+    "belongsToQueueWindow": true,
+    "tests": 4,
+    "failures": 4,
+    "errors": 0,
+    "skipped": 0,
+    "bytes": 7414,
+    "sha256": "51905EF849FC494B0376EE68571F4521083A2D03F052766A5DB8449561A0E42B",
+    "gzipBase64": "H4sIAAAAAAAACu1Z8XPaNhT+edzxP2i+XpveLcImGAgFepSQLXc05Ajbrsvlcg/7YSvIlic9k/Lf7zDQpjdwuox2XcNPCD191qfP0vskufn6fSTZDLURKm5ZDrcthrGnfBEHLevX0elh3XrdLhaahIZMKghZDBG2LKUD7kEcxGoGWeFWIPcmQnOIQc6NMDyD8O5E6BP0JGggoeLBXYx6hIYslsVbVsViZiqSBP2WZVtsAkKmGpcB1Fppk9WTiNAQREnLKtvl6qHjHDq1kV1puE6j7PK6XfvDYqEytOTXPztfYlqWyyv1itUuFhhrJlolqEmgKS0rFiQ8MOthJUac4ARSSb+gTFCbixAM9oHwUgQxUKrxjfLnP2tIwix08NJingRjdidLRrrCq7azJM1YcyUKi9AYCLBl3aaxID7REOGd0lPeMWYxLBWfgpDo9xa6NRi+T9Aj9BvPJb16Mzh5dzPsXQ76v/WeB/SKjVNid2Cy4Nnbi8FwdLmotxjNk8/swmp/QSLFwg9AbHMHfKHIwap8CzNouLWXDwLOFfX+TEGaT5BH5eN8KGQ/G5C1+iOB9eoW4GIKdMHgp9APtRm4XFmj//VsW3VzKmKQ2yb4VuyUGsduecdUcpbaMwnR2Idn9Woup7rr7IzTnaBl310VJRIXwUuVau8BVcq7fkF5CShXi0ptZ0z+eWrMZXbkrpcAzICPwWApK0mIA65xItEj/hYpVD4X8UxN8WD1b7nc6/ZmfEpC8o7WMO8LQ3yidA+88OBjTQZ33OPqDvDN0iozL82ktHaTjd4iRRDSSCNukLGrokgQoT8YywtPQj+b6uZLuYvNXdfdqbucxVSt/C2b94bDwZCN3l30GqwTjUWQCpo3mBcqZfAndhVmEtwkCwluvLUGNwQ6QDKldbvPanb9VczrGxnn3hv/B954tGMqW5LE2hcdu5afcuvud2eM2/Jmrg613W1aHpPT822x/tRscfO+4qsbouPsDXFviPvD4t4Q94a481Pi46yw9tSsMG838R/cQdrcdsv7O8j9HeQ3fs7a30E+lTvIxybIfJ+pfvc+Y+aGMDpUKbWbP151TzqjztX1dbtZuhe43xC1/tjw987wvME6RBglxEgxqcBnU5yzF4kR3EjEhIuYz0AKX9CceyF60xdsojSLFbE5UgZBn2kMhCE9LxYeeKiIPY0RxgSSa0xAG+Q+JhRyKSJBDzz8/tAWQ1nI8+EDZrtY+AvN5tOV9hwAAA==",
+    "testcases": [
+      {
+        "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirDeclarationOwnerTest",
+        "name": "psiDefaultHelpersPhaseLateSignatureBodyGraphPhase()",
+        "outcome": "failed",
+        "failureMessage": "junit.framework.AssertionFailedError: expected:<BODY_RESOLVE> but was:<IMPORTS>"
+      },
+      {
+        "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirDeclarationOwnerTest",
+        "name": "lightTreeDefaultHelpersPhaseCommittedOblPclaLambdas()",
+        "outcome": "failed",
+        "failureMessage": "junit.framework.AssertionFailedError: expected:<Int64> but was:<ERROR TYPE: Ambiguity: choose, [helper_phase_committed_targets/choose, helper_phase_committed_targets/choose]>"
+      },
+      {
+        "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirDeclarationOwnerTest",
+        "name": "psiDefaultHelpersPhaseCommittedOblPclaLambdas()",
+        "outcome": "failed",
+        "failureMessage": "junit.framework.AssertionFailedError: expected:<Int64> but was:<ERROR TYPE: Ambiguity: choose, [helper_phase_committed_targets/choose, helper_phase_committed_targets/choose]>"
+      },
+      {
+        "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirDeclarationOwnerTest",
+        "name": "lightTreeDefaultHelpersPhaseLateSignatureBodyGraphPhase()",
+        "outcome": "failed",
+        "failureMessage": "junit.framework.AssertionFailedError: expected:<BODY_RESOLVE> but was:<IMPORTS>"
+      }
+    ]
+  },
+  "capturedUtc": "2026-11-17T05:11:36.8195191Z"
+}

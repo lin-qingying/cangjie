@@ -26,8 +26,9 @@ package org.cangnova.cangjie.psi
 
 import org.cangnova.cangjie.lang.CangJieLanguage
 import org.cangnova.cangjie.parsing.CangJieParser
+import org.cangnova.cangjie.parsing.createCangJiePsiBuilder
+import org.cangnova.cangjie.parsing.requireParserSeed
 import com.intellij.lang.ASTNode
-import com.intellij.lang.PsiBuilderFactory
 import com.intellij.psi.PsiElement
 import com.intellij.psi.impl.source.tree.ICodeFragmentElementType
 
@@ -42,10 +43,9 @@ class CjTypeCodeFragmentType :
     override fun doParseContents(chameleon: ASTNode, psi: PsiElement): ASTNode {
         val project = psi.project
         val languageForParser = getLanguageForParser(psi)
-        val builder =
-            PsiBuilderFactory.getInstance().createBuilder(project, chameleon, null, languageForParser, chameleon.chars)
+        val builder = createCangJiePsiBuilder(project, chameleon, languageForParser)
         return CangJieParser.parseTypeCodeFragment(
-            builder, CangJieParser.languageModuleNameForContext(psi),
+            builder, chameleon.requireParserSeed(), psi.containingFile as? CjCodeFragment,
         ).firstChildNode
     }
 

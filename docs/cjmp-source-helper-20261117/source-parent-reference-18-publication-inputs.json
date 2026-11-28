@@ -1,0 +1,26 @@
+{
+  "utc": "2026-11-17T20:53:46.4171606Z",
+  "fileCount": 6841,
+  "aggregateSha256": "495396FE8FAB133C2849B88971157602A756555879EB70366A914C67B83267FE",
+  "roots": [
+    "common",
+    "cfir",
+    "analysis/low-level-api-cfir",
+    "analysis/analysis-api-cfir",
+    "compiler/frontend",
+    "compiler/config",
+    "compiler/phaser",
+    "compiler/arguments",
+    "psi",
+    "resolution.common",
+    "macro"
+  ],
+  "include": [
+    "*.kt",
+    "*.cj",
+    "*.kts"
+  ],
+  "exclude": "**/build/**",
+  "method": "rg --files --hidden --no-ignore, / normalized and Sort-Object -CaseSensitive; SHA256 of UTF8 LF joined path TAB length TAB uppercaseSHA256, no final LF",
+  "scope": "Ordinary call/access final publication of parent/applied signature and PCLA refresh; SOURCE18 full original/new reference assertions"
+}

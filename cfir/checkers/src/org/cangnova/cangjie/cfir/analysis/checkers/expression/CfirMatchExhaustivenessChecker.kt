@@ -1,6 +1,7 @@
 ﻿package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
@@ -19,7 +20,7 @@ import org.cangnova.cangjie.source.AbstractCjSourceElement
  * 该检查器复用共享 [ExhaustivenessAnalyzer]，并把分析结果缓存回 match 表达式，避免后续阶段
  * 重复计算同一个 pattern matrix。
  */
-object CfirMatchExhaustivenessChecker : CfirMatchExpressionChecker( ) {
+object CfirMatchExhaustivenessChecker : CfirMatchExpressionChecker(MppCheckerKind.Common) {
 
     /**
      * 检查 match 表达式是否穷尽。

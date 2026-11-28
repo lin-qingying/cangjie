@@ -27,18 +27,27 @@ package org.cangnova.cangjie.psi
 import org.cangnova.cangjie.psi.CjNodeTypes
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
+import org.cangnova.cangjie.parsing.CjParserSeed
 
 /**
  * 表示 `CjTypeCodeFragment`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
  */
-class CjTypeCodeFragment(
+class CjTypeCodeFragment private constructor(
     project: Project,
     name: String,
     text: CharSequence,
     context: PsiElement?,
-) : CjCodeFragment(project, name, text, null, CjNodeTypes.TYPE_CODE_FRAGMENT, context) {
+    imports: String?,
+    parserSeed: CjParserSeed,
+) : CjCodeFragment(project, name, text, imports, CjNodeTypes.TYPE_CODE_FRAGMENT, context, parserSeed) {
+
+    constructor(project: Project, name: String, text: CharSequence, context: PsiElement?) :
+        this(project, name, text, context, null, captureParserSeed(context))
     /**
      * 实现 `getContentElement` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
      */
     override fun getContentElement() = findChildByClass(CjTypeReference::class.java)
+
+    internal override fun createCompilationFragment(text: String, seed: CjParserSeed, targetContext: PsiElement?): CjCodeFragment =
+        CjTypeCodeFragment(project, name, text, targetContext, importsToString(), seed)
 }

@@ -13,6 +13,7 @@ import org.cangnova.cangjie.cfir.CfirQualifierPart
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
+import org.cangnova.cangjie.cfir.types.CfirTypeRefOrigin
 import org.cangnova.cangjie.cfir.types.CfirUserTypeRef
 import org.cangnova.cangjie.cfir.types.impl.CfirUserTypeRefImpl
 import org.cangnova.cangjie.source.CjSourceElement
@@ -21,6 +22,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 class CfirUserTypeRefBuilder {
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
     var customRenderer: Boolean = false
+    var typeUseOrigin: CfirTypeRefOrigin = CfirTypeRefOrigin.SEMANTIC
     lateinit var source: CjSourceElement
     val qualifier: MutableList<CfirQualifierPart> = mutableListOf()
 
@@ -29,6 +31,7 @@ class CfirUserTypeRefBuilder {
         return CfirUserTypeRefImpl(
             annotations.toMutableOrEmpty(),
             customRenderer,
+            typeUseOrigin,
             source,
             qualifier.toMutableOrEmpty(),
         )
@@ -51,6 +54,7 @@ inline fun buildUserTypeRefCopy(original: CfirUserTypeRef, init: CfirUserTypeRef
     val copyBuilder = CfirUserTypeRefBuilder()
     copyBuilder.annotations.addAll(original.annotations)
     copyBuilder.customRenderer = original.customRenderer
+    copyBuilder.typeUseOrigin = original.typeUseOrigin
     copyBuilder.source = original.source
     copyBuilder.qualifier.addAll(original.qualifier)
     return copyBuilder.apply(init).build()

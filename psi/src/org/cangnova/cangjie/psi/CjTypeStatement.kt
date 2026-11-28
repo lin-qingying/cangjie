@@ -25,6 +25,8 @@
 package org.cangnova.cangjie.psi
 
 import org.cangnova.cangjie.lexer.CjTokens
+import org.cangnova.cangjie.parsing.CjmpNominalSyntaxFacts
+import org.cangnova.cangjie.parsing.cjmpNominalSyntaxFactsOrNull
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.psi.psiUtil.ClassIdCalculator
 import org.cangnova.cangjie.psi.stubs.CangJieTypeStatementStub
@@ -68,6 +70,14 @@ abstract class CjTypeStatement :
         stub,
         nodeType,
     )
+
+    /** 解析阶段记录的直接成员事实；无来源时为 null。 */
+    val cjmpNominalSyntaxFacts: CjmpNominalSyntaxFacts?
+        get() {
+            val currentStub = stub
+            if (currentStub != null) return currentStub.cjmpNominalSyntaxFacts
+            return declarationKeyword?.node?.cjmpNominalSyntaxFactsOrNull()
+        }
 
     /**
      * 暴露 `superTypeListEntries`，实现仓颉 PSI节点对上层接口的属性契约。
@@ -148,8 +158,7 @@ abstract class CjTypeStatement :
      * 暴露 `primaryConstructor`，实现仓颉 PSI节点对上层接口的属性契约。
      */
     override val primaryConstructor: CjPrimaryConstructor?
-        get() = body?.getStubOrPsiChild(CjStubElementTypes.PRIMARY_CONSTRUCTOR)
-            ?: body?.let { PsiTreeUtil.findChildrenOfType(it, CjPrimaryConstructor::class.java).firstOrNull() }
+        get() = body?.primaryConstructors?.firstOrNull()
 
     /**
      * 暴露 `primaryConstructorModifierList`，实现仓颉 PSI节点对上层接口的属性契约。

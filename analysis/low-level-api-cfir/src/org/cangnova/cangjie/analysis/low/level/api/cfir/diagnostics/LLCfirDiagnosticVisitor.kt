@@ -122,7 +122,8 @@ internal open class LLCfirDiagnosticVisitor(
      */
     private fun commitPendingDiagnosticsOnNestedDeclarations(element: CfirElement) {
         val declarationContainer = when (element) {
-            is CfirFile, is CfirClass, is CfirExtend -> element
+            // 仓颉的 class/struct/interface/enum 对应 Kotlin 的同一 regular-class 容器协议。
+            is CfirFile, is CfirClassLikeDeclaration, is CfirExtend -> element
             else -> return
         }
 

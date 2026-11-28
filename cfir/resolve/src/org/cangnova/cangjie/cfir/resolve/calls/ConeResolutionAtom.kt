@@ -1,5 +1,7 @@
 package org.cangnova.cangjie.cfir.resolve.calls
 
+import org.cangnova.cangjie.cfir.types.asCone
+
 import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
@@ -22,7 +24,7 @@ import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeVariableForLambdaReturnTy
 import org.cangnova.cangjie.cfir.semantics.AbstractConeResolutionAtom
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
-import org.cangnova.cangjie.cfir.types.asCone
+import org.cangnova.cangjie.cfir.resolve.substitution.asCone
 import org.cangnova.cangjie.resolve.calls.model.LambdaWithTypeVariableAsExpectedTypeMarker
 import org.cangnova.cangjie.resolve.calls.model.PostponedAtomWithRevisableExpectedType
 import org.cangnova.cangjie.resolve.calls.model.PostponedCallableReferenceMarker

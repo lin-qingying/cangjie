@@ -5,8 +5,9 @@ import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.findPsi
 import org.cangnova.cangjie.analysis.api.cfir.getExplicitCallableReceiverType
 import org.cangnova.cangjie.analysis.api.cfir.location
+import org.cangnova.cangjie.analysis.api.cfir.symbols.pointers.CaCfirCallableSymbolPointer
+import org.cangnova.cangjie.analysis.api.cfir.symbols.pointers.CaCfirExtendMemberCallableSymbolPointer
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
-import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaEnumConstructorSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaFieldSymbol
@@ -21,14 +22,16 @@ import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor as CfirEnumConstructorDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
 import org.cangnova.cangjie.cfir.declarations.payloadParameterTypesOrEmpty
-import org.cangnova.cangjie.cfir.session.cfirProvider
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.psi
+import org.cangnova.cangjie.cfir.resolve.providers.cfirProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFieldVariableSymbol
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjEnumConstructor
 import org.cangnova.cangjie.psi.CjFieldVariable
+import org.cangnova.cangjie.psi.CjDeclaration
 
 /**
  * 字段与枚举构造器叶子实现。
@@ -38,9 +41,9 @@ import org.cangnova.cangjie.psi.CjFieldVariable
  */
 internal class CaCfirFieldSymbol private constructor(
     /**
-     * 字段变量对应的源码 PSI。
+     * 普通字段或主构造成员参数的源码 PSI；参数自身仍有独立的 value-parameter symbol。
      */
-    override val backingPsi: CjFieldVariable?,
+    override val backingPsi: CjDeclaration?,
     /**
      * 当前符号绑定的 CFIR Analysis session。
      */
@@ -50,7 +53,7 @@ internal class CaCfirFieldSymbol private constructor(
      */
     override val lazyCfirSymbol: Lazy<CfirFieldVariableSymbol>,
 ) : CaFieldSymbol(),
-    CaCfirCjBasedSymbol<CjFieldVariable, CfirFieldVariableSymbol> {
+    CaCfirCjBasedSymbol<CjDeclaration, CfirFieldVariableSymbol> {
     constructor(declaration: CjFieldVariable, session: CaCfirSession) : this(
         backingPsi = declaration,
         analysisSession = session,
@@ -58,7 +61,7 @@ internal class CaCfirFieldSymbol private constructor(
     )
 
     constructor(symbol: CfirFieldVariableSymbol, session: CaCfirSession) : this(
-        backingPsi = symbol.backingPsiIfApplicable as? CjFieldVariable,
+        backingPsi = symbol.cfir.psi as? CjDeclaration,
         analysisSession = session,
         lazyCfirSymbol = lazyOf(symbol),
     )
@@ -68,12 +71,6 @@ internal class CaCfirFieldSymbol private constructor(
      */
     override val cfirSymbol: CfirFieldVariableSymbol
         get() = super<CaCfirCjBasedSymbol>.cfirSymbol
-
-    /**
-     * 字段所在的 use-site 模块。
-     */
-    override val containingModule: CaModule
-        get() = analysisSession.useSiteModule
 
     /**
      * 字段 CFIR member 状态。
@@ -150,35 +147,39 @@ internal class CaCfirFieldSymbol private constructor(
         get() = withValidityAssertion { status?.isModalityExplicit == true }
 
     /**
-     * 字段当前没有稳定 pointer。
+     * 按 FIELD 身份恢复字段，不能通过参数的普通 PSI symbol 查询误恢复为 value parameter。
      */
     override fun createPointer(): CaSymbolPointer<CaCallableSymbol> = withValidityAssertion {
-        error("Field symbol cannot create a stable pointer")
+        when (val key = cfirSymbol.publicSymbolCacheKeyOrNull(analysisSession)) {
+            is CaCfirCallableSymbolCacheKey -> CaCfirCallableSymbolPointer(key, CaFieldSymbol::class.java)
+            is CaCfirExtendMemberCallableSymbolCacheKey -> CaCfirExtendMemberCallableSymbolPointer(key, CaFieldSymbol::class.java)
+            else -> error("Field symbol '${name}' has no stable callable identity")
+        }
     }
 
     /**
      * 字段是否不可变。
      */
     override val isLet: Boolean
-        get() = withValidityAssertion { backingPsi?.isVar != true }
+        get() = withValidityAssertion { !cfirSymbol.cfir.isVar }
 
     /**
      * 字段是否为 static。
      */
     override val isStatic: Boolean
-        get() = withValidityAssertion { backingPsi?.isStatic ?: (status?.isStatic == true) }
+        get() = withValidityAssertion { cfirSymbol.cfir.status.isStatic }
 
     /**
      * 字段是否为 const。
      */
     override val isConst: Boolean
-        get() = withValidityAssertion { backingPsi?.isConst ?: (status?.isConst == true) }
+        get() = withValidityAssertion { cfirSymbol.cfir.status.isConst }
 
     /**
      * 字段名称。
      */
     override val name: Name
-        get() = withValidityAssertion { backingPsi?.nameAsSafeName ?: cfirSymbol.name }
+        get() = withValidityAssertion { cfirSymbol.name }
 
     /**
      * 按 PSI 或 CFIR 符号身份比较字段。
@@ -229,12 +230,6 @@ internal class CaCfirEnumConstructorSymbol private constructor(
      */
     override val cfirSymbol: CfirEnumConstructorSymbol
         get() = super<CaCfirCjBasedSymbol>.cfirSymbol
-
-    /**
-     * enum constructor 所在的 use-site 模块。
-     */
-    override val containingModule: CaModule
-        get() = analysisSession.useSiteModule
 
     /**
      * enum constructor CFIR member 状态。

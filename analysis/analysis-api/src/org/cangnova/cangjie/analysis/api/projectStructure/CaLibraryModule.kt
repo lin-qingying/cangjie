@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.analysis.api.projectStructure
 
 import com.intellij.psi.PsiFileSystemItem
+import java.nio.file.Path
 
 /**
  * 表示一个二进制库的 [CaModule]。
@@ -25,6 +26,15 @@ interface CaLibraryModule : CaModule {
      * 与 [contentScope] 应保持一致:scope 中的文件即可在 [binaryRoots] 递归覆盖范围内找到。
      */
     val binaryRoots: List<PsiFileSystemItem>
+        get() = emptyList()
+
+    /**
+     * 显式发布的 CJMP common-part CJO 文件路径。
+     *
+     * 路径由平台模块模型提供，允许 CJO 位于普通二进制根之外；消费端通过 `dependsOn` 图
+     * 将这些文件精确归属到当前库模块。空列表表示只从 [binaryRoots] 搜索常规二进制。
+     */
+    val cjmpCommonPartCjoPaths: List<Path>
         get() = emptyList()
 
     /**

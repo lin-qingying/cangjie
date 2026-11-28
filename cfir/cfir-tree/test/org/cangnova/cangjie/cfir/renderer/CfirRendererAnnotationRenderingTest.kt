@@ -256,6 +256,7 @@ class CfirRendererAnnotationRenderingTest {
             klass: org.cangnova.cangjie.cfir.declarations.CfirClass,
             useSiteSession: CfirSession,
             scopeSession: ScopeSession,
+            memberRequiredPhase: CfirResolvePhase?,
         ): CfirTypeScope = CfirTypeScope.Empty
 
         /**

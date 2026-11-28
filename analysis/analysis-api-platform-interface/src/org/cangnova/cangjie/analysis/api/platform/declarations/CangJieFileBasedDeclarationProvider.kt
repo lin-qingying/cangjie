@@ -18,6 +18,8 @@ import org.cangnova.cangjie.psi.CjMacroDeclaration
 import org.cangnova.cangjie.psi.CjNamedDeclaration
 import org.cangnova.cangjie.psi.CjNamedFunction
 import org.cangnova.cangjie.psi.CjProperty
+import org.cangnova.cangjie.psi.CjPatternVariable
+import org.cangnova.cangjie.psi.stubs.elements.getAllPatternDeclarations
 import org.cangnova.cangjie.psi.CjTypeAlias
 import org.cangnova.cangjie.psi.CjTypeStatement
 import org.cangnova.cangjie.utils.addIfNotNull
@@ -199,10 +201,16 @@ class CangJieFileBasedDeclarationProvider private constructor(
      * 获取指定 callable id 对应顶层 callable 所在文件。
      */
     override fun getTopLevelCallableFiles(callableId: CallableId): Collection<CjFile> {
+        if (filePackageFqName != callableId.packageName) return emptyList()
         return buildSet {
             getTopLevelProperties(callableId).mapTo(this) { it.containingCjFile }
             getTopLevelFunctions(callableId).mapTo(this) { it.containingCjFile }
             getTopLevelMacros(callableId).mapTo(this) { it.containingCjFile }
+            // 一个 pattern 声明可以拥有多个 callable 名称，不能仅索引外壳的名称。
+            if (topLevelDeclarations.filterIsInstance<CjPatternVariable>().any { declaration ->
+                    declaration.pattern.getAllPatternDeclarations().any { it.nameAsName == callableId.callableName }
+                }
+            ) add(currentCangJieFile)
         }
     }
 
@@ -224,7 +232,13 @@ class CangJieFileBasedDeclarationProvider private constructor(
      * 获取指定包中的顶层 callable 名称。
      */
     override fun getTopLevelCallableNamesInPackage(packageFqName: FqName): Set<Name> {
-        return getTopLevelDeclarationNames<CjCallableDeclaration>(packageFqName)
+        if (filePackageFqName != packageFqName) return emptySet()
+        return buildSet {
+            addAll(getTopLevelDeclarationNames<CjCallableDeclaration>(packageFqName))
+            for (declaration in topLevelDeclarations.filterIsInstance<CjPatternVariable>()) {
+                declaration.pattern.getAllPatternDeclarations().mapNotNullTo(this) { it.nameAsName }
+            }
+        }
     }
 
     /**

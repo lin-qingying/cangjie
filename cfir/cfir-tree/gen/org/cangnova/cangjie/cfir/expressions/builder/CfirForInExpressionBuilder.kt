@@ -8,15 +8,17 @@
 package org.cangnova.cangjie.cfir.expressions.builder
 
 import kotlin.contracts.*
+import org.cangnova.cangjie.annotations.CangjieOverflowStrategy
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
-import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirForInExpression
 import org.cangnova.cangjie.cfir.expressions.impl.CfirForInExpressionImpl
+import org.cangnova.cangjie.cfir.patterns.CfirPattern
+import org.cangnova.cangjie.cfir.source.CfirSourceForInKind
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.source.CjSourceElement
 
@@ -25,12 +27,13 @@ class CfirForInExpressionBuilder {
     var source: CjSourceElement? = null
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
     var coneTypeOrNull: ConeCangJieType? = null
-    lateinit var condition: CfirExpression
-    var isDoWhile: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
-    lateinit var variable: CfirPatternVariable
+    var mappedExpression: CfirExpression? = null
+    var overflowStrategy: CangjieOverflowStrategy? = null
+    lateinit var pattern: CfirPattern
     lateinit var iterable: CfirExpression
     var patternGuard: CfirExpression? = null
     lateinit var body: CfirBlock
+    lateinit var iterationKind: CfirSourceForInKind
 
     @OptIn(CfirImplementationDetail::class)
     fun build(): CfirForInExpression {
@@ -38,12 +41,13 @@ class CfirForInExpressionBuilder {
             source,
             annotations.toMutableOrEmpty(),
             coneTypeOrNull,
-            condition,
-            isDoWhile,
-            variable,
+            mappedExpression,
+            overflowStrategy,
+            pattern,
             iterable,
             patternGuard,
             body,
+            iterationKind,
         )
     }
 
@@ -66,11 +70,12 @@ inline fun buildForInExpressionCopy(original: CfirForInExpression, init: CfirFor
     copyBuilder.source = original.source
     copyBuilder.annotations.addAll(original.annotations)
     copyBuilder.coneTypeOrNull = original.coneTypeOrNull
-    copyBuilder.condition = original.condition
-    copyBuilder.isDoWhile = original.isDoWhile
-    copyBuilder.variable = original.variable
+    copyBuilder.mappedExpression = original.mappedExpression
+    copyBuilder.overflowStrategy = original.overflowStrategy
+    copyBuilder.pattern = original.pattern
     copyBuilder.iterable = original.iterable
     copyBuilder.patternGuard = original.patternGuard
     copyBuilder.body = original.body
+    copyBuilder.iterationKind = original.iterationKind
     return copyBuilder.apply(init).build()
 }

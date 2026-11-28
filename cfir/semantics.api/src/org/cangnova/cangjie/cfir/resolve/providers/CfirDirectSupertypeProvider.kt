@@ -1,0 +1,150 @@
+package org.cangnova.cangjie.cfir.resolve.providers
+
+import org.cangnova.cangjie.cfir.declarations.CfirExtend
+import org.cangnova.cangjie.cfir.session.CfirSessionComponent
+import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
+import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import java.util.Collections
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirExtendSymbol
+import org.cangnova.cangjie.name.ClassId
+
+/**
+ * 超类型图中的一条边。
+ *
+ * 边记录源码类型引用、稳定渲染文本、解析到的 class-like 符号以及可选的 extend 来源。
+ */
+data class CfirSuperTypeGraphEdge(
+    /**
+     * 已解析的超类型引用。
+     */
+    val typeRef: CfirResolvedTypeRef,
+    /**
+     * 超类型的稳定渲染文本，用于无法获得 classId 时去重。
+     */
+    val renderedType: String,
+    /**
+     * 超类型解析到的 class-like 符号。
+     */
+    val resolvedClassSymbol: CfirClassLikeSymbol<*>?,
+    /**
+     * 贡献该超类型边的 extend 声明；声明自身 supertype 边为空。
+     */
+    val sourceExtend: CfirExtend? = null,
+)
+
+/**
+ * 单个 class-like 声明的超类型图节点。
+ */
+data class CfirSuperTypeGraphNode(
+    /**
+     * 节点所属 class-like 的 classId。
+     */
+    val ownerClassId: ClassId,
+    /**
+     * 声明头中直接写出的超类型边。
+     */
+    val declaredSuperTypes: List<CfirSuperTypeGraphEdge>,
+    /**
+     * extend 机制追加的超类型边。
+     */
+    val extendedSuperTypes: List<CfirSuperTypeGraphEdge>,
+) {
+    /**
+     * 声明超类型与 extend 超类型合并后的直接超类型边。
+     */
+    val superTypes: List<CfirSuperTypeGraphEdge>
+        get() = mergeSuperTypes(declaredSuperTypes, extendedSuperTypes)
+}
+
+/**
+ * 按声明 [ClassId] 查询直接父类型的 session 组件。
+ *
+ * 该接口返回的是声明上原始记录的 resolved type ref，尚未根据某个 use-site 的实际类型实参重写。
+ */
+/** 原声明的完成父图；完整引用与普通边投影独立保存，空投影不能抹去错误或循环引用。 */
+class CfirCompletedSupertypeProduct(
+    val ownerSymbol: CfirClassLikeSymbol<*>,
+    superTypeRefs: List<CfirTypeRef>,
+    declaredSuperTypes: List<CfirSuperTypeGraphEdge>,
+    extendedSuperTypes: List<CfirSuperTypeGraphEdge>,
+    val isInReferenceCycle: Boolean,
+) {
+    val superTypeRefs: List<CfirTypeRef> = Collections.unmodifiableList(ArrayList(superTypeRefs))
+    val declaredSuperTypes: List<CfirSuperTypeGraphEdge> = Collections.unmodifiableList(ArrayList(declaredSuperTypes))
+    val extendedSuperTypes: List<CfirSuperTypeGraphEdge> = Collections.unmodifiableList(ArrayList(extendedSuperTypes))
+    val superTypes: List<CfirSuperTypeGraphEdge>
+        get() = mergeSuperTypes(declaredSuperTypes, extendedSuperTypes)
+}
+
+interface CfirDirectSupertypeProvider : CfirSessionComponent {
+    /** 已完成图产品的版本；相同产品重发不递增，错误替换与循环状态变更必须发布新版本。 */
+    val modificationCount: Long
+
+    /** 只观察原 symbol 的已发布产品；未发布返回 null，合法空产品显式存在，不触发解析。 */
+    fun getCompletedSupertypeProduct(ownerSymbol: CfirClassLikeSymbol<*>): CfirCompletedSupertypeProduct?
+
+    /** 已发布的循环成员结论；marker-only 的确定循环独立于尚未完成的完整引用产品。 */
+    fun getPublishedReferenceCycleState(ownerSymbol: CfirClassLikeSymbol<*>): Boolean?
+
+    /**
+     * 返回 [ownerClassId] 声明中直接写出的父类型列表。
+     */
+    fun getDirectSuperTypes(ownerClassId: ClassId): List<CfirResolvedTypeRef>
+
+    /**
+     * 返回带来源信息的直接父类型边。
+     *
+     * 普通实现可以只提供 type ref；resolve 阶段的 graph store 会覆盖该方法，
+     * 保留 extend 来源信息供后续 checker 区分“目标已有父类型”和“当前 extend 正在实现的父类型”。
+     */
+    fun getDirectSuperTypeEdges(ownerClassId: ClassId): List<CfirSuperTypeGraphEdge> =
+        getDirectSuperTypes(ownerClassId).map { typeRef ->
+            CfirSuperTypeGraphEdge(
+                typeRef = typeRef,
+                renderedType = typeRef.toString(),
+                resolvedClassSymbol = null,
+            )
+        }
+}
+
+/**
+ * 合并声明超类型和 extend 超类型，并按稳定 key 去重。
+ */
+fun mergeSuperTypes(
+    declared: List<CfirSuperTypeGraphEdge>,
+    extended: List<CfirSuperTypeGraphEdge>,
+): List<CfirSuperTypeGraphEdge> {
+    if (declared.isEmpty()) return extended
+    if (extended.isEmpty()) return declared
+
+    val merged = LinkedHashMap<CfirSuperTypeGraphEdgeKey, CfirSuperTypeGraphEdge>()
+    for (edge in declared) {
+        merged.putIfAbsent(edge.stableKey(), edge)
+    }
+    for (edge in extended) {
+        merged.putIfAbsent(edge.stableKey(), edge)
+    }
+    return merged.values.toList()
+}
+
+/**
+ * 超类型图边的结构身份。
+ *
+ * 完整类型文本区分同一泛型接口的不同实例；extend symbol 区分声明边与 extend 边，
+ * 以及多个真实 extend 对同一接口类型的独立贡献。
+ */
+data class CfirSuperTypeGraphEdgeKey(
+    val resolvedClassId: ClassId?,
+    val renderedType: String,
+    val sourceExtendSymbol: CfirExtendSymbol?,
+)
+
+/**
+ * 计算超类型边的稳定去重 key。
+ */
+fun CfirSuperTypeGraphEdge.stableKey(): CfirSuperTypeGraphEdgeKey = CfirSuperTypeGraphEdgeKey(
+    resolvedClassId = resolvedClassSymbol?.classId,
+    renderedType = renderedType,
+    sourceExtendSymbol = sourceExtend?.symbol,
+)

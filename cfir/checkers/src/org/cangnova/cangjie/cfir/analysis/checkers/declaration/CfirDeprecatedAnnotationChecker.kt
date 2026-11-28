@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
@@ -26,7 +27,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirNamedArgumentExpression
  * 构造器以及不满足默认参数约束的参数不是合法目标。此 checker 只消费已经
  * 发布的 annotation argument view，不从源码文本重解析参数绑定。
  */
-object CfirDeprecatedAnnotationChecker : CfirBasicDeclarationChecker() {
+object CfirDeprecatedAnnotationChecker : CfirBasicDeclarationChecker(MppCheckerKind.Common) {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirDeclaration) {
         val entries = declaration.findBuiltinAnnotations(BuiltInAnnotationKind.DEPRECATED)

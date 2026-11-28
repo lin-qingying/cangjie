@@ -13,6 +13,8 @@ import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
 import org.cangnova.cangjie.cfir.serialization.cjo.*
 import org.cangnova.cangjie.cfir.serialization.deserialize.*
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.CfirImplicitSystemAnnotationsProvider
+import org.cangnova.cangjie.cfir.session.ConfiguredCfirImplicitSystemAnnotationsProvider
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.lang.declarations.CangJieDeclarationFileType
 import org.cangnova.cangjie.name.*
@@ -45,7 +47,10 @@ class CjdBinaryAnnotationIntegrationTest : CjParsingTestCase("", "cj.d", CangJie
         Files.write(path, fixture.builder.sizedByteArray())
         val sidecar = CjdSidecarLocator.deriveCjdPath(path)
         if (text == null) Files.deleteIfExists(sidecar) else Files.writeString(sidecar, "package test.pkg\n$text")
-        val manager = CjoManager(CjoSearchPath { if (it == "CANGJIE_LIBRARY") root.toString() else null })
+        val manager = CjoManager(
+            CjoSearchPath { if (it == "CANGJIE_LIBRARY") root.toString() else null },
+            CjoFormatVersionPolicy.Compilation(LanguageVersionSettingsImpl.DEFAULT),
+        )
         val loaded = kotlin.test.assertNotNull(manager.loadPackageSnapshot("test.pkg"))
         assertEquals(path.toAbsolutePath(), loaded.sourcePath)
         return CfirDeserializationContext(loaded.pkg, loaded.header, Module(), manager, loaded.sourcePath,
@@ -93,7 +98,10 @@ class CjdBinaryAnnotationIntegrationTest : CjParsingTestCase("", "cj.d", CangJie
         fixture.build()
         val path = root.resolve("platform-kind.cjo")
         Files.write(path, fixture.builder.sizedByteArray())
-        val manager = CjoManager(CjoSearchPath { if (it == "CANGJIE_LIBRARY") root.toString() else null })
+        val manager = CjoManager(
+            CjoSearchPath { if (it == "CANGJIE_LIBRARY") root.toString() else null },
+            CjoFormatVersionPolicy.Compilation(LanguageVersionSettingsImpl.DEFAULT),
+        )
         val loaded = kotlin.test.assertNotNull(manager.loadPackageSnapshot("test.pkg"))
         val context = CfirDeserializationContext(
             loaded.pkg,
@@ -187,7 +195,10 @@ class CjdBinaryAnnotationIntegrationTest : CjParsingTestCase("", "cj.d", CangJie
                 func f(@Frozen x: Int64): Unit
             }
         """.trimIndent())
-        val manager = CjoManager(CjoSearchPath { if (it == "CANGJIE_LIBRARY") root.toString() else null })
+        val manager = CjoManager(
+            CjoSearchPath { if (it == "CANGJIE_LIBRARY") root.toString() else null },
+            CjoFormatVersionPolicy.Compilation(LanguageVersionSettingsImpl.DEFAULT),
+        )
         val loaded = kotlin.test.assertNotNull(manager.loadPackageSnapshot("test.pkg"))
         val context = CfirDeserializationContext(
             loaded.pkg,
@@ -216,8 +227,9 @@ class CjdBinaryAnnotationIntegrationTest : CjParsingTestCase("", "cj.d", CangJie
             "Set CANGJIE_CJD_SDK_DIR to enable real SDK validation")
         val manager = CjoManager(CjoSearchPath {
             if (it == "CANGJIE_STDLIB_MODULE") directory else null
-        })
-        val module = Module()
+        }, CjoFormatVersionPolicy.Compilation(LanguageVersionSettingsImpl.DEFAULT))
+        // SDK 路径只选择二进制来源；隐式平台注解按正式工厂合同由 session 配置提供。
+        val module = Module(implicitSystemAnnotations = setOf(FqName("ohos.labels.APILevel")))
         val provider = CfirDeserializedSymbolProvider(module.session, manager, CfirCangJieScopeProvider(), module)
         module.session.register(org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider::class, provider)
         val classId = ClassId.topLevel(FqName("std.math.RoundingMode"))
@@ -241,7 +253,10 @@ class CjdBinaryAnnotationIntegrationTest : CjParsingTestCase("", "cj.d", CangJie
         val directory = System.getenv("CANGJIE_CJD_SDK_DIR")
         org.junit.jupiter.api.Assumptions.assumeTrue(!directory.isNullOrBlank(),
             "Set CANGJIE_CJD_SDK_DIR to enable real SDK validation")
-        val manager = CjoManager(CjoSearchPath { if (it == "CANGJIE_STDLIB_MODULE") directory else null })
+        val manager = CjoManager(
+            CjoSearchPath { if (it == "CANGJIE_STDLIB_MODULE") directory else null },
+            CjoFormatVersionPolicy.Compilation(LanguageVersionSettingsImpl.DEFAULT),
+        )
         val loaded = kotlin.test.assertNotNull(manager.loadPackageSnapshot("std.console"))
         val context = CfirDeserializationContext(
             loaded.pkg,
@@ -302,7 +317,10 @@ class CjdBinaryAnnotationIntegrationTest : CjParsingTestCase("", "cj.d", CangJie
         val directory = System.getenv("CANGJIE_CJD_SDK_DIR")
         org.junit.jupiter.api.Assumptions.assumeTrue(!directory.isNullOrBlank(),
             "Set CANGJIE_CJD_SDK_DIR to enable real SDK validation")
-        val manager = CjoManager(CjoSearchPath { if (it == "CANGJIE_STDLIB_MODULE") directory else null })
+        val manager = CjoManager(
+            CjoSearchPath { if (it == "CANGJIE_STDLIB_MODULE") directory else null },
+            CjoFormatVersionPolicy.Compilation(LanguageVersionSettingsImpl.DEFAULT),
+        )
         val paths = Files.list(Path.of(directory!!)).use { stream ->
             stream.filter { it.toString().endsWith(".cj.d") }.sorted().toList()
         }
@@ -334,7 +352,7 @@ class CjdBinaryAnnotationIntegrationTest : CjParsingTestCase("", "cj.d", CangJie
         assertTrue(matchedAnnotations > 0)
     }
 
-    private class Module : CfirModuleData() {
+    private class Module(implicitSystemAnnotations: Set<FqName> = emptySet()) : CfirModuleData() {
         override val name = Name.identifier("cjd-test")
         override val dependencies = emptyList<CfirModuleData>()
         override val refinementDependencies = emptyList<CfirModuleData>()
@@ -349,6 +367,12 @@ class CjdBinaryAnnotationIntegrationTest : CjParsingTestCase("", "cj.d", CangJie
                 CfirLanguageSettingsComponent(LanguageVersionSettingsImpl.DEFAULT),
             )
             it.register(CfirCangJieScopeProvider::class, CfirCangJieScopeProvider())
+            if (implicitSystemAnnotations.isNotEmpty()) {
+                it.register(
+                    CfirImplicitSystemAnnotationsProvider::class,
+                    ConfiguredCfirImplicitSystemAnnotationsProvider(implicitSystemAnnotations),
+                )
+            }
         }
         init { bindSession(session) }
     }

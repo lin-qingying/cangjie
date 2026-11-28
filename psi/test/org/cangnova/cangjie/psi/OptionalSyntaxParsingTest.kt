@@ -83,11 +83,9 @@ class OptionalSyntaxParsingTest : CjParsingTestCase(
         assertTrue(errors.isNotEmpty())
     }
 
-    /**
-     * 提供 `testAbstractFunctionWithoutBodyDoesNotProduceParseError` 操作，封装PSI 测试节点的访问、构造或判断逻辑。
-     */
+    /** v1.1.0 起普通 class 中显式 abstract 函数同时违反声明规则与 class 修饰符作用域。 */
     @Test
-    fun testAbstractFunctionWithoutBodyDoesNotProduceParseError() {
+    fun testAbstractFunctionOutsideCjmpAbstractNominalProducesParseError() {
         val file = createPsiFile(
             "abstractFunctionWithoutBody",
             """
@@ -98,12 +96,20 @@ class OptionalSyntaxParsingTest : CjParsingTestCase(
         ) as CjFile
 
         val errors = PsiTreeUtil.findChildrenOfType(file, PsiErrorElement::class.java)
-        assertTrue(
-            errors.isEmpty(),
-            "abstract function without body should parse without PsiErrorElement, but got: ${
-                errors.joinToString { it.errorDescription }
-            }",
+        assertEquals(2, errors.size)
+        val orderedErrors = errors.sortedWith(
+            compareBy<PsiErrorElement> { it.textRange.startOffset }.thenByDescending { it.textRange.endOffset },
         )
+        assertEquals(
+            "only common/specific or Native FFI mirror abstract classes can have explicitly abstract function",
+            orderedErrors[0].errorDescription,
+        )
+        assertEquals("abstract func dump(indent: UInt16): std.core.String", orderedErrors[0].text)
+        assertEquals(
+            "unexpected modifier 'abstract' on function declaration in class body",
+            orderedErrors[1].errorDescription,
+        )
+        assertEquals("abstract", orderedErrors[1].text)
     }
 
     /**

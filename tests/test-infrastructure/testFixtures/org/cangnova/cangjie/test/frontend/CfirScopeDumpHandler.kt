@@ -3,6 +3,8 @@ package org.cangnova.cangjie.test.frontend
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.declarations.resolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirEnum
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
@@ -18,14 +20,15 @@ import org.cangnova.cangjie.cfir.renderer.CfirRenderer
 import org.cangnova.cangjie.cfir.resolve.providers.getContainingFile
 import org.cangnova.cangjie.cfir.scopes.CfirPackageScope
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
-import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirCjmpMemberScopeView
+import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
 import org.cangnova.cangjie.cfir.session.ProcessorAction
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
-import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.resolve.providers.cfirProvider
 import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.lazyDeclarationResolver
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
@@ -227,20 +230,28 @@ class CfirScopeDumpHandler(testServices: TestServices) : CfirAnalysisHandler(tes
         classLike: CfirClassLikeDeclaration,
         outputPart: CfirOutputPartForDependsOnModule,
     ): CfirTypeScope {
+        // scope dump 只请求前端已经执行过的成员阶段，不推进仅运行到 TYPES 的 fixture。
+        val memberRequiredPhase = CfirResolvePhase.STATUS.takeIf { classLike.resolvePhase >= it }
         return when (classLike) {
             is CfirClass -> outputPart.session.cangjieScopeProvider.getUseSiteMemberScope(
                 classLike,
                 outputPart.session,
                 outputPart.scopeSession,
+                memberRequiredPhase,
             )
             else -> {
                 val symbol = classLike.symbol as? CfirClassLikeSymbol<*>
                     ?: return CfirTypeScope.Empty
-                CfirClassUseSiteMemberScope(
-                    symbol,
-                    outputPart.session.symbolProvider,
-                    outputPart.session.extendProvider,
-                    outputPart.session.directSupertypeProviderOrNull,
+                outputPart.session.cangjieScopeProvider.getUseSiteMemberScope(
+                    useSiteSession = outputPart.session,
+                    scopeSession = outputPart.scopeSession,
+                    classSymbol = symbol,
+                    symbolProvider = outputPart.session.symbolProvider,
+                    extendProvider = outputPart.session.extendProvider,
+                    directSupertypeProvider = outputPart.session.directSupertypeProviderOrNull,
+                    scopeKind = CfirClassMemberScopeKind.USE_SITE,
+                    memberScopeView = CfirCjmpMemberScopeView.RAW,
+                    memberRequiredPhase = memberRequiredPhase,
                 )
             }
         }

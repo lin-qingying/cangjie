@@ -10,6 +10,8 @@ import org.cangnova.cangjie.CjSourceKind
 import org.cangnova.cangjie.lang.CangJieFileType
 import org.cangnova.cangjie.lang.declarations.CangJieDeclarationFileType
 import org.cangnova.cangjie.parsing.CangJieParserDefinition
+import org.cangnova.cangjie.parsing.collectParsingDiagnostics
+import org.cangnova.cangjie.messages.ParsingDiagnostic
 import org.cangnova.cangjie.test.testFramework.CjParsingTestCase
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -191,9 +193,9 @@ class DeclarationFileParsingTest : CjParsingTestCase(
     // ==================== B 组守卫：残缺输入仍必须报错 ====================
 
     @Test
-    fun testFunctionWithoutNameStillReportsIdentifierError() {
+    fun testFunctionWithoutNameStillReportsFunctionNameError() {
         // `func }`：连函数名都没有。修复前报的是"函数体缺失"，语义错误。
-        assertStillReports("class C {\n    func\n}", "identifier")
+        assertStillReports("class C {\n    func\n}", "expected a func name after keyword 'func', found '}'")
     }
 
     @Test
@@ -338,5 +340,28 @@ class DeclarationModeReverseParsingTest : CjParsingTestCase(
     @Test
     fun testBodylessTopLevelFunctionReportsError() {
         assertReportsError("func topLevel(): Int64")
+    }
+
+    /** 官方恢复 AST 保留第二个 func；正常源码模式与声明模式共用名称失败的消费规则。 */
+    @Test
+    fun testMissingFunctionNameKeepsTheFollowingMemberAndItsBody() {
+        for (owner in listOf("class", "struct")) {
+            val text = "$owner C {\n    func\n    func ok(value: Int64): Int64 { return value }\n}"
+            val file = createPsiFile("nameRecovery", text) as CjFile
+            val functions = PsiTreeUtil.findChildrenOfType(file, CjNamedFunction::class.java).toList()
+            assertEquals(2, functions.size)
+            assertEquals(listOf(null, "ok"), functions.map { it.name })
+            val kept = functions.last()
+            assertEquals(listOf("value"), kept.valueParameters.map { it.name })
+            assertEquals("Int64", kept.typeReference?.text)
+            assertEquals("{ return value }", kept.bodyExpression?.text)
+            val diagnostic = file.collectParsingDiagnostics().single {
+                it.message == "expected a func name after keyword 'func', found 'func'"
+            }
+            val secondKeyword = text.lastIndexOf("func")
+            assertEquals(secondKeyword to secondKeyword + 4, diagnostic.startOffset to diagnostic.endOffset)
+            assertEquals(ParsingDiagnostic.Category.PARSE, diagnostic.category)
+            assertEquals(ParsingDiagnostic.RangeKind.TOKEN, diagnostic.rangeKind)
+        }
     }
 }

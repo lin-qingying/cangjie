@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.hasBuiltinAnnotation
@@ -10,14 +11,15 @@ import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirInterface
 import org.cangnova.cangjie.cfir.declarations.annotationInfo
+import org.cangnova.cangjie.cfir.declarations.utils.ownTypeParameters
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCallOrigin
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
-import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.resolve.providers.cfirProvider
 import org.cangnova.cangjie.cfir.session.mockSettings
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConeTupleType
@@ -37,7 +39,7 @@ import org.cangnova.cangjie.name.Name
  * - 非测试路径默认拦截为 test-mode 约束；
  * - 其余未显式启用的路径统一落到 mock feature gate。
  */
-object CfirMockApiChecker : CfirFunctionCallChecker() {
+object CfirMockApiChecker : CfirFunctionCallChecker(MppCheckerKind.Common) {
     /**
      * mock intrinsic `createMock` 函数名。
      */
@@ -95,7 +97,7 @@ object CfirMockApiChecker : CfirFunctionCallChecker() {
         }
 
         val containingFunction = context.findClosestDeclaration<CfirFunction>()
-        if (containingFunction != null && containingFunction.typeParameters.isNotEmpty() &&
+        if (containingFunction != null && containingFunction.typeParameters.ownTypeParameters.isNotEmpty() &&
             !containingFunction.hasBuiltinAnnotation(BuiltInAnnotationKind.FROZEN)
         ) {
             reporter.reportOn(source, CfirErrors.MOCK_FROZEN_REQUIRED, containingFunction.callableName())

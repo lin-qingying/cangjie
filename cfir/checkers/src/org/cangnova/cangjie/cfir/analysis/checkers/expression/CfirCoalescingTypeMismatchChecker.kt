@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.expressions.CfirBinaryOp
 import org.cangnova.cangjie.cfir.expressions.CfirBinaryOpKind
@@ -25,7 +26,7 @@ import org.cangnova.cangjie.cfir.diagnostics.reportOn
  * 下把 `??` 标记为 [ConeCoalescingRightOperandMismatch] 并携带 `realTgtTy`，本 checker 只消费
  * 该标记把诊断锚到右操作数，两边不出现对同一事实的第二套判据。
  */
-object CfirCoalescingTypeMismatchChecker : CfirBinaryOpChecker() {
+object CfirCoalescingTypeMismatchChecker : CfirBinaryOpChecker(MppCheckerKind.Common) {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirBinaryOp) {
         if (expression.kind != CfirBinaryOpKind.COALESCING) return

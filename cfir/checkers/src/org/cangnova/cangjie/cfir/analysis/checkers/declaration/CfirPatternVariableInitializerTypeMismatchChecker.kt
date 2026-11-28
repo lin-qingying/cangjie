@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.checkTargetTypedExpression
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.explicitDeclaredTypeOrNull
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.isHandled
@@ -30,7 +31,7 @@ import org.cangnova.cangjie.source.text
  * 官方仓颉编译器把这类 `sema_mismatched_types` 锚定在初始化表达式，
  * 因此这里与字段初始化器保持同一诊断表面：报告表达式上的 `TYPE_MISMATCH`。
  */
-object CfirPatternVariableInitializerTypeMismatchChecker : CfirPatternVariableChecker() {
+object CfirPatternVariableInitializerTypeMismatchChecker : CfirPatternVariableChecker(MppCheckerKind.Common) {
     /**
      * 检查 pattern variable 的初始化器类型是否兼容声明类型。
      */

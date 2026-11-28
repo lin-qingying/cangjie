@@ -51,12 +51,6 @@ internal class CaCfirFileSymbol private constructor(
     )
 
     /**
-     * 文件符号所在的 use-site 模块。
-     */
-    override val containingModule
-        get() = analysisSession.useSiteModule
-
-    /**
      * 当前符号代表的仓颉文件。
      */
     override val file: CjFile
@@ -94,4 +88,9 @@ internal class CaCfirFileSymbol private constructor(
     override fun createPointer(): CaSymbolPointer<CaSymbol> = withValidityAssertion {
         CaCfirFileSymbolPointer(CaCfirFileSymbolCacheKey(file))
     }
+
+    /** 对齐 Kotlin 文件符号的 PSI 身份契约。 */
+    override fun equals(other: Any?): Boolean = psiOrSymbolEquals(other)
+
+    override fun hashCode(): Int = psiOrSymbolHashCode()
 }

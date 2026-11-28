@@ -86,6 +86,12 @@ interface CjCallableDeclaration : CjNamedDeclaration, CjTypeParameterListOwner {
     val valueParameterList: CjParameterList?
 
     /**
+     * 声明直接拥有的全部参数列表，按真实源码顺序保存，包括官方恢复文法中的重复列表。
+     * 单列表检查必须先读取此集合的数量，不能由首列表或展平后的参数反推。
+     */
+    val valueParameterLists: List<CjParameterList>
+
+    /**
      * 获取所有值参数的列表
      *
      * 返回函数的所有参数,按照声明顺序排列。

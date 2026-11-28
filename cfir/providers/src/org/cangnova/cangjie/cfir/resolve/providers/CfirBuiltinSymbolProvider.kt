@@ -6,6 +6,7 @@ import org.cangnova.cangjie.cfir.common.CfirBinaryDependenciesModuleData
 import org.cangnova.cangjie.cfir.common.moduleData
 import org.cangnova.cangjie.cfir.common.nullableModuleData
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
+import org.cangnova.cangjie.cfir.declarations.builtinOperatorSignature
 import org.cangnova.cangjie.cfir.declarations.CfirBuiltInDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirBuiltInTypeKind
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
@@ -42,6 +43,7 @@ import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.descriptors.Modality
 
 /**
  * 将 builtin 类型暴露为合成 class-like 声明。
@@ -144,6 +146,8 @@ class CfirBuiltinSymbolProvider(
             kind = kind,
             scopeProvider = session.cangjieScopeProvider,
             typeParameters = buildBuiltInTypeParameters(kind, symbol),
+            status = CfirDeclarationStatusImpl(visibility = kind.visibility, modality = Modality.FINAL)
+                .resolved(kind.visibility, Modality.FINAL),
         )
     }
 
@@ -241,9 +245,9 @@ class CfirBuiltinSymbolProvider(
                 }
             }
 
-            val status = CfirDeclarationStatusImpl().apply {
+            val status = CfirDeclarationStatusImpl(modality = Modality.FINAL).apply {
                 isOperator = true
-            }
+            }.let { it.resolved(it.visibility, Modality.FINAL) }
             buildNamedFunction {
                 moduleData = builtinModuleData
                 resolvePhase = CfirResolvePhase.BODY_RESOLVE
@@ -259,7 +263,7 @@ class CfirBuiltinSymbolProvider(
                 symbol = functionSymbol
                 name = signature.name
                 isMut = false
-            }
+            }.apply { builtinOperatorSignature = signature }
         }
 
     /**

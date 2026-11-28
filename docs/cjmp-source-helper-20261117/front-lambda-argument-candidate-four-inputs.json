@@ -1,0 +1,26 @@
+{
+  "sampleUtc": "2026-11-17T10:01:24.3196608Z",
+  "fileCount": 6826,
+  "aggregateSha256": "911B9A624DB7248F8847D93E0322F0B3B9BDD93E2D15A1E11E8D08C283417189",
+  "roots": [
+    "common",
+    "cfir",
+    "analysis/low-level-api-cfir",
+    "analysis/analysis-api-cfir",
+    "compiler/frontend",
+    "compiler/config",
+    "compiler/phaser",
+    "compiler/arguments",
+    "psi",
+    "resolution.common",
+    "macro"
+  ],
+  "include": [
+    "*.kt",
+    "*.cj",
+    "*.kts"
+  ],
+  "exclude": "**/build/**",
+  "method": "rg --files --hidden --no-ignore, normalized /, Sort-Object -CaseSensitive; UTF8 LF path TAB length TAB uppercaseSHA256, no final LF",
+  "scope": "Original CJMP frontend four lambda cases; argument-list owned phase closure and ill-typed initializer candidate failure"
+}

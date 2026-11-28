@@ -157,7 +157,7 @@ class CjoPackageHeader(
             for (index in 0 until pkg.allDeclsLength) {
                 val decl = pkg.allDecls(index) ?: continue
                 val identifier = decl.identifier?.takeIf { it.isNotBlank() }
-                val fullIdReferenceKey = decl.exportId?.takeIf { it.isNotBlank() } ?: identifier
+                val fullIdReferenceKey = CjoFullIdReferenceKey.fromDeclaration(decl)
 
                 if (!hasCjmpAttributes && declHasCjmpAttributes(decl)) {
                     hasCjmpAttributes = true

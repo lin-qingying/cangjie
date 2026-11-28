@@ -44,7 +44,10 @@ class LspMacroServerMacroExecutor(
      * 是否向服务端传入并行宏展开开关。
      */
     private val enableParallel: Boolean = true,
+    /** 编译调用选择的 SDK 环境，跨平台传递给同一可执行文件。 */
+    environmentOverrides: Map<String, String> = emptyMap(),
 ) : ProcessMacroExecutor() {
+    private val environmentOverrides: Map<String, String> = environmentOverrides.toMap()
     /**
      * LSPMacroServer 执行器日志器。
      */
@@ -72,6 +75,7 @@ class LspMacroServerMacroExecutor(
         val command = buildCommand(executable)
         val process = ProcessBuilder(command)
             .redirectErrorStream(false)
+            .apply { environment().putAll(environmentOverrides) }
             .start()
 
         logger.info("LSPMacroServer 已启动: $macroServerPath")
@@ -107,6 +111,7 @@ class LspMacroServerMacroExecutor(
             executable = executable,
             enableParallel = enableParallel,
             logger = logger,
+            environmentOverrides = environmentOverrides,
         )
         logger.info("LSPMacroServer 已启动: $macroServerPath")
         return ProcessMacroConnection(
@@ -182,6 +187,7 @@ private class WindowsLspMacroServerConnection(
             executable: File,
             enableParallel: Boolean,
             logger: Logger,
+            environmentOverrides: Map<String, String>,
         ): WindowsLspMacroServerConnection {
             val pipeAttributes = WinBase.SECURITY_ATTRIBUTES().apply {
                 dwLength = DWORD(size().toLong())
@@ -210,7 +216,7 @@ private class WindowsLspMacroServerConnection(
                 cb = DWORD(size().toLong())
             }
             val processInfo = WinBase.PROCESS_INFORMATION()
-            val environment = buildWindowsEnvironment(executable)
+            val environment = buildWindowsEnvironment(executable, environmentOverrides)
             val commandLine = buildCommandLine(
                 executable = executable,
                 childRead = childReadRef.value,
@@ -280,7 +286,7 @@ private class WindowsLspMacroServerConnection(
         /**
          * 构造 LSPMacroServer 运行所需的 Windows 环境变量块。
          */
-        private fun buildWindowsEnvironment(executable: File): Pointer {
+        private fun buildWindowsEnvironment(executable: File, overrides: Map<String, String>): Pointer {
             val sdkHome = executable.parentFile?.parentFile?.parentFile
             val pathEntries = buildList {
                 if (sdkHome != null) {
@@ -303,6 +309,7 @@ private class WindowsLspMacroServerConnection(
                 .filter(String::isNotBlank)
                 .joinToString(separator = File.pathSeparator)
 
+            environment.putAll(overrides)
             val block = environment.entries
                 .sortedBy { it.key.uppercase() }
                 .joinToString(separator = "\u0000", postfix = "\u0000\u0000") { (key, value) -> "$key=$value" }

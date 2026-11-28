@@ -11,16 +11,27 @@ import org.cangnova.cangjie.chir.core.controlflow.ChirThrowTerminator
 import org.cangnova.cangjie.chir.core.declaration.DefaultChirFunctionDeclaration
 import org.cangnova.cangjie.chir.core.declaration.DefaultChirVariableDeclaration
 import org.cangnova.cangjie.chir.core.expression.ChirBinaryExpression
+import org.cangnova.cangjie.chir.core.expression.ChirBinaryOperator
+import org.cangnova.cangjie.chir.core.expression.ChirUnaryExpression
+import org.cangnova.cangjie.chir.core.expression.ChirUnaryOperator
+import org.cangnova.cangjie.cfir.references.CfirResolvedBuiltinOperatorReference
+import org.cangnova.cangjie.cfir.types.BuiltinPrimitiveOperatorOperation
+import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
 import org.cangnova.cangjie.chir.core.expression.ChirCallExpression
+import org.cangnova.cangjie.chir.core.expression.ChirVirtualMethodContext
+import org.cangnova.cangjie.chir.core.expression.ChirFieldExpression
 import org.cangnova.cangjie.chir.core.expression.ChirExpression
 import org.cangnova.cangjie.chir.core.expression.ChirMemoryExpression
 import org.cangnova.cangjie.chir.core.expression.ChirOtherExpression
 import org.cangnova.cangjie.chir.core.expression.ChirOtherOperation
+import org.cangnova.cangjie.chir.core.expression.ChirTupleExpression
 import org.cangnova.cangjie.chir.core.identity.ChirSemanticId
 import org.cangnova.cangjie.chir.core.type.ChirFunctionType
 import org.cangnova.cangjie.chir.core.type.ChirPrimitiveType
 import org.cangnova.cangjie.chir.core.type.ChirRefType
 import org.cangnova.cangjie.chir.core.type.ChirResolvedTypeRef
+import org.cangnova.cangjie.chir.core.type.ChirTupleType
+import org.cangnova.cangjie.chir.core.type.ChirTypeRelations
 import org.cangnova.cangjie.chir.core.type.ChirTypeRef
 import org.cangnova.cangjie.chir.core.value.ChirBlockValue
 import org.cangnova.cangjie.chir.core.value.ChirConstantValue
@@ -34,6 +45,7 @@ import org.cangnova.cangjie.chir.core.value.ChirValue
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
@@ -96,6 +108,10 @@ import org.cangnova.cangjie.cfir.expressions.CfirTypeOperator
 import org.cangnova.cangjie.cfir.expressions.CfirUnsafeExpression
 import org.cangnova.cangjie.cfir.expressions.CfirWrappedExpression
 import org.cangnova.cangjie.cfir.patterns.CfirPattern
+import org.cangnova.cangjie.cfir.patterns.CfirBindingPattern
+import org.cangnova.cangjie.cfir.patterns.CfirTuplePattern
+import org.cangnova.cangjie.cfir.patterns.CfirVarOrEnumPattern
+import org.cangnova.cangjie.cfir.patterns.CfirWildcardPattern
 import org.cangnova.cangjie.cfir.patterns.bindingVariables
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirReference
@@ -106,6 +122,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirThisOwnerSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import java.util.IdentityHashMap
@@ -195,9 +212,11 @@ internal class Cfir2ChirFunctionBodyConverter(
             semanticId = header.semanticId,
             name = header.name,
             returnType = header.returnType,
-            parameters = header.parameters,
+            parameters = header.abiParameters,
             blocks = builder.freeze(),
             entryBlockId = entry.semanticId,
+            isStatic = header.isStatic,
+            genericTypeParameters = header.genericTypeParameters,
         )
     }
 
@@ -303,8 +322,7 @@ internal class Cfir2ChirFunctionBodyConverter(
             return lowerPatternVariable(variable)
         }
         val initializerValue = variable.initializer?.let { initializer ->
-            lowerExpression(initializer)
-                ?: throw Cfir2ChirConversionException("local variable initializer does not produce a CHIR value", initializer)
+            initializer.lowerAsValue("local variable initializer")
         }
         return lowerLocalBindingVariable(variable, initializerValue, variable)
     }
@@ -315,24 +333,84 @@ internal class Cfir2ChirFunctionBodyConverter(
     private fun lowerPatternVariable(variable: CfirPatternVariable): ChirValue? {
         val initializer = variable.initializer
             ?: throw Cfir2ChirConversionException("pattern local variable requires initializer before CHIR lowering", variable)
-        val initializerValue = lowerExpression(initializer)
-            ?: throw Cfir2ChirConversionException("pattern local variable initializer does not produce a CHIR value", initializer)
+        val initializerValue = initializer.lowerAsValue("pattern local variable initializer")
+        lowerPatternBindings(variable.pattern, initializerValue, variable, emitNoBindingOperation = true)
+        return null
+    }
 
-        val bindingVariables = variable.pattern.bindingVariables()
-        if (bindingVariables.isEmpty()) {
-            emitOtherValue(
-                operation = Cfir2ChirOperation.CFIR_LET_PATTERN,
-                source = variable,
-                operands = listOf(initializerValue),
-                resultType = null,
-                attributes = patternAttributes(variable.pattern),
-            )
-            return null
+    /**
+     * 将模式绑定按实际结构路径取值；元组字段采用带结果类型的 Field 节点，
+     * 只有无法由元组字段路径表达的模式才保留专用模式提取操作。
+     */
+    private fun lowerPatternBindings(
+        pattern: CfirPattern,
+        initializerValue: ChirValue,
+        source: CfirElement,
+        emitNoBindingOperation: Boolean,
+    ) {
+        val projections = pattern.tupleFieldBindingProjections(initializerValue.type)
+        if (projections != null) {
+            if (projections.isEmpty()) {
+                if (emitNoBindingOperation) {
+                    emitOtherValue(
+                        operation = Cfir2ChirOperation.CFIR_LET_PATTERN,
+                        source = source,
+                        operands = listOf(initializerValue),
+                        resultType = null,
+                        attributes = patternAttributes(pattern),
+                    )
+                }
+                return
+            }
+            projections.forEach { projection ->
+                val bindingType = typeMapper.mapTypeRef(projection.binding.returnTypeRef)
+                val value = if (projection.path.isEmpty()) {
+                    initializerValue
+                } else {
+                    val fieldType = ChirTypeRelations.projectFieldType(initializerValue.type, projection.path)?.resultType
+                        ?: throw Cfir2ChirConversionException(
+                            "tuple pattern path ${projection.path} is invalid for ${initializerValue.type.renderName}",
+                            projection.binding,
+                        )
+                    if (!ChirTypeRelations.areEquivalent(fieldType, bindingType)) {
+                        throw Cfir2ChirConversionException(
+                            "tuple pattern binding type ${bindingType.renderName} does not match field type ${fieldType.renderName}",
+                            projection.binding,
+                        )
+                    }
+                    val fieldId = builder.nextId("pattern_field")
+                    builder.emit(
+                        ChirFieldExpression(
+                            semanticId = fieldId,
+                            base = initializerValue,
+                            path = projection.path,
+                            resultType = bindingType,
+                        ),
+                    )
+                    ChirLocalValue(fieldId, bindingType, fieldId.value)
+                }
+                lowerLocalBindingVariable(projection.binding, value, projection.binding)
+            }
+            return
         }
 
-        bindingVariables.forEachIndexed { index, binding ->
+        val bindings = pattern.bindingVariables()
+        if (bindings.isEmpty()) {
+            if (emitNoBindingOperation) {
+                emitOtherValue(
+                    operation = Cfir2ChirOperation.CFIR_LET_PATTERN,
+                    source = source,
+                    operands = listOf(initializerValue),
+                    resultType = null,
+                    attributes = patternAttributes(pattern),
+                )
+            }
+            return
+        }
+
+        bindings.forEachIndexed { index, binding ->
             val bindingType = typeMapper.mapTypeRef(binding.returnTypeRef)
-            val value = if (bindingVariables.size == 1) {
+            val value = if (bindings.size == 1) {
                 initializerValue
             } else {
                 emitOtherValue(
@@ -340,12 +418,11 @@ internal class Cfir2ChirFunctionBodyConverter(
                     source = binding,
                     operands = listOf(initializerValue),
                     resultType = bindingType,
-                    attributes = patternAttributes(variable.pattern) + attributes("cfir.binding.index" to index.toString()),
+                    attributes = patternAttributes(pattern) + attributes("cfir.binding.index" to index.toString()),
                 ) ?: throw Cfir2ChirConversionException("pattern binding extract produced no value", binding)
             }
             lowerLocalBindingVariable(binding, value, binding)
         }
-        return null
     }
 
     /**
@@ -359,21 +436,29 @@ internal class Cfir2ChirFunctionBodyConverter(
         source: CfirElement,
     ): ChirValue? {
         val declaration = DefaultChirVariableDeclaration(
-            semanticId = Cfir2ChirIds.declarationId(variable.symbol),
+            semanticId = components.declarationId(variable.symbol),
             name = variable.nameForChir(),
             type = typeMapper.mapTypeRef(variable.returnTypeRef),
             mutable = variable.isVar,
         )
+        val allocaId = builder.nextId("alloca")
         val localVariable = ChirLocalVariableHeader(
             declaration = declaration,
             ownerFunctionId = header.semanticId,
+            addressSemanticId = allocaId,
         )
         storage.registerLocalVariable(variable.symbol, localVariable)
+        val addressValue = localVariable.asAddressValue()
         builder.emit(
             ChirMemoryExpression(
-                semanticId = builder.nextId("alloca"),
+                semanticId = allocaId,
                 operation = "alloca",
-                address = localVariable.asAddressValue(),
+                address = ChirConstantValue(
+                    semanticId = builder.nextId("alloca_count"),
+                    type = ChirResolvedTypeRef(ChirPrimitiveType.INT32),
+                    literal = "1",
+                ),
+                resultType = addressValue.type,
             ),
         )
 
@@ -472,17 +557,18 @@ internal class Cfir2ChirFunctionBodyConverter(
     }
 
     /**
-     * Lower 字面量表达式，Unit 字面量不产生 CHIR value。
+     * Lower 字面量表达式。Unit 是可参与聚合与参数传递的 CHIR 值，不能与无值的 Void 混淆。
      */
     private fun lowerLiteralExpression(expression: CfirLiteralExpression): ChirValue? {
-        if (expression.kind == CfirLiteralKind.UNIT) return null
         val type = expression.coneTypeOrNull?.let(typeMapper::mapConeTypeRef)
             ?: throw Cfir2ChirConversionException("literal ${expression.kind} must carry resolved Cone type before CHIR lowering", expression)
         return ChirConstantValue(
             semanticId = builder.nextElementId("literal", expression),
             type = type,
             literal = when (expression.kind) {
-                CfirLiteralKind.STRING -> expression.value?.toString() ?: ""
+                CfirLiteralKind.UNIT -> "unit"
+                // String/JString 的文本载荷相同，目标类型仍使用各自已经解析的 Cone/CHIR 类型。
+                CfirLiteralKind.STRING, CfirLiteralKind.JSTRING -> expression.value?.toString() ?: ""
                 CfirLiteralKind.BOOLEAN -> expression.value.toString()
                 CfirLiteralKind.INT,
                 CfirLiteralKind.FLOAT,
@@ -490,7 +576,6 @@ internal class Cfir2ChirFunctionBodyConverter(
                 CfirLiteralKind.BYTE,
                 -> expression.value?.toString()
                     ?: throw Cfir2ChirConversionException("literal ${expression.kind} has null value", expression)
-                CfirLiteralKind.UNIT -> error("unit literal is handled before value materialization")
             },
         )
     }
@@ -581,14 +666,17 @@ internal class Cfir2ChirFunctionBodyConverter(
     /**
      * Lower this 接收者表达式。
      */
-    private fun lowerThisReceiverExpression(expression: CfirThisReceiverExpression): ChirValue =
-        emitOtherValue(
-            operation = Cfir2ChirOperation.CFIR_THIS_RECEIVER,
-            source = expression,
-            operands = emptyList(),
-            resultType = expression.requireResultType(),
-            attributes = thisReferenceAttributes(expression.calleeReference),
-        ) ?: throw Cfir2ChirConversionException("this receiver expression produced no value", expression)
+    private fun lowerThisReceiverExpression(expression: CfirThisReceiverExpression): ChirValue {
+        return currentDispatchReceiverValue(expression.calleeReference.boundSymbol, expression).also { receiver ->
+            val resultType = expression.requireResultType()
+            if (!ChirTypeRelations.areEquivalent(receiver.type, resultType)) {
+                throw Cfir2ChirConversionException(
+                    "this receiver type ${resultType.renderName} does not match ABI receiver ${receiver.type.renderName}",
+                    expression,
+                )
+            }
+        }
+    }
 
     /**
      * Lower 不可访问接收者表达式，并保留接收者种类。
@@ -607,8 +695,9 @@ internal class Cfir2ChirFunctionBodyConverter(
      * Lower 函数调用；普通直接调用生成 `ChirCallExpression`，带接收者或特殊 origin 的调用保留为 CFIR 操作。
      */
     private fun lowerFunctionCall(functionCall: CfirFunctionCall): ChirValue? {
-        val receiverOperands = functionCall.receiverOperands()
-        val arguments = functionCall.argumentList.arguments.mapValueOperands("function call argument")
+        (functionCall.calleeReference as? CfirResolvedBuiltinOperatorReference)?.let {
+            return lowerBuiltinOperator(functionCall, it)
+        }
         val resultType = functionCall.resultTypeOrNull()
             ?: (functionCall.calleeReference as? CfirResolvedNamedReference)
                 ?.resolvedSymbol
@@ -617,22 +706,129 @@ internal class Cfir2ChirFunctionBodyConverter(
             ?: throw Cfir2ChirConversionException("function call result type is missing", functionCall)
 
         val resolvedReference = functionCall.calleeReference as? CfirResolvedNamedReference
-        val callee = resolvedReference?.let { valueForCallableReference(it, functionCall, arguments, resultType) }
-        val useDirectCall = callee != null && receiverOperands.isEmpty() && functionCall.origin.name == "Regular"
+        val targetSymbol = resolvedReference?.resolvedSymbol as? CfirCallableSymbol<*>
+        val targetHeader = targetSymbol?.let(storage::getFunctionHeaderOrNull)
+        val targetDeclaration = targetSymbol?.cfir as? CfirCallableDeclaration
+        val targetIsStatic = targetHeader?.isStatic ?: (targetDeclaration?.status?.isStatic == true)
+        val targetHasDispatchReceiver = targetHeader?.dispatchReceiverParameter != null ||
+                (targetHeader == null && !targetIsStatic && targetDeclaration?.dispatchReceiverType != null &&
+                        targetDeclaration !is CfirEnumConstructor)
+        val dispatchReceiverExpression = functionCall.dispatchReceiver
+        val explicitReceiverExpression = functionCall.explicitReceiver
+        val receiverExpression = dispatchReceiverExpression ?: explicitReceiverExpression
+        fun lowerCallReceiver(expression: CfirExpression): ChirValue? =
+            if (targetHasDispatchReceiver && expression is CfirSuperReceiverExpression) {
+                currentDispatchReceiverValue(header.receiverOwnerSymbol, expression)
+            } else {
+                lowerExpression(expression)
+            }
+        val loweredDispatchReceiver = dispatchReceiverExpression?.let(::lowerCallReceiver)
+        val loweredExplicitReceiver = explicitReceiverExpression?.let { expression ->
+            if (expression === dispatchReceiverExpression) {
+                loweredDispatchReceiver
+            } else {
+                lowerCallReceiver(expression)
+            }
+        }
+        val dispatchReceiver = if (targetHasDispatchReceiver) {
+            when {
+                dispatchReceiverExpression != null -> loweredDispatchReceiver
+                explicitReceiverExpression != null -> loweredExplicitReceiver
+                else -> {
+                    val targetOwner = targetHeader?.receiverOwnerSymbol
+                    if (targetOwner != null && targetOwner === header.receiverOwnerSymbol) {
+                        currentDispatchReceiverValue(targetOwner, functionCall)
+                    } else {
+                        throw Cfir2ChirConversionException(
+                            "instance call ${resolvedReference?.name} has no dispatch receiver value",
+                            functionCall,
+                        )
+                    }
+                }
+            } ?: throw Cfir2ChirConversionException(
+                "instance call ${resolvedReference?.name} receiver does not produce a CHIR value",
+                functionCall,
+            )
+        } else {
+            null
+        }
+        val adaptedDispatchReceiver = dispatchReceiver?.let { receiver ->
+            val expectedReceiverType = targetHeader?.dispatchReceiverParameter?.type
+                ?: targetDeclaration?.dispatchReceiverType?.let(typeMapper::mapConeTypeRef)
+                ?: throw Cfir2ChirConversionException(
+                    "instance call ${resolvedReference?.name} has no resolved dispatch receiver type",
+                    functionCall,
+                )
+            adaptDispatchReceiver(receiver, expectedReceiverType, functionCall)
+        }
+        val arguments = functionCall.argumentList.arguments.mapValueOperands("function call argument")
+        val callArguments = listOfNotNull(adaptedDispatchReceiver) + arguments
+        val callee = resolvedReference?.let {
+            valueForCallableReference(it, functionCall, callArguments, resultType)
+        }
+        val hasRuntimeReceiverOperand = functionCall.dispatchReceiver != null || functionCall.explicitReceiver != null
+        val useDirectCall = callee != null && functionCall.origin.isRegularCallableInvocation &&
+                (targetHasDispatchReceiver || targetIsStatic || !hasRuntimeReceiverOperand)
+        val thisType = when {
+            targetHasDispatchReceiver -> checkNotNull(adaptedDispatchReceiver).type
+            targetIsStatic -> receiverExpression?.resultTypeOrNull()
+                ?: targetHeader?.ownerType
+                ?: targetHeader?.receiverOwnerSymbol
+                    ?.takeIf { it === header.receiverOwnerSymbol }
+                    ?.let { header.ownerType }
+            else -> null
+        }
+        val isSuperCall = dispatchReceiverExpression is CfirSuperReceiverExpression ||
+                explicitReceiverExpression is CfirSuperReceiverExpression
+        val targetFunction = targetDeclaration as? CfirFunction
+        val virtualMethodContext = if (
+            !isSuperCall && targetHasDispatchReceiver && targetFunction != null &&
+            (targetFunction.status.isOpen || targetFunction.status.isAbstract || targetFunction.status.isOverride)
+        ) {
+            val originalFunctionType = targetHeader?.functionType?.type as? ChirFunctionType
+                ?: run {
+                    val receiverType = targetFunction.dispatchReceiverType?.let(typeMapper::mapConeTypeRef)
+                        ?: targetHeader?.dispatchReceiverParameter?.type
+                        ?: throw Cfir2ChirConversionException(
+                            "virtual method ${targetFunction.symbol.name} has no dispatch receiver type",
+                            functionCall,
+                        )
+                    ChirFunctionType(
+                        parameterTypes = listOf(receiverType) + targetFunction.valueParameters.map {
+                            typeMapper.mapTypeRef(it.returnTypeRef)
+                        },
+                        returnType = typeMapper.mapTypeRef(targetFunction.returnTypeRef),
+                    )
+                }
+            ChirVirtualMethodContext(
+                sourceCodeIdentifier = targetFunction.symbol.name.asString(),
+                originalFunctionType = originalFunctionType,
+                genericTypeParameters = targetHeader?.genericTypeParameters
+                    ?: typeMapper.mapTypeParameters(targetFunction.typeParameters),
+            )
+        } else {
+            null
+        }
 
         val expressionId = builder.nextElementId("call", functionCall)
         if (useDirectCall) {
             builder.emit(
                 ChirCallExpression(
                     semanticId = expressionId,
-                    callee = callee,
-                    arguments = arguments,
+                    callee = checkNotNull(callee),
+                    arguments = if (virtualMethodContext == null) callArguments else arguments,
                     resultType = resultType,
+                    isSuperCall = isSuperCall,
+                    instantiatedTypeArguments = functionCall.typeArguments.map(typeMapper::mapTypeRef),
+                    thisType = thisType,
+                    virtualMethodContext = virtualMethodContext,
+                    dispatchReceiver = virtualMethodContext?.let { checkNotNull(adaptedDispatchReceiver) },
                 ),
             )
             return resultType.valueOrNull(expressionId)
         }
 
+        val receiverOperands = listOfNotNull(loweredDispatchReceiver, loweredExplicitReceiver)
         val operands = buildList {
             if (callee != null) add(callee)
             addAll(receiverOperands)
@@ -654,6 +850,76 @@ internal class Cfir2ChirFunctionBodyConverter(
         return resultType.valueOrNull(expressionId)
     }
 
+    /** 已解析的内建运算直接消费绑定身份；用户 operator 继续走真实 callable 调用。 */
+    private fun lowerBuiltinOperator(call: CfirFunctionCall, reference: CfirResolvedBuiltinOperatorReference): ChirValue? {
+        val signature = reference.signature
+        val operation = signature.operation
+        val receiver = checkNotNull(call.explicitReceiver ?: call.dispatchReceiver)
+        val left = lowerExpression(receiver)
+        if (!builder.hasOpenCurrentBlock) return null
+        val leftValue = checkNotNull(left)
+        val resultType = call.requireResultType()
+        if (operation == BuiltinPrimitiveOperatorOperation.LOGICAL_AND || operation == BuiltinPrimitiveOperatorOperation.LOGICAL_OR) {
+            val shortPred = builder.currentBlockId
+            val rhsId = builder.nextId("builtin_logic_rhs")
+            val mergeId = builder.nextId("builtin_logic_merge")
+            val isAnd = operation == BuiltinPrimitiveOperatorOperation.LOGICAL_AND
+            builder.terminate(ChirConditionalBranchTerminator(
+                semanticId = builder.nextId("builtin_logic"), condition = leftValue,
+                trueTargetBlockId = if (isAnd) rhsId else mergeId,
+                falseTargetBlockId = if (isAnd) mergeId else rhsId,
+            ))
+            builder.enterBlock(rhsId, "builtin_logic_rhs")
+            val right = lowerExpression(call.argumentList.arguments.single())
+            val rhsPred = builder.currentBlockId
+            val rhsFallsThrough = builder.hasOpenCurrentBlock
+            if (rhsFallsThrough) builder.terminate(ChirBranchTerminator(builder.nextId("builtin_logic_rhs_exit"), mergeId))
+            builder.enterBlock(mergeId, "builtin_logic_merge")
+            val shortValue = ChirConstantValue(builder.nextElementId("builtin_logic_short", call), resultType, (!isAnd).toString())
+                .withPredecessor(shortPred)
+            if (!rhsFallsThrough) return shortValue
+            return emitOtherValue(ChirOtherOperation.PHI, call,
+                listOf(shortValue, checkNotNull(right).withPredecessor(rhsPred)), resultType)
+        }
+        val id = builder.nextElementId("builtin_operator", call)
+        if (signature.parameterKinds.isEmpty()) {
+            val operator = when (operation) {
+                BuiltinPrimitiveOperatorOperation.NEGATE -> if (signature.receiverKind.isFloat) ChirUnaryOperator.FLOAT_NEG else ChirUnaryOperator.INT_NEG
+                BuiltinPrimitiveOperatorOperation.NOT -> if (signature.receiverKind == PrimitiveTypeKind.BOOLEAN) ChirUnaryOperator.LOGICAL_NOT else ChirUnaryOperator.BIT_NOT
+                else -> error("A unary builtin has an invalid operation: $operation")
+            }
+            builder.emit(ChirUnaryExpression(id, operator.canonicalName, leftValue, resultType))
+        } else {
+            val right = lowerExpression(call.argumentList.arguments.single())
+            if (!builder.hasOpenCurrentBlock) return null
+            val unsigned = signature.receiverKind in setOf(PrimitiveTypeKind.UINT8, PrimitiveTypeKind.UINT16,
+                PrimitiveTypeKind.UINT32, PrimitiveTypeKind.UINT64, PrimitiveTypeKind.UINT_NATIVE, PrimitiveTypeKind.RUNE)
+            val floating = signature.receiverKind.isFloat
+            val operator = when (operation) {
+                BuiltinPrimitiveOperatorOperation.ADD -> ChirBinaryOperator.ADD
+                BuiltinPrimitiveOperatorOperation.SUBTRACT -> ChirBinaryOperator.SUB
+                BuiltinPrimitiveOperatorOperation.MULTIPLY -> ChirBinaryOperator.MUL
+                BuiltinPrimitiveOperatorOperation.DIVIDE -> if (unsigned) ChirBinaryOperator.UNSIGNED_DIV else ChirBinaryOperator.SIGNED_DIV
+                BuiltinPrimitiveOperatorOperation.REMAINDER -> if (unsigned) ChirBinaryOperator.UNSIGNED_REM else ChirBinaryOperator.SIGNED_REM
+                BuiltinPrimitiveOperatorOperation.POWER -> ChirBinaryOperator.POWER
+                BuiltinPrimitiveOperatorOperation.BIT_AND -> ChirBinaryOperator.BIT_AND
+                BuiltinPrimitiveOperatorOperation.BIT_OR -> ChirBinaryOperator.BIT_OR
+                BuiltinPrimitiveOperatorOperation.BIT_XOR -> ChirBinaryOperator.BIT_XOR
+                BuiltinPrimitiveOperatorOperation.SHIFT_LEFT -> ChirBinaryOperator.SHIFT_LEFT
+                BuiltinPrimitiveOperatorOperation.SHIFT_RIGHT -> if (unsigned) ChirBinaryOperator.UNSIGNED_SHIFT_RIGHT else ChirBinaryOperator.SIGNED_SHIFT_RIGHT
+                BuiltinPrimitiveOperatorOperation.EQUAL -> if (floating) ChirBinaryOperator.FLOAT_EQUAL else ChirBinaryOperator.EQUAL
+                BuiltinPrimitiveOperatorOperation.NOT_EQUAL -> if (floating) ChirBinaryOperator.FLOAT_NOT_EQUAL else ChirBinaryOperator.NOT_EQUAL
+                BuiltinPrimitiveOperatorOperation.LESS -> if (floating) ChirBinaryOperator.FLOAT_LESS else if (unsigned) ChirBinaryOperator.UNSIGNED_LESS else ChirBinaryOperator.SIGNED_LESS
+                BuiltinPrimitiveOperatorOperation.LESS_EQUAL -> if (floating) ChirBinaryOperator.FLOAT_LESS_OR_EQUAL else if (unsigned) ChirBinaryOperator.UNSIGNED_LESS_OR_EQUAL else ChirBinaryOperator.SIGNED_LESS_OR_EQUAL
+                BuiltinPrimitiveOperatorOperation.GREATER -> if (floating) ChirBinaryOperator.FLOAT_GREATER else if (unsigned) ChirBinaryOperator.UNSIGNED_GREATER else ChirBinaryOperator.SIGNED_GREATER
+                BuiltinPrimitiveOperatorOperation.GREATER_EQUAL -> if (floating) ChirBinaryOperator.FLOAT_GREATER_OR_EQUAL else if (unsigned) ChirBinaryOperator.UNSIGNED_GREATER_OR_EQUAL else ChirBinaryOperator.SIGNED_GREATER_OR_EQUAL
+                else -> error("A binary builtin has an invalid operation: $operation")
+            }
+            builder.emit(ChirBinaryExpression(id, operator.canonicalName, leftValue, checkNotNull(right), resultType))
+        }
+        return resultType.valueOrNull(id)
+    }
+
     /**
      * Lower 局部、全局或导入变量读取。
      */
@@ -672,16 +938,27 @@ internal class Cfir2ChirFunctionBodyConverter(
                 resultType = localVariable.declaration.type,
             ),
         )
-        return localVariable.declaration.type.valueOrNull(loadId)
-            ?: throw Cfir2ChirConversionException("local variable ${localVariable.declaration.name} cannot be loaded as unit value", expression)
+        val type = localVariable.declaration.type
+        return type.valueOrNull(loadId)
+            ?: if (type == ChirResolvedTypeRef(ChirPrimitiveType.UNIT)) {
+                ChirLocalValue(
+                    semanticId = loadId,
+                    type = type,
+                    name = localVariable.declaration.name,
+                )
+            } else {
+                throw Cfir2ChirConversionException(
+                    "local variable ${localVariable.declaration.name} cannot be loaded as a value",
+                    expression,
+                )
+            }
     }
 
     /**
      * Lower 赋值表达式，优先降为内存 store，成员赋值保留为 CFIR 专有操作。
      */
     private fun lowerAssignmentExpression(expression: CfirAssignment) {
-        val value = lowerExpression(expression.rValue)
-            ?: throw Cfir2ChirConversionException("assignment right hand side does not produce a CHIR value", expression.rValue)
+        val value = expression.rValue.lowerAsValue("assignment right hand side")
         val targetAddress = assignmentAddressOrNull(expression.lValue)
         if (targetAddress != null) {
             emitStore(
@@ -897,23 +1174,7 @@ internal class Cfir2ChirFunctionBodyConverter(
      * 使用已求值的初始化值 lower pattern binding 变量。
      */
     private fun lowerPatternVariableWithValue(variable: CfirPatternVariable, initializerValue: ChirValue) {
-        val bindingVariables = variable.pattern.bindingVariables()
-        if (bindingVariables.isEmpty()) return
-        bindingVariables.forEachIndexed { index, binding ->
-            val bindingType = typeMapper.mapTypeRef(binding.returnTypeRef)
-            val value = if (bindingVariables.size == 1) {
-                initializerValue
-            } else {
-                emitOtherValue(
-                    operation = Cfir2ChirOperation.CFIR_PATTERN_EXTRACT,
-                    source = binding,
-                    operands = listOf(initializerValue),
-                    resultType = bindingType,
-                    attributes = patternAttributes(variable.pattern) + attributes("cfir.binding.index" to index.toString()),
-                ) ?: throw Cfir2ChirConversionException("for-in pattern extract produced no value", binding)
-            }
-            lowerLocalBindingVariable(binding, value, binding)
-        }
+        lowerPatternBindings(variable.pattern, initializerValue, variable, emitNoBindingOperation = false)
     }
 
     /**
@@ -1189,15 +1450,20 @@ internal class Cfir2ChirFunctionBodyConverter(
         )
 
     /**
-     * Lower tuple 字面量为 CFIR 专有 tuple literal 操作。
+     * Lower tuple 字面量为 CHIR 一等有序聚合表达式。
      */
-    private fun lowerTupleLiteral(expression: CfirTupleLiteral): ChirValue? =
-        emitOtherValue(
-            operation = Cfir2ChirOperation.CFIR_TUPLE_LITERAL,
-            source = expression,
-            operands = expression.elements.mapValueOperands("tuple element"),
-            resultType = expression.requireResultType(),
+    private fun lowerTupleLiteral(expression: CfirTupleLiteral): ChirValue? {
+        val resultType = expression.requireResultType()
+        val expressionId = builder.nextElementId("tuple", expression)
+        builder.emit(
+            ChirTupleExpression(
+                semanticId = expressionId,
+                elements = expression.elements.mapValueOperands("tuple element"),
+                resultType = resultType,
+            ),
         )
+        return resultType.valueOrNull(expressionId)
+    }
 
     /**
      * Lower range 表达式并记录是否为闭区间。
@@ -1575,13 +1841,84 @@ internal class Cfir2ChirFunctionBodyConverter(
             explicitReceiver?.let(::lowerExpression),
         )
 
+    /** 取得当前函数的 receiver 形参，并校验 CFIR this owner 与当前函数一致。 */
+    private fun currentDispatchReceiverValue(
+        owner: CfirThisOwnerSymbol<*>?,
+        source: CfirElement,
+    ): ChirParameterValue {
+        val receiver = header.dispatchReceiverParameter
+            ?: throw Cfir2ChirConversionException(
+                "this receiver has no ABI parameter in ${header.name}",
+                source,
+            )
+        if (owner == null || owner !== header.receiverOwnerSymbol) {
+            throw Cfir2ChirConversionException(
+                "this receiver owner does not match the current function receiver in ${header.name}",
+                source,
+            )
+        }
+        return ChirParameterValue(
+            semanticId = receiver.semanticId,
+            type = receiver.type,
+            name = receiver.name,
+            ownerFunctionId = header.semanticId,
+        )
+    }
+
+    /** 将合法的派生类接收者显式转换到目标成员声明的 receiver 类型。 */
+    private fun adaptDispatchReceiver(
+        receiver: ChirValue,
+        expectedType: ChirTypeRef,
+        source: CfirExpression,
+    ): ChirValue {
+        if (ChirTypeRelations.areEquivalent(receiver.type, expectedType)) return receiver
+
+        val sourceType = (receiver.type as? ChirResolvedTypeRef)?.type
+        val targetType = (expectedType as? ChirResolvedTypeRef)?.type
+        if (sourceType !is ChirRefType || targetType !is ChirRefType) {
+            throw Cfir2ChirConversionException(
+                "dispatch receiver conversion requires resolved reference types, actual ${receiver.type.renderName}, expected ${expectedType.renderName}",
+                source,
+            )
+        }
+
+        val expressionId = builder.nextElementId("dispatch_receiver_cast", source)
+        builder.emit(
+            ChirOtherExpression(
+                semanticId = expressionId,
+                operation = ChirOtherOperation.CANGJIE_TYPE_CAST_NA.canonicalName,
+                operands = listOf(receiver),
+                resultType = expectedType,
+            ),
+        )
+        return expectedType.valueOrNull(expressionId)
+            ?: throw Cfir2ChirConversionException(
+                "dispatch receiver conversion did not produce a CHIR value",
+                source,
+            )
+    }
+
     /**
      * Lower 表达式列表并要求每个表达式都产生 CHIR value。
      */
     private fun List<CfirExpression>.mapValueOperands(subject: String): List<ChirValue> =
-        map { expression ->
-            lowerExpression(expression) ?: throw Cfir2ChirConversionException("$subject does not produce a CHIR value", expression)
+        map { expression -> expression.lowerAsValue(subject) }
+
+    /**
+     * 在有值的 CHIR 操作数位置物化表达式值；Unit 调用仍先作为表达式降低以保留副作用，随后以 Unit 常量承载其值。
+     */
+    private fun CfirExpression.lowerAsValue(subject: String): ChirValue {
+        lowerExpression(this)?.let { return it }
+        val type = resultTypeOrNull()
+        if (type == ChirResolvedTypeRef(ChirPrimitiveType.UNIT)) {
+            return ChirConstantValue(
+                semanticId = builder.nextElementId("unit-value", this),
+                type = type,
+                literal = "unit",
+            )
         }
+        throw Cfir2ChirConversionException("$subject does not produce a CHIR value", this)
+    }
 
     /**
      * 生成使用 `Cfir2ChirOperation` 命名的 CHIR other 表达式。
@@ -1689,7 +2026,7 @@ internal class Cfir2ChirFunctionBodyConverter(
      */
     private fun registerFunctionHeaderIfNeeded(function: CfirFunction) {
         if (storage.hasFunctionHeader(function.symbol)) return
-        val functionId = Cfir2ChirIds.callableId(function)
+        val functionId = components.callableId(function)
         val parameters = function.valueParameters.map { parameter ->
             val declaration = DefaultChirVariableDeclaration(
                 semanticId = Cfir2ChirIds.parameterId(parameter),
@@ -1710,7 +2047,9 @@ internal class Cfir2ChirFunctionBodyConverter(
                 name = function.symbol.name.asString(),
                 returnType = typeMapper.mapTypeRef(function.returnTypeRef),
                 parameters = parameters,
+                dispatchReceiverParameter = components.dispatchReceiverParameter(function, functionId),
                 receiverType = function.dispatchReceiverType?.let(typeMapper::mapConeTypeRef),
+                genericTypeParameters = typeMapper.mapTypeParameters(function.typeParameters),
             ),
         )
     }
@@ -1725,7 +2064,7 @@ internal class Cfir2ChirFunctionBodyConverter(
     ): ChirImportedFunctionValue {
         val functionType = ChirResolvedTypeRef(ChirFunctionType(arguments.map { it.type }, returnType))
         return ChirImportedFunctionValue(
-            semanticId = Cfir2ChirIds.declarationId(symbol),
+            semanticId = components.declarationId(symbol),
             type = functionType,
             name = symbol.callableId.toString(),
         )
@@ -1736,7 +2075,7 @@ internal class Cfir2ChirFunctionBodyConverter(
      */
     private fun importedVariableValue(symbol: CfirVariableSymbol<*>, type: ChirTypeRef): ChirImportedVariableValue =
         ChirImportedVariableValue(
-            semanticId = Cfir2ChirIds.declarationId(symbol),
+            semanticId = components.declarationId(symbol),
             type = type,
             name = symbol.callableId.toString(),
         )
@@ -1764,6 +2103,58 @@ internal class Cfir2ChirFunctionBodyConverter(
             "cfir.this.symbol" to (reference.boundSymbol?.debugName ?: ""),
             "cfir.this.diagnostic" to (reference.diagnostic?.reason ?: ""),
         )
+
+    /**
+     * 为仅由绑定、tuple 和 tuple 子模式组成的模式计算每个绑定的实际字段路径。
+     *
+     * 枚举 payload 与 or-pattern 需要各自的判别和分支语义，不能伪装成 tuple 字段路径。
+     */
+    private fun CfirPattern.tupleFieldBindingProjections(
+        inputType: ChirTypeRef,
+        path: List<ULong> = emptyList(),
+    ): List<PatternBindingProjection>? {
+        return when (this) {
+            is CfirBindingPattern -> {
+                val nested = nestedPattern
+                val nestedProjections = if (nested == null) {
+                    emptyList()
+                } else {
+                    nested.tupleFieldBindingProjections(inputType, path) ?: return null
+                }
+                buildList {
+                    bindingVariable?.let { binding -> add(PatternBindingProjection(binding, path)) }
+                    addAll(nestedProjections)
+                }
+            }
+
+            is CfirTuplePattern -> {
+                val tupleType = (inputType as? ChirResolvedTypeRef)?.type as? ChirTupleType
+                    ?: throw Cfir2ChirConversionException(
+                        "tuple pattern requires tuple input but got ${inputType.renderName}",
+                        this,
+                    )
+                if (elements.size != tupleType.elementTypes.size) {
+                    throw Cfir2ChirConversionException(
+                        "tuple pattern arity ${elements.size} does not match input tuple arity ${tupleType.elementTypes.size}",
+                        this,
+                    )
+                }
+                val projections = mutableListOf<PatternBindingProjection>()
+                elements.forEachIndexed { index, element ->
+                    val nested = element.tupleFieldBindingProjections(
+                        tupleType.elementTypes[index],
+                        path + index.toULong(),
+                    ) ?: return null
+                    projections += nested
+                }
+                projections
+            }
+
+            is CfirVarOrEnumPattern -> bindingVariable?.let { listOf(PatternBindingProjection(it, path)) }
+            is CfirWildcardPattern -> emptyList()
+            else -> null
+        }
+    }
 
     /**
      * 把 CFIR pattern 的运行时类型写入 CHIR attribute。
@@ -1844,6 +2235,14 @@ internal class Cfir2ChirFunctionBodyConverter(
          * 该值对应的源 CFIR 元素，用于错误定位。
          */
         val source: CfirElement,
+    )
+
+    /**
+     * 模式绑定变量及其相对输入值的聚合字段路径。
+     */
+    private data class PatternBindingProjection(
+        val binding: CfirPatternBindingVariable,
+        val path: List<ULong>,
     )
 
     /**

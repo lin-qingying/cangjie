@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import java.math.BigInteger
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.firstCharacterDiagnosticSource
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
@@ -34,7 +35,7 @@ import org.cangnova.cangjie.type.AbstractTypeChecker
  * 保留复合赋值语法；body resolve 解糖为带 [CfirAssignment.augmentedOperation] 来源信息的
  * 普通赋值后，本 checker 在 AssignExpr 层完成复合赋值专有的语义诊断。
  */
-object CfirCompoundAssignmentSemanticsChecker : CfirAssignmentChecker() {
+object CfirCompoundAssignmentSemanticsChecker : CfirAssignmentChecker(MppCheckerKind.Common) {
     /**
      * 检查复合赋值 desugar 后的内建运算语义。
      *

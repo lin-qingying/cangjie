@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.declarations.CfirStruct
@@ -34,7 +35,7 @@ import org.cangnova.cangjie.source.AbstractCjSourceElement
  * 对齐官方编译器 `ChkFuncArgWithInout` / `ChkInoutFuncArg`：
  * `inout` 只能用于 foreign/CFunc 调用，实参必须是由 `var` 定义的可变左值。
  */
-object CfirInoutSemanticsChecker : CfirFunctionCallChecker() {
+object CfirInoutSemanticsChecker : CfirFunctionCallChecker(MppCheckerKind.Common) {
     /**
      * 检查函数调用中的所有 `inout` 实参。
      *

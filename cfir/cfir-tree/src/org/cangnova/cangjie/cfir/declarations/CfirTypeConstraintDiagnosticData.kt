@@ -86,7 +86,7 @@ data class CfirTypeConstraintReference(
 /**
  * [CfirTypeConstraintDiagnosticData] 在声明属性表中的键。
  */
-private object TypeConstraintDiagnosticDataKey : CfirDeclarationDataKey()
+internal object TypeConstraintDiagnosticDataKey : CfirDeclarationDataKey()
 
 /**
  * 声明属性上的泛型 where 约束诊断数据。

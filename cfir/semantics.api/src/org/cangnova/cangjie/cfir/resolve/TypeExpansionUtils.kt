@@ -1,0 +1,267 @@
+package org.cangnova.cangjie.cfir.resolve
+
+import org.cangnova.cangjie.cfir.SessionHolder
+import org.cangnova.cangjie.cfir.declarations.CfirBuiltInTypeKind
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
+import org.cangnova.cangjie.cfir.declarations.util.expandedConeType
+import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
+import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
+import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
+import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
+import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
+import org.cangnova.cangjie.cfir.types.AbbreviatedTypeAttribute
+import org.cangnova.cangjie.cfir.resolve.substitution.AbstractConeSubstitutor
+import org.cangnova.cangjie.cfir.types.abbreviatedType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeClassLikeType
+import org.cangnova.cangjie.cfir.types.ConeClassifierType
+import org.cangnova.cangjie.cfir.types.ConeCStringType
+import org.cangnova.cangjie.cfir.types.ConeFunctionType
+import org.cangnova.cangjie.cfir.types.ConeLookupTagBasedType
+import org.cangnova.cangjie.cfir.types.ConePointerType
+import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
+import org.cangnova.cangjie.cfir.types.ConeTypeProjection
+import org.cangnova.cangjie.cfir.types.ConeVArrayType
+import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
+import org.cangnova.cangjie.cfir.types.forEachType
+import org.cangnova.cangjie.cfir.types.coneTypeOrNull
+import org.cangnova.cangjie.cfir.types.type
+import org.cangnova.cangjie.cfir.types.typeContext
+import org.cangnova.cangjie.cfir.types.withAbbreviation
+import org.cangnova.cangjie.cfir.types.withAttributes
+import org.cangnova.cangjie.cfir.types.withoutAbbreviation
+
+/**
+ * 使用当前上下文 session 完全展开 typealias 顶层构造器，并保留 abbreviation 属性。
+ */
+context(sessionHolder: SessionHolder)
+fun ConeCangJieType.fullyExpandedType(): ConeCangJieType {
+    return fullyExpandedType(sessionHolder.session, expandedConeType = CfirTypeAlias::expandedConeTypeWithEnsuredPhase)
+}
+
+/**
+ * 确保 typealias 已解析到 SUPER_TYPES 阶段后读取其展开类型。
+ */
+fun CfirTypeAlias.expandedConeTypeWithEnsuredPhase(): ConeCangJieType? {
+    lazyResolveToPhase(CfirResolvePhase.SUPER_TYPES)
+    if (origin.fromSource) {
+        val product = checkNotNull(checkNotNull(moduleData.session.directSupertypeProviderOrNull)
+            .getCompletedSupertypeProduct(symbol)) { "A Source alias has no published RHS product: $symbol" }
+        return checkNotNull(product.superTypeRefs.singleOrNull()?.coneTypeOrNull) { "An alias product requires one completed RHS" }
+    }
+    return expandedConeType
+}
+
+/**
+ * @see fullyExpandedType (the first function in the file)
+ * @return the expanded type or the same instance if top-level constructor is not expandable type alias
+ */
+fun ConeClassifierType.fullyExpandedType(
+    useSiteSession: CfirSession,
+    symbolProvider: CfirSymbolProvider = useSiteSession.symbolProvider,
+    expandedConeType: (CfirTypeAlias) -> ConeCangJieType? = CfirTypeAlias::expandedConeTypeWithEnsuredPhase,
+): ConeClassifierType {
+    return (this as ConeCangJieType).fullyExpandedType(useSiteSession, symbolProvider, expandedConeType) as? ConeClassifierType ?: this
+}
+
+/**
+ * @see fullyExpandedType (the first function in the file)
+ * @return the expanded type or the same instance if top-level constructor is not expandable type alias
+ */
+fun ConeCangJieType.fullyExpandedType(
+    useSiteSession: CfirSession,
+    symbolProvider: CfirSymbolProvider = useSiteSession.symbolProvider,
+    expandedConeType: (CfirTypeAlias) -> ConeCangJieType? = CfirTypeAlias::expandedConeTypeWithEnsuredPhase,
+): ConeCangJieType = when (this) {
+    is ConeLookupTagBasedType -> fullyExpandedTypeNoCache(useSiteSession, expandedConeType, symbolProvider)
+    is ConeTypeAliasType -> fullyExpandedTypeNoCache(useSiteSession, expandedConeType, symbolProvider)
+    else -> this
+}
+
+/**
+ * 使用 alias 声明 RHS 与 abbreviation 实参完整展开类型树中的所有 typealias。
+ *
+ * 普通 [fullyExpandedType] 会优先读取 [ConeTypeAliasType.expandedType]。该字段在 use-site
+ * 解析期间可能已携带调用点类型参数，而 abbreviation 才保存源码写下的真实 alias 实参。
+ * extend 索引、适用性匹配和重复接口等声明级语义必须以 alias 声明自身 RHS 为模板，
+ * 再代入 abbreviation 实参，不能消费 use-site 展开缓存。
+ */
+fun ConeCangJieType.fullyExpandedTypeUsingAbbreviation(
+    useSiteSession: CfirSession,
+    symbolProvider: CfirSymbolProvider = useSiteSession.symbolProvider,
+    expandedConeType: (CfirTypeAlias) -> ConeCangJieType? = CfirTypeAlias::expandedConeTypeWithEnsuredPhase,
+): ConeCangJieType {
+    val expandingAliases = linkedSetOf<org.cangnova.cangjie.name.ClassId>()
+    val substitutor = object : AbstractConeSubstitutor(useSiteSession.typeContext) {
+        override fun substituteType(type: ConeCangJieType): ConeCangJieType? {
+            val aliasType = type as? ConeTypeAliasType
+                ?: type.abbreviatedType as? ConeTypeAliasType
+                ?: return null
+            if (!expandingAliases.add(aliasType.classId)) return null
+
+            return try {
+                val aliasDeclaration = symbolProvider
+                    .getClassLikeSymbolByClassId(aliasType.classId)
+                    ?.cfir as? CfirTypeAlias
+                // 来源或 Supplier 未发布产品时保留 alias，包括属性中的原始 alias。
+                // 不能让节点携带的旧展开值恢复另一个来源的语义类型。
+                val declaredExpandedType = aliasDeclaration?.let(expandedConeType) ?: return aliasType
+                val appliedExpandedType = aliasDeclaration
+                    .createParametersSubstitutor(aliasType, useSiteSession)
+                    .substituteOrSelf(declaredExpandedType)
+                val expandedType = appliedExpandedType
+                    .fullyExpandedType(useSiteSession, symbolProvider, expandedConeType)
+                    .withoutAbbreviation()
+                substituteOrNull(expandedType) ?: expandedType
+            } finally {
+                expandingAliases.remove(aliasType.classId)
+            }
+        }
+    }
+    return substitutor.substituteOrSelf(this).withoutAbbreviation()
+}
+
+/**
+ * 递归展开当前类型最外层 typealias，不使用缓存，调用者负责选择展开类型读取策略。
+ */
+private fun ConeCangJieType.fullyExpandedTypeNoCache(
+    useSiteSession: CfirSession,
+    expandedConeType: (CfirTypeAlias) -> ConeCangJieType?,
+    symbolProvider: CfirSymbolProvider,
+): ConeCangJieType {
+    val directExpansionType = directExpansionType(useSiteSession, symbolProvider, expandedConeType) ?: return this
+    val expansion = directExpansionType.fullyExpandedType(useSiteSession, symbolProvider, expandedConeType)
+    return expansion.withAbbreviation(AbbreviatedTypeAttribute(this))
+}
+
+/**
+ * 返回当前类型最外层 typealias 的直接展开类型；当前类型不是可展开 typealias 时返回 `null`。
+ */
+fun ConeCangJieType.directExpansionType(
+    useSiteSession: CfirSession,
+    symbolProvider: CfirSymbolProvider = useSiteSession.symbolProvider,
+    expandedConeType: (CfirTypeAlias) -> ConeCangJieType? = { alias ->
+        alias.expandedConeTypeWithEnsuredPhase()
+    },
+): ConeCangJieType? {
+    val typeAlias = when (this) {
+        is ConeClassifierType -> lookupTag.toSymbol(useSiteSession, symbolProvider)?.cfir as? CfirTypeAlias
+        is ConeTypeAliasType -> symbolProvider.getClassLikeSymbolByClassId(classId)?.cfir as? CfirTypeAlias
+        else -> null
+    } ?: return null
+    // 展开来源由调用方的 Supplier 决定；use-site 缓存不能越过该阶段产品合同。
+    val resultType = expandedConeType(typeAlias) ?: return null
+    val appliedAttributes = resultType.applyAttributesFrom(this)
+
+    // Alias 自有T可能位于Tuple/Function/Pointer的专属子槽；不能用名义typeArguments为空
+    // 判断整个RHS不含类型参数。参数替换器负责完整类型树，并保留重复身份和各角色标量。
+    return mapTypeAliasArguments(typeAlias, this, appliedAttributes, useSiteSession)
+}
+
+/**
+ * 把 abbreviation 上携带的类型属性合并到展开结果上。
+ */
+private fun ConeCangJieType.applyAttributesFrom(
+    abbreviation: ConeCangJieType,
+): ConeCangJieType {
+    val combinedAttributes = attributes.add(abbreviation.attributes)
+    return withAttributes(combinedAttributes)
+}
+
+/**
+ * 将 typealias 的类型参数与当前 abbreviated 类型上的实参配对。
+ */
+fun CfirTypeAlias.mapParametersToArgumentsOf(type: ConeCangJieType): List<Pair<CfirTypeParameterSymbol, ConeTypeProjection>> =
+    typeParameters.map { it.symbol }.zip(type.typeArguments)
+
+/**
+ * 为 typealias 参数到实参的映射创建类型替换器。
+ */
+fun createParametersSubstitutor(
+    useSiteSession: CfirSession,
+    typeAliasMap: Map<CfirTypeParameterSymbol, ConeTypeProjection>,
+): ConeSubstitutor = object : AbstractConeSubstitutor(useSiteSession.typeContext) {
+    override fun substituteType(type: ConeCangJieType): ConeCangJieType? {
+        if (type !is ConeTypeParameterType) {
+            return null
+        }
+        val mappedProjection = typeAliasMap[type.lookupTag.typeParameterSymbol] ?: return null
+        val mappedType = mappedProjection.type
+        return mappedType.withAttributes(type.attributes.add(mappedType.attributes))
+    }
+}
+
+/**
+ * 基于 [abbreviatedType] 的实参为当前 typealias 创建参数替换器。
+ */
+fun CfirTypeAlias.createParametersSubstitutor(
+    abbreviatedType: ConeCangJieType,
+    useSiteSession: CfirSession,
+): ConeSubstitutor = createParametersSubstitutor(useSiteSession, mapParametersToArgumentsOf(abbreviatedType).toMap())
+
+/**
+ * 将 typealias 实参替换进直接展开类型。
+ */
+private fun mapTypeAliasArguments(
+    typeAlias: CfirTypeAlias,
+    abbreviatedType: ConeCangJieType,
+    resultingType: ConeCangJieType,
+    useSiteSession: CfirSession,
+): ConeCangJieType {
+    if (typeAlias.typeParameters.isNotEmpty() && abbreviatedType.typeArguments.isEmpty()) {
+        return resultingType
+    }
+
+    return typeAlias.createParametersSubstitutor(abbreviatedType, useSiteSession).substituteOrSelf(resultingType)
+}
+
+/**
+ * 返回当前 typealias 的完全展开 cone 类型。
+ */
+fun CfirTypeAlias.fullyExpandedConeType(useSiteSession: CfirSession): ConeCangJieType? {
+    return expandedConeType?.fullyExpandedType(useSiteSession)
+}
+
+/**
+ * 返回当前 typealias 展开后的官方 BuiltInDecl 种类。
+ *
+ * 内建声明的声明层身份和 Cone 类型层身份并不一一同形：CPointer、CString、VArray
+ * 和 CFunc 在 Cone 中分别由专用类型承载，RawArray 在当前模型中保留其 classifier
+ * ClassId。调用方只需要这个统一结果，不应再次按名字或按 Cone 类型写多套判断。
+ */
+fun CfirTypeAlias.expandedBuiltInKind(useSiteSession: CfirSession): CfirBuiltInTypeKind? {
+    lazyResolveToPhase(CfirResolvePhase.SUPER_TYPES)
+    val expandedType = expandedConeType?.fullyExpandedType(useSiteSession) ?: return null
+    return when (expandedType) {
+        is ConeClassLikeType ->
+            CfirBuiltInTypeKind.fromClassIdOrNull(expandedType.classId)
+        is ConePointerType -> CfirBuiltInTypeKind.CPOINTER
+        is ConeCStringType -> CfirBuiltInTypeKind.CSTRING
+        is ConeVArrayType -> CfirBuiltInTypeKind.VARRAY
+        is ConeFunctionType -> if (expandedType.isCFunc) CfirBuiltInTypeKind.CFUNC else null
+        else -> null
+    }
+}
+
+/**
+ * 遍历当前类型树，并在访问前把遇到的 typealias 类型展开为底层类型。
+ */
+inline fun ConeCangJieType.forEachExpandedType(
+    session: CfirSession,
+    action: (ConeCangJieType) -> Unit,
+) {
+    forEachType(
+        prepareType = { type ->
+            if (type is ConeTypeAliasType) {
+                type.fullyExpandedType(session)
+            } else {
+                type
+            }
+        },
+        action = action,
+    )
+}

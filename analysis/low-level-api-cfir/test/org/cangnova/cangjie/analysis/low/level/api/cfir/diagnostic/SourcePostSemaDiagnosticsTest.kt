@@ -2,6 +2,7 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostic
 
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.DiagnosticCheckerFilter
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.collectDiagnosticsForFile
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getOrBuildCfirFile
 import org.cangnova.cangjie.analysis.low.level.api.cfir.test.configurators.analysisApiCfirSourceTestConfigurator
 import org.cangnova.cangjie.analysis.low.level.api.cfir.test.getResolutionFacadeForTest
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
@@ -33,6 +34,8 @@ class SourcePostSemaDiagnosticsTest : AbstractAnalysisApiExecutionTest(
             mainFile.getResolutionFacadeForTest(),
             DiagnosticCheckerFilter.ONLY_DEFAULT_CHECKERS,
         )
-        assertEquals(expected.sorted(), diagnostics.map { it.factoryName }.sorted())
+        val file = mainFile.getOrBuildCfirFile(mainFile.getResolutionFacadeForTest())
+        assertEquals(expected.sorted(), diagnostics.map { it.factoryName }.sorted(),
+            "diagnostic file path=${file.sourceFile?.path}, PSI file=${file.source}, origin=${mainFile.virtualFile?.path}")
     }
 }

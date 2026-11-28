@@ -9,6 +9,7 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.util.body
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.patterns.bindingVariables
 import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
 
 /**
@@ -110,26 +111,23 @@ internal object LLCfirPhaseUpdater {
             }
         }
 
-        if (element is CfirTypeParameterRefsOwner) {
-            element.typeParameters.forEach { typeParameter ->
-                // if it is not a type parameter of outer declaration
-                if (typeParameter is CfirTypeParameter) {
-                    updatePhaseForNonLocals(typeParameter, newPhase, isTargetDeclaration = false)
-                }
-            }
-        }
+        forEachSignatureInternal(element) { updatePhaseForNonLocals(it, newPhase, isTargetDeclaration = false) }
+    }
 
+    /** updater 与声明事务使用同一直接内部节点清单，不保存外围泛型参数或独立成员声明的状态。 */
+    fun forEachSignatureInternal(element: CfirElementWithResolveState, action: (CfirElementWithResolveState) -> Unit) {
+        if (element is CfirTypeParameterRefsOwner) {
+            element.typeParameters.filterIsInstance<CfirTypeParameter>().forEach(action)
+        }
         when (element) {
-            is CfirClass -> {
-            }
-            is CfirFunction -> {
-                element.valueParameters.forEach { updatePhaseForNonLocals(it, newPhase, isTargetDeclaration = false) }
-            }
+            is CfirPatternVariable -> element.pattern.bindingVariables().forEach(action)
+            is CfirFunction -> element.valueParameters.forEach(action)
+            is CfirEnumConstructor -> element.valueParameters.forEach(action)
             is CfirProperty -> {
-                element.getter?.let { updatePhaseForNonLocals(it, newPhase, isTargetDeclaration = false) }
-                element.setter?.let { updatePhaseForNonLocals(it, newPhase, isTargetDeclaration = false) }
+                element.getter?.let(action)
+                element.setter?.let(action)
             }
-            else -> {}
+            else -> Unit
         }
     }
 }

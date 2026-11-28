@@ -17,6 +17,8 @@ import org.cangnova.cangjie.psi.stubs.CangJieMacroExpressionStub
 import org.cangnova.cangjie.psi.stubs.CangJieStubElement
 import org.cangnova.cangjie.psi.stubs.elements.CjFileStubBuilder
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
+import org.cangnova.cangjie.psi.stubs.impl.CangJieFileStubImpl
+import org.cangnova.cangjie.psi.stubs.impl.deepCopy
 import org.cangnova.cangjie.test.testFramework.CjParsingTestCase
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -49,6 +51,57 @@ class EnumConstructorAnnotationParsingTest : CjParsingTestCase(
     @AfterEach
     fun tearDownFixture() {
         tearDown()
+    }
+
+    /** 命名 PSI、visitor 和名称 token 共同识别构造项，不把同名不同元数项合并成一个声明。 */
+    @Test
+    fun enumConstructorsShareNamedDeclarationContracts() {
+        val file = parse("namedEnumConstructors", "package namedstubs\nenum E { `Value` | `Value`(Int64) }")
+        val enum = file.declarations.filterIsInstance<CjEnum>().single()
+        val constructors = enum.constructor
+        assertEquals(listOf("Value", "Value"), constructors.map { it.name })
+        assertEquals(listOf(0, 1), constructors.map { it.getParameterCount() })
+        assertTrue(constructors[0] !== constructors[1])
+        val visited = mutableListOf<CjNamedDeclaration>()
+        val visitor = object : CjVisitor<Unit, Unit>() {
+            override fun visitNamedDeclaration(declaration: CjNamedDeclaration, data: Unit) {
+                visited += declaration
+            }
+        }
+        for (constructor in constructors) {
+            val declaration: CjNamedDeclaration = constructor
+            assertEquals("Value", declaration.nameAsName?.asString())
+            assertEquals("Value", declaration.nameAsSafeName.asString())
+            assertEquals("namedstubs.E.Value", declaration.fqName?.asString())
+            assertEquals("`Value`", declaration.nameIdentifier?.text)
+            assertEquals(declaration.nameIdentifier?.textRange?.startOffset, declaration.textOffset)
+            constructor.accept(visitor, Unit)
+        }
+        assertEquals(constructors, visited)
+    }
+
+    /** 名称和 owner 已在旧流中独立保存，派生 FQName 必须经真实 serializer 及 copyInto 保持。 */
+    @Test
+    fun namedEnumConstructorStubsPreserveOwnerAndPayload() {
+        val file = parse("namedEnumConstructorStubs", "package namedstubs\nenum E { `Value` | `Value`(Int64) }")
+        val original = CjFileStubBuilder().buildStubTree(file) as CangJieFileStub
+        for (root in listOf(original, roundTripStub(original), roundTripStub((original as CangJieFileStubImpl).deepCopy()))) {
+            val constructors = mutableListOf<CangJieEnumConstructorStub>()
+            fun collect(stub: StubElement<*>) {
+                if (stub is CangJieEnumConstructorStub) constructors += stub
+                stub.childrenStubs.forEach(::collect)
+            }
+            collect(root)
+            assertEquals(listOf("Value", "Value"), constructors.map { it.name })
+            assertEquals(listOf(0, 1), constructors.map { it.getTypeCount() })
+            for (constructor in constructors) {
+                assertEquals("namedstubs.E", constructor.getEnumFqName()?.asString())
+                assertEquals("namedstubs.E.Value", constructor.getFqName()?.asString())
+                val declaration: CjNamedDeclaration = constructor.psi
+                assertEquals("Value", declaration.nameAsSafeName.asString())
+                assertEquals(constructor.getFqName(), declaration.fqName)
+            }
+        }
     }
 
     /** 普通注解的宏包装不得把带参枚举项改写为主构造器。 */
@@ -192,11 +245,11 @@ class EnumConstructorAnnotationParsingTest : CjParsingTestCase(
             """.trimIndent(),
         )
         val outer = file.children.filterIsInstance<CjMacroExpression>().single()
-        val inner = PsiTreeUtil.findChildrenOfType(outer, CjMacroExpression::class.java).single()
         assertFalse(outer.hasDeclarationInput)
         assertNull(outer.unwrappedDeclaration)
-        assertTrue(inner.hasDeclarationInput)
-        assertTrue(inner.unwrappedDeclaration is CjClass)
+        assertTrue(PsiTreeUtil.findChildrenOfType(outer, CjMacroExpression::class.java).isEmpty())
+        assertTrue(PsiTreeUtil.findChildrenOfType(outer, CjClass::class.java).isEmpty())
+        assertEquals("(@Inner class Quoted {})", outer.input?.text)
         assertEquals(listOf("following"), file.declarations.filterIsInstance<CjNamedFunction>().map { it.name })
         assertTrue(file.declarations.none { it is CjClass })
 
@@ -258,15 +311,18 @@ class EnumConstructorAnnotationParsingTest : CjParsingTestCase(
 
     private fun assertQuotedStubBoundary(fileStub: CangJieFileStub) {
         val outer = fileStub.childrenStubs.filterIsInstance<CangJieMacroExpressionStub>().single()
-        val inner = outer.childrenStubs.filterIsInstance<CangJieMacroExpressionStub>().single()
         assertEquals("Outer", outer.getShortName())
-        assertEquals("Inner", inner.getShortName())
+        fun assertNoPayloadDeclarations(stub: StubElement<*>) {
+            for (child in stub.childrenStubs) {
+                assertFalse(child is CangJieMacroExpressionStub)
+                assertFalse(child.stubType == CjStubElementTypes.CLASS)
+                assertNoPayloadDeclarations(child)
+            }
+        }
+        assertNoPayloadDeclarations(outer)
         assertFalse(outer.hasDeclarationInput())
         assertFalse(outer.psi.hasDeclarationInput)
         assertNull(outer.psi.unwrappedDeclaration)
-        assertTrue(inner.hasDeclarationInput())
-        assertTrue(inner.psi.hasDeclarationInput)
-        assertTrue(inner.psi.unwrappedDeclaration is CjClass)
         val copiedFile = roundTripStub(fileStub.copyInto(null)) as CangJieFileStub
         val copied = (outer as CangJieStubElement<*>).copyInto(copiedFile) as CangJieMacroExpressionStub
         assertSame(copiedFile, copied.parentStub)

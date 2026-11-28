@@ -8,6 +8,7 @@
 package org.cangnova.cangjie.cfir.declarations.builder
 
 import kotlin.contracts.*
+import org.cangnova.cangjie.cfir.CfirContentSource
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
@@ -34,12 +35,13 @@ class CfirValueParameterBuilder {
     var isLocal: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
     var deprecationsProvider: DeprecationsProvider = UnresolvedDeprecationProvider
     var dispatchReceiverType: ConeSimpleCangJieType? = null
+    var contentSource: CfirContentSource = CfirContentSource.Owned
     var isTypeImplicit: Boolean = false
+    val typeParameters: MutableList<CfirTypeParameter> = mutableListOf()
     lateinit var symbol: CfirValueParameterSymbol
     lateinit var containingDeclarationSymbol: CfirBasedSymbol<*>
     var isNamed: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
     var status: CfirDeclarationStatus = DEFAULT_STATUS_FOR_STATUSLESS_DECLARATIONS
-    val typeParameters: MutableList<CfirTypeParameter> = mutableListOf()
     lateinit var returnTypeRef: CfirTypeRef
     lateinit var name: Name
     var defaultValue: CfirExpression? = null
@@ -56,12 +58,13 @@ class CfirValueParameterBuilder {
             isLocal,
             deprecationsProvider,
             dispatchReceiverType,
+            contentSource,
             isTypeImplicit,
+            typeParameters,
             symbol,
             containingDeclarationSymbol,
             isNamed,
             status,
-            typeParameters,
             returnTypeRef,
             name,
             defaultValue,
@@ -94,10 +97,10 @@ inline fun buildValueParameterCopy(original: CfirValueParameter, init: CfirValue
     copyBuilder.deprecationsProvider = original.deprecationsProvider
     copyBuilder.dispatchReceiverType = original.dispatchReceiverType
     copyBuilder.isTypeImplicit = original.isTypeImplicit
+    copyBuilder.typeParameters.addAll(original.typeParameters)
     copyBuilder.containingDeclarationSymbol = original.containingDeclarationSymbol
     copyBuilder.isNamed = original.isNamed
     copyBuilder.status = original.status
-    copyBuilder.typeParameters.addAll(original.typeParameters)
     copyBuilder.returnTypeRef = original.returnTypeRef
     copyBuilder.name = original.name
     copyBuilder.defaultValue = original.defaultValue

@@ -84,16 +84,40 @@ class CfirAnalysisDiagnostics2WithoutAliasExpansionTestGenerated : AbstractCfirL
             runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/commonSpecificAbstractMemberNoExplicitModifier.cj")
         }
 
+        @TestMetadata("commonSpecificAbstractPropertyGetterBodyMatrix.cj")
+        @Test
+        fun testCommonSpecificAbstractPropertyGetterBodyMatrix() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/commonSpecificAbstractPropertyGetterBodyMatrix.cj")
+        }
+
         @TestMetadata("commonSpecificAnnotationNotAllowed.cj")
         @Test
         fun testCommonSpecificAnnotationNotAllowed() {
             runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/commonSpecificAnnotationNotAllowed.cj")
         }
 
+        @TestMetadata("commonSpecificAnnotationOrdinaryMode.cj")
+        @Test
+        fun testCommonSpecificAnnotationOrdinaryMode() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/commonSpecificAnnotationOrdinaryMode.cj")
+        }
+
+        @TestMetadata("commonSpecificAnnotationOwners.cj")
+        @Test
+        fun testCommonSpecificAnnotationOwners() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/commonSpecificAnnotationOwners.cj")
+        }
+
         @TestMetadata("commonSpecificAssignCommonLetInConstructor.cj")
         @Test
         fun testCommonSpecificAssignCommonLetInConstructor() {
             runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/commonSpecificAssignCommonLetInConstructor.cj")
+        }
+
+        @TestMetadata("commonSpecificBodyDefaultExemption.cj")
+        @Test
+        fun testCommonSpecificBodyDefaultExemption() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/commonSpecificBodyDefaultExemption.cj")
         }
 
         @TestMetadata("commonSpecificCommonPackageMain.cj")
@@ -120,16 +144,112 @@ class CfirAnalysisDiagnostics2WithoutAliasExpansionTestGenerated : AbstractCfirL
             runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/commonSpecificExtensionCommonPrivate.cj")
         }
 
+        @TestMetadata("commonSpecificExtensionGenericFunctionName.cj")
+        @Test
+        fun testCommonSpecificExtensionGenericFunctionName() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/commonSpecificExtensionGenericFunctionName.cj")
+        }
+
+        @TestMetadata("commonSpecificExtensionGenericPrivateSignatures.cj")
+        @Test
+        fun testCommonSpecificExtensionGenericPrivateSignatures() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/commonSpecificExtensionGenericPrivateSignatures.cj")
+        }
+
+        @TestMetadata("commonSpecificExtensionGenericSupertypeArity.cj")
+        @Test
+        fun testCommonSpecificExtensionGenericSupertypeArity() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/commonSpecificExtensionGenericSupertypeArity.cj")
+        }
+
+        @TestMetadata("commonSpecificExtensionInvalidSupertype.cj")
+        @Test
+        fun testCommonSpecificExtensionInvalidSupertype() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/commonSpecificExtensionInvalidSupertype.cj")
+        }
+
+        @TestMetadata("commonSpecificExtensionNamedDefault.cj")
+        @Test
+        fun testCommonSpecificExtensionNamedDefault() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/commonSpecificExtensionNamedDefault.cj")
+        }
+
+        @TestMetadata("commonSpecificExtensionNonInterfaceAlias.cj")
+        @Test
+        fun testCommonSpecificExtensionNonInterfaceAlias() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/commonSpecificExtensionNonInterfaceAlias.cj")
+        }
+
+        @TestMetadata("commonSpecificExtensionPrivateDiagnosticOrder.cj")
+        @Test
+        fun testCommonSpecificExtensionPrivateDiagnosticOrder() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/commonSpecificExtensionPrivateDiagnosticOrder.cj")
+        }
+
         @TestMetadata("commonSpecificExtensionPrivateDuplicate.cj")
         @Test
         fun testCommonSpecificExtensionPrivateDuplicate() {
             runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/commonSpecificExtensionPrivateDuplicate.cj")
         }
 
+        @TestMetadata("commonSpecificExtensionPrivateSignatures.cj")
+        @Test
+        fun testCommonSpecificExtensionPrivateSignatures() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/commonSpecificExtensionPrivateSignatures.cj")
+        }
+
+        @TestMetadata("commonSpecificExtensionPrivateTypeSyntax.cj")
+        @Test
+        fun testCommonSpecificExtensionPrivateTypeSyntax() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/commonSpecificExtensionPrivateTypeSyntax.cj")
+        }
+
+        @TestMetadata("commonSpecificExtensionRawMangleCollision.cj")
+        @Test
+        fun testCommonSpecificExtensionRawMangleCollision() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/commonSpecificExtensionRawMangleCollision.cj")
+        }
+
+        @TestMetadata("commonSpecificExtensionUnicode15Mangle.cj")
+        @Test
+        fun testCommonSpecificExtensionUnicode15Mangle() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/commonSpecificExtensionUnicode15Mangle.cj")
+        }
+
+        @TestMetadata("commonSpecificExtensionUnicodeConstraintSpelling.cj")
+        @Test
+        fun testCommonSpecificExtensionUnicodeConstraintSpelling() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/commonSpecificExtensionUnicodeConstraintSpelling.cj")
+        }
+
+        @TestMetadata("commonSpecificExtensionUnicodeGenericConstraints.cj")
+        @Test
+        fun testCommonSpecificExtensionUnicodeGenericConstraints() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/commonSpecificExtensionUnicodeGenericConstraints.cj")
+        }
+
+        @TestMetadata("commonSpecificExtensionUnicodeTypeSpelling.cj")
+        @Test
+        fun testCommonSpecificExtensionUnicodeTypeSpelling() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/commonSpecificExtensionUnicodeTypeSpelling.cj")
+        }
+
+        @TestMetadata("commonSpecificExtensionVArrayRadix.cj")
+        @Test
+        fun testCommonSpecificExtensionVArrayRadix() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/commonSpecificExtensionVArrayRadix.cj")
+        }
+
         @TestMetadata("commonSpecificGenericFrozen.cj")
         @Test
         fun testCommonSpecificGenericFrozen() {
             runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/commonSpecificGenericFrozen.cj")
+        }
+
+        @TestMetadata("commonSpecificLocalFunctionDirectOwner.cj")
+        @Test
+        fun testCommonSpecificLocalFunctionDirectOwner() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/commonSpecificLocalFunctionDirectOwner.cj")
         }
 
         @TestMetadata("commonSpecificOpenClassNoInitGeneralSubclass.cj")
@@ -162,6 +282,24 @@ class CfirAnalysisDiagnostics2WithoutAliasExpansionTestGenerated : AbstractCfirL
             runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/commonSpecificPrimaryConstructorModifier.cj")
         }
 
+        @TestMetadata("commonSpecificStaticAbstractBodyCommonDefaultExemption.cj")
+        @Test
+        fun testCommonSpecificStaticAbstractBodyCommonDefaultExemption() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/commonSpecificStaticAbstractBodyCommonDefaultExemption.cj")
+        }
+
+        @TestMetadata("commonSpecificStaticAbstractFunctionRequiresBody.cj")
+        @Test
+        fun testCommonSpecificStaticAbstractFunctionRequiresBody() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/commonSpecificStaticAbstractFunctionRequiresBody.cj")
+        }
+
+        @TestMetadata("commonSpecificStaticAbstractPropertyRequiresBody.cj")
+        @Test
+        fun testCommonSpecificStaticAbstractPropertyRequiresBody() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/commonSpecificStaticAbstractPropertyRequiresBody.cj")
+        }
+
         @TestMetadata("commonSpecificStaticLetInStaticInit.cj")
         @Test
         fun testCommonSpecificStaticLetInStaticInit() {
@@ -172,6 +310,134 @@ class CfirAnalysisDiagnostics2WithoutAliasExpansionTestGenerated : AbstractCfirL
         @Test
         fun testCommonSpecificSuppressedLangver105() {
             runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/commonSpecificSuppressedLangver105.cj")
+        }
+
+        @TestMetadata("unicodeCanonicalIdentifierReferences.cj")
+        @Test
+        fun testUnicodeCanonicalIdentifierReferences() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/unicodeCanonicalIdentifierReferences.cj")
+        }
+
+        @TestMetadata("unicodeCanonicalPackageMultifile.cj")
+        @Test
+        fun testUnicodeCanonicalPackageMultifile() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/unicodeCanonicalPackageMultifile.cj")
+        }
+
+        @TestMetadata("unicodeCanonicalTypePattern.cj")
+        @Test
+        fun testUnicodeCanonicalTypePattern() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/unicodeCanonicalTypePattern.cj")
+        }
+
+        @TestMetadata("unicodeNfcPreservesCompatibilityNames.cj")
+        @Test
+        fun testUnicodeNfcPreservesCompatibilityNames() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/unicodeNfcPreservesCompatibilityNames.cj")
+        }
+
+        @TestMetadata("declaration-precheck")
+        @TestDataPath("${'$'}PROJECT_ROOT")
+        @Nested
+        inner class DeclarationPrecheck : AbstractCfirLightTreeDiagnosticsWithoutAliasExpansionTest() {
+            @Test
+            fun testAllFilesPresent() {
+                assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics2/common-specific/declaration-precheck")
+            }
+
+            @TestMetadata("callCommonOnlyOverload.cj")
+            @Test
+            fun testCallCommonOnlyOverload() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/declaration-precheck/callCommonOnlyOverload.cj")
+            }
+
+            @TestMetadata("g1Baseline.cj")
+            @Test
+            fun testG1Baseline() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/declaration-precheck/g1Baseline.cj")
+            }
+
+            @TestMetadata("g1BothReversed.cj")
+            @Test
+            fun testG1BothReversed() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/declaration-precheck/g1BothReversed.cj")
+            }
+
+            @TestMetadata("g1CommonReversed.cj")
+            @Test
+            fun testG1CommonReversed() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/declaration-precheck/g1CommonReversed.cj")
+            }
+
+            @TestMetadata("g1FilesForward.cj")
+            @Test
+            fun testG1FilesForward() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/declaration-precheck/g1FilesForward.cj")
+            }
+
+            @TestMetadata("g1FilesReversed.cj")
+            @Test
+            fun testG1FilesReversed() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/declaration-precheck/g1FilesReversed.cj")
+            }
+
+            @TestMetadata("g1NoSpecificFunction.cj")
+            @Test
+            fun testG1NoSpecificFunction() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/declaration-precheck/g1NoSpecificFunction.cj")
+            }
+
+            @TestMetadata("g1SpecificReversed.cj")
+            @Test
+            fun testG1SpecificReversed() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/declaration-precheck/g1SpecificReversed.cj")
+            }
+
+            @TestMetadata("g2ExplicitSpecific.cj")
+            @Test
+            fun testG2ExplicitSpecific() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/declaration-precheck/g2ExplicitSpecific.cj")
+            }
+
+            @TestMetadata("g2UnmarkedSpecific.cj")
+            @Test
+            fun testG2UnmarkedSpecific() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/declaration-precheck/g2UnmarkedSpecific.cj")
+            }
+        }
+
+        @TestMetadata("default-constructor-drafts")
+        @TestDataPath("${'$'}PROJECT_ROOT")
+        @Nested
+        inner class DefaultConstructorDrafts : AbstractCfirLightTreeDiagnosticsWithoutAliasExpansionTest() {
+            @Test
+            fun testAllFilesPresent() {
+                assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics2/common-specific/default-constructor-drafts")
+            }
+
+            @TestMetadata("defaultConstructorRoles.cj")
+            @Test
+            fun testDefaultConstructorRoles() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/default-constructor-drafts/defaultConstructorRoles.cj")
+            }
+
+            @TestMetadata("javaMirrorNoImplicitConstructor.cj")
+            @Test
+            fun testJavaMirrorNoImplicitConstructor() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/default-constructor-drafts/javaMirrorNoImplicitConstructor.cj")
+            }
+
+            @TestMetadata("objcMirrorNoImplicitConstructor.cj")
+            @Test
+            fun testObjcMirrorNoImplicitConstructor() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/default-constructor-drafts/objcMirrorNoImplicitConstructor.cj")
+            }
+
+            @TestMetadata("qualifiedDefaultConstructors.cj")
+            @Test
+            fun testQualifiedDefaultConstructors() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/default-constructor-drafts/qualifiedDefaultConstructors.cj")
+            }
         }
 
         @TestMetadata("e2e")
@@ -187,6 +453,12 @@ class CfirAnalysisDiagnostics2WithoutAliasExpansionTestGenerated : AbstractCfirL
             @Test
             fun testCjmpAnnotationCommonOnly() {
                 runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpAnnotationCommonOnly.cj")
+            }
+
+            @TestMetadata("cjmpAnnotationCompatibility.cj")
+            @Test
+            fun testCjmpAnnotationCompatibility() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpAnnotationCompatibility.cj")
             }
 
             @TestMetadata("cjmpAnnotationSpecificOnly.cj")
@@ -357,6 +629,18 @@ class CfirAnalysisDiagnostics2WithoutAliasExpansionTestGenerated : AbstractCfirL
                 runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpGenericCounterpartInheritedDefaultInstantiation.cj")
             }
 
+            @TestMetadata("cjmpGenericOuterConstraintMapping.cj")
+            @Test
+            fun testCjmpGenericOuterConstraintMapping() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpGenericOuterConstraintMapping.cj")
+            }
+
+            @TestMetadata("cjmpGenericOuterConstraintStricter.cj")
+            @Test
+            fun testCjmpGenericOuterConstraintStricter() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpGenericOuterConstraintStricter.cj")
+            }
+
             @TestMetadata("cjmpGenericOuterTypeParameterMembers.cj")
             @Test
             fun testCjmpGenericOuterTypeParameterMembers() {
@@ -459,6 +743,12 @@ class CfirAnalysisDiagnostics2WithoutAliasExpansionTestGenerated : AbstractCfirL
                 runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpNominalGenericArityMismatch.cj")
             }
 
+            @TestMetadata("cjmpNominalPositiveGenericArityMismatch.cj")
+            @Test
+            fun testCjmpNominalPositiveGenericArityMismatch() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpNominalPositiveGenericArityMismatch.cj")
+            }
+
             @TestMetadata("cjmpNonSpecificAbstractMember.cj")
             @Test
             fun testCjmpNonSpecificAbstractMember() {
@@ -489,6 +779,42 @@ class CfirAnalysisDiagnostics2WithoutAliasExpansionTestGenerated : AbstractCfirL
                 runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpParamTypeMismatch.cj")
             }
 
+            @TestMetadata("cjmpPatternDirectBindings.cj")
+            @Test
+            fun testCjmpPatternDirectBindings() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpPatternDirectBindings.cj")
+            }
+
+            @TestMetadata("cjmpPatternFailureContinues.cj")
+            @Test
+            fun testCjmpPatternFailureContinues() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpPatternFailureContinues.cj")
+            }
+
+            @TestMetadata("cjmpPointerExtendCounterpartInheritedDefault.cj")
+            @Test
+            fun testCjmpPointerExtendCounterpartInheritedDefault() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpPointerExtendCounterpartInheritedDefault.cj")
+            }
+
+            @TestMetadata("cjmpPointerExtendUnmatchedMemberInstantiation.cj")
+            @Test
+            fun testCjmpPointerExtendUnmatchedMemberInstantiation() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpPointerExtendUnmatchedMemberInstantiation.cj")
+            }
+
+            @TestMetadata("cjmpPropertyMember.cj")
+            @Test
+            fun testCjmpPropertyMember() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpPropertyMember.cj")
+            }
+
+            @TestMetadata("cjmpPropertyMutabilityAndModifierPriority.cj")
+            @Test
+            fun testCjmpPropertyMutabilityAndModifierPriority() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpPropertyMutabilityAndModifierPriority.cj")
+            }
+
             @TestMetadata("cjmpReturnCovariant.cj")
             @Test
             fun testCjmpReturnCovariant() {
@@ -511,6 +837,24 @@ class CfirAnalysisDiagnostics2WithoutAliasExpansionTestGenerated : AbstractCfirL
             @Test
             fun testCjmpSpecificFunctionMissingReturnType() {
                 runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpSpecificFunctionMissingReturnType.cj")
+            }
+
+            @TestMetadata("cjmpSpecificGroupFiltersCommonOverloads.cj")
+            @Test
+            fun testCjmpSpecificGroupFiltersCommonOverloads() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpSpecificGroupFiltersCommonOverloads.cj")
+            }
+
+            @TestMetadata("cjmpSpecificGroupFiltersCommonOverloadsDuringInstantiation.cj")
+            @Test
+            fun testCjmpSpecificGroupFiltersCommonOverloadsDuringInstantiation() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpSpecificGroupFiltersCommonOverloadsDuringInstantiation.cj")
+            }
+
+            @TestMetadata("cjmpSpecificGroupFiltersCommonOverloadsDuringInstantiationInExtend.cj")
+            @Test
+            fun testCjmpSpecificGroupFiltersCommonOverloadsDuringInstantiationInExtend() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpSpecificGroupFiltersCommonOverloadsDuringInstantiationInExtend.cj")
             }
 
             @TestMetadata("cjmpSpecificInitConflictsWithUnmarkedCommonPrimary.cj")
@@ -537,10 +881,34 @@ class CfirAnalysisDiagnostics2WithoutAliasExpansionTestGenerated : AbstractCfirL
                 runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpSpecificShadowingBeforeImplicitTypes.cj")
             }
 
+            @TestMetadata("cjmpSpecificStaticAbstractBodyMatrix.cj")
+            @Test
+            fun testCjmpSpecificStaticAbstractBodyMatrix() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpSpecificStaticAbstractBodyMatrix.cj")
+            }
+
             @TestMetadata("cjmpSuperTypeMismatch.cj")
             @Test
             fun testCjmpSuperTypeMismatch() {
                 runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpSuperTypeMismatch.cj")
+            }
+
+            @TestMetadata("cjmpUnmarkedCommonExtendMemberConflict.cj")
+            @Test
+            fun testCjmpUnmarkedCommonExtendMemberConflict() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpUnmarkedCommonExtendMemberConflict.cj")
+            }
+
+            @TestMetadata("cjmpUnmarkedCommonMemberSignatureMerge.cj")
+            @Test
+            fun testCjmpUnmarkedCommonMemberSignatureMerge() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpUnmarkedCommonMemberSignatureMerge.cj")
+            }
+
+            @TestMetadata("cjmpUnmarkedCommonPropertyVariableConflicts.cj")
+            @Test
+            fun testCjmpUnmarkedCommonPropertyVariableConflicts() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpUnmarkedCommonPropertyVariableConflicts.cj")
             }
 
             @TestMetadata("cjmpUnmarkedDirectMemberSignatureMerge.cj")
@@ -599,6 +967,208 @@ class CfirAnalysisDiagnostics2WithoutAliasExpansionTestGenerated : AbstractCfirL
             @Test
             fun testCjmpModeSpecificRejectsCommon() {
                 runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/gate/cjmpModeSpecificRejectsCommon.cj")
+            }
+        }
+
+        @TestMetadata("source-c-ellipsis")
+        @TestDataPath("${'$'}PROJECT_ROOT")
+        @Nested
+        inner class SourceCEllipsis : AbstractCfirLightTreeDiagnosticsWithoutAliasExpansionTest() {
+            @Test
+            fun testAllFilesPresent() {
+                assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics2/common-specific/source-c-ellipsis")
+            }
+
+            @TestMetadata("completedArguments.cj")
+            @Test
+            fun testCompletedArguments() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/source-c-ellipsis/completedArguments.cj")
+            }
+
+            @TestMetadata("deferredUnit.cj")
+            @Test
+            fun testDeferredUnit() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/source-c-ellipsis/deferredUnit.cj")
+            }
+
+            @TestMetadata("missingFixed.cj")
+            @Test
+            fun testMissingFixed() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/source-c-ellipsis/missingFixed.cj")
+            }
+
+            @TestMetadata("nonCType.cj")
+            @Test
+            fun testNonCType() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/source-c-ellipsis/nonCType.cj")
+            }
+
+            @TestMetadata("unitExtra.cj")
+            @Test
+            fun testUnitExtra() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/source-c-ellipsis/unitExtra.cj")
+            }
+        }
+
+        @TestMetadata("source-expression-export")
+        @TestDataPath("${'$'}PROJECT_ROOT")
+        @Nested
+        inner class SourceExpressionExport : AbstractCfirLightTreeDiagnosticsWithoutAliasExpansionTest() {
+            @Test
+            fun testAllFilesPresent() {
+                assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics2/common-specific/source-expression-export")
+            }
+
+            @TestMetadata("controlFlow.cj")
+            @Test
+            fun testControlFlow() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/source-expression-export/controlFlow.cj")
+            }
+
+            @TestMetadata("declarationsCalls.cj")
+            @Test
+            fun testDeclarationsCalls() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/source-expression-export/declarationsCalls.cj")
+            }
+
+            @TestMetadata("defaultFacts.cj")
+            @Test
+            fun testDefaultFacts() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/source-expression-export/defaultFacts.cj")
+            }
+
+            @TestMetadata("exceptionsResources.cj")
+            @Test
+            fun testExceptionsResources() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/source-expression-export/exceptionsResources.cj")
+            }
+
+            @TestMetadata("operatorsConversions.cj")
+            @Test
+            fun testOperatorsConversions() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/source-expression-export/operatorsConversions.cj")
+            }
+
+            @TestMetadata("referenceDerivedInstantiation.cj")
+            @Test
+            fun testReferenceDerivedInstantiation() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/source-expression-export/referenceDerivedInstantiation.cj")
+            }
+
+            @TestMetadata("referenceInstantiation.cj")
+            @Test
+            fun testReferenceInstantiation() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/source-expression-export/referenceInstantiation.cj")
+            }
+        }
+
+        @TestMetadata("source-frozen-types")
+        @TestDataPath("${'$'}PROJECT_ROOT")
+        @Nested
+        inner class SourceFrozenTypes : AbstractCfirLightTreeDiagnosticsWithoutAliasExpansionTest() {
+            @Test
+            fun testAllFilesPresent() {
+                assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics2/common-specific/source-frozen-types")
+            }
+
+            @TestMetadata("functionAbi.cj")
+            @Test
+            fun testFunctionAbi() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/source-frozen-types/functionAbi.cj")
+            }
+
+            @TestMetadata("orderedAliasRoles.cj")
+            @Test
+            fun testOrderedAliasRoles() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/source-frozen-types/orderedAliasRoles.cj")
+            }
+
+            @TestMetadata("typeUseGraphLifecycle.cj")
+            @Test
+            fun testTypeUseGraphLifecycle() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/source-frozen-types/typeUseGraphLifecycle.cj")
+            }
+        }
+
+        @TestMetadata("stored-member-instantiation")
+        @TestDataPath("${'$'}PROJECT_ROOT")
+        @Nested
+        inner class StoredMemberInstantiation : AbstractCfirLightTreeDiagnosticsWithoutAliasExpansionTest() {
+            @Test
+            fun testAllFilesPresent() {
+                assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics2/common-specific/stored-member-instantiation")
+            }
+
+            @TestMetadata("constructorExactCounterpartNoCollision.cj")
+            @Test
+            fun testConstructorExactCounterpartNoCollision() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/stored-member-instantiation/constructorExactCounterpartNoCollision.cj")
+            }
+
+            @TestMetadata("constructorInt64NoCollision.cj")
+            @Test
+            fun testConstructorInt64NoCollision() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/stored-member-instantiation/constructorInt64NoCollision.cj")
+            }
+
+            @TestMetadata("constructorMarkerCollision.cj")
+            @Test
+            fun testConstructorMarkerCollision() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/stored-member-instantiation/constructorMarkerCollision.cj")
+            }
+
+            @TestMetadata("extendInt64NoCollision.cj")
+            @Test
+            fun testExtendInt64NoCollision() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/stored-member-instantiation/extendInt64NoCollision.cj")
+            }
+
+            @TestMetadata("extendStringCollision.cj")
+            @Test
+            fun testExtendStringCollision() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/stored-member-instantiation/extendStringCollision.cj")
+            }
+
+            @TestMetadata("inheritedCounterpartMarkerCollision.cj")
+            @Test
+            fun testInheritedCounterpartMarkerCollision() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/stored-member-instantiation/inheritedCounterpartMarkerCollision.cj")
+            }
+
+            @TestMetadata("nominalInt64NoCollision.cj")
+            @Test
+            fun testNominalInt64NoCollision() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/stored-member-instantiation/nominalInt64NoCollision.cj")
+            }
+
+            @TestMetadata("nominalStringCollision.cj")
+            @Test
+            fun testNominalStringCollision() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/stored-member-instantiation/nominalStringCollision.cj")
+            }
+
+            @TestMetadata("privateNominalInt32NoCollision.cj")
+            @Test
+            fun testPrivateNominalInt32NoCollision() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/stored-member-instantiation/privateNominalInt32NoCollision.cj")
+            }
+
+            @TestMetadata("privateNominalInt64Collision.cj")
+            @Test
+            fun testPrivateNominalInt64Collision() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/stored-member-instantiation/privateNominalInt64Collision.cj")
+            }
+
+            @TestMetadata("unmatchedExtendStringCollision.cj")
+            @Test
+            fun testUnmatchedExtendStringCollision() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/stored-member-instantiation/unmatchedExtendStringCollision.cj")
+            }
+
+            @TestMetadata("unmatchedNominalStringCollision.cj")
+            @Test
+            fun testUnmatchedNominalStringCollision() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/stored-member-instantiation/unmatchedNominalStringCollision.cj")
             }
         }
     }
@@ -1522,6 +2092,12 @@ class CfirAnalysisDiagnostics2WithoutAliasExpansionTestGenerated : AbstractCfirL
         @Test
         fun testPlus() {
             runTest("cfir/analysis-tests/testData/diagnostics2/operator/plus.cj")
+        }
+
+        @TestMetadata("primitiveOperatorBindings.cj")
+        @Test
+        fun testPrimitiveOperatorBindings() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/operator/primitiveOperatorBindings.cj")
         }
 
         @TestMetadata("subscriptGet.cj")

@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.analysis.api.cfir.symbols
 
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
+import org.cangnova.cangjie.analysis.api.cfir.restoreCurrentCompiledPsi
 import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirSessionComponent
 import org.cangnova.cangjie.analysis.api.impl.base.components.CaBaseSymbolProvider
 import org.cangnova.cangjie.analysis.api.impl.base.components.withPsiValidityAssertion
@@ -27,7 +28,7 @@ import org.cangnova.cangjie.analysis.api.symbols.CaTypeParameterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaVariableSymbol
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.errorWithCfirSpecificEntries
 import org.cangnova.cangjie.cfir.session.extendProviderOrNull
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeAliasSymbol
 import org.cangnova.cangjie.name.ClassId
@@ -36,6 +37,7 @@ import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjBindingPattern
 import org.cangnova.cangjie.psi.CjConstructor
 import org.cangnova.cangjie.psi.CjEnumConstructor
+import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.CjExtend
 import org.cangnova.cangjie.psi.CjFieldVariable
 import org.cangnova.cangjie.psi.CjFile
@@ -65,6 +67,15 @@ internal class CaCfirSymbolProvider(
     override val analysisSessionProvider: () -> CaCfirSession,
 ) : CaBaseSymbolProvider<CaCfirSession>(), CaCfirSessionComponent {
     /**
+     * PSI 与 CFIR 两条公开符号入口共同使用真实来源对象作为 backingPsi。
+     * 完整 target 产品必须提供同类型的一对一导航；缺失对应不能保留 target 充当源对象。
+     */
+    private inline fun <reified P : CjElement> P.sourcePsi(): P =
+        checkNotNull(restoreCurrentCompiledPsi(analysisSession.project) as? P) {
+            "A public symbol must retain its actual source PSI of the same grammar kind."
+        }
+
+    /**
      * 将参数 PSI 转换为公开变量符号。
      */
     override val CjParameter.symbol: CaVariableSymbol
@@ -76,7 +87,7 @@ internal class CaCfirSymbolProvider(
                     psi = this,
                 )
 
-                else -> CaCfirValueParameterSymbol(this@symbol, analysisSession)
+                else -> CaCfirValueParameterSymbol(this@symbol.sourcePsi(), analysisSession)
             }
         }
 
@@ -85,7 +96,7 @@ internal class CaCfirSymbolProvider(
      */
     override val CjFile.symbol: CaFileSymbol
         get() = withPsiValidityAssertion {
-            CaCfirFileSymbol(this@symbol, analysisSession)
+            CaCfirFileSymbol(this@symbol.sourcePsi(), analysisSession)
         }
 
     /**
@@ -93,7 +104,7 @@ internal class CaCfirSymbolProvider(
      */
     override val CjTypeStatement.classSymbol: CaClassSymbol
         get() = withPsiValidityAssertion {
-            CaCfirClassSymbol(this@classSymbol, analysisSession)
+            CaCfirClassSymbol(this@classSymbol.sourcePsi(), analysisSession)
         }
 
     /**
@@ -101,7 +112,7 @@ internal class CaCfirSymbolProvider(
      */
     override val CjTypeAlias.symbol: CaTypeAliasSymbol
         get() = withPsiValidityAssertion {
-            CaCfirTypeAliasSymbol(this@symbol, analysisSession)
+            CaCfirTypeAliasSymbol(this@symbol.sourcePsi(), analysisSession)
         }
 
     /**
@@ -109,7 +120,7 @@ internal class CaCfirSymbolProvider(
      */
     override val CjNamedFunction.symbol: CaNamedFunctionSymbol
         get() = withPsiValidityAssertion {
-            CaCfirNamedFunctionSymbol(this@symbol, analysisSession)
+            CaCfirNamedFunctionSymbol(this@symbol.sourcePsi(), analysisSession)
         }
 
     /**
@@ -117,7 +128,7 @@ internal class CaCfirSymbolProvider(
      */
     override val CjFunctionLiteral.symbol: CaAnonymousFunctionSymbol
         get() = withPsiValidityAssertion {
-            CaCfirAnonymousFunctionSymbol(this@symbol, analysisSession)
+            CaCfirAnonymousFunctionSymbol(this@symbol.sourcePsi(), analysisSession)
         }
 
     /**
@@ -125,7 +136,7 @@ internal class CaCfirSymbolProvider(
      */
     override val CjConstructor<*>.symbol: CaConstructorSymbol
         get() = withPsiValidityAssertion {
-            CaCfirConstructorSymbol(this@symbol, analysisSession)
+            CaCfirConstructorSymbol(this@symbol.sourcePsi(), analysisSession)
         }
 
     /**
@@ -133,7 +144,7 @@ internal class CaCfirSymbolProvider(
      */
     override val CjMacroDeclaration.symbol: CaMacroSymbol
         get() = withPsiValidityAssertion {
-            CaCfirMacroSymbol(this@symbol, analysisSession)
+            CaCfirMacroSymbol(this@symbol.sourcePsi(), analysisSession)
         }
 
     /**
@@ -141,7 +152,7 @@ internal class CaCfirSymbolProvider(
      */
     override val CjFinalizer.symbol: CaFinalizerSymbol
         get() = withPsiValidityAssertion {
-            CaCfirFinalizerSymbol(this@symbol, analysisSession)
+            CaCfirFinalizerSymbol(this@symbol.sourcePsi(), analysisSession)
         }
 
     /**
@@ -149,7 +160,7 @@ internal class CaCfirSymbolProvider(
      */
     override val CjProperty.symbol: CaPropertySymbol
         get() = withPsiValidityAssertion {
-            CaCfirPropertySymbol(this@symbol, analysisSession)
+            CaCfirPropertySymbol(this@symbol.sourcePsi(), analysisSession)
         }
 
     /**
@@ -170,7 +181,7 @@ internal class CaCfirSymbolProvider(
      */
     override val CjFieldVariable.symbol: CaFieldSymbol
         get() = withPsiValidityAssertion {
-            CaCfirFieldSymbol(this@symbol, analysisSession)
+            CaCfirFieldSymbol(this@symbol.sourcePsi(), analysisSession)
         }
 
     /**
@@ -178,7 +189,7 @@ internal class CaCfirSymbolProvider(
      */
     override val CjEnumConstructor.symbol: CaEnumConstructorSymbol
         get() = withPsiValidityAssertion {
-            CaCfirEnumConstructorSymbol(this@symbol, analysisSession)
+            CaCfirEnumConstructorSymbol(this@symbol.sourcePsi(), analysisSession)
         }
 
     /**
@@ -186,7 +197,7 @@ internal class CaCfirSymbolProvider(
      */
     override val CjPatternVariable.symbol: CaPatternVariableSymbol
         get() = withPsiValidityAssertion {
-            CaCfirPatternVariableSymbol(this@symbol, analysisSession)
+            CaCfirPatternVariableSymbol(this@symbol.sourcePsi(), analysisSession)
         }
 
     /**
@@ -194,7 +205,7 @@ internal class CaCfirSymbolProvider(
      */
     override val CjBindingPattern.symbol: CaPatternBindingSymbol
         get() = withPsiValidityAssertion {
-            CaCfirPatternBindingSymbol(this@symbol, analysisSession)
+            CaCfirPatternBindingSymbol(this@symbol.sourcePsi(), analysisSession)
         }
 
     /**
@@ -202,7 +213,7 @@ internal class CaCfirSymbolProvider(
      */
     override val CjExtend.symbol: CaExtendSymbol
         get() = withPsiValidityAssertion {
-            CaCfirExtendSymbol(this@symbol, analysisSession)
+            CaCfirExtendSymbol(this@symbol.sourcePsi(), analysisSession)
         }
 
     /**
@@ -210,7 +221,7 @@ internal class CaCfirSymbolProvider(
      */
     override val CjTypeParameter.symbol: CaTypeParameterSymbol
         get() = withPsiValidityAssertion {
-            CaCfirTypeParameterSymbol(this@symbol, analysisSession)
+            CaCfirTypeParameterSymbol(this@symbol.sourcePsi(), analysisSession)
         }
 
     /**

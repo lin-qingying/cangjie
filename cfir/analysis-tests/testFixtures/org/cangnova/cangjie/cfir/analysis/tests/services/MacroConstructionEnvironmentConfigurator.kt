@@ -10,14 +10,10 @@ import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionServic
 import org.cangnova.cangjie.config.CompilerConfiguration
 import org.cangnova.cangjie.config.classpathRoots
 import org.cangnova.cangjie.frontend.pipeline.MacroSourcePackageCompilationRequest
-import org.cangnova.cangjie.frontend.pipeline.MacroExecutorFactory
-import org.cangnova.cangjie.frontend.pipeline.macroExecutorFactory
 import org.cangnova.cangjie.frontend.pipeline.macroBackgroundAutoCompilationEnabled
 import org.cangnova.cangjie.frontend.pipeline.macroConstructionMode
 import org.cangnova.cangjie.frontend.pipeline.macroExpansionDemandAutoCompilationEnabled
-import org.cangnova.cangjie.frontend.pipeline.macroSdkHome
 import org.cangnova.cangjie.frontend.pipeline.macroSourcePackageCompilationRequests
-import org.cangnova.cangjie.macro.process.LspMacroServerMacroExecutor
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.test.directives.MacroConstructionDirectives
 import org.cangnova.cangjie.test.model.TestFile
@@ -42,7 +38,7 @@ class MacroConstructionEnvironmentConfigurator(testServices: TestServices) : Env
      * 配置宏构造端到端测试所需的编译器选项。
      *
      * 方法会收集测试文件中的 `macro package`，物化为临时 source root，
-     * 并在缺少 executor factory 时注册 LSPMacroServer executor。
+     * 默认 executor 由生产 construction service 按同次 SDK 选择装配。
      */
     override fun configureCompilerConfiguration(configuration: CompilerConfiguration, module: TestModule) {
         configuration.macroBackgroundAutoCompilationEnabled = false
@@ -71,14 +67,6 @@ class MacroConstructionEnvironmentConfigurator(testServices: TestServices) : Env
                         compileInvocationId = "test-macro-source-$testCaseId-${sourcePackage.packageFqName.asString()}",
                     )
                 }
-        }
-
-        if (configuration.macroExecutorFactory == null) {
-            val executable = File(
-                configuration.macroSdkHome,
-                "tools/bin/${if (isWindows()) "LSPMacroServer.exe" else "LSPMacroServer"}",
-            ).path
-            configuration.macroExecutorFactory = MacroExecutorFactory { LspMacroServerMacroExecutor(executable) }
         }
 
         configuration.macroConstructionMode = MacroConstructionService.Mode.DEGRADED

@@ -1,7 +1,5 @@
 package org.cangnova.cangjie.cfir.resolve.calls.stages
 
-import org.cangnova.cangjie.cfir.session.cjmpHasDefaultValue
-
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
@@ -33,8 +31,10 @@ import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.cangjieVariadicCallShapeOrNull
 import org.cangnova.cangjie.cfir.resolve.calls.cangjieVariadicParameterForMapping
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.CandidateDefaultParameterStates
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallKind
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CheckerSink
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.defaultParameterStates
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.yieldIfNeed
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.semantics.ResolutionDiagnostic
@@ -158,11 +158,17 @@ object CfirMapArguments : ResolutionStage() {
         }
 
         val parameters = candidate.declaredParametersForMapping()
-        val variadicParameter = candidate.cangjieVariadicParameterForMapping(parameters)
         val argumentInfos = argumentAtoms.map(::CallArgumentInfo)
         val nonTrailingArguments = argumentInfos.filterNot { it.isTrailingLambda }
         val trailingLambdaArguments = argumentInfos.filter { it.isTrailingLambda }
         val callShape = candidate.createCallShape(argumentInfos)
+
+        if (candidate.hasCVariadicSignature()) {
+            mapCVariadicArguments(candidate, argumentAtoms, parameters, argumentInfos, callShape)
+            return
+        }
+        val defaultParameterStates = candidate.defaultParameterStates(parameters)
+        val variadicParameter = candidate.cangjieVariadicParameterForMapping(parameters)
 
         // CPointer/CFunc 的 builtin call 在官方前端不是普通 callable arity：
         // pointer 的多参错误来自 DesugarPointerCall，CFunc 的零参/多参错误来自
@@ -175,6 +181,7 @@ object CfirMapArguments : ResolutionStage() {
                     createArgumentMappingOutcome(
                         callShape = callShape,
                         parameters = parameters,
+                        defaultParameterStates = defaultParameterStates,
                         variadicParameter = null,
                         mappedArgumentCount = 0,
                         matchedNamedArgumentCount = 0,
@@ -192,6 +199,7 @@ object CfirMapArguments : ResolutionStage() {
                     createArgumentMappingOutcome(
                         callShape = callShape,
                         parameters = parameters,
+                        defaultParameterStates = defaultParameterStates,
                         variadicParameter = null,
                         mappedArgumentCount = 0,
                         matchedNamedArgumentCount = 0,
@@ -224,6 +232,7 @@ object CfirMapArguments : ResolutionStage() {
                 createArgumentMappingOutcome(
                     callShape = callShape,
                     parameters = parameters,
+                    defaultParameterStates = defaultParameterStates,
                     variadicParameter = null,
                     mappedArgumentCount = 0,
                     matchedNamedArgumentCount = 0,
@@ -264,6 +273,7 @@ object CfirMapArguments : ResolutionStage() {
                 createArgumentMappingOutcome(
                     callShape = callShape,
                     parameters = parameters,
+                    defaultParameterStates = defaultParameterStates,
                     variadicParameter = variadicParameter,
                     mappedArgumentCount = argumentAtoms.size,
                     matchedNamedArgumentCount = 0,
@@ -287,6 +297,7 @@ object CfirMapArguments : ResolutionStage() {
                 createArgumentMappingOutcome(
                     callShape = callShape,
                     parameters = parameters,
+                    defaultParameterStates = defaultParameterStates,
                     variadicParameter = null,
                     mappedArgumentCount = parameters.size,
                     matchedNamedArgumentCount = 0,
@@ -307,6 +318,7 @@ object CfirMapArguments : ResolutionStage() {
             candidate = candidate,
             argumentAtoms = argumentAtoms,
             parameters = parameters,
+            defaultParameterStates = defaultParameterStates,
             nonTrailingArguments = nonTrailingArguments,
             trailingLambdaArguments = trailingLambdaArguments,
             variadicParameter = null,
@@ -317,6 +329,7 @@ object CfirMapArguments : ResolutionStage() {
                 candidate = candidate,
                 argumentAtoms = argumentAtoms,
                 parameters = parameters,
+                defaultParameterStates = defaultParameterStates,
                 nonTrailingArguments = nonTrailingArguments,
                 trailingLambdaArguments = trailingLambdaArguments,
                 variadicParameter = variadicParameter,
@@ -348,6 +361,7 @@ object CfirMapArguments : ResolutionStage() {
             createArgumentMappingOutcome(
                 callShape = callShape,
                 parameters = parameters,
+                defaultParameterStates = defaultParameterStates,
                 variadicParameter = if (result === variadicResult) variadicParameter else null,
                 mappedArgumentCount = result.argumentMapping.size,
                 matchedNamedArgumentCount = result.matchedNamedArgumentCount,
@@ -370,6 +384,39 @@ object CfirMapArguments : ResolutionStage() {
         result.diagnostics.forEach(sink::reportDiagnostic)
     }
 
+    /** C ellipsis 不占 formal 槽，不接受命名/default/Array 语法糖；全部 extra 保持原顺序。 */
+    context(sink: CheckerSink)
+    private fun mapCVariadicArguments(
+        candidate: Candidate,
+        atoms: List<ConeResolutionAtom>,
+        parameters: List<CfirValueParameter>,
+        infos: List<CallArgumentInfo>,
+        shape: CallShape,
+    ) {
+        val mapping = linkedMapOf<ConeResolutionAtom, CfirValueParameter>()
+        atoms.take(parameters.size).forEachIndexed { index, atom -> mapping[atom] = parameters[index] }
+        val extras = atoms.drop(parameters.size)
+        candidate.initializeArgumentMapping(atoms, mapping)
+        candidate.initializeCVariadicArguments(parameters.size, extras)
+        candidate.numDefaults = 0
+        val hasNamedArguments = infos.any { it.name != null }
+        val lacksFixedArguments = atoms.size < parameters.size
+        candidate.initializeArgumentMappingOutcome(ArgumentMappingOutcome(
+            callShape = shape,
+            expectedParameterCount = parameters.size,
+            requiredParameterCount = parameters.size,
+            maximumAcceptedArgumentCount = null,
+            mappedArgumentCount = mapping.size,
+            matchedNamedArgumentCount = 0,
+            hasMappingFailure = hasNamedArguments || lacksFixedArguments,
+            cVariadicExtraArgumentCount = extras.size,
+        ))
+        if (lacksFixedArguments) sink.reportDiagnostic(WrongNumberOfArguments(shape.arityDiagnosticSource, parameters.size, atoms.size))
+        infos.filter { it.name != null }.forEach {
+            sink.reportDiagnostic(NamedArgumentsNotAllowed(it.atom.expression, it.nameSourceOrFail(), "function '${candidate.callInfo.name.asString()}'"))
+        }
+    }
+
     /**
      * 构造一次 callable 实参映射结果。
      */
@@ -377,6 +424,7 @@ object CfirMapArguments : ResolutionStage() {
         candidate: Candidate,
         argumentAtoms: List<ConeResolutionAtom>,
         parameters: List<CfirValueParameter>,
+        defaultParameterStates: CandidateDefaultParameterStates,
         nonTrailingArguments: List<CallArgumentInfo>,
         trailingLambdaArguments: List<CallArgumentInfo>,
         variadicParameter: CfirValueParameter?,
@@ -511,6 +559,7 @@ object CfirMapArguments : ResolutionStage() {
             operatorSetTrailingNamedParameterForPositionalArgument(
                 candidate = candidate,
                 parameters = parameters,
+                defaultParameterStates = defaultParameterStates,
                 variadicParameter = variadicParameter,
                 variadicParameterIndex = variadicParameterIndex,
                 usedParameters = usedParameters,
@@ -570,7 +619,7 @@ object CfirMapArguments : ResolutionStage() {
             val hasMissingRequiredParameter = parameters
                 .filterNot { it in usedParameters }
                 .filter { it != variadicParameter }
-                .any { !it.cjmpHasDefaultValue() }
+                .any { !defaultParameterStates.hasDefaultValue(it) }
             if (hasMissingRequiredParameter) {
                 diagnostics.addWrongNumberOfArguments(callShape, parameters.size)
             }
@@ -581,7 +630,9 @@ object CfirMapArguments : ResolutionStage() {
             diagnostics = diagnostics,
             nonBlockingDiagnostics = nonBlockingDiagnostics,
             matchedNamedArgumentCount = matchedNamedArgumentCount,
-            numDefaults = parameters.count { it != variadicParameter && it !in usedParameters && it.cjmpHasDefaultValue() },
+            numDefaults = parameters.count {
+                it != variadicParameter && it !in usedParameters && defaultParameterStates.hasDefaultValue(it)
+            },
             variadicEligibleArguments = variadicEligibleArguments,
             isEmptyVariadicCall = isEmptyVariadicCall,
         )
@@ -593,6 +644,7 @@ object CfirMapArguments : ResolutionStage() {
     private fun operatorSetTrailingNamedParameterForPositionalArgument(
         candidate: Candidate,
         parameters: List<CfirValueParameter>,
+        defaultParameterStates: CandidateDefaultParameterStates,
         variadicParameter: CfirValueParameter?,
         variadicParameterIndex: Int,
         usedParameters: Set<CfirValueParameter>,
@@ -605,7 +657,7 @@ object CfirMapArguments : ResolutionStage() {
 
         val trailingNamedParameters = parameters
             .drop(variadicParameterIndex + 1)
-            .filter { it.isNamed && !it.cjmpHasDefaultValue() && it !in usedParameters }
+            .filter { it.isNamed && !defaultParameterStates.hasDefaultValue(it) && it !in usedParameters }
         if (trailingNamedParameters.isEmpty()) return null
 
         val remainingPositionalArguments = nonTrailingArguments
@@ -743,6 +795,7 @@ private fun Candidate.hasTerminalPreArgumentMappingDiagnostic(): Boolean = diagn
 private fun createArgumentMappingOutcome(
     callShape: CallShape,
     parameters: List<CfirValueParameter>,
+    defaultParameterStates: CandidateDefaultParameterStates,
     variadicParameter: CfirValueParameter?,
     mappedArgumentCount: Int,
     matchedNamedArgumentCount: Int,
@@ -751,7 +804,7 @@ private fun createArgumentMappingOutcome(
     callShape = callShape,
     expectedParameterCount = parameters.size,
     requiredParameterCount = parameters.count { parameter ->
-        parameter != variadicParameter && !parameter.cjmpHasDefaultValue()
+        parameter != variadicParameter && !defaultParameterStates.hasDefaultValue(parameter)
     },
     maximumAcceptedArgumentCount = parameters.size.takeIf { variadicParameter == null },
     mappedArgumentCount = mappedArgumentCount,

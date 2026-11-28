@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
@@ -16,7 +17,7 @@ import org.cangnova.cangjie.cfir.types.ConeFunctionType
  *
  * 依赖 CfirFunctionCall.hasTrailingLambda 字段（由 PsiRawCfirBuilder 根据 PSI lambdaArguments 设置）。
  */
-object CfirTrailingLambdaChecker : CfirFunctionCallChecker() {
+object CfirTrailingLambdaChecker : CfirFunctionCallChecker(MppCheckerKind.Common) {
     /** 检查带 trailing lambda 的调用接收者是否为函数类型。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirFunctionCall) {

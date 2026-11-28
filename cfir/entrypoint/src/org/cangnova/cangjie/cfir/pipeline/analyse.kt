@@ -24,14 +24,30 @@
 
 package org.cangnova.cangjie.cfir.pipeline
 
+import org.cangnova.cangjie.cfir.resolve.providers.cfirProvider
+
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
+
 import org.cangnova.cangjie.CjPsiSourceFile
 import org.cangnova.cangjie.CjSourceFile
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.reportMissingProgramEntryIfNeeded
 import org.cangnova.cangjie.cfir.analysis.collectors.components.DiagnosticComponentsFactory
 import org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder
+import org.cangnova.cangjie.cfir.builder.toParsingContext
+import org.cangnova.cangjie.cfir.common.CfirModuleData
+import org.cangnova.cangjie.cfir.common.moduleData
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnostic
+import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticWithParameters1
+import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticWithParameters2
+import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticWithParameters3
+import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticWithParameters4
+import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticWithSource
+import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticRelatedInformation
+import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticRelatedSourceLocation
+import org.cangnova.cangjie.cfir.diagnostics.DiagnosticContext
+import org.cangnova.cangjie.cfir.diagnostics.Severity
 import org.cangnova.cangjie.cfir.diagnostics.impl.BaseDiagnosticsCollector
 import org.cangnova.cangjie.cfir.diagnostics.impl.PendingDiagnosticsReporterImpl
 import org.cangnova.cangjie.cfir.lightTree.LightTree2Cfir
@@ -40,7 +56,26 @@ import org.cangnova.cangjie.cfir.resolve.providers.macro.*
 import org.cangnova.cangjie.cfir.session.*
 import org.cangnova.cangjie.cfir.withFileAnalysisExceptionWrapping
 import org.cangnova.cangjie.psi.CjFile
+import org.cangnova.cangjie.psi.CjCodeFragment
+import org.cangnova.cangjie.parsing.CangJieParser
+import org.cangnova.cangjie.parsing.CjParserSettings
+import org.cangnova.cangjie.parsing.toCangJieParsingErrorListener
+import org.cangnova.cangjie.messages.CjParsingDiagnosticCollector
+import org.cangnova.cangjie.messages.MessageCollector
+import org.cangnova.cangjie.source.AbstractCjSourceElement
+import org.cangnova.cangjie.source.CjBinarySourceElement
+import org.cangnova.cangjie.source.CjLightSourceElement
+import org.cangnova.cangjie.source.CjOffsetsOnlySourceElement
+import org.cangnova.cangjie.source.CjPsiSourceElement
+import org.cangnova.cangjie.source.CjSourceElement
+import org.cangnova.cangjie.source.CjSourceElementKind
+import org.cangnova.cangjie.source.CjSourceLocation
 import org.cangnova.cangjie.source.readSourceFileWithMapping
+import com.intellij.openapi.util.TextRange
+import com.intellij.psi.tree.IElementType
+import com.intellij.util.diff.FlyweightCapableTreeStructure
+import java.util.Collections
+import java.util.IdentityHashMap
 
 /**
  * 从 PSI 构建尚未注册的 Pre-Macro Raw CFIR
@@ -52,17 +87,24 @@ import org.cangnova.cangjie.source.readSourceFileWithMapping
  * 3. **不**写入 [CfirProviderImpl]；返回 [PreMacroRawBuildResult]，
  *    由上层经 [MacroConstructionService] 与 [recordExpandedRawFilesOnce] 完成注册。
  */
-fun CfirSession.buildPreMacroRawCfirFromCjFiles(cjFiles: Collection<CjFile>): PreMacroRawBuildResult {
+fun CfirSession.buildPreMacroRawCfirFromCjFiles(cjFiles: Collection<CjFile>,
+    parserSettings: CjParserSettings = CjParserSettings(languageVersionSettings.languageVersion)): PreMacroRawBuildResult {
     val firProvider = cfirProvider as CfirProviderImpl
-    val builder = PsiRawCfirBuilder(this, firProvider.cangjieScopeProvider)
-    val rawFilesWithSurfaces = cjFiles.map { cjFile ->
-        val cfirFile = builder.buildCfirFile(cjFile)
-        cfirFile to builder.consumeCollectedMacroSurfaces()
+    val files = cjFiles.map { cjFile ->
+        val builder = PsiRawCfirBuilder(this, firProvider.cangjieScopeProvider,
+            annotationMetadata = org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationMetadataBuilder())
+        val context = cjmpSettings.toParsingContext(languageVersionSettings)
+        val parsed = if (cjFile is CjCodeFragment) CangJieParser.parseCompilationFragment(
+            cjFile, cjFile.fragmentParserSeed.copy(cjmpContext = context, settings = parserSettings), cjFile.parserCreationContext,
+        ) else CangJieParser.parseCompilationFile(cjFile, context, parserSettings)
+        parsed.withTargetFile(builder::buildPreMacroCfirFile).also { pre ->
+            pre.cfirFile.replaceSourceFile(parsed.sourceFile)
+            pre.cfirFile.replaceSourceFileLinesMapping(parsed.sourceFileLinesMapping)
+        }
     }
     return buildPreMacroRawFiles(
         session = this,
-        rawCfirFiles = rawFilesWithSurfaces.map { it.first },
-        fileSurfaces = rawFilesWithSurfaces.map { it.second },
+        files = files,
     )
 }
 
@@ -73,24 +115,31 @@ fun CfirSession.buildPreMacroRawCfirFromCjFiles(cjFiles: Collection<CjFile>): Pr
 fun CfirSession.buildPreMacroRawCfirViaLightTree(
     lightTreeFiles: Collection<CjSourceFile>,
     reportFilesAndLines: ((String, Int) -> Unit)? = null,
+    messageCollector: MessageCollector? = null,
+    parserSettings: CjParserSettings = CjParserSettings(languageVersionSettings.languageVersion),
 ): PreMacroRawBuildResult {
     val firProvider = cfirProvider as CfirProviderImpl
     val builder = LightTree2Cfir(
         session = this,
         scopeProvider = firProvider.cangjieScopeProvider,
+        parserSettings = parserSettings,
     )
     val rawFilesWithSurfaces = lightTreeFiles.map { sourceFile ->
         val (code, linesMapping) = sourceFile.getContentsAsStream().reader(Charsets.UTF_8).use {
             it.readSourceFileWithMapping()
         }
-        val (cfirFile, surfaces) = builder.buildCfirFileWithSurfaces(code, sourceFile, linesMapping)
+        val preFile = builder.buildPreMacroCfirFile(code, sourceFile, linesMapping)
         reportFilesAndLines?.invoke(sourceFile.path ?: sourceFile.name, linesMapping.linesCount)
-        cfirFile to surfaces
+        preFile
+    }
+    messageCollector?.toCangJieParsingErrorListener()?.let { listener ->
+        CjParsingDiagnosticCollector.publishSyntaxDiagnostics(
+            rawFilesWithSurfaces.flatMap { it.parsingDiagnosticPublication.reports }, parserSettings.diagnostics,
+        ).forEach(listener::onError)
     }
     return buildPreMacroRawFiles(
         session = this,
-        rawCfirFiles = rawFilesWithSurfaces.map { it.first },
-        fileSurfaces = rawFilesWithSurfaces.map { it.second },
+        files = rawFilesWithSurfaces,
     )
 }
 
@@ -201,8 +250,12 @@ fun CfirSession.runCheckers(
     scopeSession: ScopeSession,
     firFiles: Collection<CfirFile>,
     diagnosticsCollector: BaseDiagnosticsCollector,
+    mppCheckerKind: MppCheckerKind,
+    /** 已由更大的编译单元发布 parser 报告时关闭本组重放；语义 checker 始终独立运行。 */
+    includeParsingDiagnostics: Boolean = mppCheckerKind == MppCheckerKind.Common,
 ): Map<CfirFile, List<CjDiagnostic>> {
-    val collector = DiagnosticComponentsFactory.create(this, scopeSession)
+    if (includeParsingDiagnostics) diagnosticsCollector.reportParsingDiagnostics(firFiles)
+    val collector = DiagnosticComponentsFactory.create(this, scopeSession, mppCheckerKind)
     val registry = macroExpansionRegistry
     val diagnosticsReporter = PendingDiagnosticsReporterImpl(
         delegate = diagnosticsCollector,
@@ -213,8 +266,10 @@ fun CfirSession.runCheckers(
             collector.collectDiagnostics(file, diagnosticsReporter)
         }
     }
-    collector.collectDiagnosticsInSettings(diagnosticsReporter)
-    reportMissingProgramEntryIfNeeded(firFiles, this, diagnosticsCollector)
+    if (mppCheckerKind == MppCheckerKind.Common) {
+        collector.collectDiagnosticsInSettings(diagnosticsReporter)
+        reportMissingProgramEntryIfNeeded(firFiles, this, diagnosticsCollector)
+    }
     return firFiles.associateWith {
         val path = it.sourceFile?.path ?: return@associateWith emptyList()
         diagnosticsCollector.diagnosticsByFilePath[path] ?: emptyList()
@@ -235,32 +290,234 @@ fun resolveAndCheckCfir(
     diagnosticsCollector: BaseDiagnosticsCollector,
 ): SingleModuleFrontendOutput {
     val (scopeSession, fir) = session.runResolution(cfirFiles)
-    session.runCheckers(scopeSession, fir, diagnosticsCollector)
+    session.runCheckers(scopeSession, fir, diagnosticsCollector, MppCheckerKind.Common)
     return SingleModuleFrontendOutput(session, scopeSession, fir)
 }
 
+/** 一个 Platform 检查上下文及其可达源码输出。 */
+private data class PlatformCheckerSourceGraph(
+    val leaf: SingleModuleFrontendOutput,
+    val outputs: List<SingleModuleFrontendOutput>,
+)
+
+/** 用稳定的文件路径把 LightTree 身份映射回源码文件。 */
+private fun Collection<PlatformCheckerSourceGraph>.lightTreeSourceFilePaths(): IdentityHashMap<FlyweightCapableTreeStructure<*>, String> {
+    val result = IdentityHashMap<FlyweightCapableTreeStructure<*>, String>()
+    for (graph in this) {
+        for (output in graph.outputs) {
+            for (file in output.fir) {
+                val sourceFilePath = file.sourceFile?.path ?: continue
+                val source = file.source as? CjLightSourceElement ?: continue
+                val previousPath = result.put(source.treeStructure, sourceFilePath)
+                check(previousPath == null || previousPath == sourceFilePath) {
+                    "A LightTree source structure is associated with more than one source file"
+                }
+            }
+        }
+    }
+    return result
+}
+
 /**
- * 完整的 construction + resolve + check 流程。
+ * 按源码模块数据的依赖关系构造 Platform 检查图。
+ *
+ * CLI 的 HMPP 分组可以产生多个互不依赖的源码图；脚本 session 则通过 refinement 依赖连接到
+ * 普通源码 session。二进制依赖没有对应的前端输出，因此不参与源码输出闭包。
+ */
+private fun List<SingleModuleFrontendOutput>.platformCheckerSourceGraphs(): List<PlatformCheckerSourceGraph> {
+    if (isEmpty()) return emptyList()
+
+    val outputByModuleData = IdentityHashMap<CfirModuleData, SingleModuleFrontendOutput>(size)
+    for (output in this) {
+        check(outputByModuleData.put(output.session.moduleData, output) == null) {
+            "A source module has more than one frontend output"
+        }
+    }
+
+    val dependenciesByModuleData = IdentityHashMap<CfirModuleData, List<CfirModuleData>>(size)
+    val modulesUsedAsDependencies = identitySet<CfirModuleData>()
+    for (output in this) {
+        val moduleData = output.session.moduleData
+        val sourceDependencies = mutableListOf<CfirModuleData>()
+        val seenDependencies = identitySet<CfirModuleData>()
+        for (dependency in moduleData.dependencies + moduleData.refinementDependencies) {
+            val dependencyModuleData = outputByModuleData[dependency]?.session?.moduleData ?: continue
+            if (seenDependencies.add(dependencyModuleData)) sourceDependencies += dependencyModuleData
+        }
+        dependenciesByModuleData[moduleData] = sourceDependencies
+        modulesUsedAsDependencies.addAll(sourceDependencies)
+    }
+
+    val visiting = identitySet<CfirModuleData>()
+    val validated = identitySet<CfirModuleData>()
+    fun validateAcyclic(moduleData: CfirModuleData) {
+        if (moduleData in validated) return
+        check(visiting.add(moduleData)) { "Source module frontend outputs contain a dependency cycle" }
+        dependenciesByModuleData[moduleData].orEmpty().forEach(::validateAcyclic)
+        visiting.remove(moduleData)
+        validated.add(moduleData)
+    }
+    for (output in this) validateAcyclic(output.session.moduleData)
+
+    val leaves = filter { it.session.moduleData !in modulesUsedAsDependencies }
+    check(leaves.isNotEmpty()) { "Source module frontend outputs have no terminal module" }
+
+    return leaves.map { leaf ->
+        val visited = identitySet<CfirModuleData>()
+        val graphOutputs = mutableListOf<SingleModuleFrontendOutput>()
+        fun collectDependenciesFirst(moduleData: CfirModuleData) {
+            if (!visited.add(moduleData)) return
+            dependenciesByModuleData[moduleData].orEmpty().forEach(::collectDependenciesFirst)
+            graphOutputs += checkNotNull(outputByModuleData[moduleData])
+        }
+        collectDependenciesFirst(leaf.session.moduleData)
+        PlatformCheckerSourceGraph(leaf, graphOutputs)
+    }
+}
+
+private fun <T : Any> identitySet(): MutableSet<T> = Collections.newSetFromMap(IdentityHashMap())
+
+/**
+ * Platform 图会重复检查同时属于多个 HMPP module group 的 common source。
+ * 只合并 source、工厂、严重级别、完整参数和相关位置完全相同的重复诊断。
+ */
+private class PlatformCheckerDiagnosticsCollector(
+    private val delegate: BaseDiagnosticsCollector,
+    private val lightTreeSourceFilePaths: IdentityHashMap<FlyweightCapableTreeStructure<*>, String>,
+) : BaseDiagnosticsCollector() {
+    private val reported = mutableSetOf<PlatformSourceDiagnosticIdentity>()
+
+    override val diagnostics: List<CjDiagnostic>
+        get() = delegate.diagnostics
+
+    override val diagnosticsByFilePath: Map<String?, List<CjDiagnostic>>
+        get() = delegate.diagnosticsByFilePath
+
+    override val hasErrors: Boolean
+        get() = delegate.hasErrors
+
+    override val hasWarningsForWError: Boolean
+        get() = delegate.hasWarningsForWError
+
+    override fun report(diagnostic: CjDiagnostic?, context: DiagnosticContext) {
+        if (diagnostic is CjDiagnosticWithSource && !context.isDiagnosticSuppressed(diagnostic)) {
+            val identity = PlatformSourceDiagnosticIdentity(
+                filePath = context.containingFilePath,
+                factoryName = diagnostic.factoryName,
+                severity = diagnostic.severity,
+                sourceElementClass = diagnostic.element.javaClass,
+                sourceElementRange = TextRange(diagnostic.element.startOffset, diagnostic.element.endOffset),
+                sourceElementType = (diagnostic.element as? CjSourceElement)?.elementType,
+                sourceElementKind = (diagnostic.element as? CjSourceElement)?.kind,
+                ranges = diagnostic.textRanges,
+                parameters = diagnostic.parameters(),
+                message = diagnostic.renderMessage(),
+                relatedInformation = diagnostic.relatedInformation.map { it.stableIdentity(lightTreeSourceFilePaths) },
+            )
+            if (!reported.add(identity)) return
+        }
+        delegate.report(diagnostic, context)
+    }
+}
+
+private data class PlatformSourceDiagnosticIdentity(
+    val filePath: String?,
+    val factoryName: String,
+    val severity: Severity,
+    val sourceElementClass: Class<out AbstractCjSourceElement>,
+    val sourceElementRange: TextRange,
+    val sourceElementType: IElementType?,
+    val sourceElementKind: CjSourceElementKind?,
+    val ranges: List<TextRange>,
+    val parameters: List<Any?>,
+    val message: String,
+    val relatedInformation: List<PlatformRelatedInformationIdentity>,
+)
+
+private data class PlatformRelatedInformationIdentity(
+    val message: String,
+    val filePath: String?,
+    val elementClass: Class<out AbstractCjSourceElement>?,
+    val elementRange: TextRange?,
+    val elementType: IElementType?,
+    val elementKind: CjSourceElementKind?,
+    val binarySourceIdentity: CjBinarySourceElement?,
+    val binarySourceLocation: CjSourceLocation?,
+    val sourceLocation: CjDiagnosticRelatedSourceLocation?,
+)
+
+private fun CjDiagnosticRelatedInformation.stableIdentity(
+    lightTreeSourceFilePaths: IdentityHashMap<FlyweightCapableTreeStructure<*>, String>,
+): PlatformRelatedInformationIdentity {
+    val source = element as? CjSourceElement
+    return PlatformRelatedInformationIdentity(
+        message = message,
+        filePath = sourceLocation?.filePath ?: element?.sourceFilePath(lightTreeSourceFilePaths),
+        elementClass = element?.javaClass,
+        elementRange = element?.let { TextRange(it.startOffset, it.endOffset) },
+        elementType = source?.elementType,
+        elementKind = source?.kind,
+        binarySourceIdentity = element as? CjBinarySourceElement,
+        binarySourceLocation = (element as? CjBinarySourceElement)?.sourceLocation,
+        sourceLocation = sourceLocation,
+    )
+}
+
+private fun AbstractCjSourceElement.sourceFilePath(
+    lightTreeSourceFilePaths: IdentityHashMap<FlyweightCapableTreeStructure<*>, String>,
+): String? = when (this) {
+    is CjBinarySourceElement -> sourceLocation?.filePath ?: binaryFilePath
+    is CjPsiSourceElement -> psi.containingFile?.virtualFile?.path
+    is CjLightSourceElement -> lightTreeSourceFilePaths[treeStructure]
+    is CjOffsetsOnlySourceElement -> sourceAnchor?.sourceFilePath(lightTreeSourceFilePaths)
+}
+
+private fun CjDiagnosticWithSource.parameters(): List<Any?> = when (this) {
+    is CjDiagnosticWithParameters1<*> -> listOf(a)
+    is CjDiagnosticWithParameters2<*, *> -> listOf(a, b)
+    is CjDiagnosticWithParameters3<*, *, *> -> listOf(a, b, c)
+    is CjDiagnosticWithParameters4<*, *, *, *> -> listOf(a, b, c, d)
+    else -> emptyList()
+}
+
+/** 对每个源码依赖图的终端 session 执行 Platform 检查。 */
+fun List<SingleModuleFrontendOutput>.runPlatformCheckers(diagnosticsCollector: BaseDiagnosticsCollector) {
+    val graphs = platformCheckerSourceGraphs()
+    val platformDiagnosticsCollector = PlatformCheckerDiagnosticsCollector(
+        diagnosticsCollector,
+        graphs.lightTreeSourceFilePaths(),
+    )
+    for (graph in graphs) {
+        graph.leaf.session.runCheckers(
+            graph.leaf.scopeSession,
+            graph.outputs.flatMap { it.fir },
+            platformDiagnosticsCollector,
+            MppCheckerKind.Platform,
+        )
+    }
+}
+
+/**
+ * 完整的 construction + resolve 流程。
  *
  * 这是 baseline 第 1 节定义的"主流程"代码级表达：
  * ```
- * pre → MacroConstructionService.expand → recordExpandedRawFilesOnce → resolve → check
+ * pre → MacroConstructionService.expand → recordExpandedRawFilesOnce → resolve
  * ```
  *
  * 当 construction 返回 [MacroConstructionResult.Failed] /
  * [MacroConstructionResult.ExecutorUnavailable] / [MacroConstructionResult.Blocked] 时，
  * 文件不会被 record，ordinary resolve 不会运行；诊断由调用方从 registry 自行处理。
  *
- * 当前 batch 仅暴露 Success / Degraded 两种"可注册"分支；
+ * check 由调用方在确定 Common/Platform 角色后统一调度。当前 batch 仅暴露 Success / Degraded 两种"可注册"分支；
  * 其他分支返回 `null`，由上层判断 baseline 行为。
  */
-fun resolveAndCheckCfirAfterConstruction(
+fun buildAndResolveCfirAfterConstruction(
     session: CfirSession,
     pre: PreMacroRawBuildResult,
     classification: MacroDemandClassification,
     constructionService: MacroConstructionService,
     constructionMode: MacroConstructionService.Mode,
-    diagnosticsCollector: BaseDiagnosticsCollector,
     macroArtifactDefinitions: List<MacroDefinitionEntry> = emptyList(),
     preConstructionDiagnostics: List<org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionDiagnostic> = emptyList(),
 ): Pair<MacroConstructionResult, SingleModuleFrontendOutput?> {
@@ -283,8 +540,7 @@ fun resolveAndCheckCfirAfterConstruction(
             }
         }
         session.register(MacroExpansionRegistry::class, registry)
-        session.annotationMetadataRegistryOrNull?.freeze()
-        return MacroConstructionResult.Failed(registry) to null
+        return MacroConstructionService.failedOf(pre, registry) to null
     }
     val result = constructionService.expand(
         pre = pre,
@@ -308,6 +564,7 @@ fun resolveAndCheckCfirAfterConstruction(
     }
     val provider = session.cfirProvider as CfirProviderImpl
     recordExpandedRawFilesOnce(provider, recordable, result.registry)
-    val output = resolveAndCheckCfir(session, recordable, diagnosticsCollector)
+    val (scopeSession, fir) = session.runResolution(recordable)
+    val output = SingleModuleFrontendOutput(session, scopeSession, fir)
     return result to output
 }

@@ -1,5 +1,5 @@
 
-@file:OptIn(org.cangnova.cangjie.analysis.api.CaPlatformInterface::class)
+@file:OptIn(org.cangnova.cangjie.analysis.api.CaPlatformInterface::class, org.cangnova.cangjie.cfir.CfirImplementationDetail::class)
 
 package org.cangnova.cangjie.analysis.low.level.api.cfir.file.builder
 
@@ -8,7 +8,18 @@ import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjec
 import org.cangnova.cangjie.cfir.builder.BodyBuildingMode
 import org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder
 import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.declarations.publishParsingDiagnostics
+import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationMetadataBuilder
+import org.cangnova.cangjie.cfir.resolve.providers.macro.materializePrimaryConstructorParameterFields
+import org.cangnova.cangjie.cfir.session.ensureAnnotationMetadataRegistry
 import org.cangnova.cangjie.cfir.session.recordRawExpressionMacroSurfaces
+import org.cangnova.cangjie.cfir.session.rawMacroSurfaceUsageStoreOrNull
+import org.cangnova.cangjie.cfir.session.cjmpSettings
+import org.cangnova.cangjie.cfir.session.languageVersionSettings
+import org.cangnova.cangjie.cfir.builder.toParsingContext
+import org.cangnova.cangjie.parsing.CangJieParser
+import org.cangnova.cangjie.parsing.compilationParsingResultOrNull
+import org.cangnova.cangjie.psi.CjCodeFragment
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.utils.ThreadSafe
 import org.cangnova.cangjie.utils.exceptions.checkWithAttachment
@@ -43,14 +54,44 @@ internal class LLCfirFileBuilder(val moduleComponents: LLCfirModuleResolveCompon
         val builder = PsiRawCfirBuilder(
             moduleComponents.session,
             moduleComponents.scopeProvider,
-            bodyBuildingMode = BodyBuildingMode.LAZY_BODIES
+            bodyBuildingMode = BodyBuildingMode.LAZY_BODIES,
+            annotationMetadata = CfirAnnotationMetadataBuilder(),
         )
-        val cfirFile = builder.buildCfirFile(cjFile)
+        val product = cjFile.compilationParsingResultOrNull() ?: parseFile(cjFile)
+        check(product.actualInputSeed.cjmpContext ==
+                moduleComponents.session.cjmpSettings.toParsingContext(moduleComponents.session.languageVersionSettings)) {
+            "A raw source build must consume its actual session parsing configuration before publication."
+        }
+        val cfirFile = product.withTargetFile(builder::buildCfirFile)
+        cfirFile.replaceSourceFile(product.sourceFile)
+        cfirFile.replaceSourceFileLinesMapping(product.sourceFileLinesMapping)
+        cfirFile.publishParsingDiagnostics(product.diagnosticPublication, product.actualInputSeed.settings)
+        materializePrimaryConstructorParameterFields(cfirFile, builder.annotationMetadata)
+        org.cangnova.cangjie.cfir.resolve.providers.macro.prepareDefaultParameterFunctions(
+            cfirFile, builder.annotationMetadata, product.actualInputSeed.settings.backend,
+        )
+        val generation = LLCfirFileSourceGeneration(product, cfirFile, moduleComponents.session.languageVersionSettings)
+        generation.requireConsistentInput(moduleComponents.session)
+        // 封闭当前 raw 代次的元数据，不授予 macro construction 完成身份。
+        // 后续 LL construction 必须在此 seal 之前完成，不能改写已缓存图。
+        val metadata = builder.annotationMetadata.seal(listOf(cfirFile))
+        moduleComponents.session.ensureAnnotationMetadataRegistry().publish(metadata)
         moduleComponents.session.recordRawExpressionMacroSurfaces(
             file = cfirFile,
-            sourceFileIdentity = cjFile,
+            sourceFileIdentity = product.file,
             surfaces = builder.consumeCollectedMacroSurfaces(),
         )
-        cfirFile
+        checkNotNull(moduleComponents.session.rawMacroSurfaceUsageStoreOrNull).bindSourceFileIdentity(cfirFile, product.originFile)
+        generation
+    }
+
+    /** 文件产品由当前 session 语境完整解析；原入口、目标树与缓存身份始终共同保存。 */
+    fun parseFile(cjFile: CjFile): org.cangnova.cangjie.parsing.ParsedCangJiePsiFile {
+        val context = moduleComponents.session.cjmpSettings.toParsingContext(moduleComponents.session.languageVersionSettings)
+        return if (cjFile is CjCodeFragment) {
+            CangJieParser.parseCompilationFragment(cjFile, cjFile.fragmentParserSeed.copy(cjmpContext = context), cjFile.parserCreationContext)
+        } else {
+            CangJieParser.parseCompilationFile(cjFile, context)
+        }
     }
 }

@@ -10,23 +10,31 @@ package org.cangnova.cangjie.cfir.patterns.builder
 import kotlin.contracts.*
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
+import org.cangnova.cangjie.cfir.expressions.CfirConstantValue
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.patterns.CfirEnumPattern
 import org.cangnova.cangjie.cfir.patterns.CfirPattern
 import org.cangnova.cangjie.cfir.patterns.impl.CfirEnumPatternImpl
-import org.cangnova.cangjie.cfir.references.CfirReference
+import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.source.CjSourceElement
 
 @CfirBuilderDsl
 class CfirEnumPatternBuilder {
     var source: CjSourceElement? = null
-    lateinit var constructorReference: CfirReference
+    var semanticTypeRef: CfirTypeRef? = null
+    val constantValues: MutableList<CfirConstantValue> = mutableListOf()
+    var contextExpression: CfirExpression? = null
+    lateinit var constructor: CfirExpression
     val arguments: MutableList<CfirPattern> = mutableListOf()
 
     @OptIn(CfirImplementationDetail::class)
     fun build(): CfirEnumPattern {
         return CfirEnumPatternImpl(
             source,
-            constructorReference,
+            semanticTypeRef,
+            constantValues,
+            contextExpression,
+            constructor,
             arguments,
         )
     }
@@ -48,7 +56,10 @@ inline fun buildEnumPatternCopy(original: CfirEnumPattern, init: CfirEnumPattern
     }
     val copyBuilder = CfirEnumPatternBuilder()
     copyBuilder.source = original.source
-    copyBuilder.constructorReference = original.constructorReference
+    copyBuilder.semanticTypeRef = original.semanticTypeRef
+    copyBuilder.constantValues.addAll(original.constantValues)
+    copyBuilder.contextExpression = original.contextExpression
+    copyBuilder.constructor = original.constructor
     copyBuilder.arguments.addAll(original.arguments)
     return copyBuilder.apply(init).build()
 }

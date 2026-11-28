@@ -36,7 +36,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
 import org.cangnova.cangjie.cfir.patterns.*
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.type.AbstractTypeChecker
@@ -388,6 +388,8 @@ fun convertPattern(
             }
         }
         is CfirWildcardPattern -> listOf(CfirMatchPattern.wild(expectedType))
+        is CfirCatchPattern, is CfirCommandTypePattern ->
+            listOf(CfirMatchPattern.Error.copy(cfirPattern = pattern))
         is CfirVarOrEnumPattern -> listOf(CfirMatchPattern.Error.copy(cfirPattern = pattern))
         is CfirBindingPattern -> {
             val nested = pattern.nestedPattern
@@ -456,7 +458,7 @@ fun convertPattern(
                 } else {
                     CfirMatchPattern(
                         expectedType,
-                        CfirMatchPatternKind.Type(resolvedType, pattern.bindingName?.asString()),
+                        CfirMatchPatternKind.Type(resolvedType, pattern.nestedPattern.primaryBindingNameOrNull()?.asString()),
                         pattern,
                     )
                 }

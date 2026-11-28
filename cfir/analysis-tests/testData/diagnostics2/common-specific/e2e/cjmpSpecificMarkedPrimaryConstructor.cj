@@ -9,7 +9,7 @@
 package cjmp_p
 
 public common class Q {
-    public common init(x: Int64)
+    private common init(x: Int64)
 }
 
 // MODULE: specific()()(common)
@@ -18,5 +18,5 @@ public common class Q {
 package cjmp_p
 
 public specific class Q {
-    public <!WRONG_MODIFIER_TARGET!>specific<!> Q(x: Int64) {}
+    specific private Q(x: Int64) {}
 }

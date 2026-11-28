@@ -7,11 +7,9 @@ import org.cangnova.cangjie.analysis.api.symbols.CaAnonymousFunctionSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaLocalVariableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPatternBindingSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPatternVariableSymbol
-import org.cangnova.cangjie.analysis.api.symbols.CaTypeParameterSymbol
 import org.cangnova.cangjie.psi.CjBindingPattern
 import org.cangnova.cangjie.psi.CjFunctionLiteral
 import org.cangnova.cangjie.psi.CjPatternVariable
-import org.cangnova.cangjie.psi.CjTypeParameter
 
 /**
  * source-only / local 符号的 PSI-based pointer。
@@ -97,27 +95,6 @@ internal class CaCfirPatternBindingSymbolPointer(
         val cfirSession = restoreSession(session) ?: return null
         val psi = pointer.element ?: return null
         return with(cfirSession) { (psi as? CjBindingPattern)?.symbol }
-    }
-}
-
-/**
- * 源码类型参数符号 pointer。
- */
-internal class CaCfirSourceTypeParameterSymbolPointer(
-    psi: com.intellij.psi.PsiElement,
-) : CaCfirSymbolPointerBase<CaTypeParameterSymbol>() {
-    /**
-     * 类型参数源码 PSI 的 IntelliJ smart pointer。
-     */
-    private val pointer: SmartPsiElementPointer<com.intellij.psi.PsiElement> = psi.createSmartPointer()
-
-    /**
-     * 从 smart pointer 恢复类型参数 PSI 并返回类型参数符号。
-     */
-    override fun restoreSymbol(session: org.cangnova.cangjie.analysis.api.CaSession): CaTypeParameterSymbol? {
-        val cfirSession = restoreSession(session) ?: return null
-        val psi = pointer.element ?: return null
-        return with(cfirSession) { (psi as? CjTypeParameter)?.symbol }
     }
 }
 

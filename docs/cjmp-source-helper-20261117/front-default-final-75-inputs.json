@@ -1,0 +1,26 @@
+{
+  "utc": "2026-11-17T10:36:05.6747952Z",
+  "fileCount": 6826,
+  "aggregateSha256": "BE1412F21B6D7368542D2A6DF00587E82F5A7F5B44DB0F33D8E376641B84CB81",
+  "roots": [
+    "common",
+    "cfir",
+    "analysis/low-level-api-cfir",
+    "analysis/analysis-api-cfir",
+    "compiler/frontend",
+    "compiler/config",
+    "compiler/phaser",
+    "compiler/arguments",
+    "psi",
+    "resolution.common",
+    "macro"
+  ],
+  "include": [
+    "*.kt",
+    "*.cj",
+    "*.kts"
+  ],
+  "exclude": "**/build/**",
+  "method": "rg --files --hidden --no-ignore, / normalized and Sort-Object -CaseSensitive; SHA256 of UTF8 LF joined path TAB length TAB uppercaseSHA256, no final LF",
+  "scope": "Original CJMP frontend necessary defaults/lambdas: copying19 + metadata36 + lifecycle18 + original negative2 = 75, preserved expected provenance via actual semantic API"
+}

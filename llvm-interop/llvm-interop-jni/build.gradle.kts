@@ -1,3 +1,4 @@
+import org.gradle.api.tasks.Sync
 import org.gradle.api.tasks.testing.Test
 
 plugins {
@@ -49,7 +50,7 @@ val nativeLibraryFileName = run {
     }
 }
 
-val aggregateNativeArtifacts by tasks.registering(Copy::class) {
+val aggregateNativeArtifacts by tasks.registering(Sync::class) {
     group = "build"
     description = "Copies native JNI library into native/<os>-<arch>/ layout for packaging."
     dependsOn("nativeCompile")
@@ -62,7 +63,22 @@ val aggregateNativeArtifacts by tasks.registering(Copy::class) {
         val llvmBin = file("$llvmDir/bin")
         if (llvmBin.exists()) {
             from(llvmBin) {
-                include("*.dll", "*.so", "*.dylib")
+                if (currentPlatformId.startsWith("windows-")) {
+                    // 保留 JNI 动态依赖及 Windows 系统运行库，避免把 LLDB、clang 等工具库当作 JNI 依赖预加载。
+                    include(
+                        "LLVM-C.dll",
+                        "libgcc_s_*.dll",
+                        "libstdc++-*.dll",
+                        "libwinpthread-*.dll",
+                        "api-ms-win-crt-*.dll",
+                        "msvcp*.dll",
+                        "vcruntime*.dll",
+                        "concrt*.dll",
+                        "ucrtbase.dll",
+                    )
+                } else {
+                    include("*.dll", "*.so", "*.dylib")
+                }
                 exclude(nativeLibraryFileName)
             }
         }

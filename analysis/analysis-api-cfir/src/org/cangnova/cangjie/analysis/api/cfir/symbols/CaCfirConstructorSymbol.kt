@@ -7,7 +7,6 @@ import org.cangnova.cangjie.analysis.api.cfir.findPsi
 import org.cangnova.cangjie.analysis.api.cfir.getExplicitCallableReceiverType
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
-import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.symbols.CaConstructorSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolLocation
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolVisibility
@@ -62,12 +61,6 @@ internal class CaCfirConstructorSymbol private constructor(
         analysisSession = session,
         lazyCfirSymbol = lazyOf(symbol),
     )
-
-    /**
-     * 构造器所在的 use-site 模块。
-     */
-    override val containingModule: CaModule
-        get() = analysisSession.useSiteModule
 
     /**
      * 构造器 CFIR member 状态。
@@ -221,4 +214,9 @@ internal class CaCfirConstructorSymbol private constructor(
             backingPsi?.getContainingTypeStatement()?.getClassId()
                 ?: cfirSymbol.callableId.classId
         }
+
+    /** 构造器的 PSI 查询与 CFIR 查询按同一来源身份比较。 */
+    override fun equals(other: Any?): Boolean = psiOrSymbolEquals(other)
+
+    override fun hashCode(): Int = psiOrSymbolHashCode()
 }

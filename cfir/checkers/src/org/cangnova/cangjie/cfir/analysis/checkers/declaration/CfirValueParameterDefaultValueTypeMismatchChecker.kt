@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.checkTargetTypedExpression
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.isHandled
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
@@ -16,7 +17,7 @@ import org.cangnova.cangjie.source.AbstractCjSourceElement
  * Kotlin FIR 对应实现是 `FirValueParameterDefaultValueTypeMismatchChecker`：
  * 默认值表达式按参数类型作为期望类型检查，诊断落在默认值表达式上。
  */
-object CfirValueParameterDefaultValueTypeMismatchChecker : CfirValueParameterChecker() {
+object CfirValueParameterDefaultValueTypeMismatchChecker : CfirValueParameterChecker(MppCheckerKind.Common) {
     /**
      * 检查值参数默认值表达式是否兼容参数声明类型。
      *

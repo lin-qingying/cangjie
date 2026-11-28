@@ -1,3 +1,4 @@
+%cangjie.unit = type { }
 declare void @ext_log(i32)
 define i32 @main() {
 entry:

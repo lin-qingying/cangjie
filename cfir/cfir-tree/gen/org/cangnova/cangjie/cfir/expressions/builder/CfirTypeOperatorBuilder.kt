@@ -8,6 +8,7 @@
 package org.cangnova.cangjie.cfir.expressions.builder
 
 import kotlin.contracts.*
+import org.cangnova.cangjie.annotations.CangjieOverflowStrategy
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
@@ -25,6 +26,8 @@ class CfirTypeOperatorBuilder {
     var source: CjSourceElement? = null
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
     var coneTypeOrNull: ConeCangJieType? = null
+    var mappedExpression: CfirExpression? = null
+    var overflowStrategy: CangjieOverflowStrategy? = null
     lateinit var operation: CfirTypeOperationKind
     lateinit var argument: CfirExpression
     lateinit var typeRef: CfirTypeRef
@@ -35,6 +38,8 @@ class CfirTypeOperatorBuilder {
             source,
             annotations.toMutableOrEmpty(),
             coneTypeOrNull,
+            mappedExpression,
+            overflowStrategy,
             operation,
             argument,
             typeRef,
@@ -60,6 +65,8 @@ inline fun buildTypeOperatorCopy(original: CfirTypeOperator, init: CfirTypeOpera
     copyBuilder.source = original.source
     copyBuilder.annotations.addAll(original.annotations)
     copyBuilder.coneTypeOrNull = original.coneTypeOrNull
+    copyBuilder.mappedExpression = original.mappedExpression
+    copyBuilder.overflowStrategy = original.overflowStrategy
     copyBuilder.operation = original.operation
     copyBuilder.argument = original.argument
     copyBuilder.typeRef = original.typeRef

@@ -6,6 +6,7 @@ dependencies {
     api(project(":resolution.common"))
 
     api(project(":cfir:cfir-tree"))
+    api(project(":cfir:semantics.api"))
 //    api(project(":cfir:cfir-common"))
     api(project(":cfir:cfir-cones"))
 //    api(project(":common:diagnostics"))

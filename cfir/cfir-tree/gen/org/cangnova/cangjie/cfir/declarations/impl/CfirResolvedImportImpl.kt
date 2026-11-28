@@ -18,13 +18,17 @@ import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.CjSourceElement
 
+@OptIn(CfirImplementationDetail::class)
 class CfirResolvedImportImpl @CfirImplementationDetail constructor(
     override var condition: CfirExpression?,
     override var delegate: CfirImport,
     override val packageFqName: FqName,
 ) : CfirResolvedImport() {
-    override val source: CjSourceElement?
+    override var source: CjSourceElement?
         get() = delegate.source
+        set(value) {
+            delegate.replaceSource(value)
+        }
     override val importedFqName: FqName?
         get() = delegate.importedFqName
     override val organizationName: Name?
@@ -35,8 +39,11 @@ class CfirResolvedImportImpl @CfirImplementationDetail constructor(
         get() = delegate.visibility
     override val aliasName: Name?
         get() = delegate.aliasName
-    override val aliasSource: CjSourceElement?
+    override var aliasSource: CjSourceElement?
         get() = delegate.aliasSource
+        set(value) {
+            delegate.replaceAliasSource(value)
+        }
     override val importedName: Name?
         get() = importedFqName?.shortName()
 
@@ -52,6 +59,15 @@ class CfirResolvedImportImpl @CfirImplementationDetail constructor(
     override fun <D> transformCondition(transformer: CfirTransformer<D>, data: D): CfirResolvedImportImpl {
         condition = condition?.transform(transformer, data)
         return this
+    }
+
+    @CfirImplementationDetail
+    override fun replaceSource(newSource: CjSourceElement?) {
+        source = newSource
+    }
+
+    override fun replaceAliasSource(newAliasSource: CjSourceElement?) {
+        aliasSource = newAliasSource
     }
 
     override fun replaceCondition(newCondition: CfirExpression?) {

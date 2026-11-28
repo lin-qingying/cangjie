@@ -37,6 +37,17 @@ class ThisType : Table() {
             null
         }
     }
+    val ownerTypeName : String?
+        get() {
+            val o = __offset(6)
+            return if (o != 0) {
+                __string(o + bb_pos)
+            } else {
+                null
+            }
+        }
+    val ownerTypeNameAsByteBuffer : ByteBuffer get() = __vector_as_bytebuffer(6, 1)
+    fun ownerTypeNameInByteBuffer(_bb: ByteBuffer) : ByteBuffer = __vector_in_bytebuffer(_bb, 6, 1)
     companion object {
         fun validateVersion() = Constants.FLATBUFFERS_25_2_10()
         fun getRootAsThisType(_bb: ByteBuffer): ThisType = getRootAsThisType(_bb, ThisType())
@@ -44,13 +55,15 @@ class ThisType : Table() {
             _bb.order(ByteOrder.LITTLE_ENDIAN)
             return (obj.__assign(_bb.getInt(_bb.position()) + _bb.position(), _bb))
         }
-        fun createThisType(builder: FlatBufferBuilder, baseOffset: Int) : Int {
-            builder.startTable(1)
+        fun createThisType(builder: FlatBufferBuilder, baseOffset: Int, ownerTypeNameOffset: Int) : Int {
+            builder.startTable(2)
+            addOwnerTypeName(builder, ownerTypeNameOffset)
             addBase(builder, baseOffset)
             return endThisType(builder)
         }
-        fun startThisType(builder: FlatBufferBuilder) = builder.startTable(1)
+        fun startThisType(builder: FlatBufferBuilder) = builder.startTable(2)
         fun addBase(builder: FlatBufferBuilder, base: Int) = builder.addOffset(0, base, 0)
+        fun addOwnerTypeName(builder: FlatBufferBuilder, ownerTypeName: Int) = builder.addOffset(1, ownerTypeName, 0)
         fun endThisType(builder: FlatBufferBuilder) : Int {
             val o = builder.endTable()
             return o

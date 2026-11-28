@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.analysis.diagnostics.literalConversionDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
@@ -19,7 +20,7 @@ import org.cangnova.cangjie.type.AbstractTypeChecker
  * 对应官方 ChkMatchCasePatGuard / SynMatchCaseNoSelector，诊断独立于分支结果类型；
  * 字面量转换失败复用共享诊断分类，已有错误表达式不追加条件类型错误。
  */
-object CfirMatchConditionTypeChecker : CfirMatchExpressionChecker() {
+object CfirMatchConditionTypeChecker : CfirMatchExpressionChecker(MppCheckerKind.Common) {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirMatchExpression) {
         for (branch in expression.branches) {

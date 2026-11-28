@@ -7,8 +7,12 @@ FILE: publicVisibilityDisplay.cj
         internal? func implicitInternal(): R|Unit| {
             <element: CfirLazyBlock>
         }
-        public let explicitPublicValue: R|Int64|
-        internal? let implicitInternalValue: R|Int64|
+        public let explicitPublicValue: R|Int64| = ...
+            initializer:
+                <element: CfirLazyExpression>
+        internal? let implicitInternalValue: R|Int64| = ...
+            initializer:
+                <element: CfirLazyExpression>
     }
     internal? class ImplicitInternalFromClassDefault {
         init()

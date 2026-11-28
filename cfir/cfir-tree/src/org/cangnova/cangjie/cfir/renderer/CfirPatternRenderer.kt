@@ -51,12 +51,14 @@ open class CfirPatternRenderer(
             pattern.nestedPattern?.let { append(" @ ${render(it)}") }
         }
         is CfirTuplePattern -> "(${pattern.elements.joinToString { render(it) }})"
-        is CfirEnumPattern -> "${referenceRenderer.render(pattern.constructorReference)}(${
+        is CfirEnumPattern -> "${inlineExpressionRenderer.render(pattern.constructor)}(${
             pattern.arguments.joinToString { render(it) }
         })"
         is CfirTypePattern -> buildString {
             append("is ${renderTypeRefForDebug(pattern.typeRef, typeRenderer)}")
-            pattern.bindingName?.let { append(" ${it.asString()}") }
+            append(" ${render(pattern.nestedPattern)}")
         }
+        is CfirCatchPattern -> "${render(pattern.nestedPattern)}: ${pattern.typeRefs.joinToString(" | ") { renderTypeRefForDebug(it, typeRenderer) }}"
+        is CfirCommandTypePattern -> "${render(pattern.nestedPattern)}: ${pattern.typeRefs.joinToString(" | ") { renderTypeRefForDebug(it, typeRenderer) }}"
     }
 }

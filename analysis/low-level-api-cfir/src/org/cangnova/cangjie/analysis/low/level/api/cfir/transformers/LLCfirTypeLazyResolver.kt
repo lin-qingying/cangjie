@@ -13,9 +13,8 @@ import org.cangnova.cangjie.cfir.declarations.CfirCodeFragment
 import org.cangnova.cangjie.cfir.declarations.CfirEnum
 import org.cangnova.cangjie.cfir.declarations.CfirInterface
 import org.cangnova.cangjie.cfir.declarations.CfirStruct
+import org.cangnova.cangjie.cfir.patterns.*
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirTypeResolveTransformer
-import org.cangnova.cangjie.cfir.resolve.CfirTypeResolutionConfiguration
-import org.cangnova.cangjie.cfir.resolve.createFileLookupScopes
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.withCfirEntry
@@ -38,6 +37,19 @@ internal object LLCfirTypeLazyResolver : LLCfirLazyResolver(CfirResolvePhase.TYP
         }
 
         when (target) {
+            is CfirPatternVariable -> {
+                checkReturnTypeRefIsResolved(target, acceptImplicitTypeRef = true)
+                for (binding in target.pattern.bindingVariables()) {
+                    checkReturnTypeRefIsResolved(binding, acceptImplicitTypeRef = true)
+                    checkAnnotationTypeIsResolved(binding)
+                }
+            }
+            is CfirEnumConstructor -> {
+                checkReturnTypeRefIsResolved(target, acceptImplicitTypeRef = false)
+                for (parameter in target.valueParameters) {
+                    checkTypeRefIsResolved(parameter.returnTypeRef, "enum payload type", target)
+                }
+            }
             is CfirCallableDeclaration -> checkReturnTypeRefIsResolved(target, acceptImplicitTypeRef = true)
             is CfirTypeParameter -> {
                 for (bound in target.bounds) {
@@ -104,7 +116,9 @@ private class LLCfirTypeTargetResolver(target: LLCfirResolveTarget) : LLCfirTarg
     override fun doLazyResolveUnderLock(target: CfirElementWithResolveState) {
         when (target) {
             is CfirFunction -> resolve(target, TypeStateKeepers.FUNCTION)
+            is CfirEnumConstructor -> resolve(target, TypeStateKeepers.ENUM_CONSTRUCTOR)
             is CfirProperty -> resolve(target, TypeStateKeepers.PROPERTY)
+            is CfirPatternVariable -> resolve(target, TypeStateKeepers.PATTERN_VARIABLE)
             is CfirCallableDeclaration,
             is CfirExtend,
             is CfirFile,
@@ -148,63 +162,15 @@ private class LLCfirTypeTargetResolver(target: LLCfirResolveTarget) : LLCfirTarg
             is CfirCallableDeclaration,
             is CfirTypeParameter,
             is CfirValueParameter,
-                -> target.accept(transformer, buildConfiguration(target))
+                -> transformer.resolveDesignatedDeclarationTypes(
+                    target,
+                    containingDeclarations.lastOrNull { it is CfirFile } as? CfirFile ?: resolveTarget.cfirFile,
+                    containingDeclarations,
+                )
             else -> errorWithAttachment("Unknown declaration ${target::class.simpleName}") {
                 withCfirEntry("declaration", target)
             }
         }
-    }
-
-    /**
-     * 为 [topContainer] 创建类型解析配置。
-     */
-    private fun buildConfiguration(topContainer: CfirDeclaration): CfirTypeResolutionConfiguration {
-        val containingFile = containingDeclarations.lastOrNull { it is CfirFile } as? CfirFile ?: resolveTarget.cfirFile
-        val containingClasses = containingDeclarations.filterIsInstance<CfirClass>()
-
-        var configuration = CfirTypeResolutionConfiguration.EMPTY.withTopContainer(topContainer)
-        if (containingFile != null) {
-            configuration = configuration
-                .withUseSiteFile(containingFile)
-                .withScopes(
-                    resolveTargetSession.createFileLookupScopes(
-                        containingFile,
-                        resolveTargetScopeSession,
-                    ).typeResolutionScopes,
-                )
-        }
-        if (containingClasses.isNotEmpty()) {
-            configuration = configuration.withContainingClassDeclarations(containingClasses)
-        }
-        // LL 独立解析成员签名时必须重建完整的外围类型参数链；extend 成员同样能引用 extend 自身的类型参数。
-        for (containingDeclaration in containingDeclarations) {
-            configuration = when (containingDeclaration) {
-                is CfirClassLikeDeclaration -> configuration.withAdditionalTypeParameters(
-                    containingDeclaration.typeParametersForResolution(),
-                )
-                is CfirExtend -> configuration.withAdditionalTypeParameters(containingDeclaration.typeParameters)
-                else -> configuration
-            }
-        }
-        return configuration
-    }
-
-    /**
-     * low-level TYPES 需要和主 TYPES 解析器保持相同的外层类型参数可见性：
-     * interface / struct / enum 的成员签名同样可以引用所属 class-like 的类型参数。
-     */
-    private fun CfirClassLikeDeclaration.typeParametersForResolution(): List<CfirTypeParameter> = when (this) {
-        is CfirClass -> typeParameters
-        is org.cangnova.cangjie.cfir.declarations.CfirPrimitiveTypeDeclaration -> emptyList()
-        // 内建声明的 refs 在反序列化时必须已经物化为真实的 CfirTypeParameter；低阶类型解析不能丢弃它们。
-        is org.cangnova.cangjie.cfir.declarations.CfirBuiltInDeclaration -> typeParameters.map { typeParameterRef ->
-            typeParameterRef as? CfirTypeParameter
-                ?: error("内建声明 ${name.asString()} 的类型参数未物化为 CfirTypeParameter")
-        }
-        is CfirInterface -> typeParameters
-        is CfirStruct -> typeParameters
-        is CfirEnum -> typeParameters
-        is CfirTypeAlias -> typeParameters
     }
 
 }
@@ -213,6 +179,25 @@ private class LLCfirTypeTargetResolver(target: LLCfirResolveTarget) : LLCfirTarg
  * TYPES 阶段需要在局部解析失败时恢复的状态集合。
  */
 private object TypeStateKeepers {
+    /** 模式头解析是同一事务，恢复原 binding 类型与阶段以及 pattern 显式类型引用。 */
+    val PATTERN_VARIABLE: StateKeeper<CfirPatternVariable, Unit> = stateKeeper { builder, declaration, context ->
+        builder.add(CALLABLE_DECLARATION, context)
+        builder.entityList(declaration.pattern.bindingVariables(), PATTERN_BINDING, context)
+        builder.entity(declaration.pattern, PatternStateKeepers.PATTERN, context)
+    }
+
+    private val PATTERN_BINDING: StateKeeper<CfirPatternBindingVariable, Unit> = stateKeeper { builder, _, context ->
+        builder.add(CALLABLE_DECLARATION, context)
+        @OptIn(ResolveStateAccess::class)
+        builder.add({ it.resolveState }, { declaration, state -> declaration.resolveState = state })
+    }
+
+    /** 构造项的返回类型和 payload 类型都属于同一次声明头解析，取消时一起恢复。 */
+    val ENUM_CONSTRUCTOR: StateKeeper<CfirEnumConstructor, Unit> = stateKeeper { builder, declaration, context ->
+        builder.add(CALLABLE_DECLARATION, context)
+        builder.entityList(declaration.valueParameters, CALLABLE_DECLARATION, context)
+    }
+
     /**
      * 函数解析状态保持器，会同时保护函数值参数上的 callable 类型状态。
      */

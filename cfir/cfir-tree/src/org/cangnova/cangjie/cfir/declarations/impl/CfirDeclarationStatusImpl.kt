@@ -28,6 +28,8 @@ import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.CfirPureAbstractElement
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationStatus
+import org.cangnova.cangjie.cfir.declarations.CfirResolvedDeclarationStatus
+import org.cangnova.cangjie.cfir.declarations.builder.buildResolvedDeclarationStatus
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.descriptors.Modality
@@ -58,6 +60,12 @@ open class CfirDeclarationStatusImpl(
      * 声明状态对象本身没有独立源码节点。
      */
     override val source: CjSourceElement? get() = null
+
+    /** 此节点没有独立源槽位，不能被绑定到另一个源代次。 */
+    @org.cangnova.cangjie.cfir.CfirImplementationDetail
+    override fun replaceSource(newSource: CjSourceElement?) {
+        require(newSource == null)
+    }
 
     /**
      * 声明修饰符的压缩 bitset。
@@ -264,6 +272,35 @@ open class CfirDeclarationStatusImpl(
         set(value) {
             this[Modifier.SEALED] = value
         }
+
+    /**
+     * 对位 Kotlin FirDeclarationStatusImpl.resolved：生产 owner 在完成 visibility/modality 后发布状态值。
+     * 完整保留仓颉 flags；状态发布不推进声明 phase，也不执行类型或正文解析。
+     */
+    open fun resolved(visibility: Visibility, modality: Modality): CfirResolvedDeclarationStatus = buildResolvedDeclarationStatus {
+        source = this@CfirDeclarationStatusImpl.source
+        this.visibility = visibility
+        this.modality = modality
+        isVisibilityExplicit = this@CfirDeclarationStatusImpl.isVisibilityExplicit
+        isModalityExplicit = this@CfirDeclarationStatusImpl.isModalityExplicit
+        isAbstractExplicit = this@CfirDeclarationStatusImpl.isAbstractExplicit
+        isOverride = this@CfirDeclarationStatusImpl.isOverride
+        isOperator = this@CfirDeclarationStatusImpl.isOperator
+        isStatic = this@CfirDeclarationStatusImpl.isStatic
+        isConst = this@CfirDeclarationStatusImpl.isConst
+        isMut = this@CfirDeclarationStatusImpl.isMut
+        isUnsafe = this@CfirDeclarationStatusImpl.isUnsafe
+        isForeign = this@CfirDeclarationStatusImpl.isForeign
+        isC = this@CfirDeclarationStatusImpl.isC
+        isCommon = this@CfirDeclarationStatusImpl.isCommon
+        isSpecific = this@CfirDeclarationStatusImpl.isSpecific
+        isCommonWithDefault = this@CfirDeclarationStatusImpl.isCommonWithDefault
+        isRedef = this@CfirDeclarationStatusImpl.isRedef
+        isDefault = this@CfirDeclarationStatusImpl.isDefault
+        isAbstract = this@CfirDeclarationStatusImpl.isAbstract
+        isOpen = this@CfirDeclarationStatusImpl.isOpen
+        isSealed = this@CfirDeclarationStatusImpl.isSealed
+    }
 
     /**
      * [flags] 中各修饰符 bit 的定义。

@@ -7,8 +7,13 @@ import kotlinx.collections.immutable.PersistentList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toPersistentList
 import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirInternals
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.llCfirResolvableSession
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.CfirDesignation
+import org.cangnova.cangjie.analysis.low.level.api.cfir.transformers.PreservedState
+import org.cangnova.cangjie.analysis.low.level.api.cfir.transformers.StateKeeper
+import org.cangnova.cangjie.analysis.low.level.api.cfir.transformers.resolveWithKeeper
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.errorWithCfirSpecificEntries
+import org.cangnova.cangjie.analysis.low.level.api.cfir.util.getContainingFile
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
@@ -25,6 +30,9 @@ import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirMacroDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirMainFunction
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
+import org.cangnova.cangjie.cfir.declarations.parserSettings
+import org.cangnova.cangjie.cfir.resolve.providers.macro.materializeDefaultParameterHelperBodies
+import org.cangnova.cangjie.cfir.resolve.providers.macro.prepareDefaultParameterFunctionsInRebuiltBody
 import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
@@ -35,12 +43,17 @@ import org.cangnova.cangjie.cfir.expressions.CfirLazyBlock
 import org.cangnova.cangjie.cfir.expressions.CfirLazyExpression
 import org.cangnova.cangjie.cfir.psi
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.rawMacroSurfaceUsageStoreOrNull
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
+import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationMetadataBuilder
+import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirRawMacroUsageSlot
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurface
 import org.cangnova.cangjie.cfir.unwrapFakeOverridesOrDelegated
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
+import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
 import org.cangnova.cangjie.cfir.visitors.transformSingle
 import org.cangnova.cangjie.psi.CjCodeFragment
-import org.cangnova.cangjie.psi.CjDeclarationWithInitializer
+import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjElement
 import org.jetbrains.annotations.TestOnly
 
@@ -57,9 +70,9 @@ object CfirLazyBodiesCalculator {
      *
      * 只会沿 [CfirDesignation.path] 进入目标声明，避免遍历无关非局部声明。
      */
-    fun calculateBodies(designation: CfirDesignation) {
+    internal fun calculateBodies(designation: CfirDesignation, publications: CfirLazyBodyPublications) {
         designation.target.transformSingle(
-            CfirTargetLazyBodiesCalculatorTransformer,
+            CfirTargetLazyBodiesCalculatorTransformer(publications),
             designation.path.toPersistentList(),
         )
     }
@@ -71,8 +84,26 @@ object CfirLazyBodiesCalculator {
      */
     @TestOnly
     fun calculateAllLazyExpressionsInFile(cfirFile: CfirFile) {
-        cfirFile.accept(RecursiveLazyAnnotationCalculatorVisitor, cfirFile.moduleData.session)
-        cfirFile.transformSingle(CfirAllLazyBodiesCalculatorTransformer, persistentListOf())
+        val session = cfirFile.moduleData.session
+        // 此 LL 入口处理已缓存/注册的源图；不能隐式发布直接构建的私有 raw 文件。
+        val components = checkNotNull(cfirFile.llCfirResolvableSession).moduleComponents
+        val sourcePsi = checkNotNull(cfirFile.psi as? CjFile)
+        check(components.cache.getCachedCfirFile(sourcePsi) === cfirFile) {
+            "All-lazy source materialization requires the actual cached file generation."
+        }
+        checkNotNull(session.rawMacroSurfaceUsageStoreOrNull).validateAdoptionSlots(cfirFile, emptyList())
+        CfirLazyBodyPublications(session).use { publications ->
+            val graphKeeper = StateKeeper<CfirFile, CfirDesignation> { file, _ -> preserveRawGraph(file) }
+            resolveWithKeeper(
+                cfirFile,
+                CfirDesignation(cfirFile),
+                publications.withStateKeeper(graphKeeper),
+                prepareTarget = {
+                    cfirFile.accept(RecursiveLazyAnnotationCalculatorVisitor, session)
+                    cfirFile.transformSingle(CfirAllLazyBodiesCalculatorTransformer(publications), persistentListOf())
+                },
+            ) {}
+        }
     }
 
     /**
@@ -118,6 +149,8 @@ object CfirLazyBodiesCalculator {
  */
 private inline fun <reified T : CfirDeclaration> revive(
     designation: CfirDesignation,
+    annotationMetadata: CfirAnnotationMetadataBuilder,
+    macroSurfaces: MutableList<MacroSurface>,
     psi: PsiElement? = designation.target.psi,
 ): T {
     val session = designation.target.moduleData.session
@@ -133,109 +166,152 @@ private inline fun <reified T : CfirDeclaration> revive(
         scopeProvider = session.cangjieScopeProvider,
         designation = designation,
         rootNonLocalDeclaration = rootNonLocalDeclaration,
+        annotationMetadata = annotationMetadata,
+        macroSurfaces = macroSurfaces,
     ) as T
 }
 
-/**
- * 用 [copy] 中的默认参数值替换 [target] 中仍为 [CfirLazyExpression] 的默认参数值。
- *
- * 参数数量必须保持一致，因为重建声明应与原声明拥有相同签名结构。
- */
-private fun replaceLazyValueParameters(target: CfirFunction, copy: CfirFunction) {
-    val targetParameters = target.valueParameters
-    val copyParameters = copy.valueParameters
-    require(targetParameters.size == copyParameters.size)
+/** 所有结构与归属校验完成后才采用；OPEN metadata 由本次 publications 持有到根 postProcess。 */
+private class RebuiltDeclarationPlan(val slots: List<CfirRawMacroUsageSlot>, val adopt: () -> Unit)
 
-    for ((valueParameter, newValueParameter) in targetParameters.zip(copyParameters)) {
-        if (valueParameter.defaultValue is CfirLazyExpression) {
-            valueParameter.replaceDefaultValue(newValueParameter.defaultValue)
+private inline fun <reified T : CfirDeclaration> adoptRebuiltDeclaration(
+    designation: CfirDesignation,
+    psi: PsiElement?,
+    publications: CfirLazyBodyPublications,
+    prepare: (T, CfirAnnotationMetadataBuilder, CfirFile) -> RebuiltDeclarationPlan,
+) {
+    val target = designation.target as CfirDeclaration
+    val session = target.moduleData.session
+    // IGNORE_SELF 的祖先只提供解析上下文，产品仍使用 target 的实际文件与 session。
+    val sourceFile = checkNotNull(target.getContainingFile()) {
+        "A lazy body publication requires the target's actual cached source file."
+    }
+    check(sourceFile.moduleData.session === session) {
+        "A lazy body publication cannot cross its source-file session."
+    }
+    val metadata = CfirAnnotationMetadataBuilder()
+    val surfaces = mutableListOf<MacroSurface>()
+    var transferred = false
+    try {
+        val copy = revive<T>(designation, metadata, surfaces, psi)
+        val plan = prepare(copy, metadata, sourceFile)
+        publications.stage(target, sourceFile, metadata, plan.slots, surfaces)
+        transferred = true
+        plan.adopt()
+    } finally {
+        if (!transferred) metadata.abort()
+    }
+}
+
+/** 正文/default 槽位的完整结构校验在任何采用之前执行。 */
+private fun functionReplacementSlots(target: CfirFunction, copy: CfirFunction): List<CfirRawMacroUsageSlot> {
+    require(target.valueParameters.size == copy.valueParameters.size)
+    return buildList {
+        if (target.body is CfirLazyBlock) {
+            require(copy.body !is CfirLazyBlock) { "A normal rebuild must materialize the function body." }
+            add(CfirRawMacroUsageSlot(target, CfirRawMacroUsageSlot.Kind.BODY))
+        }
+        target.valueParameters.zip(copy.valueParameters).forEach { (original, recreated) ->
+            if (original.defaultValue is CfirLazyExpression) {
+                require(recreated.defaultValue !is CfirLazyExpression) { "A normal rebuild must materialize parameter defaults." }
+                add(CfirRawMacroUsageSlot(original, CfirRawMacroUsageSlot.Kind.PARAMETER_DEFAULT))
+            }
         }
     }
 }
 
-/**
- * 当 [target] 的 body 仍是 [CfirLazyBlock] 时，用 [copy] 的真实 body 替换它。
- */
-private fun replaceLazyBody(target: CfirFunction, copy: CfirFunction) {
-    if (target.body !is CfirLazyBlock) return
-    target.replaceBody(copy.body)
+/** 参数数量已经由准备阶段校验，采用时只写入仍为 lazy 的实际参数。 */
+private fun replaceLazyValueParameters(target: CfirFunction, copy: CfirFunction) {
+    for ((valueParameter, newValueParameter) in target.valueParameters.zip(copy.valueParameters)) {
+        if (valueParameter.defaultValue is CfirLazyExpression) valueParameter.replaceDefaultValue(newValueParameter.defaultValue)
+    }
 }
 
-/**
- * 返回 callable 的原始 PSI。
- *
- * fake override 或 delegated 声明需要先解包到真实声明，否则 raw rebuild 可能无法定位原始源码节点。
- */
+private fun replaceLazyBody(target: CfirFunction, copy: CfirFunction) {
+    if (target.body is CfirLazyBlock) target.replaceBody(copy.body)
+}
+
 private val CfirCallableDeclaration.originalPsi: PsiElement?
     get() = unwrapFakeOverridesOrDelegated().psi
 
-/**
- * 计算普通函数类声明的惰性 body 和默认参数值。
- */
-private inline fun <reified F : CfirFunction> calculateLazyBodiesForFunction(designation: CfirDesignation) {
+private inline fun <reified F : CfirFunction> calculateLazyBodiesForFunction(
+    designation: CfirDesignation,
+    publications: CfirLazyBodyPublications,
+) {
     val function = designation.target as F
     require(needCalculatingLazyBodyForFunction(function))
-
-    val recreatedFunction = revive<F>(designation, function.originalPsi)
-    replaceLazyBody(function, recreatedFunction)
-    replaceLazyValueParameters(function, recreatedFunction)
+    adoptRebuiltDeclaration<F>(designation, function.originalPsi, publications) { copy, metadata, sourceFile ->
+        copy.body?.let { prepareDefaultParameterFunctionsInRebuiltBody(it, metadata, checkNotNull(sourceFile.parserSettings).backend) }
+        val helperBodies = materializeDefaultParameterHelperBodies(function, copy, metadata, checkNotNull(sourceFile.parserSettings).backend)
+        val slots = functionReplacementSlots(function, copy) + helperBodies.map { (helper, _) ->
+            CfirRawMacroUsageSlot(helper, CfirRawMacroUsageSlot.Kind.BODY)
+        }
+        RebuiltDeclarationPlan(slots) {
+            replaceLazyBody(function, copy)
+            replaceLazyValueParameters(function, copy)
+            helperBodies.forEach { (helper, body) -> helper.replaceBody(body) }
+        }
+    }
 }
 
-/**
- * 计算构造函数的惰性 body 和默认参数值。
- */
-private fun calculateLazyBodyForConstructor(designation: CfirDesignation) {
+private fun calculateLazyBodyForConstructor(designation: CfirDesignation, publications: CfirLazyBodyPublications) {
     val constructor = designation.target as CfirConstructor
     require(needCalculatingLazyBodyForConstructor(constructor))
-
-    val recreatedConstructor = revive<CfirConstructor>(designation, constructor.originalPsi)
-    replaceLazyBody(constructor, recreatedConstructor)
-    replaceLazyValueParameters(constructor, recreatedConstructor)
+    adoptRebuiltDeclaration<CfirConstructor>(designation, constructor.originalPsi, publications) { copy, metadata, sourceFile ->
+        copy.body?.let { prepareDefaultParameterFunctionsInRebuiltBody(it, metadata, checkNotNull(sourceFile.parserSettings).backend) }
+        val helperBodies = materializeDefaultParameterHelperBodies(constructor, copy, metadata, checkNotNull(sourceFile.parserSettings).backend)
+        val slots = functionReplacementSlots(constructor, copy) + helperBodies.map { (helper, _) ->
+            CfirRawMacroUsageSlot(helper, CfirRawMacroUsageSlot.Kind.BODY)
+        }
+        RebuiltDeclarationPlan(slots) {
+            replaceLazyBody(constructor, copy)
+            replaceLazyValueParameters(constructor, copy)
+            helperBodies.forEach { (helper, body) -> helper.replaceBody(body) }
+        }
+    }
 }
 
-/**
- * 计算属性访问器中仍为惰性块的 getter/setter body。
- *
- * 属性本身没有需要替换的统一 body；需要分别处理已经存在的访问器，并要求重建结果中对应访问器仍存在。
- */
-private fun calculateLazyBodyForProperty(designation: CfirDesignation) {
+private fun calculateLazyBodyForProperty(designation: CfirDesignation, publications: CfirLazyBodyPublications) {
     val property = designation.target as CfirProperty
     if (!needCalculatingLazyBodyForProperty(property)) return
-
-    val recreatedProperty = revive<CfirProperty>(designation, property.originalPsi)
-
-    property.getter?.let { getter ->
-        val recreatedGetter = recreatedProperty.getter
-            ?: errorWithCfirSpecificEntries("Recreated getter is missing", cfir = recreatedProperty, psi = recreatedProperty.psi)
-        replaceLazyBody(getter, recreatedGetter)
-        replaceLazyValueParameters(getter, recreatedGetter)
-    }
-
-    property.setter?.let { setter ->
-        val recreatedSetter = recreatedProperty.setter
-            ?: errorWithCfirSpecificEntries("Recreated setter is missing", cfir = recreatedProperty, psi = recreatedProperty.psi)
-        replaceLazyBody(setter, recreatedSetter)
-        replaceLazyValueParameters(setter, recreatedSetter)
+    adoptRebuiltDeclaration<CfirProperty>(designation, property.originalPsi, publications) { copy, metadata, sourceFile ->
+        val pairs = listOfNotNull(
+            property.getter?.let { target ->
+                target to (copy.getter ?: errorWithCfirSpecificEntries("Recreated getter is missing", cfir = copy, psi = copy.psi))
+            },
+            property.setter?.let { target ->
+                target to (copy.setter ?: errorWithCfirSpecificEntries("Recreated setter is missing", cfir = copy, psi = copy.psi))
+            },
+        )
+        val helperBodies = pairs.flatMap { (target, recreated) ->
+            recreated.body?.let { prepareDefaultParameterFunctionsInRebuiltBody(it, metadata, checkNotNull(sourceFile.parserSettings).backend) }
+            materializeDefaultParameterHelperBodies(target, recreated, metadata, checkNotNull(sourceFile.parserSettings).backend)
+        }
+        val slots = pairs.flatMap { (target, recreated) -> functionReplacementSlots(target, recreated) } + helperBodies.map { (helper, _) ->
+            CfirRawMacroUsageSlot(helper, CfirRawMacroUsageSlot.Kind.BODY)
+        }
+        RebuiltDeclarationPlan(slots) {
+            pairs.forEach { (target, recreated) ->
+                replaceLazyBody(target, recreated)
+                replaceLazyValueParameters(target, recreated)
+            }
+            helperBodies.forEach { (helper, body) -> helper.replaceBody(body) }
+        }
     }
 }
 
-/**
- * 当 [target] 的 initializer 仍需惰性计算时，用 [copy] 的 initializer 替换它。
- */
-private fun replaceLazyInitializer(target: CfirVariable, copy: CfirVariable) {
-    if (!needCalculatingLazyInitializerForVariable(target)) return
-    target.replaceInitializer(copy.initializer)
-}
-
-/**
- * 计算变量类声明的惰性 initializer。
- */
-private inline fun <reified V : CfirVariable> calculateLazyInitializerForVariable(designation: CfirDesignation) {
+private inline fun <reified V : CfirVariable> calculateLazyInitializerForVariable(
+    designation: CfirDesignation,
+    publications: CfirLazyBodyPublications,
+) {
     val variable = designation.target as V
     require(needCalculatingLazyInitializerForVariable(variable))
-
-    val recreatedVariable = revive<V>(designation, variable.originalPsi)
-    replaceLazyInitializer(variable, recreatedVariable)
+    adoptRebuiltDeclaration<V>(designation, variable.originalPsi, publications) { copy, _, _ ->
+        require(copy.initializer !is CfirLazyExpression) { "A normal rebuild must materialize the initializer." }
+        RebuiltDeclarationPlan(listOf(CfirRawMacroUsageSlot(variable, CfirRawMacroUsageSlot.Kind.INITIALIZER))) {
+            variable.replaceInitializer(copy.initializer)
+        }
+    }
 }
 
 /**
@@ -260,32 +336,26 @@ private fun needCalculatingLazyBodyForProperty(property: CfirProperty): Boolean 
 /**
  * 判断变量 initializer 是否仍需要通过 raw rebuild 重新计算。
  *
- * 除显式的 [CfirLazyExpression] 外，仓颉 raw build 在 LAZY_BODIES 下可能留下 `null` initializer；
- * 如果 PSI 仍声明了 initializer，这种 `null` 也必须视为惰性占位。
+ * raw 构建使用 [CfirLazyExpression] 表示有初值但尚未构建的变量。
  */
-private fun needCalculatingLazyInitializerForVariable(variable: CfirVariable): Boolean {
-    if (variable.initializer is CfirLazyExpression) return true
-
-    /*
-     * 对齐 Kotlin 的 LL body-state keeper 语义：未完成的变量 initializer
-     * 可能被回写成 lazy placeholder；同时仓颉 raw build 在 LAZY_BODIES 下
-     * 也可能直接留下 `null`。两种形态都必须触发重建。
-     */
-    if (variable.initializer != null) return false
-    return (variable.originalPsi as? CjDeclarationWithInitializer)?.hasInitializer() == true
-}
+private fun needCalculatingLazyInitializerForVariable(variable: CfirVariable): Boolean =
+    variable.initializer is CfirLazyExpression
 
 /**
  * 计算代码片段的惰性块。
  *
  * 代码片段以文件级片段 PSI 为根重建，随后只替换 [CfirCodeFragment.block]。
  */
-private fun calculateLazyBodyForCodeFragment(designation: CfirDesignation) {
+private fun calculateLazyBodyForCodeFragment(designation: CfirDesignation, publications: CfirLazyBodyPublications) {
     val codeFragment = designation.target as CfirCodeFragment
     require(codeFragment.block is CfirLazyBlock)
 
-    val recreatedCodeFragment = revive<CfirCodeFragment>(designation, codeFragment.psi as? CjCodeFragment)
-    codeFragment.replaceBlock(recreatedCodeFragment.block)
+    adoptRebuiltDeclaration<CfirCodeFragment>(designation, codeFragment.psi as? CjCodeFragment, publications) { copy, _, _ ->
+        require(copy.block !is CfirLazyBlock)
+        RebuiltDeclarationPlan(listOf(CfirRawMacroUsageSlot(codeFragment, CfirRawMacroUsageSlot.Kind.CODE_FRAGMENT))) {
+            codeFragment.replaceBlock(copy.block)
+        }
+    }
 }
 
 /**
@@ -320,10 +390,55 @@ private fun calculateAnnotationCallIfNeeded(annotation: CfirAnnotation, session:
     annotation.replaceArgumentList(CfirLazyBodiesCalculator.createArgumentsForAnnotation(annotation, session))
 }
 
+/** 在 test-only 全图入口首次修改前捕获所有实际引用；恢复覆盖 annotation arguments 和全部 lazy 槽位。 */
+private fun preserveRawGraph(file: CfirFile): PreservedState {
+    val restorations = mutableListOf<() -> Unit>()
+    val visited = java.util.Collections.newSetFromMap(java.util.IdentityHashMap<CfirElement, Boolean>())
+    val visitor = object : CfirVisitorVoid() {
+        override fun visitElement(element: CfirElement) {
+            if (!visited.add(element)) return
+            when (element) {
+                is CfirFunction -> {
+                    val body = element.body
+                    restorations += { element.replaceBody(body) }
+                    element.valueParameters.forEach { parameter ->
+                        val defaultValue = parameter.defaultValue
+                        restorations += { parameter.replaceDefaultValue(defaultValue) }
+                    }
+                }
+                is CfirCodeFragment -> {
+                    val block = element.block
+                    restorations += { element.replaceBlock(block) }
+                }
+                is CfirVariable -> {
+                    val initializer = element.initializer
+                    restorations += { element.replaceInitializer(initializer) }
+                }
+                is CfirAnnotationCall -> {
+                    val arguments = element.argumentList
+                    restorations += { element.replaceArgumentList(arguments) }
+                }
+            }
+            element.acceptChildren(this)
+        }
+    }
+    file.accept(visitor)
+    return object : PreservedState {
+        private var restored = false
+        override fun postProcess() {}
+        override fun restore() {
+            if (restored) return
+            restored = true
+            restorations.asReversed().forEach { it() }
+        }
+    }
+}
+
 /**
  * 测试场景使用的全量惰性 body 计算 transformer。
  */
-private object CfirAllLazyBodiesCalculatorTransformer : CfirLazyBodiesCalculatorTransformer() {
+private class CfirAllLazyBodiesCalculatorTransformer(publications: CfirLazyBodyPublications) :
+    CfirLazyBodiesCalculatorTransformer(publications) {
     /**
      * 对文件、类和扩展节点递归进入子声明，其余节点交给基类按目标类型处理。
      */
@@ -335,12 +450,14 @@ private object CfirAllLazyBodiesCalculatorTransformer : CfirLazyBodiesCalculator
 /**
  * 只处理 designation 指定目标声明的惰性 body 计算 transformer。
  */
-private object CfirTargetLazyBodiesCalculatorTransformer : CfirLazyBodiesCalculatorTransformer()
+private class CfirTargetLazyBodiesCalculatorTransformer(publications: CfirLazyBodyPublications) :
+    CfirLazyBodiesCalculatorTransformer(publications)
 
 /**
  * 根据 CFIR 声明种类展开对应惰性 body、initializer 或代码片段块的 transformer 基类。
  */
-private sealed class CfirLazyBodiesCalculatorTransformer : CfirTransformer<PersistentList<CfirDeclaration>>() {
+private sealed class CfirLazyBodiesCalculatorTransformer(protected val publications: CfirLazyBodyPublications) :
+    CfirTransformer<PersistentList<CfirDeclaration>>() {
     /**
      * 默认不处理普通元素，避免遍历目标 designation 之外的节点。
      */
@@ -354,7 +471,7 @@ private sealed class CfirLazyBodiesCalculatorTransformer : CfirTransformer<Persi
         data: PersistentList<CfirDeclaration>,
     ): CfirNamedFunction {
         if (needCalculatingLazyBodyForFunction(namedFunction)) {
-            calculateLazyBodiesForFunction<CfirNamedFunction>(CfirDesignation(data, namedFunction))
+            calculateLazyBodiesForFunction<CfirNamedFunction>(CfirDesignation(data, namedFunction), publications)
         }
         return namedFunction
     }
@@ -367,7 +484,7 @@ private sealed class CfirLazyBodiesCalculatorTransformer : CfirTransformer<Persi
         data: PersistentList<CfirDeclaration>,
     ): CfirMainFunction {
         if (needCalculatingLazyBodyForFunction(mainFunction)) {
-            calculateLazyBodiesForFunction<CfirMainFunction>(CfirDesignation(data, mainFunction))
+            calculateLazyBodiesForFunction<CfirMainFunction>(CfirDesignation(data, mainFunction), publications)
         }
         return mainFunction
     }
@@ -380,7 +497,7 @@ private sealed class CfirLazyBodiesCalculatorTransformer : CfirTransformer<Persi
         data: PersistentList<CfirDeclaration>,
     ): CfirMacroDeclaration {
         if (needCalculatingLazyBodyForFunction(macroDeclaration)) {
-            calculateLazyBodiesForFunction<CfirMacroDeclaration>(CfirDesignation(data, macroDeclaration))
+            calculateLazyBodiesForFunction<CfirMacroDeclaration>(CfirDesignation(data, macroDeclaration), publications)
         }
         return macroDeclaration
     }
@@ -393,7 +510,7 @@ private sealed class CfirLazyBodiesCalculatorTransformer : CfirTransformer<Persi
         data: PersistentList<CfirDeclaration>,
     ): CfirFinalizer {
         if (needCalculatingLazyBodyForFunction(finalizer)) {
-            calculateLazyBodiesForFunction<CfirFinalizer>(CfirDesignation(data, finalizer))
+            calculateLazyBodiesForFunction<CfirFinalizer>(CfirDesignation(data, finalizer), publications)
         }
         return finalizer
     }
@@ -406,7 +523,7 @@ private sealed class CfirLazyBodiesCalculatorTransformer : CfirTransformer<Persi
         data: PersistentList<CfirDeclaration>,
     ): CfirConstructor {
         if (needCalculatingLazyBodyForConstructor(constructor)) {
-            calculateLazyBodyForConstructor(CfirDesignation(data, constructor))
+            calculateLazyBodyForConstructor(CfirDesignation(data, constructor), publications)
         }
         return constructor
     }
@@ -419,7 +536,7 @@ private sealed class CfirLazyBodiesCalculatorTransformer : CfirTransformer<Persi
         data: PersistentList<CfirDeclaration>,
     ): CfirErrorPrimaryConstructor {
         if (needCalculatingLazyBodyForConstructor(errorPrimaryConstructor)) {
-            calculateLazyBodyForConstructor(CfirDesignation(data, errorPrimaryConstructor))
+            calculateLazyBodyForConstructor(CfirDesignation(data, errorPrimaryConstructor), publications)
         }
         return errorPrimaryConstructor
     }
@@ -429,7 +546,7 @@ private sealed class CfirLazyBodiesCalculatorTransformer : CfirTransformer<Persi
      */
     override fun transformProperty(property: CfirProperty, data: PersistentList<CfirDeclaration>): CfirProperty {
         if (needCalculatingLazyBodyForProperty(property)) {
-            calculateLazyBodyForProperty(CfirDesignation(data, property))
+            calculateLazyBodyForProperty(CfirDesignation(data, property), publications)
         }
         return property
     }
@@ -442,7 +559,7 @@ private sealed class CfirLazyBodiesCalculatorTransformer : CfirTransformer<Persi
         data: PersistentList<CfirDeclaration>,
     ): CfirFieldVariable {
         if (needCalculatingLazyInitializerForVariable(fieldVariable)) {
-            calculateLazyInitializerForVariable<CfirFieldVariable>(CfirDesignation(data, fieldVariable))
+            calculateLazyInitializerForVariable<CfirFieldVariable>(CfirDesignation(data, fieldVariable), publications)
         }
         return fieldVariable
     }
@@ -455,7 +572,7 @@ private sealed class CfirLazyBodiesCalculatorTransformer : CfirTransformer<Persi
         data: PersistentList<CfirDeclaration>,
     ): CfirPatternVariable {
         if (needCalculatingLazyInitializerForVariable(patternVariable)) {
-            calculateLazyInitializerForVariable<CfirPatternVariable>(CfirDesignation(data, patternVariable))
+            calculateLazyInitializerForVariable<CfirPatternVariable>(CfirDesignation(data, patternVariable), publications)
         }
         return patternVariable
     }
@@ -468,7 +585,7 @@ private sealed class CfirLazyBodiesCalculatorTransformer : CfirTransformer<Persi
         data: PersistentList<CfirDeclaration>,
     ): CfirCodeFragment {
         if (codeFragment.block is CfirLazyBlock) {
-            calculateLazyBodyForCodeFragment(CfirDesignation(data, codeFragment))
+            calculateLazyBodyForCodeFragment(CfirDesignation(data, codeFragment), publications)
         }
         return codeFragment
     }

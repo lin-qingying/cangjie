@@ -71,6 +71,9 @@ abstract class CfirVisitor<out R, in D> {
     open fun visitTypeParameterRefsOwner(typeParameterRefsOwner: CfirTypeParameterRefsOwner, data: D): R =
         visitElement(typeParameterRefsOwner, data)
 
+    open fun visitTypeParametersOwner(typeParametersOwner: CfirTypeParametersOwner, data: D): R =
+        visitElement(typeParametersOwner, data)
+
     open fun visitMemberDeclaration(memberDeclaration: CfirMemberDeclaration, data: D): R =
         visitElement(memberDeclaration, data)
 
@@ -128,6 +131,9 @@ abstract class CfirVisitor<out R, in D> {
     open fun visitInvalidDeclaration(invalidDeclaration: CfirInvalidDeclaration, data: D): R =
         visitElement(invalidDeclaration, data)
 
+    open fun visitMacroExpansionDeclaration(macroExpansionDeclaration: CfirMacroExpansionDeclaration, data: D): R =
+        visitElement(macroExpansionDeclaration, data)
+
     open fun visitProperty(property: CfirProperty, data: D): R =
         visitElement(property, data)
 
@@ -152,11 +158,62 @@ abstract class CfirVisitor<out R, in D> {
     open fun visitTypeParameter(typeParameter: CfirTypeParameter, data: D): R =
         visitElement(typeParameter, data)
 
+    open fun visitConstructedClassTypeParameterRef(constructedClassTypeParameterRef: CfirConstructedClassTypeParameterRef, data: D): R =
+        visitElement(constructedClassTypeParameterRef, data)
+
     open fun visitDeclarationStatus(declarationStatus: CfirDeclarationStatus, data: D): R =
         visitElement(declarationStatus, data)
 
     open fun visitExpression(expression: CfirExpression, data: D): R =
         visitElement(expression, data)
+
+    open fun visitNativeMatchExpression(nativeMatchExpression: CfirNativeMatchExpression, data: D): R =
+        visitElement(nativeMatchExpression, data)
+
+    open fun visitNativeMatchCase(nativeMatchCase: CfirNativeMatchCase, data: D): R =
+        visitElement(nativeMatchCase, data)
+
+    open fun visitNativeConditionMatchExpression(nativeConditionMatchExpression: CfirNativeConditionMatchExpression, data: D): R =
+        visitElement(nativeConditionMatchExpression, data)
+
+    open fun visitNativeConditionMatchCase(nativeConditionMatchCase: CfirNativeConditionMatchCase, data: D): R =
+        visitElement(nativeConditionMatchCase, data)
+
+    open fun visitLetPatternDestructorExpression(letPatternDestructorExpression: CfirLetPatternDestructorExpression, data: D): R =
+        visitElement(letPatternDestructorExpression, data)
+
+    open fun visitNativeCatch(nativeCatch: CfirNativeCatch, data: D): R =
+        visitElement(nativeCatch, data)
+
+    open fun visitNativeTryExpression(nativeTryExpression: CfirNativeTryExpression, data: D): R =
+        visitElement(nativeTryExpression, data)
+
+    open fun visitPrimitiveTypeExpression(primitiveTypeExpression: CfirPrimitiveTypeExpression, data: D): R =
+        visitElement(primitiveTypeExpression, data)
+
+    open fun visitWildcardExpression(wildcardExpression: CfirWildcardExpression, data: D): R =
+        visitElement(wildcardExpression, data)
+
+    open fun visitFunctionArgument(functionArgument: CfirFunctionArgument, data: D): R =
+        visitElement(functionArgument, data)
+
+    open fun visitCallExpression(callExpression: CfirCallExpression, data: D): R =
+        visitElement(callExpression, data)
+
+    open fun visitUnaryExpression(unaryExpression: CfirUnaryExpression, data: D): R =
+        visitElement(unaryExpression, data)
+
+    open fun visitBinaryExpression(binaryExpression: CfirBinaryExpression, data: D): R =
+        visitElement(binaryExpression, data)
+
+    open fun visitArrayCreationExpression(arrayCreationExpression: CfirArrayCreationExpression, data: D): R =
+        visitElement(arrayCreationExpression, data)
+
+    open fun visitPointerExpression(pointerExpression: CfirPointerExpression, data: D): R =
+        visitElement(pointerExpression, data)
+
+    open fun visitResolvedSpawnExpression(resolvedSpawnExpression: CfirResolvedSpawnExpression, data: D): R =
+        visitElement(resolvedSpawnExpression, data)
 
     open fun visitBlock(block: CfirBlock, data: D): R =
         visitElement(block, data)
@@ -211,6 +268,12 @@ abstract class CfirVisitor<out R, in D> {
 
     open fun visitThisReference(thisReference: CfirThisReference, data: D): R =
         visitElement(thisReference, data)
+
+    open fun visitResolvedQualifier(resolvedQualifier: CfirResolvedQualifier, data: D): R =
+        visitElement(resolvedQualifier, data)
+
+    open fun visitErrorResolvedQualifier(errorResolvedQualifier: CfirErrorResolvedQualifier, data: D): R =
+        visitElement(errorResolvedQualifier, data)
 
     open fun visitNamedAccessExpression(namedAccessExpression: CfirNamedAccessExpression, data: D): R =
         visitElement(namedAccessExpression, data)
@@ -329,6 +392,12 @@ abstract class CfirVisitor<out R, in D> {
     open fun visitTupleLiteral(tupleLiteral: CfirTupleLiteral, data: D): R =
         visitElement(tupleLiteral, data)
 
+    open fun visitFunctionBodyOwner(functionBodyOwner: CfirFunctionBodyOwner, data: D): R =
+        visitElement(functionBodyOwner, data)
+
+    open fun visitIterationOwner(iterationOwner: CfirIterationOwner, data: D): R =
+        visitElement(iterationOwner, data)
+
     open fun visitTargetElement(targetElement: CfirTargetElement, data: D): R =
         visitElement(targetElement, data)
 
@@ -389,6 +458,9 @@ abstract class CfirVisitor<out R, in D> {
     open fun visitQualifierPart(qualifierPart: CfirQualifierPart, data: D): R =
         visitElement(qualifierPart, data)
 
+    open fun visitParenthesizedTypeRef(parenthesizedTypeRef: CfirParenthesizedTypeRef, data: D): R =
+        visitElement(parenthesizedTypeRef, data)
+
     open fun visitUserTypeRef(userTypeRef: CfirUserTypeRef, data: D): R =
         visitElement(userTypeRef, data)
 
@@ -424,6 +496,9 @@ abstract class CfirVisitor<out R, in D> {
 
     open fun visitResolvedNamedReference(resolvedNamedReference: CfirResolvedNamedReference, data: D): R =
         visitElement(resolvedNamedReference, data)
+
+    open fun visitResolvedBuiltinOperatorReference(resolvedBuiltinOperatorReference: CfirResolvedBuiltinOperatorReference, data: D): R =
+        visitElement(resolvedBuiltinOperatorReference, data)
 
     open fun visitErrorReference(errorReference: CfirErrorReference, data: D): R =
         visitElement(errorReference, data)

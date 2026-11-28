@@ -40,6 +40,8 @@ private const val CHECKERS_COMPONENT_INTERNAL_ANNOTATION = "@$CHECKERS_COMPONENT
  * 生成代码需要导入的内部注解全限定名。
  */
 private const val CHECKERS_COMPONENT_INTERNAL_FQN = "org.cangnova.cangjie.cfir.analysis.CheckersComponentInternal"
+private const val MPP_CHECKER_KIND_FQN = "org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind"
+private const val MPP_CHECKER_WITH_KIND_FQN = "org.cangnova.cangjie.cfir.analysis.checkers.CfirCheckerWithMppKind"
 
 // DiagnosticComponent
 /**
@@ -215,10 +217,12 @@ class Generator(
         val filename = "${composedComponentName}.kt"
         generationPath.resolve(filename).writeToFileUsingSmartPrinterIfFileContentChanged {
             printPackageAndCopyright()
-            printImports()
+            printImports(true, MPP_CHECKER_KIND_FQN, MPP_CHECKER_WITH_KIND_FQN)
             printGeneratedMessage()
-            println("class $composedComponentName : $checkersComponentName() {")
+            println("class $composedComponentName(val predicate: (CfirCheckerWithMppKind) -> Boolean) : $checkersComponentName() {")
             withIndent {
+                println("constructor(mppKind: MppCheckerKind) : this({ it.mppKind == mppKind })")
+                println()
                 // public overrides
                 for ((alias, _) in configuration.aliases.values) {
                     println("override ${alias.valDeclaration}")
@@ -248,10 +252,10 @@ class Generator(
                 println("fun register(checkers: $checkersComponentName) {")
                 withIndent {
                     for ((alias, _) in configuration.aliases.values) {
-                        println("_${alias.fieldName}.addAll(checkers.${alias.fieldName})")
+                        println("checkers.${alias.fieldName}.filterTo(_${alias.fieldName}, predicate)")
                     }
                     for (fieldName in configuration.additionalCheckers.keys) {
-                        println("_$fieldName.addAll(checkers.$fieldName)")
+                        println("checkers.$fieldName.filterTo(_$fieldName, predicate)")
                     }
                 }
                 println("}")
@@ -274,6 +278,7 @@ class Generator(
                 DIAGNOSTIC_REPORTER_FQN,
                 ABSTRACT_DIAGNOSTIC_REPORTER_FQN,
                 CHECKER_CONTEXT_FQN,
+                MPP_CHECKER_KIND_FQN,
                 *buildList {
                     if (emitRequiresImplementationFilter) add(IS_FROM_DECLARATION_FILE_FQN)
                 }.toTypedArray(),
@@ -369,11 +374,16 @@ class Generator(
      * 打印诊断组件从 session 读取 checker 集合的辅助构造器。
      */
     private fun SmartPrinter.printDiagnosticComponentConstructor() {
-        println("constructor(session: CfirSession, reporter: PendingDiagnosticReporter) : this(")
+        println("constructor(session: CfirSession, reporter: PendingDiagnosticReporter, mppKind: MppCheckerKind) : this(")
         withIndent {
             println("session,")
             println("reporter,")
-            println("session.checkersComponent.${checkersComponentName.replaceFirstChar(Char::lowercaseChar)}")
+            println("when (mppKind) {")
+            withIndent {
+                println("MppCheckerKind.Common -> session.checkersComponent.common$checkersComponentName")
+                println("MppCheckerKind.Platform -> session.checkersComponent.platform$checkersComponentName")
+            }
+            println("}")
         }
         println(")")
     }

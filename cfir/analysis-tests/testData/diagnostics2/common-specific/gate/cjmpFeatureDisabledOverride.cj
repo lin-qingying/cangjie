@@ -6,4 +6,8 @@
 // 每个 CJMP 修饰符只报版本门诊断，模式门 / 配对 / 族诊断零报告（门禁管行为：配对阶段早退）。
 package cjmp_p
 
-<!UNSUPPORTED_FEATURE!>public specific func b(): Int64 { 1 }<!>
+<!UNSUPPORTED_FEATURE!>public specific func b(): Int64 { 1 }
+
+<!><!UNSUPPORTED_FEATURE!>public specific abstract class A {
+    <!UNSUPPORTED_FEATURE!>public specific abstract func f(): Int64 { 1 }
+<!>}<!>

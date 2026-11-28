@@ -7,6 +7,8 @@
 
 package org.cangnova.cangjie.cfir.expressions.impl
 
+import org.cangnova.cangjie.annotations.CangjieOverflowStrategy
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.MutableOrEmptyList
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
@@ -20,13 +22,15 @@ import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.CjSourceElement
 
 internal class CfirIncrementDecrementExpressionImpl(
-    override val source: CjSourceElement?,
+    override var source: CjSourceElement?,
     override var annotations: MutableOrEmptyList<CfirAnnotation>,
     override var coneTypeOrNull: ConeCangJieType?,
+    override var mappedExpression: CfirExpression?,
+    override var overflowStrategy: CangjieOverflowStrategy?,
     override val isPrefix: Boolean,
     override val operationName: Name,
     override var expression: CfirExpression,
-    override val operationSource: CjSourceElement?,
+    override var operationSource: CjSourceElement?,
 ) : CfirIncrementDecrementExpression() {
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
@@ -50,11 +54,28 @@ internal class CfirIncrementDecrementExpressionImpl(
         return this
     }
 
+    @CfirImplementationDetail
+    override fun replaceSource(newSource: CjSourceElement?) {
+        source = newSource
+    }
+
     override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>) {
         annotations = newAnnotations.toMutableOrEmpty()
     }
 
     override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?) {
         coneTypeOrNull = newConeTypeOrNull
+    }
+
+    override fun replaceMappedExpression(newMappedExpression: CfirExpression?) {
+        mappedExpression = newMappedExpression
+    }
+
+    override fun replaceOverflowStrategy(newOverflowStrategy: CangjieOverflowStrategy?) {
+        overflowStrategy = newOverflowStrategy
+    }
+
+    override fun replaceOperationSource(newOperationSource: CjSourceElement?) {
+        operationSource = newOperationSource
     }
 }

@@ -2,6 +2,7 @@ package org.cangnova.cangjie.cfir.resolve.providers.macro
 
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.parsing.MacroParsingFacts
 import org.cangnova.cangjie.source.CjSourceElement
 
 /**
@@ -51,6 +52,9 @@ sealed class MacroSurface {
 
     /** macro 调用形式。 */
     abstract val kind: Kind
+
+    /** 同根 parser transaction 冻结的 invocation 文法事实；内建 IfAvailable 重解析也必须使用它们。 */
+    abstract val parsingFacts: MacroParsingFacts?
 
     /** 调用点是否显式带有参数括号。 */
     abstract val hasParenthesis: Boolean
@@ -135,7 +139,20 @@ data class MacroSurfaceToken(
     val endOffset: Int,
     /** lexer token type 的字符串名。 */
     val kindName: String? = null,
-)
+    /** 该 token 来自宿主源码或子宏的原始调用范围；executor 输出没有直接源码来源时为空。 */
+    val sourceRange: MacroSurfaceSourceRange? = null,
+    /**
+     * 对位官方原始位置的来源标记：只有 raw parser 捕获的源码 token 才具有逐字符偏移。
+     * 宏生成 token 的偏移属于重建文本，即使数值落在原始调用范围内也不能当作源码位置。
+     */
+    val isSourceToken: Boolean = false,
+) {
+    init {
+        require(!isSourceToken || (startOffset >= 0 && endOffset - startOffset == text.length)) {
+            "A source token must retain its complete original text range."
+        }
+    }
+}
 
 /**
  * Macro surface 的"作用域 / 容器 / 包"上下文。
@@ -221,6 +238,8 @@ data class MacroSurfaceContainerContext(
 data class CfirReplaceHandle(
     /** construction 期稳定替换句柄 id。 */
     val handleId: Long,
+    /** 句柄采集点的真实词法上下文；token 子 forest 随父句柄继承，不允许省略后按名字重建。 */
+    val ownerSnapshot: MacroRawOwnerSnapshot,
     /** raw builder 放入 CFIR 的 construction-only carrier，splice 只能按对象身份匹配，不能退回源码 offset。 */
     val carrier: Any? = null,
     /** annotation surface 的唯一 splice key；非 annotation surface 必须为 null。 */
@@ -253,6 +272,8 @@ data class MacroSurfaceDecl(
     override val isQualifiedName: Boolean,
     /** declaration macro 的调用形式。 */
     override val kind: MacroSurface.Kind,
+    /** 原解析根冻结的 scope、直接 parent 与外层声明身份。 */
+    override val parsingFacts: MacroParsingFacts?,
     /** declaration macro 调用点是否显式携带参数括号。 */
     override val hasParenthesis: Boolean,
     /** declaration macro 的 attr payload token 流。 */
@@ -284,6 +305,8 @@ data class MacroSurfaceExpr(
     override val isQualifiedName: Boolean,
     /** expression macro 的调用形式。 */
     override val kind: MacroSurface.Kind,
+    /** 本次 parser 根对该真实 invocation 冻结的 scope、直接 parent 与外层声明身份。 */
+    override val parsingFacts: MacroParsingFacts,
     /** expression macro 调用点是否显式携带参数括号。 */
     override val hasParenthesis: Boolean,
     /** expression macro 的 attr payload token 流。 */
@@ -315,6 +338,8 @@ data class MacroSurfaceParam(
     override val isQualifiedName: Boolean,
     /** parameter macro 的调用形式。 */
     override val kind: MacroSurface.Kind,
+    /** 原解析根冻结的 scope、直接 parent 与外层声明身份。 */
+    override val parsingFacts: MacroParsingFacts?,
     /** parameter macro 调用点是否显式携带参数括号。 */
     override val hasParenthesis: Boolean,
     /** parameter macro 的 attr payload token 流。 */
@@ -346,6 +371,8 @@ data class MacroSurfaceNode(
     override val isQualifiedName: Boolean,
     /** 通用 macro 的调用形式。 */
     override val kind: MacroSurface.Kind,
+    /** 原解析根冻结的 scope、直接 parent 与外层声明身份。 */
+    override val parsingFacts: MacroParsingFacts,
     /** 通用 macro 调用点是否显式携带参数括号。 */
     override val hasParenthesis: Boolean,
     /** 通用 macro 的 attr payload token 流。 */
@@ -367,45 +394,3 @@ data class MacroSurfaceNode(
     /** 通用 surface 对应最终 CFIR splice 的稳定替换句柄。 */
     override val replaceHandle: CfirReplaceHandle,
 ) : MacroSurface()
-
-/**
- * Builtin non-macro surface：`@IfAvailable` 等"看起来是宏但实际不送 executor"
- * 的语义级标记（baseline 第 8 节）。
- *
- * 必须在 stable splice **之前** desugar 为最终 CFIR；
- * 不允许残留在 successful final CFIR 中。
- */
-sealed class BuiltinNonMacroSurface : MacroSurface()
-
-/** `@IfAvailable(...)` 形态的 builtin non-macro。 */
-data class IfAvailableSurface(
-    /** builtin non-macro surface 的 construction 期唯一 id。 */
-    override val surfaceId: Long,
-    /** builtin non-macro 的限定名；语法或解析缺失时为 `null`。 */
-    override val qualifiedName: FqName?,
-    override val isQualifiedName: Boolean,
-    /** builtin non-macro 的调用形式。 */
-    override val kind: MacroSurface.Kind,
-    /** builtin non-macro 调用点是否显式携带参数括号。 */
-    override val hasParenthesis: Boolean,
-    /** builtin non-macro 的 attr payload token 流。 */
-    override val attrTokens: List<MacroSurfaceToken>,
-    /** builtin non-macro 的 input payload token 流。 */
-    override val inputTokens: List<MacroSurfaceToken>,
-    /** builtin non-macro surface 在宿主源码中的范围。 */
-    override val sourceRange: MacroSurfaceSourceRange?,
-    /** builtin non-macro surface 所在的包、类和函数上下文。 */
-    override val scopeContext: MacroSurfaceScopeContext,
-    /** builtin non-macro surface 携带的 modifier 文本。 */
-    override val modifiers: List<String>,
-    /** builtin non-macro surface 携带或覆盖的 annotation 文本。 */
-    override val carriedAnnotations: List<String>,
-    /** builtin non-macro raw builder 捕获的原始语法文本。 */
-    override val capturedRawSyntax: String?,
-    /** builtin non-macro surface 所在的语法容器上下文。 */
-    override val containerContext: MacroSurfaceContainerContext,
-    /** builtin non-macro surface 对应最终 CFIR splice 的稳定替换句柄。 */
-    override val replaceHandle: CfirReplaceHandle,
-    /** 条件分支主体 token，用于 desugar 前的简单评估。 */
-    val branchTokens: List<MacroSurfaceToken>,
-) : BuiltinNonMacroSurface()

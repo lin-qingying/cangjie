@@ -26,6 +26,11 @@ open class PositioningStrategy<in E : PsiElement> {
     }
 
     /**
+     * 仅当策略能从元素中找到实际锚点时返回范围；未找到时返回 null，不构造整元素回退范围。
+     */
+    open fun markOrNull(element: E): List<TextRange>? = null
+
+    /**
      * 判断 PSI 元素是否可作为有效诊断位置。
      */
     open fun isValid(element: E): Boolean {

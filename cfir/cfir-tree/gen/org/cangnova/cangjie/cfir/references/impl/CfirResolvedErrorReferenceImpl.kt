@@ -7,6 +7,7 @@
 
 package org.cangnova.cangjie.cfir.references.impl
 
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.references.CfirResolvedErrorReference
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.types.ConeDiagnostic
@@ -16,7 +17,7 @@ import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.CjSourceElement
 
 internal class CfirResolvedErrorReferenceImpl(
-    override val source: CjSourceElement?,
+    override var source: CjSourceElement?,
     override val name: Name,
     override val resolvedSymbol: CfirBasedSymbol<*>,
     override val diagnostic: ConeDiagnostic,
@@ -26,5 +27,10 @@ internal class CfirResolvedErrorReferenceImpl(
 
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirResolvedErrorReferenceImpl {
         return this
+    }
+
+    @CfirImplementationDetail
+    override fun replaceSource(newSource: CjSourceElement?) {
+        source = newSource
     }
 }

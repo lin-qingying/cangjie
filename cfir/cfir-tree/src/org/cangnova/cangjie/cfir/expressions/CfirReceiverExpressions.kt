@@ -76,7 +76,7 @@ open class CfirThisReceiverExpression(
     /**
      * 源码位置。
      */
-    override val source: CjSourceElement?,
+    override var source: CjSourceElement?,
     /**
      * 表达式注解。
      */
@@ -90,6 +90,20 @@ open class CfirThisReceiverExpression(
      */
     open var calleeReference: CfirThisReference,
 ) : CfirExpression() {
+    /** 源迁移不改变receiver引用或表达式身份。 */
+    final override var mappedExpression: CfirExpression? = null
+        private set
+    final override var overflowStrategy: org.cangnova.cangjie.annotations.CangjieOverflowStrategy? = null
+        private set
+    override fun replaceMappedExpression(newMappedExpression: CfirExpression?) { mappedExpression = newMappedExpression }
+    override fun replaceOverflowStrategy(newOverflowStrategy: org.cangnova.cangjie.annotations.CangjieOverflowStrategy?) {
+        overflowStrategy = newOverflowStrategy
+    }
+
+    @org.cangnova.cangjie.cfir.CfirImplementationDetail
+    override fun replaceSource(newSource: CjSourceElement?) {
+        source = newSource
+    }
     /**
      * 接受普通表达式 visitor。
      */
@@ -121,6 +135,13 @@ open class CfirThisReceiverExpression(
      * 访问注解和 `this` 引用子节点。
      */
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
+        annotations.forEach { it.accept(visitor, data) }
+        calleeReference.accept(visitor, data)
+    }
+
+    /** this 绑定是本 receiver 的来源子节点，所有来源消费者沿同一共享边捕获引用事实。 */
+    @org.cangnova.cangjie.cfir.CfirImplementationDetail
+    override fun <R, D> acceptSourceChildren(visitor: CfirVisitor<R, D>, data: D) {
         annotations.forEach { it.accept(visitor, data) }
         calleeReference.accept(visitor, data)
     }
@@ -173,7 +194,7 @@ class CfirSmartCastExpression(
     /**
      * 源码位置。
      */
-    override val source: CjSourceElement?,
+    override var source: CjSourceElement?,
     /**
      * 表达式注解。
      */
@@ -204,6 +225,20 @@ class CfirSmartCastExpression(
     var smartcastStability: CfirSmartcastStability,
 
 ) : CfirExpression() {
+    /** 源迁移不改变smartcast的语义表达式与类型关系。 */
+    override var mappedExpression: CfirExpression? = null
+        private set
+    override var overflowStrategy: org.cangnova.cangjie.annotations.CangjieOverflowStrategy? = null
+        private set
+    override fun replaceMappedExpression(newMappedExpression: CfirExpression?) { mappedExpression = newMappedExpression }
+    override fun replaceOverflowStrategy(newOverflowStrategy: org.cangnova.cangjie.annotations.CangjieOverflowStrategy?) {
+        overflowStrategy = newOverflowStrategy
+    }
+
+    @org.cangnova.cangjie.cfir.CfirImplementationDetail
+    override fun replaceSource(newSource: CjSourceElement?) {
+        source = newSource
+    }
     /**
      * 接受普通表达式 visitor。
      */
@@ -235,6 +270,14 @@ class CfirSmartCastExpression(
      * 访问 smartcast 表达式子节点。
      */
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
+        annotations.forEach { it.accept(visitor, data) }
+        originalExpression.accept(visitor, data)
+        smartcastType.accept(visitor, data)
+    }
+
+    /** smartcast 的语义拥有边包含原表达式与类型引用，不能只冻结包装器而漏掉来源内容。 */
+    @org.cangnova.cangjie.cfir.CfirImplementationDetail
+    override fun <R, D> acceptSourceChildren(visitor: CfirVisitor<R, D>, data: D) {
         annotations.forEach { it.accept(visitor, data) }
         originalExpression.accept(visitor, data)
         smartcastType.accept(visitor, data)

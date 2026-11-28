@@ -32,7 +32,10 @@ class CfirDeclarationAttributes : AttributeArrayOwner<CfirDeclarationDataKey, An
     /**
      * 创建空的声明属性容器。
      */
-    constructor() : super()
+    constructor() : super() {
+        // 初始事实走与其他声明附加事实相同的 registry；不存在 unknown→默认值的读取旁路。
+        registerComponent(CfirDeclarationExportFactsKey::class, CfirDeclarationExportFacts())
+    }
 
     /**
      * 基于已有数组映射创建副本容器。
@@ -61,6 +64,18 @@ class CfirDeclarationAttributes : AttributeArrayOwner<CfirDeclarationDataKey, An
      */
     fun copy(): CfirDeclarationAttributes = CfirDeclarationAttributes(arrayMap.copy())
 
+    /** 复制框架按注册键枚举原值，不通过反射猜测 payload 字段。 */
+    internal fun forEachOwnedCopyEntry(action: (String, Any) -> Unit) {
+        typeRegistry.allValuesThreadUnsafeForRendering().forEach { (key, id) ->
+            arrayMap[id]?.let { action(key, it) }
+        }
+    }
+
+    /** 只在复制产品发布前写入；所有 payload 由显式所有权协议复制。 */
+    internal fun putOwnedCopyEntry(key: String, value: Any) {
+        registerComponent(key, value)
+    }
+
     /**
      * 声明属性容器的工厂与常用常量。
      */
@@ -70,6 +85,11 @@ class CfirDeclarationAttributes : AttributeArrayOwner<CfirDeclarationDataKey, An
          *
          * 这里每次返回新实例，而不是共享单例，避免调用方对空属性容器写入时污染其他声明。
          */
+        internal fun emptyForOwnedCopy(): CfirDeclarationAttributes =
+            CfirDeclarationAttributes().also { attributes ->
+                attributes.removeComponent(CfirDeclarationExportFactsKey::class)
+            }
+
         val EMPTY: CfirDeclarationAttributes
             get() = CfirDeclarationAttributes()
     }

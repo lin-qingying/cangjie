@@ -8,7 +8,9 @@ FILE: classWithModifiers.cj
     }
     internal? class Counter {
         init()
-        internal? static var count: R|Int64|
+        internal? static var count: R|Int64| = ...
+            initializer:
+                <element: CfirLazyExpression>
         internal? static func getCount(): R|Int64| {
             <element: CfirLazyBlock>
         }

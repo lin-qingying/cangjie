@@ -12,6 +12,7 @@ import org.cangnova.cangjie.cfir.CfirQualifierPart
 import org.cangnova.cangjie.cfir.MutableOrEmptyList
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
+import org.cangnova.cangjie.cfir.types.CfirTypeRefOrigin
 import org.cangnova.cangjie.cfir.types.CfirUserTypeRef
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
@@ -21,7 +22,8 @@ import org.cangnova.cangjie.source.CjSourceElement
 class CfirUserTypeRefImpl @CfirImplementationDetail constructor(
     override var annotations: MutableOrEmptyList<CfirAnnotation>,
     override val customRenderer: Boolean,
-    override val source: CjSourceElement,
+    override var typeUseOrigin: CfirTypeRefOrigin,
+    override var source: CjSourceElement,
     override var qualifier: MutableOrEmptyList<CfirQualifierPart>,
 ) : CfirUserTypeRef() {
 
@@ -48,6 +50,16 @@ class CfirUserTypeRefImpl @CfirImplementationDetail constructor(
 
     override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>) {
         annotations = newAnnotations.toMutableOrEmpty()
+    }
+
+    override fun replaceTypeUseOrigin(newTypeUseOrigin: CfirTypeRefOrigin) {
+        typeUseOrigin = newTypeUseOrigin
+    }
+
+    @CfirImplementationDetail
+    override fun replaceSource(newSource: CjSourceElement?) {
+        require(newSource != null)
+        source = newSource
     }
 
     override fun replaceQualifier(newQualifier: List<CfirQualifierPart>) {

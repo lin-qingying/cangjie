@@ -41,7 +41,8 @@ import org.cangnova.cangjie.cfir.resolve.match.resolveTupleShape
 import org.cangnova.cangjie.cfir.resolve.withExpectedType
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirSpecificTypeResolverTransformer
 import org.cangnova.cangjie.cfir.resolvedTypeFromPrototype
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.toCfirResolvedTypeRef
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.session.builtinTypes
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.name.Name
@@ -89,7 +90,7 @@ internal fun CfirPartialBodyResolveTransformer.resolvePatternValueExpressions(
             valid
         }
         is CfirEnumPattern -> {
-            pattern.transformConstructorReference(transformer, ResolutionMode.ContextIndependent)
+            pattern.transformConstructor(transformer, ResolutionMode.ContextIndependent)
             val argumentTypes = resolveEnumArgumentTypes(pattern, expectedType)
             var valid = true
             pattern.arguments.forEachIndexed { index, argument ->
@@ -117,6 +118,8 @@ internal fun CfirPartialBodyResolveTransformer.resolvePatternValueExpressions(
             pattern.transformExpression(transformer, withExpectedType(session.builtinTypes.boolType))
             true
         }
+        is CfirCatchPattern -> resolvePatternValueExpressions(pattern.nestedPattern, expectedType)
+        is CfirCommandTypePattern -> resolvePatternValueExpressions(pattern.nestedPattern, expectedType)
         is CfirTypePattern, is CfirVarOrEnumPattern, is CfirWildcardPattern -> {
             pattern.transformChildren(transformer, ResolutionMode.ContextIndependent)
             true
@@ -190,8 +193,23 @@ internal fun CfirPartialBodyResolveTransformer.resolvePatternBindingTypes(
             }
 
             val bindingType = (pattern.typeRef as? CfirResolvedTypeRef)?.coneType ?: expectedType
-            pattern.bindingVariable?.replaceBindingType(bindingType)
-            pattern.replaceMatchingKind(resolveTypePatternMatchingKind(expectedType, bindingType, session))
+            recordError(resolvePatternBindingTypes(pattern.nestedPattern, bindingType, typeResolver))
+            val matching = resolveTypePatternMatchingKind(expectedType, bindingType, session)
+            pattern.replaceMatchingKind(matching)
+            // 原生两个位独立保存；UNKNOWN 保留未完成/错误恢复状态，不捏造某种匹配结论。
+            when (matching) {
+                org.cangnova.cangjie.cfir.patterns.CfirTypePatternMatchingKind.ALWAYS -> {
+                    pattern.replaceMatchBeforeRuntime(true); pattern.replaceNeedRuntimeTypeCheck(false)
+                }
+                org.cangnova.cangjie.cfir.patterns.CfirTypePatternMatchingKind.RUNTIME -> {
+                    pattern.replaceMatchBeforeRuntime(false); pattern.replaceNeedRuntimeTypeCheck(true)
+                }
+                org.cangnova.cangjie.cfir.patterns.CfirTypePatternMatchingKind.NEVER -> {
+                    pattern.replaceMatchBeforeRuntime(false); pattern.replaceNeedRuntimeTypeCheck(false)
+                }
+                org.cangnova.cangjie.cfir.patterns.CfirTypePatternMatchingKind.UNKNOWN -> Unit
+            }
+            if (bindingType != null) pattern.replaceSemanticTypeRef(bindingType.toCfirResolvedTypeRef(pattern.source))
         }
 
         is CfirTuplePattern -> {
@@ -220,7 +238,14 @@ internal fun CfirPartialBodyResolveTransformer.resolvePatternBindingTypes(
             recordError(resolvePatternBindingTypes(alternative, expectedType, typeResolver))
         }
 
-        else -> Unit
+        is CfirCatchPattern -> recordError(resolvePatternBindingTypes(pattern.nestedPattern, expectedType, typeResolver))
+        is CfirCommandTypePattern -> recordError(resolvePatternBindingTypes(pattern.nestedPattern, expectedType, typeResolver))
+        is CfirWildcardPattern, is CfirExpressionPattern -> Unit
+    }
+    // 此处是正常检查的类型发布点；reader 仍只读取原 P.types[0]，不会从 selector/变量反推保存槽。
+    if (pattern !is CfirTypePattern && pattern !is CfirCatchPattern &&
+        pattern !is CfirCommandTypePattern && expectedType != null) {
+        pattern.replaceSemanticTypeRef((firstError ?: expectedType).toCfirResolvedTypeRef(pattern.source))
     }
     return firstError
 }
@@ -247,7 +272,7 @@ internal fun propagateWholeInitializerToSimplePatternBinding(
     val binding = when (pattern) {
         is CfirBindingPattern if pattern.nestedPattern == null -> pattern.bindingVariable
         is CfirVarOrEnumPattern -> pattern.bindingVariable
-        is CfirTypePattern -> pattern.bindingVariable
+        is CfirTypePattern -> pattern.nestedPattern.simpleVariableBindingOrNull()
         else -> null
     } ?: return
     binding.replaceInitializer(initializer)
@@ -288,7 +313,7 @@ internal fun CfirPartialBodyResolveTransformer.resolveEnumArgumentTypes(
     val enumDeclaration = (session.symbolProvider.getClassLikeSymbolByClassId(enumType.classId)?.cfir as? CfirEnum)
         ?: return emptyList()
 
-    val constructorAccess = pattern.constructorReference.enumPatternConstructorAccessOrNull() ?: return emptyList()
+    val constructorAccess = pattern.constructorReference?.enumPatternConstructorAccessOrNull() ?: return emptyList()
     if (!constructorAccess.matchesEnumOwner(enumDeclaration, enumType)) return emptyList()
     val enumConstructor = enumDeclaration.declarations
         .filterIsInstance<CfirEnumConstructor>()
@@ -308,7 +333,7 @@ private fun resolveStdlibOptionArgumentTypes(
     pattern: CfirEnumPattern,
     expectedType: ConeCangJieType,
 ): List<ConeCangJieType>? {
-    val constructorAccess = pattern.constructorReference.enumPatternConstructorAccessOrNull()
+    val constructorAccess = pattern.constructorReference?.enumPatternConstructorAccessOrNull()
         ?.takeIf { it.matchesStdlibOptionOwner(expectedType) }
     val constructorName = constructorAccess?.constructorName
     val optionArgumentType = expectedType.optionElementType ?: return null

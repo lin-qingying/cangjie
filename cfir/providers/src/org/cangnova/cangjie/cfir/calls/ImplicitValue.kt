@@ -12,6 +12,7 @@ import org.cangnova.cangjie.cfir.expressions.buildThisReceiverExpressionCopy
 import org.cangnova.cangjie.cfir.expressions.unwrapSmartcastExpression
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.visitors.CfirSourceVisitor
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
 import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.source.fakeElement
@@ -55,10 +56,21 @@ sealed class ImplicitValue<S : CfirBasedSymbol<*>>(
     /**
      * 缓存后的原始表达式。
      */
-    protected val originalExpression: CfirExpression by lazy(
+    private val originalExpressionDelegate: Lazy<CfirExpression> = lazy(
         LazyThreadSafetyMode.PUBLICATION,
         ::computeOriginalExpression,
     )
+
+    protected val originalExpression: CfirExpression
+        get() = originalExpressionDelegate.value
+
+    /** 只访问已经物化的 receiver 表达式；未物化值以后从已换源的真实 boundSymbol 构建。 */
+    fun acceptSourceChildren(visitor: CfirSourceVisitor) {
+        visitor.visitElement(boundSymbol.cfir)
+        visitor.visitType(originalType)
+        visitor.visitType(type)
+        if (originalExpressionDelegate.isInitialized()) visitor.visitElement(originalExpressionDelegate.value)
+    }
 
     /**
      * 当前隐式值是否已经应用 smartcast 类型。

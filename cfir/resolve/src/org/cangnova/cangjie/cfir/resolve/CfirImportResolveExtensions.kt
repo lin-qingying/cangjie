@@ -37,10 +37,11 @@ internal fun CfirResolvedImportBinding.stableTargetSignature(): String {
     val targetSignatures = targets.map { target ->
         when (target) {
             is CfirResolvedImportTarget.Package -> "pkg:${target.organizationName}:${target.fqName.asString()}"
-            is CfirResolvedImportTarget.ClassLike -> "class:${target.classId.asString()}"
+            is CfirResolvedImportTarget.ClassLike ->
+                "class:${target.packageFqName.asString()}@${target.organizationName}:${target.name.asString()}:${target.classId.asString()}"
             is CfirResolvedImportTarget.Callable -> {
-                val callableOwner = "${target.packageFqName.asString()}.${target.name.asString()}"
-                "callable:$callableOwner#${target.symbols.size}"
+                val callableOwner = "${target.packageFqName.asString()}@${target.organizationName}.${target.name.asString()}"
+                "callable:$callableOwner"
             }
         }
     }.sorted()

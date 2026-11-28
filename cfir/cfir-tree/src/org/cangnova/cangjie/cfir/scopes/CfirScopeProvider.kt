@@ -2,6 +2,7 @@ package org.cangnova.cangjie.cfir.scopes
 
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.declarations.CfirClass
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.session.CfirSession
 
@@ -22,6 +23,7 @@ abstract class CfirScopeProvider {
         klass: CfirClass,
         useSiteSession: CfirSession,
         scopeSession: ScopeSession,
+        memberRequiredPhase: CfirResolvePhase?,
     ): CfirTypeScope
 
     /**

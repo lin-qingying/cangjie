@@ -1,0 +1,178 @@
+
+Id     Name            PSJobTypeName   State         HasMoreData     Location             Command
+--     ----            -------------   -----         -----------     --------             -------
+1      Job1            BackgroundJob   Running       True            localhost            undefined
+[GradleQueue] exec: cmd.exe /s /c "C:\Users\lin17\.codex\worktrees\cjmp-framework-implementation\cangjie\gradlew.bat --gradle-user-home .gradle/cjmp-export-home :cfir:cfir-tree:generateTree --no-build-cache --console=plain --max-workers=1"
+Starting a Gradle Daemon, 1 busy and 1 incompatible and 1 stopped Daemons could not be reused, use --status for details
+Calculating task graph as configuration cache cannot be reused because environment variable 'GRADLE_RO_DEP_CACHE' has changed.
+> Task :gradle-settings-conventions:jvm-toolchain-provisioning:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gradle-settings-conventions:jvm-toolchain-provisioning:generateExternalPluginSpecBuilders UP-TO-DATE
+> Task :gradle-settings-conventions:jvm-toolchain-provisioning:extractPrecompiledScriptPluginPlugins UP-TO-DATE
+> Task :gradle-settings-conventions:jvm-toolchain-provisioning:compilePluginsBlocks UP-TO-DATE
+> Task :gradle-settings-conventions:jvm-toolchain-provisioning:generatePrecompiledScriptPluginAccessors UP-TO-DATE
+> Task :gradle-settings-conventions:jvm-toolchain-provisioning:generateScriptPluginAdapters UP-TO-DATE
+> Task :gradle-settings-conventions:jvm-toolchain-provisioning:compileKotlin UP-TO-DATE
+> Task :gradle-settings-conventions:jvm-toolchain-provisioning:compileJava NO-SOURCE
+> Task :gradle-settings-conventions:jvm-toolchain-provisioning:pluginDescriptors UP-TO-DATE
+> Task :gradle-settings-conventions:jvm-toolchain-provisioning:processResources UP-TO-DATE
+> Task :gradle-settings-conventions:jvm-toolchain-provisioning:classes UP-TO-DATE
+> Task :gradle-settings-conventions:jvm-toolchain-provisioning:jar UP-TO-DATE
+> Task :gradle-build-conventions:buildsrc-compat:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gradle-build-conventions:gradle-plugins-common:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gradle-build-conventions:utilities:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gradle-build-conventions:utilities:compileKotlin UP-TO-DATE
+> Task :gradle-build-conventions:utilities:compileJava NO-SOURCE
+> Task :gradle-build-conventions:gradle-plugins-common:compileKotlin NO-SOURCE
+> Task :gradle-build-conventions:gradle-plugins-common:compileJava NO-SOURCE
+> Task :gradle-build-conventions:buildsrc-compat:generateExternalPluginSpecBuilders UP-TO-DATE
+> Task :gradle-build-conventions:buildsrc-compat:extractPrecompiledScriptPluginPlugins UP-TO-DATE
+> Task :gradle-build-conventions:buildsrc-compat:compilePluginsBlocks UP-TO-DATE
+> Task :gradle-build-conventions:gradle-plugins-common:pluginDescriptors UP-TO-DATE
+> Task :gradle-build-conventions:gradle-plugins-common:processResources NO-SOURCE
+> Task :gradle-build-conventions:gradle-plugins-common:classes UP-TO-DATE
+> Task :gradle-build-conventions:gradle-plugins-common:jar UP-TO-DATE
+> Task :gradle-build-conventions:utilities:pluginDescriptors UP-TO-DATE
+> Task :gradle-build-conventions:utilities:processResources NO-SOURCE
+> Task :gradle-build-conventions:utilities:classes UP-TO-DATE
+> Task :gradle-build-conventions:utilities:jar UP-TO-DATE
+> Task :gradle-build-conventions:buildsrc-compat:generatePrecompiledScriptPluginAccessors UP-TO-DATE
+> Task :gradle-build-conventions:buildsrc-compat:generateScriptPluginAdapters UP-TO-DATE
+> Task :gradle-build-conventions:buildsrc-compat:compileKotlin UP-TO-DATE
+> Task :gradle-build-conventions:buildsrc-compat:compileJava NO-SOURCE
+> Task :gradle-build-conventions:buildsrc-compat:pluginDescriptors UP-TO-DATE
+> Task :gradle-build-conventions:buildsrc-compat:processResources UP-TO-DATE
+> Task :gradle-build-conventions:buildsrc-compat:classes UP-TO-DATE
+> Task :gradle-build-conventions:buildsrc-compat:jar UP-TO-DATE
+> Task :gradle-build-conventions:analysis-coverage-convention:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gradle-build-conventions:analysis-coverage-convention:generateExternalPluginSpecBuilders UP-TO-DATE
+> Task :gradle-build-conventions:analysis-coverage-convention:extractPrecompiledScriptPluginPlugins UP-TO-DATE
+> Task :gradle-build-conventions:analysis-coverage-convention:compilePluginsBlocks UP-TO-DATE
+> Task :gradle-build-conventions:analysis-coverage-convention:generatePrecompiledScriptPluginAccessors UP-TO-DATE
+> Task :gradle-build-conventions:analysis-coverage-convention:generateScriptPluginAdapters UP-TO-DATE
+> Task :gradle-build-conventions:analysis-coverage-convention:compileKotlin UP-TO-DATE
+> Task :gradle-build-conventions:analysis-coverage-convention:compileJava NO-SOURCE
+> Task :gradle-build-conventions:analysis-coverage-convention:pluginDescriptors UP-TO-DATE
+> Task :gradle-build-conventions:analysis-coverage-convention:processResources UP-TO-DATE
+> Task :gradle-build-conventions:analysis-coverage-convention:classes UP-TO-DATE
+> Task :gradle-build-conventions:analysis-coverage-convention:jar UP-TO-DATE
+> Task :gradle-build-conventions:project-tests-convention:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gradle-build-conventions:project-tests-convention:generateExternalPluginSpecBuilders UP-TO-DATE
+> Task :gradle-build-conventions:project-tests-convention:extractPrecompiledScriptPluginPlugins UP-TO-DATE
+> Task :gradle-build-conventions:project-tests-convention:compilePluginsBlocks UP-TO-DATE
+> Task :gradle-build-conventions:project-tests-convention:generatePrecompiledScriptPluginAccessors UP-TO-DATE
+> Task :gradle-build-conventions:project-tests-convention:generateScriptPluginAdapters UP-TO-DATE
+> Task :gradle-build-conventions:project-tests-convention:compileKotlin UP-TO-DATE
+> Task :gradle-build-conventions:project-tests-convention:compileJava NO-SOURCE
+> Task :gradle-build-conventions:project-tests-convention:pluginDescriptors UP-TO-DATE
+> Task :gradle-build-conventions:project-tests-convention:processResources UP-TO-DATE
+> Task :gradle-build-conventions:project-tests-convention:classes UP-TO-DATE
+> Task :gradle-build-conventions:project-tests-convention:jar UP-TO-DATE
+> Task :gradle-build-conventions:generators:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gradle-build-conventions:generators:generateExternalPluginSpecBuilders UP-TO-DATE
+> Task :gradle-build-conventions:generators:extractPrecompiledScriptPluginPlugins UP-TO-DATE
+> Task :gradle-build-conventions:generators:compilePluginsBlocks UP-TO-DATE
+> Task :gradle-build-conventions:generators:generatePrecompiledScriptPluginAccessors UP-TO-DATE
+> Task :gradle-build-conventions:generators:generateScriptPluginAdapters UP-TO-DATE
+> Task :gradle-build-conventions:generators:compileKotlin UP-TO-DATE
+> Task :gradle-build-conventions:generators:compileJava NO-SOURCE
+> Task :gradle-build-conventions:generators:pluginDescriptors UP-TO-DATE
+> Task :gradle-build-conventions:generators:processResources UP-TO-DATE
+> Task :gradle-build-conventions:generators:classes UP-TO-DATE
+> Task :gradle-build-conventions:generators:jar UP-TO-DATE
+> Task :gradle-build-conventions:native-compile-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gradle-build-conventions:native-compile-plugin:compileKotlin UP-TO-DATE
+> Task :gradle-build-conventions:native-compile-plugin:compileJava NO-SOURCE
+> Task :gradle-build-conventions:native-compile-plugin:pluginDescriptors UP-TO-DATE
+> Task :gradle-build-conventions:native-compile-plugin:processResources UP-TO-DATE
+> Task :gradle-build-conventions:native-compile-plugin:classes UP-TO-DATE
+> Task :gradle-build-conventions:native-compile-plugin:jar UP-TO-DATE
+> Task :common:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :util:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :dependencies:intellij-core:compileJava NO-SOURCE
+> Task :util:compileKotlin UP-TO-DATE
+> Task :util:compileJava NO-SOURCE
+> Task :util:processResources NO-SOURCE
+> Task :util:classes UP-TO-DATE
+> Task :common:compileKotlin UP-TO-DATE
+> Task :common:compileJava NO-SOURCE
+> Task :common:processResources NO-SOURCE
+> Task :common:classes UP-TO-DATE
+> Task :generators:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :generators:compileKotlin UP-TO-DATE
+> Task :generators:compileJava NO-SOURCE
+> Task :generators:processResources NO-SOURCE
+> Task :psi:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :psi:generateCDocLexer UP-TO-DATE
+> Task :psi:generateCangJieLexer UP-TO-DATE
+> Task :psi:generateLexers UP-TO-DATE
+> Task :psi:compileKotlin UP-TO-DATE
+> Task :psi:compileJava UP-TO-DATE
+> Task :psi:processResources UP-TO-DATE
+> Task :cfir:cfir-common:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :psi:classes UP-TO-DATE
+> Task :common:diagnostics:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :common:diagnostics:compileKotlin UP-TO-DATE
+> Task :common:diagnostics:compileJava NO-SOURCE
+> Task :common:diagnostics:processResources NO-SOURCE
+> Task :common:diagnostics:classes UP-TO-DATE
+> Task :compiler:config:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :compiler:config:compileKotlin UP-TO-DATE
+> Task :compiler:config:compileJava NO-SOURCE
+> Task :compiler:config:processResources NO-SOURCE
+> Task :compiler:config:classes UP-TO-DATE
+> Task :cfir:cfir-common:compileKotlin UP-TO-DATE
+> Task :cfir:cfir-common:compileJava NO-SOURCE
+> Task :cfir:cfir-common:processResources NO-SOURCE
+> Task :cfir:cfir-common:classes UP-TO-DATE
+> Task :cfir:cfir-cones:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :cfir:cfir-cones:compileKotlin UP-TO-DATE
+> Task :cfir:cfir-cones:compileJava NO-SOURCE
+> Task :cfir:cfir-cones:processResources NO-SOURCE
+> Task :dependencies:intellij-core:processResources NO-SOURCE
+> Task :generators:classes UP-TO-DATE
+> Task :cfir:cfir-cones:classes UP-TO-DATE
+> Task :cfir:cfir-tree:tree-generator:checkKotlinGradlePluginConfigurationErrors SKIPPED
+
+> Task :cfir:cfir-tree:tree-generator:compileKotlin FAILED
+w: ATTENTION!
+This build uses unsafe internal compiler arguments:
+
+-XXLanguage:+ExplicitBackingFields
+
+This mode is not recommended for production use,
+as no stability/compatibility guarantees are given on
+compiler or generated code. Use it at your own risk!
+
+w: Following manually enabled features will force generation of pre-release binaries: ExplicitBackingFields
+e: file:///C:/Users/lin17/.codex/worktrees/cjmp-framework-implementation/cangjie/cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/printer/OwnedGraphCopyPrinter.kt:71:75 Unresolved reference 'typeName'.
+e: file:///C:/Users/lin17/.codex/worktrees/cjmp-framework-implementation/cangjie/cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/printer/OwnedGraphCopyPrinter.kt:71:117 Unresolved reference 'typeName'.
+e: file:///C:/Users/lin17/.codex/worktrees/cjmp-framework-implementation/cangjie/cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/printer/OwnedGraphCopyPrinter.kt:72:32 Unresolved reference 'typeName'.
+e: file:///C:/Users/lin17/.codex/worktrees/cjmp-framework-implementation/cangjie/cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/printer/OwnedGraphCopyPrinter.kt:84:27 Unresolved reference 'typeName'.
+e: file:///C:/Users/lin17/.codex/worktrees/cjmp-framework-implementation/cangjie/cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/printer/OwnedGraphCopyPrinter.kt:87:27 Unresolved reference 'typeName'.
+e: file:///C:/Users/lin17/.codex/worktrees/cjmp-framework-implementation/cangjie/cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/printer/OwnedGraphCopyPrinter.kt:88:27 Unresolved reference 'typeName'.
+e: file:///C:/Users/lin17/.codex/worktrees/cjmp-framework-implementation/cangjie/cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/printer/OwnedGraphCopyPrinter.kt:88:72 Unresolved reference 'typeName'.
+e: file:///C:/Users/lin17/.codex/worktrees/cjmp-framework-implementation/cangjie/cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/printer/OwnedGraphCopyPrinter.kt:98:28 Unresolved reference 'typeName'.
+e: file:///C:/Users/lin17/.codex/worktrees/cjmp-framework-implementation/cangjie/cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/printer/OwnedGraphCopyPrinter.kt:99:34 Unresolved reference 'typeName'.
+e: file:///C:/Users/lin17/.codex/worktrees/cjmp-framework-implementation/cangjie/cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/printer/OwnedGraphCopyPrinter.kt:110:64 Smart cast to 'Importable' is impossible, because 'typeRef' is a property that has an open or custom getter.
+e: file:///C:/Users/lin17/.codex/worktrees/cjmp-framework-implementation/cangjie/cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/printer/OwnedGraphCopyPrinter.kt:121:34 Unresolved reference 'typeName'.
+e: file:///C:/Users/lin17/.codex/worktrees/cjmp-framework-implementation/cangjie/cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/printer/OwnedGraphCopyPrinter.kt:124:50 Unresolved reference 'typeName'.
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':cfir:cfir-tree:tree-generator:compileKotlin'.
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+   > Compilation error. See log for more details
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 7m 15s
+67 actionable tasks: 1 executed, 66 up-to-date
+Configuration cache entry stored.
+[GradleQueue] gradlew finished with exitCode=1
+
+

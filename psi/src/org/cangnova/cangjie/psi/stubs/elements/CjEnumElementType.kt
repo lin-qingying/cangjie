@@ -69,6 +69,7 @@ class CjEnumElementType(debugName: String) : CjStubElementType<CangJieEnumStub, 
         for (name in superNames) {
             dataStream.writeName(name)
         }
+        writeCjmpNominalSyntaxFacts(dataStream, stub.cjmpNominalSyntaxFacts)
     }
     companion object {
         fun getStubType(): CjEnumElementType {
@@ -98,7 +99,8 @@ class CjEnumElementType(debugName: String) : CjStubElementType<CangJieEnumStub, 
             classId,
             name,
             superNames,
-            isNonExhaustive
+            isNonExhaustive,
+            readCjmpNominalSyntaxFacts(dataStream),
         )
     }
 
@@ -118,7 +120,8 @@ class CjEnumElementType(debugName: String) : CjStubElementType<CangJieEnumStub, 
             classId,
             StringRef.fromString(psi.name),
             wrapStrings(superNames),
-            isNonExhaustive
+            isNonExhaustive,
+            psi.cjmpNominalSyntaxFacts,
         )
     }
 

@@ -62,6 +62,11 @@ internal object ExtendTestFixtures {
      */
     fun newSessionAndModule(moduleName: String = "extend-test"): Pair<TestSession, CfirModuleData> {
         val session = TestSession()
+        session.register(
+            org.cangnova.cangjie.cfir.session.CfirLanguageSettingsComponent::class,
+            org.cangnova.cangjie.cfir.session.CfirLanguageSettingsComponent(org.cangnova.cangjie.LanguageVersionSettingsImpl.DEFAULT),
+        )
+        session.register(org.cangnova.cangjie.cfir.types.TypeComponents::class, org.cangnova.cangjie.cfir.types.TypeComponents(session))
         val moduleData = CfirSourceModuleData(
             name = Name.identifier(moduleName),
             dependencies = emptyList(),
@@ -82,6 +87,7 @@ internal object ExtendTestFixtures {
             source = null,
             annotations = emptyList<CfirAnnotation>().toMutableOrEmpty(),
             customRenderer = false,
+            typeUseOrigin = org.cangnova.cangjie.cfir.types.CfirTypeRefOrigin.SEMANTIC,
             coneType = ConeClassLikeType(
                 lookupTag = ConeClassLikeLookupTagImpl(classId),
                 isInterface = isInterface,
@@ -102,6 +108,7 @@ internal object ExtendTestFixtures {
             source = null,
             annotations = emptyList<CfirAnnotation>().toMutableOrEmpty(),
             customRenderer = false,
+            typeUseOrigin = org.cangnova.cangjie.cfir.types.CfirTypeRefOrigin.SEMANTIC,
             coneType = ConeClassLikeType(
                 lookupTag = ConeClassLikeLookupTagImpl(classId),
                 typeArguments = typeArguments,

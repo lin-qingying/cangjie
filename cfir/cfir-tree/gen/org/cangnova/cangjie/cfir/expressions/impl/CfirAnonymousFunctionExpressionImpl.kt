@@ -7,10 +7,12 @@
 
 package org.cangnova.cangjie.cfir.expressions.impl
 
+import org.cangnova.cangjie.annotations.CangjieOverflowStrategy
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
@@ -18,9 +20,12 @@ import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.source.CjSourceElement
 
 class CfirAnonymousFunctionExpressionImpl @CfirImplementationDetail constructor(
-    override val source: CjSourceElement?,
+    override var source: CjSourceElement?,
+    override var mappedExpression: CfirExpression?,
+    override var overflowStrategy: CangjieOverflowStrategy?,
     override var anonymousFunction: CfirAnonymousFunction,
     override var isTrailingLambda: Boolean,
+    override var supportMock: Boolean,
 ) : CfirAnonymousFunctionExpression() {
     override val annotations: List<CfirAnnotation>
         get() = anonymousFunction.annotations
@@ -45,10 +50,23 @@ class CfirAnonymousFunctionExpressionImpl @CfirImplementationDetail constructor(
         return this
     }
 
+    @CfirImplementationDetail
+    override fun replaceSource(newSource: CjSourceElement?) {
+        source = newSource
+    }
+
     override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>) {}
 
     override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?) {
         require(newConeTypeOrNull == coneTypeOrNull) { "${javaClass.simpleName}.replaceConeTypeOrNull() called with invalid type '${newConeTypeOrNull}'. Current type is '$coneTypeOrNull'" }
+    }
+
+    override fun replaceMappedExpression(newMappedExpression: CfirExpression?) {
+        mappedExpression = newMappedExpression
+    }
+
+    override fun replaceOverflowStrategy(newOverflowStrategy: CangjieOverflowStrategy?) {
+        overflowStrategy = newOverflowStrategy
     }
 
     override fun replaceAnonymousFunction(newAnonymousFunction: CfirAnonymousFunction) {
@@ -57,5 +75,9 @@ class CfirAnonymousFunctionExpressionImpl @CfirImplementationDetail constructor(
 
     override fun replaceIsTrailingLambda(newIsTrailingLambda: Boolean) {
         isTrailingLambda = newIsTrailingLambda
+    }
+
+    override fun replaceSupportMock(newSupportMock: Boolean) {
+        supportMock = newSupportMock
     }
 }

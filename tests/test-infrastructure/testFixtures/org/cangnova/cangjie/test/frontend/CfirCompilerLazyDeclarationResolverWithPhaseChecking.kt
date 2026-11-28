@@ -1,10 +1,11 @@
 package org.cangnova.cangjie.test.frontend
 
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
-import org.cangnova.cangjie.cfir.declarations.CfirClass
+import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.isItAllowedToCallLazyResolveTo
 import org.cangnova.cangjie.cfir.declarations.resolvePhase
+import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirLazyDeclarationResolver
 import org.cangnova.cangjie.util.PrivateForInline
 
@@ -37,7 +38,16 @@ class CfirCompilerLazyDeclarationResolverWithPhaseChecking : CfirLazyDeclaration
     /**
      * 执行 `lazyResolveToPhaseWithCallableMembers` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
      */
-    override fun lazyResolveToPhaseWithCallableMembers(clazz: CfirClass, toPhase: CfirResolvePhase) {
+    override fun lazyResolveToPhaseWithCallableMembers(clazz: CfirClassLikeDeclaration, toPhase: CfirResolvePhase) {
+        checkIfCanLazyResolveToPhase(toPhase, clazz.resolvePhase)
+    }
+
+    /** 层次请求沿用编译器测试的同一阶段检查，不把 scope 产品请求当作已完成的阶段。 */
+    override fun lazyResolveToPhaseWithCallableMembersInSupertypes(
+        clazz: CfirClassLikeDeclaration,
+        useSiteSession: CfirSession,
+        toPhase: CfirResolvePhase,
+    ) {
         checkIfCanLazyResolveToPhase(toPhase, clazz.resolvePhase)
     }
 

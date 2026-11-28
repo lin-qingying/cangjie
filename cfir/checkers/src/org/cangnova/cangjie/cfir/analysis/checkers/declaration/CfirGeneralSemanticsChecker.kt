@@ -25,17 +25,15 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.annotations.CangjiePlatformAnnotationKind
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.*
-import org.cangnova.cangjie.cfir.session.cfirProvider
-import org.cangnova.cangjie.cfir.session.bodyResolvePrerequisitePhase
+import org.cangnova.cangjie.cfir.resolve.providers.cfirProvider
 import org.cangnova.cangjie.LanguageFeature
 import org.cangnova.cangjie.name.ClassId
-import java.util.Collections
-import java.util.IdentityHashMap
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
@@ -50,8 +48,13 @@ import org.cangnova.cangjie.cfir.session.CfirInteropTarget
 import org.cangnova.cangjie.cfir.session.requiredLanguageFeature
 import org.cangnova.cangjie.cfir.session.interopSettings
 import org.cangnova.cangjie.cfir.session.noPrelude
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.resolve.providers.hasPackageOrSubpackages
+import org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysis
+import org.cangnova.cangjie.cfir.resolve.providers.exportAnalysisSettings
+import org.cangnova.cangjie.cfir.session.cjmpFamilyAggregate
+import org.cangnova.cangjie.cfir.session.cjmpSettings
+import org.cangnova.cangjie.cfir.session.CfirCjmpMode
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirInterfaceSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
@@ -73,7 +76,6 @@ import org.cangnova.cangjie.source.CjSourceElement
  *
  * 对齐 C++ TypeCheckDecl.cpp / TypeCheckUtil.cpp 中的通用语义检查：
  * - ACCESSIBILITY_ERROR / ACCESSIBILITY_WITH_MAIN_HINT: 可访问性检查
- * - CONFLICT_WITH_SUB_PACKAGE: 顶层声明与子包名冲突
  * - AMBIGUOUS_USE: 歧义使用
  * - PARAM_COUNT_MISMATCH: 参数个数不匹配
  * - MISMATCHED_TYPES_BECAUSE / MISMATCHED_TYPES_MULTIPLE_ASSIGN: 类型不匹配
@@ -84,14 +86,13 @@ import org.cangnova.cangjie.source.CjSourceElement
  * 注意：部分诊断（如 ACCESSIBILITY_ERROR）需要调用点上下文，
  * 属于 resolve 管线和表达式检查器的职责，此处只处理声明层面可判断的部分。
  */
-object CfirGeneralSemanticsChecker : CfirFileChecker() {
+object CfirGeneralSemanticsChecker : CfirFileChecker(MppCheckerKind.Common) {
     /**
      * 对单个文件执行通用声明语义检查。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirFile) {
         checkAccessibilityInFile(declaration)
-        checkConflictWithSubPackage(declaration)
         checkCoreObjectAvailable(declaration)
         checkMainFunctionAccessibility(declaration)
         checkExportSamePrivateDecl(declaration)
@@ -99,28 +100,6 @@ object CfirGeneralSemanticsChecker : CfirFileChecker() {
         checkObjCInteropImports(declaration)
         checkJavaImplRedefinition(declaration)
         checkCJMappingConfigValid(declaration)
-    }
-
-    /**
-     * 检查顶层声明名是否与子包名冲突。
-     *
-     * 对齐 C++ DiagKind::sema_conflict_with_sub_package。
-     */
-    context(context: CheckerContext, reporter: DiagnosticReporter)
-    private fun checkConflictWithSubPackage(file: CfirFile) {
-        val packageFqName = file.packageDirective.packageFqName
-        for (declaration in file.declarations) {
-            val declName = declaration.declarationName() ?: continue
-            val childPackageFqName = packageFqName.child(declName)
-            if (context.session.symbolProvider.hasPackageOrSubpackages(childPackageFqName)) {
-                reporter.reportOn(
-                    source = declaration.source,
-                    factory = CfirErrors.CONFLICT_WITH_SUB_PACKAGE,
-                    a = declName,
-                    b = declName,
-                )
-            }
-        }
     }
 
     /**
@@ -302,19 +281,12 @@ object CfirGeneralSemanticsChecker : CfirFileChecker() {
      * `sema_export_same_private_decl`：官方遍历 `IsNominalDecl() && private &&
      * linkage != INTERNAL` 的声明，同名即报错，锚点为**首个**声明的 identifier、
      * 后续声明附 note——本仓库诊断基建无 note 家族，V1 只报首个声明。
-     * `linkage != INTERNAL` 的等价判定是"该声明被导出面引用"：public 顶层 nominal
-     * 的继承类型与成员面（内存布局实例成员、可导出成员、enum case 参数）引用到的
-     * 类型经 worklist 传播为需导出（:330-378 PerformPublicType/
-     * HandleMemberDeclInTopLevelDecl，:390-448 AnalyzeExternalLinkageByExportedTy/
-     * HandleMemberDeclsByTy）；private 成员函数不导出（:592-597 规则 3），
-     * 解释 `private func f(a: A)` 形状零诊断。
+     * linkage 由共享 [CfirExportAnalysis] 按 modifier、实际源码引用、类型图及最终
+     * INTERNAL owner 收敛计算。可因真实引用提升 private 声明，不从 visibility 或短名猜测。
      * 该检查由 [LanguageFeature.ExportSamePrivateDeclCheck] 门禁：官方于 v1.0.2
      * 引入，v1.0.0 无此检查（cjc 1.0.0/1.0.5 双 SDK 实测确认分界）。
      *
-     * 已登记的 V1 简化：不含官方 `AnalyzeExternalLinkageBySrcExportedDecl`
-     * （src-exported 声明体的引用传播，:378-388，泛型函数体内引用 private 类的
-     * 形状当前语料未覆盖）；诊断锚点用声明名（`classLikeNameDiagnosticSource`，
-     * 对齐官方 `MakeRangeForDeclIdentifier` 的 identifier 锚定）。
+     * 诊断锚点为包遍历中首个实际非 INTERNAL 的声明名，来源定位由共享 source 协议处理。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkExportSamePrivateDecl(file: CfirFile) {
@@ -322,25 +294,40 @@ object CfirGeneralSemanticsChecker : CfirFileChecker() {
 
         val packageFiles = context.session.cfirProvider
             .getCfirFilesByPackage(file.packageDirective.packageFqName)
-        packageFiles.forEach { packageFile ->
-            packageFile.lazyResolveToPhase(context.session.bodyResolvePrerequisitePhase)
-        }
         val privateGroups = linkedMapOf<Name, MutableList<CfirClassLikeDeclaration>>()
         for (packageFile in packageFiles) {
             for (decl in packageFile.declarations) {
                 val classLike = decl as? CfirClassLikeDeclaration ?: continue
+                if (classLike is CfirTypeAlias) continue
                 if ((decl as? CfirMemberDeclaration)?.status?.visibility != Visibilities.Private) continue
                 privateGroups.getOrPut(classLike.name) { mutableListOf() }.add(classLike)
             }
         }
 
-        val exportSurface = computeExportSurfaceNominals(packageFiles)
+        if (privateGroups.values.none { it.size > 1 }) return
+        // linkage 依赖实际可导出正文中的引用；这是本诊断的语义输入，不可由短名推导代替。
+        packageFiles.forEach { it.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE) }
+        val family = if (context.session.cjmpSettings.mode == CfirCjmpMode.SPECIFIC) {
+            context.session.cjmpFamilyAggregate.ensureFamilyComplete(file.packageDirective.packageFqName)
+        } else null
+        val completeRoots = (packageFiles.flatMap { it.declarations } + family?.let { snapshot ->
+            snapshot.familyCommonDeclarations().filter { snapshot.physicalOwnerFor(it) == null }
+        }.orEmpty()).distinctBy { it.symbol }
+        val exportAnalysis = CfirExportAnalysis.analyze(
+            packageFiles, completeRoots, settings = context.session.exportAnalysisSettings,
+            matchedCommon = family?.let { snapshot ->
+                snapshot.familyCommonDeclarations().filter { snapshot.specificBindingsFor(it).isNotEmpty() }.toSet()
+            }.orEmpty(),
+        )
+        val exportedGroups = privateGroups.mapValues { (_, group) ->
+            group.filter { exportAnalysis.linkageOf(it) != CfirDeclarationLinkage.INTERNAL }
+        }
         for (declaration in file.declarations) {
             val classLike = declaration as? CfirClassLikeDeclaration ?: continue
+            if (classLike is CfirTypeAlias) continue
             if ((declaration as? CfirMemberDeclaration)?.status?.visibility != Visibilities.Private) continue
-            val group = privateGroups[classLike.name].orEmpty()
+            val group = exportedGroups[classLike.name].orEmpty()
             if (group.size < 2) continue
-            if (group.count { it in exportSurface } < 2) continue
             if (group.first() !== classLike) continue
             reporter.reportOn(
                 source = classLike.classLikeNameDiagnosticSource(),
@@ -349,116 +336,6 @@ object CfirGeneralSemanticsChecker : CfirFileChecker() {
         }
     }
 
-    /**
-     * 计算"linkage != INTERNAL"的顶层 nominal 声明集合（导出面）。
-     *
-     * 移植官方最小链：public 顶层 nominal 为种子（PerformPublicType），其继承类型与
-     * 成员面进入 exportedTys worklist，被引用到的 nominal 转为需导出并继续传播
-     * （AnalyzeExternalLinkageByExportedTy / HandleMemberDeclsByTy）。类型引用的目标
-     * 按文件私有规则解析：引用所在文件自己声明的同名 nominal 优先（private 亦然，
-     * 只有它对本文件可见），否则取跨文件同名组中的非 private 声明。
-     * 结果按声明身份聚合；单次 checkFile 内计算，会话级 memoization 留待独立
-     * session component（当前仅诊断面消费）。
-     */
-    private fun computeExportSurfaceNominals(packageFiles: List<CfirFile>): Set<CfirDeclaration> {
-        val exportSurface: MutableSet<CfirDeclaration> = Collections.newSetFromMap(IdentityHashMap())
-        val queue = ArrayDeque<Pair<CfirFile, CfirClassLikeDeclaration>>()
-        for (packageFile in packageFiles) {
-            for (decl in packageFile.declarations) {
-                val classLike = decl as? CfirClassLikeDeclaration ?: continue
-                if ((decl as? CfirMemberDeclaration)?.status?.visibility == Visibilities.Public) {
-                    exportSurface.add(decl)
-                    queue.add(packageFile to classLike)
-                }
-            }
-        }
-        while (queue.isNotEmpty()) {
-            val (ownFile, current) = queue.removeFirst()
-            for (classId in exportSurfaceTypeClassIds(current)) {
-                val target = resolveExportSurfaceTarget(ownFile, classId, packageFiles) ?: continue
-                if (exportSurface.add(target.second)) {
-                    queue.add(target)
-                }
-            }
-        }
-        return exportSurface
-    }
-
-    /** 收集一个 nominal 声明成员面上出现的类型（成员取舍规则见 [checkExportSamePrivateDecl] KDoc）。 */
-    private fun exportSurfaceTypeClassIds(declaration: CfirClassLikeDeclaration): Set<ClassId> {
-        val classIds = mutableSetOf<ClassId>()
-        fun addTypeRef(ref: CfirTypeRef?) {
-            if (ref is CfirResolvedTypeRef) collectTypeClassIds(ref.coneType, classIds)
-        }
-        declaration.superTypeRefs.forEach(::addTypeRef)
-        for (member in declaration.declarations) {
-            when (member) {
-                // 内存布局实例成员（struct/class 的非 static var、enum case）不论成员可见性都导出其类型
-                is CfirProperty -> if (!member.status.isStatic ||
-                    member.status.visibility == Visibilities.Public ||
-                    member.status.visibility == Visibilities.Protected
-                ) {
-                    addTypeRef(member.returnTypeRef)
-                }
-                is CfirVariable -> if (!member.status.isStatic ||
-                    member.status.visibility == Visibilities.Public ||
-                    member.status.visibility == Visibilities.Protected
-                ) {
-                    addTypeRef(member.returnTypeRef)
-                }
-                is CfirNamedFunction -> {
-                    val inVTable = member.status.visibility == Visibilities.Public ||
-                        member.status.visibility == Visibilities.Protected
-                    val staticNonPrivate = member.status.isStatic && member.status.visibility != Visibilities.Private
-                    if (inVTable || staticNonPrivate) {
-                        addTypeRef(member.returnTypeRef)
-                        member.valueParameters.forEach { addTypeRef(it.returnTypeRef) }
-                    }
-                }
-                is CfirEnumConstructor -> member.valueParameters.forEach { addTypeRef(it.returnTypeRef) }
-                else -> {}
-            }
-        }
-        return classIds
-    }
-
-    /** 递归收集类型本体与类型实参指向的 ClassId（官方 exportedTys 逐层展开）。 */
-    private fun collectTypeClassIds(type: ConeCangJieType, out: MutableSet<ClassId>) {
-        type.classIdOrPrimitiveClassId?.let(out::add)
-        if (type is ConeClassLikeType) {
-            type.typeArguments.forEach { collectTypeClassIds(it.type, out) }
-        }
-    }
-
-    /**
-     * 解析导出面类型引用的目标声明，返回其所在文件与声明。
-     *
-     * 文件私有规则：引用所在文件自己声明的同名 nominal 优先（private 亦然）；
-     * 跨文件时同包 private 不可见，目标只能是同名组中的非 private 声明。
-     */
-    private fun resolveExportSurfaceTarget(
-        referencingFile: CfirFile,
-        classId: ClassId,
-        packageFiles: List<CfirFile>,
-    ): Pair<CfirFile, CfirClassLikeDeclaration>? {
-        val shortName = classId.shortClassName
-        for (decl in referencingFile.declarations) {
-            val classLike = decl as? CfirClassLikeDeclaration ?: continue
-            if (classLike.name == shortName) return referencingFile to classLike
-        }
-        for (packageFile in packageFiles) {
-            if (packageFile === referencingFile) continue
-            for (decl in packageFile.declarations) {
-                val classLike = decl as? CfirClassLikeDeclaration ?: continue
-                if (classLike.name == shortName &&
-                    (decl as? CfirMemberDeclaration)?.status?.visibility != Visibilities.Private
-                ) {
-                    return packageFile to classLike
-                }
-            }
-        }
-        return null
-    }
 
     /**
      * 检查文件中的声明是否存在可访问性问题。
@@ -622,7 +499,7 @@ object CfirGeneralSemanticsChecker : CfirFileChecker() {
  * - CSTRUCT_CANNOT_IMPL_INTERFACES: @C struct 不能实现接口
  * - EXPORT_SAME_PRIVATE_DECL: 同名 private 导出限制
  */
-object CfirClassStructSemanticsChecker : CfirClassLikeChecker() {
+object CfirClassStructSemanticsChecker : CfirClassLikeChecker(MppCheckerKind.Common) {
     /**
      * C 互操作结构体注解名称。
      */
@@ -636,7 +513,6 @@ object CfirClassStructSemanticsChecker : CfirClassLikeChecker() {
         if (declaration is CfirClass) {
             checkSealedOnlyOnAbstract(declaration)
             CfirStaticGenericDependencySemantics.check(declaration)
-            checkFinalizerConstraints(declaration)
         }
         if (declaration is CfirStruct) {
             CfirStaticGenericDependencySemantics.check(declaration)
@@ -735,42 +611,10 @@ object CfirClassStructSemanticsChecker : CfirClassLikeChecker() {
         }
     }
 
-    /**
-     * finalizer 中不能使用实例函数。
-     *
-     * 对齐 C++ DiagKind::sema_instance_func_cannot_be_used_in_finalizer
-     */
-    context(context: CheckerContext, reporter: DiagnosticReporter)
-    private fun checkFinalizerConstraints(classDecl: CfirClass) {
-        for (member in classDecl.declarations) {
-            if (member !is org.cangnova.cangjie.cfir.declarations.CfirFinalizer) continue
-            val body = member.body ?: continue
-            body.acceptChildren(object : org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid() {
-                override fun visitElement(element: org.cangnova.cangjie.cfir.CfirElement) {
-                    if (element is org.cangnova.cangjie.cfir.expressions.CfirFunctionCall) {
-                        val ref = element.calleeReference as? org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
-                        val sym = ref?.resolvedSymbol as? org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
-                        val targetFunction = sym?.cfir
-                        // 这里只拦 class 实例方法；顶层函数/局部函数本身并不违反 finalizer 约束，
-                        // 违规点在于把 `this` 当值传出，由表达式检查器单独报告。
-                        if (targetFunction != null && targetFunction.dispatchReceiverType != null && !targetFunction.status.isStatic) {
-                            reporter.reportOn(
-                                source = element.source,
-                                factory = CfirErrors.INSTANCE_FUNC_CANNOT_BE_USED_IN_FINALIZER,
-                                a = "function",
-                            )
-                        }
-                    }
-                    element.acceptChildren(this, null)
-                }
-            }, null)
-        }
-    }
-
 }
 
 /** extend static var / prop / init 不能依赖 extend 自身的泛型参数。 */
-object CfirExtendStaticGenericDependencyChecker : CfirExtendChecker() {
+object CfirExtendStaticGenericDependencyChecker : CfirExtendChecker(MppCheckerKind.Common) {
     /**
      * 检查 extend 成员中的 static 泛型参数依赖。
      */
@@ -1020,7 +864,7 @@ private object CfirStaticGenericDependencySemantics {
  * - PROPERTY_HAVE_SAME_DECLARATION_IN_INHERIT_MUT / _IMMUT: 继承中同名属性 mut/immut 不一致
  * - PROPERTY_MUST_IMPLEMENT_BOTH: 接口属性的 getter/setter 都必须实现
  */
-object CfirPropertySemanticsChecker : CfirPropertyChecker() {
+object CfirPropertySemanticsChecker : CfirPropertyChecker(MppCheckerKind.Common) {
     override val requiresImplementation: Boolean get() = true
 
     /**
@@ -1040,9 +884,10 @@ object CfirPropertySemanticsChecker : CfirPropertyChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkPropertyAccessors(property: CfirProperty) {
         if (property.isCatchParameter == true) return
-        if (property.source?.kind == CjFakeSourceElementKind.PropertyFromParameter) return
         if (context.containingDeclarations.lastOrNull() is CfirInterfaceSymbol) return
-        if (property.status.isAbstract || property.symbol.isAbstractLike(context)) return
+        // 无默认实现的 common 属性不走普通属性访问器完整性检查。
+        if (property.status.isCommon && !property.cjmpHasCommonDefault()) return
+        if (property.status.hasAbstractAttribute || property.symbol.isAbstractLike(context)) return
         if (property.getter == null && property.setter == null) {
             reporter.reportOn(
                 source = property.source,

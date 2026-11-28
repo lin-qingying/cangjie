@@ -923,7 +923,7 @@ open class CjVisitor<R, D> : PsiElementVisitor() {
      * 提供 `visitEnumConstructor` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
      */
     open fun visitEnumConstructor(enumConstructor: CjEnumConstructor, data: D): R? {
-        return visitDeclaration(enumConstructor, data)
+        return visitNamedDeclaration(enumConstructor, data)
     }
 
     /**

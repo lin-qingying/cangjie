@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
@@ -10,7 +11,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
@@ -25,7 +26,7 @@ import org.cangnova.cangjie.cfir.types.ConeClassLikeType
  *
  * 注册为 callableDeclarationCheckers
  */
-object CfirDeprecatedDeclarationChecker : CfirCallableDeclarationChecker() {
+object CfirDeprecatedDeclarationChecker : CfirCallableDeclarationChecker(MppCheckerKind.Common) {
     /**
      * Deprecated 注解名。
      */

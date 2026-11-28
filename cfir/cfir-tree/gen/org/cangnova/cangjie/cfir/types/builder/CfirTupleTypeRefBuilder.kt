@@ -14,6 +14,7 @@ import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.types.CfirTupleTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.CfirTypeRefOrigin
 import org.cangnova.cangjie.cfir.types.impl.CfirTupleTypeRefImpl
 import org.cangnova.cangjie.source.CjSourceElement
 
@@ -22,6 +23,7 @@ class CfirTupleTypeRefBuilder {
     var source: CjSourceElement? = null
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
     var customRenderer: Boolean = false
+    var typeUseOrigin: CfirTypeRefOrigin = CfirTypeRefOrigin.SEMANTIC
     val elementTypeRefs: MutableList<CfirTypeRef> = mutableListOf()
 
     @OptIn(CfirImplementationDetail::class)
@@ -30,6 +32,7 @@ class CfirTupleTypeRefBuilder {
             source,
             annotations.toMutableOrEmpty(),
             customRenderer,
+            typeUseOrigin,
             elementTypeRefs,
         )
     }
@@ -53,6 +56,7 @@ inline fun buildTupleTypeRefCopy(original: CfirTupleTypeRef, init: CfirTupleType
     copyBuilder.source = original.source
     copyBuilder.annotations.addAll(original.annotations)
     copyBuilder.customRenderer = original.customRenderer
+    copyBuilder.typeUseOrigin = original.typeUseOrigin
     copyBuilder.elementTypeRefs.addAll(original.elementTypeRefs)
     return copyBuilder.apply(init).build()
 }

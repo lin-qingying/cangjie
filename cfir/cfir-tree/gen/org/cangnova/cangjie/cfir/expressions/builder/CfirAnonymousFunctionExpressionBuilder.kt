@@ -8,25 +8,33 @@
 package org.cangnova.cangjie.cfir.expressions.builder
 
 import kotlin.contracts.*
+import org.cangnova.cangjie.annotations.CangjieOverflowStrategy
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
 import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.impl.CfirAnonymousFunctionExpressionImpl
 import org.cangnova.cangjie.source.CjSourceElement
 
 @CfirBuilderDsl
 class CfirAnonymousFunctionExpressionBuilder {
     var source: CjSourceElement? = null
+    var mappedExpression: CfirExpression? = null
+    var overflowStrategy: CangjieOverflowStrategy? = null
     lateinit var anonymousFunction: CfirAnonymousFunction
     var isTrailingLambda: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
+    var supportMock: Boolean = false
 
     @OptIn(CfirImplementationDetail::class)
     fun build(): CfirAnonymousFunctionExpression {
         return CfirAnonymousFunctionExpressionImpl(
             source,
+            mappedExpression,
+            overflowStrategy,
             anonymousFunction,
             isTrailingLambda,
+            supportMock,
         )
     }
 
@@ -47,7 +55,10 @@ inline fun buildAnonymousFunctionExpressionCopy(original: CfirAnonymousFunctionE
     }
     val copyBuilder = CfirAnonymousFunctionExpressionBuilder()
     copyBuilder.source = original.source
+    copyBuilder.mappedExpression = original.mappedExpression
+    copyBuilder.overflowStrategy = original.overflowStrategy
     copyBuilder.anonymousFunction = original.anonymousFunction
     copyBuilder.isTrailingLambda = original.isTrailingLambda
+    copyBuilder.supportMock = original.supportMock
     return copyBuilder.apply(init).build()
 }

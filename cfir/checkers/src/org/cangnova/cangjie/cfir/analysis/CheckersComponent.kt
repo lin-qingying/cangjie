@@ -7,6 +7,7 @@ package org.cangnova.cangjie.cfir.analysis
 import org.cangnova.cangjie.cfir.SessionConfiguration
 import org.cangnova.cangjie.cfir.analysis.checkers.CommonLanguageVersionSettingsCheckers.languageVersionSettingsCheckers
 import org.cangnova.cangjie.cfir.analysis.checkers.LanguageVersionSettingsCheckers
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.config.ComposedLanguageVersionSettingsCheckers
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.ComposedDeclarationCheckers
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration. DeclarationCheckers
@@ -23,23 +24,34 @@ annotation class CheckersComponentInternal
 
 /** 挂载到 `CfirSession` 上的 checker 聚合组件，统一保存声明、表达式、类型和语言设置 checker。 */
 class CheckersComponent : CfirSessionComponent {
-    /** 当前 session 中已经注册的声明 checker 聚合器。 */
-    val declarationCheckers: ComposedDeclarationCheckers = ComposedDeclarationCheckers()
+    /** 在声明所属 session 执行的检查。 */
+    val commonDeclarationCheckers: DeclarationCheckers
+        field = ComposedDeclarationCheckers(MppCheckerKind.Common)
+    /** 使用叶模块 session 检查全图源码的检查。 */
+    val platformDeclarationCheckers: DeclarationCheckers
+        field = ComposedDeclarationCheckers(MppCheckerKind.Platform)
 
     /** 当前 session 中已经注册的表达式 checker 聚合器。 */
-    val expressionCheckers: ComposedExpressionCheckers = ComposedExpressionCheckers()
+    val commonExpressionCheckers: ExpressionCheckers
+        field = ComposedExpressionCheckers(MppCheckerKind.Common)
+    val platformExpressionCheckers: ExpressionCheckers
+        field = ComposedExpressionCheckers(MppCheckerKind.Platform)
 
     /** 当前 session 中已经注册的语言版本设置 checker 聚合器。 */
     val languageVersionSettingsCheckers: LanguageVersionSettingsCheckers
         field = ComposedLanguageVersionSettingsCheckers()
 
     /** 当前 session 中已经注册的类型 checker 聚合器。 */
-    val typeCheckers: ComposedTypeCheckers = ComposedTypeCheckers()
+    val commonTypeCheckers: TypeCheckers
+        field = ComposedTypeCheckers(MppCheckerKind.Common)
+    val platformTypeCheckers: TypeCheckers
+        field = ComposedTypeCheckers(MppCheckerKind.Platform)
 
     /** 将一组声明 checker 注册到当前 session 的声明 checker 聚合器。 */
     @OptIn(CheckersComponentInternal::class)
     fun register(checkers:DeclarationCheckers) {
-        declarationCheckers.register(checkers)
+        commonDeclarationCheckers.register(checkers)
+        platformDeclarationCheckers.register(checkers)
     }
 
     /** 将一组语言版本设置 checker 注册到当前 session 的语言设置 checker 聚合器。 */
@@ -52,13 +64,15 @@ class CheckersComponent : CfirSessionComponent {
     /** 将一组表达式 checker 注册到当前 session 的表达式 checker 聚合器。 */
     @OptIn(CheckersComponentInternal::class)
     fun register(checkers:ExpressionCheckers) {
-        expressionCheckers.register(checkers)
+        commonExpressionCheckers.register(checkers)
+        platformExpressionCheckers.register(checkers)
     }
 
     /** 将一组类型 checker 注册到当前 session 的类型 checker 聚合器。 */
     @OptIn(CheckersComponentInternal::class)
     fun register(checkers: TypeCheckers) {
-        typeCheckers.register(checkers)
+        commonTypeCheckers.register(checkers)
+        platformTypeCheckers.register(checkers)
     }
 }
 

@@ -24,11 +24,14 @@
 
 package org.cangnova.cangjie.test.frontend
 
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
+
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.Severity
 import org.cangnova.cangjie.cfir.diagnostics.impl.DiagnosticsCollectorImpl
 import org.cangnova.cangjie.cfir.pipeline.runCheckers
+import org.cangnova.cangjie.cfir.pipeline.reportParsingDiagnostics
 import org.cangnova.cangjie.cfir.session.lazyDeclarationResolver
 import org.cangnova.cangjie.test.services.TestService
 import org.cangnova.cangjie.test.services.TestServices
@@ -78,8 +81,16 @@ open class CfirDiagnosticCollectorService(
         val allFiles = info.partsForDependsOnModules.flatMap { it.firFilesByTestFile.values }
         val diagnosticsByFile = linkedMapOf<CfirFile, MutableList<CjDiagnostic>>()
         allFiles.forEach { diagnosticsByFile[it] = mutableListOf() }
-
         val platformPart = info.partsForDependsOnModules.last()
+        // 依赖 part 的语法已经在其自身 frontend invocation 中发布；当前单元只重放本 part 的输入。
+        // Common/Platform 语义轮次仍读取完整依赖图，不能借其依赖文件集合重复发布 parser WARNING。
+        val parsingCollector = DiagnosticsCollectorImpl()
+        val parsingFiles = platformPart.firFilesByTestFile.values
+        parsingCollector.reportParsingDiagnostics(parsingFiles)
+        for (file in parsingFiles) {
+            diagnosticsByFile.getValue(file).addAll(parsingCollector.diagnosticsByFilePath[file.sourceFile?.path].orEmpty())
+        }
+
         val lazyDeclarationResolver = platformPart.session.lazyDeclarationResolver
 
         lazyDeclarationResolver.disableLazyResolveContractChecksInside {
@@ -89,18 +100,20 @@ open class CfirDiagnosticCollectorService(
                     scopeSession = part.scopeSession,
                     firFiles = part.firFilesByTestFile.values,
                     diagnosticsCollector = diagnosticsCollector,
+                    mppCheckerKind = MppCheckerKind.Common,
+                    includeParsingDiagnostics = false,
                 )
                 appendComputedDiagnostics(diagnostics, diagnosticsByFile)
-                // 平台（specific）会话对 depends-on 模块文件报告的诊断（对位 Kotlin MppCheckerKind.Platform：
-                // CJMP common 方向 NOT_MATCHED 锚在 common 声明上，由 specific 会话产出）
-                val ownFiles = part.firFilesByTestFile.values.toSet()
-                for (file in allFiles) {
-                    if (file in ownFiles) continue
-                    val path = file.sourceFile?.path ?: continue
-                    val foreign = diagnosticsCollector.diagnosticsByFilePath[path].orEmpty()
-                    if (foreign.isNotEmpty()) diagnosticsByFile.getOrPut(file) { mutableListOf() }.addAll(foreign)
-                }
             }
+            appendComputedDiagnostics(
+                platformPart.session.runCheckers(
+                    scopeSession = platformPart.scopeSession,
+                    firFiles = allFiles,
+                    diagnosticsCollector = DiagnosticsCollectorImpl(),
+                    mppCheckerKind = MppCheckerKind.Platform,
+                ),
+                diagnosticsByFile,
+            )
         }
 
         return diagnosticsByFile.mapValues { (_, value) -> value.toList() }

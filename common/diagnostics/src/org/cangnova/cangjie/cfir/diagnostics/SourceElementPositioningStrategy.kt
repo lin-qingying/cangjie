@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.cfir.diagnostics
 
+import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 import org.cangnova.cangjie.source.CjLightSourceElement
@@ -25,6 +26,20 @@ class SourceElementPositioningStrategy(
      */
     private val offsetsOnlyPositioningStrategy: OffsetsOnlyPositioningStrategy = OffsetsOnlyPositioningStrategy(),
 ) : AbstractSourceElementPositioningStrategy() {
+    /**
+     * 在 PSI 与 LightTree 共享策略中查找真实名称锚点；没有名称 token 时返回 null，不采用诊断高亮的整元素回退。
+     */
+    fun markOrNull(element: AbstractCjSourceElement): List<TextRange>? = when (element) {
+        is CjPsiSourceElement -> psiStrategy.markPsiOrNull(element.psi)
+        is CjLightSourceElement -> lightTreeStrategy.markOrNull(
+            element.lighterASTNode,
+            element.startOffset,
+            element.endOffset,
+            element.treeStructure,
+        )
+        else -> null
+    }
+
     /**
      * 按诊断源元素类型分派到对应定位策略。
      */
@@ -54,5 +69,11 @@ class SourceElementPositioningStrategy(
     private fun PositioningStrategy<*>.hackyIsValid(psi: PsiElement): Boolean {
         @Suppress("UNCHECKED_CAST")
         return (this as PositioningStrategy<PsiElement>).isValid(psi)
+    }
+
+    /** 在擦除泛型的 PSI 策略上执行精确定位查询。 */
+    private fun PositioningStrategy<*>.markPsiOrNull(psi: PsiElement): List<TextRange>? {
+        @Suppress("UNCHECKED_CAST")
+        return (this as PositioningStrategy<PsiElement>).markOrNull(psi)
     }
 }

@@ -1,6 +1,7 @@
 ﻿package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.containingFileText
 import org.cangnova.cangjie.cfir.analysis.checkers.context.lastNonWhitespaceIndexBefore
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
@@ -32,7 +33,7 @@ import org.cangnova.cangjie.name.OperatorNameConventions
  * 该检查器处理普通整数字面量本身的范围，带源码正负号的一元字面量会委托给
  * [checkSourceSignedLiteral]，避免把 `-Int64.MIN_VALUE` 的内部正数字面量误报溢出。
  */
-object CfirLiteralNumericOverflowChecker : CfirLiteralExpressionChecker() {
+object CfirLiteralNumericOverflowChecker : CfirLiteralExpressionChecker(MppCheckerKind.Common) {
     /**
      * 检查整数字面量是否超出显式后缀、上下文目标类型或默认 Int64 范围。
      */
@@ -123,7 +124,7 @@ private fun CheckerContext.isAssignmentSpecificLiteralConversion(
  * `ChkLitConstExprRange` 同样以最终带符号值判断范围，因此 `-9223372036854775808`
  * 是合法的 Int64 下界，不能先把内部正数字面量单独报溢出。
  */
-object CfirSignedLiteralNumericOverflowChecker : CfirFunctionCallChecker() {
+object CfirSignedLiteralNumericOverflowChecker : CfirFunctionCallChecker(MppCheckerKind.Common) {
     /**
      * 检查解析为一元 operator 调用的带符号整数字面量。
      *

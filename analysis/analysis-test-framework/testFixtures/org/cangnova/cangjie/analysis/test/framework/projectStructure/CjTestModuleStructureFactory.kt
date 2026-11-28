@@ -9,6 +9,7 @@ import com.intellij.psi.PsiManager
 import org.cangnova.cangjie.LanguageVersionSettings
 import org.cangnova.cangjie.LanguageVersionSettingsImpl
 import org.cangnova.cangjie.analysis.api.CaExperimentalApi
+import org.cangnova.cangjie.analysis.api.projectStructure.CaCjmpCompilationMode
 import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryFallbackDependenciesModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
@@ -22,6 +23,8 @@ import org.cangnova.cangjie.analysis.test.framework.services.libraries.testModul
 import org.cangnova.cangjie.test.model.DependencyDescription
 import org.cangnova.cangjie.test.model.TestModule
 import org.cangnova.cangjie.test.model.TestModuleStructure
+import org.cangnova.cangjie.test.directives.CfirDiagnosticsDirectives
+import org.cangnova.cangjie.cfir.session.CfirCjmpMode
 import org.cangnova.cangjie.test.services.TestServices
 import org.cangnova.cangjie.test.services.getCjFilesForSourceFiles
 import org.cangnova.cangjie.test.services.sourceFileProvider
@@ -167,6 +170,12 @@ object CjTestModuleStructureFactory {
     ): TestModuleSet {
         val languageVersionSettings = testModule.languageVersionSettings ?: LanguageVersionSettingsImpl.DEFAULT
         val moduleName = testModule.name
+        val cjmpModes = testModule.directives[CfirDiagnosticsDirectives.CJMP_MODE]
+        val configuredCjmpMode = if (cjmpModes.isEmpty()) null else when (cjmpModes.single()) {
+            CfirCjmpMode.NONE -> CaCjmpCompilationMode.NONE
+            CfirCjmpMode.COMMON -> CaCjmpCompilationMode.COMMON
+            CfirCjmpMode.SPECIFIC -> CaCjmpCompilationMode.SPECIFIC
+        }
 
         return when (moduleKind) {
             TestModuleKind.Source -> {
@@ -176,6 +185,7 @@ object CjTestModuleStructureFactory {
                     languageVersionSettings = languageVersionSettings,
                     project = project,
                     psiRoots = psiFiles,
+                    cjmpCompilationMode = configuredCjmpMode,
                 )
                 TestModuleSet(
                     primaryModule = sourceModule,

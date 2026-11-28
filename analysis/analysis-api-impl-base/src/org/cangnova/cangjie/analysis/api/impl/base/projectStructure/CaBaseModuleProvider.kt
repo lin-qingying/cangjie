@@ -6,6 +6,8 @@ import org.cangnova.cangjie.analysis.api.CaImplementationDetail
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModuleProvider
+import org.cangnova.cangjie.parsing.compilationParsingResultOrNull
+import org.cangnova.cangjie.psi.CjFile
 
 /**
  * 默认 use-site module 选择服务。
@@ -23,6 +25,9 @@ class CaBaseModuleProvider(
     /**
      * 委托平台 project-structure provider 解析 PSI 所属模块。
      */
-    override fun getModule(element: PsiElement, useSiteModule: CaModule?): CaModule =
-        CangJieProjectStructureProvider.getModule(project, element, useSiteModule)
+    override fun getModule(element: PsiElement, useSiteModule: CaModule?): CaModule {
+        val product = (element.containingFile as? CjFile)?.compilationParsingResultOrNull()
+        product?.requireConsistentInput()
+        return CangJieProjectStructureProvider.getModule(project, product?.originFile ?: element, useSiteModule)
+    }
 }

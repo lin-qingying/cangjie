@@ -8,8 +8,22 @@ import org.cangnova.cangjie.cfir.resolve.providers.macro.PreMacroRawBuildResult
 import org.cangnova.cangjie.config.CompilerConfiguration
 import org.cangnova.cangjie.config.cangjieSourceRoots
 import org.cangnova.cangjie.config.classpathRoots
+import org.cangnova.cangjie.config.languageVersionSettings
 import org.cangnova.cangjie.name.FqName
 import java.io.File
+
+/**
+ * 将编译调用明确声明的宏包种类注入 artifact 前分类。
+ * 这里只发布需求依据；产物有效性、ABI 和导出名称仍由 locator/resolver 校验。
+ */
+fun CompilerConfiguration.createMacroDemandClassification(pre: PreMacroRawBuildResult): MacroDemandClassification =
+    MacroDemandClassification.create(
+        pre,
+        knownExternalMacroPackages = buildSet {
+            addAll(macroArtifactPackages.map { it.packageFqName })
+            addAll(macroSourcePackageCompilationRequests.map { it.packageFqName })
+        },
+    )
 
 /**
  * 宏展开前的 artifact 准备结果。
@@ -18,6 +32,8 @@ import java.io.File
  * orchestrator 返回的中间 artifact 绕过 locator/resolver。
  */
 data class MacroExpansionArtifactPreparationResult(
+    /** 本次准备与后续展开共享的 SDK 快照；下一次调用重新选择，不缓存到可复用配置。 */
+    val sdkSelection: MacroSdkSelection = MacroSdkSelection.Absent,
     /**
      * resolver 验证通过后可供宏解析使用的定义列表。
      */
@@ -49,13 +65,15 @@ data class MacroExpansionArtifactPreparationResult(
 fun prepareMacroArtifactDefinitionsForExpansion(
     configuration: CompilerConfiguration,
     classifications: List<MacroDemandClassification>,
+    sdkSelection: MacroSdkSelection = MacroSdkSelector.select(configuration.macroSdkHome),
 ): MacroExpansionArtifactPreparationResult {
     val preResults = classifications.map { it.pre }
     val demandSurfacesByPackage = collectMacroExpansionPackageDemandSurfaces(classifications)
     val demandedMacroPackages = demandSurfacesByPackage.keys
-    if (demandedMacroPackages.isEmpty()) return MacroExpansionArtifactPreparationResult()
+    if (demandedMacroPackages.isEmpty()) return MacroExpansionArtifactPreparationResult(sdkSelection = sdkSelection)
 
-    val artifactLocator = MacroArtifactLocator(configuration.macroSdkHome)
+    val sdkHome = (sdkSelection as? MacroSdkSelection.Selected)?.home?.toString()
+    val artifactLocator = MacroArtifactLocator(sdkHome)
     val initialArtifacts = artifactLocator.locate(
         packageDemands = demandedMacroPackages,
         searchRoots = macroArtifactSearchRoots(configuration),
@@ -66,6 +84,7 @@ fun prepareMacroArtifactDefinitionsForExpansion(
         preResults = preResults,
         locatedArtifacts = initialArtifacts,
         demandedMacroPackages = demandedMacroPackages,
+        sdkSelection = sdkSelection,
     )
     val locatedArtifacts = artifactLocator.locate(
         packageDemands = demandedMacroPackages,
@@ -75,11 +94,13 @@ fun prepareMacroArtifactDefinitionsForExpansion(
     val artifactSearchRoots = macroArtifactSearchRoots(configuration) + macroCompilation.artifactSearchPaths
     val artifactResolution = MacroArtifactResolver().resolve(
         packages = locatedArtifacts,
+        languageVersionSettings = configuration.languageVersionSettings,
         expectedExecutorAbiVersion = configuration.macroExecutorAbiVersion,
         searchRoots = artifactSearchRoots,
-        sdkHome = configuration.macroSdkHome,
+        sdkHome = sdkHome,
     )
     return MacroExpansionArtifactPreparationResult(
+        sdkSelection = sdkSelection,
         definitions = artifactResolution.definitions,
         diagnostics = attachDemandSurfaceOrigins(
             diagnostics = macroCompilation.diagnostics + artifactResolution.diagnostics,
@@ -117,6 +138,7 @@ private fun compileRequiredMacroSourcePackages(
     preResults: List<PreMacroRawBuildResult>,
     locatedArtifacts: List<MacroArtifactPackage>,
     demandedMacroPackages: Set<FqName>,
+    sdkSelection: MacroSdkSelection,
 ): MacroPackageCompilationResult {
     if (demandedMacroPackages.isEmpty()) return MacroPackageCompilationResult()
     val missingDemandedPackages = demandedMacroPackages - locatedArtifacts.mapTo(linkedSetOf()) { it.packageFqName }
@@ -151,6 +173,7 @@ private fun compileRequiredMacroSourcePackages(
             configuration = configuration,
             executorAbiVersion = configuration.macroExecutorAbiVersion,
             cacheContext = configuration.macroCompilationCacheContext,
+            sdkSelection = sdkSelection,
         ),
     )
     return result.copy(diagnostics = missingSourceRootDiagnostics + result.diagnostics)

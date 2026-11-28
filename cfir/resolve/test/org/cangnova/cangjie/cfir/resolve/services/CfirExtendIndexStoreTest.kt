@@ -2,10 +2,15 @@
 
 package org.cangnova.cangjie.cfir.resolve.services
 
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
+
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
+import org.cangnova.cangjie.cfir.common.CfirModuleData
+import org.cangnova.cangjie.cfir.types.CfirTypeRefOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.resolve.CfirTypeResolver
 import org.cangnova.cangjie.cfir.resolve.ExtendTestFixtures
+import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures
 import org.cangnova.cangjie.cfir.resolve.providers.CfirEmptySymbolProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirInstantiatedSupertypeDescriptor
@@ -45,12 +50,37 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 /**
  * [CfirExtendIndexStore] 绱㈠紩鏋勫缓涓庢煡璇㈡湇鍔℃祴璇曘€? */
 class CfirExtendIndexStoreTest {
+    /** 验证 callable owner 可在 extend 语义模型构建前由原始声明结构查询。 */
+    @Test
+    fun `recording declaration sources indexes callable owners before semantic rebuild`() {
+        val session = CallResolutionTestFixtures.newTestSession()
+        val memberSymbol = CallResolutionTestFixtures.buildFunctionSymbol(session, "member")
+        val member = memberSymbol.cfir
+        val packageFqName = FqName("sample.pkg")
+        val targetClassId = ClassId(packageFqName, Name.identifier("Target"))
+        val extend = ExtendTestFixtures.newExtend(
+            moduleData = session.moduleData,
+            extendedTypeRef = ExtendTestFixtures.classTypeRef(targetClassId),
+            superTypeRefs = emptyList(),
+            declarations = listOf(member),
+        )
+        val file = ExtendTestFixtures.newFile(session.moduleData, packageFqName, listOf(extend))
+        val store = CfirExtendIndexStore()
+
+        store.recordDeclarationSources(listOf(file))
+
+        assertSame(extend, store.containingExtendOf(memberSymbol))
+        assertSame(file, store.containingFileOf(extend))
+        assertNull(store.modelForDeclaration(extend))
+    }
+
     /**
      * 楠岃瘉 rebuild 浼氬悎骞跺涓枃浠朵腑鐨?extend銆?     */
     @Test
@@ -128,6 +158,7 @@ class CfirExtendIndexStoreTest {
     @Test
     fun `type alias targets are indexed by expanded semantic identity`() {
         val (_, moduleData) = ExtendTestFixtures.newSessionAndModule()
+        val core = RuleCoreModel(moduleData)
         val packageFqName = FqName("sample.pkg")
         val targetClassId = ClassId(packageFqName, Name.identifier("Target"))
         val targetAliasId = ClassId(packageFqName, Name.identifier("TargetAlias"))
@@ -135,10 +166,11 @@ class CfirExtendIndexStoreTest {
         val interfaceAliasId = ClassId(packageFqName, Name.identifier("IAlias"))
 
         fun aliasTypeRef(aliasId: ClassId, expandedClassId: ClassId, isInterface: Boolean = false) =
-            CfirResolvedTypeRefImpl(
+CfirResolvedTypeRefImpl(
                 source = null,
                 annotations = org.cangnova.cangjie.cfir.MutableOrEmptyList.empty(),
                 customRenderer = false,
+                typeUseOrigin = org.cangnova.cangjie.cfir.types.CfirTypeRefOrigin.SEMANTIC,
                 coneType = ConeTypeAliasType(
                     classId = aliasId,
                     expandedType = ConeClassLikeType(
@@ -161,8 +193,8 @@ class CfirExtendIndexStoreTest {
         )
         val file = ExtendTestFixtures.newFile(moduleData, packageFqName, listOf(aliasExtend, directExtend))
         val resolver = MapBackedTypeResolver(
-            mapOf(
-                targetClassId to ExtendTestFixtures.newClass(moduleData, "Target", classId = targetClassId),
+            core.declarations.associateBy { it.symbol.classId } + mapOf(
+                targetClassId to ExtendTestFixtures.newClass(moduleData, "Target", classId = targetClassId, superTypeRefs = listOf(core.objectRef())),
                 interfaceClassId to ExtendTestFixtures.newInterface(moduleData, "I", classId = interfaceClassId),
             ),
         )
@@ -477,6 +509,7 @@ class CfirExtendIndexStoreTest {
     @Test
     fun `target available interface view includes declared interfaces through superclass chain`() {
         val (session, moduleData) = ExtendTestFixtures.newSessionAndModule()
+        val core = RuleCoreModel(moduleData)
         val packageFqName = FqName("sample.pkg")
         val rootInterfaceId = ClassId(packageFqName, Name.identifier("IRoot"))
         val leafInterfaceId = ClassId(packageFqName, Name.identifier("ILeaf"))
@@ -491,10 +524,21 @@ class CfirExtendIndexStoreTest {
         )
         val file = ExtendTestFixtures.newFile(moduleData, packageFqName, listOf(extend))
 
+        val rootRef = ExtendTestFixtures.classTypeRef(rootInterfaceId, isInterface = true)
+        val leafRef = ExtendTestFixtures.classTypeRef(leafInterfaceId, isInterface = true)
+        val baseRef = ExtendTestFixtures.classTypeRef(baseClassId)
+        val objectRef = core.objectRef()
+        val root = ExtendTestFixtures.newInterface(moduleData, "IRoot", rootInterfaceId)
+        val leaf = ExtendTestFixtures.newInterface(moduleData, "ILeaf", leafInterfaceId, listOf(rootRef))
+        val base = ExtendTestFixtures.newClass(moduleData, "Base", baseClassId, listOf(objectRef, leafRef))
+        val target = ExtendTestFixtures.newClass(moduleData, "Target", targetClassId, listOf(baseRef))
+        val extra = ExtendTestFixtures.newInterface(moduleData, "IExtra", extraInterfaceId)
+        val declarations = core.declarations + listOf(root, leaf, base, target, extra)
+        val resolver = MapBackedTypeResolver(declarations.associateBy { it.symbol.classId })
         val store = CfirExtendIndexStore()
-        store.rebuild(listOf(file), NoopTypeResolver)
-        session.registerRuleQueryTypeInfrastructure()
-        session.register(CfirTypeResolver::class, NoopTypeResolver)
+        store.rebuild(listOf(file), resolver)
+        session.registerRuleQueryTypeInfrastructure(TypeParameterRuleQuerySymbolProvider(session, declarations))
+        session.register(CfirTypeResolver::class, resolver)
         session.register(CfirExtendProvider::class, TestExtendProvider(mapOf(extend to packageFqName)))
 
         val targetType = ExtendTestFixtures.classTypeRef(targetClassId).coneType
@@ -504,16 +548,19 @@ class CfirExtendIndexStoreTest {
         session.register(
             CfirTypeAwareSupertypeProvider::class,
             TestTypeAwareSupertypeProvider(
-                mapOf(
-                    targetType to listOf(declaredDescriptor(baseType, extend.extendedTypeRef)),
-                    baseType to listOf(declaredDescriptor(leafType, extend.extendedTypeRef)),
-                    leafType to listOf(declaredDescriptor(rootType, extend.extendedTypeRef)),
+                session,
+                core.descriptors + mapOf(
+                    targetType to listOf(declaredDescriptor(baseType, target.superTypeRefs.single())),
+                    baseType to listOf(declaredDescriptor(objectRef.coneType, objectRef), declaredDescriptor(leafType, leafRef)),
+                    leafType to listOf(declaredDescriptor(rootType, leaf.superTypeRefs.single())),
+                    rootType to emptyList(),
+                    (extend.superTypeRefs.single() as CfirResolvedTypeRef).coneType to emptyList(),
                 ),
             ),
         )
 
         assertEquals(
-            linkedSetOf(rootInterfaceId, leafInterfaceId),
+            linkedSetOf(rootInterfaceId, leafInterfaceId, StdlibClassIds.Any),
             CfirExtendRuleQueryServiceImpl(session, store)
                 .targetAvailableInterfacesOf(
                     extend,
@@ -529,6 +576,7 @@ class CfirExtendIndexStoreTest {
     @Test
     fun `duplicate target view does not expand another direct extend interface`() {
         val (session, moduleData) = ExtendTestFixtures.newSessionAndModule()
+        val core = RuleCoreModel(moduleData)
         val packageFqName = FqName("sample.pkg")
         val targetClassId = ClassId(packageFqName, Name.identifier("Target"))
         val parentInterfaceId = ClassId(packageFqName, Name.identifier("IParent"))
@@ -553,10 +601,16 @@ class CfirExtendIndexStoreTest {
             declarations = listOf(previousExtend, currentExtend),
         )
 
+        val objectRef = core.objectRef()
+        val target = ExtendTestFixtures.newClass(moduleData, "Target", targetClassId, listOf(objectRef))
+        val parent = ExtendTestFixtures.newInterface(moduleData, "IParent", parentInterfaceId)
+        val child = ExtendTestFixtures.newInterface(moduleData, "IChild", childInterfaceId, listOf(parentTypeRef))
+        val declarations = core.declarations + listOf(target, parent, child)
+        val resolver = MapBackedTypeResolver(declarations.associateBy { it.symbol.classId })
         val store = CfirExtendIndexStore()
-        store.rebuild(listOf(file), NoopTypeResolver)
-        session.registerRuleQueryTypeInfrastructure()
-        session.register(CfirTypeResolver::class, NoopTypeResolver)
+        store.rebuild(listOf(file), resolver)
+        session.registerRuleQueryTypeInfrastructure(TypeParameterRuleQuerySymbolProvider(session, declarations))
+        session.register(CfirTypeResolver::class, resolver)
         session.register(
             CfirExtendProvider::class,
             TestExtendProvider(mapOf(previousExtend to packageFqName, currentExtend to packageFqName)),
@@ -564,18 +618,21 @@ class CfirExtendIndexStoreTest {
         session.register(
             CfirTypeAwareSupertypeProvider::class,
             TestTypeAwareSupertypeProvider(
-                mapOf(
+                session,
+                core.descriptors + mapOf(
                     targetTypeRef.coneType to listOf(
+                        declaredDescriptor(objectRef.coneType, objectRef),
                         extendDescriptor(childTypeRef.coneType, previousExtend, packageFqName),
                         extendDescriptor(parentTypeRef.coneType, currentExtend, packageFqName),
                     ),
-                    childTypeRef.coneType to listOf(declaredDescriptor(parentTypeRef.coneType, parentTypeRef)),
+                    childTypeRef.coneType to listOf(declaredDescriptor(parentTypeRef.coneType, child.superTypeRefs.single())),
+                    parentTypeRef.coneType to emptyList(),
                 ),
             ),
         )
 
         assertEquals(
-            linkedSetOf(childInterfaceId),
+            linkedSetOf(childInterfaceId, StdlibClassIds.Any),
             CfirExtendRuleQueryServiceImpl(session, store)
                 .targetAvailableInterfacesOf(
                     currentExtend,
@@ -585,49 +642,50 @@ class CfirExtendIndexStoreTest {
         )
     }
 
-    /** Object/Any 的类型系统通用边不属于 extend duplicate 的声明接口基线。 */
+    /** 正式 compiler-added 父 ref 仍是声明边；Object 的显式 Any 进入 duplicate 基线。 */
     @Test
-    fun `duplicate target view excludes implicit object Any relation`() {
+    fun `duplicate target view follows compiler added Object and declared Any refs`() {
         val (session, moduleData) = ExtendTestFixtures.newSessionAndModule()
+        val core = RuleCoreModel(moduleData)
         val packageFqName = FqName("sample.pkg")
         val targetClassId = ClassId(packageFqName, Name.identifier("Host"))
+        val objectRef = core.objectRef()
+        val host = ExtendTestFixtures.newClass(moduleData, "Host", targetClassId, listOf(objectRef))
         val targetTypeRef = ExtendTestFixtures.classTypeRef(targetClassId)
         val anyTypeRef = ExtendTestFixtures.classTypeRef(StdlibClassIds.Any, isInterface = true)
-        val extend = ExtendTestFixtures.newExtend(
-            moduleData = moduleData,
-            extendedTypeRef = targetTypeRef,
-            superTypeRefs = listOf(anyTypeRef),
-        )
+        val extend = ExtendTestFixtures.newExtend(moduleData, targetTypeRef, listOf(anyTypeRef))
         val file = ExtendTestFixtures.newFile(moduleData, packageFqName, listOf(extend))
-
+        val declarations = core.declarations + host
+        val resolver = MapBackedTypeResolver(declarations.associateBy { it.symbol.classId })
         val store = CfirExtendIndexStore()
-        store.rebuild(listOf(file), NoopTypeResolver)
-        session.registerRuleQueryTypeInfrastructure()
-        session.register(CfirTypeResolver::class, NoopTypeResolver)
+        store.rebuild(listOf(file), resolver)
+        session.registerRuleQueryTypeInfrastructure(TypeParameterRuleQuerySymbolProvider(session, declarations))
+        session.register(CfirTypeResolver::class, resolver)
         session.register(CfirExtendProvider::class, TestExtendProvider(mapOf(extend to packageFqName)))
-
-        val objectType = ExtendTestFixtures.classTypeRef(StdlibClassIds.Object).coneType
-        session.register(
-            CfirTypeAwareSupertypeProvider::class,
-            TestTypeAwareSupertypeProvider(
-                mapOf(
-                    targetTypeRef.coneType to listOf(
-                        implicitObjectDescriptor(objectType, targetClassId),
-                        extendDescriptor(anyTypeRef.coneType, extend, packageFqName),
-                    ),
-                    objectType to listOf(implicitObjectDescriptor(anyTypeRef.coneType, StdlibClassIds.Object)),
+        val typed = TestTypeAwareSupertypeProvider(
+            session,
+            core.descriptors + mapOf(
+                targetTypeRef.coneType to listOf(
+                    declaredDescriptor(objectRef.coneType, objectRef),
+                    extendDescriptor(anyTypeRef.coneType, extend, packageFqName),
                 ),
             ),
         )
-
-        assertTrue(
-            CfirExtendRuleQueryServiceImpl(session, store)
-                .targetAvailableInterfacesOf(
-                    extend,
-                    CfirExtendTargetInterfaceView.DUPLICATE_BASELINE,
-                )
-                .isEmpty(),
-        )
+        session.register(CfirTypeAwareSupertypeProvider::class, typed)
+        val hostParent = typed.getDirectSupertypeDescriptors(targetTypeRef.coneType)
+            .single { it.origin is CfirInstantiatedSupertypeOrigin.Declared }
+        assertSame(host.superTypeRefs.single(), (hostParent.origin as CfirInstantiatedSupertypeOrigin.Declared).sourceTypeRef)
+        assertEquals(CfirTypeRefOrigin.COMPILER_ADDED, objectRef.typeUseOrigin)
+        val objectParent = typed.getDirectSupertypeDescriptors(objectRef.coneType).single()
+        assertSame(core.objectDeclaration.superTypeRefs.single(), (objectParent.origin as CfirInstantiatedSupertypeOrigin.Declared).sourceTypeRef)
+        assertEquals(CfirTypeRefOrigin.SOURCE, core.anyRef.typeUseOrigin)
+        val query = CfirExtendRuleQueryServiceImpl(session, store)
+        for (view in CfirExtendTargetInterfaceView.entries) {
+            assertEquals(
+                linkedSetOf(StdlibClassIds.Any),
+                query.targetAvailableInterfacesOf(extend, view).mapNotNullTo(linkedSetOf()) { it.classId },
+            )
+        }
     }
 
     /**
@@ -653,9 +711,13 @@ class CfirExtendIndexStoreTest {
         )
         val localFile = ExtendTestFixtures.newFile(moduleData, localPackage, listOf(localExtend))
 
+        val root = ExtendTestFixtures.newInterface(moduleData, "IRoot", rootInterfaceId)
+        val rootRef = ExtendTestFixtures.classTypeRef(rootInterfaceId, isInterface = true)
+        val toStringDeclaration = ExtendTestFixtures.newInterface(moduleData, "ToString", StdlibClassIds.ToString, listOf(rootRef))
+        val declarations = listOf<CfirClassLikeDeclaration>(root, toStringDeclaration)
         val store = CfirExtendIndexStore()
         store.rebuild(listOf(localFile), NoopTypeResolver)
-        session.registerRuleQueryTypeInfrastructure()
+        session.registerRuleQueryTypeInfrastructure(TypeParameterRuleQuerySymbolProvider(session, declarations))
         session.register(CfirTypeResolver::class, NoopTypeResolver)
         session.register(
             CfirExtendProvider::class,
@@ -667,12 +729,14 @@ class CfirExtendIndexStoreTest {
         session.register(
             CfirTypeAwareSupertypeProvider::class,
             TestTypeAwareSupertypeProvider(
+                session,
                 mapOf(
                     ConePrimitiveType.INT64 to listOf(
                         extendDescriptor(toStringType, remoteExtend, remotePackage),
                         extendDescriptor(toStringType, localExtend, localPackage),
                     ),
-                    toStringType to listOf(declaredDescriptor(rootType, toStringTypeRef)),
+                    toStringType to listOf(declaredDescriptor(rootType, toStringDeclaration.superTypeRefs.single())),
+                    rootType to emptyList(),
                 ),
             ),
         )
@@ -711,9 +775,10 @@ class CfirExtendIndexStoreTest {
         )
         val localFile = ExtendTestFixtures.newFile(moduleData, localPackage, listOf(localExtend))
 
+        val declaration = ExtendTestFixtures.newInterface(moduleData, "IRemote", interfaceId)
         val store = CfirExtendIndexStore()
         store.rebuild(listOf(localFile), NoopTypeResolver)
-        session.registerRuleQueryTypeInfrastructure()
+        session.registerRuleQueryTypeInfrastructure(TypeParameterRuleQuerySymbolProvider(session, listOf(declaration)))
         session.register(CfirTypeResolver::class, NoopTypeResolver)
         session.register(
             CfirExtendProvider::class,
@@ -722,11 +787,13 @@ class CfirExtendIndexStoreTest {
         session.register(
             CfirTypeAwareSupertypeProvider::class,
             TestTypeAwareSupertypeProvider(
+                session,
                 mapOf(
                     ConePrimitiveType.INT64 to listOf(
                         extendDescriptor(interfaceTypeRef.coneType, dependencyExtend, dependencyPackage),
                         extendDescriptor(interfaceTypeRef.coneType, localExtend, localPackage),
                     ),
+                    interfaceTypeRef.coneType to emptyList(),
                 ),
             ),
         )
@@ -747,13 +814,14 @@ class CfirExtendIndexStoreTest {
     @Test
     fun `declaration interface closure includes transitive parent interfaces`() {
         val (_, moduleData) = ExtendTestFixtures.newSessionAndModule()
+        val core = RuleCoreModel(moduleData)
         val packageFqName = FqName("sample.pkg")
         val targetClassId = ClassId(packageFqName, Name.identifier("Target"))
         val rootInterfaceId = ClassId(packageFqName, Name.identifier("IRoot"))
         val leafInterfaceId = ClassId(packageFqName, Name.identifier("ILeaf"))
 
-        val declarations = linkedMapOf(
-            targetClassId to ExtendTestFixtures.newClass(moduleData, "Target", classId = targetClassId),
+        val declarations = core.declarations.associateBy { it.symbol.classId } + linkedMapOf(
+            targetClassId to ExtendTestFixtures.newClass(moduleData, "Target", classId = targetClassId, superTypeRefs = listOf(core.objectRef())),
             rootInterfaceId to ExtendTestFixtures.newInterface(moduleData, "IRoot", classId = rootInterfaceId),
             leafInterfaceId to ExtendTestFixtures.newInterface(
                 moduleData = moduleData,
@@ -785,6 +853,7 @@ class CfirExtendIndexStoreTest {
     @Test
     fun `invalid interface supertypes are excluded from declaration closure`() {
         val (_, moduleData) = ExtendTestFixtures.newSessionAndModule()
+        val core = RuleCoreModel(moduleData)
         val localPackage = FqName("local.pkg")
         val remotePackage = FqName("remote.pkg")
         val targetClassId = ClassId(remotePackage, Name.identifier("Target"))
@@ -792,10 +861,10 @@ class CfirExtendIndexStoreTest {
         val invalidInterfaceId = ClassId(localPackage, Name.identifier("InvalidInterface"))
         val concreteClassId = ClassId(remotePackage, Name.identifier("Concrete"))
 
-        val declarations = linkedMapOf(
-            targetClassId to ExtendTestFixtures.newClass(moduleData, "Target", classId = targetClassId),
+        val declarations = core.declarations.associateBy { it.symbol.classId } + linkedMapOf(
+            targetClassId to ExtendTestFixtures.newClass(moduleData, "Target", classId = targetClassId, superTypeRefs = listOf(core.objectRef())),
             remoteInterfaceId to ExtendTestFixtures.newInterface(moduleData, "IRemote", classId = remoteInterfaceId),
-            concreteClassId to ExtendTestFixtures.newClass(moduleData, "Concrete", classId = concreteClassId),
+            concreteClassId to ExtendTestFixtures.newClass(moduleData, "Concrete", classId = concreteClassId, superTypeRefs = listOf(core.objectRef())),
             invalidInterfaceId to ExtendTestFixtures.newInterface(
                 moduleData = moduleData,
                 classId = invalidInterfaceId,
@@ -827,13 +896,14 @@ class CfirExtendIndexStoreTest {
     @Test
     fun `duplicate interfaces do not change declaration closure semantics`() {
         val (_, moduleData) = ExtendTestFixtures.newSessionAndModule()
+        val core = RuleCoreModel(moduleData)
         val packageFqName = FqName("sample.pkg")
         val targetClassId = ClassId(packageFqName, Name.identifier("Target"))
         val rootInterfaceId = ClassId(packageFqName, Name.identifier("IRoot"))
         val leafInterfaceId = ClassId(packageFqName, Name.identifier("ILeaf"))
 
-        val declarations = linkedMapOf(
-            targetClassId to ExtendTestFixtures.newClass(moduleData, "Target", classId = targetClassId),
+        val declarations = core.declarations.associateBy { it.symbol.classId } + linkedMapOf(
+            targetClassId to ExtendTestFixtures.newClass(moduleData, "Target", classId = targetClassId, superTypeRefs = listOf(core.objectRef())),
             rootInterfaceId to ExtendTestFixtures.newInterface(moduleData, "IRoot", classId = rootInterfaceId),
             leafInterfaceId to ExtendTestFixtures.newInterface(
                 moduleData = moduleData,
@@ -868,13 +938,14 @@ class CfirExtendIndexStoreTest {
     @Test
     fun `extend interface inheritance relation is directional`() {
         val (_, moduleData) = ExtendTestFixtures.newSessionAndModule()
+        val core = RuleCoreModel(moduleData)
         val packageFqName = FqName("sample.pkg")
         val targetClassId = ClassId(packageFqName, Name.identifier("Target"))
         val parentInterfaceId = ClassId(packageFqName, Name.identifier("IParent"))
         val childInterfaceId = ClassId(packageFqName, Name.identifier("IChild"))
 
-        val declarations = linkedMapOf(
-            targetClassId to ExtendTestFixtures.newClass(moduleData, "Target", classId = targetClassId),
+        val declarations = core.declarations.associateBy { it.symbol.classId } + linkedMapOf(
+            targetClassId to ExtendTestFixtures.newClass(moduleData, "Target", classId = targetClassId, superTypeRefs = listOf(core.objectRef())),
             parentInterfaceId to ExtendTestFixtures.newInterface(moduleData, "IParent", classId = parentInterfaceId),
             childInterfaceId to ExtendTestFixtures.newInterface(
                 moduleData = moduleData,
@@ -902,9 +973,117 @@ class CfirExtendIndexStoreTest {
         assertFalse(query.doesExtendInheritFrom(parentExtend, childExtend))
     }
 
+    /** 传递父边里的 alias 同时参与声明查找和实参代换，不能只用于字符串 key。 */
+    @Test
+    fun `default extend relation traverses aliased generic interface parents`() {
+        val (_, moduleData) = ExtendTestFixtures.newSessionAndModule()
+        val core = RuleCoreModel(moduleData)
+        val packageName = FqName("sample.aliasedDefaultRelation")
+        val targetId = ClassId(packageName, Name.identifier("Target"))
+        val parentId = ClassId(packageName, Name.identifier("Parent"))
+        val childId = ClassId(packageName, Name.identifier("Child"))
+        val aliasId = ClassId(packageName, Name.identifier("ParentAlias"))
+        val parameter = ExtendTestFixtures.newTypeParameter(moduleData, "T")
+        val parentInt64 = ExtendTestFixtures.classTypeRef(parentId, listOf(ConePrimitiveType(PrimitiveTypeKind.INT64)), isInterface = true)
+        val aliasedParent = org.cangnova.cangjie.cfir.types.impl.CfirResolvedTypeRefImpl(
+            source = null,
+            annotations = org.cangnova.cangjie.cfir.MutableOrEmptyList.empty(),
+            customRenderer = false,
+            typeUseOrigin = org.cangnova.cangjie.cfir.types.CfirTypeRefOrigin.SEMANTIC,
+            coneType = ConeTypeAliasType(classId = aliasId, expandedType = parentInt64.coneType),
+            delegatedTypeRef = null,
+        )
+        val declarations = core.declarations.associateBy { it.symbol.classId } + linkedMapOf(
+            targetId to ExtendTestFixtures.newClass(moduleData, "Target", classId = targetId, superTypeRefs = listOf(core.objectRef())),
+            parentId to ExtendTestFixtures.newInterface(moduleData, "Parent", classId = parentId, typeParameters = listOf(parameter)),
+            childId to ExtendTestFixtures.newInterface(moduleData, "Child", classId = childId, superTypeRefs = listOf(aliasedParent)),
+        )
+        val childExtend = ExtendTestFixtures.newExtend(
+            moduleData, ExtendTestFixtures.classTypeRef(targetId), listOf(ExtendTestFixtures.classTypeRef(childId, isInterface = true)),
+        )
+        val parentExtend = ExtendTestFixtures.newExtend(moduleData, ExtendTestFixtures.classTypeRef(targetId), listOf(parentInt64))
+        val differentExtend = ExtendTestFixtures.newExtend(
+            moduleData, ExtendTestFixtures.classTypeRef(targetId),
+            listOf(ExtendTestFixtures.classTypeRef(parentId, listOf(ConePrimitiveType(PrimitiveTypeKind.INT32)), isInterface = true)),
+        )
+        val store = CfirExtendIndexStore()
+        store.rebuild(listOf(ExtendTestFixtures.newFile(moduleData, packageName, listOf(childExtend, parentExtend, differentExtend))), MapBackedTypeResolver(declarations))
+        val query = CfirExtendRuleQueryServiceImpl(moduleData.session, store)
+        assertTrue(query.areExtendsInInheritRelation(childExtend, parentExtend))
+        assertTrue(query.areExtendsInInheritRelation(parentExtend, childExtend))
+        assertFalse(query.areExtendsInInheritRelation(childExtend, differentExtend))
+    }
+
+    /** 官方 IsExtendInheritRelation 比较完整接口类型，DEFAULT 关系不能只比较 ClassId。 */
+    @Test
+    fun `default extend relation distinguishes interface type arguments`() {
+        val (_, moduleData) = ExtendTestFixtures.newSessionAndModule()
+        val core = RuleCoreModel(moduleData)
+        val packageName = FqName("sample.defaultRelation")
+        val targetId = ClassId(packageName, Name.identifier("Target"))
+        val interfaceId = ClassId(packageName, Name.identifier("Contract"))
+        val parameter = ExtendTestFixtures.newTypeParameter(moduleData, "T")
+        val declarations = core.declarations.associateBy { it.symbol.classId } + linkedMapOf(
+            targetId to ExtendTestFixtures.newClass(moduleData, "Target", classId = targetId, superTypeRefs = listOf(core.objectRef())),
+            interfaceId to ExtendTestFixtures.newInterface(moduleData, "Contract", classId = interfaceId, typeParameters = listOf(parameter)),
+        )
+        fun extend(argument: PrimitiveTypeKind): CfirExtend = ExtendTestFixtures.newExtend(
+            moduleData, ExtendTestFixtures.classTypeRef(targetId),
+            listOf(ExtendTestFixtures.classTypeRef(interfaceId, listOf(ConePrimitiveType(argument)), isInterface = true)),
+        )
+        val first = extend(PrimitiveTypeKind.INT64)
+        val same = extend(PrimitiveTypeKind.INT64)
+        val different = extend(PrimitiveTypeKind.INT32)
+        val store = CfirExtendIndexStore()
+        store.rebuild(listOf(ExtendTestFixtures.newFile(moduleData, packageName, listOf(first, same, different))), MapBackedTypeResolver(declarations))
+        val query = CfirExtendRuleQueryServiceImpl(moduleData.session, store)
+        assertTrue(query.areExtendsInInheritRelation(first, same))
+        assertFalse(query.areExtendsInInheritRelation(first, different))
+        assertFalse(query.areExtendsInInheritRelation(different, first))
+    }
+
+    /** GenerateTypeMappingByTy 按目标形状映射，不能以 extend 自有 header 下标代替。 */
+    @Test
+    fun `default extend relation maps reordered target parameters`() {
+        val (_, moduleData) = ExtendTestFixtures.newSessionAndModule()
+        val core = RuleCoreModel(moduleData)
+        val packageName = FqName("sample.reorderedDefaultRelation")
+        val targetId = ClassId(packageName, Name.identifier("Target"))
+        val interfaceId = ClassId(packageName, Name.identifier("Contract"))
+        val targetParameters = listOf("A", "B").map { ExtendTestFixtures.newTypeParameter(moduleData, it) }
+        val contractParameter = ExtendTestFixtures.newTypeParameter(moduleData, "T")
+        val declarations = core.declarations.associateBy { it.symbol.classId } + linkedMapOf(
+            targetId to ExtendTestFixtures.newClass(moduleData, "Target", classId = targetId, typeParameters = targetParameters, superTypeRefs = listOf(core.objectRef())),
+            interfaceId to ExtendTestFixtures.newInterface(moduleData, "Contract", classId = interfaceId, typeParameters = listOf(contractParameter)),
+        )
+        val firstParameters = listOf("X", "Y").map { ExtendTestFixtures.newTypeParameter(moduleData, it) }
+        val secondParameters = listOf("U", "V").map { ExtendTestFixtures.newTypeParameter(moduleData, it) }
+        val first = ExtendTestFixtures.newExtend(
+            moduleData,
+            ExtendTestFixtures.classTypeRef(targetId, firstParameters.reversed().map(ExtendTestFixtures::typeParameterType)),
+            listOf(ExtendTestFixtures.classTypeRef(interfaceId, listOf(ExtendTestFixtures.typeParameterType(firstParameters.first())), isInterface = true)),
+            typeParameters = firstParameters,
+        )
+        fun second(contractIndex: Int): CfirExtend = ExtendTestFixtures.newExtend(
+            moduleData,
+            ExtendTestFixtures.classTypeRef(targetId, secondParameters.map(ExtendTestFixtures::typeParameterType)),
+            listOf(ExtendTestFixtures.classTypeRef(interfaceId, listOf(ExtendTestFixtures.typeParameterType(secondParameters[contractIndex])), isInterface = true)),
+            typeParameters = secondParameters,
+        )
+        val same = second(1)
+        val different = second(0)
+        val store = CfirExtendIndexStore()
+        store.rebuild(listOf(ExtendTestFixtures.newFile(moduleData, packageName, listOf(first, same, different))), MapBackedTypeResolver(declarations))
+        val query = CfirExtendRuleQueryServiceImpl(moduleData.session, store)
+        assertTrue(query.areExtendsInInheritRelation(first, same))
+        assertTrue(query.areExtendsInInheritRelation(same, first))
+        assertFalse(query.areExtendsInInheritRelation(first, different))
+    }
+
     @Test
     fun `extend member peer disposition compares direct instantiated interfaces`() {
         val (session, moduleData) = ExtendTestFixtures.newSessionAndModule()
+        val core = RuleCoreModel(moduleData)
         val packageFqName = FqName("sample.owner-order")
         val targetClassId = ClassId(packageFqName, Name.identifier("Target"))
         val parentInterfaceId = ClassId(packageFqName, Name.identifier("IParent"))
@@ -914,7 +1093,8 @@ class CfirExtendIndexStoreTest {
         val genericParentInterfaceId = ClassId(packageFqName, Name.identifier("IGenericParent"))
         val genericChildInterfaceId = ClassId(packageFqName, Name.identifier("IGenericChild"))
 
-        val targetClass = ExtendTestFixtures.newClass(moduleData, "Target", classId = targetClassId)
+        val objectRef = core.objectRef()
+        val targetClass = ExtendTestFixtures.newClass(moduleData, "Target", classId = targetClassId, superTypeRefs = listOf(objectRef))
         val genericParentTypeParameter = ExtendTestFixtures.newTypeParameter(moduleData, "T")
         val genericChildTypeParameter = ExtendTestFixtures.newTypeParameter(moduleData, "U")
         val grandParentInterface = ExtendTestFixtures.newInterface(
@@ -1011,7 +1191,7 @@ class CfirExtendIndexStoreTest {
                 )
             ),
         )
-        val declarations = listOf(
+        val declarations = core.declarations + listOf(
             targetClass,
             grandParentInterface,
             parentInterface,
@@ -1073,8 +1253,10 @@ class CfirExtendIndexStoreTest {
         session.register(
             CfirTypeAwareSupertypeProvider::class,
             TestTypeAwareSupertypeProvider(
-                mapOf(
+                session,
+                core.descriptors + mapOf(
                     targetType to listOf(
+                        declaredDescriptor(objectRef.coneType, objectRef),
                         edge(parentExtend, 0),
                         edge(sameInterfacePeer, 0),
                         edge(childAndSharedPeer, 0),
@@ -1091,6 +1273,25 @@ class CfirExtendIndexStoreTest {
                             ExtendTestFixtures.classTypeRef(grandParentInterfaceId, isInterface = true).coneType,
                             parentInterface.superTypeRefs.single(),
                         )
+                    ),
+                    ExtendTestFixtures.classTypeRef(grandParentInterfaceId, isInterface = true).coneType to emptyList(),
+                    ExtendTestFixtures.classTypeRef(unrelatedInterfaceId, isInterface = true).coneType to emptyList(),
+                    genericParentInt32Type to emptyList(),
+                    genericParentBooleanType to emptyList(),
+                    ExtendTestFixtures.classTypeRef(
+                        genericParentInterfaceId,
+                        listOf(ExtendTestFixtures.typeParameterType(genericParentTypeParameter)),
+                        isInterface = true,
+                    ).coneType to emptyList(),
+                    ExtendTestFixtures.classTypeRef(
+                        genericChildInterfaceId,
+                        listOf(ExtendTestFixtures.typeParameterType(genericChildTypeParameter)),
+                        isInterface = true,
+                    ).coneType to listOf(
+                        declaredDescriptor(
+                            (genericChildInterface.superTypeRefs.single() as CfirResolvedTypeRef).coneType,
+                            genericChildInterface.superTypeRefs.single(),
+                        ),
                     ),
                     genericChildInt32Type to listOf(
                         declaredDescriptor(
@@ -1148,6 +1349,7 @@ class CfirExtendIndexStoreTest {
     @Test
     fun `extend member peer disposition substitutes generic target parameters by owner identity`() {
         val (session, moduleData) = ExtendTestFixtures.newSessionAndModule()
+        val core = RuleCoreModel(moduleData)
         val packageFqName = FqName("sample.generic-owner-order")
         val targetClassId = ClassId(packageFqName, Name.identifier("Box"))
         val parentInterfaceId = ClassId(packageFqName, Name.identifier("Parent"))
@@ -1158,10 +1360,12 @@ class CfirExtendIndexStoreTest {
         val peerTypeParameter = ExtendTestFixtures.newTypeParameter(moduleData, "PeerU")
         val parentTypeParameter = ExtendTestFixtures.newTypeParameter(moduleData, "P")
         val childTypeParameter = ExtendTestFixtures.newTypeParameter(moduleData, "C")
+        val objectRef = core.objectRef()
         val target = ExtendTestFixtures.newClass(
             moduleData = moduleData,
             name = "Box",
             classId = targetClassId,
+            superTypeRefs = listOf(objectRef),
             typeParameters = listOf(targetTypeParameter),
         )
         val parent = ExtendTestFixtures.newInterface(
@@ -1213,7 +1417,7 @@ class CfirExtendIndexStoreTest {
             ),
             typeParameters = listOf(peerTypeParameter),
         )
-        val declarations = listOf<CfirClassLikeDeclaration>(target, parent, child)
+        val declarations = core.declarations + listOf<CfirClassLikeDeclaration>(target, parent, child)
         val extends = listOf(ownerExtend, peerExtend)
         val file = ExtendTestFixtures.newFile(moduleData, packageFqName, extends)
         val store = CfirExtendIndexStore()
@@ -1234,13 +1438,36 @@ class CfirExtendIndexStoreTest {
             listOf(ExtendTestFixtures.typeParameterType(ownerTypeParameter)),
             isInterface = true,
         ).coneType
+        // 顺序比较在 peer 参数域中进行，Parent<PeerU> 是实际根接口，Child<PeerU> 保留原声明父引用。
+        val peerParentType = ExtendTestFixtures.classTypeRef(parentInterfaceId,
+            listOf(ExtendTestFixtures.typeParameterType(peerTypeParameter)), isInterface = true).coneType
+        val peerChildType = ExtendTestFixtures.classTypeRef(childInterfaceId,
+            listOf(ExtendTestFixtures.typeParameterType(peerTypeParameter)), isInterface = true).coneType
         session.register(
             CfirTypeAwareSupertypeProvider::class,
             TestTypeAwareSupertypeProvider(
-                mapOf(
+                session,
+                core.descriptors + mapOf(
                     ownerTargetType to listOf(
+                        declaredDescriptor(objectRef.coneType, objectRef),
                         extendDescriptor(ownerInterfaceType, ownerExtend, packageFqName),
                         extendDescriptor(peerInterfaceType, peerExtend, packageFqName),
+                    ),
+                    ownerInterfaceType to emptyList(),
+                    peerParentType to emptyList(),
+                    peerChildType to listOf(declaredDescriptor(peerParentType, child.superTypeRefs.single())),
+                    ExtendTestFixtures.classTypeRef(
+                        targetClassId, listOf(ExtendTestFixtures.typeParameterType(targetTypeParameter)),
+                    ).coneType to listOf(declaredDescriptor(objectRef.coneType, objectRef)),
+                    ExtendTestFixtures.classTypeRef(
+                        parentInterfaceId, listOf(ExtendTestFixtures.typeParameterType(parentTypeParameter)),
+                        isInterface = true,
+                    ).coneType to emptyList(),
+                    ExtendTestFixtures.classTypeRef(
+                        childInterfaceId, listOf(ExtendTestFixtures.typeParameterType(childTypeParameter)),
+                        isInterface = true,
+                    ).coneType to listOf(
+                        declaredDescriptor((child.superTypeRefs.single() as CfirResolvedTypeRef).coneType, child.superTypeRefs.single()),
                     ),
                     peerInterfaceType to listOf(
                         declaredDescriptor(ownerInterfaceType, child.superTypeRefs.single()),
@@ -1262,6 +1489,7 @@ private fun primitiveTypeRef(type: ConePrimitiveType): CfirResolvedTypeRefImpl =
         source = null,
         annotations = org.cangnova.cangjie.cfir.MutableOrEmptyList.empty(),
         customRenderer = false,
+        typeUseOrigin = org.cangnova.cangjie.cfir.types.CfirTypeRefOrigin.SEMANTIC,
         coneType = type,
         delegatedTypeRef = null,
     )
@@ -1273,6 +1501,7 @@ private fun declaredDescriptor(
 ): CfirInstantiatedSupertypeDescriptor =
     CfirInstantiatedSupertypeDescriptor(
         type = type,
+        provenanceType = (sourceTypeRef as CfirResolvedTypeRef).coneType,
         origin = CfirInstantiatedSupertypeOrigin.Declared(sourceTypeRef),
     )
 
@@ -1291,15 +1520,22 @@ private fun extendDescriptor(
         ),
     )
 
-/** 构造隐式 Object 父边。 */
-private fun implicitObjectDescriptor(
-    type: ConeCangJieType,
-    ownerClassId: ClassId,
-): CfirInstantiatedSupertypeDescriptor =
-    CfirInstantiatedSupertypeDescriptor(
-        type = type,
-        origin = CfirInstantiatedSupertypeOrigin.ImplicitObject(ownerClassId),
+/** 规则查询中的正式 root 输入；每条 descriptor 使用声明自身的 canonical ref。 */
+private class RuleCoreModel(module: CfirModuleData) {
+    val any = ExtendTestFixtures.newInterface(module, "Any", StdlibClassIds.Any)
+    val anyRef = ExtendTestFixtures.classTypeRef(StdlibClassIds.Any, isInterface = true).also {
+        it.replaceTypeUseOrigin(CfirTypeRefOrigin.SOURCE)
+    }
+    val objectDeclaration = ExtendTestFixtures.newClass(module, "Object", StdlibClassIds.Object, listOf(anyRef))
+    val declarations: List<CfirClassLikeDeclaration> = listOf(any, objectDeclaration)
+    val descriptors: Map<ConeCangJieType, List<CfirInstantiatedSupertypeDescriptor>> = mapOf(
+        ExtendTestFixtures.classTypeRef(StdlibClassIds.Object).coneType to listOf(declaredDescriptor(anyRef.coneType, anyRef)),
+        anyRef.coneType to emptyList(),
     )
+    fun objectRef(): CfirResolvedTypeRef = ExtendTestFixtures.classTypeRef(StdlibClassIds.Object).also {
+        it.replaceTypeUseOrigin(CfirTypeRefOrigin.COMPILER_ADDED)
+    }
+}
 
 /** 注册规则查询测试所需的真实类型系统基础组件。 */
 private fun CfirSession.registerRuleQueryTypeInfrastructure() =
@@ -1349,16 +1585,31 @@ private class TypeParameterRuleQuerySymbolProvider(
 
 /** 测试用来源保留父图。 */
 private class TestTypeAwareSupertypeProvider(
+    private val session: CfirSession,
     private val descriptorsByType: Map<ConeCangJieType, List<CfirInstantiatedSupertypeDescriptor>>,
 ) : CfirTypeAwareSupertypeProvider {
+    override fun forSources(sources: org.cangnova.cangjie.cfir.resolve.providers.CfirTypeAwareSupertypeSources): CfirTypeAwareSupertypeProvider {
+        require(sources == inputStamp.sources) { "A frozen descriptor fixture cannot represent different input sources" }
+        return this
+    }
+
+    override val inputStamp: org.cangnova.cangjie.cfir.resolve.providers.CfirTypeAwareSupertypeInputStamp
+        get() = org.cangnova.cangjie.cfir.resolve.providers.CfirTypeAwareSupertypeInputStamp(
+            org.cangnova.cangjie.cfir.resolve.providers.CfirTypeAwareSupertypeSources(session, session.symbolProvider, null, null),
+            org.cangnova.cangjie.cfir.resolve.providers.CfirTypeAwareSupertypeInputRevision(null, null, 0L),
+            emptySet(),
+        )
+
     override fun getDirectSupertypeDescriptors(type: ConeCangJieType): List<CfirInstantiatedSupertypeDescriptor> =
-        descriptorsByType[type].orEmpty()
+        descriptorsByType.getValue(type)
 }
 
 /** 测试用 extend 包元数据 provider。 */
 private class TestExtendProvider(
     private val packageByExtend: Map<CfirExtend, FqName>,
 ) : CfirExtendProvider {
+    override val modificationCount: Long = 0L
+
     override fun getAllExtends(): List<CfirExtend> = packageByExtend.keys.toList()
 
     override fun getExtendsForTarget(targetKey: CfirExtendTargetKey): List<CfirExtend> = emptyList()

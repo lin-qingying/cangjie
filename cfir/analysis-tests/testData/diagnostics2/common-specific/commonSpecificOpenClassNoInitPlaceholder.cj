@@ -1,5 +1,5 @@
 // CJMP_MODE: COMMON
 // RUN_PIPELINE_TILL: FRONTEND
-common open class <!PARSE_CJMP_IN_COMMON_CTOR_REQUIRED!>Session<!> {}
+common open class Session {}
 
-common class <!PARSE_CJMP_IN_COMMON_CTOR_REQUIRED!>Derived<!> <: Session {}
+common class Derived <: Session {}

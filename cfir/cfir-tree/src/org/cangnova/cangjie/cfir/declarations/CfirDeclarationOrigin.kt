@@ -10,7 +10,7 @@ package org.cangnova.cangjie.cfir.declarations
  * @property displayName 调试输出使用的稳定显示名；为 `null` 时使用对象或类名。
  * @property fromSupertypes 当前声明是否来自父类型成员合成。
  * @property generated 当前声明是否由编译器生成，而不是源码直接声明。
- * @property fromSource 当前声明是否直接来自用户源码。
+ * @property fromSource 当前声明是否属于 SOURCE 图，包括编译器从该图派生的声明。
  */
 sealed class CfirDeclarationOrigin(
     /**
@@ -26,7 +26,7 @@ sealed class CfirDeclarationOrigin(
      */
     val generated: Boolean = false,
     /**
-     * 当前声明是否直接来自用户源码。
+     * 当前声明是否属于 SOURCE 图；generated 独立区分编译器生成的声明。
      */
     val fromSource: Boolean = false,
 ) {
@@ -51,7 +51,13 @@ sealed class CfirDeclarationOrigin(
      * Synthetic 声明不对应用户源码中的完整声明节点，但会作为正常 CFIR 声明参与解析、
      * 查询、渲染或诊断定位。
      */
-    sealed class Synthetic : CfirDeclarationOrigin(generated = true) {
+    sealed class Synthetic(fromSource: Boolean = false) : CfirDeclarationOrigin(generated = true, fromSource = fromSource) {
+        /** 原生默认参数工厂的 COMPILER_ADD 声明；通过原 owner 参加正常 lazy 生命周期。 */
+        data object DefaultParameterHelper : Synthetic(fromSource = true)
+        /** Native CreateDefaultCtor的源码派生声明；有真实空Block并走正常constructor解析。 */
+        data object ImplicitConstructor : Synthetic(fromSource = true)
+        /** 类型检查后的 SOURCE 规范化声明；属于原源码图，生命周期由独立 SOURCE 产品拥有。 */
+        data object CanonicalSource : Synthetic(fromSource = true)
         /**
          * 默认 synthetic 来源，用于没有更细分来源的普通合成声明。
          */
@@ -176,3 +182,4 @@ val CfirDeclarationOrigin.isLazyResolvable: Boolean
 
         else -> false
     }
+

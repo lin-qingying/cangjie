@@ -36,6 +36,13 @@ val sourceFileLinesMappingType = type<CjSourceFileLinesMapping>()
  * 函数调用来源枚举类型引用。
  */
 val functionCallOrigin = type("expressions", "CfirFunctionCallOrigin")
+/** 保存后树的运算、调用、循环角色；类型在共享树模块中，禁止反向依赖语义图模块。 */
+val sourceOperatorType = type("source", "CfirSourceOperator")
+val sourceCallKindType = type("source", "CfirSourceCallKind")
+val sourceForInKindType = type("source", "CfirSourceForInKind")
+val sourceStringKindType = type("source", "CfirSourceStringKind")
+val sourceOverflowStrategyType = type("org.cangnova.cangjie.annotations", "CangjieOverflowStrategy", exactPackage = true)
+val constantValueType = type("expressions", "CfirConstantValue")
 /**
  * match 穷尽性状态类型引用。
  */

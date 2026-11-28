@@ -45,7 +45,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.ScopeSession
-import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.resolve.providers.cfirProvider
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.name.ClassId
@@ -189,11 +189,17 @@ class LLResolutionFacade internal constructor(
      * 在 lazy source 模块中通过 PSI 所属非局部容器恢复 CFIR symbol。
      */
     private fun findSourceCfirSymbol(cjDeclaration: CjDeclaration): CfirBasedSymbol<*> {
-        val targetDeclaration = cjDeclaration.originalDeclaration ?: cjDeclaration
-        val targetModule = getModule(targetDeclaration)
+        val sourceDeclaration = cjDeclaration.originalDeclaration ?: cjDeclaration
+        val targetModule = getModule(sourceDeclaration)
 
         require(getModuleResolutionStrategy(targetModule) == LLModuleResolutionStrategy.LAZY) {
             "Declaration should be resolvable module, instead it had ${targetModule::class}"
+        }
+
+        val moduleComponents = sessionProvider.getResolvableSession(targetModule).moduleComponents
+        moduleComponents.cfirFileBuilder.buildRawCfirFileWithCaching(sourceDeclaration.containingCjFile)
+        val targetDeclaration = checkNotNull(moduleComponents.cache.compilationElement(sourceDeclaration) as? CjDeclaration) {
+            "The source declaration must correspond to one declaration in the current target parser product."
         }
 
         // All elements inside a code fragment are local
@@ -270,5 +276,5 @@ class LLResolutionFacade internal constructor(
  * 通过项目结构 provider 取得 PSI 元素在当前 use-site 视图下所属的 Analysis API 模块。
  */
 fun LLResolutionFacade.getModule(element: PsiElement): CaModule {
-    return CangJieProjectStructureProvider.getModule(project, element, useSiteModule)
+    return moduleProvider.getModule(element)
 }

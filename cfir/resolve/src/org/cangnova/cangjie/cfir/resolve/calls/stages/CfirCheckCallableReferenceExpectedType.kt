@@ -1,5 +1,7 @@
 package org.cangnova.cangjie.cfir.resolve.calls.stages
 
+import org.cangnova.cangjie.cfir.types.asCone
+
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.interopInfo
@@ -30,7 +32,7 @@ import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
 import org.cangnova.cangjie.cfir.types.contains
 import org.cangnova.cangjie.cfir.types.approximateThisTypeForDeclaration
-import org.cangnova.cangjie.cfir.types.asCone
+import org.cangnova.cangjie.cfir.resolve.substitution.asCone
 import org.cangnova.cangjie.cfir.types.ConeUnreportedDuplicateDiagnostic
 import org.cangnova.cangjie.resolve.calls.inference.buildCurrentSubstitutor
 import org.cangnova.cangjie.resolve.calls.inference.addSubtypeConstraintIfCompatible

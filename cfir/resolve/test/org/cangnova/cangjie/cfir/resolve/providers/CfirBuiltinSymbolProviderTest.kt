@@ -14,6 +14,8 @@ import org.cangnova.cangjie.cfir.symbols.CfirBuiltInTypeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPrimitiveTypeSymbol
 import org.cangnova.cangjie.cfir.symbols.constructType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
+import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.types.ConePointerType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
 import org.cangnova.cangjie.cfir.types.StdlibClassIds
@@ -24,7 +26,8 @@ import org.cangnova.cangjie.name.Name
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
-import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -33,13 +36,49 @@ import org.junit.jupiter.api.Test
  */
 class CfirBuiltinSymbolProviderTest {
     /**
-     * 内建声明尚未接入完整 Cone 语义映射时必须显式失败，不能静默变成普通 class-like 类型。
+     * 官方 CreateCPointerDecl 只声明一个 T；缺少 pointee 时保留错误类型和诊断，不能变成 class-like。
      */
     @Test
-    fun `unmapped builtin symbol never falls back to class like type`() {
+    fun `builtin pointer without pointee produces error instead of class like type`() {
         val symbol = CfirBuiltInTypeSymbol(StdlibClassIds.CPointer, CfirBuiltInTypeKind.CPOINTER)
 
-        assertThrows(IllegalStateException::class.java) { symbol.constructType() }
+        val type = symbol.constructType()
+
+        assertTrue(type is ConeErrorType)
+        assertFalse(type is ConeClassLikeType)
+        val error = type as ConeErrorType
+        assertEquals("CPointer expects exactly one pointee type argument", error.diagnostic.reason)
+        assertNull(error.delegatedType, "错误类型不能携带普通 class-like CPointer 作为替代载体")
+    }
+
+    /** 过量实参与缺少实参同属 arity 错误；不能截取第一个 pointee 后伪装成合法指针。 */
+    @Test
+    fun `builtin pointer with multiple pointees produces error instead of class like type`() {
+        val symbol = CfirBuiltInTypeSymbol(StdlibClassIds.CPointer, CfirBuiltInTypeKind.CPOINTER)
+
+        val type = symbol.constructType(listOf(ConePrimitiveType.INT64, ConePrimitiveType.UINT8))
+
+        assertTrue(type is ConeErrorType)
+        assertFalse(type is ConeClassLikeType)
+        val error = type as ConeErrorType
+        assertEquals("CPointer expects exactly one pointee type argument", error.diagnostic.reason)
+        assertNull(error.delegatedType)
+    }
+
+    /** 合法的唯一 pointee 必须原样进入专有 ConePointerType，包含已是指针类型的 CType 实参。 */
+    @Test
+    fun `builtin pointer keeps its pointee in the dedicated pointer type`() {
+        val symbol = CfirBuiltInTypeSymbol(StdlibClassIds.CPointer, CfirBuiltInTypeKind.CPOINTER)
+        val pointees = listOf(ConePrimitiveType.INT64, ConePrimitiveType.UINT8, ConePointerType(ConePrimitiveType.INT8))
+
+        for (pointee in pointees) {
+            val type = symbol.constructType(listOf(pointee))
+
+            assertTrue(type is ConePointerType)
+            assertFalse(type is ConeClassLikeType)
+            assertFalse(type is ConeErrorType)
+            assertSame(pointee, (type as ConePointerType).pointeeType)
+        }
     }
 
     /**

@@ -51,12 +51,6 @@ abstract class ReturnTypeCalculator {
             }
     }
 
-    companion object {
-        /**
-         * 默认返回类型计算器，供未注入特殊阶段计算器的路径使用。
-         */
-        val Default: ReturnTypeCalculator = ReturnTypeCalculatorForFullBodyResolve.Default
-    }
 }
 
 /**

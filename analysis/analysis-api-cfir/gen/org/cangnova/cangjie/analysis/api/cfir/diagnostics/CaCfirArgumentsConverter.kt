@@ -6,6 +6,8 @@ package org.cangnova.cangjie.analysis.api.cfir.diagnostics
 
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.CaSymbolByCfirBuilder
+import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirDiagnosticRenderers
+import org.cangnova.cangjie.cfir.diagnostics.CfirCjmpDiagnosticArgument
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 
@@ -23,6 +25,7 @@ private fun convertArgument(argument: Any?, cfirSymbolBuilder: CaSymbolByCfirBui
         null -> null
         is CfirTypeParameterSymbol -> convertArgument(argument, cfirSymbolBuilder)
         is ConeCangJieType -> convertArgument(argument, cfirSymbolBuilder)
+        is CfirCjmpDiagnosticArgument -> convertArgument(argument, cfirSymbolBuilder)
         is Collection<*> -> convertArgument(argument, cfirSymbolBuilder)
         else -> argument
     }
@@ -34,6 +37,10 @@ private fun convertArgument(argument: CfirTypeParameterSymbol, cfirSymbolBuilder
 
 private fun convertArgument(argument: ConeCangJieType, cfirSymbolBuilder: CaSymbolByCfirBuilder): Any? {
     return cfirSymbolBuilder.typeBuilder.buildType(argument)
+}
+
+private fun convertArgument(argument: CfirCjmpDiagnosticArgument, cfirSymbolBuilder: CaSymbolByCfirBuilder): Any? {
+    return CfirDiagnosticRenderers.CJMP_DIAGNOSTIC_ARGUMENT.render(argument)
 }
 
 private fun convertArgument(argument: Collection<*>, cfirSymbolBuilder: CaSymbolByCfirBuilder): Any? {

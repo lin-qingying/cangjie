@@ -182,6 +182,13 @@ class MacroCallForestTest {
             qualifiedName = FqName(name),
             isQualifiedName = '.' in name,
             kind = MacroSurface.Kind.PLAIN,
+            parsingFacts = org.cangnova.cangjie.parsing.MacroParsingFacts(
+                org.cangnova.cangjie.parsing.MacroParsingScope.Expression(
+                    org.cangnova.cangjie.parsing.CjExprKind.UNKNOWN_EXPR,
+                ),
+                org.cangnova.cangjie.parsing.CjMacroFragmentParent.OTHER,
+                null,
+            ),
             hasParenthesis = true,
             attrTokens = emptyList(),
             inputTokens = inputTokens,
@@ -205,7 +212,7 @@ class MacroCallForestTest {
                 isInsideEnumBody = false,
                 isInsideBlock = true,
             ),
-            replaceHandle = CfirReplaceHandle(id),
+            replaceHandle = CfirReplaceHandle(id, topLevelMacroOwnerSnapshot(FqName("test"))),
         )
     }
 
@@ -224,6 +231,13 @@ class MacroCallForestTest {
             qualifiedName = FqName(name),
             isQualifiedName = '.' in name,
             kind = MacroSurface.Kind.PLAIN,
+            parsingFacts = org.cangnova.cangjie.parsing.MacroParsingFacts(
+                org.cangnova.cangjie.parsing.MacroParsingScope.Declaration(
+                    org.cangnova.cangjie.parsing.CjScopeKind.TOPLEVEL,
+                ),
+                org.cangnova.cangjie.parsing.CjMacroFragmentParent.OTHER,
+                null,
+            ),
             hasParenthesis = false,
             attrTokens = emptyList(),
             inputTokens = emptyList(),
@@ -247,7 +261,7 @@ class MacroCallForestTest {
                 isInsideEnumBody = false,
                 isInsideBlock = false,
             ),
-            replaceHandle = CfirReplaceHandle(id, carrier),
+            replaceHandle = CfirReplaceHandle(id, topLevelMacroOwnerSnapshot(FqName("test")), carrier),
         )
     }
 

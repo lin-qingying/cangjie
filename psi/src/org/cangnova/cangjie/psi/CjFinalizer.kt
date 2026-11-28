@@ -87,7 +87,7 @@ class CjFinalizer : CjDeclarationStub<CangJieFinalizerStub>, CjFunction {
      * 暴露 `valueParameters`，实现仓颉 PSI节点对上层接口的属性契约。
      */
     override val valueParameters: List<CjParameter>
-        get() = valueParameterList?.parameters ?: emptyList()
+        get() = valueParameterLists.flatMap { it.parameters }
 
     /**
      * 暴露 `typeReference`，实现仓颉 PSI节点对上层接口的属性契约。
@@ -99,6 +99,10 @@ class CjFinalizer : CjDeclarationStub<CangJieFinalizerStub>, CjFunction {
      */
     override val valueParameterList: CjParameterList?
         get() = getStubOrPsiChild(CjStubElementTypes.VALUE_PARAMETER_LIST)
+
+    /** finalizer 的重复列表属于恢复结构，也必须完整保存。 */
+    override val valueParameterLists: List<CjParameterList>
+        get() = getStubOrPsiChildrenAsList(CjStubElementTypes.VALUE_PARAMETER_LIST)
 
     /**
      * 实现 `setTypeReference` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。

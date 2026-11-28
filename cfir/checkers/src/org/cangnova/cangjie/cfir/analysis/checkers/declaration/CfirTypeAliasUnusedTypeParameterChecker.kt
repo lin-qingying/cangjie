@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedTypeQualifierError
@@ -18,7 +19,7 @@ import org.cangnova.cangjie.cfir.types.forEachType
  * 对齐官方 Cangjie `TypeCheckerImpl::GetUnusedTysInTypeAlias`：
  * 以别名 RHS 类型树中的类型实参递归为准，按声明顺序报告未出现的类型参数。
  */
-object CfirTypeAliasUnusedTypeParameterChecker : CfirTypeAliasChecker() {
+object CfirTypeAliasUnusedTypeParameterChecker : CfirTypeAliasChecker(MppCheckerKind.Common) {
     /**
      * 检查 typealias 声明的类型参数是否在 RHS 展开类型中被使用。
      */

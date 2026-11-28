@@ -28,34 +28,46 @@ import org.cangnova.cangjie.psi.CjNodeTypes
 import com.intellij.openapi.project.Project
 import com.intellij.psi.FileViewProvider
 import com.intellij.psi.PsiElement
+import org.cangnova.cangjie.parsing.CjParserSeed
 
 /**
  * 表达式代码片段
  *
  *
  */
-open class CjExpressionCodeFragment(
+open class CjExpressionCodeFragment private constructor(
     project: Project,
     name: String,
     text: CharSequence,
     imports: String?,
     context: PsiElement?,
-) : CjCodeFragment(project, name, text, imports, CjNodeTypes.EXPRESSION_CODE_FRAGMENT, context) {
+    parserSeed: CjParserSeed,
+) : CjCodeFragment(project, name, text, imports, CjNodeTypes.EXPRESSION_CODE_FRAGMENT, context, parserSeed) {
+
+    constructor(project: Project, name: String, text: CharSequence, imports: String?, context: PsiElement?) :
+        this(project, name, text, imports, context, captureParserSeed(context))
 
     /**
      * 实现 `getContentElement` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
      */
     override fun getContentElement() = findChildByClass(CjExpression::class.java)
+
+    internal override fun createCompilationFragment(text: String, seed: CjParserSeed, targetContext: PsiElement?): CjCodeFragment =
+        CjExpressionCodeFragment(project, name, text, importsToString(), targetContext, seed)
 }
 
 /**
  * 表示 `CjBlockCodeFragment`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
  */
-class CjBlockCodeFragment(
+class CjBlockCodeFragment private constructor(
     viewProvider: FileViewProvider,
     imports: String?, // Should be separated by CjCodeFragment.IMPORT_SEPARATOR
     context: PsiElement?,
-) : CjCodeFragment(viewProvider, imports, CjNodeTypes.BLOCK_CODE_FRAGMENT, context) {
+    parserSeed: CjParserSeed,
+) : CjCodeFragment(viewProvider, imports, CjNodeTypes.BLOCK_CODE_FRAGMENT, context, parserSeed) {
+
+    constructor(viewProvider: FileViewProvider, imports: String?, context: PsiElement?) :
+        this(viewProvider, imports, context, captureParserSeed(context))
 
     constructor(
         project: Project,
@@ -74,4 +86,7 @@ class CjBlockCodeFragment(
      */
     override fun getContentElement() = findChildByClass(CjBlockExpression::class.java)
         ?: throw IllegalStateException("Block expression should be parsed for BlockCodeFragment")
+
+    internal override fun createCompilationFragment(text: String, seed: CjParserSeed, targetContext: PsiElement?): CjCodeFragment =
+        CjBlockCodeFragment(createFileViewProviderForLightFile(project, name, text), importsToString(), targetContext, seed)
 }

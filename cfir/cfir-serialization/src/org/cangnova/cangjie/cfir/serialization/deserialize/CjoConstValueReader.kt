@@ -6,6 +6,7 @@ import PackageFormat.CompositeValueIndex
 import PackageFormat.ConstValue
 import PackageFormat.MemberValue
 import PackageFormat.Package
+import PackageFormat.Pattern
 import PackageFormat.VarInfo
 import com.google.flatbuffers.Table
 import com.google.flatbuffers.Utf8
@@ -21,7 +22,11 @@ import java.nio.ByteBuffer
  */
 internal object CjoConstValueReader {
     internal sealed interface Value {
-        data class Scalar(val tag: UByte, val value: Any) : Value
+        data class Scalar(val tag: UByte, val value: Any, val bits: Long = when (value) {
+            is Float -> value.toRawBits().toLong()
+            is Double -> value.toRawBits()
+            else -> 0L
+        }) : Value
         data class StringValue(val value: String) : Value
         data class ArrayValue(val elements: List<Value>) : Value
         /** Raw union reference; it is not a materialized semantic value. */
@@ -65,6 +70,25 @@ internal object CjoConstValueReader {
         }
     }
 
+    internal data class Root(val ordinal: Int, val value: Value)
+
+    /** 根的宿主身份由正式拥有 reader 提供；这里仅保留 vector ordinal 与 payload。 */
+    internal fun readRawRoot(info: VarInfo): Root? {
+        if (info.valueType == ConstValue.NONE) return null
+        val target = UnionValueTable()
+        checkNotNull(info.value(target))
+        return Root(0, decode(info.valueType, target, null))
+    }
+
+    internal fun readRawRoots(pattern: Pattern): List<Root> = buildList {
+        check(pattern.valuesTypeLength == pattern.valuesLength)
+        for (index in 0 until pattern.valuesLength) {
+            val target = UnionValueTable()
+            checkNotNull(pattern.values(target, index))
+            add(Root(index, decode(pattern.valuesType(index), target, null)))
+        }
+    }
+
     /** Read only the union payload; composite values remain explicit raw references. */
     internal fun readRaw(info: VarInfo): Value? {
         if (info.valueType == ConstValue.NONE) return null
@@ -85,6 +109,44 @@ internal object CjoConstValueReader {
         return decode(info.valueType, target, packageData)
     }
 
+    /** Read the constants embedded in one official Pattern, including package-owned composites. */
+    internal fun read(pattern: Pattern, packageData: Package): List<Value> {
+        return buildList(pattern.valuesLength) {
+            for (index in 0 until pattern.valuesLength) {
+                val target = UnionValueTable()
+                checkNotNull(pattern.values(target, index)) {
+                    "Pattern.values[$index] has no union value"
+                }
+                add(decode(pattern.valuesType(index), target, packageData))
+            }
+        }
+    }
+
+    /** SOURCE 图先登记包值池身份；原始 union 不在语法读取阶段递归展开 composite 回边。 */
+    internal fun readRaw(pattern: Pattern): List<Value> = buildList(pattern.valuesLength) {
+        check(pattern.valuesTypeLength == pattern.valuesLength) { "Pattern ConstValue tag/value vector lengths disagree" }
+        for (index in 0 until pattern.valuesLength) {
+            val target = UnionValueTable()
+            checkNotNull(pattern.values(target, index))
+            add(decode(pattern.valuesType(index), target, null))
+        }
+    }
+
+    internal fun readCompositeRaw(index: UInt, packageData: Package): Value.CompositeValue {
+        require(index < packageData.allValuesLength.toUInt()) { "ConstValue.CompositeValue points outside Package.allValues: $index" }
+        val composite = checkNotNull(packageData.allValues(index.toInt()))
+        return Value.CompositeValue(index, composite.type, (0 until composite.fieldsLength).map { ordinal ->
+            val field = checkNotNull(composite.fields(ordinal))
+            val target = UnionValueTable()
+            checkNotNull(field.value(target))
+            Value.CompositeValue.Field(checkNotNull(field.field), field.type, decode(field.valueType, target, null))
+        })
+    }
+
+    /** Read one package-owned composite pool entry without inventing a VarInfo wrapper. */
+    internal fun readComposite(index: UInt, packageData: Package): Value.CompositeValue =
+        decodeComposite(index, packageData)
+
     private fun decode(tag: UByte, target: UnionValueTable, packageData: Package?): Value = when (tag) {
         // Struct union members are read through their generated FlatBuffers
         // accessors. The adapter only exposes the union target's position and
@@ -97,8 +159,10 @@ internal object CjoConstValueReader {
         ConstValue.UInt32Value -> Value.Scalar(tag, PackageFormat.UInt32Value().__assign(target.position(), target.buffer()).val_.toUInt())
         ConstValue.Int64Value -> Value.Scalar(tag, PackageFormat.Int64Value().__assign(target.position(), target.buffer()).val_)
         ConstValue.UInt64Value -> Value.Scalar(tag, PackageFormat.UInt64Value().__assign(target.position(), target.buffer()).val_.toULong())
-        ConstValue.Float32Value -> Value.Scalar(tag, PackageFormat.Float32Value().__assign(target.position(), target.buffer()).val_)
-        ConstValue.Float64Value -> Value.Scalar(tag, PackageFormat.Float64Value().__assign(target.position(), target.buffer()).val_)
+        ConstValue.Float32Value -> Value.Scalar(tag, PackageFormat.Float32Value().__assign(target.position(), target.buffer()).val_,
+            target.buffer().getInt(target.position()).toLong())
+        ConstValue.Float64Value -> Value.Scalar(tag, PackageFormat.Float64Value().__assign(target.position(), target.buffer()).val_,
+            target.buffer().getLong(target.position()))
         ConstValue.StringValue -> Value.StringValue(target.stringValue())
         ConstValue.CompositeValue -> {
             val index = CompositeValueIndex().__assign(target.position(), target.buffer()).idx

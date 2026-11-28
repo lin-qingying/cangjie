@@ -7,5 +7,24 @@
 package cjmp_p
 
 public common class P {
-    public <!WRONG_MODIFIER_TARGET!>common<!> P(x: Int64) {}
+    <!WRONG_MODIFIER_TARGET!>static<!> common private P(x: Int64) {}
+}
+
+public common struct S {
+    common private S(x: Int64) {}
+}
+
+public class StaticSecondary {
+    <!INCOMPATIBLE_MODIFIERS!>private<!> <!INCOMPATIBLE_MODIFIERS!>static<!> init() {}
+    <!INCOMPATIBLE_MODIFIERS!>public<!> <!INCOMPATIBLE_MODIFIERS!>static<!> init(value: Int64) {}
+    <!INCOMPATIBLE_MODIFIERS!>internal<!> <!INCOMPATIBLE_MODIFIERS!>static<!> init(value: String) {}
+    <!INCOMPATIBLE_MODIFIERS!>protected<!> <!INCOMPATIBLE_MODIFIERS!>static<!> init(value: Bool) {}
+}
+
+public class PrimaryModifierOrder {
+    <!INCOMPATIBLE_MODIFIERS!>private<!> <!INCOMPATIBLE_MODIFIERS!>public<!> <!WRONG_MODIFIER_TARGET!>static<!> PrimaryModifierOrder() {}
+}
+
+public class SecondaryVisibility {
+    <!INCOMPATIBLE_MODIFIERS!>private<!> <!INCOMPATIBLE_MODIFIERS!>public<!> init() {}
 }

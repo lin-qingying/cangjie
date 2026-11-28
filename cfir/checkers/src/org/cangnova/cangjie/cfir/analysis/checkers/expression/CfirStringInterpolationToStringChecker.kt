@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
@@ -8,7 +9,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
 import org.cangnova.cangjie.cfir.expressions.CfirStringInterpolation
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.constructType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
@@ -27,7 +28,7 @@ import org.cangnova.cangjie.type.AbstractTypeChecker
  * resolve 阶段负责把该契约写入推断约束；这里仅消费已经解析完成的 part 类型并报告
  * 确定的不兼容结果，避免诊断逻辑反向介入 PCLA 和调用完成过程。
  */
-object CfirStringInterpolationToStringChecker : CfirStringInterpolationChecker() {
+object CfirStringInterpolationToStringChecker : CfirStringInterpolationChecker(MppCheckerKind.Common) {
     /** 对每个非字面量插值块执行最终合规检查。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirStringInterpolation) {

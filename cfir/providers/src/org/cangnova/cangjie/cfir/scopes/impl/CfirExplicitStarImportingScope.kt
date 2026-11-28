@@ -1,5 +1,7 @@
 package org.cangnova.cangjie.cfir.scopes.impl
 
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
+
 import org.cangnova.cangjie.cfir.resolve.providers.CfirLookupOrigin
 import org.cangnova.cangjie.cfir.resolve.providers.CfirLookupOriginScope
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider

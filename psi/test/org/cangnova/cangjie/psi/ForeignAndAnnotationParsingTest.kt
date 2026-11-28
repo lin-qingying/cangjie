@@ -117,9 +117,9 @@ class ForeignAndAnnotationParsingTest : CjParsingTestCase(
         }
     }
 
-    /** 1.1.x 平台注解在 parser 层保留普通 annotation 结构，不降级为宏。 */
+    /** 官方 1.1.3 裸 JavaMirror 是语法 builtin，限定名称不能凭末段短名获得该身份。 */
     @Test
-    fun platformAnnotationSurfaceIsRetainedWithoutBuiltinKindFacade() {
+    fun javaMirrorBuiltinIdentityDistinguishesBareAndQualifiedNames() {
         val file = parse(
             "platformAnnotationSurface",
             """
@@ -134,7 +134,7 @@ class ForeignAndAnnotationParsingTest : CjParsingTestCase(
         assertEquals(listOf("JavaMirror", "JavaMirror"), entries.map { it.shortName?.asString() })
         assertEquals("@JavaMirror[\"java.lang.Object\"]", entries[0].text)
         assertEquals("@interoplib.interop.JavaMirror[\"java.lang.Object\"]", entries[1].text)
-        assertTrue(entries.all { !it.isBuiltInAnnotation })
+        assertEquals(listOf(true, false), entries.map { it.isBuiltInAnnotation })
     }
 
     /** @ 与 @! 的区别属于语法来源，不能从名称或声明类型推断。 */
@@ -228,7 +228,7 @@ class ForeignAndAnnotationParsingTest : CjParsingTestCase(
         assertEquals(listOf("NonProduct"), stub.psi.annotationEntries.map { it.shortName?.asString() })
     }
 
-    /** IfAvailable 使用圆括号的独立宏表达式，不能登记为声明注解。 */
+    /** 原始源码中的 IfAvailable 是普通宏；只有宏展开后的特定入口生成专用表达式。 */
     @Test
     fun ifAvailableKeepsItsExpressionForm() {
         val file = parse(
@@ -240,10 +240,10 @@ class ForeignAndAnnotationParsingTest : CjParsingTestCase(
             """.trimIndent(),
         )
         assertTrue(annotations(file).none { it.shortName?.asString() == "IfAvailable" })
-        val expressions = PsiTreeUtil.findChildrenOfType(file, CjIfAvailableExpression::class.java)
+        val expressions = PsiTreeUtil.findChildrenOfType(file, CjMacroExpression::class.java)
         assertEquals(1, expressions.size)
         assertEquals("IfAvailable", expressions.single().text.substringBefore('(').removePrefix("@"))
-        assertEquals("level", expressions.single().conditionName)
+        assertTrue(PsiTreeUtil.findChildrenOfType(file, CjIfAvailableExpression::class.java).isEmpty())
     }
 
     private fun parse(name: String, source: String): CjFile {

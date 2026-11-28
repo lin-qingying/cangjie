@@ -101,6 +101,15 @@ class LlvmNativeIntegrationTest {
     }
 
     /**
+     * 验证 JNI 版本查询报告实际加载的 LLVM 运行时版本。
+     */
+    @Test
+    fun `reports loaded llvm runtime version`() {
+        assertTrue(LlvmNative.isAvailable, LlvmNative.loadDiagnostics)
+        assertTrue(LlvmNative.llvmVersion().matches(Regex("\\d+\\.\\d+\\.\\d+")))
+    }
+
+    /**
      * 验证公开目标机器 API 可以生成目标文件和目标文件字节。
      */
     @Test

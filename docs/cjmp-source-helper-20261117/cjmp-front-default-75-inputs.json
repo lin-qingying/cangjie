@@ -1,0 +1,27 @@
+{
+  "sampleUtc": "2026-11-17T09:22:49.6469511Z",
+  "worktree": "C:\\Users\\lin17\\.codex\\worktrees\\cjmp-framework-implementation\\cangjie",
+  "fileCount": 6826,
+  "aggregateSha256": "C06EF7F0FDF7645CCEF2F61DE29B42986F1D563A05BEF61B84B6E33D12D7BEA0",
+  "roots": [
+    "common",
+    "cfir",
+    "analysis/low-level-api-cfir",
+    "analysis/analysis-api-cfir",
+    "compiler/frontend",
+    "compiler/config",
+    "compiler/phaser",
+    "compiler/arguments",
+    "psi",
+    "resolution.common",
+    "macro"
+  ],
+  "include": [
+    "*.kt",
+    "*.cj",
+    "*.kts"
+  ],
+  "exclude": "**/build/**",
+  "method": "rg --files --hidden --no-ignore, paths normalized / and Sort-Object -CaseSensitive; SHA256 of UTF8 LF-joined path TAB byteLength TAB uppercaseSHA256 lines, no terminal LF",
+  "scope": "Original CJMP frontend necessary default/lambda regression: copying19 + frozen metadata36 + lifecycle18 + original negative2 = 75; Source persistence14 kept in historical separate acceptance"
+}

@@ -15,6 +15,7 @@ import org.cangnova.cangjie.cfir.expressions.builder.buildLiteralExpression
 import org.cangnova.cangjie.cfir.patterns.CfirBindingPattern
 import org.cangnova.cangjie.cfir.patterns.CfirTypePattern
 import org.cangnova.cangjie.cfir.patterns.CfirVarOrEnumPattern
+import org.cangnova.cangjie.cfir.patterns.simpleVariableBindingOrNull
 import org.cangnova.cangjie.cfir.references.*
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.cfir.types.impl.CfirResolvedTypeRefImpl
@@ -81,6 +82,9 @@ internal open class CfirElementsRecorder : CfirVisitor<Unit, MutableMap<CjElemen
         element.acceptChildren(this, data)
     }
 
+    /** 惰性块尚无可记录的源码节点，必须在函数体解析后建立内部映射。 */
+    override fun visitLazyBlock(lazyBlock: CfirLazyBlock, data: MutableMap<CjElement, CfirElement>) = Unit
+
     /**
      * 记录 where/type constraint 中 subject 名称到类型参数声明的映射。
      */
@@ -138,12 +142,12 @@ internal open class CfirElementsRecorder : CfirVisitor<Unit, MutableMap<CjElemen
     }
 
     /**
-     * 记录 type pattern 到语义绑定变量，并访问类型引用。
+     * Type 的绑定属于真实 inner；外层语法映射与 inner 的名字/类型遍历分别保留。
      */
     override fun visitTypePattern(typePattern: CfirTypePattern, data: MutableMap<CjElement, CfirElement>) {
-        recordPatternBindingVariable(typePattern, typePattern.bindingVariable, data)
+        recordPatternBindingVariable(typePattern, typePattern.nestedPattern.simpleVariableBindingOrNull(), data)
         typePattern.typeRef.accept(this, data)
-        typePattern.bindingVariable?.accept(this, data)
+        typePattern.nestedPattern.accept(this, data)
     }
 
     //@formatter:off

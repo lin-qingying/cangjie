@@ -122,5 +122,5 @@ data class ChirBlock(
     /**
      * 基本块终结指令。
      */
-    val terminator: ChirTerminator,
+    val terminator: ChirTerminator?,
 ) : ChirNode

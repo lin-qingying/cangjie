@@ -103,7 +103,7 @@ data class CaProjectStructureSnapshot(
 @CaPlatformInterface
 interface CangJieProjectStructureProvider {
     /**
-     * 返回 PSI 元素所属的 use-site module。
+     * 返回 PSI 元素的真实所属模块。use-site 仅提供查询上下文，不能把依赖文件归属改成消费模块。
      */
     fun getModule(element: PsiElement, useSiteModule: CaModule?): CaModule
 

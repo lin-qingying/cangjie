@@ -91,7 +91,39 @@ class ConeClassLikeType(
      * 是否为类体内部出现的 `This` 类型（即 ClassThisTy）。
      */
     val isThisType: Boolean = false,
+    /** RawArray 当前一层的原生维度；源码构造默认为一层，CJO 装载显式保留 wire 数值。 */
+    val rawArrayDimensions: UInt = 1u,
 ) : ConeClassifierType() {
+
+    init {
+        require(rawArrayDimensions == 1u || lookupTag.classId == StdlibClassIds.RawArray) {
+            "Only RawArray can carry a native array dimension"
+        }
+    }
+
+    /**
+     * RawArray 的类型构造产品。normal CFIR 仍保留逐层 classifier/实参，SOURCE 使用原生
+     * ArrayTy 的叶子元素与累计维度；所有替换/复制重新构造本类型时同时重建这一产品。
+     * 非 RawArray 与实参数量不合法的 RawArray 没有已完成布局，导出不能猜测维度。
+     */
+    val rawArrayLayout: ConeRawArrayLayout? = if (lookupTag.classId == StdlibClassIds.RawArray && typeArguments.size == 1) {
+        val element = typeArguments.single().type
+        val nested = (element as? ConeClassLikeType)?.rawArrayLayout
+        if (nested == null) ConeRawArrayLayout(element, rawArrayDimensions)
+        else ConeRawArrayLayout(nested.element, nested.dimensions + rawArrayDimensions)
+    } else null
+
+    /**
+     * 原生 TypeManager.GetTypeArgs 的声明级视图与 ArrayTy.typeArgs 的叶子槽分开。
+     * 每个类型只创建一次降一维视图；UInt 的零值按原生 unsigned 减法保留其含义。
+     */
+    val rawArrayTypeArguments: List<ConeTypeProjection> by lazy {
+        require(classId == StdlibClassIds.RawArray)
+        val layout = checkNotNull(rawArrayLayout)
+        listOf(if (layout.dimensions == 1u) layout.element else ConeClassLikeType(
+            lookupTag, listOf(layout.element), attributes, rawArrayDimensions = layout.dimensions - 1u,
+        ))
+    }
 
     /**
      * 从 lookupTag 中直接提取 ClassId，方便调用方使用。
@@ -107,7 +139,8 @@ class ConeClassLikeType(
         if (other !is ConeClassLikeType) return false
         return super.equals(other) &&
                 isInterface == other.isInterface &&
-                isThisType == other.isThisType
+                isThisType == other.isThisType &&
+                rawArrayDimensions == other.rawArrayDimensions
     }
 
     /**
@@ -120,9 +153,13 @@ class ConeClassLikeType(
         var result = super.hashCode()
         result = 31 * result + isInterface.hashCode()
         result = 31 * result + isThisType.hashCode()
+        result = 31 * result + rawArrayDimensions.hashCode()
         return result
     }
 }
+
+/** 对位原生 ArrayTy 的规范化字段；布局由类型构造拥有，捕获器只读已经发布的值。 */
+data class ConeRawArrayLayout(val element: ConeCangJieType, val dimensions: UInt)
 
 /**
  * 把顶层 `This` 视图类型恢复成普通 class 类型。

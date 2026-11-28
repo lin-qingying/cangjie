@@ -62,9 +62,12 @@ fun Project.publishCangjieJarsForIde(
     // - 编译期：本模块可见（java-library 插件保证）
     // - 发布期：cangjie-publishing 通过 components["java"] 自动将 api 依赖
     //           以 compile scope 写入 POM，消费方 Gradle/Maven 均可自动继承
-    if (apiDependencies.isNotEmpty()) {
+    // 手工合并 :common 的工件不会自动继承其运行时依赖。
+    val publishedDependencies = apiDependencies +
+        if (":common" in projects) listOf("com.ibm.icu:icu4j:72.1") else emptyList()
+    if (publishedDependencies.isNotEmpty()) {
         dependencies {
-            apiDependencies.forEach { coord ->
+            publishedDependencies.distinct().forEach { coord ->
                 add("api", coord)
             }
         }

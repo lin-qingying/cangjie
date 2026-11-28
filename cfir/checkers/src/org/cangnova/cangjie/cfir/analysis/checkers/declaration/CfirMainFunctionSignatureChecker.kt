@@ -25,6 +25,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirMainFunction
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
@@ -43,7 +44,7 @@ import org.cangnova.cangjie.cfir.types.isString
  * 对齐官方 `TypeCheckerImpl::CheckEntryFunc`：源码级全局入口只能无参，
  * 或只带一个 `Array<String>` 参数；显式返回类型只能是整数类型或 `Unit`。
  */
-object CfirMainFunctionSignatureChecker : CfirMainFunctionChecker() {
+object CfirMainFunctionSignatureChecker : CfirMainFunctionChecker(MppCheckerKind.Common) {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirMainFunction) {
         if (declaration.isLocal || declaration.symbol.callableId.classId != null) return

@@ -1,8 +1,8 @@
 package org.cangnova.cangjie.cfir.resolve
 
+import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
 import org.cangnova.cangjie.cfir.declarations.declarationAvailabilityProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessContext
-import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessKind
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityResult
 import org.cangnova.cangjie.cfir.resolve.providers.CfirLookupOrigin
 import org.cangnova.cangjie.cfir.resolve.providers.lookupOriginForAccessibility
@@ -10,6 +10,8 @@ import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.accessibilityChecker
+import org.cangnova.cangjie.cfir.session.languageVersionSettings
+import org.cangnova.cangjie.supportsCjmpDeclarationModel
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassifierSymbol
@@ -33,13 +35,15 @@ internal class CfirTypeCandidateCollector(
         val symbol: CfirClassifierSymbol<*>,
         val substitutor: ConeSubstitutor?,
         val lookupOrigin: CfirLookupOrigin,
+        /** 产生候选的确切 scope；已知 ClassId 的 provider 聚合没有词法 scope。 */
+        val scope: CfirScope? = null,
     )
 
     /**
      * 返回第一个含可访问候选的 scope 层，并保留该层全部候选。
      *
-     * 不可发现的 classifier 不会阻断低优先级 scope；同层多个可访问候选由上层解析器
-     * 继续执行歧义处理，不能在 collector 内任意选择一个符号。
+     * 不可发现的 classifier 不会阻断低优先级 scope；同层先按官方 SPECIFIC 类型名优先级
+     * 选择，否则保留全部可访问候选，由上层解析器执行歧义处理。
      */
     fun firstVisibleScopeCandidates(
         scopes: Iterable<CfirScope>,
@@ -145,24 +149,22 @@ internal class CfirTypeCandidateCollector(
         val result = mutableListOf<TypeCandidate>()
         scope.processClassifiersByNameWithSubstitution(name) { symbol, substitutor ->
             if (isAccessible(symbol, lookupOrigin)) {
-                result += TypeCandidate(symbol, substitutor, lookupOrigin)
+                result += TypeCandidate(symbol, substitutor, lookupOrigin, scope)
             }
         }
-        return result.distinctBy(TypeCandidate::symbol)
+        return selectTypeNameCandidates(result.distinctBy(TypeCandidate::symbol))
     }
 
     /**
      * 聚合已确定 [classId] 的完整重声明候选。
      *
-     * [preferredCandidate] 保留首次 scope lookup 的真实 origin/substitutor；provider 冲突
-     * 候选使用 [lookupOrigin]，但仍逐个经过同一 checker，不能因已知 ClassId 绕过访问控制。
+     * 此入口用于已确定的包限定域；词法 scope 查询直接消费该层候选，不再扩展到 provider。
+     * 聚合候选仍逐个经过同一 checker，不能因已知 ClassId 绕过访问控制。
      */
     fun collectClassIdCandidates(
         classId: ClassId,
-        preferredCandidate: TypeCandidate?,
         lookupOrigin: CfirLookupOrigin,
-    ): List<TypeCandidate> = buildList {
-        preferredCandidate?.let(::add)
+    ): List<TypeCandidate> = selectTypeNameCandidates(buildList {
         session.declarationAvailabilityProvider.classLikeCandidates(classId).forEach { symbol ->
             add(
                 TypeCandidate(
@@ -174,6 +176,13 @@ internal class CfirTypeCandidateCollector(
         }
     }.distinctBy(TypeCandidate::symbol).filter { candidate ->
         isAccessible(candidate.symbol, candidate.lookupOrigin)
+    })
+
+    /** 官方 PreCheck 在已确定的同一查找层优先首个 SPECIFIC，不检查配对、种类或泛型。 */
+    private fun selectTypeNameCandidates(candidates: List<TypeCandidate>): List<TypeCandidate> {
+        if (!session.languageVersionSettings.supportsCjmpDeclarationModel()) return candidates
+        val specific = candidates.firstOrNull { (it.symbol.cfir as? CfirMemberDeclaration)?.status?.isSpecific == true }
+        return if (specific == null) candidates else listOf(specific)
     }
 
     /** classifier 以其真实查找来源进入唯一可访问性服务。 */
@@ -186,7 +195,6 @@ internal class CfirTypeCandidateCollector(
             classLike,
             context.copy(
                 lookupOrigin = lookupOrigin,
-                kind = CfirAccessKind.TYPE,
             ),
         )
         return result is CfirAccessibilityResult.Accessible

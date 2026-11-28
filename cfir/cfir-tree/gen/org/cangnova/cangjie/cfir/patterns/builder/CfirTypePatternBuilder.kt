@@ -10,30 +10,39 @@ package org.cangnova.cangjie.cfir.patterns.builder
 import kotlin.contracts.*
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
-import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
+import org.cangnova.cangjie.cfir.expressions.CfirConstantValue
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.patterns.CfirPattern
 import org.cangnova.cangjie.cfir.patterns.CfirTypePattern
 import org.cangnova.cangjie.cfir.patterns.CfirTypePatternMatchingKind
 import org.cangnova.cangjie.cfir.patterns.impl.CfirTypePatternImpl
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
-import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.CjSourceElement
 
 @CfirBuilderDsl
 class CfirTypePatternBuilder {
     var source: CjSourceElement? = null
+    var semanticTypeRef: CfirTypeRef? = null
+    val constantValues: MutableList<CfirConstantValue> = mutableListOf()
+    var contextExpression: CfirExpression? = null
     var matchingKind: CfirTypePatternMatchingKind = CfirTypePatternMatchingKind.UNKNOWN
     lateinit var typeRef: CfirTypeRef
-    var bindingName: Name? = null
-    var bindingVariable: CfirPatternBindingVariable? = null
+    lateinit var nestedPattern: CfirPattern
+    var matchBeforeRuntime: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
+    var needRuntimeTypeCheck: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
 
     @OptIn(CfirImplementationDetail::class)
     fun build(): CfirTypePattern {
         return CfirTypePatternImpl(
             source,
+            semanticTypeRef,
+            constantValues,
+            contextExpression,
             matchingKind,
             typeRef,
-            bindingName,
-            bindingVariable,
+            nestedPattern,
+            matchBeforeRuntime,
+            needRuntimeTypeCheck,
         )
     }
 
@@ -54,9 +63,13 @@ inline fun buildTypePatternCopy(original: CfirTypePattern, init: CfirTypePattern
     }
     val copyBuilder = CfirTypePatternBuilder()
     copyBuilder.source = original.source
+    copyBuilder.semanticTypeRef = original.semanticTypeRef
+    copyBuilder.constantValues.addAll(original.constantValues)
+    copyBuilder.contextExpression = original.contextExpression
     copyBuilder.matchingKind = original.matchingKind
     copyBuilder.typeRef = original.typeRef
-    copyBuilder.bindingName = original.bindingName
-    copyBuilder.bindingVariable = original.bindingVariable
+    copyBuilder.nestedPattern = original.nestedPattern
+    copyBuilder.matchBeforeRuntime = original.matchBeforeRuntime
+    copyBuilder.needRuntimeTypeCheck = original.needRuntimeTypeCheck
     return copyBuilder.apply(init).build()
 }

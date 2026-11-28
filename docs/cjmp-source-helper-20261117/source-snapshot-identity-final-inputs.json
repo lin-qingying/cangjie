@@ -1,0 +1,26 @@
+{
+  "utc": "2026-11-18T02:39:28.7233221Z",
+  "fileCount": 6843,
+  "aggregateSha256": "4F0923450709F2687AD39E75A5937592D6544CFC6C6D2ABDCD0F01EED744173C",
+  "roots": [
+    "common",
+    "cfir",
+    "analysis/low-level-api-cfir",
+    "analysis/analysis-api-cfir",
+    "compiler/frontend",
+    "compiler/config",
+    "compiler/phaser",
+    "compiler/arguments",
+    "psi",
+    "resolution.common",
+    "macro"
+  ],
+  "include": [
+    "*.kt",
+    "*.cj",
+    "*.kts"
+  ],
+  "exclude": "**/build/**",
+  "method": "rg --files --hidden --no-ignore, / normalized and Sort-Object -CaseSensitive; SHA256 of UTF8 LF joined path TAB length TAB uppercaseSHA256, no final LF",
+  "scope": "Source default metadata fixtures registered through official construction provider, expectations unchanged; snapshot identity candidate source input"
+}

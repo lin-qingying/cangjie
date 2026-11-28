@@ -100,7 +100,7 @@ class CjNameReferenceExpression :
     val typeArgumentList: CjTypeArgumentList?
         get() {
 
-            return findChildByType<PsiElement>(CjNodeTypes.TYPE_ARGUMENT_LIST) as CjTypeArgumentList?
+            return getStubOrPsiChild(CjStubElementTypes.TYPE_ARGUMENT_LIST)
         }
 
     /**
@@ -195,7 +195,7 @@ class CjNameBasicReferenceExpression :
     val typeArgumentList: CjTypeArgumentList?
         get() {
 
-            return findChildByType<PsiElement>(CjNodeTypes.TYPE_ARGUMENT_LIST) as CjTypeArgumentList?
+            return getStubOrPsiChild(CjStubElementTypes.TYPE_ARGUMENT_LIST)
         }
 
     /**

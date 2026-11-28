@@ -19,8 +19,23 @@ import org.cangnova.cangjie.descriptors.Visibilities
  * STATUS 只调用它发布不依赖实参的 ABI，BODY_RESOLVE 在映射完成后再次发布完整值。
  * 两次发布均消费同一 identity/mapping，没有从文本或 PSI 猜测注解。
  */
-public fun CfirDeclaration.publishInteropInfo(session: CfirSession) {
-    val member = this as? CfirMemberDeclaration ?: return
+public fun CfirDeclaration.publishInteropInfo(session: CfirSession, annotations: List<CfirAnnotation> = this.annotations) {
+    check(contentSource === org.cangnova.cangjie.cfir.CfirContentSource.Owned) { "Published ABI metadata requires an explicit package completion product" }
+    check(ownedGraphAnnotationsUnselected != true) { "Owned ABI metadata requires materialized annotation input" }
+    val product = computeInteropInfo(session, annotations, annotationInfo) ?: return
+    interopInfo = product
+    if (this is CfirFunction && product.abiRequest.isForeign && origin.fromSource && cjoDeclarationOrigin == null) {
+        exportFacts = exportFacts.copy(linkage = CfirDeclarationLinkage.INTERNAL)
+    }
+}
+
+/** ABI与注解结果使用同一工作输入；返回值由Library原包和注解内容一起发布。 */
+public fun CfirDeclaration.computeInteropInfo(
+    session: CfirSession,
+    annotations: List<CfirAnnotation>,
+    annotationProduct: CfirDeclarationAnnotationInfo?,
+): CfirInteropInfo? {
+    val member = this as? CfirMemberDeclaration ?: return null
     val calls = annotations.filterIsInstance<CfirAnnotationCall>()
     val settings = session.languageVersionSettings
     // The resolved kind is only an identity.  ABI facts may be consumed here
@@ -151,7 +166,7 @@ public fun CfirDeclaration.publishInteropInfo(session: CfirSession) {
         .mapNotNull { it.platformAnnotationDescriptor?.sourceName }
         .distinct()
         .toList()
-    interopInfo = CfirInteropInfo(
+    return CfirInteropInfo(
         abiRequest = request,
         resolvedAbi = abi,
         foreignName = foreignName,
@@ -162,7 +177,7 @@ public fun CfirDeclaration.publishInteropInfo(session: CfirSession) {
         java = java,
         objc = objc,
         cjmp = cjmp,
-        overflowStrategy = annotationInfo?.overflowStrategy,
+        overflowStrategy = annotationProduct?.overflowStrategy,
         isFastNative = has(BuiltInAnnotationKind.FASTNATIVE) || serializedCoreFacts?.isFastNative == true,
         isFrozen = has(BuiltInAnnotationKind.FROZEN),
         externalSymbolName = foreignName ?: java?.externalName ?: objc?.externalName ?: symbolName.takeIf { abi.kind == CfirAbiKind.C },

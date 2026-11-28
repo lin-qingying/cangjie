@@ -20,6 +20,9 @@ class CfirCompositeExtendProvider(
      */
     private val providers: List<CfirExtendProvider>,
 ) : CfirExtendProvider {
+    override val modificationCount: Long
+        get() = providers.sumOf(CfirExtendProvider::modificationCount)
+
     override fun getAllExtends(): List<CfirExtend> = providers.flatMap { it.getAllExtends() }.distinctBy { it.symbol }
 
     /**
@@ -27,6 +30,12 @@ class CfirCompositeExtendProvider(
      */
     override fun getExtendsForTarget(targetKey: CfirExtendTargetKey): List<CfirExtend> =
         providers.flatMap { it.getExtendsForTarget(targetKey) }.distinctBy { it.symbol }
+
+    override fun getExtendsForTarget(targetKey: CfirExtendTargetKey, packageFqName: FqName): List<CfirExtend> =
+        providers.flatMap { it.getExtendsForTarget(targetKey, packageFqName) }.distinctBy { it.symbol }
+
+    override fun getCjmpMatchingExtends(target: CfirExtend, packageFqName: FqName): List<CfirExtend> =
+        providers.flatMap { it.getCjmpMatchingExtends(target, packageFqName) }.distinctBy { it.symbol }
 
     /**
      * 聚合所有 provider 中扩展指定 class 的 extend。

@@ -24,6 +24,8 @@
 
 package org.cangnova.cangjie.cfir.declarations
 
+import org.cangnova.cangjie.cfir.resolve.substitution.createTypeSubstitutorByTypeConstructor
+
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
@@ -31,8 +33,8 @@ import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.session.cfirProvider
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.cfirProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirEnumSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
@@ -122,7 +124,7 @@ fun CfirEnumConstructor.substitutedPayloadParameterTypes(
     }.toMap()
     if (replacements.isEmpty()) return payloadTypes
 
-    val substitutor = CfirTypeSubstitutorByMap(replacements)
+    val substitutor = createTypeSubstitutorByTypeConstructor(replacements, enumDeclaration.moduleData.session.typeContext, false)
     return payloadTypes.map(substitutor::substituteOrSelf)
 }
 

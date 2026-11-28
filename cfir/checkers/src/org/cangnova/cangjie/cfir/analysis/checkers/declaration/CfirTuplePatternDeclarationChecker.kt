@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.containsReportedErrorDiagnostic
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
@@ -20,7 +21,7 @@ import org.cangnova.cangjie.cfir.types.coneTypeOrNull
  * 官方 SynchronizeTypeAndInitializer 在根形状失败时直接报告专用错误；根形状成立后，
  * ChkPattern 的嵌套失败还会在完整声明模式上报告 MISMATCHED_TYPE_FOR_PATTERN_IN_VARDECL。
  */
-object CfirTuplePatternDeclarationChecker : CfirPatternVariableChecker() {
+object CfirTuplePatternDeclarationChecker : CfirPatternVariableChecker(MppCheckerKind.Common) {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirPatternVariable) {
         val pattern = declaration.pattern as? CfirTuplePattern ?: return

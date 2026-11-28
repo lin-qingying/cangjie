@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirPlatformAnnotationClassIds
@@ -22,7 +23,7 @@ import org.cangnova.cangjie.name.Name
  * 因此本 checker 以文件级 construction surface forest 为 owner，禁止从 final CFIR
  * 的 declaration annotation 列表推导位置关系。
  */
-object CfirPlatformAnnotationMacroOrderChecker : CfirFileChecker() {
+object CfirPlatformAnnotationMacroOrderChecker : CfirFileChecker(MppCheckerKind.Common) {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirFile) {
         val registry = context.session.macroExpansionRegistry ?: return

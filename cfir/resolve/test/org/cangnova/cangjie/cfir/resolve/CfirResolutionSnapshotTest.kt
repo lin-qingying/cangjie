@@ -3,6 +3,10 @@ package org.cangnova.cangjie.cfir.resolve
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostic.ConeInvalidCatchTypeError
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
+import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.buildResolvedArgumentList
+import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures
 import org.cangnova.cangjie.cfir.expressions.builder.buildBlock
 import org.cangnova.cangjie.cfir.expressions.builder.buildErrorExpression
 import org.cangnova.cangjie.cfir.expressions.builder.buildLiteralExpression
@@ -13,6 +17,7 @@ import org.cangnova.cangjie.cfir.expressions.builder.buildSubscriptExpression
 import org.cangnova.cangjie.cfir.references.builder.buildNamedReference
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.cfir.patterns.builder.buildCatchPattern
+import org.cangnova.cangjie.cfir.patterns.builder.buildWildcardPattern
 import org.cangnova.cangjie.cfir.toCfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
@@ -24,6 +29,56 @@ import org.junit.jupiter.api.Test
 
 /** 快照恢复真实可变类型状态，不向错误表达式的派生类型 getter 写回。 */
 class CfirResolutionSnapshotTest {
+    /** context 独占节点与原始列表同属调用事务；别名映射也必须恢复到原对象。 */
+    @Test
+    fun `restore preserves resolved mapping identities and context only expression types`() {
+        val session = CallResolutionTestFixtures.newTestSession()
+        val owner = CallResolutionTestFixtures.buildFunctionSymbol(
+            session, "call", parameterTypes = listOf(ConePrimitiveType.INT32),
+        )
+        val parameter = owner.cfir.valueParameters.single()
+        for (aliased in listOf(false, true)) {
+            val value = buildLiteralExpression {
+                kind = CfirLiteralKind.INT
+                this.value = 1
+                coneTypeOrNull = ConePrimitiveType.INT32
+            }
+            val context = buildLiteralExpression {
+                kind = CfirLiteralKind.INT
+                this.value = 2
+                coneTypeOrNull = ConePrimitiveType.INT32
+            }
+            val original = buildArgumentList { arguments += value }
+            val mapping = linkedMapOf<CfirExpression, CfirValueParameter>(value to parameter)
+            val contextMapping: LinkedHashMap<CfirExpression, CfirValueParameter> =
+                if (aliased) mapping else linkedMapOf(value to parameter, context to parameter)
+            val resolved = buildResolvedArgumentList(original, mapping, contextMapping)
+            val call = buildFunctionCall {
+                calleeReference = buildNamedReference { name = Name.identifier("call") }
+                argumentList = resolved
+            }
+            val snapshot = CfirResolutionSnapshot.capture(call)
+            repeat(2) {
+                mapping.clear()
+                contextMapping.clear()
+                (original.arguments as MutableList<CfirExpression>).clear()
+                value.replaceConeTypeOrNull(ConePrimitiveType.INT64)
+                context.replaceConeTypeOrNull(ConePrimitiveType.INT64)
+                snapshot.restore()
+                assertSame(resolved, call.argumentList)
+                assertSame(mapping, resolved.mapping)
+                assertSame(contextMapping, resolved.mappingIncludingContextArguments)
+                assertSame(parameter, mapping[value])
+                assertSame(value, original.arguments.single())
+                assertEquals(ConePrimitiveType.INT32, value.coneTypeOrNull)
+                if (!aliased) {
+                    assertSame(parameter, contextMapping[context])
+                    assertEquals(ConePrimitiveType.INT32, context.coneTypeOrNull)
+                }
+            }
+        }
+    }
+
     /** 已检查的 optional payload 不能跨失败候选保留，原接收者的类型也必须恢复。 */
     @Test
     fun `restore discards a checked optional subject type`() {
@@ -70,16 +125,16 @@ class CfirResolutionSnapshotTest {
     fun `restore discards catch pattern typing from a failed candidate`() {
         val originalType = ConePrimitiveType.INT64.toCfirResolvedTypeRef()
         val pattern = buildCatchPattern {
-            isWildcard = true
+            nestedPattern = buildWildcardPattern {}
             typeRefs += originalType
         }
         val snapshot = CfirResolutionSnapshot.capture(pattern)
         repeat(2) {
             val errorType = ConeErrorType(ConeInvalidCatchTypeError).toCfirResolvedTypeRef()
             pattern.replaceTypeRefs(listOf(errorType))
-            pattern.replaceResolvedTypeRef(errorType)
+            pattern.replaceSemanticTypeRef(errorType)
             snapshot.restore()
-            assertNull(pattern.resolvedTypeRef)
+            assertNull(pattern.semanticTypeRef)
             assertEquals(1, pattern.typeRefs.size)
             assertSame(originalType, pattern.typeRefs.single())
         }

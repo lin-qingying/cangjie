@@ -5,6 +5,7 @@ import org.cangnova.cangjie.cfir.common.CfirPlatform
 import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoManager
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoSearchPath
+import org.cangnova.cangjie.cfir.serialization.cjo.CjoFormatVersionPolicy
 import org.cangnova.cangjie.cfir.serialization.deserialize.CfirDeserializationContext
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.lang.declarations.CangJieDeclarationFileType
@@ -77,7 +78,10 @@ class CjdSdkDeclarationBoundaryAuditTest :
         for (path in paths) {
             val sidecar = CjdSidecarParser.create().parse(path)
             assertTrue(sidecar.isUsable, "$path: ${sidecar.diagnostics}")
-            val manager = CjoManager(CjoSearchPath { if (it == "CANGJIE_STDLIB_MODULE") directory else null })
+            val manager = CjoManager(
+                CjoSearchPath { if (it == "CANGJIE_STDLIB_MODULE") directory else null },
+                CjoFormatVersionPolicy.Compilation(org.cangnova.cangjie.LanguageVersionSettingsImpl.DEFAULT),
+            )
             val loaded = assertNotNull(
                 manager.loadPackageSnapshot(sidecar.annotationContext.packageFqName),
                 "$path: no CJO for ${sidecar.annotationContext.packageFqName}",

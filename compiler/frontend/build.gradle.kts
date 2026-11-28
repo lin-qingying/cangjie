@@ -4,10 +4,12 @@ plugins {
 }
 
 dependencies {
+    api(project(":chir:chir-tree"))
     api(project(":compiler:phaser"))
     implementation(project(":compiler:config"))
     implementation(project(":cfir:entrypoint"))
     implementation(project(":macro:macro-common"))
+    implementation(project(":macro:macro-process"))
 
     compileOnly(intellijCore())
     testImplementation(intellijCore())

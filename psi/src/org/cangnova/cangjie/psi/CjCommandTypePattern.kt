@@ -51,7 +51,7 @@ class CjCommandTypePattern(node: ASTNode) : CjElementImpl(node) {
      * 保存 `bindingName`，供仓颉 PSI流程读取节点结构或语义信息。
      */
     val bindingName: String?
-        get() = bindingNameElement?.text
+        get() = bindingNameElement?.text?.let(CjPsiUtil::unquoteIdentifier)
 
     /**
      * 保存 `wildcardElement`，供仓颉 PSI流程读取节点结构或语义信息。

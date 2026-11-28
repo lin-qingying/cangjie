@@ -3,6 +3,7 @@ package org.cangnova.cangjie.cfir.lightTree
 import org.cangnova.cangjie.CjInMemoryTextSourceFile
 import org.cangnova.cangjie.cfir.builder.BodyBuildingMode
 import org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder
+import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationMetadataBuilder
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.resolve.providers.isReexportingSourceImport
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
@@ -71,14 +72,14 @@ class ImportGroupRawCfirTest : AbstractLightTree2CfirConverterTestCase() {
     }
 
     private fun buildPsi(source: String): CfirFile =
-        PsiRawCfirBuilder(createTestSession(), BodyBuildingMode.NORMAL)
+        PsiRawCfirBuilder(createTestSession(), BodyBuildingMode.NORMAL, CfirAnnotationMetadataBuilder())
             .buildCfirFile(createCjFile("importGroups", source))
 
     private fun buildLightTree(source: String): CfirFile {
         val session = createTestSession()
         val sourceFile = CjInMemoryTextSourceFile("importGroups.cj", null, source)
         return LightTree2Cfir(session, session.cangjieScopeProvider)
-            .buildCfirFileWithSurfaces(parseLightTree(source), sourceFile, source.toSourceLinesMapping()).first
+            .buildPreMacroCfirFile(parseLightFile(source), sourceFile, source.toSourceLinesMapping()).cfirFile
     }
 
     companion object {

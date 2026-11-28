@@ -13,15 +13,26 @@ import java.math.BigInteger
 import java.util.IdentityHashMap
 
 /** 在注解参数绑定后发布 declaration 语义；checker 和 Analysis 只消费该快照。 */
-fun CfirDeclaration.publishAnnotationInfo(session: CfirSession) {
+fun CfirDeclaration.publishAnnotationInfo(session: CfirSession, annotations: List<CfirAnnotation> = this.annotations) {
+    check(contentSource === org.cangnova.cangjie.cfir.CfirContentSource.Owned) { "Published annotation metadata requires an explicit package completion product" }
+    check(ownedGraphAnnotationsUnselected != true) { "Owned annotation metadata requires its captured content to be materialized" }
+    val target = annotationTargetFor()
+    annotations.forEach { it.replaceAnnotationTarget(target) }
+    annotationInfo = computeAnnotationInfo(session, annotations, annotationInfo)
+}
+
+/** 使用本次已绑定注解与原header事实计算metadata；Library调用方将结果纳入根快照，不写旧声明。 */
+fun CfirDeclaration.computeAnnotationInfo(
+    session: CfirSession,
+    annotations: List<CfirAnnotation>,
+    headerInfo: CfirDeclarationAnnotationInfo?,
+): CfirDeclarationAnnotationInfo {
     val calls = annotations.filterIsInstance<CfirAnnotationCall>()
     val builtInsSupported = session.languageVersionSettings.supportsFeature(LanguageFeature.BuiltInAnnotations)
     val supportedCalls = calls.filter { call ->
         val kind = call.annotationKind ?: return@filter true
         builtInsSupported && call.isSupportedBuiltinAnnotation(kind, session.languageVersionSettings)
     }
-    val declarationTarget = annotationTargetFor()
-    calls.forEach { it.replaceAnnotationTarget(declarationTarget) }
     fun has(kind: BuiltInAnnotationKind): Boolean = supportedCalls.any { it.annotationKind == kind }
     val annotation = supportedCalls.firstOrNull { it.annotationKind == BuiltInAnnotationKind.ANNOTATION }
     val targetArgument = annotation?.argumentValue("target") as? CfirArrayLiteral
@@ -68,8 +79,8 @@ fun CfirDeclaration.publishAnnotationInfo(session: CfirSession) {
             }
         }
     } + serializedInteropFacts?.attributeNames.orEmpty()
-    val serialized = annotationInfo.takeIf { builtInsSupported }
-    annotationInfo = CfirDeclarationAnnotationInfo(
+    val serialized = headerInfo.takeIf { builtInsSupported }
+    return CfirDeclarationAnnotationInfo(
         isAnnotation = annotation != null || serialized?.isAnnotation == true,
         annotationTargets = if (annotation == null && serialized != null) serialized.annotationTargets else targetSet,
         annotationTargetResolutionStatus = if (annotation == null && serialized != null) {

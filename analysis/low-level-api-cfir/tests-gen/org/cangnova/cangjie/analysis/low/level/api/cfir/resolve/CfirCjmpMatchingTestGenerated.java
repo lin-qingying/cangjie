@@ -43,9 +43,39 @@ public class CfirCjmpMatchingTestGenerated extends AbstractCfirCjmpMatchingTest 
   }
 
   @Test
+  @TestMetadata("multipleCommonParents.cj")
+  public void testMultipleCommonParents() {
+    run("multipleCommonParents.cj");
+  }
+
+  @Test
+  @TestMetadata("multipleCommonParentsSharedAncestor.cj")
+  public void testMultipleCommonParentsSharedAncestor() {
+    run("multipleCommonParentsSharedAncestor.cj");
+  }
+
+  @Test
+  @TestMetadata("noCommonCandidates.cj")
+  public void testNoCommonCandidates() {
+    run("noCommonCandidates.cj");
+  }
+
+  @Test
   @TestMetadata("parallelTopLevelSpecificFirstMatch.cj")
   public void testParallelTopLevelSpecificFirstMatch() {
     run("parallelTopLevelSpecificFirstMatch.cj");
+  }
+
+  @Test
+  @TestMetadata("propertyMemberMatches.cj")
+  public void testPropertyMemberMatches() {
+    run("propertyMemberMatches.cj");
+  }
+
+  @Test
+  @TestMetadata("rootFactsFailureRetry.cj")
+  public void testRootFactsFailureRetry() {
+    run("rootFactsFailureRetry.cj");
   }
 
   @Test

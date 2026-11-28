@@ -1,5 +1,7 @@
 package org.cangnova.cangjie.cfir.entrypoint.session
 
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
+
 import org.cangnova.cangjie.cfir.SessionConfiguration
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.deserialization.ModuleDataProvider
@@ -11,10 +13,10 @@ import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoManager
 import org.cangnova.cangjie.cfir.serialization.provider.CfirDeserializedSymbolProvider
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.registerTypeAwareSupertypeComponents
 import org.cangnova.cangjie.cfir.session.CfirConditionalCompilationSettings
 import org.cangnova.cangjie.cfir.session.CfirAbiPolicy
 import org.cangnova.cangjie.cfir.session.CfirInteropSettingsComponent
-import org.cangnova.cangjie.cfir.session.CfirCjmpLoadDiagnosticsComponent
 import org.cangnova.cangjie.cfir.session.CfirCjmpSettingsComponent
 import org.cangnova.cangjie.cfir.session.CfirMockSettingsComponent
 import org.cangnova.cangjie.cfir.session.ConfiguredCfirImplicitSystemAnnotationsProvider
@@ -94,8 +96,8 @@ open class CfirDefaultSessionFactory : CfirAbstractSessionFactory<CfirDefaultSes
          val interopSettings: CfirInteropSettingsComponent = CfirInteropSettingsComponent(),
         /** 当前 session 使用的 CJMP 编译模式（D14：模式 = session 组件）。 */
         val cjmpSettings: CfirCjmpSettingsComponent = CfirCjmpSettingsComponent(),
-        /** 本次编译调用的 CJMP 加载门诊断收集器（库会话记录、源码会话外显，G17）。 */
-        val cjmpLoadDiagnostics: CfirCjmpLoadDiagnosticsComponent = CfirCjmpLoadDiagnosticsComponent(),
+        val exportSettings: org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisSettings =
+            org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisSettings(),
         /** 当前编译调用的 mock/test capability；不能从 source path 推断。 */
         val mockSettings: CfirMockSettingsComponent = CfirMockSettingsComponent(),
         /** compiler invocation 显式注入的 `@When` 环境；缺失时不合成默认环境。 */
@@ -154,7 +156,7 @@ open class CfirDefaultSessionFactory : CfirAbstractSessionFactory<CfirDefaultSes
                                 cangjieScopeProvider = cangjieScopeProvider,
                                 libraryModuleData = moduleDataProvider.regularDependenciesModuleData,
                                 moduleDataProvider = moduleDataProvider,
-                            )
+                            ).also { session.register(org.cangnova.cangjie.cfir.source.CfirImportedSourceGraphProvider::class, it) }
                         )
                     }
 
@@ -231,10 +233,11 @@ open class CfirDefaultSessionFactory : CfirAbstractSessionFactory<CfirDefaultSes
      * 执行上下文提供的库会话组件注册回调。
      */
     override fun CfirSession.registerLibrarySessionComponents(c: Context) {
+        registerTypeAwareSupertypeComponents()
         register(CfirAbiPolicy::class, c.abiPolicy)
         register(CfirInteropSettingsComponent::class, c.interopSettings)
         register(CfirCjmpSettingsComponent::class, c.cjmpSettings)
-        register(CfirCjmpLoadDiagnosticsComponent::class, c.cjmpLoadDiagnostics)
+        register(org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisSettings::class, c.exportSettings)
         register(CfirMockSettingsComponent::class, c.mockSettings)
         if (c.implicitSystemAnnotations.isNotEmpty()) {
             register(
@@ -283,7 +286,7 @@ open class CfirDefaultSessionFactory : CfirAbstractSessionFactory<CfirDefaultSes
         register(CfirAbiPolicy::class, c.abiPolicy)
         register(CfirInteropSettingsComponent::class, c.interopSettings)
         register(CfirCjmpSettingsComponent::class, c.cjmpSettings)
-        register(CfirCjmpLoadDiagnosticsComponent::class, c.cjmpLoadDiagnostics)
+        register(org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisSettings::class, c.exportSettings)
         register(CfirMockSettingsComponent::class, c.mockSettings)
         if (c.implicitSystemAnnotations.isNotEmpty()) {
             register(

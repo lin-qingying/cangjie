@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.explicitLambdaParameterType
 import org.cangnova.cangjie.cfir.analysis.checkers.firstOmittedLambdaParameterForInferenceFailure
 import org.cangnova.cangjie.cfir.declarations.hasOmittedLambdaParameterType
@@ -28,7 +29,7 @@ import org.cangnova.cangjie.source.CjOffsetsOnlySourceElement
  *
  * 注册为 anonymousFunctionCheckers
  */
-object CfirLambdaParameterTypeChecker : CfirAnonymousFunctionChecker() {
+object CfirLambdaParameterTypeChecker : CfirAnonymousFunctionChecker(MppCheckerKind.Common) {
     /**
      * 检查显式参数列表 lambda 中未能从上下文推断出的参数类型。
      */

@@ -6,7 +6,6 @@ import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassifierSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaConstructorSymbol
 import org.cangnova.cangjie.cfir.scopes.CfirScope
-import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.name.Name
 
 
@@ -19,25 +18,9 @@ internal fun CfirScope.getCallableSymbols(
 ): Sequence<CaCallableSymbol> = sequence {
     callableNames.forEach { name ->
         yieldList {
-            processFunctionsByName(name) { firSymbol ->
-                add(builder.functionBuilder.buildNamedFunctionSymbol(firSymbol))
-            }
-        }
-        yieldList {
-            processPropertiesByName(name) { firSymbol ->
-                add(builder.callableBuilder.buildCallableSymbol(firSymbol))
-            }
-        }
-        yieldList {
-            processVariablesByName(name) { firSymbol ->
-                add(builder.callableBuilder.buildCallableSymbol(firSymbol))
-            }
-        }
-        yieldList {
-            processCallablesByName(name) { firSymbol ->
-                if (firSymbol is CfirEnumConstructorSymbol) {
-                    add(builder.callableBuilder.buildCallableSymbol(firSymbol))
-                }
+            // 与 body lookup 共用完整 callable 入口，包含字段与 enum 构造项，不重复拼接分类通道。
+            processCallablesByName(name) { cfirSymbol ->
+                add(builder.callableBuilder.buildCallableSymbol(cfirSymbol))
             }
         }
     }
@@ -49,18 +32,9 @@ internal fun CfirScope.getCallableSymbols(
 internal fun CfirScope.getCallableSignatures(
     callableNames: Collection<Name>,
     builder: CaSymbolByCfirBuilder
-): Sequence<CaCallableSignature<*>> = sequence {
-    callableNames.forEach { name ->
-        yieldList {
-            processFunctionsByName(name) { cfirSymbol ->
-                add(builder.functionBuilder.buildFunctionSignature(cfirSymbol))
-            }
-        }
-        yieldList {
-            processPropertiesByName(name) { cfirSymbol ->
-                add(builder.variableBuilder.buildVariableLikeSignature(cfirSymbol))
-            }
-        }
+): Sequence<CaCallableSignature<*>> = getCallableSymbols(callableNames, builder).map { symbol ->
+    with(builder.analysisSession) {
+        symbol.asSignature()
     }
 }
 

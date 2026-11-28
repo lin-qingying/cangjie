@@ -15,6 +15,7 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.lazy.resolve.LLCfirResol
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 import org.cangnova.cangjie.cfir.canHaveDeferredReturnTypeCalculation
 import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.resolve.providers.cfirProvider
 
 /**
  * Collects [LLCfirResolveTarget] for requested [CfirElementWithResolveState].
@@ -37,7 +38,7 @@ internal object LLCfirResolveDesignationCollector {
     /**
      * 为类 [target] 收集包含全部 callable 成员的 lazy resolve 目标。
      */
-    fun getDesignationToResolveWithCallableMembers(target: CfirClass): LLCfirResolveTarget? {
+    fun getDesignationToResolveWithCallableMembers(target: CfirClassLikeDeclaration): LLCfirResolveTarget? {
         return getDesignationToResolve(target, ::LLCfirClassWithAllCallablesResolveTarget)
     }
 
@@ -85,6 +86,11 @@ internal object LLCfirResolveDesignationCollector {
         }
 
         return when (target) {
+            is CfirPatternBindingVariable if !target.isLocal -> getCfirDesignationToResolve(
+                requireNotNull(target.moduleData.session.cfirProvider.getCfirPatternVariableForBinding(target.symbol)) {
+                    "A declaration binding must have its original pattern owner"
+                },
+            )
             is CfirPropertyAccessor -> getCfirDesignationToResolve(target.propertySymbol.cfir)
             is CfirTypeParameter -> getCfirDesignationToResolve(target.containingDeclarationSymbol.cfir)
             is CfirValueParameter -> getCfirDesignationToResolve(target.containingDeclarationSymbol.cfir)

@@ -6,7 +6,7 @@
 // `sema_common_open_class_no_init`（官方 PreCheckCJMPClass）在 1.1.3 无可达触发点。
 package cjmp_p
 
-public common open class <!PARSE_CJMP_IN_COMMON_CTOR_REQUIRED!>A<!> {}
+public common open class A {}
 
 public class B <: A {
     public init() {}

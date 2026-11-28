@@ -14,6 +14,7 @@ import org.cangnova.cangjie.cfir.common.CfirPlatform
 import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoManager
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoSearchPath
+import org.cangnova.cangjie.cfir.serialization.cjo.CjoFormatVersionPolicy
 import org.cangnova.cangjie.cfir.serialization.provider.CfirDeserializedSymbolProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.session.CfirSession
@@ -40,7 +41,10 @@ class CompiledStubShapeTest {
             val repository = generateSequence(Path.of("").toAbsolutePath()) { it.parent }
                 .first { Files.isRegularFile(it.resolve("settings.gradle.kts")) }
             val library = repository.resolve("cfir/cfir-serialization/testResources/cjo-sdk/windows_x86_64_cjnative")
-            val manager = CjoManager(CjoSearchPath { if (it == "CANGJIE_LIBRARY") library.toString() else null })
+            val manager = CjoManager(
+                CjoSearchPath { if (it == "CANGJIE_LIBRARY") library.toString() else null },
+                CjoFormatVersionPolicy.Decompilation,
+            )
             val snapshot = requireNotNull(manager.loadPackageSnapshot("std.core"))
             val module = Module()
             module.session.register(CfirSymbolProvider::class,

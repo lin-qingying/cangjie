@@ -43,6 +43,8 @@ import org.cangnova.cangjie.cfir.resolve.providers.*
 import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
 import org.cangnova.cangjie.cfir.scopes.CfirDefaultImportsProviderHolder
 import org.cangnova.cangjie.cfir.serialization.provider.CfirExtendProviderComposer
+import org.cangnova.cangjie.cfir.session.ownExtendProvider
+import org.cangnova.cangjie.cfir.session.OWN_EXTEND_PROVIDER_QUALIFIED_KEY
 import org.cangnova.cangjie.cfir.session.*
 import org.cangnova.cangjie.config.*
 import org.cangnova.cangjie.name.Name
@@ -72,6 +74,7 @@ abstract class CfirAbstractSessionFactory<CONTEXT> {
     ): CfirSession {
         return CfirDefaultSession(CfirSession.Kind.Library).apply session@{
             registerCliCompilerAndCommonComponents(languageVersionSettings)
+            registerTypeSystemComponents()
             registerLibrarySessionComponents(context)
 
             val cangjieScopeProvider = createCangJieScopeProviderForLibrarySession()
@@ -157,6 +160,7 @@ abstract class CfirAbstractSessionFactory<CONTEXT> {
 
             // 3. 注册公共组件
             registerCliCompilerAndCommonComponents(languageVersionSettings)
+            registerTypeSystemComponents()
             registerLibrarySessionComponents(context)
 
             // 4. 注册 ScopeProvider
@@ -274,6 +278,7 @@ abstract class CfirAbstractSessionFactory<CONTEXT> {
             val cfirProvider = CfirProviderImpl(this, cangjieScopeProvider)
             register(CfirProvider::class, cfirProvider)
             val sourceExtendProvider = CfirSessionExtendProvider(this, extendIndexStore)
+            register(OWN_EXTEND_PROVIDER_QUALIFIED_KEY, sourceExtendProvider)
 
             CfirSessionConfigurator(this).apply {
                 registerCommonCheckers()
@@ -334,7 +339,14 @@ abstract class CfirAbstractSessionFactory<CONTEXT> {
                     // dependencies + depends-on（refinement）：CJMP specific 模块经 refinement 边看到 common extend
                     dependencyProviders = (moduleData.dependencies + moduleData.allRefinementDependencies)
                         .distinctBy { it.session }
-                        .mapNotNull { it.session.extendProviderOrNull },
+                        .mapNotNull { dependency ->
+                            val dependencySession = dependency.session
+                            if (dependencySession.kind == CfirSession.Kind.Source) {
+                                dependencySession.ownExtendProvider
+                            } else {
+                                dependencySession.extendProviderOrNull
+                            }
+                        },
                 ),
             )
 

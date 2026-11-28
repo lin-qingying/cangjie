@@ -3,6 +3,11 @@ FILE: forWithPatternGuard.cj
         FOR_IN(<anonymous>: <implicit>) {
             iterable:
                 NAMED_ACCESS(scoreList)
+            patternGuard:
+                COMPARISON(GT) {
+                    NAMED_ACCESS(item)
+                    INT(50)
+                }
             body:
                 local? let high: <implicit> = ...
                     initializer:

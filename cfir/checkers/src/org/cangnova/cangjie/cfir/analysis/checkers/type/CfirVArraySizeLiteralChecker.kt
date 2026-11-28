@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.type
 
 import org.cangnova.cangjie.cfir.analysis.checkers.CfirVArraySizeLiteralUtils
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
@@ -15,7 +16,7 @@ import org.cangnova.cangjie.cfir.types.CfirVArrayTypeRef
  * 在类型语义层按 Int64 初始化，超出 `[0, Int64.MAX_VALUE]` 的值报告数字
  * 范围错误，随后该 VArray 类型进入错误类型路径。
  */
-object CfirVArraySizeLiteralChecker : CfirTypeRefChecker() {
+object CfirVArraySizeLiteralChecker : CfirTypeRefChecker(MppCheckerKind.Common) {
     /** 检查一个类型引用是否为 VArray，并在长度字面量越界时报告数值溢出诊断。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(typeRef: CfirTypeRef) {

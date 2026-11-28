@@ -1,12 +1,14 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
+import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirInterface
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.functionBodyDiagnosticData
@@ -21,8 +23,9 @@ import org.cangnova.cangjie.cfir.resolve.providers.classifyDeclaredSupertype
 import org.cangnova.cangjie.cfir.resolve.providers.constructorDependencyTypeOrNull
 import org.cangnova.cangjie.cfir.resolve.providers.getContainingClass
 import org.cangnova.cangjie.cfir.resolve.providers.getContainingFile
-import org.cangnova.cangjie.cfir.session.cfirProvider
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.cfirProvider
+import org.cangnova.cangjie.cfir.session.cjmpDefaultParameterState
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
@@ -35,6 +38,7 @@ import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.source.AbstractCjSourceElement
+import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.source.CjOffsetsOnlySourceElement
 
 /**
@@ -43,7 +47,7 @@ import org.cangnova.cangjie.source.CjOffsetsOnlySourceElement
  * - 参数匹配仍复用调用解析基础设施；
  * - delegation 的位置、循环与父类构造器要求在专门的 constructor checker 中统一处理。
  */
-object CfirConstructorDelegationChecker : CfirConstructorChecker() {
+object CfirConstructorDelegationChecker : CfirConstructorChecker(MppCheckerKind.Common) {
     /**
      * 检查单个构造器的委托调用语义。
      *
@@ -85,6 +89,11 @@ object CfirConstructorDelegationChecker : CfirConstructorChecker() {
             }
 
         firstStatementDelegation?.checkArgumentMemberAccessBeforeInitialization(owner)
+        // 生成调用的候选/失败已由 resolver 发布；不把它当显式语法，也不再匹配父构造器。
+        val firstCall = body?.statements?.firstOrNull().let { statement ->
+            if (statement is CfirFunctionCall) statement else null
+        }
+        if (firstCall?.origin == CfirFunctionCallOrigin.ImplicitConstructorDelegationSuper) return
 
         when (firstStatementDelegation?.kind) {
             ConstructorDelegationCallKind.THIS -> {
@@ -146,11 +155,11 @@ object CfirConstructorDelegationChecker : CfirConstructorChecker() {
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun CfirConstructor.checkMultiplePrimaryConstructors(owner: CfirClassLikeDeclaration) {
-        if (!isPrimary) return
+        if (!isPrimary || isImplicitPrimaryConstructor) return
         val primaryConstructors = owner.declarations
             .asSequence()
             .filterIsInstance<CfirConstructor>()
-            .filter(CfirConstructor::isPrimary)
+            .filter { it.isPrimary && !it.isImplicitPrimaryConstructor }
             .toList()
         val firstPrimary = primaryConstructors.minByOrNull { constructor ->
             constructor.source?.startOffset ?: Int.MAX_VALUE
@@ -162,6 +171,10 @@ object CfirConstructorDelegationChecker : CfirConstructorChecker() {
             factory = CfirErrors.MULTIPLE_PRIMARY_CONSTRUCTORS,
         )
     }
+
+    /** 隐式默认构造器是错误恢复与调用解析用的合成节点，不代表第二个源码主构造器。 */
+    private val CfirConstructor.isImplicitPrimaryConstructor: Boolean
+        get() = origin == CfirDeclarationOrigin.ImplicitDefault || source?.kind == CjFakeSourceElementKind.ImplicitConstructor
 
     /**
      * 在构造器没有显式委托调用时检查是否允许隐式调用父类无参构造器。
@@ -386,7 +399,7 @@ private fun org.cangnova.cangjie.cfir.expressions.CfirBlock.collectDelegationCal
  * 带默认值的参数不计入必填数量，用于实参数量诊断和隐式无参构造器判断。
  */
 internal fun CfirConstructor.requiredParameterCount(): Int =
-    valueParameters.count { it.defaultValue == null }
+    valueParameters.count { !it.cjmpDefaultParameterState().hasInitial }
 
 /**
  * 解析 class-like 声明的直接具体父类声明。

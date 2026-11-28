@@ -1,39 +1,51 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
+import org.cangnova.cangjie.cfir.symbols.constructType
+
+import org.cangnova.cangjie.cfir.resolve.substitution.substitutorByMap
+
 import org.cangnova.cangjie.cfir.lookupTracker
 import org.cangnova.cangjie.cfir.nameConflictsTracker
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.CjmpGate
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
-import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRef
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.declarations.callableNameOrNull
+import org.cangnova.cangjie.cfir.declarations.hasInitialDefaultValue
+import org.cangnova.cangjie.cfir.declarations.typeConstraintDiagnosticData
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.patterns.visibleBindingVariables
 import org.cangnova.cangjie.cfir.scopes.CfirPackageScope
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
-import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
-import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
+import org.cangnova.cangjie.cfir.scopes.CfirDeclarationPreCheckCandidate
+import org.cangnova.cangjie.cfir.scopes.CfirDeclarationPreCheckInput
+import org.cangnova.cangjie.cfir.scopes.CfirDeclarationPreCheckNames
+import org.cangnova.cangjie.cfir.scopes.CfirDeclarationPreCheckFunctionKind
+import org.cangnova.cangjie.cfir.scopes.CfirDeclarationPreCheckScopeIdentity
+import org.cangnova.cangjie.cfir.scopes.CfirDeclarationPreCheckView
+import org.cangnova.cangjie.cfir.scopes.declarationPreCheckCandidateProvider
+import org.cangnova.cangjie.cfir.session.isCjmpSpecificCompilationEnabled
+import org.cangnova.cangjie.cfir.declarations.declarationOverloadabilityHelper
 import org.cangnova.cangjie.cfir.resolve.providers.getContainingClass
 import org.cangnova.cangjie.cfir.resolve.providers.getContainingFile
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
-import org.cangnova.cangjie.cfir.session.cfirProvider
-import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
-import org.cangnova.cangjie.cfir.session.extendProvider
-import org.cangnova.cangjie.cfir.session.symbolProvider
-import org.cangnova.cangjie.cfir.session.languageVersionSettings
+import org.cangnova.cangjie.cfir.resolve.providers.cfirProvider
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
@@ -45,651 +57,172 @@ import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.coneTypeOrNull
+import org.cangnova.cangjie.cfir.types.containsErrorType
 import org.cangnova.cangjie.cfir.types.renderForDebugging
+import org.cangnova.cangjie.cfir.types.typeContext
+import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.SpecialNames
 import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.source.CjSourceElement
+import org.cangnova.cangjie.type.AbstractTypeChecker
 import org.cangnova.cangjie.utils.SmartSet
 
 /**
- * 同一名称下的顶层声明分桶。
- */
-private class DeclarationBuckets {
-    /**
-     * 普通函数声明及其稳定签名展示。
-     */
-    val simpleFunctions = mutableListOf<Pair<CfirFunctionSymbol<*>, String>>()
-
-    /**
-     * 构造器声明及其稳定签名展示。
-     */
-    val constructors = mutableListOf<Pair<CfirConstructorSymbol, String>>()
-
-    /**
-     * classifier 声明及其展示名。
-     */
-    val classLikes = mutableListOf<Pair<CfirClassLikeSymbol<*>, String>>()
-
-    /**
-     * 非扩展属性/字段声明及其展示名。
-     */
-    val properties = mutableListOf<Pair<CfirCallableSymbol<*>, String>>()
-
-    /**
-     * 扩展属性声明及其展示名。
-     */
-    val extensionProperties = mutableListOf<Pair<CfirCallableSymbol<*>, String>>()
-}
-
-/**
- * 将顶层声明按可见诊断名称分组。
- */
-context(context: CheckerContext)
-private fun groupTopLevelByName(declarations: List<CfirDeclaration>): Map<Name, DeclarationBuckets> {
-    val groups = mutableMapOf<Name, DeclarationBuckets>()
-
-    for (declaration in declarations) {
-        when (declaration) {
-            is CfirFunction -> {
-                val symbol = declaration.symbol as? CfirFunctionSymbol<*> ?: continue
-                if (!symbol.isCollectable()) continue
-
-                val name = declaration.callableNameOrNull() ?: symbol.name
-                val presentation = CfirRedeclarationPresenter.represent(symbol) ?: continue
-                groups.getOrPut(name, ::DeclarationBuckets).simpleFunctions += symbol to presentation
-            }
-
-            is CfirProperty -> {
-                val symbol = declaration.symbol as? CfirPropertySymbol ?: continue
-                if (!symbol.isCollectable()) continue
-
-                val presentation = CfirRedeclarationPresenter.represent(symbol) ?: continue
-                val group = groups.getOrPut(declaration.name, ::DeclarationBuckets)
-                if (declaration.dispatchReceiverType != null) {
-                    group.extensionProperties += symbol to presentation
-                } else {
-                    group.properties += symbol to presentation
-                }
-            }
-
-            is CfirFieldVariable -> {
-                val symbol = declaration.symbol as? CfirCallableSymbol<*> ?: continue
-                if (!symbol.isCollectable()) continue
-
-                val presentation = CfirRedeclarationPresenter.represent(symbol) ?: continue
-                groups.getOrPut(symbol.name, ::DeclarationBuckets).properties += symbol to presentation
-            }
-
-            is CfirPatternVariable -> {
-                for (bindingVariable in declaration.pattern.visibleBindingVariables()) {
-                    val symbol = bindingVariable.symbol as? CfirCallableSymbol<*> ?: continue
-                    if (!symbol.isCollectable()) continue
-                    val presentation = bindingVariable.name.asString()
-                    groups.getOrPut(bindingVariable.name, ::DeclarationBuckets).properties += symbol to presentation
-                }
-            }
-
-            is CfirClassLikeDeclaration -> {
-                val symbol = declaration.symbol as? CfirClassLikeSymbol<*> ?: continue
-                if (!symbol.isCollectable()) continue
-
-                val presentation = CfirRedeclarationPresenter.represent(symbol) ?: continue
-                val group = groups.getOrPut(declaration.name, ::DeclarationBuckets)
-                group.classLikes += symbol to presentation
-            }
-
-            else -> Unit
-        }
-    }
-
-    return groups
-}
-
-/**
- * 声明冲突收集器。
- *
- * @property context 当前检查上下文。
+ * 声明冲突图的共享收集器。general 与函数参数签名分别执行官方预检查规则，
+ * 所有名字、角色、物理/逻辑归属和声明顺序都来自同一不可变输入。
  */
 internal class CfirDeclarationCollector<D : CfirBasedSymbol<*>>(
-    /**
-     * 当前检查上下文。
-     */
     internal val context: CheckerContext,
 ) {
-    /**
-     * 每个声明符号对应的冲突符号集合。
-     */
     val declarationConflictingSymbols: HashMap<D, SmartSet<CfirBasedSymbol<*>>> = hashMapOf()
-}
+    var hasLogicalMemberRedeclarationContext: Boolean = false
+        private set
 
-/**
- * 收集文件顶层声明与 package scope 中已有声明之间的冲突。
- */
-context(context: CheckerContext)
-internal fun CfirDeclarationCollector<CfirBasedSymbol<*>>.collectTopLevel(
-    file: CfirFile,
-    packageMemberScope: CfirPackageScope,
-) {
-    for ((declarationName, group) in groupTopLevelByName(file.declarations)) {
-        val groupHasClassLikesOrProperties = group.classLikes.isNotEmpty() || group.properties.isNotEmpty()
-        val groupHasSimpleFunctions = group.simpleFunctions.isNotEmpty()
-
-        fun collect(
-            declarations: List<Pair<CfirBasedSymbol<*>, String>>,
-            conflictingSymbol: CfirBasedSymbol<*>,
-            conflictingPresentation: String? = null,
-            conflictingFile: CfirFile? = null,
-        ) {
-            declarations.forEach { (declaration, declarationPresentation) ->
-                collectTopLevelConflict(
-                    declaration = declaration,
-                    declarationPresentation = declarationPresentation,
-                    containingFile = file,
-                    conflictingSymbol = conflictingSymbol,
-                    conflictingPresentation = conflictingPresentation,
-                    conflictingFile = conflictingFile,
-                )
-
-                context.session.lookupTracker?.recordLookup(
-                    declarationName.asString(),
-                    file.packageDirective.packageFqName.asString(),
-                    declaration.boundSourceOrNull(),
-                    file.source,
-                )
-            }
-        }
-
-        fun collectFromClassifierSource(
-            conflictingSymbol: CfirClassLikeSymbol<*>,
-            conflictingPresentation: String? = null,
-            conflictingFile: CfirFile? = null,
-        ) {
-            collect(group.classLikes, conflictingSymbol, conflictingPresentation, conflictingFile)
-            collect(group.properties, conflictingSymbol, conflictingPresentation, conflictingFile)
-
-            if (groupHasSimpleFunctions) {
-                collectConstructorsForClassLike(conflictingSymbol).forEach { (constructorSymbol, constructorPresentation) ->
-                    collect(group.simpleFunctions, constructorSymbol, constructorPresentation, conflictingFile)
-                }
-            }
-        }
-
-        if (groupHasSimpleFunctions || group.constructors.isNotEmpty()) {
-            packageMemberScope.processFunctionsByName(declarationName) {
-                collect(group.simpleFunctions, it)
-                collect(group.constructors, it)
-            }
-        }
-
-        if (groupHasClassLikesOrProperties || groupHasSimpleFunctions) {
-            packageMemberScope.processClassifiersByName(declarationName) {
-                collectFromClassifierSource(it)
-            }
-
-            context.session.nameConflictsTracker
-                ?.getClassifierRedeclarations(ClassId(file.packageDirective.packageFqName, declarationName))
-                ?.forEach { redeclaration ->
-                    val symbol = redeclaration.classifierSymbol as? CfirClassLikeSymbol<*> ?: return@forEach
-                    collectFromClassifierSource(
-                        conflictingSymbol = symbol,
-                        conflictingFile = redeclaration.containingFile,
-                    )
-                }
-
-            group.classLikes.forEach { (classLike, representation) ->
-                collectFromClassifierSource(classLike, representation, file)
-            }
-        }
-
-        if (groupHasClassLikesOrProperties || group.extensionProperties.isNotEmpty()) {
-            packageMemberScope.processPropertiesByName(declarationName) {
-                collect(group.classLikes, conflictingSymbol = it)
-                collect(group.properties, conflictingSymbol = it)
-                collect(group.extensionProperties, conflictingSymbol = it)
-            }
-        }
-
-        collectFunctionNameRedeclarations(group)
-    }
-}
-
-/**
- * 收集 class-like 声明成员之间以及成员与继承 scope 之间的冲突。
- */
-context(context: CheckerContext)
-internal fun CfirDeclarationCollector<CfirBasedSymbol<*>>.collectClassMembers(classDeclaration: CfirClassLikeDeclaration) {
-    val otherDeclarations = mutableMapOf<String, MutableSet<CfirBasedSymbol<*>>>()
-    val functionDeclarations = mutableMapOf<String, MutableSet<CfirBasedSymbol<*>>>()
-    val useSiteScope = createUseSiteMemberScope(classDeclaration)
-
-    fun processClassifier(symbol: CfirClassLikeSymbol<*>) {
-        if (!symbol.isCollectable() || !symbol.isVisibleInClass(classDeclaration)) return
-
-        val representation = CfirRedeclarationPresenter.represent(symbol) ?: return
-        collect(symbol, representation, otherDeclarations)
-
-        collectConstructorsForClassLike(symbol).forEach { (constructorSymbol, constructorPresentation) ->
-            collect(constructorSymbol, constructorPresentation, functionDeclarations)
-        }
-    }
-
-    for (declaration in classDeclaration.declarations) {
-        when (declaration) {
-            is CfirFunction -> {
-                val declaredFunction = declaration.symbol as? CfirFunctionSymbol<*> ?: continue
-                if (!declaredFunction.isCollectable()) continue
-
-                val representation = CfirRedeclarationPresenter.represent(declaredFunction) ?: continue
-                collect(declaredFunction, representation, functionDeclarations)
-                collect(declaredFunction, representation, otherDeclarations)
-
-                useSiteScope.processFunctionsByName(declaredFunction.name) { anotherFunction ->
-                    if (
-                        anotherFunction != declaredFunction &&
-                        anotherFunction.isCollectable() &&
-                        !anotherFunction.isScopeGeneratedSubstitutionOverride() &&
-                        anotherFunction.isVisibleInClass(classDeclaration, context)
+    private fun collectInput(input: CfirDeclarationPreCheckInput, reported: Set<CfirBasedSymbol<*>>?) {
+        hasLogicalMemberRedeclarationContext = input.isCjmpActualized
+        collectGeneralRedeclarations(input, reported)
+        for (group in input.functionGroups) {
+            val functions = group.candidates.filter { it.declaration.symbol.isCollectable() }
+            for (index in functions.indices) {
+                val current = functions[index]
+                for (previous in functions.take(index)) {
+                    if (isPackagePeerOutsideDependencyGraph(input, current, previous) ||
+                        areTopLevelPrivateDeclarationsInDifferentFiles(current, previous)
+                    ) continue
+                    val currentSymbol = current.declaration.symbol as CfirCallableSymbol<*>
+                    val previousSymbol = previous.declaration.symbol as CfirCallableSymbol<*>
+                    if (context.session.declarationOverloadabilityHelper.isConflicting(
+                            currentSymbol, previousSymbol,
+                            substitutorByMap((current.ownerTypeParameterMapping).entries.associate { (origin, target) -> origin.symbol to target.symbol.constructType() }, context.session),
+                            substitutorByMap((previous.ownerTypeParameterMapping).entries.associate { (origin, target) -> origin.symbol to target.symbol.constructType() }, context.session),
+                        )
                     ) {
-                        val anotherRepresentation = CfirRedeclarationPresenter.represent(anotherFunction) ?: return@processFunctionsByName
-                        collect(anotherFunction, anotherRepresentation, functionDeclarations)
+                        recordConflict(currentSymbol, previousSymbol, reported)
                     }
                 }
             }
-
-            is CfirProperty -> {
-                val declaredProperty = declaration.symbol as? CfirPropertySymbol ?: continue
-                if (!declaredProperty.isCollectable()) continue
-
-                val representation = CfirRedeclarationPresenter.represent(declaredProperty) ?: continue
-                collect(declaredProperty, representation, otherDeclarations)
-
-                useSiteScope.processPropertiesByName(declaredProperty.name) { anotherProperty ->
-                    if (
-                        anotherProperty != declaredProperty &&
-                        anotherProperty.isCollectable() &&
-                        !anotherProperty.isScopeGeneratedSubstitutionOverride() &&
-                        anotherProperty.isVisibleInClass(classDeclaration, context)
-                    ) {
-                        val anotherRepresentation = CfirRedeclarationPresenter.represent(anotherProperty) ?: return@processPropertiesByName
-                        collect(anotherProperty, anotherRepresentation, otherDeclarations)
-                    }
-                }
-            }
-
-            is CfirFieldVariable -> {
-                val declaredVariable = declaration.symbol as? CfirCallableSymbol<*> ?: continue
-                if (!declaredVariable.isCollectable()) continue
-
-                val representation = CfirRedeclarationPresenter.represent(declaredVariable) ?: continue
-                collect(declaredVariable, representation, otherDeclarations)
-
-                useSiteScope.processCallablesByName(declaredVariable.name) { anotherCallable ->
-                    if (
-                        anotherCallable != declaredVariable &&
-                        anotherCallable !is CfirFunctionSymbol<*> &&
-                        anotherCallable.isCollectable() &&
-                        !anotherCallable.isScopeGeneratedSubstitutionOverride() &&
-                        anotherCallable.isVisibleInClass(classDeclaration, context)
-                    ) {
-                        val anotherRepresentation = CfirRedeclarationPresenter.represent(anotherCallable) ?: return@processCallablesByName
-                        collect(anotherCallable, anotherRepresentation, otherDeclarations)
-                    }
-                }
-            }
-
-            is CfirPatternVariable -> {
-                for (bindingVariable in declaration.pattern.visibleBindingVariables()) {
-                    val declaredVariable = bindingVariable.symbol as? CfirCallableSymbol<*> ?: continue
-                    if (!declaredVariable.isCollectable()) continue
-
-                    val representation = CfirRedeclarationPresenter.represent(declaredVariable) ?: continue
-                    collect(declaredVariable, representation, otherDeclarations)
-
-                    useSiteScope.processCallablesByName(bindingVariable.name) { anotherCallable ->
-                        if (
-                            anotherCallable != declaredVariable &&
-                            anotherCallable !is CfirFunctionSymbol<*> &&
-                            anotherCallable.isCollectable() &&
-                            !anotherCallable.isScopeGeneratedSubstitutionOverride() &&
-                            anotherCallable.isVisibleInClass(classDeclaration, context)
-                        ) {
-                            val anotherRepresentation = CfirRedeclarationPresenter.represent(anotherCallable) ?: return@processCallablesByName
-                            collect(anotherCallable, anotherRepresentation, otherDeclarations)
-                        }
-                    }
-                }
-            }
-
-            is CfirClassLikeDeclaration -> {
-                val declaredClassifier = declaration.symbol as? CfirClassLikeSymbol<*> ?: continue
-                processClassifier(declaredClassifier)
-
-                useSiteScope.processClassifiersByName(declaredClassifier.name) { anotherClassifier ->
-                    if (anotherClassifier != declaredClassifier) {
-                        processClassifier(anotherClassifier)
-                    }
-                }
-            }
-
-            else -> Unit
-        }
-    }
-}
-
-/**
- * 收集单个 `extend` 声明自身成员函数的同签名冲突。
- *
- * `extend` 是独立的声明所有者，不能借用被扩展类型的 class-member collector：后者会把目标类型
- * 及其他 extend 的成员混入当前作用域，而这里的 `CONFLICTING_OVERLOADS` 只描述同一 extend 块内
- * 的重复声明。继承成员冲突仍由 `CfirInheritanceDeepChecker` 统一处理。
- */
-context(context: CheckerContext)
-internal fun CfirDeclarationCollector<CfirBasedSymbol<*>>.collectExtendMembers(extend: CfirExtend) {
-    val functionDeclarations = mutableMapOf<String, MutableSet<CfirBasedSymbol<*>>>()
-    val functionNamesBySignature = mutableMapOf<String, Name>()
-    val staticSignatures = mutableMapOf<String, Boolean>()
-    val nonStaticFunctionNames = mutableSetOf<Name>()
-
-    for (declaration in extend.declarations) {
-        if (declaration !is CfirFunction) continue
-
-        val declaredFunction = declaration.symbol as? CfirFunctionSymbol<*> ?: continue
-        if (!declaredFunction.isCollectable()) continue
-
-        // static 属性属于函数重定义签名；static/non-static 同名规则由
-        // CfirFunctionOverloadChecker 单独报告，不能在此降格为 CONFLICTING_OVERLOADS。
-        val representation = CfirRedeclarationPresenter.represent(declaredFunction)
-            ?.let { signature -> "${declaration.status.isStatic}:$signature" }
-            ?: continue
-        functionNamesBySignature[representation] = declaredFunction.name
-        staticSignatures[representation] = declaration.status.isStatic
-        if (!declaration.status.isStatic) {
-            nonStaticFunctionNames += declaredFunction.name
-        }
-        // `collect` 会在加入成员的同时把冲突边写入 declarationConflictingSymbols。
-        // static/non-static 规则依赖完整的同名组，必须先完成纯分组，再决定该签名组
-        // 是否应参与 CONFLICTING_OVERLOADS；否则后续排除无法撤销已经写入的边。
-        functionDeclarations.getOrPut(representation) { linkedSetOf() } += declaredFunction
-    }
-
-    // extend 内的同签名函数共享一个声明所有者；冲突图必须对每个参与者保留边，
-    // 以便诊断层能够在每个源码声明位置渲染该冲突。
-    for ((signature, sameSignatureFunctions) in functionDeclarations) {
-        // 官方 static/non-static 函数冲突以同名组为单位，而不是以签名组为单位；
-        // 同名 non-static 函数存在时，静态函数仅由 CfirFunctionOverloadChecker 报告。
-        if (staticSignatures[signature] == true && functionNamesBySignature[signature] in nonStaticFunctionNames) {
-            continue
-        }
-
-        for (function in sameSignatureFunctions) {
-            val conflicts = SmartSet.create<CfirBasedSymbol<*>>()
-            for (anotherFunction in sameSignatureFunctions) {
-                if (
-                    anotherFunction != function &&
-                    getConflictState(function, anotherFunction) == ConflictState.Conflict
-                ) {
-                    conflicts += anotherFunction
-                }
-            }
-            declarationConflictingSymbols.mergeConflicts(function, conflicts)
-        }
-    }
-}
-
-/**
- * 两个声明的冲突判定结果。
- */
-private enum class ConflictState {
-    /**
-     * 两个声明形成冲突。
-     */
-    Conflict,
-
-    /**
-     * 两个声明不形成冲突。
-     */
-    NoConflict,
-}
-
-/**
- * 判断两个符号在当前收集器语义下是否冲突。
- */
-private fun CfirDeclarationCollector<*>.getConflictState(
-    declaration: CfirBasedSymbol<*>,
-    conflicting: CfirBasedSymbol<*>,
-): ConflictState {
-    if (declaration is CfirCallableSymbol<*> && conflicting is CfirCallableSymbol<*>) {
-        val declarationPresentation = CfirRedeclarationPresenter.represent(declaration)
-        val conflictingPresentation = CfirRedeclarationPresenter.represent(conflicting)
-        if (declarationPresentation != conflictingPresentation) {
-            return ConflictState.NoConflict
-        }
-    }
-    return ConflictState.Conflict
-}
-
-/**
- * 将声明加入按表示文本分组的冲突集合。
- */
-private fun <D : CfirBasedSymbol<*>, S : D> CfirDeclarationCollector<D>.collect(
-    declaration: S,
-    representation: String,
-    map: MutableMap<String, MutableSet<S>>,
-) {
-    map.getOrPut(representation, ::mutableSetOf).also { declarations ->
-        if (!declarations.add(declaration)) return@also
-
-        val conflicts = SmartSet.create<CfirBasedSymbol<*>>()
-        for (otherDeclaration in declarations) {
-            if (
-                otherDeclaration != declaration &&
-                declaration.shouldReportRedeclarationWith(otherDeclaration) &&
-                getConflictState(declaration, otherDeclaration) == ConflictState.Conflict
-            ) {
-                conflicts += otherDeclaration
-            }
-        }
-
-        declarationConflictingSymbols.mergeConflicts(declaration, conflicts)
-    }
-}
-
-/**
- * 合并声明已有冲突集合和新发现的冲突集合。
- */
-private fun <D : CfirBasedSymbol<*>> MutableMap<D, SmartSet<CfirBasedSymbol<*>>>.mergeConflicts(
-    declaration: D,
-    conflicts: SmartSet<CfirBasedSymbol<*>>,
-) {
-    if (conflicts.isEmpty()) {
-        getOrPut(declaration) { SmartSet.create() }
-        return
-    }
-
-    val current = getOrPut(declaration) { SmartSet.create() }
-    conflicts.forEach { current += it }
-}
-
-/**
- * 收集单个顶层声明与另一个顶层符号之间的冲突。
- */
-private fun CfirDeclarationCollector<CfirBasedSymbol<*>>.collectTopLevelConflict(
-    declaration: CfirBasedSymbol<*>,
-    declarationPresentation: String,
-    containingFile: CfirFile,
-    conflictingSymbol: CfirBasedSymbol<*>,
-    conflictingPresentation: String? = null,
-    conflictingFile: CfirFile? = null,
-) {
-    if (conflictingSymbol == declaration) return
-    if (declaration is CfirFunctionSymbol<*> && conflictingSymbol is CfirConstructorSymbol) return
-    if (isCommonAndSpecific(declaration, conflictingSymbol)) return
-
-    if (declaration.isBound && conflictingSymbol.isBound) {
-        val declarationModule = declaration.cfir.moduleData
-        val conflictingModule = conflictingSymbol.cfir.moduleData
-        if (
-            declarationModule != conflictingModule &&
-            !shouldCheckForMultiplatformRedeclaration(declaration, conflictingSymbol)
-        ) {
-            return
         }
     }
 
-    val actualConflictingPresentation = conflictingPresentation ?: CfirRedeclarationPresenter.represent(conflictingSymbol) ?: return
-    if (actualConflictingPresentation != declarationPresentation) {
-        return
+    /** general 阶段保留所有声明，按 current 与 found.front 的自身角色成对豁免。 */
+    private fun collectGeneralRedeclarations(input: CfirDeclarationPreCheckInput, reported: Set<CfirBasedSymbol<*>>?) {
+        val declarationsByName = linkedMapOf<CfirDeclarationPreCheckNames, MutableList<CfirDeclarationPreCheckCandidate>>()
+        for (candidate in input.rawCandidates.flatMap { generalCandidates(it, input.scope) }) {
+            val names = candidate.names ?: continue
+            if (!candidate.declaration.symbol.isCollectable()) continue
+            val previous = declarationsByName.getOrPut(names, ::mutableListOf)
+            val kind = candidate.functionKind
+            val functionOverloading = kind != null && kind != CfirDeclarationPreCheckFunctionKind.MACRO &&
+                    previous.any { it.functionKind != null && it.functionKind != CfirDeclarationPreCheckFunctionKind.MACRO }
+            val macroOverloading = kind == CfirDeclarationPreCheckFunctionKind.MACRO &&
+                    previous.any { it.functionKind == CfirDeclarationPreCheckFunctionKind.MACRO }
+            // 原生 enum VAR/FUNC 两类构造项可共名；同一类别的后续声明仍进入正常重定义。
+            val enumConstructorOverloading = candidate.declaration is org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor &&
+                    previous.none { (it.functionKind != null) == (kind != null) }
+            val ignoredHere = functionOverloading || macroOverloading || enumConstructorOverloading ||
+                    kind == CfirDeclarationPreCheckFunctionKind.CONSTRUCTOR ||
+                    kind == CfirDeclarationPreCheckFunctionKind.MAIN
+            val first = previous.firstOrNull()
+            previous += candidate
+            if (ignoredHere || first == null || isPackagePeerOutsideDependencyGraph(input, candidate, first) ||
+                areTopLevelPrivateDeclarationsInDifferentFiles(candidate, first) ||
+                isOppositeCjmpRolePair(input, candidate, first)
+            ) continue
+            recordConflict(candidate.declaration.symbol, first.declaration.symbol, reported)
+        }
     }
 
-    val actualConflictingFile = conflictingFile ?: conflictingSymbol.getContainingFile()
-    if (!conflictingSymbol.isCollectable()) {
-        return
-    }
-    if (areCompatibleMainFunctions(declaration, containingFile, conflictingSymbol, actualConflictingFile)) {
-        return
+    /** irrefutable pattern 的可见绑定分别参与 general 重定义，wildcard 没有声明名。 */
+    private fun generalCandidates(
+        candidate: CfirDeclarationPreCheckCandidate,
+        scope: CfirDeclarationPreCheckScopeIdentity,
+    ): List<CfirDeclarationPreCheckCandidate> {
+        val pattern = candidate.declaration as? CfirPatternVariable ?: return listOf(candidate)
+        return pattern.pattern.visibleBindingVariables().map { binding ->
+            candidate.copy(
+                declaration = binding,
+                names = CfirDeclarationPreCheckNames(binding.name, scope),
+                attributes = candidate.attributes.copy(
+                    isCommon = binding.status.isCommon,
+                    isSpecific = binding.status.isSpecific,
+                ),
+                sourceStartOffset = binding.source?.startOffset,
+                sourceEndOffset = binding.source?.endOffset,
+            )
+        }
     }
 
-    val conflictingDeclaration = if (conflictingSymbol.isBound) conflictingSymbol.cfir else return
-    if (conflictingDeclaration.isExemptCrossFileTopLevelPrivate(actualConflictingFile, containingFile)) {
-        return
+    private fun isOppositeCjmpRolePair(
+        input: CfirDeclarationPreCheckInput,
+        current: CfirDeclarationPreCheckCandidate,
+        previous: CfirDeclarationPreCheckCandidate,
+    ): Boolean = input.view != CfirDeclarationPreCheckView.RAW &&
+            (current.attributes.isCommon && previous.attributes.isSpecific ||
+                    current.attributes.isSpecific && previous.attributes.isCommon)
+
+    private fun areTopLevelPrivateDeclarationsInDifferentFiles(
+        first: CfirDeclarationPreCheckCandidate,
+        second: CfirDeclarationPreCheckCandidate,
+    ): Boolean =
+        first.logicalOwner == null && second.logicalOwner == null &&
+                (first.declaration as? CfirMemberDeclaration)?.status?.visibility == Visibilities.Private &&
+                (second.declaration as? CfirMemberDeclaration)?.status?.visibility == Visibilities.Private &&
+                first.sourceFileIdentity != null && second.sourceFileIdentity != null &&
+                first.sourceFileIdentity != second.sourceFileIdentity
+
+    private fun isPackagePeerOutsideDependencyGraph(
+        input: CfirDeclarationPreCheckInput,
+        first: CfirDeclarationPreCheckCandidate,
+        second: CfirDeclarationPreCheckCandidate,
+    ): Boolean {
+        if (input.scope !is CfirDeclarationPreCheckScopeIdentity.Package) return false
+        val firstModule = first.declaration.moduleData
+        val secondModule = second.declaration.moduleData
+        return firstModule != secondModule &&
+                firstModule !in secondModule.dependencies && firstModule !in secondModule.allRefinementDependencies &&
+                secondModule !in firstModule.dependencies && secondModule !in firstModule.allRefinementDependencies
     }
 
-    if (
-        declaration.shouldReportRedeclarationWith(conflictingSymbol) &&
-        getConflictState(declaration, conflictingSymbol) == ConflictState.Conflict
+    @Suppress("UNCHECKED_CAST")
+    private fun recordConflict(
+        current: CfirBasedSymbol<*>,
+        previous: CfirBasedSymbol<*>,
+        reported: Set<CfirBasedSymbol<*>>?,
     ) {
-        declarationConflictingSymbols.getOrPut(declaration) { SmartSet.create() }.add(conflictingSymbol)
+        if (reported != null && current !in reported) return
+        declarationConflictingSymbols.getOrPut(current as D) { SmartSet.create() } += previous
+    }
+
+    /** 包级输入跨文件共用，但每个文件仅报告其真正拥有的声明。 */
+    fun collectTopLevel(file: CfirFile) {
+        val reported = file.declarations.flatMap { declaration ->
+            if (declaration is CfirPatternVariable) declaration.pattern.visibleBindingVariables().map { it.symbol }
+            else listOf(declaration.symbol)
+        }.toSet()
+        collectInput(context.declarationPreCheckInputFor(file), reported)
+    }
+
+    fun collectClassMembers(declaration: CfirClassLikeDeclaration) {
+        collectInput(context.declarationPreCheckInputFor(declaration), reported = null)
+    }
+
+    fun collectExtendMembers(declaration: CfirExtend) {
+        collectInput(context.declarationPreCheckInputFor(declaration), reported = null)
     }
 }
 
-/**
- * common 与 specific 同名声明互为 CJMP 对应物，不构成重复声明（对位 Kotlin `isExpectAndActual`；
- * cjc 1.1.3 实测：配对与否都不报 overload conflict，配对结论由 CJMP 检查器报告；两个 specific 之间仍冲突）。
- */
-private fun isCommonAndSpecific(first: CfirBasedSymbol<*>, second: CfirBasedSymbol<*>): Boolean {
-    if (!first.isBound || !second.isBound) return false
-    // 门禁管行为（§8.5.5）：1.0.x 下 common/specific 无语义，同名声明照常冲突
-    val settings = runCatching { first.cfir.moduleData.session.languageVersionSettings }.getOrNull() ?: return false
-    if (!settings.supportsFeature(org.cangnova.cangjie.LanguageFeature.CommonSpecificDeclarations)) return false
-    val firstStatus = (first.cfir as? CfirMemberDeclaration)?.status ?: return false
-    val secondStatus = (second.cfir as? CfirMemberDeclaration)?.status ?: return false
-    return firstStatus.isCommon && secondStatus.isSpecific || firstStatus.isSpecific && secondStatus.isCommon
-}
-
-/**
- * 判断先前声明是否因「顶层 private 只对所在文件可见」而不与当前文件构成重复声明。
- *
- * 官方 `Sema/PreCheck.cpp:246-251` 对 `GLOBAL + PRIVATE` 且位于**不同文件**的两个声明豁免
- * `sema_redefinition`，依据是 `Sema/LookUpImpl.cpp:454-458`（`IsTargetVisibleToNode`）：
- * 顶层 private 目标仅对同文件引用可见。该豁免与声明种类无关——函数、属性与 class-like
- * 一律适用；同一文件内的重名仍按普通重复声明处理。
- */
-private fun CfirDeclaration.isExemptCrossFileTopLevelPrivate(
-    conflictingFile: CfirFile?,
-    containingFile: CfirFile,
-): Boolean {
-    if (conflictingFile == null || conflictingFile == containingFile) return false
-    val visibility = (this as? CfirMemberDeclaration)?.status?.visibility ?: return false
-    return visibility == Visibilities.Private
-}
-
-/**
- * 收集函数名与先前非函数声明之间的 redeclaration 关系。
- */
-private fun CfirDeclarationCollector<CfirBasedSymbol<*>>.collectFunctionNameRedeclarations(group: DeclarationBuckets) {
-    val nonFunctionDeclarations = (group.classLikes + group.properties + group.extensionProperties)
-        .sortedBy { (symbol, _) -> symbol.boundSourceOrNull()?.startOffset ?: Int.MAX_VALUE }
-
-    val functions = group.simpleFunctions
-        .sortedBy { (symbol, _) -> symbol.boundSourceOrNull()?.startOffset ?: Int.MAX_VALUE }
-
-    for ((function, _) in functions) {
-        val functionSource = function.boundSourceOrNull() ?: continue
-        if (functions.any { (otherFunction, _) ->
-                otherFunction != function &&
-                    (otherFunction.boundSourceOrNull()?.startOffset ?: Int.MAX_VALUE) < functionSource.startOffset
-            }
-        ) {
-            continue
-        }
-
-        nonFunctionDeclarations
-            .asSequence()
-            .map { (symbol, _) -> symbol }
-            .filter { (it.boundSourceOrNull()?.startOffset ?: Int.MAX_VALUE) < functionSource.startOffset }
-            .forEach { previous ->
-                declarationConflictingSymbols.getOrPut(function) { SmartSet.create() }.add(previous)
-            }
+/** 诊断语境选择明确输入域，使用 CheckerContext 的语言门；FINAL 从不按异常回退。 */
+internal fun CheckerContext.declarationPreCheckInputFor(owner: CfirDeclaration): CfirDeclarationPreCheckInput {
+    val view = if (CjmpGate.isEnabled(this) && session.isCjmpSpecificCompilationEnabled()) {
+        CfirDeclarationPreCheckView.CJMP_FINAL
+    } else {
+        CfirDeclarationPreCheckView.RAW
     }
-}
-
-/**
- * 判断当前声明是否应作为与另一个声明冲突的报告主体。
- */
-private fun CfirBasedSymbol<*>.shouldReportRedeclarationWith(conflicting: CfirBasedSymbol<*>): Boolean {
-    val declarationSource = boundSourceOrNull() ?: return true
-    val conflictingSource = conflicting.boundSourceOrNull() ?: return true
-    return declarationSource.startOffset >= conflictingSource.startOffset
-}
-
-/**
- * 判断跨模块符号是否需要检查多平台 redeclaration。
- */
-private fun shouldCheckForMultiplatformRedeclaration(
-    dependency: CfirBasedSymbol<*>,
-    dependent: CfirBasedSymbol<*>,
-): Boolean {
-    if (!dependency.isBound || !dependent.isBound) return true
-
-    val dependencyModule = dependency.cfir.moduleData
-    val dependentModule = dependent.cfir.moduleData
-    if (dependencyModule == dependentModule) return true
-
-    return dependencyModule in dependentModule.dependencies ||
-        dependencyModule in dependentModule.allRefinementDependencies ||
-        dependentModule in dependencyModule.dependencies ||
-        dependentModule in dependencyModule.allRefinementDependencies
-}
-
-/**
- * 判断两个 main 函数是否属于允许跨文件共存的入口重载形态。
- */
-private fun areCompatibleMainFunctions(
-    declaration1: CfirBasedSymbol<*>,
-    file1: CfirFile,
-    declaration2: CfirBasedSymbol<*>,
-    file2: CfirFile?,
-): Boolean {
-    if (file1 == file2) return false
-    if (declaration1 !is CfirNamedFunctionSymbol || declaration2 !is CfirNamedFunctionSymbol) return false
-    return declaration1.representsMainFunctionAllowingConflictingOverloads() &&
-        declaration2.representsMainFunctionAllowingConflictingOverloads()
-}
-
-/**
- * 判断函数符号是否是允许跨文件共存的 main 签名。
- */
-private fun CfirNamedFunctionSymbol.representsMainFunctionAllowingConflictingOverloads(): Boolean {
-    if (!isBound) return false
-    if (name.asString() != "main") return false
-    if (callableId.className != null) return false
-
-    val function = cfir
-    if (function.dispatchReceiverType != null) return false
-    if (function.typeParameters.isNotEmpty()) return false
-
-    val returnType = function.returnTypeRef.toStableSignatureKey()
-    if (!returnType.contains("Unit")) return false
-
-    val valueParameters = function.valueParameters
-    if (valueParameters.isEmpty()) return true
-    if (valueParameters.size != 1) return false
-
-    val parameterType = valueParameters.single().returnTypeRef.toStableSignatureKey()
-    return parameterType.contains("Array") && parameterType.contains("String")
+    return session.declarationPreCheckCandidateProvider.inputFor(owner, scopeSession, view)
 }
 
 /**
@@ -725,29 +258,6 @@ internal fun checkForLocalRedeclarations(elements: List<org.cangnova.cangjie.cfi
         }.drop(1).forEach { conflictingSymbol ->
             reporter.reportOn(conflictingSymbol.boundSourceOrNull(), CfirErrors.REDECLARATION, rendered)
         }
-    }
-}
-
-/**
- * 为 class-like 声明创建用于成员冲突检查的 declaration-site member scope。
- */
-context(context: CheckerContext)
-private fun createUseSiteMemberScope(classDeclaration: CfirClassLikeDeclaration): CfirTypeScope {
-    val classLikeSymbol = classDeclaration.symbol as? CfirClassLikeSymbol<*> ?: return CfirTypeScope.Empty
-    return when (classDeclaration) {
-        is CfirClass -> context.session.cangjieScopeProvider.getDeclarationSiteMemberScope(
-            classDeclaration,
-            context.session,
-            context.scopeSession,
-        )
-        else -> CfirClassUseSiteMemberScope(
-            session = context.session,
-            classLikeSymbol,
-            context.session.symbolProvider,
-            context.session.extendProvider,
-            context.session.directSupertypeProviderOrNull,
-            scopeKind = CfirClassMemberScopeKind.DECLARATION_SITE,
-        )
     }
 }
 
@@ -826,7 +336,7 @@ private fun CfirBasedSymbol<*>.isCollectable(): Boolean {
  */
 private fun CfirCallableSymbol<*>.typeParameterSymbolsHaveNoName(): Boolean {
     if (!isBound) return false
-    return cfir.typeParameters.any { it.symbol.name == SpecialNames.NO_NAME_PROVIDED }
+    return cfir.typeParameters.filterIsInstance<CfirTypeParameter>().any { it.symbol.name == SpecialNames.NO_NAME_PROVIDED }
 }
 
 /**
@@ -849,6 +359,58 @@ private fun CfirBasedSymbol<*>.boundSourceOrNull(): CjSourceElement? =
  * redeclaration 诊断展示名渲染器。
  */
 internal object CfirRedeclarationPresenter {
+    /**
+     * 官方 CheckCommonExtensions 比较 rawMangleName，不比较类型检查后的重载签名。
+     * 保留原始类型注解、泛型名称和命名参数事实；推断结果不能补成源码未写的返回注解。
+     */
+    fun representCommonExtensionMember(
+        member: CfirCallableDeclaration,
+        owner: CfirExtend,
+    ): CfirCommonExtensionMemberSignature? {
+        require(member is CfirNamedFunction || member is CfirProperty)
+        val ownerSource = checkNotNull(owner.source)
+        val ownerTypes = CfirCjmpSourceTypeMangler.extendAnnotations(ownerSource) ?: return null
+        val ownerType = ownerTypes.firstOrNull() ?: return null
+        val constraints = owner.attributes.typeConstraintDiagnosticData?.typeConstraints.orEmpty()
+            .map { constraint ->
+                val name = CfirCjmpSourceTypeMangler.typeParameterReference(constraint.source) ?: return null
+                val bounds = CfirCjmpSourceTypeMangler.directAnnotations(constraint.constraintSource) ?: return null
+                name to bounds.sortedWith(cjmpUtf8Order)
+            }
+            .sortedWith(compareBy(cjmpUtf8Order) { it.first })
+        val rawName = buildString {
+            append(ownerType).append("<:")
+            append(ownerTypes.drop(1).sortedWith(cjmpUtf8Order).joinToString("&"))
+            for ((name, bounds) in constraints) {
+                append('W').append(name)
+                for (bound in bounds) append(':').append(bound)
+            }
+            append('X').append(cjmpRawMangleName(member.symbol.name.asString()))
+            if (member.typeParameters.isNotEmpty()) {
+                append('<')
+                member.typeParameters.forEach { append(cjmpRawMangleName(it.symbol.name.asString())) }
+                append('>')
+            }
+            if (member is CfirNamedFunction) {
+                append('F')
+                for (parameter in member.valueParameters) {
+                    val annotations = CfirCjmpSourceTypeMangler.directAnnotations(checkNotNull(parameter.source)) ?: return null
+                    if (annotations.size > 1) return null
+                    annotations.singleOrNull()?.let(::append)
+                    if (parameter.isNamed) {
+                        append('!').append(cjmpRawMangleName(parameter.name.asString()))
+                        if (parameter.hasInitialDefaultValue) append('=')
+                    }
+                }
+                append("\$\$")
+                val annotations = CfirCjmpSourceTypeMangler.directAnnotations(checkNotNull(member.source)) ?: return null
+                if (annotations.size > 1) return null
+                annotations.singleOrNull()?.let(::append)
+            } else append('P')
+        }
+        return CfirCommonExtensionMemberSignature(member.symbol.name, rawName)
+    }
+
     /**
      * 渲染任意可支持符号的 redeclaration 表示。
      */
@@ -937,6 +499,9 @@ internal object CfirRedeclarationPresenter {
         else -> symbol.debugName
     }
 }
+
+/** common extend 的原始声明签名；static 与属性类型不属于官方 rawMangleName 的区分项。 */
+internal data class CfirCommonExtensionMemberSignature(val name: Name, val rawName: String)
 
 /**
  * 将类型引用渲染为稳定签名 key。

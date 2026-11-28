@@ -314,8 +314,6 @@ class AnalysisApiLspProjectStructureState(
      * 不允许退化为“随便取一个模块”的兜底行为。
      */
     internal fun getModule(element: PsiElement, useSiteModule: CaModule?): CaModule {
-        useSiteModule?.let { return it }
-
         val containingFile = element.containingFile as? CjFile
             ?: error("LSP Analysis API 只能为带有仓颉源码文件的元素恢复 use-site 模块：${element.javaClass.simpleName}")
 

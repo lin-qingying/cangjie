@@ -13,6 +13,7 @@ import org.cangnova.cangjie.cfir.checkers.generator.diagnostics.model.Diagnostic
 import org.cangnova.cangjie.cfir.checkers.generator.diagnostics.model.DiagnosticList
 import org.cangnova.cangjie.cfir.checkers.generator.diagnostics.model.DiagnosticParameter
 import org.cangnova.cangjie.cfir.checkers.generator.diagnostics.model.RegularDiagnosticData
+import org.cangnova.cangjie.cfir.diagnostics.CfirCjmpDiagnosticArgument
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.descriptors.Visibility
@@ -227,7 +228,12 @@ internal object CfirToCjConversionCreator {
         ConeCangJieType::class to HLFunctionCallConversion(
             "cfirSymbolBuilder.typeBuilder.buildType({0})",
             CaType::class.createType()
-        )
+        ),
+        CfirCjmpDiagnosticArgument::class to HLFunctionCallConversion(
+            "CfirDiagnosticRenderers.CJMP_DIAGNOSTIC_ARGUMENT.render({0})",
+            String::class.createType(),
+            importsToAdd = listOf("org.cangnova.cangjie.cfir.analysis.diagnostics.CfirDiagnosticRenderers")
+        ),
     )
 
     /**

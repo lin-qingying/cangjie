@@ -8,6 +8,7 @@
 package org.cangnova.cangjie.cfir.declarations.builder
 
 import kotlin.contracts.*
+import org.cangnova.cangjie.cfir.CfirContentSource
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
@@ -24,12 +25,13 @@ class CfirExtendBuilder {
     var source: CjSourceElement? = null
     lateinit var moduleData: CfirModuleData
     lateinit var resolvePhase: CfirResolvePhase
+    var contentSource: CfirContentSource = CfirContentSource.Owned
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
     lateinit var origin: CfirDeclarationOrigin
     lateinit var attributes: CfirDeclarationAttributes
+    val typeParameters: MutableList<CfirTypeParameter> = mutableListOf()
     lateinit var symbol: CfirExtendSymbol
     lateinit var status: CfirDeclarationStatus
-    val typeParameters: MutableList<CfirTypeParameter> = mutableListOf()
     lateinit var extendedTypeRef: CfirTypeRef
     val superTypeRefs: MutableList<CfirTypeRef> = mutableListOf()
     val declarations: MutableList<CfirDeclaration> = mutableListOf()
@@ -40,12 +42,13 @@ class CfirExtendBuilder {
             source,
             moduleData,
             resolvePhase,
+            contentSource,
             annotations.toMutableOrEmpty(),
             origin,
             attributes,
+            typeParameters,
             symbol,
             status,
-            typeParameters,
             extendedTypeRef,
             superTypeRefs,
             declarations,
@@ -74,8 +77,8 @@ inline fun buildExtendCopy(original: CfirExtend, init: CfirExtendBuilder.() -> U
     copyBuilder.annotations.addAll(original.annotations)
     copyBuilder.origin = original.origin
     copyBuilder.attributes = original.attributes.copy()
-    copyBuilder.status = original.status
     copyBuilder.typeParameters.addAll(original.typeParameters)
+    copyBuilder.status = original.status
     copyBuilder.extendedTypeRef = original.extendedTypeRef
     copyBuilder.superTypeRefs.addAll(original.superTypeRefs)
     copyBuilder.declarations.addAll(original.declarations)

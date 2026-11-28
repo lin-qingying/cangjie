@@ -75,3 +75,12 @@ class NotNullablePsiCopyableUserDataProperty<in R : PsiElement, T : Any>(val key
         thisRef.putCopyableUserData(key, if (value != defaultValue) value else null)
     }
 }
+
+/** 随 PSI 树复制的可空事实；null 表示尚未发布，不由副本重新猜测原始语境。 */
+class PsiCopyableUserDataProperty<in R : PsiElement, T : Any>(val key: Key<T>) {
+    operator fun getValue(thisRef: R, property: KProperty<*>): T? = thisRef.getCopyableUserData(key)
+
+    operator fun setValue(thisRef: R, property: KProperty<*>, value: T?) {
+        thisRef.putCopyableUserData(key, value)
+    }
+}

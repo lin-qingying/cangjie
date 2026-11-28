@@ -30,6 +30,13 @@ data class SessionWithSources<F>(
      * 分配给该 session 的源文件列表。
      */
     val files: List<F>,
+    /**
+     * 当前源码 session 解析依赖时使用的普通库 session。
+     *
+     * 该关系属于本次 session 图；解析完源码级输入事实后，调用方可在库 provider 首次读取依赖前
+     * 将同一份编译设置发布给实际持有反序列化 provider 的 session。
+     */
+    val librarySession: CfirSession,
 )
 
 /**
@@ -77,10 +84,11 @@ object CfirSessionConstructionUtils {
         val sessionConfigurator: CfirSessionConfigurator.() -> Unit = {}
 
         val sharedSession = createSharedLibrarySession()
-        createLibrarySession(sharedSession)
+        val librarySession = createLibrarySession(sharedSession)
 
         val nonScriptSession = createSingleSession(
             files = nonScriptFiles,
+            librarySession = librarySession,
             rootModuleName = rootModuleName,
             dependencyList = dependencyList,
             targetPlatform = targetPlatform,
@@ -92,6 +100,7 @@ object CfirSessionConstructionUtils {
 
         val scriptsSession = createSingleSession(
             files = scriptFiles,
+            librarySession = librarySession,
             rootModuleName = Name.identifier("${rootModuleName.asString()}-scripts"),
             dependencyList = DependencyListForCliModule(
                 regularDependencies = dependencyList.regularDependencies,
@@ -117,6 +126,7 @@ object CfirSessionConstructionUtils {
      */
     private fun <F> createSingleSession(
         files: List<F>,
+        librarySession: CfirSession,
         rootModuleName: Name,
         dependencyList: DependencyListForCliModule,
         targetPlatform: TargetPlatform,
@@ -138,7 +148,7 @@ object CfirSessionConstructionUtils {
             sessionConfigurator = sessionConfigurator,
         )
 
-        return SessionWithSources(sourceSession, files)
+        return SessionWithSources(sourceSession, files, librarySession)
     }
 }
 

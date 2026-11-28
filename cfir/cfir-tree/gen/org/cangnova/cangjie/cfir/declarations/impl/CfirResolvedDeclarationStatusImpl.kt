@@ -7,6 +7,7 @@
 
 package org.cangnova.cangjie.cfir.declarations.impl
 
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.CfirPureAbstractElement
 import org.cangnova.cangjie.cfir.declarations.CfirResolvedDeclarationStatus
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
@@ -16,7 +17,7 @@ import org.cangnova.cangjie.descriptors.Visibility
 import org.cangnova.cangjie.source.CjSourceElement
 
 internal class CfirResolvedDeclarationStatusImpl(
-    override val source: CjSourceElement?,
+    override var source: CjSourceElement?,
     override val visibility: Visibility,
     override val isVisibilityExplicit: Boolean,
     override val isModalityExplicit: Boolean,
@@ -44,5 +45,10 @@ internal class CfirResolvedDeclarationStatusImpl(
 
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirResolvedDeclarationStatusImpl {
         return this
+    }
+
+    @CfirImplementationDetail
+    override fun replaceSource(newSource: CjSourceElement?) {
+        source = newSource
     }
 }

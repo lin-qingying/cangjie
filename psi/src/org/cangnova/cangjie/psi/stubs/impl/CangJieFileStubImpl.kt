@@ -35,6 +35,7 @@ import com.intellij.psi.tree.IStubFileElementType
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjFile
+import org.cangnova.cangjie.parsing.CjmpParsedRoleEventId
 import org.cangnova.cangjie.psi.stubs.CangJieFileStub
 import org.cangnova.cangjie.psi.stubs.CangJieStubElement
 import org.cangnova.cangjie.psi.stubs.CangJieFileStubKind
@@ -55,7 +56,24 @@ class CangJieFileStubImpl(
      * 暴露 `kind`，实现PSI Stub节点对上层接口的属性契约。
      */
     override val kind: CangJieFileStubKind,
+    cjmpRoleSnapshot: org.cangnova.cangjie.parsing.CjmpFileRoleSyntaxSnapshot? = null,
 ) : PsiFileStubImpl<CjFile>(file), CangJieFileStub {
+
+    override var cjmpRoleSnapshot: org.cangnova.cangjie.parsing.CjmpFileRoleSyntaxSnapshot? = cjmpRoleSnapshot
+        private set
+
+    /** 文件构建事务完成后一次性附加声明 stub 身份。 */
+    internal fun publishCjmpStubBindings(
+        snapshot: org.cangnova.cangjie.parsing.CjmpFileRoleSyntaxSnapshot,
+        bindings: Map<List<Int>, List<CjmpParsedRoleEventId>>,
+        declarationModifiers: Map<List<Int>, org.cangnova.cangjie.parsing.CjParsedDeclarationModifiers>,
+    ) {
+        val initial = checkNotNull(cjmpRoleSnapshot)
+        check(initial.stubBindings.isEmpty() && initial.stubDeclarationModifiers.isEmpty())
+        check(initial.parsingContext == snapshot.parsingContext && initial.sourceFingerprint == snapshot.sourceFingerprint &&
+            initial.lexicalSource == snapshot.lexicalSource)
+        cjmpRoleSnapshot = snapshot.withStubBindings(bindings, declarationModifiers)
+    }
 
     /**
      * 兼容旧构造函数：仅指定包名的普通文件。
@@ -94,6 +112,7 @@ class CangJieFileStubImpl(
     override fun copyInto(newParent: StubElement<*>?): CangJieFileStubImpl = CangJieFileStubImpl(
         file = null, // no psi should be copied
         kind = kind,
+        cjmpRoleSnapshot = cjmpRoleSnapshot,
     )
 
     companion object {

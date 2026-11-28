@@ -8,7 +8,6 @@ import org.cangnova.cangjie.analysis.api.cfir.symbols.pointers.CaCfirPatternBind
 import org.cangnova.cangjie.analysis.api.cfir.symbols.pointers.CaCfirPatternVariableSymbolPointer
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
-import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPatternBindingSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPatternVariableSymbol
@@ -44,10 +43,6 @@ internal open class CaCfirLocalVariableSymbol(
      * 当前符号绑定的 CFIR Analysis session。
      */
     final override val analysisSession: CaCfirSession,
-    /**
-     * 局部变量所在模块。
-     */
-    final override val containingModule: CaModule,
     /**
      * 局部变量符号生命周期 token。
      */
@@ -173,12 +168,6 @@ internal class CaCfirPatternVariableSymbol private constructor(
      */
     override val cfirSymbol: CfirPatternVariableSymbol
         get() = super<CaCfirCjBasedSymbol>.cfirSymbol
-
-    /**
-     * pattern variable 所在的 use-site 模块。
-     */
-    override val containingModule: CaModule
-        get() = analysisSession.useSiteModule
 
     /**
      * pattern variable 对应的 PSI。
@@ -317,12 +306,6 @@ internal class CaCfirPatternBindingSymbol private constructor(
      */
     override val cfirSymbol: CfirPatternBindingSymbol
         get() = super<CaCfirCjBasedSymbol>.cfirSymbol
-
-    /**
-     * pattern binding 所在的 use-site 模块。
-     */
-    override val containingModule: CaModule
-        get() = analysisSession.useSiteModule
 
     /**
      * pattern binding 对应的 PSI。

@@ -6,6 +6,7 @@
 package org.cangnova.cangjie.cfir.declarations
 
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.references.CfirControlFlowGraphReference
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
@@ -18,12 +19,21 @@ interface CfirControlFlowGraphOwner : CfirElement {
     override val source: CjSourceElement?
     val controlFlowGraphReference: CfirControlFlowGraphReference?
 
+    /** 访问本节点拥有的完整来源子图；独立于 ordinary visitor 的语法子树。 */
+    @CfirImplementationDetail
+    override fun <R, D> acceptSourceChildren(visitor: CfirVisitor<R, D>, data: D) {
+        controlFlowGraphReference?.accept(visitor, data)
+    }
+
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitControlFlowGraphOwner(this, data)
 
     @Suppress("UNCHECKED_CAST")
     override fun <E : CfirElement, D> transform(transformer: CfirTransformer<D>, data: D): E =
         transformer.transformControlFlowGraphOwner(this, data) as E
+
+    @CfirImplementationDetail
+    override fun replaceSource(newSource: CjSourceElement?)
 
     fun replaceControlFlowGraphReference(newControlFlowGraphReference: CfirControlFlowGraphReference?)
 }

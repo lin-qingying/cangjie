@@ -17,6 +17,7 @@ import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.visitors.CfirSourceVisitor
 import org.cangnova.cangjie.name.Name
 
 /**
@@ -57,6 +58,20 @@ class ImplicitValueStorage private constructor(
      */
     val implicitValues: Collection<ImplicitValue<*>>
         get() = implicitValuesBySymbol.values
+
+    /** 栈、标签和符号索引可以保留不同快照实例，必须逐个访问已物化载荷。 */
+    fun acceptSourceChildren(visitor: CfirSourceVisitor) {
+        val values = java.util.Collections.newSetFromMap(java.util.IdentityHashMap<ImplicitValue<*>, Boolean>())
+        fun value(value: ImplicitValue<*>) {
+            if (values.add(value)) value.acceptSourceChildren(visitor)
+        }
+        implicitReceiverStack.forEach(::value)
+        implicitReceiversByLabel.values.forEach { receivers -> receivers.forEach(::value) }
+        implicitValuesBySymbol.forEach { (symbol, implicitValue) ->
+            visitor.visitElement(symbol.cfir)
+            value(implicitValue)
+        }
+    }
 
     /**
      * 批量追加隐式 receiver。

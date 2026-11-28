@@ -4,8 +4,11 @@ import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationDataRegistry
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
+import org.cangnova.cangjie.cfir.declarations.CfirConstructor
+import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
+import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.types.ConeClassLikeLookupTag
 import org.cangnova.cangjie.cfir.types.ConeClassifierType
@@ -173,15 +176,41 @@ inline fun <reified D : CfirCallableDeclaration> D.unwrapSubstitutionOverrides()
 inline fun <reified S : CfirCallableSymbol<*>> S.unwrapSubstitutionOverrides(): S =
     cfir.unwrapSubstitutionOverrides().symbol as S
 
-/**
- * 主构造参数对应属性的附加数据键。
- */
-private object CorrespondingPropertyKey : CfirDeclarationDataKey()
+internal object CorrespondingFieldKey : CfirDeclarationDataKey()
+internal object CorrespondingValueParameterKey : CfirDeclarationDataKey()
+internal object MemberParameterKey : CfirDeclarationDataKey()
+
+private var CfirValueParameter.correspondingFieldAttribute: CfirFieldVariable? by
+    CfirDeclarationDataRegistry.data(CorrespondingFieldKey)
+private var CfirFieldVariable.correspondingValueParameterAttribute: CfirValueParameter? by
+    CfirDeclarationDataRegistry.data(CorrespondingValueParameterKey)
+private var CfirVariable.memberParameterAttribute: Boolean? by CfirDeclarationDataRegistry.data(MemberParameterKey)
 
 /**
- * 主构造参数提升为属性时，记录它在声明树中的对应属性。
+ * 官方 FuncParam/VarDecl 的 isMemberParam 事实；CJO 的 ParamInfo 和 VarInfo 独立恢复该标志。
+ * 不能根据是否已建立源码参数关联判断库声明的成员参数身份。
  */
-var CfirValueParameter.correspondingProperty: CfirProperty? by CfirDeclarationDataRegistry.data(CorrespondingPropertyKey)
+var CfirVariable.isMemberParameter: Boolean
+    get() = memberParameterAttribute == true
+    set(value) { memberParameterAttribute = value }
+
+/** 主构造 let/var 参数生成的真实字段；源码构建在发布容器前建立双向关联。 */
+val CfirValueParameter.correspondingField: CfirFieldVariable? get() = correspondingFieldAttribute
+
+/** 合成字段对应的原始主构造参数，供 LL 映射直接使用声明身份而非按名称扫描。 */
+val CfirFieldVariable.correspondingValueParameter: CfirValueParameter? get() = correspondingValueParameterAttribute
+
+/** 在同一 raw 容器内一次建立参数与字段关系；字段不生成 property accessor。 */
+fun bindPrimaryConstructorParameterField(parameter: CfirValueParameter, field: CfirFieldVariable) {
+    require((parameter.containingDeclarationSymbol.cfir as? CfirConstructor)?.isPrimary == true)
+    require(parameter.moduleData == field.moduleData)
+    check(parameter.correspondingFieldAttribute == null || parameter.correspondingFieldAttribute === field)
+    check(field.correspondingValueParameterAttribute == null || field.correspondingValueParameterAttribute === parameter)
+    parameter.isMemberParameter = true
+    field.isMemberParameter = true
+    parameter.correspondingFieldAttribute = field
+    field.correspondingValueParameterAttribute = parameter
+}
 
 /**
  * catch 参数属性标记的附加数据键。

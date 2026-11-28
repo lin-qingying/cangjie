@@ -11,7 +11,7 @@ FILE: simple.cj
     internal? func readLocal(value: R|Int64|): R|Int64| {
         local? let local: R|Int64| = ...
             initializer:
-                FUNCTION_CALL(*operator_plus) {
+                FUNCTION_CALL(*operator_plus -> BUILTIN(BuiltinPrimitiveOperatorSignature(name=*operator_plus, receiverKind=INT64, parameterKinds=[INT64], returnKind=INT64))) {
                     receiver:
                         NAMED_ACCESS(value -> CfirValueParameterSymbol(value))
                     arguments:

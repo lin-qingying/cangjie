@@ -24,6 +24,20 @@
 
 package org.cangnova.cangjie.psi
 
+import org.cangnova.cangjie.CjSourceKind
+import org.cangnova.cangjie.parsing.AbstractCangJieParsing.ParsingContext
+import org.cangnova.cangjie.parsing.CangJieParser
+import org.cangnova.cangjie.parsing.CjParserSeed
+import org.cangnova.cangjie.parsing.CjScopeKind
+import org.cangnova.cangjie.parsing.CjmpFileRole
+import org.cangnova.cangjie.parsing.CjmpParsingContext
+import org.cangnova.cangjie.parsing.PARSER_SEED_KEY
+import org.cangnova.cangjie.parsing.ROOT_PARSER_SEED_KEY
+import org.cangnova.cangjie.parsing.cjmpParsingContext
+import org.cangnova.cangjie.parsing.parsedFileFacts
+import org.cangnova.cangjie.parsing.parserSourceKind
+import com.intellij.psi.impl.source.tree.TreeElement
+
 import org.cangnova.cangjie.lang.CangJieFileType
 import org.cangnova.cangjie.psi.psiUtil.getElementTextWithContext
 import com.intellij.openapi.diagnostic.Logger
@@ -38,11 +52,12 @@ import com.intellij.psi.tree.IElementType
 import com.intellij.testFramework.LightVirtualFile
 import com.intellij.util.messages.Topic
 import java.util.LinkedHashSet
+import java.util.concurrent.atomic.AtomicLong
 
 /**
  * 表示 `CjCodeFragment`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
  */
-abstract class CjCodeFragment(
+abstract class CjCodeFragment protected constructor(
     viewProvider: FileViewProvider,
     imports: String?, // Should be separated by KtCodeFragment.IMPORT_SEPARATOR
     elementType: IElementType,
@@ -50,6 +65,7 @@ abstract class CjCodeFragment(
      * 保存 `context` 的内部状态，供仓颉 PSI实现维护节点缓存或解析上下文。
      */
     private val context: PsiElement?,
+    parserSeed: CjParserSeed,
 ) : CjFile(
     viewProvider,
     false,
@@ -59,6 +75,36 @@ abstract class CjCodeFragment(
      * 保存 `viewProvider` 的内部状态，供仓颉 PSI实现维护节点缓存或解析上下文。
      */
     private var viewProvider = super.getViewProvider() as SingleRootFileViewProvider
+
+    /** 创建片段时确定入口；后续宿主变更或取消的 diff 都不能改变既有片段的解析含义。 */
+    val fragmentParserSeed: CjParserSeed = parserSeed.also {
+        putCopyableUserData(ROOT_PARSER_SEED_KEY, it)
+    }
+
+    /** SDK 在提交 diff 前调用原片段；只向新节点写入口，不修改原片段。 */
+    override fun createContentLeafElement(text: CharSequence): TreeElement {
+        val content = super.createContentLeafElement(text)
+        content.putCopyableUserData(PARSER_SEED_KEY, fragmentParserSeed)
+        return content
+    }
+
+    constructor(
+        viewProvider: FileViewProvider,
+        imports: String?,
+        elementType: IElementType,
+        context: PsiElement?,
+    ) : this(viewProvider, imports, elementType, context, captureParserSeed(context))
+
+    /** 宏等独立入口直接传入已经确定的完整 seed，不借宿主反推文法。 */
+    protected constructor(
+        project: Project,
+        name: String,
+        text: CharSequence,
+        imports: String?,
+        elementType: IElementType,
+        context: PsiElement?,
+        parserSeed: CjParserSeed,
+    ) : this(createFileViewProviderForLightFile(project, name, text), imports, elementType, context, parserSeed)
 
     constructor(
         project: Project,
@@ -102,6 +148,8 @@ abstract class CjCodeFragment(
         return hasNewImports
     }
 
+    private var importDirectiveStrings = LinkedHashSet<String>()
+
     init {
         @Suppress("LeakingThis")
         getViewProvider().forceCachedPsi(this)
@@ -114,12 +162,15 @@ abstract class CjCodeFragment(
     /**
      * 保存 `importDirectiveStrings` 的内部状态，供仓颉 PSI实现维护节点缓存或解析上下文。
      */
-    private var importDirectiveStrings = LinkedHashSet<String>()
 
     /**
      * 保存 `forcedResolveScope` 的内部状态，供仓颉 PSI实现维护节点缓存或解析上下文。
      */
     private var forcedResolveScope: GlobalSearchScope? = null
+    /** imports/scope 不一定修改文本或触发平台事件，仍必须使目标解析输入失效。 */
+    private var compilationInputChanges = AtomicLong()
+    internal val compilationInputVersion: Long get() = compilationInputChanges.get()
+    val parserCreationContext: PsiElement? get() = context
     /**
      * 实现 `getForcedResolveScope` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
      */
@@ -132,6 +183,7 @@ abstract class CjCodeFragment(
      */
     override fun forceResolveScope(scope: GlobalSearchScope?) {
         forcedResolveScope = scope
+        compilationInputChanges.incrementAndGet()
     }
 
     /**
@@ -143,6 +195,9 @@ abstract class CjCodeFragment(
      * 提供 `getContentElement` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
      */
     abstract fun getContentElement(): CjElement?
+
+    /** 用目标根的完整 seed 创建同种原生片段，导入与上下文由本次调用显式保留。 */
+    internal abstract fun createCompilationFragment(text: String, seed: CjParserSeed, targetContext: PsiElement?): CjCodeFragment
 
     /**
      * 实现 `isPhysical` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
@@ -182,6 +237,7 @@ abstract class CjCodeFragment(
             isPhysical = false
             myOriginalFile = this@CjCodeFragment
             importDirectiveStrings = LinkedHashSet(this@CjCodeFragment.importDirectiveStrings)
+            compilationInputChanges = AtomicLong(this@CjCodeFragment.compilationInputVersion)
             viewProvider = SingleRootFileViewProvider(
                 PsiManager.getInstance(project),
                 LightVirtualFile(name, CangJieFileType.INSTANCE, text),
@@ -193,6 +249,7 @@ abstract class CjCodeFragment(
             isPhysical = false
             myOriginalFile = this@CjCodeFragment
             importDirectiveStrings = LinkedHashSet(this@CjCodeFragment.importDirectiveStrings)
+            compilationInputChanges = AtomicLong(this@CjCodeFragment.compilationInputVersion)
 
             viewProvider = SingleRootFileViewProvider(
                 PsiManager.getInstance(project),
@@ -222,6 +279,7 @@ abstract class CjCodeFragment(
         val notifyChanged = viewProvider.isEventSystemEnabled && project !is MockProject
 
         if (imports != null && appendImports(imports)) {
+            compilationInputChanges.incrementAndGet()
             if (notifyChanged) {
                 // This forces the code fragment to be re-highlighted.
                 add(CjPsiFactory(project).createColon()).delete()
@@ -297,6 +355,27 @@ abstract class CjCodeFragment(
         val FAKE_CONTEXT_FOR_JAVA_FILE: Key<Function0<CjElement>> = Key.create("FAKE_CONTEXT_FOR_JAVA_FILE")
 
         private val LOG = Logger.getInstance(CjCodeFragment::class.java)
+
+        internal fun captureParserSeed(context: PsiElement?): CjParserSeed {
+            val sourceFile = context?.containingFile as? CjFile
+            // 子片段继承父片段完整的已发布入口，包含角色与quote状态；不能重读已变化的宿主。
+            if (sourceFile is CjCodeFragment) return sourceFile.fragmentParserSeed
+            val moduleName = CangJieParser.languageModuleNameForContext(context)
+            val origin = sourceFile?.getCopyableUserData(ROOT_PARSER_SEED_KEY)
+            val sourceContext = origin?.context ?: when (sourceFile?.sourceKind) {
+                CjSourceKind.MACRO_CALL -> ParsingContext.ANNOTATION_ONLY
+                CjSourceKind.SOURCE, CjSourceKind.DECLARATION, null -> ParsingContext.DEFAULT
+            }
+            return CjParserSeed(
+                sourceKind = origin?.sourceKind ?: sourceFile?.parserSourceKind ?: sourceFile?.sourceKind ?: CjSourceKind.SOURCE,
+                languageModuleName = moduleName,
+                cjmpContext = origin?.cjmpContext ?: sourceFile?.cjmpParsingContext ?: CjmpParsingContext.SyntaxOnly,
+                fileRole = sourceFile?.parsedFileFacts?.cjmpRole ?: CjmpFileRole.NONE,
+                quotedSyntaxDepth = 0,
+                context = sourceContext.copy(memberScope = null, statementScope = CjScopeKind.FUNC_BODY),
+            )
+        }
+
         fun createFileViewProviderForLightFile(
             project: Project,
             name: String,

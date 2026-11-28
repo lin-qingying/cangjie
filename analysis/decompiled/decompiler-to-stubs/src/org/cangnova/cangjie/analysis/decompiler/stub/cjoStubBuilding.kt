@@ -54,6 +54,8 @@ internal fun createDecompiledFileStub(
         parent = fileStub,
         isMacroPackage = loadedPackage.header.kind == PackageKind.Macro,
     )
+    // 包头与源码 parser 使用相同的前缀层级；空注解/修饰符节点也属于 compiled PSI 的正式结构。
+    createEmptyDeclarationHeaderStubs(packageDirectiveStub)
     createPackageNameExpressionStubs(packageDirectiveStub, loadedPackage.packageFqName.pathSegments())
     val importListStub = CangJiePlaceHolderStubImpl<CjImportList>(fileStub, CjStubElementTypes.IMPORT_LIST)
     createImportDirectiveStubs(importListStub, fileStub.getPackageFqName(), loadedPackage)
@@ -282,7 +284,7 @@ private fun toStubImportItemInfo(entry: CjoImportEntry): CangJieImportDirectiveS
 /**
  * 根据 CFIR 声明实际类型分派到对应的 `.cjo` stub 构建入口。
  *
- * 不具备独立 PSI 声明形态的 accessor、code fragment、匿名函数、类型参数和值参数等节点在这里跳过；
+ * 不具备独立 PSI 声明形态的宏展开承载节点、accessor、code fragment、匿名函数、类型参数和值参数等节点在这里跳过；
  * 它们会作为所属声明的附属结构由更具体的 builder 处理。
  */
 internal fun createDeclarationStub(
@@ -309,6 +311,7 @@ internal fun createDeclarationStub(
         is CfirPatternVariable -> createPatternVariableStub(parent, declaration, context)
         is CfirConstructor -> createConstructorStub(parent, declaration, context)
         is CfirPropertyAccessor,
+        is CfirMacroExpansionDeclaration,
         is CfirCodeFragment,
         is CfirFile,
         is CfirInvalidDeclaration,

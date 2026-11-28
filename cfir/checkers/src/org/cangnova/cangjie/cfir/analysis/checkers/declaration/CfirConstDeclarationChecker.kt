@@ -25,6 +25,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.CfirExtendSemantics
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirMutationTargetClassifier
@@ -51,7 +52,7 @@ import org.cangnova.cangjie.source.CjOffsetsOnlySourceElement
  * strong const 表达式检查；const 函数体内的 `let` 由函数体 checker 以 weak const
  * 规则处理，因此这里跳过已由 const 函数体接管的局部声明，避免重复诊断。
  */
-object CfirConstVariableInitializerChecker : CfirCallableDeclarationChecker() {
+object CfirConstVariableInitializerChecker : CfirCallableDeclarationChecker(MppCheckerKind.Common) {
     override val requiresImplementation: Boolean get() = true
 
     /**
@@ -75,7 +76,7 @@ object CfirConstVariableInitializerChecker : CfirCallableDeclarationChecker() {
  * 对齐官方 `ChkFuncDecl`/`ChkFuncBody`：参数默认值和函数体按 weak const 检查；
  * 函数体中的 `var`、非 const 局部函数、赋值、调用等由同一个表达式递归器处理。
  */
-object CfirConstFunctionBodyChecker : CfirFunctionChecker() {
+object CfirConstFunctionBodyChecker : CfirFunctionChecker(MppCheckerKind.Common) {
     /**
      * 检查 const 函数体与参数默认值。
      */
@@ -98,7 +99,7 @@ object CfirConstFunctionBodyChecker : CfirFunctionChecker() {
  *
  * 注意：官方 `ChkClassDeclHasConstInitNoVarMember` 只作用于 class，不作用于 struct。
  */
-object CfirConstDeclarationChecker : CfirClassLikeChecker() {
+object CfirConstDeclarationChecker : CfirClassLikeChecker(MppCheckerKind.Common) {
     /**
      * 检查 class/struct 的 const init 聚合规则。
      */
@@ -170,7 +171,7 @@ object CfirConstDeclarationChecker : CfirClassLikeChecker() {
  * 官方 `ChkExtendDecl` 会解析被扩展的 class/struct：目标没有 const init 时，
  * extend 内不能定义 const 实例成员函数。
  */
-object CfirConstExtendDeclarationChecker : CfirExtendChecker() {
+object CfirConstExtendDeclarationChecker : CfirExtendChecker(MppCheckerKind.Common) {
     /**
      * 检查 extend 中 const 实例函数是否拥有目标类型 const init 支撑。
      */
@@ -723,6 +724,7 @@ private class CfirConstExpressionEvaluator(
             CfirMutationTargetClassifier.classifyAssignment(access, expression)
         }
         return when (assignmentTarget) {
+            is CfirMutationTargetClassifier.MutationTarget.CommonImmutableFieldInConstructor,
             is CfirMutationTargetClassifier.MutationTarget.ImmutableValue,
             is CfirMutationTargetClassifier.MutationTarget.NonAssignableName,
                 -> true

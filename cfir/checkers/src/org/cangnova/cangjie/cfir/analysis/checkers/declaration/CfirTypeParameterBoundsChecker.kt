@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.CfirExtendSemantics
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.declaredUpperBoundConeTypeInCurrentContextOrNull
 import org.cangnova.cangjie.cfir.analysis.checkers.declaredUpperBoundTypesInCurrentContext
@@ -23,10 +24,9 @@ import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassSubstitutionScope
-import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
 import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.session.extendProvider
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
@@ -43,7 +43,7 @@ import org.cangnova.cangjie.cfir.types.ConeLookupTagBasedType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
 import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
-import org.cangnova.cangjie.cfir.types.createTypeSubstitutorByTypeConstructor
+import org.cangnova.cangjie.cfir.resolve.substitution.createTypeSubstitutorByTypeConstructor
 import org.cangnova.cangjie.cfir.types.declaredUpperBoundConeTypeOrNull
 import org.cangnova.cangjie.cfir.types.declaredUpperBoundRefsAfterTypeResolve
 import org.cangnova.cangjie.cfir.types.renderForDebugging
@@ -53,6 +53,8 @@ import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.type.AbstractTypeChecker
 import org.cangnova.cangjie.type.model.TypeConstructorMarker
+import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 
 /**
  * 类型参数上界合法性检查器。
@@ -60,7 +62,7 @@ import org.cangnova.cangjie.type.model.TypeConstructorMarker
  * 该检查器去重后检查上界是否为 class/interface，可忽略 Any/C 类型上界，并报告多个 class 上界
  * 不在同一继承链中的冲突。
  */
-object CfirTypeParameterBoundsChecker : CfirTypeParameterChecker() {
+object CfirTypeParameterBoundsChecker : CfirTypeParameterChecker(MppCheckerKind.Platform) {
     /**
      * 检查单个类型参数的所有已解析上界。
      */
@@ -79,7 +81,7 @@ object CfirTypeParameterBoundsChecker : CfirTypeParameterChecker() {
             }
         }
 
-        if (with(context.session) { declaration.findFirstGenericUpperBoundRecursionIssueInOwner() } != null) return
+        if (declaration.findFirstGenericUpperBoundRecursionIssueInOwner() != null) return
 
         val nonErrorBounds = declaration
             .declaredUpperBoundTypesInCurrentContext()
@@ -417,8 +419,9 @@ private fun ConeCangJieType.upperBoundMemberScope(): CfirTypeScope? {
     val expandedType = fullyExpandTypeAlias()
     val classId = expandedType.classIdOrPrimitiveClassId ?: return null
     val symbol = context.session.symbolProvider.getClassLikeSymbolByClassId(classId) ?: return null
-    val rawScope = CfirClassUseSiteMemberScope(
-        session = context.session,
+    val rawScope = context.session.cangjieScopeProvider.getUseSiteMemberScope(
+        scopeSession = context.scopeSession,
+        useSiteSession = context.session,
         classSymbol = symbol,
         symbolProvider = context.session.symbolProvider,
         extendProvider = context.session.extendProvider,
@@ -426,6 +429,7 @@ private fun ConeCangJieType.upperBoundMemberScope(): CfirTypeScope? {
         ownerType = expandedType,
         dispatchReceiverType = expandedType,
         scopeKind = CfirClassMemberScopeKind.USE_SITE,
+        memberRequiredPhase = CfirResolvePhase.STATUS,
     )
     return CfirClassSubstitutionScope(
         session = context.session,

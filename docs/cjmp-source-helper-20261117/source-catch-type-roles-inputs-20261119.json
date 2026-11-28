@@ -1,0 +1,32 @@
+{
+  "utc": "2026-11-18T22:29:05.9833458Z",
+  "fileCount": 7282,
+  "aggregateSha256": "68FBA2B874395128179C4A75922967ACB10F177D0CF6F03AC414E1AFFA112010",
+  "roots": [
+    "common",
+    "cfir",
+    "analysis/low-level-api-cfir",
+    "analysis/analysis-api-cfir",
+    "compiler/frontend",
+    "compiler/config",
+    "compiler/phaser",
+    "compiler/arguments",
+    "compiler/compiler.version",
+    "psi",
+    "resolution.common",
+    "macro",
+    "settings.gradle.kts",
+    "prepare/frontend",
+    "prepare/ide-plugin-dependencies/cangjie-frontend-cfir-for-ide"
+  ],
+  "include": [
+    "*.kt",
+    "*.cj",
+    "*.kts",
+    "*.java",
+    "**/resources/META-INF/cangjie/compiler.version"
+  ],
+  "exclude": "**/build/**",
+  "method": "rg --files --hidden --no-ignore, / normalized and Sort-Object -CaseSensitive; SHA256 of UTF8 LF joined path TAB length TAB uppercaseSHA256, no final LF",
+  "scope": "8de1f653 compile passed: catch source type references remain independent of semantic prefix; encoder consumes frozen TypeUse for each original catch Type node. Verify existing SOURCE48 again in these bytes; no pending Generic/decoder/body-consumer requirement is closed."
+}

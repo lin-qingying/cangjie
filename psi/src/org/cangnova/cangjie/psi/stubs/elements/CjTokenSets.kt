@@ -39,6 +39,7 @@ object CjTokenSets {
      * 所有声明类型
      */
     val DECLARATION_TYPES: TokenSet = TokenSet.create(
+        CjStubElementTypes.INVALID_DECLARATION,
         CjStubElementTypes.CLASS,
         CjStubElementTypes.INTERFACE,
         CjStubElementTypes.STRUCT,
@@ -60,6 +61,7 @@ object CjTokenSets {
      * 文件级别的声明类型
      */
     val FILE_DECLARATION_TYPES: TokenSet = TokenSet.create(
+        CjStubElementTypes.INVALID_DECLARATION,
         CjStubElementTypes.CLASS,
         CjStubElementTypes.INTERFACE,
         CjStubElementTypes.STRUCT,
@@ -76,6 +78,7 @@ object CjTokenSets {
      * 类/接口/结构体/枚举成员声明类型
      */
     val CLASS_MEMBER_DECLARATION_TYPES: TokenSet = TokenSet.create(
+        CjStubElementTypes.INVALID_DECLARATION,
         CjStubElementTypes.ENUM_CONSTRUCTOR,
         CjStubElementTypes.PRIMARY_CONSTRUCTOR,
         CjStubElementTypes.FUNCTION,
@@ -97,6 +100,17 @@ object CjTokenSets {
     val INSIDE_DIRECTIVE_EXPRESSIONS: TokenSet = TokenSet.create( //            IMPORT_DIRECTIVE_ITEM,
         CjStubElementTypes.DOT_QUALIFIED_EXPRESSION,
         CjStubElementTypes.REFERENCE_EXPRESSION,
+    )
+
+    /** 模式槽的实际 PSI 家族；混合子项按原 stub 顺序读取，不包含普通引用或类型节点。 */
+    val CASE_PATTERN_TYPES: TokenSet = TokenSet.create(
+        CjStubElementTypes.BINDING_PATTERN,
+        CjStubElementTypes.TUPLE_PATTERN,
+        CjStubElementTypes.ENUM_PATTERN,
+        CjStubElementTypes.VAR_OR_ENUM_PATTERN,
+        CjStubElementTypes.WILDCARD_PATTERN,
+        CjStubElementTypes.TYPE_PATTERN,
+        CjStubElementTypes.CONSTANT_PATTERN,
     )
     /**
      * 保存 `TYPE_ELEMENT_TYPES`，供PSI Stub流程读取节点结构或语义信息。

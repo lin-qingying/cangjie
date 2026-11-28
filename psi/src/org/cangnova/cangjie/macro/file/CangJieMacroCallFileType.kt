@@ -20,7 +20,7 @@ class CjMacroCallFile(
     private val provider: FileViewProvider,
 ) : CjFile(
     provider,
-    isCompiled = true
+    isCompiled = false
 ) {
     /**
      * 实现 `toString` 的宏文件 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。

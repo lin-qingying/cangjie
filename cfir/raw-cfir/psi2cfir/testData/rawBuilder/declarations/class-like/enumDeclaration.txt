@@ -3,11 +3,9 @@ FILE: enumDeclaration.cj
         Red
         Green
         Blue
-        init()
     }
     internal? enum Option<T> {
         Some(R|T|)
         None
         ...
-        init()
     }

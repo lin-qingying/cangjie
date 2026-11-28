@@ -160,6 +160,14 @@ abstract class CfirTransformer<in D> : CfirVisitor<CfirElement, D>() {
         return transformTypeParameterRefsOwner(typeParameterRefsOwner, data)
     }
 
+    open fun transformTypeParametersOwner(typeParametersOwner: CfirTypeParametersOwner, data: D): CfirTypeParametersOwner {
+        return transformElement(typeParametersOwner, data)
+    }
+
+    final override fun visitTypeParametersOwner(typeParametersOwner: CfirTypeParametersOwner, data: D): CfirTypeParametersOwner {
+        return transformTypeParametersOwner(typeParametersOwner, data)
+    }
+
     open fun transformMemberDeclaration(memberDeclaration: CfirMemberDeclaration, data: D): CfirMemberDeclaration {
         return transformElement(memberDeclaration, data)
     }
@@ -312,6 +320,14 @@ abstract class CfirTransformer<in D> : CfirVisitor<CfirElement, D>() {
         return transformInvalidDeclaration(invalidDeclaration, data)
     }
 
+    open fun transformMacroExpansionDeclaration(macroExpansionDeclaration: CfirMacroExpansionDeclaration, data: D): CfirMacroExpansionDeclaration {
+        return transformElement(macroExpansionDeclaration, data)
+    }
+
+    final override fun visitMacroExpansionDeclaration(macroExpansionDeclaration: CfirMacroExpansionDeclaration, data: D): CfirMacroExpansionDeclaration {
+        return transformMacroExpansionDeclaration(macroExpansionDeclaration, data)
+    }
+
     open fun transformProperty(property: CfirProperty, data: D): CfirProperty {
         return transformElement(property, data)
     }
@@ -376,6 +392,14 @@ abstract class CfirTransformer<in D> : CfirVisitor<CfirElement, D>() {
         return transformTypeParameter(typeParameter, data)
     }
 
+    open fun transformConstructedClassTypeParameterRef(constructedClassTypeParameterRef: CfirConstructedClassTypeParameterRef, data: D): CfirTypeParameterRef {
+        return transformElement(constructedClassTypeParameterRef, data)
+    }
+
+    final override fun visitConstructedClassTypeParameterRef(constructedClassTypeParameterRef: CfirConstructedClassTypeParameterRef, data: D): CfirTypeParameterRef {
+        return transformConstructedClassTypeParameterRef(constructedClassTypeParameterRef, data)
+    }
+
     open fun transformDeclarationStatus(declarationStatus: CfirDeclarationStatus, data: D): CfirDeclarationStatus {
         return transformElement(declarationStatus, data)
     }
@@ -390,6 +414,134 @@ abstract class CfirTransformer<in D> : CfirVisitor<CfirElement, D>() {
 
     final override fun visitExpression(expression: CfirExpression, data: D): CfirStatement {
         return transformExpression(expression, data)
+    }
+
+    open fun transformNativeMatchExpression(nativeMatchExpression: CfirNativeMatchExpression, data: D): CfirStatement {
+        return transformElement(nativeMatchExpression, data)
+    }
+
+    final override fun visitNativeMatchExpression(nativeMatchExpression: CfirNativeMatchExpression, data: D): CfirStatement {
+        return transformNativeMatchExpression(nativeMatchExpression, data)
+    }
+
+    open fun transformNativeMatchCase(nativeMatchCase: CfirNativeMatchCase, data: D): CfirStatement {
+        return transformElement(nativeMatchCase, data)
+    }
+
+    final override fun visitNativeMatchCase(nativeMatchCase: CfirNativeMatchCase, data: D): CfirStatement {
+        return transformNativeMatchCase(nativeMatchCase, data)
+    }
+
+    open fun transformNativeConditionMatchExpression(nativeConditionMatchExpression: CfirNativeConditionMatchExpression, data: D): CfirStatement {
+        return transformElement(nativeConditionMatchExpression, data)
+    }
+
+    final override fun visitNativeConditionMatchExpression(nativeConditionMatchExpression: CfirNativeConditionMatchExpression, data: D): CfirStatement {
+        return transformNativeConditionMatchExpression(nativeConditionMatchExpression, data)
+    }
+
+    open fun transformNativeConditionMatchCase(nativeConditionMatchCase: CfirNativeConditionMatchCase, data: D): CfirStatement {
+        return transformElement(nativeConditionMatchCase, data)
+    }
+
+    final override fun visitNativeConditionMatchCase(nativeConditionMatchCase: CfirNativeConditionMatchCase, data: D): CfirStatement {
+        return transformNativeConditionMatchCase(nativeConditionMatchCase, data)
+    }
+
+    open fun transformLetPatternDestructorExpression(letPatternDestructorExpression: CfirLetPatternDestructorExpression, data: D): CfirStatement {
+        return transformElement(letPatternDestructorExpression, data)
+    }
+
+    final override fun visitLetPatternDestructorExpression(letPatternDestructorExpression: CfirLetPatternDestructorExpression, data: D): CfirStatement {
+        return transformLetPatternDestructorExpression(letPatternDestructorExpression, data)
+    }
+
+    open fun transformNativeCatch(nativeCatch: CfirNativeCatch, data: D): CfirNativeCatch {
+        return transformElement(nativeCatch, data)
+    }
+
+    final override fun visitNativeCatch(nativeCatch: CfirNativeCatch, data: D): CfirNativeCatch {
+        return transformNativeCatch(nativeCatch, data)
+    }
+
+    open fun transformNativeTryExpression(nativeTryExpression: CfirNativeTryExpression, data: D): CfirStatement {
+        return transformElement(nativeTryExpression, data)
+    }
+
+    final override fun visitNativeTryExpression(nativeTryExpression: CfirNativeTryExpression, data: D): CfirStatement {
+        return transformNativeTryExpression(nativeTryExpression, data)
+    }
+
+    open fun transformPrimitiveTypeExpression(primitiveTypeExpression: CfirPrimitiveTypeExpression, data: D): CfirStatement {
+        return transformElement(primitiveTypeExpression, data)
+    }
+
+    final override fun visitPrimitiveTypeExpression(primitiveTypeExpression: CfirPrimitiveTypeExpression, data: D): CfirStatement {
+        return transformPrimitiveTypeExpression(primitiveTypeExpression, data)
+    }
+
+    open fun transformWildcardExpression(wildcardExpression: CfirWildcardExpression, data: D): CfirStatement {
+        return transformElement(wildcardExpression, data)
+    }
+
+    final override fun visitWildcardExpression(wildcardExpression: CfirWildcardExpression, data: D): CfirStatement {
+        return transformWildcardExpression(wildcardExpression, data)
+    }
+
+    open fun transformFunctionArgument(functionArgument: CfirFunctionArgument, data: D): CfirStatement {
+        return transformElement(functionArgument, data)
+    }
+
+    final override fun visitFunctionArgument(functionArgument: CfirFunctionArgument, data: D): CfirStatement {
+        return transformFunctionArgument(functionArgument, data)
+    }
+
+    open fun transformCallExpression(callExpression: CfirCallExpression, data: D): CfirStatement {
+        return transformElement(callExpression, data)
+    }
+
+    final override fun visitCallExpression(callExpression: CfirCallExpression, data: D): CfirStatement {
+        return transformCallExpression(callExpression, data)
+    }
+
+    open fun transformUnaryExpression(unaryExpression: CfirUnaryExpression, data: D): CfirStatement {
+        return transformElement(unaryExpression, data)
+    }
+
+    final override fun visitUnaryExpression(unaryExpression: CfirUnaryExpression, data: D): CfirStatement {
+        return transformUnaryExpression(unaryExpression, data)
+    }
+
+    open fun transformBinaryExpression(binaryExpression: CfirBinaryExpression, data: D): CfirStatement {
+        return transformElement(binaryExpression, data)
+    }
+
+    final override fun visitBinaryExpression(binaryExpression: CfirBinaryExpression, data: D): CfirStatement {
+        return transformBinaryExpression(binaryExpression, data)
+    }
+
+    open fun transformArrayCreationExpression(arrayCreationExpression: CfirArrayCreationExpression, data: D): CfirStatement {
+        return transformElement(arrayCreationExpression, data)
+    }
+
+    final override fun visitArrayCreationExpression(arrayCreationExpression: CfirArrayCreationExpression, data: D): CfirStatement {
+        return transformArrayCreationExpression(arrayCreationExpression, data)
+    }
+
+    open fun transformPointerExpression(pointerExpression: CfirPointerExpression, data: D): CfirStatement {
+        return transformElement(pointerExpression, data)
+    }
+
+    final override fun visitPointerExpression(pointerExpression: CfirPointerExpression, data: D): CfirStatement {
+        return transformPointerExpression(pointerExpression, data)
+    }
+
+    open fun transformResolvedSpawnExpression(resolvedSpawnExpression: CfirResolvedSpawnExpression, data: D): CfirStatement {
+        return transformElement(resolvedSpawnExpression, data)
+    }
+
+    final override fun visitResolvedSpawnExpression(resolvedSpawnExpression: CfirResolvedSpawnExpression, data: D): CfirStatement {
+        return transformResolvedSpawnExpression(resolvedSpawnExpression, data)
     }
 
     open fun transformBlock(block: CfirBlock, data: D): CfirStatement {
@@ -536,6 +688,22 @@ abstract class CfirTransformer<in D> : CfirVisitor<CfirElement, D>() {
         return transformThisReference(thisReference, data)
     }
 
+    open fun transformResolvedQualifier(resolvedQualifier: CfirResolvedQualifier, data: D): CfirStatement {
+        return transformElement(resolvedQualifier, data)
+    }
+
+    final override fun visitResolvedQualifier(resolvedQualifier: CfirResolvedQualifier, data: D): CfirStatement {
+        return transformResolvedQualifier(resolvedQualifier, data)
+    }
+
+    open fun transformErrorResolvedQualifier(errorResolvedQualifier: CfirErrorResolvedQualifier, data: D): CfirStatement {
+        return transformElement(errorResolvedQualifier, data)
+    }
+
+    final override fun visitErrorResolvedQualifier(errorResolvedQualifier: CfirErrorResolvedQualifier, data: D): CfirStatement {
+        return transformErrorResolvedQualifier(errorResolvedQualifier, data)
+    }
+
     open fun transformNamedAccessExpression(namedAccessExpression: CfirNamedAccessExpression, data: D): CfirStatement {
         return transformElement(namedAccessExpression, data)
     }
@@ -672,11 +840,11 @@ abstract class CfirTransformer<in D> : CfirVisitor<CfirElement, D>() {
         return transformMatchBranch(matchBranch, data)
     }
 
-    open fun transformCatchPattern(catchPattern: CfirCatchPattern, data: D): CfirCatchPattern {
+    open fun transformCatchPattern(catchPattern: CfirCatchPattern, data: D): CfirPattern {
         return transformElement(catchPattern, data)
     }
 
-    final override fun visitCatchPattern(catchPattern: CfirCatchPattern, data: D): CfirCatchPattern {
+    final override fun visitCatchPattern(catchPattern: CfirCatchPattern, data: D): CfirPattern {
         return transformCatchPattern(catchPattern, data)
     }
 
@@ -688,11 +856,11 @@ abstract class CfirTransformer<in D> : CfirVisitor<CfirElement, D>() {
         return transformCatch(catch, data)
     }
 
-    open fun transformCommandTypePattern(commandTypePattern: CfirCommandTypePattern, data: D): CfirCommandTypePattern {
+    open fun transformCommandTypePattern(commandTypePattern: CfirCommandTypePattern, data: D): CfirPattern {
         return transformElement(commandTypePattern, data)
     }
 
-    final override fun visitCommandTypePattern(commandTypePattern: CfirCommandTypePattern, data: D): CfirCommandTypePattern {
+    final override fun visitCommandTypePattern(commandTypePattern: CfirCommandTypePattern, data: D): CfirPattern {
         return transformCommandTypePattern(commandTypePattern, data)
     }
 
@@ -846,6 +1014,22 @@ abstract class CfirTransformer<in D> : CfirVisitor<CfirElement, D>() {
 
     final override fun visitTupleLiteral(tupleLiteral: CfirTupleLiteral, data: D): CfirStatement {
         return transformTupleLiteral(tupleLiteral, data)
+    }
+
+    open fun transformFunctionBodyOwner(functionBodyOwner: CfirFunctionBodyOwner, data: D): CfirFunctionBodyOwner {
+        return transformElement(functionBodyOwner, data)
+    }
+
+    final override fun visitFunctionBodyOwner(functionBodyOwner: CfirFunctionBodyOwner, data: D): CfirFunctionBodyOwner {
+        return transformFunctionBodyOwner(functionBodyOwner, data)
+    }
+
+    open fun transformIterationOwner(iterationOwner: CfirIterationOwner, data: D): CfirIterationOwner {
+        return transformElement(iterationOwner, data)
+    }
+
+    final override fun visitIterationOwner(iterationOwner: CfirIterationOwner, data: D): CfirIterationOwner {
+        return transformIterationOwner(iterationOwner, data)
     }
 
     open fun transformTargetElement(targetElement: CfirTargetElement, data: D): CfirTargetElement {
@@ -1008,6 +1192,14 @@ abstract class CfirTransformer<in D> : CfirVisitor<CfirElement, D>() {
         return transformQualifierPart(qualifierPart, data)
     }
 
+    open fun transformParenthesizedTypeRef(parenthesizedTypeRef: CfirParenthesizedTypeRef, data: D): CfirTypeRef {
+        return transformElement(parenthesizedTypeRef, data)
+    }
+
+    final override fun visitParenthesizedTypeRef(parenthesizedTypeRef: CfirParenthesizedTypeRef, data: D): CfirTypeRef {
+        return transformParenthesizedTypeRef(parenthesizedTypeRef, data)
+    }
+
     open fun transformUserTypeRef(userTypeRef: CfirUserTypeRef, data: D): CfirTypeRef {
         return transformElement(userTypeRef, data)
     }
@@ -1102,6 +1294,14 @@ abstract class CfirTransformer<in D> : CfirVisitor<CfirElement, D>() {
 
     final override fun visitResolvedNamedReference(resolvedNamedReference: CfirResolvedNamedReference, data: D): CfirReference {
         return transformResolvedNamedReference(resolvedNamedReference, data)
+    }
+
+    open fun transformResolvedBuiltinOperatorReference(resolvedBuiltinOperatorReference: CfirResolvedBuiltinOperatorReference, data: D): CfirReference {
+        return transformElement(resolvedBuiltinOperatorReference, data)
+    }
+
+    final override fun visitResolvedBuiltinOperatorReference(resolvedBuiltinOperatorReference: CfirResolvedBuiltinOperatorReference, data: D): CfirReference {
+        return transformResolvedBuiltinOperatorReference(resolvedBuiltinOperatorReference, data)
     }
 
     open fun transformErrorReference(errorReference: CfirErrorReference, data: D): CfirReference {

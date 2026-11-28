@@ -1,6 +1,8 @@
 ﻿package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
+import org.cangnova.cangjie.cfir.analysis.checkers.CfirCheckerWithMppKind
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 
@@ -10,7 +12,9 @@ import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
  * 每个具体 checker 通过类型参数限定自己接收的声明种类，并在 checker registry
  * 分发到对应 CFIR 声明时执行诊断逻辑。
  */
-abstract class CfirDeclarationChecker<D : CfirDeclaration> {
+abstract class CfirDeclarationChecker<D : CfirDeclaration>(
+    final override val mppKind: MppCheckerKind,
+) : CfirCheckerWithMppKind {
     /**
      * 该 checker 是否检查"实现的完备性"——即依赖函数体 / 初始化器 / 访问器**实现的存在性**。
      *

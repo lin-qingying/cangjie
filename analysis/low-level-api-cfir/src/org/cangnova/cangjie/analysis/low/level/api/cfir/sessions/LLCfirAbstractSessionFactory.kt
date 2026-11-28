@@ -33,6 +33,7 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.providers.LLNameConflict
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.*
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.combined.LLCombinedCangJieSymbolProvider
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.combined.LLCombinedPackageDelegationSymbolProvider
+import org.cangnova.cangjie.analysis.low.level.api.cfir.transformers.LLCfirCjmpFamilyAggregate
 import org.cangnova.cangjie.cfir.ScopeSession
 
 import org.cangnova.cangjie.cfir.CfirNameConflictsTracker
@@ -40,16 +41,26 @@ import org.cangnova.cangjie.cfir.PrivateSessionConstructor
 import org.cangnova.cangjie.cfir.SessionConfiguration
 import org.cangnova.cangjie.cfir.diagnostics.CjRegisteredDiagnosticFactoriesStorage
 import org.cangnova.cangjie.cfir.common.moduleData
+import org.cangnova.cangjie.cfir.common.CfirModuleData
+import org.cangnova.cangjie.cfir.deserialization.LibraryPathFilter
+import org.cangnova.cangjie.cfir.deserialization.ModuleDataProvider
+import org.cangnova.cangjie.cfir.deserialization.MultipleModuleDataProvider
 import org.cangnova.cangjie.cfir.extensions.*
 import org.cangnova.cangjie.cfir.resolve.providers.*
 import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
 import org.cangnova.cangjie.cfir.serialization.provider.CfirExtendProviderComposer
 import org.cangnova.cangjie.cfir.session.*
+import org.cangnova.cangjie.config.CjmpCommonPartInput
+import org.cangnova.cangjie.config.CjmpCommonPartInputs
 import org.cangnova.cangjie.cfir.session.extendProviderOrNull
+import org.cangnova.cangjie.cfir.session.ownExtendProvider
+import org.cangnova.cangjie.cfir.session.OWN_EXTEND_PROVIDER_QUALIFIED_KEY
 import org.cangnova.cangjie.cfir.symbols.CfirDummyCompilerLazyDeclarationResolver
 import org.cangnova.cangjie.cfir.symbols.CfirLazyDeclarationResolver
 import org.cangnova.cangjie.psi.CjCodeFragment
 import org.cangnova.cangjie.psi.CjFile
+import org.cangnova.cangjie.platform.isMultiPlatform
+import java.io.File
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
 import org.cangnova.cangjie.utils.exceptions.withPsiEntry
@@ -152,6 +163,7 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
 
             register(CfirProvider::class, provider)
             register(CfirLazyDeclarationResolver::class, LLCfirLazyDeclarationResolver())
+            register(CfirCjmpFamilyAggregate::class, LLCfirCjmpFamilyAggregate(this))
 
             val dependencyProvider = LLDependenciesSymbolProvider(this) {
                 buildList {
@@ -243,7 +255,9 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
             }
 
             register(CfirProvider::class, cfirProvider)
+            registerCjmpSourceModuleGraph(module, moduleData)
             register(CfirLazyDeclarationResolver::class, LLCfirLazyDeclarationResolver())
+            register(CfirCjmpFamilyAggregate::class, LLCfirCjmpFamilyAggregate(this))
 
             registerCompilerPluginServices(project, resolutionScope)
             registerCompilerPluginExtensions(project, module)
@@ -341,6 +355,7 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
             register(CfirProvider::class, cfirProvider)
 
             register(CfirLazyDeclarationResolver::class, LLCfirLazyDeclarationResolver())
+            register(CfirCjmpFamilyAggregate::class, LLCfirCjmpFamilyAggregate(this))
 
             // We need CfirRegisteredPluginAnnotations during extensions' registration process
             val annotationsResolver = project.createAnnotationResolver(binaryContentScope)
@@ -481,6 +496,8 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
             register(CfirCangJieScopeProvider::class, scopeProvider)
 
             registerAllCommonComponents(languageVersionSettings, module, resolutionScope)
+            // dangling 只继承编译语境，自己的模块、provider、cache 与源代次仍保持独立。
+            register(CfirCjmpSettingsComponent::class, contextSession.cjmpSettings)
             registerSourceLikeComponents()
 
             val cfirProvider = LLCfirProvider(
@@ -492,6 +509,7 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
 
             register(CfirProvider::class, cfirProvider)
             register(CfirLazyDeclarationResolver::class, LLCfirLazyDeclarationResolver())
+            register(CfirCjmpFamilyAggregate::class, LLCfirCjmpFamilyAggregate(this))
 
             register(CfirRegisteredPluginAnnotations::class, CfirRegisteredPluginAnnotationsImpl(session))
             register(CfirPredicateBasedProvider::class, CfirEmptyPredicateBasedProvider)
@@ -713,6 +731,83 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
         return LLCfirModuleData(session)
     }
 
+    /** 将 Analysis API 源码模块的 depends-on 图注册为 CJMP 消费端事实。 */
+    private fun LLCfirSession.registerCjmpSourceModuleGraph(
+        module: CaSourceModule,
+        sourceModuleData: LLCfirModuleData,
+    ) {
+        val dependsOnModules = module.transitiveDependsOnDependencies
+        val commonPartLibraries = dependsOnModules.filterIsInstance<CaLibraryModule>()
+            .filter { it.cjmpCommonPartCjoPaths.isNotEmpty() }
+        // 模式来自持久模块配置；未指定时按真实 refinement 图推导，不把目标架构等同于编译角色。
+        val mode = when (module.cjmpCompilationMode) {
+            CaCjmpCompilationMode.NONE -> CfirCjmpMode.NONE
+            CaCjmpCompilationMode.COMMON -> CfirCjmpMode.COMMON
+            CaCjmpCompilationMode.SPECIFIC -> CfirCjmpMode.SPECIFIC
+            null -> when {
+                module.directDependsOnDependencies.isNotEmpty() -> CfirCjmpMode.SPECIFIC
+                module.targetPlatform.isMultiPlatform() || projectStructureProvider.getImplementingModules(module).isNotEmpty() ->
+                    CfirCjmpMode.COMMON
+                else -> CfirCjmpMode.NONE
+            }
+        }
+        val commonPartInputs = CjmpCommonPartInputs.from(
+            commonPartLibraries.flatMap { library ->
+                library.cjmpCommonPartCjoPaths.map { path ->
+                    CjmpCommonPartInput(path.toAbsolutePath().normalize().toString(), chirPath = null)
+                }
+            },
+        )
+        register(
+            CfirCjmpSettingsComponent::class,
+            CfirCjmpSettingsComponent(commonPartInputs = commonPartInputs, explicitMode = mode),
+        )
+
+        val moduleDataWithFilters = linkedMapOf<CfirModuleData, LibraryPathFilter>()
+        val regularDependencies = (module.directRegularDependencies + module.directFriendDependencies)
+            .filterNot { it in dependsOnModules }
+        val regularDependenciesModuleData = regularDependencies.firstOrNull()
+            ?.let(::LLCfirModuleData)
+            ?: sourceModuleData
+
+        fun registerPathOwner(dependency: CaModule) {
+            val moduleData = LLCfirModuleData(dependency)
+            val library = dependency as? CaLibraryModule
+            val roots = library?.binaryRoots.orEmpty().mapNotNull { root ->
+                root.virtualFile?.let { File(it.path).toPath() }
+            }
+            val explicitCommonPaths = library?.cjmpCommonPartCjoPaths.orEmpty()
+            val filter = when {
+                explicitCommonPaths.isNotEmpty() && roots.isNotEmpty() ->
+                    LibraryPathFilter.LibraryPathsAndRoots(explicitCommonPaths, roots)
+                explicitCommonPaths.isNotEmpty() -> LibraryPathFilter.LibraryList(explicitCommonPaths.toSet())
+                roots.isNotEmpty() -> LibraryPathFilter.LibraryRoots(roots)
+                else -> LibraryPathFilter.RejectAll
+            }
+            moduleDataWithFilters[moduleData] = filter
+        }
+
+        // 显式 common CJO 的拥有者先登记，使其精确路径优先于可能重叠的常规依赖根。
+        val pathOwners = buildList {
+            addAll(commonPartLibraries)
+            addAll(dependsOnModules.filterNot { it in commonPartLibraries })
+            addAll(regularDependencies)
+        }.distinct()
+        pathOwners.forEach(::registerPathOwner)
+        if (regularDependenciesModuleData !in moduleDataWithFilters) {
+            moduleDataWithFilters[regularDependenciesModuleData] = LibraryPathFilter.RejectAll
+        }
+        val dependsOnModuleData = dependsOnModules.map(::LLCfirModuleData)
+        register(
+            ModuleDataProvider::class,
+            MultipleModuleDataProvider(
+                moduleDataWithFilters = moduleDataWithFilters,
+                regularDependenciesModuleData = regularDependenciesModuleData,
+                dependsOnDependenciesModuleData = dependsOnModuleData,
+            ),
+        )
+    }
+
     /**
      * 注册所有 session 类型共享的 IDE 与 CFIR 公共组件。
      */
@@ -756,11 +851,16 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
         dependencyProvidersRef: () -> List<CfirSymbolProvider>,
     ) {
         val ownProvider = LLCfirSessionExtendProvider(this, extendIndexStore)
+        register(OWN_EXTEND_PROVIDER_QUALIFIED_KEY, ownProvider)
         val deserializedProvider = CfirExtendProviderComposer.lazyFromSymbolProviders(dependencyProvidersRef)
         register(
             CfirExtendProvider::class,
             CfirExtendProviderComposer.lazyCombine(ownProvider) {
-                moduleData.allRefinementDependencies.mapNotNull { it.session.extendProviderOrNull } + deserializedProvider
+                // 与 symbol provider 共享 regular/friend/refinement 来源集合，源码只取模块自身索引。
+                // 依赖的完整视图会递归带回消费模块，并错误扩大 regular 依赖的传递可见性。
+                computeDependencySessions(caModule).filterIsInstance<LLCfirResolvableModuleSession>()
+                    .distinct()
+                    .map { it.ownExtendProvider } + deserializedProvider
             },
         )
     }

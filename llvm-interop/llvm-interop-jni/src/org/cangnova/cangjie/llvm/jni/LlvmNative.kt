@@ -37,6 +37,7 @@ object LlvmNative {
         installLlvmBindings(JniLlvmBindings)
     }
 
+    @JvmStatic external fun llvmVersion(): String
     @JvmStatic external fun targetInitializeAll()
     @JvmStatic external fun targetDefaultTriple(): String
     @JvmStatic external fun targetCreateMachine(

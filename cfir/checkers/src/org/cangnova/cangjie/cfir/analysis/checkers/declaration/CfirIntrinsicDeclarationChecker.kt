@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.containingClassForStaticMemberAttr
 import org.cangnova.cangjie.cfir.containingExtend
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
@@ -18,7 +19,7 @@ import org.cangnova.cangjie.name.Name
  * 且不能拥有函数体。class 等非函数声明不会进入这两个专用检查；target checker
  * 因此不应代替本 owner 产生通用的注解目标诊断。
  */
-object CfirIntrinsicDeclarationChecker : CfirFunctionChecker() {
+object CfirIntrinsicDeclarationChecker : CfirFunctionChecker(MppCheckerKind.Common) {
     private val allowedIntrinsicPackages = setOf(
         "std.core",
         "std.sync",
@@ -74,7 +75,7 @@ object CfirIntrinsicDeclarationChecker : CfirFunctionChecker() {
  * 这是文件级事实，不能在单个 declaration checker 中用全局可变集合猜测，
  * 否则会把不同文件/不同 session 的声明错误地合并。
  */
-object CfirIntrinsicDuplicateChecker : CfirFileChecker() {
+object CfirIntrinsicDuplicateChecker : CfirFileChecker(MppCheckerKind.Common) {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: org.cangnova.cangjie.cfir.declarations.CfirFile) {
         val firstByName = linkedMapOf<Name, CfirNamedFunction>()

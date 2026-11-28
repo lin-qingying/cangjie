@@ -8,6 +8,7 @@
 package org.cangnova.cangjie.cfir.declarations.builder
 
 import kotlin.contracts.*
+import org.cangnova.cangjie.cfir.CfirContentSource
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
@@ -26,6 +27,7 @@ class CfirTypeAliasBuilder {
     var source: CjSourceElement? = null
     lateinit var moduleData: CfirModuleData
     lateinit var resolvePhase: CfirResolvePhase
+    var contentSource: CfirContentSource = CfirContentSource.Owned
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
     lateinit var origin: CfirDeclarationOrigin
     lateinit var attributes: CfirDeclarationAttributes
@@ -33,9 +35,9 @@ class CfirTypeAliasBuilder {
     val declarations: MutableList<CfirDeclaration> = mutableListOf()
     val superTypeRefs: MutableList<CfirTypeRef> = mutableListOf()
     lateinit var scopeProvider: CfirScopeProvider
+    val typeParameters: MutableList<CfirTypeParameter> = mutableListOf()
     lateinit var symbol: CfirTypeAliasSymbol
     lateinit var status: CfirDeclarationStatus
-    val typeParameters: MutableList<CfirTypeParameter> = mutableListOf()
     lateinit var name: Name
     lateinit var expandedTypeRef: CfirTypeRef
 
@@ -45,6 +47,7 @@ class CfirTypeAliasBuilder {
             source,
             moduleData,
             resolvePhase,
+            contentSource,
             annotations.toMutableOrEmpty(),
             origin,
             attributes,
@@ -52,9 +55,9 @@ class CfirTypeAliasBuilder {
             declarations,
             superTypeRefs,
             scopeProvider,
+            typeParameters,
             symbol,
             status,
-            typeParameters,
             name,
             expandedTypeRef,
         )
@@ -86,8 +89,8 @@ inline fun buildTypeAliasCopy(original: CfirTypeAlias, init: CfirTypeAliasBuilde
     copyBuilder.declarations.addAll(original.declarations)
     copyBuilder.superTypeRefs.addAll(original.superTypeRefs)
     copyBuilder.scopeProvider = original.scopeProvider
-    copyBuilder.status = original.status
     copyBuilder.typeParameters.addAll(original.typeParameters)
+    copyBuilder.status = original.status
     copyBuilder.name = original.name
     copyBuilder.expandedTypeRef = original.expandedTypeRef
     return copyBuilder.apply(init).build()

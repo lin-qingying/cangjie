@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
@@ -21,7 +22,7 @@ import org.cangnova.cangjie.platform.isCjNative
  * 或函数短名推断。该 checker 只消费调用解析发布的 declaration/type identity，
  * 并保持 `unsafe` 作用域由 CFIR ancestor 栈表达。
  */
-object CfirUnsafeFunctionInvokeChecker : CfirFunctionCallChecker() {
+object CfirUnsafeFunctionInvokeChecker : CfirFunctionCallChecker(MppCheckerKind.Common) {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirFunctionCall) {
         if (!context.session.moduleData.targetPlatform.isCjNative()) return

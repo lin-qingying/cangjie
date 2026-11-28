@@ -1,0 +1,27 @@
+{
+  "sampleUtc": "2026-11-17T04:45:53.9056676Z",
+  "worktree": "C:\\Users\\lin17\\.codex\\worktrees\\cjmp-framework-implementation\\cangjie",
+  "fileCount": 6826,
+  "aggregateSha256": "68DB20E8C2E24DCFB6ADA602C9284CBE1ADB97499F2106E1DF1265A2C821D02A",
+  "roots": [
+    "common",
+    "cfir",
+    "analysis/low-level-api-cfir",
+    "analysis/analysis-api-cfir",
+    "compiler/frontend",
+    "compiler/config",
+    "compiler/phaser",
+    "compiler/arguments",
+    "psi",
+    "resolution.common",
+    "macro"
+  ],
+  "include": [
+    "*.kt",
+    "*.cj",
+    "*.kts"
+  ],
+  "exclude": "**/build/**",
+  "method": "rg --files --hidden --no-ignore, paths normalized / and Sort-Object -CaseSensitive; SHA256 of UTF8 LF-joined path TAB byteLength TAB uppercaseSHA256 lines, no terminal LF",
+  "scope": "New PSI/LT late signature and actual OBL/PCLA four; numeric approximation function-owner boundary and identity-counted declaration domain"
+}

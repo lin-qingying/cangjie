@@ -24,6 +24,9 @@
 
 package org.cangnova.cangjie.cfir.resolve
 
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.cfirProvider
+
 import org.cangnova.cangjie.AnalysisFlags
 import org.cangnova.cangjie.cfir.CfirQualifierPart
 import org.cangnova.cangjie.cfir.declarations.*
@@ -36,6 +39,7 @@ import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedNameError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedTypeQualifierError
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
+import org.cangnova.cangjie.cfir.resolve.body.CfirImportedPackageQualifier
 import org.cangnova.cangjie.cfir.resolve.body.resolveImportedPackageQualifier
 import org.cangnova.cangjie.cfir.resolve.constants.CfirIntConstantEvalUtils
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessContext
@@ -47,6 +51,7 @@ import org.cangnova.cangjie.cfir.scopes.CfirTypeParameterScope
 import org.cangnova.cangjie.cfir.semantics.AbstractCandidate
 import org.cangnova.cangjie.cfir.session.*
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirEnumSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirMacroDeclarationSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagImpl
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
@@ -57,7 +62,6 @@ import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability
-import org.cangnova.cangjie.source.CjBinarySourceElement
 
 /**
  * CFIR 类型解析器抽象。
@@ -110,26 +114,6 @@ data class CfirTypeResolutionResult(
 private const val THIS_TYPE_NOT_ALLOWED_REASON = "This type is only allowed as an instance member function return type"
 
 /**
- * SUPER_TYPES 阶段使用的超类型供应扩展点。
- */
-fun interface SupertypeSupplier {
-    /**
-     * 返回指定 classId 的超类型列表。
-     */
-    fun getSupertypes(classId: ClassId): List<ConeCangJieType>
-
-    /**
-     * 默认超类型供应器集合。
-     */
-    companion object {
-        /**
-         * 不提供额外超类型的默认供应器。
-         */
-        val Default: SupertypeSupplier = SupertypeSupplier { emptyList() }
-    }
-}
-
-/**
  * 默认 CFIR 类型解析器实现。
  */
 class CfirTypeResolverImpl(
@@ -166,8 +150,10 @@ class CfirTypeResolverImpl(
             is CfirResolvedTypeRef -> result(typeRef.coneType)
             is CfirImplicitTypeRef -> result(ConeErrorType(ConeSimpleDiagnostic("Implicit type reference is not resolvable at this stage")))
             is CfirBasicTypeRef -> result(resolveBasicType(typeRef, configuration))
-            is CfirUserTypeRef -> resolveUserType(typeRef, configuration, expandTypeAliases)
-            is CfirOptionTypeRef -> result(resolveOptionType(typeRef, configuration, expandTypeAliases))
+            is CfirParenthesizedTypeRef -> resolveType(typeRef.innerTypeRef, configuration, areBareTypesAllowed,
+                isOperandOfIsOperator, resolveDeprecations, supertypeSupplier, expandTypeAliases)
+            is CfirUserTypeRef -> resolveUserType(typeRef, configuration, supertypeSupplier, expandTypeAliases)
+            is CfirOptionTypeRef -> result(resolveOptionType(typeRef, configuration, supertypeSupplier, expandTypeAliases))
             is CfirFunctionTypeRef -> {
                 val parameterTypes = typeRef.parameterTypeRefs.map { resolveType(it, configuration, areBareTypesAllowed, isOperandOfIsOperator, resolveDeprecations, supertypeSupplier, expandTypeAliases).type }
                 val returnType = resolveType(typeRef.returnTypeRef, configuration, areBareTypesAllowed, isOperandOfIsOperator, resolveDeprecations, supertypeSupplier, expandTypeAliases).type
@@ -237,6 +223,7 @@ class CfirTypeResolverImpl(
     private fun resolveUserType(
         typeRef: CfirUserTypeRef,
         configuration: TypeResolutionConfiguration,
+        supertypeSupplier: SupertypeSupplier,
         expandTypeAliases: Boolean = true,
     ): CfirTypeResolutionResult {
         if (typeRef.qualifier.isEmpty()) {
@@ -256,6 +243,7 @@ class CfirTypeResolverImpl(
                 val resolvedArguments = resolveTypeArguments(
                     qualifierPart.typeArguments,
                     configuration,
+                    supertypeSupplier,
                     expandTypeAliases,
                 )
                 return result(
@@ -276,6 +264,7 @@ class CfirTypeResolverImpl(
         val resolvedArguments = resolveTypeArguments(
             finalQualifier.typeArguments,
             configuration,
+            supertypeSupplier,
             expandTypeAliases,
         )
         val resolvedClass = resolvedQualifier.declaration
@@ -296,6 +285,7 @@ class CfirTypeResolverImpl(
                 resolvedArguments = emptyList(),
                 expandTypeAliases = expandTypeAliases,
                 configuration = configuration,
+                supertypeSupplier = supertypeSupplier,
             )
             return result(
                 ConeErrorType(
@@ -317,6 +307,7 @@ class CfirTypeResolverImpl(
             resolvedArguments = resolvedArguments,
             expandTypeAliases = expandTypeAliases,
             configuration = configuration,
+            supertypeSupplier = supertypeSupplier,
         )
         // 分类器已经成功解析时必须保留外层名义类型。错误类型实参由其自身 type ref 负责报告，
         // 不能提升为顶层 ConeErrorType，否则会丢失成员作用域与 owner substitution 所需的 classId。
@@ -332,6 +323,7 @@ class CfirTypeResolverImpl(
     private fun resolveTypeArguments(
         typeArguments: List<CfirTypeRef>,
         configuration: TypeResolutionConfiguration,
+        supertypeSupplier: SupertypeSupplier,
         expandTypeAliases: Boolean,
     ): List<ConeCangJieType> = typeArguments.map { argument ->
         resolveType(
@@ -340,7 +332,7 @@ class CfirTypeResolverImpl(
             areBareTypesAllowed = false,
             isOperandOfIsOperator = false,
             resolveDeprecations = true,
-            supertypeSupplier = SupertypeSupplier.Default,
+            supertypeSupplier = supertypeSupplier,
             expandTypeAliases = expandTypeAliases,
         ).type
     }
@@ -417,6 +409,7 @@ class CfirTypeResolverImpl(
     private fun resolveOptionType(
         typeRef: CfirOptionTypeRef,
         configuration: TypeResolutionConfiguration,
+        supertypeSupplier: SupertypeSupplier,
         expandTypeAliases: Boolean,
     ): ConeCangJieType {
         val componentType = resolveType(
@@ -425,14 +418,17 @@ class CfirTypeResolverImpl(
             areBareTypesAllowed = false,
             isOperandOfIsOperator = false,
             resolveDeprecations = true,
-            supertypeSupplier = SupertypeSupplier.Default,
+            supertypeSupplier = supertypeSupplier,
             expandTypeAliases = expandTypeAliases,
         ).type
 
-        return ConeClassLikeType(
-            lookupTag = ConeClassLikeLookupTagImpl(StdlibClassIds.Option),
-            typeArguments = listOf(componentType),
-        )
+        val optionSymbol = checkNotNull(session.symbolProvider.getClassLikeSymbolByClassId(StdlibClassIds.Option)) {
+            "The standard-library Option declaration must be available when resolving the option type"
+        }
+        check(optionSymbol is CfirEnumSymbol) {
+            "The standard-library Option declaration must be an enum, but was ${optionSymbol::class.simpleName}"
+        }
+        return optionSymbol.constructType(listOf(componentType))
     }
 
     /**
@@ -465,19 +461,18 @@ class CfirTypeResolverImpl(
                     diagnostic = ConeNotATypeError(lastQualifier.name),
                 )
             }
-            val simpleCandidate = (
+            val scopeCandidates = (
                 simpleNameLookup as? CfirTypeCandidateCollector.SimpleTypeNameLookup.Classifiers
                 )
                 ?.candidates
-                ?.firstOrNull { it.symbol is CfirClassLikeSymbol<*> }
-            val simpleSymbol = simpleCandidate?.symbol as? CfirClassLikeSymbol<*>
-            val classId = simpleSymbol?.classId ?: ClassId(FqName.ROOT, lastQualifier.name)
-            val candidates = classLikeCandidates(
-                classId,
-                preferredCandidate = simpleCandidate,
-                lookupOrigin = simpleCandidate?.lookupOrigin ?: CfirLookupOrigin.LEXICAL,
+                ?.mapNotNull { it.symbol as? CfirClassLikeSymbol<*> }
+            // 首个可见 scope 的完整候选就是该层结果；不能再扩大到 provider 并丢失词法优先级。
+            val candidates = scopeCandidates ?: classLikeCandidates(
+                ClassId(FqName.ROOT, lastQualifier.name),
+                lookupOrigin = CfirLookupOrigin.LEXICAL,
                 configuration = configuration,
             )
+            val classId = candidates.firstOrNull()?.classId ?: ClassId(FqName.ROOT, lastQualifier.name)
             classifierRedeclarationAmbiguity(typeRef, candidates)?.let { diagnostic ->
                 return QualifiedClassLikeResolution(classId, null, diagnostic)
             }
@@ -498,44 +493,33 @@ class CfirTypeResolverImpl(
         val firstName = qualifierNames.first()
         val importedPackageQualifier = configuration.useSiteFile
             ?.resolveImportedPackageQualifier(firstName, session)
-        if (importedPackageQualifier != null) {
-            if (importedPackageQualifier.isAmbiguous) {
+        when (importedPackageQualifier) {
+            is CfirImportedPackageQualifier.AmbiguousPackages ->
                 return QualifiedClassLikeResolution(
                     classId = null,
                     declaration = null,
-                    diagnostic = ConePackageNameConflictError(firstName),
+                    diagnostic = ConePackageNameConflictError(importedPackageQualifier.name),
                 )
-            }
-            if (importedPackageQualifier.isUnresolved) {
+
+            is CfirImportedPackageQualifier.UnresolvedImport ->
                 return QualifiedClassLikeResolution(
                     classId = null,
                     declaration = null,
-                    diagnostic = ConeUnresolvedNameError(firstName),
+                    diagnostic = ConeUnresolvedNameError(importedPackageQualifier.name),
+                )
+
+            is CfirImportedPackageQualifier.UniquePackage -> {
+                val packageSegments = importedPackageQualifier.target.fqName.pathSegments() +
+                        qualifierNames.drop(1).dropLast(1)
+                return resolveQualifiedClassLikeInPackage(
+                    packageFqName = packageSegments.toFqName(),
+                    lastQualifier = lastQualifier,
+                    typeRef = typeRef,
+                    configuration = configuration,
                 )
             }
 
-            val importedPackage = checkNotNull(importedPackageQualifier.packageFqName) {
-                "Resolved imported package qualifier `$firstName` has no unique package binding"
-            }
-            val packageSegments =
-                importedPackage.pathSegments() + qualifierNames.drop(1).dropLast(1)
-            return resolveQualifiedClassLikeInPackage(
-                packageFqName = packageSegments.toFqName(),
-                lastQualifier = lastQualifier,
-                typeRef = typeRef,
-                configuration = configuration,
-            )
-        }
-
-        if (configuration.useSiteFile == null && typeRef.source is CjBinarySourceElement) {
-            // 二进制声明携带的是规范化全限定类型身份，不存在源码 import 表可查。
-            // 源码类型引用必须命中当前文件的 package import/alias，不能据文本前缀反查 package。
-            return resolveQualifiedClassLikeInPackage(
-                packageFqName = qualifierNames.dropLast(1).toFqName(),
-                lastQualifier = lastQualifier,
-                typeRef = typeRef,
-                configuration = configuration,
-            )
+            null -> Unit
         }
 
         return QualifiedClassLikeResolution(
@@ -561,7 +545,6 @@ class CfirTypeResolverImpl(
         val fullClassId = ClassId(fullPackageFqName, lastQualifier.name)
         val candidates = classLikeCandidates(
             fullClassId,
-            preferredCandidate = null,
             lookupOrigin = CfirLookupOrigin.QUALIFIED_PACKAGE,
             configuration = configuration,
         )
@@ -632,7 +615,6 @@ class CfirTypeResolverImpl(
      */
     private fun classLikeCandidates(
         classId: ClassId,
-        preferredCandidate: CfirTypeCandidateCollector.TypeCandidate?,
         lookupOrigin: CfirLookupOrigin,
         configuration: TypeResolutionConfiguration,
     ): List<CfirClassLikeSymbol<*>> = CfirTypeCandidateCollector(
@@ -640,7 +622,6 @@ class CfirTypeResolverImpl(
         context = configuration.accessContext(CfirAccessKind.TYPE),
     ).collectClassIdCandidates(
         classId = classId,
-        preferredCandidate = preferredCandidate,
         lookupOrigin = lookupOrigin,
     ).mapNotNull { it.symbol as? CfirClassLikeSymbol<*> }
 
@@ -653,46 +634,43 @@ class CfirTypeResolverImpl(
         resolvedArguments: List<ConeCangJieType>,
         expandTypeAliases: Boolean,
         configuration: TypeResolutionConfiguration,
+        supertypeSupplier: SupertypeSupplier,
     ): ConeCangJieType {
         return when (resolvedClass) {
             is CfirPrimitiveTypeDeclaration -> ConePrimitiveType(resolvedClass.kind)
             is CfirBuiltInDeclaration -> resolvedClass.symbol.constructType(resolvedArguments)
             is CfirClass -> ConeClassLikeType(
-                lookupTag = ConeClassLikeLookupTagImpl(classId),
+                lookupTag = resolvedClass.symbol.toLookupTag(),
                 typeArguments = resolvedArguments,
             )
             is CfirInterface -> ConeClassLikeType(
-                lookupTag = ConeClassLikeLookupTagImpl(classId),
+                lookupTag = resolvedClass.symbol.toLookupTag(),
                 typeArguments = resolvedArguments,
                 isInterface = true,
             )
             is CfirStruct -> ConeStructType(
-                lookupTag = ConeClassLikeLookupTagImpl(classId),
+                lookupTag = resolvedClass.symbol.toLookupTag(),
                 typeArguments = resolvedArguments,
             )
             is CfirEnum -> ConeEnumType(
-                lookupTag = ConeClassLikeLookupTagImpl(classId),
+                lookupTag = resolvedClass.symbol.toLookupTag(),
                 typeArguments = resolvedArguments,
                 isRefEnum = resolvedClass.isRefEnum,
             )
             is CfirTypeAlias -> {
                 if (expandTypeAliases && !aliasedTypeExpansionGloballyDisabled) {
-                    /*
-                     * typealias RHS 属于 alias 声明语境，绝不能用当前 use-site 的类型参数配置解析。
-                     * TYPES 全局前置步骤会先解析所有 alias RHS；若 low-level 场景尚未推进该声明，
-                     * 保留名义 alias 类型并把展开延后到声明 owner 自己的解析阶段。
-                     */
-                    val expandedType = resolvedClass.expandedTypeRef.coneTypeOrNull
+                    // alias 的 RHS 由当前阶段的 Supplier 提供；SUPER_TYPES 临时产品不读取尚未写回的 AST。
+                    val expandedType = supertypeSupplier.expansionForTypeAlias(resolvedClass, session)
                     val aliasType = ConeTypeAliasType(
                         classId = classId,
                         expandedType = expandedType,
                         typeArguments = resolvedArguments,
                     )
-                    if (expandedType != null) aliasType.fullyExpandedType(session) else aliasType
+                    aliasType.fullyExpandedType(session) { alias -> supertypeSupplier.expansionForTypeAlias(alias, session) }
                 } else {
                     ConeTypeAliasType(
                         classId = classId,
-                        expandedType = resolvedClass.expandedTypeRef.coneTypeOrNull,
+                        expandedType = supertypeSupplier.expansionForTypeAlias(resolvedClass, session),
                         typeArguments = resolvedArguments,
                     )
                 }

@@ -24,12 +24,16 @@
 
 package org.cangnova.cangjie.cfir.resolve.transformers.body.resolve
 
+import org.cangnova.cangjie.cfir.CfirFunctionBodyOwner
+
+import org.cangnova.cangjie.cfir.types.asCone
+
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.SessionAndScopeSessionHolder
 import org.cangnova.cangjie.cfir.calls.ImplicitExtensionReceiverValue
 import org.cangnova.cangjie.cfir.calls.ImplicitReceiverValue
 import org.cangnova.cangjie.cfir.calls.InaccessibleImplicitReceiverValue
-import org.cangnova.cangjie.cfir.correspondingProperty
+import org.cangnova.cangjie.cfir.isMemberParameter
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
@@ -61,7 +65,7 @@ import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeTypeVariable
 import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
 import org.cangnova.cangjie.cfir.types.type
-import org.cangnova.cangjie.cfir.types.asCone
+import org.cangnova.cangjie.cfir.resolve.substitution.asCone
 import org.cangnova.cangjie.cfir.types.coneType
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.contains
@@ -252,6 +256,23 @@ class BodyResolveContext(
     /** 当前正在解析 initializer 的最内层字段。 */
     val fieldBeingInitialized: CfirFieldVariable?
         get() = fieldInitializerStack.lastOrNull()
+
+    /** 未退出的 initializer/default/fragment 是实际拥有根；最终 writer 不在其内部提交阶段。 */
+    fun hasActiveBodyOwnerOutside(root: CfirElement): Boolean =
+        variableInitializerStack.any { group -> group.any { it !== root } } ||
+            fieldInitializerStack.any { it !== root } ||
+            containers.any { it is CfirCodeFragment && it !== root }
+
+    @PublishedApi
+    internal fun enterParameterDefaultBodyScope(parameter: CfirValueParameter) {
+        variableInitializerStack.addLast(listOf(parameter))
+    }
+
+    @PublishedApi
+    internal fun leaveParameterDefaultBodyScope(parameter: CfirValueParameter) {
+        check(variableInitializerStack.last().single() === parameter)
+        variableInitializerStack.removeLast()
+    }
 
     /** 当前 public API inline 函数上下文。 */
     @set:PrivateForInline
@@ -463,6 +484,10 @@ class BodyResolveContext(
     fun <T> withVariableInitializer(variable: CfirVariable, f: () -> T): T =
         withVariableInitializer(listOf(variable), f)
 
+    /** 零绑定模式仍有真实初始化拥有根；命名模式的名称可见性由实际 binding 域表达。 */
+    fun <T> withPatternInitializer(owner: CfirPatternVariable, bindings: List<CfirPatternBindingVariable>, f: () -> T): T =
+        if (bindings.isEmpty()) withVariableInitializer(owner, f) else withVariableInitializer(bindings, f)
+
     /**
      * 在一组 pattern binding 的 initializer 上下文内执行解析。
      *
@@ -488,7 +513,7 @@ class BodyResolveContext(
     fun <T> withFieldInitializer(field: CfirFieldVariable, f: () -> T): T {
         fieldInitializerStack.addLast(field)
         return try {
-            f()
+            withTowerDataMode(if (field.status.isStatic && field.symbol.callableId.classId != null) CfirTowerDataMode.STATIC_MEMBER else null, f)
         } finally {
             fieldInitializerStack.removeLast()
         }
@@ -733,7 +758,7 @@ class BodyResolveContext(
         val newContexts = CfirRegularTowerDataContexts(
             regular = forMembersResolution,
             forNestedClasses = forNestedClasses,
-            forStaticMembers = statics,
+            forStaticMembers = withTypeParameters,
             forConstructorHeaders = forConstructorHeaders,
             forEnumConstructors = forEnumConstructors,
             forFinalizers = forFinalizers,
@@ -792,8 +817,8 @@ class BodyResolveContext(
      * 对齐 Kotlin `forRegularClassBody`：
      * 统一 regular class body 的本地 class 注册、class scope 安装和容器栈更新。
      *
-     * 仓颉当前没有 Kotlin 的 inner/companion 静态嵌套 tower-data mode 切换语义，
-     * 因此这里只保留统一入口，不额外改写 tower data mode。
+     * 仓颉不支持 Kotlin inner/companion；错误恢复或生成 IR 的嵌套 class 也不能
+     * 沿用外层实例权限。环境切换与新 class 自身 scopes 的安装是两个步骤。
      */
     @OptIn(PrivateForInline::class)
     fun <T> forRegularClassBody(
@@ -802,8 +827,11 @@ class BodyResolveContext(
         f: () -> T,
     ): T {
         storeClassOrTypealiasIfNotNested(regularClass, holder.session)
-        return withScopesForClass(regularClass, holder) {
-            withContainerRegularClass(regularClass, f)
+        val nestedMode = if (containerIfAny is CfirClassLikeDeclaration || containerIfAny is CfirExtend) CfirTowerDataMode.NESTED_CLASS else null
+        return withTowerDataMode(nestedMode) {
+            withScopesForClass(regularClass, holder) {
+                withContainerRegularClass(regularClass, f)
+            }
         }
     }
 
@@ -826,14 +854,24 @@ class BodyResolveContext(
      * Kotlin 的 FirClass 覆盖所有 class-like 种类；CFIR 还需覆盖独立的 extend owner。
      */
     @OptIn(PrivateForInline::class)
-    inline fun <T> withNamedFunction(namedFunction: CfirNamedFunction, session: CfirSession, f: () -> T): T {
+    inline fun <T> withNamedFunction(
+        namedFunction: CfirNamedFunction,
+        session: CfirSession,
+        beforeEnter: () -> Unit = {},
+        f: () -> T,
+    ): T {
         if (namedFunction.isLocal ||
             (containerIfAny !is CfirClassLikeDeclaration && containerIfAny !is CfirExtend)
         ) {
             storeFunction(namedFunction, session)
         }
-        return withTypeParametersOf(namedFunction) {
-            withContainer(namedFunction, f)
+        val staticMode = if (namedFunction.status.isStatic && namedFunction.symbol.callableId.classId != null) CfirTowerDataMode.STATIC_MEMBER else null
+        return withTowerDataMode(staticMode) {
+            // helper 继承声明位置的 static/lexical 权限，不取得原函数参数或自有泛型 scope。
+            beforeEnter()
+            withTypeParametersOf(namedFunction) {
+                withContainer(namedFunction, f)
+            }
         }
     }
 
@@ -842,8 +880,10 @@ class BodyResolveContext(
      */
     @OptIn(PrivateForInline::class)
     inline fun <T> withProperty(property: CfirProperty, f: () -> T): T =
-        withTypeParametersOf(property) {
-            withContainer(property, f)
+        withTowerDataMode(if (property.status.isStatic && property.symbol.callableId.classId != null) CfirTowerDataMode.STATIC_MEMBER else null) {
+            withTypeParametersOf(property) {
+                withContainer(property, f)
+            }
         }
 
     /**
@@ -941,7 +981,7 @@ class BodyResolveContext(
      */
     @PublishedApi
     internal inline fun <T> withFunctionLocalScope(
-        function: CfirFunction,
+        function: CfirFunctionBodyOwner,
         session: CfirSession,
         preloadValueParameters: Boolean,
         f: () -> T,
@@ -965,14 +1005,18 @@ class BodyResolveContext(
         session: CfirSession,
         f: () -> T,
     ): T {
-        val result = withContainer(valueParameter) {
-            f()
+        val hasDefaultBody = valueParameter.defaultValue != null
+        if (hasDefaultBody) enterParameterDefaultBodyScope(valueParameter)
+        val result = try {
+            withContainer(valueParameter) { f() }
+        } finally {
+            if (hasDefaultBody) leaveParameterDefaultBodyScope(valueParameter)
         }
         storeValueParameterIfNeeded(valueParameter, session)
         return result
     }
 
-    /** 为匿名函数建立参数局部 scope 和容器上下文。 */
+    /** 为匿名函数建立空的局部 scope 和容器；参数由 withValueParameter 在自身内容完成后逐个登记。 */
     @OptIn(PrivateForInline::class)
     inline fun <T> withAnonymousFunction(
         anonymousFunction: CfirFunction,
@@ -980,9 +1024,6 @@ class BodyResolveContext(
         f: () -> T,
     ): T = withTowerDataCleanup {
         addLocalScope(CfirLocalScope(holder.session))
-        for (parameter in anonymousFunction.valueParameters) {
-            storeValueParameterIfNeeded(parameter, holder.session)
-        }
         withContainer(anonymousFunction, f)
     }
 
@@ -1112,7 +1153,7 @@ class BodyResolveContext(
         var allScope = CfirLocalScope(session)
         for (parameter in valueParameters) {
             allScope = allScope.storeVariable(parameter, session)
-            if (parameter.correspondingProperty == null) {
+            if (!parameter.isMemberParameter) {
                 pureScope = pureScope.storeVariable(parameter, session)
             }
         }
@@ -1121,17 +1162,13 @@ class BodyResolveContext(
 
     // ── Annotation class context ──────────────────────────────────────────
 
-    /**
-     * 仓颉 annotation class 的 primary constructor 上下文：
-     * 参数默认值必须是常量表达式，且不能访问构造类的实例成员。
-     * 目前以标志位 + CONSTRUCTOR_HEADER tower data 表达约束，具体语义由 checker 细化。
-     */
+    /** 注解调用或注解参数默认值的表达式模式；tower 权限由所在声明及表达式的词法 owner 管理。 */
     @OptIn(PrivateForInline::class)
     inline fun <T> withAnnotationContext(f: () -> T): T {
         val old = isInsideAnnotationContext
         isInsideAnnotationContext = true
         return try {
-            withTowerDataMode(CfirTowerDataMode.CONSTRUCTOR_HEADER, f)
+            f()
         } finally {
             isInsideAnnotationContext = old
         }
@@ -1210,20 +1247,6 @@ class BodyResolveContext(
         specialTowerDataContexts.restore(snapshot)
     }
 
-    /**
-     * 捕获 DFA/CFG 上下文，用于 speculative lambda body 重检后的候选级回滚。
-     *
-     * 对位 Kotlin FIR 的 data-flow snapshot 角色：候选试跑可以构造 CFG、记录 return
-     * 表达式和赋值状态，但这些状态只有在最终选中的候选提交时才能保留。
-     */
-    fun captureDataFlowAnalyzerContext(): CfirDataFlowAnalyzerContextSnapshot =
-        dataFlowAnalyzerContext.createSnapshot(IdentitySnapshotCfirMapper)
-
-    /** 从快照恢复 DFA/CFG 上下文。 */
-    fun restoreDataFlowAnalyzerContext(snapshot: CfirDataFlowAnalyzerContextSnapshot) {
-        dataFlowAnalyzerContext.resetFrom(snapshot.context)
-    }
-
     // ── Inference / expectations ──────────────────────────────────────────
 
     /** 在指定推断会话中执行 [block]，结束后恢复旧会话。 */
@@ -1259,6 +1282,9 @@ class BodyResolveContext(
             overloadByLambdaCandidateStack.removeLast()
         }
     }
+
+    /** 实际候选分析域仍活动时，其 body/CFG 只是试跑输入，不能发布可消费 BODY 阶段。 */
+    fun hasActiveOverloadByLambdaCandidateAnalysis(): Boolean = overloadByLambdaCandidateStack.isNotEmpty()
 
     /** 是否仍应缩减 overload-by-lambda 候选集合。 */
     fun shouldReduceOverloadByLambdaCandidates(): Boolean {
@@ -1471,7 +1497,7 @@ class CfirRegularTowerDataContexts private constructor(
     /**
      * 从各语义位置的 context 构造 regular tower data contexts。
      *
-     * 缺失的专用 context 会回退到 [regular]。
+     * 缺失的专用 context 表示该环境未建立，不得代用 regular 授实例权限。
      */
     constructor(
         regular: CfirTowerDataContext,
@@ -1541,11 +1567,11 @@ class CfirRegularTowerDataContexts private constructor(
         ): EnumMap<CfirTowerDataMode, CfirTowerDataContext> {
             val result = EnumMap<CfirTowerDataMode, CfirTowerDataContext>(CfirTowerDataMode::class.java)
             result[CfirTowerDataMode.REGULAR] = regular
-            result[CfirTowerDataMode.NESTED_CLASS] = forNestedClasses ?: regular
-            result[CfirTowerDataMode.STATIC_MEMBER] = forStaticMembers ?: regular
-            result[CfirTowerDataMode.CONSTRUCTOR_HEADER] = forConstructorHeaders ?: regular
-            result[CfirTowerDataMode.ENUM_CONSTRUCTOR] = forEnumConstructors ?: regular
-            result[CfirTowerDataMode.FINALIZER] = forFinalizers ?: regular
+            forNestedClasses?.let { result[CfirTowerDataMode.NESTED_CLASS] = it }
+            forStaticMembers?.let { result[CfirTowerDataMode.STATIC_MEMBER] = it }
+            forConstructorHeaders?.let { result[CfirTowerDataMode.CONSTRUCTOR_HEADER] = it }
+            forEnumConstructors?.let { result[CfirTowerDataMode.ENUM_CONSTRUCTOR] = it }
+            forFinalizers?.let { result[CfirTowerDataMode.FINALIZER] = it }
             return result
         }
     }

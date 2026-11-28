@@ -3,13 +3,17 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.CheckersComponentInternal
+import org.cangnova.cangjie.cfir.analysis.checkers.CfirCheckerWithMppKind
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 
 /*
  * 本文件由生成器自动生成
  * 请勿手动修改
  */
 
-class ComposedDeclarationCheckers : DeclarationCheckers() {
+class ComposedDeclarationCheckers(val predicate: (CfirCheckerWithMppKind) -> Boolean) : DeclarationCheckers() {
+    constructor(mppKind: MppCheckerKind) : this({ it.mppKind == mppKind })
+
     override val basicDeclarationCheckers: Set<CfirBasicDeclarationChecker>
         get() = _basicDeclarationCheckers
     override val memberDeclarationCheckers: Set<CfirMemberDeclarationChecker>
@@ -74,25 +78,25 @@ class ComposedDeclarationCheckers : DeclarationCheckers() {
 
     @CheckersComponentInternal
     fun register(checkers: DeclarationCheckers) {
-        _basicDeclarationCheckers.addAll(checkers.basicDeclarationCheckers)
-        _memberDeclarationCheckers.addAll(checkers.memberDeclarationCheckers)
-        _callableDeclarationCheckers.addAll(checkers.callableDeclarationCheckers)
-        _functionCheckers.addAll(checkers.functionCheckers)
-        _enumConstructorCheckers.addAll(checkers.enumConstructorCheckers)
-        _simpleFunctionCheckers.addAll(checkers.simpleFunctionCheckers)
-        _propertyCheckers.addAll(checkers.propertyCheckers)
-        _classLikeCheckers.addAll(checkers.classLikeCheckers)
-        _anonymousFunctionCheckers.addAll(checkers.anonymousFunctionCheckers)
-        _propertyAccessorCheckers.addAll(checkers.propertyAccessorCheckers)
-        _constructorCheckers.addAll(checkers.constructorCheckers)
-        _fileCheckers.addAll(checkers.fileCheckers)
-        _typeParameterCheckers.addAll(checkers.typeParameterCheckers)
-        _extendCheckers.addAll(checkers.extendCheckers)
-        _mainFunctionCheckers.addAll(checkers.mainFunctionCheckers)
-        _patternVariableCheckers.addAll(checkers.patternVariableCheckers)
-        _fieldVariableCheckers.addAll(checkers.fieldVariableCheckers)
-        _typeAliasCheckers.addAll(checkers.typeAliasCheckers)
-        _valueParameterCheckers.addAll(checkers.valueParameterCheckers)
-        _invalidDeclarationCheckers.addAll(checkers.invalidDeclarationCheckers)
+        checkers.basicDeclarationCheckers.filterTo(_basicDeclarationCheckers, predicate)
+        checkers.memberDeclarationCheckers.filterTo(_memberDeclarationCheckers, predicate)
+        checkers.callableDeclarationCheckers.filterTo(_callableDeclarationCheckers, predicate)
+        checkers.functionCheckers.filterTo(_functionCheckers, predicate)
+        checkers.enumConstructorCheckers.filterTo(_enumConstructorCheckers, predicate)
+        checkers.simpleFunctionCheckers.filterTo(_simpleFunctionCheckers, predicate)
+        checkers.propertyCheckers.filterTo(_propertyCheckers, predicate)
+        checkers.classLikeCheckers.filterTo(_classLikeCheckers, predicate)
+        checkers.anonymousFunctionCheckers.filterTo(_anonymousFunctionCheckers, predicate)
+        checkers.propertyAccessorCheckers.filterTo(_propertyAccessorCheckers, predicate)
+        checkers.constructorCheckers.filterTo(_constructorCheckers, predicate)
+        checkers.fileCheckers.filterTo(_fileCheckers, predicate)
+        checkers.typeParameterCheckers.filterTo(_typeParameterCheckers, predicate)
+        checkers.extendCheckers.filterTo(_extendCheckers, predicate)
+        checkers.mainFunctionCheckers.filterTo(_mainFunctionCheckers, predicate)
+        checkers.patternVariableCheckers.filterTo(_patternVariableCheckers, predicate)
+        checkers.fieldVariableCheckers.filterTo(_fieldVariableCheckers, predicate)
+        checkers.typeAliasCheckers.filterTo(_typeAliasCheckers, predicate)
+        checkers.valueParameterCheckers.filterTo(_valueParameterCheckers, predicate)
+        checkers.invalidDeclarationCheckers.filterTo(_invalidDeclarationCheckers, predicate)
     }
 }

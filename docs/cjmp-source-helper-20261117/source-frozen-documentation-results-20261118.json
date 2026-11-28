@@ -1,0 +1,140 @@
+{
+  "utc": "2026-11-18T09:57:40.3802498Z",
+  "queues": [
+    {
+      "id": "85c5a273",
+      "args": [
+        "--gradle-user-home",
+        ".gradle/cjmp-export-home",
+        "validateDocumentation",
+        "--no-build-cache",
+        "--console=plain",
+        "--max-workers=1"
+      ],
+      "pid": 35744,
+      "owner": "pid@35744",
+      "submitAt": 1794995152327,
+      "startedAt": 1794995152375,
+      "finishedAt": 1794995165766,
+      "exitCode": 1,
+      "status": "DONE"
+    },
+    {
+      "id": "2409c097",
+      "args": [
+        "--gradle-user-home",
+        ".gradle/cjmp-export-home",
+        "validateDocumentation",
+        "--no-build-cache",
+        "--console=plain",
+        "--max-workers=1"
+      ],
+      "pid": 17020,
+      "owner": "pid@17020",
+      "submitAt": 1794995401682,
+      "startedAt": 1794995401734,
+      "finishedAt": 1794995417684,
+      "exitCode": 1,
+      "status": "DONE"
+    },
+    {
+      "id": "b417013f",
+      "args": [
+        "--gradle-user-home",
+        ".gradle/cjmp-export-home",
+        "validateDocumentation",
+        "--no-build-cache",
+        "--console=plain",
+        "--max-workers=1"
+      ],
+      "pid": 18096,
+      "owner": "pid@18096",
+      "submitAt": 1794995499405,
+      "startedAt": 1794995499465,
+      "finishedAt": 1794995509879,
+      "exitCode": 0,
+      "status": "DONE"
+    },
+    {
+      "id": "8dd013c8",
+      "args": [
+        "--gradle-user-home",
+        ".gradle/cjmp-export-home",
+        "validateDocumentation",
+        "--no-build-cache",
+        "--console=plain",
+        "--max-workers=1"
+      ],
+      "pid": 28648,
+      "owner": "pid@28648",
+      "submitAt": 1794995668645,
+      "startedAt": 1794995668726,
+      "finishedAt": 1794995694186,
+      "exitCode": 0,
+      "status": "DONE"
+    }
+  ],
+  "reportArchives": [
+    {
+      "path": "docs/cjmp-source-frozen-encoder-continuation-20261118.md",
+      "bytes": 5953,
+      "sha256": "C513149CD5F00A0EF529A7658B418DF2BEFA9261D424D80101A2C124E6B60AA3",
+      "verified": true
+    },
+    {
+      "path": "docs/cjmp-source-ordered-types-continuation-20261118.md",
+      "bytes": 3611,
+      "sha256": "46A61CAB04D6E65FCD60467378B285F9AAE413DFE83DCBD0138451483EA633F5",
+      "verified": true
+    },
+    {
+      "path": "docs/cjmp-source-helper-20261117/frozen-type-roles-authority-20261118.md",
+      "bytes": 13487,
+      "sha256": "C7AFDC209A3B4CCE0E0B7E690DA4E22A9BF9E636FBBC9F9CD290F6F3B6C84D34",
+      "verified": true
+    },
+    {
+      "path": "docs/cjmp-source-helper-20261117/ordered-type-payload-kotlin-authority.md",
+      "bytes": 4990,
+      "sha256": "BE64B023BE9B672988050B944ADEDDB1A14C60C58168937B713BB349C477689D",
+      "verified": true
+    },
+    {
+      "path": "docs/cjmp-source-helper-20261117/ordered-type-payload-native-authority.md",
+      "bytes": 13008,
+      "sha256": "A85093508E8FC2265AAB80B8E473219FB06E0DF1089892D3215725996A1BD46B",
+      "verified": true
+    },
+    {
+      "path": "docs/cjmp-source-helper-20261117/source-frozen-encoder-gate-r1-r6-20261118.md",
+      "bytes": 6229,
+      "sha256": "9A50A63C661073BEE6ED2D018A0585CDEBF5CAECB4BB79B8E606B0F83F826FDF",
+      "verified": true
+    },
+    {
+      "path": "docs/cjmp-source-helper-20261117/source-frozen-encoder-gate-r1-r6-recheck-20261118.md",
+      "bytes": 15772,
+      "sha256": "2CB26E0E8BBE567ED40BAD4A5DFB3BA248E75F058E8B0FF6230C046715949080",
+      "verified": true
+    },
+    {
+      "path": "docs/cjmp-source-helper-20261117/source-frozen-encoder-gate-final-20261118.md",
+      "bytes": 19776,
+      "sha256": "D3E0FC666B1F54053FA42987E3E7B197AD769C80F941394C51E39782B5B01BFC",
+      "verified": true
+    },
+    {
+      "path": "docs/cjmp-source-helper-20261117/source-frozen-encoder-gate-rawarray-closed-20261118.md",
+      "bytes": 13500,
+      "sha256": "083956EDD5CC9F524DCAC675091E943E275F0477B5CC0ABC8F7FC906C8513EE6",
+      "verified": true
+    },
+    {
+      "path": "docs/cjmp-source-helper-20261117/source-frozen-encoder-gate-rawarray-semantic-equality-20261118.md",
+      "bytes": 9738,
+      "sha256": "F4B258420458C88DE0370362D6B0B09648C1777BA0AEDC52BEE6C82662075317",
+      "verified": true
+    }
+  ],
+  "semanticFindingsPreserved": true
+}

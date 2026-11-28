@@ -18,12 +18,21 @@ abstract class CfirFeaturesDirective : CfirPureAbstractElement(), CfirAnnotation
     abstract override val annotations: List<CfirAnnotation>
     abstract val featureIds: List<String>
 
+    /** 访问本节点拥有的完整来源子图；独立于 ordinary visitor 的语法子树。 */
+    @CfirImplementationDetail
+    override fun <R, D> acceptSourceChildren(visitor: CfirVisitor<R, D>, data: D) {
+        annotations.forEach { it.accept(visitor, data) }
+    }
+
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitFeaturesDirective(this, data)
 
     @Suppress("UNCHECKED_CAST")
     override fun <E : CfirElement, D> transform(transformer: CfirTransformer<D>, data: D): E =
         transformer.transformFeaturesDirective(this, data) as E
+
+    @CfirImplementationDetail
+    abstract override fun replaceSource(newSource: CjSourceElement?)
 
     abstract override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
 

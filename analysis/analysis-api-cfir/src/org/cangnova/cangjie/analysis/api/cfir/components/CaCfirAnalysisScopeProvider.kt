@@ -10,6 +10,8 @@ import org.cangnova.cangjie.analysis.api.impl.base.components.CaBaseAnalysisScop
 import org.cangnova.cangjie.analysis.api.impl.base.components.CaBaseSessionComponent
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaResolutionScope
+import org.cangnova.cangjie.parsing.compilationParsingResultOrNull
+import org.cangnova.cangjie.psi.CjFile
 
 /**
  * 对齐 Kotlin 的 analysis-scope provider 落位，
@@ -39,8 +41,11 @@ internal class CaCfirAnalysisScopeProvider(
      * 判断 PSI 元素是否处于当前解析作用域内。
      */
     override fun canBeAnalysedImpl(element: PsiElement): Boolean {
-        return resolutionScope.contains(element)
-
+        // target只是本代同一源码的编译产品；资格仍按真实原PSI的现有模块/作用域检查。
+        // 缺少唯一导航时不授予资格，不能把普通副本或未知来源节点当作同模块输入。
+        val product = (element.containingFile as? CjFile)?.compilationParsingResultOrNull()
+        val source = if (product != null) product.originalElementOrNull(element) ?: return false else element
+        return resolutionScope.contains(source)
     }
 
 

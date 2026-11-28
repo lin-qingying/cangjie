@@ -10,7 +10,7 @@ import org.cangnova.cangjie.analysis.api.symbols.CaPropertySymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
 import org.cangnova.cangjie.analysis.low.level.api.cfir.providers.CfirCallableSignature
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirClass
+import org.cangnova.cangjie.cfir.scopes.impl.CfirClassDeclaredMemberScope
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
 import org.cangnova.cangjie.cfir.symbols.CfirAnonymousFunctionSymbol
@@ -25,9 +25,8 @@ import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPatternBindingSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPatternVariableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
-import org.cangnova.cangjie.cfir.session.symbolProvider
-import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
-import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.cfirProvider
 import org.cangnova.cangjie.cfir.session.extendIndexStore
 import org.cangnova.cangjie.cfir.resolve.providers.CfirProviderImpl
 import org.cangnova.cangjie.name.CallableId
@@ -44,13 +43,10 @@ internal fun CaCfirSession.restoreCallablePublicSymbol(
     val candidates = when (ownerClassId) {
         null -> getTopLevelCallableSymbols(callableId.packageName, callableId.callableName)
         else -> {
-            val ownerClass = cfirSession.symbolProvider.getClassLikeSymbolByClassId(ownerClassId)?.cfir as? CfirClass
+            val owner = cfirSession.symbolProvider.getClassLikeSymbolByClassId(ownerClassId)
                 ?: return null
-            cfirSession.cangjieScopeProvider.getDeclarationSiteMemberScope(
-                ownerClass,
-                cfirSession,
-                getScopeSessionFor(cfirSession),
-            ).let { scope ->
+            // CallableId 指向声明所属 nominal，恢复时使用该 owner 的声明成员，覆盖 class/struct/interface/enum。
+            CfirClassDeclaredMemberScope(owner).let { scope ->
                 buildList {
                     scope.processCallablesByName(callableId.callableName) { symbol ->
                         add(cfirSymbolBuilder.buildSymbol(symbol) as CaCallableSymbol)

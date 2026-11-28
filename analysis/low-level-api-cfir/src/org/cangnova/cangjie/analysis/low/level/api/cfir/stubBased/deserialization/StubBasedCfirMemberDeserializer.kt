@@ -15,6 +15,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.declarations.EmptyDeprecationsProvider
 import org.cangnova.cangjie.cfir.declarations.builder.buildConstructor
+import org.cangnova.cangjie.cfir.declarations.utils.constructedClassTypeParameterRefs
 import org.cangnova.cangjie.cfir.declarations.builder.buildNamedFunction
 import org.cangnova.cangjie.cfir.declarations.builder.buildPrimaryConstructor
 import org.cangnova.cangjie.cfir.declarations.builder.buildProperty
@@ -490,7 +491,8 @@ internal class StubBasedCfirMemberDeserializer(
             this.symbol = symbol
             dispatchReceiverType = null
             resolvePhase = CfirResolvePhase.ANALYZED_DEPENDENCIES
-            this.typeParameters += typeParameters
+            // 构造器引用所属名义类型的参数 symbol，不重复持有 owner 的参数声明。
+            this.typeParameters += constructedClassTypeParameterRefs(typeParameters.map { it.symbol })
             valueParameters += local.memberDeserializer.valueParameters(constructor.valueParameters, symbol)
             annotations += c.annotationDeserializer.loadAnnotations(constructor, symbol)
             deprecationsProvider = EmptyDeprecationsProvider
@@ -514,7 +516,8 @@ internal class StubBasedCfirMemberDeserializer(
             this.symbol = symbol
             dispatchReceiverType = null
             resolvePhase = CfirResolvePhase.ANALYZED_DEPENDENCIES
-            this.typeParameters += typeParameters
+            // 构造器引用所属名义类型的参数 symbol，不重复持有 owner 的参数声明。
+            this.typeParameters += constructedClassTypeParameterRefs(typeParameters.map { it.symbol })
             valueParameters += local.memberDeserializer.valueParameters(constructor.valueParameters, symbol)
             annotations += c.annotationDeserializer.loadAnnotations(constructor, symbol)
             deprecationsProvider = EmptyDeprecationsProvider

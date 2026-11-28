@@ -8,6 +8,7 @@
 package org.cangnova.cangjie.cfir.expressions.builder
 
 import kotlin.contracts.*
+import org.cangnova.cangjie.annotations.CangjieOverflowStrategy
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
@@ -24,6 +25,8 @@ class CfirIfAvailableExpressionBuilder {
     var source: CjSourceElement? = null
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
     var coneTypeOrNull: ConeCangJieType? = null
+    var mappedExpression: CfirExpression? = null
+    var overflowStrategy: CangjieOverflowStrategy? = null
     lateinit var conditionName: Name
     var conditionArgumentSource: CjSourceElement? = null
     var conditionNameSource: CjSourceElement? = null
@@ -37,6 +40,8 @@ class CfirIfAvailableExpressionBuilder {
             source,
             annotations.toMutableOrEmpty(),
             coneTypeOrNull,
+            mappedExpression,
+            overflowStrategy,
             conditionName,
             conditionArgumentSource,
             conditionNameSource,
@@ -65,6 +70,8 @@ inline fun buildIfAvailableExpressionCopy(original: CfirIfAvailableExpression, i
     copyBuilder.source = original.source
     copyBuilder.annotations.addAll(original.annotations)
     copyBuilder.coneTypeOrNull = original.coneTypeOrNull
+    copyBuilder.mappedExpression = original.mappedExpression
+    copyBuilder.overflowStrategy = original.overflowStrategy
     copyBuilder.conditionName = original.conditionName
     copyBuilder.conditionArgumentSource = original.conditionArgumentSource
     copyBuilder.conditionNameSource = original.conditionNameSource

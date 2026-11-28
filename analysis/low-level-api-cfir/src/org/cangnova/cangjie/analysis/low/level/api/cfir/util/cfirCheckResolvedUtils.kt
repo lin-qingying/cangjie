@@ -9,6 +9,7 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.lazy.resolve.NonLocalAnn
 import org.cangnova.cangjie.cfir.CfirAnnotationContainer
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
+import org.cangnova.cangjie.cfir.CfirFunctionBodyOwner
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
@@ -100,7 +101,7 @@ internal fun <T> checkAnnotationTypeIsResolved(annotationContainer: T) where T :
 /**
  * 校验 [function] 的 body block 已经具有表达式类型。
  */
-internal fun checkBodyIsResolved(function: CfirFunction) {
+internal fun checkBodyIsResolved(function: CfirFunctionBodyOwner) {
     val block = function.body ?: return
     checkExpressionTypeIsResolved(block.coneTypeOrNull, "block type", function) {
         withCfirEntry("block", block)
@@ -273,6 +274,10 @@ internal fun checkAnalysisReadiness(
     requestedPhase: CfirResolvePhase,
     currentPhase: CfirResolvePhase = target.resolvePhase
 ): Boolean {
+    if (requestedPhase >= CfirResolvePhase.BODY_RESOLVE) {
+        (target as? CfirDeclaration)?.requireOwnedGraphAnalysisReady()
+        containingDeclarations?.forEach { it.requireOwnedGraphAnalysisReady() }
+    }
     if (currentPhase >= requestedPhase) {
         if (shouldRecordReadyPhaseEvent(requestedPhase)) {
             if (containingDeclarations != null) {

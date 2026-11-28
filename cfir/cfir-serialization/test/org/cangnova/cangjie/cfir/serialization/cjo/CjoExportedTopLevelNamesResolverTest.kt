@@ -69,6 +69,7 @@ class CjoExportedTopLevelNamesResolverTest {
                         else -> null
                     }
                 },
+                CjoFormatVersionPolicy.Compilation(org.cangnova.cangjie.LanguageVersionSettingsImpl.DEFAULT),
             ),
         )
 

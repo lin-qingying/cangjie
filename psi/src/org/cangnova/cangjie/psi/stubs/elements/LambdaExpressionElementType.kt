@@ -28,13 +28,14 @@ import org.cangnova.cangjie.lang.CangJieLanguage
 import org.cangnova.cangjie.lexer.CangJieLexer
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.parsing.CangJieParser
+import org.cangnova.cangjie.parsing.createCangJiePsiBuilder
+import org.cangnova.cangjie.parsing.requireParserSeed
+import org.cangnova.cangjie.parsing.copyParserSeedForReparse
 import org.cangnova.cangjie.psi.CjFunctionLiteral
 import org.cangnova.cangjie.psi.CjLambdaExpression
 import org.cangnova.cangjie.psi.CjParameterList
 import com.intellij.lang.ASTNode
 import com.intellij.lang.Language
-import com.intellij.lang.PsiBuilder
-import com.intellij.lang.PsiBuilderFactory
 import com.intellij.lexer.Lexer
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
@@ -61,15 +62,9 @@ import com.intellij.psi.util.PsiTreeUtil
      */
     override fun parseContents(chameleon: ASTNode): ASTNode {
         val project = chameleon.psi.project
-        val builder: PsiBuilder = PsiBuilderFactory.getInstance().createBuilder(
-            project,
-            chameleon,
-            null,
-            CangJieLanguage,
-            chameleon.chars,
-        )
+        val builder = createCangJiePsiBuilder(project, chameleon, CangJieLanguage)
         return CangJieParser.parseLambdaExpression(
-            builder, CangJieParser.languageModuleNameForContext(chameleon.psi),
+            builder, chameleon.requireParserSeed(),
         ).firstChildNode
     }
 
@@ -79,6 +74,9 @@ import com.intellij.psi.util.PsiTreeUtil
     override fun createNode(text: CharSequence?): ASTNode {
         return CjLambdaExpression(text)
     }
+
+    override fun isValidReparse(oldNode: ASTNode, newNode: ASTNode): Boolean =
+        copyParserSeedForReparse(oldNode, newNode)
 
     /**
      * 实现 `isParsable` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
@@ -168,10 +166,10 @@ import com.intellij.psi.util.PsiTreeUtil
                 if (newType == null) return true // New text was finished before reaching expected token in old text
 
                 if (newType !== oldType) {
-                    if (newType === CjTokens.WHITE_SPACE) {
+                    if (CjTokens.ALL_WHITESPACE_TOKENS.contains(newType)) {
                         newLexer.advance()
                         continue
-                    } else if (oldType === CjTokens.WHITE_SPACE) {
+                    } else if (CjTokens.ALL_WHITESPACE_TOKENS.contains(oldType)) {
                         oldLexer.advance()
                         continue
                     }

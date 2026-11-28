@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.diagnostic.ConeResumeThrowingMismatchTypeError
@@ -36,7 +37,7 @@ import org.cangnova.cangjie.type.AbstractTypeChecker
  * - RESUMPTION_INCORRECT_RETURN_TYPE: resumption 返回类型不匹配
  * - COMMAND_RESUMPTION_MISMATCH: command-resumption 类型不匹配
  */
-object CfirTryHandleReturnChecker : CfirTryExpressionChecker() {
+object CfirTryHandleReturnChecker : CfirTryExpressionChecker(MppCheckerKind.Common) {
     /**
      * 检查 try/handle 子句的 command 类型与 handle body 类型。
      *
@@ -96,7 +97,7 @@ object CfirTryHandleReturnChecker : CfirTryExpressionChecker() {
  * 该检查器覆盖不能单独挂在 try expression 分发上的 effects 表达式规则，包括 handle body
  * 控制流限制和 `resume with` 类型约束。
  */
-object CfirEffectsBasicChecker : CfirBasicExpressionChecker() {
+object CfirEffectsBasicChecker : CfirBasicExpressionChecker(MppCheckerKind.Common) {
     /**
      * 分发表达式级 effects 检查。
      */

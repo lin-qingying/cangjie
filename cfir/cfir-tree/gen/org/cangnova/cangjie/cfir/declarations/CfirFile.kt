@@ -6,8 +6,10 @@
 package org.cangnova.cangjie.cfir.declarations
 
 import org.cangnova.cangjie.CjSourceFile
+import org.cangnova.cangjie.cfir.CfirContentSource
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.CfirFeaturesDirective
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.references.CfirControlFlowGraphReference
@@ -24,6 +26,7 @@ import org.cangnova.cangjie.source.CjSourceFileLinesMapping
 abstract class CfirFile : CfirDeclaration(), CfirControlFlowGraphOwner {
     abstract override val source: CjSourceElement?
     abstract override val moduleData: CfirModuleData
+    abstract override val contentSource: CfirContentSource
     abstract override val annotations: List<CfirAnnotation>
     abstract override val origin: CfirDeclarationOrigin
     abstract override val attributes: CfirDeclarationAttributes
@@ -38,6 +41,17 @@ abstract class CfirFile : CfirDeclaration(), CfirControlFlowGraphOwner {
     abstract val conditionalCompilationFailures: List<CfirConditionalCompilationFailure>
     abstract val declarations: List<CfirDeclaration>
 
+    /** 访问本节点拥有的完整来源子图；独立于 ordinary visitor 的语法子树。 */
+    @CfirImplementationDetail
+    override fun <R, D> acceptSourceChildren(visitor: CfirVisitor<R, D>, data: D) {
+        annotations.forEach { it.accept(visitor, data) }
+        controlFlowGraphReference?.accept(visitor, data)
+        featuresDirective?.accept(visitor, data)
+        packageDirective.accept(visitor, data)
+        imports.forEach { it.accept(visitor, data) }
+        declarations.forEach { it.accept(visitor, data) }
+    }
+
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitFile(this, data)
 
@@ -45,13 +59,20 @@ abstract class CfirFile : CfirDeclaration(), CfirControlFlowGraphOwner {
     override fun <E : CfirElement, D> transform(transformer: CfirTransformer<D>, data: D): E =
         transformer.transformFile(this, data) as E
 
+    @CfirImplementationDetail
+    abstract override fun replaceSource(newSource: CjSourceElement?)
+
     abstract override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
 
     abstract override fun replaceControlFlowGraphReference(newControlFlowGraphReference: CfirControlFlowGraphReference?)
 
+    abstract fun replaceSourceFile(newSourceFile: CjSourceFile?)
+
     abstract fun replaceFeaturesDirective(newFeaturesDirective: CfirFeaturesDirective?)
 
     abstract fun replaceImports(newImports: List<CfirImport>)
+
+    abstract fun replaceSourceFileLinesMapping(newSourceFileLinesMapping: CjSourceFileLinesMapping?)
 
     abstract fun replaceConditionalCompilationFailures(newConditionalCompilationFailures: List<CfirConditionalCompilationFailure>)
 

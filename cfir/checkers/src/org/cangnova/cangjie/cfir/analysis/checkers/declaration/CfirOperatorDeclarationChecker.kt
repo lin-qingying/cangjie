@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.builtins.StandardNames
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
 import org.cangnova.cangjie.cfir.analysis.checkers.modifierByToken
@@ -28,7 +29,7 @@ import org.cangnova.cangjie.type.AbstractTypeChecker
  * 该检查器验证普通 unary/binary operator 的参数个数、`operator set` 的下标赋值协议，
  * 以及 primitive 内建 operator 不能在 extend 中被重新定义的声明级规则。
  */
-object CfirOperatorDeclarationChecker : CfirSimpleFunctionChecker() {
+object CfirOperatorDeclarationChecker : CfirSimpleFunctionChecker(MppCheckerKind.Common) {
     /**
      * 一元 operator 名称集合。
      */

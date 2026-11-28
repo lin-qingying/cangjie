@@ -20,6 +20,9 @@ import org.cangnova.cangjie.chir.core.type.ChirUnresolvedTypeRef
 import org.cangnova.cangjie.chir.core.type.ChirVArrayType
 import org.cangnova.cangjie.codegen.diagnostics.CodegenLoweringException
 
+/** LLVM value type used for the zero-sized Cangjie Unit/Nothing value. */
+internal const val LLVM_UNIT_TYPE_NAME = "%cangjie.unit"
+
 /**
  * CHIR 类型到 LLVM IR 类型的唯一 lowering 入口。
  *
@@ -31,6 +34,11 @@ interface TypeLowering {
      * 将 CHIR 类型引用降低为 LLVM textual type。
      */
     fun lower(type: ChirTypeRef): String
+
+    /**
+     * 降低 Cangjie 函数 ABI 返回类型；Unit/Nothing 在值位置仍有聚合表示，在 ABI 返回位置使用 void。
+     */
+    fun lowerFunctionReturn(type: ChirTypeRef): String
 }
 
 /**
@@ -50,12 +58,21 @@ class DefaultTypeLowering : TypeLowering {
         }
     }
 
+    override fun lowerFunctionReturn(type: ChirTypeRef): String {
+        val primitive = (type as? ChirResolvedTypeRef)?.type as? ChirPrimitiveType
+        return if (primitive in setOf(ChirPrimitiveType.UNIT, ChirPrimitiveType.NOTHING, ChirPrimitiveType.VOID)) {
+            "void"
+        } else {
+            lower(type)
+        }
+    }
+
     /**
      * 降低具体已解析 CHIR 类型到 LLVM textual type。
      */
     private fun lowerResolved(type: ChirResolvedTypeRef): String {
         return when (val resolved = type.type) {
-            ChirPrimitiveType.UNIT -> "void"
+            ChirPrimitiveType.UNIT -> LLVM_UNIT_TYPE_NAME
             ChirPrimitiveType.BOOL -> "i1"
             ChirPrimitiveType.INT8 -> "i8"
             ChirPrimitiveType.INT16 -> "i16"
@@ -71,25 +88,23 @@ class DefaultTypeLowering : TypeLowering {
             ChirPrimitiveType.FLOAT32 -> "float"
             ChirPrimitiveType.FLOAT64 -> "double"
             ChirPrimitiveType.RUNE -> "i32"
-            ChirPrimitiveType.NOTHING -> "void"
+            ChirPrimitiveType.NOTHING -> LLVM_UNIT_TYPE_NAME
             ChirPrimitiveType.VOID -> "void"
             is ChirNamedType -> llvmNominalTypeName(resolved)
             is ChirTupleType -> "{ ${resolved.elementTypes.joinToString(", ") { lower(it) }} }"
             is ChirFunctionType -> "ptr"
             is ChirStructType -> llvmNominalTypeName(resolved)
             is ChirClassType -> llvmNominalTypeName(resolved)
-            is ChirEnumType -> llvmNominalTypeName(resolved)
-            is ChirRawArrayType -> {
-                val size = resolved.size ?: throw CodegenLoweringException(
-                    "raw array type '${resolved.renderName}' must carry a fixed LLVM array size",
-                    null,
-                )
-                "[$size x ${lower(resolved.elementType)}]"
+            is ChirEnumType -> if (resolved.hasTrivialDiscriminantValueRepresentation) {
+                "i32"
+            } else {
+                llvmNominalTypeName(resolved)
             }
+            is ChirRawArrayType -> "ptr"
             is ChirVArrayType -> llvmNominalTypeName(resolved)
             is ChirCPointerType -> "ptr"
             is ChirCStringType -> "ptr"
-            is ChirGenericType -> llvmNominalTypeName(resolved)
+            is ChirGenericType -> "ptr"
             is ChirRefType -> "ptr"
             is ChirBoxType -> llvmNominalTypeName(resolved)
             is ChirThisType -> llvmNominalTypeName(resolved)

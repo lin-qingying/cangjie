@@ -8,9 +8,12 @@ import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 
 /**
- * 最小可用的 extend provider。
+ * 明确没有扩展声明的会话供应器。
  */
 class CfirEmptyExtendProvider : CfirExtendProvider {
+    /** 空供应器在会话内不可变，没有尚待发布的索引产品。 */
+    override val modificationCount: Long = 0L
+
     override fun getAllExtends(): List<CfirExtend> = emptyList()
 
     /**

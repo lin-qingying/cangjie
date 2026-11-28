@@ -1,5 +1,7 @@
 package org.cangnova.cangjie.cfir.resolve
 
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
+
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.SessionAndScopeSessionHolder
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration

@@ -18,15 +18,14 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.util.checkPhase
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.errorWithCfirSpecificEntries
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 import org.cangnova.cangjie.cfir.canHaveDeferredReturnTypeCalculation
-import org.cangnova.cangjie.cfir.correspondingProperty
+import org.cangnova.cangjie.cfir.correspondingValueParameter
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.originalIfFakeOverrideOrDelegated
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.psi
 import org.cangnova.cangjie.cfir.resolve.providers.getContainingFile
-import org.cangnova.cangjie.cfir.session.bodyResolvePrerequisitePhase
-import org.cangnova.cangjie.cfir.session.cfirProvider
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.cfirProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.checkWithAttachment
@@ -162,9 +161,9 @@ internal sealed class LLCfirTargetResolver(
                 originalDeclaration?.lazyResolveToPhase(resolverPhase)
             }
 
-            target is CfirProperty -> {
-                // We share type references and annotations with the original parameter
-                target.correspondingValueParameterFromPrimaryConstructor?.lazyResolveToPhase(resolverPhase)
+            target is CfirFieldVariable -> {
+                // 主构造成员字段与参数共享源类型和注解，按显式身份关系推进依赖。
+                target.correspondingValueParameter?.lazyResolveToPhase(resolverPhase)
             }
 
             target is CfirPatternBindingVariable -> {
@@ -316,8 +315,10 @@ internal sealed class LLCfirTargetResolver(
                     target,
                     resolverPhase,
                     actionUnderLock = {
-                        doLazyResolveUnderLock(target)
-                        updatePhaseForDeclarationInternals(target)
+                        withDeclarationStateUnderLock(target) {
+                            doLazyResolveUnderLock(target)
+                            updatePhaseForDeclarationInternals(target)
+                        }
                     },
                     actionOnCycle = {
                         handleCycleInResolution(target)
@@ -363,9 +364,19 @@ internal sealed class LLCfirTargetResolver(
         }
 
         lockProvider.withWriteLock(target, resolverPhase) {
-            action()
-            updatePhaseForDeclarationInternals(target)
+            withDeclarationStateUnderLock(target) {
+                action()
+                updatePhaseForDeclarationInternals(target)
+            }
         }
+    }
+
+    /**
+     * 阶段自有声明状态的事务接缝。保存、action、内部阶段更新和失败恢复均在目标锁内进行；
+     * 根阶段仍由通用锁发布。仓颉 CJMP 的一次性根事实需要覆盖 Kotlin 原 action 之外的 updater 区间。
+     */
+    protected open fun withDeclarationStateUnderLock(target: CfirElementWithResolveState, action: () -> Unit) {
+        action()
     }
 
     /**
@@ -392,16 +403,7 @@ internal sealed class LLCfirTargetResolver(
      * 校验 [target] 至少已经达到当前阶段的前一阶段。
      */
     private fun checkThatResolvedAtLeastToPreviousPhase(target: CfirElementWithResolveState) {
-        val targetSession = when (target) {
-            is CfirDeclaration -> target.moduleData.session
-            is CfirFile -> target.moduleData.session
-            else -> resolveTargetSession
-        }
-        val previousPhase = if (resolverPhase == CfirResolvePhase.BODY_RESOLVE) {
-            targetSession.bodyResolvePrerequisitePhase
-        } else {
-            resolverPhase.previous
-        }
+        val previousPhase = resolverPhase.previous
         when (previousPhase) {
             CfirResolvePhase.IMPORTS -> {}
             else -> {
@@ -410,20 +412,6 @@ internal sealed class LLCfirTargetResolver(
         }
     }
 }
-
-/**
- * 返回属性对应的主构造参数。
- *
- * 主构造参数和属性会共享部分类型状态，懒解析属性前需要先推进该参数。
- */
-private val CfirProperty.correspondingValueParameterFromPrimaryConstructor: CfirValueParameter?
-    get() {
-        val ownerClassLike = symbol.callableId.classId?.let(moduleData.session.symbolProvider::getClassLikeSymbolByClassId)?.cfir as? CfirClassLikeDeclaration
-            ?: return null
-        val primaryConstructor = ownerClassLike.declarations.firstOrNull { it is CfirConstructor && it.isPrimary } as? CfirConstructor
-            ?: return null
-        return primaryConstructor.valueParameters.firstOrNull { it.correspondingProperty === this }
-    }
 
 /**
  * 返回 pattern binding 变量所属的外层 pattern 变量。

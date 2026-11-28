@@ -11,6 +11,18 @@ abstract class CommonCompilerArguments : CommonToolArguments() {
             field = value
         }
 
+    var warnOff: Array<String> = emptyArray()
+        set(value) {
+            checkFrozen()
+            field = value
+        }
+
+    var warnOn: Array<String> = emptyArray()
+        set(value) {
+            checkFrozen()
+            field = value
+        }
+
     var languageVersion: String? = null
         set(value) {
             checkFrozen()
@@ -39,6 +51,18 @@ abstract class CommonCompilerArguments : CommonToolArguments() {
         set(value) {
             checkFrozen()
             field = value
+        }
+
+    var debug: Boolean = false
+        set(value) {
+            checkFrozen()
+            field = value
+        }
+
+    var optimizationLevel: String? = null
+        set(value) {
+            checkFrozen()
+            field = if (value.isNullOrEmpty()) null else value
         }
 
     var outputFile: String? = null

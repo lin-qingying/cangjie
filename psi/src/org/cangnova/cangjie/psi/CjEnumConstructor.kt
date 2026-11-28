@@ -28,10 +28,7 @@ import org.cangnova.cangjie.name.*
 import org.cangnova.cangjie.psi.stubs.CangJieEnumConstructorStub
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import com.intellij.lang.ASTNode
-import com.intellij.psi.PsiElement
-import com.intellij.psi.PsiNameIdentifierOwner
 import org.cangnova.cangjie.lexer.CjKeywordToken
-import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.psi.psiUtil.getStrictParentOfType
 
 /**
@@ -40,7 +37,7 @@ import org.cangnova.cangjie.psi.psiUtil.getStrictParentOfType
  * 根据仓颉语言规范，枚举条目是构造器，用于创建枚举实例。
  * 枚举构造项是独立声明，也是注解和声明宏的 carrier；payload 只决定它的参数列表。
  */
-class CjEnumConstructor : CjDeclarationStub<CangJieEnumConstructorStub>, PsiNameIdentifierOwner {
+class CjEnumConstructor : CjNamedDeclarationStub<CangJieEnumConstructorStub> {
     constructor(node: ASTNode) : super(node)
 
     constructor(stub: CangJieEnumConstructorStub) : super(stub, CjStubElementTypes.ENUM_CONSTRUCTOR)
@@ -50,32 +47,6 @@ class CjEnumConstructor : CjDeclarationStub<CangJieEnumConstructorStub>, PsiName
      */
     override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
         return visitor.visitEnumConstructor(this, data)
-    }
-
-    /**
-     * 实现 `getName` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
-     */
-    override fun getName(): String? {
-        val stub = greenStub
-        if (stub != null) {
-            return stub.name
-        }
-        return nameIdentifier?.text
-    }
-
-    /**
-     * 实现 `setName` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
-     */
-    override fun setName(name: String): PsiElement {
-        // 枚举构造器名称通常不支持重命名
-        return this
-    }
-
-    /**
-     * 实现 `getNameIdentifier` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
-     */
-    override fun getNameIdentifier(): PsiElement? {
-        return findChildByType(CjTokens.IDENTIFIER)
     }
 
     /**

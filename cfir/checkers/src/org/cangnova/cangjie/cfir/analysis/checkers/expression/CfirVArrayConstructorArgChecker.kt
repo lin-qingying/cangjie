@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.CfirVArraySizeLiteralUtils
 import org.cangnova.cangjie.cfir.analysis.checkers.findUnsupportedVArrayElementType
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
@@ -27,7 +28,7 @@ import org.cangnova.cangjie.source.CjSourceElement
  * 其元素类型 `T` 不再处于完整的 `CfirVArrayTypeRef` 内，因此这里补上与
  * `CheckVArrayType` 相同的元素类型限制入口。
  */
-object CfirVArrayConstructorArgChecker : CfirFunctionCallChecker() {
+object CfirVArrayConstructorArgChecker : CfirFunctionCallChecker(MppCheckerKind.Common) {
     /** 检查 VArray synthetic 构造器调用的长度字面量、元素类型和实参数量。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirFunctionCall) {

@@ -17,7 +17,7 @@ import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.CjSourceElement
 
 class CfirResolvedNamedReferenceImpl @CfirImplementationDetail constructor(
-    override val source: CjSourceElement?,
+    override var source: CjSourceElement?,
     override val name: Name,
     override val resolvedSymbol: CfirBasedSymbol<*>,
 ) : CfirPureAbstractElement(), CfirResolvedNamedReference {
@@ -26,5 +26,10 @@ class CfirResolvedNamedReferenceImpl @CfirImplementationDetail constructor(
 
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirResolvedNamedReferenceImpl {
         return this
+    }
+
+    @CfirImplementationDetail
+    override fun replaceSource(newSource: CjSourceElement?) {
+        source = newSource
     }
 }

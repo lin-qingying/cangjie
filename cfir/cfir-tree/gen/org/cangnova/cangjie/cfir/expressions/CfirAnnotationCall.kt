@@ -5,11 +5,9 @@
 
 package org.cangnova.cangjie.cfir.expressions
 
-import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
-import org.cangnova.cangjie.annotations.CangjieAnnotationIdentity
-import org.cangnova.cangjie.annotations.CangjieAnnotationOrigin
-import org.cangnova.cangjie.annotations.CangjieAnnotationTarget
+import org.cangnova.cangjie.annotations.*
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
@@ -26,6 +24,8 @@ abstract class CfirAnnotationCall : CfirAnnotation(), CfirCall, CfirResolvable {
     abstract override val source: CjSourceElement?
     abstract override val annotations: List<CfirAnnotation>
     abstract override val coneTypeOrNull: ConeCangJieType?
+    abstract override val mappedExpression: CfirExpression?
+    abstract override val overflowStrategy: CangjieOverflowStrategy?
     abstract override val typeRef: CfirTypeRef
     abstract override val arguments: List<CfirExpression>
     abstract override val argumentMapping: CfirAnnotationArgumentMapping
@@ -44,6 +44,17 @@ abstract class CfirAnnotationCall : CfirAnnotation(), CfirCall, CfirResolvable {
     abstract val annotationResolveState: CfirAnnotationResolveState
     abstract val containingDeclarationSymbol: CfirBasedSymbol<*>
 
+    /** 访问本节点拥有的完整来源子图；独立于 ordinary visitor 的语法子树。 */
+    @CfirImplementationDetail
+    override fun <R, D> acceptSourceChildren(visitor: CfirVisitor<R, D>, data: D) {
+        annotations.forEach { it.accept(visitor, data) }
+        typeRef.accept(visitor, data)
+        argumentMapping.accept(visitor, data)
+        argumentList.accept(visitor, data)
+        calleeReference.accept(visitor, data)
+        argumentView?.acceptSourceChildren(visitor, data)
+    }
+
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitAnnotationCall(this, data)
 
@@ -51,9 +62,16 @@ abstract class CfirAnnotationCall : CfirAnnotation(), CfirCall, CfirResolvable {
     override fun <E : CfirElement, D> transform(transformer: CfirTransformer<D>, data: D): E =
         transformer.transformAnnotationCall(this, data) as E
 
+    @CfirImplementationDetail
+    abstract override fun replaceSource(newSource: CjSourceElement?)
+
     abstract override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
 
     abstract override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?)
+
+    abstract override fun replaceMappedExpression(newMappedExpression: CfirExpression?)
+
+    abstract override fun replaceOverflowStrategy(newOverflowStrategy: CangjieOverflowStrategy?)
 
     abstract override fun replaceTypeRef(newTypeRef: CfirTypeRef)
 

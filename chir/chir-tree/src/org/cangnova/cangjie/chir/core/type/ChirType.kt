@@ -57,6 +57,29 @@ sealed interface ChirType {
 }
 
 /**
+ * 仓内名义类型声明的结构化身份；它跨 common/specific 包保持一致，不依赖展示名或布局副本。
+ */
+data class ChirTypeDeclarationId(
+    /** 名义类型所属包，根包使用空字符串。 */
+    val packageName: String,
+    /** 包内声明名。 */
+    val declarationName: String,
+) {
+    companion object {
+        /** 仓颉核心包中 Any 类的稳定身份。 */
+        val CORE_ANY = ChirTypeDeclarationId("std.core", "Any")
+    }
+
+    init {
+        require(declarationName.isNotBlank()) { "nominal type declaration name must not be blank" }
+    }
+
+    /** 供诊断和输出使用的限定名。 */
+    val qualifiedName: String
+        get() = if (packageName.isBlank()) declarationName else "$packageName/$declarationName"
+}
+
+/**
  * CHIR 内建原始类型。
  */
 enum class ChirPrimitiveType(
@@ -95,9 +118,9 @@ enum class ChirPrimitiveType(
  */
 data class ChirNamedType(
     /**
-     * 类型的名称或已解析显示名。
+     * 名义类型名称。
      */
-    override val renderName: String,
+    val name: String,
 
     /**
      * 名称类型携带的类型实参。
@@ -108,6 +131,11 @@ data class ChirNamedType(
      * 名称类型的固定分类。
      */
     override val kind: ChirTypeKind = ChirTypeKind.NAMED
+
+    /**
+     * 类型名称及其实际类型参数。
+     */
+    override val renderName: String = renderNominalTypeName(name, typeArguments)
 }
 
 /**
@@ -153,6 +181,16 @@ data class ChirFunctionType(
      * 函数类型是否声明抛出语义。
      */
     val throws: Boolean = false,
+
+    /**
+     * 函数是否使用 C ABI。
+     */
+    val isCFunctionType: Boolean = false,
+
+    /**
+     * 函数是否包含变长参数。
+     */
+    val hasVarArg: Boolean = false,
 ) : ChirType {
     /**
      * 函数类型的固定分类。
@@ -170,6 +208,8 @@ data class ChirFunctionType(
         append(parameterTypes.joinToString(prefix = "(", postfix = ")") { it.renderName })
         append(" -> ")
         append(returnType.renderName)
+        if (isCFunctionType) append(" cfunc")
+        if (hasVarArg) append(" vararg")
         if (throws) append(" throws")
     }
 }
@@ -178,10 +218,8 @@ data class ChirFunctionType(
  * 结构体类型。
  */
 data class ChirStructType(
-    /**
-     * 结构体名称。
-     */
-    val name: String,
+    /** 结构体声明身份。 */
+    val declarationId: ChirTypeDeclarationId,
 
     /**
      * 结构体字段类型列表。
@@ -201,17 +239,18 @@ data class ChirStructType(
     /**
      * 结构体类型渲染名。
      */
-    override val renderName: String = name
+    val name: String
+        get() = declarationId.qualifiedName
+
+    override val renderName: String = renderNominalTypeName(name, typeArguments)
 }
 
 /**
  * 类类型。
  */
 data class ChirClassType(
-    /**
-     * 类名称。
-     */
-    val name: String,
+    /** 类声明身份。 */
+    val declarationId: ChirTypeDeclarationId,
 
     /**
      * 类字段类型列表。
@@ -236,7 +275,10 @@ data class ChirClassType(
     /**
      * 类类型渲染名。
      */
-    override val renderName: String = name
+    val name: String
+        get() = declarationId.qualifiedName
+
+    override val renderName: String = renderNominalTypeName(name, typeArguments)
 }
 
 /**
@@ -258,10 +300,8 @@ data class ChirEnumCaseType(
  * 枚举类型。
  */
 data class ChirEnumType(
-    /**
-     * 枚举名称。
-     */
-    val name: String,
+    /** 枚举声明身份。 */
+    val declarationId: ChirTypeDeclarationId,
 
     /**
      * 枚举 case 列表。
@@ -272,6 +312,11 @@ data class ChirEnumType(
      * 枚举类型实参。
      */
     val typeArguments: List<ChirTypeRef> = emptyList(),
+
+    /**
+     * 枚举定义是否允许跨包扩展 case。
+     */
+    val nonExhaustive: Boolean = false,
 ) : ChirType {
     /**
      * 枚举类型的固定分类。
@@ -281,7 +326,38 @@ data class ChirEnumType(
     /**
      * 枚举类型渲染名。
      */
-    override val renderName: String = name
+    val name: String
+        get() = declarationId.qualifiedName
+
+    override val renderName: String = renderNominalTypeName(name, typeArguments)
+
+    /**
+     * 官方 CHIR 用 Bool 表示穷尽的二构造器 Option-like 枚举选择器，其余选择器为 UInt32。
+     */
+    val selectorType: ChirPrimitiveType
+        get() = if (
+            !nonExhaustive &&
+            cases.size == 2 &&
+            cases.count { it.payloadTypes.isEmpty() } == 1 &&
+            cases.count { it.payloadTypes.size == 1 } == 1
+        ) {
+            ChirPrimitiveType.BOOL
+        } else {
+            ChirPrimitiveType.UINT32
+        }
+
+    /** 官方后端将唯一空构造器的封闭、非泛型枚举表示为零大小值。 */
+    val hasZeroSizeValueRepresentation: Boolean
+        get() = !nonExhaustive &&
+            typeArguments.isEmpty() &&
+            cases.size == 1 &&
+            cases.single().payloadTypes.isEmpty()
+
+    /** 无 payload 且不属于零大小情形的枚举直接以 UInt32 构造器序号作为值。 */
+    val hasTrivialDiscriminantValueRepresentation: Boolean
+        get() = !hasZeroSizeValueRepresentation &&
+            cases.isNotEmpty() &&
+            cases.all { it.payloadTypes.isEmpty() }
 }
 
 /**
@@ -294,10 +370,14 @@ data class ChirRawArrayType(
     val elementType: ChirTypeRef,
 
     /**
-     * 固定数组大小；未知或动态大小时为 `null`。
+     * 仓颉 RawArray 的维数。
      */
-    val size: Int? = null,
+    val dimensions: UInt = 1u,
 ) : ChirType {
+    init {
+        require(dimensions > 0u) { "RawArray dimensions must be positive" }
+    }
+
     /**
      * 原始数组类型的固定分类。
      */
@@ -306,7 +386,7 @@ data class ChirRawArrayType(
     /**
      * 原始数组类型渲染名。
      */
-    override val renderName: String = "rawarray<${elementType.renderName}>"
+    override val renderName: String = "rawarray$dimensions<${elementType.renderName}>"
 }
 
 /**
@@ -319,10 +399,14 @@ data class ChirVArrayType(
     val elementType: ChirTypeRef,
 
     /**
-     * VArray 维度或 rank。
+     * VArray 的静态长度。
      */
-    val rank: Int = 1,
+    val size: Long,
 ) : ChirType {
+    init {
+        require(size >= 0L) { "VArray size must not be negative" }
+    }
+
     /**
      * VArray 类型的固定分类。
      */
@@ -331,7 +415,7 @@ data class ChirVArrayType(
     /**
      * VArray 类型渲染名。
      */
-    override val renderName: String = "varray$rank<${elementType.renderName}>"
+    override val renderName: String = "varray<$size, ${elementType.renderName}>"
 }
 
 /**
@@ -387,6 +471,11 @@ data class ChirGenericType(
      * 泛型参数在声明中的索引；未知时为 `null`。
      */
     val declarationIndex: Int? = null,
+
+    /**
+     * 泛型参数的稳定语义身份，用于区分不同声明中同名的类型参数。
+     */
+    val semanticIdentity: String = identifier,
 ) : ChirType {
     /**
      * 泛型类型的固定分类。
@@ -398,6 +487,12 @@ data class ChirGenericType(
      */
     override val renderName: String = identifier
 }
+
+/**
+ * 渲染具名类型及其实际类型参数。
+ */
+private fun renderNominalTypeName(name: String, typeArguments: List<ChirTypeRef>): String =
+    if (typeArguments.isEmpty()) name else typeArguments.joinToString(prefix = "$name<", postfix = ">") { it.renderName }
 
 /**
  * 引用类型。

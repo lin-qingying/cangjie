@@ -9,6 +9,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirStatement
 import org.cangnova.cangjie.cfir.resolve.body.CfirDataFlowAnalyzerContext
 import org.cangnova.cangjie.cfir.resolve.body.CfirTowerDataContext
+import org.cangnova.cangjie.cfir.resolve.dfa.DfaSourceVisitor
 
 /**
  * Represents the partial (incomplete) body resolve state.
@@ -88,8 +89,19 @@ internal class LLPartialBodyAnalysisSnapshot(
     /**
      * partial analysis 停止位置对应的数据流分析上下文。
      */
-    val dataFlowAnalyzerContext: CfirDataFlowAnalyzerContext
-)
+    val dataFlowAnalyzerContext: CfirDataFlowAnalyzerContext,
+    /** 实际解析游标与不可变 flow 共同保留，恢复不能改用其它 CFG 程序点。 */
+    val smartCastPosition: org.cangnova.cangjie.cfir.resolve.dfa.Flow?,
+) {
+    /** 快照是独立的保留状态面；源换代访问它，不能删除未改声明的 partial 进度或强制完成解析。 */
+    fun acceptSourceChildren(visitor: DfaSourceVisitor) {
+        result.statements.forEach(visitor::visitElement)
+        result.defaultParameterValues.forEach(visitor::visitElement)
+        towerDataContext.acceptSourceChildren(visitor)
+        dataFlowAnalyzerContext.acceptSourceChildren(visitor)
+        smartCastPosition?.let(visitor::visitFlow)
+    }
+}
 
 /**
  * Contains already resolved parts of the declaration.

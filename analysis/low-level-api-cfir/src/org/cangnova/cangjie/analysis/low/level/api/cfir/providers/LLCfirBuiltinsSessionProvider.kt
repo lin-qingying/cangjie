@@ -5,11 +5,14 @@
 
 package org.cangnova.cangjie.analysis.low.level.api.cfir.providers
 
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
+
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.resolve.providers.CfirProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
@@ -41,6 +44,9 @@ internal class LLCfirBuiltinsSessionProvider(
      * Builtins session 中 classifier 没有源码容器文件。
      */
     override fun getCfirClassifierContainerFileIfAny(fqName: ClassId): CfirFile? = null
+
+    /** builtin symbol 没有源码容器产品。 */
+    override fun getCfirClassifierContainerFileIfAny(symbol: CfirClassLikeSymbol<*>): CfirFile? = null
 
     /**
      * Builtins session 中 callable 没有源码容器文件。

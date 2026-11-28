@@ -1,6 +1,7 @@
 ﻿package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.diagnosticFactoryForReturnTypeMismatch
 import org.cangnova.cangjie.cfir.analysis.checkers.hasUninferredOmittedLambdaParameterType
 import org.cangnova.cangjie.cfir.analysis.checkers.isSubtypeForTypeMismatch
@@ -45,7 +46,7 @@ import org.cangnova.cangjie.cfir.types.typeContext
  * 函数返回类型检查器。
  * 检查 `return expr` 中 `expr` 的类型是否为所在函数返回类型的子类型。
  */
-object CfirReturnTypeMismatchChecker : CfirReturnExpressionChecker( ) {
+object CfirReturnTypeMismatchChecker : CfirReturnExpressionChecker(MppCheckerKind.Common) {
     /**
      * 检查 `return` 表达式结果类型是否兼容目标函数返回类型。
      *

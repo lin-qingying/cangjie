@@ -3,7 +3,7 @@ package org.cangnova.cangjie.cfir.declarations
 import org.cangnova.cangjie.cfir.CfirDeclarationDataKey
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
-import org.cangnova.cangjie.source.CjFakeSourceElementKind
+import org.cangnova.cangjie.cfir.types.CfirTypeRefOrigin
 
 /**
  * Lambda 形参是否省略了源码类型标注。
@@ -18,16 +18,16 @@ private object LambdaParameterTypeOmittedKey : CfirDeclarationDataKey()
  *
  * 取值语义：`true` / `false` 表示 raw 阶段已记录的省略与否；
  * `null` 表示该参数尚未被 raw 层标记（如编译器合成参数），
- * 读取方应回退到 [hasOmittedLambdaParameterType] 的推导逻辑。
+ * 已知/合成参数通过type-ref创建协议表达其类型节点存在性，不从source位置推断。
  */
 var CfirValueParameter.isLambdaParameterTypeOmitted: Boolean? by
     CfirDeclarationDataRegistry.data(LambdaParameterTypeOmittedKey)
 
-/** 统一读取源码省略信息；编译器合成参数尚无raw标记时，使用其隐式type-ref/source种类。 */
+/** 源码raw事实优先；合成参数以创建owner发布的语义ref协议表达没有原始Type节点。 */
 fun CfirValueParameter.hasOmittedLambdaParameterType(): Boolean =
     isLambdaParameterTypeOmitted
         ?: (returnTypeRef is CfirImplicitTypeRef ||
-                returnTypeRef.source?.kind == CjFakeSourceElementKind.ImplicitReturnTypeOfLambdaValueParameter)
+                returnTypeRef.typeUseOrigin == CfirTypeRefOrigin.SEMANTIC)
 
 /**
  * Lambda 头部诊断使用的目标函数类型。

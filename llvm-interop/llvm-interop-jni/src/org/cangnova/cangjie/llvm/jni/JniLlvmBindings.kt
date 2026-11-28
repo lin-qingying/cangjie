@@ -705,6 +705,10 @@ internal object JniLlvmBindings : LlvmBindings {
             LlvmCodeGenOptimizationLevel.LESS -> 1
             LlvmCodeGenOptimizationLevel.DEFAULT -> 2
             LlvmCodeGenOptimizationLevel.AGGRESSIVE -> 3
+            // LLVM's C target-machine API exposes speed levels only; the preceding IR pipeline carries Os/Oz.
+            LlvmCodeGenOptimizationLevel.SIZE,
+            LlvmCodeGenOptimizationLevel.SIZE_AGGRESSIVE,
+            -> 2
         }
 
     /**

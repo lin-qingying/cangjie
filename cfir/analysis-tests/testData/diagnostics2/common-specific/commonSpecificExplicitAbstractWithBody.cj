@@ -10,4 +10,7 @@ public common abstract class A {
     <!EXPLICITLY_ABSTRACT_CAN_NOT_HAVE_BODY!>public abstract func f(): Int64 {
         1
     }<!>
+    <!EXPLICITLY_ABSTRACT_CAN_NOT_HAVE_BODY!>public abstract prop p: Int64 {
+        get() { 1 }
+    }<!>
 }

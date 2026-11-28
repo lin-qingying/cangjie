@@ -8,14 +8,16 @@
 package org.cangnova.cangjie.cfir.expressions.builder
 
 import kotlin.contracts.*
+import org.cangnova.cangjie.annotations.CangjieOverflowStrategy
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirCatch
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.impl.CfirCatchImpl
-import org.cangnova.cangjie.cfir.patterns.CfirCatchPattern
+import org.cangnova.cangjie.cfir.patterns.CfirPattern
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.source.CjSourceElement
 
@@ -24,7 +26,9 @@ class CfirCatchBuilder {
     var source: CjSourceElement? = null
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
     var coneTypeOrNull: ConeCangJieType? = null
-    lateinit var pattern: CfirCatchPattern
+    var mappedExpression: CfirExpression? = null
+    var overflowStrategy: CangjieOverflowStrategy? = null
+    lateinit var pattern: CfirPattern
     lateinit var body: CfirBlock
 
     @OptIn(CfirImplementationDetail::class)
@@ -33,6 +37,8 @@ class CfirCatchBuilder {
             source,
             annotations.toMutableOrEmpty(),
             coneTypeOrNull,
+            mappedExpression,
+            overflowStrategy,
             pattern,
             body,
         )
@@ -57,6 +63,8 @@ inline fun buildCatchCopy(original: CfirCatch, init: CfirCatchBuilder.() -> Unit
     copyBuilder.source = original.source
     copyBuilder.annotations.addAll(original.annotations)
     copyBuilder.coneTypeOrNull = original.coneTypeOrNull
+    copyBuilder.mappedExpression = original.mappedExpression
+    copyBuilder.overflowStrategy = original.overflowStrategy
     copyBuilder.pattern = original.pattern
     copyBuilder.body = original.body
     return copyBuilder.apply(init).build()

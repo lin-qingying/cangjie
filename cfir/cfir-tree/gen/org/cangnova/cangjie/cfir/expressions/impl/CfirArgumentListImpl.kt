@@ -7,6 +7,7 @@
 
 package org.cangnova.cangjie.cfir.expressions.impl
 
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.expressions.CfirArgumentList
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
@@ -15,7 +16,7 @@ import org.cangnova.cangjie.cfir.visitors.transformInplace
 import org.cangnova.cangjie.source.CjSourceElement
 
 internal class CfirArgumentListImpl(
-    override val source: CjSourceElement?,
+    override var source: CjSourceElement?,
     override val arguments: MutableList<CfirExpression>,
 ) : CfirArgumentList() {
 
@@ -31,5 +32,10 @@ internal class CfirArgumentListImpl(
     override fun <D> transformArguments(transformer: CfirTransformer<D>, data: D): CfirArgumentListImpl {
         arguments.transformInplace(transformer, data)
         return this
+    }
+
+    @CfirImplementationDetail
+    override fun replaceSource(newSource: CjSourceElement?) {
+        source = newSource
     }
 }

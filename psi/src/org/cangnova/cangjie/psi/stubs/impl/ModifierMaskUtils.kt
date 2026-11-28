@@ -57,10 +57,14 @@ import org.cangnova.cangjie.psi.CjModifierList
  */
 object ModifierMaskUtils {
     /**
-     * 保存 `ADDITIONAL_KEYWORDS` 的内部状态，供PSI Stub实现维护节点缓存或解析上下文。
+     * 不属于普通 modifier 数组的真实修饰符；只向尾部追加，保留既有 FOREIGN 位序。
      */
     private val ADDITIONAL_KEYWORDS = arrayOf(
         CjTokens.FOREIGN_KEYWORD,
+        CjTokens.CONST_KEYWORD,
+        CjTokens.UNSAFE_KEYWORD,
+        CjTokens.INOUT_KEYWORD,
+        CjTokens.PLATFORM_KEYWORD,
     )
 
     /**
@@ -161,7 +165,6 @@ object ModifierMaskUtils {
 
         val additionalIndex = ADDITIONAL_KEYWORDS.indexOf(modifierToken)
         if (additionalIndex < 0) {
-            // unsafe、const 等关键字因兼具块语法角色（如 unsafe { }）而未编码进当前掩码。
             return false
         }
 

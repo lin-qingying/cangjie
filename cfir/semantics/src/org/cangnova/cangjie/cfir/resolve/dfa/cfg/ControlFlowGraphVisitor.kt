@@ -97,10 +97,39 @@ abstract class ControlFlowGraphVisitor<out R, in D> {
 
     /** 访问 if 入口节点。 */
     open fun visitIfEnterNode(node: IfEnterNode, data: D): R = visitNode(node, data)
+
+    open fun visitIfBranchResultEnterNode(node: IfBranchResultEnterNode, data: D): R = visitNode(node, data)
     /** 访问 if 出口节点。 */
     open fun visitIfExitNode(node: IfExitNode, data: D): R = visitNode(node, data)
 
     /** 访问循环入口节点。 */
+    /** 访问 For 的真实执行阶段。 */
+    open fun visitForInLoopIterationEnterNode(node: ForInLoopIterationEnterNode, data: D): R = visitNode(node, data)
+
+    /** 访问 For 的真实执行阶段。 */
+    open fun visitForInLoopIterationExitNode(node: ForInLoopIterationExitNode, data: D): R = visitNode(node, data)
+
+    /** 访问 For 的真实执行阶段。 */
+    open fun visitForInLoopGuardExitNode(node: ForInLoopGuardExitNode, data: D): R = visitNode(node, data)
+
+    open fun visitForInLoopInitialCheckExitNode(node: ForInLoopInitialCheckExitNode, data: D): R = visitNode(node, data)
+
+    open fun visitForInLoopConditionEnterNode(node: ForInLoopConditionEnterNode, data: D): R = visitNode(node, data)
+
+    open fun visitForInLoopRangeCheckNode(node: ForInLoopRangeCheckNode, data: D): R = visitNode(node, data)
+
+    open fun visitForInLoopStringCheckNode(node: ForInLoopStringCheckNode, data: D): R = visitNode(node, data)
+
+    open fun visitForInLoopStringUpdateNode(node: ForInLoopStringUpdateNode, data: D): R = visitNode(node, data)
+
+    open fun visitForInLoopIteratorCheckNode(node: ForInLoopIteratorCheckNode, data: D): R = visitNode(node, data)
+
+    open fun visitCallExpressionNode(node: CallExpressionNode, data: D): R = visitNode(node, data)
+
+    open fun visitUnaryExpressionNode(node: UnaryExpressionNode, data: D): R = visitNode(node, data)
+
+    open fun visitBinaryExpressionNode(node: BinaryExpressionNode, data: D): R = visitNode(node, data)
+
     open fun visitLoopEnterNode(node: LoopEnterNode, data: D): R = visitNode(node, data)
     /** 访问循环体入口节点。 */
     open fun visitLoopBlockEnterNode(node: LoopBlockEnterNode, data: D): R = visitNode(node, data)
@@ -152,6 +181,11 @@ abstract class ControlFlowGraphVisitor<out R, in D> {
     open fun visitJumpNode(node: JumpNode, data: D): R = visitNode(node, data)
     /** 访问字面量节点。 */
     open fun visitLiteralExpressionNode(node: LiteralExpressionNode, data: D): R = visitNode(node, data)
+
+    /** 访问 tuple 的真实求值入口、逐元素完成点与聚合完成点。 */
+    open fun visitTupleLiteralEnterNode(node: TupleLiteralEnterNode, data: D): R = visitNode(node, data)
+    open fun visitTupleLiteralElementExitNode(node: TupleLiteralElementExitNode, data: D): R = visitNode(node, data)
+    open fun visitTupleLiteralExitNode(node: TupleLiteralExitNode, data: D): R = visitNode(node, data)
     /** 访问限定访问节点。 */
     open fun visitQualifiedAccessNode(node: QualifiedAccessNode, data: D): R = visitNode(node, data)
 

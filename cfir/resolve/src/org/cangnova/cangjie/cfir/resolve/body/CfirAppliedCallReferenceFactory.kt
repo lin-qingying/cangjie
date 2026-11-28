@@ -2,17 +2,18 @@ package org.cangnova.cangjie.cfir.resolve.body
 
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
-import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.references.impl.CfirResolvedAppliedCallableReference
-import org.cangnova.cangjie.cfir.references.impl.CfirResolvedNamedReferenceImpl
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallKind
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
+import org.cangnova.cangjie.cfir.references.CfirReferenceParentType
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.source.CjSourceElement
 
 
 @OptIn(CfirImplementationDetail::class)
@@ -24,30 +25,33 @@ import org.cangnova.cangjie.name.Name
 internal fun buildAppliedCallableReference(
     name: Name,
     candidate: Candidate,
-    substitutedReturnType: ConeCangJieType,
+    callSiteType: ConeCangJieType,
     finalSubstitutor: ConeSubstitutor,
+    source: CjSourceElement?,
+    matchedParentType: CfirReferenceParentType,
 ): CfirResolvedNamedReference {
-    if (!candidate.symbol.isBound) {
-        return CfirResolvedNamedReferenceImpl(null, name, candidate.symbol)
-    }
+    check(candidate.symbol.isBound) { "A completed callable reference requires its bound declaration" }
 
-    val substitutedParameterTypes = when (candidate.symbol.cfir) {
-        is CfirFunction,
-        is CfirConstructor,
-        is CfirEnumConstructor,
-        -> candidate.declaredParametersForMapping().mapNotNull { parameter: CfirValueParameter ->
-            val paramType = (parameter.returnTypeRef as? CfirResolvedTypeRef)?.coneType ?: return@mapNotNull null
-            finalSubstitutor.substituteOrNull(candidate.substitutor.substituteOrSelf(paramType))
-                ?: candidate.substitutor.substituteOrSelf(paramType)
-        }
-        else -> emptyList()
+    val declaration = candidate.symbol.cfir
+    val parameters = if (candidate.callInfo.callKind == CallKind.NamedValueAccess &&
+        declaration !is CfirFunction && declaration !is CfirEnumConstructor) emptyList()
+        else candidate.declaredParametersForMapping()
+    val substitutedParameterTypes = parameters.map { parameter: CfirValueParameter ->
+            val paramType = checkNotNull((parameter.returnTypeRef as? CfirResolvedTypeRef)?.coneType) {
+                "A completed callable reference requires every declared parameter type"
+            }
+            finalSubstitutor.substituteOrSelf(candidate.substitutor.substituteOrSelf(paramType))
     }
     return CfirResolvedAppliedCallableReference(
-        source = null,
+        source = source,
         name = name,
         resolvedSymbol = candidate.symbol,
-        substitutedReturnType = substitutedReturnType,
+        substitutedReturnType = if (candidate.callInfo.callKind == CallKind.NamedValueAccess &&
+            declaration !is CfirFunction && declaration !is CfirEnumConstructor) null
+        else finalSubstitutor.substituteOrSelf(candidate.substitutedCallableSignatureReturnType()),
         substitutedParameterTypes = substitutedParameterTypes,
         isFunctionValue = candidate.callInfo.callKind == org.cangnova.cangjie.cfir.resolve.calls.candidate.CallKind.NamedValueAccess,
+        matchedParentType = matchedParentType,
+        callSiteType = callSiteType,
     )
 }

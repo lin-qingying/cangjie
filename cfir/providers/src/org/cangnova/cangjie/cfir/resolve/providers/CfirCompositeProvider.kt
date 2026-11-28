@@ -13,7 +13,7 @@ import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 
 /**
- * 对齐 Kotlin FIR 的 composite provider。
+ * 聚合仓颉多个声明来源的 provider；各来源保留自己的文件归属查询。
  *
  * symbol lookup 由 [CfirCompositeSymbolProvider] 聚合，ownership/container 只在 provider 层聚合。
  */
@@ -61,6 +61,14 @@ class CfirCompositeProvider(
     override fun getCfirClassifierContainerFileIfAny(fqName: ClassId): CfirFile? {
         for (provider in providers) {
             provider.getCfirClassifierContainerFileIfAny(fqName)?.let { return it }
+        }
+        return null
+    }
+
+    /** symbol 文件查询沿各来源的原声明索引聚合，不经过名称首命中。 */
+    override fun getCfirClassifierContainerFileIfAny(symbol: CfirClassLikeSymbol<*>): CfirFile? {
+        for (provider in providers) {
+            provider.getCfirClassifierContainerFileIfAny(symbol)?.let { return it }
         }
         return null
     }

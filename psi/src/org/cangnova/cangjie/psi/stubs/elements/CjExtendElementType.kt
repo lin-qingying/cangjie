@@ -73,6 +73,7 @@ class CjExtendElementType(debugName: String) : CjStubElementType<CangJieExtendSt
         for (name in superNames) {
             dataStream.writeName(name)
         }
+        writeCjmpNominalSyntaxFacts(dataStream, stub.cjmpNominalSyntaxFacts)
 
     }
 
@@ -103,7 +104,8 @@ class CjExtendElementType(debugName: String) : CjStubElementType<CangJieExtendSt
             name,
             extendId,
             superNames,
-            receiverTypeName = StringRef.toString(receiverTypeName) ?: ""
+            receiverTypeName = StringRef.toString(receiverTypeName) ?: "",
+            cjmpNominalSyntaxFacts = readCjmpNominalSyntaxFacts(dataStream),
         )
     }
 
@@ -126,7 +128,8 @@ class CjExtendElementType(debugName: String) : CjStubElementType<CangJieExtendSt
             StringRef.fromString(psi.name),
             StringRef.fromString(psi.getExtendId()),
             Utils.wrapStrings(superNames),
-            receiverTypeName = receiverTypeName
+            receiverTypeName = receiverTypeName,
+            cjmpNominalSyntaxFacts = psi.cjmpNominalSyntaxFacts,
         )
     }
 

@@ -1,5 +1,7 @@
 package org.cangnova.cangjie.cfir.tree.generator.printer
 
+import org.cangnova.cangjie.cfir.tree.generator.CfirTree
+
 import org.cangnova.cangjie.cfir.tree.generator.cfirImplementationDetailType
 import org.cangnova.cangjie.cfir.tree.generator.cfirTransformerType
 import org.cangnova.cangjie.cfir.tree.generator.cfirVisitorType
@@ -126,6 +128,24 @@ internal class ImplementationPrinter(
                 println()
                 println("init {")
                 withIndent {
+                    // 数据源已经由构造参数初始化；在首次 symbol.bind 前校验，不接受被数据源遮蔽的字段值。
+                    if (implementation.allFields.any { it.name == "contentSource" }) {
+                        println("if (contentSource is CfirContentSource.Published) {")
+                        withIndent {
+                            println("require(origin == CfirDeclarationOrigin.Library) { \"Published content requires a Library declaration\" }")
+                            implementation.fieldsInConstructor.filter {
+                                it.publishedContentKind != null && it.customGetter != null
+                            }.forEach { content ->
+                                val empty = when (content.publishedContentKind) {
+                                    Field.PublishedContentKind.ANNOTATIONS -> "${content.name}.isEmpty()"
+                                    Field.PublishedContentKind.DEPRECATIONS -> "${content.name} === UnresolvedDeprecationProvider"
+                                    else -> "${content.name} == null"
+                                }
+                                println("require($empty) { \"Published content must be supplied by its completed snapshot\" }")
+                            }
+                        }
+                        println("}")
+                    }
                     for (symbolField in bindingCalls) {
                         println("${symbolField.name}${symbolField.call()}bind(this)")
                     }
@@ -219,20 +239,29 @@ internal class ImplementationPrinter(
                 )
                 if (!isInterface && !isAbstract) {
                     printBlock {
+                        if (implementation.allFields.any { it.name == "contentSource" }) {
+                            println("check(contentSource === CfirContentSource.Owned) { \"Published Library children require an owned graph before transformation\" }")
+                        }
                         for (field in transformableChildren) {
                             when {
                                 field.name == "explicitReceiver" -> {
                                     val explicitReceiver = implementation["explicitReceiver"]
                                     val dispatchReceiver = implementation.getOrNull("dispatchReceiver")
                                     val extensionReceiver = implementation.getOrNull("extensionReceiver")
+                                    // 比较转换前的槽身份；可替换 transformer 返回新节点时也保留一次转换结果。
+                                    println("val originalExplicitReceiver = explicitReceiver")
+                                    if (dispatchReceiver != null) println("val originalDispatchReceiver = dispatchReceiver")
+                                    if (extensionReceiver != null) println("val originalExtensionReceiver = extensionReceiver")
                                     if (explicitReceiver.isMutable) {
-                                        println("explicitReceiver = explicitReceiver${explicitReceiver.call()}transform(transformer, data)")
+                                        println("explicitReceiver = originalExplicitReceiver${explicitReceiver.call()}transform(transformer, data)")
                                     }
                                     if (dispatchReceiver?.isMutable == true) {
                                         println(
                                             """
-                                    |if (dispatchReceiver !== explicitReceiver) {
-                                    |            dispatchReceiver = dispatchReceiver?.transform(transformer, data)
+                                    |dispatchReceiver = if (originalDispatchReceiver === originalExplicitReceiver) {
+                                    |            explicitReceiver
+                                    |        } else {
+                                    |            originalDispatchReceiver?.transform(transformer, data)
                                     |        }
                                 """.trimMargin(),
                                         )
@@ -240,15 +269,18 @@ internal class ImplementationPrinter(
                                     if (extensionReceiver?.isMutable == true) {
                                         println(
                                             """
-                                    |if (extensionReceiver !== explicitReceiver && extensionReceiver !== dispatchReceiver) {
-                                    |            extensionReceiver = extensionReceiver?.transform(transformer, data)
+                                    |extensionReceiver = when {
+                                    |            originalExtensionReceiver === originalExplicitReceiver -> explicitReceiver
+                                    |            originalExtensionReceiver === originalDispatchReceiver -> dispatchReceiver
+                                    |            else -> originalExtensionReceiver?.transform(transformer, data)
                                     |        }
                                 """.trimMargin(),
                                         )
                                     }
                                 }
 
-                                field.name == "dispatchReceiver" && this.typeName != "CfirSuperReceiverExpressionImpl" -> {}
+                                // 仓颉 super 同样具有 explicit 槽，dispatch 已由该槽分支按身份处理。
+                                field.name == "dispatchReceiver" && transformableChildren.any { it.name == "explicitReceiver" } -> {}
                                 field.name == "extensionReceiver" -> {}
 
                                 field.withTransform -> {
@@ -279,6 +311,9 @@ internal class ImplementationPrinter(
                     continue
                 }
                 printBlock {
+                    if (implementation.allFields.any { it.name == "contentSource" }) {
+                        println("check(contentSource === CfirContentSource.Owned) { \"Published Library children require an owned graph before transformation\" }")
+                    }
                     if (field.isMutable && field.containsElement) {
                         if (typeName == "CfirWhenExpressionImpl" && field.name == "subject") {
                             println(
@@ -306,6 +341,9 @@ internal class ImplementationPrinter(
                     println()
                 } else {
                     printBlock {
+                        if (implementation.allFields.any { it.name == "contentSource" }) {
+                            println("check(contentSource === CfirContentSource.Owned) { \"Published Library children require an owned graph before transformation\" }")
+                        }
                         for (field in allFields) {
                             if (!field.isMutable || !field.containsElement || field.name == "subjectVariable") continue
                             if (!field.withTransform) {
@@ -337,7 +375,13 @@ internal class ImplementationPrinter(
                 }
                 print(" {")
                 if (!field.isMutable) {
-                    if (field.name == "coneTypeOrNull") {
+                    if (field.typeRef.copy(nullable = false).render() == CfirTree.sourceElementType.render()) {
+                        println()
+                        withIndent {
+                            val newValue = "new" + field.name.replaceFirstChar(Char::uppercaseChar)
+                            println("require($newValue == ${field.name}) { \"An immutable source slot cannot accept another source.\" }")
+                        }
+                    } else if (field.name == "coneTypeOrNull") {
                         println()
                         withIndent {
                             println("require(newConeTypeOrNull == coneTypeOrNull) { \"\${javaClass.simpleName}.replaceConeTypeOrNull() called with invalid type '\${newConeTypeOrNull}'. Current type is '\$coneTypeOrNull'\" }")
@@ -358,6 +402,9 @@ internal class ImplementationPrinter(
                 val newValue = "new$capitalizedFieldName"
                 generateReplace(field, forceNullable = field.receiveNullableTypeInReplace) {
                     when {
+                        field.implementationDefaultStrategy!!.withGetter && field.customSetter != null -> {
+                            println("${field.name} = $newValue")
+                        }
                         field.implementationDefaultStrategy!!.withGetter -> {}
                         field is ListField && !field.isMutableOrEmptyList -> {
                             println("if (${field.name} === $newValue) return")

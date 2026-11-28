@@ -71,6 +71,7 @@ enum class ChirBinaryOperator(
     ADD("add", ChirBinaryOperatorFamily.ARITHMETIC, "+", "plus"),
     SUB("sub", ChirBinaryOperatorFamily.ARITHMETIC, "-", "minus"),
     MUL("mul", ChirBinaryOperatorFamily.ARITHMETIC, "*", "times"),
+    POWER("pow", ChirBinaryOperatorFamily.ARITHMETIC, "**"),
     SIGNED_DIV("div", ChirBinaryOperatorFamily.ARITHMETIC, "/"),
     UNSIGNED_DIV("udiv", ChirBinaryOperatorFamily.ARITHMETIC),
     SIGNED_REM("rem", ChirBinaryOperatorFamily.ARITHMETIC, "%"),
@@ -156,7 +157,9 @@ enum class ChirMemoryOperation(
     STORE("store"),
     ALLOCA("alloca"),
     GET_ELEMENT_PTR("gep", "getelementptr"),
-    GET_ELEMENT_PTR_INBOUNDS("getelementptr.inbounds", "getelementptr inbounds");
+    GET_ELEMENT_PTR_INBOUNDS("getelementptr.inbounds", "getelementptr inbounds"),
+    GET_ELEMENT_BY_NAME("get.element.by.name"),
+    STORE_ELEMENT_BY_NAME("store.element.by.name");
 
     /**
      * 当前操作可接受的所有规范化名称。
@@ -222,7 +225,15 @@ enum class ChirOtherOperation(
     UITOFP("uitofp", ChirOtherOperationFamily.LLVM_CAST),
     FPTOSI("fptosi", ChirOtherOperationFamily.LLVM_CAST),
     FPTOUI("fptoui", ChirOtherOperationFamily.LLVM_CAST),
+    CANGJIE_TYPE_CAST_NA("cangjie.typecast.na", ChirOtherOperationFamily.CANGJIE_SEMANTIC),
+    CANGJIE_TYPE_CAST_CHECKED("cangjie.typecast.checked", ChirOtherOperationFamily.CANGJIE_SEMANTIC),
+    CANGJIE_TYPE_CAST_WRAPPING("cangjie.typecast.wrapping", ChirOtherOperationFamily.CANGJIE_SEMANTIC),
+    CANGJIE_TYPE_CAST_THROWING("cangjie.typecast.throwing", ChirOtherOperationFamily.CANGJIE_SEMANTIC),
+    CANGJIE_TYPE_CAST_SATURATING("cangjie.typecast.saturating", ChirOtherOperationFamily.CANGJIE_SEMANTIC),
     PHI("phi", ChirOtherOperationFamily.LLVM_VALUE),
+    RAW_ARRAY_ALLOCATE("rawarray.allocate", ChirOtherOperationFamily.LLVM_VALUE),
+    RAW_ARRAY_LITERAL_INIT("rawarray.literal.init", ChirOtherOperationFamily.LLVM_VALUE),
+    RAW_ARRAY_INIT_BY_VALUE("rawarray.init.by.value", ChirOtherOperationFamily.LLVM_VALUE),
     JVM_NEW("jvm.new", ChirOtherOperationFamily.JVM),
     JVM_GET_FIELD("jvm.getfield", ChirOtherOperationFamily.JVM),
     JVM_PUT_FIELD("jvm.putfield", ChirOtherOperationFamily.JVM),
@@ -239,6 +250,17 @@ enum class ChirOtherOperation(
      * 当前操作可接受的所有规范化名称。
      */
     val acceptedNames: Set<String> = (aliases.toSet() + canonicalName).mapTo(linkedSetOf(), String::canonicalOperationName)
+
+    /** 仓颉有溢出策略的类型转换对应的语义策略。 */
+    val typeCastOverflowStrategy: ChirOverflowStrategy?
+        get() = when (this) {
+            CANGJIE_TYPE_CAST_NA -> ChirOverflowStrategy.NOT_APPLICABLE
+            CANGJIE_TYPE_CAST_CHECKED -> ChirOverflowStrategy.CHECKED
+            CANGJIE_TYPE_CAST_WRAPPING -> ChirOverflowStrategy.WRAPPING
+            CANGJIE_TYPE_CAST_THROWING -> ChirOverflowStrategy.THROWING
+            CANGJIE_TYPE_CAST_SATURATING -> ChirOverflowStrategy.SATURATING
+            else -> null
+        }
 
     /**
      * 其他操作解析工具。
@@ -275,7 +297,41 @@ enum class ChirOtherOperation(
 enum class ChirOtherOperationFamily {
     LLVM_VALUE,
     LLVM_CAST,
+    CANGJIE_SEMANTIC,
     JVM,
+}
+
+/** 仓颉 CHIR 类型转换的溢出策略。 */
+enum class ChirOverflowStrategy {
+    NOT_APPLICABLE,
+    CHECKED,
+    WRAPPING,
+    THROWING,
+    SATURATING,
+}
+
+/** 官方 CHIR schema 定义的 intrinsic 操作码，保留完整枚举域以支持语义包往返。 */
+data class ChirIntrinsicKind(val schemaCode: UShort) {
+    /** 供现有操作展示与诊断使用的稳定名称；权威身份始终是 schemaCode。 */
+    val canonicalName: String
+        get() = "official.intrinsic.$schemaCode"
+
+    companion object {
+        /** v1.1.3 与当前 CHIR schema 中 ARRAY_BUILT_IN_COPY_TO 的官方枚举值。 */
+        val ARRAY_BUILT_IN_COPY_TO = ChirIntrinsicKind(7u)
+
+        /** v1.1.3 与当前 CHIR schema 中 ARRAY_GET_UNCHECKED 的官方枚举值。 */
+        val ARRAY_GET_UNCHECKED = ChirIntrinsicKind(10u)
+
+        /** 官方 CHIR schema 中 RawArray 引用身份比较的 intrinsic 值。 */
+        val RAW_ARRAY_REFEQ = ChirIntrinsicKind(41u)
+
+        /** 官方 CHIR schema 中以 32 字节向量比较两个 RawArray 区间的 intrinsic。 */
+        val VECTOR_COMPARE_32 = ChirIntrinsicKind(104u)
+
+        /** 官方 CHIR schema 中在 32 字节 RawArray 区间中查找首个匹配字节的 intrinsic。 */
+        val VECTOR_INDEX_BYTE_32 = ChirIntrinsicKind(105u)
+    }
 }
 
 /**

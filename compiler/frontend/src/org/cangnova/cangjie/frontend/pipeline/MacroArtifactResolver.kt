@@ -8,6 +8,9 @@ import org.cangnova.cangjie.cfir.serialization.cjo.CjoExportedTopLevelNamesResol
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoPackageHeader
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoManager
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoSearchPath
+import org.cangnova.cangjie.cfir.serialization.cjo.CjoFormatVersionPolicy
+import org.cangnova.cangjie.LanguageVersionSettings
+import org.cangnova.cangjie.LanguageVersionSettingsImpl
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.utils.StableHash
@@ -105,7 +108,7 @@ data class MacroArtifactResolverResult(
 class MacroArtifactResolver {
     companion object {
         /** Artifact resolver 算法版本；搜索路径、校验规则或签名算法变化时必须递增。 */
-        const val ALGORITHM_VERSION: Int = 2
+        const val ALGORITHM_VERSION: Int = 3
     }
 
     /**
@@ -113,13 +116,18 @@ class MacroArtifactResolver {
      */
     fun resolve(
         packages: List<MacroArtifactPackage>,
+        languageVersionSettings: LanguageVersionSettings = LanguageVersionSettingsImpl.DEFAULT,
         expectedExecutorAbiVersion: String? = null,
         searchRoots: List<String> = emptyList(),
-        sdkHome: String = DEFAULT_MACRO_SDK_HOME,
+        sdkHome: String? = null,
     ): MacroArtifactResolverResult {
         val definitions = mutableListOf<MacroDefinitionEntry>()
         val diagnostics = mutableListOf<MacroConstructionDiagnostic>()
-        val exportedTopLevelNamesResolver = buildExportedTopLevelNamesResolver(packages, searchRoots)
+        val exportedTopLevelNamesResolver = buildExportedTopLevelNamesResolver(
+            packages = packages,
+            searchRoots = searchRoots,
+            languageVersionSettings = languageVersionSettings,
+        )
         val artifactLocator = MacroArtifactLocator(sdkHome = sdkHome)
         val providedArtifactsByPackage = packages.associateBy(MacroArtifactPackage::packageFqName)
         val executableArtifactCache = mutableMapOf<FqName, MacroArtifactPackage?>()
@@ -275,6 +283,7 @@ class MacroArtifactResolver {
     private fun buildExportedTopLevelNamesResolver(
         packages: List<MacroArtifactPackage>,
         searchRoots: List<String>,
+        languageVersionSettings: LanguageVersionSettings,
     ): CjoExportedTopLevelNamesResolver? {
         val resolvedRoots = (searchRoots + packages.mapNotNull { File(it.cjoPath).parentFile?.absolutePath })
             .map(String::trim)
@@ -293,6 +302,7 @@ class MacroArtifactResolver {
                     else -> null
                 }
             },
+            CjoFormatVersionPolicy.Compilation(languageVersionSettings),
         )
         return CjoExportedTopLevelNamesResolver(manager)
     }

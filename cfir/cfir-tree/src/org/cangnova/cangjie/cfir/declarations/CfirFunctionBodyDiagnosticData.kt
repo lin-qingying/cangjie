@@ -70,7 +70,7 @@ data class CfirValueParameterListReference(
 /**
  * [CfirFunctionBodyDiagnosticData] 在声明属性表中的键。
  */
-private object FunctionBodyDiagnosticDataKey : CfirDeclarationDataKey()
+internal object FunctionBodyDiagnosticDataKey : CfirDeclarationDataKey()
 
 /**
  * 声明属性上的函数体诊断数据。

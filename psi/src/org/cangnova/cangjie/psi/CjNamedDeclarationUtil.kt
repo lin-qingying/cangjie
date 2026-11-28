@@ -70,9 +70,11 @@ object CjNamedDeclarationUtil {
             if (constructorClass != null) {
                 return getFQName(constructorClass)
             }
-        } 
-        else if (parent is CjExtend) {
+        } else if (parent is CjExtend) {
             return getParentFqName(parent)
+        } else if (parent is CjTypeStatement || parent is CjNamedFunction) {
+            // 直接声明所有者贡献名字域；在构建 stub 时保存完整名字，脱离文件 PSI 后无需重建。
+            return getFQName(parent)
         }
 
         return null

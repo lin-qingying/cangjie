@@ -1,0 +1,26 @@
+{
+  "utc": "2026-11-17T14:57:25.4609663Z",
+  "fileCount": 6834,
+  "aggregateSha256": "CE09673C8E9995087E5EF39C0FBF71BE732816EF9FFB79D86D42A24772C3773F",
+  "roots": [
+    "common",
+    "cfir",
+    "analysis/low-level-api-cfir",
+    "analysis/analysis-api-cfir",
+    "compiler/frontend",
+    "compiler/config",
+    "compiler/phaser",
+    "compiler/arguments",
+    "psi",
+    "resolution.common",
+    "macro"
+  ],
+  "include": [
+    "*.kt",
+    "*.cj",
+    "*.kts"
+  ],
+  "exclude": "**/build/**",
+  "method": "rg --files --hidden --no-ignore, / normalized and Sort-Object -CaseSensitive; SHA256 of UTF8 LF joined path TAB length TAB uppercaseSHA256, no final LF",
+  "scope": "Canonical SOURCE capture eight via public frontend: generated declaration ownership, type/reference closure and original normal domain"
+}

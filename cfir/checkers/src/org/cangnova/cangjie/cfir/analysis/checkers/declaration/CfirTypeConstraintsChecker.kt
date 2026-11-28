@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.builtins.StandardNames
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
@@ -13,7 +14,7 @@ import org.cangnova.cangjie.cfir.declarations.typeConstraintDiagnosticData
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedTypeQualifierError
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.CfirUserTypeRef
@@ -28,7 +29,7 @@ import org.cangnova.cangjie.name.Name
  * 该检查器处理 raw/build 阶段记录的 type constraint 诊断数据，确保约束中的名字必须来自当前
  * 声明的类型参数列表。
  */
-object CfirTypeConstraintsChecker : CfirBasicDeclarationChecker() {
+object CfirTypeConstraintsChecker : CfirBasicDeclarationChecker(MppCheckerKind.Common) {
     /**
      * 检查声明是否带有悬空 type constraint。
      */

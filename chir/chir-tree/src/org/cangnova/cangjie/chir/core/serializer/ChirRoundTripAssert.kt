@@ -9,11 +9,19 @@ import org.cangnova.cangjie.chir.core.controlflow.ChirUnwindTerminator
 import org.cangnova.cangjie.chir.core.declaration.ChirFunctionDeclaration
 import org.cangnova.cangjie.chir.core.expression.ChirBinaryExpression
 import org.cangnova.cangjie.chir.core.expression.ChirCallExpression
+import org.cangnova.cangjie.chir.core.expression.ChirConstantExpression
 import org.cangnova.cangjie.chir.core.expression.ChirExpression
+import org.cangnova.cangjie.chir.core.expression.ChirFieldExpression
 import org.cangnova.cangjie.chir.core.expression.ChirMemoryExpression
 import org.cangnova.cangjie.chir.core.expression.ChirOtherExpression
+import org.cangnova.cangjie.chir.core.expression.ChirTupleExpression
 import org.cangnova.cangjie.chir.core.expression.ChirUnaryExpression
 import org.cangnova.cangjie.chir.core.model.ChirPackage
+import org.cangnova.cangjie.chir.core.type.ChirPrimitiveType
+import org.cangnova.cangjie.chir.core.type.ChirResolvedTypeRef
+import org.cangnova.cangjie.chir.core.type.ChirTypeRelations
+import org.cangnova.cangjie.chir.core.value.ChirConstantValue
+import org.cangnova.cangjie.chir.core.value.ChirConstantKind
 import org.cangnova.cangjie.chir.core.value.ChirValue
 
 /**
@@ -50,7 +58,9 @@ object ChirRoundTripAssert {
                 require(leftFunction != null && rightFunction != null) { "only function declarations supported for round-trip assert" }
                 require(leftFunction.semanticId == rightFunction.semanticId) { "function id mismatch" }
                 require(leftFunction.name == rightFunction.name) { "function name mismatch" }
-                require(leftFunction.returnType.renderName == rightFunction.returnType.renderName) { "function return type mismatch" }
+                require(ChirTypeRelations.areEquivalent(leftFunction.returnType, rightFunction.returnType)) { "function return type mismatch" }
+                require(leftFunction.hasBody == rightFunction.hasBody) { "function body state mismatch" }
+                require(leftFunction.isStatic == rightFunction.isStatic) { "function static-member state mismatch" }
                 require(leftFunction.entryBlockId == rightFunction.entryBlockId) { "entry block mismatch" }
                 require(leftFunction.blocks.size == rightFunction.blocks.size) { "block count mismatch" }
 
@@ -74,39 +84,133 @@ object ChirRoundTripAssert {
         require(expected::class == actual::class) { "expression kind mismatch" }
         require(expected.semanticId == actual.semanticId) { "expression id mismatch" }
         require(expected.domain == actual.domain) { "expression domain mismatch" }
-        require(expected.resultType?.renderName == actual.resultType?.renderName) { "expression result type mismatch" }
+        require(
+            (expected.resultType == null && actual.resultType == null) ||
+                (expected.resultType != null && actual.resultType != null &&
+                    ChirTypeRelations.areEquivalent(expected.resultType!!, actual.resultType!!)),
+        ) { "expression result type mismatch" }
+        require(
+            (expected.resultLocalValue == null && actual.resultLocalValue == null) ||
+                (expected.resultLocalValue != null && actual.resultLocalValue != null &&
+                    expected.resultLocalValue!!.semanticId == actual.resultLocalValue!!.semanticId &&
+                    (expected.resultLocalValue!!.name.isBlank() || actual.resultLocalValue!!.name.isBlank() ||
+                        expected.resultLocalValue!!.name == actual.resultLocalValue!!.name) &&
+                    expected.resultLocalValue!!.associatedExpressionId == actual.resultLocalValue!!.associatedExpressionId &&
+                    expected.resultLocalValue!!.isReturnValue == actual.resultLocalValue!!.isReturnValue &&
+                    ChirTypeRelations.areEquivalent(expected.resultLocalValue!!.type, actual.resultLocalValue!!.type)),
+        ) { "expression result local value mismatch" }
         when (expected) {
             is ChirUnaryExpression -> {
                 actual as ChirUnaryExpression
                 require(expected.operator == actual.operator) { "unary operator mismatch in ${expected.semanticId.value}" }
+                require(expected.overflowStrategy == actual.overflowStrategy) {
+                    "unary overflow strategy mismatch in ${expected.semanticId.value}"
+                }
                 assertValueEquivalent(expected.operand, actual.operand, "unary operand")
             }
             is ChirBinaryExpression -> {
                 actual as ChirBinaryExpression
                 require(expected.operator == actual.operator) { "binary operator mismatch in ${expected.semanticId.value}" }
+                require(expected.overflowStrategy == actual.overflowStrategy) {
+                    "binary overflow strategy mismatch in ${expected.semanticId.value}"
+                }
                 assertValueEquivalent(expected.left, actual.left, "binary left")
                 assertValueEquivalent(expected.right, actual.right, "binary right")
             }
             is ChirMemoryExpression -> {
                 actual as ChirMemoryExpression
                 require(expected.operation == actual.operation) { "memory operation mismatch in ${expected.semanticId.value}" }
+                require(expected.memberNames == actual.memberNames) { "memory member path mismatch in ${expected.semanticId.value}" }
                 assertValueEquivalent(expected.address, actual.address, "memory address")
                 assertNullableValueEquivalent(expected.value, actual.value, "memory value")
             }
             is ChirCallExpression -> {
                 actual as ChirCallExpression
-                assertValueEquivalent(expected.callee, actual.callee, "call callee")
+                require(expected.isSuperCall == actual.isSuperCall) { "call dispatch kind mismatch in ${expected.semanticId.value}" }
+                require(expected.instantiatedTypeArguments.size == actual.instantiatedTypeArguments.size &&
+                    expected.instantiatedTypeArguments.zip(actual.instantiatedTypeArguments).all { (left, right) ->
+                        ChirTypeRelations.areEquivalent(left, right)
+                    }
+                ) {
+                    "call instantiated type arguments mismatch in ${expected.semanticId.value}"
+                }
+                require(
+                    (expected.thisType == null && actual.thisType == null) ||
+                        (expected.thisType != null && actual.thisType != null &&
+                            ChirTypeRelations.areEquivalent(expected.thisType!!, actual.thisType!!)),
+                ) {
+                    "call this type mismatch in ${expected.semanticId.value}"
+                }
+                val expectedContext = expected.virtualMethodContext
+                val actualContext = actual.virtualMethodContext
+                require((expectedContext == null) == (actualContext == null)) {
+                    "call kind mismatch in ${expected.semanticId.value}"
+                }
+                if (expectedContext == null) {
+                    assertValueEquivalent(expected.callee, actual.callee, "call callee")
+                } else {
+                    val decodedContext = checkNotNull(actualContext)
+                    require(expectedContext.sourceCodeIdentifier == decodedContext.sourceCodeIdentifier) {
+                        "virtual method identifier mismatch in ${expected.semanticId.value}"
+                    }
+                    require(ChirTypeRelations.areEquivalent(
+                        ChirResolvedTypeRef(expectedContext.originalFunctionType),
+                        ChirResolvedTypeRef(decodedContext.originalFunctionType),
+                    )) {
+                        "virtual method signature mismatch in ${expected.semanticId.value}"
+                    }
+                    require(expectedContext.genericTypeParameters.size == decodedContext.genericTypeParameters.size &&
+                        expectedContext.genericTypeParameters.zip(decodedContext.genericTypeParameters).all { (left, right) ->
+                            ChirTypeRelations.areEquivalent(left, right)
+                        }
+                    ) {
+                        "virtual method generic parameters mismatch in ${expected.semanticId.value}"
+                    }
+                    assertNullableValueEquivalent(expected.dispatchReceiver, actual.dispatchReceiver, "call dispatch receiver")
+                }
                 require(expected.arguments.size == actual.arguments.size) { "call argument count mismatch in ${expected.semanticId.value}" }
                 expected.arguments.zip(actual.arguments).forEachIndexed { index, (left, right) ->
                     assertValueEquivalent(left, right, "call argument #$index")
                 }
             }
+            is ChirTupleExpression -> {
+                actual as ChirTupleExpression
+                require(expected.elements.size == actual.elements.size) {
+                    "tuple element count mismatch in ${expected.semanticId.value}"
+                }
+                expected.elements.zip(actual.elements).forEachIndexed { index, (left, right) ->
+                    assertValueEquivalent(left, right, "tuple element #$index")
+                }
+            }
+            is ChirFieldExpression -> {
+                actual as ChirFieldExpression
+                require(expected.path == actual.path) { "field path mismatch in ${expected.semanticId.value}" }
+                assertValueEquivalent(expected.base, actual.base, "field base")
+            }
+            is ChirConstantExpression -> {
+                actual as ChirConstantExpression
+                assertValueEquivalent(expected.value, actual.value, "constant literal")
+            }
             is ChirOtherExpression -> {
                 actual as ChirOtherExpression
                 require(expected.operation == actual.operation) { "other operation mismatch in ${expected.semanticId.value}" }
+                require(expected.intrinsicKind == actual.intrinsicKind) {
+                    "intrinsic kind mismatch in ${expected.semanticId.value}"
+                }
+                require(expected.intrinsicTypeArguments.size == actual.intrinsicTypeArguments.size) {
+                    "intrinsic type argument count mismatch in ${expected.semanticId.value}"
+                }
+                expected.intrinsicTypeArguments.zip(actual.intrinsicTypeArguments).forEachIndexed { index, (left, right) ->
+                    require(ChirTypeRelations.areEquivalent(left, right)) {
+                        "intrinsic type argument #$index mismatch in ${expected.semanticId.value}"
+                    }
+                }
                 require(expected.operands.size == actual.operands.size) { "other operand count mismatch in ${expected.semanticId.value}" }
                 expected.operands.zip(actual.operands).forEachIndexed { index, (left, right) ->
                     assertValueEquivalent(left, right, "other operand #$index")
+                }
+                require(expected.debugMetadata == actual.debugMetadata) {
+                    "debug metadata mismatch in ${expected.semanticId.value}"
                 }
             }
         }
@@ -115,7 +219,10 @@ object ChirRoundTripAssert {
     /**
      * 断言两个终结指令语义等价。
      */
-    private fun assertTerminatorEquivalent(expected: ChirTerminator, actual: ChirTerminator) {
+    private fun assertTerminatorEquivalent(expected: ChirTerminator?, actual: ChirTerminator?) {
+        require(expected == null || actual != null) { "terminator mismatch: actual is missing" }
+        require(actual == null || expected != null) { "terminator mismatch: expected is missing" }
+        if (expected == null || actual == null) return
         require(expected::class == actual::class) { "terminator kind mismatch" }
         require(expected.semanticId == actual.semanticId) { "terminator id mismatch" }
         when (expected) {
@@ -163,7 +270,41 @@ object ChirRoundTripAssert {
         require(expected::class == actual::class) { "$location value kind mismatch" }
         require(expected.semanticId == actual.semanticId) { "$location value id mismatch" }
         require(expected.kind == actual.kind) { "$location value kind enum mismatch" }
-        require(expected.type.renderName == actual.type.renderName) { "$location value type mismatch" }
-        require(expected.displayName == actual.displayName) { "$location value display name mismatch" }
+        require(ChirTypeRelations.areEquivalent(expected.type, actual.type)) { "$location value type mismatch" }
+        if (expected is ChirConstantValue && actual is ChirConstantValue) {
+            if (expected.constantKind != ChirConstantKind.UNSPECIFIED) {
+                require(expected.constantKind == actual.constantKind) { "$location constant kind mismatch" }
+            }
+            when ((expected.type as? ChirResolvedTypeRef)?.type) {
+                ChirPrimitiveType.BOOL ->
+                    require(booleanValue(expected.literal) == booleanValue(actual.literal)) {
+                        "$location Bool literal mismatch"
+                    }
+                ChirPrimitiveType.FLOAT16,
+                ChirPrimitiveType.FLOAT32,
+                ChirPrimitiveType.FLOAT64,
+                -> require(floatingValueBits(expected.literal) == floatingValueBits(actual.literal)) {
+                    "$location floating-point literal mismatch"
+                }
+                ChirPrimitiveType.RUNE ->
+                    require(expected.literal.toUIntOrNull() == actual.literal.toUIntOrNull()) {
+                        "$location Rune literal mismatch"
+                    }
+                else -> require(expected.displayName == actual.displayName) {
+                    "$location value display name mismatch"
+                }
+            }
+        } else {
+            require(expected.displayName == actual.displayName) { "$location value display name mismatch" }
+        }
+    }
+
+    private fun floatingValueBits(literal: String): Long = literal.toDoubleOrNull()?.toBits()
+        ?: throw IllegalArgumentException("invalid floating-point literal '$literal'")
+
+    private fun booleanValue(literal: String): Boolean? = when (literal) {
+        "0", "false" -> false
+        "1", "true" -> true
+        else -> null
     }
 }

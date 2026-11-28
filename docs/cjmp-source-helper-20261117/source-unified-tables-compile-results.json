@@ -1,0 +1,79 @@
+{
+  "before": {
+    "utc": "2026-11-17T18:44:20.4695019Z",
+    "fileCount": 6837,
+    "aggregateSha256": "71E25976E5AC9E1FFBE29E78E31E244654B67CD9E9A270BF80115E0E2540EFBD",
+    "roots": [
+      "common",
+      "cfir",
+      "analysis/low-level-api-cfir",
+      "analysis/analysis-api-cfir",
+      "compiler/frontend",
+      "compiler/config",
+      "compiler/phaser",
+      "compiler/arguments",
+      "psi",
+      "resolution.common",
+      "macro"
+    ],
+    "include": [
+      "*.kt",
+      "*.cj",
+      "*.kts"
+    ],
+    "exclude": "**/build/**",
+    "method": "rg --files --hidden --no-ignore, / normalized and Sort-Object -CaseSensitive; SHA256 of UTF8 LF joined path TAB length TAB uppercaseSHA256, no final LF",
+    "scope": "Unified d/e/t reserve-fill production compilation before matched-parent semantic product"
+  },
+  "after": {
+    "utc": "2026-11-17T18:49:52.0224470Z",
+    "fileCount": 6837,
+    "aggregateSha256": "71E25976E5AC9E1FFBE29E78E31E244654B67CD9E9A270BF80115E0E2540EFBD",
+    "roots": [
+      "common",
+      "cfir",
+      "analysis/low-level-api-cfir",
+      "analysis/analysis-api-cfir",
+      "compiler/frontend",
+      "compiler/config",
+      "compiler/phaser",
+      "compiler/arguments",
+      "psi",
+      "resolution.common",
+      "macro"
+    ],
+    "include": [
+      "*.kt",
+      "*.cj",
+      "*.kts"
+    ],
+    "exclude": "**/build/**",
+    "method": "rg --files --hidden --no-ignore, / normalized and Sort-Object -CaseSensitive; SHA256 of UTF8 LF joined path TAB length TAB uppercaseSHA256, no final LF",
+    "scope": "Unified tables compile terminal input verification",
+    "unchanged": true
+  },
+  "queue": {
+    "id": "5406912f",
+    "args": [
+      "--gradle-user-home",
+      ".gradle/cjmp-export-home",
+      ":cfir:cfir-serialization:compileKotlin",
+      "--no-build-cache",
+      "--console=plain",
+      "--max-workers=1"
+    ],
+    "pid": 21828,
+    "owner": "pid@21828",
+    "submitAt": 1794941089162,
+    "startedAt": 1794941089240,
+    "finishedAt": 1794941220734,
+    "exitCode": 0,
+    "status": "DONE"
+  },
+  "compiledTasks": [
+    ":cfir:cfir-serialization:compileKotlin"
+  ],
+  "didRunTests": false,
+  "terminalOutput": "> Task :cfir:cfir-serialization:compileKotlin\r\nw: ATTENTION!\nThis build uses unsafe internal compiler arguments:\n\n-XXLanguage:+ExplicitBackingFields\n\nThis mode is not recommended for production use,\nas no stability/compatibility guarantees are given on\ncompiler or generated code. Use it at your own risk!\n\r\nw: Following manually enabled features will force generation of pre-release binaries: ExplicitBackingFields\r\nw: file:///C:/Users/lin17/.codex/worktrees/cjmp-framework-implementation/cangjie/cfir/cfir-serialization/src/org/cangnova/cangjie/cfir/serialization/provider/AbstractCfirDeserializedSymbolProvider.kt:257:57 Check for instance is always 'true'.\r\n\r\nBUILD SUCCESSFUL in 2m 11s\r\n81 actionable tasks: 1 executed, 80 up-to-date\r\nConfiguration cache entry stored.\r\n[GradleQueue] gradlew finished success (exitCode=0)\r\n",
+  "scope": "Explicit Reserved/Filled d/e/t tables and declaration-reference queue compilation only; no behavior acceptance"
+}

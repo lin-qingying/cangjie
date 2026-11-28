@@ -1,7 +1,20 @@
 package org.cangnova.cangjie.arguments.dsl.base
 
 import org.cangnova.cangjie.arguments.dsl.types.CangJieArgumentValueType
+import org.cangnova.cangjie.arguments.dsl.types.StringType
 import kotlin.properties.ReadOnlyProperty
+
+/** 单字符短选项的附加值语法。 */
+public sealed interface CangJieShortOptionValueMode {
+    /** 值必须紧跟短选项，例如 `-O2`；不读取下一个独立参数。 */
+    public data object AttachedRequired : CangJieShortOptionValueMode
+
+    /** 值可紧跟短选项；短选项单独出现时使用声明的值。 */
+    public data class AttachedOptional(
+        /** 短选项单独出现时解析出的值。 */
+        val valueWhenOmitted: String,
+    ) : CangJieShortOptionValueMode
+}
 
 /**
  * 单个编译器命令行参数的完整元数据模型。
@@ -16,6 +29,14 @@ data class CangJieCompilerArgument(
      * 参数短名称，不存在短参数时为空。
      */
     val shortName: String? = null,
+    /**
+     * 单字符短选项的黏连值语法；未设置时保留标准的独立参数值解析。
+     */
+    val shortOptionValueMode: CangJieShortOptionValueMode? = null,
+    /** SEPARATED 参数的原生 alias 可直接黏连值，也可使用等号；不改变连续短参数的规则。 */
+    val acceptsJoinedAliasValues: Boolean = false,
+    /** 单次输入值的精确合法集合；空集合表示此参数没有枚举限制。 */
+    val allowedValues: Set<String> = emptySet(),
     /**
      * 已废弃但仍需要识别或生成兼容信息的旧参数名称。
      */
@@ -58,6 +79,21 @@ data class CangJieCompilerArgument(
      */
     val isObsolete: Boolean = false,
 ) : WithCangJieReleaseVersionsMetadata {
+
+    init {
+        if (acceptsJoinedAliasValues) {
+            require(!shortName.isNullOrBlank()) { "Joined alias values require an actual option alias" }
+            require(shortOptionValueMode == null) { "Separated alias values cannot use continuous short-option rules" }
+        }
+        if (shortOptionValueMode != null) {
+            require((shortName ?: name).length == 1) {
+                "Attached short-option values require a single-character option name"
+            }
+            require(valueType is StringType && argumentType is StringType) {
+                "Attached short-option values require string argument types"
+            }
+        }
+    }
 
     /**
      * 命令行参数值的分隔符描述。
@@ -112,6 +148,15 @@ class CangJieCompilerArgumentBuilder {
      * 待构造参数的短名称。
      */
     var shortName: String? = null
+
+    /** 单字符短选项的黏连值语法。 */
+    var shortOptionValueMode: CangJieShortOptionValueMode? = null
+
+    /** 原生 SEPARATED alias 的黏连值及等号语法。 */
+    var acceptsJoinedAliasValues: Boolean = false
+
+    /** 参数单次输入值的精确合法集合。 */
+    var allowedValues: Set<String> = emptySet()
 
     /**
      * 待构造参数的废弃旧名称。
@@ -189,6 +234,9 @@ class CangJieCompilerArgumentBuilder {
     fun build(): CangJieCompilerArgument = CangJieCompilerArgument(
         name = name,
         shortName = shortName,
+        shortOptionValueMode = shortOptionValueMode,
+        acceptsJoinedAliasValues = acceptsJoinedAliasValues,
+        allowedValues = allowedValues.toSet(),
         deprecatedName = deprecatedName,
         description = description,
         valueType = valueType,

@@ -4,6 +4,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import org.cangnova.cangjie.analysis.decompiler.stub.LoadedCjoPackage
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoManager
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoSearchPath
+import org.cangnova.cangjie.cfir.serialization.cjo.CjoFormatVersionPolicy
 import org.cangnova.cangjie.name.FqName
 import java.io.File
 
@@ -41,6 +42,7 @@ internal class DecompiledCjoRepository(
                 else -> null
             }
         },
+        CjoFormatVersionPolicy.Decompilation,
     )
 
     /**

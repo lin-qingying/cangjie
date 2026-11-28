@@ -59,7 +59,8 @@ open class CangJieEnumStubImpl(
     /**
      * 保存 `isNonExhaustive` 的内部状态，供PSI Stub实现维护节点缓存或解析上下文。
      */
-    private val isNonExhaustive: Boolean
+    private val isNonExhaustive: Boolean,
+    override val cjmpNominalSyntaxFacts: org.cangnova.cangjie.parsing.CjmpNominalSyntaxFacts? = null,
 ) : CangJieStubBaseImpl<CjEnum>(parent, type), CangJieEnumStub {
 
     /**
@@ -107,5 +108,6 @@ open class CangJieEnumStubImpl(
         name = name,
         superNames = superNames,
         isNonExhaustive = isNonExhaustive,
+        cjmpNominalSyntaxFacts = cjmpNominalSyntaxFacts,
     )
 }

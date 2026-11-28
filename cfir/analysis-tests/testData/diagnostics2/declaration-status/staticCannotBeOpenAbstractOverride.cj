@@ -14,5 +14,5 @@ class StaticStatus {
 }
 
 abstract class AbstractStaticStatus {
-    <!PARSE_EXPLICITLY_ABSTRACT_ONLY_FOR_CJMP_ABSTRACT_CLASS!>static <!WRONG_MODIFIER_TARGET!>abstract<!> func absFn(): Unit<!>
+    static <!WRONG_MODIFIER_TARGET!>abstract<!> <!MISSING_FUNC_BODY!>func absFn(): Unit<!>
 }

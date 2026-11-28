@@ -24,10 +24,13 @@
 
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
+import org.cangnova.cangjie.cfir.analysis.checkers.CjmpGate
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
-import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
 import org.cangnova.cangjie.cfir.analysis.checkers.isFromDeclarationFile
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
+import org.cangnova.cangjie.cfir.diagnostics.CfirCjmpDiagnosticArgument
+import org.cangnova.cangjie.cfir.diagnostics.CfirCjmpDiagnosticLabel
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
@@ -38,37 +41,62 @@ import org.cangnova.cangjie.name.Name
  *
  * 对齐官方 `DeclAttributeChecker::CheckAttributesForPropAndFuncDeclInClass`：
  * class 体内无 body 的函数/属性会先成为 abstract，随后在 static 成员或非 abstract class 中报
- * `sema_missing_func_body`，诊断位置为声明起始 token 的首字符。
+ * `sema_missing_func_body`。声明文件整体豁免，COMMON_WITH_DEFAULT 不报缺体；
+ * 高亮由共享可调用声明签名策略负责，保留完整 token 与返回类型。
  */
-object CfirMemberBodyDeclarationChecker : CfirDeclarationChecker<CfirMemberDeclaration>() {
+object CfirMemberBodyDeclarationChecker : CfirDeclarationChecker<CfirMemberDeclaration>(MppCheckerKind.Common) {
     /**
      * 检查 class 直接成员是否缺少必需的函数体或属性访问器实现。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirMemberDeclaration) {
         val member = declaration.bodyRequiredMemberInfo() ?: return
-        val owner = context.findClosestDeclaration<CfirClass>()
+        // collector 在检查后才压入当前声明，栈顶就是直接 owner；局部声明不能借用祖先 class。
+        val owner = context.containingDeclarations.lastOrNull()?.cfir as? CfirClass
             ?: return
 
-        if (!member.status.isAbstract) return
-        val invalidAbstract =
-            member.status.isStatic && !member.status.isForeign ||
-                    !owner.status.isAbstract && !owner.status.isForeign
-        if (!invalidAbstract) return
+        // 官方 compileCjd 在所有函数与属性检查之前返回；raw 函数的模态规则由
+        // 独立 raw-builder 回归验证，不能在生产 checker 中保留针对测试的例外。
+        if (isFromDeclarationFile(context)) return
 
-        // 官方 `DeclAttributeChecker::CheckAttributesForPropAndFuncDeclInClass`（:284-289）开头
-        // 以 `opts.compileCjd` 整体提前返回：声明文件（.cj.d）不报 sema_missing_func_body。
-        // 属性在 .cj.d 中按 R4 仍带 abstract（护栏 1 只作用于函数），若不豁免，
-        // `class C { prop p: Int64 }` 会被误报——因此对属性分支按文件种类跳过。
-        // 函数分支**不加**同款守卫：它是护栏 1 失效的回归探测器（A-4 更正四）。
-        if (declaration is CfirProperty && isFromDeclarationFile(context)) return
+        val invalidAbstract = member.status.hasAbstractAttribute && owner.interopInfo?.objc?.isMirror != true && (
+                member.status.isStatic && !member.status.isForeign ||
+                        !owner.status.isAbstract && !owner.status.isForeign
+                )
+        if (invalidAbstract && !declaration.hasCjmpCommonDefaultAttribute()) {
+            reporter.reportOn(
+                source = declaration.source,
+                factory = CfirErrors.MISSING_FUNC_BODY,
+                a = member.kind,
+                b = member.name,
+            )
+        }
 
-        reporter.reportOn(
-            source = declaration.source?.firstCharacterDiagnosticSource(),
-            factory = CfirErrors.MISSING_FUNC_BODY,
-            a = member.kind,
-            b = member.name,
-        )
+        if (CjmpGate.isEnabled(context) &&
+            (owner.status.isCommon || owner.status.isSpecific) &&
+            member.status.isAbstractExplicit
+        ) {
+            declaration.explicitlyAbstractBodyLabel()?.let { memberKind ->
+                reporter.reportOn(
+                    source = declaration.source,
+                    factory = CfirErrors.EXPLICITLY_ABSTRACT_CAN_NOT_HAVE_BODY,
+                    a = CfirCjmpDiagnosticArgument.Label(memberKind),
+                )
+            }
+        }
+
+    }
+
+    /**
+     * 显式 abstract 函数以函数体、属性以非合成 getter 存在形成 CJMP 诊断条件。
+     */
+    private fun CfirMemberDeclaration.explicitlyAbstractBodyLabel(): CfirCjmpDiagnosticLabel? = when (this) {
+        is CfirNamedFunction -> CfirCjmpDiagnosticLabel.FUNCTION.takeIf { body != null }
+        is CfirProperty -> CfirCjmpDiagnosticLabel.PROPERTY.takeIf {
+            getter?.let { accessor -> !accessor.origin.generated } == true
+        }
+
+        else -> null
     }
 
     /**

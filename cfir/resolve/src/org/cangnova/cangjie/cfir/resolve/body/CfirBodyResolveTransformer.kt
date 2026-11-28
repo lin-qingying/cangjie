@@ -3,6 +3,7 @@
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.resolve.transformers.ReturnTypeCalculator
+import org.cangnova.cangjie.cfir.resolve.transformers.ReturnTypeCalculatorForFullBodyResolve
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.BodyResolveContext
 import org.cangnova.cangjie.cfir.session.CfirSession
 
@@ -15,7 +16,7 @@ import org.cangnova.cangjie.cfir.session.CfirSession
 open class CfirBodyResolveTransformer(
     session: CfirSession,
     scopeSession: ScopeSession,
-    returnTypeCalculator: ReturnTypeCalculator = ReturnTypeCalculator.Default,
+    returnTypeCalculator: ReturnTypeCalculator = ReturnTypeCalculatorForFullBodyResolve.Default,
     outerBodyResolveContext: BodyResolveContext? = null,
     phase: CfirResolvePhase = CfirResolvePhase.BODY_RESOLVE,
     /** 当前 dispatcher 是否只解析隐式类型所需路径。 */

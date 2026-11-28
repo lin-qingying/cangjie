@@ -5,7 +5,7 @@ interface I2 <: I1 { }
 interface I3 { }
 interface I4 <: I3 { }
 
-class Box { }
+class Box<T> { }
 
-extend Box <: I1 & I4 { }
-extend Box <: I3 & I2 { }
+extend<T> Box<T> <: I1 & I4 { }
+extend<T> Box<T> <: I3 & I2 { }

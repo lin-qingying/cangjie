@@ -26,7 +26,7 @@ import org.cangnova.cangjie.cfir.types.ConeTypeContext
 import org.cangnova.cangjie.cfir.types.abbreviatedType
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
-import org.cangnova.cangjie.cfir.types.createTypeSubstitutorByTypeConstructor
+import org.cangnova.cangjie.cfir.resolve.substitution.createTypeSubstitutorByTypeConstructor
 import org.cangnova.cangjie.cfir.types.declaredUpperBoundConeTypeOrNull
 import org.cangnova.cangjie.cfir.types.declaredUpperBoundRefsAfterTypeResolve
 import org.cangnova.cangjie.cfir.types.hasInvalidDeclaredUpperBounds

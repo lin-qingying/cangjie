@@ -37,6 +37,9 @@ enum class CfirLiteralKind {
      */
     STRING,
 
+    /** Java 互操作字符串字面量；官方 LitConstKind::JSTRING 与 STRING 分开参与 CJMP 比较。 */
+    JSTRING,
+
     /**
      * Unit 字面量。
      */

@@ -13,6 +13,7 @@ import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.types.CfirOptionTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.CfirTypeRefOrigin
 import org.cangnova.cangjie.cfir.types.impl.CfirOptionTypeRefImpl
 import org.cangnova.cangjie.source.CjSourceElement
 
@@ -20,6 +21,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 class CfirOptionTypeRefBuilder {
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
     var customRenderer: Boolean = false
+    var typeUseOrigin: CfirTypeRefOrigin = CfirTypeRefOrigin.SEMANTIC
     lateinit var source: CjSourceElement
     lateinit var componentTypeRef: CfirTypeRef
 
@@ -27,6 +29,7 @@ class CfirOptionTypeRefBuilder {
         return CfirOptionTypeRefImpl(
             annotations.toMutableOrEmpty(),
             customRenderer,
+            typeUseOrigin,
             source,
             componentTypeRef,
         )

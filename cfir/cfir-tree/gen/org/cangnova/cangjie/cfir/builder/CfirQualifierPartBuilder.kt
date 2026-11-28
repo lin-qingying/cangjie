@@ -13,6 +13,7 @@ import org.cangnova.cangjie.cfir.CfirQualifierPart
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.impl.CfirQualifierPartImpl
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.CfirTypeRefOrigin
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.CjSourceElement
 
@@ -20,6 +21,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 class CfirQualifierPartBuilder {
     var source: CjSourceElement? = null
     lateinit var name: Name
+    var typeUseOrigin: CfirTypeRefOrigin = CfirTypeRefOrigin.SEMANTIC
     val typeArguments: MutableList<CfirTypeRef> = mutableListOf()
 
     @OptIn(CfirImplementationDetail::class)
@@ -27,6 +29,7 @@ class CfirQualifierPartBuilder {
         return CfirQualifierPartImpl(
             source,
             name,
+            typeUseOrigin,
             typeArguments.toMutableOrEmpty(),
         )
     }
@@ -49,6 +52,7 @@ inline fun buildQualifierPartCopy(original: CfirQualifierPart, init: CfirQualifi
     val copyBuilder = CfirQualifierPartBuilder()
     copyBuilder.source = original.source
     copyBuilder.name = original.name
+    copyBuilder.typeUseOrigin = original.typeUseOrigin
     copyBuilder.typeArguments.addAll(original.typeArguments)
     return copyBuilder.apply(init).build()
 }

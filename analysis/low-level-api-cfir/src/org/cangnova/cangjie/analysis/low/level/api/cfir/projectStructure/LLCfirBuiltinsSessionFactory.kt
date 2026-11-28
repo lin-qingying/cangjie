@@ -5,6 +5,8 @@
 
 package org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure
 
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
+
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.psi.util.CachedValue

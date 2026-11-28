@@ -153,6 +153,8 @@ table FuncType {
   base: Type;
   isCFuncType: bool = false;
   hasVarArg: bool = false;
+  receiverType: uint32; // use type id; zero means no receiver
+  throws: bool = false;
 }
 
 table CustomType {
@@ -200,6 +202,7 @@ table GenericType {
 
 table RefType {
   base: Type;
+  mutable: bool = false;
 }
 
 table BoxType {
@@ -212,6 +215,7 @@ table VoidType {
 
 table ThisType {
   base: Type;
+  ownerTypeName: string(shared);
 }
 
 enum Linkage: int16 {
@@ -1421,6 +1425,7 @@ table ForInClosedRange {
 table Debug {
   base: Expression;
   srcCodeIdentifier: string(shared);
+accurateEnvObjTy: uint32;
 }
 
 table Spawn {

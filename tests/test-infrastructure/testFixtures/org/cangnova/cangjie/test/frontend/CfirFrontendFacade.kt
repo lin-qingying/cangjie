@@ -11,10 +11,13 @@ import org.cangnova.cangjie.cfir.entrypoint.session.CfirDefaultSessionFactory
 import org.cangnova.cangjie.cfir.entrypoint.session.createDefaultCfirSessionFactoryContext
 import org.cangnova.cangjie.cfir.entrypoint.session.createCfirCjmpSettingsComponent
 import org.cangnova.cangjie.cfir.session.CfirCjmpSettingsComponent
+import org.cangnova.cangjie.cfir.builder.toParsingContext
 import org.cangnova.cangjie.cfir.entrypoint.session.CfirSessionConfigurator
 import org.cangnova.cangjie.cfir.extensions.CfirExtensionRegistrar
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.CjPsiSourceFile
+import org.cangnova.cangjie.parsing.compilationParsingResultOrNull
+import org.cangnova.cangjie.source.CjPsiSourceElement
+import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.CjSourceFile
 import org.cangnova.cangjie.config.CompilerConfiguration
 import org.cangnova.cangjie.config.classpathRoots
@@ -24,6 +27,7 @@ import org.cangnova.cangjie.frontend.pipeline.initializeCfirFrontendMacroCompila
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.platform.CangJiePlatforms
 import org.cangnova.cangjie.psi.CjFile
+import org.cangnova.cangjie.parsing.cjmpParsingContext
 import org.cangnova.cangjie.test.CfirParser
 import org.cangnova.cangjie.test.directives.CfirDiagnosticsDirectives
 import org.cangnova.cangjie.test.directives.model.singleValue
@@ -211,7 +215,15 @@ open class CfirFrontendFacade(
                 emptyMap<TestFile, CjFile>() to testServices.sourceFileProvider.getCjSourceFilesForSourceFiles(module.files)
             }
 
-            CfirParser.Psi -> testServices.sourceFileProvider.getCjFilesForSourceFiles(module.files, project) to emptyMap()
+            CfirParser.Psi -> {
+                val configuration = testServices.compilerConfigurationProvider.getCompilerConfiguration(module)
+                val options = createCfirCjmpSettingsComponent(configuration).toParsingContext(
+                    module.languageVersionSettings ?: configuration.languageVersionSettings,
+                )
+                testServices.sourceFileProvider.getCjFilesForSourceFiles(module.files, project).also { files ->
+                    files.values.forEach { it.cjmpParsingContext = options }
+                } to emptyMap()
+            }
         }
 
         val sessionConfigurator: CfirSessionConfigurator.() -> Unit = {
@@ -250,7 +262,7 @@ open class CfirFrontendFacade(
 
         val filesMap = usedFilesMap.keys.associateWith { testFile ->
             val sourceFile = usedFilesMap.getValue(testFile)
-            val candidates = firFiles.filter { it.sourceFile.matchesTestSourceFile(sourceFile) }
+            val candidates = firFiles.filter { it.matchesTestSourceFile(sourceFile) }
             require(candidates.size == 1) {
                 "Expected exactly one CFIR file for test file $testFile, got ${candidates.size}"
             }
@@ -268,11 +280,17 @@ open class CfirFrontendFacade(
 
     /**
      * 测试框架中的 `TestFile.relativePath` 只属于 fixture 标识，CFIR 文件必须回连到真实前端源对象。
-     * LightTree 直接复用同一个 [CjSourceFile]，PSI 则在 builder 中用同一个 [CjFile] 包装成 [CjPsiSourceFile]。
+     * LightTree 直接复用同一个 [CjSourceFile]；PSI 完整编译产品保存原树、目标树与冻结来源的精确身份。
      */
-    private fun CjSourceFile?.matchesTestSourceFile(testSourceFile: Any): Boolean = when (testSourceFile) {
-        is CjSourceFile -> this === testSourceFile
-        is CjFile -> this is CjPsiSourceFile && psiFile === testSourceFile
+    private fun CfirFile.matchesTestSourceFile(testSourceFile: Any): Boolean = when (testSourceFile) {
+        is CjSourceFile -> sourceFile === testSourceFile
+        is CjFile -> {
+            val target = (source as CjPsiSourceElement).psi as CjFile
+            val product = checkNotNull(target.compilationParsingResultOrNull()) {
+                "A PSI frontend output must retain its actual complete parsing product"
+            }
+            product.file === target && product.originFile === testSourceFile && sourceFile === product.sourceFile
+        }
         else -> false
     }
 

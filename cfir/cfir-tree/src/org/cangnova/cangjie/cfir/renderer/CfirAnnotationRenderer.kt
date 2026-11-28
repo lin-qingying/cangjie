@@ -30,25 +30,25 @@ open class CfirAnnotationRenderer {
     protected val callArgumentsRenderer: CfirCallArgumentsRenderer? get() = components.callArgumentsRenderer
 
     /**
-     * 渲染注解容器上的全部注解。
+     * 渲染注解容器；行内声明需要末尾分隔空格，文件/features 独立行由宿主换行。
      */
-    fun render(annotationContainer: CfirAnnotationContainer) {
-        renderAnnotations(annotationContainer.annotations)
+    fun render(annotationContainer: CfirAnnotationContainer, trailingSpace: Boolean = true) {
+        renderAnnotations(annotationContainer.annotations, trailingSpace)
     }
 
     /**
      * 渲染注解列表。
      */
-    internal fun renderAnnotations(annotations: List<CfirAnnotation>) {
-        for (annotation in annotations) {
-            renderAnnotation(annotation)
+    internal fun renderAnnotations(annotations: List<CfirAnnotation>, trailingSpace: Boolean = true) {
+        for ((index, annotation) in annotations.withIndex()) {
+            renderAnnotation(annotation, trailingSpace = index < annotations.lastIndex || trailingSpace)
         }
     }
 
     /**
      * 渲染单个注解。
      */
-    internal fun renderAnnotation(annotation: CfirAnnotation) {
+    internal fun renderAnnotation(annotation: CfirAnnotation, trailingSpace: Boolean = true) {
         printer.print("@")
         annotation.typeRef.accept(visitor)
         when (annotation) {
@@ -57,7 +57,7 @@ open class CfirAnnotationRenderer {
                 callArgumentsRenderer?.renderArgumentElements(annotation.arguments)
             }
         }
-        printer.print(" ")
+        if (trailingSpace) printer.print(" ")
     }
 
 

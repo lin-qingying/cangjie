@@ -25,6 +25,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.analysis.diagnostics.renderInvalidBinaryOperatorType
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
@@ -59,7 +60,7 @@ import org.cangnova.cangjie.cfir.types.containsErrorType
  *    [ConeInvalidFlowBinaryExpr]——合成的 `this |> g` 实参失配、`x ~> g` 的
  *    `UNRESOLVED_REFERENCE` 都属于被丢弃的调用诊断，不会单独报出。
  */
-object CfirFlowBinaryOpChecker : CfirBinaryOpChecker() {
+object CfirFlowBinaryOpChecker : CfirBinaryOpChecker(MppCheckerKind.Common) {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirBinaryOp) {
         when (val marker = (expression.coneTypeOrNull as? ConeErrorType)?.diagnostic) {

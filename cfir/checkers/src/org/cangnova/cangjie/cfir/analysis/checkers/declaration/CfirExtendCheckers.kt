@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.CfirExtendSemantics
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.firstCharacterDiagnosticSource
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.modifierByToken
@@ -8,7 +9,6 @@ import org.cangnova.cangjie.cfir.analysis.checkers.realSourceModifiers
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
-import org.cangnova.cangjie.cfir.declarations.cjoDeclarationPosition
 import org.cangnova.cangjie.cfir.declarations.CfirInterface
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
@@ -17,7 +17,7 @@ import org.cangnova.cangjie.cfir.diagnostic.ConeUnmatchedTypeArgumentsError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedTypeQualifierError
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticRelatedInformation
-import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticRelatedSourceLocation
+import org.cangnova.cangjie.cfir.diagnostics.DiagnosticContext
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.diagnostics.reportOnWithRelatedInformation
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedTypeUsingAbbreviation
@@ -30,7 +30,8 @@ import org.cangnova.cangjie.cfir.session.services.CfirExtendTargetInterfaceView
 import org.cangnova.cangjie.cfir.session.services.CfirExtendInheritedInterfaceSemantic
 import org.cangnova.cangjie.cfir.session.services.CfirExtendMemberPeerConflictChain
 import org.cangnova.cangjie.cfir.session.services.CfirExtendMemberPeerConflictWitness
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.session.services.CfirExtendMemberPeerSequenceConflict
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.types.CfirBasicTypeRef
@@ -51,7 +52,6 @@ import org.cangnova.cangjie.cfir.types.ConeStructType
 import org.cangnova.cangjie.cfir.types.ConeTupleType
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
-import org.cangnova.cangjie.cfir.types.ConeUnreportedDuplicateDiagnostic
 import org.cangnova.cangjie.cfir.types.ConeUnionType
 import org.cangnova.cangjie.cfir.types.ConeVArrayType
 import org.cangnova.cangjie.cfir.types.abbreviatedType
@@ -72,7 +72,7 @@ import org.cangnova.cangjie.type.AbstractTypeChecker
  * 该检查器负责过滤不能作为 extend 接收者的类型，包括接口、函数类型、元组、varray、
  * 交叉/联合类型以及外部互操作边界类型。
  */
-object CfirExtendTargetLegalityChecker : CfirExtendChecker() {
+object CfirExtendTargetLegalityChecker : CfirExtendChecker(MppCheckerKind.Common) {
     /**
      * 检查单个 extend 声明的目标类型是否合法。
      */
@@ -122,7 +122,7 @@ object CfirExtendTargetLegalityChecker : CfirExtendChecker() {
 /**
  * extend 所实现接口的类型种类检查器。
  */
-object CfirExtendInterfaceKindChecker : CfirExtendChecker() {
+object CfirExtendInterfaceKindChecker : CfirExtendChecker(MppCheckerKind.Common) {
     /**
      * 检查 extend super type 列表中的每个接口类型是否合法且可扩展。
      */
@@ -171,7 +171,7 @@ object CfirExtendInterfaceKindChecker : CfirExtendChecker() {
  * 同一 extend 内、同一目标的多个 extend 之间、目标类型本身已继承接口之间都需要检查
  * 重复接口关系。
  */
-object CfirExtendDuplicateInterfaceChecker : CfirExtendChecker() {
+object CfirExtendDuplicateInterfaceChecker : CfirExtendChecker(MppCheckerKind.Common) {
     /**
      * 检查当前 extend 声明是否重复引入接口。
      */
@@ -218,7 +218,7 @@ internal fun CfirExtend.duplicatesInheritedTargetInterface(
 /**
  * extend 检查顺序不可判定诊断检查器。
  */
-object CfirExtendCheckSequenceChecker : CfirExtendChecker() {
+object CfirExtendCheckSequenceChecker : CfirExtendChecker(MppCheckerKind.Common) {
     /**
      * 检查当前 extend 是否处于无法决定检查顺序的规则集合中。
      */
@@ -228,36 +228,44 @@ object CfirExtendCheckSequenceChecker : CfirExtendChecker() {
         val conflicts = query.undecidableExtendCheckSequenceConflicts(declaration)
         if (conflicts.isEmpty()) return
 
-        reporter.reportOnWithRelatedInformation(
-            source = declaration.source?.firstCharacterDiagnosticSource() ?: declaration.extendedTypeRef.source,
-            factory = CfirErrors.EXTEND_CHECK_SEQUENCE_CANNOT_DECIDE,
-            relatedInformation = conflicts.map { conflict ->
-                val peer = conflict.peerDeclaration as? CfirExtend
-                val peerSource = peer?.extendedTypeRef?.source?.firstCharacterDiagnosticSource()
-                    ?: peer?.source?.firstCharacterDiagnosticSource()
-                conflict.witness.toExtendCheckSequenceRelatedInformation(
-                    peerSource = peerSource,
-                    sourceLocation = peer?.cjoDeclarationPosition?.let { position ->
-                        CjDiagnosticRelatedSourceLocation(position.filePath, position.line, position.column)
-                    },
-                )
-            },
+        reporter.reportExtendCheckSequenceConflicts(
+            conflicts = conflicts,
             context = context,
+            source = declaration.source?.firstCharacterDiagnosticSource() ?: declaration.extendedTypeRef.source,
         )
     }
 }
 
+/** 在 owner 对应的诊断上下文中报告一组不可判定的 extend 顺序关系。 */
+internal fun DiagnosticReporter.reportExtendCheckSequenceConflicts(
+    conflicts: List<CfirExtendMemberPeerSequenceConflict>,
+    context: DiagnosticContext,
+    source: AbstractCjSourceElement?,
+) {
+    if (conflicts.isEmpty()) return
+    reportOnWithRelatedInformation(
+        source = source,
+        factory = CfirErrors.EXTEND_CHECK_SEQUENCE_CANNOT_DECIDE,
+        relatedInformation = conflicts.map { conflict ->
+            val peer = conflict.peerDeclaration as? CfirExtend
+            conflict.witness.toExtendCheckSequenceRelatedInformation(
+                peerDeclaration = peer,
+            )
+        },
+        context = context,
+    )
+}
+
 /** 保留 peer 的独立源码范围与 pairwise 直接接口证据，供 IDE 导航和 CLI note 展示。 */
 internal fun CfirExtendMemberPeerConflictWitness.toExtendCheckSequenceRelatedInformation(
-    peerSource: AbstractCjSourceElement?,
-    sourceLocation: CjDiagnosticRelatedSourceLocation? = null,
-): CjDiagnosticRelatedInformation = CjDiagnosticRelatedInformation(
-    element = peerSource,
-    message = "conflict with this extension, beacase of ${conflictChains.joinToString(separator = " and ") { chain ->
+    peerDeclaration: CfirExtend?,
+): CjDiagnosticRelatedInformation {
+    val message = "conflict with this extension, beacase of ${conflictChains.joinToString(separator = " and ") { chain ->
         "'${chain.renderExtendInterfaceChain()}'"
-    }}",
-    sourceLocation = sourceLocation,
-)
+    }}"
+    return peerDeclaration?.relatedInformation(message)
+        ?: CjDiagnosticRelatedInformation(element = null, message = message)
+}
 
 private fun CfirExtendMemberPeerConflictChain.renderExtendInterfaceChain(): String =
     buildList {
@@ -292,7 +300,7 @@ private fun CfirExtendInheritedInterfaceSemantic.renderExtendInterfaceInstance()
  * 该检查是官方 orphan rule 在 CFIR 中的唯一实现，诊断名与官方
  * `sema_type_cannot_extend_imported_interface` 对齐。
  */
-object CfirExtendOrphanRuleChecker : CfirExtendChecker() {
+object CfirExtendOrphanRuleChecker : CfirExtendChecker(MppCheckerKind.Common) {
     /**
      * 检查当前 extend 是否违反 orphan rule。
      */
@@ -339,7 +347,7 @@ object CfirExtendOrphanRuleChecker : CfirExtendChecker() {
 /**
  * extend 泛型参数使用检查器。
  */
-object CfirExtendGenericUsageChecker : CfirExtendChecker() {
+object CfirExtendGenericUsageChecker : CfirExtendChecker(MppCheckerKind.Common) {
     /**
      * 检查 extend 声明的类型参数是否至少出现在目标类型中。
      */
@@ -363,7 +371,7 @@ object CfirExtendGenericUsageChecker : CfirExtendChecker() {
 /**
  * 不可变目标泄漏 mut 接口检查器。
  */
-object CfirExtendImmutableMutInterfaceChecker : CfirExtendChecker() {
+object CfirExtendImmutableMutInterfaceChecker : CfirExtendChecker(MppCheckerKind.Common) {
     /**
      * 检查不可变目标是否通过 extend super interface 泄漏 mut 接口能力。
      */
@@ -390,7 +398,7 @@ object CfirExtendImmutableMutInterfaceChecker : CfirExtendChecker() {
  * 自身掌握，因此规则归 extend 层，而不是函数声明层：函数声明层看不到 extend 目标类型，
  * 只能退化成一个永远不会命中的分支。
  */
-object CfirExtendMutFunctionModifierChecker : CfirExtendChecker() {
+object CfirExtendMutFunctionModifierChecker : CfirExtendChecker(MppCheckerKind.Common) {
     /**
      * 检查 extend 体内声明的 `mut` 函数是否合法。
      */
@@ -437,7 +445,7 @@ object CfirExtendMutFunctionModifierChecker : CfirExtendChecker() {
 /**
  * 不可变目标上的 extend 成员合法性检查器。
  */
-object CfirExtendImmutableMemberChecker : CfirExtendChecker() {
+object CfirExtendImmutableMemberChecker : CfirExtendChecker(MppCheckerKind.Common) {
     /**
      * 检查不可变目标不能声明 mut 属性或 index assignment operator。
      */
@@ -474,7 +482,7 @@ object CfirExtendImmutableMemberChecker : CfirExtendChecker() {
 /**
  * 泛型目标 extend 特化冲突检查器。
  */
-object CfirExtendSpecializationConflictChecker : CfirExtendChecker() {
+object CfirExtendSpecializationConflictChecker : CfirExtendChecker(MppCheckerKind.Common) {
     /**
      * 检查泛型目标不同特化 extend 之间的接口冲突。
      */
@@ -556,7 +564,7 @@ object CfirExtendSpecializationConflictChecker : CfirExtendChecker() {
  * 同一 nominal 目标的多个 extend 以不同实例化形式引入同一泛型接口时，接口中不依赖
  * 接口类型参数的默认成员会成为同一份实现。官方将 shadow 诊断定位到该接口成员原声明。
  */
-object CfirExtendDefaultIndependentMemberShadowChecker : CfirExtendChecker() {
+object CfirExtendDefaultIndependentMemberShadowChecker : CfirExtendChecker(MppCheckerKind.Common) {
     /**
      * 检查当前 extend 与同目标其它 extend 引入接口默认实现是否冲突。
      */
@@ -668,11 +676,7 @@ private fun CfirTypeRef.isDefinitelyNotInterfaceType(
 private fun ConeCangJieType.isDefinitelyNotExtendInterfaceType(): Boolean = when (this) {
     // extend 的接口类型检查对齐官方 PreCheckExtend：类型实例化失败时按 Ty 正确性决定是否派生
     // EXTEND_NOT_INTERFACE。泛型实参数量错误已经有独立诊断，内部错误实参则仍会让整个接口实例无效。
-    is ConeErrorType -> when (diagnostic) {
-        is ConeUnmatchedTypeArgumentsError -> false
-        is ConeUnreportedDuplicateDiagnostic -> true
-        else -> false
-    }
+    is ConeErrorType -> diagnostic !is ConeUnmatchedTypeArgumentsError
     else -> containsErrorType() || when (this) {
         is ConeClassLikeType -> !isInterface
         is ConePrimitiveType,

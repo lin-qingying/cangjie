@@ -10,20 +10,29 @@ package org.cangnova.cangjie.cfir.patterns.builder
 import kotlin.contracts.*
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
+import org.cangnova.cangjie.cfir.expressions.CfirConstantValue
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.patterns.CfirPattern
 import org.cangnova.cangjie.cfir.patterns.CfirTuplePattern
 import org.cangnova.cangjie.cfir.patterns.impl.CfirTuplePatternImpl
+import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.source.CjSourceElement
 
 @CfirBuilderDsl
 class CfirTuplePatternBuilder {
     var source: CjSourceElement? = null
+    var semanticTypeRef: CfirTypeRef? = null
+    val constantValues: MutableList<CfirConstantValue> = mutableListOf()
+    var contextExpression: CfirExpression? = null
     val elements: MutableList<CfirPattern> = mutableListOf()
 
     @OptIn(CfirImplementationDetail::class)
     fun build(): CfirTuplePattern {
         return CfirTuplePatternImpl(
             source,
+            semanticTypeRef,
+            constantValues,
+            contextExpression,
             elements,
         )
     }
@@ -45,6 +54,9 @@ inline fun buildTuplePatternCopy(original: CfirTuplePattern, init: CfirTuplePatt
     }
     val copyBuilder = CfirTuplePatternBuilder()
     copyBuilder.source = original.source
+    copyBuilder.semanticTypeRef = original.semanticTypeRef
+    copyBuilder.constantValues.addAll(original.constantValues)
+    copyBuilder.contextExpression = original.contextExpression
     copyBuilder.elements.addAll(original.elements)
     return copyBuilder.apply(init).build()
 }

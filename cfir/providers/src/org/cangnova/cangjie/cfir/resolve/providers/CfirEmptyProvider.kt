@@ -3,6 +3,7 @@ package org.cangnova.cangjie.cfir.resolve.providers
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
@@ -31,6 +32,9 @@ class CfirEmptyProvider(
      * 空 provider 不包含任何 classifier 容器文件。
      */
     override fun getCfirClassifierContainerFileIfAny(fqName: ClassId): CfirFile? = null
+
+    /** 空来源不拥有任何 symbol 的源码文件。 */
+    override fun getCfirClassifierContainerFileIfAny(symbol: CfirClassLikeSymbol<*>): CfirFile? = null
 
     /**
      * 空 provider 不包含任何 callable 容器文件。

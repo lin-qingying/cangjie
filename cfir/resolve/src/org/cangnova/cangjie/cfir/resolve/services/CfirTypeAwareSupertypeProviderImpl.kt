@@ -24,27 +24,49 @@
 
 package org.cangnova.cangjie.cfir.resolve.services
 
+import org.cangnova.cangjie.cfir.resolve.toSymbol
+
+import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
+
+import org.cangnova.cangjie.cfir.resolve.substitution.createTypeSubstitutorByTypeConstructor
+
 import org.cangnova.cangjie.cfir.declarations.CfirClass
+import org.cangnova.cangjie.cfir.declarations.isInReferenceCycle
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
+import org.cangnova.cangjie.cfir.declarations.util.expandedConeType
+import org.cangnova.cangjie.cfir.resolve.expandedConeTypeWithEnsuredPhase
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedTypeUsingAbbreviation
 import org.cangnova.cangjie.cfir.resolve.CfirTypeResolutionConfiguration
 import org.cangnova.cangjie.cfir.resolve.SupertypeSupplier
+import org.cangnova.cangjie.cfir.resolve.isReferenceCycleTarget
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirInstantiatedSupertypeDescriptor
 import org.cangnova.cangjie.cfir.resolve.providers.CfirInstantiatedSupertypeOrigin
 import org.cangnova.cangjie.cfir.resolve.providers.CfirTypeAwareSupertypeProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirTypeAwareSupertypeSources
+import org.cangnova.cangjie.cfir.resolve.providers.CfirTypeAwareSupertypeInputRevision
+import org.cangnova.cangjie.cfir.resolve.providers.CfirTypeAwareSupertypeInputStamp
+import org.cangnova.cangjie.cfir.resolve.providers.CfirTypeAwareSupertypeInputDependency
 import org.cangnova.cangjie.cfir.resolve.providers.classifyDeclaredSupertype
 import org.cangnova.cangjie.cfir.resolve.providers.createExtendDeclarationSubstitution
 import org.cangnova.cangjie.cfir.resolve.providers.isExtendSuperTypeRefPredicateVisible
 import org.cangnova.cangjie.cfir.resolve.providers.ordinarySupertypeTypeOrNull
+import org.cangnova.cangjie.cfir.resolve.providers.ordinaryMemberSupertypeOrNull
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.session.extendIndexStoreOrNull
+import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
+import org.cangnova.cangjie.cfir.session.typeAwareSupertypeProviderOrNull
+import org.cangnova.cangjie.cfir.toCfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.session.extendProvider
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.session.typeResolver
 import org.cangnova.cangjie.cfir.symbols.CfirInterfaceSymbol
+import org.cangnova.cangjie.cfir.symbols.ConeClassifierLookupTagWithFixedSymbol
+import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagWithFixedSymbol
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.cfir.symbols.toLookupTag
 import org.cangnova.cangjie.cfir.types.*
@@ -58,12 +80,68 @@ import org.cangnova.cangjie.type.model.TypeConstructorMarker
  * 2. extend 的匹配与实例化基于当前 concrete type，因此泛型 extend 不会丢失 use-site 实参。
  * 3. extend 接口会沿 superclass 链继续传播，和官方编译器 `GetAllExtendInterfaceTy` 的语义保持一致。
  */
-class CfirTypeAwareSupertypeProviderImpl(
+class CfirTypeAwareSupertypeProviderImpl private constructor(
     /**
      * 当前解析会话。
      */
     private val session: CfirSession,
+    private val boundSources: CfirTypeAwareSupertypeSources?,
 ) : CfirTypeAwareSupertypeProvider {
+    constructor(session: CfirSession) : this(session, null)
+
+    private val sourceProviders = mutableMapOf<CfirTypeAwareSupertypeSources, CfirTypeAwareSupertypeProviderImpl>()
+    /** 实际读取的 Source 声明拥有图；use-site 的图版本不能代替 refinement 声明的原图版本。 */
+    private val declarationSessions = linkedSetOf<CfirSession>()
+    /** 另一直接图是显式父边查询源；默认 session 图保留既有声明 AST 生产合同。 */
+    private val declaredFromGraph = boundSources != null && boundSources.directSupertypes !== session.directSupertypeProviderOrNull
+
+    init {
+        val graph = if (boundSources == null) session.directSupertypeProviderOrNull else boundSources.directSupertypes
+        checkNotNull(graph) {
+            "Type-aware supertypes require the registered completed source-publication graph"
+        }
+    }
+
+    private fun currentSources(): CfirTypeAwareSupertypeSources = if (boundSources == null) {
+        CfirTypeAwareSupertypeSources(session, session.symbolProvider, session.extendProvider, session.directSupertypeProviderOrNull)
+    } else boundSources
+
+    override fun forSources(sources: CfirTypeAwareSupertypeSources): CfirTypeAwareSupertypeProvider {
+        require(sources.session === session) { "Type-aware input sources belong to a different type context" }
+        if (sources == currentSources()) return this
+        return synchronized(sourceProviders) {
+            sourceProviders.getOrPut(sources) { CfirTypeAwareSupertypeProviderImpl(session, sources) }
+        }
+    }
+
+    /** 结构父图始终读取这些真实来源；不受某次 scope 禁止直接 extend 成员的开关影响。 */
+    override val inputStamp: CfirTypeAwareSupertypeInputStamp
+        get() {
+            val sources = currentSources()
+            val graph = checkNotNull(sources.directSupertypes) {
+                "The completed source-publication graph cannot be removed from a live semantic session"
+            }
+            val revision = CfirTypeAwareSupertypeInputRevision(sources.extends?.modificationCount, graph.modificationCount, 0L)
+            val canonicalSources = CfirTypeAwareSupertypeSources(session, session.symbolProvider, session.extendProvider, session.directSupertypeProviderOrNull)
+            val canonical = session.typeAwareSupertypeProviderOrNull
+            val dependencies = linkedSetOf(CfirTypeAwareSupertypeInputDependency(
+                null, canonicalSources,
+                CfirTypeAwareSupertypeInputRevision(canonicalSources.extends?.modificationCount, canonicalSources.directSupertypes?.modificationCount, 0L),
+            ))
+            if (canonical != null && canonical !== this) {
+                val stamp = canonical.inputStamp
+                dependencies += CfirTypeAwareSupertypeInputDependency(canonical, stamp.sources, stamp.revision)
+                dependencies += stamp.dependencies
+            }
+            synchronized(declarationSessions) { declarationSessions.toList() }.forEach { ownerSession ->
+                val ownerSources = CfirTypeAwareSupertypeSources(ownerSession, ownerSession.symbolProvider, null,
+                    checkNotNull(ownerSession.directSupertypeProviderOrNull) { "An original Source supertype provider was removed" })
+                dependencies += CfirTypeAwareSupertypeInputDependency(null, ownerSources,
+                    CfirTypeAwareSupertypeInputRevision(null, checkNotNull(ownerSources.directSupertypes).modificationCount, 0L))
+            }
+            return CfirTypeAwareSupertypeInputStamp(sources, revision, dependencies)
+        }
+
     /**
      * 具体类型到来源保留父边列表的缓存。
      *
@@ -78,7 +156,7 @@ class CfirTypeAwareSupertypeProviderImpl(
      * 类型系统可能在 EXTENSIONS 阶段之前查询父类型；这时 extend 索引尚未完成，
      * 不能把空结果带到后续 BODY_RESOLVE。索引 rebuild 后必须整体失效。
      */
-    private var cachedExtendIndexVersion: Long = Long.MIN_VALUE
+    private var cachedInputStamp: CfirTypeAwareSupertypeInputStamp? = null
 
     /**
      * 当前调用栈上正在计算直接父类型的类型集合。
@@ -103,24 +181,30 @@ class CfirTypeAwareSupertypeProviderImpl(
     override fun getDirectSupertypeDescriptors(
         type: ConeCangJieType,
     ): List<CfirInstantiatedSupertypeDescriptor> {
-        ensureCacheFresh()
-        synchronized(directSupertypeDescriptorsCache) {
-            directSupertypeDescriptorsCache[type]?.let { return it }
-        }
+        while (true) {
+            val revision = ensureCacheFresh()
+            synchronized(directSupertypeDescriptorsCache) {
+                directSupertypeDescriptorsCache[type]?.let { return it }
+            }
 
-        val semanticType = type.fullyExpandedType(session)
-        val computingTypes = computingSupertypes.get()
-        if (semanticType.isSupertypeComputationReentry(computingTypes)) return emptyList()
+            val semanticType = expandForSources(type)
+            val computingTypes = computingSupertypes.get()
+            if (semanticType.isSupertypeComputationReentry(computingTypes)) return emptyList()
 
-        computingTypes += semanticType
-        val computed = try {
-            computeDirectSupertypeDescriptors(semanticType)
-        } finally {
-            computingTypes -= semanticType
-        }
+            computingTypes += semanticType
+            val computed = try {
+                computeDirectSupertypeDescriptors(semanticType)
+            } finally {
+                computingTypes -= semanticType
+            }
 
-        synchronized(directSupertypeDescriptorsCache) {
-            return directSupertypeDescriptorsCache.getOrPut(type) { computed }
+            // 正规解析回调可能发布新的完成图；跨代结果重新计算，不能写入新代缓存。
+            if (ensureCacheFresh() != revision) continue
+            synchronized(directSupertypeDescriptorsCache) {
+                if (currentRevision() == revision) {
+                    return directSupertypeDescriptorsCache.getOrPut(type) { computed }
+                }
+            }
         }
     }
 
@@ -182,13 +266,17 @@ class CfirTypeAwareSupertypeProviderImpl(
     /**
      * 根据 session 级 extend 索引版本清理本地父类型缓存。
      */
-    private fun ensureCacheFresh() {
-        val currentVersion = session.extendIndexStoreOrNull?.modificationCount ?: Long.MIN_VALUE
+    private fun currentRevision(): CfirTypeAwareSupertypeInputStamp = inputStamp
+
+    private fun ensureCacheFresh(): CfirTypeAwareSupertypeInputStamp {
+        val revision = currentRevision()
         synchronized(directSupertypeDescriptorsCache) {
-            if (cachedExtendIndexVersion == currentVersion) return
-            directSupertypeDescriptorsCache.clear()
-            cachedExtendIndexVersion = currentVersion
+            if (cachedInputStamp != revision) {
+                directSupertypeDescriptorsCache.clear()
+                cachedInputStamp = revision
+            }
         }
+        return revision
     }
 
     /**
@@ -225,47 +313,30 @@ class CfirTypeAwareSupertypeProviderImpl(
         val declaration = resolveClassLikeDeclaration(type) ?: return emptyList()
         val substitutor = declaration.createDeclarationSubstitutor(type)
 
-        val declaredSupertypes = declaration.superTypeRefs.mapNotNull { superTypeRef ->
-            val classification = superTypeRef.classifyDeclaredSupertype(session)
-            val semanticType = classification.ordinarySupertypeTypeOrNull() ?: return@mapNotNull null
+        val refs = if (declaredFromGraph) {
+            checkNotNull(checkNotNull(currentSources().directSupertypes).getCompletedSupertypeProduct(declaration.symbol)) {
+                "The selected supertype source has no completed product for ${declaration.symbol}"
+            }.declaredSuperTypes.map { it.typeRef }
+        } else if (declaration.origin.fromSource) {
+            val ownerSession = declaration.moduleData.session
+            val ownerGraph = checkNotNull(ownerSession.directSupertypeProviderOrNull) {
+                "A Source declaration requires its original completed supertype source"
+            }
+            synchronized(declarationSessions) { declarationSessions += ownerSession }
+            checkNotNull(ownerGraph.getCompletedSupertypeProduct(declaration.symbol)) {
+                "The original Source declaration has no completed supertype product: ${declaration.symbol}"
+            }.superTypeRefs
+        } else declaration.superTypeRefs
+        val declaredSupertypes = refs.mapNotNull { superTypeRef ->
+            val semanticType = superTypeRef.ordinaryMemberSupertypeOrNull(declaration, session, ::expandForSources,
+                symbolProvider, ::isCycleTargetForSources) ?: return@mapNotNull null
             CfirInstantiatedSupertypeDescriptor(
                 type = substitutor?.substituteOrSelf(semanticType) ?: semanticType,
+                provenanceType = semanticType,
                 origin = CfirInstantiatedSupertypeOrigin.Declared(superTypeRef),
             )
         }
-        return declaredSupertypes.withImplicitObjectSuperclass(declaration)
-    }
-
-    /**
-     * 官方 `PreCheck::AddSuperClassObjectForClassDecl` 会在 class 没有显式父类时补
-     * `std.core.Object`。这里保持同一语义在类型系统的统一父类型入口中生效：
-     * 显式接口不占用 class superclass 槽位，只有显式 concrete superclass 才阻止补父类。
-     */
-    private fun List<CfirInstantiatedSupertypeDescriptor>.withImplicitObjectSuperclass(
-        declaration: CfirClassLikeDeclaration,
-    ): List<CfirInstantiatedSupertypeDescriptor> {
-        if (declaration !is CfirClass) return this
-        if (declaration.symbol.classId == StdlibClassIds.Any) return this
-        if (any { it.type.isConcreteSuperclassCandidate() }) return this
-
-        val implicitSuperclass = if (declaration.symbol.classId == StdlibClassIds.Object) {
-            ConeClassLikeType(StdlibClassIds.Any.toLookupTag(), isInterface = true)
-        } else {
-            ConeClassLikeType(StdlibClassIds.Object.toLookupTag())
-        }
-        return this + CfirInstantiatedSupertypeDescriptor(
-            type = implicitSuperclass,
-            origin = CfirInstantiatedSupertypeOrigin.ImplicitObject(declaration.symbol.classId),
-        )
-    }
-
-    /**
-     * 判断类型是否可占用 class 的 concrete superclass 槽位。
-     */
-    private fun ConeCangJieType.isConcreteSuperclassCandidate(): Boolean = when (this) {
-        is ConeClassLikeType -> !isInterface
-        is ConeStructType, is ConeEnumType -> true
-        else -> false
+        return declaredSupertypes
     }
 
     /**
@@ -292,7 +363,6 @@ class CfirTypeAwareSupertypeProviderImpl(
             if (!supertype.type.shouldParticipateInSuperclassExtendPropagation()) continue
             val nextPropagationPath = when (val origin = supertype.origin) {
                 is CfirInstantiatedSupertypeOrigin.Declared -> propagationPath + origin.sourceTypeRef
-                is CfirInstantiatedSupertypeOrigin.ImplicitObject -> propagationPath
                 is CfirInstantiatedSupertypeOrigin.Extend -> error(
                     "Declared-supertype traversal produced an extend edge: $supertype",
                 )
@@ -330,20 +400,26 @@ class CfirTypeAwareSupertypeProviderImpl(
         concreteType: ConeCangJieType,
         propagationPath: List<CfirTypeRef>,
     ): List<CfirInstantiatedSupertypeDescriptor> {
-        val targetPattern = resolveExtendTypeRef(extend, extend.extendedTypeRef) ?: return emptyList()
+        val targetPattern = resolveExtendTypeRef(extend, extend.extendedTypeRef).coneType
         val substitutor = createExtendDeclarationSubstitution(
             session = session,
             extend = extend,
             targetPattern = targetPattern,
             concreteReceiverType = concreteType,
+            symbolProvider = symbolProvider,
+            expandedConeType = ::expandedAliasForSources,
         )?.substitutor ?: return emptyList()
         return extend.superTypeRefs.mapNotNull { superTypeRef ->
-            val coneType = resolveExtendTypeRef(extend, superTypeRef) ?: return@mapNotNull null
+            val resolvedRef = resolveExtendTypeRef(extend, superTypeRef)
+            val coneType = resolvedRef.classifyDeclaredSupertype(::expandForSources).ordinarySupertypeTypeOrNull()
+                ?: return@mapNotNull null
+            if (!coneType.isInterface || isCycleTargetForSources(coneType)) return@mapNotNull null
             CfirInstantiatedSupertypeDescriptor(
                 type = substitutor.substituteOrSelf(coneType),
+                provenanceType = coneType,
                 origin = CfirInstantiatedSupertypeOrigin.Extend(
                     sourceExtend = extend,
-                    declarationPackage = requireNotNull(session.extendProvider.getPackageFqName(extend)) {
+                    declarationPackage = requireNotNull(checkNotNull(extendProvider).getPackageFqName(extend)) {
                         "Extend declaration package is not indexed: ${extend.symbol}"
                     },
                     sourceTypeRef = superTypeRef,
@@ -354,6 +430,8 @@ class CfirTypeAwareSupertypeProviderImpl(
                         targetPattern = targetPattern,
                         concreteReceiverType = concreteType,
                         superTypeRefType = coneType,
+                        symbolProvider = symbolProvider,
+                        expandedConeType = ::expandedAliasForSources,
                     ),
                 ),
             )
@@ -369,8 +447,9 @@ class CfirTypeAwareSupertypeProviderImpl(
     private fun resolveExtendTypeRef(
         extend: CfirExtend,
         typeRef: CfirTypeRef,
-    ): ConeCangJieType? {
-        if (typeRef is CfirResolvedTypeRef) return typeRef.coneType
+    ): CfirResolvedTypeRef {
+        if (typeRef is CfirResolvedTypeRef) return typeRef
+        check(boundSources == null) { "A specialized supertype source must publish resolved extend headers" }
 
         return session.typeResolver.resolveType(
             typeRef = typeRef,
@@ -381,21 +460,24 @@ class CfirTypeAwareSupertypeProviderImpl(
             isOperandOfIsOperator = false,
             resolveDeprecations = false,
             supertypeSupplier = SupertypeSupplier.Default,
-        ).type
+        ).type.toCfirResolvedTypeRef(typeRef.source, typeRef).also {
+            it.replaceAnnotations(typeRef.annotations)
+        }
     }
 
     /**
      * 查询当前类型可匹配的 extend 声明。
      */
     private fun resolveExtends(type: ConeCangJieType): List<CfirExtend> {
+        val provider = extendProvider ?: return emptyList()
         return when (type) {
             is ConeIdealLiteralType -> type.idealExtendLookupTypes
-                .flatMap { extendProvider.getExtendsForBuiltinType(it.kind) }
+                .flatMap { provider.getExtendsForBuiltinType(it.kind) }
                 .distinct()
-            is ConePrimitiveType -> extendProvider.getExtendsForBuiltinType(type.kind)
+            is ConePrimitiveType -> provider.getExtendsForBuiltinType(type.kind)
             else -> {
                 val targetKey = type.expandedExtendTargetKey ?: return emptyList()
-                extendProvider.getExtendsForTarget(targetKey)
+                provider.getExtendsForTarget(targetKey)
             }
         }
     }
@@ -404,27 +486,49 @@ class CfirTypeAwareSupertypeProviderImpl(
      * 解析类型对应的 class-like 声明。
      */
     private fun resolveClassLikeDeclaration(type: ConeCangJieType): CfirClassLikeDeclaration? {
-        val classId = type.classIdOrPrimitiveClassId ?: return null
-        val symbol = symbolProvider.getClassLikeSymbolByClassId(classId) ?: return null
+        val symbol = if (type is ConeClassifierType) when (val tag = type.lookupTag) {
+            is ConeClassLikeLookupTagWithFixedSymbol -> tag.symbol
+            is ConeClassifierLookupTagWithFixedSymbol -> tag.symbol
+            is ConeClassLikeLookupTag -> symbolProvider.getClassLikeSymbolByClassId(tag.classId)
+            else -> error("Unknown classifier lookup tag in the selected supertype source: $tag")
+        } else {
+            val classId = type.classIdOrPrimitiveClassId ?: return null
+            symbolProvider.getClassLikeSymbolByClassId(classId)
+        } ?: return null
         if (!symbol.isBound) return null
 
         symbol.lazyResolveToPhase(CfirResolvePhase.SUPER_TYPES)
         return symbol.cfir as? CfirClassLikeDeclaration
     }
 
+    /** 父边过滤观察其目标的同代发布结论；目标图也是本次 typed 产品的独立依赖。 */
+    private fun isCycleTargetForSources(type: ConeCangJieType): Boolean {
+        val symbol = (if (type is ConeLookupTagBasedType) type.lookupTag.toSymbol(session, symbolProvider)
+            else type.classIdOrPrimitiveClassId?.let(symbolProvider::getClassLikeSymbolByClassId)) as? CfirClassLikeSymbol<*>
+            ?: return false
+        if (declaredFromGraph) return checkNotNull(checkNotNull(currentSources().directSupertypes).getPublishedReferenceCycleState(symbol)) {
+            "The selected supertype source has no published cycle input for $symbol"
+        }
+        if (!symbol.cfir.origin.fromSource) return symbol.cfir.isInReferenceCycle
+        val ownerSession = symbol.cfir.moduleData.session
+        synchronized(declarationSessions) { declarationSessions += ownerSession }
+        return type.isReferenceCycleTarget(session, symbolProvider)
+    }
+
     /**
      * 为 class-like 声明类型参数创建 use-site 替换器。
      */
-    private fun CfirClassLikeDeclaration.createDeclarationSubstitutor(type: ConeCangJieType): CfirTypeSubstitutorByMap? {
+    private fun CfirClassLikeDeclaration.createDeclarationSubstitutor(type: ConeCangJieType): ConeSubstitutor? {
         if (type !is ConeLookupTagBasedType) return null
         if (typeParameters.isEmpty()) return null
-        if (typeParameters.size != type.typeArguments.size) return null
+        val arguments = type.declarationTypeArguments()
+        if (typeParameters.size != arguments.size) return null
 
         val replacements: Map<TypeConstructorMarker, ConeCangJieType> =
-            typeParameters.zip(type.typeArguments).associate { (typeParameter, argument) ->
+            typeParameters.zip(arguments).associate { (typeParameter, argument) ->
                 typeParameter.symbol.toLookupTag() to argument.type
         }
-        return CfirTypeSubstitutorByMap(replacements)
+        return createTypeSubstitutorByTypeConstructor(replacements, session.typeContext, false)
     }
 
     /**
@@ -443,8 +547,15 @@ class CfirTypeAwareSupertypeProviderImpl(
      * 判断父类型是否继续参与 superclass extend 传播。
      */
     private fun ConeCangJieType.shouldParticipateInSuperclassExtendPropagation(): Boolean {
-        val classId = classIdOrPrimitiveClassId ?: return false
-        val symbol = symbolProvider.getClassLikeSymbolByClassId(classId) ?: return false
+        val symbol = if (this is ConeClassifierType) when (val tag = lookupTag) {
+            is ConeClassLikeLookupTagWithFixedSymbol -> tag.symbol
+            is ConeClassifierLookupTagWithFixedSymbol -> tag.symbol
+            is ConeClassLikeLookupTag -> symbolProvider.getClassLikeSymbolByClassId(tag.classId)
+            else -> error("Unknown classifier lookup tag in the selected superclass source: $tag")
+        } else {
+            val classId = classIdOrPrimitiveClassId ?: return false
+            symbolProvider.getClassLikeSymbolByClassId(classId)
+        } ?: return false
         return symbol !is CfirInterfaceSymbol
     }
 
@@ -462,11 +573,36 @@ class CfirTypeAwareSupertypeProviderImpl(
      * 当前会话的符号 provider。
      */
     private val symbolProvider
-        get() = session.symbolProvider
+        get() = currentSources().symbols
+
+    /** 来源 specialization 只消费完成的 alias RHS，不调用默认 session resolver。 */
+    private fun expandedAliasForSources(alias: CfirTypeAlias): ConeCangJieType? {
+        if (alias.origin.fromSource) {
+            if (boundSources == null) alias.lazyResolveToPhase(CfirResolvePhase.SUPER_TYPES)
+            val ownerSession = alias.moduleData.session
+            val graph = if (declaredFromGraph) checkNotNull(currentSources().directSupertypes)
+                else checkNotNull(ownerSession.directSupertypeProviderOrNull) {
+                    "A Source alias requires its original completed supertype source"
+                }.also { synchronized(declarationSessions) { declarationSessions += ownerSession } }
+            val product = checkNotNull(graph.getCompletedSupertypeProduct(alias.symbol)) {
+                "A Source alias has no completed RHS product: ${alias.symbol}"
+            }
+            return checkNotNull(product.superTypeRefs.singleOrNull() as? CfirResolvedTypeRef) {
+                "An alias product requires exactly one completed RHS"
+            }.coneType
+        }
+        if (boundSources == null) return alias.expandedConeTypeWithEnsuredPhase()
+        check(alias.expandedTypeRef is CfirResolvedTypeRef) { "A specialized supertype source must publish resolved alias headers" }
+        return alias.expandedConeType
+    }
+
+    private fun expandForSources(type: ConeCangJieType): ConeCangJieType =
+        type.fullyExpandedType(session, symbolProvider, ::expandedAliasForSources)
+            .fullyExpandedTypeUsingAbbreviation(session, symbolProvider, ::expandedAliasForSources)
 
     /**
      * 当前会话的 extend provider。
      */
-    private val extendProvider: CfirExtendProvider
-        get() = session.extendProvider
+    private val extendProvider: CfirExtendProvider?
+        get() = currentSources().extends
 }

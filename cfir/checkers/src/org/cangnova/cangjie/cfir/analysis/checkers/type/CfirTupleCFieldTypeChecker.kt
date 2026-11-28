@@ -24,6 +24,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.type
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
@@ -40,7 +41,7 @@ import org.cangnova.cangjie.cfir.types.ConeTupleType
  * `sema_invalid_tuple_field_ctype`。primitive、CPointer、CString、CFunc 等
  * 其它满足 CType 的类型不受限。
  */
-object CfirTupleCFieldTypeChecker : CfirResolvedTypeRefChecker() {
+object CfirTupleCFieldTypeChecker : CfirResolvedTypeRefChecker(MppCheckerKind.Common) {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(typeRef: CfirResolvedTypeRef) {
         val tupleType = typeRef.coneType as? ConeTupleType ?: return

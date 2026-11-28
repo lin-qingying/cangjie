@@ -6,7 +6,7 @@ import org.cangnova.cangjie.cfir.pipeline.AllModulesFrontendOutput
 import org.cangnova.cangjie.cfir.pipeline.SingleModuleFrontendOutput
 import org.cangnova.cangjie.cfir.pipeline.buildPreMacroRawCfirFromCjFiles
 import org.cangnova.cangjie.cfir.pipeline.buildPreMacroRawCfirViaLightTree
-import org.cangnova.cangjie.cfir.pipeline.resolveAndCheckCfirAfterConstruction
+import org.cangnova.cangjie.cfir.pipeline.buildAndResolveCfirAfterConstruction
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroDemandClassification
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFailurePolicy
@@ -15,11 +15,13 @@ import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.ensureAnnotationMetadataRegistry
 import org.cangnova.cangjie.config.CompilerConfiguration
 import org.cangnova.cangjie.config.diagnosticsCollector
+import org.cangnova.cangjie.config.parserSettings
 import org.cangnova.cangjie.frontend.pipeline.FrontendMacroConstructionService
 import org.cangnova.cangjie.frontend.pipeline.pruneConditionalCompilation
 import org.cangnova.cangjie.frontend.pipeline.installDefaultMacroFragmentParserFactory
 import org.cangnova.cangjie.frontend.pipeline.macroConstructionMode
 import org.cangnova.cangjie.frontend.pipeline.prepareMacroArtifactDefinitionsForExpansion
+import org.cangnova.cangjie.frontend.pipeline.createMacroDemandClassification
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.test.CfirParser
 
@@ -100,11 +102,12 @@ class CfirAnalyzerFacade(
             CfirParser.LightTree -> session.buildPreMacroRawCfirViaLightTree(
                 lightTreeFiles,
                 reportFilesAndLines = null,
+                parserSettings = configuration.parserSettings,
             )
-            CfirParser.Psi -> session.buildPreMacroRawCfirFromCjFiles(cjFiles)
+            CfirParser.Psi -> session.buildPreMacroRawCfirFromCjFiles(cjFiles, configuration.parserSettings)
         }.pruneConditionalCompilation()
         session.ensureAnnotationMetadataRegistry()
-        val classification = MacroDemandClassification.create(pre).also {
+        val classification = configuration.createMacroDemandClassification(pre).also {
             session.register(MacroDemandClassification::class, it)
         }
         val artifactPreparation = prepareMacroArtifactDefinitionsForExpansion(configuration, listOf(classification))
@@ -116,13 +119,12 @@ class CfirAnalyzerFacade(
             },
         )
         configuration.installDefaultMacroFragmentParserFactory(cjFiles.firstOrNull()?.project)
-        val (constructionResult, output) = resolveAndCheckCfirAfterConstruction(
+        val (constructionResult, output) = buildAndResolveCfirAfterConstruction(
             session = session,
             pre = pre,
             classification = classification,
-            constructionService = FrontendMacroConstructionService(configuration),
+            constructionService = FrontendMacroConstructionService(configuration, sdkSelection = artifactPreparation.sdkSelection),
             constructionMode = configuration.macroConstructionMode,
-            diagnosticsCollector = configuration.diagnosticsCollector,
             macroArtifactDefinitions = artifactPreparation.definitions,
             preConstructionDiagnostics = artifactPreparation.diagnostics,
         )
@@ -130,38 +132,53 @@ class CfirAnalyzerFacade(
             ?: error(buildString {
                 append("Macro construction failed before CFIR test frontend output was produced.")
                 val diagnostics = constructionResult.registry.diagnostics
-                if (diagnostics.isEmpty()) {
+                val parsingFailures = constructionResult.registry.parsingFailures
+                if (diagnostics.isEmpty() && parsingFailures.isEmpty()) {
                     append(" No macro construction diagnostics were recorded.")
                     return@buildString
                 }
-                appendLine()
-                appendLine("Macro construction diagnostics:")
-                diagnostics.forEach { diagnostic ->
-                    append(" - ")
-                    append(diagnostic.severity)
-                    append(' ')
-                    append(diagnostic.kind)
-                    append(" [")
-                    append(diagnostic.diagnosticOrigin)
-                    append("]: ")
-                    append(diagnostic.message)
-                    diagnostic.artifactPackage?.let {
-                        append(" package=")
-                        append(it)
-                    }
-                    diagnostic.artifactPath?.let {
-                        append(" artifact=")
-                        append(it)
-                    }
-                    diagnostic.macroLibraryPath?.let {
-                        append(" lib=")
-                        append(it)
-                    }
-                    diagnostic.originSurfaceId?.let {
-                        append(" surfaceId=")
-                        append(it)
-                    }
+                if (diagnostics.isNotEmpty()) {
                     appendLine()
+                    appendLine("Macro construction diagnostics:")
+                    diagnostics.forEach { diagnostic ->
+                        append(" - ")
+                        append(diagnostic.severity)
+                        append(' ')
+                        append(diagnostic.kind)
+                        append(" [")
+                        append(diagnostic.diagnosticOrigin)
+                        append("]: ")
+                        append(diagnostic.message)
+                        diagnostic.artifactPackage?.let {
+                            append(" package=")
+                            append(it)
+                        }
+                        diagnostic.artifactPath?.let {
+                            append(" artifact=")
+                            append(it)
+                        }
+                        diagnostic.macroLibraryPath?.let {
+                            append(" lib=")
+                            append(it)
+                        }
+                        diagnostic.originSurfaceId?.let {
+                            append(" surfaceId=")
+                            append(it)
+                        }
+                        appendLine()
+                    }
+                }
+                if (parsingFailures.isNotEmpty()) {
+                    appendLine("Macro fragment parsing failures:")
+                    parsingFailures.forEach { failure ->
+                        append(" - ")
+                        append(failure.originNode.surface.qualifiedName?.asString() ?: "<unresolved>")
+                        append(": ")
+                        appendLine(failure.diagnostics.joinToString { diagnostic ->
+                            "${diagnostic.startOffset}..${diagnostic.endOffset} ${diagnostic.message}"
+                        })
+                        appendLine(failure.parsedText.lineSequence().take(8).joinToString(" ").take(512))
+                    }
                 }
             })
         constructionOutput = resolvedOutput

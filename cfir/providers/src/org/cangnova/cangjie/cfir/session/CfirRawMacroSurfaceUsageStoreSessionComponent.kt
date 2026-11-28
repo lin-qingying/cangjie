@@ -4,6 +4,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirRawMacroSurfaceUsageStore
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurface
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceExpr
+import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirRawMacroUsageSlot
 
 /** 当前 session 的 Analysis API raw expression macro surface 使用事实。 */
 val CfirSession.rawMacroSurfaceUsageStoreOrNull: CfirRawMacroSurfaceUsageStore? by
@@ -15,7 +16,7 @@ val CfirSession.rawMacroSurfaceUsageStoreOrNull: CfirRawMacroSurfaceUsageStore? 
  * 文件可并行构建，组件必须在 session 锁下只创建一次。
  */
 fun CfirSession.ensureRawMacroSurfaceUsageStore(): CfirRawMacroSurfaceUsageStore = synchronized(this) {
-    rawMacroSurfaceUsageStoreOrNull ?: CfirRawMacroSurfaceUsageStore().also {
+    rawMacroSurfaceUsageStoreOrNull ?: CfirRawMacroSurfaceUsageStore(this).also {
         register(CfirRawMacroSurfaceUsageStore::class, it)
     }
 }
@@ -27,6 +28,14 @@ fun CfirSession.recordRawExpressionMacroSurfaces(
     surfaces: List<MacroSurface>,
 ) {
     val expressionSurfaces = surfaces.filterIsInstance<MacroSurfaceExpr>()
-    if (expressionSurfaces.isEmpty()) return
     ensureRawMacroSurfaceUsageStore().recordExpressionSurfaces(file, sourceFileIdentity, expressionSurfaces)
+}
+
+/** 只提交Calculator实际采用的声明槽位，空更新同样撤销该槽位旧macro使用事实。 */
+fun CfirSession.replaceAdoptedRawExpressionMacroSurfaces(
+    file: CfirFile,
+    slots: List<CfirRawMacroUsageSlot>,
+    surfaces: List<MacroSurface>,
+) {
+    ensureRawMacroSurfaceUsageStore().replaceAdoptedExpressionSurfaces(file, slots, surfaces.filterIsInstance<MacroSurfaceExpr>())
 }

@@ -69,11 +69,11 @@ class JvmTypeMapper(
             ChirPrimitiveType.FLOAT16 -> Type.FLOAT_TYPE
             is ChirCStringType -> Type.getObjectType("java/lang/String")
             is ChirNamedType -> mapNamedType(resolved)
-            is ChirClassType -> Type.getObjectType(namePolicy.typeInternalName(defaultPackageName, resolved.name))
-            is ChirStructType -> Type.getObjectType(namePolicy.typeInternalName(defaultPackageName, resolved.name))
-            is ChirEnumType -> Type.getObjectType(namePolicy.typeInternalName(defaultPackageName, resolved.name))
-            is ChirRawArrayType -> Type.getType("[${mapValueType(resolved.elementType).descriptor}")
-            is ChirVArrayType -> Type.getType("[".repeat(resolved.rank.coerceAtLeast(1)) + mapValueType(resolved.elementType).descriptor)
+            is ChirClassType -> Type.getObjectType(namePolicy.typeInternalName(defaultPackageName, resolved.declarationId))
+            is ChirStructType -> Type.getObjectType(namePolicy.typeInternalName(defaultPackageName, resolved.declarationId))
+            is ChirEnumType -> Type.getObjectType(namePolicy.typeInternalName(defaultPackageName, resolved.declarationId))
+            is ChirRawArrayType -> mapRawArrayType(resolved)
+            is ChirVArrayType -> Type.getType("[${mapValueType(resolved.elementType).descriptor}")
             is ChirCPointerType -> Type.getObjectType("java/nio/ByteBuffer")
             is ChirRefType -> Type.getObjectType("java/lang/Object")
             is ChirBoxType -> Type.getObjectType("java/lang/Object")
@@ -105,6 +105,22 @@ class JvmTypeMapper(
     }
 
     /**
+     * 将官方无符号维数映射为 JVM 数组 descriptor，并在超过 classfile 上限时明确拒绝。
+     */
+    private fun mapRawArrayType(type: ChirRawArrayType): Type {
+        val elementType = mapValueType(type.elementType)
+        val nestedDimensions = elementType.descriptor.takeWhile { it == '[' }.length
+        val totalDimensions = type.dimensions.toLong() + nestedDimensions
+        if (totalDimensions > MAX_JVM_ARRAY_DIMENSIONS) {
+            throw JvmCodegenException(
+                "raw array has $totalDimensions dimensions; JVM supports at most $MAX_JVM_ARRAY_DIMENSIONS",
+            )
+        }
+
+        return Type.getType("[".repeat(type.dimensions.toInt()) + elementType.descriptor)
+    }
+
+    /**
      * 读取已解析 CHIR 类型；未解析类型不能进入 JVM lowering。
      */
     private fun resolvedType(type: ChirTypeRef): ChirType {
@@ -112,6 +128,10 @@ class JvmTypeMapper(
             is ChirResolvedTypeRef -> type.type
             is ChirUnresolvedTypeRef -> throw JvmCodegenException("unresolved type ${type.symbol} cannot be lowered to JVM")
         }
+    }
+
+    private companion object {
+        const val MAX_JVM_ARRAY_DIMENSIONS = 255L
     }
 
 }

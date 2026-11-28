@@ -134,7 +134,7 @@ internal fun resolveBuiltinAnnotationArguments(
 
     val resolved = CfirMapArguments.mapAnnotationArguments(annotation, schema, parameters)
     val values = linkedMapOf<Name, CfirExpression>()
-    val view = resolved.toAnnotationArgumentView(parameters).entries.toMutableList()
+    val view = resolved.toAnnotationArgumentView(parameters, parameters.associateWith { it.defaultValue }).entries.toMutableList()
     var failed = false
     for ((index, entry) in view.withIndex()) {
         val argument = entry.argument

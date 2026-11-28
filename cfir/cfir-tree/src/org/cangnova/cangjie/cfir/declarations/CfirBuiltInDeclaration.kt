@@ -73,7 +73,7 @@ class CfirBuiltInDeclaration(
     /**
      * 声明上的注解列表。
      */
-    override var annotations: MutableOrEmptyList<CfirAnnotation> = MutableOrEmptyList.empty(),
+    annotations: MutableOrEmptyList<CfirAnnotation> = MutableOrEmptyList.empty(),
     /**
      * 声明来源。
      */
@@ -82,6 +82,7 @@ class CfirBuiltInDeclaration(
      * 声明扩展属性容器。
      */
     override val attributes: CfirDeclarationAttributes = CfirDeclarationAttributes.EMPTY,
+    override val contentSource: org.cangnova.cangjie.cfir.CfirContentSource = org.cangnova.cangjie.cfir.CfirContentSource.Owned,
     /**
      * 内建类型声明携带的类型参数列表。
      */
@@ -89,11 +90,11 @@ class CfirBuiltInDeclaration(
     /**
      * 声明状态与修饰符信息。
      */
-    override var status: CfirDeclarationStatus = org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl(),
+    override var status: CfirDeclarationStatus = DEFAULT_STATUS_FOR_STATUSLESS_DECLARATIONS,
     /**
      * 弃用信息提供者。
      */
-    override var deprecationsProvider: DeprecationsProvider = UnresolvedDeprecationProvider,
+    deprecationsProvider: DeprecationsProvider = UnresolvedDeprecationProvider,
     /**
      * 内建类型内部声明。
      */
@@ -103,12 +104,39 @@ class CfirBuiltInDeclaration(
      */
     override var superTypeRefs: MutableList<CfirTypeRef> = mutableListOf(),
 ) : CfirClassLikeDeclaration() {
+    override var deprecationsProvider: DeprecationsProvider = deprecationsProvider
+        get() = when (val selectedSource = contentSource) {
+            org.cangnova.cangjie.cfir.CfirContentSource.Owned -> field
+            is org.cangnova.cangjie.cfir.CfirContentSource.Published -> selectedSource.snapshot().deprecations(this)
+        }
+        set(value) {
+            check(contentSource === org.cangnova.cangjie.cfir.CfirContentSource.Owned) { "Published builtin metadata requires its package completion product" }
+            field = value
+        }
+    override var annotations: MutableOrEmptyList<CfirAnnotation> = annotations
+        get() = when (val selectedSource = contentSource) {
+            org.cangnova.cangjie.cfir.CfirContentSource.Owned -> field
+            is org.cangnova.cangjie.cfir.CfirContentSource.Published -> selectedSource.snapshot().annotations(this).values
+        }
+        set(value) {
+            check(contentSource === org.cangnova.cangjie.cfir.CfirContentSource.Owned) { "Published Library annotations cannot be changed through an ordinary setter" }
+            field = value
+        }
     /**
      * 内建类型由编译器注入，没有对应源码节点。
      */
     override val source: CjSourceElement? = null
 
+    /** 此节点没有独立源槽位，不能被绑定到另一个源代次。 */
+    @org.cangnova.cangjie.cfir.CfirImplementationDetail
+    override fun replaceSource(newSource: CjSourceElement?) {
+        require(newSource == null)
+    }
+
     init {
+        if (contentSource is org.cangnova.cangjie.cfir.CfirContentSource.Published) {
+            require(origin == CfirDeclarationOrigin.Library && annotations.isEmpty() && deprecationsProvider === UnresolvedDeprecationProvider) { "Published builtin annotations require their completed package snapshot" }
+        }
         symbol.bind(this)
         resolveState = CfirResolvePhase.RAW_CFIR.asResolveState()
     }
@@ -148,6 +176,7 @@ class CfirBuiltInDeclaration(
      * 原地转换注解子节点并返回当前声明。
      */
     override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirBuiltInDeclaration {
+        check(contentSource === org.cangnova.cangjie.cfir.CfirContentSource.Owned) { "Published builtin children require an owned graph before transformation" }
         annotations.transformInplace(transformer, data)
         return this
     }
@@ -156,6 +185,7 @@ class CfirBuiltInDeclaration(
      * 转换类型参数子节点并保持可变列表承载。
      */
     override fun <D> transformTypeParameters(transformer: CfirTransformer<D>, data: D): CfirBuiltInDeclaration {
+        check(contentSource === org.cangnova.cangjie.cfir.CfirContentSource.Owned) { "Published builtin children require an owned graph before transformation" }
         typeParameters = typeParameters.map { it.transform<CfirElement, D>(transformer, data) as CfirTypeParameterRef }.toMutableList()
         return this
     }
@@ -164,6 +194,7 @@ class CfirBuiltInDeclaration(
      * 转换声明状态节点。
      */
     override fun <D> transformStatus(transformer: CfirTransformer<D>, data: D): CfirBuiltInDeclaration {
+        check(contentSource === org.cangnova.cangjie.cfir.CfirContentSource.Owned) { "Published builtin children require an owned graph before transformation" }
         status = status.transform<CfirElement, D>(transformer, data) as CfirDeclarationStatus
         return this
     }
@@ -172,6 +203,7 @@ class CfirBuiltInDeclaration(
      * 转换内建类型内部声明列表。
      */
     override fun <D> transformDeclarations(transformer: CfirTransformer<D>, data: D): CfirBuiltInDeclaration {
+        check(contentSource === org.cangnova.cangjie.cfir.CfirContentSource.Owned) { "Published builtin children require an owned graph before transformation" }
         declarations = declarations.map { it.transform<CfirElement, D>(transformer, data) as CfirDeclaration }.toMutableList()
         return this
     }
@@ -180,6 +212,7 @@ class CfirBuiltInDeclaration(
      * 转换父类型引用列表。
      */
     override fun <D> transformSuperTypeRefs(transformer: CfirTransformer<D>, data: D): CfirBuiltInDeclaration {
+        check(contentSource === org.cangnova.cangjie.cfir.CfirContentSource.Owned) { "Published builtin children require an owned graph before transformation" }
         superTypeRefs = superTypeRefs.map { it.transform<CfirElement, D>(transformer, data) as CfirTypeRef }.toMutableList()
         return this
     }
@@ -188,6 +221,7 @@ class CfirBuiltInDeclaration(
      * 按生成式 CFIR 节点顺序转换所有子节点。
      */
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirBuiltInDeclaration {
+        check(contentSource === org.cangnova.cangjie.cfir.CfirContentSource.Owned) { "Published builtin children require an owned graph before transformation" }
         transformAnnotations(transformer, data)
         transformTypeParameters(transformer, data)
         transformStatus(transformer, data)

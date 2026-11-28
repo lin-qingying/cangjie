@@ -18,5 +18,4 @@ FILE: genericWhereTypeDeclarations.cj
     }
     internal? enum GenericEnum<T> {
         Value(R|T|)
-        init()
     }

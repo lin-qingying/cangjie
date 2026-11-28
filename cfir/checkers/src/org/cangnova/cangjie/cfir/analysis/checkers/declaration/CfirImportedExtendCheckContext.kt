@@ -9,10 +9,10 @@ import org.cangnova.cangjie.cfir.diagnostics.CjDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticContext
 import org.cangnova.cangjie.cfir.resolve.providers.CfirLookupOrigin
 import org.cangnova.cangjie.cfir.resolve.services.reachesClassId
-import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.resolve.services.requireImportBindings
+import org.cangnova.cangjie.cfir.resolve.providers.cfirProvider
 import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.extendRuleQueryService
-import org.cangnova.cangjie.cfir.session.importBindingStore
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.name.ClassId
@@ -69,7 +69,7 @@ internal class CfirImportedExtendCheckContext(
         val ownerPackage = provider.getPackageFqName(extend)
         val ownerTypes = exportedTypeIds(extend).filter { it.packageFqName == ownerPackage }.toSet()
         val groupTypes = participatingExtends.flatMap(::exportedTypeIds).toSet()
-        val bindings = session.importBindingStore.requireBindings(useSiteFile).imports
+        val bindings = useSiteFile.requireImportBindings().imports
         // 优先定位当前库扩展的导出入口；隐式标准库扩展发生冲突时定位引入同组冲突的导入。
         val binding = bindings.asSequence()
             .filter { it.lookupOrigin == CfirLookupOrigin.EXPLICIT_IMPORT && it.importDirective.source != null }

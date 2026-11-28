@@ -79,8 +79,8 @@ class CjoExportedTopLevelNamesResolver(
             )
         }
 
-        val header = cjoManager.loadPackageHeader(packageFqName.asString())
-        if (header == null) {
+        val headers = cjoManager.loadPackageHeaders(packageFqName.asString())
+        if (headers.isEmpty()) {
             visiting.remove(packageFqName)
             return CjoExportedTopLevelNames(
                 callableNames = emptySet(),
@@ -90,20 +90,22 @@ class CjoExportedTopLevelNamesResolver(
             )
         }
 
-        val callableNames = linkedSetOf<Name>().apply { addAll(header.topLevelCallableNames) }
-        val classifierNames = linkedSetOf<Name>().apply { addAll(header.topLevelClassNames) }
-        val callableTargets = linkedMapOf<Name, CjoExportedTopLevelTarget>().apply {
+        val callableNames = linkedSetOf<Name>()
+        val classifierNames = linkedSetOf<Name>()
+        val callableTargets = linkedMapOf<Name, CjoExportedTopLevelTarget>()
+        val classifierTargets = linkedMapOf<Name, CjoExportedTopLevelTarget>()
+        for (header in headers) {
+            callableNames += header.topLevelCallableNames
+            classifierNames += header.topLevelClassNames
             for (name in header.topLevelCallableNames) {
-                put(name, CjoExportedTopLevelTarget(packageFqName, name))
+                callableTargets.putIfAbsent(name, CjoExportedTopLevelTarget(packageFqName, name))
             }
-        }
-        val classifierTargets = linkedMapOf<Name, CjoExportedTopLevelTarget>().apply {
             for (name in header.topLevelClassNames) {
-                put(name, CjoExportedTopLevelTarget(packageFqName, name))
+                classifierTargets.putIfAbsent(name, CjoExportedTopLevelTarget(packageFqName, name))
             }
         }
 
-        for (entry in header.fileImportEntries) {
+        for (entry in headers.flatMap { it.fileImportEntries }) {
             if (!entry.isPublicExportImport()) continue
             val importedPackageFqName = entry.importedPackageFqName() ?: continue
             val importedNames = resolveRecursively(importedPackageFqName, visiting)

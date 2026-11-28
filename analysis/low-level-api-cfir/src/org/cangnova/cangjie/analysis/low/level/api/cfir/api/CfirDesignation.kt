@@ -14,10 +14,9 @@ import org.cangnova.cangjie.analysis.utils.errors.unexpectedElementError
 import org.cangnova.cangjie.cfir.*
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.resolve.getContainingClassSymbol
-import org.cangnova.cangjie.cfir.resolve.toClassSymbol
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
-import org.cangnova.cangjie.cfir.session.cfirProvider
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.cfirProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.types.toPrimitiveTypeKindOrNull
 import org.cangnova.cangjie.name.ClassId
@@ -147,8 +146,10 @@ private fun tryCollectDesignation(providedFile: CfirFile?, target: CfirElementWi
                 return null
             }
 
+            // 对位 Kotlin：名义 owner ID 已由 lookup tag 承载；不能再收窄为 CfirClassSymbol，
+            // 否则 struct/enum 的合成成员没有独立 PSI 父链时会丢失解析祖先及其类型参数作用域。
             val containingClassId =
-                target.containingClassLookupTag()?.toClassSymbol(target.moduleData.session)?.classId
+                target.containingClassLookupTag()?.classId
                     ?: (target.psi as? org.cangnova.cangjie.psi.CjDeclaration)
                         ?.containingTypeStatement
                         ?.getClassId()

@@ -17,8 +17,7 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.util.*
 import org.cangnova.cangjie.cfir.diagnostics.CjPsiDiagnostic
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
-import org.cangnova.cangjie.cfir.session.bodyResolvePrerequisitePhase
-import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.resolve.providers.cfirProvider
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.psi.*
 import org.cangnova.cangjie.psi.CjVisitorUnit
@@ -110,7 +109,13 @@ internal class FileStructure private constructor(
         element: CjElement,
         nonLocalContainer: CjElement? = findNonLocalContainer(element),
     ): FileStructureElement {
-        val container = getContainerCjElement(element, nonLocalContainer)
+        val targetElement = checkNotNull(moduleComponents.cache.compilationElement(element) as? CjElement) {
+            "A structure query must identify a syntax element in the current target product."
+        }
+        val targetContainer = nonLocalContainer?.let {
+            checkNotNull(moduleComponents.cache.compilationElement(it) as? CjElement) { "The non-local container has no current grammar correspondence." }
+        }
+        val container = getContainerCjElement(targetElement, targetContainer)
         return structureElements.getOrPut(container) { createStructureElement(container) }
     }
 
@@ -173,10 +178,13 @@ internal class FileStructure private constructor(
     /**
      * 收集整个文件所有 structure element 的 diagnostics。
      */
-    fun getAllDiagnosticsForFile(diagnosticCheckerFilter: DiagnosticCheckerFilter): List<CjPsiDiagnostic> {
+    fun getAllDiagnosticsForFile(
+        diagnosticCheckerFilter: DiagnosticCheckerFilter,
+        platformCheckerComponents: LLCfirModuleResolveComponents? = null,
+    ): List<CjPsiDiagnostic> {
         val structureElements = getAllStructureElements()
         return buildList {
-            collectDiagnosticsFromStructureElements(structureElements, diagnosticCheckerFilter)
+            collectDiagnosticsFromStructureElements(structureElements, diagnosticCheckerFilter, platformCheckerComponents)
         }
     }
 
@@ -186,11 +194,12 @@ internal class FileStructure private constructor(
     private fun MutableCollection<CjPsiDiagnostic>.collectDiagnosticsFromStructureElements(
         structureElements: Collection<FileStructureElement>,
         diagnosticCheckerFilter: DiagnosticCheckerFilter,
+        platformCheckerComponents: LLCfirModuleResolveComponents?,
     ) {
         structureElements.forEach { structureElement ->
             ProgressManager.checkCanceled()
 
-            structureElement.diagnostics.forEach(diagnosticCheckerFilter) { diagnostics ->
+            structureElement.diagnostics.forEach(diagnosticCheckerFilter, platformCheckerComponents) { diagnostics ->
                 addAll(diagnostics)
             }
         }
@@ -228,7 +237,7 @@ internal class FileStructure private constructor(
      */
     private fun createRootStructure(): RootStructureElement {
         val cfirFile = moduleComponents.cfirFileBuilder.buildRawCfirFileWithCaching(cjFile)
-        cfirFile.lazyResolveToPhase(cfirFile.moduleData.session.bodyResolvePrerequisitePhase)
+        cfirFile.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE.previous)
         return RootStructureElement(cfirFile, moduleComponents)
     }
 

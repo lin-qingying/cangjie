@@ -25,10 +25,12 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
-import org.cangnova.cangjie.cfir.correspondingProperty
+import org.cangnova.cangjie.cfir.correspondingValueParameter
+import org.cangnova.cangjie.cfir.isMemberParameter
 import org.cangnova.cangjie.cfir.unwrapFakeOverridesOrDelegated
 import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
@@ -64,7 +66,7 @@ import org.cangnova.cangjie.cfir.visitors.CfirDefaultVisitorVoid
  * Kotlin 没有同语义规则，但成员属性初始化相关诊断由 `FirMemberPropertiesChecker`
  * 这样的声明检查入口统一处理；本 checker 因此挂在 `CfirFieldVariableChecker`。
  */
-object CfirFieldVariableThisOrSuperInitializerChecker : CfirFieldVariableChecker() {
+object CfirFieldVariableThisOrSuperInitializerChecker : CfirFieldVariableChecker(MppCheckerKind.Common) {
     /**
      * 检查字段初始化器中的显式 this/super 引用。
      */
@@ -83,7 +85,7 @@ object CfirFieldVariableThisOrSuperInitializerChecker : CfirFieldVariableChecker
  * 构造器默认参数表达式中不能读取当前对象或父对象的实例成员，因为对象初始化尚未完成。
  * 普通函数默认参数不属于该规则，保持由普通名称解析和类型检查处理。
  */
-object CfirConstructorParameterThisOrSuperDefaultValueChecker : CfirValueParameterChecker() {
+object CfirConstructorParameterThisOrSuperDefaultValueChecker : CfirValueParameterChecker(MppCheckerKind.Common) {
     /**
      * 检查构造器参数默认值中的构造前成员访问。
      */
@@ -444,9 +446,8 @@ private class ConstructorMemberAccessBeforeInitializationVisitor(
 
         val memberParameter = when (target) {
             is CfirValueParameter -> target
-            else -> constructor?.valueParameters?.firstOrNull { parameter ->
-                parameter.correspondingProperty === target
-            }
+            is CfirFieldVariable -> target.correspondingValueParameter
+            else -> null
         }
         val shadowingParameter = memberParameter?.takeIf {
             it.shouldReportUninitializedMemberParameterAccess()
@@ -499,7 +500,7 @@ private class ConstructorMemberAccessBeforeInitializationVisitor(
      * 排在当前参数之后的成员参数尚未初始化，语义上等价于读取构造中对象的成员。
      */
     private fun CfirValueParameter.shouldReportUninitializedMemberParameterAccess(): Boolean {
-        if (correspondingProperty == null && !shadowsInstanceMemberInOwner()) return false
+        if (!isMemberParameter && !shadowsInstanceMemberInOwner()) return false
         val constructor = constructor ?: return false
         val currentParameter = currentParameter ?: return false
         val currentIndex = constructor.valueParameters.indexOf(currentParameter)

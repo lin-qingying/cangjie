@@ -30,8 +30,8 @@ This index contains maintained documentation for the Kotlin/JVM Cangjie frontend
 
 ## Independent projects
 
-- [IntelliJ Platform plugin](../intellij-ide/README.md)
-- [DevEco integration](../deveco/README.md)
+- [IntelliJ Platform plugin](intellij-ide.md)
+- [DevEco integration](deveco.md)
 
 ## Documentation boundary
 

@@ -6,6 +6,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.CfirTypeRefOrigin
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeDiagnostic
 import org.cangnova.cangjie.cfir.types.impl.CfirErrorTypeRefImpl
@@ -22,6 +23,7 @@ import kotlin.contracts.contract
  */
 @CfirBuilderDsl
 class CfirErrorTypeRefBuilder {
+    var typeUseOrigin: CfirTypeRefOrigin = CfirTypeRefOrigin.SEMANTIC
     /**
      * 错误类型引用对应的源码位置。
      */
@@ -64,6 +66,7 @@ class CfirErrorTypeRefBuilder {
             delegatedTypeRef = delegatedTypeRef,
             diagnostic = diagnostic,
             partiallyResolvedTypeRef = partiallyResolvedTypeRef,
+            typeUseOrigin = typeUseOrigin,
         )
     }
 }
@@ -97,6 +100,7 @@ inline fun buildErrorTypeRefCopy(
         coneType = original.coneType
         annotations = original.annotations.toMutableList()
         delegatedTypeRef = original.delegatedTypeRef
+        typeUseOrigin = original.typeUseOrigin
         diagnostic = original.diagnostic
         partiallyResolvedTypeRef = original.partiallyResolvedTypeRef
     }.apply(init).build()

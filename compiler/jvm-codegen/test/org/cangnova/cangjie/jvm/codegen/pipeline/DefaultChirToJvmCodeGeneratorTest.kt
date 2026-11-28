@@ -15,23 +15,29 @@ import org.cangnova.cangjie.chir.core.declaration.DefaultChirStructDeclaration
 import org.cangnova.cangjie.chir.core.declaration.DefaultChirVariableDeclaration
 import org.cangnova.cangjie.chir.core.expression.ChirBinaryExpression
 import org.cangnova.cangjie.chir.core.expression.ChirCallExpression
+import org.cangnova.cangjie.chir.core.expression.ChirConstantExpression
 import org.cangnova.cangjie.chir.core.expression.ChirMemoryExpression
 import org.cangnova.cangjie.chir.core.expression.ChirOtherExpression
+import org.cangnova.cangjie.chir.core.expression.ChirOtherOperation
 import org.cangnova.cangjie.chir.core.expression.ChirUnaryExpression
+import org.cangnova.cangjie.chir.core.expression.ChirVirtualMethodContext
 import org.cangnova.cangjie.chir.core.identity.ChirSemanticId
 import org.cangnova.cangjie.chir.core.model.ChirModule
 import org.cangnova.cangjie.chir.core.model.ChirPackage
 import org.cangnova.cangjie.chir.core.model.ChirPackageMembers
 import org.cangnova.cangjie.chir.core.declaration.ChirDeclaration
 import org.cangnova.cangjie.chir.core.type.ChirCPointerType
+import org.cangnova.cangjie.chir.core.type.ChirClassType
 import org.cangnova.cangjie.chir.core.type.ChirFunctionType
 import org.cangnova.cangjie.chir.core.type.ChirNamedType
 import org.cangnova.cangjie.chir.core.type.ChirPrimitiveType
 import org.cangnova.cangjie.chir.core.type.ChirRawArrayType
 import org.cangnova.cangjie.chir.core.type.ChirRefType
 import org.cangnova.cangjie.chir.core.type.ChirResolvedTypeRef
+import org.cangnova.cangjie.chir.core.type.ChirTypeDeclarationId
 import org.cangnova.cangjie.chir.core.type.ChirVArrayType
 import org.cangnova.cangjie.chir.core.value.ChirConstantValue
+import org.cangnova.cangjie.chir.core.value.ChirConstantKind
 import org.cangnova.cangjie.chir.core.value.ChirFunctionValue
 import org.cangnova.cangjie.chir.core.value.ChirGlobalValue
 import org.cangnova.cangjie.chir.core.value.ChirImportedFunctionValue
@@ -104,6 +110,120 @@ class DefaultChirToJvmCodeGeneratorTest {
         verifyClass(artifact)
         val generatedClass = GeneratedClassLoader().define(artifact)
         assertEquals(3, generatedClass.getMethod("sum").invoke(null))
+    }
+
+    /** JVM 后端将官方无溢出语义的类引用转换发射为可验证的引用适配。 */
+    @Test
+    fun `lowers no-overflow class reference cast`() {
+        val stringType = ChirResolvedTypeRef(
+            ChirRefType(
+                ChirResolvedTypeRef(ChirClassType(ChirTypeDeclarationId("java.lang", "String"))),
+                mutable = true,
+            ),
+        )
+        val charSequenceType = ChirResolvedTypeRef(
+            ChirRefType(
+                ChirResolvedTypeRef(ChirClassType(ChirTypeDeclarationId("java.lang", "CharSequence"))),
+                mutable = true,
+            ),
+        )
+        val functionId = ChirSemanticId("fn:referenceCast")
+        val parameter = DefaultChirVariableDeclaration(
+            semanticId = ChirSemanticId("param:referenceCast.value"),
+            name = "value",
+            type = stringType,
+            mutable = false,
+        )
+        val parameterValue = ChirParameterValue(
+            semanticId = parameter.semanticId,
+            type = stringType,
+            name = parameter.name,
+            ownerFunctionId = functionId,
+        )
+        val castId = ChirSemanticId("expr:referenceCast")
+        val function = DefaultChirFunctionDeclaration(
+            semanticId = functionId,
+            name = "referenceCast",
+            returnType = charSequenceType,
+            parameters = listOf(parameter),
+            blocks = listOf(
+                ChirBlock(
+                    semanticId = ChirSemanticId("block:referenceCast"),
+                    name = "entry",
+                    expressions = listOf(
+                        ChirOtherExpression(
+                            semanticId = castId,
+                            operation = ChirOtherOperation.CANGJIE_TYPE_CAST_NA.canonicalName,
+                            operands = listOf(parameterValue),
+                            resultType = charSequenceType,
+                        ),
+                    ),
+                    terminator = ChirReturnTerminator(
+                        semanticId = ChirSemanticId("term:referenceCast:return"),
+                        returnValue = ChirLocalValue(castId, charSequenceType, "expr_reference_cast"),
+                    ),
+                ),
+            ),
+            entryBlockId = ChirSemanticId("block:referenceCast"),
+        )
+
+        val output = DefaultChirToJvmCodeGenerator().generate(inputWith(function))
+        val artifact = output.classes.single()
+
+        verifyClass(artifact)
+        val generatedClass = GeneratedClassLoader().define(artifact)
+        assertEquals("text", generatedClass.getMethod("referenceCast", Any::class.java).invoke(null, "text"))
+    }
+
+    /**
+     * JVM lowering rejects official CHIR compatibility that would require boxing without an explicit conversion.
+     */
+    @Test
+    fun `rejects primitive constant with reference result type before emitting invalid bytecode`() {
+        val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
+        val anyReferenceType = ChirResolvedTypeRef(
+            ChirRefType(
+                ChirResolvedTypeRef(ChirClassType(ChirTypeDeclarationId.CORE_ANY)),
+            ),
+        )
+        val resultId = ChirSemanticId("expr:primitive-as-any")
+        val resultValue = ChirLocalValue(
+            semanticId = resultId,
+            type = anyReferenceType,
+            name = "primitive_as_any",
+            associatedExpressionId = resultId,
+        )
+        val function = DefaultChirFunctionDeclaration(
+            semanticId = ChirSemanticId("fn:primitiveAsAny"),
+            name = "primitiveAsAny",
+            returnType = anyReferenceType,
+            parameters = emptyList(),
+            blocks = listOf(
+                ChirBlock(
+                    semanticId = ChirSemanticId("block:primitiveAsAny"),
+                    name = "entry",
+                    expressions = listOf(
+                        ChirConstantExpression(
+                            semanticId = resultId,
+                            value = ChirConstantValue(ChirSemanticId("const:int32"), intType, "1"),
+                            resultType = anyReferenceType,
+                            resultLocalValue = resultValue,
+                        ),
+                    ),
+                    terminator = ChirReturnTerminator(
+                        semanticId = ChirSemanticId("term:primitiveAsAny:return"),
+                        returnValue = resultValue,
+                    ),
+                ),
+            ),
+            entryBlockId = ChirSemanticId("block:primitiveAsAny"),
+        )
+
+        val exception = assertThrows(JvmCodegenException::class.java) {
+            DefaultChirToJvmCodeGenerator().generate(inputWith(function))
+        }
+
+        assertTrue(requireNotNull(exception.message).contains("without a value conversion"), exception.message)
     }
 
     /**
@@ -419,6 +539,7 @@ class DefaultChirToJvmCodeGeneratorTest {
         val duplicateFields = DefaultChirStructDeclaration(
             semanticId = ChirSemanticId("struct:DuplicateFields"),
             name = "DuplicateFields",
+            typeDeclarationId = ChirTypeDeclarationId("", "DuplicateFields"),
             fieldDeclarations = listOf(firstField, secondField),
         )
 
@@ -1002,7 +1123,7 @@ class DefaultChirToJvmCodeGeneratorTest {
     fun `lowers CHIR memory local slots to JVM locals`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
         val refIntType = ChirResolvedTypeRef(ChirRefType(intType, mutable = true))
-        val localAddress = ChirLocalValue(ChirSemanticId("addr:x"), refIntType, "x")
+        val localAddress = ChirLocalValue(ChirSemanticId("expr:alloca-x"), refIntType, "x")
         val loadResult = ChirLocalValue(ChirSemanticId("expr:load-x"), intType, "expr_load_x")
         val function = DefaultChirFunctionDeclaration(
             semanticId = ChirSemanticId("fn:local"),
@@ -1017,7 +1138,8 @@ class DefaultChirToJvmCodeGeneratorTest {
                         ChirMemoryExpression(
                             semanticId = ChirSemanticId("expr:alloca-x"),
                             operation = "alloca",
-                            address = localAddress,
+                            address = ChirConstantValue(ChirSemanticId("const:alloca-size-x"), intType, "1"),
+                            resultType = refIntType,
                         ),
                         ChirMemoryExpression(
                             semanticId = ChirSemanticId("expr:store-initial-x"),
@@ -1688,6 +1810,112 @@ class DefaultChirToJvmCodeGeneratorTest {
      * 验证带 receiver 的 CHIR 函数值会降低为 JVM 实例方法调用。
      */
     @Test
+    fun `dispatches CHIR virtual calls through the runtime receiver class`() {
+        val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
+        val baseType = ChirResolvedTypeRef(ChirClassType(ChirTypeDeclarationId("demo.pkg", "Base")))
+
+        fun valueMethod(id: String, value: Int) = DefaultChirFunctionDeclaration(
+            semanticId = ChirSemanticId("fn:$id"),
+            name = "value",
+            returnType = intType,
+            parameters = emptyList(),
+            blocks = listOf(
+                ChirBlock(
+                    semanticId = ChirSemanticId("block:$id"),
+                    name = "entry",
+                    expressions = emptyList(),
+                    terminator = ChirReturnTerminator(
+                        semanticId = ChirSemanticId("term:$id:return"),
+                        returnValue = ChirConstantValue(ChirSemanticId("const:$id"), intType, value.toString()),
+                    ),
+                ),
+            ),
+            entryBlockId = ChirSemanticId("block:$id"),
+        )
+
+        val baseMethod = valueMethod("Base.value", 11)
+        val derivedMethod = valueMethod("Derived.value", 42)
+        val base = DefaultChirClassDeclaration(
+            semanticId = ChirSemanticId("class:Base"),
+            name = "Base",
+            typeDeclarationId = ChirTypeDeclarationId("demo.pkg", "Base"),
+            memberDeclarations = listOf(baseMethod),
+        )
+        val derived = DefaultChirClassDeclaration(
+            semanticId = ChirSemanticId("class:Derived"),
+            name = "Derived",
+            typeDeclarationId = ChirTypeDeclarationId("demo.pkg", "Derived"),
+            superTypes = listOf(baseType),
+            memberDeclarations = listOf(derivedMethod),
+        )
+
+        val callerId = ChirSemanticId("fn:callThroughBase")
+        val receiver = DefaultChirVariableDeclaration(
+            semanticId = ChirSemanticId("param:callThroughBase.receiver"),
+            name = "receiver",
+            type = baseType,
+            mutable = false,
+        )
+        val receiverValue = ChirParameterValue(
+            semanticId = receiver.semanticId,
+            type = receiver.type,
+            name = receiver.name,
+            ownerFunctionId = callerId,
+        )
+        val callId = ChirSemanticId("expr:callThroughBase.value")
+        val caller = DefaultChirFunctionDeclaration(
+            semanticId = callerId,
+            name = "callThroughBase",
+            returnType = intType,
+            parameters = listOf(receiver),
+            blocks = listOf(
+                ChirBlock(
+                    semanticId = ChirSemanticId("block:callThroughBase"),
+                    name = "entry",
+                    expressions = listOf(
+                        ChirCallExpression(
+                            semanticId = callId,
+                            callee = ChirFunctionValue(
+                                semanticId = baseMethod.semanticId,
+                                type = ChirResolvedTypeRef(ChirFunctionType(emptyList(), intType, receiverType = baseType)),
+                                name = "value",
+                            ),
+                            arguments = emptyList(),
+                            resultType = intType,
+                            virtualMethodContext = ChirVirtualMethodContext(
+                                sourceCodeIdentifier = "value",
+                                originalFunctionType = ChirFunctionType(listOf(baseType), intType),
+                                genericTypeParameters = emptyList(),
+                            ),
+                            dispatchReceiver = receiverValue,
+                        ),
+                    ),
+                    terminator = ChirReturnTerminator(
+                        semanticId = ChirSemanticId("term:callThroughBase:return"),
+                        returnValue = ChirLocalValue(callId, intType, "expr_callThroughBase_value"),
+                    ),
+                ),
+            ),
+            entryBlockId = ChirSemanticId("block:callThroughBase"),
+        )
+
+        val output = DefaultChirToJvmCodeGenerator().generate(inputWithDeclarations(base, derived, caller))
+        val artifactsByName = output.classes.associateBy { it.internalName }
+        val loader = GeneratedClassLoader(artifactsByName)
+        verifyClasses(output.classes, loader)
+        val baseClass = loader.load(requireNotNull(artifactsByName["demo/pkg/Base"]))
+        val derivedClass = loader.load(requireNotNull(artifactsByName["demo/pkg/Derived"]))
+        val facadeClass = loader.load(requireNotNull(artifactsByName["demo/pkg/DemoCj"]))
+        val call = facadeClass.getMethod("callThroughBase", baseClass)
+
+        assertEquals(11, call.invoke(null, baseClass.getConstructor().newInstance()))
+        assertEquals(42, call.invoke(null, derivedClass.getConstructor().newInstance()))
+    }
+
+    /**
+     * 验证带 receiver 的 CHIR 函数值会降低为 JVM 实例方法调用。
+     */
+    @Test
     fun `invokes CHIR receiver function values as JVM instance methods`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
         val boxType = ChirResolvedTypeRef(ChirNamedType("demo.pkg.Box"))
@@ -1713,6 +1941,7 @@ class DefaultChirToJvmCodeGeneratorTest {
         val box = DefaultChirClassDeclaration(
             semanticId = ChirSemanticId("class:ReceiverBox"),
             name = "Box",
+            typeDeclarationId = ChirTypeDeclarationId("", "Box"),
             memberDeclarations = listOf(answer),
         )
         val caller = DefaultChirFunctionDeclaration(
@@ -1806,6 +2035,7 @@ class DefaultChirToJvmCodeGeneratorTest {
         val box = DefaultChirClassDeclaration(
             semanticId = ChirSemanticId("class:Box.receiverHandle"),
             name = "Box",
+            typeDeclarationId = ChirTypeDeclarationId("", "Box"),
             memberDeclarations = listOf(answer),
         )
         val caller = DefaultChirFunctionDeclaration(
@@ -1964,6 +2194,7 @@ class DefaultChirToJvmCodeGeneratorTest {
         val box = DefaultChirClassDeclaration(
             semanticId = ChirSemanticId("class:Box"),
             name = "Box",
+            typeDeclarationId = ChirTypeDeclarationId("", "Box"),
             memberDeclarations = listOf(
                 DefaultChirVariableDeclaration(
                     semanticId = ChirSemanticId("field:Box.value"),
@@ -1978,6 +2209,7 @@ class DefaultChirToJvmCodeGeneratorTest {
         val pair = DefaultChirStructDeclaration(
             semanticId = ChirSemanticId("struct:Pair"),
             name = "Pair",
+            typeDeclarationId = ChirTypeDeclarationId("", "Pair"),
             fieldDeclarations = listOf(
                 DefaultChirVariableDeclaration(ChirSemanticId("field:Pair.left"), "left", intType, mutable = false),
             ),
@@ -1988,6 +2220,7 @@ class DefaultChirToJvmCodeGeneratorTest {
         val color = DefaultChirEnumDeclaration(
             semanticId = ChirSemanticId("enum:Color"),
             name = "Color",
+            typeDeclarationId = ChirTypeDeclarationId("", "Color"),
             cases = listOf("RED", "GREEN"),
             memberDeclarations = listOf(
                 DefaultChirVariableDeclaration(
@@ -2056,6 +2289,7 @@ class DefaultChirToJvmCodeGeneratorTest {
         val nested = DefaultChirStructDeclaration(
             semanticId = ChirSemanticId("struct:Outer.Nested"),
             name = "demo.pkg.Outer.Nested",
+            typeDeclarationId = ChirTypeDeclarationId("demo.pkg", "Outer.Nested"),
             fieldDeclarations = listOf(
                 DefaultChirVariableDeclaration(
                     semanticId = ChirSemanticId("field:Outer.Nested.value"),
@@ -2068,6 +2302,7 @@ class DefaultChirToJvmCodeGeneratorTest {
         val outer = DefaultChirClassDeclaration(
             semanticId = ChirSemanticId("class:Outer"),
             name = "Outer",
+            typeDeclarationId = ChirTypeDeclarationId("demo.pkg", "Outer"),
             memberDeclarations = listOf(nested),
         )
 
@@ -2093,6 +2328,7 @@ class DefaultChirToJvmCodeGeneratorTest {
         val box = DefaultChirClassDeclaration(
             semanticId = ChirSemanticId("class:Box"),
             name = "Box",
+            typeDeclarationId = ChirTypeDeclarationId("", "Box"),
             memberDeclarations = listOf(
                 DefaultChirVariableDeclaration(
                     semanticId = ChirSemanticId("field:Box.value"),
@@ -2203,6 +2439,7 @@ class DefaultChirToJvmCodeGeneratorTest {
         val box = DefaultChirClassDeclaration(
             semanticId = ChirSemanticId("class:BoxWithConstructor"),
             name = "Box",
+            typeDeclarationId = ChirTypeDeclarationId("", "Box"),
             memberDeclarations = listOf(
                 DefaultChirVariableDeclaration(
                     semanticId = ChirSemanticId("field:Box.value"),
@@ -2334,6 +2571,7 @@ class DefaultChirToJvmCodeGeneratorTest {
         val box = DefaultChirClassDeclaration(
             semanticId = ChirSemanticId("class:BoxWithFacadeAccess"),
             name = "Box",
+            typeDeclarationId = ChirTypeDeclarationId("", "Box"),
             memberDeclarations = listOf(member),
         )
         val caller = DefaultChirFunctionDeclaration(
@@ -2411,6 +2649,7 @@ class DefaultChirToJvmCodeGeneratorTest {
         val box = DefaultChirClassDeclaration(
             semanticId = ChirSemanticId("class:EqualityBox"),
             name = "Box",
+            typeDeclarationId = ChirTypeDeclarationId("", "Box"),
         )
         val sameReference = DefaultChirFunctionDeclaration(
             semanticId = ChirSemanticId("fn:sameReference"),
@@ -2656,8 +2895,8 @@ class DefaultChirToJvmCodeGeneratorTest {
     @Test
     fun `lowers CHIR multidimensional varray allocation and nested element access`() {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
-        val rowType = ChirResolvedTypeRef(ChirVArrayType(intType))
-        val matrixType = ChirResolvedTypeRef(ChirVArrayType(intType, rank = 2))
+        val rowType = ChirResolvedTypeRef(ChirVArrayType(intType, size = 3))
+        val matrixType = ChirResolvedTypeRef(ChirVArrayType(rowType, size = 2))
         val matrixLocal = ChirLocalValue(ChirSemanticId("expr:new-matrix"), matrixType, "expr_new_matrix")
         val rowLocal = ChirLocalValue(ChirSemanticId("expr:matrix-row"), rowType, "expr_matrix_row")
         val loadedLocal = ChirLocalValue(ChirSemanticId("expr:matrix-load"), intType, "expr_matrix_load")
@@ -2796,10 +3035,17 @@ class DefaultChirToJvmCodeGeneratorTest {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
         val stringType = ChirResolvedTypeRef(ChirNamedType("String"))
         val boxType = ChirResolvedTypeRef(ChirNamedType("demo.pkg.Box"))
+        val boxReferenceType = ChirResolvedTypeRef(
+            ChirRefType(
+                ChirResolvedTypeRef(ChirClassType(ChirTypeDeclarationId("demo.pkg", "Box"))),
+                mutable = true,
+            ),
+        )
         val stringLength = ChirLocalValue(ChirSemanticId("expr:string-null-length"), intType, "expr_string_null_length")
         val box = DefaultChirClassDeclaration(
             semanticId = ChirSemanticId("class:NullBox"),
             name = "Box",
+            typeDeclarationId = ChirTypeDeclarationId("", "Box"),
         )
         val isNullBox = functionReturningValue(
             name = "isNullBox",
@@ -2839,8 +3085,59 @@ class DefaultChirToJvmCodeGeneratorTest {
             ),
             returnValue = stringLength,
         )
+        val stringNullConstantId = ChirSemanticId("expr:string-null-constant")
+        val stringNullConstantValue = ChirLocalValue(
+            semanticId = stringNullConstantId,
+            type = stringType,
+            name = "expr_string_null_constant",
+            associatedExpressionId = stringNullConstantId,
+        )
+        val stringNullConstant = functionReturningValue(
+            name = "stringNullConstant",
+            returnType = stringType,
+            expressions = listOf(
+                ChirConstantExpression(
+                    semanticId = stringNullConstantId,
+                    value = ChirConstantValue(
+                        semanticId = ChirSemanticId("const:string-null-expression"),
+                        type = stringType,
+                        literal = "null",
+                    ),
+                    resultType = stringType,
+                    resultLocalValue = stringNullConstantValue,
+                ),
+            ),
+            returnValue = stringNullConstantValue,
+        )
+        val nullConstantId = ChirSemanticId("expr:null-constant")
+        val nullConstantValue = ChirLocalValue(
+            semanticId = nullConstantId,
+            type = boxReferenceType,
+            name = "expr_null_constant",
+            associatedExpressionId = nullConstantId,
+        )
+        val nullConstant = functionReturningValue(
+            name = "nullConstant",
+            returnType = boxReferenceType,
+            expressions = listOf(
+                ChirConstantExpression(
+                    semanticId = nullConstantId,
+                    value = ChirConstantValue(
+                        semanticId = ChirSemanticId("const:null-expression"),
+                        type = boxReferenceType,
+                        literal = "null",
+                        constantKind = ChirConstantKind.NULL,
+                    ),
+                    resultType = boxReferenceType,
+                    resultLocalValue = nullConstantValue,
+                ),
+            ),
+            returnValue = nullConstantValue,
+        )
 
-        val output = DefaultChirToJvmCodeGenerator().generate(inputWithDeclarations(box, isNullBox, stringNullLength))
+        val output = DefaultChirToJvmCodeGenerator().generate(
+            inputWithDeclarations(box, isNullBox, stringNullLength, stringNullConstant, nullConstant),
+        )
         val artifactsByName = output.classes.associateBy { it.internalName }
 
         val loader = GeneratedClassLoader(artifactsByName)
@@ -2849,6 +3146,8 @@ class DefaultChirToJvmCodeGeneratorTest {
         val facadeClass = loader.load(requireNotNull(artifactsByName["demo/pkg/DemoCj"]))
         assertEquals(true, facadeClass.getMethod("isNullBox").invoke(null))
         assertEquals(4, facadeClass.getMethod("stringNullLength").invoke(null))
+        assertEquals("null", facadeClass.getMethod("stringNullConstant").invoke(null))
+        assertEquals(null, facadeClass.getMethod("nullConstant").invoke(null))
     }
 
     /**

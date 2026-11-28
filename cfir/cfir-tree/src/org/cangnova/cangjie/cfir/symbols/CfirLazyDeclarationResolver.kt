@@ -1,8 +1,8 @@
 package org.cangnova.cangjie.cfir.symbols
 
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
-import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.CfirSessionComponent
@@ -38,8 +38,16 @@ fun CfirElementWithResolveState.lazyResolveToPhase(toPhase: CfirResolvePhase) {
 /**
  * 将类声明及其 callable 成员一起懒解析到指定阶段。
  */
-fun CfirClass.lazyResolveToPhaseWithCallableMembers(toPhase: CfirResolvePhase) {
+fun CfirClassLikeDeclaration.lazyResolveToPhaseWithCallableMembers(toPhase: CfirResolvePhase) {
     invokeLazyResolveToPhase(toPhase, CfirLazyDeclarationResolver::lazyResolveToPhaseWithCallableMembers)
+}
+
+/** 已构建 scope 提升成员要求时，对 owner 和全部父类型的 callable 产品一起完成阶段。 */
+fun CfirClassLikeDeclaration.lazyResolveToPhaseWithCallableMembersInSupertypes(
+    useSiteSession: CfirSession,
+    toPhase: CfirResolvePhase,
+) {
+    lazyDeclarationResolver.lazyResolveToPhaseWithCallableMembersInSupertypes(this, useSiteSession, toPhase)
 }
 
 /**
@@ -47,6 +55,17 @@ fun CfirClass.lazyResolveToPhaseWithCallableMembers(toPhase: CfirResolvePhase) {
  */
 fun CfirElementWithResolveState.lazyResolveToPhaseRecursively(toPhase: CfirResolvePhase) {
     invokeLazyResolveToPhase(toPhase, CfirLazyDeclarationResolver::lazyResolveToPhaseRecursively)
+}
+
+/**
+ * 递归推进整个 CFIR 文件的声明子树到指定阶段。
+ *
+ * 文件自身不是声明，递归只作用于其声明列表；容器（class-like/extend）按声明顺序先于其成员推进，
+ * 与批处理阶段的遍历顺序一致。调用方据此在不解析函数体的前提下把整族声明推进到
+ * [CfirResolvePhase.CJMP_MATCHING]。
+ */
+fun CfirFile.lazyResolveToPhaseRecursively(toPhase: CfirResolvePhase) {
+    moduleData.session.lazyDeclarationResolver.lazyResolveToPhaseRecursively(this, toPhase)
 }
 
 /**
@@ -66,9 +85,9 @@ private fun CfirElementWithResolveState.invokeLazyResolveToPhase(
 /**
  * 通过类声明所属 session 的 resolver 执行类专用懒解析。
  */
-private fun CfirClass.invokeLazyResolveToPhase(
+private fun CfirClassLikeDeclaration.invokeLazyResolveToPhase(
     toPhase: CfirResolvePhase,
-    resolver: CfirLazyDeclarationResolver.(CfirClass, CfirResolvePhase) -> Unit,
+    resolver: CfirLazyDeclarationResolver.(CfirClassLikeDeclaration, CfirResolvePhase) -> Unit,
 ) {
     lazyDeclarationResolver.resolver(this, toPhase)
 }
@@ -123,9 +142,14 @@ abstract class CfirLazyDeclarationResolver : CfirSessionComponent {
     /**
      * 将类声明及其 callable 成员懒解析到 [toPhase]。
      */
-    open fun lazyResolveToPhaseWithCallableMembers(clazz: CfirClass, toPhase: CfirResolvePhase) {
-        lazyResolveToPhase(clazz, toPhase)
-    }
+    abstract fun lazyResolveToPhaseWithCallableMembers(clazz: CfirClassLikeDeclaration, toPhase: CfirResolvePhase)
+
+    /** 保障 owner 和全部父类型成员的阶段，不能把 class 自身阶段当作整个层次的完成产品。 */
+    abstract fun lazyResolveToPhaseWithCallableMembersInSupertypes(
+        clazz: CfirClassLikeDeclaration,
+        useSiteSession: CfirSession,
+        toPhase: CfirResolvePhase,
+    )
 
     /**
      * 递归推进元素及其子声明到 [toPhase]。
@@ -202,7 +226,14 @@ object CfirDummyCompilerLazyDeclarationResolver : CfirLazyDeclarationResolver() 
     /**
      * 批处理模式中 callable 成员已由外层 phase runner 处理。
      */
-    override fun lazyResolveToPhaseWithCallableMembers(clazz: CfirClass, toPhase: CfirResolvePhase) {}
+    override fun lazyResolveToPhaseWithCallableMembers(clazz: CfirClassLikeDeclaration, toPhase: CfirResolvePhase) {}
+
+    /** 批处理模式的父层次产品由统一阶段遍历完成，不进行独立惰性遍历。 */
+    override fun lazyResolveToPhaseWithCallableMembersInSupertypes(
+        clazz: CfirClassLikeDeclaration,
+        useSiteSession: CfirSession,
+        toPhase: CfirResolvePhase,
+    ) {}
 
     /**
      * 批处理模式中递归解析由外层 phase runner 控制。

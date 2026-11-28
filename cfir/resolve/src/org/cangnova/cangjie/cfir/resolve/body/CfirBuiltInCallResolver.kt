@@ -2,7 +2,6 @@ package org.cangnova.cangjie.cfir.resolve.body
 
 import org.cangnova.cangjie.builtins.StandardNames
 import org.cangnova.cangjie.cfir.declarations.CfirBuiltInTypeKind
-import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirNamedArgumentExpression
@@ -33,11 +32,8 @@ import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.name.Name
-import org.cangnova.cangjie.psi.CjValueArgument
 import org.cangnova.cangjie.resolve.calls.tower.ApplicabilityDetail
 import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability
-import org.cangnova.cangjie.source.psi
-import org.cangnova.cangjie.source.text
 
 /**
  * 内建调用解析完成后的候选结果。
@@ -445,21 +441,11 @@ internal class CfirBuiltInCallResolver(
         }
     }
 
-    /** 判断表达式对应的源码实参是否显式写了参数名。 */
-    private fun CfirExpression.hasExplicitArgumentName(): Boolean {
-        if (this is CfirNamedArgumentExpression) return true
-        val source = when (this) {
-            is CfirBlock -> source?.takeIf { statements.size == 1 }
-            else -> source
-        } ?: return false
-
-        val psiArgument = source.psi as? CjValueArgument
-        if (psiArgument != null) return psiArgument.getArgumentName() != null
-
-        val rawText = source.text?.toString()?.trim().orEmpty()
-        val separatorIndex = rawText.indexOf(':')
-        return separatorIndex > 0 && Name.identifierIfValid(rawText.substring(0, separatorIndex).trim()) != null
-    }
+    /**
+     * 对位官方 FuncArg.name：两种 raw builder 都保留具名实参节点，名称只能来自该节点。
+     * lambda 参数的类型冒号属于 lambda 自身，不能从源码文本反推成构造器实参名。
+     */
+    private fun CfirExpression.hasExplicitArgumentName(): Boolean = this is CfirNamedArgumentExpression
 
     /** 创建 Array/VArray builtin 调用信息，并剔除直写 VArray 的尺寸类型实参。 */
     private fun createBuiltinArrayConstructorCallInfo(

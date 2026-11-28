@@ -94,10 +94,39 @@ abstract class ControlFlowGraphVisitorVoid : ControlFlowGraphVisitor<Unit, Nothi
     open fun visitMatchSyntheticElseBranchNode(node: MatchSyntheticElseBranchNode) = visitNode(node)
     /** 访问 if 入口节点。 */
     open fun visitIfEnterNode(node: IfEnterNode) = visitNode(node)
+    /** 访问条件真/假分支的独立入口。 */
+    open fun visitIfBranchResultEnterNode(node: IfBranchResultEnterNode) = visitNode(node)
     /** 访问 if 出口节点。 */
     open fun visitIfExitNode(node: IfExitNode) = visitNode(node)
 
     /** 访问循环入口节点。 */
+    /** 访问 For 的真实执行阶段。 */
+    open fun visitForInLoopIterationEnterNode(node: ForInLoopIterationEnterNode) = visitNode(node)
+
+    /** 访问 For 的真实执行阶段。 */
+    open fun visitForInLoopIterationExitNode(node: ForInLoopIterationExitNode) = visitNode(node)
+
+    /** 访问 For 的真实执行阶段。 */
+    open fun visitForInLoopGuardExitNode(node: ForInLoopGuardExitNode) = visitNode(node)
+
+    open fun visitForInLoopInitialCheckExitNode(node: ForInLoopInitialCheckExitNode) = visitNode(node)
+
+    open fun visitForInLoopConditionEnterNode(node: ForInLoopConditionEnterNode) = visitNode(node)
+
+    open fun visitForInLoopRangeCheckNode(node: ForInLoopRangeCheckNode) = visitNode(node)
+
+    open fun visitForInLoopStringCheckNode(node: ForInLoopStringCheckNode) = visitNode(node)
+
+    open fun visitForInLoopStringUpdateNode(node: ForInLoopStringUpdateNode) = visitNode(node)
+
+    open fun visitForInLoopIteratorCheckNode(node: ForInLoopIteratorCheckNode) = visitNode(node)
+
+    open fun visitCallExpressionNode(node: CallExpressionNode) = visitNode(node)
+
+    open fun visitUnaryExpressionNode(node: UnaryExpressionNode) = visitNode(node)
+
+    open fun visitBinaryExpressionNode(node: BinaryExpressionNode) = visitNode(node)
+
     open fun visitLoopEnterNode(node: LoopEnterNode) = visitNode(node)
     /** 访问循环体入口节点。 */
     open fun visitLoopBlockEnterNode(node: LoopBlockEnterNode) = visitNode(node)
@@ -147,6 +176,12 @@ abstract class ControlFlowGraphVisitorVoid : ControlFlowGraphVisitor<Unit, Nothi
     open fun visitJumpNode(node: JumpNode) = visitNode(node)
     /** 访问字面量节点。 */
     open fun visitLiteralExpressionNode(node: LiteralExpressionNode) = visitNode(node)
+    /** 访问 tuple 的实际求值入口。 */
+    open fun visitTupleLiteralEnterNode(node: TupleLiteralEnterNode) = visitNode(node)
+    /** 访问 tuple 原元素的实际完成程序点。 */
+    open fun visitTupleLiteralElementExitNode(node: TupleLiteralElementExitNode) = visitNode(node)
+    /** 访问 tuple 的实际聚合完成程序点。 */
+    open fun visitTupleLiteralExitNode(node: TupleLiteralExitNode) = visitNode(node)
     /** 访问限定访问节点。 */
     open fun visitQualifiedAccessNode(node: QualifiedAccessNode) = visitNode(node)
     /** 访问函数调用参数入口节点。 */
@@ -260,9 +295,35 @@ abstract class ControlFlowGraphVisitorVoid : ControlFlowGraphVisitor<Unit, Nothi
     final override fun visitMatchSyntheticElseBranchNode(node: MatchSyntheticElseBranchNode, data: Nothing?) = visitMatchSyntheticElseBranchNode(node)
     /** 桥接 if 入口节点的双参数访问到无 data 访问。 */
     final override fun visitIfEnterNode(node: IfEnterNode, data: Nothing?) = visitIfEnterNode(node)
+    /** 桥接 if 分支入口的双参数访问到无 data 访问。 */
+    final override fun visitIfBranchResultEnterNode(node: IfBranchResultEnterNode, data: Nothing?) = visitIfBranchResultEnterNode(node)
     /** 桥接 if 出口节点的双参数访问到无 data 访问。 */
     final override fun visitIfExitNode(node: IfExitNode, data: Nothing?) = visitIfExitNode(node)
     /** 桥接循环入口节点的双参数访问到无 data 访问。 */
+    final override fun visitForInLoopIterationEnterNode(node: ForInLoopIterationEnterNode, data: Nothing?) = visitForInLoopIterationEnterNode(node)
+
+    final override fun visitForInLoopIterationExitNode(node: ForInLoopIterationExitNode, data: Nothing?) = visitForInLoopIterationExitNode(node)
+
+    final override fun visitForInLoopGuardExitNode(node: ForInLoopGuardExitNode, data: Nothing?) = visitForInLoopGuardExitNode(node)
+
+    final override fun visitForInLoopInitialCheckExitNode(node: ForInLoopInitialCheckExitNode, data: Nothing?) = visitForInLoopInitialCheckExitNode(node)
+
+    final override fun visitForInLoopConditionEnterNode(node: ForInLoopConditionEnterNode, data: Nothing?) = visitForInLoopConditionEnterNode(node)
+
+    final override fun visitForInLoopRangeCheckNode(node: ForInLoopRangeCheckNode, data: Nothing?) = visitForInLoopRangeCheckNode(node)
+
+    final override fun visitForInLoopStringCheckNode(node: ForInLoopStringCheckNode, data: Nothing?) = visitForInLoopStringCheckNode(node)
+
+    final override fun visitForInLoopStringUpdateNode(node: ForInLoopStringUpdateNode, data: Nothing?) = visitForInLoopStringUpdateNode(node)
+
+    final override fun visitForInLoopIteratorCheckNode(node: ForInLoopIteratorCheckNode, data: Nothing?) = visitForInLoopIteratorCheckNode(node)
+
+    final override fun visitCallExpressionNode(node: CallExpressionNode, data: Nothing?) = visitCallExpressionNode(node)
+
+    final override fun visitUnaryExpressionNode(node: UnaryExpressionNode, data: Nothing?) = visitUnaryExpressionNode(node)
+
+    final override fun visitBinaryExpressionNode(node: BinaryExpressionNode, data: Nothing?) = visitBinaryExpressionNode(node)
+
     final override fun visitLoopEnterNode(node: LoopEnterNode, data: Nothing?) = visitLoopEnterNode(node)
     /** 桥接循环体入口节点的双参数访问到无 data 访问。 */
     final override fun visitLoopBlockEnterNode(node: LoopBlockEnterNode, data: Nothing?) = visitLoopBlockEnterNode(node)
@@ -310,6 +371,10 @@ abstract class ControlFlowGraphVisitorVoid : ControlFlowGraphVisitor<Unit, Nothi
     final override fun visitJumpNode(node: JumpNode, data: Nothing?) = visitJumpNode(node)
     /** 桥接字面量表达式节点的双参数访问到无 data 访问。 */
     final override fun visitLiteralExpressionNode(node: LiteralExpressionNode, data: Nothing?) = visitLiteralExpressionNode(node)
+    /** 将双参数入口分派给 tuple 的一参数回调。 */
+    final override fun visitTupleLiteralEnterNode(node: TupleLiteralEnterNode, data: Nothing?) = visitTupleLiteralEnterNode(node)
+    final override fun visitTupleLiteralElementExitNode(node: TupleLiteralElementExitNode, data: Nothing?) = visitTupleLiteralElementExitNode(node)
+    final override fun visitTupleLiteralExitNode(node: TupleLiteralExitNode, data: Nothing?) = visitTupleLiteralExitNode(node)
     /** 桥接限定访问节点的双参数访问到无 data 访问。 */
     final override fun visitQualifiedAccessNode(node: QualifiedAccessNode, data: Nothing?) = visitQualifiedAccessNode(node)
     /** 桥接函数调用参数入口节点的双参数访问到无 data 访问。 */

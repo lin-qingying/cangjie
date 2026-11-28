@@ -25,5 +25,5 @@ The `code-insight/` modules provide editor-facing language services shared by ID
 ## Related documentation
 
 - [Analysis subsystem](../analysis/README.md)
-- [IntelliJ Platform plugin](../intellij-ide/README.md)
+- [IntelliJ Platform plugin](../docs/intellij-ide.md)
 - [Module catalog](../docs/module-catalog.md)

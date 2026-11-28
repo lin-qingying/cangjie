@@ -1,0 +1,26 @@
+{
+  "utc": "2026-11-18T17:29:14.5198265Z",
+  "fileCount": 6851,
+  "aggregateSha256": "A0707F13F3A529795B42F77C4EBA082FFC4178CEBF7C6B920C48DA40B3BD829E",
+  "roots": [
+    "common",
+    "cfir",
+    "analysis/low-level-api-cfir",
+    "analysis/analysis-api-cfir",
+    "compiler/frontend",
+    "compiler/config",
+    "compiler/phaser",
+    "compiler/arguments",
+    "psi",
+    "resolution.common",
+    "macro"
+  ],
+  "include": [
+    "*.kt",
+    "*.cj",
+    "*.kts"
+  ],
+  "exclude": "**/build/**",
+  "method": "rg --files --hidden --no-ignore, / normalized and Sort-Object -CaseSensitive; SHA256 of UTF8 LF joined path TAB length TAB uppercaseSHA256, no final LF",
+  "scope": "TypeRefOrigin source creation/prototype/source migration/owned copy, frozen type syntax and explicit header identities; originalSOURCE18 and four official new Alias/ABI fixtures remain strict"
+}

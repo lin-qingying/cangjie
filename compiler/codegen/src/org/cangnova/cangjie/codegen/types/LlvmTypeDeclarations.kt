@@ -15,10 +15,16 @@ import org.cangnova.cangjie.chir.core.declaration.ChirTypeDeclaration
 import org.cangnova.cangjie.chir.core.declaration.ChirVariableDeclaration
 import org.cangnova.cangjie.chir.core.expression.ChirBinaryExpression
 import org.cangnova.cangjie.chir.core.expression.ChirCallExpression
+import org.cangnova.cangjie.chir.core.expression.ChirIntrinsicKind
+import org.cangnova.cangjie.chir.core.expression.ChirConstantExpression
 import org.cangnova.cangjie.chir.core.expression.ChirExpression
+import org.cangnova.cangjie.chir.core.expression.ChirFieldExpression
 import org.cangnova.cangjie.chir.core.expression.ChirMemoryExpression
 import org.cangnova.cangjie.chir.core.expression.ChirOtherExpression
+import org.cangnova.cangjie.chir.core.expression.ChirOtherOperation
+import org.cangnova.cangjie.chir.core.expression.ChirTupleExpression
 import org.cangnova.cangjie.chir.core.expression.ChirUnaryExpression
+import org.cangnova.cangjie.chir.core.identity.ChirSemanticId
 import org.cangnova.cangjie.chir.core.model.ChirModule
 import org.cangnova.cangjie.chir.core.model.ChirPackage
 import org.cangnova.cangjie.chir.core.type.ChirBoxType
@@ -53,7 +59,6 @@ internal enum class LlvmNominalTypeKind(val prefix: String) {
     CLASS("class"),
     ENUM("enum"),
     VARRAY("varray"),
-    GENERIC("generic"),
     BOX("box"),
     THIS("this"),
 }
@@ -71,12 +76,11 @@ internal fun llvmNominalTypeName(kind: LlvmNominalTypeKind, rawName: String): St
  * 根据 CHIR nominal 类型生成统一的 LLVM identified type 名称。
  */
 internal fun llvmNominalTypeName(type: ChirType): String = when (type) {
-    is ChirNamedType -> llvmNominalTypeName(LlvmNominalTypeKind.TYPE, nominalRawName(type.renderName, type.typeArguments))
+    is ChirNamedType -> llvmNominalTypeName(LlvmNominalTypeKind.TYPE, nominalRawName(type.name, type.typeArguments))
     is ChirStructType -> llvmNominalTypeName(LlvmNominalTypeKind.STRUCT, nominalRawName(type.name, type.typeArguments))
     is ChirClassType -> llvmNominalTypeName(LlvmNominalTypeKind.CLASS, nominalRawName(type.name, type.typeArguments))
     is ChirEnumType -> llvmNominalTypeName(LlvmNominalTypeKind.ENUM, nominalRawName(type.name, type.typeArguments))
-    is ChirVArrayType -> llvmNominalTypeName(LlvmNominalTypeKind.VARRAY, "${type.rank}.${type.elementType.renderName}")
-    is ChirGenericType -> llvmNominalTypeName(LlvmNominalTypeKind.GENERIC, type.identifier)
+            is ChirVArrayType -> llvmNominalTypeName(LlvmNominalTypeKind.VARRAY, "${type.size}.${type.elementType.renderName}")
     is ChirBoxType -> llvmNominalTypeName(LlvmNominalTypeKind.BOX, type.boxedType.renderName)
     is ChirThisType -> llvmNominalTypeName(LlvmNominalTypeKind.THIS, type.ownerTypeName)
     else -> throw CodegenLoweringException("type ${type.renderName} is not an LLVM nominal type", null)
@@ -89,7 +93,28 @@ internal fun collectLlvmTypeDeclarations(
     chirPackage: ChirPackage,
     module: ChirModule,
     typeLowering: TypeLowering,
-): List<String> {
+): List<String> = collectTypeDeclarationCollector(chirPackage, module, typeLowering).declarations()
+
+/**
+ * 收集 package 与 module 中 RawArray 分配操作需要的运行时类型信息和 ABI 声明。
+ */
+internal fun collectLlvmRawArrayRuntimePlan(
+    chirPackage: ChirPackage,
+    module: ChirModule,
+    typeLowering: TypeLowering,
+    additionalReferencedArrayTypes: Collection<Pair<ChirRawArrayType, ChirSemanticId>> = emptyList(),
+): LlvmRawArrayRuntimePlan =
+    collectTypeDeclarationCollector(chirPackage, module, typeLowering).also { collector ->
+        additionalReferencedArrayTypes.forEach { (type, sourceId) ->
+            collector.recordReferencedArrayType(type, sourceId)
+        }
+    }.rawArrayRuntimePlan()
+
+private fun collectTypeDeclarationCollector(
+    chirPackage: ChirPackage,
+    module: ChirModule,
+    typeLowering: TypeLowering,
+): LlvmTypeDeclarationCollector {
     val collector = LlvmTypeDeclarationCollector(typeLowering)
     chirPackage.typeDefinitions.forEach(collector::recordDeclaredType)
     chirPackage.importedTypeDefinitions.forEach(collector::recordDeclaredType)
@@ -101,7 +126,7 @@ internal fun collectLlvmTypeDeclarations(
     chirPackage.members.importedFunctions.forEach(collector::visitDeclaration)
     module.declarations.forEach(collector::visitDeclaration)
 
-    return collector.declarations()
+    return collector
 }
 
 /**
@@ -156,6 +181,12 @@ private class LlvmTypeDeclarationCollector(
      * 已访问 CHIR 类型集合，用于避免递归类型重复遍历。
      */
     private val visitedTypes = mutableSetOf<String>()
+    /** Official RawArrayAllocate operations whose component TypeInfo is required by this module. */
+    private val rawArrayAllocations = linkedMapOf<String, Pair<ChirRawArrayType, org.cangnova.cangjie.chir.core.identity.ChirSemanticId>>()
+    /** RawArray descriptors required by values and generic call-site TypeInfo arguments. */
+    private val rawArrayTypeInfos = linkedMapOf<String, Pair<ChirRawArrayType, org.cangnova.cangjie.chir.core.identity.ChirSemanticId>>()
+    /** Concrete call-site TypeInfos supplied by the runtime metadata ABI. */
+    private val referencedTypeInfos = linkedMapOf<String, Pair<ChirTypeRef, org.cangnova.cangjie.chir.core.identity.ChirSemanticId>>()
 
     /**
      * 返回已收集的 LLVM type declaration 行。
@@ -163,29 +194,60 @@ private class LlvmTypeDeclarationCollector(
     fun declarations(): List<String> = declarationsByName.values.map { it.line }
 
     /**
+     * 将本 module 的 RawArrayAllocate 节点闭包转换为 runtime TypeInfo 与 ABI 计划。
+     */
+    fun rawArrayRuntimePlan(): LlvmRawArrayRuntimePlan = LlvmRawArrayRuntime.declarations(
+        allocationExpressions = rawArrayAllocations.values,
+        referencedArrayTypes = rawArrayTypeInfos.values,
+        referencedTypeInfos = referencedTypeInfos.values,
+    )
+
+    /** 记录由代码生成器合成的运行时对象所需 RawArray TypeInfo。 */
+    fun recordReferencedArrayType(type: ChirRawArrayType, sourceId: ChirSemanticId) {
+        rawArrayTypeInfos.putIfAbsent(type.renderName, type to sourceId)
+    }
+
+    /**
      * 记录显式 CHIR type declaration 对应的 LLVM type declaration。
      */
     fun recordDeclaredType(declaration: ChirTypeDeclaration) {
+        if (declaration.typeParameterTypes.isNotEmpty()) {
+            recordLine(
+                LlvmRawArrayRuntime.TYPE_INFO_TYPE_NAME,
+                LlvmRawArrayRuntime.TYPE_INFO_TYPE_DECLARATION.substringAfter(" = "),
+                TypeDeclarationBodyKind.DEFINED,
+            )
+        }
         when (declaration) {
             is ChirStructDeclaration -> {
-                declaration.fieldDeclarations.forEach(::visitDeclaration)
+                if (declaration.typeDeclarationId == LlvmStringLiteralRuntime.STRING_TYPE_ID) {
+                    recordLine(
+                        LlvmStringLiteralRuntime.STRING_TYPE_NAME,
+                        LlvmStringLiteralRuntime.STRING_TYPE_BODY,
+                        TypeDeclarationBodyKind.DEFINED,
+                    )
+                    visitCustomTypeMembers(declaration)
+                    return
+                }
+                val fields = llvmAggregateFieldDeclarations(declaration)
+                fields.forEach(::visitDeclaration)
                 recordDefined(
                     llvmNominalTypeName(LlvmNominalTypeKind.STRUCT, nominalRawName(declaration.name, declaration.typeParameters.map(::genericTypeRef))),
-                    declaration.fieldDeclarations.map { it.type },
+                    fields.map { it.type },
                 )
                 visitCustomTypeMembers(declaration)
             }
             is ChirClassDeclaration -> {
                 declaration.superTypes.forEach(::visitTypeRef)
                 declaration.implementedTypes.forEach(::visitTypeRef)
-                val fieldTypes = declaration.memberDeclarations.filterIsInstance<ChirVariableDeclaration>().map { it.type }
+                val fieldTypes = llvmAggregateFieldDeclarations(declaration).map { it.type }
                 fieldTypes.forEach(::visitTypeRef)
                 val name = llvmNominalTypeName(
                     LlvmNominalTypeKind.CLASS,
                     nominalRawName(declaration.name, declaration.typeParameters.map(::genericTypeRef)),
                 )
                 if (fieldTypes.isEmpty()) {
-                    recordOpaque(name)
+                    recordLine(name, "type { }", TypeDeclarationBodyKind.DEFINED)
                 } else {
                     recordDefined(name, fieldTypes)
                 }
@@ -233,10 +295,11 @@ private class LlvmTypeDeclarationCollector(
      */
     private fun visitFunctionDeclaration(function: ChirFunctionDeclaration) {
         visitTypeRef(function.returnType)
+        function.genericTypeParameters.forEach(::visitTypeRef)
         function.parameters.forEach(::visitDeclaration)
         function.blocks.forEach { block ->
             block.expressions.forEach(::visitExpression)
-            visitTerminator(block.terminator)
+            block.terminator?.let(::visitTerminator)
         }
     }
 
@@ -257,9 +320,49 @@ private class LlvmTypeDeclarationCollector(
             }
             is ChirCallExpression -> {
                 visitValue(expression.callee)
+                expression.dispatchReceiver?.let(::visitValue)
                 expression.arguments.forEach(::visitValue)
+                expression.instantiatedTypeArguments.forEach { type ->
+                    visitTypeRef(type)
+                    recordReferencedTypeInfo(type, expression.semanticId)
+                }
+                expression.thisType?.let { type ->
+                    visitTypeRef(type)
+                    recordReferencedTypeInfo(type, expression.semanticId)
+                }
             }
-            is ChirOtherExpression -> expression.operands.forEach(::visitValue)
+            is ChirConstantExpression -> visitValue(expression.value)
+            is ChirOtherExpression -> {
+                if (ChirOtherOperation.parse(expression.operation) == ChirOtherOperation.RAW_ARRAY_ALLOCATE) {
+                    val arrayType = LlvmRawArrayRuntime.arrayType(expression.resultType, expression.semanticId)
+                    rawArrayAllocations.putIfAbsent(arrayType.renderName, arrayType to expression.semanticId)
+                }
+                if (expression.intrinsicKind == ChirIntrinsicKind.ARRAY_GET_UNCHECKED) {
+                    val arrayType = LlvmRawArrayRuntime.arrayType(
+                        expression.operands.firstOrNull()?.type,
+                        expression.semanticId,
+                    )
+                    if ((arrayType.elementType as? ChirResolvedTypeRef)?.type is ChirGenericType) {
+                        recordLine(
+                            LlvmRawArrayRuntime.TYPE_INFO_TYPE_NAME,
+                            LlvmRawArrayRuntime.TYPE_INFO_TYPE_DECLARATION.substringAfter(" = "),
+                            TypeDeclarationBodyKind.DEFINED,
+                        )
+                    }
+                }
+                expression.operands.forEach(::visitValue)
+            }
+            is ChirTupleExpression -> expression.elements.forEach(::visitValue)
+            is ChirFieldExpression -> visitValue(expression.base)
+        }
+        (expression as? ChirOtherExpression)?.debugMetadata?.accurateEnvironmentObjectType?.let(::visitTypeRef)
+    }
+
+    private fun recordReferencedTypeInfo(type: ChirTypeRef, sourceId: org.cangnova.cangjie.chir.core.identity.ChirSemanticId) {
+        if (referencedTypeInfos.putIfAbsent(type.renderName, type to sourceId) == null) {
+            LlvmRuntimeTypeInfo.dynamicTemplateReference(type)?.typeArguments?.forEach { argument ->
+                recordReferencedTypeInfo(argument, sourceId)
+            }
         }
     }
 
@@ -286,7 +389,15 @@ private class LlvmTypeDeclarationCollector(
      */
     private fun visitTypeRef(typeRef: ChirTypeRef) {
         when (typeRef) {
-            is ChirResolvedTypeRef -> visitType(typeRef.type)
+            is ChirResolvedTypeRef -> {
+                (typeRef.type as? ChirRawArrayType)?.let { arrayType ->
+                    rawArrayTypeInfos.putIfAbsent(
+                        arrayType.renderName,
+                        arrayType to org.cangnova.cangjie.chir.core.identity.ChirSemanticId("llvm:typeinfo:${arrayType.renderName}"),
+                    )
+                }
+                visitType(typeRef.type)
+            }
             is ChirUnresolvedTypeRef -> throw CodegenLoweringException(
                 "cannot collect LLVM declaration for unresolved CHIR type '${typeRef.symbol}'",
                 null,
@@ -313,6 +424,14 @@ private class LlvmTypeDeclarationCollector(
             }
             is ChirStructType -> {
                 type.typeArguments.forEach(::visitTypeRef)
+                if (LlvmStringLiteralRuntime.isStringType(ChirResolvedTypeRef(type))) {
+                    recordLine(
+                        LlvmStringLiteralRuntime.STRING_TYPE_NAME,
+                        LlvmStringLiteralRuntime.STRING_TYPE_BODY,
+                        TypeDeclarationBodyKind.DEFINED,
+                    )
+                    return
+                }
                 type.fieldTypes.forEach(::visitTypeRef)
                 recordDefined(llvmNominalTypeName(type), type.fieldTypes)
             }
@@ -321,7 +440,11 @@ private class LlvmTypeDeclarationCollector(
                 type.superTypes.forEach(::visitTypeRef)
                 type.fieldTypes.forEach(::visitTypeRef)
                 if (type.fieldTypes.isEmpty()) {
-                    recordOpaque(llvmNominalTypeName(type))
+                    recordLine(
+                        llvmNominalTypeName(type),
+                        "type { }",
+                        TypeDeclarationBodyKind.DEFINED,
+                    )
                 } else {
                     recordDefined(llvmNominalTypeName(type), type.fieldTypes)
                 }
@@ -329,7 +452,8 @@ private class LlvmTypeDeclarationCollector(
             is ChirEnumType -> {
                 type.typeArguments.forEach(::visitTypeRef)
                 type.cases.flatMap { it.payloadTypes }.forEach(::visitTypeRef)
-                recordLine(llvmNominalTypeName(type), "type { i32 }", TypeDeclarationBodyKind.DEFINED)
+                val body = if (type.hasZeroSizeValueRepresentation) "type { }" else "type { i32 }"
+                recordLine(llvmNominalTypeName(type), body, TypeDeclarationBodyKind.DEFINED)
             }
             is ChirRawArrayType -> visitTypeRef(type.elementType)
             is ChirVArrayType -> {
@@ -339,7 +463,6 @@ private class LlvmTypeDeclarationCollector(
             is ChirCPointerType -> visitTypeRef(type.pointeeType)
             is ChirGenericType -> {
                 type.upperBounds.forEach(::visitTypeRef)
-                recordOpaque(llvmNominalTypeName(type))
             }
             is ChirRefType -> visitTypeRef(type.referencedType)
             is ChirBoxType -> {
@@ -347,9 +470,12 @@ private class LlvmTypeDeclarationCollector(
                 recordDefined(llvmNominalTypeName(type), listOf(type.boxedType))
             }
             is ChirThisType -> recordOpaque(llvmNominalTypeName(type))
-            is ChirPrimitiveType,
-            is ChirCStringType,
-            -> Unit
+            is ChirPrimitiveType -> {
+                if (type == ChirPrimitiveType.UNIT || type == ChirPrimitiveType.NOTHING) {
+                    recordLine(LLVM_UNIT_TYPE_NAME, "type { }", TypeDeclarationBodyKind.DEFINED)
+                }
+            }
+            is ChirCStringType -> Unit
         }
     }
 

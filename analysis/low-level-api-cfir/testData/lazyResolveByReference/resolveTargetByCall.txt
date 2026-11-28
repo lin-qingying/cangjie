@@ -16,15 +16,21 @@ TARGET:
     <element: CfirLazyBlock>
 }
 
+CJMP_MATCHING:
+TARGET:
+[ResolvedTo(CJMP_MATCHING)] internal? func identity([ResolvedTo(CJMP_MATCHING)] value: R|Int64|): R|Int64| {
+    <element: CfirLazyBlock>
+}
+
 IMPLICIT_TYPES:
 TARGET:
 [ResolvedTo(IMPLICIT_TYPES)] internal? func identity([ResolvedTo(IMPLICIT_TYPES)] value: R|Int64|): R|Int64| {
     <element: CfirLazyBlock>
 }
 
-CJMP_MATCHING:
+CJMP_FINAL_MATCHING:
 TARGET:
-[ResolvedTo(IMPLICIT_TYPES)] internal? func identity([ResolvedTo(IMPLICIT_TYPES)] value: R|Int64|): R|Int64| {
+[ResolvedTo(CJMP_FINAL_MATCHING)] internal? func identity([ResolvedTo(CJMP_FINAL_MATCHING)] value: R|Int64|): R|Int64| {
     <element: CfirLazyBlock>
 }
 

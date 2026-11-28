@@ -28,6 +28,7 @@ import org.cangnova.cangjie.cfir.tree.generator.CfirTree.anonymousFunction
 import org.cangnova.cangjie.cfir.tree.generator.CfirTree.function
 import org.cangnova.cangjie.cfir.tree.generator.CfirTree.typeRef
 import org.cangnova.cangjie.cfir.tree.generator.context.AbstractCfirTreeBuilder
+import org.cangnova.cangjie.cfir.tree.generator.model.Field
 import org.cangnova.cangjie.cfir.tree.generator.model.Element
 import org.cangnova.cangjie.cfir.tree.generator.model.Element.Kind.*
 import org.cangnova.cangjie.cfir.tree.generator.model.fieldSet
@@ -66,10 +67,6 @@ object CfirTree : AbstractCfirTreeBuilder() {
      * 声明属性集合类型引用。
      */
     private val declarationAttributesType = generatedType("declarations", "CfirDeclarationAttributes", TypeKind.Class)
-    /**
-     * 声明状态接口类型引用。
-     */
-    private val declarationStatusType = generatedType("declarations", "CfirDeclarationStatus", TypeKind.Interface)
     /**
      * 描述符可见性类型引用。
      */
@@ -239,6 +236,8 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
      * enum 构造器符号类型引用。
      */
     val enumConstructorSymbolType = type("symbols", "CfirEnumConstructorSymbol")
+    /** 正常字段与 Library 完成内容的非空数据源角色。 */
+    private val contentSourceType = type(BASE_PACKAGE, "CfirContentSource", exactPackage = true)
     /**
      * 具名值符号基类类型引用。
      */
@@ -328,16 +327,10 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
             listField("declarations", declaration, withTransform = true) {
                 useInBaseTransformerDetection = false
             })
-        /**
-         * 类型参数列表字段集合。
-         */
+        /** 自有参数的明确字段类型；多父节点必须显式覆盖 refs owner 的字段。 */
         val typeParameters = fieldSet(
-            listField(
-                "typeParameters",
-                typeParameter
-            )
+            listField("typeParameters", typeParameter, withTransform = true)
         )
-
         /**
          * 注解列表字段集合。
          */
@@ -354,7 +347,8 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
         kind = ImplementationKind.Interface
         hasAcceptChildrenMethod = true
         hasTransformChildrenMethod = true
-        +field("source", sourceElementType, nullable = true)
+        // 仓颉独立target PSI换代时，保留的IR节点与symbol必须通过同一源槽位协议迁移。
+        +field("source", sourceElementType, nullable = true, withReplace = true)
     }
 
     /**
@@ -430,8 +424,8 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
     val ifAvailableExpression: Element by element(Expression, name = "IfAvailableExpression") {
         parent(expression)
         +field("conditionName", nameType)
-        +field("conditionArgumentSource", sourceElementType, nullable = true)
-        +field("conditionNameSource", sourceElementType, nullable = true)
+        +field("conditionArgumentSource", sourceElementType, nullable = true, withReplace = true)
+        +field("conditionNameSource", sourceElementType, nullable = true, withReplace = true)
         +field("condition", expression, nullable = true, withTransform = true)
         // 合法分支必须保留匿名函数节点，以便 BODY_RESOLVE 看到参数列表、lambda
         // 作用域和 `() -> Unit` 目标类型；非法分支仍以 expression 承载原始形状。
@@ -488,7 +482,7 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
         // 语句级可见性在 raw 构建时传给每个叶项，后续阶段不得反查源码 token。
         +field("visibility", visibilityType)
         +field("aliasName", nameType, nullable = true)
-        +field("aliasSource", sourceElementType, nullable = true)
+        +field("aliasSource", sourceElementType, nullable = true, withReplace = true)
         /** `@When[...] import` 在 raw-CFIR 裁剪前保留的条件表达式。 */
         +field("condition", expression, nullable = true, withTransform = true, withReplace = true)
     }
@@ -498,7 +492,7 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
      */
     val resolvedImportDirective: Element by element(Declaration, name = "ResolvedImport") {
         parent(importDirective)
-        +field("delegate", importDirective, isChild = false)
+        +field("delegate", importDirective, isChild = false) { sourceTraversalKind = Field.SourceTraversalKind.ELEMENT }
         +field("packageFqName", fqNameType)
         +field("importedName", nameType, nullable = true)
     }
@@ -511,7 +505,9 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
 
         +field("typeRef", typeRef, withTransform = true, withReplace = true)
         +listField("arguments", expression, isChild = false)
-        +field("argumentMapping", annotationArgumentMapping, withReplace = true, isChild = false)
+        +field("argumentMapping", annotationArgumentMapping, withReplace = true, isChild = false) {
+            sourceTraversalKind = Field.SourceTraversalKind.ELEMENT
+        }
         +field("annotationClassId", type("org.cangnova.cangjie.name", "ClassId", exactPackage = true, kind = TypeKind.Class), nullable = true, withReplace = true)
         +field("annotationTarget", annotationTargetType, nullable = true, withReplace = true)
         +field("forcedCustom", booleanType, withReplace = true) { defaultValueInBuilder = "false" }
@@ -554,6 +550,16 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
         parent(elementWithResolveState)
         parent(annotationContainer)
 
+        +field("contentSource", contentSourceType, isChild = false) {
+            implementationDefaultStrategy = AbstractField.ImplementationDefaultStrategy.ConstructorDefaultValue("CfirContentSource.Owned")
+            defaultValueInBuilder = "CfirContentSource.Owned"
+            skippedInCopy = true
+        }
+        +listField("annotations", annotation, withReplace = true, useMutableOrEmpty = true, withTransform = true) {
+            needTransformInOtherChildren = true
+            publishedContentKind = Field.PublishedContentKind.ANNOTATIONS
+        }
+
         +declaredSymbol(symbolType)
         +field("origin", declarationOriginType)
         +field("attributes", declarationAttributesType)
@@ -563,6 +569,15 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
      */
     val typeParameterRefsOwner: Element by sealedElement(Declaration) {
         +listField("typeParameters", typeParameterRef, withTransform = true)
+    }
+    /**
+     * 自身声明类型参数的 owner，对位 Kotlin FirTypeParametersOwner。
+     *
+     * 构造器借用所属名义类型参数，只继承 refs owner；不能把引用收窄为新声明。
+     */
+    val typeParametersOwner: Element by sealedElement(Declaration) {
+        parent(typeParameterRefsOwner)
+        +listField("typeParameters", typeParameter, withTransform = true)
     }
     /**
      * 成员声明抽象层。
@@ -591,6 +606,7 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
         )
         +field("deprecationsProvider", deprecationsProviderType, withReplace = true) {
             isMutable = true
+            publishedContentKind = Field.PublishedContentKind.DEPRECATIONS
             defaultValueInBuilder = "UnresolvedDeprecationProvider"
             arbitraryImportables += unresolvedDeprecationsProviderType
         }
@@ -608,6 +624,7 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
         +declaredSymbol(classLikeSymbolType)
         +field("deprecationsProvider", deprecationsProviderType, withReplace = true) {
             isMutable = true
+            publishedContentKind = Field.PublishedContentKind.DEPRECATIONS
             defaultValueInBuilder = "UnresolvedDeprecationProvider"
             arbitraryImportables += unresolvedDeprecationsProviderType
         }
@@ -627,11 +644,11 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
         parent(controlFlowGraphOwner)
         +declaredSymbol(fileSymbolType)
         +field("name", stringType)
-        +field("sourceFile", sourceFileType, nullable = true)
+        +field("sourceFile", sourceFileType, nullable = true, withReplace = true)
         +field("featuresDirective", featuresDirective, nullable = true, withReplace = true, withTransform = true)
         +field("packageDirective", packageDirective, withTransform = true)
          +listField("imports", importDirective, withReplace = true, withTransform = true)
-        +field("sourceFileLinesMapping", sourceFileLinesMappingType, nullable = true)
+        +field("sourceFileLinesMapping", sourceFileLinesMappingType, nullable = true, withReplace = true)
         +listField(
             "conditionalCompilationFailures",
             conditionalCompilationFailureType,
@@ -660,8 +677,10 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
     val classDeclaration: Element by element(Declaration, name = "Class") {
         parent(classLikeDeclaration)
         parent(controlFlowGraphOwner)
-        +field("status", declarationStatusType, withReplace = true, withTransform = true)
+        parent(typeParametersOwner)
+        // 多父节点且不指定 visitor 父：默认 visitor 不把 class 转发到 class-like，沿用既有分派。
         +FieldSets.typeParameters
+        +field("status", declarationStatus, withReplace = true, withTransform = true)
         +declaredSymbol(classSymbolType)
         +listField("superTypeRefs", typeRef, withTransform = true)
         +FieldSets.declarations
@@ -684,8 +703,9 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
     val interfaceDeclaration: Element by element(Declaration, name = "Interface") {
         parent(classLikeDeclaration)
         parent(controlFlowGraphOwner)
-        +field("status", declarationStatusType, withReplace = true, withTransform = true)
+        parent(typeParametersOwner)
         +FieldSets.typeParameters
+        +field("status", declarationStatus, withReplace = true, withTransform = true)
         +declaredSymbol(interfaceSymbolType)
         +listField("superTypeRefs", typeRef, withTransform = true)
         +FieldSets.declarations
@@ -701,8 +721,9 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
     val structDeclaration: Element by element(Declaration, name = "Struct") {
         parent(classLikeDeclaration)
         parent(controlFlowGraphOwner)
-        +field("status", declarationStatusType, withReplace = true, withTransform = true)
+        parent(typeParametersOwner)
         +FieldSets.typeParameters
+        +field("status", declarationStatus, withReplace = true, withTransform = true)
         +declaredSymbol(structSymbolType)
         +listField("superTypeRefs", typeRef, withTransform = true)
         +FieldSets.declarations
@@ -719,8 +740,9 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
     val enumDeclaration: Element by element(Declaration, name = "Enum") {
         parent(classLikeDeclaration)
         parent(controlFlowGraphOwner)
-        +field("status", declarationStatusType, withReplace = true, withTransform = true)
+        parent(typeParametersOwner)
         +FieldSets.typeParameters
+        +field("status", declarationStatus, withReplace = true, withTransform = true)
         +declaredSymbol(enumSymbolType)
         +listField("superTypeRefs", typeRef, withTransform = true)
         +FieldSets.declarations
@@ -737,11 +759,10 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
      */
     val enumConstructor: Element by element(Declaration, name = "EnumConstructor") {
         parent(callableDeclaration)
+        parent(functionBodyOwner)
+        customParentInVisitor = callableDeclaration
         +declaredSymbol(enumConstructorSymbolType)
-        +field("status", declarationStatusType, withReplace = true, withTransform = true)
-        +FieldSets.typeParameters
-        +field("returnTypeRef", typeRef, withReplace = true, withTransform = true)
-        +listField("valueParameters", valueParameter, withTransform = true)
+        +field("status", declarationStatus, withReplace = true, withTransform = true)
         +field("name", nameType)
     }
 
@@ -750,9 +771,11 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
      */
     val extend: Element by element(Declaration, name = "Extend") {
         parent(memberDeclaration)
-        +declaredSymbol(extendSymbolType)
-        +field("status", declarationStatusType, withReplace = true, withTransform = true)
+        parent(typeParametersOwner)
+        customParentInVisitor = memberDeclaration
         +FieldSets.typeParameters
+        +declaredSymbol(extendSymbolType)
+        +field("status", declarationStatus, withReplace = true, withTransform = true)
         +field("extendedTypeRef", typeRef, withTransform = true)
         +listField("superTypeRefs", typeRef, withTransform = true)
         +FieldSets.declarations
@@ -763,9 +786,11 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
      */
     val typeAlias: Element by element(Declaration, name = "TypeAlias") {
         parent(classLikeDeclaration)
-        +declaredSymbol(typeAliasSymbolType)
-        +field("status", declarationStatusType, withReplace = true, withTransform = true)
+        parent(typeParametersOwner)
+        customParentInVisitor = classLikeDeclaration
         +FieldSets.typeParameters
+        +declaredSymbol(typeAliasSymbolType)
+        +field("status", declarationStatus, withReplace = true, withTransform = true)
         +field("name", nameType)
         +field("expandedTypeRef", typeRef, withReplace = true, withTransform = true)
     }
@@ -775,18 +800,15 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
      */
     val function: Element by sealedElement(Declaration, name = "Function") {
         parent(callableDeclaration)
-        parent(targetElement)
-        parent(controlFlowGraphOwner)
+        parent(functionBodyOwner)
         parent(statement)
         customParentInVisitor = callableDeclaration
         +declaredSymbol(functionSymbolType)
-        +field("status", declarationStatusType, withReplace = true, withTransform = true)
-        +FieldSets.typeParameters
-        +field("returnTypeRef", typeRef, withReplace = true, withTransform = true)
+        +field("status", declarationStatus, withReplace = true, withTransform = true)
+        // 普通函数保留参数向量的 replace 能力；enum F 继承共同 owner 的原参数向量。
         +listField("valueParameters", valueParameter, withReplace = true, withTransform = true)
         /** foreign C function 的 `...` 不是一个值参数，必须作为函数级签名事实保存。 */
         +field("hasVariableLenArg", booleanType) { defaultValueInBuilder = "false" }
-        +field("body", block, nullable = true, withReplace = true, withTransform = true)
     }
 
     /**
@@ -794,6 +816,9 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
      */
     val namedFunction: Element by element(Declaration, name = "NamedFunction") {
         parent(function)
+        parent(typeParametersOwner)
+        customParentInVisitor = function
+        +FieldSets.typeParameters
         +declaredSymbol(namedFunctionSymbolType)
         +field("name", nameType)
         +field("isMut", booleanType)
@@ -804,6 +829,9 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
      */
     val mainFunction: Element by element(Declaration, name = "MainFunction") {
         parent(function)
+        parent(typeParametersOwner)
+        customParentInVisitor = function
+        +FieldSets.typeParameters
         +declaredSymbol(mainFunctionSymbolType)
     }
 
@@ -812,6 +840,9 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
      */
     val macroDeclaration: Element by element(Declaration, name = "MacroDeclaration") {
         parent(function)
+        parent(typeParametersOwner)
+        customParentInVisitor = function
+        +FieldSets.typeParameters
         +declaredSymbol(macroDeclarationSymbolType)
         +field("name", nameType)
     }
@@ -821,6 +852,9 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
      */
     val finalizer: Element by element(Declaration, name = "Finalizer") {
         parent(function)
+        parent(typeParametersOwner)
+        customParentInVisitor = function
+        +FieldSets.typeParameters
         +declaredSymbol(finalizerSymbolType)
     }
 
@@ -841,16 +875,22 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
         +field("reason", stringType)
     }
 
+    /** 源码中独立的宏声明调用；它在展开前占据真实声明列表槽位。 */
+    val macroExpansionDeclaration: Element by element(Declaration, name = "MacroExpansionDeclaration") {
+        parent(declaration)
+    }
+
     /**
      * 属性声明节点。
      */
     val property: Element by element(Declaration, name = "Property") {
         parent(callableDeclaration)
         parent(controlFlowGraphOwner)
+        parent(typeParametersOwner)
         customParentInVisitor = callableDeclaration
-        +declaredSymbol(propertySymbolType)
-        +field("status", declarationStatusType, withReplace = true, withTransform = true)
         +FieldSets.typeParameters
+        +declaredSymbol(propertySymbolType)
+        +field("status", declarationStatus, withReplace = true, withTransform = true)
         +field("returnTypeRef", typeRef, withReplace = true, withTransform = true)
         +field("name", nameType)
         +field("getter", propertyAccessor, nullable = true, withReplace = true, withTransform = true)
@@ -865,7 +905,9 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
      */
     val propertyAccessor: Element by element(Declaration, name = "PropertyAccessor") {
         parent(function)
+        parent(typeParametersOwner)
         customParentInVisitor = function
+        +FieldSets.typeParameters
         +declaredSymbol(propertyAccessorSymbolType)
         +referencedSymbol("propertySymbol", propertySymbolType, withReplace = false) {
             withBindThis = false
@@ -880,8 +922,15 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
         parent(callableDeclaration)
         parent(statement)
         +declaredSymbol(variableSymbolType)
-        +field("status", declarationStatusType, withReplace = true, withTransform = true)
-        +field("initializer", expression, nullable = true, withReplace = true, withTransform = true)
+        +field("status", declarationStatus, withReplace = true, withTransform = true)
+        +field("contentSource", contentSourceType, isChild = false) {
+            implementationDefaultStrategy = AbstractField.ImplementationDefaultStrategy.ConstructorDefaultValue("CfirContentSource.Owned")
+            defaultValueInBuilder = "CfirContentSource.Owned"
+            skippedInCopy = true
+        }
+        +field("initializer", expression, nullable = true, withReplace = true, withTransform = true) {
+            publishedContentKind = Field.PublishedContentKind.INITIALIZER
+        }
         +field("isVar", booleanType)
         // 保留源码是否省略变量类型；resolve 后 returnTypeRef 会变成 resolved，
         // 该事实不能再由 resolved type-ref 的形状或 source 文本反推。
@@ -893,8 +942,10 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
      */
     val fieldVariable: Element by element(Declaration, name = "FieldVariable") {
         parent(variable)
-        +declaredSymbol(fieldVariableSymbolType)
+        parent(typeParametersOwner)
+        customParentInVisitor = variable
         +FieldSets.typeParameters
+        +declaredSymbol(fieldVariableSymbolType)
         +field("returnTypeRef", typeRef, withReplace = true, withTransform = true)
         +field("name", nameType)
     }
@@ -904,8 +955,10 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
      */
     val patternVariable: Element by element(Declaration, name = "PatternVariable") {
         parent(variable)
-        +declaredSymbol(patternVariableSymbolType)
+        parent(typeParametersOwner)
+        customParentInVisitor = variable
         +FieldSets.typeParameters
+        +declaredSymbol(patternVariableSymbolType)
         +field("returnTypeRef", typeRef, withReplace = true, withTransform = true)
         +field("pattern", pattern, withTransform = true)
     }
@@ -918,8 +971,10 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
      */
     val patternBindingVariable: Element by element(Declaration, name = "PatternBindingVariable") {
         parent(variable)
-        +declaredSymbol(patternBindingVariableSymbolType)
+        parent(typeParametersOwner)
+        customParentInVisitor = variable
         +FieldSets.typeParameters
+        +declaredSymbol(patternBindingVariableSymbolType)
         +field("returnTypeRef", typeRef, withReplace = true, withTransform = true)
         +field("name", nameType)
     }
@@ -930,16 +985,21 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
     val valueParameter: Element by element(Declaration, name = "ValueParameter") {
         parent(variable)
         parent(controlFlowGraphOwner)
+        parent(typeParametersOwner)
+        // 对位 Kotlin FirValueParameter：默认 visitor 不把形参转发为 variable，
+        // 否则局部声明类 visitor 会把 lambda/函数形参当作局部变量处理。
+        +FieldSets.typeParameters
         +declaredSymbol(valueParameterSymbolType)
         +referencedSymbol("containingDeclarationSymbol", cfirSymbolType.withArgs(TreeTypeRef.Star)) {
             withBindThis = false
         }
         +field("isNamed",booleanType, withReplace = false)
-        +field("status", declarationStatusType, withReplace = true, withTransform = true)
-        +FieldSets.typeParameters
+        +field("status", declarationStatus, withReplace = true, withTransform = true)
         +field("returnTypeRef", typeRef, withReplace = true, withTransform = true)
         +field("name", nameType)
-        +field("defaultValue", expression, nullable = true, withReplace = true, withTransform = true)
+        +field("defaultValue", expression, nullable = true, withReplace = true, withTransform = true) {
+            publishedContentKind = Field.PublishedContentKind.DEFAULT_VALUE
+        }
     }
 
     /**
@@ -954,7 +1014,15 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
         }
         +declaredSymbol(typeParameterSymbolType)
         +field("name", nameType)
-        +listField("bounds", typeRef, withTransform = true)
+        +listField("bounds", typeRef, withReplace = true, withTransform = true)
+    }
+
+    /**
+     * 构造器对所属 class、struct 或 enum 类型参数的引用。
+     * 不拥有声明、不绑定 symbol，也不重复推进原参数的解析阶段或导出其物理声明。
+     */
+    val constructedClassTypeParameterRef: Element by element(Declaration) {
+        parent(typeParameterRef)
     }
 
     /**
@@ -993,6 +1061,130 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
     val expression: Element by element(Expression) {
         parent(statement)
         +field("coneTypeOrNull", coneTypeType, nullable = true, withReplace = true)
+        // 保存后 map 为借用回边，不沿它扩大普通或 SOURCE 的拥有域。
+        +field("mappedExpression", expression, nullable = true, isChild = false, withReplace = true) {
+            defaultValueInBuilder = "null"
+        }
+        +field("overflowStrategy", sourceOverflowStrategyType, nullable = true, withReplace = true) {
+            defaultValueInBuilder = "null"
+        }
+    }
+
+
+    /** 保存后 NativeMatchExpression 的真实拥有结构；不借用 raw 节点表示。 */
+    val nativeMatchExpression: Element by element(Expression, name = "NativeMatchExpression") {
+        parent(expression)
+        +field("selector", expression, withTransform = true)
+        +listField("cases", nativeMatchCase, withTransform = true)
+    }
+
+    /** 保存后 NativeMatchCase 的真实拥有结构；不借用 raw 节点表示。 */
+    val nativeMatchCase: Element by element(Expression, name = "NativeMatchCase") {
+        parent(expression)
+        +listField("patterns", pattern, withTransform = true)
+        +field("guard", expression, nullable = true, withTransform = true)
+        +field("body", block, withTransform = true)
+    }
+
+    /** 保存后 NativeConditionMatchExpression 的真实拥有结构；不借用 raw 节点表示。 */
+    val nativeConditionMatchExpression: Element by element(Expression, name = "NativeConditionMatchExpression") {
+        parent(expression)
+        +listField("cases", nativeConditionMatchCase, withTransform = true)
+    }
+
+    /** 保存后 NativeConditionMatchCase 的真实拥有结构；不借用 raw 节点表示。 */
+    val nativeConditionMatchCase: Element by element(Expression, name = "NativeConditionMatchCase") {
+        parent(expression)
+        +field("condition", expression, withTransform = true)
+        +field("body", block, withTransform = true)
+    }
+
+    /** 保存后 LetPatternDestructorExpression 的真实拥有结构；不借用 raw 节点表示。 */
+    val letPatternDestructorExpression: Element by element(Expression, name = "LetPatternDestructorExpression") {
+        parent(expression)
+        +field("initializer", expression, withTransform = true)
+        +listField("patterns", pattern, withTransform = true)
+    }
+
+    /** Native Try 拥有原 resources/catch P/body，保留嵌套异常模式。 */
+    val nativeCatch: Element by element(Expression, name = "NativeCatch") {
+        parent(rootElement)
+        +field("pattern", pattern, withTransform = true)
+        +field("body", block, withTransform = true)
+    }
+
+    /** Native Try 拥有原 resources/catch P/body，保留嵌套异常模式。 */
+    val nativeTryExpression: Element by element(Expression, name = "NativeTryExpression") {
+        parent(expression)
+        +listField("resources", fieldVariable, withTransform = true)
+        +field("tryBlock", block, withTransform = true)
+        +listField("catches", nativeCatch, withTransform = true)
+        +field("finallyBlock", block, nullable = true, withTransform = true)
+    }
+
+    /** Native PrimitiveTypeExpr 的实际表达式角色，不以 TypeRef 或值字面量代替。 */
+    val primitiveTypeExpression: Element by element(Expression, name = "PrimitiveTypeExpression") {
+        parent(expression)
+    }
+
+    /** Native WildcardExpr 与模式 wildcard 分属 e/P 身份域。 */
+    val wildcardExpression: Element by element(Expression, name = "WildcardExpression") {
+        parent(expression)
+    }
+
+    /** 保存后的 FuncArg：应用后类型属于本节点，default 占位确实没有 value。 */
+    val functionArgument: Element by element(Expression, name = "FunctionArgument") {
+        parent(expression)
+        +field("value", expression, nullable = true, withTransform = true)
+        +field("isDefaultValue", booleanType)
+        +field("withInout", booleanType)
+    }
+
+    /** 保存后 CallExpr 的 base 是独立拥有节点，调用种类不从 raw origin 反推。 */
+    val callExpression: Element by element(Expression, name = "CallExpression") {
+        parent(expression)
+        +field("base", expression, withTransform = true)
+        +listField("arguments", functionArgument, withTransform = true)
+        +field("callKind", sourceCallKindType)
+        +field("hasSideEffect", booleanType)
+    }
+
+    /** 保存后的语言运算直接承载真实 opcode 与 operand，不能造未解析的运算函数调用。 */
+    val unaryExpression: Element by element(Expression, name = "UnaryExpression") {
+        parent(expression)
+        +field("operand", expression, withTransform = true)
+        +field("operation", sourceOperatorType)
+    }
+
+    /** Native BinaryExpr 包含短路与急切运算；左右节点和原运算角色各自保留。 */
+    val binaryExpression: Element by element(Expression, name = "BinaryExpression") {
+        parent(expression)
+        +field("left", expression, withTransform = true)
+        +field("right", expression, withTransform = true)
+        +field("operation", sourceOperatorType)
+    }
+
+    /** ArrayExpr 构造与 ArrayLit 分开；initFunc 是借用目标，不通过它取得函数体。 */
+    val arrayCreationExpression: Element by element(Expression, name = "ArrayCreationExpression") {
+        parent(expression)
+        +listField("arguments", functionArgument, withTransform = true)
+        +field("initializerSymbol", functionSymbolType, nullable = true, withReplace = true) {
+            withBindThis = false
+        }
+        +field("isValueArray", booleanType)
+    }
+
+    /** Native PointerExpr 保留零或一个 FuncArg，不把 inout 传址或转换混为指针构造。 */
+    val pointerExpression: Element by element(Expression, name = "PointerExpression") {
+        parent(expression)
+        +field("argument", functionArgument, nullable = true, withTransform = true)
+    }
+
+    /** 解糖后的 SpawnExpr：原 task 已被消除，拥有真实 future d，不能补空 body。 */
+    val resolvedSpawnExpression: Element by element(Expression, name = "ResolvedSpawnExpression") {
+        parent(expression)
+        +field("argument", functionArgument, nullable = true, withTransform = true)
+        +field("future", fieldVariable, withTransform = true)
     }
 
     /**
@@ -1003,6 +1195,7 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
 
         parent(expression)
         +listField("statements", statement, withReplace = true, withTransform = true)
+        +field("isUnsafe", booleanType, withReplace = true) { defaultValueInBuilder = "false" }
     }
 
     /**
@@ -1026,6 +1219,9 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
         parent(expression)
         +field("kind", literalKindType)
         +field("value", anyType, nullable = true)
+        +field("stringKind", sourceStringKindType, withReplace = true) {
+            defaultValueInBuilder = "CfirSourceStringKind.NORMAL"
+        }
     }
 
     /**
@@ -1049,6 +1245,8 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
     val errorPrimaryConstructor: Element by element(Declaration) {
         parent(constructor)
         parent(diagnosticHolder)
+        // diagnosticHolder 是附加能力；默认 visitor 必须沿构造器语义父链处理 body 和参数。
+        customParentInVisitor = constructor
     }
 
     /**
@@ -1064,6 +1262,8 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
         +field("origin", functionCallOrigin)
         +field("hasTrailingLambda", boolean)
         +field("varraySizeLiteral", stringType, nullable = true)
+        // 原生 SIDE_EFFECT 是完成 desugar 的语义位，独立于 operator origin 和 callable 名字。
+        +field("sourceCallHasSideEffect", boolean, withReplace = true, isChild = false)
 
     }
 
@@ -1079,7 +1279,7 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
         +field("isPrefix", boolean)
         +field("operationName", nameType)
         +field("expression", expression, withTransform = true)
-        +field("operationSource", sourceElementType, nullable = true)
+        +field("operationSource", sourceElementType, nullable = true, withReplace = true)
     }
     /**
      * 解析失败的具名引用节点。
@@ -1115,7 +1315,7 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
         parent(wrappedExpression)
 
         +field("argumentName", nameType)
-        +field("nameSource", sourceElementType, nullable = true)
+        +field("nameSource", sourceElementType, nullable = true, withReplace = true)
     }
     /**
      * 调用表达式抽象层。
@@ -1129,7 +1329,9 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
      * 注解调用表达式节点。
      */
     val annotationArgumentMapping: Element by element(Expression) {
-        +field("mapping", type("kotlin.collections", "Map", exactPackage = true, kind = TypeKind.Interface).withArgs(nameType, expression), isChild = false)
+        +field("mapping", type("kotlin.collections", "Map", exactPackage = true, kind = TypeKind.Interface).withArgs(nameType, expression), isChild = false) {
+            sourceTraversalKind = Field.SourceTraversalKind.MAP_VALUES
+        }
     }
 
     val annotationCall: Element by element(Expression) {
@@ -1139,7 +1341,9 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
 
         // mapping 仍属于 CfirResolvedArgumentList；annotation call 只保存由
         // 宿主 processor 发布的不可变 view，不复制第二套映射。
-        +field("argumentView", annotationArgumentViewType, nullable = true, withReplace = true, isChild = false)
+        +field("argumentView", annotationArgumentViewType, nullable = true, withReplace = true, isChild = false) {
+            sourceTraversalKind = Field.SourceTraversalKind.ARGUMENT_VIEW
+        }
         +field("annotationResolveState", annotationResolveStateType, withReplace = true) {
             defaultValueInBuilder = "CfirAnnotationResolveState.UNRESOLVED"
         }
@@ -1174,10 +1378,31 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
     /**
      * 名称访问表达式（不带类型参数的成员访问）。
      */
+    /** 已完成身份的 package/class/typealias qualifier；没有 callable reference 或运行期接收者。 */
+    val resolvedQualifier: Element by element(Expression) {
+        parent(expression)
+        customParentInVisitor = expression
+        +field("packageFqName", fqNameType)
+        +field("relativeClassFqName", fqNameType, nullable = true)
+        +referencedSymbol("qualifierSymbol", classLikeSymbolType, nullable = true)
+        +field("explicitParent", resolvedQualifier, nullable = true, withTransform = true, withReplace = true)
+        +listField("nonFatalDiagnostics", coneDiagnosticType, useMutableOrEmpty = true, withReplace = true, isChild = false)
+        +FieldSets.typeArguments { withReplace = true; withTransform = true }
+        +field("organizationName", nameType, nullable = true, isChild = false)
+        +field("referenceName", nameType, isChild = false)
+    }
+
+    /** 具有真实 qualifier 身份的错误，不用虚构 package 或 callable target。 */
+    val errorResolvedQualifier: Element by element(Expression) {
+        parent(resolvedQualifier)
+        parent(diagnosticHolder)
+        customParentInVisitor = expression
+    }
+
     val namedAccessExpression: Element by element(Expression ) {
         parent(qualifiedAccessExpression)
 
-        +field("explicitReceiver", expression, nullable = true, withTransform = true)
+        +field("explicitReceiver", expression, nullable = true, withTransform = true, withReplace = true)
     }
 
     /**
@@ -1188,7 +1413,7 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
         parent(resolvable)
         +field("dispatchReceiver", expression, nullable = true, withReplace = true)
 
-        +field("explicitReceiver", expression, nullable = true, withTransform = true)
+        +field("explicitReceiver", expression, nullable = true, withTransform = true, withReplace = true)
         +FieldSets.typeArguments {
             withTransform = true
         }
@@ -1232,6 +1457,8 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
         +field("lValue", expression, withTransform = true)
         +field("rValue", expression, withTransform = true)
         +field("augmentedOperation", nameType, nullable = true)
+        +field("operation", sourceOperatorType, withReplace = true) { defaultValueInBuilder = "CfirSourceOperator.ASSIGN" }
+        +field("isCompound", booleanType, withReplace = true) { defaultValueInBuilder = "false" }
         +field("typeMismatchOutcome", assignmentTypeMismatchOutcomeType, nullable = true, withReplace = true)
     }
 
@@ -1245,7 +1472,7 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
     val augmentedAssignment: Element by element(Expression, name = "AugmentedAssignment") {
         parent(expression)
         +field("operation", nameType)
-        +field("operationSource", sourceElementType, nullable = true)
+        +field("operationSource", sourceElementType, nullable = true, withReplace = true)
         +field("leftArgument", expression, withTransform = true)
         +field("rightArgument", expression, withTransform = true)
     }
@@ -1353,22 +1580,15 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
     }
 
     /**
-     * catch 子句的异常模式。
+     * 官方 ExceptTypePattern 的共享模式节点。
      *
-     * 官方仓颉 AST 中 `catch (_)` 是 `WildcardPattern`，`catch (e: E | F)` 是
-     * `ExceptTypePattern(pattern = VarPattern(e), types = [E, F])`。这里保留
-     * “绑定名 + 多个异常类型”的结构，但不接到通用 match pattern，避免把异常模式
-     * 混入普通模式匹配的合法性和穷尽性分析。
+     * 整体语义类型使用 Pattern.semanticTypeRef；typeRefs 仅保存原异常 Type 尾槽。
+     * 嵌套模式拥有自己的绑定声明；异常上下文的合法性仍由 catch resolver/checker 负责。
      */
     val catchPattern: Element by element(Pattern, name = "CatchPattern") {
-        parent(rootElement)
-        +field("bindingName", nameType, nullable = true)
-        +field("isWildcard", booleanType)
+        parent(pattern)
+        +field("nestedPattern", pattern, withReplace = true, withTransform = true)
         +listField("typeRefs", typeRef, withReplace = true, withTransform = true)
-        // 整体模式类型与源码异常类型列表分开；null 表示尚未进行 catch 语义分析。
-        // wildcard 也需要此状态，不能借助可选的绑定变量判断模式是否已经检查。
-        +field("resolvedTypeRef", resolvedTypeRef, nullable = true, withReplace = true, withTransform = true)
-        +field("bindingVariable", patternBindingVariable, nullable = true, withTransform = true)
     }
 
     /**
@@ -1376,21 +1596,21 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
      */
     val catchClause: Element by element(Expression, name = "Catch") {
         parent(expression)
-        +field("pattern", catchPattern, withTransform = true)
+        // catch (_) 直接拥有共享 WildcardPattern；带类型列表才拥有 CatchPattern。
+        +field("pattern", pattern, withReplace = true, withTransform = true)
         +field("body", block, withTransform = true)
     }
 
     /**
-     * effect command pattern。
+     * 官方 CommandTypePattern 的共享模式节点。
      *
-     * 它和 match/catch pattern 同样带有“绑定名 + 多个类型”的结构，
-     * 但语义只服务于 try/handle，因此不接到通用 pattern 分派上，避免污染现有模式匹配路径。
+     * 原 Type 尾槽与整体 P 类型分开，inner P 保留真实拥有结构和声明身份。
+     * handle 上下文负责 command 语义，进入共同 Pattern 不改变合法使用位置。
      */
     val commandTypePattern: Element by element(Pattern, name = "CommandTypePattern") {
-        parent(rootElement)
-        +field("bindingName", nameType, nullable = true)
-        +field("isWildcard", booleanType)
-        +listField("typeRefs", typeRef, withTransform = true)
+        parent(pattern)
+        +field("nestedPattern", pattern, withReplace = true, withTransform = true)
+        +listField("typeRefs", typeRef, withReplace = true, withTransform = true)
     }
 
     /**
@@ -1410,21 +1630,23 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
      */
     val loopExpression: Element by element(Expression, name = "LoopExpression") {
         parent(expression)
-        parent(targetElement)
+        parent(iterationOwner)
+        customParentInVisitor = expression
         +field("condition", expression, withTransform = true)
         +field("body", block, withTransform = true)
         +field("isDoWhile", booleanType)
     }
 
-    /**
-     * for-in 循环表达式节点。
-     */
-val forInExpression: Element by element(Expression, name = "ForInExpression") {
-        parent(loopExpression)
-        +field("variable", patternVariable, withTransform = true)
+    /** 原生 For 的完整拥有结构；迭代检查属于实际 kind 的语义阶段，不生成 condition 或包装变量。 */
+    val forInExpression: Element by element(Expression, name = "ForInExpression") {
+        parent(expression)
+        parent(iterationOwner)
+        customParentInVisitor = expression
+        +field("pattern", pattern, withReplace = true, withTransform = true)
         +field("iterable", expression, withTransform = true)
         +field("patternGuard", expression, nullable = true, withTransform = true)
         +field("body", block, withTransform = true)
+        +field("iterationKind", sourceForInKindType)
     }
 
     /**
@@ -1480,23 +1702,16 @@ val forInExpression: Element by element(Expression, name = "ForInExpression") {
     val returnExpression: Element by element(Expression, name = "ReturnExpression") {
         needTransformOtherChildren()
 
-        parent(jump.withArgs("E" to function))
+        parent(jump.withArgs("E" to functionBodyOwner))
 
-        +field("result", expression,  withTransform = true)
+        +field("result", expression, withReplace = true, withTransform = true)
     }
 
-    /**
-     * jump 基类。
-     *
-     * 当前先对齐 loop jump 体系，把 `break` / `continue` 从单节点枚举分派
-     * 提升为独立 CFIR 节点，避免 target 已经框架化后仍然依赖 `kind` 做语义分叉。
-     *
-     * `return` 后续也可以继续接到这套 target 体系上，但第一步先把循环跳转拆实。
-     */
+    /** 统一控制转移；target 是稳定借用身份，Return.result 才是拥有子节点。 */
     val jump: Element by sealedElement(Expression, name = "Jump") {
         val e = +param("E", targetElement)
         parent(expression)
-        +field("target", jumpTargetType.withArgs(e))
+        +field("target", jumpTargetType.withArgs(e), isChild = false)
     }
 
     /**
@@ -1506,7 +1721,7 @@ val forInExpression: Element by element(Expression, name = "ForInExpression") {
      * 交由不同 concrete 节点表达，而不是再回退到枚举字段。
      */
     val loopJump: Element by sealedElement(Expression, name = "LoopJump") {
-        parent(jump.withArgs("E" to loopExpression))
+        parent(jump.withArgs("E" to iterationOwner))
     }
 
     /**
@@ -1534,6 +1749,9 @@ val forInExpression: Element by element(Expression, name = "ForInExpression") {
      */
     val anonymousFunction: Element by element(Declaration, name = "AnonymousFunction") {
         parent(function)
+        parent(typeParametersOwner)
+        customParentInVisitor = function
+        +FieldSets.typeParameters
         +declaredSymbol(anonymousFunctionSymbolType)
         +field("hasExplicitParameterList", booleanType)
         +field("isLambda", booleanType)
@@ -1560,6 +1778,7 @@ val forInExpression: Element by element(Expression, name = "ForInExpression") {
         parent(expression)
         +field("anonymousFunction", anonymousFunction, withTransform = true, withReplace = true)
         +field("isTrailingLambda", booleanType, withReplace = true)
+        +field("supportMock", booleanType, withReplace = true) { defaultValueInBuilder = "false" }
     }
 
     /**
@@ -1578,7 +1797,11 @@ val forInExpression: Element by element(Expression, name = "ForInExpression") {
      */
     val arrayLiteral: Element by element(Expression, name = "ArrayLiteral") {
         parent(expression)
-        +listField("elements", expression, withTransform = true)
+        +listField("elements", expression, withTransform = true, withReplace = true)
+        // initFunc 是引用目标；不能 bind 到 ArrayLit，也不能通过它扩大拥有域。
+        +field("initializerSymbol", functionSymbolType, nullable = true, withReplace = true) {
+            withBindThis = false
+        }
     }
 
     /**
@@ -1586,12 +1809,35 @@ val forInExpression: Element by element(Expression, name = "ForInExpression") {
      */
     val tupleLiteral: Element by element(Expression, name = "TupleLiteral") {
         parent(expression)
-        +listField("elements", expression, withTransform = true)
+        +listField("elements", expression, withTransform = true, withReplace = true)
     }
 
-    /**
-     * 跳转 target 元素接口。
-     */
+    /** 真实 F 的共同参数、返回类型、正文和 CFG 能力；具体声明继续持有自身种类的 symbol。 */
+    val functionBodyOwner: Element by element(Other, name = "FunctionBodyOwner") {
+        kind = ImplementationKind.Interface
+        parent(targetElement)
+        parent(controlFlowGraphOwner)
+        customParentInVisitor = targetElement
+        +field("contentSource", contentSourceType, isChild = false) {
+            implementationDefaultStrategy = AbstractField.ImplementationDefaultStrategy.ConstructorDefaultValue("CfirContentSource.Owned")
+            defaultValueInBuilder = "CfirContentSource.Owned"
+            skippedInCopy = true
+        }
+        // 共同接口只暴露身份；具体 function/enumConstructor 的 declaredSymbol 在构造时绑定一次。
+        +field("symbol", callableSymbolType, isChild = false) { withBindThis = false }
+        +field("returnTypeRef", typeRef, withReplace = true, withTransform = true)
+        +listField("valueParameters", valueParameter, withReplace = true, withTransform = true)
+        +field("body", block, nullable = true, withReplace = true, withTransform = true) {
+            publishedContentKind = Field.PublishedContentKind.BODY
+        }
+    }
+
+    /** while、do-while 和 For 共用实际迭代目标；此接口不声明 condition。 */
+    val iterationOwner: Element by element(Other, name = "IterationOwner") {
+        kind = ImplementationKind.Interface
+        parent(targetElement)
+    }
+
     val targetElement: Element by element(Other, name = "TargetElement") {
         kind = ImplementationKind.Interface
     }
@@ -1639,10 +1885,15 @@ val forInExpression: Element by element(Expression, name = "ForInExpression") {
         parent(expression)
         +field("receiver", expression, withTransform = true)
         +listField("indices", expression, withTransform = true)
+        +field("isTupleAccess", booleanType, withReplace = true) { defaultValueInBuilder = "false" }
         // 解析成功的 operator 调用保留完整绑定，供调用检查器和语义消费者使用。
         // 操作数已由下标/赋值节点拥有；这些引用不是重复的语法子节点。
-        +field("resolvedGetCall", functionCall, nullable = true, withReplace = true, isChild = false)
-        +field("resolvedSetCall", functionCall, nullable = true, withReplace = true, isChild = false)
+        +field("resolvedGetCall", functionCall, nullable = true, withReplace = true, isChild = false) {
+            sourceTraversalKind = Field.SourceTraversalKind.ELEMENT
+        }
+        +field("resolvedSetCall", functionCall, nullable = true, withReplace = true, isChild = false) {
+            sourceTraversalKind = Field.SourceTraversalKind.ELEMENT
+        }
     }
 
     /**
@@ -1667,6 +1918,12 @@ val forInExpression: Element by element(Expression, name = "ForInExpression") {
      */
     val pattern: Element by sealedElement(Pattern) {
         parent(rootElement)
+        // raw 尚未取得整体类型；正常解析或保存后 reader 必须填入 P 自己的真实类型。
+        +field("semanticTypeRef", typeRef, nullable = true, withReplace = true, withTransform = true)
+        +listField("constantValues", constantValueType, withReplace = true)
+        +field("contextExpression", expression, nullable = true, isChild = false, withReplace = true) {
+            defaultValueInBuilder = "null"
+        }
     }
 
     /**
@@ -1674,7 +1931,9 @@ val forInExpression: Element by element(Expression, name = "ForInExpression") {
      */
     val constPattern: Element by element(Pattern, name = "ConstPattern") {
         parent(pattern)
-        +field("expression", expression, withTransform = true)
+        +field("expression", expression, withReplace = true, withTransform = true)
+        // 拥有真实 == 调用；raw FunctionCall 与保存后 CallExpression 共用 Expression 抽象。
+        +field("operatorCall", expression, nullable = true, withReplace = true, withTransform = true)
     }
 
     /**
@@ -1687,10 +1946,11 @@ val forInExpression: Element by element(Expression, name = "ForInExpression") {
      */
     val bindingPattern: Element by element(Pattern, name = "BindingPattern") {
         parent(pattern)
+        // raw 名字保留原语法；已绑定身份来自实际 declaration 槽，不按名字重新创建声明。
         +field("name", nameType)
-        +field("typeRef", typeRef, nullable = true, withTransform = true)
-        +field("bindingVariable", patternBindingVariable, nullable = true, withTransform = true)
-        +field("nestedPattern", pattern, nullable = true, withTransform = true)
+        +field("typeRef", typeRef, nullable = true, withReplace = true, withTransform = true)
+        +field("bindingVariable", patternBindingVariable, nullable = true, withReplace = true, withTransform = true)
+        +field("nestedPattern", pattern, nullable = true, withReplace = true, withTransform = true)
     }
 
     /**
@@ -1710,7 +1970,7 @@ val forInExpression: Element by element(Expression, name = "ForInExpression") {
      */
     val tuplePattern: Element by element(Pattern, name = "TuplePattern") {
         parent(pattern)
-        +listField("elements", pattern, withTransform = true)
+        +listField("elements", pattern, withReplace = true, withTransform = true)
     }
 
     /**
@@ -1718,8 +1978,11 @@ val forInExpression: Element by element(Expression, name = "ForInExpression") {
      */
     val enumPattern: Element by element(Pattern, name = "EnumPattern") {
         parent(pattern)
-        +field("constructorReference", reference, withTransform = true)
-        +listField("arguments", pattern, withTransform = true)
+        // 原 constructor expression 是唯一拥有入口，receiver/type arguments/回边均留在此节点。
+        +field("constructor", expression, withReplace = true, withTransform = true)
+        // reference 是原 constructor 或调用 base 的阶段视图；不重复拥有、存储或独立 transform。
+        +field("constructorReference", reference, nullable = true, isChild = false)
+        +listField("arguments", pattern, withReplace = true, withTransform = true)
     }
 
     /**
@@ -1727,12 +1990,15 @@ val forInExpression: Element by element(Expression, name = "ForInExpression") {
      */
     val typePattern: Element by element(Pattern, name = "TypePattern") {
         parent(pattern)
+        // matchingKind 保留现有 raw/checker 阶段状态；两个原生位由语义生产者独立填写。
         +field("matchingKind", typePatternMatchingKindType, withReplace = true) {
             defaultValueInBuilder = "CfirTypePatternMatchingKind.UNKNOWN"
         }
-        +field("typeRef", typeRef, withTransform = true)
-        +field("bindingName", nameType, nullable = true)
-        +field("bindingVariable", patternBindingVariable, nullable = true, withTransform = true)
+        +field("typeRef", typeRef, withReplace = true, withTransform = true)
+        // inner P 自己拥有绑定变量和位置；不在 Type 上再次存储绑定名或变量。
+        +field("nestedPattern", pattern, withReplace = true, withTransform = true)
+        +field("matchBeforeRuntime", booleanType, withReplace = true)
+        +field("needRuntimeTypeCheck", booleanType, withReplace = true)
     }
 
     /**
@@ -1746,6 +2012,10 @@ val forInExpression: Element by element(Expression, name = "ForInExpression") {
             defaultValueInBuilder = "false"
         }
 
+        +field("typeUseOrigin", type("types", "CfirTypeRefOrigin"), withReplace = true) {
+            defaultValueInBuilder = "CfirTypeRefOrigin.SEMANTIC"
+        }
+
     }
 
     /**
@@ -1754,7 +2024,9 @@ val forInExpression: Element by element(Expression, name = "ForInExpression") {
     val resolvedTypeRef: Element by element(TypeRef, name = "ResolvedTypeRef") {
         parent(typeRef)
         +field("coneType", coneTypeType)
-        +field("delegatedTypeRef", typeRef, nullable = true, isChild = false)
+        +field("delegatedTypeRef", typeRef, nullable = true, isChild = false) {
+            sourceTraversalKind = Field.SourceTraversalKind.ELEMENT
+        }
     }
     /**
      * 未解析类型引用抽象层。
@@ -1762,16 +2034,25 @@ val forInExpression: Element by element(Expression, name = "ForInExpression") {
     val unresolvedTypeRef: Element by sealedElement(TypeRef) {
         parent(typeRef)
 
-        +field("source", sourceElementType, nullable = false)
+        +field("source", sourceElementType, nullable = false, withReplace = true)
     }
 
     /**
      * 用户类型限定名片段节点。
      */
     val qualifierPart: Element by element(Other, name = "QualifierPart") {
-        +field("source", sourceElementType, nullable = true, isChild = false)
+        +field("source", sourceElementType, nullable = true, isChild = false, withReplace = true)
         +field("name", nameType)
+        +field("typeUseOrigin", type("types", "CfirTypeRefOrigin"), withReplace = true) {
+            defaultValueInBuilder = "CfirTypeRefOrigin.SEMANTIC"
+        }
         +FieldSets.typeArguments
+    }
+
+    /** 原生ParenType拥有独立来源/flags，不能在raw阶段直接删除外层节点。 */
+    val parenthesizedTypeRef: Element by element(TypeRef, name = "ParenthesizedTypeRef") {
+        parent(typeRef)
+        +field("innerTypeRef", typeRef, withTransform = true)
     }
 
     /**
@@ -1875,6 +2156,12 @@ val forInExpression: Element by element(Expression, name = "ForInExpression") {
     val resolvedNamedReference: Element by element(Reference, name = "ResolvedNamedReference") {
         parent(namedReference)
         +field("resolvedSymbol", symbolType)
+    }
+
+    /** 已绑定的仓颉内建运算引用；原生 primitive 运算没有 FuncDecl 符号。 */
+    val resolvedBuiltinOperatorReference: Element by element(Reference, name = "ResolvedBuiltinOperatorReference") {
+        parent(namedReference)
+        +field("signature", type("types", "BuiltinPrimitiveOperatorSignature", kind = TypeKind.Class))
     }
 
     /**

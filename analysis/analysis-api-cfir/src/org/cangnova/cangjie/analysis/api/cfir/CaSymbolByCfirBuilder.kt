@@ -29,6 +29,7 @@ import org.cangnova.cangjie.analysis.api.cfir.types.CaCfirErrorType
 import org.cangnova.cangjie.analysis.api.cfir.types.CaCfirFunctionType
 import org.cangnova.cangjie.analysis.api.cfir.types.CaCfirGenericSubstitutor
 import org.cangnova.cangjie.analysis.api.cfir.types.CaCfirIntersectionType
+import org.cangnova.cangjie.analysis.api.cfir.types.CaCfirMapBackedSubstitutor
 import org.cangnova.cangjie.analysis.api.cfir.types.CaCfirNonClassErrorType
 import org.cangnova.cangjie.analysis.api.cfir.types.CaCfirPrimitiveType
 import org.cangnova.cangjie.analysis.api.cfir.types.CaCfirTupleType
@@ -45,7 +46,6 @@ import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassifierSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaConstructorSymbol
-import org.cangnova.cangjie.analysis.api.symbols.CaDeclarationSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaExtendSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaFileSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaFunctionSymbol
@@ -58,7 +58,6 @@ import org.cangnova.cangjie.analysis.api.symbols.CaTypeParameterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaTypeAliasSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaValueParameterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaVariableSymbol
-import org.cangnova.cangjie.analysis.api.symbols.markers.CaValueParameterOwnerSymbol
 import org.cangnova.cangjie.analysis.api.types.CaSubstitutor
 import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.analysis.api.types.CaTypeProjection
@@ -70,7 +69,6 @@ import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
-import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnmatchedTypeArgumentsError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedError
 import org.cangnova.cangjie.cfir.expressions.withCfirSymbolEntry
@@ -103,7 +101,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterLookupTag
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
@@ -115,7 +113,6 @@ import org.cangnova.cangjie.cfir.types.ConeIntersectionType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.ConeQuestType
 import org.cangnova.cangjie.cfir.types.ConeStructType
-import org.cangnova.cangjie.cfir.types.CfirTypeSubstitutorByMap
 import org.cangnova.cangjie.cfir.types.ConeStubType
 import org.cangnova.cangjie.cfir.types.IdealTypeResolver
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
@@ -180,12 +177,6 @@ companion object{
         }
     }
 }
-    /**
-     * 当前会话的 use-site 模块。
-     */
-    private val useSiteModule: CaModule
-        get() = analysisSession.useSiteModule
-
     /**
      * 当前 use-site 范围内的包 provider。
      */
@@ -411,12 +402,12 @@ companion object{
          */
         fun buildFunctionSymbol(symbol: CfirCallableSymbol<*>): CaFunctionSymbol = when (symbol) {
             is CfirAnonymousFunctionSymbol -> CaCfirAnonymousFunctionSymbol(symbol, analysisSession)
-            is CfirMainFunctionSymbol -> CaCfirMainFunctionSymbol(symbol, analysisSession, useSiteModule, analysisSession.token)
+            is CfirMainFunctionSymbol -> CaCfirMainFunctionSymbol(symbol, analysisSession, analysisSession.token)
             is CfirMacroDeclarationSymbol -> CaCfirMacroSymbol(symbol, analysisSession)
             is CfirFinalizerSymbol -> CaCfirFinalizerSymbol(symbol, analysisSession)
             is CfirPropertyAccessorSymbol -> buildPropertyAccessorSymbol(symbol)
-            is CfirConstructorSymbol -> CaCfirConstructorSymbol(symbol, analysisSession)
-            is CfirNamedFunctionSymbol -> CaCfirNamedFunctionSymbol(symbol, analysisSession)
+            is CfirConstructorSymbol -> buildConstructorSymbol(symbol)
+            is CfirNamedFunctionSymbol -> buildNamedFunctionSymbol(symbol)
             else -> error("Unsupported function public symbol mapping for `${symbol::class.simpleName}`")
         }
 
@@ -539,26 +530,6 @@ companion object{
                 else -> CaCfirValueParameterSymbol(symbol, analysisSession)
             }
         }
-
-        /**
-         * 为指定 owner 构造带稳定索引和值参数 PSI 的公开值参数符号。
-         */
-        fun buildOwnedValueParameterSymbol(
-            ownerSymbol: CaValueParameterOwnerSymbol,
-            parameter: CfirValueParameter,
-            parameterIndex: Int,
-        ): CaValueParameterSymbol =
-            CaCfirValueParameterSymbol(
-                symbol = parameter.symbol,
-                session = analysisSession,
-                ownerSymbol = ownerSymbol,
-                stableParameterIndex = parameterIndex,
-                parameterPsi = (ownerSymbol as? CaDeclarationSymbol)
-                    ?.psi
-                    ?.let { ownerPsi ->
-                        (ownerPsi as? org.cangnova.cangjie.psi.CjCallableDeclaration)?.valueParameters?.getOrNull(parameterIndex)
-                    },
-            )
 
         /**
          * 构造变量类符号签名。
@@ -685,7 +656,7 @@ companion object{
          */
         fun buildSubstitutor(substitutor: ConeSubstitutor): CaSubstitutor = when (substitutor) {
             ConeSubstitutor.Empty -> CaSubstitutor.Empty(analysisSession.token)
-            is CfirTypeSubstitutorByMap -> CaCfirGenericSubstitutor(substitutor, this@CaSymbolByCfirBuilder)
+            is org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutorByMap -> CaCfirMapBackedSubstitutor(substitutor, this@CaSymbolByCfirBuilder)
             else -> CaCfirGenericSubstitutor(substitutor, this@CaSymbolByCfirBuilder)
         }
     }

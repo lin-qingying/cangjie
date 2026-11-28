@@ -3,6 +3,7 @@
 package org.cangnova.cangjie.cfir.serialization.cjo
 
 import PackageFormat.CjoVersion
+import org.cangnova.cangjie.metadata.model.AttributePack
 import PackageFormat.Anno
 import PackageFormat.AnnoArg
 import PackageFormat.AnnoKind
@@ -12,6 +13,23 @@ import PackageFormat.DeclInfo
 import PackageFormat.Expr
 import PackageFormat.ExprInfo
 import PackageFormat.ExprKind
+import PackageFormat.CallInfo
+import PackageFormat.FuncArgInfo
+import PackageFormat.UnaryInfo
+import PackageFormat.BinaryInfo
+import PackageFormat.IncOrDecInfo
+import PackageFormat.LambdaInfo
+import PackageFormat.AssignInfo
+import PackageFormat.ArrayInfo
+import PackageFormat.JumpInfo
+import PackageFormat.SubscriptInfo
+import PackageFormat.MatchInfo
+import PackageFormat.BlockInfo
+import PackageFormat.TryInfo
+import PackageFormat.LetPatternDestructorInfo
+import PackageFormat.ForInInfo
+import PackageFormat.MatchCaseInfo
+import PackageFormat.SpawnInfo
 import PackageFormat.FullId
 import PackageFormat.ImportSpec
 import PackageFormat.LitConstInfo
@@ -32,6 +50,7 @@ import PackageFormat.PropInfo
 import PackageFormat.OverflowPolicy
 import PackageFormat.FuncBody
 import PackageFormat.FuncParamList
+import PackageFormat.ParamInfo
 import PackageFormat.ExtendInfo
 import PackageFormat.ClassInfo
 import PackageFormat.InterfaceInfo
@@ -64,9 +83,9 @@ import java.nio.file.Path
 /**
  * 写出 `.cjo` 包级元数据。
  *
- * 该 writer 覆盖包头、导入、源文件列表、顶层导出声明索引以及 ModuleFormat
- * 已定义的声明 attributes/annotation metadata。完整 CFIR/CHIR body 序列化
- * 仍由后续二进制产物管线负责，不能在这里伪造。
+ * 该 writer 覆盖包头、导入、源文件列表、声明索引、ModuleFormat 声明元数据，
+ * 以及 CJO 中用于默认值和可重导出 common 声明的函数表达式图。它不序列化
+ * CFIR/CHIR 执行体；函数体字段只保存 CJO wire format 明确定义的 AST 元数据。
  */
 @OptIn(ExperimentalUnsignedTypes::class)
 object CjoPackageWriter {
@@ -355,28 +374,145 @@ object CjoPackageWriter {
      */
     private fun validateExpressionReferences(metadata: CjoPackageMetadata) {
         val expressionCount = metadata.expressions.size.toUInt()
-        fun validate(rawIndex: UInt, owner: String) {
+        val declarationCount = metadata.declarations.size.toUInt()
+        val typeCount = metadata.types.size.toUInt()
+        fun validateIndex(rawIndex: UInt, count: UInt, owner: String) {
             if (rawIndex == 0u || rawIndex == UInt.MAX_VALUE) {
                 // Both values are official “no expression” sentinels.  They
                 // are valid only as an explicit absent reference and do not
                 // need an allExprs entry.
                 return
             }
-            require(rawIndex <= expressionCount) {
-                "$owner references expression $rawIndex, but allExprs has $expressionCount entries"
+            require(rawIndex <= count) {
+                "$owner references index $rawIndex, but the target pool has $count entries"
             }
         }
 
+        fun validateExpression(rawIndex: UInt, owner: String) = validateIndex(rawIndex, expressionCount, owner)
+        fun validateDeclaration(rawIndex: UInt, owner: String) = validateIndex(rawIndex, declarationCount, owner)
+        fun validateType(rawIndex: UInt, owner: String) = validateIndex(rawIndex, typeCount, owner)
+
+        fun validateFunctionBody(body: CjoFunctionBodyInfo, owner: String) {
+            body.parameterLists.forEachIndexed { listIndex, parameters ->
+                parameters.forEachIndexed { parameterIndex, parameter ->
+                    validateDeclaration(parameter, "$owner.paramLists[$listIndex].params[$parameterIndex]")
+                }
+            }
+            body.desugaredParameterLists.forEachIndexed { listIndex, desugars ->
+                desugars.forEachIndexed { desugarIndex, desugar ->
+                    validateDeclaration(desugar, "$owner.paramLists[$listIndex].desugars[$desugarIndex]")
+                    if (desugar != 0u && desugar != UInt.MAX_VALUE) {
+                        require(metadata.declarations[desugar.toInt() - 1].kind == DeclKind.FuncDecl) {
+                            "$owner.paramLists[$listIndex].desugars[$desugarIndex] must reference FuncDecl"
+                        }
+                    }
+                }
+            }
+            validateType(body.returnType, "$owner.retType")
+            validateExpression(body.body, "$owner.body")
+        }
+
+        fun validateTarget(target: CjoExpressionTargetMetadata, owner: String) {
+            when (target.pkgId) {
+                PackageIndex.INVALID.value -> Unit
+                PackageIndex.CURRENT.value -> validateDeclaration(target.index, owner)
+                PackageIndex.PACKAGE_REFERENCE.value -> require(!target.decl.isNullOrBlank()) {
+                    "$owner package reference is missing its declaration key"
+                }
+                else -> {
+                    require(target.pkgId >= 0 && target.pkgId < metadata.imports.size) {
+                        "$owner references import ${target.pkgId}, but imports has ${metadata.imports.size} entries"
+                    }
+                    require(!target.decl.isNullOrBlank()) { "$owner imported reference is missing its declaration key" }
+                }
+            }
+        }
+
+        fun validatePattern(pattern: CjoPatternMetadata, owner: String) =
+            validatePatternReferences(pattern, metadata, owner)
+
         metadata.declarations.forEach { declaration ->
+            (declaration.info as? CjoFunctionInfo)
+                ?.takeIf(CjoFunctionInfo::hasFunctionBody)
+                ?.body
+                ?.let { validateFunctionBody(it, "${declaration.identifier}.funcBody") }
+            when (val info = declaration.info) {
+                is CjoParameterInfo -> validateExpression(info.defaultValue, "${declaration.identifier}.defaultValue")
+                is CjoVariableInfo -> validateExpression(info.initializer, "${declaration.identifier}.initializer")
+                is CjoVarWithPatternInfo -> {
+                    validateExpression(info.initializer, "${declaration.identifier}.initializer")
+                    validatePattern(info.irrefutablePattern, "${declaration.identifier}.pattern")
+                }
+                else -> Unit
+            }
             declaration.annotations.forEach { annotation ->
                 annotation.arguments.forEachIndexed { index, argument ->
-                    validate(argument.expr, "${declaration.identifier}.${annotation.identifier} argument #$index")
+                    validateExpression(argument.expr, "${declaration.identifier}.${annotation.identifier} argument #$index")
+                }
+                annotation.target?.let { target ->
+                    validateTarget(
+                        CjoExpressionTargetMetadata(target.pkgId, target.decl, target.index),
+                        "${declaration.identifier}.${annotation.identifier}.target",
+                    )
                 }
             }
         }
         metadata.expressions.forEachIndexed { index, expression ->
-            expression.operands.forEachIndexed { operandIndex, operand ->
-                validate(operand, "allExprs[$index].operands[$operandIndex]")
+            validateType(expression.type, "allExprs[$index].type")
+            validateExpression(expression.mapExpression, "allExprs[$index].mapExpr")
+            val block = expression.additionalInfo as? CjoAdditionalExpressionInfoMetadata.Block
+            if (block == null) {
+                expression.operands.forEachIndexed { operandIndex, operand ->
+                    validateExpression(operand, "allExprs[$index].operands[$operandIndex]")
+                }
+            } else {
+                require(block.expressions.size == expression.operands.size + 1) {
+                    "allExprs[$index].BlockInfo must contain one operand-kind flag per operand and a trailing unsafe flag"
+                }
+                expression.operands.forEachIndexed { operandIndex, operand ->
+                    if (block.expressions[operandIndex]) {
+                        validateExpression(operand, "allExprs[$index].operands[$operandIndex]")
+                    } else {
+                        validateDeclaration(operand, "allExprs[$index].operands[$operandIndex]")
+                    }
+                }
+            }
+            expression.reference?.let { reference ->
+                reference.target?.let { validateTarget(it, "allExprs[$index].reference.target") }
+                reference.instantiatedTypes.forEachIndexed { typeIndex, type ->
+                    validateType(type, "allExprs[$index].reference.instTys[$typeIndex]")
+                }
+                validateType(reference.matchedParentType, "allExprs[$index].reference.matchedParentTy")
+            }
+            when (val info = expression.additionalInfo) {
+                is CjoAdditionalExpressionInfoMetadata.Array -> info.initializer?.let {
+                    validateTarget(it, "allExprs[$index].array.initFunc")
+                }
+                is CjoAdditionalExpressionInfoMetadata.Try -> {
+                    info.resources.forEachIndexed { resourceIndex, resource ->
+                        validateTarget(resource, "allExprs[$index].try.resources[$resourceIndex]")
+                    }
+                    info.patterns.forEachIndexed { patternIndex, pattern ->
+                        validatePattern(pattern, "allExprs[$index].try.patterns[$patternIndex]")
+                    }
+                }
+                is CjoAdditionalExpressionInfoMetadata.LetPatternDestructor ->
+                    info.patterns.forEachIndexed { patternIndex, pattern ->
+                        validatePattern(pattern, "allExprs[$index].letPattern.patterns[$patternIndex]")
+                    }
+                is CjoAdditionalExpressionInfoMetadata.ForIn -> info.pattern?.let {
+                    validatePattern(it, "allExprs[$index].forIn.pattern")
+                }
+                is CjoAdditionalExpressionInfoMetadata.MatchCase ->
+                    info.patterns.forEachIndexed { patternIndex, pattern ->
+                        validatePattern(pattern, "allExprs[$index].matchCase.patterns[$patternIndex]")
+                    }
+                is CjoAdditionalExpressionInfoMetadata.Spawn -> info.future?.let {
+                    validateTarget(it, "allExprs[$index].spawn.future")
+                }
+                is CjoAdditionalExpressionInfoMetadata.Lambda ->
+                    validateFunctionBody(info.body, "allExprs[$index].lambda.funcBody")
+                else -> Unit
             }
         }
     }
@@ -439,8 +575,41 @@ object CjoPackageWriter {
             if (raw == 0u || raw == UInt.MAX_VALUE) return
             require(raw <= count.toUInt()) { "$owner references $raw, but the pool has $count entries" }
         }
+
+        fun validateFullId(pkgId: Int, declarationKey: String?, index: UInt, owner: String) {
+            when (pkgId) {
+                PackageIndex.INVALID.value -> Unit
+                PackageIndex.CURRENT.value -> validate(index, metadata.declarations.size, owner)
+                PackageIndex.PACKAGE_REFERENCE.value -> require(!declarationKey.isNullOrBlank()) {
+                    "$owner package reference is missing its declaration key"
+                }
+                else -> {
+                    require(pkgId >= 0 && pkgId < metadata.imports.size) {
+                        "$owner references import $pkgId, but imports has ${metadata.imports.size} entries"
+                    }
+                    require(!declarationKey.isNullOrBlank()) { "$owner imported reference is missing its declaration key" }
+                }
+            }
+        }
+
         metadata.declarations.forEachIndexed { index, declaration ->
             validate(declaration.type, metadata.types.size, "declarations[$index].type")
+            declaration.genericDecl?.let { genericDecl ->
+                validateFullId(
+                    genericDecl.pkgId,
+                    genericDecl.decl,
+                    genericDecl.index,
+                    "declarations[$index].genericDecl",
+                )
+            }
+            declaration.dependencies.forEachIndexed { dependencyIndex, dependency ->
+                validateFullId(
+                    dependency.pkgId,
+                    dependency.decl,
+                    dependency.index,
+                    "declarations[$index].dependencies[$dependencyIndex]",
+                )
+            }
             declaration.generic?.let { generic ->
                 generic.typeParameters.forEachIndexed { parameterIndex, parameter ->
                     validate(parameter, metadata.declarations.size,
@@ -458,20 +627,25 @@ object CjoPackageWriter {
             when (val info = declaration.info) {
                 null -> Unit
                 is CjoFunctionInfo -> {
-                    info.body.parameterLists.forEachIndexed { listIndex, list ->
-                        list.forEachIndexed { parameterIndex, parameter ->
-                            validate(parameter, metadata.declarations.size,
-                                "declarations[$index].info.paramLists[$listIndex].params[$parameterIndex]")
+                    if (info.hasFunctionBody) {
+                        info.body.parameterLists.forEachIndexed { listIndex, list ->
+                            list.forEachIndexed { parameterIndex, parameter ->
+                                validate(parameter, metadata.declarations.size,
+                                    "declarations[$index].info.paramLists[$listIndex].params[$parameterIndex]")
+                            }
                         }
-                    }
-                    info.body.desugaredParameterLists.forEachIndexed { listIndex, list ->
-                        list.forEachIndexed { desugarIndex, desugar ->
-                            validate(desugar, metadata.declarations.size,
-                                "declarations[$index].info.paramLists[$listIndex].desugars[$desugarIndex]")
+                        info.body.desugaredParameterLists.forEachIndexed { listIndex, list ->
+                            list.forEachIndexed { desugarIndex, desugar ->
+                                validate(desugar, metadata.declarations.size,
+                                    "declarations[$index].info.paramLists[$listIndex].desugars[$desugarIndex]")
+                            }
                         }
+                        validate(info.body.returnType, metadata.types.size, "declarations[$index].info.funcBody.retType")
                     }
-                    validate(info.body.returnType, metadata.types.size, "declarations[$index].info.funcBody.retType")
                 }
+                is CjoParameterInfo ->
+                    validate(info.defaultValue, metadata.expressions.size,
+                        "declarations[$index].info.paramInfo.defaultVal")
                 is CjoVariableInfo ->
                     validate(info.initializer, metadata.expressions.size,
                         "declarations[$index].info.varInfo.initializer")
@@ -510,33 +684,41 @@ object CjoPackageWriter {
                 is CjoEnumInfo -> validateInheritableInfo(info, metadata, index, "enumInfo")
                 is CjoAliasInfo -> validate(info.aliasedType, metadata.types.size,
                     "declarations[$index].info.aliasInfo.aliasedTy")
+                is CjoBuiltInInfo -> Unit
             }
         }
         metadata.types.forEachIndexed { index, type ->
             type.typeArguments.forEachIndexed { argumentIndex, argument ->
                 validate(argument, metadata.types.size, "types[$index].typeArgs[$argumentIndex]")
             }
-            val composite = type.semanticInfo as? CjoCompositeTypeInfoMetadata
-            if (composite != null) {
-                when {
-                    composite.packageId == -2 -> validate(
-                        composite.declarationIndex,
-                        metadata.declarations.size,
-                        "types[$index].compositeDecl",
+            when (val info = type.semanticInfo) {
+                is CjoFunctionTypeInfoMetadata -> validate(
+                    info.returnType,
+                    metadata.types.size,
+                    "types[$index].function.retType",
+                )
+                is CjoCompositeTypeInfoMetadata -> validateFullId(
+                    info.packageId,
+                    info.declarationKey,
+                    info.declarationIndex,
+                    "types[$index].compositeDecl",
+                )
+                is CjoGenericTypeInfoMetadata -> {
+                    validateFullId(
+                        info.packageId,
+                        info.declarationKey,
+                        info.declarationIndex,
+                        "types[$index].genericDecl",
                     )
-                    composite.packageId >= 0 -> {
-                        require(composite.packageId < metadata.imports.size) {
-                            "types[$index] references import ${composite.packageId}, but imports has ${metadata.imports.size} entries"
-                        }
-                        require(!composite.declarationKey.isNullOrBlank()) {
-                            "types[$index] imported composite reference is missing its declaration key"
-                        }
+                    info.upperBounds.forEachIndexed { boundIndex, bound ->
+                        validate(bound, metadata.types.size, "types[$index].upperBounds[$boundIndex]")
                     }
-                    else -> error("types[$index] uses unsupported composite package id ${composite.packageId}")
                 }
+                is CjoArrayTypeInfoMetadata, null -> Unit
             }
         }
         metadata.values.forEachIndexed { valueIndex, value ->
+            validate(value.type, metadata.types.size, "allValues[$valueIndex].type")
             value.fields.forEachIndexed { fieldIndex, field ->
                 validate(field.type, metadata.types.size, "allValues[$valueIndex].fields[$fieldIndex].type")
             }
@@ -613,7 +795,8 @@ object CjoPackageWriter {
                     "$owner ConstPattern must contain one or two expression references"
                 }
                 requireSize("types", pattern.types.size, 1)
-                require(pattern.patterns.isEmpty() && pattern.values.isEmpty()) {
+                require(pattern.patterns.isEmpty() && (pattern.values.isEmpty() ||
+                    metadata.sourceEncodingContract == CjoSourceEncodingContract.TYPED_SCHEMA)) {
                     "$owner ConstPattern may not contain child patterns or values"
                 }
                 pattern.types.forEachIndexed(::validateType)
@@ -728,6 +911,17 @@ object CjoPackageWriter {
             ?.let { Expr.createOperandsVector(builder, it) }
             ?: 0
         val (infoType, infoOffset) = when {
+            additionalInfo != null -> additionalInfo.write(builder)
+            call != null -> ExprInfo.CallInfo to CallInfo.createCallInfo(
+                builder,
+                call.hasSideEffect,
+                call.callKind,
+            )
+            functionArgument != null -> ExprInfo.FuncArgInfo to FuncArgInfo.createFuncArgInfo(
+                builder,
+                functionArgument.withInout,
+                functionArgument.isDefaultVal,
+            )
             literal != null -> {
                 val valueOffset = literal.value?.let(builder::createString) ?: 0
                 ExprInfo.LitConstInfo to LitConstInfo.createLitConstInfo(
@@ -760,8 +954,13 @@ object CjoPackageWriter {
         }
         Expr.startExpr(builder)
         Expr.addKind(builder, kind)
+        // FlatBuffers struct 必须紧邻 addStruct 写入，不能预先保存 offset 再写其它字段。
+        begin?.let { Expr.addBegin(builder, it.write(builder)) }
+        end?.let { Expr.addEnd(builder, it.write(builder)) }
+        Expr.addMapExpr(builder, mapExpression)
         if (operandsOffset != 0) Expr.addOperands(builder, operandsOffset)
         Expr.addType(builder, type)
+        Expr.addOverflowPolicy(builder, overflowPolicy)
         if (infoOffset != 0) {
             Expr.addInfoType(builder, infoType)
             Expr.addInfo(builder, infoOffset)
@@ -785,12 +984,11 @@ object CjoPackageWriter {
         val valuesOffset = encodedValues.map { it.second }.toIntArray()
             .takeIf(IntArray::isNotEmpty)
             ?.let { Pattern.createValuesVector(builder, it) } ?: 0
-        val beginOffset = begin?.write(builder) ?: 0
-        val endOffset = end?.write(builder) ?: 0
 
         Pattern.startPattern(builder)
-        if (beginOffset != 0) Pattern.addBegin(builder, beginOffset)
-        if (endOffset != 0) Pattern.addEnd(builder, endOffset)
+        // FlatBuffers struct 必须紧邻 addStruct 写入，begin/end 不能先后缓存 offset。
+        begin?.let { Pattern.addBegin(builder, it.write(builder)) }
+        end?.let { Pattern.addEnd(builder, it.write(builder)) }
         if (patternsOffset != 0) Pattern.addPatterns(builder, patternsOffset)
         if (typesOffset != 0) Pattern.addTypes(builder, typesOffset)
         if (exprsOffset != 0) Pattern.addExprs(builder, exprsOffset)
@@ -824,11 +1022,17 @@ object CjoPackageWriter {
 
     /** 写出 ModuleFormat 的 SemaTy 基础节点。 */
     private fun CjoTypeMetadata.write(builder: FlatBufferBuilder): Int {
-        val argumentsOffset = typeArguments
-            .takeIf(List<UInt>::isNotEmpty)
-            ?.toUIntArray()
-            ?.let { SemaTy.createTypeArgsVector(builder, it) }
-            ?: 0
+        // Native SaveNominalTy/SaveFuncTy/SaveTupleTy即使没有实参也写vector；
+        // Primitive/Generic/Invalid没有这个槽，不能把两种格式状态混为一谈。
+        val hasArgumentVector = kind in listOf(
+            PackageFormat.TypeKind.Class, PackageFormat.TypeKind.Interface, PackageFormat.TypeKind.Struct,
+            PackageFormat.TypeKind.Enum, PackageFormat.TypeKind.Type, PackageFormat.TypeKind.Func,
+            PackageFormat.TypeKind.Tuple, PackageFormat.TypeKind.Array, PackageFormat.TypeKind.VArray,
+            PackageFormat.TypeKind.CPointer,
+        )
+        val argumentsOffset = if (hasArgumentVector || typeArguments.isNotEmpty()) {
+            SemaTy.createTypeArgsVector(builder, typeArguments.toUIntArray())
+        } else 0
         val semanticInfo = semanticInfo?.write(builder)
         return SemaTy.createSemaTy(
             builder,
@@ -904,6 +1108,7 @@ data class CjoPackageMetadata(
     val values: List<CjoCompositeValueMetadata> = emptyList(),
     /** FlatBuffers builder 初始缓冲区大小。 */
     val initialBufferSize: Int = 1024,
+    val sourceEncodingContract: CjoSourceEncodingContract = CjoSourceEncodingContract.NATIVE_SOURCE,
 ) {
     init {
         require(fullPackageName.isNotBlank()) { "CJO package name must not be blank." }
@@ -1078,7 +1283,7 @@ data class CjoPackageDeclaration(
     /** `Decl.type` 的 1-based `Package.allTypes` 引用。 */
     val type: UInt = 0u,
     /** 官方 Decl.attributes 位图；顺序和位宽按 ModuleFormat 保留。 */
-    val attributes: List<ULong> = emptyList(),
+    val attributes: List<ULong> = AttributePack().toULongList(),
     /** 已解析的声明注解 metadata；writer 不根据源码短名推断 kind。 */
     val annotations: List<CjoAnnotationMetadata> = emptyList(),
     /** Official Decl.generic table. */
@@ -1089,13 +1294,15 @@ data class CjoPackageDeclaration(
     val dependencies: List<CjoAnnotationTargetMetadata> = emptyList(),
 ) {
     init {
-        require(identifier.isNotBlank() || kind == DeclKind.ExtendDecl) {
-            "CJO declaration identifier must not be blank except for official ExtendDecl."
+        // 原生ExtendDecl和VarWithPatternDecl没有独立identifier；模式中的绑定各自拥有名称。
+        require(identifier.isNotBlank() || kind == DeclKind.ExtendDecl || kind == DeclKind.VarWithPatternDecl) {
+            "CJO declaration identifier must not be blank except for official ExtendDecl or VarWithPatternDecl."
         }
         require(
             when (info) {
                 null -> true
                 is CjoFunctionInfo -> kind == DeclKind.FuncDecl
+                is CjoParameterInfo -> kind == DeclKind.FuncParam
                 is CjoVariableInfo -> kind == DeclKind.VarDecl
                 is CjoPropertyInfo -> kind == DeclKind.PropDecl
                 is CjoVarWithPatternInfo -> kind == DeclKind.VarWithPatternDecl
@@ -1105,6 +1312,7 @@ data class CjoPackageDeclaration(
                 is CjoStructInfo -> kind == DeclKind.StructDecl
                 is CjoEnumInfo -> kind == DeclKind.EnumDecl
                 is CjoAliasInfo -> kind == DeclKind.TypeAliasDecl
+                is CjoBuiltInInfo -> kind == DeclKind.BuiltInDecl
             },
         ) { "CJO declaration '$identifier' has an info table incompatible with kind $kind." }
     }
@@ -1114,6 +1322,16 @@ data class CjoPackageDeclaration(
 sealed interface CjoDeclarationInfo {
     /** 返回官方 union 类型与 table offset。 */
     fun write(builder: FlatBufferBuilder): Pair<UByte, Int>
+}
+
+/** 参数自身的命名/成员标志与常量默认表达式；辅助函数引用独立保存在 FuncParamList.desugars。 */
+data class CjoParameterInfo(
+    val isNamed: Boolean,
+    val isMember: Boolean,
+    val defaultValue: UInt = 0u,
+) : CjoDeclarationInfo {
+    override fun write(builder: FlatBufferBuilder): Pair<UByte, Int> =
+        DeclInfo.ParamInfo to ParamInfo.createParamInfo(builder, isNamed, isMember, defaultValue)
 }
 
 /** ExtendInfo 的官方字段；引用均为当前 Package 的 1-based 索引。 */
@@ -1158,10 +1376,14 @@ data class CjoConstraintMetadata(
     val type: UInt,
     val upperBounds: List<UInt> = emptyList(),
     val isImplicitlyIntroduced: Boolean = false,
+    val begin: CjoPositionMetadata? = null,
+    val end: CjoPositionMetadata? = null,
 ) {
     fun write(builder: FlatBufferBuilder): Int {
         val uppers = Constraint.createUppersVector(builder, upperBounds.toUIntArray())
         Constraint.startConstraint(builder)
+        begin?.let { Constraint.addBegin(builder, it.write(builder)) }
+        end?.let { Constraint.addEnd(builder, it.write(builder)) }
         Constraint.addType(builder, type)
         Constraint.addUppers(builder, uppers)
         Constraint.addIsImplicitlyIntroduced(builder, isImplicitlyIntroduced)
@@ -1172,6 +1394,7 @@ data class CjoConstraintMetadata(
 data class CjoClassInfo(
     override val inheritedTypes: List<UInt> = emptyList(),
     override val body: List<UInt> = emptyList(),
+    val autoDiff: CjoAutoDiffInfo? = null,
     val isAnnotation: Boolean = false,
     val annotationTargets: UByte = 0u,
     val runtimeVisible: Boolean = false,
@@ -1181,7 +1404,8 @@ data class CjoClassInfo(
         val inherited = inheritedTypes.toUIntArray().let { ClassInfo.createInheritedTypesVector(builder, it) }
         val members = body.toUIntArray().let { ClassInfo.createBodyVector(builder, it) }
         return DeclInfo.ClassInfo to ClassInfo.createClassInfo(
-            builder, inherited, members, 0, isAnnotation, annotationTargets, runtimeVisible, annotationTargets2,
+            builder, inherited, members, autoDiff?.write(builder) ?: 0,
+            isAnnotation, annotationTargets, runtimeVisible, annotationTargets2,
         )
     }
 }
@@ -1200,19 +1424,22 @@ data class CjoInterfaceInfo(
 data class CjoStructInfo(
     override val inheritedTypes: List<UInt> = emptyList(),
     override val body: List<UInt> = emptyList(),
+    val autoDiff: CjoAutoDiffInfo? = null,
 ) : CjoDeclarationInfo, CjoInheritableInfo {
     override fun write(builder: FlatBufferBuilder): Pair<UByte, Int> {
         val inherited = inheritedTypes.toUIntArray().let { StructInfo.createInheritedTypesVector(builder, it) }
         val members = body.toUIntArray().let { StructInfo.createBodyVector(builder, it) }
-        return DeclInfo.StructInfo to StructInfo.createStructInfo(builder, inherited, members, 0)
+        return DeclInfo.StructInfo to StructInfo.createStructInfo(builder, inherited, members, autoDiff?.write(builder) ?: 0)
     }
 }
 
 data class CjoEnumInfo(
     override val inheritedTypes: List<UInt> = emptyList(),
     override val body: List<UInt> = emptyList(),
+    val autoDiff: CjoAutoDiffInfo? = null,
     val hasArguments: Boolean = false,
     val nonExhaustive: Boolean = false,
+    val ellipsisPosition: CjoPositionMetadata? = null,
 ) : CjoDeclarationInfo, CjoInheritableInfo {
     override fun write(builder: FlatBufferBuilder): Pair<UByte, Int> {
         val inherited = inheritedTypes.toUIntArray().let { EnumInfo.createInheritedTypesVector(builder, it) }
@@ -1220,8 +1447,10 @@ data class CjoEnumInfo(
         EnumInfo.startEnumInfo(builder)
         EnumInfo.addInheritedTypes(builder, inherited)
         EnumInfo.addBody(builder, members)
+        autoDiff?.let { EnumInfo.addAdInfo(builder, it.write(builder)) }
         EnumInfo.addHasArguments(builder, hasArguments)
         EnumInfo.addNonExhaustive(builder, nonExhaustive)
+        ellipsisPosition?.let { EnumInfo.addEllipsisPos(builder, it.write(builder)) }
         return DeclInfo.EnumInfo to EnumInfo.endEnumInfo(builder)
     }
 }
@@ -1231,17 +1460,21 @@ data class CjoFunctionInfo(
     val overflowStrategy: CangjieOverflowStrategy? = null,
     val operation: UByte = 0u,
     val body: CjoFunctionBodyInfo = CjoFunctionBodyInfo(),
+    val hasFunctionBody: Boolean = true,
+    val autoDiff: CjoAutoDiffInfo? = null,
     val isConst: Boolean = false,
     val isInline: Boolean = false,
     val isFastNative: Boolean = false,
+    /** Preserve an imported CJO enum value even when this version has no source enum entry for it. */
+    val encodedOverflowPolicy: UByte? = null,
 ) : CjoDeclarationInfo {
     override fun write(builder: FlatBufferBuilder): Pair<UByte, Int> =
         DeclInfo.FuncInfo to FuncInfo.createFuncInfo(
             builder,
-            body.write(builder),
-            overflowStrategy.toCjoOverflowPolicy(),
+            if (hasFunctionBody) body.write(builder) else 0,
+            encodedOverflowPolicy ?: overflowStrategy.toCjoOverflowPolicy(),
             operation,
-            0,
+            autoDiff?.write(builder) ?: 0,
             isConst,
             isInline,
             isFastNative,
@@ -1265,10 +1498,10 @@ data class CjoFunctionBodyInfo(
         val lists = parameterLists.mapIndexed { listIndex, parameters ->
             val paramsOffset = FuncParamList.createParamsVector(builder, parameters.toUIntArray())
             val desugars = desugaredParameterLists[listIndex]
-            require(desugars.size == parameters.size) {
-                "FuncParamList[$listIndex] desugared parameter count must match parameter count"
+            require(desugars.isEmpty() || desugars.size == parameters.size) {
+                "FuncParamList[$listIndex] desugars must be absent or parallel to parameters"
             }
-            val desugarsOffset = desugars.takeIf(List<UInt>::isNotEmpty)
+            val desugarsOffset = desugars.takeIf { it.isNotEmpty() }
                 ?.toUIntArray()
                 ?.let { FuncParamList.createDesugarsVector(builder, it) }
                 ?: 0
@@ -1276,6 +1509,31 @@ data class CjoFunctionBodyInfo(
         }.toIntArray()
         val listsOffset = FuncBody.createParamListsVector(builder, lists)
         return FuncBody.createFuncBody(builder, listsOffset, returnType, body, always, captureKind)
+    }
+}
+
+/** Official ModuleFormat.AutoDiffInfo, preserved when a CJO declaration is re-exported. */
+data class CjoAutoDiffInfo(
+    val isDiff: Boolean,
+    val isAdjoint: Boolean,
+    val primal: String? = null,
+    val excepts: List<String> = emptyList(),
+    val includes: List<String> = emptyList(),
+    val stage: ULong = 0uL,
+) {
+    fun write(builder: FlatBufferBuilder): Int {
+        val primalOffset = primal?.let(builder::createString) ?: 0
+        val exceptOffsets = excepts.map(builder::createString).toIntArray()
+            .takeIf(IntArray::isNotEmpty)
+            ?.let { PackageFormat.AutoDiffInfo.createExceptsVector(builder, it) }
+            ?: 0
+        val includeOffsets = includes.map(builder::createString).toIntArray()
+            .takeIf(IntArray::isNotEmpty)
+            ?.let { PackageFormat.AutoDiffInfo.createIncludesVector(builder, it) }
+            ?: 0
+        return PackageFormat.AutoDiffInfo.createAutoDiffInfo(
+            builder, isDiff, isAdjoint, primalOffset, exceptOffsets, includeOffsets, stage,
+        )
     }
 }
 
@@ -1332,13 +1590,13 @@ data class CjoGenericTypeInfoMetadata(
     val declarationIndex: UInt,
     val upperBounds: List<UInt> = emptyList(),
     val packageId: Int = -2,
+    val declarationKey: String? = null,
 ) : CjoTypeInfoMetadata {
     override fun write(builder: FlatBufferBuilder): Pair<UByte, Int> {
-        val fullId = FullId.createFullId(builder, packageId, 0, declarationIndex)
-        val bounds = upperBounds.toUIntArray()
-            .takeIf { it.isNotEmpty() }
-            ?.let { GenericTyInfo.createUpperBoundsVector(builder, it) }
-            ?: 0
+        val declarationOffset = declarationKey?.let(builder::createString) ?: 0
+        val fullId = FullId.createFullId(builder, packageId, declarationOffset, declarationIndex)
+        // SaveGenericsTy保留present-empty上界；原生loader以vector存在性区分完整Generic记录。
+        val bounds = GenericTyInfo.createUpperBoundsVector(builder, upperBounds.toUIntArray())
         return SemaTyInfo.GenericTyInfo to GenericTyInfo.createGenericTyInfo(builder, fullId, bounds)
     }
 }
@@ -1358,6 +1616,12 @@ data class CjoVarWithPatternInfo(
             CjoPackageWriter.writePattern(builder, irrefutablePattern),
             initializer,
         )
+}
+
+/** Official BuiltInInfo union payload. */
+data class CjoBuiltInInfo(val builtInType: UByte) : CjoDeclarationInfo {
+    override fun write(builder: FlatBufferBuilder): Pair<UByte, Int> =
+        DeclInfo.BuiltInInfo to PackageFormat.BuiltInInfo.createBuiltInInfo(builder, builtInType)
 }
 
 data class CjoVariableInfo(
@@ -1431,9 +1695,26 @@ data class CjoFloat32ConstValue(val value: Float) : CjoConstValueInfo {
         ConstValue.Float32Value to PackageFormat.Float32Value.createFloat32Value(builder, value)
 }
 
+/** 已冻结的 IEEE 位值直接写原 struct，避免 NaN payload 在浮点转换中被规范化。 */
+data class CjoFloat32BitsConstValue(val bits: Int) : CjoConstValueInfo {
+    override fun write(builder: FlatBufferBuilder): Pair<UByte, Int> {
+        builder.prep(4, 4)
+        builder.putInt(bits)
+        return ConstValue.Float32Value to builder.offset()
+    }
+}
+
 data class CjoFloat64ConstValue(val value: Double) : CjoConstValueInfo {
     override fun write(builder: FlatBufferBuilder): Pair<UByte, Int> =
         ConstValue.Float64Value to PackageFormat.Float64Value.createFloat64Value(builder, value)
+}
+
+data class CjoFloat64BitsConstValue(val bits: Long) : CjoConstValueInfo {
+    override fun write(builder: FlatBufferBuilder): Pair<UByte, Int> {
+        builder.prep(8, 8)
+        builder.putLong(bits)
+        return ConstValue.Float64Value to builder.offset()
+    }
 }
 
 data class CjoStringConstValue(val value: String) : CjoConstValueInfo {
@@ -1515,25 +1796,171 @@ data class CjoAnnotationTargetMetadata(
 data class CjoExpressionMetadata(
     /** `PackageFormat.ExprKind` 的稳定数值。 */
     val kind: UShort = ExprKind.InvalidExpr,
+    /** Official source range, when the expression came from an existing CJO. */
+    val begin: CjoPositionMetadata? = null,
+    val end: CjoPositionMetadata? = null,
+    /** `mapExpr` is a 1-based expression-pool reference. */
+    val mapExpression: UInt = 0u,
     /** `allTypes` 中的 1-based 类型引用；未知时为 0。 */
     val type: UInt = 0u,
+    /** Official expression overflow policy. */
+    val overflowPolicy: UByte = OverflowPolicy.NA,
     /** 子表达式的 1-based `allExprs` 引用。 */
     val operands: List<UInt> = emptyList(),
     /** literal expression 的结构化值。 */
     val literal: CjoLiteralExpressionMetadata? = null,
     /** reference expression 的结构化引用。 */
     val reference: CjoReferenceExpressionMetadata? = null,
+    /** call expression 的官方调用语义信息。 */
+    val call: CjoCallExpressionMetadata? = null,
+    /** `CallExpr.operands` 中的官方函数实参包装节点。 */
+    val functionArgument: CjoFunctionArgumentExpressionMetadata? = null,
+    /** Remaining official ExprInfo variants, preserved when re-exporting a CJO expression graph. */
+    val additionalInfo: CjoAdditionalExpressionInfoMetadata? = null,
 ) {
     init {
-        require(literal == null || reference == null) { "CJO expression cannot be both literal and reference" }
+        require(listOfNotNull(literal, reference, call, functionArgument, additionalInfo).size <= 1) {
+            "CJO expression cannot carry multiple expression-info payloads"
+        }
         require(kind != ExprKind.LitConstExpr || literal != null) {
             "LitConstExpr must carry LitConstInfo"
         }
         require(kind != ExprKind.RefExpr || reference != null) {
             "RefExpr must carry ReferenceInfo"
         }
+        require(kind != ExprKind.CallExpr || call != null) {
+            "CallExpr must carry CallInfo"
+        }
+        functionArgument?.let { argument ->
+            require(kind == ExprKind.InvalidExpr) {
+                "FuncArgInfo must use the official InvalidExpr kind"
+            }
+            require(if (argument.isDefaultVal) operands.isEmpty() else operands.size == 1) {
+                "FuncArgInfo isDefaultVal=${argument.isDefaultVal} must have " +
+                        "${if (argument.isDefaultVal) 0 else 1} operands, got ${operands.size}"
+            }
+        }
+        require(additionalInfo == null || listOfNotNull(literal, reference, call, functionArgument).isEmpty()) {
+            "CJO expression cannot combine an additional info payload with a built-in expression payload"
+        }
     }
 }
+
+/** Official expression-info union variants not represented by the source-CFIR expression writer. */
+sealed interface CjoAdditionalExpressionInfoMetadata {
+    fun write(builder: FlatBufferBuilder): Pair<UByte, Int>
+
+    data class Unary(val operator: UByte) : CjoAdditionalExpressionInfoMetadata {
+        override fun write(builder: FlatBufferBuilder): Pair<UByte, Int> =
+            ExprInfo.UnaryInfo to UnaryInfo.createUnaryInfo(builder, operator)
+    }
+
+    data class Binary(val operator: UByte) : CjoAdditionalExpressionInfoMetadata {
+        override fun write(builder: FlatBufferBuilder): Pair<UByte, Int> =
+            ExprInfo.BinaryInfo to BinaryInfo.createBinaryInfo(builder, operator)
+    }
+
+    data class IncOrDec(val operator: UByte) : CjoAdditionalExpressionInfoMetadata {
+        override fun write(builder: FlatBufferBuilder): Pair<UByte, Int> =
+            ExprInfo.IncOrDecInfo to IncOrDecInfo.createIncOrDecInfo(builder, operator)
+    }
+
+    data class Lambda(val body: CjoFunctionBodyInfo, val supportMock: Boolean) : CjoAdditionalExpressionInfoMetadata {
+        override fun write(builder: FlatBufferBuilder): Pair<UByte, Int> =
+            ExprInfo.LambdaInfo to LambdaInfo.createLambdaInfo(builder, body.write(builder), supportMock)
+    }
+
+    data class Assign(val isCompound: Boolean, val operator: UByte) : CjoAdditionalExpressionInfoMetadata {
+        override fun write(builder: FlatBufferBuilder): Pair<UByte, Int> =
+            ExprInfo.AssignInfo to AssignInfo.createAssignInfo(builder, isCompound, operator)
+    }
+
+    data class Array(val initializer: CjoExpressionTargetMetadata?, val isValueArray: Boolean) : CjoAdditionalExpressionInfoMetadata {
+        override fun write(builder: FlatBufferBuilder): Pair<UByte, Int> =
+            ExprInfo.ArrayInfo to ArrayInfo.createArrayInfo(builder, initializer?.write(builder) ?: 0, isValueArray)
+    }
+
+    data class Jump(val isBreak: Boolean) : CjoAdditionalExpressionInfoMetadata {
+        override fun write(builder: FlatBufferBuilder): Pair<UByte, Int> =
+            ExprInfo.JumpInfo to JumpInfo.createJumpInfo(builder, isBreak)
+    }
+
+    data class Subscript(val isTupleAccess: Boolean) : CjoAdditionalExpressionInfoMetadata {
+        override fun write(builder: FlatBufferBuilder): Pair<UByte, Int> =
+            ExprInfo.SubscriptInfo to SubscriptInfo.createSubscriptInfo(builder, isTupleAccess)
+    }
+
+    data class Match(val matchMode: Boolean) : CjoAdditionalExpressionInfoMetadata {
+        override fun write(builder: FlatBufferBuilder): Pair<UByte, Int> =
+            ExprInfo.MatchInfo to MatchInfo.createMatchInfo(builder, matchMode)
+    }
+
+    data class Block(val expressions: List<Boolean>) : CjoAdditionalExpressionInfoMetadata {
+        override fun write(builder: FlatBufferBuilder): Pair<UByte, Int> {
+            val vector = expressions.toBooleanArray().let { BlockInfo.createIsExprVector(builder, it) }
+            return ExprInfo.BlockInfo to BlockInfo.createBlockInfo(builder, vector)
+        }
+    }
+
+    data class Try(
+        val resources: List<CjoExpressionTargetMetadata>,
+        val patterns: List<CjoPatternMetadata>,
+    ) : CjoAdditionalExpressionInfoMetadata {
+        override fun write(builder: FlatBufferBuilder): Pair<UByte, Int> {
+            val resourcesOffset = resources.map { it.write(builder) }.toIntArray()
+                .takeIf(IntArray::isNotEmpty)?.let { TryInfo.createResourcesVector(builder, it) } ?: 0
+            val patternsOffset = patterns.map { CjoPackageWriter.writePattern(builder, it) }.toIntArray()
+                .takeIf(IntArray::isNotEmpty)?.let { TryInfo.createPatternsVector(builder, it) } ?: 0
+            return ExprInfo.TryInfo to TryInfo.createTryInfo(builder, resourcesOffset, patternsOffset)
+        }
+    }
+
+    data class LetPatternDestructor(val patterns: List<CjoPatternMetadata>) : CjoAdditionalExpressionInfoMetadata {
+        override fun write(builder: FlatBufferBuilder): Pair<UByte, Int> {
+            val vector = patterns.map { CjoPackageWriter.writePattern(builder, it) }.toIntArray()
+                .takeIf(IntArray::isNotEmpty)?.let { LetPatternDestructorInfo.createPatternsVector(builder, it) } ?: 0
+            return ExprInfo.LetPatternDestructorInfo to LetPatternDestructorInfo.createLetPatternDestructorInfo(builder, vector)
+        }
+    }
+
+    data class ForIn(val pattern: CjoPatternMetadata?, val forInKind: UByte) : CjoAdditionalExpressionInfoMetadata {
+        override fun write(builder: FlatBufferBuilder): Pair<UByte, Int> = ExprInfo.ForInInfo to ForInInfo.createForInInfo(
+            builder,
+            pattern?.let { CjoPackageWriter.writePattern(builder, it) } ?: 0,
+            forInKind,
+        )
+    }
+
+    data class MatchCase(val patterns: List<CjoPatternMetadata>) : CjoAdditionalExpressionInfoMetadata {
+        override fun write(builder: FlatBufferBuilder): Pair<UByte, Int> {
+            val vector = patterns.map { CjoPackageWriter.writePattern(builder, it) }.toIntArray()
+                .takeIf(IntArray::isNotEmpty)?.let { MatchCaseInfo.createPatternsVector(builder, it) } ?: 0
+            return ExprInfo.MatchCaseInfo to MatchCaseInfo.createMatchCaseInfo(builder, vector)
+        }
+    }
+
+    data class Spawn(val future: CjoExpressionTargetMetadata?) : CjoAdditionalExpressionInfoMetadata {
+        override fun write(builder: FlatBufferBuilder): Pair<UByte, Int> =
+            ExprInfo.SpawnInfo to SpawnInfo.createSpawnInfo(builder, future?.write(builder) ?: 0)
+    }
+}
+
+private fun CjoExpressionTargetMetadata.write(builder: FlatBufferBuilder): Int {
+    val declarationOffset = decl?.let(builder::createString) ?: 0
+    return FullId.createFullId(builder, pkgId, declarationOffset, index)
+}
+
+/** `CallInfo` 的结构化元数据。 */
+data class CjoCallExpressionMetadata(
+    val hasSideEffect: Boolean,
+    val callKind: UByte,
+)
+
+/** `FuncArgInfo` 的参数包装事实。 */
+data class CjoFunctionArgumentExpressionMetadata(
+    val withInout: Boolean,
+    val isDefaultVal: Boolean,
+)
 
 /** `LitConstInfo` 的公共输入模型。 */
 data class CjoLiteralExpressionMetadata(

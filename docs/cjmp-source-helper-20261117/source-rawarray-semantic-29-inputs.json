@@ -1,0 +1,26 @@
+{
+  "utc": "2026-11-18T09:35:02.8899282Z",
+  "fileCount": 6849,
+  "aggregateSha256": "B42F2AAC89054DD39E1F7DCBC414753801EA6086C18AB5C69DD5492485ECB4EA",
+  "roots": [
+    "common",
+    "cfir",
+    "analysis/low-level-api-cfir",
+    "analysis/analysis-api-cfir",
+    "compiler/frontend",
+    "compiler/config",
+    "compiler/phaser",
+    "compiler/arguments",
+    "psi",
+    "resolution.common",
+    "macro"
+  ],
+  "include": [
+    "*.kt",
+    "*.cj",
+    "*.kts"
+  ],
+  "exclude": "**/build/**",
+  "method": "rg --files --hidden --no-ignore, / normalized and Sort-Object -CaseSensitive; SHA256 of UTF8 LF joined path TAB length TAB uppercaseSHA256, no final LF",
+  "scope": "F4-C semantic repeated TP binding equality and provider29 including original SOURCE18 plus Raw2 and relations7"
+}

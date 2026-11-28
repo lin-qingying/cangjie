@@ -27,7 +27,9 @@ package org.cangnova.cangjie.cfir.scopes
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRefsOwner
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
+import org.cangnova.cangjie.cfir.declarations.utils.ownTypeParameters
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
+import org.cangnova.cangjie.cfir.resolve.substitution.createTypeSubstitutorByTypeConstructor
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
@@ -49,8 +51,10 @@ fun CfirCallableSymbol<*>.overrideSignatureKey(
 
     return when (val declaration = cfir) {
         is CfirFunction -> {
-            val typeParameterPart = "#tp${declaration.typeParameters.size}"
-            val ownTypeParameterIndices = declaration.typeParameters
+            // 签名只计自有泛型；构造器借用的 owner 参数经 ownerSubstitutor 处理，不属于签名形状。
+            val ownTypeParameters = declaration.typeParameters.ownTypeParameters
+            val typeParameterPart = "#tp${ownTypeParameters.size}"
+            val ownTypeParameterIndices = ownTypeParameters
                 .mapIndexed { index, typeParameter -> typeParameter.symbol.toLookupTag() as TypeConstructorMarker to index }
                 .toMap()
             val parameterPart = declaration.valueParameters.joinToString(

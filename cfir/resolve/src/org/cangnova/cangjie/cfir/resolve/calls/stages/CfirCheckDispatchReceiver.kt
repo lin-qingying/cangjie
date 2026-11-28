@@ -32,13 +32,15 @@ object CfirCheckDispatchReceiver : ResolutionStage() {
     context(sink: CheckerSink, context: ResolutionContext)
     /** 检查 dispatch receiver 的实际类型是否满足成员声明要求的接收者类型。 */
     override suspend fun check(candidate: Candidate) {
-        val receiver = candidate.dispatchReceiver ?: return
+        // common invoke 的 dispatch receiver 是函数值；成员形态归原值访问的 candidate 所有。
+        val commonValueCandidate = candidate.callInfo.candidateForCommonInvokeReceiver
+        val memberCandidate = commonValueCandidate ?: candidate
         // 非 callable 候选不参与形态判定；后续 receiver 类型约束同样只对 callable 成立。
-        val callableSymbol = candidate.symbol as? CfirCallableSymbol<*> ?: return
+        val callableSymbol = memberCandidate.symbol as? CfirCallableSymbol<*> ?: return
         val memberAccessFormError = memberAccessFormError(
             callableSymbol,
-            candidate.callInfo,
-            candidate.dispatchReceiver?.expression,
+            memberCandidate.callInfo,
+            memberCandidate.callInfo.explicitReceiver ?: memberCandidate.dispatchReceiver?.expression,
             context,
         )
         when (memberAccessFormError) {
@@ -56,6 +58,12 @@ object CfirCheckDispatchReceiver : ResolutionStage() {
 
             null -> Unit
         }
+        if (commonValueCandidate != null) {
+            // 值访问的 owner 接收者约束已在该候选中完成；invoke 只消费函数形状与实参约束。
+            sink.yieldIfNeed()
+            return
+        }
+        val receiver = candidate.dispatchReceiver ?: return
         if (candidate.isImplicitReceiverForStaticMember()) return
 
         val expectedReceiverType = candidate.expectedDispatchReceiverType() ?: return

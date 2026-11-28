@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
@@ -73,7 +74,7 @@ object CfirAnnotationArgNumberChecker {
 }
 
 /** 面向 CfirClassLikeDeclaration 的分发。 */
-object CfirAnnotationArgNumberClassChecker : CfirClassLikeChecker() {
+object CfirAnnotationArgNumberClassChecker : CfirClassLikeChecker(MppCheckerKind.Common) {
     /** 对 class-like 声明分发内置注解参数数量检查。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirClassLikeDeclaration) {
@@ -82,7 +83,7 @@ object CfirAnnotationArgNumberClassChecker : CfirClassLikeChecker() {
 }
 
 /** 面向 CfirCallableDeclaration 的分发。 */
-object CfirAnnotationArgNumberCallableChecker : CfirCallableDeclarationChecker() {
+object CfirAnnotationArgNumberCallableChecker : CfirCallableDeclarationChecker(MppCheckerKind.Common) {
     /** 对 callable 声明分发内置注解参数数量检查。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirCallableDeclaration) {

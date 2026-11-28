@@ -1,0 +1,32 @@
+{
+  "utc": "2026-11-18T21:36:58.5421737Z",
+  "fileCount": 7282,
+  "aggregateSha256": "E5E0C9B0507B6D9DB0C792C3F115F13D195836A32AC79A4504CA38AE111FA2A5",
+  "roots": [
+    "common",
+    "cfir",
+    "analysis/low-level-api-cfir",
+    "analysis/analysis-api-cfir",
+    "compiler/frontend",
+    "compiler/config",
+    "compiler/phaser",
+    "compiler/arguments",
+    "compiler/compiler.version",
+    "psi",
+    "resolution.common",
+    "macro",
+    "settings.gradle.kts",
+    "prepare/frontend",
+    "prepare/ide-plugin-dependencies/cangjie-frontend-cfir-for-ide"
+  ],
+  "include": [
+    "*.kt",
+    "*.cj",
+    "*.kts",
+    "*.java",
+    "**/resources/META-INF/cangjie/compiler.version"
+  ],
+  "exclude": "**/build/**",
+  "method": "rg --files --hidden --no-ignore, / normalized and Sort-Object -CaseSensitive; SHA256 of UTF8 LF joined path TAB length TAB uppercaseSHA256, no final LF",
+  "scope": "38783 actual checker parent-dispatch generation and compile succeeded; exact zero attribute words retained. New48 analysis cases (source18,frozen4,typeUse16,Cellipsis10), rerun current bytes. Existing raw/copy/provider results are prior6a7fdb7f, not counted in this new run. FullD1/D3/mirror/T6/decoder remains open."
+}

@@ -47,7 +47,7 @@ import org.cangnova.cangjie.cfir.resolve.transformers.CfirAbstractPhaseTransform
 import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.extendProvider
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
@@ -474,7 +474,7 @@ abstract class CfirAbstractBodyResolveTransformerDispatcher(
             is CfirInterface -> declaration.typeParameters
             is CfirStruct -> declaration.typeParameters
             is CfirEnum -> declaration.typeParameters
-            is CfirConstructor -> declaration.typeParameters
+            is CfirConstructor -> declaration.typeParameters.filterIsInstance<CfirTypeParameter>()
             is CfirProperty -> declaration.typeParameters
             is CfirFieldVariable -> declaration.typeParameters
             is CfirValueParameter -> declaration.typeParameters
@@ -484,9 +484,9 @@ abstract class CfirAbstractBodyResolveTransformerDispatcher(
             is CfirMacroDeclaration -> declaration.typeParameters
             is CfirMainFunction -> declaration.typeParameters
             is CfirFinalizer -> declaration.typeParameters
-            is CfirFunction -> declaration.typeParameters
+            is CfirFunction -> declaration.typeParameters.filterIsInstance<CfirTypeParameter>()
             is CfirCodeFragment -> emptyList()
-            is CfirEnumConstructor -> declaration.typeParameters
+            is CfirEnumConstructor -> declaration.typeParameters.filterIsInstance<CfirTypeParameter>()
             else -> emptyList()
         }
     }
@@ -526,6 +526,19 @@ abstract class CfirAbstractBodyResolveTransformerDispatcher(
     override fun transformExpression(expression: CfirExpression, data: ResolutionMode): CfirExpression {
         return expressionsTransformer.transformExpression(expression, data) as CfirExpression
     }
+
+    // 已保存表达式在生成器中各有独立入口，直接分发到负责求值顺序的 transformer。
+    override fun transformCallExpression(callExpression: CfirCallExpression, data: ResolutionMode): CfirExpression =
+        expressionsTransformer.transformCallExpression(callExpression, data)
+
+    override fun transformUnaryExpression(unaryExpression: CfirUnaryExpression, data: ResolutionMode): CfirExpression =
+        expressionsTransformer.transformUnaryExpression(unaryExpression, data)
+
+    override fun transformBinaryExpression(binaryExpression: CfirBinaryExpression, data: ResolutionMode): CfirExpression =
+        expressionsTransformer.transformBinaryExpression(binaryExpression, data)
+
+    override fun transformFunctionArgument(functionArgument: CfirFunctionArgument, data: ResolutionMode): CfirExpression =
+        expressionsTransformer.transformFunctionArgument(functionArgument, data)
 
     /** 将 wrapped expression body resolve 分发给表达式 transformer。 */
     override fun transformWrappedExpression(

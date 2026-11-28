@@ -27,6 +27,108 @@ import org.junit.jupiter.api.Test
  */
 class FunctionCallConventionIntegrationTest {
     /**
+     * 验证同名重载导入函数按语义身份区分声明与调用符号。
+     */
+    @Test
+    fun `names overloaded imported functions by semantic identity`() {
+        val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
+        val functionType = ChirResolvedTypeRef(ChirFunctionType(parameterTypes = emptyList(), returnType = intType))
+        val firstFunctionId = ChirSemanticId("@_CNfirstImport")
+        val secondFunctionId = ChirSemanticId("@_CNsecond<init>")
+        val importedFunctions = listOf(firstFunctionId, secondFunctionId).map { id ->
+            DefaultChirFunctionDeclaration(
+                semanticId = id,
+                name = "externalOverload",
+                returnType = intType,
+                parameters = emptyList(),
+                blocks = emptyList(),
+                entryBlockId = null,
+                hasBody = false,
+                isImported = true,
+            )
+        }
+        val firstCallId = ChirSemanticId("call:first")
+        val secondCallId = ChirSemanticId("call:second")
+        val firstCall = ChirCallExpression(
+            semanticId = firstCallId,
+            callee = ChirImportedFunctionValue(firstFunctionId, functionType, name = "externalOverload"),
+            arguments = emptyList(),
+            resultType = intType,
+            resultLocalValue = ChirLocalValue(
+                semanticId = firstCallId,
+                type = intType,
+                name = "firstResult",
+                associatedExpressionId = firstCallId,
+            ),
+        )
+        val secondCall = ChirCallExpression(
+            semanticId = secondCallId,
+            callee = ChirImportedFunctionValue(secondFunctionId, functionType, name = "externalOverload"),
+            arguments = emptyList(),
+            resultType = intType,
+            resultLocalValue = ChirLocalValue(
+                semanticId = secondCallId,
+                type = intType,
+                name = "secondResult",
+                associatedExpressionId = secondCallId,
+            ),
+        )
+        val caller = DefaultChirFunctionDeclaration(
+            semanticId = ChirSemanticId("fn:caller"),
+            name = "caller",
+            returnType = intType,
+            parameters = emptyList(),
+            blocks = listOf(
+                ChirBlock(
+                    semanticId = ChirSemanticId("block:entry"),
+                    name = "entry",
+                    expressions = listOf(firstCall, secondCall),
+                    terminator = ChirReturnTerminator(
+                        semanticId = ChirSemanticId("term:return"),
+                        returnValue = ChirLocalValue(
+                            semanticId = secondCallId,
+                            type = intType,
+                            name = "secondResult",
+                            associatedExpressionId = secondCallId,
+                        ),
+                    ),
+                ),
+            ),
+            entryBlockId = ChirSemanticId("block:entry"),
+        )
+
+        val output = DefaultChirToLlvmCodeGenerator().generate(
+            ChirCodegenInput(
+                chirPackage = ChirPackage(
+                    semanticId = ChirSemanticId("pkg:test"),
+                    name = "test",
+                    modules = listOf(
+                        ChirModule(
+                            semanticId = ChirSemanticId("mod:test"),
+                            name = "test",
+                            declarations = listOf(caller),
+                        ),
+                    ),
+                    members = ChirPackageMembers(importedFunctions = importedFunctions),
+                ),
+                options = CodegenOptions(
+                    validateChirBeforeLowering = true,
+                    emitBitcode = false,
+                    emitComments = false,
+                    emitModuleHeader = false,
+                    emitRuntimeDeclarations = false,
+                ),
+            ),
+        )
+
+        val ir = output.modules.single().ir
+        assertTrue(ir.contains("declare i32 @_CNfirstImport()"), ir)
+        assertTrue(ir.contains("""declare i32 @"_CNsecond\3Cinit\3E"()"""), ir)
+        assertTrue(ir.contains("call i32 @_CNfirstImport()"), ir)
+        assertTrue(ir.contains("""call i32 @"_CNsecond\3Cinit\3E"()"""), ir)
+    }
+
+    /**
      * 验证导入函数声明和调用会保留 calling convention 与参数属性。
      */
     @Test
@@ -45,17 +147,19 @@ class FunctionCallConventionIntegrationTest {
             returnType = intType,
             parameters = listOf(importedParameter),
             blocks = emptyList(),
-            entryBlockId = ChirSemanticId("block:none"),
+            entryBlockId = null,
             attributes = setOf(
                 ChirStringAttribute("cc", "fastcc"),
                 ChirBooleanAttribute("nounwind", enabled = true),
             ),
+            hasBody = false,
+            isImported = true,
         )
         val calleeType = ChirResolvedTypeRef(ChirFunctionType(parameterTypes = listOf(intType), returnType = intType))
         val callExpression = ChirCallExpression(
             semanticId = ChirSemanticId("call_ret"),
             callee = ChirImportedFunctionValue(
-                semanticId = ChirSemanticId("value:ext_add"),
+                semanticId = ChirSemanticId("fn:ext_add"),
                 type = calleeType,
                 name = "ext_add",
                 attributes = setOf(
@@ -87,7 +191,7 @@ class FunctionCallConventionIntegrationTest {
                     terminator = ChirReturnTerminator(
                         semanticId = ChirSemanticId("term:return"),
                         returnValue = ChirLocalValue(
-                            semanticId = ChirSemanticId("local:call_ret"),
+                            semanticId = ChirSemanticId("call_ret"),
                             type = intType,
                             name = "call_ret",
                         ),

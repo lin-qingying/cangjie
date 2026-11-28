@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.*
@@ -36,7 +37,7 @@ import org.cangnova.cangjie.source.text
  * unused/local-DCE 类诊断属于附加 warning 检查，统一由 `ExtraDeclarationCheckers`
  * 按测试或 IDE 诊断过滤配置挂载，避免污染主干 type-check 诊断集合。
  */
-object CfirUnusedExpressionChecker : CfirBasicDeclarationChecker() {
+object CfirUnusedExpressionChecker : CfirBasicDeclarationChecker(MppCheckerKind.Common) {
     /**
      * 从声明入口驱动 unused expression 和 unused local variable 检查。
      */
@@ -431,7 +432,7 @@ private fun CfirTypeRef.isUnitReturnTypeRef(): Boolean =
  * 当前 CFIR 不构造 CHIR user graph，因此这里在文件级先收集已解析函数/参数引用，
  * 再只对不可导出的静态函数声明及其形参模拟官方 DCE warning。
  */
-object CfirDceUnusedDeclarationChecker : CfirFileChecker() {
+object CfirDceUnusedDeclarationChecker : CfirFileChecker(MppCheckerKind.Common) {
     /**
      * 对单个文件执行 DCE 风格的 unused function/parameter 检查。
      *

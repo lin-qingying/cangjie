@@ -3,10 +3,12 @@
 import org.cangnova.cangjie.chir.core.declaration.ChirDeclaration
 import org.cangnova.cangjie.chir.core.declaration.ChirCustomTypeDeclaration
 import org.cangnova.cangjie.chir.core.declaration.ChirFunctionDeclaration
+import org.cangnova.cangjie.chir.core.declaration.ChirNominalTypeDeclaration
 import org.cangnova.cangjie.chir.core.declaration.ChirStructDeclaration
 import org.cangnova.cangjie.chir.core.declaration.ChirTypeDeclaration
 import org.cangnova.cangjie.chir.core.declaration.ChirVariableDeclaration
 import org.cangnova.cangjie.chir.core.identity.ChirSemanticId
+import org.cangnova.cangjie.chir.core.type.ChirTypeDeclarationId
 
 /**
  * CHIR 包访问级别。
@@ -110,7 +112,20 @@ data class ChirPackage(
      * 包访问级别。
      */
     val accessLevel: ChirPackageAccessLevel = ChirPackageAccessLevel.INTERNAL,
-) : ChirNode
+) : ChirNode {
+    /**
+     * 本包与已导入包中所有名义定义的稳定索引；重复身份表示图冲突并在建索引时失败。
+     */
+    val nominalTypeDefinitionsById: Map<ChirTypeDeclarationId, ChirNominalTypeDeclaration> by lazy {
+        buildMap {
+            (typeDefinitions + importedTypeDefinitions).filterIsInstance<ChirNominalTypeDeclaration>().forEach { definition ->
+                check(put(definition.typeDeclarationId, definition) == null) {
+                    "duplicate nominal type declaration identity ${definition.typeDeclarationId.qualifiedName} in package $name"
+                }
+            }
+        }
+    }
+}
 
 /**
  * 包内全部声明的扁平化视图。
@@ -125,6 +140,10 @@ val ChirPackage.allDeclarations: List<ChirDeclaration>
         addDeclarationsWithMembers(importedTypeDefinitions)
         modules.forEach { module -> addDeclarationsWithMembers(module.declarations) }
     }
+
+/** 模块内全部声明的扁平化视图，包含嵌套自定义类型的成员。 */
+val ChirModule.allDeclarations: List<ChirDeclaration>
+    get() = buildList { addDeclarationsWithMembers(declarations) }
 
 /**
  * 将声明及其自定义类型成员递归加入当前列表。

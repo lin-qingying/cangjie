@@ -14,6 +14,7 @@ import com.intellij.psi.search.ProjectScope
 import com.intellij.psi.search.GlobalSearchScope
 import org.cangnova.cangjie.LanguageVersionSettings
 import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaCjmpCompilationMode
 import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileResolutionMode
 import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryFallbackDependenciesModule
@@ -28,6 +29,7 @@ import org.cangnova.cangjie.platform.CangJiePlatforms
 import org.cangnova.cangjie.platform.TargetPlatform
 import org.cangnova.cangjie.psi.CjCodeFragment
 import org.cangnova.cangjie.psi.CjFile
+import java.nio.file.Path
 
 /**
  * 测试阶段允许回填依赖的模块视图。
@@ -100,6 +102,7 @@ class CaSourceModuleImpl(
     project: Project,
     psiRoots: List<PsiFileSystemItem>,
     targetPlatform: TargetPlatform = CangJiePlatforms.defaultCangJiePlatform,
+    override val cjmpCompilationMode: CaCjmpCompilationMode? = null,
 ) : CaTestModuleBase(project, createSourceRootsContentScope(project, psiRoots), targetPlatform), CaSourceModule {
     /**
      * 源码模块包含的 PSI root 列表。
@@ -123,6 +126,8 @@ class CaLibraryModuleImpl(
     project: Project,
     binaryRoots: List<PsiFileSystemItem>,
     targetPlatform: TargetPlatform = CangJiePlatforms.defaultCangJiePlatform,
+    /** 显式发布的 CJMP common-part CJO 文件路径。 */
+    override val cjmpCommonPartCjoPaths: List<Path> = emptyList(),
 ) : CaTestModuleBase(project, TestLibraryRootContentScope(project, binaryRoots), targetPlatform), CaLibraryModule {
     /**
      * library binary root 列表。

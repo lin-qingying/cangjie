@@ -41,14 +41,15 @@ abstract class CjFunctionNotStubbed(node: ASTNode) :
     override val valueParameterList: CjParameterList?
         get() = findChildByType(CjNodeTypes.VALUE_PARAMETER_LIST)
 
+    /** 非 stub 函数也按真实直接子节点提供完整列表。 */
+    override val valueParameterLists: List<CjParameterList>
+        get() = children.filterIsInstance<CjParameterList>()
+
     /**
      * 暴露 `valueParameters`，实现仓颉 PSI节点对上层接口的属性契约。
      */
     override val valueParameters: List<CjParameter>
-        get() {
-            val list = valueParameterList
-            return list?.parameters ?: emptyList()
-        }
+        get() = valueParameterLists.flatMap { it.parameters }
 
     /**
      * 暴露 `bodyExpression`，实现仓颉 PSI节点对上层接口的属性契约。

@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.serialization.provider
 
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.resolve.providers.CfirCompositeSymbolProvider
@@ -27,13 +28,21 @@ class CfirDeserializedExtendProvider(
     private val providers: List<AbstractCfirDeserializedSymbolProvider>,
 ) : CfirExtendProvider {
     /** 延迟构造的 extend 查询索引，首次查询时遍历所有可见包。 */
-    private val index: ExtendIndex by lazy(LazyThreadSafetyMode.PUBLICATION) { buildIndex() }
+    private val indexDelegate = lazy(LazyThreadSafetyMode.PUBLICATION) { buildIndex() }
+    private val index: ExtendIndex by indexDelegate
+
+    /** CJO provider 在会话生命周期内稳定；索引首次建成后版本固定为 1。 */
+    override val modificationCount: Long
+        get() = if (indexDelegate.isInitialized()) 1L else 0L
 
     override fun getAllExtends(): List<CfirExtend> = index.byDeclarationPackage.keys.toList()
 
     /** 按规范化目标 key 查询库中声明的 extend。 */
     override fun getExtendsForTarget(targetKey: CfirExtendTargetKey): List<CfirExtend> =
         index.byTargetKey[targetKey].orEmpty()
+
+    override fun getExtendsForTarget(targetKey: CfirExtendTargetKey, packageFqName: FqName): List<CfirExtend> =
+        index.byTargetKey[targetKey].orEmpty().filter { index.byDeclarationPackage[it] == packageFqName }
 
     /** 按 class-like 目标类型查询 extend。 */
     override fun getExtendsForClass(classId: ClassId): List<CfirExtend> =
@@ -123,4 +132,13 @@ fun CfirSymbolProvider.flattenDeserializedProviders(): List<AbstractCfirDeserial
         is AbstractCfirDeserializedSymbolProvider -> listOf(this)
         else -> emptyList()
     }
+}
+
+/** 依 FullId 所属包与声明索引，在 session provider 链中取回共享 CJO canonical 成员。 */
+internal fun CfirSymbolProvider.deserializeCjoInitializationDependency(
+    fullPackageName: String,
+    ownerDeclarationIndex: Int,
+    declarationIndex: Int,
+): CfirDeclaration? = flattenDeserializedProviders().firstNotNullOfOrNull { provider ->
+    provider.deserializeCjoInitializationDependency(fullPackageName, ownerDeclarationIndex, declarationIndex)
 }

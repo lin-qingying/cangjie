@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.resolve.dfa
 
 import kotlinx.collections.immutable.PersistentSet
+import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.collections.immutable.toPersistentSet
 import org.cangnova.cangjie.cfir.DfaType
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
@@ -28,7 +29,12 @@ data class PersistentTypeStatement(
      * 变量已知排除的下界集合。
      */
     override val lowerTypes: PersistentSet<DfaType>,
-) : TypeStatement()
+    override val intrinsicUpperTypes: PersistentSet<ConeCangJieType> = persistentSetOf(),
+) : TypeStatement() {
+    init {
+        require(upperTypes.containsAll(intrinsicUpperTypes))
+    }
+}
 
 /**
  * 可变类型陈述。
@@ -50,7 +56,12 @@ class MutableTypeStatement(
      * 可写的下界集合。
      */
     override val lowerTypes: MutableSet<DfaType> = linkedSetOf(),
-) : TypeStatement()
+    override val intrinsicUpperTypes: MutableSet<ConeCangJieType> = linkedSetOf(),
+) : TypeStatement() {
+    init {
+        require(upperTypes.containsAll(intrinsicUpperTypes))
+    }
+}
 
 /**
  * 按数据流变量索引的类型陈述集合。
@@ -117,16 +128,20 @@ infix fun DataFlowVariable.typeNotEq(type: ConeCangJieType): MutableTypeStatemen
  */
 fun TypeStatement.toPersistent(): PersistentTypeStatement = when (this) {
     is PersistentTypeStatement -> this
-    else -> PersistentTypeStatement(variable, upperTypes.toPersistentSet(), lowerTypes.toPersistentSet())
+    else -> PersistentTypeStatement(variable, upperTypes.toPersistentSet(), lowerTypes.toPersistentSet(), intrinsicUpperTypes.toPersistentSet())
 }
 
 /**
  * 将类型陈述转换为可变形态。
  */
 fun TypeStatement.toMutable(): MutableTypeStatement = when (this) {
-    is PersistentTypeStatement -> MutableTypeStatement(variable, upperTypes.builder(), lowerTypes.builder())
-    else -> MutableTypeStatement(variable, LinkedHashSet(upperTypes), LinkedHashSet(lowerTypes))
+    is PersistentTypeStatement -> MutableTypeStatement(variable, upperTypes.builder(), lowerTypes.builder(), intrinsicUpperTypes.builder())
+    else -> MutableTypeStatement(variable, LinkedHashSet(upperTypes), LinkedHashSet(lowerTypes), LinkedHashSet(intrinsicUpperTypes))
 }
+
+/** 正常完成/读取/投影发布的固有上界，与检查器批准的普通 typeEq 保留不同来源。 */
+internal infix fun DataFlowVariable.intrinsicTypeEq(type: ConeCangJieType): MutableTypeStatement =
+    MutableTypeStatement(this, upperTypes = linkedSetOf(type), intrinsicUpperTypes = linkedSetOf(type))
 
 /**
  * 判断数据流变量是否为合成变量。

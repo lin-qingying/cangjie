@@ -13,6 +13,7 @@ import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.CfirTypeRefOrigin
 import org.cangnova.cangjie.cfir.types.CfirVArrayTypeRef
 import org.cangnova.cangjie.cfir.types.impl.CfirVArrayTypeRefImpl
 import org.cangnova.cangjie.source.CjSourceElement
@@ -22,6 +23,7 @@ class CfirVArrayTypeRefBuilder {
     var source: CjSourceElement? = null
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
     var customRenderer: Boolean = false
+    var typeUseOrigin: CfirTypeRefOrigin = CfirTypeRefOrigin.SEMANTIC
     lateinit var elementTypeRef: CfirTypeRef
     lateinit var sizeLiteral: String
 
@@ -31,6 +33,7 @@ class CfirVArrayTypeRefBuilder {
             source,
             annotations.toMutableOrEmpty(),
             customRenderer,
+            typeUseOrigin,
             elementTypeRef,
             sizeLiteral,
         )
@@ -55,6 +58,7 @@ inline fun buildVArrayTypeRefCopy(original: CfirVArrayTypeRef, init: CfirVArrayT
     copyBuilder.source = original.source
     copyBuilder.annotations.addAll(original.annotations)
     copyBuilder.customRenderer = original.customRenderer
+    copyBuilder.typeUseOrigin = original.typeUseOrigin
     copyBuilder.elementTypeRef = original.elementTypeRef
     copyBuilder.sizeLiteral = original.sizeLiteral
     return copyBuilder.apply(init).build()

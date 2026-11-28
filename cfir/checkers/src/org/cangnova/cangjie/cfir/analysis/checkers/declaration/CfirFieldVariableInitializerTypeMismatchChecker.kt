@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.checkTargetTypedExpression
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.explicitDeclaredTypeOrNull
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.isHandled
@@ -15,7 +16,7 @@ import org.cangnova.cangjie.source.AbstractCjSourceElement
  *
  * 检查成员字段 `let/var/const name: T = expr` 中初始化表达式是否可以赋给声明类型。
  */
-object CfirFieldVariableInitializerTypeMismatchChecker : CfirFieldVariableChecker() {
+object CfirFieldVariableInitializerTypeMismatchChecker : CfirFieldVariableChecker(MppCheckerKind.Common) {
     /**
      * 检查字段声明的初始化器类型。
      *

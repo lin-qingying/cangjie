@@ -2,6 +2,7 @@ package org.cangnova.cangjie.cfir.types
 
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.OperatorNameConventions
+import java.util.Collections
 
 /**
  * 内建 primitive 运算符签名。
@@ -11,16 +12,65 @@ import org.cangnova.cangjie.name.OperatorNameConventions
  * @property parameterKinds 参数 primitive 类型列表；一元运算为空列表。
  * @property returnKind 运算结果 primitive 类型。
  */
-data class BuiltinPrimitiveOperatorSignature(
+class BuiltinPrimitiveOperatorSignature(
     /** 运算符函数名。 */
     val name: Name,
     /** 接收者 primitive 类型。 */
     val receiverKind: PrimitiveTypeKind,
     /** 参数 primitive 类型列表；一元运算为空列表。 */
-    val parameterKinds: List<PrimitiveTypeKind>,
+    parameterKinds: List<PrimitiveTypeKind>,
     /** 运算结果 primitive 类型。 */
     val returnKind: PrimitiveTypeKind,
-)
+) {
+    /** 绑定事实不能共享调用方可原地修改的参数列表。 */
+    val parameterKinds: List<PrimitiveTypeKind> = Collections.unmodifiableList(parameterKinds.toList())
+
+    /** 只有成功匹配的完整签名才能提供操作身份；同名 unary/binary 由参数数量区分。 */
+    val operation: BuiltinPrimitiveOperatorOperation
+        get() = BuiltinPrimitiveOperatorOperation.entries.single {
+            it.nameInCfir == name && it.parameterCount == parameterKinds.size
+        }
+
+    fun copy(
+        name: Name = this.name,
+        receiverKind: PrimitiveTypeKind = this.receiverKind,
+        parameterKinds: List<PrimitiveTypeKind> = this.parameterKinds,
+        returnKind: PrimitiveTypeKind = this.returnKind,
+    ): BuiltinPrimitiveOperatorSignature = BuiltinPrimitiveOperatorSignature(name, receiverKind, parameterKinds, returnKind)
+
+    override fun equals(other: Any?): Boolean = other is BuiltinPrimitiveOperatorSignature &&
+        name == other.name && receiverKind == other.receiverKind && parameterKinds == other.parameterKinds && returnKind == other.returnKind
+
+    override fun hashCode(): Int = 31 * (31 * (31 * name.hashCode() + receiverKind.hashCode()) + parameterKinds.hashCode()) + returnKind.hashCode()
+
+    override fun toString(): String = "BuiltinPrimitiveOperatorSignature(name=$name, receiverKind=$receiverKind, " +
+        "parameterKinds=$parameterKinds, returnKind=$returnKind)"
+}
+
+/** 原生 UnaryInfo/BinaryInfo 所保存的运算身份；自增自减保留其独立语法及写回节点。 */
+enum class BuiltinPrimitiveOperatorOperation(val nameInCfir: Name, val parameterCount: Int) {
+    ADD(OperatorNameConventions.PLUS, 1),
+    SUBTRACT(OperatorNameConventions.MINUS, 1),
+    MULTIPLY(OperatorNameConventions.TIMES, 1),
+    DIVIDE(OperatorNameConventions.DIV, 1),
+    REMAINDER(OperatorNameConventions.REM, 1),
+    BIT_AND(OperatorNameConventions.AND, 1),
+    BIT_OR(OperatorNameConventions.OR, 1),
+    BIT_XOR(OperatorNameConventions.XOR, 1),
+    SHIFT_LEFT(OperatorNameConventions.LEFT_SHIFT, 1),
+    SHIFT_RIGHT(OperatorNameConventions.RIGHT_SHIFT, 1),
+    POWER(OperatorNameConventions.EXPONENTIATION, 1),
+    EQUAL(OperatorNameConventions.EQUALS, 1),
+    NOT_EQUAL(OperatorNameConventions.NOT_EQUALS, 1),
+    LESS(OperatorNameConventions.COMPARE_LT, 1),
+    LESS_EQUAL(OperatorNameConventions.COMPARE_LTEQ, 1),
+    GREATER(OperatorNameConventions.COMPARE_GT, 1),
+    GREATER_EQUAL(OperatorNameConventions.COMPARE_GTEQ, 1),
+    LOGICAL_AND(OperatorNameConventions.ANDAND, 1),
+    LOGICAL_OR(OperatorNameConventions.OROR, 1),
+    NEGATE(OperatorNameConventions.UNARY_MINUS, 0),
+    NOT(OperatorNameConventions.NOT, 0),
+}
 
 /**
  * primitive 内建运算匹配结果。
@@ -102,15 +152,6 @@ object BuiltinPrimitiveOperators {
      */
     private val unaryNumericNames = listOf(
         OperatorNameConventions.UNARY_MINUS,
-        OperatorNameConventions.UNARY_PLUS,
-    )
-
-    /**
-     * 整数一元运算符名称集合。
-     */
-    private val unaryIntegerNames = listOf(
-        OperatorNameConventions.INC,
-        OperatorNameConventions.DEC,
     )
 
     /**
@@ -146,7 +187,7 @@ object BuiltinPrimitiveOperators {
 
                 if (kind in integerKinds) {
                     addSameOperandOperators(kind, listOf(OperatorNameConventions.REM) + bitwiseNames)
-                    addSameOperandUnaryOperators(kind, listOf(OperatorNameConventions.NOT) + unaryIntegerNames)
+                    addSameOperandUnaryOperators(kind, listOf(OperatorNameConventions.NOT))
                     for (shiftName in shiftNames) {
                         for (rhsKind in integerKinds) {
                             add(signature(shiftName, kind, rhsKind, kind))

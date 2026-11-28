@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.collectors.components
 
 import org.cangnova.cangjie.cfir.ScopeSession
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.DeclarationCheckersDiagnosticComponent
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.ExpressionCheckersDiagnosticComponent
 import org.cangnova.cangjie.cfir.analysis.checkers.type.TypeCheckersDiagnosticComponent
@@ -15,19 +16,24 @@ object DiagnosticComponentsFactory {
     private fun createAllDiagnosticComponents(
         session: CfirSession,
         reporter: PendingDiagnosticReporter,
+        mppCheckerKind: MppCheckerKind,
     ): DiagnosticCollectorComponents {
         val regularComponents = buildList {
-            add(DeclarationCheckersDiagnosticComponent(session, reporter))
-            add(ExpressionCheckersDiagnosticComponent(session, reporter))
-            add(TypeCheckersDiagnosticComponent(session, reporter))
-            add(MacroConstructionDiagnosticCollectorComponent(session, reporter))
-            add(ErrorNodeDiagnosticCollectorComponent(session, reporter))
-            add(LanguageVersionSettingsDiagnosticComponent(session, reporter))
+            add(DeclarationCheckersDiagnosticComponent(session, reporter, mppCheckerKind))
+            add(ExpressionCheckersDiagnosticComponent(session, reporter, mppCheckerKind))
+            add(TypeCheckersDiagnosticComponent(session, reporter, mppCheckerKind))
+            if (mppCheckerKind == MppCheckerKind.Common) {
+                add(MacroConstructionDiagnosticCollectorComponent(session, reporter))
+                add(ErrorNodeDiagnosticCollectorComponent(session, reporter))
+                add(LanguageVersionSettingsDiagnosticComponent(session, reporter))
+            } else {
+                add(CfirCjmpBinaryDiagnosticsCollectorComponent(session, reporter))
+            }
         }.toTypedArray()
-        val postSemaComponents = arrayOf<AbstractDiagnosticCollectorComponent>(
+        val postSemaComponents = if (mppCheckerKind == MppCheckerKind.Common) arrayOf<AbstractDiagnosticCollectorComponent>(
             ControlFlowAnalysisDiagnosticComponent(session, reporter),
             CfirChirArithmeticDiagnosticCollectorComponent(session, reporter),
-        )
+        ) else emptyArray()
         return DiagnosticCollectorComponents(
             regularComponents = regularComponents,
             postSemaComponents = postSemaComponents,
@@ -39,10 +45,10 @@ object DiagnosticComponentsFactory {
     fun create(
         session: CfirSession,
         scopeSession: ScopeSession,
-
+        mppCheckerKind: MppCheckerKind,
         ): CliDiagnosticsCollector {
         return CliDiagnosticsCollector(session, scopeSession) { reporter ->
-            createAllDiagnosticComponents(session, reporter)
+            createAllDiagnosticComponents(session, reporter, mppCheckerKind)
         }
     }
 }

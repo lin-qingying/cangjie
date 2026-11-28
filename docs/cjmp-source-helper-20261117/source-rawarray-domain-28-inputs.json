@@ -1,0 +1,26 @@
+{
+  "utc": "2026-11-18T09:11:20.3138878Z",
+  "fileCount": 6849,
+  "aggregateSha256": "75FC2FCD0982749EC0DD55185CACD1BA84566B53114191BB4512A3B98E45AE21",
+  "roots": [
+    "common",
+    "cfir",
+    "analysis/low-level-api-cfir",
+    "analysis/analysis-api-cfir",
+    "compiler/frontend",
+    "compiler/config",
+    "compiler/phaser",
+    "compiler/arguments",
+    "psi",
+    "resolution.common",
+    "macro"
+  ],
+  "include": [
+    "*.kt",
+    "*.cj",
+    "*.kts"
+  ],
+  "exclude": "**/build/**",
+  "method": "rg --files --hidden --no-ignore, / normalized and Sort-Object -CaseSensitive; SHA256 of UTF8 LF joined path TAB length TAB uppercaseSHA256, no final LF",
+  "scope": "RawArray F4-A/B marker replacement/declaration argument domains, relations7 and real provider1 plus nativeRaw2 and SOURCE18"
+}

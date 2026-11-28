@@ -83,6 +83,7 @@ class ChirDataFlowEngine<S>(
      * 对 [function] 执行数据流分析直到收敛。
      */
     fun analyze(function: ChirFunctionDeclaration): ChirDataFlowResult<S> {
+        require(function.hasBody) { "cannot analyze data flow for bodyless function ${function.semanticId}" }
         require(function.blocks.isNotEmpty()) { "function ${function.name} has no blocks" }
 
         val blocks = function.blocks
@@ -95,7 +96,12 @@ class ChirDataFlowEngine<S>(
 
         when (direction) {
             ChirDataFlowDirection.FORWARD -> {
-                entrySeed?.let { inState[function.entryBlockId] = it }
+                entrySeed?.let {
+                    val entryBlockId = requireNotNull(function.entryBlockId) {
+                        "bodyful function ${function.semanticId} has no entry block"
+                    }
+                    inState[entryBlockId] = it
+                }
             }
             ChirDataFlowDirection.BACKWARD -> {
                 val exitBlocks = blocks.filter { successors.getValue(it.semanticId).isEmpty() }

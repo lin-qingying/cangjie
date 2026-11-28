@@ -9,6 +9,8 @@ import org.cangnova.cangjie.test.TestInfrastructureInternals
 import org.cangnova.cangjie.test.builders.TestConfigurationBuilder
 import org.cangnova.cangjie.test.builders.nonGroupingPhaseTestRunner
 import org.cangnova.cangjie.test.model.ResultingArtifact
+import org.cangnova.cangjie.test.directives.ConfigurationDirectives
+import org.cangnova.cangjie.test.directives.LanguageSettingsDirectives
 import org.cangnova.cangjie.test.services.MetaInfosCleanupPreprocessor
 import org.cangnova.cangjie.test.services.SourceFilePreprocessor
 import org.cangnova.cangjie.test.services.TemporaryDirectoryManager
@@ -30,6 +32,9 @@ abstract class AbstractCangjieCompilerTest {
     private var previousSlowAssertions: Boolean = false
 
     companion object {
+        /** 与 Analysis API 测试共享基础指令，保证语言版本与特性指令由同一对象解析和读取。 */
+        val defaultDirectiveContainers = listOf(ConfigurationDirectives, LanguageSettingsDirectives)
+
         val defaultPreprocessors: List<Constructor<SourceFilePreprocessor>> = listOf(
             ::MetaInfosCleanupPreprocessor,
 
@@ -42,6 +47,7 @@ abstract class AbstractCangjieCompilerTest {
     @OptIn(TestInfrastructureInternals::class)
     protected open val configuration: TestConfigurationBuilder.() -> Unit = {
         assertions = JUnit5Assertions
+        useDirectives(*defaultDirectiveContainers.toTypedArray())
         useSourcePreprocessor(*defaultPreprocessors.toTypedArray())
 
         useAdditionalService<TemporaryDirectoryManager>(::TemporaryDirectoryManagerImpl)

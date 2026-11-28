@@ -45,9 +45,11 @@ Module-specific implementation notes belong to the linked subsystem document. In
 | `:cfir:raw-cfir:raw-cfir-common` | CFIR | Raw CFIR shared abstractions | [owner](../cfir/README.md) |
 | `:cfir:resolve` | CFIR | CFIR semantic resolution | [owner](../cfir/README.md) |
 | `:cfir:semantics` | CFIR | Shared semantic utilities | [owner](../cfir/README.md) |
+| `:cfir:semantics.api` | CFIR | Semantic service contracts | [owner](../cfir/semantics.api/README.md) |
 | `:chir` | CHIR | CHIR aggregation | [owner](../chir/README.md) |
 | `:chir:cfir2chir` | CHIR | CFIR to CHIR lowering | [owner](../chir/README.md) |
 | `:chir:chir-tree` | CHIR | CHIR tree and passes | [owner](../chir/README.md) |
+| `:chir:cjmp-linker` | CHIR | CJMP CHIR package linking and actualization | [owner](../chir/README.md) |
 | `:code-insight` | Code insight | Editor-service aggregation | [owner](../code-insight/README.md) |
 | `:code-insight:api` | Code insight | Editor-service API | [owner](../code-insight/README.md) |
 | `:code-insight:fixes` | Code insight | Editor quick fixes | [owner](../code-insight/README.md) |
@@ -60,7 +62,10 @@ Module-specific implementation notes belong to the linked subsystem document. In
 | `:common:diagnostics` | Common | Shared diagnostics framework | [owner](../common/README.md) |
 | `:compiler` | Compiler | Compiler driver aggregation | [owner](../compiler/README.md) |
 | `:compiler:arguments` | Compiler | Compiler CLI arguments | [owner](../compiler/README.md) |
+| `:compiler:cli` | Compiler | Compiler command-line pipeline | [owner](../compiler/README.md) |
+| `:compiler:cli:cli-base` | Compiler | Shared command-line argument parsing | [owner](../compiler/README.md) |
 | `:compiler:codegen` | Compiler | CHIR to LLVM code generation | [owner](../compiler/README.md) |
+| `:compiler:compiler.version` | Compiler | 编译器版本信息 | [owner](../compiler/README.md) |
 | `:compiler:config` | Compiler | Compiler configuration | [owner](../compiler/README.md) |
 | `:compiler:frontend` | Compiler | Frontend pipeline coordination | [owner](../compiler/README.md) |
 | `:compiler:frontend-arguments-generator` | Compiler | CLI argument generator | [owner](../compiler/README.md) |

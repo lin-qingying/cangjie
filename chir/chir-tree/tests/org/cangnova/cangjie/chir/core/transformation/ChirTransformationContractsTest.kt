@@ -113,6 +113,9 @@ class ChirTransformationContractsTest {
             override fun handleBinary(expression: ChirBinaryExpression): String = "binary"
             override fun handleMemory(expression: org.cangnova.cangjie.chir.core.expression.ChirMemoryExpression): String = "memory"
             override fun handleCall(expression: ChirCallExpression): String = "call"
+            override fun handleTuple(expression: org.cangnova.cangjie.chir.core.expression.ChirTupleExpression): String = "tuple"
+            override fun handleField(expression: org.cangnova.cangjie.chir.core.expression.ChirFieldExpression): String = "field"
+            override fun handleConstant(expression: org.cangnova.cangjie.chir.core.expression.ChirConstantExpression): String = "constant"
             override fun handleOthers(expression: org.cangnova.cangjie.chir.core.expression.ChirOtherExpression): String = "others"
         })
 

@@ -70,10 +70,10 @@ internal object DefaultJniNativeFacade : JniNativeFacade {
         get() = LlvmNative.loadDiagnostics
 
     /**
-     * 读取 JVM 系统属性中暴露的 LLVM 版本。
+     * 读取当前 JNI 绑定所加载 LLVM 运行时的版本。
      */
     override val llvmVersion: String?
-        get() = System.getProperty("cangjie.llvm.version")
+        get() = if (isAvailable) LlvmNative.llvmVersion() else null
 
     /**
      * 安装 JNI 绑定符号。
@@ -244,6 +244,8 @@ private fun CodegenOptimizationLevel.toLlvmOptimizationLevel(): LlvmCodeGenOptim
         CodegenOptimizationLevel.LESS -> LlvmCodeGenOptimizationLevel.LESS
         CodegenOptimizationLevel.DEFAULT -> LlvmCodeGenOptimizationLevel.DEFAULT
         CodegenOptimizationLevel.AGGRESSIVE -> LlvmCodeGenOptimizationLevel.AGGRESSIVE
+        CodegenOptimizationLevel.SIZE -> LlvmCodeGenOptimizationLevel.SIZE
+        CodegenOptimizationLevel.SIZE_AGGRESSIVE -> LlvmCodeGenOptimizationLevel.SIZE_AGGRESSIVE
     }
 
 /**

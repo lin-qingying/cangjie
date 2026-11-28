@@ -141,7 +141,7 @@ internal fun normalizeTypeForCompatibilityCheck(type: ConeCangJieType): ConeCang
  * 参数检查和完成写回必须看到同一个已替换的 expected type，lambda / 字面量才能按目标类型定型。
  */
 internal fun Candidate.substituteExplicitTypeArgumentConstraints(expectedType: ConeCangJieType): ConeCangJieType =
-    system.currentStorage().explicitTypeArgumentsSubstitutor().substituteOrSelf(expectedType)
+    system.currentStorage().explicitTypeArgumentsSubstitutor(callInfo.session.typeContext).substituteOrSelf(expectedType)
 
 /**
  * 计算表达式在当前参数位置上的期望类型。

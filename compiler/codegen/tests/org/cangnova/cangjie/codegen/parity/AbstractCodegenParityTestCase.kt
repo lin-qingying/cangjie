@@ -303,11 +303,13 @@ abstract class AbstractCodegenParityTestCase : TestCase() {
                 ),
             ),
             blocks = emptyList(),
-            entryBlockId = ChirSemanticId("block:none"),
+            entryBlockId = null,
             attributes = setOf(
                 org.cangnova.cangjie.chir.core.attribute.ChirStringAttribute("cc", "fastcc"),
                 org.cangnova.cangjie.chir.core.attribute.ChirBooleanAttribute("nounwind", enabled = true),
             ),
+            hasBody = false,
+            isImported = true,
         )
         val callExpr = ChirCallExpression(
             semanticId = ChirSemanticId("expr:call"),
@@ -684,10 +686,12 @@ abstract class AbstractCodegenParityTestCase : TestCase() {
                 ),
             ),
             blocks = emptyList(),
-            entryBlockId = ChirSemanticId("block:none"),
+            entryBlockId = null,
             attributes = setOf(
                 org.cangnova.cangjie.chir.core.attribute.ChirStringAttribute("cc", "fastcc"),
             ),
+            hasBody = false,
+            isImported = true,
         )
         val call = ChirCallExpression(
             semanticId = ChirSemanticId("expr:call"),
@@ -841,6 +845,7 @@ abstract class AbstractCodegenParityTestCase : TestCase() {
      */
     private fun buildBitwiseShiftChainFixturePackage(packageName: String, moduleName: String, functionName: String): ChirPackage {
         val i32 = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
+        val i64 = ChirResolvedTypeRef(ChirPrimitiveType.INT64)
         val function = DefaultChirFunctionDeclaration(
             semanticId = ChirSemanticId("fn:$functionName"),
             name = functionName,
@@ -869,14 +874,14 @@ abstract class AbstractCodegenParityTestCase : TestCase() {
                             semanticId = ChirSemanticId("expr:shl"),
                             operator = "shl",
                             left = ChirLocalValue(ChirSemanticId("expr:xor"), i32, "expr_xor"),
-                            right = ChirConstantValue(ChirSemanticId("const:shl_rhs"), i32, "1"),
+                            right = ChirConstantValue(ChirSemanticId("const:shl_rhs"), i64, "1"),
                             resultType = i32,
                         ),
                         ChirBinaryExpression(
                             semanticId = ChirSemanticId("expr:lshr"),
                             operator = "lshr",
                             left = ChirLocalValue(ChirSemanticId("expr:shl"), i32, "expr_shl"),
-                            right = ChirConstantValue(ChirSemanticId("const:lshr_rhs"), i32, "1"),
+                            right = ChirConstantValue(ChirSemanticId("const:lshr_rhs"), i64, "1"),
                             resultType = i32,
                         ),
                         ChirBinaryExpression(
@@ -890,7 +895,7 @@ abstract class AbstractCodegenParityTestCase : TestCase() {
                             semanticId = ChirSemanticId("expr:ashr"),
                             operator = "ashr",
                             left = ChirConstantValue(ChirSemanticId("const:ashr_lhs"), i32, "-8"),
-                            right = ChirConstantValue(ChirSemanticId("const:ashr_rhs"), i32, "1"),
+                            right = ChirConstantValue(ChirSemanticId("const:ashr_rhs"), i64, "1"),
                             resultType = i32,
                         ),
                         ChirBinaryExpression(
@@ -1195,7 +1200,9 @@ abstract class AbstractCodegenParityTestCase : TestCase() {
                 ),
             ),
             blocks = emptyList(),
-            entryBlockId = ChirSemanticId("block:none"),
+            entryBlockId = null,
+            hasBody = false,
+            isImported = true,
         )
         val call = ChirCallExpression(
             semanticId = ChirSemanticId("expr:call_void"),

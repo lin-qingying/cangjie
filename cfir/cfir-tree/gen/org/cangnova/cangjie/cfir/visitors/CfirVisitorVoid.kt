@@ -160,6 +160,14 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
         visitElement(typeParameterRefsOwner)
     }
 
+    final override fun visitTypeParametersOwner(typeParametersOwner: CfirTypeParametersOwner, data: Nothing?) {
+        visitTypeParametersOwner(typeParametersOwner)
+    }
+
+    open fun visitTypeParametersOwner(typeParametersOwner: CfirTypeParametersOwner) {
+        visitElement(typeParametersOwner)
+    }
+
     final override fun visitMemberDeclaration(memberDeclaration: CfirMemberDeclaration, data: Nothing?) {
         visitMemberDeclaration(memberDeclaration)
     }
@@ -312,6 +320,14 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
         visitElement(invalidDeclaration)
     }
 
+    final override fun visitMacroExpansionDeclaration(macroExpansionDeclaration: CfirMacroExpansionDeclaration, data: Nothing?) {
+        visitMacroExpansionDeclaration(macroExpansionDeclaration)
+    }
+
+    open fun visitMacroExpansionDeclaration(macroExpansionDeclaration: CfirMacroExpansionDeclaration) {
+        visitElement(macroExpansionDeclaration)
+    }
+
     final override fun visitProperty(property: CfirProperty, data: Nothing?) {
         visitProperty(property)
     }
@@ -376,6 +392,14 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
         visitElement(typeParameter)
     }
 
+    final override fun visitConstructedClassTypeParameterRef(constructedClassTypeParameterRef: CfirConstructedClassTypeParameterRef, data: Nothing?) {
+        visitConstructedClassTypeParameterRef(constructedClassTypeParameterRef)
+    }
+
+    open fun visitConstructedClassTypeParameterRef(constructedClassTypeParameterRef: CfirConstructedClassTypeParameterRef) {
+        visitElement(constructedClassTypeParameterRef)
+    }
+
     final override fun visitDeclarationStatus(declarationStatus: CfirDeclarationStatus, data: Nothing?) {
         visitDeclarationStatus(declarationStatus)
     }
@@ -390,6 +414,134 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
 
     open fun visitExpression(expression: CfirExpression) {
         visitElement(expression)
+    }
+
+    final override fun visitNativeMatchExpression(nativeMatchExpression: CfirNativeMatchExpression, data: Nothing?) {
+        visitNativeMatchExpression(nativeMatchExpression)
+    }
+
+    open fun visitNativeMatchExpression(nativeMatchExpression: CfirNativeMatchExpression) {
+        visitElement(nativeMatchExpression)
+    }
+
+    final override fun visitNativeMatchCase(nativeMatchCase: CfirNativeMatchCase, data: Nothing?) {
+        visitNativeMatchCase(nativeMatchCase)
+    }
+
+    open fun visitNativeMatchCase(nativeMatchCase: CfirNativeMatchCase) {
+        visitElement(nativeMatchCase)
+    }
+
+    final override fun visitNativeConditionMatchExpression(nativeConditionMatchExpression: CfirNativeConditionMatchExpression, data: Nothing?) {
+        visitNativeConditionMatchExpression(nativeConditionMatchExpression)
+    }
+
+    open fun visitNativeConditionMatchExpression(nativeConditionMatchExpression: CfirNativeConditionMatchExpression) {
+        visitElement(nativeConditionMatchExpression)
+    }
+
+    final override fun visitNativeConditionMatchCase(nativeConditionMatchCase: CfirNativeConditionMatchCase, data: Nothing?) {
+        visitNativeConditionMatchCase(nativeConditionMatchCase)
+    }
+
+    open fun visitNativeConditionMatchCase(nativeConditionMatchCase: CfirNativeConditionMatchCase) {
+        visitElement(nativeConditionMatchCase)
+    }
+
+    final override fun visitLetPatternDestructorExpression(letPatternDestructorExpression: CfirLetPatternDestructorExpression, data: Nothing?) {
+        visitLetPatternDestructorExpression(letPatternDestructorExpression)
+    }
+
+    open fun visitLetPatternDestructorExpression(letPatternDestructorExpression: CfirLetPatternDestructorExpression) {
+        visitElement(letPatternDestructorExpression)
+    }
+
+    final override fun visitNativeCatch(nativeCatch: CfirNativeCatch, data: Nothing?) {
+        visitNativeCatch(nativeCatch)
+    }
+
+    open fun visitNativeCatch(nativeCatch: CfirNativeCatch) {
+        visitElement(nativeCatch)
+    }
+
+    final override fun visitNativeTryExpression(nativeTryExpression: CfirNativeTryExpression, data: Nothing?) {
+        visitNativeTryExpression(nativeTryExpression)
+    }
+
+    open fun visitNativeTryExpression(nativeTryExpression: CfirNativeTryExpression) {
+        visitElement(nativeTryExpression)
+    }
+
+    final override fun visitPrimitiveTypeExpression(primitiveTypeExpression: CfirPrimitiveTypeExpression, data: Nothing?) {
+        visitPrimitiveTypeExpression(primitiveTypeExpression)
+    }
+
+    open fun visitPrimitiveTypeExpression(primitiveTypeExpression: CfirPrimitiveTypeExpression) {
+        visitElement(primitiveTypeExpression)
+    }
+
+    final override fun visitWildcardExpression(wildcardExpression: CfirWildcardExpression, data: Nothing?) {
+        visitWildcardExpression(wildcardExpression)
+    }
+
+    open fun visitWildcardExpression(wildcardExpression: CfirWildcardExpression) {
+        visitElement(wildcardExpression)
+    }
+
+    final override fun visitFunctionArgument(functionArgument: CfirFunctionArgument, data: Nothing?) {
+        visitFunctionArgument(functionArgument)
+    }
+
+    open fun visitFunctionArgument(functionArgument: CfirFunctionArgument) {
+        visitElement(functionArgument)
+    }
+
+    final override fun visitCallExpression(callExpression: CfirCallExpression, data: Nothing?) {
+        visitCallExpression(callExpression)
+    }
+
+    open fun visitCallExpression(callExpression: CfirCallExpression) {
+        visitElement(callExpression)
+    }
+
+    final override fun visitUnaryExpression(unaryExpression: CfirUnaryExpression, data: Nothing?) {
+        visitUnaryExpression(unaryExpression)
+    }
+
+    open fun visitUnaryExpression(unaryExpression: CfirUnaryExpression) {
+        visitElement(unaryExpression)
+    }
+
+    final override fun visitBinaryExpression(binaryExpression: CfirBinaryExpression, data: Nothing?) {
+        visitBinaryExpression(binaryExpression)
+    }
+
+    open fun visitBinaryExpression(binaryExpression: CfirBinaryExpression) {
+        visitElement(binaryExpression)
+    }
+
+    final override fun visitArrayCreationExpression(arrayCreationExpression: CfirArrayCreationExpression, data: Nothing?) {
+        visitArrayCreationExpression(arrayCreationExpression)
+    }
+
+    open fun visitArrayCreationExpression(arrayCreationExpression: CfirArrayCreationExpression) {
+        visitElement(arrayCreationExpression)
+    }
+
+    final override fun visitPointerExpression(pointerExpression: CfirPointerExpression, data: Nothing?) {
+        visitPointerExpression(pointerExpression)
+    }
+
+    open fun visitPointerExpression(pointerExpression: CfirPointerExpression) {
+        visitElement(pointerExpression)
+    }
+
+    final override fun visitResolvedSpawnExpression(resolvedSpawnExpression: CfirResolvedSpawnExpression, data: Nothing?) {
+        visitResolvedSpawnExpression(resolvedSpawnExpression)
+    }
+
+    open fun visitResolvedSpawnExpression(resolvedSpawnExpression: CfirResolvedSpawnExpression) {
+        visitElement(resolvedSpawnExpression)
     }
 
     final override fun visitBlock(block: CfirBlock, data: Nothing?) {
@@ -534,6 +686,22 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
 
     open fun visitThisReference(thisReference: CfirThisReference) {
         visitElement(thisReference)
+    }
+
+    final override fun visitResolvedQualifier(resolvedQualifier: CfirResolvedQualifier, data: Nothing?) {
+        visitResolvedQualifier(resolvedQualifier)
+    }
+
+    open fun visitResolvedQualifier(resolvedQualifier: CfirResolvedQualifier) {
+        visitElement(resolvedQualifier)
+    }
+
+    final override fun visitErrorResolvedQualifier(errorResolvedQualifier: CfirErrorResolvedQualifier, data: Nothing?) {
+        visitErrorResolvedQualifier(errorResolvedQualifier)
+    }
+
+    open fun visitErrorResolvedQualifier(errorResolvedQualifier: CfirErrorResolvedQualifier) {
+        visitElement(errorResolvedQualifier)
     }
 
     final override fun visitNamedAccessExpression(namedAccessExpression: CfirNamedAccessExpression, data: Nothing?) {
@@ -848,6 +1016,22 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
         visitElement(tupleLiteral)
     }
 
+    final override fun visitFunctionBodyOwner(functionBodyOwner: CfirFunctionBodyOwner, data: Nothing?) {
+        visitFunctionBodyOwner(functionBodyOwner)
+    }
+
+    open fun visitFunctionBodyOwner(functionBodyOwner: CfirFunctionBodyOwner) {
+        visitElement(functionBodyOwner)
+    }
+
+    final override fun visitIterationOwner(iterationOwner: CfirIterationOwner, data: Nothing?) {
+        visitIterationOwner(iterationOwner)
+    }
+
+    open fun visitIterationOwner(iterationOwner: CfirIterationOwner) {
+        visitElement(iterationOwner)
+    }
+
     final override fun visitTargetElement(targetElement: CfirTargetElement, data: Nothing?) {
         visitTargetElement(targetElement)
     }
@@ -1008,6 +1192,14 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
         visitElement(qualifierPart)
     }
 
+    final override fun visitParenthesizedTypeRef(parenthesizedTypeRef: CfirParenthesizedTypeRef, data: Nothing?) {
+        visitParenthesizedTypeRef(parenthesizedTypeRef)
+    }
+
+    open fun visitParenthesizedTypeRef(parenthesizedTypeRef: CfirParenthesizedTypeRef) {
+        visitElement(parenthesizedTypeRef)
+    }
+
     final override fun visitUserTypeRef(userTypeRef: CfirUserTypeRef, data: Nothing?) {
         visitUserTypeRef(userTypeRef)
     }
@@ -1102,6 +1294,14 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
 
     open fun visitResolvedNamedReference(resolvedNamedReference: CfirResolvedNamedReference) {
         visitElement(resolvedNamedReference)
+    }
+
+    final override fun visitResolvedBuiltinOperatorReference(resolvedBuiltinOperatorReference: CfirResolvedBuiltinOperatorReference, data: Nothing?) {
+        visitResolvedBuiltinOperatorReference(resolvedBuiltinOperatorReference)
+    }
+
+    open fun visitResolvedBuiltinOperatorReference(resolvedBuiltinOperatorReference: CfirResolvedBuiltinOperatorReference) {
+        visitElement(resolvedBuiltinOperatorReference)
     }
 
     final override fun visitErrorReference(errorReference: CfirErrorReference, data: Nothing?) {

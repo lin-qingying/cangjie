@@ -77,6 +77,7 @@ object CangJieHighlightingLexicalKeys {
         keys2[CDocTokens.TAG_NAME] = CangJieHighlightingColors.CDOC_TAG
 
         keys1[TokenType.BAD_CHARACTER] = CangJieHighlightingColors.BAD_CHARACTER
+        keys1[CjTokens.UNKNOWN_TOKEN_START] = CangJieHighlightingColors.BAD_CHARACTER
     }
 
     /**

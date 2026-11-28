@@ -9,7 +9,6 @@ import org.cangnova.cangjie.analysis.api.cfir.getExplicitCallableReceiverType
 import org.cangnova.cangjie.analysis.api.cfir.location
 import org.cangnova.cangjie.analysis.api.cfir.symbols.pointers.CaCfirAnonymousFunctionSymbolPointer
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
-import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.symbols.CaAnonymousFunctionSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaFinalizerSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaFunctionSymbol
@@ -68,12 +67,6 @@ internal class CaCfirAnonymousFunctionSymbol private constructor(
      */
     override val cfirSymbol: CfirAnonymousFunctionSymbol
         get() = super<CaCfirCjBasedSymbol>.cfirSymbol
-
-    /**
-     * 匿名函数所在的 use-site 模块。
-     */
-    override val containingModule: CaModule
-        get() = analysisSession.useSiteModule
 
     /**
      * 匿名函数 CFIR member 状态。
@@ -267,12 +260,6 @@ internal class CaCfirFinalizerSymbol private constructor(
      */
     override val cfirSymbol: CfirFinalizerSymbol
         get() = super<CaCfirCjBasedSymbol>.cfirSymbol
-
-    /**
-     * finalizer 所在的 use-site 模块。
-     */
-    override val containingModule: CaModule
-        get() = analysisSession.useSiteModule
 
     /**
      * finalizer CFIR member 状态。

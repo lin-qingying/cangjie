@@ -12,7 +12,7 @@ import org.cangnova.cangjie.cfir.declarations.annotationInfo
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.cfir.types.*
@@ -132,7 +132,8 @@ private fun CfirLiteralExpression.asPublicLiteralAnnotationValue(
     val constant = when (kind) {
         CfirLiteralKind.BOOLEAN -> (value as? Boolean)?.let { CaBaseAnnotationValues.boolValue(it, psi) }
         CfirLiteralKind.RUNE -> (value as? Int)?.let { CaBaseAnnotationValues.runeValue(it, psi) }
-        CfirLiteralKind.STRING -> (value as? String)?.let { CaBaseAnnotationValues.stringValue(it, psi) }
+        CfirLiteralKind.STRING, CfirLiteralKind.JSTRING ->
+            (value as? String)?.let { CaBaseAnnotationValues.stringValue(it, psi) }
         CfirLiteralKind.UNIT -> CaBaseAnnotationValues.unitValue(psi)
         CfirLiteralKind.INT,
         CfirLiteralKind.BYTE,
@@ -200,7 +201,7 @@ private fun CfirConstantValue.asPublicValue(psi: CjElement?, token: CaLifetimeTo
 private fun CfirConstantValue.Primitive.asPublicConstant(psi: CjElement?): CaConstantValue = when (kind) {
     CfirLiteralKind.BOOLEAN -> CaBaseAnnotationValues.boolValue(value as Boolean, psi)
     CfirLiteralKind.RUNE -> CaBaseAnnotationValues.runeValue(value as Int, psi)
-    CfirLiteralKind.STRING -> CaBaseAnnotationValues.stringValue(value as String, psi)
+    CfirLiteralKind.STRING, CfirLiteralKind.JSTRING -> CaBaseAnnotationValues.stringValue(value as String, psi)
     CfirLiteralKind.UNIT -> CaBaseAnnotationValues.unitValue(psi)
     CfirLiteralKind.INT, CfirLiteralKind.BYTE -> {
         val integer = value as BigInteger

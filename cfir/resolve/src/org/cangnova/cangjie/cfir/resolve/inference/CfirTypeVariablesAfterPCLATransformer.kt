@@ -32,6 +32,9 @@ import org.cangnova.cangjie.cfir.expressions.CfirLazyBlock
 import org.cangnova.cangjie.cfir.expressions.CfirLazyExpression
 import org.cangnova.cangjie.cfir.expressions.CfirResolvable
 import org.cangnova.cangjie.cfir.references.CfirReference
+import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
+import org.cangnova.cangjie.cfir.references.CfirReferenceParentType
+import org.cangnova.cangjie.cfir.references.impl.CfirResolvedAppliedCallableReference
 import org.cangnova.cangjie.cfir.resolvedTypeFromPrototype
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtom
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
@@ -52,6 +55,7 @@ import org.cangnova.cangjie.cfir.visitors.CfirDefaultTransformer
 internal class CfirTypeVariablesAfterPCLATransformer(
     private val substitutor: ConeSubstitutor,
 ) : CfirDefaultTransformer<Nothing?>() {
+    private val references = java.util.IdentityHashMap<CfirResolvedAppliedCallableReference, CfirResolvedAppliedCallableReference>()
 
     override fun <E : CfirElement> transformElement(element: E, data: Nothing?): E {
         if (element is CfirResolvable) {
@@ -72,6 +76,25 @@ internal class CfirTypeVariablesAfterPCLATransformer(
         return substitutor.substituteOrNull(resolvedTypeRef.coneType)
             ?.let { resolvedTypeRef.resolvedTypeFromPrototype(it, resolvedTypeRef.source) }
             ?: resolvedTypeRef
+    }
+
+    /** 完成引用的类型不是 ordinary children；PCLA固定后仍须保留其绑定、别名和父类型状态。 */
+    @OptIn(org.cangnova.cangjie.cfir.CfirImplementationDetail::class)
+    override fun transformResolvedNamedReference(resolvedNamedReference: CfirResolvedNamedReference, data: Nothing?): CfirReference {
+        if (resolvedNamedReference !is CfirResolvedAppliedCallableReference) return resolvedNamedReference
+        return references.getOrPut(resolvedNamedReference) {
+            CfirResolvedAppliedCallableReference(
+                resolvedNamedReference.source, resolvedNamedReference.name, resolvedNamedReference.resolvedSymbol,
+                resolvedNamedReference.substitutedReturnType?.let(substitutor::substituteOrSelf),
+                resolvedNamedReference.substitutedParameterTypes.map(substitutor::substituteOrSelf),
+                resolvedNamedReference.isFunctionValue,
+                when (val parent = resolvedNamedReference.matchedParentType) {
+                    CfirReferenceParentType.Absent, CfirReferenceParentType.Invalid -> parent
+                    is CfirReferenceParentType.Instantiated -> CfirReferenceParentType.Instantiated(substitutor.substituteOrSelf(parent.type))
+                },
+                resolvedNamedReference.callSiteType?.let(substitutor::substituteOrSelf),
+            )
+        }
     }
 
     /**

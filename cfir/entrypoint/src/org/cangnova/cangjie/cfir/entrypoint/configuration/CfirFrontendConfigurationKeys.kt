@@ -27,10 +27,15 @@ package org.cangnova.cangjie.cfir.entrypoint.configuration
 import org.cangnova.cangjie.cfir.diagnostics.CjRegisteredDiagnosticFactoriesStorage
 import org.cangnova.cangjie.cfir.session.CfirInteropTarget
 import org.cangnova.cangjie.cfir.session.CfirCjmpMode
+import org.cangnova.cangjie.cfir.session.CfirCjmpOptimizationLevel
 import org.cangnova.cangjie.cfir.session.CfirConditionalCompilationSettings
+import org.cangnova.cangjie.LanguageFeature
+import org.cangnova.cangjie.config.CjmpCommonPartInputs
 import org.cangnova.cangjie.config.CompilerConfiguration
 import org.cangnova.cangjie.config.CompilerConfigurationKey
+import org.cangnova.cangjie.config.languageVersionSettings
 import org.cangnova.cangjie.name.FqName
+import java.io.File
 
 /**
  * 前端阶段配置键集合。
@@ -93,15 +98,10 @@ object CfirFrontendConfigurationKeys {
     val IMPLICIT_SYSTEM_ANNOTATIONS =
         CompilerConfigurationKey.create<Set<FqName>>("IMPLICIT_SYSTEM_ANNOTATIONS")
 
-    /** CJMP common-part `.cjo` 输入路径列表（官方 `--common-part-cjo` 对位）。 */
+    /** 本次编译唯一的 common-part 输入解析结果。 */
     @JvmField
-    val CJMP_COMMON_PART_CJO_PATHS =
-        CompilerConfigurationKey.create<List<String>>("CJMP_COMMON_PART_CJO_PATHS")
-
-    /** CJMP common-part `.chir` 输入路径列表（官方 `--common-part-chir` 对位）。 */
-    @JvmField
-    val CJMP_COMMON_PART_CHIR_PATHS =
-        CompilerConfigurationKey.create<List<String>>("CJMP_COMMON_PART_CHIR_PATHS")
+    val CJMP_COMMON_PART_INPUT_RESOLUTION =
+        CompilerConfigurationKey.create<CjmpCommonPartInputResolution>("CJMP_COMMON_PART_INPUT_RESOLUTION")
 
     /** 当前调用是否为 CHIR 输出模式（官方 `outputMode == CHIR` 对位，即编译 common part）。 */
     @JvmField
@@ -113,11 +113,6 @@ object CfirFrontendConfigurationKeys {
     val CJMP_MODE =
         CompilerConfigurationKey.create<CfirCjmpMode>("CJMP_MODE")
 
-    /** 当前编译包的 features 集合（官方 `features { ... }` 指令的包级并集）。 */
-    @JvmField
-    val CJMP_PACKAGE_FEATURES =
-        CompilerConfigurationKey.create<Set<String>>("CJMP_PACKAGE_FEATURES")
-
     /** 写出 common part cjo 时内嵌的 debug 选项（官方 `Option::debug` 对位）。 */
     @JvmField
     val CJMP_MODULE_DEBUG =
@@ -126,7 +121,7 @@ object CfirFrontendConfigurationKeys {
     /** 写出 common part cjo 时内嵌的优化级别（官方 `Option` 优化级别对位）。 */
     @JvmField
     val CJMP_MODULE_OPT_LEVEL =
-        CompilerConfigurationKey.create<String>("CJMP_MODULE_OPT_LEVEL")
+        CompilerConfigurationKey.create<CfirCjmpOptimizationLevel>("CJMP_MODULE_OPT_LEVEL")
 }
 
 /**
@@ -256,15 +251,13 @@ var CompilerConfiguration.implicitSystemAnnotations: Set<FqName>
         ?: org.cangnova.cangjie.annotations.BuiltInAnnotationRegistry.defaultImplicitSystemAnnotations
     set(value) = put(CfirFrontendConfigurationKeys.IMPLICIT_SYSTEM_ANNOTATIONS, value.toSet())
 
-/** CJMP common-part `.cjo` 输入路径列表。 */
-var CompilerConfiguration.cjmpCommonPartCjoPaths: List<String>
-    get() = getList(CfirFrontendConfigurationKeys.CJMP_COMMON_PART_CJO_PATHS)
-    set(value) = put(CfirFrontendConfigurationKeys.CJMP_COMMON_PART_CJO_PATHS, value.toList())
 
-/** CJMP common-part `.chir` 输入路径列表。 */
-var CompilerConfiguration.cjmpCommonPartChirPaths: List<String>
-    get() = getList(CfirFrontendConfigurationKeys.CJMP_COMMON_PART_CHIR_PATHS)
-    set(value) = put(CfirFrontendConfigurationKeys.CJMP_COMMON_PART_CHIR_PATHS, value.toList())
+
+
+/** 本次编译唯一的 common-part 输入解析结果；未配置输入时等价于空输入。 */
+val CompilerConfiguration.cjmpCommonPartInputResolution: CjmpCommonPartInputResolution
+    get() = get(CfirFrontendConfigurationKeys.CJMP_COMMON_PART_INPUT_RESOLUTION)
+        ?: CjmpCommonPartInputResolution.Valid(CjmpCommonPartInputs.EMPTY)
 
 /** 当前调用是否为 CHIR 输出模式（编译 common part）。 */
 var CompilerConfiguration.cjmpChirOutput: Boolean
@@ -285,12 +278,55 @@ var CompilerConfiguration.cjmpModuleDebug: Boolean
     set(value) = put(CfirFrontendConfigurationKeys.CJMP_MODULE_DEBUG, value)
 
 /** 写出 common part cjo 时内嵌的优化级别。 */
-var CompilerConfiguration.cjmpModuleOptLevel: String
+var CompilerConfiguration.cjmpModuleOptLevel: CfirCjmpOptimizationLevel
     get() = get(CfirFrontendConfigurationKeys.CJMP_MODULE_OPT_LEVEL)
-        ?: org.cangnova.cangjie.cfir.session.CfirCjmpSettingsComponent.DEFAULT_OPT_LEVEL
+        ?: CfirCjmpOptimizationLevel.O0
     set(value) = put(CfirFrontendConfigurationKeys.CJMP_MODULE_OPT_LEVEL, value)
 
-/** 当前编译包的 features 集合（features 子集门的 specific 侧输入）。 */
-var CompilerConfiguration.cjmpPackageFeatures: Set<String>
-    get() = get(CfirFrontendConfigurationKeys.CJMP_PACKAGE_FEATURES) ?: emptySet()
-    set(value) = put(CfirFrontendConfigurationKeys.CJMP_PACKAGE_FEATURES, value.toSet())
+/**
+ * 按当前语言版本和消费边界归一化 common-part 输入，并写入唯一解析结果。
+ *
+ * pipeline、测试 facade、depends-on 图与 CJO manager 必须消费该结果；失败时不发布部分输入，
+ * 调用方必须报告 [CjmpCommonPartInputResolution.Invalid.message] 并终止。
+ */
+fun CompilerConfiguration.configureCjmpCommonPartInputs(
+    commonPartCjoPaths: List<String>,
+    commonPartChirPaths: List<String>,
+    consumer: CjmpCommonPartInputConsumer = CjmpCommonPartInputConsumer.FRONTEND,
+): CjmpCommonPartInputResolution {
+    val protocolResolution = CjmpCommonPartInputResolver.resolve(
+        commonPartCjoPaths = commonPartCjoPaths,
+        commonPartChirPaths = commonPartChirPaths,
+        languageVersionSettings = languageVersionSettings,
+        consumer = consumer,
+    )
+    val unsupportedChirOption = protocolResolution is CjmpCommonPartInputResolution.Invalid &&
+            protocolResolution.kind == CjmpCommonPartInputErrorKind.COMMON_CHIR_NOT_SUPPORTED
+    val invalidPath = if (unsupportedChirOption) {
+        null
+    } else {
+        (commonPartCjoPaths.asSequence() + commonPartChirPaths.asSequence())
+            .firstOrNull { path -> !File(path).isFile || !File(path).canRead() }
+    }
+    val resolution = if (invalidPath != null) {
+        CjmpCommonPartInputResolution.Invalid(
+            kind = CjmpCommonPartInputErrorKind.COMMON_PART_INPUT_FILE_INVALID,
+            commonCjoCount = commonPartCjoPaths.size,
+            commonChirCount = commonPartChirPaths.size,
+            inputPath = invalidPath,
+        )
+    } else {
+        protocolResolution
+    }
+    put(CfirFrontendConfigurationKeys.CJMP_COMMON_PART_INPUT_RESOLUTION, resolution)
+    return resolution
+}
+
+/**
+ * 返回本次编译唯一的 CJMP 输入事实；参数解析失败时不允许进入 session 装配。
+ */
+fun CompilerConfiguration.requireCjmpCommonPartInputs(): CjmpCommonPartInputs =
+    when (val resolution = cjmpCommonPartInputResolution) {
+        is CjmpCommonPartInputResolution.Valid -> resolution.inputs
+        is CjmpCommonPartInputResolution.Invalid -> error(resolution.message)
+    }

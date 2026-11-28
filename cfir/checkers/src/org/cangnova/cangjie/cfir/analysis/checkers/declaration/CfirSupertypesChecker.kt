@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.hasInvalidGenericTypeArgument
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.isUnresolvedCascadeAfterFailedImport
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
@@ -21,8 +22,8 @@ import org.cangnova.cangjie.cfir.resolve.providers.DeclaredSupertypeClassificati
 import org.cangnova.cangjie.cfir.resolve.providers.classifyDeclaredSupertype
 import org.cangnova.cangjie.cfir.resolve.providers.declaredSupertypeClassifierSource
 import org.cangnova.cangjie.cfir.resolve.providers.independentNominalCheckTypeOrNull
-import org.cangnova.cangjie.cfir.session.cfirProvider
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.cfirProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
@@ -47,7 +48,7 @@ import org.cangnova.cangjie.source.CjSourceElement
  *
  * 该检查器覆盖重复父类型、接口继承非接口、多个具体父类型以及继承 final concrete 类型等规则。
  */
-object CfirSupertypesChecker : CfirClassLikeChecker() {
+object CfirSupertypesChecker : CfirClassLikeChecker(MppCheckerKind.Platform) {
     /**
      * 检查 class-like 声明的所有直接父类型规则。
      */

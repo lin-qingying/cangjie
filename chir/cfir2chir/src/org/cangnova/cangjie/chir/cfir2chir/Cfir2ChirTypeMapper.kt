@@ -9,13 +9,17 @@ import org.cangnova.cangjie.chir.core.type.ChirGenericType
 import org.cangnova.cangjie.chir.core.type.ChirNamedType
 import org.cangnova.cangjie.chir.core.type.ChirPrimitiveType
 import org.cangnova.cangjie.chir.core.type.ChirRawArrayType
+import org.cangnova.cangjie.chir.core.type.ChirRefType
 import org.cangnova.cangjie.chir.core.type.ChirResolvedTypeRef
 import org.cangnova.cangjie.chir.core.type.ChirStructType
 import org.cangnova.cangjie.chir.core.type.ChirTupleType
 import org.cangnova.cangjie.chir.core.type.ChirType
 import org.cangnova.cangjie.chir.core.type.ChirTypeRef
+import org.cangnova.cangjie.chir.core.type.ChirTypeDeclarationId
 import org.cangnova.cangjie.chir.core.type.ChirVArrayType
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
+import org.cangnova.cangjie.cfir.symbols.constructType
+import org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRef
 import org.cangnova.cangjie.cfir.types.CfirBasicTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
@@ -49,6 +53,10 @@ import org.cangnova.cangjie.cfir.types.type
  * 不在 backend 阶段兜底成其他类型。
  */
 class Cfir2ChirTypeMapper {
+    /** 将声明类型参数映射为携带稳定声明身份的 CHIR 泛型引用。 */
+    fun mapTypeParameters(parameters: List<CfirTypeParameterRef>): List<ChirTypeRef> =
+        parameters.map { parameter -> mapConeTypeRef(parameter.symbol.constructType()) }
+
     /**
      * 将 CFIR type ref 映射为 CHIR type ref。
      */
@@ -59,6 +67,25 @@ class Cfir2ChirTypeMapper {
             else -> throw Cfir2ChirConversionException("unresolved CFIR type ref cannot be lowered to CHIR: ${typeRef::class.simpleName}", typeRef)
         }
     }
+
+    /**
+     * 映射 CHIR 类层次元数据中的名义类型。
+     *
+     * 官方 CHIR 的父类、已实现接口和 extend 接口边保存 `ClassType`；
+     * `RefType` 只用于表达式及函数签名中的运行时引用值。
+     */
+    fun mapHierarchyTypeRef(typeRef: CfirTypeRef): ChirTypeRef {
+        val classLikeType = hierarchyClassLikeType(typeRef)
+        return ChirResolvedTypeRef(
+            ChirClassType(
+                declarationId = classLikeType.classId.toChirTypeDeclarationId(),
+                typeArguments = classLikeType.typeArguments.map { mapConeTypeRef(it.type) },
+            ),
+        )
+    }
+
+    /** 判断类层次中的 resolved 类型是接口边还是唯一父类边。 */
+    fun isInterfaceHierarchyType(typeRef: CfirTypeRef): Boolean = hierarchyClassLikeType(typeRef).isInterface
 
     /**
      * 将 Cone 类型映射为已解析 CHIR type ref。
@@ -72,16 +99,21 @@ class Cfir2ChirTypeMapper {
     fun mapConeType(type: ConeCangJieType): ChirType {
         return when (type) {
             is ConePrimitiveType -> mapPrimitiveType(type.kind)
-            is ConeClassLikeType -> ChirClassType(
-                name = type.classId.asString(),
-                typeArguments = type.typeArguments.map { mapConeTypeRef(it.type) },
+            is ConeClassLikeType -> ChirRefType(
+                referencedType = ChirResolvedTypeRef(
+                    ChirClassType(
+                        declarationId = type.classId.toChirTypeDeclarationId(),
+                        typeArguments = type.typeArguments.map { mapConeTypeRef(it.type) },
+                    ),
+                ),
+                mutable = true,
             )
             is ConeStructType -> ChirStructType(
-                name = type.classId.asString(),
+                declarationId = type.classId.toChirTypeDeclarationId(),
                 typeArguments = type.typeArguments.map { mapConeTypeRef(it.type) },
             )
             is ConeEnumType -> ChirEnumType(
-                name = type.classId.asString(),
+                declarationId = type.classId.toChirTypeDeclarationId(),
                 typeArguments = type.typeArguments.map { mapConeTypeRef(it.type) },
             )
             is ConeFunctionType -> {
@@ -96,22 +128,29 @@ class Cfir2ChirTypeMapper {
             is ConeTupleType -> ChirTupleType(type.elementTypes.map(::mapConeTypeRef))
             is ConeVArrayType -> ChirVArrayType(
                 elementType = mapConeTypeRef(type.elementType),
-                rank = type.size.toIntExact("VArray size"),
+                size = type.size,
             )
             is ConePointerType -> ChirCPointerType(mapConeTypeRef(type.pointeeType))
             is ConeCStringType -> ChirCStringType
             ConeAnyType -> ChirNamedType("Any")
-            is ConeTypeParameterType -> ChirGenericType(type.lookupTag.typeParameterSymbol.name.asString())
+            is ConeTypeParameterType -> {
+                val symbol = type.lookupTag.typeParameterSymbol
+                ChirGenericType(
+                    identifier = symbol.name.asString(),
+                    declarationIndex = Cfir2ChirIds.typeParameterIndex(symbol),
+                    semanticIdentity = Cfir2ChirIds.typeParameterId(symbol).value,
+                )
+            }
             is ConeTypeAliasType -> type.expandedType?.let(::mapConeType) ?: ChirNamedType(
-                renderName = type.classId.asString(),
+                name = type.classId.asString(),
                 typeArguments = type.typeArguments.map { mapConeTypeRef(it.type) },
             )
             is ConeIntersectionType -> ChirNamedType(
-                renderName = type.intersectedTypes.joinToString(prefix = "intersection<", postfix = ">") { it.renderNameForSyntheticType() },
+                name = "intersection",
                 typeArguments = type.intersectedTypes.map(::mapConeTypeRef),
             )
             is ConeUnionType -> ChirNamedType(
-                renderName = type.unionTypes.joinToString(prefix = "union<", postfix = ">") { it.renderNameForSyntheticType() },
+                name = "union",
                 typeArguments = type.unionTypes.map(::mapConeTypeRef),
             )
             is ConeQuestType -> ChirNamedType("Quest")
@@ -124,6 +163,29 @@ class Cfir2ChirTypeMapper {
             else -> throw Cfir2ChirConversionException("unsupported CFIR Cone type for CHIR lowering: ${type::class.qualifiedName}")
         }
     }
+
+    private fun hierarchyClassLikeType(typeRef: CfirTypeRef): ConeClassLikeType {
+        val resolvedTypeRef = typeRef as? CfirResolvedTypeRef
+            ?: throw Cfir2ChirConversionException(
+                "unresolved CFIR hierarchy type cannot be lowered to CHIR: ${typeRef::class.simpleName}",
+                typeRef,
+            )
+        return hierarchyClassLikeType(resolvedTypeRef.coneType, typeRef)
+    }
+
+    private fun hierarchyClassLikeType(type: ConeCangJieType, source: CfirTypeRef): ConeClassLikeType =
+        when (type) {
+            is ConeClassLikeType -> type
+            is ConeTypeAliasType -> type.expandedType?.let { hierarchyClassLikeType(it, source) }
+                ?: throw Cfir2ChirConversionException(
+                    "unexpanded CFIR type alias cannot be lowered as a CHIR hierarchy type: ${type.classId}",
+                    source,
+                )
+            else -> throw Cfir2ChirConversionException(
+                "CFIR hierarchy type is not a class-like nominal type: ${type::class.simpleName}",
+                source,
+            )
+        }
 
     /**
      * 映射尚未形成 Cone 的基础类型引用，主要覆盖内建类型名。
@@ -183,16 +245,6 @@ class Cfir2ChirTypeMapper {
     }
 
     /**
-     * 将 Long 精确转换为 Int，越界时报告转换异常。
-     */
-    private fun Long.toIntExact(label: String): Int {
-        if (this < Int.MIN_VALUE || this > Int.MAX_VALUE) {
-            throw Cfir2ChirConversionException("$label $this cannot be represented by current CHIR VArray rank field")
-        }
-        return toInt()
-    }
-
-    /**
      * 为交叉/联合等合成类型渲染稳定可读名称。
      */
     private fun ConeCangJieType.renderNameForSyntheticType(): String =
@@ -207,3 +259,10 @@ class Cfir2ChirTypeMapper {
             else -> this::class.simpleName ?: "anonymous"
         }
 }
+
+/** 将仓颉顶层 ClassId 拆成仓内名义声明身份。 */
+internal fun org.cangnova.cangjie.name.ClassId.toChirTypeDeclarationId(): ChirTypeDeclarationId =
+    ChirTypeDeclarationId(
+        packageName = packageFqName.asString(),
+        declarationName = relativeClassName.asString(),
+    )

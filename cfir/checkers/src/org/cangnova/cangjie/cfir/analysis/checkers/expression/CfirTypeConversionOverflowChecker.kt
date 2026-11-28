@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
@@ -18,7 +19,7 @@ import org.cangnova.cangjie.cfir.types.coneTypeOrNull
  * 再以当前目标类型的完整范围判断。这样诊断稳定地落在发生截断的整个转换表达式上，
  * 而不会错误落在其中的字面量或已成功的内层转换上。
  */
-object CfirTypeConversionOverflowChecker : CfirBasicExpressionChecker() {
+object CfirTypeConversionOverflowChecker : CfirBasicExpressionChecker(MppCheckerKind.Common) {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirStatement) {
         val conversion = expression as? CfirTypeConversion ?: return

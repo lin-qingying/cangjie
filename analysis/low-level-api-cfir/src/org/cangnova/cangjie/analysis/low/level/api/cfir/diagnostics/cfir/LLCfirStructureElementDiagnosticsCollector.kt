@@ -10,6 +10,7 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.api.DiagnosticCheckerFil
 import org.cangnova.cangjie.cfir.analysis.collectors.CheckerRunningDiagnosticCollectorVisitor
 import org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics.AbstractLLCfirDiagnosticsCollector
 import org.cangnova.cangjie.cfir.analysis.collectors.DiagnosticCollectorComponents
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.diagnostics.PendingDiagnosticReporter
 import org.cangnova.cangjie.cfir.session.CfirSession
 
@@ -23,9 +24,11 @@ internal class LLCfirStructureElementDiagnosticsCollector(
      */
     private val doCreateVisitor: (components: DiagnosticCollectorComponents) -> CheckerRunningDiagnosticCollectorVisitor,
     filter: DiagnosticCheckerFilter,
+    mppCheckerKind: MppCheckerKind? = null,
 ) : AbstractLLCfirDiagnosticsCollector(
     session,
     filter,
+    mppCheckerKind,
 ) {
     /**
      * 使用外部注入的 visitor 工厂创建 diagnostics visitor。

@@ -123,7 +123,9 @@ abstract class AbstractImplementation<Implementation, Element, Field>(
      * 判断字段是否由实现类体内默认值或自定义 setter 处理，而不是必须作为构造参数传入。
      */
     private fun withDefault(field: Field) =
-        !field.isFinal && field.implementationDefaultStrategy !is AbstractField.ImplementationDefaultStrategy.Required
+        !field.isFinal &&
+            field.implementationDefaultStrategy !is AbstractField.ImplementationDefaultStrategy.Required &&
+            field.implementationDefaultStrategy !is AbstractField.ImplementationDefaultStrategy.ConstructorDefaultValue
 
     /**
      * 应放入主构造函数参数列表的字段。
@@ -133,7 +135,7 @@ abstract class AbstractImplementation<Implementation, Element, Field>(
     /**
      * 应放入类体的字段。
      */
-    val fieldsInBody by lazy { allFields.filter { withDefault(it) || it.customSetter != null } }
+    val fieldsInBody by lazy { allFields.filter { withDefault(it) || it.customSetter != null || it.customGetter != null } }
 
     /**
      * 当前实现类是否需要 opt-in 注解保护。

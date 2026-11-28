@@ -31,6 +31,32 @@ import kotlin.test.assertTrue
  * 验证 CJO 包写入器产出的 FlatBuffers 数据可被包头读取器消费。
  */
 class CjoPackageWriterTest {
+    /** Native ASTWriter:995–1050；空参数和空上界必须是实际vector，不能编码成缺失槽。 */
+    @Test
+    fun `preserves required empty type vectors for native loading`() {
+        val metadata = CjoPackageMetadata(
+            fullPackageName = "sample.emptytypes", moduleName = "sample",
+            schemaProfile = CjoSchemaProfile.OFFICIAL_V1_1_3,
+            declarations = listOf(
+                CjoPackageDeclaration(identifier = "T", kind = DeclKind.GenericParamDecl, type = 1u),
+                CjoPackageDeclaration(identifier = "Empty", kind = DeclKind.ClassDecl, type = 2u, info = CjoClassInfo()),
+            ),
+            types = listOf(
+                CjoTypeMetadata(PackageFormat.TypeKind.Generic, semanticInfo = CjoGenericTypeInfoMetadata(1u)),
+                CjoTypeMetadata(PackageFormat.TypeKind.Class, semanticInfo = CjoCompositeTypeInfoMetadata(2u)),
+                CjoTypeMetadata(PackageFormat.TypeKind.Func, semanticInfo = CjoFunctionTypeInfoMetadata(4u, isC = false, hasVariableLenArg = false)),
+                CjoTypeMetadata(PackageFormat.TypeKind.Unit),
+            ),
+        )
+        val pkg = Package.getRootAsPackage(ByteBuffer.wrap(CjoPackageWriter.toByteArray(metadata)))
+        val generic = assertNotNull(pkg.allTypes(0))
+        val bounds = assertNotNull(generic.info(PackageFormat.GenericTyInfo()) as? PackageFormat.GenericTyInfo)
+        assertEquals(0, bounds.upperBoundsLength)
+        assertEquals(0, bounds.upperBoundsAsByteBuffer.remaining())
+        assertEquals(0, assertNotNull(pkg.allTypes(1)).typeArgsAsByteBuffer.remaining())
+        assertEquals(0, assertNotNull(pkg.allTypes(2)).typeArgsAsByteBuffer.remaining())
+    }
+
     @Test
     fun `encodes semantic type info with the package builder`() {
         val bytes = CjoPackageWriter.toByteArray(
@@ -101,7 +127,7 @@ class CjoPackageWriterTest {
                         identifier = "Box",
                         kind = DeclKind.ClassDecl,
                         type = 1u,
-                        genericDecl = CjoAnnotationTargetMetadata(pkgId = 0, index = 2u),
+                        genericDecl = CjoAnnotationTargetMetadata(pkgId = PackageIndex.CURRENT.value, index = 2u),
                         begin = CjoPositionMetadata(file = 1u, line = 1, column = 0),
                         end = CjoPositionMetadata(file = 1u, line = 4, column = 1),
                         identifierPosition = CjoPositionMetadata(file = 1u, line = 1, column = 7),
@@ -208,6 +234,133 @@ class CjoPackageWriterTest {
                             ),
                         ),
                     ),
+                ),
+            )
+        }
+    }
+
+    @Test
+    fun `rejects dangling lambda function body references`() {
+        assertFailsWith<IllegalArgumentException> {
+            CjoPackageWriter.toByteArray(
+                CjoPackageMetadata(
+                    fullPackageName = "sample.pkg",
+                    moduleName = "sample",
+                    types = listOf(CjoTypeMetadata(kind = PackageFormat.TypeKind.Unit)),
+                    expressions = listOf(
+                        CjoExpressionMetadata(
+                            kind = ExprKind.LambdaExpr,
+                            type = 1u,
+                            additionalInfo = CjoAdditionalExpressionInfoMetadata.Lambda(
+                                body = CjoFunctionBodyInfo(returnType = 1u, body = 2u),
+                                supportMock = false,
+                            ),
+                        ),
+                    ),
+                ),
+            )
+        }
+    }
+
+    @Test
+    fun `rejects lambda desugaring references to non-function declarations`() {
+        assertFailsWith<IllegalArgumentException> {
+            CjoPackageWriter.toByteArray(
+                CjoPackageMetadata(
+                    fullPackageName = "sample.pkg",
+                    moduleName = "sample",
+                    declarations = listOf(
+                        CjoPackageDeclaration(identifier = "parameter", kind = DeclKind.FuncParam),
+                    ),
+                    types = listOf(CjoTypeMetadata(kind = PackageFormat.TypeKind.Unit)),
+                    expressions = listOf(
+                        CjoExpressionMetadata(
+                            kind = ExprKind.LambdaExpr,
+                            type = 1u,
+                            additionalInfo = CjoAdditionalExpressionInfoMetadata.Lambda(
+                                body = CjoFunctionBodyInfo(
+                                    parameterLists = listOf(listOf(1u)),
+                                    desugaredParameterLists = listOf(listOf(1u)),
+                                    returnType = 1u,
+                                ),
+                                supportMock = false,
+                            ),
+                        ),
+                    ),
+                ),
+            )
+        }
+    }
+
+    @Test
+    fun `rejects dangling declaration and semantic type FullIds`() {
+        val declarations = listOf(CjoPackageDeclaration(identifier = "Box", kind = DeclKind.ClassDecl))
+        assertFailsWith<IllegalArgumentException> {
+            CjoPackageWriter.toByteArray(
+                CjoPackageMetadata(
+                    fullPackageName = "sample.pkg",
+                    moduleName = "sample",
+                    declarations = declarations,
+                    types = listOf(
+                        CjoTypeMetadata(
+                            kind = PackageFormat.TypeKind.Generic,
+                            semanticInfo = CjoGenericTypeInfoMetadata(declarationIndex = 2u),
+                        ),
+                    ),
+                ),
+            )
+        }
+        assertFailsWith<IllegalArgumentException> {
+            CjoPackageWriter.toByteArray(
+                CjoPackageMetadata(
+                    fullPackageName = "sample.pkg",
+                    moduleName = "sample",
+                    declarations = declarations.map {
+                        it.copy(genericDecl = CjoAnnotationTargetMetadata(pkgId = PackageIndex.CURRENT.value, index = 2u))
+                    },
+                ),
+            )
+        }
+        assertFailsWith<IllegalArgumentException> {
+            CjoPackageWriter.toByteArray(
+                CjoPackageMetadata(
+                    fullPackageName = "sample.pkg",
+                    moduleName = "sample",
+                    declarations = declarations.map {
+                        it.copy(dependencies = listOf(CjoAnnotationTargetMetadata(pkgId = PackageIndex.CURRENT.value, index = 2u)))
+                    },
+                ),
+            )
+        }
+    }
+
+    @Test
+    fun `rejects dangling function type and composite value types`() {
+        assertFailsWith<IllegalArgumentException> {
+            CjoPackageWriter.toByteArray(
+                CjoPackageMetadata(
+                    fullPackageName = "sample.pkg",
+                    moduleName = "sample",
+                    types = listOf(
+                        CjoTypeMetadata(
+                            kind = PackageFormat.TypeKind.Func,
+                            semanticInfo = CjoFunctionTypeInfoMetadata(
+                                returnType = 2u,
+                                isC = false,
+                                hasVariableLenArg = false,
+                            ),
+                        ),
+                    ),
+                ),
+            )
+        }
+        assertFailsWith<IllegalArgumentException> {
+            CjoPackageWriter.toByteArray(
+                CjoPackageMetadata(
+                    fullPackageName = "sample.pkg",
+                    moduleName = "sample",
+                    types = listOf(CjoTypeMetadata(kind = PackageFormat.TypeKind.Unit)),
+                    values = listOf(CjoCompositeValueMetadata(type = 2u)),
                 ),
             )
         }
@@ -380,6 +533,7 @@ class CjoPackageWriterTest {
                 fullPackageName = "sample.pkg",
                 moduleName = "sample",
                 schemaProfile = CjoSchemaProfile.REPOSITORY_EXTENDED,
+                imports = listOf("annotation.owner"),
                 declarations = listOf(
                     CjoPackageDeclaration(
                         identifier = "f",
@@ -389,7 +543,7 @@ class CjoPackageWriterTest {
                                 kind = AnnoKind.Deprecated,
                                 identifier = "Deprecated",
                                 arguments = listOf(CjoAnnotationArgumentMetadata("message", 7u)),
-                                target = CjoAnnotationTargetMetadata(decl = "Owner"),
+                                target = CjoAnnotationTargetMetadata(pkgId = 0, decl = "Owner"),
                             ),
                         ),
                     ),
@@ -498,7 +652,7 @@ class CjoPackageWriterTest {
                             info = CjoFunctionInfo(
                                 body = CjoFunctionBodyInfo(
                                     parameterLists = listOf(listOf(1u)),
-                                    desugaredParameterLists = listOf(emptyList()),
+                                    desugaredParameterLists = listOf(listOf(1u, 1u)),
                                 ),
                             ),
                         ),
@@ -578,6 +732,65 @@ class CjoPackageWriterTest {
         assertEquals(listOf(1u, 2u), (0 until pkg.allExprs(2)!!.operandsLength)
             .map { pkg.allExprs(2)!!.operands(it) })
         assertEquals(3u, pkg.allDecls(0)?.annotations(0)?.args(0)?.expr)
+    }
+
+    @Test
+    fun `writes inline source positions for expressions and nested patterns`() {
+        val bytes = CjoPackageWriter.toByteArray(
+            CjoPackageMetadata(
+                fullPackageName = "sample.pkg",
+                moduleName = "sample",
+                declarations = listOf(CjoPackageDeclaration(identifier = "binding")),
+                types = listOf(CjoTypeMetadata(kind = PackageFormat.TypeKind.Unit)),
+                expressions = listOf(
+                    CjoExpressionMetadata(
+                        kind = ExprKind.TryExpr,
+                        begin = CjoPositionMetadata(file = 11u, pkgId = 12u, line = 2, column = 3, ignore = true),
+                        end = CjoPositionMetadata(file = 21u, pkgId = 22u, line = 6, column = 7),
+                        additionalInfo = CjoAdditionalExpressionInfoMetadata.Try(
+                            resources = emptyList(),
+                            patterns = listOf(
+                                CjoPatternMetadata(
+                                    kind = PatternKind.VarPattern,
+                                    types = listOf(1u),
+                                    exprs = listOf(1u),
+                                    begin = CjoPositionMetadata(file = 31u, pkgId = 32u, line = 3, column = 4, ignore = true),
+                                    end = CjoPositionMetadata(file = 41u, pkgId = 42u, line = 5, column = 6),
+                                ),
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+        )
+
+        val expression = requireNotNull(Package.getRootAsPackage(ByteBuffer.wrap(bytes)).allExprs(0))
+        val expressionBegin = requireNotNull(expression.begin)
+        assertEquals(11u, expressionBegin.file)
+        assertEquals(12u, expressionBegin.pkgId)
+        assertEquals(2, expressionBegin.line)
+        assertEquals(3, expressionBegin.column)
+        assertEquals(true, expressionBegin.ignore)
+        val expressionEnd = requireNotNull(expression.end)
+        assertEquals(21u, expressionEnd.file)
+        assertEquals(22u, expressionEnd.pkgId)
+        assertEquals(6, expressionEnd.line)
+        assertEquals(7, expressionEnd.column)
+        assertEquals(false, expressionEnd.ignore)
+        val tryInfo = expression.info(PackageFormat.TryInfo()) as PackageFormat.TryInfo
+        val pattern = requireNotNull(tryInfo.patterns(0))
+        val patternBegin = requireNotNull(pattern.begin)
+        assertEquals(31u, patternBegin.file)
+        assertEquals(32u, patternBegin.pkgId)
+        assertEquals(3, patternBegin.line)
+        assertEquals(4, patternBegin.column)
+        assertEquals(true, patternBegin.ignore)
+        val patternEnd = requireNotNull(pattern.end)
+        assertEquals(41u, patternEnd.file)
+        assertEquals(42u, patternEnd.pkgId)
+        assertEquals(5, patternEnd.line)
+        assertEquals(6, patternEnd.column)
+        assertEquals(false, patternEnd.ignore)
     }
 
     /**

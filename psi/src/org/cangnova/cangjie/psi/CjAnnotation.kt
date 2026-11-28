@@ -26,8 +26,12 @@ package org.cangnova.cangjie.psi
 
 import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
+import com.intellij.psi.tree.TokenSet
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.annotations.BuiltInAnnotationRegistry
+import org.cangnova.cangjie.parsing.CangJieParser
+import org.cangnova.cangjie.parsing.MACRO_PARSING_FACTS_KEY
+import org.cangnova.cangjie.parsing.MacroParsingFacts
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.Name.Companion.identifier
 import org.cangnova.cangjie.psi.stubs.CangJieAnnotationStub
@@ -89,6 +93,11 @@ class CjAnnotation : CjElementImplStub<CangJieAnnotationStub>, CjCallElement {
     constructor(node: ASTNode) : super(node)
 
     constructor(stub: CangJieAnnotationStub) : super(stub, CjStubElementTypes.ANNOTATION)
+
+    /** 当前 annotation 根由原 parser transaction 冻结的真实 invocation 文法事实。 */
+    val parsingFacts: MacroParsingFacts?
+        get() = node.findChildByType(TokenSet.create(CjTokens.AT, CjTokens.ATEXCL))
+            ?.getCopyableUserData(MACRO_PARSING_FACTS_KEY)
 
     /**
      * 暴露 `calleeExpression`，实现仓颉 PSI节点对上层接口的属性契约。
@@ -229,10 +238,7 @@ class CjAnnotation : CjElementImplStub<CangJieAnnotationStub>, CjCallElement {
         val typeElement = typeReference?.typeElement as? CjUserType
         if (typeElement?.qualifier != null) return@run null
         val name = shortName?.asString() ?: return@run null
-        val file = containingFile as? CjFile
-        val moduleName = file?.let {
-            BuiltInAnnotationRegistry.sourceModuleName(it.packageFqName, it.packageDirective?.organizationName)
-        } ?: ""
+        val moduleName = CangJieParser.languageModuleNameForContext(this)
         BuiltInAnnotationRegistry.resolveLanguageBuiltIn(name, forcedCustom = false, moduleName = moduleName)
     }
 

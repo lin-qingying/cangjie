@@ -32,7 +32,7 @@ internal fun expressionGuard(fir: CfirExpression): CfirExpression {
         return fir
     }
 
-    return buildLazyExpression()
+    return buildLazyExpression { source = fir.source }
 }
 
 /**
@@ -48,7 +48,7 @@ private fun isLazyStatement(fir: CfirStatement): Boolean {
 private val SPECIAL_BODY_CALLABLE_SOURCE_KINDS = setOf(
     CjFakeSourceElementKind.DefaultAccessor,
     CjFakeSourceElementKind.ImplicitConstructor,
-    CjFakeSourceElementKind.PropertyFromParameter,
+    CjFakeSourceElementKind.FieldFromParameter,
     CjFakeSourceElementKind.DataClassGeneratedMembers,
     CjFakeSourceElementKind.EnumGeneratedDeclaration,
 )

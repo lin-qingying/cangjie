@@ -78,6 +78,7 @@ class BuiltInDeclProbeTest {
                 CjoSearchPath { key ->
                     if (key == "CANGJIE_STDLIB_MODULE") tempDir.toString() else null
                 },
+                CjoFormatVersionPolicy.Compilation(org.cangnova.cangjie.LanguageVersionSettingsImpl.DEFAULT),
             )
             val header = assertNotNull(manager.loadPackageHeader("std.core"))
             val pkg = assertNotNull(manager.loadPackage("std.core"))

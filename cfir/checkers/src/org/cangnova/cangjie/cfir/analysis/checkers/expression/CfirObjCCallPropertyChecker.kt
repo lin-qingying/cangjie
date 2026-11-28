@@ -11,6 +11,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirPropertyAccessor
@@ -40,7 +41,7 @@ import org.cangnova.cangjie.source.CjOffsetsOnlySourceElement
  * 目标身份由接收者的已解析 ClassId 与已解析属性声明共同确定。不能按 `ObjCFunc`/
  * `ObjCBlock` 短名扫描，也不能把任意名为 `call` 的用户属性当成 Objective-C 属性。
  */
-object CfirObjCCallPropertyChecker : CfirQualifiedAccessChecker() {
+object CfirObjCCallPropertyChecker : CfirQualifiedAccessChecker(MppCheckerKind.Common) {
     private val callName = Name.identifier("call")
 
     context(context: CheckerContext, reporter: DiagnosticReporter)

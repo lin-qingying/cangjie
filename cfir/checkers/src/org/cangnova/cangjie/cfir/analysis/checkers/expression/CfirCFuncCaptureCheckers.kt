@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.lambdaExpectedFunctionType
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
@@ -33,7 +34,7 @@ import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
  * 两条诊断的来源和范围，并让 this、super、named access、function call 分别挂在真实
  * CFIR visitor seam 上，避免把所有引用压到一个基于源码文本的 checker 中。
  */
-object CfirCFuncCaptureThisChecker : CfirBasicExpressionChecker() {
+object CfirCFuncCaptureThisChecker : CfirBasicExpressionChecker(MppCheckerKind.Common) {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirStatement) {
         val thisExpression = expression as? CfirThisReceiverExpression ?: return
@@ -48,7 +49,7 @@ object CfirCFuncCaptureThisChecker : CfirBasicExpressionChecker() {
 }
 
 /** CFunc lambda 中的 `super` receiver 不能被捕获。 */
-object CfirCFuncCaptureSuperChecker : CfirSuperReceiverExpressionChecker() {
+object CfirCFuncCaptureSuperChecker : CfirSuperReceiverExpressionChecker(MppCheckerKind.Common) {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirSuperReceiverExpression) {
         if (!context.isInsideCFuncLambda(expression)) return
@@ -67,7 +68,7 @@ object CfirCFuncCaptureSuperChecker : CfirSuperReceiverExpressionChecker() {
  * 显式 `this`/`super` 已经由对应 receiver checker 报告，显式普通对象 receiver
  * 则由其自身访问节点检查局部变量捕获；因此这里只处理官方的隐式成员访问形状。
  */
-object CfirCFuncCaptureNamedAccessChecker : CfirQualifiedAccessChecker() {
+object CfirCFuncCaptureNamedAccessChecker : CfirQualifiedAccessChecker(MppCheckerKind.Common) {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirQualifiedAccessExpression) {
         if (expression is CfirFunctionCall) return
@@ -97,7 +98,7 @@ object CfirCFuncCaptureNamedAccessChecker : CfirQualifiedAccessChecker() {
 }
 
 /** CFunc lambda 中局部变量/局部闭包作为 call callee 的捕获检查。 */
-object CfirCFuncCaptureCallChecker : CfirFunctionCallChecker() {
+object CfirCFuncCaptureCallChecker : CfirFunctionCallChecker(MppCheckerKind.Common) {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirFunctionCall) {
         if (!context.isInsideCFuncLambda(expression)) return

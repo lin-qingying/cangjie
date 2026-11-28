@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
@@ -22,7 +23,7 @@ import org.cangnova.cangjie.cfir.types.coneTypeOrNull
  * 后拒绝这种赋值。这个事实属于声明初始化 owner，不应由调用 checker 或 backend
  * 再次猜测；显式类型变量继续由普通类型匹配规则负责。
  */
-object CfirCFuncVariableInitializerChecker : CfirCallableDeclarationChecker() {
+object CfirCFuncVariableInitializerChecker : CfirCallableDeclarationChecker(MppCheckerKind.Common) {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirCallableDeclaration) {
         val variable = declaration as? CfirVariable ?: return

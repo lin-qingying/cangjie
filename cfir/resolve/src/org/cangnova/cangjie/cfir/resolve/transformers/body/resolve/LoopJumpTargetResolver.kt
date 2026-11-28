@@ -24,7 +24,7 @@
 
 package org.cangnova.cangjie.cfir.resolve.transformers.body.resolve
 
-import org.cangnova.cangjie.cfir.expressions.CfirLoopExpression
+import org.cangnova.cangjie.cfir.CfirIterationOwner
 import org.cangnova.cangjie.cfir.expressions.CfirLoopJump
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
@@ -47,7 +47,7 @@ import kotlin.collections.ArrayDeque
  */
 sealed class LoopJumpScope {
     /** 循环体区域。 */
-    data class Body(val loop: CfirLoopExpression) : LoopJumpScope()
+    data class Body(val loop: CfirIterationOwner) : LoopJumpScope()
 
     /**
      * 循环条件类区域。
@@ -55,7 +55,7 @@ sealed class LoopJumpScope {
      * 同一循环的 iterable 与 patternGuard 各有一个区域，但同一时刻最多只有一个
      * 处于栈顶，因此不会同时出现两个 `ConditionPart(loop)` 兄弟区域。
      */
-    data class ConditionPart(val loop: CfirLoopExpression) : LoopJumpScope()
+    data class ConditionPart(val loop: CfirIterationOwner) : LoopJumpScope()
 
     /** 函数边界。 */
     data object FunctionBoundary : LoopJumpScope()
@@ -100,7 +100,7 @@ object LoopJumpTargetResolver {
     }
 
     /** 从区域栈解析隐式最近循环；无可用循环时返回 null。 */
-    private fun resolveLoopTarget(scopes: ArrayDeque<LoopJumpScope>): CfirLoopExpression? {
+    private fun resolveLoopTarget(scopes: ArrayDeque<LoopJumpScope>): CfirIterationOwner? {
         val first = scopes.lastOrNull() ?: return null
         return when (first) {
             is LoopJumpScope.Body -> first.loop

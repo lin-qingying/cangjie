@@ -1,0 +1,539 @@
+{
+  "before": {
+    "utc": "2026-11-18T21:36:58.5421737Z",
+    "fileCount": 7282,
+    "aggregateSha256": "E5E0C9B0507B6D9DB0C792C3F115F13D195836A32AC79A4504CA38AE111FA2A5",
+    "roots": [
+      "common",
+      "cfir",
+      "analysis/low-level-api-cfir",
+      "analysis/analysis-api-cfir",
+      "compiler/frontend",
+      "compiler/config",
+      "compiler/phaser",
+      "compiler/arguments",
+      "compiler/compiler.version",
+      "psi",
+      "resolution.common",
+      "macro",
+      "settings.gradle.kts",
+      "prepare/frontend",
+      "prepare/ide-plugin-dependencies/cangjie-frontend-cfir-for-ide"
+    ],
+    "include": [
+      "*.kt",
+      "*.cj",
+      "*.kts",
+      "*.java",
+      "**/resources/META-INF/cangjie/compiler.version"
+    ],
+    "exclude": "**/build/**",
+    "method": "rg --files --hidden --no-ignore, / normalized and Sort-Object -CaseSensitive; SHA256 of UTF8 LF joined path TAB length TAB uppercaseSHA256, no final LF",
+    "scope": "38783 actual checker parent-dispatch generation and compile succeeded; exact zero attribute words retained. New48 analysis cases (source18,frozen4,typeUse16,Cellipsis10), rerun current bytes. Existing raw/copy/provider results are prior6a7fdb7f, not counted in this new run. FullD1/D3/mirror/T6/decoder remains open."
+  },
+  "after": {
+    "utc": "2026-11-18T21:40:06.2378871Z",
+    "fileCount": 7282,
+    "aggregateSha256": "387CA98CE89D784E8044125048A8FE0813F6064B25C7EE1A325B30071C6FB406",
+    "roots": [
+      "common",
+      "cfir",
+      "analysis/low-level-api-cfir",
+      "analysis/analysis-api-cfir",
+      "compiler/frontend",
+      "compiler/config",
+      "compiler/phaser",
+      "compiler/arguments",
+      "compiler/compiler.version",
+      "psi",
+      "resolution.common",
+      "macro",
+      "settings.gradle.kts",
+      "prepare/frontend",
+      "prepare/ide-plugin-dependencies/cangjie-frontend-cfir-for-ide"
+    ],
+    "include": [
+      "*.kt",
+      "*.cj",
+      "*.kts",
+      "*.java",
+      "**/resources/META-INF/cangjie/compiler.version"
+    ],
+    "exclude": "**/build/**",
+    "method": "rg --files --hidden --no-ignore, / normalized and Sort-Object -CaseSensitive; SHA256 of UTF8 LF joined path TAB length TAB uppercaseSHA256, no final LF",
+    "scope": "36364/59b38753 actual48/46passed2Aliasfailed; SOURCE18,Cextra10,TypeUseLifecycle16 and ABI2 pass in new bytes. No prior tree/provider results counted. Paren checker andzero attribute vector repaired; Alias remaining exact mismatch retained. FullS4/S5/S6 open.",
+    "unchanged": false
+  },
+  "queue": {
+    "id": "59b38753",
+    "args": [
+      "--gradle-user-home",
+      ".gradle/cjmp-export-home",
+      ":cfir:analysis-tests:test",
+      "--rerun",
+      "--tests",
+      "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExport*Test",
+      "--tests",
+      "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjo*Test.publicInterfaceDefaultBodyPromotesReferencedPrivateFunction",
+      "--tests",
+      "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjo*Test.referencedPrivateDefaultHelperIsCollectedOutsideClassBody",
+      "--tests",
+      "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceFrozenTypes*Test",
+      "--tests",
+      "org.cangnova.cangjie.cfir.analysis.tests.CfirExportTypeUseGraphLifecycle*Test",
+      "--tests",
+      "org.cangnova.cangjie.cfir.analysis.tests.CfirCVariadicSourceArguments*Test",
+      "--no-build-cache",
+      "--console=plain",
+      "--max-workers=1",
+      "--continue"
+    ],
+    "pid": 35136,
+    "owner": "pid@35136",
+    "submitAt": 1795037820808,
+    "startedAt": 1795037820844,
+    "finishedAt": 1795037921087,
+    "exitCode": 1,
+    "status": "DONE"
+  },
+  "total": 48,
+  "passed": 46,
+  "failed": 2,
+  "errors": 0,
+  "skipped": 0,
+  "allXmlWithinWindow": true,
+  "scope": "36364/59b38753 actual48/46passed2Aliasfailed; SOURCE18,Cextra10,TypeUseLifecycle16 and ABI2 pass in new bytes. No prior tree/provider results counted. Paren checker andzero attribute vector repaired; Alias remaining exact mismatch retained. FullS4/S5/S6 open.",
+  "extraPassedTasks": [],
+  "cases": [
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoLightTreeTest",
+      "name": "publicInterfaceDefaultBodyPromotesReferencedPrivateFunction()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoLightTreeTest",
+      "name": "referencedPrivateDefaultHelperIsCollectedOutsideClassBody()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoTest",
+      "name": "publicInterfaceDefaultBodyPromotesReferencedPrivateFunction()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoTest",
+      "name": "referencedPrivateDefaultHelperIsCollectedOutsideClassBody()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirCVariadicSourceArgumentsLightTreeTest",
+      "name": "c01DeferredUnitExtraIsRejectedAfterNestedGenericCompletion()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirCVariadicSourceArgumentsLightTreeTest",
+      "name": "ordinaryClassExtraDoesNotSatisfyCType()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirCVariadicSourceArgumentsLightTreeTest",
+      "name": "completedArgumentsPreserveFixedExtrasAndDeclaredSourceKind()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirCVariadicSourceArgumentsLightTreeTest",
+      "name": "missingFixedArgumentsRemainArityErrors()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirCVariadicSourceArgumentsLightTreeTest",
+      "name": "directUnitExtraHasItsOwnCallDiagnostic()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirCVariadicSourceArgumentsTest",
+      "name": "c01DeferredUnitExtraIsRejectedAfterNestedGenericCompletion()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirCVariadicSourceArgumentsTest",
+      "name": "ordinaryClassExtraDoesNotSatisfyCType()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirCVariadicSourceArgumentsTest",
+      "name": "completedArgumentsPreserveFixedExtrasAndDeclaredSourceKind()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirCVariadicSourceArgumentsTest",
+      "name": "missingFixedArgumentsRemainArityErrors()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirCVariadicSourceArgumentsTest",
+      "name": "directUnitExtraHasItsOwnCallDiagnostic()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirExportTypeUseGraphLifecycleLightTreeTest",
+      "name": "inheritedTypeSlotsKeepOrderAndBindings()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirExportTypeUseGraphLifecycleLightTreeTest",
+      "name": "replacingReturnNodeLeavesOldGraphFrozen()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirExportTypeUseGraphLifecycleLightTreeTest",
+      "name": "sourceSemanticAndCompilerAddedNodesKeepTheirRoles()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirExportTypeUseGraphLifecycleLightTreeTest",
+      "name": "explicitAliasAndExpressionKeepSeparateRoles()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirExportTypeUseGraphLifecycleLightTreeTest",
+      "name": "omittedReturnPublishesCompletedCompilerAddedType()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirExportTypeUseGraphLifecycleLightTreeTest",
+      "name": "parenthesesSelectOnlyTheActualInner()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirExportTypeUseGraphLifecycleLightTreeTest",
+      "name": "replacingAliasRightHandSideLeavesOldGraphFrozen()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirExportTypeUseGraphLifecycleLightTreeTest",
+      "name": "sharedTypeParametersKeepOwnerAndRepeatedOrder()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirExportTypeUseGraphLifecycleTest",
+      "name": "inheritedTypeSlotsKeepOrderAndBindings()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirExportTypeUseGraphLifecycleTest",
+      "name": "replacingReturnNodeLeavesOldGraphFrozen()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirExportTypeUseGraphLifecycleTest",
+      "name": "sourceSemanticAndCompilerAddedNodesKeepTheirRoles()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirExportTypeUseGraphLifecycleTest",
+      "name": "explicitAliasAndExpressionKeepSeparateRoles()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirExportTypeUseGraphLifecycleTest",
+      "name": "omittedReturnPublishesCompletedCompilerAddedType()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirExportTypeUseGraphLifecycleTest",
+      "name": "parenthesesSelectOnlyTheActualInner()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirExportTypeUseGraphLifecycleTest",
+      "name": "replacingAliasRightHandSideLeavesOldGraphFrozen()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirExportTypeUseGraphLifecycleTest",
+      "name": "sharedTypeParametersKeepOwnerAndRepeatedOrder()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportLightTreeTest",
+      "name": "controlFlow()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportLightTreeTest",
+      "name": "operatorsConversions()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportLightTreeTest",
+      "name": "declarationsCalls()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportLightTreeTest",
+      "name": "referenceInstantiation()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportLightTreeTest",
+      "name": "exceptionsResources()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportLightTreeTest",
+      "name": "originalDefaultAssignmentFactsAndFinalSelection()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportLightTreeTest",
+      "name": "referenceDerivedInstantiation()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportTest",
+      "name": "controlFlow()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportTest",
+      "name": "operatorsConversions()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportTest",
+      "name": "declarationsCalls()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportTest",
+      "name": "referenceInstantiation()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportTest",
+      "name": "exceptionsResources()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportTest",
+      "name": "originalDefaultAssignmentFactsAndFinalSelection()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportTest",
+      "name": "referenceDerivedInstantiation()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceFrozenTypesLightTreeTest",
+      "name": "functionAbi()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceFrozenTypesLightTreeTest",
+      "name": "orderedAliasRoles()",
+      "status": "FAILED",
+      "failureMessage": "org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)\r\n\torg.opentest4j.AssertionFailedError: 完整 D/E 闭包及每条有序边必须符合官方产物；类型编号可以共享或不同 ==> expected: <{3:aliasUse=3:aliasUse;top=false;type=20([28([];decl=11:IntPairChain;This=false)];ret=28([];decl=11:IntPairChain;This=false);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=true;params=[3:aliasUse/param[0]];ret=28([];decl=11:IntPairChain;This=false);body=28:16([];none);unsafe=false;slots=[E:3:16([];none);operands=[6:18([5([];none), 5([];none)];none);ref=value;target=3:aliasUse/param[0];inst=[];parent=none;operands=[]]], 11:IntPairChain=11:IntPairChain;top=true;type=28([];decl=11:IntPairChain;This=false);generic=none;genericDecl=none;dependencies=[];default=false;rhs=28([];decl=11:IntPair;This=false), 3:aliasUse/param[0]=7:value;top=false;type=28([];decl=11:IntPairChain;This=false);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:tupleUse=3:tupleUse;top=false;type=20([18([5([];none), 5([];none)];none)];ret=18([5([];none), 5([];none)];none);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=true;params=[3:tupleUse/param[0]];ret=18([5([];none), 5([];none)];none);body=28:16([];none);unsafe=false;slots=[E:3:16([];none);operands=[6:18([5([];none), 5([];none)];none);ref=value;target=3:tupleUse/param[0];inst=[];parent=none;operands=[]]], 3:tupleUse/param[0]=7:value;top=false;type=18([5([];none), 5([];none)];none);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:functionUse=3:functionUse;top=false;type=20([20([5([];none), 17([];none), 5([];none)];ret=17([];none);C=false;variadic=false), 5([];none), 17([];none), 5([];none)];ret=17([];none);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=true;params=[3:functionUse/param[0], 3:functionUse/param[1], 3:functionUse/param[2], 3:functionUse/param[3]];ret=17([];none);body=28:16([];none);unsafe=false;slots=[E:3:16([];none);operands=[7:17([];none);call=3;sideEffect=false;operands=[6:20([5([];none), 17([];none), 5([];none)];ret=17([];none);C=false;variadic=false);ref=callback;target=3:functionUse/param[0];inst=[];parent=none;operands=[], 0:5([];none);inout=false;default=false;operands=[6:5([];none);ref=first;target=3:functionUse/param[1];inst=[];parent=none;operands=[]], 0:17([];none);inout=false;default=false;operands=[6:17([];none);ref=middle;target=3:functionUse/param[2];inst=[];parent=none;operands=[]], 0:5([];none);inout=false;default=false;operands=[6:5([];none);ref=last;target=3:functionUse/param[3];inst=[];parent=none;operands=[]]]]], 3:functionUse/param[0]=7:callback;top=false;type=20([5([];none), 17([];none), 5([];none)];ret=17([];none);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:functionUse/param[1]=7:first;top=false;type=5([];none);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:functionUse/param[2]=7:middle;top=false;type=17([];none);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:functionUse/param[3]=7:last;top=false;type=5([];none);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:functionReturn=3:functionReturn;top=false;type=20([20([5([];none), 17([];none), 5([];none)];ret=17([];none);C=false;variadic=false)];ret=20([5([];none), 17([];none), 5([];none)];ret=17([];none);C=false;variadic=false);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=true;params=[3:functionReturn/param[0]];ret=20([5([];none), 17([];none), 5([];none)];ret=17([];none);C=false;variadic=false);body=28:16([];none);unsafe=false;slots=[E:3:16([];none);operands=[6:20([5([];none), 17([];none), 5([];none)];ret=17([];none);C=false;variadic=false);ref=callback;target=3:functionReturn/param[0];inst=[];parent=none;operands=[]]], 3:functionReturn/param[0]=7:callback;top=false;type=20([5([];none), 17([];none), 5([];none)];ret=17([];none);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:carrierUse=3:carrierUse;top=false;type=20([26([5([];none), 17([];none)];decl=1:Carrier;This=false)];ret=26([5([];none), 17([];none)];decl=1:Carrier;This=false);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=true;params=[3:carrierUse/param[0]];ret=26([5([];none), 17([];none)];decl=1:Carrier;This=false);body=28:16([];none);unsafe=false;slots=[E:3:16([];none);operands=[7:26([5([];none), 17([];none)];decl=1:Carrier;This=false);call=1;sideEffect=false;operands=[5:20([];ret=26([5([];none), 17([];none)];decl=1:Carrier;This=true);C=false;variadic=false);ref=asThis;target=3:asThis;inst=[];parent=0([];none);operands=[6:26([5([];none), 17([];none)];decl=1:Carrier;This=false);ref=value;target=3:carrierUse/param[0];inst=[];parent=none;operands=[]]]]], 1:Carrier=1:Carrier;top=true;type=26([29([];tp=1:Carrier/tp[0];uppers=[]), 29([];tp=1:Carrier/tp[1];uppers=[])];decl=1:Carrier;This=false);generic=[1:Carrier/tp[0], 1:Carrier/tp[1]];genericDecl=none;dependencies=[];default=false;members=[3:asThis, 3:asNominal, 3:choose, 3:pair, 3:init];supers=[26([];decl=std.core:_CNat6ObjectE;This=false)], 3:carrierUse/param[0]=7:value;top=false;type=26([5([];none), 17([];none)];decl=1:Carrier;This=false);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:asThis=3:asThis;top=false;type=20([];ret=26([29([];tp=1:Carrier/tp[0];uppers=[]), 29([];tp=1:Carrier/tp[1];uppers=[])];decl=1:Carrier;This=true);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=false;params=[];ret=26([29([];tp=1:Carrier/tp[0];uppers=[]), 29([];tp=1:Carrier/tp[1];uppers=[])];decl=1:Carrier;This=true);body=none, 3:publicArrayUse=3:publicArrayUse;top=false;type=20([21([21([5([];none)];decl=std.core:_CNat5ArrayIG_E;This=false)];decl=std.core:_CNat5ArrayIG_E;This=false)];ret=21([21([5([];none)];decl=std.core:_CNat5ArrayIG_E;This=false)];decl=std.core:_CNat5ArrayIG_E;This=false);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=true;params=[3:publicArrayUse/param[0]];ret=21([21([5([];none)];decl=std.core:_CNat5ArrayIG_E;This=false)];decl=std.core:_CNat5ArrayIG_E;This=false);body=28:16([];none);unsafe=false;slots=[E:3:16([];none);operands=[6:21([21([5([];none)];decl=std.core:_CNat5ArrayIG_E;This=false)];decl=std.core:_CNat5ArrayIG_E;This=false);ref=value;target=3:publicArrayUse/param[0];inst=[];parent=none;operands=[]]], 3:publicArrayUse/param[0]=7:value;top=false;type=21([21([5([];none)];decl=std.core:_CNat5ArrayIG_E;This=false)];decl=std.core:_CNat5ArrayIG_E;This=false);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 11:Pair=11:Pair;top=true;type=28([29([];tp=11:Pair/tp[0];uppers=[])];decl=11:Pair;This=false);generic=[11:Pair/tp[0]];genericDecl=none;dependencies=[];default=false;rhs=18([29([];tp=11:Pair/tp[0];uppers=[]), 29([];tp=11:Pair/tp[0];uppers=[])];none), 11:Pair/tp[0]=12:T;top=false;type=29([];tp=11:Pair/tp[0];uppers=[]);generic=none;genericDecl=none;dependencies=[];default=false;tp=11:Pair/tp[0], 11:PairLink=11:PairLink;top=true;type=28([29([];tp=11:PairLink/tp[0];uppers=[])];decl=11:PairLink;This=false);generic=[11:PairLink/tp[0]];genericDecl=none;dependencies=[];default=false;rhs=28([29([];tp=11:PairLink/tp[0];uppers=[])];decl=11:Pair;This=false), 11:PairLink/tp[0]=12:T;top=false;type=29([];tp=11:PairLink/tp[0];uppers=[]);generic=none;genericDecl=none;dependencies=[];default=false;tp=11:PairLink/tp[0], 11:IntPair=11:IntPair;top=true;type=28([];decl=11:IntPair;This=false);generic=none;genericDecl=none;dependencies=[];default=false;rhs=28([5([];none)];decl=11:PairLink;This=false), 1:Carrier/tp[0]=12:T;top=false;type=29([];tp=1:Carrier/tp[0];uppers=[]);generic=none;genericDecl=none;dependencies=[];default=false;tp=1:Carrier/tp[0], 1:Carrier/tp[1]=12:U;top=false;type=29([];tp=1:Carrier/tp[1];uppers=[]);generic=none;genericDecl=none;dependencies=[];default=false;tp=1:Carrier/tp[1], 3:asNominal=3:asNominal;top=false;type=20([];ret=26([29([];tp=1:Carrier/tp[0];uppers=[]), 29([];tp=1:Carrier/tp[1];uppers=[])];decl=1:Carrier;This=false);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=false;params=[];ret=26([29([];tp=1:Carrier/tp[0];uppers=[]), 29([];tp=1:Carrier/tp[1];uppers=[])];decl=1:Carrier;This=false);body=none, 3:choose=3:choose;top=false;type=20([29([];tp=1:Carrier/tp[0];uppers=[]), 29([];tp=1:Carrier/tp[1];uppers=[]), 29([];tp=1:Carrier/tp[0];uppers=[])];ret=29([];tp=1:Carrier/tp[1];uppers=[]);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=false;params=[3:choose/param[0], 3:choose/param[1], 3:choose/param[2]];ret=29([];tp=1:Carrier/tp[1];uppers=[]);body=none, 3:choose/param[0]=7:first;top=false;type=29([];tp=1:Carrier/tp[0];uppers=[]);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:choose/param[1]=7:middle;top=false;type=29([];tp=1:Carrier/tp[1];uppers=[]);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:choose/param[2]=7:last;top=false;type=29([];tp=1:Carrier/tp[0];uppers=[]);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:pair=3:pair;top=false;type=20([29([];tp=1:Carrier/tp[0];uppers=[])];ret=28([29([];tp=1:Carrier/tp[0];uppers=[])];decl=11:Pair;This=false);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=false;params=[3:pair/param[0]];ret=28([29([];tp=1:Carrier/tp[0];uppers=[])];decl=11:Pair;This=false);body=none, 3:pair/param[0]=7:value;top=false;type=29([];tp=1:Carrier/tp[0];uppers=[]);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:init=3:init;top=false;type=20([];ret=26([29([];tp=1:Carrier/tp[0];uppers=[]), 29([];tp=1:Carrier/tp[1];uppers=[])];decl=1:Carrier;This=false);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=false;params=[];ret=26([29([];tp=1:Carrier/tp[0];uppers=[]), 29([];tp=1:Carrier/tp[1];uppers=[])];decl=1:Carrier;This=false);body=none, 3:pairOf=3:pairOf;top=true;type=20([29([];tp=3:pairOf/tp[0];uppers=[])];ret=28([29([];tp=3:pairOf/tp[0];uppers=[])];decl=11:Pair;This=false);C=false;variadic=false);generic=[3:pairOf/tp[0]];genericDecl=none;dependencies=[];default=false;params=[3:pairOf/param[0]];ret=28([29([];tp=3:pairOf/tp[0];uppers=[])];decl=11:Pair;This=false);body=none, 3:pairOf/tp[0]=12:T;top=false;type=29([];tp=3:pairOf/tp[0];uppers=[]);generic=none;genericDecl=none;dependencies=[];default=false;tp=3:pairOf/tp[0], 3:pairOf/param[0]=7:value;top=false;type=29([];tp=3:pairOf/tp[0];uppers=[]);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:orderedSlots=3:orderedSlots;top=true;type=20([5([];none), 17([];none), 5([];none)];ret=17([];none);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=false;params=[3:orderedSlots/param[0], 3:orderedSlots/param[1], 3:orderedSlots/param[2]];ret=17([];none);body=none, 3:orderedSlots/param[0]=7:first;top=false;type=5([];none);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:orderedSlots/param[1]=7:middle;top=false;type=17([];none);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:orderedSlots/param[2]=7:last;top=false;type=5([];none);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:reorderedSlots=3:reorderedSlots;top=true;type=20([17([];none), 5([];none), 5([];none)];ret=17([];none);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=false;params=[3:reorderedSlots/param[0], 3:reorderedSlots/param[1], 3:reorderedSlots/param[2]];ret=17([];none);body=none, 3:reorderedSlots/param[0]=7:first;top=false;type=17([];none);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:reorderedSlots/param[1]=7:middle;top=false;type=5([];none);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:reorderedSlots/param[2]=7:last;top=false;type=5([];none);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:repeatedReturn=3:repeatedReturn;top=true;type=20([5([];none), 5([];none)];ret=5([];none);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=false;params=[3:repeatedReturn/param[0], 3:repeatedReturn/param[1]];ret=5([];none);body=none, 3:repeatedReturn/param[0]=7:first;top=false;type=5([];none);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:repeatedReturn/param[1]=7:last;top=false;type=5([];none);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 2:FrozenTypeSource=2:FrozenTypeSource;top=true;type=27([];decl=2:FrozenTypeSource;This=false);generic=none;genericDecl=none;dependencies=[];default=false;members=[3:aliasUse, 3:tupleUse, 3:functionUse, 3:functionReturn, 3:carrierUse, 3:publicArrayUse];supers=[]}> but was: <{11:Pair=11:Pair;top=true;type=28([29([];tp=11:Pair/tp[0];uppers=[])];decl=11:Pair;This=false);generic=[11:Pair/tp[0]];genericDecl=none;dependencies=[];default=false;rhs=18([29([];tp=11:Pair/tp[0];uppers=[]), 29([];tp=11:Pair/tp[0];uppers=[])];none), 11:Pair/tp[0]=12:T;top=false;type=29([];tp=11:Pair/tp[0];uppers=[]);generic=none;genericDecl=none;dependencies=[];default=false;tp=11:Pair/tp[0], 11:PairLink=11:PairLink;top=true;type=28([29([];tp=11:PairLink/tp[0];uppers=[])];decl=11:PairLink;This=false);generic=[11:PairLink/tp[0]];genericDecl=none;dependencies=[];default=false;rhs=28([29([];tp=11:PairLink/tp[0];uppers=[])];decl=11:Pair;This=false), 11:PairLink/tp[0]=12:T;top=false;type=29([];tp=11:PairLink/tp[0];uppers=[]);generic=none;genericDecl=none;dependencies=[];default=false;tp=11:PairLink/tp[0], 11:IntPair=11:IntPair;top=true;type=28([];decl=11:IntPair;This=false);generic=none;genericDecl=none;dependencies=[];default=false;rhs=28([5([];none)];decl=11:PairLink;This=false), 11:IntPairChain=11:IntPairChain;top=true;type=28([];decl=11:IntPairChain;This=false);generic=none;genericDecl=none;dependencies=[];default=false;rhs=28([];decl=11:IntPair;This=false), 1:Carrier=1:Carrier;top=true;type=26([29([];tp=1:Carrier/tp[0];uppers=[]), 29([];tp=1:Carrier/tp[1];uppers=[])];decl=1:Carrier;This=false);generic=[1:Carrier/tp[0], 1:Carrier/tp[1]];genericDecl=none;dependencies=[];default=false;members=[3:asThis, 3:asNominal, 3:choose, 3:pair, 3:init];supers=[], 1:Carrier/tp[0]=12:T;top=false;type=29([];tp=1:Carrier/tp[0];uppers=[]);generic=none;genericDecl=none;dependencies=[];default=false;tp=1:Carrier/tp[0], 1:Carrier/tp[1]=12:U;top=false;type=29([];tp=1:Carrier/tp[1];uppers=[]);generic=none;genericDecl=none;dependencies=[];default=false;tp=1:Carrier/tp[1], 3:asThis=3:asThis;top=false;type=20([];ret=26([29([];tp=1:Carrier/tp[0];uppers=[]), 29([];tp=1:Carrier/tp[1];uppers=[])];decl=1:Carrier;This=true);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=false;params=[];ret=26([29([];tp=1:Carrier/tp[0];uppers=[]), 29([];tp=1:Carrier/tp[1];uppers=[])];decl=1:Carrier;This=true);body=none, 3:asNominal=3:asNominal;top=false;type=20([];ret=26([29([];tp=1:Carrier/tp[0];uppers=[]), 29([];tp=1:Carrier/tp[1];uppers=[])];decl=1:Carrier;This=false);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=false;params=[];ret=26([29([];tp=1:Carrier/tp[0];uppers=[]), 29([];tp=1:Carrier/tp[1];uppers=[])];decl=1:Carrier;This=false);body=none, 3:choose=3:choose;top=false;type=20([29([];tp=1:Carrier/tp[0];uppers=[]), 29([];tp=1:Carrier/tp[1];uppers=[]), 29([];tp=1:Carrier/tp[0];uppers=[])];ret=29([];tp=1:Carrier/tp[1];uppers=[]);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=false;params=[3:choose/param[0], 3:choose/param[1], 3:choose/param[2]];ret=29([];tp=1:Carrier/tp[1];uppers=[]);body=none, 3:choose/param[0]=7:first;top=false;type=29([];tp=1:Carrier/tp[0];uppers=[]);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:choose/param[1]=7:middle;top=false;type=29([];tp=1:Carrier/tp[1];uppers=[]);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:choose/param[2]=7:last;top=false;type=29([];tp=1:Carrier/tp[0];uppers=[]);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:pair=3:pair;top=false;type=20([29([];tp=1:Carrier/tp[0];uppers=[])];ret=28([29([];tp=1:Carrier/tp[0];uppers=[])];decl=11:Pair;This=false);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=false;params=[3:pair/param[0]];ret=28([29([];tp=1:Carrier/tp[0];uppers=[])];decl=11:Pair;This=false);body=none, 3:pair/param[0]=7:value;top=false;type=29([];tp=1:Carrier/tp[0];uppers=[]);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:init=3:init;top=false;type=20([];ret=26([29([];tp=1:Carrier/tp[0];uppers=[]), 29([];tp=1:Carrier/tp[1];uppers=[])];decl=1:Carrier;This=false);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=false;params=[];ret=26([29([];tp=1:Carrier/tp[0];uppers=[]), 29([];tp=1:Carrier/tp[1];uppers=[])];decl=1:Carrier;This=false);body=none, 3:pairOf=3:pairOf;top=true;type=20([29([];tp=3:pairOf/tp[0];uppers=[])];ret=28([29([];tp=3:pairOf/tp[0];uppers=[])];decl=11:Pair;This=false);C=false;variadic=false);generic=[3:pairOf/tp[0]];genericDecl=none;dependencies=[];default=false;params=[3:pairOf/param[0]];ret=28([29([];tp=3:pairOf/tp[0];uppers=[])];decl=11:Pair;This=false);body=none, 3:pairOf/tp[0]=12:T;top=false;type=29([];tp=3:pairOf/tp[0];uppers=[]);generic=none;genericDecl=none;dependencies=[];default=false;tp=3:pairOf/tp[0], 3:pairOf/param[0]=7:value;top=false;type=29([];tp=3:pairOf/tp[0];uppers=[]);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:orderedSlots=3:orderedSlots;top=true;type=20([5([];none), 17([];none), 5([];none)];ret=17([];none);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=false;params=[3:orderedSlots/param[0], 3:orderedSlots/param[1], 3:orderedSlots/param[2]];ret=17([];none);body=none, 3:orderedSlots/param[0]=7:first;top=false;type=5([];none);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:orderedSlots/param[1]=7:middle;top=false;type=17([];none);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:orderedSlots/param[2]=7:last;top=false;type=5([];none);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:reorderedSlots=3:reorderedSlots;top=true;type=20([17([];none), 5([];none), 5([];none)];ret=17([];none);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=false;params=[3:reorderedSlots/param[0], 3:reorderedSlots/param[1], 3:reorderedSlots/param[2]];ret=17([];none);body=none, 3:reorderedSlots/param[0]=7:first;top=false;type=17([];none);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:reorderedSlots/param[1]=7:middle;top=false;type=5([];none);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:reorderedSlots/param[2]=7:last;top=false;type=5([];none);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:repeatedReturn=3:repeatedReturn;top=true;type=20([5([];none), 5([];none)];ret=5([];none);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=false;params=[3:repeatedReturn/param[0], 3:repeatedReturn/param[1]];ret=5([];none);body=none, 3:repeatedReturn/param[0]=7:first;top=false;type=5([];none);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:repeatedReturn/param[1]=7:last;top=false;type=5([];none);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 2:FrozenTypeSource=2:FrozenTypeSource;top=true;type=27([];decl=2:FrozenTypeSource;This=false);generic=none;genericDecl=none;dependencies=[];default=false;members=[3:aliasUse, 3:tupleUse, 3:functionUse, 3:functionReturn, 3:carrierUse, 3:publicArrayUse];supers=[], 3:aliasUse=3:aliasUse;top=false;type=20([28([];decl=11:IntPairChain;This=false)];ret=28([];decl=11:IntPairChain;This=false);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=true;params=[3:aliasUse/param[0]];ret=28([];decl=11:IntPairChain;This=false);body=28:16([];none);unsafe=false;slots=[E:3:16([];none);operands=[6:18([5([];none), 5([];none)];none);ref=value;target=3:aliasUse/param[0];inst=[];parent=none;operands=[]]], 3:aliasUse/param[0]=7:value;top=false;type=28([];decl=11:IntPairChain;This=false);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:tupleUse=3:tupleUse;top=false;type=20([18([5([];none), 5([];none)];none)];ret=18([5([];none), 5([];none)];none);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=true;params=[3:tupleUse/param[0]];ret=18([5([];none), 5([];none)];none);body=28:16([];none);unsafe=false;slots=[E:3:16([];none);operands=[6:18([5([];none), 5([];none)];none);ref=value;target=3:tupleUse/param[0];inst=[];parent=none;operands=[]]], 3:tupleUse/param[0]=7:value;top=false;type=18([5([];none), 5([];none)];none);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:functionUse=3:functionUse;top=false;type=20([20([5([];none), 17([];none), 5([];none)];ret=17([];none);C=false;variadic=false), 5([];none), 17([];none), 5([];none)];ret=17([];none);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=true;params=[3:functionUse/param[0], 3:functionUse/param[1], 3:functionUse/param[2], 3:functionUse/param[3]];ret=17([];none);body=28:16([];none);unsafe=false;slots=[E:3:16([];none);operands=[7:17([];none);call=3;sideEffect=false;operands=[6:20([5([];none), 17([];none), 5([];none)];ret=17([];none);C=false;variadic=false);ref=callback;target=3:functionUse/param[0];inst=[];parent=none;operands=[], 0:5([];none);inout=false;default=false;operands=[6:5([];none);ref=first;target=3:functionUse/param[1];inst=[];parent=none;operands=[]], 0:17([];none);inout=false;default=false;operands=[6:17([];none);ref=middle;target=3:functionUse/param[2];inst=[];parent=none;operands=[]], 0:5([];none);inout=false;default=false;operands=[6:5([];none);ref=last;target=3:functionUse/param[3];inst=[];parent=none;operands=[]]]]], 3:functionUse/param[0]=7:callback;top=false;type=20([5([];none), 17([];none), 5([];none)];ret=17([];none);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:functionUse/param[1]=7:first;top=false;type=5([];none);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:functionUse/param[2]=7:middle;top=false;type=17([];none);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:functionUse/param[3]=7:last;top=false;type=5([];none);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:functionReturn=3:functionReturn;top=false;type=20([20([5([];none), 17([];none), 5([];none)];ret=17([];none);C=false;variadic=false)];ret=20([5([];none), 17([];none), 5([];none)];ret=17([];none);C=false;variadic=false);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=true;params=[3:functionReturn/param[0]];ret=20([5([];none), 17([];none), 5([];none)];ret=17([];none);C=false;variadic=false);body=28:16([];none);unsafe=false;slots=[E:3:16([];none);operands=[6:20([5([];none), 17([];none), 5([];none)];ret=17([];none);C=false;variadic=false);ref=callback;target=3:functionReturn/param[0];inst=[];parent=none;operands=[]]], 3:functionReturn/param[0]=7:callback;top=false;type=20([5([];none), 17([];none), 5([];none)];ret=17([];none);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:carrierUse=3:carrierUse;top=false;type=20([26([5([];none), 17([];none)];decl=1:Carrier;This=false)];ret=26([5([];none), 17([];none)];decl=1:Carrier;This=false);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=true;params=[3:carrierUse/param[0]];ret=26([5([];none), 17([];none)];decl=1:Carrier;This=false);body=28:16([];none);unsafe=false;slots=[E:3:16([];none);operands=[7:26([5([];none), 17([];none)];decl=1:Carrier;This=false);call=1;sideEffect=false;operands=[5:20([];ret=26([5([];none), 17([];none)];decl=1:Carrier;This=true);C=false;variadic=false);ref=asThis;target=3:asThis;inst=[];parent=0([];none);operands=[6:26([5([];none), 17([];none)];decl=1:Carrier;This=false);ref=value;target=3:carrierUse/param[0];inst=[];parent=none;operands=[]]]]], 3:carrierUse/param[0]=7:value;top=false;type=26([5([];none), 17([];none)];decl=1:Carrier;This=false);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:publicArrayUse=3:publicArrayUse;top=false;type=20([21([21([5([];none)];decl=std.core:_CNat5ArrayIG_E;This=false)];decl=std.core:_CNat5ArrayIG_E;This=false)];ret=21([21([5([];none)];decl=std.core:_CNat5ArrayIG_E;This=false)];decl=std.core:_CNat5ArrayIG_E;This=false);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=true;params=[3:publicArrayUse/param[0]];ret=21([21([5([];none)];decl=std.core:_CNat5ArrayIG_E;This=false)];decl=std.core:_CNat5ArrayIG_E;This=false);body=28:16([];none);unsafe=false;slots=[E:3:16([];none);operands=[6:21([21([5([];none)];decl=std.core:_CNat5ArrayIG_E;This=false)];decl=std.core:_CNat5ArrayIG_E;This=false);ref=value;target=3:publicArrayUse/param[0];inst=[];parent=none;operands=[]]], 3:publicArrayUse/param[0]=7:value;top=false;type=21([21([5([];none)];decl=std.core:_CNat5ArrayIG_E;This=false)];decl=std.core:_CNat5ArrayIG_E;This=false);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none}>\r\n\torg.opentest4j.AssertionFailedError: 不能跳过失败的类型角色或未完成的 SOURCE→CJO ==> expected: <1> but was: <0>"
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceFrozenTypesTest",
+      "name": "functionAbi()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceFrozenTypesTest",
+      "name": "orderedAliasRoles()",
+      "status": "FAILED",
+      "failureMessage": "org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)\r\n\torg.opentest4j.AssertionFailedError: 完整 D/E 闭包及每条有序边必须符合官方产物；类型编号可以共享或不同 ==> expected: <{3:aliasUse=3:aliasUse;top=false;type=20([28([];decl=11:IntPairChain;This=false)];ret=28([];decl=11:IntPairChain;This=false);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=true;params=[3:aliasUse/param[0]];ret=28([];decl=11:IntPairChain;This=false);body=28:16([];none);unsafe=false;slots=[E:3:16([];none);operands=[6:18([5([];none), 5([];none)];none);ref=value;target=3:aliasUse/param[0];inst=[];parent=none;operands=[]]], 11:IntPairChain=11:IntPairChain;top=true;type=28([];decl=11:IntPairChain;This=false);generic=none;genericDecl=none;dependencies=[];default=false;rhs=28([];decl=11:IntPair;This=false), 3:aliasUse/param[0]=7:value;top=false;type=28([];decl=11:IntPairChain;This=false);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:tupleUse=3:tupleUse;top=false;type=20([18([5([];none), 5([];none)];none)];ret=18([5([];none), 5([];none)];none);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=true;params=[3:tupleUse/param[0]];ret=18([5([];none), 5([];none)];none);body=28:16([];none);unsafe=false;slots=[E:3:16([];none);operands=[6:18([5([];none), 5([];none)];none);ref=value;target=3:tupleUse/param[0];inst=[];parent=none;operands=[]]], 3:tupleUse/param[0]=7:value;top=false;type=18([5([];none), 5([];none)];none);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:functionUse=3:functionUse;top=false;type=20([20([5([];none), 17([];none), 5([];none)];ret=17([];none);C=false;variadic=false), 5([];none), 17([];none), 5([];none)];ret=17([];none);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=true;params=[3:functionUse/param[0], 3:functionUse/param[1], 3:functionUse/param[2], 3:functionUse/param[3]];ret=17([];none);body=28:16([];none);unsafe=false;slots=[E:3:16([];none);operands=[7:17([];none);call=3;sideEffect=false;operands=[6:20([5([];none), 17([];none), 5([];none)];ret=17([];none);C=false;variadic=false);ref=callback;target=3:functionUse/param[0];inst=[];parent=none;operands=[], 0:5([];none);inout=false;default=false;operands=[6:5([];none);ref=first;target=3:functionUse/param[1];inst=[];parent=none;operands=[]], 0:17([];none);inout=false;default=false;operands=[6:17([];none);ref=middle;target=3:functionUse/param[2];inst=[];parent=none;operands=[]], 0:5([];none);inout=false;default=false;operands=[6:5([];none);ref=last;target=3:functionUse/param[3];inst=[];parent=none;operands=[]]]]], 3:functionUse/param[0]=7:callback;top=false;type=20([5([];none), 17([];none), 5([];none)];ret=17([];none);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:functionUse/param[1]=7:first;top=false;type=5([];none);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:functionUse/param[2]=7:middle;top=false;type=17([];none);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:functionUse/param[3]=7:last;top=false;type=5([];none);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:functionReturn=3:functionReturn;top=false;type=20([20([5([];none), 17([];none), 5([];none)];ret=17([];none);C=false;variadic=false)];ret=20([5([];none), 17([];none), 5([];none)];ret=17([];none);C=false;variadic=false);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=true;params=[3:functionReturn/param[0]];ret=20([5([];none), 17([];none), 5([];none)];ret=17([];none);C=false;variadic=false);body=28:16([];none);unsafe=false;slots=[E:3:16([];none);operands=[6:20([5([];none), 17([];none), 5([];none)];ret=17([];none);C=false;variadic=false);ref=callback;target=3:functionReturn/param[0];inst=[];parent=none;operands=[]]], 3:functionReturn/param[0]=7:callback;top=false;type=20([5([];none), 17([];none), 5([];none)];ret=17([];none);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:carrierUse=3:carrierUse;top=false;type=20([26([5([];none), 17([];none)];decl=1:Carrier;This=false)];ret=26([5([];none), 17([];none)];decl=1:Carrier;This=false);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=true;params=[3:carrierUse/param[0]];ret=26([5([];none), 17([];none)];decl=1:Carrier;This=false);body=28:16([];none);unsafe=false;slots=[E:3:16([];none);operands=[7:26([5([];none), 17([];none)];decl=1:Carrier;This=false);call=1;sideEffect=false;operands=[5:20([];ret=26([5([];none), 17([];none)];decl=1:Carrier;This=true);C=false;variadic=false);ref=asThis;target=3:asThis;inst=[];parent=0([];none);operands=[6:26([5([];none), 17([];none)];decl=1:Carrier;This=false);ref=value;target=3:carrierUse/param[0];inst=[];parent=none;operands=[]]]]], 1:Carrier=1:Carrier;top=true;type=26([29([];tp=1:Carrier/tp[0];uppers=[]), 29([];tp=1:Carrier/tp[1];uppers=[])];decl=1:Carrier;This=false);generic=[1:Carrier/tp[0], 1:Carrier/tp[1]];genericDecl=none;dependencies=[];default=false;members=[3:asThis, 3:asNominal, 3:choose, 3:pair, 3:init];supers=[26([];decl=std.core:_CNat6ObjectE;This=false)], 3:carrierUse/param[0]=7:value;top=false;type=26([5([];none), 17([];none)];decl=1:Carrier;This=false);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:asThis=3:asThis;top=false;type=20([];ret=26([29([];tp=1:Carrier/tp[0];uppers=[]), 29([];tp=1:Carrier/tp[1];uppers=[])];decl=1:Carrier;This=true);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=false;params=[];ret=26([29([];tp=1:Carrier/tp[0];uppers=[]), 29([];tp=1:Carrier/tp[1];uppers=[])];decl=1:Carrier;This=true);body=none, 3:publicArrayUse=3:publicArrayUse;top=false;type=20([21([21([5([];none)];decl=std.core:_CNat5ArrayIG_E;This=false)];decl=std.core:_CNat5ArrayIG_E;This=false)];ret=21([21([5([];none)];decl=std.core:_CNat5ArrayIG_E;This=false)];decl=std.core:_CNat5ArrayIG_E;This=false);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=true;params=[3:publicArrayUse/param[0]];ret=21([21([5([];none)];decl=std.core:_CNat5ArrayIG_E;This=false)];decl=std.core:_CNat5ArrayIG_E;This=false);body=28:16([];none);unsafe=false;slots=[E:3:16([];none);operands=[6:21([21([5([];none)];decl=std.core:_CNat5ArrayIG_E;This=false)];decl=std.core:_CNat5ArrayIG_E;This=false);ref=value;target=3:publicArrayUse/param[0];inst=[];parent=none;operands=[]]], 3:publicArrayUse/param[0]=7:value;top=false;type=21([21([5([];none)];decl=std.core:_CNat5ArrayIG_E;This=false)];decl=std.core:_CNat5ArrayIG_E;This=false);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 11:Pair=11:Pair;top=true;type=28([29([];tp=11:Pair/tp[0];uppers=[])];decl=11:Pair;This=false);generic=[11:Pair/tp[0]];genericDecl=none;dependencies=[];default=false;rhs=18([29([];tp=11:Pair/tp[0];uppers=[]), 29([];tp=11:Pair/tp[0];uppers=[])];none), 11:Pair/tp[0]=12:T;top=false;type=29([];tp=11:Pair/tp[0];uppers=[]);generic=none;genericDecl=none;dependencies=[];default=false;tp=11:Pair/tp[0], 11:PairLink=11:PairLink;top=true;type=28([29([];tp=11:PairLink/tp[0];uppers=[])];decl=11:PairLink;This=false);generic=[11:PairLink/tp[0]];genericDecl=none;dependencies=[];default=false;rhs=28([29([];tp=11:PairLink/tp[0];uppers=[])];decl=11:Pair;This=false), 11:PairLink/tp[0]=12:T;top=false;type=29([];tp=11:PairLink/tp[0];uppers=[]);generic=none;genericDecl=none;dependencies=[];default=false;tp=11:PairLink/tp[0], 11:IntPair=11:IntPair;top=true;type=28([];decl=11:IntPair;This=false);generic=none;genericDecl=none;dependencies=[];default=false;rhs=28([5([];none)];decl=11:PairLink;This=false), 1:Carrier/tp[0]=12:T;top=false;type=29([];tp=1:Carrier/tp[0];uppers=[]);generic=none;genericDecl=none;dependencies=[];default=false;tp=1:Carrier/tp[0], 1:Carrier/tp[1]=12:U;top=false;type=29([];tp=1:Carrier/tp[1];uppers=[]);generic=none;genericDecl=none;dependencies=[];default=false;tp=1:Carrier/tp[1], 3:asNominal=3:asNominal;top=false;type=20([];ret=26([29([];tp=1:Carrier/tp[0];uppers=[]), 29([];tp=1:Carrier/tp[1];uppers=[])];decl=1:Carrier;This=false);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=false;params=[];ret=26([29([];tp=1:Carrier/tp[0];uppers=[]), 29([];tp=1:Carrier/tp[1];uppers=[])];decl=1:Carrier;This=false);body=none, 3:choose=3:choose;top=false;type=20([29([];tp=1:Carrier/tp[0];uppers=[]), 29([];tp=1:Carrier/tp[1];uppers=[]), 29([];tp=1:Carrier/tp[0];uppers=[])];ret=29([];tp=1:Carrier/tp[1];uppers=[]);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=false;params=[3:choose/param[0], 3:choose/param[1], 3:choose/param[2]];ret=29([];tp=1:Carrier/tp[1];uppers=[]);body=none, 3:choose/param[0]=7:first;top=false;type=29([];tp=1:Carrier/tp[0];uppers=[]);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:choose/param[1]=7:middle;top=false;type=29([];tp=1:Carrier/tp[1];uppers=[]);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:choose/param[2]=7:last;top=false;type=29([];tp=1:Carrier/tp[0];uppers=[]);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:pair=3:pair;top=false;type=20([29([];tp=1:Carrier/tp[0];uppers=[])];ret=28([29([];tp=1:Carrier/tp[0];uppers=[])];decl=11:Pair;This=false);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=false;params=[3:pair/param[0]];ret=28([29([];tp=1:Carrier/tp[0];uppers=[])];decl=11:Pair;This=false);body=none, 3:pair/param[0]=7:value;top=false;type=29([];tp=1:Carrier/tp[0];uppers=[]);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:init=3:init;top=false;type=20([];ret=26([29([];tp=1:Carrier/tp[0];uppers=[]), 29([];tp=1:Carrier/tp[1];uppers=[])];decl=1:Carrier;This=false);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=false;params=[];ret=26([29([];tp=1:Carrier/tp[0];uppers=[]), 29([];tp=1:Carrier/tp[1];uppers=[])];decl=1:Carrier;This=false);body=none, 3:pairOf=3:pairOf;top=true;type=20([29([];tp=3:pairOf/tp[0];uppers=[])];ret=28([29([];tp=3:pairOf/tp[0];uppers=[])];decl=11:Pair;This=false);C=false;variadic=false);generic=[3:pairOf/tp[0]];genericDecl=none;dependencies=[];default=false;params=[3:pairOf/param[0]];ret=28([29([];tp=3:pairOf/tp[0];uppers=[])];decl=11:Pair;This=false);body=none, 3:pairOf/tp[0]=12:T;top=false;type=29([];tp=3:pairOf/tp[0];uppers=[]);generic=none;genericDecl=none;dependencies=[];default=false;tp=3:pairOf/tp[0], 3:pairOf/param[0]=7:value;top=false;type=29([];tp=3:pairOf/tp[0];uppers=[]);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:orderedSlots=3:orderedSlots;top=true;type=20([5([];none), 17([];none), 5([];none)];ret=17([];none);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=false;params=[3:orderedSlots/param[0], 3:orderedSlots/param[1], 3:orderedSlots/param[2]];ret=17([];none);body=none, 3:orderedSlots/param[0]=7:first;top=false;type=5([];none);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:orderedSlots/param[1]=7:middle;top=false;type=17([];none);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:orderedSlots/param[2]=7:last;top=false;type=5([];none);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:reorderedSlots=3:reorderedSlots;top=true;type=20([17([];none), 5([];none), 5([];none)];ret=17([];none);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=false;params=[3:reorderedSlots/param[0], 3:reorderedSlots/param[1], 3:reorderedSlots/param[2]];ret=17([];none);body=none, 3:reorderedSlots/param[0]=7:first;top=false;type=17([];none);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:reorderedSlots/param[1]=7:middle;top=false;type=5([];none);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:reorderedSlots/param[2]=7:last;top=false;type=5([];none);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:repeatedReturn=3:repeatedReturn;top=true;type=20([5([];none), 5([];none)];ret=5([];none);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=false;params=[3:repeatedReturn/param[0], 3:repeatedReturn/param[1]];ret=5([];none);body=none, 3:repeatedReturn/param[0]=7:first;top=false;type=5([];none);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:repeatedReturn/param[1]=7:last;top=false;type=5([];none);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 2:FrozenTypeSource=2:FrozenTypeSource;top=true;type=27([];decl=2:FrozenTypeSource;This=false);generic=none;genericDecl=none;dependencies=[];default=false;members=[3:aliasUse, 3:tupleUse, 3:functionUse, 3:functionReturn, 3:carrierUse, 3:publicArrayUse];supers=[]}> but was: <{11:Pair=11:Pair;top=true;type=28([29([];tp=11:Pair/tp[0];uppers=[])];decl=11:Pair;This=false);generic=[11:Pair/tp[0]];genericDecl=none;dependencies=[];default=false;rhs=18([29([];tp=11:Pair/tp[0];uppers=[]), 29([];tp=11:Pair/tp[0];uppers=[])];none), 11:Pair/tp[0]=12:T;top=false;type=29([];tp=11:Pair/tp[0];uppers=[]);generic=none;genericDecl=none;dependencies=[];default=false;tp=11:Pair/tp[0], 11:PairLink=11:PairLink;top=true;type=28([29([];tp=11:PairLink/tp[0];uppers=[])];decl=11:PairLink;This=false);generic=[11:PairLink/tp[0]];genericDecl=none;dependencies=[];default=false;rhs=28([29([];tp=11:PairLink/tp[0];uppers=[])];decl=11:Pair;This=false), 11:PairLink/tp[0]=12:T;top=false;type=29([];tp=11:PairLink/tp[0];uppers=[]);generic=none;genericDecl=none;dependencies=[];default=false;tp=11:PairLink/tp[0], 11:IntPair=11:IntPair;top=true;type=28([];decl=11:IntPair;This=false);generic=none;genericDecl=none;dependencies=[];default=false;rhs=28([5([];none)];decl=11:PairLink;This=false), 11:IntPairChain=11:IntPairChain;top=true;type=28([];decl=11:IntPairChain;This=false);generic=none;genericDecl=none;dependencies=[];default=false;rhs=28([];decl=11:IntPair;This=false), 1:Carrier=1:Carrier;top=true;type=26([29([];tp=1:Carrier/tp[0];uppers=[]), 29([];tp=1:Carrier/tp[1];uppers=[])];decl=1:Carrier;This=false);generic=[1:Carrier/tp[0], 1:Carrier/tp[1]];genericDecl=none;dependencies=[];default=false;members=[3:asThis, 3:asNominal, 3:choose, 3:pair, 3:init];supers=[], 1:Carrier/tp[0]=12:T;top=false;type=29([];tp=1:Carrier/tp[0];uppers=[]);generic=none;genericDecl=none;dependencies=[];default=false;tp=1:Carrier/tp[0], 1:Carrier/tp[1]=12:U;top=false;type=29([];tp=1:Carrier/tp[1];uppers=[]);generic=none;genericDecl=none;dependencies=[];default=false;tp=1:Carrier/tp[1], 3:asThis=3:asThis;top=false;type=20([];ret=26([29([];tp=1:Carrier/tp[0];uppers=[]), 29([];tp=1:Carrier/tp[1];uppers=[])];decl=1:Carrier;This=true);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=false;params=[];ret=26([29([];tp=1:Carrier/tp[0];uppers=[]), 29([];tp=1:Carrier/tp[1];uppers=[])];decl=1:Carrier;This=true);body=none, 3:asNominal=3:asNominal;top=false;type=20([];ret=26([29([];tp=1:Carrier/tp[0];uppers=[]), 29([];tp=1:Carrier/tp[1];uppers=[])];decl=1:Carrier;This=false);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=false;params=[];ret=26([29([];tp=1:Carrier/tp[0];uppers=[]), 29([];tp=1:Carrier/tp[1];uppers=[])];decl=1:Carrier;This=false);body=none, 3:choose=3:choose;top=false;type=20([29([];tp=1:Carrier/tp[0];uppers=[]), 29([];tp=1:Carrier/tp[1];uppers=[]), 29([];tp=1:Carrier/tp[0];uppers=[])];ret=29([];tp=1:Carrier/tp[1];uppers=[]);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=false;params=[3:choose/param[0], 3:choose/param[1], 3:choose/param[2]];ret=29([];tp=1:Carrier/tp[1];uppers=[]);body=none, 3:choose/param[0]=7:first;top=false;type=29([];tp=1:Carrier/tp[0];uppers=[]);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:choose/param[1]=7:middle;top=false;type=29([];tp=1:Carrier/tp[1];uppers=[]);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:choose/param[2]=7:last;top=false;type=29([];tp=1:Carrier/tp[0];uppers=[]);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:pair=3:pair;top=false;type=20([29([];tp=1:Carrier/tp[0];uppers=[])];ret=28([29([];tp=1:Carrier/tp[0];uppers=[])];decl=11:Pair;This=false);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=false;params=[3:pair/param[0]];ret=28([29([];tp=1:Carrier/tp[0];uppers=[])];decl=11:Pair;This=false);body=none, 3:pair/param[0]=7:value;top=false;type=29([];tp=1:Carrier/tp[0];uppers=[]);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:init=3:init;top=false;type=20([];ret=26([29([];tp=1:Carrier/tp[0];uppers=[]), 29([];tp=1:Carrier/tp[1];uppers=[])];decl=1:Carrier;This=false);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=false;params=[];ret=26([29([];tp=1:Carrier/tp[0];uppers=[]), 29([];tp=1:Carrier/tp[1];uppers=[])];decl=1:Carrier;This=false);body=none, 3:pairOf=3:pairOf;top=true;type=20([29([];tp=3:pairOf/tp[0];uppers=[])];ret=28([29([];tp=3:pairOf/tp[0];uppers=[])];decl=11:Pair;This=false);C=false;variadic=false);generic=[3:pairOf/tp[0]];genericDecl=none;dependencies=[];default=false;params=[3:pairOf/param[0]];ret=28([29([];tp=3:pairOf/tp[0];uppers=[])];decl=11:Pair;This=false);body=none, 3:pairOf/tp[0]=12:T;top=false;type=29([];tp=3:pairOf/tp[0];uppers=[]);generic=none;genericDecl=none;dependencies=[];default=false;tp=3:pairOf/tp[0], 3:pairOf/param[0]=7:value;top=false;type=29([];tp=3:pairOf/tp[0];uppers=[]);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:orderedSlots=3:orderedSlots;top=true;type=20([5([];none), 17([];none), 5([];none)];ret=17([];none);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=false;params=[3:orderedSlots/param[0], 3:orderedSlots/param[1], 3:orderedSlots/param[2]];ret=17([];none);body=none, 3:orderedSlots/param[0]=7:first;top=false;type=5([];none);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:orderedSlots/param[1]=7:middle;top=false;type=17([];none);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:orderedSlots/param[2]=7:last;top=false;type=5([];none);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:reorderedSlots=3:reorderedSlots;top=true;type=20([17([];none), 5([];none), 5([];none)];ret=17([];none);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=false;params=[3:reorderedSlots/param[0], 3:reorderedSlots/param[1], 3:reorderedSlots/param[2]];ret=17([];none);body=none, 3:reorderedSlots/param[0]=7:first;top=false;type=17([];none);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:reorderedSlots/param[1]=7:middle;top=false;type=5([];none);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:reorderedSlots/param[2]=7:last;top=false;type=5([];none);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:repeatedReturn=3:repeatedReturn;top=true;type=20([5([];none), 5([];none)];ret=5([];none);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=false;params=[3:repeatedReturn/param[0], 3:repeatedReturn/param[1]];ret=5([];none);body=none, 3:repeatedReturn/param[0]=7:first;top=false;type=5([];none);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:repeatedReturn/param[1]=7:last;top=false;type=5([];none);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 2:FrozenTypeSource=2:FrozenTypeSource;top=true;type=27([];decl=2:FrozenTypeSource;This=false);generic=none;genericDecl=none;dependencies=[];default=false;members=[3:aliasUse, 3:tupleUse, 3:functionUse, 3:functionReturn, 3:carrierUse, 3:publicArrayUse];supers=[], 3:aliasUse=3:aliasUse;top=false;type=20([28([];decl=11:IntPairChain;This=false)];ret=28([];decl=11:IntPairChain;This=false);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=true;params=[3:aliasUse/param[0]];ret=28([];decl=11:IntPairChain;This=false);body=28:16([];none);unsafe=false;slots=[E:3:16([];none);operands=[6:18([5([];none), 5([];none)];none);ref=value;target=3:aliasUse/param[0];inst=[];parent=none;operands=[]]], 3:aliasUse/param[0]=7:value;top=false;type=28([];decl=11:IntPairChain;This=false);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:tupleUse=3:tupleUse;top=false;type=20([18([5([];none), 5([];none)];none)];ret=18([5([];none), 5([];none)];none);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=true;params=[3:tupleUse/param[0]];ret=18([5([];none), 5([];none)];none);body=28:16([];none);unsafe=false;slots=[E:3:16([];none);operands=[6:18([5([];none), 5([];none)];none);ref=value;target=3:tupleUse/param[0];inst=[];parent=none;operands=[]]], 3:tupleUse/param[0]=7:value;top=false;type=18([5([];none), 5([];none)];none);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:functionUse=3:functionUse;top=false;type=20([20([5([];none), 17([];none), 5([];none)];ret=17([];none);C=false;variadic=false), 5([];none), 17([];none), 5([];none)];ret=17([];none);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=true;params=[3:functionUse/param[0], 3:functionUse/param[1], 3:functionUse/param[2], 3:functionUse/param[3]];ret=17([];none);body=28:16([];none);unsafe=false;slots=[E:3:16([];none);operands=[7:17([];none);call=3;sideEffect=false;operands=[6:20([5([];none), 17([];none), 5([];none)];ret=17([];none);C=false;variadic=false);ref=callback;target=3:functionUse/param[0];inst=[];parent=none;operands=[], 0:5([];none);inout=false;default=false;operands=[6:5([];none);ref=first;target=3:functionUse/param[1];inst=[];parent=none;operands=[]], 0:17([];none);inout=false;default=false;operands=[6:17([];none);ref=middle;target=3:functionUse/param[2];inst=[];parent=none;operands=[]], 0:5([];none);inout=false;default=false;operands=[6:5([];none);ref=last;target=3:functionUse/param[3];inst=[];parent=none;operands=[]]]]], 3:functionUse/param[0]=7:callback;top=false;type=20([5([];none), 17([];none), 5([];none)];ret=17([];none);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:functionUse/param[1]=7:first;top=false;type=5([];none);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:functionUse/param[2]=7:middle;top=false;type=17([];none);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:functionUse/param[3]=7:last;top=false;type=5([];none);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:functionReturn=3:functionReturn;top=false;type=20([20([5([];none), 17([];none), 5([];none)];ret=17([];none);C=false;variadic=false)];ret=20([5([];none), 17([];none), 5([];none)];ret=17([];none);C=false;variadic=false);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=true;params=[3:functionReturn/param[0]];ret=20([5([];none), 17([];none), 5([];none)];ret=17([];none);C=false;variadic=false);body=28:16([];none);unsafe=false;slots=[E:3:16([];none);operands=[6:20([5([];none), 17([];none), 5([];none)];ret=17([];none);C=false;variadic=false);ref=callback;target=3:functionReturn/param[0];inst=[];parent=none;operands=[]]], 3:functionReturn/param[0]=7:callback;top=false;type=20([5([];none), 17([];none), 5([];none)];ret=17([];none);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:carrierUse=3:carrierUse;top=false;type=20([26([5([];none), 17([];none)];decl=1:Carrier;This=false)];ret=26([5([];none), 17([];none)];decl=1:Carrier;This=false);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=true;params=[3:carrierUse/param[0]];ret=26([5([];none), 17([];none)];decl=1:Carrier;This=false);body=28:16([];none);unsafe=false;slots=[E:3:16([];none);operands=[7:26([5([];none), 17([];none)];decl=1:Carrier;This=false);call=1;sideEffect=false;operands=[5:20([];ret=26([5([];none), 17([];none)];decl=1:Carrier;This=true);C=false;variadic=false);ref=asThis;target=3:asThis;inst=[];parent=0([];none);operands=[6:26([5([];none), 17([];none)];decl=1:Carrier;This=false);ref=value;target=3:carrierUse/param[0];inst=[];parent=none;operands=[]]]]], 3:carrierUse/param[0]=7:value;top=false;type=26([5([];none), 17([];none)];decl=1:Carrier;This=false);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none, 3:publicArrayUse=3:publicArrayUse;top=false;type=20([21([21([5([];none)];decl=std.core:_CNat5ArrayIG_E;This=false)];decl=std.core:_CNat5ArrayIG_E;This=false)];ret=21([21([5([];none)];decl=std.core:_CNat5ArrayIG_E;This=false)];decl=std.core:_CNat5ArrayIG_E;This=false);C=false;variadic=false);generic=none;genericDecl=none;dependencies=[];default=true;params=[3:publicArrayUse/param[0]];ret=21([21([5([];none)];decl=std.core:_CNat5ArrayIG_E;This=false)];decl=std.core:_CNat5ArrayIG_E;This=false);body=28:16([];none);unsafe=false;slots=[E:3:16([];none);operands=[6:21([21([5([];none)];decl=std.core:_CNat5ArrayIG_E;This=false)];decl=std.core:_CNat5ArrayIG_E;This=false);ref=value;target=3:publicArrayUse/param[0];inst=[];parent=none;operands=[]]], 3:publicArrayUse/param[0]=7:value;top=false;type=21([21([5([];none)];decl=std.core:_CNat5ArrayIG_E;This=false)];decl=std.core:_CNat5ArrayIG_E;This=false);generic=none;genericDecl=none;dependencies=[];default=false;named=false;member=false;default=none}>\r\n\torg.opentest4j.AssertionFailedError: 不能跳过失败的类型角色或未完成的 SOURCE→CJO ==> expected: <1> but was: <0>"
+    }
+  ],
+  "xml": [
+    {
+      "path": "cfir/analysis-tests/build/test-results/test/TEST-org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoLightTreeTest.xml",
+      "bytes": 773,
+      "sha256": "201B752CE5D3722CC6DDC9AA332232D5BB7FE1CB8C685F240C3F47CA59360FBA",
+      "timestamp": "2026-11-18T21:38:31.292Z",
+      "lastWriteUtc": "2026-11-18T21:38:40.2760831Z",
+      "withinQueueWindow": true,
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "gzipBase64": "H4sIAAAAAAAACsWST2vbQBDF7wZ/h82e2oNlS06CHSSFVCbUkH+0yqUhh81q5Iy72hUzI1N/+yKJlFBybm8z8+bB+w2TXv5qnDoAMQaf6ThaaAXehgr9LtOP5fVspS/z6SQVYOEOBZQ3DWQ60C6yxu98OJih2CNEtkaKjDfuyMjRYImKGqnYN+13CQTVLTQvQFvPYrygEQy+2Icb3L1KSQAlsGg1GDOdaMU/sW2hyvRCq9qg6wh4aIAo0FgKNsBimjbTySI5n8XxLF6VSXyxXF0s4yhZJz+0eg0sY/Cb7d3oGWiXZzqfTpRKWwotkCDwfBz0IazhN962e3Fot16AamNhA7XpnHwJ1fGBQhME+BvUQOAtVA+EByNw3XnbA376rJV1hvkfXG7gWkSn67X+mIP+TrkZSb6Ca4G2XATnwApU950wVlD0wXvM/0Bxtjx9o+AjCzSz0EmenjwVm6vy6un5OU/n74T3i0D08WIvTCfp/M8/59PJb3TXzyoFAwAA",
+      "archiveVerified": true
+    },
+    {
+      "path": "cfir/analysis-tests/build/test-results/test/TEST-org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoTest.xml",
+      "bytes": 746,
+      "sha256": "A9F50B9D8352E79F312B6FA0A84350B93AABE27A851C094AC3BAE2E6E3D3B2D5",
+      "timestamp": "2026-11-18T21:38:32.328Z",
+      "lastWriteUtc": "2026-11-18T21:38:40.2760831Z",
+      "withinQueueWindow": true,
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "gzipBase64": "H4sIAAAAAAAACr2STU/CQBCG7yT8h3VPeqDQogikrdESI4kfRPGi8bBup7i43W1mpkT+vSlVY4xXvc3HO8nzbDY+eSut2ACS8S6RYTCQApz2uXGrRN4vz3tjeZJ2OzEDMdWGQThVQiI9rgKt3Mr5jdoVawOBLgwGyim7JUPB7iTICoPZuqzu2CPkV1A+A84dsXJsFBvvsrVfArEUu3wiIyno1VQV5IkcSFEoY2sE2jWA6LEt2ZRArMoqkdEgGvXCsBeOl1E4HY6nwygYRuMHKV48cct7Ob9ubxI5CCajiUy7HSHiCn0FyAao3w4aCK3oU7Oqn63Rc8eAhdIwg0LVls98vl2gLz0D3UIBCE5DvkCzUQzntdON1/6BFNoqor97sA+dw8mR/B0ff8LNWoELsBXgnDJvLWiG/KZmMjlkDW9j94/wx9EnPG2Joez5mtN47zGbnS5PH5+e0rj/bfE9CIi/B5tFtxP3vz5t2u28A81TLjTqAgAA",
+      "archiveVerified": true
+    },
+    {
+      "path": "cfir/analysis-tests/build/test-results/test/TEST-org.cangnova.cangjie.cfir.analysis.tests.CfirCVariadicSourceArgumentsLightTreeTest.xml",
+      "bytes": 1261,
+      "sha256": "4C9AE0E1426ECD4E34FC1DEBD925F6DD6B39A8EABF982F35CC00776A5236F03D",
+      "timestamp": "2026-11-18T21:38:28.786Z",
+      "lastWriteUtc": "2026-11-18T21:38:40.2740850Z",
+      "withinQueueWindow": true,
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "gzipBase64": "H4sIAAAAAAAACr3UzW7aQBAA4DsS7+DuqT1gsCHEimwiyyQtakSrhPTQKIfV7tiZ1N61ZgYKb19hFJRDOJbb7M/sfrMabXq9bepgA8ToXaaicKQCcMZbdFWmHle3g0Rdz/q9VICF1ygQON1ApjxVodGucn6ju+AVITQlUqidrneMHHYpYVEiFb80obZoHvyaDORUrRtwwndYvciKAFbAooIuIVMXKuA/2LZgMzVSQamxXhNwNwAiT4dQsAEW3bSZikfxdBBFgyhZxdHVOLmKk/Aymf5WwYtnOYDvFstDzr7K8fhCzfq9IEhb8i2QIPDwMLFHGM1vdZpRNIcSiMA+OpSbrZBe8D28ghGweSlAS2AB+xUcEJrCN20Ngt59/qICU2vm//hgXTmjcJIk6mO+J4tO067YQzr83AMvvTxoQS53xWrXwhmlcRSdkJrDw4E9HvGTgIE2cItbsJ2dc2fnYGpNYA/3fUdnz8gfTyYn+A0yo6s66/GUe2g0upxQdjdd456RGsXxCapFAiPHbv6meSH8468rdF3PUVfOs6A5J3V6+UblHQs0A7+WWfrpqZjnq/zp+XmWDt8tvN8IRB9v3C/0e+nw+G/N+r1/2xhvj+0EAAA=",
+      "archiveVerified": true
+    },
+    {
+      "path": "cfir/analysis-tests/build/test-results/test/TEST-org.cangnova.cangjie.cfir.analysis.tests.CfirCVariadicSourceArgumentsTest.xml",
+      "bytes": 1205,
+      "sha256": "ADA6A64D56B6AC48A7195F6F0F359AA944E4FC4AAD217A2797D7D16A17070458",
+      "timestamp": "2026-11-18T21:38:30.122Z",
+      "lastWriteUtc": "2026-11-18T21:38:40.2750840Z",
+      "withinQueueWindow": true,
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "gzipBase64": "H4sIAAAAAAAACr2UwW7bMAyG7wHyDp5O2yGO7bRZVtgpDKfdgg3Z0KY7rOhBkOiMnS0ZJJPFbz/ERoMemtvaGyXyBz/+IpRe7usq2AExepepOIxUAM54i26Tqbv19WimLufDQSrAwlsUCJyuIVOeNqHRbuP8TnfBI0JoSqRQO121jBx2krAokYqfmlBbNLd+SwZy2mxrcMJrYFFBV5epcxXwH2wasJmKVFBqrLYE3B2AyFMfCtbAousmU0mUTEdxPIpn6yS+mMwuJlEYJ8kvFfz2LD3nt+Wq1xyGi6ef1Hw4CIK0Id8ACQKP+4sDhNH8NJ6J4gWUQAT2zqFc7YX0km/gEYyAzUsBWgEL2M/ggNAUvm4qEPTu/QcVmEoz/3+fuimiMD4/Uy9Te7LoNLXFoX/HvPDAKy+3WpDLtli3Dbw+YPJxegLQ9DaBPSp/EDDQDq5xD7ZD5tzZBZhKE9i+zVd09vWpz065WiMzuk1HeNTeQK3R5YTSXnXL+QbvfspViwRGjnv6RfNS+PtfV+iqWqDeOM+C5g0AJ7MnQm5ZoB75rczTd/fFIl/n9w8P83T8LPG8EIheLjwkhoN0fPx/5sPBP2i9bpK1BAAA",
+      "archiveVerified": true
+    },
+    {
+      "path": "cfir/analysis-tests/build/test-results/test/TEST-org.cangnova.cangjie.cfir.analysis.tests.CfirExportTypeUseGraphLifecycleLightTreeTest.xml",
+      "bytes": 1803,
+      "sha256": "9CC9361BDD16F238869900B1FC27E72EE61E11EB4C585239DA2ECED268404A69",
+      "timestamp": "2026-11-18T21:38:01.589Z",
+      "lastWriteUtc": "2026-11-18T21:38:40.2791282Z",
+      "withinQueueWindow": true,
+      "tests": 8,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "gzipBase64": "H4sIAAAAAAAACsWVTW/bMAyG7wHyHzydtkNcO1lrp4hTeF27FQvaInEvK3rQrDexNlkSKLlL9usH21jRAQ12WnrTByk9fEVSs7NtrYJHkJNGZywOIxZAl0ZIvcnYXXE5StnZfDiYeTjvGukRaF4jY4Y2Ycn1RptH3g2+S4TlWlLINVc7J13YuYTna0kXW2vIFzuLO4dPxG21kGuUu1JhITeVLwgo4DwLOp+MpSxwP6S1EBmLWLDmUjUE101AZKgfelnDeV7bjI2j8ckojkdxWozj00l6GsXhcTr9yoLKON8zL66ue5+MxUk4SRI2Hw6CYGbJWJCXcEf9QktRcvcnVqkrkPQQbQQrZbz7AtgbEqBciw9St2q5t+9YUCru3P8VqMOfhpMkZS/TEqzipdSbJXxD+toILMAf4W6U6I6+JPML+pC4cZgcv9+D60xDJVaoufayzLU4N7WVCpQLAdHSd2oXFSQtjcJBdY7D8XS8Bxxbq2Qpfa4kd7kWF1tLcG0dtbwrWE7c4zWQx9M9yKaW3kP0iXHbfFPSVXCt4Aoefyvf3nhY7miyL0csJ2hfwcGtoFD6G612RYW89A1XV1qDDokahUky/Vf1dWmxbN0/cy1W8vWrMArTk5N9VVhx6t/8lhOv4UF9k/upuya3hAX3EF3TO7DWx09au53zqEem8fPZm/vzj3mR3z88zGdHzzaeG4LoZcN2YziYHT39avPh4Dcwf0zaCwcAAA==",
+      "archiveVerified": true
+    },
+    {
+      "path": "cfir/analysis-tests/build/test-results/test/TEST-org.cangnova.cangjie.cfir.analysis.tests.CfirExportTypeUseGraphLifecycleTest.xml",
+      "bytes": 1980,
+      "sha256": "0CFCC25FA6426BB9DE78FD46B078AF8B337908EF41F37173525800A1E62CE1F2",
+      "timestamp": "2026-11-18T21:38:18.970Z",
+      "lastWriteUtc": "2026-11-18T21:38:40.2654027Z",
+      "withinQueueWindow": true,
+      "tests": 8,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "gzipBase64": "H4sIAAAAAAAACsWVUW/bNhDH3w34O7B66foQxkoaxw1sF1rWbkWDpLBdDFjRB47827qFIonjObX66QfJWJsBMwIMmPdCHMW700//452mr3eNVw/gTDHMilKPCoVgo6OwmRUfV29PJsXr+XAwFWTJWxKoYBrMisgbbU3YhPhgeuMPgrZrYm2C8W2mrPsQfb0mfrNLkWXVJnzM+JlNqm9oDdtajxWyFKp3nRWTQuV7SgluVowKtTbkt4zcb8AceW8KNchimjQrzkZn45OyPCknq7Py6nxyVU70q8vRb4WqY5Y96s27233MrBjr8eismA8HSk0TxwQWQj7dP+ggrMl/fSGFGkwC13EvfZT8Hkh37MBVcD9S6DTKP7wolPUm5/9Elh661OeXF8U/QzKSN5bCZgHZcriNDjcwD8h33vUZ33L8inAEypGevDo/QJnjli2WaEwQslVw17FJ5MGVc3AddK/tqgbxInocQ9WRHpcvD/BilzxZksqTyVVwb3aJkbsW6TCXSIaN4Hikly/LA6SxIRG4ffU/bH/3lGvkTl4Pwd917l50FNyLyaHrmgwjSI2MvISHlbvg21WNysrW+HchgI8j6Gj8VEP1tV/QppZfTHBL+j8b6+JQ+XNteF/YD4ZNAwHvp9SX0E+pBRKMwPVT6zis59+GQG6zoDmJW5lPn326/qlaVZ8+f55PTx8dPHYE83fHX6vF7ZWqRNAkURKVj8ape7TqecqksweSpqAfjCdH0mpbw94/V+vIKkRRLaQPgVOMDWXhdjh4IikFy2gQxHjNXZNnaIcktfbUkPz75OSg627Bzvqtg9Nr8shPJHysVafNcDA9/fYbng8HfwLg3Du+vAcAAA==",
+      "archiveVerified": true
+    },
+    {
+      "path": "cfir/analysis-tests/build/test-results/test/TEST-org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportLightTreeTest.xml",
+      "bytes": 1446,
+      "sha256": "F2A4D63E1352B32EC1C3BA0C1B39F1EABB07C6128268D3B395094467378FADDB",
+      "timestamp": "2026-11-18T21:38:33.299Z",
+      "lastWriteUtc": "2026-11-18T21:38:40.2770834Z",
+      "withinQueueWindow": true,
+      "tests": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "gzipBase64": "H4sIAAAAAAAACsWUwW7bMAyG7wHyDppO6yFObLduUtgugqQBChQ7rN6lRQ+CTLvaZMkg6TR9+8HOOvTQYKe5N0o/KX7kDyi9PjRW7AHJeJfJMFhIAU770rg6kz+K3Wwpr/PpJGUgps4wCKcayKTHOtDK1c7v1RD8NBDoymCgnLKvZCgYSoJNZfDed6jh5tAiUN/o5tB65DtTP3OBAAUQSzGkZ/JSCvpl2hbKTC6kqJSxHQINB0D0eAzZNECsmjaT0SJKZmE4C5dFFF7Fy6s4DqLV6kGKZ098xL27/XasyWQcRPFS5tOJEGmLvgVkAzQ/XvQQWtHblNo7Rm931r98PZNCW0X03+Yf6BbBeZLIj2l6VsUeaePdH8toNKwkCU9glaCtQsU9zkZZOx5THF2cYEKoAMFpuHXEyrEZ8MbzcBWfAIODhnZY1Xeg4cnx1nUenqLyaGrjlN1CpTrLayJTuwYc75RmWrty16v3YEGPuseLf/q7BTR7KD/H5ji6fOOjV2JoZr7jPP3yuNmui/Xj01Oezt8J7xMB8ePEXphO0vnfDzefTn4DL/4V6qYFAAA=",
+      "archiveVerified": true
+    },
+    {
+      "path": "cfir/analysis-tests/build/test-results/test/TEST-org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportTest.xml",
+      "bytes": 1374,
+      "sha256": "A928F9B7BCB28FC838A72B379D99270DD4290C29C0817902E2538A43D19CB9BA",
+      "timestamp": "2026-11-18T21:38:36.538Z",
+      "lastWriteUtc": "2026-11-18T21:38:40.2780833Z",
+      "withinQueueWindow": true,
+      "tests": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "gzipBase64": "H4sIAAAAAAAACr2UwW7bMAyG7wHyDppO2yGKFbdpVtgugqQBCgw7rNllRQ+CTHvaZMkg6Sx9+8HOOvTQoJcmN0okpY//Lyi72Tde7ADJxZBLrRIpINhYulDn8vt2M1nIm2I8yhiIqXMMIpgGchmxVtaEOsSdGYJfDpStHCoTjH8iR2poUavK4X3s0MLtvkWg/qLbfRuRt0AsxVCVyysp6LdrWyhzmUhRGec7BBoWgBjxELJrgNg0bS5nyWw+0XqiF9uZvk4X1+lcXaaLH1L8jMQHyi93Xw89uUyVnstiPBIiazG2gOyApoeNnsEaep7NxsAY/cbHPx8/SWG9IXrvqQemRKUXn+XrED2i4Yi0iuGfP3RqmsvZMZoSrDdouKdYGe9PjpLq+REUhAoQgoW7QGwCu4Hq5NLoY9LA3kI7CPMNaDjpDD5dHXs16GoXjF9DZTrPSyJXhwYCb4xlWoZy02fvwYM9h2oXb7u4BnQ7KM9rZqKfseiJGJpJ7LjIPjys1svt8uHxscimLxIvCwHx9cI+MR5l0/8fZTEe/QWHknbVXgUAAA==",
+      "archiveVerified": true
+    },
+    {
+      "path": "cfir/analysis-tests/build/test-results/test/TEST-org.cangnova.cangjie.cfir.analysis.tests.CfirSourceFrozenTypesLightTreeTest.xml",
+      "bytes": 85125,
+      "sha256": "74B2815EC3342C10812FE968BF25A805E1EA2F35BE330FBFBDDD8EE9BB99BD68",
+      "timestamp": "2026-11-18T21:38:25.574Z",
+      "lastWriteUtc": "2026-11-18T21:38:40.2690782Z",
+      "withinQueueWindow": true,
+      "tests": 2,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0,
+      "gzipBase64": "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",
+      "archiveVerified": true
+    },
+    {
+      "path": "cfir/analysis-tests/build/test-results/test/TEST-org.cangnova.cangjie.cfir.analysis.tests.CfirSourceFrozenTypesTest.xml",
+      "bytes": 85090,
+      "sha256": "34B866BE01B0CC64BEF0F3126B88017208C6614278599EDD5041CE9B80611DE3",
+      "timestamp": "2026-11-18T21:38:27.521Z",
+      "lastWriteUtc": "2026-11-18T21:38:40.2730858Z",
+      "withinQueueWindow": true,
+      "tests": 2,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0,
+      "gzipBase64": "H4sIAAAAAAAACu2dW2/cxhWAn2PA/4HdGIYMONSS69VKu6IDVZZTB4kVWPJLhUVAcWclSlySnSGVKEWfmrROm8BBgLpFmhYI0DToLUHaALm2+S+FJTtP/QvF8LIckjNLai/UxjgPgpbD4cyZy5kZzhmeb/XZVweWdIQwMR1bqylyvSYh23B6pr2n1e5u33xmufbs9YsXVj1EPOKbHpJsfYC0moP3ZEO392znSA9+HJhINvomlnVbt46JSeTgEXm9b+Itx8cGuomd15C9fewiso2IV5OCCFpNrUnk0HRd1NNq9ZrU103Lx4hoNaUmIYwdTIJwzxwg4ukDV6updXXpGUV5RlneVpV2Y7mttuSmqvy4Ju07xAsFfOHW7fAZWip1qVG7fvGCJK262HER9kxEFsMAKoShk7hcfd82PNOx13bNhSs1ybB0QqZY4kCeutxcXqnx83dwD2HUW7NMndxxLERmKMVSSw1rRZJWo1qXBogQfS/KyHGRTVO7diC/6Fue6VroZtQ6G7Rh2lIcLMXh0oI6bMErl59WGp3LTyv1zuWnVzqZFNcIoQ3h2PRR1IsSPPn4rdPffCbdWNyQvvvtP07eeuPk/q9OP7l/+ocPTt9/8+Sr+4//8+XJt29898HXj/7+55N37p18/LvTB18+/OqjR2/+5X/f/P7Rp1+f/PHXj755cHL/85P7nzz8+sOTNz59+NXfTu89ePjF2yfvvCVp2uU9ryOhV11keKjXli5bXuenjbZOK/wuQVrys+M5rtbXLfrr2EWaWl/YUZcXdrqdHjIsTVHat2zvJd3E6/u6aXe2900SRr/S7WDkaeXidtajPI50bOo904jD95CNsGlotmOj+OIGTSwI6CEX2T1kGyYiWpBNX/ctT/OwjzqujvUB0XaSsiwGQTv17plE23V6x5q63FaWaHSa75WObxO9jyKZieV4RNvZaDdScaiK6XaPaDtLbWV5Yac5vHVVSn7HsTHqa0e65aOOp+M95GkcsTumTTxaTlfHyPbCOkiy6Xa7V6VMSXIlo80ZVE/YmuWqYLxWCGsH7xN+NmwOVyVOcbVWO6qRTBecvdB0mOlFvwdosItwdBFHo2lQoT3ftVCoMfFPnsYUtn/YI4u7yUz1JC5BRk+KpTo3FclJXEZFOI+JulqxUJX0sng+Djsac8UdnetpmZWWoABB2yY3RX2LfWjy1KbTU5kqGLZhpqKicEUQrgrCG918USbv3q02m56hW5bW6BCzhzb6fWTE/YFVh2m3YqA9NONd3ThMFIhXkUU6dFWqtxMJOqbt+HEJ0v2bLQ/zAJWkb2LijRJDKVZlKgdb8nKCsE9QSQZmr2cxQwqvq5QSZdIqsfTRNdIoMbiFwxuvUbVWO2n9/KAxByo+/pg47DJaqx11rHQJmZo+J9lUKlvc1TJzTOvcpWtQ6cL+Nx8Vdwd5Pra1bEAV0130bjBtnahkOgxrKfuaM+2iTGO1V/H0lqmYcqtEwcNP3Ehq6BibCIeLy+SCq2xLwgLGb2Tt9TAFzlbAeA/PVnWS8mbVZkxpp7FYHDfvYGGpjFpYNgPNG7OEtOpGa6BOaERmCyO8zqhbXTAmjFlqznshp1XLLZ6GOTB5ZbZMlhZ21BUqmecmkRY9l+bhuy7CNLUrVyV+JIWNNLJYcffeyWTCCBkm2D3ryBCOBuHWWNBAwfYLue0MTFu3giFh33FIMDi4uonpf9M2vW6H+KHotBIi4YnXkw0Ho/bL67d1b2lz9wAZ3kZK+9ODTPH+zpj9oJLBMqywpGtzBslEu2bbT0ar4yS1EQ+P1ZYkGDnjenb9Xcs01jDWj8OJKR3AnZyU8I+daDldtBmkceu5l9Od9CxRg1qpKLfZTn/pWs1OgVUVcSoryqqE5Uw3glost8wUPCwcHasqZwXDqaK06d493cYPLAJ540QypIRRcqNOYgjI2hSYCZR9tjuOAUMpIwo7AAqljec0NoKmqO3tXDsXpTVRA2XTHUr0gmkfaszvEm1CoxW0S5DSqLZJ0hirfcYUK22Cyj1Xql242UypbZK0WcMea0MrYc6buiUvN/IIGjmzUC2sT+HKYuLaLFhAU7nulpNLmZlcoaFiuArXmN/nucicySLkfFaZ7GJjuPcRvOho8Q/usnJKQokiZcanoC5K9L1ZtkhcHSnbWipIyQep3fLCc9qAXfhwN/FnPVCU3y9LV4RwY3/WI8h4Aquivf65qV+65UAX1fH8dnZ9TM73lIosXEHOVsdoATlHkiYTOf0SzeYgfKGYl3anW0xa+A9mvJnNeLRPbPYj/drsZ1eQrILFccro14i4Y6vXTjrR7mSqttkfpWzjyM+p1zILXWFWk64n0wkzQpUeAmYjWukRIDr3uxXs9qQvOf10bixtST9jJU4tnjg3FNENVXQEiVdNhcumqk343JLOz+EHbn3PyekHjDIKkA7gqICg25+nCqRlTikB95YivlWoCIK8RKpQeWcTFFioDefb4eZPHVyke6g3PAyUDiiYEbIa0KxOAVgpMwrAuUUNuBkBM52cm968jPeCMs1FH1LbyWc/4WdAWj4o24+CQSJY83HiTmsvlTXBR989sAfTM8f08qeR0ib1vBkpMdV3fxZ867Pre9IrOok+9QHDCxhewPDyBBtevqdfgcHxq1LHr7ImLDCtlTKtwcmtKk5ugQkTTJhgwgQTJpgwwYQJJkw4tAMmTDBhggkTTJhgwgQTJpgwwYQJJkwwYYIJE0yYZzBhsu7hwDfh99Y3Ifj4Ax9/4ONPcI4GfPyBjz/w8Qc+/sDHH/j4Ax9/mU/+wMcf+PgDH3/g4w98/IGPv4l9/D05zujASdpsvtQHJ2ngJG1OnKQFX++MgRB6+MXbj3/+78ef/+vxt788+dOnjz/78NF7r4dkoMcfvfv4zX+e3ntw+v5fKWno3juP3ntd2tq8e2d947+/eHf9+U0+IEjJf0hUp0E1KRgpS8GSatengVS6eOEp4CgBRwk4SsBRAo4ScJSAowQcJeAoAUcJOErAUarQ8wVwlICjBBwl4CgN3awCRwk4SsBRAo4ScJSKF0/gjQM4SsBRAo4ScJSAowQcJeAoAUcJOErAUQKOEnCUgKMEHCXgKAFHCThKc00OBI4ScJSAowQcJeAozSE4BjhKwFECjhJwlICjBBwl4CjtE406+craG0a+IQmiJN/BshFG805FaU2KO02lO5SIwnBSYJw86yYrWUL7EXJfs4idhFELHCXgKAFHqfhD+J3MzkwGYUQpiBMw9AK2T4o+AxylqYyxwFGqZIcROErnvqEbQte0+AfXD9WUhBJFyixAgrooTm3GPNuwOlIc21SQkg8CEyaYMMGECSZMMGGCCVP4Sp2aiYumsJ3Y4BpOk93xp7MomXg6i2ZZdldgHPk5puEyWyPCrCZdt6cTZoQq9Hc2W9FK23AyFpwCiIzAQ1vaQUzgfT25OeNlEytxavHEuaGIbsQLKVZs4CgBRwk4SsBRAo4ScJSAowQcJeAoBRaALJAoWdgny/ZbduAxb31fN+388h04SrNd0nu+a6GQ4BX/5G2yFvKooiVxIbZqpj6B4xJk+luxVOfW1XISl0N25R4TvTkWC1W1VyYtdcXd0J/yuyP70Lm9iQJHCThKwFECjhJwlMDHH3CURNPhHeT52M6+Lkx7L3kaq72pC0UXh4ZuWbu6cZisDwUVU26VKHhYa7WTjPLLrzlYLJ1xdQk+/sDHH/j4A47SjqqEf+xINQufXuAkDZykgZO0KXGUynKDKoQnXbzwlO5JVKoD3zY9+cB3TQ9hWXfNSLg1y5L1+NdCEnagH+nt5fqVCVNoXps0hWvLJVIwHZvkkggCgzTUlRabiqHbe7ZzpAc/Dkwk0+aSCcJHpoGIbA5cS37+rm16TSYhioeiad8Imz25sxU+Jx96baVZL8xmGxHvjm/bCMsYuQ72YgbVAnPn0EvXHD+p2479HHZ817T32FR9m169ZLrIMm20wI916LVbjclyEKfcqE+W8qVIt8Q5qK3CHHAQmchru8TDuuGthzfXnYFrWgjT9IYlGRXn0Gsvr4zKzeibWNZt3TomJgnyZjLtm3jL8bGBbmLnNWRvH7uIxFmv6wQtiGPQDlVvzSTnzfAw0Bo1a91xLESKxFDOKoY4PedseS/FWVNNlnd1ghaDX5Zu78kY9S1kePKLyNt3erJpHzmHaCG6Cgeg4RiWed73TEsOFkUvmMST+w7e0I39hSQkeFxprixN4/kt33UxIoQO2ACXA7gcwOUALgeGZzA8g+EZDM8AlwO4HMDlAC4HcLm8rS9nOazinNWMrLWVnMMCwzMYnsHwfCbVSazu2fMaS8IRoNjxw0THMlrtcfOmByI0pUPMHhIsLJvBkY8xSxh6Ehl19CN0lpMc/IiuM+c86oLDKGOWmnMgmdOq5U7tDXNg8sp8E1qVB5F59m5EK4FraV7a3D1Ahpe2M6dPtxR/JzxmP6jklA7A5QAuB3A5gMsBXA7gcuDjFHycAlwO4HIAlwO4HHhmBM+M4JkRPDOCZ0bwzAieGcEzI3hmBM+M4Jkx9kGptdoDs9ez8p5dGNN55c4/AS43A+ekaUJeyj0p95YivlXoolSQl9Zq902chwVW3tkEBRZqw/nSDOdPHVyUOGLUsgEFvnqzh3SaVXnnTUuZUQDOLWrAzQgIcDmAywFcDuByAJcbAf3jovWmBP5L0g7gf5FzT8bPJwf9l/MFOrXDKVQRaA45hxACgiArc+CQNOegtIT0eU+m0yjCyEqC41cAl5uWHgNcDuByZ+PATLLqB7gcwOXSJ1u5GxAlzg1X5GsuTdkTbkiUQQRWL7Bwh2Ju6peemo4wR2PCHjnwqFGRx6ZfTbbXQQs4inc1lsg54FV5stR5tzs9Ja+F/3jtXvE08aTOeCE9bIgR42wElgGuTQXOBnA5gMsBXA7gcmDC5FmUAptNAV9R8GX1efIVwYQJJkwwYYIJcx7M4Go7cYsYuknU8kHZYTUYKYM1KyfutLb02a+II0IaC3XKAJPy3j0ALgdwOfEb/exNUgCXA7gcwOUALsccuZrQbQv7hhK4YmmMcsVSOX3nLN5Qrkr1NrPQMW3Hj0uQHkXZ8jAPUEkiE4hYDKXYKQuVgy15OUHYJ6gksXFDLIpaTpRJqyRcT4rFaJR0U8Nv1CcOicTrMiLbWtWnU3l9aH6OufO61ly8z4CPP/DxB3A5gMvN1FQJPv7Ax9+oxdOT4ozO9Xct0wioIyGTPB3APXoCcLkzjx/pWs2ed6moQqfDe61KWI5PTkEtloPACh4Wam1V5awMLlcCghaxxH7om1YPYXmX/l8Q3Y0ARQFfacy01+ze9j52XinIo6GWyWPjJ75uhaC12054tZC6Eya20jpDYjpzwUtsuZRkDF4ulVRCmFOUZsB5OhMji6FdrR84P9LtnoWw7GLHQIS86PR8qwAPpirXqs9UCYlcxZS7LQ+5lxiCW3AdZUjoRSbX+JkgkxD7N+NMlNFtNgJUl05UiKlTltRxc9jXjcPjl0pmE3IHJy7IJUsf7Pb0S0pjRF4h3K885NC3YxThpr1l2nsWomjFDO1wZXnWLaGO3dbYt2mPIeLEV0poxKSwxrAjybIsrUgDB6NxoHLVkkdhvpr+fJVW9PHnq+ZSY7ozx1rfQ3jNskI9LGA6qmpzdsqo1MceDCfRxtVFunDxMbp+8YIkrS7SbAydRJfkmHho8Izje9dXf7CzfmNte22n272+usjcYCMijPkR6Q2aWdAkvunR9P8PtxcJs2JMAQA=",
+      "archiveVerified": true
+    }
+  ]
+}

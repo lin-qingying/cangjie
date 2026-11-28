@@ -24,6 +24,12 @@
 
 package org.cangnova.cangjie.analysis.api.cfir.components
 
+import org.cangnova.cangjie.cfir.types.typeContext
+
+import org.cangnova.cangjie.cfir.resolve.substitution.createTypeSubstitutorByTypeConstructor
+
+import org.cangnova.cangjie.cfir.types.asCone
+
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.references.CaCfirReference
 import org.cangnova.cangjie.analysis.api.cfir.symbols.publicSymbolCacheKeyOrNull
@@ -48,6 +54,7 @@ import org.cangnova.cangjie.cfir.analysis.diagnostics.toCfirDiagnostics
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
+import org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRef
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
@@ -71,9 +78,8 @@ import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.cfir.types.ConeDiagnostic
 import org.cangnova.cangjie.cfir.types.ConeUnreportedDuplicateDiagnostic
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
-import org.cangnova.cangjie.cfir.types.CfirTypeSubstitutorByMap
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
-import org.cangnova.cangjie.cfir.types.asCone
+import org.cangnova.cangjie.cfir.resolve.substitution.asCone
 import org.cangnova.cangjie.cfir.types.coneType
 import org.cangnova.cangjie.cfir.types.resolvedType
 import org.cangnova.cangjie.idea.references.mainReference
@@ -332,7 +338,7 @@ internal class CaCfirResolver(
         return CallTypeArguments(
             publicMapping = publicMapping,
             publicSubstitutor = analysisSession.cfirSymbolBuilder.typeBuilder.buildSubstitutor(
-                CfirTypeSubstitutorByMap(cfirMappings)
+                createTypeSubstitutorByTypeConstructor(cfirMappings, analysisSession.cfirSession.typeContext, false)
             ),
         )
     }
@@ -363,7 +369,7 @@ internal class CaCfirResolver(
             }
         }
         val publicSubstitutor = analysisSession.cfirSymbolBuilder.typeBuilder.buildSubstitutor(
-            CfirTypeSubstitutorByMap(cfirMappings),
+            createTypeSubstitutorByTypeConstructor(cfirMappings, analysisSession.cfirSession.typeContext, false),
         )
         return CallTypeArguments(publicMapping, publicSubstitutor)
     }
@@ -371,7 +377,8 @@ internal class CaCfirResolver(
     /** 从通用候选约束状态恢复声明类型参数的最终 CFIR 类型实参。 */
     private fun candidateTypeArgumentMappings(
         candidate: Candidate,
-        typeParameters: List<CfirTypeParameter>,
+        // 只读取 symbol：构造器/enum 构造项的 constructed-class 引用与自有声明同序参与实参映射。
+        typeParameters: List<CfirTypeParameterRef>,
     ): Map<TypeConstructorMarker, ConeCangJieType> {
         if (typeParameters.isEmpty()) return emptyMap()
         val systemSubstitutor = candidate.system.buildCurrentSubstitutor().asCone()
@@ -396,7 +403,7 @@ internal class CaCfirResolver(
     ): CallTypeArguments {
         val cfirMappings = candidateTypeArgumentMappings(candidate, resolvedSymbol.cfir.typeParameters)
         val publicSubstitutor = cfirMappings.takeIf { it.isNotEmpty() }?.let { mappings ->
-            analysisSession.cfirSymbolBuilder.typeBuilder.buildSubstitutor(CfirTypeSubstitutorByMap(mappings))
+            analysisSession.cfirSymbolBuilder.typeBuilder.buildSubstitutor(createTypeSubstitutorByTypeConstructor(mappings, analysisSession.cfirSession.typeContext, false))
         }
         return CallTypeArguments(emptyMap(), publicSubstitutor)
     }
@@ -417,7 +424,7 @@ internal class CaCfirResolver(
         }
         return CallTypeArguments(
             emptyMap(),
-            analysisSession.cfirSymbolBuilder.typeBuilder.buildSubstitutor(CfirTypeSubstitutorByMap(cfirMappings)),
+            analysisSession.cfirSymbolBuilder.typeBuilder.buildSubstitutor(createTypeSubstitutorByTypeConstructor(cfirMappings, analysisSession.cfirSession.typeContext, false)),
         )
     }
 

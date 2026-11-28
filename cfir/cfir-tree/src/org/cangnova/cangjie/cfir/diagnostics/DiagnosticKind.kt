@@ -28,6 +28,8 @@ package org.cangnova.cangjie.cfir.diagnostics
  * 诊断分类，对齐 K2 `DiagnosticKind`。
  */
 enum class DiagnosticKind {
+    /** 正常候选解析确定隐式 super() 没有可用无参数父构造器。 */
+    NoNonParamConstructorInSuperClass,
     /**
      * 非法 const 表达式。
      */
@@ -87,6 +89,9 @@ enum class DiagnosticKind {
      * 父类型无法解析。
      */
     UnresolvedSupertype,
+
+    /** 默认父类所需的 std.core.Object 不在本次真实导入域内。 */
+    NoCoreObject,
 
     /**
      * 无法推断参数类型。

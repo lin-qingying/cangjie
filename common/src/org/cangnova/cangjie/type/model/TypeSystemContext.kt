@@ -262,6 +262,11 @@ interface TypeSystemCommonSuperTypesContext : TypeSystemContext, TypeSystemTypeF
     override fun CangJieTypeMarker.extractSizeForVArrayType(): Long =
         error("Not a VArray type")
 
+    /** RawArray 的规范布局与普通名义实参分开；公共算法比较累计维度和真实叶子。 */
+    override fun CangJieTypeMarker.isRawArrayType(): Boolean = false
+    override fun CangJieTypeMarker.extractElementTypeForRawArrayType(): CangJieTypeMarker = error("Not a RawArray type")
+    override fun CangJieTypeMarker.extractDimensionsForRawArrayType(): UInt = error("Not a RawArray type")
+
     /** 创建元组类型 */
     fun createTupleType(elementTypes: List<CangJieTypeMarker>): CangJieTypeMarker =
         error("Tuple type creation not available in this context")
@@ -760,6 +765,11 @@ interface TypeSystemContext : TypeSystemOptimizationContext {
     /** 提取 VArray 的编译期固定尺寸 */
     fun CangJieTypeMarker.extractSizeForVArrayType(): Long =
         error("Not a VArray type")
+
+    /** ArrayTy 的结构类型协议；累计维度和叶子不从名义 classifier 实参数量推断。 */
+    fun CangJieTypeMarker.isRawArrayType(): Boolean = false
+    fun CangJieTypeMarker.extractElementTypeForRawArrayType(): CangJieTypeMarker = error("Not a RawArray type")
+    fun CangJieTypeMarker.extractDimensionsForRawArrayType(): UInt = error("Not a RawArray type")
 
     // ------------------------------------------------------------------
     // Option 自动装箱

@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.type
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
@@ -16,7 +17,7 @@ import org.cangnova.cangjie.resolve.deprecation.DeprecationLevelValue
  * 当通过类型引用（如 `let mtx: ReentrantMutex`）使用被 `@Deprecated` 标记的 class/struct/enum 时，
  * 按其严格级别报告 warning/error。弃用信息通过声明上的 `deprecationsProvider` 获取。
  */
-object CfirDeprecatedTypeRefChecker : CfirResolvedTypeRefChecker() {
+object CfirDeprecatedTypeRefChecker : CfirResolvedTypeRefChecker(MppCheckerKind.Common) {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(typeRef: CfirResolvedTypeRef) {
         val source = typeRef.source ?: return

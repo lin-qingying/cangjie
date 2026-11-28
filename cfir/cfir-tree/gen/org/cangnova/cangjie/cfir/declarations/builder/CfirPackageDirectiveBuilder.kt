@@ -21,7 +21,7 @@ class CfirPackageDirectiveBuilder {
     var source: CjSourceElement? = null
     lateinit var packageFqName: FqName
     var organizationName: Name? = null
-    var isMacroPackage: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
+    var isMacroPackage: Boolean = false
 
     @OptIn(CfirImplementationDetail::class)
     fun build(): CfirPackageDirective {

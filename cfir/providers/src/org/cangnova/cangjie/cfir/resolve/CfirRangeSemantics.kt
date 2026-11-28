@@ -1,10 +1,11 @@
 package org.cangnova.cangjie.cfir.resolve
 
+import org.cangnova.cangjie.cfir.resolve.substitution.createTypeSubstitutorByTypeConstructor
+
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.symbols.constructType
-import org.cangnova.cangjie.cfir.types.CfirTypeSubstitutorByMap
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeClassifierType
@@ -78,7 +79,7 @@ fun ConeCangJieType.rangeTypeForExpectedType(session: CfirSession): ConeClassifi
         if (rangeSubstitution[rangeTypeParameter.lookupTag] == null) {
             return@mapNotNull null
         }
-        CfirTypeSubstitutorByMap(rangeSubstitution)
+        createTypeSubstitutorByTypeConstructor(rangeSubstitution, session.typeContext, false)
             .substituteOrSelf(rangeType) as? ConeClassifierType
     }.distinct()
 

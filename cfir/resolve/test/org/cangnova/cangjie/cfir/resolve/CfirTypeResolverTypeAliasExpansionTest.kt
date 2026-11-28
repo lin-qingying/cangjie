@@ -5,6 +5,13 @@
 
 package org.cangnova.cangjie.cfir.resolve
 
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
+
+import com.intellij.lang.LighterASTNode
+import com.intellij.openapi.util.Ref
+import com.intellij.psi.TokenType
+import com.intellij.psi.tree.IElementType
+import com.intellij.util.diff.FlyweightCapableTreeStructure
 import org.cangnova.cangjie.AnalysisFlags
 import org.cangnova.cangjie.LanguageVersion
 import org.cangnova.cangjie.LanguageVersionSettings
@@ -34,19 +41,27 @@ import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeAliasSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirLazyDeclarationResolver
+import org.cangnova.cangjie.cfir.symbols.CfirDummyCompilerLazyDeclarationResolver
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
+import org.cangnova.cangjie.cfir.types.withAbbreviation
 import org.cangnova.cangjie.cfir.types.builder.buildBasicTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildUserTypeRef
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.CjBinarySourceElement
+import org.cangnova.cangjie.source.CjLightSourceElement
+import org.cangnova.cangjie.source.CjRealSourceElementKind
+import org.cangnova.cangjie.source.CjSourceElement
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertInstanceOf
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
 
 /**
@@ -60,18 +75,10 @@ class CfirTypeResolverTypeAliasExpansionTest {
      */
     @Test
     fun `resolveType preserves typealias when expansion is disabled`() {
-        val aliasClassId = ClassId(FqName("sample.lib"), Name.identifier("RemoteAlias"))
+        val aliasClassId = ClassId(FqName.ROOT, Name.identifier("RemoteAlias"))
         val resolver = createResolverForTypeAlias(aliasClassId)
         val typeRef = buildUserTypeRef {
-            source = TestBinarySourceElement("sample.lib.RemoteAlias")
-            qualifier += buildQualifierPart {
-                source = this@buildUserTypeRef.source
-                name = Name.identifier("sample")
-            }
-            qualifier += buildQualifierPart {
-                source = this@buildUserTypeRef.source
-                name = Name.identifier("lib")
-            }
+            source = testSourceElement()
             qualifier += buildQualifierPart {
                 source = this@buildUserTypeRef.source
                 name = aliasClassId.shortClassName
@@ -113,7 +120,7 @@ class CfirTypeResolverTypeAliasExpansionTest {
      */
     @Test
     fun `global no alias expansion flag overrides local expansion request`() {
-        val aliasClassId = ClassId(FqName("sample.lib"), Name.identifier("RemoteAlias"))
+        val aliasClassId = ClassId(FqName.ROOT, Name.identifier("RemoteAlias"))
         val resolver = createResolverForTypeAlias(
             aliasClassId,
             languageVersionSettings = LanguageVersionSettingsImpl(
@@ -122,15 +129,7 @@ class CfirTypeResolverTypeAliasExpansionTest {
             ),
         )
         val typeRef = buildUserTypeRef {
-            source = TestBinarySourceElement("sample.lib.RemoteAlias")
-            qualifier += buildQualifierPart {
-                source = this@buildUserTypeRef.source
-                name = Name.identifier("sample")
-            }
-            qualifier += buildQualifierPart {
-                source = this@buildUserTypeRef.source
-                name = Name.identifier("lib")
-            }
+            source = testSourceElement()
             qualifier += buildQualifierPart {
                 source = this@buildUserTypeRef.source
                 name = aliasClassId.shortClassName
@@ -152,14 +151,113 @@ class CfirTypeResolverTypeAliasExpansionTest {
         assertEquals(ConePrimitiveType.INT64, aliasType.expandedType)
     }
 
-    /**
-     * 构造只包含一个 typealias 声明的测试 type resolver。
-     */
+    /** SUPER_TYPES 的临时展开产品必须覆盖类型节点缓存的旧展开结果。 */
+    @Test
+    fun `direct expansion uses supplied alias product instead of cached expansion`() {
+        val aliasClassId = ClassId(FqName.ROOT, Name.identifier("RemoteAlias"))
+        val session = createSessionForTypeAlias(aliasClassId)
+        val aliasType = ConeTypeAliasType(aliasClassId, expandedType = ConePrimitiveType.INT64)
+        val aliasSymbol = session.symbolProvider.getClassLikeSymbolByClassId(aliasClassId)
+        var expansionReads = 0
+
+        val expansion = aliasType.directExpansionType(session) { alias ->
+            assertEquals(aliasSymbol, alias.symbol)
+            expansionReads++
+            ConePrimitiveType.FLOAT64
+        }
+
+        assertEquals(ConePrimitiveType.FLOAT64, expansion)
+        assertEquals(1, expansionReads)
+    }
+
+    /** Supplier 暂未发布展开产品时，禁止从旧缓存或声明 typeRef 绕过该边界。 */
+    @Test
+    fun `direct expansion preserves missing supplied alias product`() {
+        val aliasClassId = ClassId(FqName.ROOT, Name.identifier("RemoteAlias"))
+        val session = createSessionForTypeAlias(aliasClassId)
+        val aliasType = ConeTypeAliasType(aliasClassId, expandedType = ConePrimitiveType.INT64)
+        var expansionReads = 0
+
+        assertNull(aliasType.directExpansionType(session) {
+            expansionReads++
+            null
+        })
+        assertEquals(1, expansionReads)
+    }
+
+    /** alias 本体、属性和递归子类型都不能用旧节点展开值越过所选来源的产品边界。 */
+    @Test
+    fun `abbreviation expansion preserves missing selected products throughout the type tree`() {
+        val aliasId = ClassId(FqName.ROOT, Name.identifier("RemoteAlias"))
+        val session = createSessionForTypeAlias(aliasId)
+        val alias = ConeTypeAliasType(aliasId, expandedType = ConePrimitiveType.FLOAT64)
+        val carrier = ConePrimitiveType.INT64.withAbbreviation(
+            org.cangnova.cangjie.cfir.types.AbbreviatedTypeAttribute(alias),
+        )
+        val nested = org.cangnova.cangjie.cfir.types.ConeTupleType(listOf(alias, carrier))
+        val missing = org.cangnova.cangjie.cfir.resolve.providers.CfirEmptySymbolProvider(session)
+        for (symbols in listOf(missing, session.symbolProvider)) {
+            fun expand(type: org.cangnova.cangjie.cfir.types.ConeCangJieType) =
+                type.fullyExpandedTypeUsingAbbreviation(session, symbols) { null }
+            fun assertUnexpanded(type: org.cangnova.cangjie.cfir.types.ConeCangJieType) {
+                val restored = assertInstanceOf(ConeTypeAliasType::class.java, type)
+                // 属性重写可生成新节点；未展开 alias 的身份与保留字段必须完整一致。
+                assertEquals(alias.classId, restored.classId)
+                assertEquals(alias.typeArguments, restored.typeArguments)
+                assertEquals(alias.expandedType, restored.expandedType)
+            }
+            assertSame(alias, expand(alias))
+            assertUnexpanded(expand(carrier))
+            val restoredElements = (expand(nested) as org.cangnova.cangjie.cfir.types.ConeTupleType).elementTypes
+            assertEquals(2, restoredElements.size)
+            restoredElements.forEach(::assertUnexpanded)
+        }
+        assertEquals(ConePrimitiveType.INT64, alias.fullyExpandedTypeUsingAbbreviation(session))
+    }
+
+    /** 从语法类型引用进入解析器时，阶段 Supplier 仍决定 alias 产品。 */
+    @Test
+    fun `user type resolution forwards supplied alias product`() {
+        val aliasClassId = ClassId(FqName.ROOT, Name.identifier("RemoteAlias"))
+        val session = createSessionForTypeAlias(aliasClassId)
+        val resolver = CfirTypeResolverImpl(session)
+        val typeRef = buildUserTypeRef {
+            source = testSourceElement()
+            qualifier += buildQualifierPart {
+                source = this@buildUserTypeRef.source
+                name = aliasClassId.shortClassName
+            }
+        }
+        val supplier = object : SupertypeSupplier() {
+            override fun forClass(firClass: CfirClassLikeDeclaration, useSiteSession: CfirSession): List<ConeCangJieType> =
+                SupertypeSupplier.Default.forClass(firClass, useSiteSession)
+
+            override fun expansionForTypeAlias(typeAlias: CfirTypeAlias, useSiteSession: CfirSession): ConeCangJieType =
+                ConePrimitiveType.FLOAT64
+        }
+
+        val resolvedType = resolver.resolveType(
+            typeRef, TypeResolutionConfiguration.EMPTY,
+            areBareTypesAllowed = false, isOperandOfIsOperator = false, resolveDeprecations = true,
+            supertypeSupplier = supplier, expandTypeAliases = true,
+        ).type
+
+        val primitive = assertInstanceOf(ConePrimitiveType::class.java, resolvedType)
+        assertEquals(ConePrimitiveType.FLOAT64.kind, primitive.kind)
+    }
+
+    /** 构造只包含一个 typealias 声明的测试 type resolver。 */
     private fun createResolverForTypeAlias(
         aliasClassId: ClassId,
         languageVersionSettings: LanguageVersionSettings = LanguageVersionSettingsImpl.DEFAULT,
-    ): CfirTypeResolverImpl {
+    ): CfirTypeResolverImpl = CfirTypeResolverImpl(createSessionForTypeAlias(aliasClassId, languageVersionSettings))
+
+    private fun createSessionForTypeAlias(
+        aliasClassId: ClassId,
+        languageVersionSettings: LanguageVersionSettings = LanguageVersionSettingsImpl.DEFAULT,
+    ): CfirSession {
         val (session, moduleData) = ExtendTestFixtures.newSessionAndModule("typealias-expansion")
+        session.register(CfirLazyDeclarationResolver::class, CfirDummyCompilerLazyDeclarationResolver)
         session.register(
             CfirLanguageSettingsComponent::class,
             CfirLanguageSettingsComponent(languageVersionSettings),
@@ -188,6 +286,7 @@ class CfirTypeResolverTypeAliasExpansionTest {
                 source = null,
                 annotations = org.cangnova.cangjie.cfir.MutableOrEmptyList.empty(),
                 customRenderer = false,
+                typeUseOrigin = org.cangnova.cangjie.cfir.types.CfirTypeRefOrigin.SEMANTIC,
                 coneType = ConePrimitiveType.INT64,
                 delegatedTypeRef = null,
             )
@@ -197,7 +296,7 @@ class CfirTypeResolverTypeAliasExpansionTest {
         session.register(CfirSymbolProvider::class, symbolProvider)
         session.register(CfirProvider::class, CfirLibrarySessionProvider(symbolProvider))
         session.register(CfirAccessibilityChecker::class, CfirAccessibilityChecker(session))
-        return CfirTypeResolverImpl(session)
+        return session
     }
 
     /**
@@ -288,6 +387,7 @@ class CfirTypeResolverTypeAliasExpansionTest {
             klass: CfirClass,
             useSiteSession: CfirSession,
             scopeSession: ScopeSession,
+            memberRequiredPhase: CfirResolvePhase?,
         ): CfirTypeScope = CfirTypeScope.Empty
 
         /**
@@ -317,4 +417,29 @@ class CfirTypeResolverTypeAliasExpansionTest {
         binaryFilePath = null,
         stableIdentity = identity,
     )
+
+    /** 用 LightTree 形态构造真实的测试类型引用来源。 */
+    private fun testSourceElement(): CjSourceElement = CjLightSourceElement(
+        lighterASTNode = TEST_LIGHTER_AST_NODE,
+        startOffset = 0,
+        endOffset = 1,
+        treeStructure = TEST_TREE_STRUCTURE,
+        kind = CjRealSourceElementKind,
+    )
+
+    private val TEST_LIGHTER_AST_NODE = object : LighterASTNode {
+        override fun getTokenType(): IElementType = TokenType.DUMMY_HOLDER
+        override fun getStartOffset(): Int = 0
+        override fun getEndOffset(): Int = 1
+    }
+
+    private val TEST_TREE_STRUCTURE = object : FlyweightCapableTreeStructure<LighterASTNode> {
+        override fun getRoot(): LighterASTNode = TEST_LIGHTER_AST_NODE
+        override fun getParent(node: LighterASTNode): LighterASTNode? = null
+        override fun getChildren(node: LighterASTNode, nodesRef: Ref<Array<LighterASTNode>>): Int = 0
+        override fun disposeChildren(children: Array<out LighterASTNode>?, count: Int) {}
+        override fun getStartOffset(node: LighterASTNode): Int = node.startOffset
+        override fun getEndOffset(node: LighterASTNode): Int = node.endOffset
+        override fun toString(node: LighterASTNode): CharSequence = "RemoteAlias"
+    }
 }

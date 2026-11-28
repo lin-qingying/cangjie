@@ -8,7 +8,7 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.api.targets
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.CfirDesignation
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.forEachDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirClass
+import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 
 /**
  * [LLCfirResolveTarget] representing a class with all callable members (functions and variables).
@@ -22,7 +22,7 @@ internal class LLCfirClassWithAllCallablesResolveTarget(designation: CfirDesigna
     /**
      * 遍历 class 中所有 callable 声明并交给 visitor 执行 resolve 动作。
      */
-    override fun visitMembers(visitor: LLCfirResolveTargetVisitor, cfirClass: CfirClass) {
+    override fun visitMembers(visitor: LLCfirResolveTargetVisitor, cfirClass: CfirClassLikeDeclaration) {
         cfirClass.forEachDeclaration {
             if (it is CfirCallableDeclaration) {
                 visitor.performAction(it)

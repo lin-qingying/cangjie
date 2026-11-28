@@ -7,6 +7,8 @@
 
 package org.cangnova.cangjie.cfir.expressions.impl
 
+import org.cangnova.cangjie.annotations.CangjieOverflowStrategy
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.MutableOrEmptyList
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
@@ -22,9 +24,11 @@ import org.cangnova.cangjie.cfir.visitors.transformInplace
 import org.cangnova.cangjie.source.CjSourceElement
 
 internal class CfirSuperReceiverExpressionImpl(
-    override val source: CjSourceElement?,
+    override var source: CjSourceElement?,
     override var annotations: MutableOrEmptyList<CfirAnnotation>,
     override var coneTypeOrNull: ConeCangJieType?,
+    override var mappedExpression: CfirExpression?,
+    override var overflowStrategy: CangjieOverflowStrategy?,
     override var dispatchReceiver: CfirExpression?,
     override var explicitReceiver: CfirExpression?,
     override var typeArguments: MutableOrEmptyList<CfirTypeRef>,
@@ -43,10 +47,13 @@ internal class CfirSuperReceiverExpressionImpl(
 
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirSuperReceiverExpressionImpl {
         transformAnnotations(transformer, data)
-        dispatchReceiver = dispatchReceiver?.transform(transformer, data)
-        explicitReceiver = explicitReceiver?.transform(transformer, data)
-        if (dispatchReceiver !== explicitReceiver) {
-            dispatchReceiver = dispatchReceiver?.transform(transformer, data)
+        val originalExplicitReceiver = explicitReceiver
+        val originalDispatchReceiver = dispatchReceiver
+        explicitReceiver = originalExplicitReceiver?.transform(transformer, data)
+        dispatchReceiver = if (originalDispatchReceiver === originalExplicitReceiver) {
+            explicitReceiver
+        } else {
+            originalDispatchReceiver?.transform(transformer, data)
         }
         transformTypeArguments(transformer, data)
         transformCalleeReference(transformer, data)
@@ -73,6 +80,11 @@ internal class CfirSuperReceiverExpressionImpl(
         return this
     }
 
+    @CfirImplementationDetail
+    override fun replaceSource(newSource: CjSourceElement?) {
+        source = newSource
+    }
+
     override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>) {
         annotations = newAnnotations.toMutableOrEmpty()
     }
@@ -81,8 +93,20 @@ internal class CfirSuperReceiverExpressionImpl(
         coneTypeOrNull = newConeTypeOrNull
     }
 
+    override fun replaceMappedExpression(newMappedExpression: CfirExpression?) {
+        mappedExpression = newMappedExpression
+    }
+
+    override fun replaceOverflowStrategy(newOverflowStrategy: CangjieOverflowStrategy?) {
+        overflowStrategy = newOverflowStrategy
+    }
+
     override fun replaceDispatchReceiver(newDispatchReceiver: CfirExpression?) {
         dispatchReceiver = newDispatchReceiver
+    }
+
+    override fun replaceExplicitReceiver(newExplicitReceiver: CfirExpression?) {
+        explicitReceiver = newExplicitReceiver
     }
 
     override fun replaceTypeArguments(newTypeArguments: List<CfirTypeRef>) {

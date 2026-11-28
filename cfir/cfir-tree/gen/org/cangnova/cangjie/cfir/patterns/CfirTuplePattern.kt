@@ -6,6 +6,10 @@
 package org.cangnova.cangjie.cfir.patterns
 
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.expressions.CfirConstantValue
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.source.CjSourceElement
@@ -15,7 +19,17 @@ import org.cangnova.cangjie.source.CjSourceElement
  */
 abstract class CfirTuplePattern : CfirPattern() {
     abstract override val source: CjSourceElement?
+    abstract override val semanticTypeRef: CfirTypeRef?
+    abstract override val constantValues: List<CfirConstantValue>
+    abstract override val contextExpression: CfirExpression?
     abstract val elements: List<CfirPattern>
+
+    /** 访问本节点拥有的完整来源子图；独立于 ordinary visitor 的语法子树。 */
+    @CfirImplementationDetail
+    override fun <R, D> acceptSourceChildren(visitor: CfirVisitor<R, D>, data: D) {
+        semanticTypeRef?.accept(visitor, data)
+        elements.forEach { it.accept(visitor, data) }
+    }
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitTuplePattern(this, data)
@@ -23,6 +37,19 @@ abstract class CfirTuplePattern : CfirPattern() {
     @Suppress("UNCHECKED_CAST")
     override fun <E : CfirElement, D> transform(transformer: CfirTransformer<D>, data: D): E =
         transformer.transformTuplePattern(this, data) as E
+
+    @CfirImplementationDetail
+    abstract override fun replaceSource(newSource: CjSourceElement?)
+
+    abstract override fun replaceSemanticTypeRef(newSemanticTypeRef: CfirTypeRef?)
+
+    abstract override fun replaceConstantValues(newConstantValues: List<CfirConstantValue>)
+
+    abstract override fun replaceContextExpression(newContextExpression: CfirExpression?)
+
+    abstract fun replaceElements(newElements: List<CfirPattern>)
+
+    abstract override fun <D> transformSemanticTypeRef(transformer: CfirTransformer<D>, data: D): CfirTuplePattern
 
     abstract fun <D> transformElements(transformer: CfirTransformer<D>, data: D): CfirTuplePattern
 }

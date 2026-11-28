@@ -15,7 +15,7 @@ import org.cangnova.cangjie.cfir.resolve.match.exhaustive.CheckSource
 import org.cangnova.cangjie.cfir.resolve.match.exhaustive.ExhaustivenessChecker
 import org.cangnova.cangjie.cfir.resolve.match.exhaustive.ExhaustivenessResult
 import org.cangnova.cangjie.cfir.resolve.match.exhaustive.MatchExhaustivenessContext
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.cfir.types.ConeCangJieType

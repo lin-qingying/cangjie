@@ -21,6 +21,7 @@ val frontendProjectPaths = listOf(
     ":compiler:frontend",
     ":compiler:phaser",
     ":compiler:config",
+    ":compiler:compiler.version",
     // CFIR 全系列
     ":cfir:entrypoint",
     ":cfir:cfir-common",
@@ -52,6 +53,7 @@ dependencies {
     implementation(libs.guava)
     implementation(libs.flatbuffers.java)
     implementation(libs.kotlinx.collections.immutable)
+    implementation("com.ibm.icu:icu4j:72.1")
 }
 
 tasks.named<Jar>("jar") {

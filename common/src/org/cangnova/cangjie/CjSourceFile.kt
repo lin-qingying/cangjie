@@ -156,5 +156,5 @@ class CjInMemoryTextSourceFile(
     /**
      * 将内存文本转换为输入流。
      */
-    override fun getContentsAsStream(): InputStream = ByteArrayInputStream(text.toString().toByteArray())
+    override fun getContentsAsStream(): InputStream = ByteArrayInputStream(text.toString().toByteArray(Charsets.UTF_8))
 }

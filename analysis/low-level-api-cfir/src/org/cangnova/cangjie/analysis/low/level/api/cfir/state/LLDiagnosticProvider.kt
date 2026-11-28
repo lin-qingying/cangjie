@@ -3,6 +3,7 @@
 package org.cangnova.cangjie.analysis.low.level.api.cfir.state
 
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.DiagnosticCheckerFilter
+import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirModuleResolveComponents
 import org.cangnova.cangjie.cfir.diagnostics.CjPsiDiagnostic
 import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.CjFile
@@ -62,7 +63,11 @@ internal class LLSourceDiagnosticProvider(
     override fun collectDiagnostics(file: CjFile, filter: DiagnosticCheckerFilter): List<CjPsiDiagnostic> {
         val module = moduleProvider.getModule(file)
         val moduleComponents = sessionProvider.getResolvableSession(module).moduleComponents
-        return moduleComponents.diagnosticsCollector.collectDiagnosticsForFile(file, filter)
+        return moduleComponents.diagnosticsCollector.collectDiagnosticsForFile(
+            file,
+            filter,
+            platformCheckerComponentsFor(module),
+        )
     }
 
     /**
@@ -71,6 +76,20 @@ internal class LLSourceDiagnosticProvider(
     override fun getDiagnostics(element: CjElement, filter: DiagnosticCheckerFilter): List<CjPsiDiagnostic> {
         val module = moduleProvider.getModule(element)
         val moduleComponents = sessionProvider.getResolvableSession(module).moduleComponents
-        return moduleComponents.diagnosticsCollector.getDiagnosticsFor(element, filter)
+        return moduleComponents.diagnosticsCollector.getDiagnosticsFor(
+            element,
+            filter,
+            platformCheckerComponentsFor(module),
+        )
+    }
+
+    /**
+     * dependsOn 源文件的 Platform checker 由当前 use-site leaf session 驱动；Common checker 仍留在 owner session。
+     */
+    private fun platformCheckerComponentsFor(ownerModule: org.cangnova.cangjie.analysis.api.projectStructure.CaModule): LLCfirModuleResolveComponents? {
+        if (ownerModule == moduleProvider.useSiteModule || ownerModule !in moduleProvider.useSiteModule.transitiveDependsOnDependencies) {
+            return null
+        }
+        return sessionProvider.getResolvableSession(moduleProvider.useSiteModule).moduleComponents
     }
 }

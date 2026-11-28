@@ -13,12 +13,17 @@ import org.cangnova.cangjie.source.CjSourceElement
 /** 携带调用候选的命名引用。 */
 open class CfirNamedReferenceWithCandidate(
     /** 引用源位置。 */
-    override val source: CjSourceElement?,
+    override var source: CjSourceElement?,
     /** 引用名称。 */
     override val name: Name,
     /** 与该引用绑定的候选。 */
     val candidate: Candidate
 ) : CfirNamedReferenceWithCandidateBase() {
+    /** 源迁移保留当前候选与命中符号。 */
+    @org.cangnova.cangjie.cfir.CfirImplementationDetail
+    override fun replaceSource(newSource: CjSourceElement?) {
+        source = newSource
+    }
     /** 当前候选对应的符号。 */
     override val candidateSymbol: CfirBasedSymbol<*>
         get() = candidate.symbol
@@ -28,6 +33,15 @@ open class CfirNamedReferenceWithCandidate(
 
     /** 候选引用没有子节点需要访问。 */
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {}
+
+    /** 候选仍拥有解析时的调用输入；语法图改写后保留的输入节点也必须更新来源。 */
+    @org.cangnova.cangjie.cfir.CfirImplementationDetail
+    override fun <R, D> acceptSourceChildren(visitor: CfirVisitor<R, D>, data: D) {
+        candidate.callInfo.callSite.accept(visitor, data)
+        candidate.callInfo.explicitReceiver?.accept(visitor, data)
+        candidate.callInfo.arguments.forEach { it.accept(visitor, data) }
+        candidate.callInfo.typeArguments.forEach { it.accept(visitor, data) }
+    }
 
     /** 候选引用没有子节点需要转换，直接返回自身。 */
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirElement {
@@ -43,6 +57,10 @@ class CfirErrorReferenceWithCandidate(
     /** 该错误引用对应的诊断。 */
     override val diagnostic: ConeDiagnostic
 ) : CfirNamedReferenceWithCandidate(source, name, candidate), CfirDiagnosticHolder {
+    @org.cangnova.cangjie.cfir.CfirImplementationDetail
+    override fun <R, D> acceptSourceChildren(visitor: CfirVisitor<R, D>, data: D) {
+        super<CfirNamedReferenceWithCandidate>.acceptSourceChildren(visitor, data)
+    }
     /** 错误候选引用固定返回 true。 */
     override val isError: Boolean get() = true
 

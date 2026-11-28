@@ -24,6 +24,7 @@
 package org.cangnova.cangjie.parsing
 
 import com.intellij.psi.tree.IElementType
+import org.cangnova.cangjie.lexer.CjTokens
 
 
 /**
@@ -40,7 +41,9 @@ class TruncatedSemanticWhitespaceAwarePsiBuilder(
      * 实现 `eof` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
      */
     override fun eof(): Boolean {
-        return super.eof() || isOffsetBeyondEof(currentOffset)
+        val rawIndex = rawLookAhead(0)
+        val tokenType = rawLookup(rawIndex) ?: return true
+        return isOffsetBeyondEof(rawTokenTypeStart(rawIndex))
     }
 
     /**
@@ -66,30 +69,44 @@ class TruncatedSemanticWhitespaceAwarePsiBuilder(
         if (eof()) return null
 
         val rawLookAheadSteps = rawLookAhead(steps)
+        val tokenType = rawLookup(rawLookAheadSteps) ?: return null
         if (isOffsetBeyondEof(rawTokenTypeStart(rawLookAheadSteps))) return null
 
-        return super.rawLookup(rawLookAheadSteps)
+        return tokenType
+    }
+
+    override fun lookAheadTokenText(steps: Int): String? {
+        if (eof()) return null
+        val rawIndex = rawLookAhead(steps)
+        if (rawLookup(rawIndex) == null || isOffsetBeyondEof(rawTokenTypeStart(rawIndex))) return null
+        return originalText.substring(rawTokenTypeStart(rawIndex), rawTokenTypeStart(rawIndex + 1))
     }
 
     /**
      * 执行 `rawLookAhead` 内部辅助逻辑，支撑仓颉语法解析节点的结构解析与访问。
      */
     private fun rawLookAhead(steps: Int): Int {
-        var steps = steps
-        var cur = 0
-        while (steps > 0) {
-            cur++
-
-            var rawTokenType = rawLookup(cur)
-            while (rawTokenType != null && isWhitespaceOrComment(rawTokenType)) {
-                cur++
-                rawTokenType = rawLookup(cur)
+        require(steps >= 0)
+        var remaining = steps
+        var rawIndex = 0
+        while (true) {
+            var rawTokenType = rawLookup(rawIndex)
+            while (rawTokenType != null && shouldSkip(rawTokenType)) {
+                rawIndex++
+                rawTokenType = rawLookup(rawIndex)
             }
-
-            steps--
+            if (remaining == 0 || rawTokenType == null) return rawIndex
+            rawIndex++
+            remaining--
         }
-        return cur
     }
+
+    private fun shouldSkip(elementType: IElementType): Boolean =
+        if (elementType === CjTokens.NL) {
+            isNLTokenSkippingEnabled
+        } else {
+            isWhitespaceOrComment(elementType)
+        }
 
     /**
      * 执行 `isOffsetBeyondEof` 内部辅助逻辑，支撑仓颉语法解析节点的结构解析与访问。

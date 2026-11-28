@@ -1,0 +1,769 @@
+{
+  "before": {
+    "utc": "2026-11-18T02:47:59.8759976Z",
+    "fileCount": 6843,
+    "aggregateSha256": "4D2FDC9D64F5B1A018240458EAC44B9914AB762AB25AA7E0E3BBC135A1A7E662",
+    "roots": [
+      "common",
+      "cfir",
+      "analysis/low-level-api-cfir",
+      "analysis/analysis-api-cfir",
+      "compiler/frontend",
+      "compiler/config",
+      "compiler/phaser",
+      "compiler/arguments",
+      "psi",
+      "resolution.common",
+      "macro"
+    ],
+    "include": [
+      "*.kt",
+      "*.cj",
+      "*.kts"
+    ],
+    "exclude": "**/build/**",
+    "method": "rg --files --hidden --no-ignore, / normalized and Sort-Object -CaseSensitive; SHA256 of UTF8 LF joined path TAB length TAB uppercaseSHA256, no final LF",
+    "scope": "Snapshot/domain identity complete migration and semantic top-level helper retention; full90 current/imported CJO/source/manager regression"
+  },
+  "after": {
+    "utc": "2026-11-18T02:54:21.6272597Z",
+    "fileCount": 6843,
+    "aggregateSha256": "4D2FDC9D64F5B1A018240458EAC44B9914AB762AB25AA7E0E3BBC135A1A7E662",
+    "roots": [
+      "common",
+      "cfir",
+      "analysis/low-level-api-cfir",
+      "analysis/analysis-api-cfir",
+      "compiler/frontend",
+      "compiler/config",
+      "compiler/phaser",
+      "compiler/arguments",
+      "psi",
+      "resolution.common",
+      "macro"
+    ],
+    "include": [
+      "*.kt",
+      "*.cj",
+      "*.kts"
+    ],
+    "exclude": "**/build/**",
+    "method": "rg --files --hidden --no-ignore, / normalized and Sort-Object -CaseSensitive; SHA256 of UTF8 LF joined path TAB length TAB uppercaseSHA256, no final LF",
+    "scope": "S4 snapshot identity/domain and helper native top-level complete90 regression, original expectations intact",
+    "unchanged": true
+  },
+  "queue": {
+    "id": "cc1e0c85",
+    "args": [
+      "--gradle-user-home",
+      ".gradle/cjmp-export-home",
+      ":cfir:cfir-serialization:test",
+      "--rerun",
+      "--tests",
+      "org.cangnova.cangjie.cfir.serialization.cjo.CjoExportSourceSnapshotsTest",
+      "--tests",
+      "org.cangnova.cangjie.cfir.serialization.cjo.CjoDefaultValueMetadataTest",
+      "--tests",
+      "org.cangnova.cangjie.cfir.serialization.cjo.CfirInitializationDependencySerializationTest",
+      "--tests",
+      "org.cangnova.cangjie.cfir.serialization.cjo.CjmpCommonPartCjoTest",
+      "--tests",
+      "org.cangnova.cangjie.cfir.serialization.cjo.CjoSourcePositionResolverTest",
+      ":cfir:analysis-tests:test",
+      "--rerun",
+      "--tests",
+      "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExport*Test",
+      "--tests",
+      "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjo*Test",
+      "--no-build-cache",
+      "--console=plain",
+      "--max-workers=1",
+      "--continue"
+    ],
+    "pid": 45296,
+    "owner": "pid@45296",
+    "submitAt": 1794970167457,
+    "startedAt": 1794970167492,
+    "finishedAt": 1794970331935,
+    "exitCode": 0,
+    "status": "DONE"
+  },
+  "total": 90,
+  "passed": 90,
+  "failed": 0,
+  "errors": 0,
+  "skipped": 0,
+  "allXmlWithinWindow": true,
+  "scope": "S4 snapshot identity/domain and helper native top-level complete90 regression, original expectations intact",
+  "extraPassedTasks": [],
+  "cases": [
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoLightTreeTest",
+      "name": "constructorInt64NoCollision()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoLightTreeTest",
+      "name": "constructorMarkerCollision()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoLightTreeTest",
+      "name": "nominalInt64NoCollision()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoLightTreeTest",
+      "name": "publicInterfaceDefaultBodyPromotesReferencedPrivateFunction()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoLightTreeTest",
+      "name": "privateNominalSourceInt32AndBinaryImportNoCollision()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoLightTreeTest",
+      "name": "unmatchedExtendStringCollision()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoLightTreeTest",
+      "name": "referencedPrivateDefaultHelperIsCollectedOutsideClassBody()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoLightTreeTest",
+      "name": "extendStringCollision()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoLightTreeTest",
+      "name": "unmatchedNominalStringCollision()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoLightTreeTest",
+      "name": "inheritedCounterpartMarkerCollisionAndDefaultBit()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoLightTreeTest",
+      "name": "privateNominalSourceInt64CollisionAndBinaryImportNoCollision()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoLightTreeTest",
+      "name": "constructorExactCounterpartNoCollision()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoLightTreeTest",
+      "name": "extendInt64NoCollision()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoLightTreeTest",
+      "name": "privateInstanceLayoutFieldRequiresItsPrivateTypeGraph()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoLightTreeTest",
+      "name": "nominalStringCollision()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoTest",
+      "name": "constructorInt64NoCollision()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoTest",
+      "name": "constructorMarkerCollision()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoTest",
+      "name": "nominalInt64NoCollision()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoTest",
+      "name": "publicInterfaceDefaultBodyPromotesReferencedPrivateFunction()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoTest",
+      "name": "privateNominalSourceInt32AndBinaryImportNoCollision()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoTest",
+      "name": "unmatchedExtendStringCollision()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoTest",
+      "name": "referencedPrivateDefaultHelperIsCollectedOutsideClassBody()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoTest",
+      "name": "extendStringCollision()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoTest",
+      "name": "unmatchedNominalStringCollision()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoTest",
+      "name": "inheritedCounterpartMarkerCollisionAndDefaultBit()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoTest",
+      "name": "privateNominalSourceInt64CollisionAndBinaryImportNoCollision()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoTest",
+      "name": "constructorExactCounterpartNoCollision()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoTest",
+      "name": "extendInt64NoCollision()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoTest",
+      "name": "privateInstanceLayoutFieldRequiresItsPrivateTypeGraph()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoTest",
+      "name": "nominalStringCollision()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportLightTreeTest",
+      "name": "controlFlow()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportLightTreeTest",
+      "name": "operatorsConversions()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportLightTreeTest",
+      "name": "declarationsCalls()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportLightTreeTest",
+      "name": "referenceInstantiation()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportLightTreeTest",
+      "name": "exceptionsResources()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportLightTreeTest",
+      "name": "originalDefaultAssignmentFactsAndFinalSelection()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportLightTreeTest",
+      "name": "referenceDerivedInstantiation()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportTest",
+      "name": "controlFlow()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportTest",
+      "name": "operatorsConversions()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportTest",
+      "name": "declarationsCalls()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportTest",
+      "name": "referenceInstantiation()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportTest",
+      "name": "exceptionsResources()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportTest",
+      "name": "originalDefaultAssignmentFactsAndFinalSelection()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportTest",
+      "name": "referenceDerivedInstantiation()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.serialization.cjo.CfirInitializationDependencySerializationTest",
+      "name": "commonDeserializerKeepsOnlyInstanceFieldEdgesFromSharedCjoDependencyVectors()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.serialization.cjo.CfirInitializationDependencySerializationTest",
+      "name": "commonProducerRejectsExternalTypeWithoutProviderDeclaration()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.serialization.cjo.CfirInitializationDependencySerializationTest",
+      "name": "commonDeserializerRestoresDependencyToCanonicalOwnerChildAfterClassMaterialization()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.serialization.cjo.CfirInitializationDependencySerializationTest",
+      "name": "specificProducerAndDeserializerKeepInitializationDependenciesUncollectedOnCjoBoundary()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.serialization.cjo.CfirInitializationDependencySerializationTest",
+      "name": "commonDeserializerRestoresImportedDependencyThroughProviderCanonicalOwner(Path)",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.serialization.cjo.CfirInitializationDependencySerializationTest",
+      "name": "commonProducerProjectsDependenciesThroughDeclarationsOutsideThePackageIndex()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.serialization.cjo.CfirInitializationDependencySerializationTest",
+      "name": "stdCoreProducerInjectsProviderBuiltinsAsPackageRoots()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.serialization.cjo.CfirInitializationDependencySerializationTest",
+      "name": "producerRejectsUnexpandedFieldInitializer()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.serialization.cjo.CfirInitializationDependencySerializationTest",
+      "name": "commonProducerRoundTripsStandardLibraryExportIdsFromCjo(Path)",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.serialization.cjo.CfirInitializationDependencySerializationTest",
+      "name": "commonProducerWritesPublishedInstanceDependencyAsCurrentPackageFullId()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.serialization.cjo.CjmpCommonPartCjoTest",
+      "name": "cjmp facts stay absent for plain packages()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.serialization.cjo.CjmpCommonPartCjoTest",
+      "name": "format version gate rejects missing or unsupported versions()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.serialization.cjo.CjmpCommonPartCjoTest",
+      "name": "options gate reports missing and mismatched compile options()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.serialization.cjo.CjmpCommonPartCjoTest",
+      "name": "package name gate reports mismatch()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.serialization.cjo.CjmpCommonPartCjoTest",
+      "name": "format compatibility starts at alpha five for explicit common CJO inputs()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.serialization.cjo.CjmpCommonPartCjoTest",
+      "name": "cjo manager accepts a cjmp cjo with a matching package name()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.serialization.cjo.CjmpCommonPartCjoTest",
+      "name": "cjo manager refuses a cjo whose package name does not match the request()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.serialization.cjo.CjmpCommonPartCjoTest",
+      "name": "features gate requires common features to be a subset of the child set()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.serialization.cjo.CjmpCommonPartCjoTest",
+      "name": "missing explicit common input blocks fallback to a search path cjo()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.serialization.cjo.CjmpCommonPartCjoTest",
+      "name": "binary library defers common CJO format compatibility to its consumer session()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.serialization.cjo.CjmpCommonPartCjoTest",
+      "name": "cjmp common part cjo round-trips package level cjmp facts()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.serialization.cjo.CjoDefaultValueMetadataTest",
+      "name": "initialFlagAndHelperReferenceRemainIndependent()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.serialization.cjo.CjoDefaultValueMetadataTest",
+      "name": "helperKeepsClassOwnerRegardlessOfMemberLoadOrder()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.serialization.cjo.CjoDefaultValueMetadataTest",
+      "name": "producerWritesCommonDefaultForSimpleSourceBindings()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.serialization.cjo.CjoDefaultValueMetadataTest",
+      "name": "specificHasDefaultDoesNotBecomeCommonDefaultAttribute()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.serialization.cjo.CjoDefaultValueMetadataTest",
+      "name": "producerIndexesActualHelperAndPreservesTopLevelIdentity()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.serialization.cjo.CjoDefaultValueMetadataTest",
+      "name": "constructorHelperKeepsStaticClassOwner()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.serialization.cjo.CjoDefaultValueMetadataTest",
+      "name": "commonDefaultAttributeRemainsAuthoritativeAfterDeserialization()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.serialization.cjo.CjoDefaultValueMetadataTest",
+      "name": "rejectsDesugarReferenceToParameterInWriterAndReader()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.serialization.cjo.CjoDefaultValueMetadataTest",
+      "name": "producerRejectsLazyTuplePatternInitializer()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.serialization.cjo.CjoDefaultValueMetadataTest",
+      "name": "toolAddedFlagRemainsOwnedByTheParameter()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.serialization.cjo.CjoExportSourceSnapshotsTest",
+      "name": "repeated providers may share one actual snapshot()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.serialization.cjo.CjoExportSourceSnapshotsTest",
+      "name": "separate reads at the same path conflict even with identical bytes()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.serialization.cjo.CjoExportSourceSnapshotsTest",
+      "name": "package accessors cannot mutate manager owned snapshot bytes()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.serialization.cjo.CjoExportSourceSnapshotsTest",
+      "name": "different source paths retain independent same package inputs()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.serialization.cjo.CjoExportSourceSnapshotsTest",
+      "name": "file replacement cannot update or combine an already loaded generation()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.serialization.cjo.CjoSourcePositionResolverTest",
+      "name": "absent positions and zero current file index do not acquire a source location()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.serialization.cjo.CjoSourcePositionResolverTest",
+      "name": "invalid package and file indices including unsigned overflow remain unresolved()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.serialization.cjo.CjoSourcePositionResolverTest",
+      "name": "blank metadata file paths do not produce invalid source locations()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.serialization.cjo.CjoSourcePositionResolverTest",
+      "name": "current package positions use one based file indices()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.serialization.cjo.CjoSourcePositionResolverTest",
+      "name": "declaration deserialization resolves each imported position while retaining its current CJO identity()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.serialization.cjo.CjoSourcePositionResolverTest",
+      "name": "missing identifier package leaves the declaration anchor intact without creating a name anchor()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.serialization.cjo.CjoSourcePositionResolverTest",
+      "name": "missing imported packages and invalid line or column do not use current package locations()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.serialization.cjo.CjoSourcePositionResolverTest",
+      "name": "imported package and file indices have independent one based and zero based conventions()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.serialization.cjo.CjoSourcePositionResolverTest",
+      "name": "unresolved declaration begin does not discard a valid end or imported identifier()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.serialization.cjo.CjoSourcePositionResolverTest",
+      "name": "positions index allFiles directly instead of interpreting global FileInfo file ids()",
+      "status": "PASSED",
+      "failureMessage": null
+    }
+  ],
+  "xml": [
+    {
+      "path": "cfir/analysis-tests/build/test-results/test/TEST-org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoLightTreeTest.xml",
+      "bytes": 3058,
+      "sha256": "6EBB5EAE2CB3993B494E624AFC92F5812D2601BD3B69CDA519792E94CB14634E",
+      "timestamp": "2026-11-18T02:51:42.989Z",
+      "lastWriteUtc": "2026-11-18T02:52:11.5229992Z",
+      "withinQueueWindow": true,
+      "tests": 15,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "gzipBase64": "H4sIAAAAAAAACs2WS0/jMBSF95X6HzJezSwa8qZFTVEJj4kEDKKdzSAWxrltDYmdub5B9N+P0lBUoUnRbCbs7Ng3+nx8fOzx8UuRW8+ARmoVM9d2mAVK6EyqZcx+zs8HQ3Y86ffGBIZMJQksxQuImcalLbhaKv3MN41HCbZYSLS54vnaSGNvSuxkITF5LMoZaYTsCooHwFQZ4ookJ6lV8qgv5XJFcwSYgyFmbQpj5obMMk+yLCGLmcOsBZd5hWA2HUDU2DRJFmCIF2XMPMeLBq47cIdzxzsK3aPAs0fD0S9mrbShhvwyvW5qYub6duQGbNLvWda4RF0CkgRz0HyoMQQ32xULrQxhJUhjqigKrnWi81zWwn39xiyRc2P+gzYb8ND2RyH7kPOK4xNgd5iOPYwOWzCVLqTieedSurbjjVoYy+ohlyJVBLjgAk5hwaucTnS2vkFdaAJzCwtAUAKyG5TPnOC8UoK60To6bLNE2bBdN5LPdIUCUkW+N1XZiVQc12lRaqQu98Gx/cht4a9UwUmsIDt7IVDZjFCqZZeo4bCFFN/74dUz3yEvAVNTQ4MgyH5UZGQGSc1dG6qDRQR+29mEzyLzKPjIEVtPd84atIkp1QpQEmSJruokKTnSu2CeqmybLZI60dn/t+SIgl32TxQhgfvxrXj2wgXtbEa3yIHv7T2FnV+Qjh057n57NP8RcMnXuqJzCXl2C78riWBSMq9JOF+XcIG8XHVhcCfc/wyZdZ4f4fAtQMzaEBQDXdFk/OUuOZ3Op3f395Pxwc7A7kRA/PvEeqDfGx+8Pd4n/d4fLsxRYvILAAA=",
+      "archiveVerified": true
+    },
+    {
+      "path": "cfir/analysis-tests/build/test-results/test/TEST-org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoTest.xml",
+      "bytes": 3173,
+      "sha256": "776CAD935089987DB4B79F1A79288DE99E1CF4F3EC72CD1E98BCF5D695B037BD",
+      "timestamp": "2026-11-18T02:51:56.607Z",
+      "lastWriteUtc": "2026-11-18T02:52:11.5179919Z",
+      "withinQueueWindow": true,
+      "tests": 15,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "gzipBase64": "H4sIAAAAAAAACsWX30/bMBDH3yv1f/DywvaA6c+0oLaolLFVAoag06QhHox9bQ8c2ztfEPnvp7bAKqRSbdLIS+QkvtMn3zt/7fQOHzMrHoAietdP6rKWCHDaG3SzfvJ9crLbTQ4H1UqPIXLMkUE4lUE/8TSTWrmZ8w9qObhDkHqKJJVTtogY5TJEjqZIo7ssXLEnMGeQ3QKNXWTlGBWjd6M7P4HIiVjO7yf1diLiPYYApp/UEjFVaHOCuLwBIk+rIWMGkVUW+kmj1kh36/XdendSaxy06wftVKa1zs9EzH3kFfDp+HwV0086srvfSgbVihC9QD4AMULcWz1YUGgVn79TexeZcs2exo7T1rkfeWtxIdfHT4nQVsX4/xRZ4tZkt91KtuKdKboHKoGutd/dQOd8hk7Z8oTr7Dc2oIX81qIeOwaaKg3HMFW55SNvigvymWeIlzAFAqfBXBA+KIaT3Gl+V/xms70Jf4V0vhL4yuekYey42Rg6c4ROUTHOgicuRfVWbVO75i5TrOdgPj8yOHPFhG5WAmG7nW4gpNdVf+qMr2AD0DguYEEzmG85RzQwWvAu2uYdu6K7vwEeylU1bTa31f25YUsrfKu+ARHdHAgZzMjnC1cIiviVpQ6defYJ5HdcTp3u37lA2lpHLt0Ommlj++71+VFpXpO+HOPaqPRqZZW3kaX1t1tgFa3hVBU+5xMEay7hV44EcczxycomRYAvpML8Pb2q/fbZoDwn6LyQxSIyZLs+50Hvw/XoeDgZXt/cDHp7ay/WJwLRn4k/hpfnB2LIDFlgwV5Yr4y4h0LshIgyWoAg0ckHZdEgF1LPQd/viKkn4TyLAngZAkYQzDAyFdXKlqToNEEGjpWVBEFRBGkg8FxazJD/PTkakPPFBR61zQ0YOUULcUvCda0W2lQrvb2X/4VBtfIb6qGDpGUMAAA=",
+      "archiveVerified": true
+    },
+    {
+      "path": "cfir/analysis-tests/build/test-results/test/TEST-org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportLightTreeTest.xml",
+      "bytes": 1446,
+      "sha256": "A6CACCFC6E544D90D11004D1DBD57E3A5BB49A0E0445DE614D7DFBF562156DFE",
+      "timestamp": "2026-11-18T02:52:04.502Z",
+      "lastWriteUtc": "2026-11-18T02:52:11.5189968Z",
+      "withinQueueWindow": true,
+      "tests": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "gzipBase64": "H4sIAAAAAAAACsWUsW7bMBCGdwN+B5ZTO1iWZCt2A0mBYcdAgKBDoy4NMhDUSWFLkcLd2XXevpBcBxmiMepG8u7I7/6fZHpzaqw4ApLxLpNREEoBTvvSuDqTP4r9bC1v8ukkZSCmg2EQTjWQSY91oJWrnT+qfvDLQKArg4Fyyr6QoaAvCbaVwQd/QA23pxaBuoNuT61Hvjf1MxcIUACxFH16JldS0G/TtlBmMpSiUsYeEKifAKLH85BNA8SqaTMZh/HVLIpm0boI4+skvg6XQRLGP6V49sRn3Pu7b+eaTC6CZLmS+XQiRNqibwHZAM3PCx2EVnTpUnvH6O3e+j+fv0ihrSL6sP57ujBIvibyfZqOVbFH2nr3zzIaDWuVLAewStBWoeIOZ6usHY9psRpAQqgAwWm4c8TKsenpxrPwakgrOGloe6W+A/VbjqjWevBioamNU3YHlTpY3hCZ2jXgeK8008aV+y76ABb0qDouB58CXgzeAZojlP/H58U6uvDRCzE0M3/gPP30uN1tis3j01Oezt8E3iYC4vuJXWA6SeevH24+nfwFbxbOcaYFAAA=",
+      "archiveVerified": true
+    },
+    {
+      "path": "cfir/analysis-tests/build/test-results/test/TEST-org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportTest.xml",
+      "bytes": 1375,
+      "sha256": "9B95A997B795F5D101C997A7A60E89297DA6080BEDC4A3766D7BF6ED0E04BA72",
+      "timestamp": "2026-11-18T02:52:08.050Z",
+      "lastWriteUtc": "2026-11-18T02:52:11.5199964Z",
+      "withinQueueWindow": true,
+      "tests": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "gzipBase64": "H4sIAAAAAAAACr2UwW7bMAyG7wHyDppO2yGK7dStU9gugqQBCgw7rNllRQ+CTHvaZMkg6Sx9+8LOOvTQYJelN0r8KX38KSi/ObRO7AHJBl/IWEVSgDehsr4p5LfddpbJm3I6yRmIqbcMwusWChmwUUb7xoe9HoOfFpSpLSrttXsiS2osUeva4n3o0cDtoUOg4aLbQxeQd0Asxagq5JUU9Mt2HVSFjKSotXU9Ao0LQAx4DNm2QKzbrpBJlFzO4ngWZ7souU6T6yhTURp9l+JHID5Sfr77cqwpZKKydCHL6USIvMPQAbIFmh83Bgij6aU5EzxjcFsXfn/8JIVxmuh/tz1CRWqRXMm3IQZEzQFpHfyfAdG5aS4uT9FUYJxGzQPFWjt3dpRkGZ9AQagBwRu488Tasx2pzs2TZskJHjgY6EZjvgKNJ53dnEWanXo1aBvrtdtArXvHKyLb+BY8b7VhWvlqO2TvwYF5D9cWy/RfU9wA2j1U7zrMi2T5gkVPxNDOQs9l/uFhvVntVg+Pj2U+f5V4LQTEt4VDYjrJ539/ynI6eQY1PNk+XwUAAA==",
+      "archiveVerified": true
+    },
+    {
+      "path": "cfir/cfir-serialization/build/test-results/test/TEST-org.cangnova.cangjie.cfir.serialization.cjo.CfirInitializationDependencySerializationTest.xml",
+      "bytes": 2447,
+      "sha256": "15ECEDB25DDBA5A864CB48D1023983C39FA7C77AF9E36CF09A816AC5A957BDFA",
+      "timestamp": "2026-11-18T02:50:54.860Z",
+      "lastWriteUtc": "2026-11-18T02:50:55.5040178Z",
+      "withinQueueWindow": true,
+      "tests": 10,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "gzipBase64": "H4sIAAAAAAAACs2WUW/aMBDH35H4DpmfugfSwGhHK6CiaZGidQO16Sqt6oNrH8Q0saO7Swf79BMBCp3WiT1M2ZtjO7n7+X//c7pn8yz1ngHJONsTTT8QHljltLHTnriNh42OOOvXa10GYioMg2dlBj3hcOoraafWPctyMDPgq4lBnwCNTM0PycZZX82cH04MRtbwdvoCcrAarFrc7O6OgVh4ZaieaAbCoyeT56B7IhDeRJq0QKDyARAdroZsMiCWWd4TraB13Gg2G81OHLROj4LTo7bfOQ6+CS9xxKvEr6Ivq3d6IvDbH05Ev17zvG6OLgdkA3S4mlhmoSRteJXLsmXeGzrATwA5jWy6iCyxtAqGBlJ9qadAQ3TZTSIRdDhzW9avoNghHbwXnkol0b8/yTVm0DwWf8Iao9OFAryGGSimyzkDWpnGixzuDCeu4DG6Z6MBL0ClEssQFWC0T8S+6lwDsUOg7YdjF0rrrFEyHX23gGFiUj2YMGC4pPgseTdyFSK13qCjHJSZGLWRaWD1r4X4RjwDdGuVS1NQDHpkw5k7d4XVEhdVAP61elGWO2TQOyom6IppsqnH15IejCUnFZTlfu4aoyvttavOGmfHVjQqmIyGOIGxVE9yCpHVMP+P5CLWoUPYYEW2pNoocl6YlI2lAa3Tv3aOq+h57c4b+eevu92thXkurQZdNvCXUIBVnHl7v0a9NHGMJqcblks76yvziBIXl/OlYSJdXkHhzFXjiFbz414Yd2gYaFw8poYS0JuLdBtjQGGBCJbXtTQs0jTSlfZmWhBD1nAF97vv7sOLQTy4f3jodw93FnY3AuLvNy4X6rXu4cufVb9e+wkzpa7mjwkAAA==",
+      "archiveVerified": true
+    },
+    {
+      "path": "cfir/cfir-serialization/build/test-results/test/TEST-org.cangnova.cangjie.cfir.serialization.cjo.CjmpCommonPartCjoTest.xml",
+      "bytes": 2287,
+      "sha256": "8584BF8642BEEDD896AB41693A9A043627CCA68E6E836C0755A980B256B5E969",
+      "timestamp": "2026-11-18T02:50:55.299Z",
+      "lastWriteUtc": "2026-11-18T02:50:55.5060232Z",
+      "withinQueueWindow": true,
+      "tests": 11,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "gzipBase64": "H4sIAAAAAAAACsWWwW7bMAyG7wXyDpxP2yGuEyxDWyQpigwDNgzbDtllRQ+0TMdKZEkV6bTZ0w+y6y7bmtuCnEyZlPCJ/El7ev1YG9hSYO3sLBmlWQJklSu0Xc2S78sPw4vkej44mwqxcKOFwGJNs8SFVarQrqzbYmusNaWq1CFlChqN/ominU3V2qWLde0Xrq6d/YZBFmu3JJYE2iNnyWiUAG+091TMkiyBErVpAnG7oBBc6EzRNbFg7WfJOBu/G45Gw9HFMhtfTbKrySQdX17+SKByLB3g549fuj2zJEuzSTIfnAFMfXCegmji8+5FhFDI/bXUuvZQohIGFtwB5kxWoHQBvEFtwaPa4Ir49ZsElEHm/5eOnjUbJS/DlS7UKH21YIVCEGhNkbbWzNquwAVoLDfeuyBU9LFHxX17ANf5eAb3nJHoNyfaIto1iqqoAOVqrw3B055j4k4O4D5Vtl39w9xynrDmMT8oOtdGyy5KM3KhABpfIZR6S61G6dEbrXQbXzsLi09fQVvfyDEzeghdrR3UaHFFAVAp8hEZ2g6LrgctFSC0mY2K2M//iWkDlQ1TR+vgoXJMf+BB4YjBOunoQaoolvuGWE6h3JJQ4sTsVXvf6Lh60sCzVxzkBAjc5EwCrmy5VaVNAUxHJT+U9H4a/K3bVrOQG6c2DCUak6PaxAsgMGFQFXiUKlbnFPnOtcWwA6PzEJ8FlRR4v+VebFpxoCWGWW5qCsDEcTSfYjKrtgc7Xo9BWpkH19hiKEF7fha7oS2ZrmXbj+IRYXtU3rFQPXSNzKevbhfvb5Y3t3d38+n5nmM/kEJ4OTA6BmfT8+c/l/ng7BcRm4fl7wgAAA==",
+      "archiveVerified": true
+    },
+    {
+      "path": "cfir/cfir-serialization/build/test-results/test/TEST-org.cangnova.cangjie.cfir.serialization.cjo.CjoDefaultValueMetadataTest.xml",
+      "bytes": 2238,
+      "sha256": "4BDC2D3162EC83E98F66425F19707C408142F09E027C5815D2E3356BBEB0CFAA",
+      "timestamp": "2026-11-18T02:50:53.196Z",
+      "lastWriteUtc": "2026-11-18T02:50:55.5110222Z",
+      "withinQueueWindow": true,
+      "tests": 10,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "gzipBase64": "H4sIAAAAAAAACsWWQW8TMRCF75HyH8xegEO3m0JKWyVB20ZVK0pbpQEkEAdjvyTTem1rPBtIfz3apNBWIuqFwM27az998/w8697bH5VTc3Ci4PtZJy8yBW+CJT/tZx/Gx1t72dtBu9UTJEk1CZTXFfpZ4GlutJ/6MNfLwTUhNxPiPIFJO7rVQsHn5jrkR9dhiImunXzUrsZ7iLZa9BhJMrUU7medIlPphmKE7WdFpiaaXM1IywcwB14NhSok0VXsZzvFzu5Wp7PV2RsXOwfd4qD7Ku/s737O1CwkWWGenZ6v1jS17Xb3s0G7pVQvcohgIaTt1YuGwuj0qzryJKTdsdPT0tsTuAgeYQKGNxih0uRPvUWEt/Dy4mWmjNMp/W1rltxFvt/pZH/mnC3J3gExHTUAF999AzrVbB1Supi8R/UNfBa0vWAL3jRpUeyvIY0cbG3An5gE6ShUVfB3eseBr6iKDlehZoND8k360qZZuzvdNawpwtCEzIlOdzLDgHQe5BAmVHgEX4owfasFm7d29wlrm0T+QCqN1NqtMlt6e8lI4DnSOMQzzOFOm8iSLDYO/GYdsAk+CddGAp/cB/hKtJC5j/H/M9T8cYNXxz6VtcwCUwM7RzkR8BCPCDbPvS63jGsYSUOkeqrv+9U4XGrWFaSJyPL8NbkYQf+ThtB9IrWjFfSZvl2M6+hwqUXA/nTVgen2HzC+WoMoIbjSWtjmP3C3/U007eFiPMNvUzfv4etfgGmRBNVWqGXQe/blaFiOyy9fvw562w8+PJwI5vuJn8rR+YEqRVBFURKUC9qqGyzU85goTw6IOfl8rh1ZkkVuZjA3z9UksPJB1AKyXAKrGFNKwot26wlR8oZRwYt2OSNqTsgtosxyRxXJE+IPS2tKabd6278vIoN26ycHdYbtvggAAA==",
+      "archiveVerified": true
+    },
+    {
+      "path": "cfir/cfir-serialization/build/test-results/test/TEST-org.cangnova.cangjie.cfir.serialization.cjo.CjoExportSourceSnapshotsTest.xml",
+      "bytes": 1277,
+      "sha256": "EF1B1934BA245E6D224D46F2AD570528BA5C1DAFEEBD7F69D6C1C4015D411B6D",
+      "timestamp": "2026-11-18T02:50:55.350Z",
+      "lastWriteUtc": "2026-11-18T02:50:55.5070236Z",
+      "withinQueueWindow": true,
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "gzipBase64": "H4sIAAAAAAAACsWUwW7bMAyG7wHyDpxO2yGOk8BFUdgpim4DBgy7NL2s6IGVaVupLQkknTZ7+sFOU/TQ3obsRokU8f0/CeWXz10LO2JxwRdmkaQGyNtQOl8X5nbzfXZuLtfTSa4kKr1TAo8dFSZwnVj0tQ87HIOto8RWjhMhdti6P6gu+MRuQ3K9Dd+eY2C9CT1buvEYpQkqGxI1MHYuTGZAHl2MVBYmNVCha3smGQ/EHPgQqutIFLtYmGW6PJstFrPF+SZdXmTpRZYlqyz9baAJogfMnz9+Hd4UJk3S1cqspxOAPHKIxOpI5oeLAcKiHNUxRUKlEiKHnSuJBTrcgzTIBMEToNUeW5AXKZ+/GLAtivxzc47o6bl5H1UoIqMSMGEpgAraEAh2BBG1ARt81TqrQDvy8OS0AVeSV2exhYe9kpwA/uwD+Ij2EevBTksigQUseh8Uul4HTR16rIkhPHkqX90+GXb2AXbpqoqYvIKMDUanBZgUnQfnS4rkB5OPcziodD72+j+5K9cOexJbtNQNeC9u97Ec3A4MNnQPbthvD9gOG7WHNmBJJdTkiUeUUwqQvSh1s9DrOv90d/31anN1d3+/zudvEm8Lifn9wiExneTz139sPZ38BWbuTX79BAAA",
+      "archiveVerified": true
+    },
+    {
+      "path": "cfir/cfir-serialization/build/test-results/test/TEST-org.cangnova.cangjie.cfir.serialization.cjo.CjoSourcePositionResolverTest.xml",
+      "bytes": 2402,
+      "sha256": "4B177C7CD5BEDFF68C4C03EE1B469B6CA2E4A828D6A7A10F281A23EC1FF25F5B",
+      "timestamp": "2026-11-18T02:50:55.384Z",
+      "lastWriteUtc": "2026-11-18T02:50:55.5090236Z",
+      "withinQueueWindow": true,
+      "tests": 10,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "gzipBase64": "H4sIAAAAAAAACs2WTW/TQBCG75HyHwaf4JDUaQlqqyRVVVSpCAGCcKHqYbI7SaZd75qZdfrx69HaSZqWRlxQ4Ob98O77zDsz9uDkrnCwIFEOfpj1unkG5E2w7GfD7Pv4vHOYnYzarUEkjVpxJPBY0DALMusa9DMfFlg/XDN1zZSlqySMjh8wcvBdcx26Z9fhW6jE0JegnGa/kga3IBmTxgzqo4dZL89Ab7gsyQ6zPIMpsquEtB6QSJDmMXJBGrEoh9l+vv+u0+t1eofjfP+4nx/3+92Dw7c/MpgHjY3QjxefmneGWd7N+0fZqN0CGJQSSpLIpHvNRFJhUFd8OFHyEcqlYgX0Fh5IAphKJC1N2RGwt3QHNoAPEdD8rFgIELTGBRdMHYXXbzIwDlX/fuxWYHk/exmE/QIdWyjR3OCMao6VdDakwN64KvkNlVeeebIQFiRTF25BqED2UHlpbrW7IHm7hWTi0N9AQREtRmwgSoxzXcW/lGArk8ga5Gcu6L8Uv8qalQ2PiVUpQfAEE1R6as0u9B5s0WvJOJT6QLD05AJYJoMCoZkDF2WQSHaNBLfzBCEUkX3KK466rpqzD5+BLfnI8X4HfL3eFr6CVWtttZYpk6ytcYQJLs4JNqOA3syDAPuIJsItx3moIhghjOkgrA9e7toF2Z/A1rY0WE0HW5WGY08QBExwVeFXBZRS8Xmi/hfV8xzm9y42x0XTjUvyydKNklp37mZogl8kz3eEtK3AHnvqkyyb0IyTH6S1I5bVoFhAaHwjb5Nt63g8pu8uWI62sDw2s+Z7iM6dsyMFy0Imuntgr5HQQpimAiIpheqqmbkwQQdp94WfhqWndrfO6L1GKjqhiqPBq8uz96fj08urq9Fgb2NhcyOJvLwxLbRbg731z9Ko3foFiAWNXmIJAAA=",
+      "archiveVerified": true
+    }
+  ]
+}

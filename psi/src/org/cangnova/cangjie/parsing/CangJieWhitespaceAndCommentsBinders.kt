@@ -50,13 +50,17 @@ object PrecedingCommentsBinder : WhitespacesAndCommentsBinder {
 
         // 2.绑定注释
         var result = tokens.size
+        var lineBreakCount = 0
         tokens@ for (idx in tokens.indices.reversed()) {
             val tokenType = tokens[idx]
             when (tokenType) {
-                CjTokens.WHITE_SPACE -> if (StringUtil.getLineBreakCount(getter[idx]) > 1) break@tokens
+                in CjTokens.ALL_WHITESPACE_TOKENS -> {
+                    lineBreakCount += StringUtil.getLineBreakCount(getter[idx])
+                    if (lineBreakCount > 1) break@tokens
+                }
 
                 in CjTokens.COMMENTS -> {
-                    if (idx == 0 || tokens[idx - 1] == CjTokens.WHITE_SPACE && StringUtil.containsLineBreak(getter[idx - 1])) {
+                    if (idx == 0 || CjTokens.ALL_WHITESPACE_TOKENS.contains(tokens[idx - 1]) && StringUtil.containsLineBreak(getter[idx - 1])) {
                         result = idx
                     }
                 }
@@ -110,7 +114,7 @@ object TrailingCommentsBinder : WhitespacesAndCommentsBinder {
         tokens@ for (idx in tokens.indices) {
             val tokenType = tokens[idx]
             when (tokenType) {
-                CjTokens.WHITE_SPACE -> if (StringUtil.containsLineBreak(getter[idx])) break@tokens
+                in CjTokens.ALL_WHITESPACE_TOKENS -> if (StringUtil.containsLineBreak(getter[idx])) break@tokens
 
                 CjTokens.EOL_COMMENT, CjTokens.BLOCK_COMMENT -> result = idx + 1
 
@@ -138,8 +142,11 @@ private class AllCommentsBinder(val isTrailing: Boolean) : WhitespacesAndComment
 
         val size = tokens.size
 
-        val endToken = tokens[if (isTrailing) size - 1 else 0]
-        val shift = if (endToken == CjTokens.WHITE_SPACE) 1 else 0
+        val shift = if (isTrailing) {
+            tokens.asReversed().takeWhile(CjTokens.ALL_WHITESPACE_TOKENS::contains).size
+        } else {
+            tokens.takeWhile(CjTokens.ALL_WHITESPACE_TOKENS::contains).size
+        }
 
         return if (isTrailing) size - shift else shift
     }
@@ -186,7 +193,7 @@ object BindFirstShebangWithWhitespaceOnly : WhitespacesAndCommentsBinder {
         getter: WhitespacesAndCommentsBinder.TokenTextGetter,
     ): Int {
         if (tokens.firstOrNull() == CjTokens.SHEBANG_COMMENT) {
-            return if (tokens.getOrNull(1) == CjTokens.WHITE_SPACE) 2 else 1
+            return if (CjTokens.ALL_WHITESPACE_TOKENS.contains(tokens.getOrNull(1))) 2 else 1
         }
 
         return 0

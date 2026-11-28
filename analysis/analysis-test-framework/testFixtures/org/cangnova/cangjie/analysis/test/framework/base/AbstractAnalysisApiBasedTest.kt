@@ -36,6 +36,7 @@ import org.cangnova.cangjie.test.CangJieTestInfo
 import org.cangnova.cangjie.test.NonGroupingPhaseTestConfiguration
 import org.cangnova.cangjie.test.builders.TestConfigurationBuilder
 import org.cangnova.cangjie.test.builders.testConfiguration
+import org.cangnova.cangjie.test.runners.AbstractCangjieCompilerTest
 import org.cangnova.cangjie.test.model.DependencyKind
 import org.cangnova.cangjie.test.model.FrontendKinds
 import org.cangnova.cangjie.test.model.TestModuleStructure
@@ -372,6 +373,7 @@ abstract class AbstractAnalysisApiBasedTest : TestWithDisposable() {
      */
     private fun createTestConfiguration(): NonGroupingPhaseTestConfiguration {
         return testConfiguration(testDataPath.toString()) {
+            useDirectives(*AbstractCangjieCompilerTest.defaultDirectiveContainers.toTypedArray())
             configureTest(this)
             globalDefaults {
                 frontend = FrontendKinds.CFIR

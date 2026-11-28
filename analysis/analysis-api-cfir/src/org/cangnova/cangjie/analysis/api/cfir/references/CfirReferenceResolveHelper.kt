@@ -15,8 +15,10 @@ import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.references.CfirSuperReference
 import org.cangnova.cangjie.cfir.references.CfirThisReference
 import org.cangnova.cangjie.cfir.resolve.services.CfirResolvedImportTarget
+import org.cangnova.cangjie.cfir.resolve.services.resolveSymbols
 import org.cangnova.cangjie.cfir.resolve.providers.CfirLookupOrigin
 import org.cangnova.cangjie.cfir.resolve.resolveImportBinding
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.resolve.toSymbol
 import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
@@ -149,11 +151,13 @@ internal object CfirReferenceResolveHelper {
                     }
 
                     is CfirResolvedImportTarget.ClassLike -> {
-                        add(symbolBuilder.buildSymbol(target.symbol))
+                        target.resolveSymbols(analysisSession.cfirSession.symbolProvider)
+                            .mapTo(this) { symbol -> symbolBuilder.buildSymbol(symbol) }
                     }
 
                     is CfirResolvedImportTarget.Callable -> {
-                        target.symbols.mapTo(this) { callable -> symbolBuilder.buildSymbol(callable) }
+                        target.resolveSymbols(analysisSession.cfirSession.symbolProvider)
+                            .mapTo(this) { callable -> symbolBuilder.buildSymbol(callable) }
                     }
                 }
             }

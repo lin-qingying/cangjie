@@ -572,6 +572,9 @@ public interface CaBuiltinsModule : CaModule
 CaBuiltinsModule.public val builtinsName: String
 CaBuiltinsModule.public override val moduleDescription: String
 CaBuiltinsModule.public override val stableModuleName: String?
+## org/cangnova/cangjie/analysis/api/projectStructure/CaCjmpCompilationMode.kt
+package org.cangnova.cangjie.analysis.api.projectStructure
+public enum class CaCjmpCompilationMode
 ## org/cangnova/cangjie/analysis/api/projectStructure/CaDanglingFileModule.kt
 package org.cangnova.cangjie.analysis.api.projectStructure
 public interface CaDanglingFileModule : CaSourceModule
@@ -593,6 +596,7 @@ package org.cangnova.cangjie.analysis.api.projectStructure
 public interface CaLibraryModule : CaModule
 CaLibraryModule.public val libraryName: String
 CaLibraryModule.public val binaryRoots: List<PsiFileSystemItem>
+CaLibraryModule.public val cjmpCommonPartCjoPaths: List<Path>
 CaLibraryModule.public override val moduleDescription: String
 CaLibraryModule.public override val stableModuleName: String?
 ## org/cangnova/cangjie/analysis/api/projectStructure/CaLibrarySourceModule.kt
@@ -637,6 +641,7 @@ package org.cangnova.cangjie.analysis.api.projectStructure
 public interface CaSourceModule : CaModule
 CaSourceModule.public val name: String
 CaSourceModule.public val languageVersionSettings: LanguageVersionSettings
+CaSourceModule.public val cjmpCompilationMode: CaCjmpCompilationMode?
 CaSourceModule.public val psiRoots: List<PsiFileSystemItem>
 CaSourceModule.public override val moduleDescription: String
 CaSourceModule.public override val stableModuleName: String?
@@ -1276,6 +1281,7 @@ public abstract class CaNamedFunctionSymbol : CaFunctionSymbol(), CaNamedSymbol
 package org.cangnova.cangjie.analysis.api.symbols
 public interface CaPackageSymbol : CaSymbol, CaNamedSymbol
 CaPackageSymbol.public val fqName: FqName
+CaPackageSymbol.public val organizationName: Name?
 CaPackageSymbol.public override val name: Name
 ## org/cangnova/cangjie/analysis/api/symbols/CaParameterSymbol.kt
 package org.cangnova.cangjie.analysis.api.symbols
@@ -1356,7 +1362,7 @@ CaSymbolProvider.public val CjPatternVariable.symbol: CaPatternVariableSymbol
 CaSymbolProvider.public val CjBindingPattern.symbol: CaPatternBindingSymbol
 CaSymbolProvider.public val CjParameter.symbol: CaVariableSymbol
 CaSymbolProvider.public val CjTypeParameter.symbol: CaTypeParameterSymbol
-CaSymbolProvider.public fun getPackageSymbol(fqName: FqName): CaPackageSymbol?
+CaSymbolProvider.public fun getPackageSymbol(fqName: FqName, organizationName: Name? = null): CaPackageSymbol?
 CaSymbolProvider.public fun getClassLikeSymbol(classId: ClassId): CaClassLikeSymbol?
 CaSymbolProvider.public fun getClassSymbol(classId: ClassId): CaClassSymbol?
 CaSymbolProvider.public fun getTypeAliasSymbol(classId: ClassId): CaTypeAliasSymbol?

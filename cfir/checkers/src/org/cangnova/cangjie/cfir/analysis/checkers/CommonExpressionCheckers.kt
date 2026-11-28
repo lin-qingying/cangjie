@@ -155,6 +155,7 @@ object CommonExpressionCheckers : ExpressionCheckers() {
             CfirInterfaceCallWithUnimplementedCallChecker,
             CfirStaticContextNonStaticMemberAccessChecker,
             CfirOpenConstructorMemberAccessChecker,
+            CfirFinalizerMemberAccessChecker,
             CfirApiLevelRefHigherChecker,
         )
 

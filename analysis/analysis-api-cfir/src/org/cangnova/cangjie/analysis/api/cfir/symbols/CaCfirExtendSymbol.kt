@@ -125,12 +125,6 @@ internal class CaCfirExtendSymbol private constructor(
         get() = (extendDeclaration as? CfirMemberDeclaration)?.status
 
     /**
-     * extend 所在的 use-site 模块。
-     */
-    override val containingModule
-        get() = analysisSession.useSiteModule
-
-    /**
      * extend 公开注解列表。
      */
     override val annotations: CaAnnotationList

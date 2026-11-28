@@ -2,6 +2,7 @@
 
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
@@ -33,7 +34,9 @@ import org.cangnova.cangjie.cfir.types.ConeLookupTagBasedType
 import org.cangnova.cangjie.cfir.types.ConeStructType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
 import org.cangnova.cangjie.cfir.types.ConeTypeProjection
-import org.cangnova.cangjie.cfir.types.CfirTypeSubstitutorByMap
+import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
+import org.cangnova.cangjie.cfir.resolve.substitution.createTypeSubstitutorByTypeConstructor
+import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.cfir.types.abbreviatedType
 import org.cangnova.cangjie.cfir.types.arrayElementType
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
@@ -42,6 +45,7 @@ import org.cangnova.cangjie.cfir.types.declaredExtendTargetKey
 import org.cangnova.cangjie.cfir.types.expandedExtendTargetKey
 import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.types.generateGenericTypeMapping
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
@@ -79,7 +83,8 @@ class CfirExtendIndexStore(
     /** extend 声明到其结构性源码文件的索引，在类型与继承语义完成前即可使用。 */
     @Volatile
     private var sourceFileByDeclaration: Map<CfirExtend, CfirFile> = emptyMap()
-    /** extend 成员符号到 owner extend 声明的索引。 */
+    /** extend 成员符号到 owner extend 声明的结构索引，不依赖 extend 语义模型。 */
+    @Volatile
     private var containingExtendByCallableSymbol: Map<CfirCallableSymbol<*>, CfirExtend> = emptyMap()
     /** 最近一次重建索引使用的类型解析器，查询接口成员的最终签名时继续复用。 */
     private lateinit var typeResolver: CfirTypeResolver
@@ -93,13 +98,26 @@ class CfirExtendIndexStore(
      */
     @Synchronized
     fun recordDeclarationSources(files: List<CfirFile>) {
-        sourceFileByDeclaration = buildMap {
+        val sourceFiles = buildMap {
             for (file in files) {
                 for (declaration in file.declarations) {
                     if (declaration is CfirExtend) put(declaration, file)
                 }
             }
         }
+        val callableOwners = buildMap {
+            for (file in files) {
+                for (declaration in file.declarations) {
+                    val extend = declaration as? CfirExtend ?: continue
+                    for (member in extend.declarations) {
+                        val callable = member as? CfirCallableDeclaration ?: continue
+                        put(callable.symbol, extend)
+                    }
+                }
+            }
+        }
+        containingExtendByCallableSymbol = callableOwners
+        sourceFileByDeclaration = sourceFiles
     }
 
     /** 返回 extend 声明对应的源码文件。 */
@@ -141,7 +159,6 @@ class CfirExtendIndexStore(
         duplicateInterfaceOccurrenceByDeclaration = buildDuplicateInterfaceOccurrences(next)
         modelsByPackage = next.groupBy { it.packageFqName }
         modelsByOrigin = next.groupBy { it.origin }
-        containingExtendByCallableSymbol = buildContainingExtendIndex(next)
         interfaceClosureByClassId = buildInterfaceClosureMap(next, resolver)
         modificationCount++
     }
@@ -253,13 +270,33 @@ class CfirExtendIndexStore(
 
     /**
      * 对齐官方 `TypeManager::IsExtendInheritRelation` 在默认接口成员合并中的用途：
-     * 两个 extend 只要存在“其中一个直接接口继承了另一个直接接口”的关系，就视为相关 extend。
+     * 先按两侧目标类型生成泛型映射，再比较完整直接接口及其带实参的传递父接口。
+     * 该关系独立于 peer 先后顺序；不能把 I<Int64> 与 I<String> 压成同一个 ClassId。
      */
     fun areExtendsInInheritRelation(firstDeclaration: Any, secondDeclaration: Any): Boolean {
         val first = firstDeclaration as? CfirExtend ?: return false
         val second = secondDeclaration as? CfirExtend ?: return false
-        if (first === second) return true
-        return doesExtendInheritFrom(first, second) || doesExtendInheritFrom(second, first)
+        val firstTarget = first.extendedTypeRef.coneTypeOrNull ?: return false
+        val secondTarget = second.extendedTypeRef.coneTypeOrNull ?: return false
+        val mapping = generateGenericTypeMapping(firstTarget, secondTarget, second.moduleData.session.typeContext) { type ->
+            checkNotNull(type.semanticExpandedType(typeResolver)) { "Extend relation types must have a resolved semantic shape" }
+        }
+        val normalizer = CfirExtendTypeSemanticNormalizer(second, session, typeResolver, includeTypeParameterBounds = false)
+        val firstInterfaces = first.superTypeRefs.mapNotNull { it.coneTypeOrNull?.let(mapping::substituteOrSelf) }
+        val secondInterfaces = second.superTypeRefs.mapNotNull { it.coneTypeOrNull?.let(mapping::substituteOrSelf) }
+        fun closureKeys(type: ConeCangJieType): Set<String> {
+            val result = linkedMapOf<String, CfirExtendInheritedInterfaceSemantic>()
+            collectInterfaceSemantics(type, normalizer, typeResolver, result, linkedSetOf(), linkedMapOf())
+            return result.keys
+        }
+        for (firstInterface in firstInterfaces) {
+            val firstKey = normalizer.semanticKeyOrNull(firstInterface)
+            val firstClosure = closureKeys(firstInterface)
+            for (secondInterface in secondInterfaces) {
+                if (normalizer.semanticKeyOrNull(secondInterface) in firstClosure || firstKey in closureKeys(secondInterface)) return true
+            }
+        }
+        return false
     }
 
     /**
@@ -366,25 +403,6 @@ class CfirExtendIndexStore(
      */
     private inline fun buildLinkedSet(build: LinkedHashSet<ClassId>.() -> Unit): Set<ClassId> =
         linkedSetOf<ClassId>().apply(build)
-
-    /**
-     * 建立 extend 成员到 owner extend 的稳定索引。
-     *
-     * substitution scope 必须通过 providers 直接拿到 owner extend，才能在 scope 层
-     * 完成声明复制与类型实参替换，不能退化成运行期遍历所有 extend 做反查。
-     */
-    private fun buildContainingExtendIndex(
-        models: List<CfirExtendSemanticModel>,
-    ): Map<CfirCallableSymbol<*>, CfirExtend> {
-        val result = linkedMapOf<CfirCallableSymbol<*>, CfirExtend>()
-        for (model in models) {
-            for (declaration in model.declaration.declarations) {
-                val callableDeclaration = declaration as? CfirCallableDeclaration ?: continue
-                result[callableDeclaration.symbol] = model.declaration
-            }
-        }
-        return result
-    }
 
     /**
      * 将单条 extend 声明转换为索引层使用的语义模型。
@@ -585,10 +603,12 @@ class CfirExtendIndexStore(
         visiting: MutableSet<String>,
         validityMemo: MutableMap<ClassId, Boolean>,
     ) {
-        val semanticKey = semanticNormalizer.semanticKeyOrNull(interfaceType)
+        // key、声明查找和父边代换必须使用同一个真实类型；只展开 key 会在 alias 声明处截断闭包。
+        val semanticInterfaceType = interfaceType.semanticExpandedType(resolver) ?: return
+        val semanticKey = semanticNormalizer.semanticKeyOrNull(semanticInterfaceType)
         if (!visiting.add(semanticKey)) return
 
-        val lookupType = interfaceType as? ConeLookupTagBasedType
+        val lookupType = semanticInterfaceType as? ConeLookupTagBasedType
         val classId = lookupType?.classIdOrPrimitiveClassId
         val declaration = classId?.let(resolver::resolveClass)
         if (
@@ -632,15 +652,15 @@ class CfirExtendIndexStore(
      */
     private fun CfirTypeParameterRefsOwner.createDeclarationTypeSubstitutor(
         type: ConeCangJieType,
-    ): CfirTypeSubstitutorByMap {
-        val lookupType = type as? ConeLookupTagBasedType ?: return CfirTypeSubstitutorByMap(emptyMap())
+    ): ConeSubstitutor {
+        val lookupType = type as? ConeLookupTagBasedType ?: return ConeSubstitutor.Empty
         if (typeParameters.isEmpty() || typeParameters.size != lookupType.typeArguments.size) {
-            return CfirTypeSubstitutorByMap(emptyMap())
+            return ConeSubstitutor.Empty
         }
         val substitutions = typeParameters.zip(lookupType.typeArguments).associate { (typeParameter, argument) ->
             typeParameter.symbol.toLookupTag() as TypeConstructorMarker to argument.type
         }
-        return CfirTypeSubstitutorByMap(substitutions)
+        return createTypeSubstitutorByTypeConstructor(substitutions, (this as CfirDeclaration).moduleData.session.typeContext, false)
     }
 
     /**

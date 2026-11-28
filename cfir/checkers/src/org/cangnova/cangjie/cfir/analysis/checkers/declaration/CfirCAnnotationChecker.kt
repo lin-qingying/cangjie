@@ -1,10 +1,12 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.annotations.CangjieCallingConvention
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.declarations.utils.ownTypeParameters
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.*
@@ -13,7 +15,7 @@ import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.source.CjOffsetsOnlySourceElement
 
 /** 对齐官方 CFFICheck：目标/作用域使用同一 resolved annotation 与 ABI 状态。 */
-object CfirCAnnotationChecker : CfirBasicDeclarationChecker() {
+object CfirCAnnotationChecker : CfirBasicDeclarationChecker(MppCheckerKind.Common) {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirDeclaration) {
         val enclosing = context.containingDeclarations.map { it.cfir }.filter { it !== declaration }
@@ -35,7 +37,7 @@ object CfirCAnnotationChecker : CfirBasicDeclarationChecker() {
             val source = annotation.source
             when (kind) {
                 BuiltInAnnotationKind.C -> {
-                    if (declaration is CfirFunction && declaration.typeParameters.isNotEmpty()) {
+                    if (declaration is CfirFunction && declaration.typeParameters.ownTypeParameters.isNotEmpty()) {
                         reporter.reportOn(declaration.typeParameterListDiagnosticSource(), CfirErrors.CFFI_CANNOT_HAVE_TYPE_PARAM, "CFunc")
                     }
                     if (declaration !is CfirFunction && declaration !is CfirStruct) {
@@ -98,7 +100,7 @@ object CfirCAnnotationChecker : CfirBasicDeclarationChecker() {
 }
 
 /** C struct 的所有直接字段使用统一 CType 判断，Unit 单独诊断。 */
-object CfirCStructFieldChecker : CfirClassLikeChecker() {
+object CfirCStructFieldChecker : CfirClassLikeChecker(MppCheckerKind.Common) {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirClassLikeDeclaration) {
         if (declaration !is CfirStruct || !declaration.status.isC) return

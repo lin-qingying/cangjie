@@ -1,5 +1,7 @@
 package org.cangnova.cangjie.cfir.resolve.calls.stages
 
+import org.cangnova.cangjie.cfir.types.asCone
+
 import org.cangnova.cangjie.cfir.SessionHolder
 import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
@@ -7,6 +9,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.lambdaParameterShapeExpectedFunctionType
+import org.cangnova.cangjie.cfir.declarations.utils.ownTypeParameters
 import org.cangnova.cangjie.cfir.diagnostic.ArgumentTypeMismatch
 import org.cangnova.cangjie.cfir.diagnostic.BuiltinCFuncConstructorArgumentType
 import org.cangnova.cangjie.cfir.diagnostic.BuiltinCStringConstructorArgumentType
@@ -14,6 +17,8 @@ import org.cangnova.cangjie.cfir.diagnostic.BuiltinPointerConstructorArgumentTyp
 import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguityError
 import org.cangnova.cangjie.cfir.diagnostic.ConeConstraintSystemHasContradiction
 import org.cangnova.cangjie.cfir.diagnostic.CStructCannotAutobox
+import org.cangnova.cangjie.cfir.diagnostic.UnitCannotBeCFunctionArgument
+import org.cangnova.cangjie.cfir.declarations.interopInfo
 import org.cangnova.cangjie.cfir.diagnostic.InapplicableWrongReceiver
 import org.cangnova.cangjie.cfir.diagnostic.LambdaParameterTypeMismatch
 import org.cangnova.cangjie.cfir.diagnostic.NamedParameterNotFound
@@ -63,7 +68,7 @@ import org.cangnova.cangjie.cfir.semantics.ErrorTypeInCandidateSignature
 import org.cangnova.cangjie.cfir.semantics.ErrorTypeInArguments
 import org.cangnova.cangjie.cfir.semantics.ResolutionDiagnostic
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.resolve.providers.cfirProvider
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterLookupTag
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
@@ -86,7 +91,7 @@ import org.cangnova.cangjie.cfir.types.ConeUnreportedDuplicateDiagnostic
 import org.cangnova.cangjie.cfir.types.ConeVArrayType
 import org.cangnova.cangjie.cfir.types.IdealTypeResolver
 import org.cangnova.cangjie.cfir.types.arrayLiteralElementType
-import org.cangnova.cangjie.cfir.types.asCone
+import org.cangnova.cangjie.cfir.resolve.substitution.asCone
 import org.cangnova.cangjie.cfir.types.expandedClassIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
@@ -158,6 +163,8 @@ internal object ArgumentCheckingProcessor {
          * 内层变量访问，诊断映射就会丢失 `inout` 语义。
          */
         val isInoutArgument: Boolean = false,
+        /** 原实参角色随包装/子atom递归保留，不从缺失formal推断extra。 */
+        val isCVariadicExtra: Boolean = false,
     ) : SessionHolder {
         /**
          * 当前上下文所属会话。
@@ -198,6 +205,7 @@ internal object ArgumentCheckingProcessor {
         isDispatch: Boolean,
         anonymousFunctionIfReturnExpression: CfirAnonymousFunction? = null,
         isInoutArgument: Boolean = false,
+        isCVariadicExtra: Boolean = false,
     ) {
         ArgumentContext(
             candidate = candidate,
@@ -209,6 +217,7 @@ internal object ArgumentCheckingProcessor {
             isDispatch = isDispatch,
             anonymousFunctionIfReturnExpression = anonymousFunctionIfReturnExpression,
             isInoutArgument = isInoutArgument,
+            isCVariadicExtra = isCVariadicExtra,
         ).resolveArgumentExpression(atom)
     }
 
@@ -488,7 +497,7 @@ internal object ArgumentCheckingProcessor {
             .expectedTypeRefinementDiscovery(functionCall)
         val resolutionSnapshot = CfirResolutionSnapshot.capture(functionCall)
         val resolvedProbe = try {
-            context.bodyResolveContext.dataFlowAnalyzerContext.withIsolatedContext {
+            context.bodyResolveComponents.dataFlowAnalyzer.withIsolatedContext {
                 fun completeBuiltinPointerProbeIfApplicable(
                     selected: Pair<Candidate, CfirFunctionCall>,
                     resolutionMode: ResolutionMode,
@@ -615,7 +624,7 @@ internal object ArgumentCheckingProcessor {
         if (candidate.callInfo.hasExplicitTypeArguments) return false
         val declaration = candidate.symbol.takeIf { it.isBound }?.cfir
         if (declaration !is CfirFunction && declaration !is CfirConstructor) return false
-        if (declaration.typeParameters.isEmpty()) return false
+        if (declaration.typeParameters.ownTypeParameters.isEmpty()) return false
         val diagnostic = (calleeReference as? CfirDiagnosticHolder)?.diagnostic
         return diagnostic is ConeConstraintSystemHasContradiction
     }
@@ -920,7 +929,7 @@ internal object ArgumentCheckingProcessor {
         // 候选降级为类型不匹配之前拒绝 @C struct 的隐式 autobox。
         // 只在期望类型已是 proper type 时发布该专用诊断；仍含推断变量的
         // 泛型候选必须先完成自身约束，不能在约束尚未固定时提前判死。
-        if (csBuilder.isProperType(expectedType) &&
+        if (!isCVariadicExtra && csBuilder.isProperType(expectedType) &&
             CfirCTypeSemantics.isCStruct(session, argumentType)
         ) {
             val expandedActual = argumentType.fullyExpandedType(session)
@@ -1010,7 +1019,14 @@ internal object ArgumentCheckingProcessor {
             csBuilder.addSubtypeConstraint(argumentTypeForSubtypeCheck, expectedType, position)
             true
         }
-        if (added) return
+        if (added) {
+            val function = candidate.symbol.takeIf { it.isBound }?.cfir as? CfirFunction
+            if (!isReceiver && anonymousFunctionIfReturnExpression == null && !candidate.isCallableValueCall &&
+                function?.interopInfo?.resolvedAbi?.isCFunction == true && argumentType.isUnit) {
+                reportDiagnostic(UnitCannotBeCFunctionArgument(expression))
+            }
+            return
+        }
         if (argumentType.isIdealTypeForTypeParameterExpectedType(expectedType)) return
         if (isReceiver) {
             csBuilder.addSubtypeConstraint(argumentType, expectedType, position)

@@ -39,10 +39,11 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater
 internal abstract class AbstractLLCfirDiagnosticsCollector(
     session: CfirSession,
     filter: DiagnosticCheckerFilter,
+    mppCheckerKind: MppCheckerKind? = null,
 ) : AbstractDiagnosticCollector(
     session,
     createComponents = { reporter ->
-        session.checkersFactory.createComponents(filter, reporter)
+        session.checkersFactory.createComponents(filter, reporter, mppCheckerKind)
     }
 )
 
@@ -78,13 +79,17 @@ internal class LLCheckersFactory(val session: LLCfirSession) : CfirSessionCompon
     /**
      * 根据 checker filter 和 reporter 创建完整 diagnostics collector 组件集合。
      */
-    fun createComponents(filter: DiagnosticCheckerFilter, reporter: PendingDiagnosticReporter): DiagnosticCollectorComponents {
-        val declarationCheckers = declarationCheckersProvider.getOrCreateCheckers(filter)
-        val expressionCheckers = expressionCheckersProvider.getOrCreateCheckers(filter)
-        val typeCheckers = typeCheckersProvider.getOrCreateCheckers(filter)
+    fun createComponents(
+        filter: DiagnosticCheckerFilter,
+        reporter: PendingDiagnosticReporter,
+        mppCheckerKind: MppCheckerKind? = null,
+    ): DiagnosticCollectorComponents {
+        val declarationCheckers = declarationCheckersProvider.getOrCreateCheckers(filter, mppCheckerKind)
+        val expressionCheckers = expressionCheckersProvider.getOrCreateCheckers(filter, mppCheckerKind)
+        val typeCheckers = typeCheckersProvider.getOrCreateCheckers(filter, mppCheckerKind)
 
         val regularComponents = buildList {
-            if (!filter.runExtraCheckers && !filter.runExperimentalCheckers) {
+            if (mppCheckerKind != MppCheckerKind.Platform && !filter.runExtraCheckers && !filter.runExperimentalCheckers) {
                 add(ErrorNodeDiagnosticCollectorComponent(session, reporter))
             }
             add(DeclarationCheckersDiagnosticComponent(session, reporter, declarationCheckers))
@@ -92,7 +97,7 @@ internal class LLCheckersFactory(val session: LLCfirSession) : CfirSessionCompon
             add(TypeCheckersDiagnosticComponent(session, reporter, typeCheckers))
         }.toTypedArray()
 
-        val postSemaComponents = if (filter.runDefaultCheckers) {
+        val postSemaComponents = if (filter.runDefaultCheckers && mppCheckerKind != MppCheckerKind.Platform) {
             arrayOf<AbstractDiagnosticCollectorComponent>(
                 ControlFlowAnalysisDiagnosticComponent(session, reporter),
                 CfirChirArithmeticDiagnosticCollectorComponent(session, reporter),
@@ -121,26 +126,28 @@ internal class LLCheckersFactory(val session: LLCfirSession) : CfirSessionCompon
          */
         private val checkersFactory: (
             filter: DiagnosticCheckerFilter,
+            mppCheckerKind: MppCheckerKind?,
             additionalCheckers: List<CfirAdditionalCheckersExtension>,
         ) -> T,
     ) {
         /** @see filterToCheckersMapUpdater */
         @Volatile
-        private var filterToCheckersMap: SmartFMap<DiagnosticCheckerFilter, T> = SmartFMap.emptyMap()
+        private var filterToCheckersMap: SmartFMap<CheckerSelection, T> = SmartFMap.emptyMap()
 
         /**
          * 返回指定 filter 对应的 checker 集合；未命中时原子创建并缓存。
          */
-        fun getOrCreateCheckers(filter: DiagnosticCheckerFilter): T {
+        fun getOrCreateCheckers(filter: DiagnosticCheckerFilter, mppCheckerKind: MppCheckerKind?): T {
+            val selection = CheckerSelection(filter, mppCheckerKind)
             // Happy-path to avoid checkers recreation
-            filterToCheckersMap[filter]?.let { return it }
+            filterToCheckersMap[selection]?.let { return it }
 
-            val checkers = createCheckers(filter)
+            val checkers = createCheckers(filter, mppCheckerKind)
             do {
                 val oldMap = filterToCheckersMap
-                oldMap[filter]?.let { return it }
+                oldMap[selection]?.let { return it }
 
-                val newMap = oldMap.plus(filter, checkers)
+                val newMap = oldMap.plus(selection, checkers)
             } while (!filterToCheckersMapUpdater.compareAndSet(/* obj = */ this, /* expect = */ oldMap, /* update = */ newMap))
 
             return checkers
@@ -149,10 +156,15 @@ internal class LLCheckersFactory(val session: LLCfirSession) : CfirSessionCompon
         /**
          * 从 session 扩展服务中读取额外 checker 并创建实际 checker 集合。
          */
-        private fun createCheckers(filter: DiagnosticCheckerFilter): T {
+        private fun createCheckers(filter: DiagnosticCheckerFilter, mppCheckerKind: MppCheckerKind?): T {
             val additionalCheckers = session.extensionService.additionalCheckers
-            return checkersFactory(filter, additionalCheckers)
+            return checkersFactory(filter, mppCheckerKind, additionalCheckers)
         }
+
+        private data class CheckerSelection(
+            val filter: DiagnosticCheckerFilter,
+            val mppCheckerKind: MppCheckerKind?,
+        )
 
         companion object {
             private val filterToCheckersMapUpdater = AtomicReferenceFieldUpdater.newUpdater(
@@ -168,8 +180,9 @@ internal class LLCheckersFactory(val session: LLCfirSession) : CfirSessionCompon
      */
     private fun createDeclarationCheckers(
         filter: DiagnosticCheckerFilter,
+        mppCheckerKind: MppCheckerKind?,
         extensionCheckers: List<CfirAdditionalCheckersExtension>
-    ) = createDeclarationCheckers {
+    ) = createDeclarationCheckers(mppCheckerKind) {
         if (filter.runDefaultCheckers) {
             add(CommonDeclarationCheckers)
             add(CommonIdeOnlyDeclarationCheckers)
@@ -186,8 +199,9 @@ internal class LLCheckersFactory(val session: LLCfirSession) : CfirSessionCompon
      */
     private fun createExpressionCheckers(
         filter: DiagnosticCheckerFilter,
+        mppCheckerKind: MppCheckerKind?,
         extensionCheckers: List<CfirAdditionalCheckersExtension>
-    ) = createExpressionCheckers {
+    ) = createExpressionCheckers(mppCheckerKind) {
         if (filter.runDefaultCheckers) {
             add(CommonExpressionCheckers)
             addAll(extensionCheckers.map { it.expressionCheckers })
@@ -207,8 +221,9 @@ internal class LLCheckersFactory(val session: LLCfirSession) : CfirSessionCompon
      */
     private fun createTypeCheckers(
         filter: DiagnosticCheckerFilter,
+        mppCheckerKind: MppCheckerKind?,
         extensionCheckers: List<CfirAdditionalCheckersExtension>,
-    ) = createTypeCheckers {
+    ) = createTypeCheckers(mppCheckerKind) {
         if (filter.runDefaultCheckers) {
             add(CommonTypeCheckers)
             addAll(extensionCheckers.map { it.typeCheckers })
@@ -224,19 +239,24 @@ internal class LLCheckersFactory(val session: LLCfirSession) : CfirSessionCompon
      * 用 DSL 构建 declaration checker 列表并合成为一个 checker 集合。
      */
     private inline fun createDeclarationCheckers(
+        mppCheckerKind: MppCheckerKind?,
         createDeclarationCheckers: MutableList<DeclarationCheckers>.() -> Unit
-    ): DeclarationCheckers =
-        createDeclarationCheckers(buildList(createDeclarationCheckers))
+    ): DeclarationCheckers = createDeclarationCheckers(buildList(createDeclarationCheckers), mppCheckerKind)
 
 
     /**
      * 将一个或多个 declaration checker 集合合成为 collector 可消费的实例。
      */
     @OptIn(CheckersComponentInternal::class)
-    private fun createDeclarationCheckers(declarationCheckers: List<DeclarationCheckers>): DeclarationCheckers {
-        return when (declarationCheckers.size) {
-            1 -> declarationCheckers.single()
-            else -> ComposedDeclarationCheckers().apply {
+    private fun createDeclarationCheckers(
+        declarationCheckers: List<DeclarationCheckers>,
+        mppCheckerKind: MppCheckerKind?,
+    ): DeclarationCheckers {
+        return when {
+            declarationCheckers.size == 1 && mppCheckerKind == null -> declarationCheckers.single()
+            else -> ComposedDeclarationCheckers { checker ->
+                mppCheckerKind == null || checker.mppKind == mppCheckerKind
+            }.apply {
                 declarationCheckers.forEach(::register)
             }
         }
@@ -246,17 +266,23 @@ internal class LLCheckersFactory(val session: LLCfirSession) : CfirSessionCompon
      * 用 DSL 构建 expression checker 列表并合成为一个 checker 集合。
      */
     private inline fun createExpressionCheckers(
+        mppCheckerKind: MppCheckerKind?,
         createExpressionCheckers: MutableList<ExpressionCheckers>.() -> Unit
-    ): ExpressionCheckers = createExpressionCheckers(buildList(createExpressionCheckers))
+    ): ExpressionCheckers = createExpressionCheckers(buildList(createExpressionCheckers), mppCheckerKind)
 
     /**
      * 将一个或多个 expression checker 集合合成为 collector 可消费的实例。
      */
     @OptIn(CheckersComponentInternal::class)
-    private fun createExpressionCheckers(expressionCheckers: List<ExpressionCheckers>): ExpressionCheckers {
-        return when (expressionCheckers.size) {
-            1 -> expressionCheckers.single()
-            else -> ComposedExpressionCheckers().apply {
+    private fun createExpressionCheckers(
+        expressionCheckers: List<ExpressionCheckers>,
+        mppCheckerKind: MppCheckerKind?,
+    ): ExpressionCheckers {
+        return when {
+            expressionCheckers.size == 1 && mppCheckerKind == null -> expressionCheckers.single()
+            else -> ComposedExpressionCheckers { checker ->
+                mppCheckerKind == null || checker.mppKind == mppCheckerKind
+            }.apply {
                 expressionCheckers.forEach(::register)
             }
         }
@@ -266,17 +292,23 @@ internal class LLCheckersFactory(val session: LLCfirSession) : CfirSessionCompon
      * 用 DSL 构建 type checker 列表并合成为一个 checker 集合。
      */
     private inline fun createTypeCheckers(
+        mppCheckerKind: MppCheckerKind?,
         createTypeCheckers: MutableList<TypeCheckers>.() -> Unit
-    ): TypeCheckers = createTypeCheckers(buildList(createTypeCheckers))
+    ): TypeCheckers = createTypeCheckers(buildList(createTypeCheckers), mppCheckerKind)
 
     /**
      * 将一个或多个 type checker 集合合成为 collector 可消费的实例。
      */
     @OptIn(CheckersComponentInternal::class)
-    private fun createTypeCheckers(typeCheckers: List<TypeCheckers>): TypeCheckers {
-        return when (typeCheckers.size) {
-            1 -> typeCheckers.single()
-            else -> ComposedTypeCheckers().apply {
+    private fun createTypeCheckers(
+        typeCheckers: List<TypeCheckers>,
+        mppCheckerKind: MppCheckerKind?,
+    ): TypeCheckers {
+        return when {
+            typeCheckers.size == 1 && mppCheckerKind == null -> typeCheckers.single()
+            else -> ComposedTypeCheckers { checker ->
+                mppCheckerKind == null || checker.mppKind == mppCheckerKind
+            }.apply {
                 typeCheckers.forEach(::register)
             }
         }

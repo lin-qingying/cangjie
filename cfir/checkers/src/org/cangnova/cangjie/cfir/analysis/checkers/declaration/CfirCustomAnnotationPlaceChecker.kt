@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
@@ -15,7 +16,7 @@ import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 import org.cangnova.cangjie.cfir.session.annotationMetadataRegistryOrNull
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 
@@ -26,7 +27,7 @@ import org.cangnova.cangjie.cfir.types.ConeClassLikeType
  * 自定义注解(即注解类带 @Annotation 元注解)只能放在非 local 声明上;
  * 局部 function / property / var 不允许带自定义注解。
  */
-object CfirCustomAnnotationPlaceChecker : CfirCallableDeclarationChecker() {
+object CfirCustomAnnotationPlaceChecker : CfirCallableDeclarationChecker(MppCheckerKind.Common) {
     /**
      * 检查 callable 声明上的自定义注解是否放置在局部声明上。
      */

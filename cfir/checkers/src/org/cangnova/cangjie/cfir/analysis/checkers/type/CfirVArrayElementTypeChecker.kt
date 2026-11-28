@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.type
 
 import org.cangnova.cangjie.cfir.analysis.checkers.findUnsupportedVArrayElementType
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
@@ -22,7 +23,7 @@ import org.cangnova.cangjie.cfir.types.ConeVArrayType
  * 按 Kotlin FIR 框架位置，该规则挂在 resolved type-ref checker，而不是
  * 某类声明 checker 上，这样变量、参数、typealias 使用处与构造器类型实参都能统一覆盖。
  */
-object CfirVArrayElementTypeChecker : CfirResolvedTypeRefChecker() {
+object CfirVArrayElementTypeChecker : CfirResolvedTypeRefChecker(MppCheckerKind.Common) {
     /** 对已解析的 VArray 类型引用检查其元素类型是否含有禁止作为元素的引用类型。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(typeRef: CfirResolvedTypeRef) {

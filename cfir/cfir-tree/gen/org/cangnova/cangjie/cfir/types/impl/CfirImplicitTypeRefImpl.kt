@@ -12,6 +12,7 @@ import org.cangnova.cangjie.cfir.MutableOrEmptyList
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
+import org.cangnova.cangjie.cfir.types.CfirTypeRefOrigin
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.cfir.visitors.transformInplace
@@ -20,6 +21,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 class CfirImplicitTypeRefImpl @CfirImplementationDetail constructor(
     override var annotations: MutableOrEmptyList<CfirAnnotation>,
     override val customRenderer: Boolean,
+    override var typeUseOrigin: CfirTypeRefOrigin,
 ) : CfirImplicitTypeRef() {
     override val source: CjSourceElement?
         get() = null
@@ -38,7 +40,16 @@ class CfirImplicitTypeRefImpl @CfirImplementationDetail constructor(
         return this
     }
 
+    @CfirImplementationDetail
+    override fun replaceSource(newSource: CjSourceElement?) {
+        require(newSource == source) { "An immutable source slot cannot accept another source." }
+    }
+
     override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>) {
         annotations = newAnnotations.toMutableOrEmpty()
+    }
+
+    override fun replaceTypeUseOrigin(newTypeUseOrigin: CfirTypeRefOrigin) {
+        typeUseOrigin = newTypeUseOrigin
     }
 }

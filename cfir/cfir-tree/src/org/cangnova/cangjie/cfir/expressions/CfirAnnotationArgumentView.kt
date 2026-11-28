@@ -3,6 +3,7 @@ package org.cangnova.cangjie.cfir.expressions
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.CjSourceElement
+import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 
 /** annotation 实参视图中的绑定状态。 */
 public enum class CfirAnnotationArgumentStatus {
@@ -59,6 +60,18 @@ public data class CfirAnnotationArgumentView(
     /** 按 source order（默认值排在显式实参之后）排列的条目。 */
     val entries: List<CfirAnnotationArgumentViewEntry>,
 ) {
+    /** 视图拥有显式实参及其独立常量；默认表达式仍由形参声明拥有，不能沿借用引用迁移另一产品。 */
+    public fun <R, D> acceptSourceChildren(visitor: CfirVisitor<R, D>, data: D) {
+        entries.forEach { entry ->
+            entry.argument?.accept(visitor, data)
+            if (!entry.isDefaultOrigin) entry.constantExpression?.accept(visitor, data)
+        }
+    }
+
+    /** 来源视图是不可变产品，换代生成新视图，保留绑定及常量对象身份。 */
+    public fun mapSources(mapper: (CjSourceElement) -> CjSourceElement): CfirAnnotationArgumentView =
+        copy(entries = entries.map { it.copy(source = it.source?.let(mapper)) })
+
     public companion object {
         /** 没有可见实参时的稳定空视图。 */
         public val EMPTY: CfirAnnotationArgumentView = CfirAnnotationArgumentView(emptyList())
@@ -72,7 +85,9 @@ public data class CfirAnnotationArgumentView(
  * 显式实参。这样 view 不会自行查找 declaration 或重新解析名字。
  */
 public fun CfirResolvedArgumentList.toAnnotationArgumentView(
-    defaultParameters: List<CfirValueParameter> = emptyList(),
+    defaultParameters: List<CfirValueParameter>,
+    /** 默认值来自此次完成产品；库binder不能在根提交前通过Published getter读取工作默认值。 */
+    defaultValues: Map<CfirValueParameter, CfirExpression?>,
 ): CfirAnnotationArgumentView {
     val explicitArguments = originalArgumentList?.arguments ?: arguments
     val mappedArguments = mappingIncludingContextArguments
@@ -101,7 +116,7 @@ public fun CfirResolvedArgumentList.toAnnotationArgumentView(
 
     defaultParameters
         .asSequence()
-        .filter { it !in seenParameters && it.defaultValue != null }
+        .filter { it !in seenParameters && defaultValues.getValue(it) != null }
         .forEachIndexed { offset, parameter ->
             entries += CfirAnnotationArgumentViewEntry(
                 sourceOrder = explicitArguments.size + offset,
@@ -110,7 +125,7 @@ public fun CfirResolvedArgumentList.toAnnotationArgumentView(
                 resolvedParameter = parameter,
                 status = CfirAnnotationArgumentStatus.RESOLVED,
                 isDefaultOrigin = true,
-                constantExpression = parameter.defaultValue,
+                constantExpression = defaultValues.getValue(parameter),
                 source = parameter.source,
             )
         }

@@ -1,37 +1,47 @@
 package org.cangnova.cangjie.cfir.resolve.providers.macro
 
 import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.declarations.parsingFileFacts
+import org.cangnova.cangjie.parsing.ParsingFileFacts
 import org.cangnova.cangjie.cfir.declarations.CfirMacroDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.session.annotationMetadataRegistryOrNull
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.symbols.CfirMacroDeclarationSymbol
 import org.cangnova.cangjie.cfir.visitors.CfirDefaultVisitor
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.AbstractCjSourceElement
+import org.cangnova.cangjie.source.CjOffsetsOnlySourceElement
 import org.cangnova.cangjie.source.CjSourceElement
+import org.cangnova.cangjie.messages.CjParsingDiagnosticPublication
+import org.cangnova.cangjie.parsing.CjParserSettings
+import org.cangnova.cangjie.cfir.declarations.publishParsingDiagnostics
+import org.cangnova.cangjie.cfir.declarations.parsingDiagnosticPublication
+import org.cangnova.cangjie.cfir.declarations.parsingSourceContext
+import org.cangnova.cangjie.parsing.CjParserSourceContext
 
 /**
  * Raw CFIR 构建产物中、尚未注册到 source provider 的单个文件包装。
  *
- * Batch 1 阶段仅作为 [cfirFile] 的薄包装；
- * Batch 4 引入完整 PreMacro / MacroSurface 模型后，
- * 该类型会承载只含 surface 节点的中间 CFIR。
- *
- * @param surfaces  本文件中收集到的 macro surface 列表（baseline 第 7 节）。
- *                  Batch 4a 阶段由 [buildPreMacroRawFiles] 默认填空；
- *                  4b 起 PSI / LightTree builder 双覆盖时填入实际数据。
+ * 文件、macro surfaces 与元数据事务是同次 raw 构建的完整产品，不能分别重建或按名称重新配对。
  * @property cfirFile raw builder 构造出的原始 CFIR 文件。
  * @property surfaces 当前文件中采集到的 construction-only macro surface 列表。
  */
-class PreMacroCfirFile internal constructor(
+class PreMacroCfirFile(
     /** raw builder 构造出的原始 CFIR 文件。 */
     val cfirFile: CfirFile,
     /** 当前文件中采集到的 construction-only macro surface 列表。 */
     val surfaces: List<MacroSurface> = emptyList(),
+    /** raw 与该文件的所有 fragment 共同使用的私有元数据事务。 */
+    val annotationMetadata: CfirAnnotationMetadataBuilder,
+    /** 与文件树同代的完整 parser 报告；宏和条件编译过滤不能丢弃或重新分配顺序。 */
+    val parsingDiagnosticPublication: CjParsingDiagnosticPublication = CjParsingDiagnosticPublication.EMPTY,
+    val parserSettings: CjParserSettings = CjParserSettings(),
 ) {
+    init {
+        cfirFile.publishParsingDiagnostics(parsingDiagnosticPublication, parserSettings)
+    }
     /** 当前文件是否声明为 `macro package`。 */
     val isMacroPackage: Boolean
         get() = cfirFile.packageDirective.isMacroPackage
@@ -75,11 +85,26 @@ class PreMacroRawBuildResult internal constructor(
 
 /** 替换单文件 raw CFIR，同时保留该文件尚未消费的 macro surfaces。 */
 public fun PreMacroCfirFile.withCfirFile(cfirFile: CfirFile): PreMacroCfirFile =
-    PreMacroCfirFile(cfirFile, surfaces)
+    PreMacroCfirFile(cfirFile, surfaces, annotationMetadata, parsingDiagnosticPublication, parserSettings)
 
 /** 在 raw 裁剪 owner 中同步移除已删除声明对应的 macro surfaces。 */
 public fun PreMacroCfirFile.withSurfaces(predicate: (MacroSurface) -> Boolean): PreMacroCfirFile =
-    PreMacroCfirFile(cfirFile, surfaces.filter(predicate))
+    PreMacroCfirFile(cfirFile, surfaces.filter(predicate), annotationMetadata, parsingDiagnosticPublication, parserSettings)
+
+/** construction 的最终文件保持输入顺序；封闭元数据不是另一次 raw 构建。 */
+private fun PreMacroRawBuildResult.sealAnnotationMetadata(finalFiles: List<CfirFile>): List<CfirAnnotationMetadataSnapshot> {
+    require(finalFiles.size == files.size) { "Construction must retain its per-file metadata ownership." }
+    finalFiles.forEach { it.checkPrimaryConstructorParameterFieldsMaterialized() }
+    finalFiles.forEachIndexed { index, file ->
+        prepareDefaultParameterFunctions(file, files[index].annotationMetadata, files[index].parserSettings.backend)
+    }
+    return files.mapIndexed { index, file -> file.annotationMetadata.seal(listOf(finalFiles[index])) }
+}
+
+/** 失败结果只丢弃本次私有事务，不影响 session 已发布的其他文件。 */
+fun PreMacroRawBuildResult.abortAnnotationMetadata() {
+    files.forEach { it.annotationMetadata.abortIfOpen() }
+}
 
 /**
  * 构造 [PreMacroRawBuildResult]。
@@ -87,25 +112,19 @@ public fun PreMacroCfirFile.withSurfaces(predicate: (MacroSurface) -> Boolean): 
  * Raw builder（PSI 或 LightTree）完成构建后，
  * 必须经此入口包装产物，**不得**直接调用 source provider 的注册接口。
  *
- * @param fileSurfaces  与 [rawCfirFiles] 顺序对齐的 per-file surface 列表；
- *                      默认全空（Batch 4b 起由 PSI / LightTree builder 填入）。
  * @param session 当前 raw build 所属的 CFIR session。
- * @param rawCfirFiles raw builder 已经构造完成但尚未注册的 CFIR 文件列表。
+ * @param files raw builder 已构造但尚未注册的完整单文件产品。
  * @return 带 construction 边界约束的 pre-macro raw build 结果。
  */
 fun buildPreMacroRawFiles(
     session: CfirSession,
-    rawCfirFiles: List<CfirFile>,
-    fileSurfaces: List<List<MacroSurface>> = List(rawCfirFiles.size) { emptyList() },
+    files: List<PreMacroCfirFile>,
 ): PreMacroRawBuildResult {
-    require(fileSurfaces.size == rawCfirFiles.size) {
-        "fileSurfaces size (${fileSurfaces.size}) must match rawCfirFiles size (${rawCfirFiles.size})"
-    }
+    require(files.map { it.annotationMetadata }.distinct().size == files.size) { "Each raw file requires its own metadata transaction." }
+    require(files.all { it.cfirFile.moduleData.session === session }) { "Raw files must belong to their construction session." }
     return PreMacroRawBuildResult(
         session = session,
-        files = rawCfirFiles.mapIndexed { index, cfirFile ->
-            PreMacroCfirFile(cfirFile = cfirFile, surfaces = fileSurfaces[index])
-        },
+        files = files.toList(),
     )
 }
 
@@ -124,6 +143,8 @@ class RecordableRawCfirFiles internal constructor(
     val session: CfirSession,
     /** 已经过 macro construction 处理、允许进入 source provider 的文件列表。 */
     val files: List<CfirFile>,
+    /** 按最终文件封闭的 metadata，provider 发布文件前一并交付索引。 */
+    val annotationMetadata: List<CfirAnnotationMetadataSnapshot>,
 ) {
     /** 可注册文件数量。 */
     val size: Int get() = files.size
@@ -227,6 +248,8 @@ data class MacroConstructionDiagnostic(
         MACRO_NOT_EXPANDED,
         /** macro 展开失败。 */
         MACRO_EXPANSION_FAILED,
+        /** 宏重解析结果不符合声明槽位要求。 */
+        MACRO_EXPECT_DECLARATION,
         /** macro package 未定义或不可见。 */
         MACRO_UNDEFINED_PACKAGE,
         /** macro 标识符未声明。 */
@@ -303,9 +326,47 @@ data class MacroConstructionDiagnostic(
  * 候选，可通过 [org.cangnova.cangjie.cfir.session.CfirSession.register] 挂到 session 上；
  * 多模块 build 时每个 source session 各持一份。
  */
+/** 实际 parser 调用的完整报告；宿主输入、source map 与报告共同冻结，不随保留的 CFIR 文件原地换代。 */
+data class MacroParsingDiagnosticRecord(
+    val originNode: MacroCallNode,
+    /** 调用当时的完整 raw owner；同一 surface 后续重新登记不能改写已提交代次的来源。 */
+    val originFile: CfirFile,
+    /** 调用前的宿主 parser 产品；文件副本可共享该身份，新源码代次不能重用。 */
+    val originDiagnosticPublication: CjParsingDiagnosticPublication,
+    val originSourceContext: CjParserSourceContext,
+    val diagnosticPublication: CjParsingDiagnosticPublication,
+    val sourceMap: MacroFragmentSourceMap?,
+    /** 在真实 parser 调用前分配；seal/失败状态和映射后的显示位置不决定调用顺序。 */
+    val invocationSequence: Long,
+    val syntaxFailure: Boolean = false,
+)
+
 class MacroExpansionRegistry : org.cangnova.cangjie.cfir.session.CfirSessionComponent {
+    private data class ParsingInvocation(
+        val sequence: Long,
+        val file: CfirFile,
+        val publication: CjParsingDiagnosticPublication,
+        val sourceContext: CjParserSourceContext,
+    )
+    private data class CompletedParsingReport(val record: MacroParsingDiagnosticRecord, val constructionCommitted: Boolean)
+    private data class GeneratedSourceOrigin(
+        val surfaceId: Long,
+        val fragmentSourceMap: MacroFragmentSourceMap?,
+        val fallbackToSurface: Boolean = true,
+    )
+
     /** construction 期间累积的宏诊断列表。 */
     private val _diagnostics: MutableList<MacroConstructionDiagnostic> = mutableListOf()
+    /** 独立的 parser 错误通道，禁止 ordinary CFIR collector 将其映射为语义工厂。 */
+    private val _parsingFailures: MutableList<MacroFragmentResult.SyntaxFailure> = mutableListOf()
+    private val parsingInvocations = java.util.IdentityHashMap<MacroCallNode, ParsingInvocation>()
+    private var nextParsingInvocationSequence = 0L
+    private val parsingFailureRecords = mutableListOf<MacroParsingDiagnosticRecord>()
+    private val pendingParsingReports = linkedMapOf<Long, MacroParsingDiagnosticRecord>()
+    private val completedParsingReports = linkedMapOf<Long, CompletedParsingReport>()
+    private val _originFileBySurfaceId: MutableMap<Long, CfirFile> = mutableMapOf()
+    /** 原始文件快照不变；依源码构造顺序更新每个文件的 parser 角色事务。 */
+    private val _parsingFactsByFile: MutableMap<CfirFile, ParsingFileFacts> = java.util.IdentityHashMap()
     /** `surfaceId -> MacroSurface` 反查表。 */
     private val _originSurfaceById: MutableMap<Long, MacroSurface> = mutableMapOf()
     /** `fileIdentity -> 原始 macro surface 列表`。 */
@@ -320,10 +381,8 @@ class MacroExpansionRegistry : org.cangnova.cangjie.cfir.session.CfirSessionComp
     private val _declaredMacroPackages: MutableSet<FqName> = linkedSetOf()
     /** degraded placeholder id 到原始 surface id 的映射。 */
     private val _placeholderOriginById: MutableMap<Long, Long> = mutableMapOf()
-    /** 展开产物 source 到原始 surface id 的映射。 */
-    private val _generatedSourceOriginById: MutableMap<AbstractCjSourceElement, Long> = mutableMapOf()
-    /** surface id 到 IDE / debug 展示文本的可选映射。 */
-    private val _generatedDisplayText: MutableMap<Long, String> = mutableMapOf()
+    /** 展开产物 source 到原始 surface 与可选逐 token source map 的映射。 */
+    private val _generatedSourceOriginById: MutableMap<AbstractCjSourceElement, GeneratedSourceOrigin> = mutableMapOf()
     /** file identity 到宏展开 cache key 的映射。 */
     private val _cacheKeys: MutableMap<String, MacroExpansionCacheKey> = linkedMapOf()
 
@@ -333,7 +392,83 @@ class MacroExpansionRegistry : org.cangnova.cangjie.cfir.session.CfirSessionComp
 
     /** 是否存在错误级 construction 诊断。 */
     val hasErrors: Boolean
-        get() = _diagnostics.any { it.severity == MacroConstructionDiagnostic.Severity.ERROR }
+        get() = _parsingFailures.any { it.diagnostics.any { diagnostic -> diagnostic.isError } } ||
+            _diagnostics.any { it.severity == MacroConstructionDiagnostic.Severity.ERROR }
+
+    val parsingFailures: List<MacroFragmentResult.SyntaxFailure> get() = _parsingFailures.toList()
+    /** metadata seal 后才存在可注册 CFIR 产品；失败单元的 parser 报告另由完整诊断时间线读取。 */
+    val parsingReports: List<MacroParsingDiagnosticRecord>
+        get() = completedParsingReports.values.filter { it.constructionCommitted }.map { it.record }
+
+    /** 成功与失败共用 producer 时间线，不能先按提交状态分桶再决定独立根首报。 */
+    val parsingDiagnosticRecords: List<MacroParsingDiagnosticRecord>
+        get() = (completedParsingReports.values.map { it.record } + parsingFailureRecords).sortedBy { it.invocationSequence }
+
+    fun beginParsingInvocation(node: MacroCallNode) {
+        val file = checkNotNull(originFileForSurface(node.surface.surfaceId)) { "A parser invocation requires its actual source owner" }
+        val publication = checkNotNull(file.parsingDiagnosticPublication) { "A parser invocation requires its frozen host diagnostic product" }
+        val sourceContext = checkNotNull(file.parsingSourceContext) { "A parser invocation requires its frozen host source input" }
+        parsingInvocations[node] = ParsingInvocation(nextParsingInvocationSequence++, file, publication, sourceContext)
+    }
+
+    /** Splicer 正常返回后暂存实际接受的批次；同一 surface 的淘汰代次由新结果替换。 */
+    fun stageParsingReports(slots: List<MacroReplaceSlot>) {
+        val records = slots.map { slot ->
+            val fragment = slot.fragment
+            val publication = fragment.diagnosticPublication
+            val sourceMap = when (fragment) {
+                is MacroFragmentResult.Success -> fragment.sourceMap
+                is MacroFragmentResult.CustomAnnotation -> fragment.sourceMap
+                else -> error("Only an accepted fragment can stage successful parser reports")
+            }
+            val invocation = checkNotNull(parsingInvocations[fragment.originNode]) { "A successful parser report must retain its actual invocation" }
+            check(originFileForSurface(slot.origin.surfaceId) === invocation.file) { "A staged parser report cannot change its invocation owner" }
+            slot.origin.surfaceId to MacroParsingDiagnosticRecord(
+                fragment.originNode, invocation.file, invocation.publication, invocation.sourceContext,
+                publication, sourceMap, invocation.sequence,
+            )
+        }
+        records.forEach { (surface, record) -> pendingParsingReports[surface] = record }
+    }
+
+    /**
+     * construction 正常返回后保留完整 parser 证据。metadata seal 的成功只决定可注册 CFIR 产品，
+     * PARSE 失败不能额外抑制成功兄弟根的 WARNING；取消与内部异常不会完成本批次。
+     */
+    internal fun completeParsingReports(constructionCommitted: Boolean) {
+        pendingParsingReports.forEach { (surface, record) ->
+            completedParsingReports[surface] = CompletedParsingReport(record, constructionCommitted)
+        }
+        pendingParsingReports.clear()
+    }
+
+    /** 保留原始 parser 输入和错误范围，CLI 与 IDE 使用同一份语法证据。 */
+    fun addParsingFailure(failure: MacroFragmentResult.SyntaxFailure) {
+        val invocation = checkNotNull(parsingInvocations[failure.originNode]) { "A failed parser report must retain its actual invocation" }
+        val record = MacroParsingDiagnosticRecord(
+            failure.originNode, invocation.file, invocation.publication, invocation.sourceContext,
+            failure.diagnosticPublication, failure.sourceMap, invocation.sequence, syntaxFailure = true,
+        )
+        _parsingFailures += failure
+        parsingFailureRecords += record
+    }
+
+    /** 宏的原始文件承担宿主位置映射，不从展开后 CFIR 或 package 名推测文件。 */
+    fun originFileForSurface(surfaceId: Long): CfirFile? = _originFileBySurfaceId[surfaceId]
+
+    /** 返回该宏所属原文件当前的文法事实，不从展开声明或文件名推断。 */
+    fun parsingFactsForSurface(surfaceId: Long): ParsingFileFacts? =
+        _originFileBySurfaceId[surfaceId]?.let { _parsingFactsByFile[it] }
+
+    /** parser 在发现后续语法错误前也可能已改变文件角色；完成结果均需接入事务。 */
+    fun acceptParsingFacts(surfaceId: Long, facts: ParsingFileFacts) {
+        val file = checkNotNull(_originFileBySurfaceId[surfaceId]) { "Macro surface has no original file." }
+        val previous = checkNotNull(_parsingFactsByFile[file]) { "Original file has no published parsing facts." }
+        check(previous.sourceKind == facts.sourceKind) { "Macro reparse changed the original source kind." }
+        check(!previous.cjmpRole.isCommon || facts.cjmpRole.isCommon) { "Macro reparse lost the original common file role." }
+        check(!previous.cjmpRole.isSpecific || facts.cjmpRole.isSpecific) { "Macro reparse lost the original specific file role." }
+        _parsingFactsByFile[file] = facts
+    }
 
     /**
      * `surfaceId -> MacroSurface` 反查。
@@ -362,11 +497,7 @@ class MacroExpansionRegistry : org.cangnova.cangjie.cfir.session.CfirSessionComp
      * 调用 source。
      */
     val generatedSourceOriginById: Map<AbstractCjSourceElement, Long>
-        get() = _generatedSourceOriginById.toMap()
-
-    /** 可选：surface 展开后用于 IDE 展示的文本（不参与 semantic）。 */
-    val generatedDisplayText: Map<Long, String>
-        get() = _generatedDisplayText.toMap()
+        get() = _generatedSourceOriginById.mapValues { (_, origin) -> origin.surfaceId }
 
     /** 追加一条 macro construction 诊断。 */
     fun addDiagnostic(diagnostic: MacroConstructionDiagnostic) {
@@ -392,8 +523,10 @@ class MacroExpansionRegistry : org.cangnova.cangjie.cfir.session.CfirSessionComp
      */
     fun registerFileSurfaces(file: CfirFile, surfaces: List<MacroSurface>) {
         if (surfaces.isEmpty()) return
+        file.parsingFileFacts?.let { facts -> _parsingFactsByFile.putIfAbsent(file, facts) }
         for (surface in surfaces) {
             registerOriginSurface(surface)
+            _originFileBySurfaceId[surface.surfaceId] = file
         }
         for (fileIdentity in file.macroExpansionFileIdentities()) {
             val existing = _originSurfacesByFileIdentity.getOrPut(fileIdentity) { mutableListOf() }
@@ -514,7 +647,7 @@ class MacroExpansionRegistry : org.cangnova.cangjie.cfir.session.CfirSessionComp
     /** 注册展开产物 source 到原始 surface 的对应关系；source 为空时忽略。 */
     fun registerGeneratedSource(source: AbstractCjSourceElement?, originSurfaceId: Long) {
         if (source != null) {
-            _generatedSourceOriginById[source] = originSurfaceId
+            _generatedSourceOriginById[source] = GeneratedSourceOrigin(originSurfaceId, fragmentSourceMap = null)
         }
     }
 
@@ -522,26 +655,41 @@ class MacroExpansionRegistry : org.cangnova.cangjie.cfir.session.CfirSessionComp
      * 递归注册展开产物 CFIR 子树中所有 source 与原始 surface 的对应关系。
      *
      * 普通 checker 只看到 final CFIR；此映射使诊断 reporter 能把 generated source
-     * 上的错误重定位回 macro 调用位点。
+     * 上的错误重定位回原始 macro 调用位点。自定义注解重解析保留 root 的宿主 source，
+     * 并要求未能映射的子节点维持原坐标，不能扩大成整个 macro surface。
+     *
+     * @param fragmentSourceMap 重解析 fragment 坐标到原始 token 来源的映射。
+     * @param registerRootSource 是否将 root 的 source 视为片段生成坐标。
+     * @param fallbackToSurfaceOnUnmappedSource 未命中 source map 时是否回退到 macro surface。
      */
-    fun registerGeneratedCfirElement(element: CfirElement, originSurfaceId: Long) {
-        element.accept(
+    fun registerGeneratedCfirElement(
+        element: CfirElement,
+        originSurfaceId: Long,
+        fragmentSourceMap: MacroFragmentSourceMap? = null,
+        registerRootSource: Boolean = true,
+        fallbackToSurfaceOnUnmappedSource: Boolean = true,
+    ) {
+        val root = element
+        val boundSourceMap = fragmentSourceMap?.bindToFragmentTree(root.source)
+        root.accept(
             object : CfirDefaultVisitor<Unit, Unit>() {
                 /**
                  * 访问展开产物中的每个 CFIR 节点，记录其 source 到原始 macro surface 的映射。
-                 */
+                */
                 override fun visitElement(element: CfirElement, data: Unit) {
-                    registerGeneratedSource(element.source, originSurfaceId)
+                    val source = element.source
+                    if (source != null && (element !== root || registerRootSource)) {
+                        _generatedSourceOriginById[source] = GeneratedSourceOrigin(
+                            originSurfaceId,
+                            boundSourceMap,
+                            fallbackToSurfaceOnUnmappedSource,
+                        )
+                    }
                     element.acceptChildren(this, data)
                 }
             },
             Unit,
         )
-    }
-
-    /** 记录 surface 展开后的展示文本，供 IDE / debug pass 使用。 */
-    fun registerGeneratedDisplayText(surfaceId: Long, text: String) {
-        _generatedDisplayText[surfaceId] = text
     }
 
     /**
@@ -580,8 +728,19 @@ class MacroExpansionRegistry : org.cangnova.cangjie.cfir.session.CfirSessionComp
 
     /** 普通 checker 在 generated source 上报错时，反查原 macro 调用 source。 */
     fun originSourceForGeneratedSource(source: AbstractCjSourceElement): CjSourceElement? {
-        val originId = _generatedSourceOriginById[source] ?: return null
-        return _originSurfaceById[originId]?.sourceRange?.source
+        val sourceAnchor = (source as? CjOffsetsOnlySourceElement)?.sourceAnchor ?: source
+        val origin = _generatedSourceOriginById[source]
+            ?: _generatedSourceOriginById[sourceAnchor]
+            ?: run {
+            val matchingOrigins = _generatedSourceOriginById.values.filter { origin ->
+                origin.fragmentSourceMap?.owns(sourceAnchor) == true
+            }
+            if (matchingOrigins.map { it.surfaceId }.distinct().size != 1) return null
+            matchingOrigins.firstOrNull() ?: return null
+        }
+        val surface = _originSurfaceById[origin.surfaceId] ?: return null
+        return origin.fragmentSourceMap?.mapRange(source.startOffset, source.endOffset)
+            ?: if (origin.fallbackToSurface) surface.sourceRange?.source else null
     }
 
     /** Macro expansion registry 的共享常量。 */
@@ -794,7 +953,7 @@ interface MacroConstructionService {
          * 主流程顺序、forest 推进策略、splice 语义、degraded placeholder 形态
          * 任一变更都必须递增；上游 cache 据此整体失效。
          */
-        const val ALGORITHM_VERSION: Int = 1
+        const val ALGORITHM_VERSION: Int = 5
 
         /**
          * 无宏 identity 实现：把 raw 文件原样打包为可注册输入，
@@ -817,10 +976,11 @@ interface MacroConstructionService {
             pre: PreMacroRawBuildResult,
             files: List<CfirFile>,
             registry: MacroExpansionRegistry,
-        ): MacroConstructionResult.Success = MacroConstructionResult.Success(
-            recordableFiles = RecordableRawCfirFiles(pre.session, files),
-            registry = registry,
-        )
+        ): MacroConstructionResult.Success {
+            val metadata = pre.sealAnnotationMetadata(files)
+            registry.completeParsingReports(constructionCommitted = true)
+            return MacroConstructionResult.Success(RecordableRawCfirFiles(pre.session, files, metadata), registry)
+        }
 
         /**
          * 给具体 service 实现使用的 degraded 结果工厂。
@@ -834,10 +994,18 @@ interface MacroConstructionService {
             pre: PreMacroRawBuildResult,
             files: List<CfirFile>,
             registry: MacroExpansionRegistry,
-        ): MacroConstructionResult.Degraded = MacroConstructionResult.Degraded(
-            recordableFiles = RecordableRawCfirFiles(pre.session, files),
-            registry = registry,
-        )
+        ): MacroConstructionResult.Degraded {
+            val metadata = pre.sealAnnotationMetadata(files)
+            registry.completeParsingReports(constructionCommitted = true)
+            return MacroConstructionResult.Degraded(RecordableRawCfirFiles(pre.session, files, metadata), registry)
+        }
+
+        /** 失败只终止 CFIR 元数据事务，全部实际解析报告仍交付编译单元的统一 LEX/PARSE 发布门。 */
+        fun failedOf(pre: PreMacroRawBuildResult, registry: MacroExpansionRegistry): MacroConstructionResult.Failed {
+            pre.abortAnnotationMetadata()
+            registry.completeParsingReports(constructionCommitted = false)
+            return MacroConstructionResult.Failed(registry)
+        }
     }
 }
 
@@ -912,11 +1080,17 @@ private object IdentityMacroConstructionService : MacroConstructionService {
         registry.registerConstructionSurfaceUsage(pre, classification)
         registry.addAll(preConstructionDiagnostics)
         pre.session.register(MacroExpansionRegistry::class, registry)
-        pre.session.annotationMetadataRegistryOrNull?.freeze()
+
+        if (!(registry.hasErrors && mode == MacroConstructionService.Mode.STRICT)) {
+            pre.files.forEach {
+                finalizeImplicitConstructorDeclarations(it.cfirFile, it.annotationMetadata)
+                materializePrimaryConstructorParameterFields(it.cfirFile, it.annotationMetadata)
+            }
+        }
 
         if (preConstructionDiagnostics.isNotEmpty()) {
             return if (registry.hasErrors && mode == MacroConstructionService.Mode.STRICT) {
-                MacroConstructionResult.Failed(registry)
+                MacroConstructionService.failedOf(pre, registry)
             } else {
                 MacroConstructionService.degradedOf(pre, files, registry)
             }

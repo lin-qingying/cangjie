@@ -1,0 +1,32 @@
+{
+  "utc": "2026-11-18T21:19:39.8824789Z",
+  "fileCount": 7278,
+  "aggregateSha256": "CD5BB1763DC972A96A31BE402871E30B6429B2E816589AD7F052B2293B6A0F19",
+  "roots": [
+    "common",
+    "cfir",
+    "analysis/low-level-api-cfir",
+    "analysis/analysis-api-cfir",
+    "compiler/frontend",
+    "compiler/config",
+    "compiler/phaser",
+    "compiler/arguments",
+    "compiler/compiler.version",
+    "psi",
+    "resolution.common",
+    "macro",
+    "settings.gradle.kts",
+    "prepare/frontend",
+    "prepare/ide-plugin-dependencies/cangjie-frontend-cfir-for-ide"
+  ],
+  "include": [
+    "*.kt",
+    "*.cj",
+    "*.kts",
+    "*.java",
+    "**/resources/META-INF/cangjie/compiler.version"
+  ],
+  "exclude": "**/build/**",
+  "method": "rg --files --hidden --no-ignore, / normalized and Sort-Object -CaseSensitive; SHA256 of UTF8 LF joined path TAB length TAB uppercaseSHA256, no final LF",
+  "scope": "18794 compile passed; TYPE refs allraw resolved; ctor/enum/static return node and real ctor body; distinct applied signature/callSite; CType extras/deferredUnit/current source positions; source18/frozen4/lifecycle16/Cextra10/tree25/allproviders plus actual frontend and IDE CFIR jar outputs. D1/D3/mirror and T6/S5/S6 remain open."
+}

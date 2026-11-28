@@ -3,6 +3,10 @@ package org.cangnova.cangjie.cfir.session
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirPhaseResolverRegistry
 import org.cangnova.cangjie.cfir.resolve.transformers.registerResolveProcessors
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAvailabilityProvider
+import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOverloadabilityHelper
+import org.cangnova.cangjie.cfir.resolve.calls.overloads.CfirDeclarationOverloadabilityHelperImpl
+import org.cangnova.cangjie.cfir.scopes.CfirDeclarationPreCheckCandidateProvider
+import org.cangnova.cangjie.cfir.scopes.impl.CfirDeclarationPreCheckCandidateProviderImpl
 import org.cangnova.cangjie.cfir.CfirEnumMatchTrackerComponent
 import org.cangnova.cangjie.cfir.CfirImportTrackerComponent
 import org.cangnova.cangjie.cfir.CfirLookupTrackerComponent
@@ -40,6 +44,7 @@ import org.cangnova.cangjie.cfir.analysis.CheckersComponent
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirNameConflictsTrackerImpl
 import org.cangnova.cangjie.cfir.analysis.nullableCheckersComponent
 import org.cangnova.cangjie.cfir.resolve.CfirTypeResolverImpl
+import org.cangnova.cangjie.cfir.resolve.cjmp.CfirCjmpMatchRunner
 import org.cangnova.cangjie.cfir.extensions.CfirExtensionService
 import org.cangnova.cangjie.LanguageVersionSettings
 import org.cangnova.cangjie.cfir.CfirCliExceptionHandler
@@ -49,7 +54,6 @@ import org.cangnova.cangjie.incremental.components.EnumMatchTracker
 import org.cangnova.cangjie.incremental.components.ICFileMappingTracker
 import org.cangnova.cangjie.incremental.components.ImportTracker
 import org.cangnova.cangjie.incremental.components.LookupTracker
-import org.cangnova.cangjie.cfir.session.CfirCjmpMappingStorage
 
 // ==================================== 通用组件 ====================================
 
@@ -65,15 +69,20 @@ import org.cangnova.cangjie.cfir.session.CfirCjmpMappingStorage
  */
 @OptIn(SessionConfiguration::class)
 fun CfirSession.registerCommonComponents(languageVersionSettings: LanguageVersionSettings) {
+    register(org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisSettings::class,
+        org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisSettings())
     // 注册语言版本设置组件，供编译器各阶段查询当前语言版本及特性开关
     register(CfirLanguageSettingsComponent::class, CfirLanguageSettingsComponent(languageVersionSettings))
     // 注册内置类型组件，提供 Int、Bool、String 等基础类型的符号定义
     register(CfirBuiltinTypes::class, CfirBuiltinTypes())
     // 注册扩展服务组件，管理编译器插件注册的扩展点（checker、生成器等）
     register(CfirExtensionService::class, CfirExtensionService())
-    // 注册 CJMP（common/specific）配对结果存储：每个 session 独立实例（可变组件，不能共享默认单例；
-    // 覆盖 CLI/LL/库/内置全部会话种类——specific 会话写入配对结果，common/库会话保持空存储）
-    register(CfirCjmpMappingStorage::class, CfirCjmpMappingStorage())
+    register(CfirDeclarationPreCheckCandidateProvider::class, CfirDeclarationPreCheckCandidateProviderImpl(this))
+    register(CfirDeclarationOverloadabilityHelper::class, CfirDeclarationOverloadabilityHelperImpl(this))
+    // 注册 CJMP 不可变事实聚合入口；CLI 与 LL session 可替换组发现策略，共用冻结结果模型。
+    register(CfirCjmpFamilyAggregate::class, CfirCjmpBatchFamilyAggregate(this) { declaration, ownerFacts, matchingMode ->
+        CfirCjmpMatchRunner.prepareDeclaration(declaration, this@registerCommonComponents, ownerFacts, matchingMode = matchingMode)
+    })
 }
 
 /**
@@ -90,9 +99,28 @@ fun CfirSession.registerCommonComponents(languageVersionSettings: LanguageVersio
 fun CfirSession.registerCliCompilerAndCommonComponents(languageVersionSettings: LanguageVersionSettings) {
     registerCommonComponents(languageVersionSettings)
 
-
     register(CfirLazyDeclarationResolver::class, CfirDummyCompilerLazyDeclarationResolver)
     register(CfirExceptionHandler::class, CfirCliExceptionHandler)
+}
+
+/**
+ * 注册类型系统上下文。
+ *
+ * 源码解析会话和库会话中的成员作用域都需要在所属 session 上执行类型比较，因此该组件
+ * 与完整源码 resolve 流水线分开注册，供不同会话工厂按各自生命周期装配。
+ */
+@OptIn(SessionConfiguration::class)
+fun CfirSession.registerTypeSystemComponents() {
+    register(TypeComponents::class, TypeComponents(this))
+}
+
+/** 库 header 与源码使用同一真实父类型查询服务；不为 binary 类型比较启动 BODY 流水线。 */
+@OptIn(SessionConfiguration::class)
+fun CfirSession.registerTypeAwareSupertypeComponents() {
+    val superTypeGraphStore = CfirSuperTypeGraphStore()
+    register(CfirSuperTypeGraphStore::class, superTypeGraphStore)
+    register(CfirDirectSupertypeProvider::class, superTypeGraphStore)
+    register(CfirTypeAwareSupertypeProvider::class, CfirTypeAwareSupertypeProviderImpl(this))
 }
 
 /**
@@ -149,7 +177,7 @@ fun CfirSession.registerResolveComponents(
 
     // ── Step 3：注册核心 resolve 服务 ─────────────────────────────────────
     registerCoreResolveServices(diagnosticReporter)
-    register(TypeComponents::class, TypeComponents(this))
+    registerTypeSystemComponents()
     register(InferenceComponents::class, InferenceComponents(this))
 
     // 注册源文件路径映射服务，用于将 CjSourceElement 转换为文件系统路径
@@ -268,10 +296,7 @@ private fun CfirSession.registerCoreResolveServices(
     // 父类型图存储：记录类型继承关系，用于：
     //  1. 检测循环继承（A extends B extends A）
     //  2. 父类成员的继承与覆盖解析
-    val superTypeGraphStore = CfirSuperTypeGraphStore()
-    register(CfirSuperTypeGraphStore::class, superTypeGraphStore)
-    register(CfirDirectSupertypeProvider::class, superTypeGraphStore)
-    register(CfirTypeAwareSupertypeProvider::class, CfirTypeAwareSupertypeProviderImpl(this))
+    registerTypeAwareSupertypeComponents()
     register(CfirModuleVisibilityChecker::class, CfirModuleVisibilityChecker.Standard(this))
     register(
         CfirDeclarationAvailabilityProvider::class,

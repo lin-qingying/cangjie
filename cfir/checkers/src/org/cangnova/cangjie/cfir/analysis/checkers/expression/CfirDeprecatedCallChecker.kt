@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
@@ -9,7 +10,7 @@ import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.getDeprecation
 import org.cangnova.cangjie.resolve.deprecation.DeprecationLevelValue
@@ -24,7 +25,7 @@ import org.cangnova.cangjie.resolve.deprecation.DeprecationLevelValue
  *
  * 弃用信息通过声明上的 `deprecationsProvider` 获取，兼容源码与库（序列化）声明。
  */
-object CfirDeprecatedCallChecker : CfirFunctionCallChecker() {
+object CfirDeprecatedCallChecker : CfirFunctionCallChecker(MppCheckerKind.Common) {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirFunctionCall) {
         // 弃用检查消费 resolve 发布的成功引用；错误引用的根因由诊断收集器报告。

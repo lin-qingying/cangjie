@@ -13,7 +13,8 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.util.forEachDeclaration
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContextForProvider
 import org.cangnova.cangjie.cfir.analysis.collectors.DiagnosticCollectorComponents
-import org.cangnova.cangjie.cfir.correspondingProperty
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
+import org.cangnova.cangjie.cfir.correspondingField
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.impl.CfirPrimaryConstructor
 import org.cangnova.cangjie.cfir.resolve.SessionHolderImpl
@@ -38,15 +39,19 @@ internal sealed class FileStructureElementDiagnosticRetriever(
     /**
      * 当前模块的 low-level 解析组件。
      */
-    private val moduleComponents: LLCfirModuleResolveComponents,
+    val moduleComponents: LLCfirModuleResolveComponents,
 ) {
     /**
      * 强制必要的 body resolve，恢复 checker context，并收集当前 structure element 的 diagnostics。
      */
-    fun retrieve(filter: DiagnosticCheckerFilter): FileStructureElementDiagnosticList {
+    fun retrieve(
+        filter: DiagnosticCheckerFilter,
+        checkerComponents: LLCfirModuleResolveComponents = moduleComponents,
+        mppCheckerKind: MppCheckerKind? = null,
+    ): FileStructureElementDiagnosticList {
         forceBodyResolve()
 
-        val sessionHolder = SessionHolderImpl(moduleComponents.session, moduleComponents.scopeSessionProvider.getScopeSession())
+        val sessionHolder = SessionHolderImpl(checkerComponents.session, checkerComponents.scopeSessionProvider.getScopeSession())
         val context = if (declaration is CfirFile) {
             PersistentCheckerContextFactory.createEmptyPersistenceCheckerContext(sessionHolder)
         } else {
@@ -54,7 +59,7 @@ internal sealed class FileStructureElementDiagnosticRetriever(
         }
 
         return withSourceCodeAnalysisExceptionUnwrapping {
-            collectForStructureElement(declaration, filter) { components ->
+            collectForStructureElement(declaration, checkerComponents, filter, mppCheckerKind) { components ->
                 createVisitor(context, components)
             }
         }
@@ -140,7 +145,7 @@ internal class ClassDiagnosticRetriever(
          * 判断 fake-source 元素是否必须在 class diagnostics 中检查。
          */
         fun shouldDiagnosticsAlwaysBeCheckedOn(cfirElement: CfirElement) = when (cfirElement.source?.kind) {
-            CjFakeSourceElementKind.PropertyFromParameter -> true
+            CjFakeSourceElementKind.FieldFromParameter -> true
             CjFakeSourceElementKind.ImplicitConstructor -> true
             else -> false
         }
@@ -177,8 +182,8 @@ internal class SingleNonLocalDeclarationDiagnosticRetriever(
 
             if (constructor is CfirPrimaryConstructor) {
                 for (valueParameter in constructor.valueParameters) {
-                    valueParameter.correspondingProperty?.let {
-                        visitProperty(it, data)
+                    valueParameter.correspondingField?.let {
+                        visitFieldVariable(it, data)
                     }
                 }
             }

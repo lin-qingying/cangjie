@@ -1,10 +1,18 @@
 FILE: accessControlMemberModifiers.cj
     internal? class AccessControlMemberModifiers {
         init()
-        private let privateValue: R|Int64|
-        protected var protectedValue: R|Int64|
-        internal let internalValue: R|Int64|
-        internal? let implicitValue: R|Int64|
+        private let privateValue: R|Int64| = ...
+            initializer:
+                <element: CfirLazyExpression>
+        protected var protectedValue: R|Int64| = ...
+            initializer:
+                <element: CfirLazyExpression>
+        internal let internalValue: R|Int64| = ...
+            initializer:
+                <element: CfirLazyExpression>
+        internal? let implicitValue: R|Int64| = ...
+            initializer:
+                <element: CfirLazyExpression>
         private func privateFn(): R|Unit| {
             <element: CfirLazyBlock>
         }

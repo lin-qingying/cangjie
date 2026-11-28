@@ -32,6 +32,9 @@ import org.cangnova.cangjie.descriptors.Modality
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.descriptors.Visibility
 import org.cangnova.cangjie.lexer.CjTokens
+import org.cangnova.cangjie.CjmpDeclarationRole
+import org.cangnova.cangjie.parsing.CjParsedDeclarationModifiers
+import org.cangnova.cangjie.parsing.token
 import org.cangnova.cangjie.psi.CjNodeTypes
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 
@@ -52,15 +55,22 @@ class LightTreeModifierList(
     private val modifierListNode: LighterASTNode?,
     /** 声明或参数上采集到的 annotation 节点列表。 */
     val annotations: List<LighterASTNode>,
-    /** foreign 块对直接声明施加的语法修饰符。 */
-    private val inForeignBlock: Boolean = false,
+    /** 真实声明读取同树返回属性；普通参数和访问器保留自身词法列表入口。 */
+    private val parsedModifiers: CjParsedDeclarationModifiers?,
 ) {
     /** 修饰符 Token 类型集合（用于快速查找） */
     private val modifierTokens: Set<com.intellij.psi.tree.IElementType> by lazy {
-        if (modifierListNode == null) return@lazy emptySet()
+        parsedModifiers?.let { parsed ->
+            return@lazy buildSet {
+                parsed.attributes.forEach { add(it.token()) }
+                if (parsed.hasConstModifier) add(CjTokens.CONST_KEYWORD)
+            }
+        }
         val tokens = mutableSetOf<com.intellij.psi.tree.IElementType>()
-        tree.forEachChildren(modifierListNode) { child ->
-            tokens.add(child.tokenType)
+        if (modifierListNode != null) {
+            tree.childrenThroughErrors(modifierListNode).forEach { child ->
+                tokens.add(child.tokenType)
+            }
         }
         tokens
     }
@@ -118,17 +128,19 @@ class LightTreeModifierList(
     /** 是否包含 unsafe modifier。 */
     val isUnsafe: Boolean get() = hasModifier(CjTokens.UNSAFE_KEYWORD)
     /** 是否包含 foreign modifier。 */
-    val isForeign: Boolean get() = inForeignBlock || hasModifier(CjTokens.FOREIGN_KEYWORD)
+    val isForeign: Boolean get() = hasModifier(CjTokens.FOREIGN_KEYWORD)
     /** 是否包含 common modifier（CJMP，1.1.0）。 */
     val isCommon: Boolean get() = hasModifier(CjTokens.COMMON_KEYWORD)
     /** 是否包含 specific modifier（CJMP，1.1.0）。 */
     val isSpecific: Boolean get() = hasModifier(CjTokens.SPECIFIC_KEYWORD)
+    /** 角色已由 parser 归一，不在 raw 中用 session 和原始 spelling 再算一次。 */
+    val declarationRole: CjmpDeclarationRole get() = parsedModifiers?.role ?: CjmpDeclarationRole(isCommon, isSpecific)
 
     /** 按源码顺序暴露声明/参数修饰符文本，供 construction-only surface 携带。 */
     val modifierTexts: List<String> by lazy {
         if (modifierListNode == null) return@lazy emptyList()
         val result = mutableListOf<String>()
-        tree.forEachChildren(modifierListNode) { child ->
+        tree.childrenThroughErrors(modifierListNode).forEach { child ->
             if (child.tokenType != CjStubElementTypes.ANNOTATIONS && child.tokenType != CjNodeTypes.ANNOTATION) {
                 result.add(child.tokenType.toString())
             }
@@ -145,6 +157,7 @@ class LightTreeModifierList(
         defaultVisibility: Visibility? = null,
         isDefault: Boolean = false,
         isImplicitAbstract: Boolean = false,
+        isSpecificDeclaration: Boolean = isSpecific,
     ): CfirDeclarationStatus {
         val effectiveDefaultVisibility = defaultVisibility ?: when {
             inLocalContext -> Visibilities.Local
@@ -172,10 +185,9 @@ class LightTreeModifierList(
         status.isUnsafe = isUnsafe
         status.isForeign = isForeign
         status.isDefault = isDefault
-        // CJMP（common/specific，1.1.0）：与 AbstractRawCfirBuilder.buildDeclarationStatus 对齐，
-        // 仅装填状态；语义合法性由 checker 侧负责。
+        // 合法目标、拒绝及特殊 extend 的返回属性均由同次 parser 决定。
         status.isCommon = isCommon
-        status.isSpecific = isSpecific
+        status.isSpecific = isSpecificDeclaration
         return status
     }
 
@@ -185,7 +197,12 @@ class LightTreeModifierList(
         fun from(
             tree: FlyweightCapableTreeStructure<LighterASTNode>,
             declarationNode: LighterASTNode,
+            declarationModifiers: Map<Int, CjParsedDeclarationModifiers>,
+            isPrimaryConstructorParameter: Boolean? = null,
         ): LightTreeModifierList {
+            require(declarationNode.tokenType != CjNodeTypes.VALUE_PARAMETER || isPrimaryConstructorParameter != null) {
+                "参数修饰符必须提供所属声明的参数语法身份。"
+            }
             val modifierList = tree.findChildByType(declarationNode, CjNodeTypes.MODIFIER_LIST)
             val annotations = buildList {
                 collectAnnotationsFrom(tree, declarationNode, this)
@@ -195,8 +212,45 @@ class LightTreeModifierList(
             }
             return LightTreeModifierList(
                 tree, modifierList, annotations,
-                inForeignBlock = tree.getParent(declarationNode)?.tokenType == CjNodeTypes.FOREIGN_BODY,
+                parsedModifiers = modifiersForDeclaration(tree, declarationNode, declarationModifiers, isPrimaryConstructorParameter),
             )
+        }
+
+        /**
+         * parser 将角色结果记录在声明关键字（成员参数为 let/var、主构造器为名称）上。
+         * 只查询当前声明的直接锚点；普通参数、访问器及恢复节点没有角色检查事实。
+         */
+        private fun modifiersForDeclaration(
+            tree: FlyweightCapableTreeStructure<LighterASTNode>,
+            node: LighterASTNode,
+            modifiers: Map<Int, CjParsedDeclarationModifiers>,
+            isPrimaryConstructorParameter: Boolean?,
+        ): CjParsedDeclarationModifiers? {
+            val anchors = when (node.tokenType) {
+                CjNodeTypes.CLASS -> setOf(CjTokens.CLASS_KEYWORD)
+                CjNodeTypes.INTERFACE -> setOf(CjTokens.INTERFACE_KEYWORD)
+                CjNodeTypes.STRUCT -> setOf(CjTokens.STRUCT_KEYWORD)
+                CjNodeTypes.ENUM -> setOf(CjTokens.ENUM_KEYWORD)
+                CjNodeTypes.EXTEND -> setOf(CjTokens.EXTEND_KEYWORD)
+                CjNodeTypes.FUNC -> setOf(CjTokens.FUNC_KEYWORD)
+                CjNodeTypes.MAIN_FUNC -> setOf(CjTokens.MAIN_KEYWORD)
+                CjNodeTypes.MACRO -> setOf(CjTokens.MACRO_KEYWORD)
+                CjNodeTypes.FINALIZER, CjNodeTypes.SECONDARY_CONSTRUCTOR -> setOf(CjTokens.INIT_KEYWORD)
+                CjNodeTypes.PRIMARY_CONSTRUCTOR -> setOf(CjTokens.IDENTIFIER, CjTokens.INIT_KEYWORD)
+                CjNodeTypes.PROPERTY -> setOf(CjTokens.PROP_KEYWORD)
+                CjNodeTypes.FIELD, CjNodeTypes.VARIABLE -> setOf(CjTokens.LET_KEYWORD, CjTokens.VAR_KEYWORD, CjTokens.CONST_KEYWORD)
+                CjNodeTypes.TYPEALIAS -> setOf(CjTokens.TYPE_KEYWORD)
+                CjNodeTypes.VALUE_PARAMETER -> if (checkNotNull(isPrimaryConstructorParameter)) {
+                    setOf(CjTokens.LET_KEYWORD, CjTokens.VAR_KEYWORD)
+                } else return null
+                else -> return null
+            }
+            val anchor = tree.childrenThroughErrors(node).firstOrNull { it.tokenType in anchors }
+                ?: if (node.tokenType == CjNodeTypes.VALUE_PARAMETER) return null
+                else error("Missing actual declaration modifier owner for ${node.tokenType}")
+            return checkNotNull(modifiers[anchor.startOffset]) {
+                "Missing parser declaration modifier result for ${node.tokenType} at ${anchor.startOffset}"
+            }
         }
 
         /** 从 [node] 的直接子树中收集 annotation 与 macro expression annotation 包装。 */

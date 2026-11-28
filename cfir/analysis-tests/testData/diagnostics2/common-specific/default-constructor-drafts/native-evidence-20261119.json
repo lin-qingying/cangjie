@@ -1,0 +1,2357 @@
+{
+  "nativeCommit": "14276740ffec1262b81b6b5236b1d840af270b37",
+  "kotlinCommit": "3c7a5041f238102285764d370665f56f587f9dc4",
+  "sdk": "C:/Users/lin17/.cangjie/sdks/cangjie-sdk-windows-x64-1.1.3/cangjie/bin/cjc.exe",
+  "cases": [
+    {
+      "name": "defaultConstructorRoles",
+      "source": "cfir/analysis-tests/testData/diagnostics2/common-specific/default-constructor-drafts/defaultConstructorRoles.cj",
+      "sourceSha256": "965535267B5BDE00DC6067BD9A3996C362D752B7F68C8BD4E375CAB8FE2B6AD4",
+      "cjo": "build/default-constructor-drafts-native-v113/defaultConstructorRoles/default_constructor_models.cjo",
+      "cjoSha256": "273070F053AC83FDF2C991985B3545F3F869C6F50AFF709DB1512A5D275622B2",
+      "cjoBytes": 16040,
+      "cjoGzipBase64": "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",
+      "counts": {
+        "declarations": 44,
+        "types": 27,
+        "expressions": 0
+      },
+      "declarations": [
+        {
+          "id": 1,
+          "name": "DefaultClass",
+          "kind": "ClassDecl",
+          "attributes": [
+            "144678138029278384",
+            "0"
+          ],
+          "flags": [
+            "GLOBAL",
+            "INITIALIZED",
+            "GENERIC",
+            "PUBLIC",
+            "INITIALIZATION_CHECKED",
+            "IS_CHECK_VISITED"
+          ],
+          "type": 1,
+          "genericDecl": {
+            "pkgId": -1,
+            "decl": "",
+            "index": 0
+          },
+          "typeParameters": [
+            2,
+            3
+          ],
+          "body": [
+            {
+              "id": 4,
+              "name": "choose"
+            },
+            {
+              "id": 8,
+              "name": "init"
+            }
+          ],
+          "returnType": null,
+          "paramLists": null
+        },
+        {
+          "id": 2,
+          "name": "T",
+          "kind": "GenericParamDecl",
+          "attributes": [
+            "0",
+            "0"
+          ],
+          "flags": [],
+          "type": 2,
+          "genericDecl": null,
+          "typeParameters": [],
+          "body": null,
+          "returnType": null,
+          "paramLists": null
+        },
+        {
+          "id": 3,
+          "name": "U",
+          "kind": "GenericParamDecl",
+          "attributes": [
+            "0",
+            "0"
+          ],
+          "flags": [],
+          "type": 3,
+          "genericDecl": null,
+          "typeParameters": [],
+          "body": null,
+          "returnType": null,
+          "paramLists": null
+        },
+        {
+          "id": 4,
+          "name": "choose",
+          "kind": "FuncDecl",
+          "attributes": [
+            "144678138297713696",
+            "0"
+          ],
+          "flags": [
+            "INITIALIZED",
+            "PUBLIC",
+            "IN_CLASSLIKE",
+            "INITIALIZATION_CHECKED",
+            "IS_CHECK_VISITED"
+          ],
+          "type": 4,
+          "genericDecl": {
+            "pkgId": -1,
+            "decl": "",
+            "index": 0
+          },
+          "typeParameters": [],
+          "body": null,
+          "returnType": 3,
+          "paramLists": [
+            [
+              5,
+              6,
+              7
+            ]
+          ]
+        },
+        {
+          "id": 5,
+          "name": "first",
+          "kind": "FuncParam",
+          "attributes": [
+            "562949953421344",
+            "0"
+          ],
+          "flags": [
+            "INITIALIZED",
+            "INITIALIZATION_CHECKED"
+          ],
+          "type": 2,
+          "genericDecl": null,
+          "typeParameters": [],
+          "body": null,
+          "returnType": null,
+          "paramLists": null
+        },
+        {
+          "id": 6,
+          "name": "middle",
+          "kind": "FuncParam",
+          "attributes": [
+            "562949953421344",
+            "0"
+          ],
+          "flags": [
+            "INITIALIZED",
+            "INITIALIZATION_CHECKED"
+          ],
+          "type": 3,
+          "genericDecl": null,
+          "typeParameters": [],
+          "body": null,
+          "returnType": null,
+          "paramLists": null
+        },
+        {
+          "id": 7,
+          "name": "last",
+          "kind": "FuncParam",
+          "attributes": [
+            "562949953421344",
+            "0"
+          ],
+          "flags": [
+            "INITIALIZED",
+            "INITIALIZATION_CHECKED"
+          ],
+          "type": 2,
+          "genericDecl": null,
+          "typeParameters": [],
+          "body": null,
+          "returnType": null,
+          "paramLists": null
+        },
+        {
+          "id": 8,
+          "name": "init",
+          "kind": "FuncDecl",
+          "attributes": [
+            "1297599645052044384",
+            "0"
+          ],
+          "flags": [
+            "INITIALIZED",
+            "COMPILER_ADD",
+            "PUBLIC",
+            "IN_CLASSLIKE",
+            "CONSTRUCTOR",
+            "INITIALIZATION_CHECKED",
+            "IS_CHECK_VISITED",
+            "IMPLICIT_ADD"
+          ],
+          "type": 5,
+          "genericDecl": {
+            "pkgId": -1,
+            "decl": "",
+            "index": 0
+          },
+          "typeParameters": [],
+          "body": null,
+          "returnType": 1,
+          "paramLists": [
+            []
+          ]
+        },
+        {
+          "id": 9,
+          "name": "DefaultStruct",
+          "kind": "StructDecl",
+          "attributes": [
+            "144678138029278384",
+            "0"
+          ],
+          "flags": [
+            "GLOBAL",
+            "INITIALIZED",
+            "GENERIC",
+            "PUBLIC",
+            "INITIALIZATION_CHECKED",
+            "IS_CHECK_VISITED"
+          ],
+          "type": 7,
+          "genericDecl": {
+            "pkgId": -1,
+            "decl": "",
+            "index": 0
+          },
+          "typeParameters": [
+            10,
+            11
+          ],
+          "body": [
+            {
+              "id": 12,
+              "name": "choose"
+            },
+            {
+              "id": 16,
+              "name": "init"
+            }
+          ],
+          "returnType": null,
+          "paramLists": null
+        },
+        {
+          "id": 10,
+          "name": "T",
+          "kind": "GenericParamDecl",
+          "attributes": [
+            "0",
+            "0"
+          ],
+          "flags": [],
+          "type": 8,
+          "genericDecl": null,
+          "typeParameters": [],
+          "body": null,
+          "returnType": null,
+          "paramLists": null
+        },
+        {
+          "id": 11,
+          "name": "U",
+          "kind": "GenericParamDecl",
+          "attributes": [
+            "0",
+            "0"
+          ],
+          "flags": [],
+          "type": 9,
+          "genericDecl": null,
+          "typeParameters": [],
+          "body": null,
+          "returnType": null,
+          "paramLists": null
+        },
+        {
+          "id": 12,
+          "name": "choose",
+          "kind": "FuncDecl",
+          "attributes": [
+            "144678138062832672",
+            "0"
+          ],
+          "flags": [
+            "INITIALIZED",
+            "PUBLIC",
+            "IN_STRUCT",
+            "INITIALIZATION_CHECKED",
+            "IS_CHECK_VISITED"
+          ],
+          "type": 10,
+          "genericDecl": {
+            "pkgId": -1,
+            "decl": "",
+            "index": 0
+          },
+          "typeParameters": [],
+          "body": null,
+          "returnType": 9,
+          "paramLists": [
+            [
+              13,
+              14,
+              15
+            ]
+          ]
+        },
+        {
+          "id": 13,
+          "name": "first",
+          "kind": "FuncParam",
+          "attributes": [
+            "562949953421344",
+            "0"
+          ],
+          "flags": [
+            "INITIALIZED",
+            "INITIALIZATION_CHECKED"
+          ],
+          "type": 8,
+          "genericDecl": null,
+          "typeParameters": [],
+          "body": null,
+          "returnType": null,
+          "paramLists": null
+        },
+        {
+          "id": 14,
+          "name": "middle",
+          "kind": "FuncParam",
+          "attributes": [
+            "562949953421344",
+            "0"
+          ],
+          "flags": [
+            "INITIALIZED",
+            "INITIALIZATION_CHECKED"
+          ],
+          "type": 9,
+          "genericDecl": null,
+          "typeParameters": [],
+          "body": null,
+          "returnType": null,
+          "paramLists": null
+        },
+        {
+          "id": 15,
+          "name": "last",
+          "kind": "FuncParam",
+          "attributes": [
+            "562949953421344",
+            "0"
+          ],
+          "flags": [
+            "INITIALIZED",
+            "INITIALIZATION_CHECKED"
+          ],
+          "type": 8,
+          "genericDecl": null,
+          "typeParameters": [],
+          "body": null,
+          "returnType": null,
+          "paramLists": null
+        },
+        {
+          "id": 16,
+          "name": "init",
+          "kind": "FuncDecl",
+          "attributes": [
+            "1297599644817163360",
+            "0"
+          ],
+          "flags": [
+            "INITIALIZED",
+            "COMPILER_ADD",
+            "PUBLIC",
+            "IN_STRUCT",
+            "CONSTRUCTOR",
+            "INITIALIZATION_CHECKED",
+            "IS_CHECK_VISITED",
+            "IMPLICIT_ADD"
+          ],
+          "type": 11,
+          "genericDecl": {
+            "pkgId": -1,
+            "decl": "",
+            "index": 0
+          },
+          "typeParameters": [],
+          "body": null,
+          "returnType": 7,
+          "paramLists": [
+            []
+          ]
+        },
+        {
+          "id": 17,
+          "name": "StaticClass",
+          "kind": "ClassDecl",
+          "attributes": [
+            "144678138029278256",
+            "0"
+          ],
+          "flags": [
+            "GLOBAL",
+            "INITIALIZED",
+            "PUBLIC",
+            "INITIALIZATION_CHECKED",
+            "IS_CHECK_VISITED"
+          ],
+          "type": 12,
+          "genericDecl": {
+            "pkgId": -1,
+            "decl": "",
+            "index": 0
+          },
+          "typeParameters": [],
+          "body": [
+            {
+              "id": 18,
+              "name": "state"
+            },
+            {
+              "id": 19,
+              "name": "read"
+            },
+            {
+              "id": 20,
+              "name": "init"
+            }
+          ],
+          "returnType": null,
+          "paramLists": null
+        },
+        {
+          "id": 18,
+          "name": "state",
+          "kind": "VarDecl",
+          "attributes": [
+            "144678138297729568",
+            "0"
+          ],
+          "flags": [
+            "INITIALIZED",
+            "STATIC",
+            "INTERNAL",
+            "IN_CLASSLIKE",
+            "INITIALIZATION_CHECKED",
+            "IS_CHECK_VISITED"
+          ],
+          "type": 13,
+          "genericDecl": null,
+          "typeParameters": [],
+          "body": null,
+          "returnType": null,
+          "paramLists": null
+        },
+        {
+          "id": 19,
+          "name": "read",
+          "kind": "FuncDecl",
+          "attributes": [
+            "144678138297713696",
+            "0"
+          ],
+          "flags": [
+            "INITIALIZED",
+            "PUBLIC",
+            "IN_CLASSLIKE",
+            "INITIALIZATION_CHECKED",
+            "IS_CHECK_VISITED"
+          ],
+          "type": 14,
+          "genericDecl": {
+            "pkgId": -1,
+            "decl": "",
+            "index": 0
+          },
+          "typeParameters": [],
+          "body": null,
+          "returnType": 13,
+          "paramLists": [
+            []
+          ]
+        },
+        {
+          "id": 20,
+          "name": "init",
+          "kind": "FuncDecl",
+          "attributes": [
+            "1297599645052044384",
+            "0"
+          ],
+          "flags": [
+            "INITIALIZED",
+            "COMPILER_ADD",
+            "PUBLIC",
+            "IN_CLASSLIKE",
+            "CONSTRUCTOR",
+            "INITIALIZATION_CHECKED",
+            "IS_CHECK_VISITED",
+            "IMPLICIT_ADD"
+          ],
+          "type": 15,
+          "genericDecl": {
+            "pkgId": -1,
+            "decl": "",
+            "index": 0
+          },
+          "typeParameters": [],
+          "body": null,
+          "returnType": 12,
+          "paramLists": [
+            []
+          ]
+        },
+        {
+          "id": 21,
+          "name": "StaticStruct",
+          "kind": "StructDecl",
+          "attributes": [
+            "144678138029278256",
+            "0"
+          ],
+          "flags": [
+            "GLOBAL",
+            "INITIALIZED",
+            "PUBLIC",
+            "INITIALIZATION_CHECKED",
+            "IS_CHECK_VISITED"
+          ],
+          "type": 16,
+          "genericDecl": {
+            "pkgId": -1,
+            "decl": "",
+            "index": 0
+          },
+          "typeParameters": [],
+          "body": [
+            {
+              "id": 22,
+              "name": "state"
+            },
+            {
+              "id": 23,
+              "name": "read"
+            },
+            {
+              "id": 24,
+              "name": "init"
+            }
+          ],
+          "returnType": null,
+          "paramLists": null
+        },
+        {
+          "id": 22,
+          "name": "state",
+          "kind": "VarDecl",
+          "attributes": [
+            "144678138062848544",
+            "0"
+          ],
+          "flags": [
+            "INITIALIZED",
+            "STATIC",
+            "INTERNAL",
+            "IN_STRUCT",
+            "INITIALIZATION_CHECKED",
+            "IS_CHECK_VISITED"
+          ],
+          "type": 13,
+          "genericDecl": null,
+          "typeParameters": [],
+          "body": null,
+          "returnType": null,
+          "paramLists": null
+        },
+        {
+          "id": 23,
+          "name": "read",
+          "kind": "FuncDecl",
+          "attributes": [
+            "144678138062832672",
+            "0"
+          ],
+          "flags": [
+            "INITIALIZED",
+            "PUBLIC",
+            "IN_STRUCT",
+            "INITIALIZATION_CHECKED",
+            "IS_CHECK_VISITED"
+          ],
+          "type": 14,
+          "genericDecl": {
+            "pkgId": -1,
+            "decl": "",
+            "index": 0
+          },
+          "typeParameters": [],
+          "body": null,
+          "returnType": 13,
+          "paramLists": [
+            []
+          ]
+        },
+        {
+          "id": 24,
+          "name": "init",
+          "kind": "FuncDecl",
+          "attributes": [
+            "1297599644817163360",
+            "0"
+          ],
+          "flags": [
+            "INITIALIZED",
+            "COMPILER_ADD",
+            "PUBLIC",
+            "IN_STRUCT",
+            "CONSTRUCTOR",
+            "INITIALIZATION_CHECKED",
+            "IS_CHECK_VISITED",
+            "IMPLICIT_ADD"
+          ],
+          "type": 17,
+          "genericDecl": {
+            "pkgId": -1,
+            "decl": "",
+            "index": 0
+          },
+          "typeParameters": [],
+          "body": null,
+          "returnType": 16,
+          "paramLists": [
+            []
+          ]
+        },
+        {
+          "id": 25,
+          "name": "ExplicitClass",
+          "kind": "ClassDecl",
+          "attributes": [
+            "144678138029278256",
+            "0"
+          ],
+          "flags": [
+            "GLOBAL",
+            "INITIALIZED",
+            "PUBLIC",
+            "INITIALIZATION_CHECKED",
+            "IS_CHECK_VISITED"
+          ],
+          "type": 18,
+          "genericDecl": {
+            "pkgId": -1,
+            "decl": "",
+            "index": 0
+          },
+          "typeParameters": [],
+          "body": [
+            {
+              "id": 26,
+              "name": "init"
+            },
+            {
+              "id": 27,
+              "name": "read"
+            }
+          ],
+          "returnType": null,
+          "paramLists": null
+        },
+        {
+          "id": 26,
+          "name": "init",
+          "kind": "FuncDecl",
+          "attributes": [
+            "144678140445197344",
+            "0"
+          ],
+          "flags": [
+            "INITIALIZED",
+            "PUBLIC",
+            "IN_CLASSLIKE",
+            "CONSTRUCTOR",
+            "INITIALIZATION_CHECKED",
+            "IS_CHECK_VISITED"
+          ],
+          "type": 19,
+          "genericDecl": {
+            "pkgId": -1,
+            "decl": "",
+            "index": 0
+          },
+          "typeParameters": [],
+          "body": null,
+          "returnType": 18,
+          "paramLists": [
+            []
+          ]
+        },
+        {
+          "id": 27,
+          "name": "read",
+          "kind": "FuncDecl",
+          "attributes": [
+            "144678138297713696",
+            "0"
+          ],
+          "flags": [
+            "INITIALIZED",
+            "PUBLIC",
+            "IN_CLASSLIKE",
+            "INITIALIZATION_CHECKED",
+            "IS_CHECK_VISITED"
+          ],
+          "type": 14,
+          "genericDecl": {
+            "pkgId": -1,
+            "decl": "",
+            "index": 0
+          },
+          "typeParameters": [],
+          "body": null,
+          "returnType": 13,
+          "paramLists": [
+            []
+          ]
+        },
+        {
+          "id": 28,
+          "name": "PrimaryClass",
+          "kind": "ClassDecl",
+          "attributes": [
+            "144678138029278256",
+            "0"
+          ],
+          "flags": [
+            "GLOBAL",
+            "INITIALIZED",
+            "PUBLIC",
+            "INITIALIZATION_CHECKED",
+            "IS_CHECK_VISITED"
+          ],
+          "type": 20,
+          "genericDecl": {
+            "pkgId": -1,
+            "decl": "",
+            "index": 0
+          },
+          "typeParameters": [],
+          "body": [
+            {
+              "id": 29,
+              "name": "stored"
+            },
+            {
+              "id": 30,
+              "name": "read"
+            },
+            {
+              "id": 31,
+              "name": "init"
+            }
+          ],
+          "returnType": null,
+          "paramLists": null
+        },
+        {
+          "id": 29,
+          "name": "stored",
+          "kind": "VarDecl",
+          "attributes": [
+            "144678138297729056",
+            "0"
+          ],
+          "flags": [
+            "INITIALIZED",
+            "INTERNAL",
+            "IN_CLASSLIKE",
+            "INITIALIZATION_CHECKED",
+            "IS_CHECK_VISITED"
+          ],
+          "type": 13,
+          "genericDecl": null,
+          "typeParameters": [],
+          "body": null,
+          "returnType": null,
+          "paramLists": null
+        },
+        {
+          "id": 30,
+          "name": "read",
+          "kind": "FuncDecl",
+          "attributes": [
+            "144678138297713696",
+            "0"
+          ],
+          "flags": [
+            "INITIALIZED",
+            "PUBLIC",
+            "IN_CLASSLIKE",
+            "INITIALIZATION_CHECKED",
+            "IS_CHECK_VISITED"
+          ],
+          "type": 14,
+          "genericDecl": {
+            "pkgId": -1,
+            "decl": "",
+            "index": 0
+          },
+          "typeParameters": [],
+          "body": null,
+          "returnType": 13,
+          "paramLists": [
+            []
+          ]
+        },
+        {
+          "id": 31,
+          "name": "init",
+          "kind": "FuncDecl",
+          "attributes": [
+            "144678158698808416",
+            "0"
+          ],
+          "flags": [
+            "INITIALIZED",
+            "COMPILER_ADD",
+            "PUBLIC",
+            "IN_CLASSLIKE",
+            "PRIMARY_CONSTRUCTOR",
+            "CONSTRUCTOR",
+            "IS_CLONED_SOURCE_CODE",
+            "INITIALIZATION_CHECKED",
+            "IS_CHECK_VISITED"
+          ],
+          "type": 21,
+          "genericDecl": {
+            "pkgId": -1,
+            "decl": "",
+            "index": 0
+          },
+          "typeParameters": [],
+          "body": null,
+          "returnType": 20,
+          "paramLists": [
+            [
+              32
+            ]
+          ]
+        },
+        {
+          "id": 32,
+          "name": "value",
+          "kind": "FuncParam",
+          "attributes": [
+            "562967133290592",
+            "0"
+          ],
+          "flags": [
+            "INITIALIZED",
+            "COMPILER_ADD",
+            "IS_CLONED_SOURCE_CODE",
+            "INITIALIZATION_CHECKED"
+          ],
+          "type": 13,
+          "genericDecl": null,
+          "typeParameters": [],
+          "body": null,
+          "returnType": null,
+          "paramLists": null
+        },
+        {
+          "id": 33,
+          "name": "PrimaryStruct",
+          "kind": "StructDecl",
+          "attributes": [
+            "144678138029278256",
+            "0"
+          ],
+          "flags": [
+            "GLOBAL",
+            "INITIALIZED",
+            "PUBLIC",
+            "INITIALIZATION_CHECKED",
+            "IS_CHECK_VISITED"
+          ],
+          "type": 22,
+          "genericDecl": {
+            "pkgId": -1,
+            "decl": "",
+            "index": 0
+          },
+          "typeParameters": [],
+          "body": [
+            {
+              "id": 34,
+              "name": "read"
+            },
+            {
+              "id": 35,
+              "name": "value"
+            },
+            {
+              "id": 36,
+              "name": "flag"
+            },
+            {
+              "id": 37,
+              "name": "init"
+            }
+          ],
+          "returnType": null,
+          "paramLists": null
+        },
+        {
+          "id": 34,
+          "name": "read",
+          "kind": "FuncDecl",
+          "attributes": [
+            "144678138062832672",
+            "0"
+          ],
+          "flags": [
+            "INITIALIZED",
+            "PUBLIC",
+            "IN_STRUCT",
+            "INITIALIZATION_CHECKED",
+            "IS_CHECK_VISITED"
+          ],
+          "type": 14,
+          "genericDecl": {
+            "pkgId": -1,
+            "decl": "",
+            "index": 0
+          },
+          "typeParameters": [],
+          "body": null,
+          "returnType": 13,
+          "paramLists": [
+            []
+          ]
+        },
+        {
+          "id": 35,
+          "name": "value",
+          "kind": "VarDecl",
+          "attributes": [
+            "144678155242717280",
+            "0"
+          ],
+          "flags": [
+            "INITIALIZED",
+            "COMPILER_ADD",
+            "INTERNAL",
+            "IN_STRUCT",
+            "IS_CLONED_SOURCE_CODE",
+            "INITIALIZATION_CHECKED",
+            "IS_CHECK_VISITED"
+          ],
+          "type": 13,
+          "genericDecl": null,
+          "typeParameters": [],
+          "body": null,
+          "returnType": null,
+          "paramLists": null
+        },
+        {
+          "id": 36,
+          "name": "flag",
+          "kind": "VarDecl",
+          "attributes": [
+            "144678155242717280",
+            "0"
+          ],
+          "flags": [
+            "INITIALIZED",
+            "COMPILER_ADD",
+            "INTERNAL",
+            "IN_STRUCT",
+            "IS_CLONED_SOURCE_CODE",
+            "INITIALIZATION_CHECKED",
+            "IS_CHECK_VISITED"
+          ],
+          "type": 23,
+          "genericDecl": null,
+          "typeParameters": [],
+          "body": null,
+          "returnType": null,
+          "paramLists": null
+        },
+        {
+          "id": 37,
+          "name": "init",
+          "kind": "FuncDecl",
+          "attributes": [
+            "144678158463927392",
+            "0"
+          ],
+          "flags": [
+            "INITIALIZED",
+            "COMPILER_ADD",
+            "PUBLIC",
+            "IN_STRUCT",
+            "PRIMARY_CONSTRUCTOR",
+            "CONSTRUCTOR",
+            "IS_CLONED_SOURCE_CODE",
+            "INITIALIZATION_CHECKED",
+            "IS_CHECK_VISITED"
+          ],
+          "type": 24,
+          "genericDecl": {
+            "pkgId": -1,
+            "decl": "",
+            "index": 0
+          },
+          "typeParameters": [],
+          "body": null,
+          "returnType": 22,
+          "paramLists": [
+            [
+              38,
+              39
+            ]
+          ]
+        },
+        {
+          "id": 38,
+          "name": "value",
+          "kind": "FuncParam",
+          "attributes": [
+            "562967133290592",
+            "0"
+          ],
+          "flags": [
+            "INITIALIZED",
+            "COMPILER_ADD",
+            "IS_CLONED_SOURCE_CODE",
+            "INITIALIZATION_CHECKED"
+          ],
+          "type": 13,
+          "genericDecl": null,
+          "typeParameters": [],
+          "body": null,
+          "returnType": null,
+          "paramLists": null
+        },
+        {
+          "id": 39,
+          "name": "flag",
+          "kind": "FuncParam",
+          "attributes": [
+            "562967133290592",
+            "0"
+          ],
+          "flags": [
+            "INITIALIZED",
+            "COMPILER_ADD",
+            "IS_CLONED_SOURCE_CODE",
+            "INITIALIZATION_CHECKED"
+          ],
+          "type": 23,
+          "genericDecl": null,
+          "typeParameters": [],
+          "body": null,
+          "returnType": null,
+          "paramLists": null
+        },
+        {
+          "id": 40,
+          "name": "NoConstructor",
+          "kind": "InterfaceDecl",
+          "attributes": [
+            "144678138029278256",
+            "0"
+          ],
+          "flags": [
+            "GLOBAL",
+            "INITIALIZED",
+            "PUBLIC",
+            "INITIALIZATION_CHECKED",
+            "IS_CHECK_VISITED"
+          ],
+          "type": 25,
+          "genericDecl": {
+            "pkgId": -1,
+            "decl": "",
+            "index": 0
+          },
+          "typeParameters": [],
+          "body": [],
+          "returnType": null,
+          "paramLists": null
+        },
+        {
+          "id": 41,
+          "name": "NoDefaultInit",
+          "kind": "EnumDecl",
+          "attributes": [
+            "144678138029278256",
+            "0"
+          ],
+          "flags": [
+            "GLOBAL",
+            "INITIALIZED",
+            "PUBLIC",
+            "INITIALIZATION_CHECKED",
+            "IS_CHECK_VISITED"
+          ],
+          "type": 26,
+          "genericDecl": {
+            "pkgId": -1,
+            "decl": "",
+            "index": 0
+          },
+          "typeParameters": [],
+          "body": [
+            {
+              "id": 42,
+              "name": "Empty"
+            },
+            {
+              "id": 43,
+              "name": "Carry"
+            }
+          ],
+          "returnType": null,
+          "paramLists": null
+        },
+        {
+          "id": 42,
+          "name": "Empty",
+          "kind": "VarDecl",
+          "attributes": [
+            "4429186080",
+            "0"
+          ],
+          "flags": [
+            "INITIALIZED",
+            "PUBLIC",
+            "IN_ENUM",
+            "ENUM_CONSTRUCTOR"
+          ],
+          "type": 26,
+          "genericDecl": null,
+          "typeParameters": [],
+          "body": null,
+          "returnType": null,
+          "paramLists": null
+        },
+        {
+          "id": 43,
+          "name": "Carry",
+          "kind": "FuncDecl",
+          "attributes": [
+            "4429186080",
+            "0"
+          ],
+          "flags": [
+            "INITIALIZED",
+            "PUBLIC",
+            "IN_ENUM",
+            "ENUM_CONSTRUCTOR"
+          ],
+          "type": 27,
+          "genericDecl": {
+            "pkgId": -1,
+            "decl": "",
+            "index": 0
+          },
+          "typeParameters": [],
+          "body": null,
+          "returnType": 26,
+          "paramLists": [
+            [
+              44
+            ]
+          ]
+        },
+        {
+          "id": 44,
+          "name": "p1",
+          "kind": "FuncParam",
+          "attributes": [
+            "0",
+            "0"
+          ],
+          "flags": [],
+          "type": 13,
+          "genericDecl": null,
+          "typeParameters": [],
+          "body": null,
+          "returnType": null,
+          "paramLists": null
+        }
+      ],
+      "types": [
+        {
+          "id": 1,
+          "kind": "Class",
+          "arguments": [
+            2,
+            3
+          ],
+          "binding": {
+            "pkgId": -2,
+            "decl": "",
+            "index": 1
+          },
+          "returnType": null
+        },
+        {
+          "id": 2,
+          "kind": "Generic",
+          "arguments": [],
+          "binding": {
+            "pkgId": -2,
+            "decl": "",
+            "index": 2
+          },
+          "returnType": null
+        },
+        {
+          "id": 3,
+          "kind": "Generic",
+          "arguments": [],
+          "binding": {
+            "pkgId": -2,
+            "decl": "",
+            "index": 3
+          },
+          "returnType": null
+        },
+        {
+          "id": 4,
+          "kind": "Func",
+          "arguments": [
+            2,
+            3,
+            2
+          ],
+          "binding": null,
+          "returnType": 3
+        },
+        {
+          "id": 5,
+          "kind": "Func",
+          "arguments": [],
+          "binding": null,
+          "returnType": 1
+        },
+        {
+          "id": 6,
+          "kind": "Class",
+          "arguments": [],
+          "binding": {
+            "pkgId": 0,
+            "decl": "_CNat6ObjectE",
+            "index": 0
+          },
+          "returnType": null
+        },
+        {
+          "id": 7,
+          "kind": "Struct",
+          "arguments": [
+            8,
+            9
+          ],
+          "binding": {
+            "pkgId": -2,
+            "decl": "",
+            "index": 9
+          },
+          "returnType": null
+        },
+        {
+          "id": 8,
+          "kind": "Generic",
+          "arguments": [],
+          "binding": {
+            "pkgId": -2,
+            "decl": "",
+            "index": 10
+          },
+          "returnType": null
+        },
+        {
+          "id": 9,
+          "kind": "Generic",
+          "arguments": [],
+          "binding": {
+            "pkgId": -2,
+            "decl": "",
+            "index": 11
+          },
+          "returnType": null
+        },
+        {
+          "id": 10,
+          "kind": "Func",
+          "arguments": [
+            8,
+            9,
+            8
+          ],
+          "binding": null,
+          "returnType": 9
+        },
+        {
+          "id": 11,
+          "kind": "Func",
+          "arguments": [],
+          "binding": null,
+          "returnType": 7
+        },
+        {
+          "id": 12,
+          "kind": "Class",
+          "arguments": [],
+          "binding": {
+            "pkgId": -2,
+            "decl": "",
+            "index": 17
+          },
+          "returnType": null
+        },
+        {
+          "id": 13,
+          "kind": "Int64",
+          "arguments": [],
+          "binding": null,
+          "returnType": null
+        },
+        {
+          "id": 14,
+          "kind": "Func",
+          "arguments": [],
+          "binding": null,
+          "returnType": 13
+        },
+        {
+          "id": 15,
+          "kind": "Func",
+          "arguments": [],
+          "binding": null,
+          "returnType": 12
+        },
+        {
+          "id": 16,
+          "kind": "Struct",
+          "arguments": [],
+          "binding": {
+            "pkgId": -2,
+            "decl": "",
+            "index": 21
+          },
+          "returnType": null
+        },
+        {
+          "id": 17,
+          "kind": "Func",
+          "arguments": [],
+          "binding": null,
+          "returnType": 16
+        },
+        {
+          "id": 18,
+          "kind": "Class",
+          "arguments": [],
+          "binding": {
+            "pkgId": -2,
+            "decl": "",
+            "index": 25
+          },
+          "returnType": null
+        },
+        {
+          "id": 19,
+          "kind": "Func",
+          "arguments": [],
+          "binding": null,
+          "returnType": 18
+        },
+        {
+          "id": 20,
+          "kind": "Class",
+          "arguments": [],
+          "binding": {
+            "pkgId": -2,
+            "decl": "",
+            "index": 28
+          },
+          "returnType": null
+        },
+        {
+          "id": 21,
+          "kind": "Func",
+          "arguments": [
+            13
+          ],
+          "binding": null,
+          "returnType": 20
+        },
+        {
+          "id": 22,
+          "kind": "Struct",
+          "arguments": [],
+          "binding": {
+            "pkgId": -2,
+            "decl": "",
+            "index": 33
+          },
+          "returnType": null
+        },
+        {
+          "id": 23,
+          "kind": "Bool",
+          "arguments": [],
+          "binding": null,
+          "returnType": null
+        },
+        {
+          "id": 24,
+          "kind": "Func",
+          "arguments": [
+            13,
+            23
+          ],
+          "binding": null,
+          "returnType": 22
+        },
+        {
+          "id": 25,
+          "kind": "Interface",
+          "arguments": [],
+          "binding": {
+            "pkgId": -2,
+            "decl": "",
+            "index": 40
+          },
+          "returnType": null
+        },
+        {
+          "id": 26,
+          "kind": "Enum",
+          "arguments": [],
+          "binding": {
+            "pkgId": -2,
+            "decl": "",
+            "index": 41
+          },
+          "returnType": null
+        },
+        {
+          "id": 27,
+          "kind": "Func",
+          "arguments": [
+            13
+          ],
+          "binding": null,
+          "returnType": 26
+        }
+      ],
+      "calls": [],
+      "compileExitCode": 0,
+      "diagnosticCounts": {
+        "Errors": 0,
+        "Warnings": 4
+      },
+      "warningDefinition": "chir_dce_unused_variable"
+    },
+    {
+      "name": "qualifiedDefaultConstructors",
+      "source": "cfir/analysis-tests/testData/diagnostics2/common-specific/default-constructor-drafts/qualifiedDefaultConstructors.cj",
+      "sourceSha256": "FC47588B9BAA58D68D02ABBB7624EF8E6D136099FB38F957A9B28D9C03348595",
+      "cjo": "build/default-constructor-drafts-native-v113/qualifiedDefaultConstructors/default_constructor_qualified.cjo",
+      "cjoSha256": "E8BC0977782948357A109513094FA054028E376C8CBDC0AD50173140E31B5974",
+      "cjoBytes": 11512,
+      "cjoGzipBase64": "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",
+      "counts": {
+        "declarations": 11,
+        "types": 19,
+        "expressions": 41
+      },
+      "declarations": [
+        {
+          "id": 1,
+          "name": "defaultClass",
+          "kind": "FuncDecl",
+          "attributes": [
+            "144678138298238240",
+            "0"
+          ],
+          "flags": [
+            "INITIALIZED",
+            "DEFAULT",
+            "PUBLIC",
+            "OPEN",
+            "IN_CLASSLIKE",
+            "INITIALIZATION_CHECKED",
+            "IS_CHECK_VISITED"
+          ],
+          "type": 1,
+          "genericDecl": {
+            "pkgId": -1,
+            "decl": "",
+            "index": 0
+          },
+          "typeParameters": [],
+          "body": null,
+          "returnType": 2,
+          "paramLists": [
+            []
+          ]
+        },
+        {
+          "id": 2,
+          "name": "defaultStruct",
+          "kind": "FuncDecl",
+          "attributes": [
+            "144678138298238240",
+            "0"
+          ],
+          "flags": [
+            "INITIALIZED",
+            "DEFAULT",
+            "PUBLIC",
+            "OPEN",
+            "IN_CLASSLIKE",
+            "INITIALIZATION_CHECKED",
+            "IS_CHECK_VISITED"
+          ],
+          "type": 7,
+          "genericDecl": {
+            "pkgId": -1,
+            "decl": "",
+            "index": 0
+          },
+          "typeParameters": [],
+          "body": null,
+          "returnType": 8,
+          "paramLists": [
+            []
+          ]
+        },
+        {
+          "id": 3,
+          "name": "staticClass",
+          "kind": "FuncDecl",
+          "attributes": [
+            "144678138298238240",
+            "0"
+          ],
+          "flags": [
+            "INITIALIZED",
+            "DEFAULT",
+            "PUBLIC",
+            "OPEN",
+            "IN_CLASSLIKE",
+            "INITIALIZATION_CHECKED",
+            "IS_CHECK_VISITED"
+          ],
+          "type": 9,
+          "genericDecl": {
+            "pkgId": -1,
+            "decl": "",
+            "index": 0
+          },
+          "typeParameters": [],
+          "body": null,
+          "returnType": 10,
+          "paramLists": [
+            []
+          ]
+        },
+        {
+          "id": 4,
+          "name": "staticStruct",
+          "kind": "FuncDecl",
+          "attributes": [
+            "144678138298238240",
+            "0"
+          ],
+          "flags": [
+            "INITIALIZED",
+            "DEFAULT",
+            "PUBLIC",
+            "OPEN",
+            "IN_CLASSLIKE",
+            "INITIALIZATION_CHECKED",
+            "IS_CHECK_VISITED"
+          ],
+          "type": 11,
+          "genericDecl": {
+            "pkgId": -1,
+            "decl": "",
+            "index": 0
+          },
+          "typeParameters": [],
+          "body": null,
+          "returnType": 12,
+          "paramLists": [
+            []
+          ]
+        },
+        {
+          "id": 5,
+          "name": "explicitClass",
+          "kind": "FuncDecl",
+          "attributes": [
+            "144678138298238240",
+            "0"
+          ],
+          "flags": [
+            "INITIALIZED",
+            "DEFAULT",
+            "PUBLIC",
+            "OPEN",
+            "IN_CLASSLIKE",
+            "INITIALIZATION_CHECKED",
+            "IS_CHECK_VISITED"
+          ],
+          "type": 13,
+          "genericDecl": {
+            "pkgId": -1,
+            "decl": "",
+            "index": 0
+          },
+          "typeParameters": [],
+          "body": null,
+          "returnType": 14,
+          "paramLists": [
+            []
+          ]
+        },
+        {
+          "id": 6,
+          "name": "primaryClass",
+          "kind": "FuncDecl",
+          "attributes": [
+            "144678138298238240",
+            "0"
+          ],
+          "flags": [
+            "INITIALIZED",
+            "DEFAULT",
+            "PUBLIC",
+            "OPEN",
+            "IN_CLASSLIKE",
+            "INITIALIZATION_CHECKED",
+            "IS_CHECK_VISITED"
+          ],
+          "type": 15,
+          "genericDecl": {
+            "pkgId": -1,
+            "decl": "",
+            "index": 0
+          },
+          "typeParameters": [],
+          "body": null,
+          "returnType": 16,
+          "paramLists": [
+            [
+              7
+            ]
+          ]
+        },
+        {
+          "id": 7,
+          "name": "value",
+          "kind": "FuncParam",
+          "attributes": [
+            "562949953421344",
+            "0"
+          ],
+          "flags": [
+            "INITIALIZED",
+            "INITIALIZATION_CHECKED"
+          ],
+          "type": 3,
+          "genericDecl": null,
+          "typeParameters": [],
+          "body": null,
+          "returnType": null,
+          "paramLists": null
+        },
+        {
+          "id": 8,
+          "name": "primaryStruct",
+          "kind": "FuncDecl",
+          "attributes": [
+            "144678138298238240",
+            "0"
+          ],
+          "flags": [
+            "INITIALIZED",
+            "DEFAULT",
+            "PUBLIC",
+            "OPEN",
+            "IN_CLASSLIKE",
+            "INITIALIZATION_CHECKED",
+            "IS_CHECK_VISITED"
+          ],
+          "type": 17,
+          "genericDecl": {
+            "pkgId": -1,
+            "decl": "",
+            "index": 0
+          },
+          "typeParameters": [],
+          "body": null,
+          "returnType": 18,
+          "paramLists": [
+            [
+              9,
+              10
+            ]
+          ]
+        },
+        {
+          "id": 9,
+          "name": "value",
+          "kind": "FuncParam",
+          "attributes": [
+            "562949953421344",
+            "0"
+          ],
+          "flags": [
+            "INITIALIZED",
+            "INITIALIZATION_CHECKED"
+          ],
+          "type": 3,
+          "genericDecl": null,
+          "typeParameters": [],
+          "body": null,
+          "returnType": null,
+          "paramLists": null
+        },
+        {
+          "id": 10,
+          "name": "flag",
+          "kind": "FuncParam",
+          "attributes": [
+            "562949953421344",
+            "0"
+          ],
+          "flags": [
+            "INITIALIZED",
+            "INITIALIZATION_CHECKED"
+          ],
+          "type": 4,
+          "genericDecl": null,
+          "typeParameters": [],
+          "body": null,
+          "returnType": null,
+          "paramLists": null
+        },
+        {
+          "id": 11,
+          "name": "QualifiedConstructorSource",
+          "kind": "InterfaceDecl",
+          "attributes": [
+            "144678138029278256",
+            "0"
+          ],
+          "flags": [
+            "GLOBAL",
+            "INITIALIZED",
+            "PUBLIC",
+            "INITIALIZATION_CHECKED",
+            "IS_CHECK_VISITED"
+          ],
+          "type": 19,
+          "genericDecl": {
+            "pkgId": -1,
+            "decl": "",
+            "index": 0
+          },
+          "typeParameters": [],
+          "body": [
+            {
+              "id": 1,
+              "name": "defaultClass"
+            },
+            {
+              "id": 2,
+              "name": "defaultStruct"
+            },
+            {
+              "id": 3,
+              "name": "staticClass"
+            },
+            {
+              "id": 4,
+              "name": "staticStruct"
+            },
+            {
+              "id": 5,
+              "name": "explicitClass"
+            },
+            {
+              "id": 6,
+              "name": "primaryClass"
+            },
+            {
+              "id": 8,
+              "name": "primaryStruct"
+            }
+          ],
+          "returnType": null,
+          "paramLists": null
+        }
+      ],
+      "types": [
+        {
+          "id": 1,
+          "kind": "Func",
+          "arguments": [],
+          "binding": null,
+          "returnType": 2
+        },
+        {
+          "id": 2,
+          "kind": "Class",
+          "arguments": [
+            3,
+            4
+          ],
+          "binding": {
+            "pkgId": 0,
+            "decl": "_CN26default_constructor_models12DefaultClassIG_G0_E",
+            "index": 0
+          },
+          "returnType": null
+        },
+        {
+          "id": 3,
+          "kind": "Int64",
+          "arguments": [],
+          "binding": null,
+          "returnType": null
+        },
+        {
+          "id": 4,
+          "kind": "Bool",
+          "arguments": [],
+          "binding": null,
+          "returnType": null
+        },
+        {
+          "id": 5,
+          "kind": "Nothing",
+          "arguments": [],
+          "binding": null,
+          "returnType": null
+        },
+        {
+          "id": 6,
+          "kind": "Invalid",
+          "arguments": [],
+          "binding": null,
+          "returnType": null
+        },
+        {
+          "id": 7,
+          "kind": "Func",
+          "arguments": [],
+          "binding": null,
+          "returnType": 8
+        },
+        {
+          "id": 8,
+          "kind": "Struct",
+          "arguments": [
+            3,
+            4
+          ],
+          "binding": {
+            "pkgId": 0,
+            "decl": "_CN26default_constructor_models13DefaultStructIG_G0_E",
+            "index": 0
+          },
+          "returnType": null
+        },
+        {
+          "id": 9,
+          "kind": "Func",
+          "arguments": [],
+          "binding": null,
+          "returnType": 10
+        },
+        {
+          "id": 10,
+          "kind": "Class",
+          "arguments": [],
+          "binding": {
+            "pkgId": 0,
+            "decl": "_CN26default_constructor_models11StaticClassE",
+            "index": 0
+          },
+          "returnType": null
+        },
+        {
+          "id": 11,
+          "kind": "Func",
+          "arguments": [],
+          "binding": null,
+          "returnType": 12
+        },
+        {
+          "id": 12,
+          "kind": "Struct",
+          "arguments": [],
+          "binding": {
+            "pkgId": 0,
+            "decl": "_CN26default_constructor_models12StaticStructE",
+            "index": 0
+          },
+          "returnType": null
+        },
+        {
+          "id": 13,
+          "kind": "Func",
+          "arguments": [],
+          "binding": null,
+          "returnType": 14
+        },
+        {
+          "id": 14,
+          "kind": "Class",
+          "arguments": [],
+          "binding": {
+            "pkgId": 0,
+            "decl": "_CN26default_constructor_models13ExplicitClassE",
+            "index": 0
+          },
+          "returnType": null
+        },
+        {
+          "id": 15,
+          "kind": "Func",
+          "arguments": [
+            3
+          ],
+          "binding": null,
+          "returnType": 16
+        },
+        {
+          "id": 16,
+          "kind": "Class",
+          "arguments": [],
+          "binding": {
+            "pkgId": 0,
+            "decl": "_CN26default_constructor_models12PrimaryClassE",
+            "index": 0
+          },
+          "returnType": null
+        },
+        {
+          "id": 17,
+          "kind": "Func",
+          "arguments": [
+            3,
+            4
+          ],
+          "binding": null,
+          "returnType": 18
+        },
+        {
+          "id": 18,
+          "kind": "Struct",
+          "arguments": [],
+          "binding": {
+            "pkgId": 0,
+            "decl": "_CN26default_constructor_models13PrimaryStructE",
+            "index": 0
+          },
+          "returnType": null
+        },
+        {
+          "id": 19,
+          "kind": "Interface",
+          "arguments": [],
+          "binding": {
+            "pkgId": -2,
+            "decl": "",
+            "index": 11
+          },
+          "returnType": null
+        }
+      ],
+      "calls": [
+        {
+          "id": 3,
+          "callKindValue": 2,
+          "sourceNominalKind": "Class",
+          "argumentCount": 0,
+          "type": 2
+        },
+        {
+          "id": 8,
+          "callKindValue": 4,
+          "sourceNominalKind": "Struct",
+          "argumentCount": 0,
+          "type": 8
+        },
+        {
+          "id": 13,
+          "callKindValue": 2,
+          "sourceNominalKind": "Class",
+          "argumentCount": 0,
+          "type": 10
+        },
+        {
+          "id": 18,
+          "callKindValue": 4,
+          "sourceNominalKind": "Struct",
+          "argumentCount": 0,
+          "type": 12
+        },
+        {
+          "id": 23,
+          "callKindValue": 2,
+          "sourceNominalKind": "Class",
+          "argumentCount": 0,
+          "type": 14
+        },
+        {
+          "id": 28,
+          "callKindValue": 2,
+          "sourceNominalKind": "Class",
+          "argumentCount": 1,
+          "type": 16
+        },
+        {
+          "id": 35,
+          "callKindValue": 4,
+          "sourceNominalKind": "Struct",
+          "argumentCount": 2,
+          "type": 18
+        }
+      ],
+      "compileExitCode": 0,
+      "diagnosticOutput": ""
+    }
+  ],
+  "sdkSha256": "DFEBED3139AFE00EE642F75322AB82D1D97651A5E9F10EBF4F6D86ABAC061257",
+  "mirrorCases": [
+    {
+      "name": "javaMirrorNoImplicitConstructor",
+      "source": "cfir/analysis-tests/testData/diagnostics2/common-specific/default-constructor-drafts/javaMirrorNoImplicitConstructor.cj",
+      "sourceSha256": "B22A294B536AF8D4F117AEB752715EF7474325EBB4284AFF74F1188A7434CC1A",
+      "compileExitCode": 1,
+      "diagnostics": {
+        "Diags": [
+          {
+            "DiagKind": "sema_member_not_imported",
+            "Severity": "error",
+            "WarnGroup": "none",
+            "DiagCategory": "sema",
+            "Message": "'java.lang.JObject' is not imported",
+            "Location": {
+              "File": "C:\\Users\\lin17\\.codex\\worktrees\\cjmp-framework-implementation\\cangjie\\cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\default-constructor-drafts\\javaMirrorNoImplicitConstructor.cj",
+              "Line": 5,
+              "Column": 19
+            },
+            "MainHint": {
+              "Content": "",
+              "Range": {
+                "Begin": {
+                  "File": "C:\\Users\\lin17\\.codex\\worktrees\\cjmp-framework-implementation\\cangjie\\cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\default-constructor-drafts\\javaMirrorNoImplicitConstructor.cj",
+                  "Line": 5,
+                  "Column": 19
+                },
+                "End": {
+                  "File": "C:\\Users\\lin17\\.codex\\worktrees\\cjmp-framework-implementation\\cangjie\\cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\default-constructor-drafts\\javaMirrorNoImplicitConstructor.cj",
+                  "Line": 5,
+                  "Column": 20
+                }
+              }
+            },
+            "OtherHints": [],
+            "Notes": [],
+            "Helps": []
+          },
+          {
+            "DiagKind": "sema_member_not_imported",
+            "Severity": "error",
+            "WarnGroup": "none",
+            "DiagCategory": "sema",
+            "Message": "'java.lang.JObject' is not imported",
+            "Location": {
+              "File": "C:\\Users\\lin17\\.codex\\worktrees\\cjmp-framework-implementation\\cangjie\\cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\default-constructor-drafts\\javaMirrorNoImplicitConstructor.cj",
+              "Line": 8,
+              "Column": 19
+            },
+            "MainHint": {
+              "Content": "",
+              "Range": {
+                "Begin": {
+                  "File": "C:\\Users\\lin17\\.codex\\worktrees\\cjmp-framework-implementation\\cangjie\\cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\default-constructor-drafts\\javaMirrorNoImplicitConstructor.cj",
+                  "Line": 8,
+                  "Column": 19
+                },
+                "End": {
+                  "File": "C:\\Users\\lin17\\.codex\\worktrees\\cjmp-framework-implementation\\cangjie\\cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\default-constructor-drafts\\javaMirrorNoImplicitConstructor.cj",
+                  "Line": 8,
+                  "Column": 20
+                }
+              }
+            },
+            "OtherHints": [],
+            "Notes": [],
+            "Helps": []
+          },
+          {
+            "DiagKind": "sema_java_mirror_interoplib_must_be_imported",
+            "Severity": "error",
+            "WarnGroup": "none",
+            "DiagCategory": "sema",
+            "Message": "interoplib.interop must be imported to use java interoperability",
+            "Location": {
+              "File": "C:\\Users\\lin17\\.codex\\worktrees\\cjmp-framework-implementation\\cangjie\\cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\default-constructor-drafts\\javaMirrorNoImplicitConstructor.cj",
+              "Line": 5,
+              "Column": 1
+            },
+            "MainHint": {
+              "Content": "",
+              "Range": {
+                "Begin": {
+                  "File": "C:\\Users\\lin17\\.codex\\worktrees\\cjmp-framework-implementation\\cangjie\\cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\default-constructor-drafts\\javaMirrorNoImplicitConstructor.cj",
+                  "Line": 5,
+                  "Column": 1
+                },
+                "End": {
+                  "File": "C:\\Users\\lin17\\.codex\\worktrees\\cjmp-framework-implementation\\cangjie\\cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\default-constructor-drafts\\javaMirrorNoImplicitConstructor.cj",
+                  "Line": 5,
+                  "Column": 37
+                }
+              }
+            },
+            "OtherHints": [],
+            "Notes": [],
+            "Helps": []
+          },
+          {
+            "DiagKind": "sema_java_mirror_interoplib_must_be_imported",
+            "Severity": "error",
+            "WarnGroup": "none",
+            "DiagCategory": "sema",
+            "Message": "interoplib.interop must be imported to use java interoperability",
+            "Location": {
+              "File": "C:\\Users\\lin17\\.codex\\worktrees\\cjmp-framework-implementation\\cangjie\\cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\default-constructor-drafts\\javaMirrorNoImplicitConstructor.cj",
+              "Line": 8,
+              "Column": 1
+            },
+            "MainHint": {
+              "Content": "",
+              "Range": {
+                "Begin": {
+                  "File": "C:\\Users\\lin17\\.codex\\worktrees\\cjmp-framework-implementation\\cangjie\\cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\default-constructor-drafts\\javaMirrorNoImplicitConstructor.cj",
+                  "Line": 8,
+                  "Column": 1
+                },
+                "End": {
+                  "File": "C:\\Users\\lin17\\.codex\\worktrees\\cjmp-framework-implementation\\cangjie\\cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\default-constructor-drafts\\javaMirrorNoImplicitConstructor.cj",
+                  "Line": 10,
+                  "Column": 2
+                }
+              }
+            },
+            "OtherHints": [],
+            "Notes": [],
+            "Helps": []
+          }
+        ],
+        "Num": {
+          "Errors": 4,
+          "PrintedErrors": 4,
+          "Warnings": 0,
+          "PrintedWarnings": 0
+        }
+      },
+      "ast": "build/default-constructor-drafts-native-v113/javaMirrorNoImplicitConstructor/default_constructor_java_mirror_AST/4_sema_ast.txt",
+      "astSha256": "627E2D7A65463E5FA048BEB03A4644CAEEC972C08B47E85BECA0BD70564D128D",
+      "astGzipBase64": "H4sIAAAAAAAACu2Y72/aOBjH30/a//Cor9YTlJSWQiPdSTRlW64UENCddEuFHMdhbhM7sp2t1an/+8kxgRACdDtNJ7WLEE38PH784/k8X6eMEL5Hc2JDQEKURmqGOZNKpFhxMbtDX9EspkJwAf+8fQPA+CT1R/dzGyz9+J5GxAbtdZ05DbgbJxHFVDmrKEf4znQGwKkwXRzbu5FESC+i7LjtHWEekAfvGxf3ShAiPXwXJ/VQoJjotjqNk4jEhCmkKGceRmx+R4mHQyo8xFD0KKmsKyKV9PT3JVLICyiaMy4VxbLpYR7HnNVlQjANKfYWi60XFlsPBAqV9Pavxqwl4ZLq2djw7rgG+nNo7qwaNA+Nj8Q8IQMUExsO0IFpU4823LB7xr+x6WNCFsGUsMHSV7PZskJ80sZnljGFaRSNTJJMpD2JMr2QUoL6qSLShs+3pq3RgJAglQoigaVRlCixNCRmBPO8GG6SEPxMLvT1rHk9mT9unHChzAC/rUIkgoT0YYTUF2mDVMER5oLkRiovCY4W5C0jORGSC8Of6Cv6i6ovPFUuo2oV9iVhVwavtQSvVYOT9mHutYbeLIfP4JftWb20Xcvw6yiedzpBx8qNPwZjCccP/eFFt18Dd+BO3W7f/bt3WYPRzUXfdWowHPUGBVN36g4HM+djz7nSXu5kdjEeXmUuE9M8++RO3GkWYjyc9pxp7/I2HzaizIjbMdSAymw/lwABIMa4ya2Ez3kjQHfZbJgyaamBT+aUwe/ZZp/qIq8BYcGq4bh5uGLu5XG3yd7pkj2z+qJnkb+DoqFS/yrRQ+Qcn1pFhx/Fb5si5sLi8DihEZnSmHyikvo6Z2sDIzFfQwRgLQIKiswUSLFqoD8rUvKGYu9GAzBnQe8hEeu6vNgwJOZElSbUaICPJKnu85TfLid5zQMaUiKkDUnqRxQDTwjLrZkeXPDgcYXv0z6R1U9IkOD1KG2n8ogvK62/Q2mLe7ZFbn3Uav6S2w25bZfltv0K5ba9BLD9M+TWRy2r9Utu/xe5BXifMmwUlmpF1Vk+N4znt2evDPfzGrRWq+9sxR1ZvlV8w82pf3cI9T+eocDVpdAhP6cUKlXYHcycfncy6btXvRo4w8FkOr5xpsPxTmneq8ewX5P1xVNFhN6Z3YcRbJfwUn1u4F80atDL8L9MnCuALtbzOtEVTG9Q/f1cV5HtB9a6y39he5fQm1yPkEBxn0pVTnimqoxD5iDXbU/rj40GCKJSwUCVzjCAMQn1wWbDZvwlUowroAxCGpGyTyFF+WFRfWyUU3RQNj7vfa8yL8cn5OyseWyVnUqZASqBxIl6LPut5cAZXo/cfm88615W6MRtdRL0vupjN9WVJDeWlp2JpZKHctlXpc3nQWm2FxHH9/aOZL2g+q9SgM52BXgGYDf7ULJC32pb7X0ofWeR70Zs2xF1Peq7jjvVXluw8zUMOxgqPCxv1/815YLOKUPRNcKCOyiKBjwgS1KzYTPPOWFEUOwyqRBTFCkS6PKUBsTMRQpsfpckwYCzD6ZD2YmyiDKSv62tLE9v3/wLFJHG+ksXAAA=",
+      "cjoPresent": false
+    },
+    {
+      "name": "objcMirrorNoImplicitConstructor",
+      "source": "cfir/analysis-tests/testData/diagnostics2/common-specific/default-constructor-drafts/objcMirrorNoImplicitConstructor.cj",
+      "sourceSha256": "16CD45B00FAE384A648334C7246985B72993106AB286474673FD72E21F04B57E",
+      "compileExitCode": 1,
+      "diagnostics": {
+        "Diags": [
+          {
+            "DiagKind": "sema_member_not_imported",
+            "Severity": "error",
+            "WarnGroup": "none",
+            "DiagCategory": "sema",
+            "Message": "'objc.lang.ObjCId' is not imported",
+            "Location": {
+              "File": "C:\\Users\\lin17\\.codex\\worktrees\\cjmp-framework-implementation\\cangjie\\cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\default-constructor-drafts\\objcMirrorNoImplicitConstructor.cj",
+              "Line": 5,
+              "Column": 19
+            },
+            "MainHint": {
+              "Content": "",
+              "Range": {
+                "Begin": {
+                  "File": "C:\\Users\\lin17\\.codex\\worktrees\\cjmp-framework-implementation\\cangjie\\cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\default-constructor-drafts\\objcMirrorNoImplicitConstructor.cj",
+                  "Line": 5,
+                  "Column": 19
+                },
+                "End": {
+                  "File": "C:\\Users\\lin17\\.codex\\worktrees\\cjmp-framework-implementation\\cangjie\\cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\default-constructor-drafts\\objcMirrorNoImplicitConstructor.cj",
+                  "Line": 5,
+                  "Column": 20
+                }
+              }
+            },
+            "OtherHints": [],
+            "Notes": [],
+            "Helps": []
+          },
+          {
+            "DiagKind": "sema_member_not_imported",
+            "Severity": "error",
+            "WarnGroup": "none",
+            "DiagCategory": "sema",
+            "Message": "'objc.lang.ObjCId' is not imported",
+            "Location": {
+              "File": "C:\\Users\\lin17\\.codex\\worktrees\\cjmp-framework-implementation\\cangjie\\cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\default-constructor-drafts\\objcMirrorNoImplicitConstructor.cj",
+              "Line": 8,
+              "Column": 19
+            },
+            "MainHint": {
+              "Content": "",
+              "Range": {
+                "Begin": {
+                  "File": "C:\\Users\\lin17\\.codex\\worktrees\\cjmp-framework-implementation\\cangjie\\cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\default-constructor-drafts\\objcMirrorNoImplicitConstructor.cj",
+                  "Line": 8,
+                  "Column": 19
+                },
+                "End": {
+                  "File": "C:\\Users\\lin17\\.codex\\worktrees\\cjmp-framework-implementation\\cangjie\\cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\default-constructor-drafts\\objcMirrorNoImplicitConstructor.cj",
+                  "Line": 8,
+                  "Column": 20
+                }
+              }
+            },
+            "OtherHints": [],
+            "Notes": [],
+            "Helps": []
+          },
+          {
+            "DiagKind": "sema_objc_mirror_interoplib_must_be_imported",
+            "Severity": "error",
+            "WarnGroup": "none",
+            "DiagCategory": "sema",
+            "Message": "interoplib.objc must be imported to use Objective-C interoperability",
+            "Location": {
+              "File": "C:\\Users\\lin17\\.codex\\worktrees\\cjmp-framework-implementation\\cangjie\\cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\default-constructor-drafts\\objcMirrorNoImplicitConstructor.cj",
+              "Line": 5,
+              "Column": 1
+            },
+            "MainHint": {
+              "Content": "",
+              "Range": {
+                "Begin": {
+                  "File": "C:\\Users\\lin17\\.codex\\worktrees\\cjmp-framework-implementation\\cangjie\\cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\default-constructor-drafts\\objcMirrorNoImplicitConstructor.cj",
+                  "Line": 5,
+                  "Column": 1
+                },
+                "End": {
+                  "File": "C:\\Users\\lin17\\.codex\\worktrees\\cjmp-framework-implementation\\cangjie\\cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\default-constructor-drafts\\objcMirrorNoImplicitConstructor.cj",
+                  "Line": 5,
+                  "Column": 37
+                }
+              }
+            },
+            "OtherHints": [],
+            "Notes": [],
+            "Helps": []
+          },
+          {
+            "DiagKind": "sema_objc_mirror_interoplib_must_be_imported",
+            "Severity": "error",
+            "WarnGroup": "none",
+            "DiagCategory": "sema",
+            "Message": "interoplib.objc must be imported to use Objective-C interoperability",
+            "Location": {
+              "File": "C:\\Users\\lin17\\.codex\\worktrees\\cjmp-framework-implementation\\cangjie\\cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\default-constructor-drafts\\objcMirrorNoImplicitConstructor.cj",
+              "Line": 8,
+              "Column": 1
+            },
+            "MainHint": {
+              "Content": "",
+              "Range": {
+                "Begin": {
+                  "File": "C:\\Users\\lin17\\.codex\\worktrees\\cjmp-framework-implementation\\cangjie\\cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\default-constructor-drafts\\objcMirrorNoImplicitConstructor.cj",
+                  "Line": 8,
+                  "Column": 1
+                },
+                "End": {
+                  "File": "C:\\Users\\lin17\\.codex\\worktrees\\cjmp-framework-implementation\\cangjie\\cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\default-constructor-drafts\\objcMirrorNoImplicitConstructor.cj",
+                  "Line": 10,
+                  "Column": 2
+                }
+              }
+            },
+            "OtherHints": [],
+            "Notes": [],
+            "Helps": []
+          }
+        ],
+        "Num": {
+          "Errors": 4,
+          "PrintedErrors": 4,
+          "Warnings": 0,
+          "PrintedWarnings": 0
+        }
+      },
+      "ast": "build/default-constructor-drafts-native-v113/objcMirrorNoImplicitConstructor/default_constructor_objc_mirror_AST/4_sema_ast.txt",
+      "astSha256": "399A1ED1476476D2B1BCB1FE734D6D7811DD4EF2813E212D51E50CBAE2D302C9",
+      "astGzipBase64": "H4sIAAAAAAAACu2Z227bOBCG7wv0HQa5ahZ2raRxfQB2gURxW6GObcROF9gqMChq5DKRSIGk0AaLvPuCpiVL8iFpF71JIhiOyBmSIufj/FQ8IfSWLLAPIUYki/WcCq60zKgWci6CGzpPmJRCwr+vXwFwMc2Cye2iD44pfmAx9sF4XSydRsJL0phRpt11L2/pjW0MQDNpm7h9/0qhVH7M+FHHf0tFiD/870LeaomofHqTpM1IkgRNXZMlaYwJck00E9ynhC9uGPo0YtInnMR3iqmmRqWVb77PiSZ+yMiCC6UZVcc+FUkieFOlSFnEqL+abLM02WYoSaSV//Bs7FxSoZh5mj68OWqA+RzaO6cBx4fWR1GR4ogk2IcDcmDr9F0frvgtF9/57C7FVWda9sEx11HYa/eI06HvHWuKsjie2CDZnh4IlG1FtJYsyDSqPny9tnWtFkRIdCZRAc/iONWyMKR2BFteDTdNkT6SC3M96rnu7R8vSYXUdoA/1l2kEiP2Y0L0N9UHpcO3VEjMjUydI41X5BU9uTFRK8M4uHH/ZvqbyLTHmV53+5Swq4PXLsBrN+Bd5zD3qqA3z+Gz+C3XrFlbrqL7KoqddjfsOrnx12Cs4fhxOD47HTbAG3kz73To/TM4b8Dk6mzouQ0YTwajkul05o1Hc/fTwP1svLzp/Oxy/HnpMrXV8y/e1JsZ4+XgfPDhOh8yZtwmtiNoAFPLtSzgASCcCxtXBV/zSoDTotryZEPSgAAXjMOfy4U+MRu8AcjDdcXR8eGat6fH3CZ3JwV3dvZlzzJ7B2XD1ty3Fbtu0KMnTtnhV9HblQ3zpOKKJGUxzliCX5higYlZZWAiFxVEACo9kLDMTIkUpwHmsyYlryi3brWACh4OfqSympNXC0bkAnXtgVotCIjC7W3u89viIS9EyCKGUvUhzYKYURAp8iKr8m8omcbQBKQyz0uMTN1yHyDVzwjvPFDbQ7aX7iK1ItW78Q7puyh893vwdscXE284uJyfnp9f17DhAvRdigbpzARBbbIGCeGLGMPVBOfuiOj3dj6Dg0333TtjE8Tl2pyJ8G6N0v1DWm5KRGL4fAS9u/UkWRf0YI+gl9dsh6r3Ou3jF1WvqHqnruqdZ6jqnQK+zu9Q9V6n7bRfVP1F1Z+qqmM7fFF1APiQcWqFnBnhNgmlZ9Npfvv+mWXWXgPa69l3d7JHnMApv6/nCL45hOZfjxD6TSxN1u3i78Fyq9h7o7k7PJ1Oh97nQQPc8Wg6u7xyZ+PLvSeAvbIPD0u/uUSmUZpV2X/egd0nhZoMbGTZstFAXgf/aaK8BebyXq7SvIXnDaJ/nultVAfVZPv/uN53nrCxnhBJkiFTuh7wPAsvHVTVdl8ttlogUWeSL1N21VZI82b/BVJcaGAcIhZj3efRUlcP0UHd+LhXiu1xMa+2UdupO9UiA0wBJqm+q/vtFL3NHHG9PQi7pRB26RvUt/22sAUirD3tWSzobX9PsJ7Q/t+WAbq7M8AjALt6EKVeN+w4nYdQ+slNvh+xXfJ0MRl6rjfbOH1BgV1gYNjDUKlQ3Fb/+yEkWzBO4gtCpXBJHI9EuD67L4ddei6Qo2TU40oTrhnRGJrtqSyISxclqf2FBcOR4B9tg7oT4zHjmJ/U1pb716/+AzY5lmwVHAAA",
+      "cjoPresent": false
+    }
+  ],
+  "execution": {
+    "arguments": [
+      "--output-type=staticlib",
+      "--output-dir",
+      "<独立 case 输出目录>",
+      "--dump-ast",
+      "--diagnostic-format=json"
+    ],
+    "qualifiedImportPath": "build/default-constructor-drafts-native-v113/defaultConstructorRoles",
+    "gradleRun": false,
+    "kotlincRun": false
+  },
+  "scopeNotes": [
+    "CJO attribute vectors are literal unsigned 64-bit words, including trailing zero words.",
+    "Constructor declaration typeParameters are own Generic parameters; constructed class parameters are bound through the owner nominal return type.",
+    "Static init exists in the sema AST but is absent from the native CJO nominal body vector for this input.",
+    "Native C++ CallKind ordinal for struct construction is 4; record the actual wire value rather than infer source meaning from the differently ordered fixed schema enum.",
+    "Mirror cases are dependency-error inputs with IS_BROKEN declarations. Their absence of synthesized constructors is an observation of these inputs, not acceptance of valid Mirror interop preparation."
+  ]
+}

@@ -10,6 +10,7 @@ import org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilder
 import org.cangnova.cangjie.cfir.builder.Context
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.lexer.CjTokens
+import org.cangnova.cangjie.parsing.isParsingErrorElementType
 import org.cangnova.cangjie.psi.CjNodeTypes
 import org.cangnova.cangjie.psi.ElementTypeUtils.isExpression
 import org.cangnova.cangjie.source.AbstractCjSourceElement
@@ -41,7 +42,13 @@ abstract class AbstractLightTreeRawCfirBuilder(
         /** 遍历子节点时忽略的空白、注释和错误 token。 */
         protected val ignoredTokens: TokenSet = TokenSet.orSet(
             CjTokens.COMMENTS,
-            TokenSet.create(CjTokens.WHITE_SPACE, CjTokens.SEMICOLON, TokenType.ERROR_ELEMENT, TokenType.BAD_CHARACTER),
+            CjTokens.ALL_WHITESPACE_TOKENS,
+            TokenSet.create(
+                CjTokens.SEMICOLON,
+                CjTokens.UNKNOWN_TOKEN_START,
+                TokenType.ERROR_ELEMENT,
+                TokenType.BAD_CHARACTER,
+            ),
         )
     }
 
@@ -87,7 +94,7 @@ abstract class AbstractLightTreeRawCfirBuilder(
     protected inline fun LighterASTNode.forEachChildren(action: (LighterASTNode) -> Unit) {
         for (child in getChildrenAsArray()) {
             if (child == null) break
-            if (ignoredTokens.contains(child.tokenType)) continue
+            if (ignoredTokens.contains(child.tokenType) || child.tokenType.isParsingErrorElementType()) continue
             action(child)
         }
     }

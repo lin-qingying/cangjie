@@ -12,6 +12,7 @@ import org.cangnova.cangjie.cfir.types.CfirUserTypeRef
 import org.cangnova.cangjie.cfir.types.builder.*
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.name.CangJieUnicode.sourceIdentifier
 import org.cangnova.cangjie.psi.CjNodeTypes
 
 /**
@@ -32,7 +33,11 @@ fun convertTypeReference(
     if (typeRefNode == null) return buildImplicitTypeRef {}
     // TYPE_REFERENCE 内部包含一个具体的类型元素子节点
     val typeElement = findDirectTypeElement(typeRefNode, tree)
-    val element = typeElement ?: return buildImplicitTypeRef {}
+    val element = typeElement ?: return buildErrorTypeRef {
+        this.source = typeRefNode.toCjSourceElement(toSource)
+        typeUseOrigin = org.cangnova.cangjie.cfir.types.CfirTypeRefOrigin.SOURCE
+        diagnostic = ConeSimpleDiagnostic("Malformed type reference: missing type element")
+    }
     return convertTypeElement(element, typeRefNode, tree, source, toSource)
 }
 
@@ -75,13 +80,21 @@ private fun convertTypeElement(
     CjNodeTypes.PARENTHESIZED_TYPE -> {
         // 括号内嵌套一个 TYPE_REFERENCE
         val innerTypeRef = tree.findChildByType(typeElement, CjNodeTypes.TYPE_REFERENCE)
-        convertTypeReference(innerTypeRef, tree, source, toSource)
+        if (innerTypeRef == null) buildErrorTypeRef {
+            this.source = typeRefNode.toCjSourceElement(toSource)
+            typeUseOrigin = org.cangnova.cangjie.cfir.types.CfirTypeRefOrigin.SOURCE
+            diagnostic = ConeSimpleDiagnostic("Malformed parenthesized type: missing component type reference")
+        } else buildParenthesizedTypeRef {
+            this.source = typeRefNode.toCjSourceElement(toSource)
+            typeUseOrigin = org.cangnova.cangjie.cfir.types.CfirTypeRefOrigin.SOURCE
+            this.innerTypeRef = convertTypeReference(innerTypeRef, tree, source, toSource)
+        }
     }
     else -> buildErrorTypeRef {
         this.source = toSource(typeRefNode) as? CjSourceElement
         diagnostic = ConeSimpleDiagnostic("Unsupported type element: ${typeElement.tokenType}")
     }
-}
+}.also { it.replaceTypeUseOrigin(org.cangnova.cangjie.cfir.types.CfirTypeRefOrigin.SOURCE) }
 
 /**
  * OPTIONAL_TYPE → CfirOptionTypeRef
@@ -196,7 +209,8 @@ private fun buildQualifierFromUserType(
             segments.add(
                 buildQualifierPart {
                     this.source = toSource(refExpr) as? CjSourceElement
-                    this.name = Name.identifier(name)
+                    this.name = Name.identifier(sourceIdentifier(name))
+                    typeUseOrigin = org.cangnova.cangjie.cfir.types.CfirTypeRefOrigin.SOURCE
                     typeArguments += collectTypeArguments(userTypeNode, tree, source, toSource)
                 }
             )

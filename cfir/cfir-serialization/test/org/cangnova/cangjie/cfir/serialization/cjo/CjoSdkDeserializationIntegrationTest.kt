@@ -79,7 +79,10 @@ class CjoSdkDeserializationIntegrationTest {
                             else -> null
                         }
                     }
-                )
+                ),
+                formatVersionPolicy = CjoFormatVersionPolicy.Compilation(
+                    org.cangnova.cangjie.LanguageVersionSettingsImpl.DEFAULT,
+                ),
             )
 
             assertTrue(manager.hasPackage(org.cangnova.cangjie.name.FqName(fullPkgName)))
@@ -171,7 +174,8 @@ class CjoSdkDeserializationIntegrationTest {
                         "CANGJIE_STDLIB_MODULE" -> tempDir.toString()
                         else -> null
                     }
-                }
+                },
+                CjoFormatVersionPolicy.Compilation(org.cangnova.cangjie.LanguageVersionSettingsImpl.DEFAULT),
             )
             val header = assertNotNull(manager.loadPackageHeader("std.core"), "header")
             val pkg = assertNotNull(manager.loadPackage("std.core"), "pkg")
@@ -250,6 +254,11 @@ class CjoSdkDeserializationIntegrationTest {
                     org.cangnova.cangjie.LanguageVersionSettingsImpl.DEFAULT,
                 ),
             )
+            // 类型入口会完成真实 nominal header，必须提供所属库会话的 scope provider。
+            register(
+                org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider::class,
+                org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider(),
+            )
         }
     }
 
@@ -286,7 +295,8 @@ class CjoSdkDeserializationIntegrationTest {
                         "CANGJIE_STDLIB_MODULE" -> tempDir.toString()
                         else -> null
                     }
-                }
+                },
+                CjoFormatVersionPolicy.Compilation(org.cangnova.cangjie.LanguageVersionSettingsImpl.DEFAULT),
             )
             val provider = org.cangnova.cangjie.cfir.serialization.provider.CfirDeserializedSymbolProvider(
                 session = DiagSession,
@@ -354,7 +364,8 @@ class CjoSdkDeserializationIntegrationTest {
                         "CANGJIE_STDLIB_MODULE" -> tempDir.toString()
                         else -> null
                     }
-                }
+                },
+                CjoFormatVersionPolicy.Compilation(org.cangnova.cangjie.LanguageVersionSettingsImpl.DEFAULT),
             )
             val provider = org.cangnova.cangjie.cfir.serialization.provider.CfirDeserializedSymbolProvider(
                 session = DiagSession,

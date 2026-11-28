@@ -19,4 +19,10 @@ object CfirEmptyArgumentList : CfirAbstractArgumentList() {
      */
     override val source: CjSourceElement?
         get() = null
+
+    /** 无源单例不能获得某一文件代次的源锚点。 */
+    @org.cangnova.cangjie.cfir.CfirImplementationDetail
+    override fun replaceSource(newSource: CjSourceElement?) {
+        require(newSource == null)
+    }
 }

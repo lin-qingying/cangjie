@@ -7,16 +7,21 @@
 
 package org.cangnova.cangjie.cfir.expressions.impl
 
+import org.cangnova.cangjie.annotations.CangjieOverflowStrategy
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLazyExpression
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.source.CjSourceElement
 
-class CfirLazyExpressionImpl : CfirLazyExpression() {
-    override val source: CjSourceElement?
-        get() = error("CfirLazyExpression should be resolved before accessing")
+class CfirLazyExpressionImpl @CfirImplementationDetail constructor(
+    override var source: CjSourceElement?,
+    override var mappedExpression: CfirExpression?,
+    override var overflowStrategy: CangjieOverflowStrategy?,
+) : CfirLazyExpression() {
     override val annotations: List<CfirAnnotation>
         get() = error("CfirLazyExpression should be resolved before accessing")
     override val coneTypeOrNull: ConeCangJieType?
@@ -32,9 +37,22 @@ class CfirLazyExpressionImpl : CfirLazyExpression() {
         return this
     }
 
+    @CfirImplementationDetail
+    override fun replaceSource(newSource: CjSourceElement?) {
+        source = newSource
+    }
+
     override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>) {}
 
     override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?) {
         require(newConeTypeOrNull == coneTypeOrNull) { "${javaClass.simpleName}.replaceConeTypeOrNull() called with invalid type '${newConeTypeOrNull}'. Current type is '$coneTypeOrNull'" }
+    }
+
+    override fun replaceMappedExpression(newMappedExpression: CfirExpression?) {
+        mappedExpression = newMappedExpression
+    }
+
+    override fun replaceOverflowStrategy(newOverflowStrategy: CangjieOverflowStrategy?) {
+        overflowStrategy = newOverflowStrategy
     }
 }

@@ -19,6 +19,8 @@ import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
+import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
+import org.cangnova.cangjie.cfir.patterns.bindingVariables
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
@@ -214,6 +216,14 @@ internal class LLCfirImplicitBodyTargetResolver(
             is CfirProperty -> {
                 if (target.shouldBeResolvedOnImplicitTypePhase) {
                     resolve(target, BodyStateKeepers.PROPERTY)
+                }
+            }
+
+            is CfirPatternVariable -> {
+                if (target.returnTypeRef is CfirImplicitTypeRef ||
+                    target.pattern.bindingVariables().any { it.returnTypeRef is CfirImplicitTypeRef }
+                ) {
+                    resolve(target, BodyStateKeepers.PATTERN_VARIABLE)
                 }
             }
 

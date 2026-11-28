@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import com.intellij.lang.LighterASTNode
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import com.intellij.openapi.util.Ref
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.diff.FlyweightCapableTreeStructure
@@ -36,7 +37,7 @@ import org.cangnova.cangjie.source.toCjPsiSourceElement
  *
  * 注册为 classLikeCheckers
  */
-object CfirCJMappingChecker : CfirClassLikeChecker() {
+object CfirCJMappingChecker : CfirClassLikeChecker(MppCheckerKind.Common) {
     /**
      * 检查由 Java 目标配置派生的 CJMapping 声明及其成员类型限制。
      */
@@ -110,7 +111,7 @@ object CfirCJMappingChecker : CfirClassLikeChecker() {
  *
  * 注册为 classLikeCheckers
  */
-object CfirObjCCJMappingChecker : CfirClassLikeChecker() {
+object CfirObjCCJMappingChecker : CfirClassLikeChecker(MppCheckerKind.Common) {
     /**
      * 检查由 Objective-C 目标配置派生的 CJMapping 声明是否包含非法继承或泛型参数。
      */

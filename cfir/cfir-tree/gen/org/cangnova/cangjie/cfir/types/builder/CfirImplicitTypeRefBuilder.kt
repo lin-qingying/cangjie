@@ -13,18 +13,21 @@ import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
+import org.cangnova.cangjie.cfir.types.CfirTypeRefOrigin
 import org.cangnova.cangjie.cfir.types.impl.CfirImplicitTypeRefImpl
 
 @CfirBuilderDsl
 class CfirImplicitTypeRefBuilder {
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
     var customRenderer: Boolean = false
+    var typeUseOrigin: CfirTypeRefOrigin = CfirTypeRefOrigin.SEMANTIC
 
     @OptIn(CfirImplementationDetail::class)
     fun build(): CfirImplicitTypeRef {
         return CfirImplicitTypeRefImpl(
             annotations.toMutableOrEmpty(),
             customRenderer,
+            typeUseOrigin,
         )
     }
 }
@@ -45,5 +48,6 @@ inline fun buildImplicitTypeRefCopy(original: CfirImplicitTypeRef, init: CfirImp
     val copyBuilder = CfirImplicitTypeRefBuilder()
     copyBuilder.annotations.addAll(original.annotations)
     copyBuilder.customRenderer = original.customRenderer
+    copyBuilder.typeUseOrigin = original.typeUseOrigin
     return copyBuilder.apply(init).build()
 }

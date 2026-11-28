@@ -95,6 +95,7 @@ class CfirOrganizationImportBindingTest {
                 override fun getCfirClassifierByFqName(classId: ClassId): CfirClassLikeDeclaration? = null
                 override fun getCfirClassifierContainerFile(fqName: ClassId): CfirFile = error("Library symbols have no source file")
                 override fun getCfirClassifierContainerFileIfAny(fqName: ClassId): CfirFile? = null
+                override fun getCfirClassifierContainerFileIfAny(symbol: CfirClassLikeSymbol<*>): CfirFile? = null
                 override fun getCfirCallableContainerFile(symbol: CfirCallableSymbol<*>): CfirFile? = null
                 override fun getCfirFilesByPackage(fqName: FqName): List<CfirFile> = emptyList()
                 override fun getClassNamesInPackage(fqName: FqName): Set<Name> = emptySet()

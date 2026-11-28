@@ -8,6 +8,8 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics
 import com.intellij.psi.PsiElement
 import com.intellij.util.SmartList
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.DiagnosticCheckerFilter
+import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirModuleResolveComponents
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.diagnostics.CjPsiDiagnostic
 
 /**
@@ -56,6 +58,23 @@ internal class FileStructureElementDiagnostics(
             }
         }
 
+    /**
+     * 按声明 owner 与当前 leaf 分别收集 Common/Platform 检查，避免把依赖声明的结果写入错误 session。
+     */
+    fun diagnosticsFor(
+        filter: DiagnosticCheckerFilter,
+        element: PsiElement,
+        platformCheckerComponents: LLCfirModuleResolveComponents?,
+    ): List<CjPsiDiagnostic> {
+        if (platformCheckerComponents == null || platformCheckerComponents === retriever.moduleComponents) {
+            return diagnosticsFor(filter, element)
+        }
+
+        return SmartList<CjPsiDiagnostic>().apply {
+            diagnosticListsFor(filter, platformCheckerComponents).forEach { addAll(it.diagnosticsFor(element)) }
+        }
+    }
+
 
     /**
      * 按 filter 遍历所有已收集 diagnostics 列表。
@@ -69,6 +88,55 @@ internal class FileStructureElementDiagnostics(
         }
         if (filter.runExperimentalCheckers) {
             diagnosticByExperimentalCheckers.forEach(action)
+        }
+    }
+
+    /**
+     * 按当前 collection context 返回结果集；跨模块时使用 owner Common 与 leaf Platform 两个独立 pass。
+     */
+    fun forEach(
+        filter: DiagnosticCheckerFilter,
+        platformCheckerComponents: LLCfirModuleResolveComponents?,
+        action: (List<CjPsiDiagnostic>) -> Unit,
+    ) {
+        if (platformCheckerComponents == null || platformCheckerComponents === retriever.moduleComponents) {
+            forEach(filter, action)
+            return
+        }
+
+        diagnosticListsFor(filter, platformCheckerComponents).forEach { it.forEach(action) }
+    }
+
+    private fun diagnosticListsFor(
+        filter: DiagnosticCheckerFilter,
+        platformCheckerComponents: LLCfirModuleResolveComponents,
+    ): List<FileStructureElementDiagnosticList> = buildList {
+        val ownerComponents = retriever.moduleComponents
+        val checkerFilters = buildList {
+            if (filter.runDefaultCheckers) add(DiagnosticCheckerFilter.ONLY_DEFAULT_CHECKERS)
+            if (filter.runExtraCheckers) add(DiagnosticCheckerFilter.ONLY_EXTRA_CHECKERS)
+            if (filter.runExperimentalCheckers) add(DiagnosticCheckerFilter.ONLY_EXPERIMENTAL_CHECKERS)
+        }
+
+        for (checkerFilter in checkerFilters) {
+            add(
+                ownerComponents.diagnosticsCollector.getOrComputeContextualDiagnostics(
+                    this@FileStructureElementDiagnostics,
+                    checkerFilter,
+                    MppCheckerKind.Common,
+                ) {
+                    retriever.retrieve(checkerFilter, ownerComponents, MppCheckerKind.Common)
+                }
+            )
+            add(
+                platformCheckerComponents.diagnosticsCollector.getOrComputeContextualDiagnostics(
+                    this@FileStructureElementDiagnostics,
+                    checkerFilter,
+                    MppCheckerKind.Platform,
+                ) {
+                    retriever.retrieve(checkerFilter, platformCheckerComponents, MppCheckerKind.Platform)
+                }
+            )
         }
     }
 }

@@ -5,6 +5,7 @@ import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.testing.Test
+import org.gradle.api.internal.tasks.testing.filter.DefaultTestFilter
 import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.register
 
@@ -199,32 +200,24 @@ open class ProjectTestsExtension(
  * 该函数在 JUnit4 测试执行前补充 `SomeGeneratedClass$*` 形式的模式。
  */
 private fun Test.addInnerClassPatternsForExplicitClassIncludes() {
-    val defaultFilterClass = "org.gradle.api.internal.tasks.testing.filter.DefaultTestFilter"
-    val filterObject = filter
-    if (!Class.forName(defaultFilterClass).isInstance(filterObject)) return
+    val filterObject = filter as DefaultTestFilter
+    val buildScriptPatterns = filter.includePatterns.toSet()
+    val commandLinePatterns = filterObject.commandLineIncludePatterns.toMutableSet()
 
-    val commandLinePatterns = runCatching {
-        val method = filterObject.javaClass.getMethod("getCommandLineIncludePatterns")
-        @Suppress("UNCHECKED_CAST")
-        (method.invoke(filterObject) as Set<String>).toMutableSet()
-    }.getOrDefault(mutableSetOf())
-
-    val patterns = filter.includePatterns + commandLinePatterns
-    if (patterns.isEmpty() || patterns.any { '*' in it }) return
+    val patterns = buildScriptPatterns + commandLinePatterns
 
     patterns.forEach { pattern ->
+        if ('*' in pattern) return@forEach
         val lastPart = pattern.substringAfterLast('.')
         if (lastPart.firstOrNull()?.isUpperCase() != true) return@forEach
 
-        val innerClassPattern = "${pattern}\\$*"
+        val innerClassPattern = pattern + "\$*"
         if (pattern in commandLinePatterns) {
             commandLinePatterns.add(innerClassPattern)
-            runCatching {
-                val setter = filterObject.javaClass.getMethod("setCommandLineIncludePatterns", Set::class.java)
-                setter.invoke(filterObject, commandLinePatterns)
-            }
-        } else {
-            filter.includePatterns.add(innerClassPattern)
+        }
+        if (pattern in buildScriptPatterns) {
+            filter.includeTestsMatching(innerClassPattern)
         }
     }
+    filterObject.setCommandLineIncludePatterns(commandLinePatterns)
 }

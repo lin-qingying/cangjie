@@ -32,6 +32,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.resolve.CfirTypeCandidateCollector
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallInfo
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CandidateFactory
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidateCollector
 import org.cangnova.cangjie.cfir.resolve.calls.stages.ResolutionStageRunner
@@ -43,6 +44,7 @@ import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessContext
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessKind
 import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirLocalScope
+import org.cangnova.cangjie.cfir.scopes.impl.actualizeCjmpCandidates
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassifierSymbol
@@ -164,7 +166,8 @@ class CfirTowerResolver(
                 }
             }
 
-            if (result.isNotEmpty()) return result.distinct()
+            val actualized = actualizeCjmpCandidates(result, session) { it }
+            if (actualized.isNotEmpty()) return actualized.distinct()
         }
         return emptyList()
     }
@@ -177,7 +180,8 @@ class CfirTowerResolver(
         for (scope in scopes) {
             val result = mutableListOf<CfirFunctionSymbol<*>>()
             scope.processFunctionsByName(name) { result += it }
-            if (result.isNotEmpty()) return result
+            val actualized = actualizeCjmpCandidates(result, session) { it }
+            if (actualized.isNotEmpty()) return actualized
         }
         return emptyList()
     }
@@ -190,7 +194,8 @@ class CfirTowerResolver(
         for (scope in scopes) {
             val result = mutableListOf<CfirCallableSymbol<*>>()
             scope.processCallablesByName(name) { result += it }
-            if (result.isNotEmpty()) return result
+            val actualized = actualizeCjmpCandidates(result, session) { it }
+            if (actualized.isNotEmpty()) return actualized
         }
         return emptyList()
     }
@@ -199,10 +204,7 @@ class CfirTowerResolver(
      * 在当前 tower 可见作用域中查找分类器符号。
      */
     fun findClassifiers(name: Name): List<CfirClassifierSymbol<*>> {
-        val scopes = components.towerDataContext.towerDataElements.asReversed().flatMap { it.getAvailableScopes() }
-        return createTypeCandidateCollector()
-            .firstVisibleScopeCandidates(scopes, name)
-            .map { it.symbol }
+        return lookupClassifierCandidates(name).map { it.symbol }
     }
 
     /** 返回指定 classifier 在首个可见 tower scope 中携带的 use-site substitutor。 */
@@ -210,13 +212,54 @@ class CfirTowerResolver(
         name: Name,
         target: CfirClassifierSymbol<*>,
     ): org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor {
-        val scopes = components.towerDataContext.towerDataElements.asReversed().flatMap { it.getAvailableScopes() }
-        return createTypeCandidateCollector()
-            .firstVisibleScopeCandidates(scopes, name)
+        return lookupClassifierCandidates(name)
             .firstOrNull { it.symbol == target }
             ?.substitutor
             ?: org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor.Empty
     }
+
+    /**
+     * 比较 classifier 构造调用与已发现 callable 候选的 Tower scope 优先级。
+     *
+     * 普通 callable 和 class constructor 若来自不同 lexical scope，必须保留更内层候选；
+     * 同一 scope 中则交由仓颉的 class/function 冲突规则处理。
+     */
+    fun classifierLookupHasPriorityOver(
+        name: Name,
+        target: CfirClassifierSymbol<*>,
+        candidates: Collection<Candidate>,
+    ): Boolean {
+        val towerScopes = currentTowerScopes()
+        val classifierScope = lookupClassifierCandidates(name)
+            .firstOrNull { it.symbol == target }
+            ?.scope
+            ?: return false
+        val classifierPriority = towerScopes.indexOfFirst { it === classifierScope }
+        if (classifierPriority < 0) return false
+
+        val candidatePriorities = candidates.map { candidate ->
+            val originScope = candidate.originScope ?: return false
+            towerScopes.indexOfFirst { it === originScope }.takeIf { it >= 0 } ?: return false
+        }
+        return candidatePriorities.all { classifierPriority <= it }
+    }
+
+    /**
+     * 按简单类型名的词法遮蔽规则查找 classifier。
+     *
+     * 先前只跳过不含 classifier 的 scope，导致更内层函数名无法遮蔽外层同名 class；
+     * 类型候选收集器同时返回这种非类型绑定屏障，使值调用与类型名查找遵循同一 Tower 顺序。
+     */
+    private fun lookupClassifierCandidates(name: Name): List<CfirTypeCandidateCollector.TypeCandidate> {
+        val collector = createTypeCandidateCollector()
+        return when (val lookup = collector.lookupSimpleTypeName(currentTowerScopes(), name, exemptDeclarationTypeRef = null)) {
+            is CfirTypeCandidateCollector.SimpleTypeNameLookup.Classifiers -> lookup.candidates
+            else -> emptyList()
+        }
+    }
+
+    private fun currentTowerScopes(): List<CfirScope> =
+        components.towerDataContext.towerDataElements.asReversed().flatMap { it.getAvailableScopes() }
 
     /** 为当前动态声明栈创建 classifier 统一候选收集器。 */
     private fun createTypeCandidateCollector(): CfirTypeCandidateCollector = CfirTypeCandidateCollector(
@@ -261,7 +304,8 @@ class CfirTowerResolver(
                     result += symbol
                 }
             }
-            if (result.isNotEmpty()) return result.distinct()
+            val actualized = actualizeCjmpCandidates(result, session) { it }
+            if (actualized.isNotEmpty()) return actualized.distinct()
         }
         return emptyList()
     }
@@ -273,7 +317,8 @@ class CfirTowerResolver(
         for (scope in scopes) {
             val result = mutableListOf<CfirFunctionSymbol<*>>()
             scope.processFunctionsByName(name) { result += it }
-            if (result.isNotEmpty()) return result
+            val actualized = actualizeCjmpCandidates(result, session) { it }
+            if (actualized.isNotEmpty()) return actualized
         }
         return emptyList()
     }

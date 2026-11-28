@@ -17,7 +17,7 @@ import org.cangnova.cangjie.analysis.api.symbols.pointers.CaSymbolPointer
  */
 interface CaSymbol : CaLifetimeOwner {
     /**
-     * 当前符号所属的 use-site 模块。
+     * 当前符号的声明所属模块；继承形成的成员视图归属其接收者类型模块。
      */
     val containingModule: CaModule
 

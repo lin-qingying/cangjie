@@ -8,6 +8,7 @@
 package org.cangnova.cangjie.cfir.declarations.builder
 
 import kotlin.contracts.*
+import org.cangnova.cangjie.cfir.CfirContentSource
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
@@ -23,49 +24,52 @@ import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.CjSourceElement
 
 @CfirBuilderDsl
-class CfirNamedFunctionBuilder {
-    var source: CjSourceElement? = null
-    lateinit var moduleData: CfirModuleData
-    lateinit var resolvePhase: CfirResolvePhase
-    val annotations: MutableList<CfirAnnotation> = mutableListOf()
-    lateinit var origin: CfirDeclarationOrigin
-    lateinit var attributes: CfirDeclarationAttributes
-    var isLocal: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
-    var deprecationsProvider: DeprecationsProvider = UnresolvedDeprecationProvider
-    var dispatchReceiverType: ConeSimpleCangJieType? = null
-    lateinit var status: CfirDeclarationStatus
+class CfirNamedFunctionBuilder : CfirFunctionBuilder {
+    override var source: CjSourceElement? = null
+    override lateinit var moduleData: CfirModuleData
+    override lateinit var resolvePhase: CfirResolvePhase
+    override var contentSource: CfirContentSource = CfirContentSource.Owned
+    override val annotations: MutableList<CfirAnnotation> = mutableListOf()
+    override lateinit var origin: CfirDeclarationOrigin
+    override lateinit var attributes: CfirDeclarationAttributes
+    override var isLocal: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
+    override lateinit var returnTypeRef: CfirTypeRef
+    override var deprecationsProvider: DeprecationsProvider = UnresolvedDeprecationProvider
+    override var dispatchReceiverType: ConeSimpleCangJieType? = null
+    override var body: CfirBlock? = null
+    override lateinit var status: CfirDeclarationStatus
+    override val valueParameters: MutableList<CfirValueParameter> = mutableListOf()
+    override var hasVariableLenArg: Boolean = false
     val typeParameters: MutableList<CfirTypeParameter> = mutableListOf()
-    lateinit var returnTypeRef: CfirTypeRef
-    val valueParameters: MutableList<CfirValueParameter> = mutableListOf()
-    var hasVariableLenArg: Boolean = false
-    var body: CfirBlock? = null
     lateinit var symbol: CfirNamedFunctionSymbol
     lateinit var name: Name
     var isMut: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
 
     @OptIn(CfirImplementationDetail::class)
-    fun build(): CfirNamedFunction {
+    override fun build(): CfirNamedFunction {
         return CfirNamedFunctionImpl(
             source,
             moduleData,
             resolvePhase,
+            contentSource,
             annotations.toMutableOrEmpty(),
             origin,
             attributes,
             isLocal,
+            returnTypeRef,
             deprecationsProvider,
             dispatchReceiverType,
+            body,
             status,
-            typeParameters,
-            returnTypeRef,
             valueParameters,
             hasVariableLenArg,
-            body,
+            typeParameters,
             symbol,
             name,
             isMut,
         )
     }
+
 
 }
 
@@ -90,14 +94,14 @@ inline fun buildNamedFunctionCopy(original: CfirNamedFunction, init: CfirNamedFu
     copyBuilder.origin = original.origin
     copyBuilder.attributes = original.attributes.copy()
     copyBuilder.isLocal = original.isLocal
+    copyBuilder.returnTypeRef = original.returnTypeRef
     copyBuilder.deprecationsProvider = original.deprecationsProvider
     copyBuilder.dispatchReceiverType = original.dispatchReceiverType
+    copyBuilder.body = original.body
     copyBuilder.status = original.status
-    copyBuilder.typeParameters.addAll(original.typeParameters)
-    copyBuilder.returnTypeRef = original.returnTypeRef
     copyBuilder.valueParameters.addAll(original.valueParameters)
     copyBuilder.hasVariableLenArg = original.hasVariableLenArg
-    copyBuilder.body = original.body
+    copyBuilder.typeParameters.addAll(original.typeParameters)
     copyBuilder.name = original.name
     copyBuilder.isMut = original.isMut
     return copyBuilder.apply(init).build()

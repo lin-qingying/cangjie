@@ -29,11 +29,13 @@ import org.cangnova.cangjie.lang.CangJieLanguage
 import org.cangnova.cangjie.lexer.CangJieLexer
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.parsing.CangJieParser
+import org.cangnova.cangjie.parsing.createCangJiePsiBuilder
+import org.cangnova.cangjie.parsing.requireParserSeed
+import org.cangnova.cangjie.parsing.copyParserSeedForReparse
 import org.cangnova.cangjie.psi.CjBlockExpression
 import org.cangnova.cangjie.psi.CjCaseBlockExpression
 import com.intellij.lang.ASTNode
 import com.intellij.lang.Language
-import com.intellij.lang.PsiBuilderFactory
 import com.intellij.openapi.project.Project
 import com.intellij.psi.tree.ICompositeElementType
 import com.intellij.psi.tree.IErrorCounterReparseableElementType
@@ -46,16 +48,10 @@ class CaseBlockExpressionElementType : BlockExpressionElementType("CASE_BLOCK") 
      */
     override fun parseContents(chameleon: ASTNode): ASTNode {
         val project = chameleon.psi.project
-        val builder = PsiBuilderFactory.getInstance().createBuilder(
-            project,
-            chameleon,
-            null,
-            CangJieLanguage,
-            chameleon.chars,
-        )
+        val builder = createCangJiePsiBuilder(project, chameleon, CangJieLanguage)
 
         return CangJieParser.parseBlockExpression(
-            builder, CangJieParser.languageModuleNameForContext(chameleon.psi),
+            builder, chameleon.requireParserSeed(),
         ).firstChildNode
     }
 
@@ -91,11 +87,14 @@ open class BlockExpressionElementType(debugName: String = "BLOCK") :
      */
     override fun createNode(text: CharSequence?) = CjBlockExpression(text)
 
+    override fun isValidReparse(oldNode: ASTNode, newNode: ASTNode): Boolean =
+        copyParserSeedForReparse(oldNode, newNode)
+
     /**
      * 实现 `isParsable` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
      */
     override fun isParsable(parent: ASTNode?, buffer: CharSequence, fileLanguage: Language, project: Project) =
-        fileLanguage == CangJieLanguage &&
+        fileLanguage.isKindOf(CangJieLanguage) &&
             isAllowedParentNode(parent) &&
             isReparseableBlock(buffer) &&
             super.isParsable(buffer, fileLanguage, project)
@@ -112,16 +111,10 @@ open class BlockExpressionElementType(debugName: String = "BLOCK") :
     override fun parseContents(chameleon: ASTNode): ASTNode {
 
         val project = chameleon.psi.project
-        val builder = PsiBuilderFactory.getInstance().createBuilder(
-            project,
-            chameleon,
-            null,
-            CangJieLanguage,
-            chameleon.chars,
-        )
+        val builder = createCangJiePsiBuilder(project, chameleon, CangJieLanguage)
 
         return CangJieParser.parseBlockExpression(
-            builder, CangJieParser.languageModuleNameForContext(chameleon.psi),
+            builder, chameleon.requireParserSeed(),
         ).firstChildNode
     }
 
@@ -135,7 +128,7 @@ open class BlockExpressionElementType(debugName: String = "BLOCK") :
                 lexer.advance()
                 while (lexer.tokenType != null && lexer.tokenType != CjTokens.EOF) {
                     if (lexer.tokenType == CjTokens.ARROW) return true
-                    if (lexer.tokenType != CjTokens.WHITE_SPACE) return false
+                    if (!CjTokens.ALL_WHITESPACE_TOKENS.contains(lexer.tokenType)) return false
                     lexer.advance()
                 }
                 return true

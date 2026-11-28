@@ -28,6 +28,7 @@ dependencies {
     testFixturesApi(testFixtures(project(":tests:test-infrastructure")))
     testFixturesApi(libs.junit4)
     testImplementation(project(":psi"))
+    testImplementation(project(":cfir:raw-cfir:light-tree2cfir"))
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit")
 
     // IntelliJ 平台（测试时需要完整传递依赖，不能 isTransitive=false）

@@ -19,7 +19,6 @@ import org.cangnova.cangjie.analysis.api.cfir.visibilityByModifiers
 import org.cangnova.cangjie.analysis.api.impl.base.util.callableId
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
-import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.symbols.CaFunctionSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaMacroSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaMainFunctionSymbol
@@ -36,12 +35,12 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.providers.CfirCallableSi
 import org.cangnova.cangjie.cfir.containingClassLookupTag
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
-import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
+import org.cangnova.cangjie.cfir.declarations.util.isMut
+import org.cangnova.cangjie.cfir.declarations.util.isOperator
 import org.cangnova.cangjie.cfir.symbols.CfirMacroDeclarationSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirMainFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.descriptors.Visibilities
-import org.cangnova.cangjie.lexer.CjModifierKeywordToken
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.Name
@@ -88,16 +87,10 @@ internal class CaCfirNamedFunctionSymbol private constructor(
     )
 
     /**
-     * 函数所在的 use-site 模块。
-     */
-    override val containingModule: CaModule
-        get() = analysisSession.useSiteModule
-
-    /**
      * 函数 CFIR member 状态。
      */
     private val status
-        get() = (cfirSymbol.cfir as? CfirMemberDeclaration)?.status
+        get() = cfirSymbol.cfir.status
 
     /**
      * 函数对应的 PSI。
@@ -240,40 +233,36 @@ internal class CaCfirNamedFunctionSymbol private constructor(
      * 函数是否为 static。
      */
     override val isStatic: Boolean
-        get() = withValidityAssertion { backingPsi?.hasModifier(CjTokens.STATIC_KEYWORD) ?: (status?.isStatic == true) }
+        get() = withValidityAssertion { status.isStatic }
 
     /**
      * 函数是否为 const。
      */
     override val isConst: Boolean
-        get() = withValidityAssertion { backingPsi?.hasModifier(CjTokens.CONST_KEYWORD) ?: (status?.isConst == true) }
+        get() = withValidityAssertion { status.isConst }
 
     /**
      * 函数是否为 mutating。
      */
     override val isMutating: Boolean
-        get() = withValidityAssertion {
-            psiHasModifierConsideringInheritance(CjTokens.MUT_KEYWORD) ?: (status?.isMut == true)
-        }
+        get() = withValidityAssertion { cfirSymbol.isMut }
 
     /**
      * 函数是否为 operator。
      */
     override val isOperator: Boolean
-        get() = withValidityAssertion {
-            psiHasModifierConsideringInheritance(CjTokens.OPERATOR_KEYWORD) ?: (status?.isOperator == true)
-        }
+        get() = withValidityAssertion { cfirSymbol.isOperator }
     /**
      * 函数是否为 unsafe。
      */
     override val isUnsafe: Boolean
-        get() = withValidityAssertion { backingPsi?.hasModifier(CjTokens.UNSAFE_KEYWORD) ?: (status?.isUnsafe == true) }
+        get() = withValidityAssertion { status.isUnsafe }
 
     /**
-     * 函数是否为 foreign。
+     * 函数是否为 foreign；集合继承与被拒绝后的空属性均以 CFIR 返回状态为准。
      */
     override val isForeign: Boolean
-        get() = withValidityAssertion { backingPsi?.hasModifier(CjTokens.FOREIGN_KEYWORD) ?: (status?.isForeign == true) }
+        get() = withValidityAssertion { status.isForeign }
 
     /**
      * 函数是否为 override。
@@ -281,23 +270,10 @@ internal class CaCfirNamedFunctionSymbol private constructor(
     override val isOverride: Boolean
         get() = withValidityAssertion { isOverrideWithWorkaround }
 
-    /**
-     * 按源码显式修饰符和 override 继承规则判断函数修饰符。
-     */
-    private fun psiHasModifierConsideringInheritance(modifierToken: CjModifierKeywordToken): Boolean? {
-        if (backingPsi == null) return null
+    /** 命名函数的不同查询入口共享真实源身份。 */
+    override fun equals(other: Any?): Boolean = psiOrSymbolEquals(other)
 
-        val hasModifier = backingPsi.hasModifier(modifierToken)
-        return when {
-            // The modifier is explicitly declared, so it shouldn't be changed
-            hasModifier -> true
-            // The modifier is inherited, so it might be changed
-            isOverride -> null
-            // The modifier is not explicitly declared and not inherited, so it should be false
-            else -> false
-        }
-    }
-
+    override fun hashCode(): Int = psiOrSymbolHashCode()
 }
 
 @OptIn(CaImplementationDetail::class)
@@ -325,10 +301,6 @@ internal class CaCfirMainFunctionSymbol(
      */
     final override val analysisSession: CaCfirSession,
     /**
-     * main 函数所在模块。
-     */
-    final override val containingModule: CaModule,
-    /**
      * main 函数符号生命周期 token。
      */
     final override val token: CaLifetimeToken,
@@ -337,7 +309,7 @@ internal class CaCfirMainFunctionSymbol(
      * main 函数 CFIR member 状态。
      */
     private val status
-        get() = (cfirSymbol.cfir as? CfirMemberDeclaration)?.status
+        get() = cfirSymbol.cfir.status
 
     /**
      * main 函数公开注解列表。
@@ -512,16 +484,10 @@ internal class CaCfirMacroSymbol private constructor(
         get() = super<CaCfirCjBasedSymbol>.cfirSymbol
 
     /**
-     * macro 所在的 use-site 模块。
-     */
-    override val containingModule: CaModule
-        get() = analysisSession.useSiteModule
-
-    /**
      * macro CFIR member 状态。
      */
     private val status
-        get() = (cfirSymbol.cfir as? CfirMemberDeclaration)?.status
+        get() = cfirSymbol.cfir.status
 
     /**
      * macro 对应的 PSI。
@@ -617,19 +583,19 @@ internal class CaCfirMacroSymbol private constructor(
      * macro 是否为 static。
      */
     override val isStatic: Boolean
-        get() = withValidityAssertion { backingPsi?.hasModifier(CjTokens.STATIC_KEYWORD) ?: (status?.isStatic == true) }
+        get() = withValidityAssertion { status.isStatic }
 
     /**
      * macro 是否为 const。
      */
     override val isConst: Boolean
-        get() = withValidityAssertion { backingPsi?.hasModifier(CjTokens.CONST_KEYWORD) ?: (status?.isConst == true) }
+        get() = withValidityAssertion { status.isConst }
 
     /**
      * macro 是否为 mutating。
      */
     override val isMutating: Boolean
-        get() = withValidityAssertion { backingPsi?.hasModifier(CjTokens.MUT_KEYWORD) ?: (status?.isMut == true) }
+        get() = withValidityAssertion { status.isMut }
 
     /**
      * macro 是否为 override。
@@ -641,19 +607,19 @@ internal class CaCfirMacroSymbol private constructor(
      * macro 是否为 operator。
      */
     override val isOperator: Boolean
-        get() = withValidityAssertion { backingPsi?.hasModifier(CjTokens.OPERATOR_KEYWORD) ?: (status?.isOperator == true) }
+        get() = withValidityAssertion { status.isOperator }
 
     /**
      * macro 是否为 unsafe。
      */
     override val isUnsafe: Boolean
-        get() = withValidityAssertion { backingPsi?.hasModifier(CjTokens.UNSAFE_KEYWORD) ?: (status?.isUnsafe == true) }
+        get() = withValidityAssertion { status.isUnsafe }
 
     /**
-     * macro 是否为 foreign。
+     * macro 是否为 foreign；读取声明属性而非前缀 token。
      */
     override val isForeign: Boolean
-        get() = withValidityAssertion { backingPsi?.hasModifier(CjTokens.FOREIGN_KEYWORD) ?: (status?.isForeign == true) }
+        get() = withValidityAssertion { status.isForeign }
 
     /**
      * macro 类型参数列表。

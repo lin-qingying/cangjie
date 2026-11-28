@@ -80,6 +80,45 @@ enum class CfirExtendMemberPeerDisposition {
     UNDECIDABLE,
 }
 
+/** 每对已准备接口的三个独立关系；双向 subtype 同时成立不能压成单一方向。 */
+data class CfirExtendMemberPeerRelation(val equal: Boolean, val peerSubtypeOfOwner: Boolean, val ownerSubtypeOfPeer: Boolean)
+
+/** 完成的 owner/peer 关系事实；纯裁决不持有 resolver、provider 或可执行回调。 */
+class CfirExtendMemberPeerFacts(
+    val ownerDeclaration: Any,
+    val peerDeclaration: Any,
+    val initialDisposition: CfirExtendMemberPeerDisposition?,
+    ownerInterfaces: List<CfirExtendInheritedInterfaceSemantic>,
+    peerInterfaces: List<CfirExtendInheritedInterfaceSemantic>,
+    relations: List<List<CfirExtendMemberPeerRelation>>,
+) {
+    val ownerInterfaces: List<CfirExtendInheritedInterfaceSemantic> = java.util.Collections.unmodifiableList(ArrayList(ownerInterfaces))
+    val peerInterfaces: List<CfirExtendInheritedInterfaceSemantic> = java.util.Collections.unmodifiableList(ArrayList(peerInterfaces))
+    val relations: List<List<CfirExtendMemberPeerRelation>> = java.util.Collections.unmodifiableList(relations.map {
+        java.util.Collections.unmodifiableList(ArrayList(it))
+    })
+    init {
+        require(initialDisposition != CfirExtendMemberPeerDisposition.UNDECIDABLE) { "Undecidable order requires interface facts" }
+        require(relations.size == ownerInterfaces.size && relations.all { it.size == peerInterfaces.size }) {
+            "Every ordered interface pair requires its independent relationship facts"
+        }
+    }
+
+    override fun equals(other: Any?): Boolean = other is CfirExtendMemberPeerFacts &&
+        ownerDeclaration === other.ownerDeclaration && peerDeclaration === other.peerDeclaration &&
+        initialDisposition == other.initialDisposition && ownerInterfaces == other.ownerInterfaces &&
+        peerInterfaces == other.peerInterfaces && relations == other.relations
+
+    override fun hashCode(): Int {
+        var result = System.identityHashCode(ownerDeclaration)
+        result = 31 * result + System.identityHashCode(peerDeclaration)
+        result = 31 * result + (initialDisposition?.hashCode() ?: 0)
+        result = 31 * result + ownerInterfaces.hashCode()
+        result = 31 * result + peerInterfaces.hashCode()
+        return 31 * result + relations.hashCode()
+    }
+}
+
 /**
  * 已实例化 peer 顺序的结构化结果。
  */
@@ -144,6 +183,11 @@ data class CfirExtendMemberPeerSequenceConflict(
  * 或源码顺序关系。
  */
 interface CfirExtendRuleQueryService : CfirSessionComponent {
+    /** 具体来源准备属于实现层；Core 不依赖 Cone、声明树或具体供应器。 */
+    fun prepareExtendMemberPeerFacts(ownerDeclaration: Any, peerDeclaration: Any, preparationInput: Any): CfirExtendMemberPeerFacts
+
+    /** 只消费完成事实，默认来源和显式 scope 来源使用同一裁决实现。 */
+    fun extendMemberPeerDecision(facts: CfirExtendMemberPeerFacts): CfirExtendMemberPeerDecision
     /**
      * 返回 [declaration] 对应 extend 的目标键。
      */

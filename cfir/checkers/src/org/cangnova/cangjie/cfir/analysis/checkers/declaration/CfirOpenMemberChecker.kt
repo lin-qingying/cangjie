@@ -17,6 +17,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.modifierByToken
 import org.cangnova.cangjie.cfir.analysis.checkers.realSourceModifiers
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
@@ -39,7 +40,7 @@ import org.cangnova.cangjie.lexer.CjTokens
  * 对 final class 中的显式 `open` 成员报告忽略警告；CFIR 使用项目已有的
  * `IGNORE_OPEN` 诊断名承载该官方语义。
  */
-object CfirOpenMemberChecker : CfirClassLikeChecker() {
+object CfirOpenMemberChecker : CfirClassLikeChecker(MppCheckerKind.Common) {
     override val requiresImplementation: Boolean get() = true
 
     /**

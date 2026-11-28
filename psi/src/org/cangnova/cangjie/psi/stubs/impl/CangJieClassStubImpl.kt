@@ -56,6 +56,7 @@ open class CangJieClassStubImpl(
      * 保存 `superNames` 的内部状态，供PSI Stub实现维护节点缓存或解析上下文。
      */
     private val superNames: Array<StringRef>,
+    override val cjmpNominalSyntaxFacts: org.cangnova.cangjie.parsing.CjmpNominalSyntaxFacts? = null,
 //    private val isTopLevel: Boolean,
 ) : CangJieStubBaseImpl<CjClass>(parent, type), CangJieClassStub {
 
@@ -100,5 +101,6 @@ open class CangJieClassStubImpl(
         classId = classId,
         name = name,
         superNames = superNames,
+        cjmpNominalSyntaxFacts = cjmpNominalSyntaxFacts,
     )
 }

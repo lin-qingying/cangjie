@@ -24,6 +24,8 @@
 
 package org.cangnova.cangjie.cfir.analysis.checkers
 
+import org.cangnova.cangjie.cfir.analysis.checkers.modifier.ConstructorRole
+import org.cangnova.cangjie.cfir.analysis.checkers.modifier.ModifierTarget
 import org.cangnova.cangjie.lexer.CjKeywordToken
 import org.cangnova.cangjie.lexer.CjTokens.*
 
@@ -31,10 +33,6 @@ import org.cangnova.cangjie.lexer.CjTokens.*
 internal enum class Compatibility {
     /** 两个修饰符可以同时出现。 */
     COMPATIBLE,
-    /** 第二个修饰符被第一个修饰符覆盖，属于冗余。 */
-    REDUNDANT,
-    /** 第一个修饰符被第二个修饰符覆盖，属于反向冗余。 */
-    REVERSE_REDUNDANT,
     /** 两个修饰符是同一个 token，属于重复。 */
     REPEATED,
     /** 该修饰符组合仍可接受，但需要报告弃用组合。 */
@@ -54,10 +52,6 @@ private fun buildCompatibilityMap(): Map<Pair<CjKeywordToken, CjKeywordToken>, C
 
     result += incompatibilityRegister(PRIVATE_KEYWORD, PROTECTED_KEYWORD, PUBLIC_KEYWORD, INTERNAL_KEYWORD)
 
-    result += redundantRegister(ABSTRACT_KEYWORD, OPEN_KEYWORD)
-    result += redundantRegister(SEALED_KEYWORD, PUBLIC_KEYWORD)
-    result += redundantRegister(SEALED_KEYWORD, OPEN_KEYWORD)
-
     result += incompatibilityRegister(CONST_KEYWORD, ABSTRACT_KEYWORD)
     result += incompatibilityRegister(CONST_KEYWORD, OPEN_KEYWORD)
     result += incompatibilityRegister(CONST_KEYWORD, MUT_KEYWORD)
@@ -71,22 +65,51 @@ private fun buildCompatibilityMap(): Map<Pair<CjKeywordToken, CjKeywordToken>, C
     result += compatibilityForClassesRegister(PRIVATE_KEYWORD, OPEN_KEYWORD)
     result += compatibilityForClassesRegister(PRIVATE_KEYWORD, ABSTRACT_KEYWORD)
 
-    // common/specific（CJMP，1.1.0）：官方 ParserModifierRules.cpp 各作用域表均含
-    // CR(COMMON, PRIVATE, SPECIFIC)——三者两两互斥。版本门关闭时由
-    // checkCompatibilityType 按 CJMP token 短路（见 ModifiersCompatibilityUtils）。
-    result += incompatibilityRegister(COMMON_KEYWORD, SPECIFIC_KEYWORD, PRIVATE_KEYWORD)
-
     return result
 }
 
 /** 查询两个修饰符 token 的兼容性分类。 */
-internal fun compatibility(first: CjKeywordToken, second: CjKeywordToken): Compatibility {
+internal fun compatibility(
+    first: CjKeywordToken,
+    second: CjKeywordToken,
+    target: ModifierTarget? = null,
+): Compatibility {
     return if (first == second) {
         Compatibility.REPEATED
     } else {
-        mutualCompatibility[first to second] ?: Compatibility.COMPATIBLE
+        target?.constructorRole?.let { role -> constructorCompatibility(first, second, role) }
+            ?: mutualCompatibility[first to second]
+            ?: Compatibility.COMPATIBLE
     }
 }
+
+/**
+ * 先按官方构造器作用域表判定，再查询共享修饰符组合表。
+ *
+ * 次级构造器的 static 与可见性修饰符互斥；CJMP 修饰符组合由共享 parser 负责。
+ */
+private fun constructorCompatibility(
+    first: CjKeywordToken,
+    second: CjKeywordToken,
+    role: ConstructorRole,
+): Compatibility? {
+    if (isPair(first, second, STATIC_KEYWORD, PUBLIC_KEYWORD) ||
+        isPair(first, second, STATIC_KEYWORD, PRIVATE_KEYWORD) ||
+        isPair(first, second, STATIC_KEYWORD, INTERNAL_KEYWORD) ||
+        isPair(first, second, STATIC_KEYWORD, PROTECTED_KEYWORD)
+    ) {
+        return if (role == ConstructorRole.SECONDARY) Compatibility.INCOMPATIBLE else Compatibility.COMPATIBLE
+    }
+
+    return null
+}
+
+private fun isPair(
+    first: CjKeywordToken,
+    second: CjKeywordToken,
+    left: CjKeywordToken,
+    right: CjKeywordToken,
+): Boolean = first == left && second == right || first == right && second == left
 
 /** 注册只在 class-like 声明上允许共存的修饰符组合。 */
 private fun compatibilityForClassesRegister(vararg list: CjKeywordToken): Map<Pair<CjKeywordToken, CjKeywordToken>, Compatibility> {
@@ -112,17 +135,6 @@ private fun compatibilityRegister(
 /** 注册一组两两不兼容的修饰符。 */
 private fun incompatibilityRegister(vararg list: CjKeywordToken): Map<Pair<CjKeywordToken, CjKeywordToken>, Compatibility> {
     return compatibilityRegister(Compatibility.INCOMPATIBLE, *list)
-}
-
-/** 注册一个有方向的冗余关系。 */
-private fun redundantRegister(
-    sufficient: CjKeywordToken,
-    redundant: CjKeywordToken,
-): Map<Pair<CjKeywordToken, CjKeywordToken>, Compatibility> {
-    return mapOf(
-        (sufficient to redundant) to Compatibility.REDUNDANT,
-        (redundant to sufficient) to Compatibility.REVERSE_REDUNDANT,
-    )
 }
 
 /** 注册一个对称的弃用修饰符组合。 */

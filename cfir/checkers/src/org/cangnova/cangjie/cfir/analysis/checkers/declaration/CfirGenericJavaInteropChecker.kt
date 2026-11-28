@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirClass
@@ -19,7 +20,7 @@ import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.name.Name
 
@@ -33,7 +34,7 @@ import org.cangnova.cangjie.name.Name
  *
  * 注册为 classLikeCheckers
  */
-object CfirGenericJavaInteropChecker : CfirClassLikeChecker() {
+object CfirGenericJavaInteropChecker : CfirClassLikeChecker(MppCheckerKind.Common) {
     /**
      * Java 互操作注解名。
      */

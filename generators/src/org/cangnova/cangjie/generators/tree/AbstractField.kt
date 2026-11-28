@@ -140,6 +140,9 @@ abstract class AbstractField<Field : AbstractField<Field>> {
      */
     abstract var customSetter: String?
 
+    /** 实现类后备字段的 getter；不改变构造输入和初始化策略。 */
+    open var customGetter: String? = null
+
     /**
      * @see org.cangnova.cangjie.generators.tree.detectBaseTransformerTypes
      */
@@ -208,6 +211,7 @@ abstract class AbstractField<Field : AbstractField<Field>> {
         copy.useInBaseTransformerDetection = useInBaseTransformerDetection
         copy.overriddenFields += overriddenFields
         copy.implementationDefaultStrategy = implementationDefaultStrategy
+        copy.customGetter = customGetter
     }
 
     /**
@@ -231,6 +235,11 @@ abstract class AbstractField<Field : AbstractField<Field>> {
          * 字段必须在实现类构造函数中显式初始化。
          */
         data object Required : ImplementationDefaultStrategy
+
+        /** 保留构造参数，并为参数提供默认值；字段仍由调用方在构造时绑定。 */
+        data class ConstructorDefaultValue(
+            override val defaultValue: String,
+        ) : ImplementationDefaultStrategy
 
         /**
          * 字段会生成为 `lateinit var`。

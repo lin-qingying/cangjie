@@ -25,12 +25,13 @@ import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
 import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
+import org.cangnova.cangjie.cfir.patterns.bindingVariables
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirResolvedDeclarationStatus
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirStatusComputationSession
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirStatusResolveTransformer
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
@@ -66,6 +67,9 @@ internal object LLCfirStatusLazyResolver : LLCfirLazyResolver(CfirResolvePhase.S
     override fun phaseSpecificCheckIsResolved(target: CfirElementWithResolveState) {
         if (target !is CfirMemberDeclaration) return
         checkDeclarationStatusIsResolved(target)
+        if (target is CfirPatternVariable) {
+            target.pattern.bindingVariables().forEach(::checkDeclarationStatusIsResolved)
+        }
     }
 }
 

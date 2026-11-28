@@ -1,5 +1,9 @@
 package org.cangnova.cangjie.cfir.resolve.inference
 
+import org.cangnova.cangjie.cfir.resolvedTypeFromPrototype
+
+import org.cangnova.cangjie.cfir.types.asCone
+
 import org.cangnova.cangjie.cfir.CfirLookupTrackerComponent
 import org.cangnova.cangjie.cfir.SessionHolder
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
@@ -51,7 +55,7 @@ import org.cangnova.cangjie.cfir.resolve.typeFromCallee
 import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeVariableForLambdaReturnType
 import org.cangnova.cangjie.cfir.scopes.impl.typeAliasConstructorInfo
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.resolve.providers.cfirProvider
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
@@ -61,7 +65,6 @@ import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
-import org.cangnova.cangjie.cfir.types.CfirTypeSubstitutorByMap
 import org.cangnova.cangjie.cfir.types.ConeAnyType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeClassifierType
@@ -81,14 +84,14 @@ import org.cangnova.cangjie.cfir.types.ConeUnreportedDuplicateDiagnostic
 import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.types.arrayLiteralElementType
-import org.cangnova.cangjie.cfir.types.asCone
+import org.cangnova.cangjie.cfir.resolve.substitution.asCone
 import org.cangnova.cangjie.cfir.types.builder.buildErrorTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.classId
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.coneTypeSafe
 import org.cangnova.cangjie.cfir.types.contains
-import org.cangnova.cangjie.cfir.types.createTypeSubstitutorByTypeConstructor
+import org.cangnova.cangjie.cfir.resolve.substitution.createTypeSubstitutorByTypeConstructor
 import org.cangnova.cangjie.cfir.types.expandedClassIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.cfir.types.typeApproximator
@@ -674,7 +677,7 @@ class CfirCallCompleter(
         val freshTypeConstructors = freshVariables.mapTo(mutableSetOf()) { it.typeConstructor }
         if (!freshTypeConstructors.all { it in targetSubstitution }) return null
 
-        return NoArgEnumConstructorCompletion.Resolved(targetType, CfirTypeSubstitutorByMap(targetSubstitution))
+        return NoArgEnumConstructorCompletion.Resolved(targetType, createTypeSubstitutorByTypeConstructor(targetSubstitution, session.typeContext, false))
     }
 
     /** 无参 enum constructor 的目标完成结果。 */
@@ -824,7 +827,7 @@ class CfirCallCompleter(
             val current = correspondingSupertype as? ConeCangJieType ?: continue
             val substitution = linkedMapOf<TypeConstructorMarker, ConeCangJieType>()
             if (collectOwnerSubstitution(current, expectedInterfaceType, substitution)) {
-                val targetType = CfirTypeSubstitutorByMap(substitution).substituteOrSelf(initialOwnerType)
+                val targetType = createTypeSubstitutorByTypeConstructor(substitution, session.typeContext, false).substituteOrSelf(initialOwnerType)
                 if (targetType.enumConstructorOwnerClassIdOrNull() == ownerClassId &&
                     !containsCandidateFreshVariable(targetType)
                 ) {
@@ -1365,30 +1368,6 @@ fun CfirLookupTrackerComponent.recordTypeResolveAsLookup(
     }
 }
 
-/**
- * 基于既有类型引用原型创建 resolved/error type ref。
- *
- * 新引用继承原型的 source 和 delegation 信息，并在目标类型为 `ConeErrorType` 时保留其诊断。
- */
-private fun CfirTypeRef.resolvedTypeFromPrototype(
-    type: ConeCangJieType,
-    source: CjSourceElement?,
-): CfirResolvedTypeRef {
-    return when (type) {
-        is ConeErrorType -> buildErrorTypeRef {
-            this.source = source ?: this@resolvedTypeFromPrototype.source
-            coneType = type
-            delegatedTypeRef = this@resolvedTypeFromPrototype
-            diagnostic = type.diagnostic
-        }
-
-        else -> buildResolvedTypeRef {
-            this.source = source ?: this@resolvedTypeFromPrototype.source
-            coneType = type
-            delegatedTypeRef = this@resolvedTypeFromPrototype
-        }
-    }
-}
 
 /**
  * 将 Cone 类型直接包装为新的 resolved/error type ref。

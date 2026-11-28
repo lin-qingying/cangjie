@@ -93,7 +93,9 @@ internal fun CfirPartialBodyResolveTransformer.registerScopedPatternBindings(
                 registerScopedPatternBindings(it, bindingScope, pattern.typeRef?.coneTypeOrNull ?: expectedType)
             }
         is CfirVarOrEnumPattern -> register(pattern.bindingVariable, retainOnConflict = false)
-        is CfirTypePattern -> register(pattern.bindingVariable, retainOnConflict = true)
+        is CfirTypePattern -> registerScopedPatternBindings(pattern.nestedPattern, bindingScope, pattern.typeRef.coneTypeOrNull)
+        is CfirCatchPattern -> registerScopedPatternBindings(pattern.nestedPattern, bindingScope, pattern.semanticTypeRef?.coneTypeOrNull)
+        is CfirCommandTypePattern -> registerScopedPatternBindings(pattern.nestedPattern, bindingScope, pattern.semanticTypeRef?.coneTypeOrNull)
         is CfirTuplePattern -> {
             val shape = pattern.resolveTupleShape(expectedType, session)
             if (shape is CfirTuplePatternShape.NotTuple || shape is CfirTuplePatternShape.WrongSize) {

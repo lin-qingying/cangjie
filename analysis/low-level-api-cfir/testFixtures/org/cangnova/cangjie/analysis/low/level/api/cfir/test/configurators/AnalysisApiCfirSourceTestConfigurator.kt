@@ -16,6 +16,7 @@ import org.cangnova.cangjie.analysis.test.framework.test.configurators.TestModul
 import org.cangnova.cangjie.test.builders.TestConfigurationBuilder
 import org.cangnova.cangjie.test.model.TestModuleStructure
 import org.cangnova.cangjie.test.services.TestServices
+import org.cangnova.cangjie.test.directives.CfirDiagnosticsDirectives
 
 /**
  * Low-level CFIR source-module 测试配置器。
@@ -89,6 +90,7 @@ private class AnalysisApiCfirSourceTestConfigurator(
      * 将基础测试配置写入 builder，并让委托配置器负责 disposable 生命周期绑定。
      */
     override fun configureTest(builder: TestConfigurationBuilder, disposable: Disposable) {
+        builder.useDirectives(CfirDiagnosticsDirectives)
         delegate.configureTest(builder, disposable)
     }
 

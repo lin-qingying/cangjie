@@ -16,7 +16,7 @@ import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.CjSourceElement
 
 class CfirPackageDirectiveImpl @CfirImplementationDetail constructor(
-    override val source: CjSourceElement?,
+    override var source: CjSourceElement?,
     override val packageFqName: FqName,
     override val organizationName: Name?,
     override val isMacroPackage: Boolean,
@@ -26,5 +26,10 @@ class CfirPackageDirectiveImpl @CfirImplementationDetail constructor(
 
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirPackageDirectiveImpl {
         return this
+    }
+
+    @CfirImplementationDetail
+    override fun replaceSource(newSource: CjSourceElement?) {
+        source = newSource
     }
 }

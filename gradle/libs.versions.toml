@@ -17,6 +17,8 @@ junit5 = "5.12.2"
 asm = "9.9"
 kotlinx-collections-immutable = "0.4.0"
 kotlinx-serialization-json = "1.7.3"
+# 与 IntelliJ SDK 253.29346.379 的公共协程 API 保持同一发行版本。
+intellij-coroutines = "1.10.1-intellij-5"
 [libraries]
 kotlinGradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 koverGradlePlugin = { module = "org.jetbrains.kotlinx:kover-gradle-plugin", version.ref = "kover" }
@@ -41,6 +43,7 @@ junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", vers
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit5" }
 kotlinx-collections-immutable = { module = "org.jetbrains.kotlinx:kotlinx-collections-immutable", version.ref = "kotlinx-collections-immutable" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization-json" }
+intellij-coroutines-core = { module = "com.intellij.platform:kotlinx-coroutines-core-jvm", version.ref = "intellij-coroutines" }
 
 [plugins]
 kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

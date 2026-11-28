@@ -41,7 +41,7 @@ import org.cangnova.cangjie.cfir.resolve.constants.CfirIntConstantEvalUtils
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.match.exhaustive.MatchExhaustivenessContext
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.name.ClassId
 import java.math.BigInteger
@@ -557,6 +557,9 @@ fun convertPattern(
             }
         }
         is CfirWildcardPattern -> listOf(CfirMatchPattern.wild(expectedType))
+        // Exception/command 模式由 catch/handle 上下文检查，不能作为 match 的成功分支。
+        is CfirCatchPattern, is CfirCommandTypePattern ->
+            listOf(CfirMatchPattern(expectedType, CfirMatchPatternKind.Error, pattern))
         is CfirVarOrEnumPattern -> listOf(CfirMatchPattern.Error.copy(cfirPattern = pattern))
         is CfirBindingPattern -> {
             val nested = pattern.nestedPattern
@@ -585,7 +588,7 @@ fun convertPattern(
         is CfirEnumPattern -> {
             val patternType = expectedType.expandedPatternEnumType(session) ?: expectedType
             val enumClassId = patternType.patternEnumClassId()
-            val constructorAccess = pattern.constructorReference.enumPatternConstructorAccessOrNull()
+            val constructorAccess = pattern.constructorReference?.enumPatternConstructorAccessOrNull()
             val ownerMatches = when (patternType) {
                 is ConeEnumType -> {
                     val enumDeclaration = session.enumDeclaration(patternType)
@@ -646,7 +649,7 @@ fun convertPattern(
                 } else {
                     CfirMatchPattern(
                         expectedType,
-                        CfirMatchPatternKind.Type(resolvedType, pattern.bindingName?.asString()),
+                        CfirMatchPatternKind.Type(resolvedType, pattern.nestedPattern.primaryBindingNameOrNull()?.asString()),
                         pattern,
                     )
                 }

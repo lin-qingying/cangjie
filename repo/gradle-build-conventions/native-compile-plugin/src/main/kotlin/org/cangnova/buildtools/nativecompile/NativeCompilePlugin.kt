@@ -203,6 +203,12 @@ abstract class NativeCompileTask @Inject constructor(
         val llvmLibDirs = listOf(File(llvmRoot, "lib"), File(llvmRoot, "lib64"))
             .filter { it.exists() && it.isDirectory }
             .map { "-L${it.absolutePath}" }
+        val llvmImportLibrary = if (platform.os == "windows") {
+            listOf(File(llvmRoot, "lib/LLVM-C.lib"), File(llvmRoot, "lib64/LLVM-C.lib"))
+                .firstOrNull { it.isFile }
+        } else {
+            null
+        }
         val llvmStaticLibs = if (sharedLinkFlags.contains("-shared")) {
             File(llvmRoot, "lib")
                 .listFiles()
@@ -215,6 +221,11 @@ abstract class NativeCompileTask @Inject constructor(
         } else {
             emptyList()
         }
+        if (platform.os == "windows" && llvmImportLibrary == null && llvmStaticLibs.isEmpty()) {
+            throw GradleException(
+                "LLVM C API link library not found; expected LLVM-C.lib or libLLVM*.a under ${llvmRoot.absolutePath}",
+            )
+        }
 
         execOperations.exec {
             executable = compiler
@@ -224,6 +235,7 @@ abstract class NativeCompileTask @Inject constructor(
                     addAll(linkerArgs.get())
                     addAll(llvmLibDirs)
                     addAll(objects.map { it.absolutePath })
+                    llvmImportLibrary?.let { add(it.absolutePath) }
                     if (llvmStaticLibs.isNotEmpty()) {
                         add("-Wl,--start-group")
                         addAll(llvmStaticLibs)

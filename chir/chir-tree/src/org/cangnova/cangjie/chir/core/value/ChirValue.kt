@@ -21,6 +21,17 @@ enum class ChirValueKind {
 }
 
 /**
+ * 常量字面量的源语义分类。
+ *
+ * 值文本不能区分内容恰为 `null` 的字符串字面量与官方 CHIR 的 NullLiteral，
+ * 因此导入和序列化边界必须保留该分类。
+ */
+enum class ChirConstantKind {
+    UNSPECIFIED,
+    NULL,
+}
+
+/**
  * CHIR 值节点公共接口。
  *
  * 值节点描述表达式、声明或控制流中可被引用的数据实体，并通过 [semanticId] 与使用点关联。
@@ -90,6 +101,16 @@ data class ChirLocalValue(
      * 使用该局部值的节点标识集合。
      */
     override val userIds: Set<ChirSemanticId> = emptySet(),
+
+    /**
+     * 定义该局部值的表达式身份。官方 CHIR 的 VALUE 与 EXPRESSION 使用独立编号域。
+     */
+    val associatedExpressionId: ChirSemanticId? = null,
+
+    /**
+     * 该局部值是否是函数返回槽。
+     */
+    val isReturnValue: Boolean = false,
 ) : ChirValue {
     /**
      * 局部值的固定分类。
@@ -135,6 +156,9 @@ data class ChirConstantValue(
      * 使用该常量值的节点标识集合。
      */
     override val userIds: Set<ChirSemanticId> = emptySet(),
+
+    /** 常量在 CHIR 中的具体字面量类别；UNSPECIFIED 用于尚未携带该来源事实的旧构造点。 */
+    val constantKind: ChirConstantKind = ChirConstantKind.UNSPECIFIED,
 ) : ChirValue {
     /**
      * 常量值的固定分类。

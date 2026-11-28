@@ -1,5 +1,7 @@
 package org.cangnova.cangjie.cfir.resolve.calls.tower
 
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
+
 import org.cangnova.cangjie.cfir.calls.ReceiverValue
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.resolve.BodyResolveComponents
@@ -7,10 +9,11 @@ import org.cangnova.cangjie.cfir.resolve.providers.CfirImportNamespaceContext
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallInfo
 import org.cangnova.cangjie.cfir.resolve.services.CfirDefaultImportPriority
 import org.cangnova.cangjie.cfir.resolve.services.CfirResolvedImportTarget
+import org.cangnova.cangjie.cfir.resolve.services.requireImportBindings
+import org.cangnova.cangjie.cfir.resolve.services.resolveSymbols
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassSubstitutionScope
-import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
 import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.importBindingStore
@@ -23,6 +26,8 @@ import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeTypeProjection
 import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
+import org.cangnova.cangjie.cfir.session.isCjmpSpecificCompilationEnabled
 
 /**
  * 为 fresh type variable 接收者提供成员签名候选。
@@ -122,7 +127,7 @@ private class CfirTypeVariableReceiverMemberScopeProvider(
      */
     private fun collectMemberScopesForName(name: Name): List<CfirTypeScope> {
         val importStore = components.session.importBindingStore
-        val bindings = importStore.requireBindings(components.file).imports +
+        val bindings = components.file.requireImportBindings().imports +
                 CfirDefaultImportPriority.entries.flatMap(importStore::requireDefaultImportBindings)
         val packages = linkedSetOf(CfirResolvedImportTarget.Package(components.file.packageDirective.packageFqName))
         val classSymbols = linkedSetOf<CfirClassLikeSymbol<*>>()
@@ -131,7 +136,8 @@ private class CfirTypeVariableReceiverMemberScopeProvider(
                 when (target) {
                     is CfirResolvedImportTarget.Package ->
                         if (binding.importDirective.isAllUnder) packages += target
-                    is CfirResolvedImportTarget.ClassLike -> classSymbols += target.symbol
+                    is CfirResolvedImportTarget.ClassLike ->
+                        classSymbols += target.resolveSymbols(components.symbolProvider)
                     is CfirResolvedImportTarget.Callable -> Unit
                 }
             }
@@ -165,8 +171,9 @@ private class CfirTypeVariableReceiverMemberScopeProvider(
         if (!classSymbol.isBound) return null
         classSymbol.lazyResolveToPhase(CfirResolvePhase.TYPES)
         val ownerType = classSymbol.declarationSelfType()
-        val rawScope = CfirClassUseSiteMemberScope(
-            session = components.session,
+        val rawScope = components.session.cangjieScopeProvider.getUseSiteMemberScope(
+            scopeSession = components.scopeSession,
+            useSiteSession = components.session,
             classSymbol = classSymbol,
             symbolProvider = components.symbolProvider,
             extendProvider = components.session.extendProvider,
@@ -174,6 +181,7 @@ private class CfirTypeVariableReceiverMemberScopeProvider(
             ownerType = ownerType,
             dispatchReceiverType = ownerType,
             scopeKind = CfirClassMemberScopeKind.USE_SITE,
+            memberRequiredPhase = if (components.session.isCjmpSpecificCompilationEnabled()) CfirResolvePhase.CJMP_MATCHING else CfirResolvePhase.STATUS,
         )
         return CfirClassSubstitutionScope(
             session = components.session,

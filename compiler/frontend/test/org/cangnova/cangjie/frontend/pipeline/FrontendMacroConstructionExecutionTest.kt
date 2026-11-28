@@ -2,13 +2,23 @@ package org.cangnova.cangjie.frontend.pipeline
 
 import org.cangnova.cangjie.annotations.BuiltInAnnotationRegistry
 import org.cangnova.cangjie.CjInMemoryTextSourceFile
+import org.cangnova.cangjie.CjPsiSourceFile
+import org.cangnova.cangjie.cfir.builder.toParsingContext
 import org.cangnova.cangjie.cfir.common.CfirModuleCapabilities
 import org.cangnova.cangjie.cfir.common.CfirModuleData
+import org.cangnova.cangjie.cfir.common.moduleData
 import org.cangnova.cangjie.cfir.common.CfirPlatform
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAttributes
+import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.cjmpHasCommonDefault
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirErrorFunction
 import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.declarations.publishParsingFileFacts
+import org.cangnova.cangjie.cfir.declarations.parsingFileFacts
+import org.cangnova.cangjie.parsing.CjmpFileRole
+import org.cangnova.cangjie.parsing.ParsingFileFacts
+import org.cangnova.cangjie.CjSourceKind
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
@@ -24,18 +34,25 @@ import org.cangnova.cangjie.cfir.declarations.builder.buildValueParameter
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.expressions.CfirErrorExpression
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
+import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.CfirIfAvailableExpression
 import org.cangnova.cangjie.cfir.expressions.builder.buildAnnotationCall
 import org.cangnova.cangjie.cfir.expressions.builder.buildArgumentList
 import org.cangnova.cangjie.cfir.expressions.builder.buildBlock
 import org.cangnova.cangjie.cfir.expressions.builder.buildErrorExpression
 import org.cangnova.cangjie.cfir.patterns.builder.buildWildcardPattern
 import org.cangnova.cangjie.cfir.references.builder.buildNamedReference
-import org.cangnova.cangjie.cfir.resolve.providers.macro.BuiltinNonMacroDesugarer
+import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationMetadataBuilder
+import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationSlotSnapshot
+import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationReplaceCarrier
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroCallSite
+import org.cangnova.cangjie.cfir.resolve.providers.macro.PreMacroCfirFile
 import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirReplaceHandle
-import org.cangnova.cangjie.cfir.resolve.providers.macro.IfAvailableSurface
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroCallNode
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionResult
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionDiagnostic
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionService
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroDemandClassification
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroDefinitionEntry
@@ -43,7 +60,12 @@ import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroExpansionCacheKey
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentParser
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentInput
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentResult
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentPayload
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroReplacementSlotType
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroParameterSignature
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroRawOwnerSnapshot
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroReplaceSlot
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroResolution
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroStableSplicer
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurface
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceContainerContext
@@ -57,12 +79,22 @@ import org.cangnova.cangjie.cfir.resolve.providers.macro.bindMacroImports
 import org.cangnova.cangjie.cfir.resolve.providers.macro.buildMacroSymbolIndex
 import org.cangnova.cangjie.cfir.resolve.providers.macro.buildPreMacroRawFiles
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
+import org.cangnova.cangjie.cfir.session.ensureAnnotationMetadataRegistry
+import org.cangnova.cangjie.cfir.session.cjmpSettings
+import org.cangnova.cangjie.cfir.session.languageVersionSettings
+import org.cangnova.cangjie.cfir.session.macroExpansionRegistry
+import org.cangnova.cangjie.source.CjOffsetsOnlySourceElement
+import org.cangnova.cangjie.source.toCjPsiSourceElement
+import org.cangnova.cangjie.psi.CjPsiFactory
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPatternVariableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
 import org.cangnova.cangjie.cfir.types.builder.buildImplicitTypeRef
 import org.cangnova.cangjie.source.toSourceLinesMapping
+import org.cangnova.cangjie.source.CjBinarySourceElement
 import org.cangnova.cangjie.config.CompilerConfiguration
 import org.cangnova.cangjie.macro.MacroCallInfo
 import org.cangnova.cangjie.macro.MacroDiagnosticInfo
@@ -73,23 +105,840 @@ import org.cangnova.cangjie.macro.MacroLibraryLoadFailure
 import org.cangnova.cangjie.macro.MacroLibraryLoadFailureKind
 import org.cangnova.cangjie.macro.MacroLibraryLoadResult
 import org.cangnova.cangjie.macro.SourcePosition
+import org.cangnova.cangjie.messages.CjParsingDiagnosticCollector
+import org.cangnova.cangjie.messages.ParsingDiagnostic
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.parsing.CjParameterGrammar
+import org.cangnova.cangjie.parsing.CjParserSourceContext
+import org.cangnova.cangjie.parsing.cjmpParsingContext
+import org.cangnova.cangjie.parsing.parsedFileFacts
+import org.cangnova.cangjie.parsing.parsingSourceContextOrNull
 import org.cangnova.cangjie.platform.CangJiePlatforms
 import org.cangnova.cangjie.platform.isCommon
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotEquals
+import org.junit.jupiter.api.Assertions.assertNotSame
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Test
+import java.util.concurrent.CancellationException
 
 @OptIn(CompilerConfiguration.Internals::class)
 /**
  * 覆盖前端宏构造执行链路中的 splicer、executor、parser、降级和诊断行为。
  */
 class FrontendMacroConstructionExecutionTest {
+    /** 真正源码的 IfAvailable 必须保留整段调用，重解析后在原 expression 槽写回两个分支。 */
+    @Test
+    fun sourceIfAvailableRetainsInvocationAndBothBranchesThroughRawConstruction() {
+        val disposable = com.intellij.openapi.util.Disposer.newDisposable("ifavailable-source-construction")
+        try {
+            val project = org.cangnova.cangjie.CangJieCoreEnvironment.create(
+                disposable, org.cangnova.cangjie.CangJieCoreEnvironmentMode.Production,
+            ).projectEnvironment.project
+            val source = """
+                package sample
+                func use(): Unit {
+                    @IfAvailable(level: 19, {=> availableBranch() }, {=> unavailableBranch() })
+                }
+            """.trimIndent()
+
+            for (lightTree in listOf(false, true)) {
+                var executorCreations = 0
+                val executor = RecordingExecutor()
+                val session = productionParserSession()
+                val preFile = if (lightTree) {
+                    val sourceFile = CjInMemoryTextSourceFile("ifavailable.cj", "memory/ifavailable.cj", source)
+                    org.cangnova.cangjie.cfir.lightTree.LightTree2Cfir(session, session.cangjieScopeProvider)
+                        .buildPreMacroCfirFile(source, sourceFile, source.toSourceLinesMapping())
+                } else {
+                    val psiFile = com.intellij.psi.PsiFileFactory.getInstance(project).createFileFromText(
+                        "ifavailable.cj",
+                        org.cangnova.cangjie.lang.CangJieFileType.INSTANCE,
+                        source,
+                    ) as org.cangnova.cangjie.psi.CjFile
+                    org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder(
+                        session,
+                        annotationMetadata = CfirAnnotationMetadataBuilder(),
+                    ).buildPreMacroCfirFile(psiFile)
+                }
+                val sourceSurface = preFile.surfaces.single() as MacroSurfaceExpr
+                assertTrue(sourceSurface.capturedRawSyntax.orEmpty().startsWith("@IfAvailable("))
+                val pre = buildPreMacroRawFiles(session, listOf(preFile))
+                val configuration = CompilerConfiguration().apply {
+                    put(org.cangnova.cangjie.config.CommonConfigurationKeys.USE_LIGHT_TREE, lightTree)
+                    installDefaultMacroFragmentParserFactory(project)
+                    macroExecutorFactory = MacroExecutorFactory {
+                        executorCreations++
+                        executor
+                    }
+                }
+                val context = bindMacroImports(pre, buildMacroSymbolIndex(pre = pre))
+                val classification = MacroDemandClassification.create(pre)
+                classification.freezeFinal(macroArtifactDefinitions = context.symbolIndex.foreigns)
+                assertTrue(classification.finalDecisions.single().resolution is MacroResolution.BuiltinNonMacro)
+
+                val result = FrontendMacroConstructionService(configuration).expand(
+                    pre = pre,
+                    context = context,
+                    classification = classification,
+                    mode = MacroConstructionService.Mode.STRICT,
+                )
+
+                assertInstanceOf(MacroConstructionResult.Success::class.java, result, "LightTree=$lightTree")
+                assertEquals(0, executorCreations, "IfAvailable must not initialize the user macro executor; LightTree=$lightTree")
+                assertTrue(executor.calls.isEmpty(), "IfAvailable must not execute as a user macro; LightTree=$lightTree")
+                val function = preFile.cfirFile.declarations.filterIsInstance<CfirNamedFunction>().single()
+                val expression = function.body!!.statements.single() as CfirIfAvailableExpression
+                assertEquals(Name.identifier("level"), expression.conditionName)
+                val conditionNameSource = checkNotNull(expression.conditionNameSource)
+                val mappedConditionName = checkNotNull(session.macroExpansionRegistry)
+                    .originSourceForGeneratedSource(conditionNameSource)
+                assertEquals(source.indexOf("level: 19"), mappedConditionName?.startOffset)
+                assertEquals(source.indexOf("level: 19") + "level".length, mappedConditionName?.endOffset)
+                val offsetOnlyConditionName = CjOffsetsOnlySourceElement(
+                    conditionNameSource.startOffset,
+                    conditionNameSource.endOffset,
+                    sourceAnchor = conditionNameSource,
+                )
+                val mappedOffsetOnlyConditionName = checkNotNull(session.macroExpansionRegistry)
+                    .originSourceForGeneratedSource(offsetOnlyConditionName)
+                assertEquals(source.indexOf("level: 19"), mappedOffsetOnlyConditionName?.startOffset)
+                assertEquals(source.indexOf("level: 19") + "level".length, mappedOffsetOnlyConditionName?.endOffset)
+                val thenBranch = expression.thenBranch as CfirAnonymousFunctionExpression
+                val elseBranch = expression.elseBranch as CfirAnonymousFunctionExpression
+                assertTrue(thenBranch.anonymousFunction.body!!.statements.isNotEmpty())
+                assertTrue(elseBranch.anonymousFunction.body!!.statements.isNotEmpty())
+            }
+        } finally {
+            com.intellij.openapi.util.Disposer.dispose(disposable)
+        }
+    }
+
+    /** 声明位点仍按原声明 scope 重解析完整调用，并由真实声明槽拒绝表达式结果。 */
+    @Test
+    fun sourceIfAvailableDeclarationPreservesInvocationAndDeclarationSlotInPsiAndLightTree() {
+        val disposable = com.intellij.openapi.util.Disposer.newDisposable("ifavailable-declaration-construction")
+        try {
+            val project = org.cangnova.cangjie.CangJieCoreEnvironment.create(
+                disposable, org.cangnova.cangjie.CangJieCoreEnvironmentMode.Production,
+            ).projectEnvironment.project
+            val source = """
+                package sample
+                @IfAvailable(level: 19, {=> availableBranch() }, {=> unavailableBranch() })
+                func use(): Unit {}
+            """.trimIndent()
+
+            for (lightTree in listOf(false, true)) {
+                val session = productionParserSession()
+                val preFile = if (lightTree) {
+                    val sourceFile = CjInMemoryTextSourceFile("ifavailable-declaration.cj", "memory/ifavailable-declaration.cj", source)
+                    org.cangnova.cangjie.cfir.lightTree.LightTree2Cfir(session, session.cangjieScopeProvider)
+                        .buildPreMacroCfirFile(source, sourceFile, source.toSourceLinesMapping())
+                } else {
+                    val psiFile = com.intellij.psi.PsiFileFactory.getInstance(project).createFileFromText(
+                        "ifavailable-declaration.cj",
+                        org.cangnova.cangjie.lang.CangJieFileType.INSTANCE,
+                        source,
+                    ) as org.cangnova.cangjie.psi.CjFile
+                    org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder(
+                        session,
+                        annotationMetadata = CfirAnnotationMetadataBuilder(),
+                    ).buildPreMacroCfirFile(psiFile)
+                }
+                assertEquals(1, preFile.surfaces.size, "LightTree=$lightTree")
+                val surface = preFile.surfaces.single() as MacroSurfaceDecl
+                assertTrue(surface.capturedRawSyntax.orEmpty().startsWith("@IfAvailable("))
+                assertNull(surface.replaceHandle.annotationCarrier)
+                assertEquals(
+                    listOf("CfirMacroExpansionDeclarationImpl", "CfirNamedFunctionImpl"),
+                    preFile.cfirFile.declarations.map { it::class.simpleName },
+                    "LightTree=$lightTree",
+                )
+                val pre = buildPreMacroRawFiles(session, listOf(preFile))
+                val context = bindMacroImports(pre, buildMacroSymbolIndex(pre = pre))
+                val classification = MacroDemandClassification.create(pre)
+                classification.freezeFinal(macroArtifactDefinitions = context.symbolIndex.foreigns)
+                val decision = classification.finalDecisions.single()
+                assertTrue(decision.resolution is MacroResolution.BuiltinNonMacro)
+                assertEquals(MacroReplacementSlotType.DECLARATION, decision.slotType)
+
+                var executorCreations = 0
+                val parserInputs = mutableListOf<MacroFragmentInput>()
+                val configuration = CompilerConfiguration().apply {
+                    put(org.cangnova.cangjie.config.CommonConfigurationKeys.USE_LIGHT_TREE, lightTree)
+                    installDefaultMacroFragmentParserFactory(project)
+                    macroExecutorFactory = MacroExecutorFactory {
+                        executorCreations++
+                        RecordingExecutor()
+                    }
+                }
+                val productionParserFactory = checkNotNull(configuration.macroFragmentParserFactory)
+                configuration.macroFragmentParserFactory = MacroFragmentParserFactory { parserSession ->
+                    val productionParser = productionParserFactory.create(parserSession)
+                    object : MacroFragmentParser {
+                        override fun parse(input: MacroFragmentInput): MacroFragmentResult {
+                            parserInputs += input
+                            return productionParser.parse(input)
+                        }
+                    }
+                }
+
+                val result = FrontendMacroConstructionService(configuration).expand(
+                    pre = pre,
+                    context = context,
+                    classification = classification,
+                    mode = MacroConstructionService.Mode.STRICT,
+                )
+
+                assertInstanceOf(MacroConstructionResult.Failed::class.java, result, "LightTree=$lightTree")
+                assertEquals(0, executorCreations, "IfAvailable declaration recovery must not execute a user macro")
+                val parsedTokenText = parserInputs.single().tokens.joinToString(separator = "") { it.text }
+                assertTrue(parsedTokenText.startsWith("@IfAvailable"))
+                assertTrue(parsedTokenText.contains("availableBranch"))
+                assertTrue(parsedTokenText.contains("unavailableBranch"))
+                assertFalse(parsedTokenText.contains("func"))
+                assertTrue((result as MacroConstructionResult.Failed).registry.diagnostics.any {
+                    it.kind == MacroConstructionDiagnostic.Kind.MACRO_EXPECT_DECLARATION
+                })
+
+                val successSession = productionParserSession()
+                val successPreFile = if (lightTree) {
+                    val sourceFile = CjInMemoryTextSourceFile("ifavailable-declaration.cj", "memory/ifavailable-declaration.cj", source)
+                    org.cangnova.cangjie.cfir.lightTree.LightTree2Cfir(successSession, successSession.cangjieScopeProvider)
+                        .buildPreMacroCfirFile(source, sourceFile, source.toSourceLinesMapping())
+                } else {
+                    val psiFile = com.intellij.psi.PsiFileFactory.getInstance(project).createFileFromText(
+                        "ifavailable-declaration.cj",
+                        org.cangnova.cangjie.lang.CangJieFileType.INSTANCE,
+                        source,
+                    ) as org.cangnova.cangjie.psi.CjFile
+                    org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder(
+                        successSession,
+                        annotationMetadata = CfirAnnotationMetadataBuilder(),
+                    ).buildPreMacroCfirFile(psiFile)
+                }
+                val successPre = buildPreMacroRawFiles(successSession, listOf(successPreFile))
+                val successContext = bindMacroImports(successPre, buildMacroSymbolIndex(pre = successPre))
+                val successClassification = MacroDemandClassification.create(successPre)
+                successClassification.freezeFinal(macroArtifactDefinitions = successContext.symbolIndex.foreigns)
+                val generatedFunction = namedFunction(
+                    moduleData = successPreFile.cfirFile.moduleData,
+                    packageFqName = FqName("sample"),
+                    name = "generated",
+                )
+                val successfulConfiguration = CompilerConfiguration().apply {
+                    put(org.cangnova.cangjie.config.CommonConfigurationKeys.USE_LIGHT_TREE, lightTree)
+                    macroExecutorFactory = MacroExecutorFactory {
+                        executorCreations++
+                        RecordingExecutor()
+                    }
+                    macroFragmentParserFactory = MacroFragmentParserFactory {
+                        object : MacroFragmentParser {
+                            override fun parse(input: MacroFragmentInput): MacroFragmentResult =
+                                MacroFragmentResult.Success(
+                                    input.node,
+                                    input.tokens,
+                                    input.mode,
+                                    MacroFragmentPayload.single(generatedFunction),
+                                )
+                        }
+                    }
+                }
+                val successfulResult = FrontendMacroConstructionService(successfulConfiguration).expand(
+                    pre = successPre,
+                    context = successContext,
+                    classification = successClassification,
+                    mode = MacroConstructionService.Mode.STRICT,
+                )
+                assertInstanceOf(MacroConstructionResult.Success::class.java, successfulResult, "LightTree=$lightTree")
+                assertEquals(
+                    listOf("generated", "use"),
+                    successPreFile.cfirFile.declarations.filterIsInstance<CfirNamedFunction>().map { it.name.asString() },
+                    "The expanded declaration must replace the real macro declaration slot; LightTree=$lightTree",
+                )
+                assertTrue(successPreFile.cfirFile.declarations.none { it is org.cangnova.cangjie.cfir.declarations.CfirMacroExpansionDeclaration })
+                assertEquals(0, executorCreations, "IfAvailable declaration recovery must not execute a user macro")
+            }
+        } finally {
+            com.intellij.openapi.util.Disposer.dispose(disposable)
+        }
+    }
+
+    /** class body 中的独立声明宏调用在 PSI 与 LightTree 中指向同一真实成员槽。 */
+    @Test
+    fun sourceIfAvailableDeclarationSlotIsRetainedInsideClassBodyInPsiAndLightTree() {
+        val disposable = com.intellij.openapi.util.Disposer.newDisposable("ifavailable-class-declaration-slot")
+        try {
+            val project = org.cangnova.cangjie.CangJieCoreEnvironment.create(
+                disposable, org.cangnova.cangjie.CangJieCoreEnvironmentMode.Production,
+            ).projectEnvironment.project
+            val source = """
+                package sample
+                class Host {
+                    @IfAvailable(level: 19, {=> availableBranch() }, {=> unavailableBranch() })
+                }
+            """.trimIndent()
+
+            for (lightTree in listOf(false, true)) {
+                val session = productionParserSession()
+                val preFile = if (lightTree) {
+                    val sourceFile = CjInMemoryTextSourceFile("ifavailable-member.cj", "memory/ifavailable-member.cj", source)
+                    org.cangnova.cangjie.cfir.lightTree.LightTree2Cfir(session, session.cangjieScopeProvider)
+                        .buildPreMacroCfirFile(source, sourceFile, source.toSourceLinesMapping())
+                } else {
+                    val psiFile = com.intellij.psi.PsiFileFactory.getInstance(project).createFileFromText(
+                        "ifavailable-member.cj",
+                        org.cangnova.cangjie.lang.CangJieFileType.INSTANCE,
+                        source,
+                    ) as org.cangnova.cangjie.psi.CjFile
+                    org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder(
+                        session,
+                        annotationMetadata = CfirAnnotationMetadataBuilder(),
+                    ).buildPreMacroCfirFile(psiFile)
+                }
+                val host = preFile.cfirFile.declarations
+                    .filterIsInstance<org.cangnova.cangjie.cfir.declarations.CfirClass>()
+                    .single()
+                val invocationCarrier = host.declarations
+                    .filterIsInstance<org.cangnova.cangjie.cfir.declarations.CfirMacroExpansionDeclaration>()
+                    .single()
+                val surface = preFile.surfaces.single() as MacroSurfaceDecl
+
+                assertSame(invocationCarrier, surface.replaceHandle.carrier, "LightTree=$lightTree")
+                assertNull(surface.replaceHandle.annotationCarrier)
+                assertTrue(surface.capturedRawSyntax.orEmpty().startsWith("@IfAvailable("))
+            }
+        } finally {
+            com.intellij.openapi.util.Disposer.dispose(disposable)
+        }
+    }
+
+    /** 宏声明槽替换改变成员图，但不能改变宿主在原始源码中确定的默认实现事实。 */
+    @Test
+    fun macroDeclarationReplacementPreservesCommonHostDefaultFactInPsiAndLightTree() {
+        val disposable = com.intellij.openapi.util.Disposer.newDisposable("common-host-macro-replacement")
+        try {
+            val project = org.cangnova.cangjie.CangJieCoreEnvironment.create(
+                disposable, org.cangnova.cangjie.CangJieCoreEnvironmentMode.Production,
+            ).projectEnvironment.project
+            for (lightTree in listOf(false, true)) {
+                for (hasDefault in listOf(false, true)) {
+                    val initializer = if (hasDefault) " = 1" else ""
+                    val source = """
+                        package sample
+                        public common class Host {
+                            public common let value: Int64$initializer
+                            @IfAvailable(level: 19, {=> availableBranch() }, {=> unavailableBranch() })
+                        }
+                    """.trimIndent()
+                    val session = productionParserSession()
+                    val preFile = if (lightTree) {
+                        val sourceFile = CjInMemoryTextSourceFile("host.cj", "memory/host.cj", source)
+                        org.cangnova.cangjie.cfir.lightTree.LightTree2Cfir(session, session.cangjieScopeProvider)
+                            .buildPreMacroCfirFile(source, sourceFile, source.toSourceLinesMapping())
+                    } else {
+                        val psiFile = com.intellij.psi.PsiFileFactory.getInstance(project).createFileFromText(
+                            "host.cj", org.cangnova.cangjie.lang.CangJieFileType.INSTANCE, source,
+                        ) as org.cangnova.cangjie.psi.CjFile
+                        org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder(
+                            session, annotationMetadata = CfirAnnotationMetadataBuilder(),
+                        ).buildPreMacroCfirFile(psiFile)
+                    }
+                    val host = preFile.cfirFile.declarations
+                        .filterIsInstance<org.cangnova.cangjie.cfir.declarations.CfirClass>().single()
+                    val before = host.cjmpHasCommonDefault()
+                    assertEquals(hasDefault, before, "LightTree=$lightTree")
+                    val carrier = host.declarations
+                        .filterIsInstance<org.cangnova.cangjie.cfir.declarations.CfirMacroExpansionDeclaration>().single()
+                    val originalMembers = host.declarations.toList()
+                    val generated = namedFunction(preFile.cfirFile.moduleData, FqName("sample"), "generated")
+                    generated.replaceStatus(CfirDeclarationStatusImpl().apply { isCommon = true })
+                    assertFalse(generated.cjmpHasCommonDefault())
+                    val pre = buildPreMacroRawFiles(session, listOf(preFile))
+                    val context = bindMacroImports(pre, buildMacroSymbolIndex(pre = pre))
+                    val classification = MacroDemandClassification.create(pre)
+                    classification.freezeFinal(macroArtifactDefinitions = context.symbolIndex.foreigns)
+                    val configuration = CompilerConfiguration().apply {
+                        put(org.cangnova.cangjie.config.CommonConfigurationKeys.USE_LIGHT_TREE, lightTree)
+                        macroFragmentParserFactory = MacroFragmentParserFactory {
+                            object : MacroFragmentParser {
+                                override fun parse(input: MacroFragmentInput): MacroFragmentResult =
+                                    MacroFragmentResult.Success(input.node, input.tokens, input.mode, MacroFragmentPayload.single(generated))
+                            }
+                        }
+                    }
+                    val result = FrontendMacroConstructionService(configuration).expand(
+                        pre = pre, context = context, classification = classification,
+                        mode = MacroConstructionService.Mode.STRICT,
+                    )
+                    assertInstanceOf(MacroConstructionResult.Success::class.java, result, "LightTree=$lightTree")
+                    assertTrue(originalMembers.any { it === carrier })
+                    assertTrue(host.declarations.none { it === carrier })
+                    assertTrue(host.declarations.any { it === generated })
+                    assertEquals(before, host.cjmpHasCommonDefault(), "LightTree=$lightTree, original=$hasDefault")
+                }
+            }
+        } finally {
+            com.intellij.openapi.util.Disposer.dispose(disposable)
+        }
+    }
+
+    /** 使用生产 parser，防止宏重新解析绕过文件角色和函数签名语法。 */
+    @Test
+    fun productionMacroParserRejectsInvalidDeclarationSyntaxInPsiAndLightTree() {
+        val disposable = com.intellij.openapi.util.Disposer.newDisposable("macro-parser-syntax")
+        try {
+            val project = org.cangnova.cangjie.CangJieCoreEnvironment.create(
+                disposable, org.cangnova.cangjie.CangJieCoreEnvironmentMode.Production,
+            ).projectEnvironment.project
+            val originalSourceText = "package sample\n@GenerateDeclaration func original(): Unit {}\n"
+            val originalSourceFile = CjPsiFactory(project).createFile("macroInvocation.cj", originalSourceText)
+            val invocationRange = MacroSurfaceSourceRange(
+                originalSourceFile.toCjPsiSourceElement(),
+                originalSourceText.indexOf('@'),
+                originalSourceText.lastIndexOf('}') + 1,
+            )
+            val cases = listOf(
+                Triple("common func generated(): Unit", org.cangnova.cangjie.cfir.session.CfirCjmpMode.NONE,
+                    org.cangnova.cangjie.messages.CangJieParsingBundle.message("parsing.error.cjmp.common.in.non.common.file")),
+                Triple("specific func generated(): Unit", org.cangnova.cangjie.cfir.session.CfirCjmpMode.NONE,
+                    org.cangnova.cangjie.messages.CangJieParsingBundle.message("parsing.error.cjmp.specific.in.non.specific.file")),
+                Triple("common func generated()", org.cangnova.cangjie.cfir.session.CfirCjmpMode.COMMON,
+                    org.cangnova.cangjie.messages.CangJieParsingBundle.message("parsing.error.cjmp.function.return.type.required", "common")),
+                Triple("common let (a, b) = (1, 2)", org.cangnova.cangjie.cfir.session.CfirCjmpMode.COMMON,
+                    org.cangnova.cangjie.messages.CangJieParsingBundle.message("parsing.error.cjmp.pattern.declaration", "tuple", "common")),
+                Triple("common let Some(x) = value", org.cangnova.cangjie.cfir.session.CfirCjmpMode.COMMON,
+                    org.cangnova.cangjie.messages.CangJieParsingBundle.message("parsing.error.cjmp.pattern.declaration", "enum", "common")),
+                Triple("common let _ = value", org.cangnova.cangjie.cfir.session.CfirCjmpMode.COMMON,
+                    org.cangnova.cangjie.messages.CangJieParsingBundle.message("parsing.error.cjmp.pattern.declaration", "wildcard", "common")),
+            )
+            for (lightTree in listOf(false, true)) {
+                for ((text, cjmpMode, expected) in cases) {
+                    val session = object : CfirSession(CfirSession.Kind.Source) {}
+                    val moduleData = TestModuleData(session)
+                    session.register(CfirModuleData::class, moduleData)
+                    session.register(org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider::class,
+                        org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider())
+                    session.register(org.cangnova.cangjie.cfir.session.CfirLanguageSettingsComponent::class,
+                        org.cangnova.cangjie.cfir.session.CfirLanguageSettingsComponent(org.cangnova.cangjie.LanguageVersionSettingsImpl.DEFAULT))
+                    session.register(org.cangnova.cangjie.cfir.session.CfirCjmpSettingsComponent::class,
+                        org.cangnova.cangjie.cfir.session.CfirCjmpSettingsComponent(explicitMode = cjmpMode))
+                    val packageName = FqName("sample")
+                    val original = namedFunction(moduleData, packageName, "original")
+                    val file = fileWithParsedSource(moduleData, packageName, originalSourceFile, original)
+                    assertEquals(ParsingFileFacts(CjSourceKind.SOURCE, CjmpFileRole.NONE), file.parsingFileFacts)
+                    val surface = declarationSurface(3101L, FqName("macros.GenerateDeclaration"), packageName, original)
+                        .copy(sourceRange = invocationRange)
+                    val pre = buildPreMacroRawFiles(session, listOf(PreMacroCfirFile(file, listOf(surface), CfirAnnotationMetadataBuilder())))
+                    val configuration = CompilerConfiguration().apply {
+                        put(org.cangnova.cangjie.config.CommonConfigurationKeys.USE_LIGHT_TREE, lightTree)
+                        macroExecutorFactory = MacroExecutorFactory {
+                            RecordingExecutor(MacroExpansionResult.Success(listOf(tokenInfo(text)), text))
+                        }
+                        installDefaultMacroFragmentParserFactory(project)
+                    }
+                    val result = FrontendMacroConstructionService(configuration).expandWithClassification(
+                        pre, contextWithArtifact(pre, "GenerateDeclaration"), MacroConstructionService.Mode.STRICT,
+                    )
+                    assertInstanceOf(MacroConstructionResult.Failed::class.java, result, "$lightTree: $text")
+                    assertTrue(result.registry.diagnostics.isEmpty(), "${result.registry.diagnostics}")
+                    val failure = result.registry.parsingFailures.single()
+                    assertEquals(text, failure.parsedText)
+                    assertTrue(failure.diagnostics.any { it.message == expected }, "$lightTree: ${failure.diagnostics}")
+                    val expectedOrigin = if (cjmpMode == org.cangnova.cangjie.cfir.session.CfirCjmpMode.NONE)
+                        org.cangnova.cangjie.messages.ParsingDiagnostic.Origin.ORIGINAL_FILE
+                    else org.cangnova.cangjie.messages.ParsingDiagnostic.Origin.INPUT
+                    val expectedDiagnostic = failure.diagnostics.single { it.message == expected }
+                    assertEquals(expectedOrigin, expectedDiagnostic.origin)
+                    if (expectedOrigin == org.cangnova.cangjie.messages.ParsingDiagnostic.Origin.INPUT) {
+                        val mapped = checkNotNull(failure.sourceMap).mapRange(
+                            expectedDiagnostic.startOffset,
+                            expectedDiagnostic.endOffset,
+                        )
+                        assertEquals(invocationRange.startOffset, mapped?.startOffset, "Generated text is not original source: $lightTree")
+                        assertEquals(invocationRange.endOffset, mapped?.endOffset, "Generated text is not original source: $lightTree")
+                    }
+                    assertSame(original, file.declarations.single())
+                }
+            }
+        } finally {
+            com.intellij.openapi.util.Disposer.dispose(disposable)
+        }
+    }
+
+    /** 文件角色依实际 parser 顺序传递；失败解析已识别的角色也保留，不同文件之间不串状态。 */
+    @Test
+    fun productionMacroParserMaintainsOriginalFileTransactionAcrossFragments() {
+        val disposable = com.intellij.openapi.util.Disposer.newDisposable("macro-parser-file-transaction")
+        try {
+            val project = org.cangnova.cangjie.CangJieCoreEnvironment.create(
+                disposable, org.cangnova.cangjie.CangJieCoreEnvironmentMode.Production,
+            ).projectEnvironment.project
+            for (lightTree in listOf(false, true)) for (mode in MacroConstructionService.Mode.entries) {
+                for (separateFiles in listOf(false, true)) for (brokenFirst in listOf(false, true)) {
+                    for (firstRole in listOf(CjmpFileRole.COMMON, CjmpFileRole.SPECIFIC)) for (version in listOf(
+                        org.cangnova.cangjie.LanguageVersion.CANGJIE_1_1_3,
+                        org.cangnova.cangjie.LanguageVersion.CANGJIE_1_2_0_ALPHA_19,
+                        org.cangnova.cangjie.LanguageVersion.CANGJIE_1_2_0_ALPHA_20,
+                    )) {
+                        val mixedAllowed = version >= org.cangnova.cangjie.LanguageVersion.CANGJIE_1_2_0_ALPHA_20
+                        val session = productionParserSession(version)
+                        val moduleData = session.moduleData
+                        val packageName = FqName("sample")
+                        val originals = listOf("first", "second").map { namedFunction(moduleData, packageName, it) }
+                        val fileOwners = if (separateFiles) originals.map { listOf(it) } else listOf(originals)
+                        val files = fileOwners.map { owners ->
+                            val sourceText = "package sample\n" + owners.joinToString("\n") {
+                                "@macros.GenerateDeclaration func ${it.name.asString()}(): Unit {}"
+                            } + "\n"
+                            val sourceFile = CjPsiFactory(project, markGenerated = false).createFile("sample.cj", sourceText)
+                            sourceFile.cjmpParsingContext = session.cjmpSettings.toParsingContext(session.languageVersionSettings)
+                            fileWithParsedSource(moduleData, packageName, sourceFile, *owners.toTypedArray())
+                        }
+                        files.forEach { assertEquals(ParsingFileFacts(CjSourceKind.SOURCE, CjmpFileRole.NONE), it.parsingFileFacts) }
+                        val surfaces = originals.mapIndexed { index, original ->
+                            declarationSurface(3201L + index, FqName("macros.GenerateDeclaration"), packageName, original)
+                        }
+                        val pre = buildPreMacroRawFiles(session, files.mapIndexed { index, file ->
+                            PreMacroCfirFile(
+                                file,
+                                if (separateFiles) listOf(surfaces[index]) else surfaces,
+                                CfirAnnotationMetadataBuilder(),
+                            )
+                        })
+                        val opposite = if (firstRole == CjmpFileRole.COMMON) CjmpFileRole.SPECIFIC else CjmpFileRole.COMMON
+                        val texts = listOf(
+                            "${firstRole.name.lowercase()} func firstGenerated()" + if (brokenFirst) "" else ": Unit {}",
+                            "${opposite.name.lowercase()} func secondGenerated(): Unit {}",
+                        ).iterator()
+                        val delegate = RecordingExecutor()
+                        val executor = object : MacroExecutor by delegate {
+                            override fun execute(calls: List<MacroCallInfo>): List<MacroExpansionResult> = calls.map {
+                                val text = texts.next()
+                                MacroExpansionResult.Success(listOf(tokenInfo(text)), text)
+                            }
+                        }
+                        val configuration = CompilerConfiguration().apply {
+                            put(org.cangnova.cangjie.config.CommonConfigurationKeys.USE_LIGHT_TREE, lightTree)
+                            macroExecutorFactory = MacroExecutorFactory { executor }
+                            installDefaultMacroFragmentParserFactory(project)
+                        }
+                        val result = FrontendMacroConstructionService(configuration).expandWithClassification(
+                            pre, contextWithArtifact(pre, "GenerateDeclaration"), mode,
+                        )
+                        val label = "$version/$lightTree/$mode/separate=$separateFiles/broken=$brokenFirst/$firstRole"
+                        assertTrue(result.registry.diagnostics.isEmpty(), "$label: ${result.registry.diagnostics}")
+                        val mixed = org.cangnova.cangjie.messages.CangJieParsingBundle.message("parsing.error.cjmp.common.and.specific.in.same.file")
+                        assertEquals(!separateFiles && !mixedAllowed, result.registry.parsingFailures.any { failure ->
+                            failure.diagnostics.any { it.message == mixed }
+                        }, label)
+                        result.registry.parsingFailures.flatMap { it.diagnostics }.filter { it.message == mixed }.forEach {
+                            assertEquals(org.cangnova.cangjie.messages.ParsingDiagnostic.Origin.ORIGINAL_FILE, it.origin, label)
+                        }
+                        // 查询返回原文件的当前事务快照；同文件的两个 surface 都看到后续角色更新。
+                        assertEquals(if (!separateFiles && mixedAllowed) CjmpFileRole.BOTH else firstRole,
+                            result.registry.parsingFactsForSurface(surfaces.first().surfaceId)?.cjmpRole, label)
+                        assertEquals(if (separateFiles) opposite else if (mixedAllowed) CjmpFileRole.BOTH else firstRole,
+                            result.registry.parsingFactsForSurface(surfaces.last().surfaceId)?.cjmpRole, label)
+                        files.forEach { assertEquals(CjmpFileRole.NONE, it.parsingFileFacts?.cjmpRole, label) }
+                        if (brokenFirst || (!separateFiles && !mixedAllowed)) assertInstanceOf(MacroConstructionResult.Failed::class.java, result, label)
+                        else assertInstanceOf(MacroConstructionResult.Success::class.java, result, label)
+                    }
+                }
+            }
+        } finally {
+            com.intellij.openapi.util.Disposer.dispose(disposable)
+        }
+    }
+
+    /** 宏声明重解析保留 `.cj.d` 无体规则和 raw 状态；宿主角色也须直接继承。 */
+    @Test
+    fun productionMacroParserInheritsDeclarationSourceKindAndExistingRole() {
+        val disposable = com.intellij.openapi.util.Disposer.newDisposable("macro-parser-origin-kind")
+        try {
+            val project = org.cangnova.cangjie.CangJieCoreEnvironment.create(
+                disposable, org.cangnova.cangjie.CangJieCoreEnvironmentMode.Production,
+            ).projectEnvironment.project
+            for (lightTree in listOf(false, true)) for (sourceKind in listOf(CjSourceKind.SOURCE, CjSourceKind.DECLARATION)) {
+                for (initialRole in listOf(CjmpFileRole.NONE, CjmpFileRole.COMMON, CjmpFileRole.SPECIFIC)) {
+                    val session = productionParserSession()
+                    val packageName = FqName("sample")
+                    val original = namedFunction(session.moduleData, packageName, "original")
+                    val originalFacts = ParsingFileFacts(sourceKind, initialRole)
+                    // 真实 viewProvider 的 FileType 决定文件种类；普通 CjPsiFactory 固定创建 SOURCE。
+                    val sourceFileName = if (sourceKind == CjSourceKind.DECLARATION) "sample.cj.d" else "sample.cj"
+                    val body = if (sourceKind == CjSourceKind.SOURCE && initialRole != CjmpFileRole.COMMON) " {}" else ""
+                    val sourceFile = com.intellij.psi.PsiFileFactory.getInstance(project).createFileFromText(
+                        sourceFileName,
+                        if (sourceKind == CjSourceKind.DECLARATION) org.cangnova.cangjie.lang.declarations.CangJieDeclarationFileType
+                        else org.cangnova.cangjie.lang.CangJieFileType.INSTANCE,
+                        "package sample\n@macros.GenerateDeclaration func original(): Unit$body\n",
+                        com.intellij.util.LocalTimeCounter.currentTime(), false, false,
+                    ) as org.cangnova.cangjie.psi.CjFile
+                    assertNull(sourceFile.parsingSourceContextOrNull(), "入口角色必须在首次解析前安装")
+                    sourceFile.cjmpParsingContext = session.cjmpSettings.toParsingContext(session.languageVersionSettings)
+                        .copy(initialFileRole = initialRole)
+                    val file = fileWithParsedSource(session.moduleData, packageName, sourceFile, original)
+                    assertEquals(originalFacts, file.parsingFileFacts)
+                    val surface = declarationSurface(3301L, FqName("macros.GenerateDeclaration"), packageName, original)
+                    val pre = buildPreMacroRawFiles(session, listOf(PreMacroCfirFile(file, listOf(surface), CfirAnnotationMetadataBuilder())))
+                    val text = if (initialRole == CjmpFileRole.NONE) "func generated(): Unit"
+                        else "${if (initialRole == CjmpFileRole.COMMON) "specific" else "common"} func generated(): Unit {}"
+                    val configuration = CompilerConfiguration().apply {
+                        put(org.cangnova.cangjie.config.CommonConfigurationKeys.USE_LIGHT_TREE, lightTree)
+                        macroExecutorFactory = MacroExecutorFactory {
+                            RecordingExecutor(MacroExpansionResult.Success(listOf(tokenInfo(text)), text))
+                        }
+                        installDefaultMacroFragmentParserFactory(project)
+                    }
+                    val result = FrontendMacroConstructionService(configuration).expandWithClassification(
+                        pre, contextWithArtifact(pre, "GenerateDeclaration"), MacroConstructionService.Mode.STRICT,
+                    )
+                    val label = "$lightTree/$sourceKind/$initialRole"
+                    assertTrue(result.registry.diagnostics.isEmpty(), "$label: ${result.registry.diagnostics}")
+                    assertEquals(originalFacts, result.registry.parsingFactsForSurface(surface.surfaceId), label)
+                    assertEquals(originalFacts, file.parsingFileFacts, label)
+                    if (initialRole != CjmpFileRole.NONE) {
+                        assertInstanceOf(MacroConstructionResult.Failed::class.java, result, label)
+                        val mixed = org.cangnova.cangjie.messages.CangJieParsingBundle.message("parsing.error.cjmp.common.and.specific.in.same.file")
+                        assertTrue(result.registry.parsingFailures.single().diagnostics.any { it.message == mixed }, label)
+                    } else if (sourceKind == CjSourceKind.DECLARATION) {
+                        assertInstanceOf(MacroConstructionResult.Success::class.java, result, label)
+                        val generated = (result as MacroConstructionResult.Success).recordableFiles.files.single().declarations.single() as CfirNamedFunction
+                        assertEquals("generated", generated.name.asString(), label)
+                        assertNotEquals(org.cangnova.cangjie.descriptors.Modality.ABSTRACT, generated.status.modality, label)
+                    } else {
+                        assertInstanceOf(MacroConstructionResult.Failed::class.java, result, label)
+                        assertTrue(result.registry.parsingFailures.isNotEmpty(), label)
+                    }
+                }
+            }
+        } finally {
+            com.intellij.openapi.util.Disposer.dispose(disposable)
+        }
+    }
+
+    /**
+     * 真实 PSI 提供这份宿主文件的输入、来源和已发布文法事实；声明仍是测试显式构造的
+     * 合成 CFIR owner，保留 replace handle 与原断言所检查的对象身份，不声称其由 PSI raw 构建生成。
+     */
+    private fun fileWithParsedSource(
+        moduleData: CfirModuleData,
+        packageFqName: FqName,
+        parsedSource: org.cangnova.cangjie.psi.CjFile,
+        vararg owners: CfirNamedFunction,
+    ): CfirFile {
+        val root = parsedSource.node
+        // 根正文必须实际展开，来源查询本身不会触发 parser。
+        root.firstChildNode
+        val sourceContext = checkNotNull(parsedSource.parsingSourceContextOrNull()) {
+            "The fixture's actual PSI parser must publish its source context."
+        }
+        sourceContext.requireInput(root.chars)
+        check(parsedSource.packageFqName == packageFqName)
+        val facts = checkNotNull(parsedSource.parsedFileFacts)
+        return buildFileCopy(fileWithDeclarations(moduleData, packageFqName, *owners)) {
+            symbol = CfirFileSymbol()
+            name = parsedSource.name
+            source = parsedSource.toCjPsiSourceElement()
+            sourceFile = CjPsiSourceFile(parsedSource)
+            sourceFileLinesMapping = root.chars.toString().toSourceLinesMapping()
+        }.also { it.publishParsingFileFacts(facts, sourceContext) }
+    }
+
+    /** 测试调用同时启用两个独立编译谓词，保留真实 parser/version/raw-builder 装配。 */
+    private fun productionParserSession(
+        version: org.cangnova.cangjie.LanguageVersion = org.cangnova.cangjie.LanguageVersion.LATEST_STABLE,
+    ): CfirSession {
+        val languageVersionSettings = org.cangnova.cangjie.LanguageVersionSettingsImpl(version)
+        val commonPartInputs = (
+            org.cangnova.cangjie.cfir.entrypoint.configuration.CjmpCommonPartInputResolver.resolve(
+                commonPartCjoPaths = listOf("common.cjo"),
+                commonPartChirPaths = emptyList(),
+                languageVersionSettings = languageVersionSettings,
+            ) as org.cangnova.cangjie.cfir.entrypoint.configuration.CjmpCommonPartInputResolution.Valid
+        ).inputs
+        val session = object : CfirSession(CfirSession.Kind.Source) {}
+        session.register(CfirModuleData::class, TestModuleData(session))
+        session.register(org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider::class,
+            org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider())
+        session.register(org.cangnova.cangjie.cfir.session.CfirLanguageSettingsComponent::class,
+            org.cangnova.cangjie.cfir.session.CfirLanguageSettingsComponent(languageVersionSettings))
+        session.register(org.cangnova.cangjie.cfir.session.CfirCjmpSettingsComponent::class,
+            org.cangnova.cangjie.cfir.session.CfirCjmpSettingsComponent(
+                commonPartInputs = commonPartInputs,
+                isChirOutput = true,
+            ))
+        return session
+    }
+
+    /** STRICT 与 DEGRADED 均不能拼接 parser 已拒绝的宏产物。 */
+    @Test
+    fun parserSyntaxFailureRejectsConstructionWithoutSemanticDiagnosticInEitherMode() {
+        for (mode in MacroConstructionService.Mode.entries) {
+            val fixture = macroExpressionCarrierFixture()
+            val original = fixture.function.body!!.statements.single()
+            val configuration = CompilerConfiguration().apply {
+                macroExecutorFactory = MacroExecutorFactory {
+                    RecordingExecutor(MacroExpansionResult.Success(listOf(tokenInfo("invalid")), "invalid"))
+                }
+                macroFragmentParserFactory = MacroFragmentParserFactory {
+                    object : MacroFragmentParser {
+                        override fun parse(input: MacroFragmentInput): MacroFragmentResult {
+                            val parsedText = "invalid"
+                            val collector = CjParsingDiagnosticCollector(CjParserSourceContext.complete(parsedText))
+                            collector.report(ParsingDiagnostic(0, 7, "Invalid macro syntax"))
+                            collector.finish()
+                            return MacroFragmentResult.SyntaxFailure(
+                                input.node, parsedText, collector.publication,
+                            )
+                        }
+                    }
+                }
+            }
+            val result = FrontendMacroConstructionService(configuration).expandWithClassification(
+                pre = fixture.pre,
+                context = contextWithArtifact(fixture.pre, "Generated"),
+                mode = mode,
+            )
+            assertInstanceOf(MacroConstructionResult.Failed::class.java, result)
+            assertEquals(1, result.registry.parsingFailures.size)
+            assertTrue(result.registry.diagnostics.isEmpty(), "${result.registry.diagnostics}")
+            assertSame(original, fixture.function.body!!.statements.single())
+        }
+    }
+
+    /** 合法语法产生的 roots 仍须匹配最终替换槽，避免把形状错误拖到 splicer 内部异常。 */
+    @Test
+    fun parserRootShapeFailureRejectsConstructionBeforeSplicing() {
+        val fixture = macroExpressionCarrierFixture()
+        val original = fixture.function.body!!.statements.single()
+        val configuration = CompilerConfiguration().apply {
+            macroExecutorFactory = MacroExecutorFactory {
+                RecordingExecutor(MacroExpansionResult.Success(listOf(tokenInfo("expanded")), "expanded"))
+            }
+            macroFragmentParserFactory = MacroFragmentParserFactory {
+                object : MacroFragmentParser {
+                    override fun parse(input: MacroFragmentInput): MacroFragmentResult = MacroFragmentResult.Success(
+                        originNode = input.node,
+                        tokens = input.tokens,
+                        mode = input.mode,
+                        payload = MacroFragmentPayload.EMPTY,
+                    )
+                }
+            }
+        }
+
+        val result = FrontendMacroConstructionService(configuration).expandWithClassification(
+            pre = fixture.pre,
+            context = contextWithArtifact(fixture.pre, "Generated"),
+            mode = MacroConstructionService.Mode.STRICT,
+        )
+
+        val registry = (result as? MacroConstructionResult.Failed)?.registry
+            ?: error("A fragment without an expression root must fail construction, got ${result::class.simpleName}")
+        val shapeFailure = registry.diagnostics.singleOrNull {
+            it.kind == org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionDiagnostic.Kind.MACRO_EXPANSION_FAILED
+        }
+        assertTrue(shapeFailure?.message?.contains("exactly one expression root") == true)
+        assertSame(original, fixture.function.body!!.statements.single())
+    }
+
+    /** DEGRADED 仅处理结构化编译失败；parser/splicer 不变量与取消必须清理后原样抛出。 */
+    @Test
+    fun invariantAndCancellationFailuresAbortMetadataAndCloseExecutorWithoutDegrading() {
+        for (failInParser in listOf(true, false)) {
+            for (expected in listOf(IllegalStateException("metadata invariant"), CancellationException("cancel construction"))) {
+                val fixture = macroExpressionCarrierFixture()
+                val preFile = fixture.pre.files.single()
+                val metadata = preFile.annotationMetadata
+                val original = fixture.function.body!!.statements.single()
+                val annotationSource = MetadataFixtureSource("@!FailureTag")
+                val annotation = buildAnnotationCall {
+                    source = annotationSource
+                    typeRef = buildImplicitTypeRef()
+                    annotationSourceName = "FailureTag"
+                    sourceModuleName = "sample"
+                    forcedCustom = true
+                    isCompileTimeVisible = true
+                    argumentList = buildArgumentList()
+                    calleeReference = buildNamedReference { name = Name.identifier("FailureTag") }
+                    containingDeclarationSymbol = fixture.function.symbol
+                }
+                fixture.function.replaceAnnotations(listOf(annotation))
+                metadata.record(CfirAnnotationSlotSnapshot(
+                    owner = fixture.function,
+                    annotationIndex = 0,
+                    originalAnnotation = annotation,
+                    rawSyntax = "@!FailureTag",
+                    forcedCustom = true,
+                    isCompileTimeVisible = true,
+                    annotationSource = annotationSource,
+                    qualifiedName = FqName("sample.FailureTag"),
+                    argumentText = null,
+                    tokens = listOf(MacroSurfaceToken("@!FailureTag", 0, 12)),
+                    callSite = MacroCallSite.DECLARATION,
+                ))
+                val published = fixture.pre.session.ensureAnnotationMetadataRegistry()
+                val delegate = RecordingExecutor(MacroExpansionResult.Success(listOf(tokenInfo("42")), "42"))
+                var closeCalls = 0
+                var parserCalls = 0
+                var spliceCalls = 0
+                val executor = object : MacroExecutor by delegate {
+                    override fun close() {
+                        closeCalls++
+                        delegate.close()
+                    }
+                }
+                val configuration = CompilerConfiguration().apply {
+                    macroExecutorFactory = MacroExecutorFactory { executor }
+                    macroFragmentParserFactory = MacroFragmentParserFactory {
+                        object : MacroFragmentParser {
+                            override fun parse(input: MacroFragmentInput): MacroFragmentResult {
+                                parserCalls++
+                                assertSame(metadata, input.annotationMetadata)
+                                if (failInParser) throw expected
+                                return MacroFragmentResult.Success(
+                                    input.node, input.tokens, input.mode,
+                                    MacroFragmentPayload.single(buildErrorExpression { diagnostic = ConeSimpleDiagnostic("replacement") }),
+                                )
+                            }
+                        }
+                    }
+                }
+                val splicer = object : MacroStableSplicer {
+                    override fun applySlices(files: List<CfirFile>, slots: List<MacroReplaceSlot>): List<CfirFile> {
+                        spliceCalls++
+                        assertSame(metadata, slots.single().annotationMetadata)
+                        throw expected
+                    }
+                }
+                val thrown = assertThrows(RuntimeException::class.java) {
+                    FrontendMacroConstructionService(configuration, splicer).expandWithClassification(
+                        fixture.pre, contextWithArtifact(fixture.pre, "Generated"), MacroConstructionService.Mode.DEGRADED,
+                    )
+                }
+                assertSame(expected, thrown)
+                assertEquals(1, delegate.calls.size)
+                assertEquals(1, parserCalls)
+                assertEquals(if (failInParser) 0 else 1, spliceCalls)
+                assertEquals(1, closeCalls)
+                assertSame(original, fixture.function.body!!.statements.single())
+                // SEALED 仍可只读，ABORTED 禁止查询；此处明确验证异常路径已 abort。
+                assertThrows(IllegalStateException::class.java) { metadata.snapshot(annotation) }
+                assertThrows(IllegalStateException::class.java) { metadata.seal(listOf(preFile.cfirFile)) }
+                assertNull(published.snapshot(annotation))
+            }
+        }
+    }
+
     /**
      * 验证默认稳定 splicer 会用解析出的表达式 payload 替换表达式 carrier。
      */
@@ -108,9 +957,9 @@ class FrontendMacroConstructionExecutionTest {
                     originNode = input.node,
                     tokens = input.tokens,
                     mode = input.mode,
-                    payload = buildErrorExpression {
+                    payload = MacroFragmentPayload.single(buildErrorExpression {
                         diagnostic = ConeSimpleDiagnostic("expanded macro payload")
-                    },
+                    }),
                 )
             }
         }
@@ -153,6 +1002,43 @@ class FrontendMacroConstructionExecutionTest {
         val packageFqName = FqName("sample")
         val original = namedFunction(moduleData, packageFqName, "original")
         val replacement = namedFunction(moduleData, packageFqName, "expanded")
+        val siblingReplacement = namedFunction(moduleData, packageFqName, "expandedSibling")
+        val metadata = CfirAnnotationMetadataBuilder()
+        fun annotation(annotationName: String, context: CfirBasedSymbol<*> = replacement.symbol): CfirAnnotationCall = buildAnnotationCall {
+            source = MetadataFixtureSource("@!$annotationName")
+            typeRef = buildImplicitTypeRef()
+            annotationSourceName = annotationName
+            sourceModuleName = "sample"
+            forcedCustom = true
+            isCompileTimeVisible = true
+            argumentList = buildArgumentList()
+            calleeReference = buildNamedReference { name = Name.identifier(annotationName) }
+            containingDeclarationSymbol = context
+        }
+        fun record(owner: CfirDeclaration, annotation: CfirAnnotationCall): CfirAnnotationReplaceCarrier {
+            val rawSyntax = "@!${annotation.annotationSourceName}"
+            return metadata.record(CfirAnnotationSlotSnapshot(
+                owner = owner,
+                annotationIndex = owner.annotations.indexOfFirst { it === annotation },
+                originalAnnotation = annotation,
+                rawSyntax = rawSyntax,
+                forcedCustom = true,
+                isCompileTimeVisible = true,
+                annotationSource = requireNotNull(annotation.source),
+                qualifiedName = FqName("sample.${annotation.annotationSourceName}"),
+                argumentText = null,
+                tokens = listOf(MacroSurfaceToken(rawSyntax, 0, rawSyntax.length)),
+                callSite = MacroCallSite.DECLARATION,
+            ))
+        }
+        val originalAnnotation = annotation("Tag", original.symbol).also { original.replaceAnnotations(listOf(it)) }
+        val originalCarrier = record(original, originalAnnotation)
+        val duplicatedFragmentAnnotation = annotation("Tag")
+        val retainedFragmentAnnotation = annotation("Other")
+        replacement.replaceAnnotations(listOf(duplicatedFragmentAnnotation, retainedFragmentAnnotation))
+        val duplicateCarrier = record(replacement, duplicatedFragmentAnnotation)
+        val retainedCarrier = record(replacement, retainedFragmentAnnotation)
+        val reparsedAnnotation = annotation("Tag")
         val file = fileWithDeclarations(moduleData, packageFqName, original)
         val surface = declarationSurface(
             surfaceId = 3100L,
@@ -160,13 +1046,47 @@ class FrontendMacroConstructionExecutionTest {
             packageFqName = packageFqName,
             carrier = original,
         )
-        val pre = buildPreMacroRawFiles(session, listOf(file), listOf(listOf(surface)))
+        val annotationSurface = surface.copy(
+            surfaceId = 3101L,
+            qualifiedName = FqName("Tag"),
+            isQualifiedName = false,
+            kind = MacroSurface.Kind.FORCED,
+            hasParenthesis = false,
+            inputTokens = emptyList(),
+            capturedRawSyntax = "@!Tag",
+            replaceHandle = CfirReplaceHandle(
+                3101L,
+                ownerSnapshot = surface.replaceHandle.ownerSnapshot,
+                annotationCarrier = originalCarrier,
+            ),
+        )
+        val pre = buildPreMacroRawFiles(session, listOf(PreMacroCfirFile(file, listOf(surface, annotationSurface), metadata)))
         val configuration = CompilerConfiguration().apply {
             macroExecutorFactory = MacroExecutorFactory {
                 RecordingExecutor(MacroExpansionResult.Success(listOf(tokenInfo("func expanded() {}")), "func expanded() {}"))
             }
             macroFragmentParserFactory = MacroFragmentParserFactory {
-                StaticPayloadParser(replacement)
+                object : MacroFragmentParser {
+                    override fun parse(input: MacroFragmentInput): MacroFragmentResult {
+                        assertSame(metadata, input.annotationMetadata)
+                        return if (input.decision.parserMode == MacroFragmentParser.Mode.CUSTOM_ANNOTATION) {
+                            MacroFragmentResult.CustomAnnotation(input.node, reparsedAnnotation, input.tokens)
+                        } else {
+                            MacroFragmentResult.Success(
+                                input.node,
+                                input.tokens,
+                                input.decision.parserMode,
+                                MacroFragmentPayload(
+                                    listOf(
+                                        MacroFragmentPayload.Root.Declaration(0, replacement),
+                                        MacroFragmentPayload.Root.Declaration(1, siblingReplacement),
+                                    ),
+                                    MacroFragmentPayload.EMPTY.parsingInfo,
+                                ),
+                            )
+                        }
+                    }
+                }
             }
         }
 
@@ -177,7 +1097,20 @@ class FrontendMacroConstructionExecutionTest {
         )
 
         assertTrue(result is MacroConstructionResult.Success)
-        assertSame(replacement, file.declarations.single())
+        assertEquals(listOf(replacement, siblingReplacement), file.declarations)
+        assertEquals(listOf(reparsedAnnotation, retainedFragmentAnnotation), replacement.annotations)
+        assertEquals(CfirAnnotationReplaceCarrier(replacement, 0, reparsedAnnotation), metadata.currentSlot(originalCarrier))
+        assertEquals(CfirAnnotationReplaceCarrier(replacement, 1, retainedFragmentAnnotation), metadata.currentSlot(retainedCarrier))
+        assertNull(metadata.currentSlot(duplicateCarrier))
+        assertSame(duplicatedFragmentAnnotation, metadata.snapshot(duplicateCarrier)?.originalAnnotation)
+        val published = session.ensureAnnotationMetadataRegistry()
+        published.publishAll((result as MacroConstructionResult.Success).recordableFiles.annotationMetadata)
+        assertNull(published.snapshot(originalAnnotation))
+        assertNull(published.snapshot(duplicatedFragmentAnnotation))
+        assertSame(replacement, published.snapshot(reparsedAnnotation)?.owner)
+        assertEquals(0, published.snapshot(reparsedAnnotation)?.annotationIndex)
+        assertSame(replacement, published.snapshot(retainedFragmentAnnotation)?.owner)
+        assertEquals(1, published.snapshot(retainedFragmentAnnotation)?.annotationIndex)
     }
 
     /**
@@ -192,6 +1125,7 @@ class FrontendMacroConstructionExecutionTest {
         val functionSymbol = CfirNamedFunctionSymbol(CallableId(packageFqName, Name.identifier("useMacro")))
         val original = valueParameter(moduleData, packageFqName, "before", functionSymbol)
         val replacement = valueParameter(moduleData, packageFqName, "after", functionSymbol)
+        val siblingReplacement = valueParameter(moduleData, packageFqName, "afterSibling", functionSymbol)
         val function = namedFunction(moduleData, packageFqName, "useMacro", functionSymbol, listOf(original))
         val file = fileWithDeclarations(moduleData, packageFqName, function)
         val surface = parameterSurface(
@@ -200,13 +1134,26 @@ class FrontendMacroConstructionExecutionTest {
             packageFqName = packageFqName,
             carrier = original,
         )
-        val pre = buildPreMacroRawFiles(session, listOf(file), listOf(listOf(surface)))
+        val pre = buildPreMacroRawFiles(session, listOf(PreMacroCfirFile(file, listOf(surface), CfirAnnotationMetadataBuilder())))
         val configuration = CompilerConfiguration().apply {
             macroExecutorFactory = MacroExecutorFactory {
                 RecordingExecutor(MacroExpansionResult.Success(listOf(tokenInfo("after: Int")), "after: Int"))
             }
             macroFragmentParserFactory = MacroFragmentParserFactory {
-                StaticPayloadParser(replacement)
+                object : MacroFragmentParser {
+                    override fun parse(input: MacroFragmentInput): MacroFragmentResult = MacroFragmentResult.Success(
+                        input.node,
+                        input.tokens,
+                        input.mode,
+                        MacroFragmentPayload(
+                            listOf(
+                                MacroFragmentPayload.Root.Parameter(0, replacement),
+                                MacroFragmentPayload.Root.Parameter(1, siblingReplacement),
+                            ),
+                            MacroFragmentPayload.EMPTY.parsingInfo,
+                        ),
+                    )
+                }
             }
         }
 
@@ -217,7 +1164,7 @@ class FrontendMacroConstructionExecutionTest {
         )
 
         assertTrue(result is MacroConstructionResult.Success)
-        assertSame(replacement, function.valueParameters.single())
+        assertEquals(listOf(replacement, siblingReplacement), function.valueParameters)
     }
 
     /**
@@ -250,9 +1197,9 @@ class FrontendMacroConstructionExecutionTest {
             qualifiedName = FqName("macros").child(Name.identifier("Generated")),
             packageFqName = packageFqName,
         ).copy(
-            replaceHandle = CfirReplaceHandle(3102L, carrier),
+            replaceHandle = CfirReplaceHandle(3102L, functionBodyMacroOwnerSnapshot(packageFqName, function), carrier),
         )
-        val pre = buildPreMacroRawFiles(session, listOf(file), listOf(listOf(surface)))
+        val pre = buildPreMacroRawFiles(session, listOf(PreMacroCfirFile(file, listOf(surface), CfirAnnotationMetadataBuilder())))
         val configuration = CompilerConfiguration().apply {
             macroExecutorFactory = MacroExecutorFactory {
                 RecordingExecutor(MacroExpansionResult.Success(listOf(tokenInfo("expanded")), "expanded"))
@@ -299,9 +1246,9 @@ class FrontendMacroConstructionExecutionTest {
             qualifiedName = FqName("macros").child(Name.identifier("Generated")),
             packageFqName = packageFqName,
         ).copy(
-            replaceHandle = CfirReplaceHandle(3103L, carrier),
+            replaceHandle = CfirReplaceHandle(3103L, functionBodyMacroOwnerSnapshot(packageFqName, function), carrier),
         )
-        val pre = buildPreMacroRawFiles(session, listOf(file), listOf(listOf(surface)))
+        val pre = buildPreMacroRawFiles(session, listOf(PreMacroCfirFile(file, listOf(surface), CfirAnnotationMetadataBuilder())))
 
         val result = FrontendMacroConstructionService(CompilerConfiguration()).expandWithClassification(
             pre = pre,
@@ -332,12 +1279,48 @@ class FrontendMacroConstructionExecutionTest {
         val functionSymbol = CfirNamedFunctionSymbol(CallableId(packageFqName, Name.identifier("parameterCarrier")))
         val parameterCarrier = valueParameter(moduleData, packageFqName, "before", functionSymbol)
         val parameterOwner = namedFunction(moduleData, packageFqName, "parameterCarrier", functionSymbol, listOf(parameterCarrier))
+        val metadata = CfirAnnotationMetadataBuilder()
+        fun recordAnnotation(owner: CfirDeclaration, context: CfirBasedSymbol<*>, annotationName: String): CfirAnnotationCall {
+            val rawSyntax = "@!$annotationName[42]"
+            val annotationSource = MetadataFixtureSource(rawSyntax)
+            val annotation = buildAnnotationCall {
+                source = annotationSource
+                typeRef = buildImplicitTypeRef()
+                annotationSourceName = annotationName
+                sourceModuleName = "sample"
+                forcedCustom = true
+                isCompileTimeVisible = true
+                argumentList = buildArgumentList()
+                calleeReference = buildNamedReference { name = Name.identifier(annotationName) }
+                containingDeclarationSymbol = context
+            }
+            owner.replaceAnnotations(listOf(annotation))
+            metadata.record(CfirAnnotationSlotSnapshot(
+                owner = owner,
+                annotationIndex = 0,
+                originalAnnotation = annotation,
+                rawSyntax = rawSyntax,
+                forcedCustom = true,
+                isCompileTimeVisible = true,
+                annotationSource = annotationSource,
+                qualifiedName = FqName("sample.$annotationName"),
+                argumentText = "[42]",
+                tokens = listOf(MacroSurfaceToken(rawSyntax, 0, rawSyntax.length)),
+                callSite = if (owner is CfirValueParameter) MacroCallSite.PARAMETER else MacroCallSite.DECLARATION,
+            ))
+            return annotation
+        }
+        val declarationAnnotation = recordAnnotation(declarationCarrier, declarationCarrier.symbol, "DeclarationTag")
+        val parameterAnnotation = recordAnnotation(parameterCarrier, functionSymbol, "ParameterTag")
+        val declarationMetadata = requireNotNull(metadata.snapshot(declarationAnnotation))
+        val parameterMetadata = requireNotNull(metadata.snapshot(parameterAnnotation))
+        val publishedMetadata = session.ensureAnnotationMetadataRegistry()
         val file = fileWithDeclarations(moduleData, packageFqName, declarationCarrier, parameterOwner)
         val surfaces = listOf(
             declarationSurface(3200L, FqName("macros.GenerateDeclaration"), packageFqName, declarationCarrier),
             parameterSurface(3201L, FqName("macros.GenerateParameter"), packageFqName, parameterCarrier),
         )
-        val pre = buildPreMacroRawFiles(session, listOf(file), listOf(surfaces))
+        val pre = buildPreMacroRawFiles(session, listOf(PreMacroCfirFile(file, surfaces, metadata)))
 
         val result = FrontendMacroConstructionService(CompilerConfiguration()).expandWithClassification(
             pre = pre,
@@ -353,6 +1336,21 @@ class FrontendMacroConstructionExecutionTest {
             surfaces.map { it.surfaceId }.toSet(),
             (result as MacroConstructionResult.Degraded).registry.placeholderOriginById.keys,
         )
+        val declarationPlaceholder = file.declarations.first()
+        assertNotSame(declarationCarrier, declarationPlaceholder)
+        assertNotSame(parameterCarrier, parameterPlaceholder)
+        assertNotSame(declarationCarrier.attributes, declarationPlaceholder.attributes)
+        assertNotSame(parameterCarrier.attributes, parameterPlaceholder.attributes)
+        assertSame(declarationAnnotation, declarationPlaceholder.annotations.single())
+        assertSame(parameterAnnotation, parameterPlaceholder.annotations.single())
+        assertSame(functionSymbol, parameterAnnotation.containingDeclarationSymbol)
+        assertNull(publishedMetadata.snapshot(declarationAnnotation), "封闭产品不能在显式 publish 前进入 session 索引")
+        assertNull(publishedMetadata.snapshot(parameterAnnotation))
+        publishedMetadata.publishAll(result.recordableFiles.annotationMetadata)
+        assertEquals(declarationMetadata.copy(owner = declarationPlaceholder), publishedMetadata.snapshot(declarationAnnotation))
+        assertEquals(parameterMetadata.copy(owner = parameterPlaceholder), publishedMetadata.snapshot(parameterAnnotation))
+        assertSame(declarationPlaceholder, publishedMetadata.snapshot(declarationAnnotation)?.owner)
+        assertSame(parameterPlaceholder, publishedMetadata.snapshot(parameterAnnotation)?.owner)
     }
 
     /**
@@ -458,7 +1456,7 @@ class FrontendMacroConstructionExecutionTest {
                 isQualifiedName = qualified,
                 scopeContext = originalSurface.scopeContext.copy(sourceModuleName = parserModule),
             )
-            val pre = buildPreMacroRawFiles(session, listOf(file), listOf(listOf(surface)))
+            val pre = buildPreMacroRawFiles(session, listOf(PreMacroCfirFile(file, listOf(surface), CfirAnnotationMetadataBuilder())))
             val executor = RecordingExecutor(
                 MacroExpansionResult.Success(listOf(tokenInfo(expandedText)), expandedText),
             )
@@ -482,6 +1480,10 @@ class FrontendMacroConstructionExecutionTest {
         }
 
         val original = constructCacheKey(parserModule = "", qualified = false)
+        assertEquals(org.cangnova.cangjie.cfir.builder.macro.MacroPayloadTokenizer.VERSION, original.tokenScannerVersion)
+        assertNotEquals(original.stableHash(), original.copy(tokenScannerVersion = 2).stableHash())
+        assertEquals(MacroFragmentParser.VERSION, original.fragmentParserVersion)
+        assertNotEquals(original.stableHash(), original.copy(fragmentParserVersion = 30).stableHash())
         val differentModule = constructCacheKey(parserModule = "std", qualified = false)
         val differentQualification = constructCacheKey(parserModule = "", qualified = true)
         val differentAnnotationModule = constructCacheKey(parserModule = "", qualified = false, annotationModule = "std")
@@ -536,8 +1538,10 @@ class FrontendMacroConstructionExecutionTest {
         )
         val pre = buildPreMacroRawFiles(
             session = session,
-            rawCfirFiles = listOf(firstFile, secondFile),
-            fileSurfaces = listOf(listOf(firstSurface), listOf(secondSurface)),
+            files = listOf(
+                PreMacroCfirFile(firstFile, listOf(firstSurface), CfirAnnotationMetadataBuilder()),
+                PreMacroCfirFile(secondFile, listOf(secondSurface), CfirAnnotationMetadataBuilder()),
+            ),
         )
         val executor = RecordingExecutor(
             MacroExpansionResult.Success(
@@ -642,21 +1646,21 @@ class FrontendMacroConstructionExecutionTest {
             sourceRange = MacroSurfaceSourceRange(source = null, startOffset = 0, endOffset = 100),
         ).copy(
             inputTokens = listOf(
-                MacroSurfaceToken("left", 10, 14),
-                MacroSurfaceToken(" ", 14, 15),
-                MacroSurfaceToken("@ChildOne", 20, 29),
-                MacroSurfaceToken("(", 29, 30),
-                MacroSurfaceToken("one", 30, 33),
-                MacroSurfaceToken(")", 33, 34),
-                MacroSurfaceToken(" ", 34, 35),
-                MacroSurfaceToken("middle", 35, 41),
-                MacroSurfaceToken(" ", 41, 42),
-                MacroSurfaceToken("@ChildTwo", 50, 59),
-                MacroSurfaceToken("(", 59, 60),
-                MacroSurfaceToken("two", 60, 63),
-                MacroSurfaceToken(")", 63, 64),
-                MacroSurfaceToken(" ", 64, 65),
-                MacroSurfaceToken("right", 65, 70),
+                MacroSurfaceToken("left", 10, 14, isSourceToken = true),
+                MacroSurfaceToken(" ", 14, 15, isSourceToken = true),
+                MacroSurfaceToken("@ChildOne", 20, 29, isSourceToken = true),
+                MacroSurfaceToken("(", 29, 30, isSourceToken = true),
+                MacroSurfaceToken("one", 30, 33, isSourceToken = true),
+                MacroSurfaceToken(")", 33, 34, isSourceToken = true),
+                MacroSurfaceToken(" ", 34, 35, isSourceToken = true),
+                MacroSurfaceToken("middle", 35, 41, isSourceToken = true),
+                MacroSurfaceToken(" ", 41, 42, isSourceToken = true),
+                MacroSurfaceToken("@ChildTwo", 50, 59, isSourceToken = true),
+                MacroSurfaceToken("(", 59, 60, isSourceToken = true),
+                MacroSurfaceToken("two", 60, 63, isSourceToken = true),
+                MacroSurfaceToken(")", 63, 64, isSourceToken = true),
+                MacroSurfaceToken(" ", 64, 65, isSourceToken = true),
+                MacroSurfaceToken("right", 65, 70, isSourceToken = true),
             ),
         )
         val firstChild = expressionSurface(
@@ -665,7 +1669,7 @@ class FrontendMacroConstructionExecutionTest {
             packageFqName = packageFqName,
             sourceRange = MacroSurfaceSourceRange(source = null, startOffset = 20, endOffset = 34),
         ).copy(
-            inputTokens = listOf(MacroSurfaceToken("one", 30, 33)),
+            inputTokens = listOf(MacroSurfaceToken("one", 30, 33, isSourceToken = true)),
         )
         val secondChild = expressionSurface(
             surfaceId = 3302L,
@@ -673,9 +1677,11 @@ class FrontendMacroConstructionExecutionTest {
             packageFqName = packageFqName,
             sourceRange = MacroSurfaceSourceRange(source = null, startOffset = 50, endOffset = 64),
         ).copy(
-            inputTokens = listOf(MacroSurfaceToken("two", 60, 63)),
+            inputTokens = listOf(MacroSurfaceToken("two", 60, 63, isSourceToken = true)),
         )
-        val fixture = macroSurfaceFixture(listOf(parent, firstChild, secondChild))
+        val originalText = " ".repeat(10) + "left" + " ".repeat(6) + "@ChildOne(one)" +
+            " middle" + " ".repeat(9) + "@ChildTwo(two) right" + " ".repeat(30)
+        val fixture = macroSurfaceFixture(listOf(parent, firstChild, secondChild), sourceText = originalText)
         val executor = RoutingExecutor(
             results = mapOf(
                 "ChildOne" to MacroExpansionResult.Success(listOf(tokenInfo("expandedOne")), "expandedOne"),
@@ -700,6 +1706,12 @@ class FrontendMacroConstructionExecutionTest {
             listOf("left", " ", "expandedOne", " ", "middle", " ", "expandedTwo", " ", "right"),
             executor.calls.single { it.idName == "Parent" }.argTokens.map { it.value },
         )
+        val parentArguments = executor.calls.single { it.idName == "Parent" }.argTokens
+        assertEquals(SourcePosition(line = 1, column = 11), parentArguments.first().begin)
+        assertEquals(SourcePosition(line = 1, column = 21), parentArguments.single { it.value == "expandedOne" }.begin)
+        assertEquals(SourcePosition(line = 1, column = 35), parentArguments.single { it.value == "expandedOne" }.end)
+        assertEquals(SourcePosition(line = 1, column = 51), parentArguments.single { it.value == "expandedTwo" }.begin)
+        assertEquals(SourcePosition(line = 1, column = 65), parentArguments.single { it.value == "expandedTwo" }.end)
     }
 
     /**
@@ -715,14 +1727,14 @@ class FrontendMacroConstructionExecutionTest {
             sourceRange = MacroSurfaceSourceRange(source = null, startOffset = 0, endOffset = 80),
         ).copy(
             attrTokens = listOf(
-                MacroSurfaceToken("#[", 10, 12),
-                MacroSurfaceToken("@Child", 20, 26),
-                MacroSurfaceToken("(", 26, 27),
-                MacroSurfaceToken("childArg", 27, 35),
-                MacroSurfaceToken(")", 35, 36),
-                MacroSurfaceToken("]", 36, 37),
+                MacroSurfaceToken("#[", 10, 12, isSourceToken = true),
+                MacroSurfaceToken("@Child", 20, 26, isSourceToken = true),
+                MacroSurfaceToken("(", 26, 27, isSourceToken = true),
+                MacroSurfaceToken("childArg", 27, 35, isSourceToken = true),
+                MacroSurfaceToken(")", 35, 36, isSourceToken = true),
+                MacroSurfaceToken("]", 36, 37, isSourceToken = true),
             ),
-            inputTokens = listOf(MacroSurfaceToken("arg", 50, 53)),
+            inputTokens = listOf(MacroSurfaceToken("arg", 50, 53, isSourceToken = true)),
         )
         val child = expressionSurface(
             surfaceId = 3311L,
@@ -730,7 +1742,7 @@ class FrontendMacroConstructionExecutionTest {
             packageFqName = packageFqName,
             sourceRange = MacroSurfaceSourceRange(source = null, startOffset = 20, endOffset = 36),
         ).copy(
-            inputTokens = listOf(MacroSurfaceToken("childArg", 27, 35)),
+            inputTokens = listOf(MacroSurfaceToken("childArg", 27, 35, isSourceToken = true)),
         )
         val fixture = macroSurfaceFixture(listOf(parent, child))
         val executor = RoutingExecutor(
@@ -784,7 +1796,12 @@ class FrontendMacroConstructionExecutionTest {
         val fixture = macroSurfaceFixture(surface)
         val configuration = CompilerConfiguration().apply {
             macroFragmentParserFactory = MacroFragmentParserFactory { RecordingParser() }
-            // 不注入 macroExecutorFactory → executor 不可用
+            // 显式不可用执行器使测试独立于本机是否安装了可用 SDK。
+            macroExecutorFactory = MacroExecutorFactory {
+                object : MacroExecutor by RecordingExecutor() {
+                    override fun isAvailable(): Boolean = false
+                }
+            }
         }
 
         val result = FrontendMacroConstructionService(configuration).expandWithClassification(
@@ -866,9 +1883,9 @@ class FrontendMacroConstructionExecutionTest {
                 originNode = input.node,
                 tokens = input.tokens,
                 mode = input.mode,
-                payload = buildErrorExpression {
+                payload = MacroFragmentPayload.single(buildErrorExpression {
                     diagnostic = ConeSimpleDiagnostic("expanded WithLib payload")
-                },
+                }),
             )
         }
         val configuration = CompilerConfiguration().apply {
@@ -1128,7 +2145,7 @@ class FrontendMacroConstructionExecutionTest {
             imports += firstImport
             imports += secondImport
         }
-        val pre = buildPreMacroRawFiles(session, listOf(file), listOf(emptyList()))
+        val pre = buildPreMacroRawFiles(session, listOf(PreMacroCfirFile(file, annotationMetadata = CfirAnnotationMetadataBuilder())))
         val context = bindMacroImports(
             pre = pre,
             symbolIndex = buildMacroSymbolIndex(
@@ -1229,13 +2246,6 @@ class FrontendMacroConstructionExecutionTest {
         val carrier = buildErrorExpression {
             diagnostic = ConeSimpleDiagnostic("macro construction carrier")
         }
-        val surface = expressionSurface(
-            surfaceId = 3000L,
-            qualifiedName = FqName("macros").child(Name.identifier(macroName)),
-            packageFqName = packageFqName,
-        ).copy(
-            replaceHandle = CfirReplaceHandle(3000L, carrier),
-        )
         val function = buildNamedFunction {
             this.moduleData = moduleData
             resolvePhase = CfirResolvePhase.RAW_CFIR
@@ -1252,6 +2262,13 @@ class FrontendMacroConstructionExecutionTest {
                 statements += carrier
             }
         }
+        val surface = expressionSurface(
+            surfaceId = 3000L,
+            qualifiedName = FqName("macros").child(Name.identifier(macroName)),
+            packageFqName = packageFqName,
+        ).copy(
+            replaceHandle = CfirReplaceHandle(3000L, functionBodyMacroOwnerSnapshot(packageFqName, function), carrier),
+        )
         val file = buildFile {
             this.moduleData = moduleData
             resolvePhase = CfirResolvePhase.RAW_CFIR
@@ -1267,44 +2284,7 @@ class FrontendMacroConstructionExecutionTest {
         }
         return MacroExpressionCarrierFixture(
             function = function,
-            pre = buildPreMacroRawFiles(session, listOf(file), listOf(listOf(surface))),
-        )
-    }
-
-    /**
-     * 验证 builtin non-macro surface 在 stable splice 前完成脱糖。
-     */
-    @Test
-    fun builtinNonMacroSurfaceIsDesugaredBeforeStableSplice() {
-        val surface = ifAvailableSurface()
-        val fixture = macroSurfaceFixture(surface)
-        val parser = RecordingParser()
-        val desugarer = RecordingDesugarer()
-        val splicer = RecordingSplicer()
-        val configuration = CompilerConfiguration().apply {
-            macroFragmentParserFactory = MacroFragmentParserFactory { parser }
-        }
-
-        val result = FrontendMacroConstructionService(
-            configuration = configuration,
-            stableSplicer = splicer,
-            builtinNonMacroDesugarer = desugarer,
-        ).expandWithClassification(
-            pre = fixture.pre,
-            context = bindMacroImports(
-                pre = fixture.pre,
-                symbolIndex = buildMacroSymbolIndex(pre = fixture.pre),
-            ),
-            mode = MacroConstructionService.Mode.STRICT,
-        )
-
-        assertTrue(result is MacroConstructionResult.Success)
-        assertEquals(listOf("body"), parser.parsedTokens.single().map { it.text })
-        assertSame(surface, desugarer.surfaces.single())
-        assertTrue(splicer.slots.isEmpty())
-        assertEquals(
-            "body",
-            (result as MacroConstructionResult.Success).registry.generatedDisplayText.getValue(surface.surfaceId),
+            pre = buildPreMacroRawFiles(session, listOf(PreMacroCfirFile(file, listOf(surface), CfirAnnotationMetadataBuilder()))),
         )
     }
 
@@ -1401,7 +2381,7 @@ class FrontendMacroConstructionExecutionTest {
         return MacroSurfaceFixture(
             file = file,
             surface = surfaces.singleOrNull() ?: surfaces.first(),
-            pre = buildPreMacroRawFiles(session, listOf(file), listOf(surfaces)),
+            pre = buildPreMacroRawFiles(session, listOf(PreMacroCfirFile(file, surfaces, CfirAnnotationMetadataBuilder()))),
         )
     }
 
@@ -1484,6 +2464,9 @@ class FrontendMacroConstructionExecutionTest {
         this.valueParameters += valueParameters
     }
 
+    /** metadata fixture 使用独立语义来源，不伪造 PSI 或借宿主源码推导注解语义。 */
+    private class MetadataFixtureSource(text: String) : CjBinarySourceElement(text, null, text)
+
     /**
      * 构造测试用值参数声明。
      *
@@ -1537,7 +2520,7 @@ class FrontendMacroConstructionExecutionTest {
     /**
      * 构造表达式宏 surface。
      *
-     * 该 surface 默认位于函数体块内，并携带表达式替换句柄，是宏执行测试中最常见的输入形态。
+     * 纯 token/mock 调用没有 CFIR 宿主，快照显式采用顶层语境；实际函数体 fixture 替换句柄时提供真实宿主快照。
      * qualifiedName 参数直接作为 capturedRawSyntax 中的源码拼写，并非包名补全后的内部名称。
      */
     private fun expressionSurface(
@@ -1550,9 +2533,16 @@ class FrontendMacroConstructionExecutionTest {
         qualifiedName = qualifiedName,
         isQualifiedName = '.' in qualifiedName.asString(),
         kind = MacroSurface.Kind.PLAIN,
+        parsingFacts = org.cangnova.cangjie.parsing.MacroParsingFacts(
+            org.cangnova.cangjie.parsing.MacroParsingScope.Expression(
+                org.cangnova.cangjie.parsing.CjExprKind.UNKNOWN_EXPR,
+            ),
+            org.cangnova.cangjie.parsing.CjMacroFragmentParent.OTHER,
+            null,
+        ),
         hasParenthesis = true,
         attrTokens = emptyList(),
-        inputTokens = listOf(MacroSurfaceToken("arg", 0, 3)),
+        inputTokens = listOf(MacroSurfaceToken("arg", 0, 3, isSourceToken = true)),
         sourceRange = sourceRange,
         scopeContext = MacroSurfaceScopeContext(
             packageFqName = packageFqName,
@@ -1569,7 +2559,7 @@ class FrontendMacroConstructionExecutionTest {
             isInsideEnumBody = false,
             isInsideBlock = true,
         ),
-        replaceHandle = CfirReplaceHandle(surfaceId),
+        replaceHandle = CfirReplaceHandle(surfaceId, topLevelMacroOwnerSnapshot(packageFqName)),
     )
 
     /**
@@ -1588,9 +2578,16 @@ class FrontendMacroConstructionExecutionTest {
         qualifiedName = qualifiedName,
         isQualifiedName = '.' in qualifiedName.asString(),
         kind = MacroSurface.Kind.PLAIN,
+        parsingFacts = org.cangnova.cangjie.parsing.MacroParsingFacts(
+            org.cangnova.cangjie.parsing.MacroParsingScope.Declaration(
+                org.cangnova.cangjie.parsing.CjScopeKind.TOPLEVEL,
+            ),
+            org.cangnova.cangjie.parsing.CjMacroFragmentParent.OTHER,
+            null,
+        ),
         hasParenthesis = true,
         attrTokens = emptyList(),
-        inputTokens = listOf(MacroSurfaceToken("decl", 0, 4)),
+        inputTokens = listOf(MacroSurfaceToken("decl", 0, 4, isSourceToken = true)),
         sourceRange = null,
         scopeContext = MacroSurfaceScopeContext(
             packageFqName = packageFqName,
@@ -1607,7 +2604,7 @@ class FrontendMacroConstructionExecutionTest {
             isInsideEnumBody = false,
             isInsideBlock = false,
         ),
-        replaceHandle = CfirReplaceHandle(surfaceId, carrier),
+        replaceHandle = CfirReplaceHandle(surfaceId, topLevelMacroOwnerSnapshot(packageFqName), carrier),
     )
 
     /**
@@ -1626,9 +2623,16 @@ class FrontendMacroConstructionExecutionTest {
         qualifiedName = qualifiedName,
         isQualifiedName = '.' in qualifiedName.asString(),
         kind = MacroSurface.Kind.PLAIN,
+        parsingFacts = org.cangnova.cangjie.parsing.MacroParsingFacts(
+            org.cangnova.cangjie.parsing.MacroParsingScope.Declaration(
+                org.cangnova.cangjie.parsing.CjScopeKind.PRIMARY_CONSTRUCTOR_FUNC_PARAM,
+            ),
+            org.cangnova.cangjie.parsing.CjMacroFragmentParent.FUNCTION_PARAMETER_LIST,
+            null,
+        ),
         hasParenthesis = true,
         attrTokens = emptyList(),
-        inputTokens = listOf(MacroSurfaceToken("param", 0, 5)),
+        inputTokens = listOf(MacroSurfaceToken("param", 0, 5, isSourceToken = true)),
         sourceRange = null,
         scopeContext = MacroSurfaceScopeContext(
             packageFqName = packageFqName,
@@ -1645,7 +2649,25 @@ class FrontendMacroConstructionExecutionTest {
             isInsideEnumBody = false,
             isInsideBlock = false,
         ),
-        replaceHandle = CfirReplaceHandle(surfaceId, carrier),
+        replaceHandle = CfirReplaceHandle(
+            surfaceId,
+            ownerSnapshot = MacroRawOwnerSnapshot(
+                packageFqName = packageFqName,
+                // 顶层函数的参数先于函数体解析；签名 owner 独立于函数体的容器及 return target。
+                containerSymbols = emptyList(),
+                dispatchReceiverType = null,
+                inLocalContext = false,
+                functionTarget = null,
+                signature = MacroParameterSignature.Declaration(
+                    carrier.containingDeclarationSymbol,
+                    CjParameterGrammar.REGULAR_TYPED,
+                ),
+                nominalSyntax = null,
+                capturedTypeParameters = emptyList(),
+                constructedClasses = emptyList(),
+            ),
+            carrier = carrier,
+        ),
     )
 
     /**
@@ -1654,39 +2676,6 @@ class FrontendMacroConstructionExecutionTest {
     private fun tokenInfo(text: String): org.cangnova.cangjie.macro.TokenInfo {
         return org.cangnova.cangjie.macro.TokenInfo(0u.toUByte(), text)
     }
-
-    /**
-     * 构造 `@IfAvailable` 内建 surface。
-     *
-     * 该 surface 使用 branch token 表达脱糖后的主体片段，用于验证 builtin non-macro 不进入稳定拼接队列。
-     */
-    private fun ifAvailableSurface(): IfAvailableSurface = IfAvailableSurface(
-        surfaceId = 3002L,
-        qualifiedName = FqName.topLevel(Name.identifier("IfAvailable")),
-        isQualifiedName = false,
-        kind = MacroSurface.Kind.PLAIN,
-        hasParenthesis = true,
-        attrTokens = emptyList(),
-        inputTokens = listOf(MacroSurfaceToken("condition", 0, 9)),
-        sourceRange = null,
-        scopeContext = MacroSurfaceScopeContext(
-            packageFqName = FqName("sample"),
-            sourceModuleName = BuiltInAnnotationRegistry.sourceModuleName(FqName("sample")),
-            enclosingClassFqName = null,
-            enclosingFunctionName = null,
-        ),
-        modifiers = emptyList(),
-        carriedAnnotations = emptyList(),
-        capturedRawSyntax = "@IfAvailable(condition)",
-        containerContext = MacroSurfaceContainerContext(
-            outerDeclarationKind = MacroSurfaceContainerContext.OuterDeclarationKind.TOP_LEVEL,
-            isInsidePrimaryConstructor = false,
-            isInsideEnumBody = false,
-            isInsideBlock = false,
-        ),
-        replaceHandle = CfirReplaceHandle(3002L),
-        branchTokens = listOf(MacroSurfaceToken("body", 0, 4)),
-    )
 
     /**
      * 宏 surface 测试 fixture。
@@ -1893,7 +2882,13 @@ class FrontendMacroConstructionExecutionTest {
         override fun parse(input: MacroFragmentInput): MacroFragmentResult {
             parsedTokens += input.tokens
             modes += input.mode
-            return MacroFragmentResult.Success(input.node, input.tokens, input.mode)
+            check(input.decision.slotType == MacroReplacementSlotType.EXPRESSION) {
+                "RecordingParser only models expression-fragment roots."
+            }
+            val payload = MacroFragmentPayload.single(buildErrorExpression {
+                diagnostic = ConeSimpleDiagnostic("recorded expression fragment")
+            })
+            return MacroFragmentResult.Success(input.node, input.tokens, input.mode, payload)
         }
     }
 
@@ -1902,32 +2897,13 @@ class FrontendMacroConstructionExecutionTest {
      */
     private class StaticPayloadParser(
         /** 放入解析成功结果的静态 payload。 */
-        private val payload: Any,
+        private val payload: org.cangnova.cangjie.cfir.CfirElement,
     ) : MacroFragmentParser {
         /**
          * 原样返回片段节点与 token，并携带固定 payload。
          */
         override fun parse(input: MacroFragmentInput): MacroFragmentResult {
-            return MacroFragmentResult.Success(input.node, input.tokens, input.mode, payload)
-        }
-    }
-
-    /**
-     * 记录内建 non-macro 脱糖调用的测试脱糖器。
-     */
-    private class RecordingDesugarer : BuiltinNonMacroDesugarer {
-        /** 已进入脱糖流程的内建 surface。 */
-        val surfaces = mutableListOf<org.cangnova.cangjie.cfir.resolve.providers.macro.BuiltinNonMacroSurface>()
-
-        /**
-         * 记录 surface 并将片段结果原样传回调用方。
-         */
-        override fun desugar(
-            surface: org.cangnova.cangjie.cfir.resolve.providers.macro.BuiltinNonMacroSurface,
-            fragment: MacroFragmentResult.Success,
-        ): MacroFragmentResult? {
-            surfaces += surface
-            return fragment
+            return MacroFragmentResult.Success(input.node, input.tokens, input.mode, MacroFragmentPayload.single(payload))
         }
     }
 

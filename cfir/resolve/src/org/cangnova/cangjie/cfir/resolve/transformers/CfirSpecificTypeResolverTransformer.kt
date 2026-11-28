@@ -6,7 +6,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.resolve.SupertypeSupplier
 import org.cangnova.cangjie.cfir.resolve.TypeResolutionConfiguration
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.resolve.providers.hasPackageOrSubpackages
 import org.cangnova.cangjie.cfir.session.typeResolver
 import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
@@ -15,6 +15,11 @@ import org.cangnova.cangjie.cfir.types.CfirOptionTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.CfirUserTypeRef
+import org.cangnova.cangjie.cfir.types.CfirBasicTypeRef
+import org.cangnova.cangjie.cfir.types.CfirParenthesizedTypeRef
+import org.cangnova.cangjie.cfir.types.CfirFunctionTypeRef
+import org.cangnova.cangjie.cfir.types.CfirTupleTypeRef
+import org.cangnova.cangjie.cfir.types.CfirVArrayTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeDiagnostic
@@ -130,6 +135,7 @@ class CfirSpecificTypeResolverTransformer(
                 // 正常路径：成功解析
                 buildResolvedTypeRef {
                     source = typeRef.source
+                    typeUseOrigin = typeRef.typeUseOrigin
                     coneType = resolvedType
                     annotations += typeRef.annotations
                     delegatedTypeRef = typeRef
@@ -149,6 +155,7 @@ class CfirSpecificTypeResolverTransformer(
     ): CfirErrorTypeRef {
         return buildErrorTypeRef {
             source = typeRef.source
+            typeUseOrigin = typeRef.typeUseOrigin
             if (errorTypeAsResolved || resolvedType !is ConeErrorType) {
                 coneType = resolvedType
             }
@@ -282,4 +289,18 @@ class CfirSpecificTypeResolverTransformer(
     override fun transformOptionTypeRef(optionTypeRef: CfirOptionTypeRef, data: TypeResolutionConfiguration): CfirTypeRef {
         return transformTypeRef(optionTypeRef, data)
     }
+
+    /** 生成Transformer的默认入口只递归children；所有原始Type角色均须发布当前resolved节点。 */
+    override fun transformUserTypeRef(userTypeRef: CfirUserTypeRef, data: TypeResolutionConfiguration): CfirTypeRef =
+        transformTypeRef(userTypeRef, data)
+    override fun transformBasicTypeRef(basicTypeRef: CfirBasicTypeRef, data: TypeResolutionConfiguration): CfirTypeRef =
+        transformTypeRef(basicTypeRef, data)
+    override fun transformParenthesizedTypeRef(parenthesizedTypeRef: CfirParenthesizedTypeRef, data: TypeResolutionConfiguration): CfirTypeRef =
+        transformTypeRef(parenthesizedTypeRef, data)
+    override fun transformFunctionTypeRef(functionTypeRef: CfirFunctionTypeRef, data: TypeResolutionConfiguration): CfirTypeRef =
+        transformTypeRef(functionTypeRef, data)
+    override fun transformTupleTypeRef(tupleTypeRef: CfirTupleTypeRef, data: TypeResolutionConfiguration): CfirTypeRef =
+        transformTypeRef(tupleTypeRef, data)
+    override fun transformVArrayTypeRef(vArrayTypeRef: CfirVArrayTypeRef, data: TypeResolutionConfiguration): CfirTypeRef =
+        transformTypeRef(vArrayTypeRef, data)
 }

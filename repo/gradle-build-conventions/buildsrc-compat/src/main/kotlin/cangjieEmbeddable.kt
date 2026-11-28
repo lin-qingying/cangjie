@@ -8,6 +8,7 @@ const val cangjieEmbeddableRootPackage = "org.cangnova.cangjie"
 /** 需要在 embeddable 工件中重定位的第三方包前缀集合。 */
 private val cangjieEmbeddablePackagesToRelocate = listOf(
     "com.google",
+    "com.ibm.icu",
     "com.sampullara",
     "org.apache",
     "org.jdom",

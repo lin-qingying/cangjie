@@ -1,6 +1,8 @@
 package org.cangnova.cangjie.cfir.declarations
 
 import org.cangnova.cangjie.cfir.types.StdlibClassIds
+import org.cangnova.cangjie.descriptors.Visibility
+import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.name.ClassId
 
 /**
@@ -29,6 +31,8 @@ enum class CfirBuiltInTypeKind(
      * 官方声明携带的类型参数个数。
      */
     val typeParameterCount: Int,
+    /** 官方 `AddBuiltIn*Decl` 为该声明设置的可见性。 */
+    val visibility: Visibility,
 ) {
     /**
      * `RawArray<T>`。
@@ -36,38 +40,38 @@ enum class CfirBuiltInTypeKind(
      * 官方 `AddBuiltInArrayDecl` 注入，属性只有 `GLOBAL | GENERIC`，**没有** `PUBLIC`，
      * 因此仅 `std.core` 内部可见。用户代码书写的 `Array<T>` 是标准库 struct，并非此类型。
      */
-    ARRAY(StdlibClassIds.RawArray, typeParameterCount = 1),
+    ARRAY(StdlibClassIds.RawArray, typeParameterCount = 1, visibility = Visibilities.Internal),
 
     /**
      * `VArray<T, $N>`。
      *
      * 官方 `AddBuiltInVArrayDecl` 注入，声明只带一个类型参数 `T`；
-     * 定长 `$N` 属于类型头部（官方 `VArrayTy::size` 字段），不是类型实参。
+     * 定长 `$N` 属于类型头部（官方 `VArrayTy::size` 字段），不是类型实参；该声明为 public。
      */
-    VARRAY(StdlibClassIds.VArray, typeParameterCount = 1),
+    VARRAY(StdlibClassIds.VArray, typeParameterCount = 1, visibility = Visibilities.Public),
 
     /**
      * `CPointer<T>`。
      *
      * 官方 `AddBuiltInPointerDecl` 注入，除类型参数 `T` 外还带 `T <: CType` 约束
-     * （`CreateConstraintForFFI(CTYPE_NAME)`）。
+     * （`CreateConstraintForFFI(CTYPE_NAME)`），并设置 public 可见性。
      */
-    CPOINTER(StdlibClassIds.CPointer, typeParameterCount = 1),
+    CPOINTER(StdlibClassIds.CPointer, typeParameterCount = 1, visibility = Visibilities.Public),
 
     /**
      * `CString`。
      *
-     * 官方 `AddBuiltInCStringDecl` 注入，`generic` 显式置空，无类型参数。
+     * 官方 `AddBuiltInCStringDecl` 注入，`generic` 显式置空、无类型参数，并设置 public 可见性。
      */
-    CSTRING(StdlibClassIds.CString, typeParameterCount = 0),
+    CSTRING(StdlibClassIds.CString, typeParameterCount = 0, visibility = Visibilities.Public),
 
     /**
      * `CFunc<T>`。
      *
      * 官方 `AddBuiltinCFuncDecl` 注入。注意它虽在声明层是内建类型，
-     * 但其类型 `CFuncTy` 属于 `FuncTy`，不在 `Ty::IsBuiltin()` 集合内。
+     * 但其类型 `CFuncTy` 属于 `FuncTy`，不在 `Ty::IsBuiltin()` 集合内；该声明为 public。
      */
-    CFUNC(StdlibClassIds.CFunc, typeParameterCount = 1),
+    CFUNC(StdlibClassIds.CFunc, typeParameterCount = 1, visibility = Visibilities.Public),
     ;
 
     /**

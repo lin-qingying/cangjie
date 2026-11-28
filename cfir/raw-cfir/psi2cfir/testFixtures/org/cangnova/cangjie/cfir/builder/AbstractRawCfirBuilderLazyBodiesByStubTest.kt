@@ -71,6 +71,8 @@ abstract class AbstractRawCfirBuilderLazyBodiesByStubTest : AbstractRawCfirBuild
 
             override fun getStub(): CangJieFileStub? = fakeStub
         }
+        // 同 VirtualFile 的替代视图只继承 copyable 配置；不登记 PSI copy 关系，避免 provider 失效环。
+        originalFile.copyCopyableDataTo(fileWithStub)
         updatedProvider.forceCachedPsi(fileWithStub)
 
         check(fileWithStub.viewProvider.isPhysical) { "Stub mode file must be physical: ${File(filePath).name}" }

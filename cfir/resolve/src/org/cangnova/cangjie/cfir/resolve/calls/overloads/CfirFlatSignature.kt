@@ -53,11 +53,12 @@ class CfirFlatSignature(
 
             when (decl) {
                 is CfirFunction -> {
-                    typeParams = decl.typeParameters
+                    // 只计自有泛型 header；构造器的 constructed-class 引用不改变重载特化度。
+                    typeParams = decl.typeParameters.filterIsInstance<CfirTypeParameter>()
                     paramTypes = parametersOf(decl.valueParameters)
                 }
                 is CfirConstructor -> {
-                    typeParams = decl.typeParameters
+                    typeParams = decl.typeParameters.filterIsInstance<CfirTypeParameter>()
                     paramTypes = parametersOf(decl.valueParameters)
                 }
                 else -> {

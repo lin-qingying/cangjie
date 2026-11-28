@@ -13,6 +13,10 @@ import com.intellij.psi.FileContextProvider
 import com.intellij.psi.PsiReferenceContributor
 import com.intellij.psi.PsiFileFactory
 import com.intellij.psi.PsiTreeChangeListener
+import com.intellij.pom.PomModel
+import com.intellij.psi.codeStyle.CodeStyleManager
+import com.intellij.psi.impl.source.PostprocessReformattingAspect
+import com.intellij.psi.impl.source.PostprocessReformattingAspectImpl
 import com.intellij.psi.impl.PsiTreeChangePreprocessor
 import com.intellij.psi.search.PsiSearchHelper
 import com.intellij.psi.impl.smartPointers.SmartPointerAnchorProvider
@@ -29,6 +33,7 @@ import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 
 /**
@@ -102,6 +107,30 @@ class CangJieCoreEnvironmentTest {
             }
 
             assertFalse(application.isWriteAccessAllowed)
+        }
+    }
+
+    /** 标准服务必须进入真实后处理事务；嵌套调用及异常都应恢复原来的格式化状态。 */
+    @Test
+    fun `formatter disabled action restores the real postprocess aspect after failure`() {
+        withEnvironment { environment ->
+            val project = environment.project
+            val model = requireNotNull(project.getService(PomModel::class.java))
+            val aspect = requireNotNull(model.getModelAspect(PostprocessReformattingAspectImpl::class.java))
+            assertSame(aspect, model.getModelAspect(PostprocessReformattingAspect::class.java))
+            val manager = requireNotNull(project.getService(CodeStyleManager::class.java))
+            assertFalse(aspect.isDisabled)
+            val expected = IllegalStateException("formatter action failure")
+            val actual = assertThrows(IllegalStateException::class.java) {
+                manager.performActionWithFormatterDisabled(Runnable {
+                    assertTrue(aspect.isDisabled)
+                    manager.performActionWithFormatterDisabled(Runnable { assertTrue(aspect.isDisabled) })
+                    assertTrue(aspect.isDisabled)
+                    throw expected
+                })
+            }
+            assertSame(expected, actual)
+            assertFalse(aspect.isDisabled)
         }
     }
 

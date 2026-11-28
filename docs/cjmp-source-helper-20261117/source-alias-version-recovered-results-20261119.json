@@ -1,0 +1,129 @@
+{
+  "before": {
+    "utc": "2026-11-18T17:29:14.5198265Z",
+    "fileCount": 6851,
+    "aggregateSha256": "A0707F13F3A529795B42F77C4EBA082FFC4178CEBF7C6B920C48DA40B3BD829E",
+    "roots": [
+      "common",
+      "cfir",
+      "analysis/low-level-api-cfir",
+      "analysis/analysis-api-cfir",
+      "compiler/frontend",
+      "compiler/config",
+      "compiler/phaser",
+      "compiler/arguments",
+      "psi",
+      "resolution.common",
+      "macro"
+    ],
+    "include": [
+      "*.kt",
+      "*.cj",
+      "*.kts"
+    ],
+    "exclude": "**/build/**",
+    "method": "rg --files --hidden --no-ignore, / normalized and Sort-Object -CaseSensitive; SHA256 of UTF8 LF joined path TAB length TAB uppercaseSHA256, no final LF",
+    "scope": "TypeRefOrigin source creation/prototype/source migration/owned copy, frozen type syntax and explicit header identities; originalSOURCE18 and four official new Alias/ABI fixtures remain strict"
+  },
+  "after": {
+    "utc": "2026-11-18T19:19:40.8274764Z",
+    "fileCount": 6855,
+    "aggregateSha256": "3FEABB729B310B3A4E64F4DA734C5F9200542CDC96C354B93ED7EF2884BB16C4",
+    "roots": [
+      "common",
+      "cfir",
+      "analysis/low-level-api-cfir",
+      "analysis/analysis-api-cfir",
+      "compiler/frontend",
+      "compiler/config",
+      "compiler/phaser",
+      "compiler/arguments",
+      "psi",
+      "resolution.common",
+      "macro"
+    ],
+    "include": [
+      "*.kt",
+      "*.cj",
+      "*.kts"
+    ],
+    "exclude": "**/build/**",
+    "method": "rg --files --hidden --no-ignore, / normalized and Sort-Object -CaseSensitive; SHA256 of UTF8 LF joined path TAB length TAB uppercaseSHA256, no final LF",
+    "scope": "Recovered final85212/a39e14e2. Version publication reached actual SOURCE CJO; both Alias cases fail Type(28) versus Tuple(18) at alias RHS. The old input manifest precedes subsequent revisions; unchanged must remain false. Original XML belongs to this actual queue window only.",
+    "unchanged": false
+  },
+  "queue": {
+    "id": "a39e14e2",
+    "args": [
+      "--gradle-user-home",
+      ".gradle/cjmp-export-home",
+      ":cfir:analysis-tests:test",
+      "--rerun",
+      "--tests",
+      "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceFrozenTypes*Test.orderedAliasRoles",
+      "--no-build-cache",
+      "--console=plain",
+      "--max-workers=1",
+      "--continue"
+    ],
+    "pid": 25244,
+    "owner": "pid@25244",
+    "submitAt": 1795028470231,
+    "startedAt": 1795028470280,
+    "finishedAt": 1795028645145,
+    "exitCode": 1,
+    "status": "DONE"
+  },
+  "total": 2,
+  "passed": 0,
+  "failed": 2,
+  "errors": 0,
+  "skipped": 0,
+  "allXmlWithinWindow": true,
+  "scope": "Recovered final85212/a39e14e2. Version publication reached actual SOURCE CJO; both Alias cases fail Type(28) versus Tuple(18) at alias RHS. The old input manifest precedes subsequent revisions; unchanged must remain false. Original XML belongs to this actual queue window only.",
+  "extraPassedTasks": [],
+  "cases": [
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceFrozenTypesLightTreeTest",
+      "name": "orderedAliasRoles()",
+      "status": "FAILED",
+      "failureMessage": "org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)\r\n\torg.opentest4j.AssertionFailedError: expected: <28> but was: <18>\r\n\torg.opentest4j.AssertionFailedError: 不能跳过失败的类型角色或未完成的 SOURCE→CJO ==> expected: <1> but was: <0>"
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceFrozenTypesTest",
+      "name": "orderedAliasRoles()",
+      "status": "FAILED",
+      "failureMessage": "org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)\r\n\torg.opentest4j.AssertionFailedError: expected: <28> but was: <18>\r\n\torg.opentest4j.AssertionFailedError: 不能跳过失败的类型角色或未完成的 SOURCE→CJO ==> expected: <1> but was: <0>"
+    }
+  ],
+  "xml": [
+    {
+      "path": "cfir/analysis-tests/build/test-results/test/TEST-org.cangnova.cangjie.cfir.analysis.tests.CfirSourceFrozenTypesLightTreeTest.xml",
+      "bytes": 5729,
+      "sha256": "E33D82A9724ED6DC5D2CECB4805A8E6553DC22DEB1B333CABD38B358EFFEAB2E",
+      "timestamp": "2026-11-18T19:03:51.827Z",
+      "lastWriteUtc": "2026-11-18T19:04:04.3580466Z",
+      "withinQueueWindow": true,
+      "tests": 1,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0,
+      "gzipBase64": "H4sIAAAAAAAACu1YS28jRRA+b6T8h2Y2ipxDOp7xcxzbK683CazyWMXOAVYr1Jkp2223u4funmzClRUsAiS0Bw4rxAmExAFpAQkkhPgviDx+BpoZ27ETJ/b6kRMnT1d1fV91dXdVufMPjtsMHYFUVPCCYeK4gYA7wqW8XjAOqpurWeNBcXEhr0Fp5VMNiJM2FAwh69ghvM7FEQk/mhSwU6MSE07YiaIKhya4XKOyInzpwKYUHwOvnnigtmm9oasSoApKGyicWTBMA6kW9TxwC0bcQDVCmS8hUoCUQqpQrmkblCZtr2BYcSu9apqrZrZq2rl4IpcycdbKfGCghlA68nT7vd3IpmDYOBM3jeLiAkJ5TwoPpKag1iJB4IRD1OUCXZDglhglal8wULEVAzmMKDWPAHTcS9p25B5C+c7yURuUIvUOo/CAB7DJJt7xmaYeg81OmDaCCOVQV4y6chSzeqFcWb5vJtaX75vx9eX79voVxJJSQUQED0zB7QDCsQeOBjeHlplet7LLdb2ODn2NnhMVycxQNgH0v398dfHJXxe//3rx92en37+5+O2H89cvzt/8efrdFxc/vrr4/Jezl9+cffvT6c9fnr38+vz1C1TZO9gvb/zz6avy4z1UKISuDPpnXncvHogMpE+8MYNoFGcR6sWFezON77h4dxjUxYV7RKPAq6bPqcZN36MaJCYe7ThXYgyT7lfsUtYkRySXja9MiZBKTouQzI6BQAVX1yBCYYhh2Zl+lGtZIdgurEAeUQcUpm2P4ccHnOpUH1BwbALsR1AjPtOXmkpkh1s6Z6biI2mCfLLvcw4SS/CE1N2zGevTtPRg5IZD7Qq+JYXvUV7vR/V5MHpCPWCUQ2z4rJbOZRLTMdyMnIhPh7zkRkG+mcHKjGSQ4WSFS4dKS+LocqQsi7ZHGcgAr7eS2+a0dC5r38Y2rKb0AIfVli51mSiI3TwjOFDx9FyY967VzhFu3LqhkxVVLN7OiXR3E4IrjQ+JgrXwixFexxJqDByNd0A3hIspPxItiHVGUSbqJbMr9r6mDJekJCfbVGlcE3KDOI3YpSQ0N1N2ehb2Fd/zJCgVZO5ZV58xsmQn2Tz0KXNB4sPgN3aTtuO4uTI5dom71YYUz0dwJKxxODY+8gmLMvGuiEaxAU0EZmfeAoz0DYaBZa0ZgmXG8qyvmA1AXdYz00ym+pHGupF9V2pLEq+BuWhTTtjqqr314ftu8vbbl4wnZs7YS/MjmK3pmbu9wXipxspmZkW5SY+1L0ekeSudnIav3BTvEu4ykNiTwgGldoTrs1GkpnX3pGY6zMKjW6SKBm+pr/yH4w6hCgZXWLs2IUnUM86ZxAzz+SRdziDojT2OmbYmZWgQp3XyZEyaqGmdeiFLjLQPXbJkJm7hijrD8Ttkn3f72D1eobzOIOjLr7TKdnbeO2FNvNfS58GJUTeD2wP1dT6dfnSQMMbIRm0hYZJG5G7/tv7fy8y+lxm86JO3H6l0YraVo1TTIEuMRfdwVHG2kvO7jGb0T+eub2N+rfMqFb10rnWfOqOhOlEa2qvC18X8O0/Lj0rV0tNnz4r5tT5F/0SQcvjEQBGQ9d6Ki4sL/wFNIssJYRYAAA==",
+      "archiveVerified": true
+    },
+    {
+      "path": "cfir/analysis-tests/build/test-results/test/TEST-org.cangnova.cangjie.cfir.analysis.tests.CfirSourceFrozenTypesTest.xml",
+      "bytes": 5961,
+      "sha256": "44C9D867D1E0421F2F6E8918435E86C71EC9BF260EEB96AE606D147493A16BEF",
+      "timestamp": "2026-11-18T19:04:01.532Z",
+      "lastWriteUtc": "2026-11-18T19:04:04.3570482Z",
+      "withinQueueWindow": true,
+      "tests": 1,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0,
+      "gzipBase64": "H4sIAAAAAAAACu1YzW8bRRQ/N1L+h2Ebpc4hE+/6I7ZjpzJuUqiapMqHEFQVmuw+2xPPzgwzs2nMlQqKAAn1wKFCnEBIHJAKSCAhxP+CaJs/A82undhJHLu2kxMXe+fNvN/vzdt5Hzvl20chQ4egNBW84rg47SDgvggob1Scvd31xYJze3V2pmxAGx1RA4iTECqOUA3sE97g4pDEDwcUsF+nChNOWFtTjWMVXKtTtSMi5cO6Eh8D321L0LugjYPiBRXHdZBuUSkhqDhpB9UJZZGCZAKUEkrHckND0IaEsuJ4aS+/6LqLbmHXLZbS2VLaxbmM94GDmkKbxMD7724mOnZXBTfnrM7OIFSWSkhQhoJeSgTWCJ/o030FoCCoMkr0tmCgUwsO8hnReor7PrEqm1iFULmzaxSC1qTRIRISuEXLHuCNiBkqGax3vLNmHVNCXTHqylHKO/HgwvxNN7Myf9NNr8zfLK6cQaxqbR0huFWFoAMIRxJ8A0EJzTOz4hXmG2YF7UcGPSY6kbmxbAzof//46viTv45///X4789efv/i+LcfXj9/8vrFny+/++L4x2fHn//y6uk3r7796eXPX756+vXr50/Qztbedm3tn0+f1e5toUolNqXfPve8eWkrcpBpyxGd6KxOw9WzMzem6t9R8a7RqbMzN4hB1qqDiFODDyJJDShMJO0YV2UMk+5T6lR2QA5JqZBemBAhl50UIVsYAYEKrs9BxMIYwysu96KcSwb2dWEN6pD6oDENJcP39jg1uR4ge2ws9h2ok4iZ05mdRA+3TMnNpYfS2HyyHXEOCiuQQpnu2Uz1zLRMv+cuhtoU/K4SkaS80YsacTt6QCUwyiF18aqWKS1nJmMYjJxJT4Y8FyROHszgLQ9lUPFijav72ijim1oyWROhpAyUxTvZyWVrWqZUKF7GdlEpOQEcVFIsdY1oSA1eYQ9UOn8lzFvnSuYQMy59oW9US7F4M+58l9pGMt4nGpbiJ0Z4AyuoM/AN3gDTFAGm/FC0INUZJQmoMEA/MpThqlKkfZ9qg+tCrRG/mTqVxOpurpifhv5OJKUCrW3CnnbRGSE5dnLM2xFlASi8b/9Tg2Y7hrsL42NXebDbVOLxEI6MNwrH2kcRYUkC3hTJKNU3k4AVl98AjPQMLgIreFMEWx7Jsp4a1gd1WsZcN5vrRRopEHtC6q4isom5CCknbHGxePfD94Ps5dGXTWemzniS3Ycwe5Mzd1uC0VKNV1ieFuU6PTKRGpLdvXx2Er7agXiH8ICBwlIJH7TeEEHEhpG63vWTukkWH94Z7RiQcz1VPx53CLUdnGHt6sQkSat4xSRunM/HaW76QQe2Nm7eG5ehSfxW+8GINEmvOvFG5hgJ9wMy52Yu4UoawtEb44h329ctvkN5g4Ftx890yMXCVb8Jb+x3rSJuT4weDF7sq69X0+AnBwljjIooFArGaUSu92v1/15m+r1Mf6CP337k8pnpVo5q3YCqMpbE4bDi7GWvLhg7HzjXHY3lpc5lVHKvudS92EyGuq0NhIsiMqvltx7W7lR3qw8fPVotL/VM9C4EpU4Xvlfd3iyhqjEQSoOMQEyQALWgjW5JTbFmABJTjg8JowE1bew3wW/dQnWhEBcGtcHEKhAgBQ2qjWrPzgwBpdxXEAI3hNm7DaI04ACkaWJGQ2rGB6cB4Kb9gSOfRQEEuE4Z6CGAvb6yvrH+PrkTX52d+Q825QmqSRcAAA==",
+      "archiveVerified": true
+    }
+  ]
+}
