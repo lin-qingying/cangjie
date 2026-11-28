@@ -11255,3 +11255,104 @@ ExtendsImplementsInterfaceDuplicated）集合差 **ADDED=0、REMOVED=12**（本�
 - fixtures covered: 该用例内的两处 spelling（未限定 `@JavaMirror` / 限定 `@interoplib.interop.JavaMirror`）。
 - verification command(s) and outcome: `gradlew.bat :psi:cleanTest :psi:test` → **281 tests / 0 failed**（修复前 281 / 1）；`:psi:test` 模块由此全绿。
 - remaining risks: `expectedLanguageBuiltIns`（`common/src/org/cangnova/cangjie/annotations/CangjieAnnotationModel.kt`）与官方目录仍不完全一致——官方 `NAME_TO_ANNO_KIND` 还含 `Java`、`ObjC`、`NonProduct`，本仓把 `Java`/`ObjC` 留在平台身份域、把 `NonProduct` 归入 `packageDirectives`。因此同文件 `builtInArgumentFormsPreserveTheirAnnotationNodes` 对 `@Java` 断言的 `isBuiltInAnnotation == false` 与官方目录并不一致（该用例当前通过，是因为 `findLanguageBuiltIn("Java") == null`）。本轮未改动该模型：它牵涉平台身份域划分与 raw builder/checker/序列化多消费者，需单独决策后再收敛；届时应把这条断言与 registry 一并修正。
+
+## 2026-11-25：CPointer 调用完成保留候选身份
+
+- 根因：内建指针泛型推断失败后，完成器提前将调用根换成不携带候选的错误引用，随后的 FULL 完成无法核验当前候选。
+- 官方证据：`TypeCheckBuiltinExpr.cpp` 的 `ChkPointerExpr` 只从可用目标类型实参推断指针元素。cjc 1.1.3 对 `cpointer_expected_inference.cj` 的等价源码在两个缺少目标类型实参的调用上报告 `sema_pointer_unknow_generic_type`。
+- Kotlin 参照：`FirCallCompleter.completeCall` 保留候选至完成结果写回，`FirCallCompletionResultsWriterTransformer.toResolvedReference` 消费带候选的错误引用。
+- 修复：`CfirCallCompleter` 复用 `CfirErrorReferenceWithCandidate` 保存诊断与原候选，由现有完成结果写回器发布最终错误，partial 记录按当前引用判断。FULL 凭证校验沿用原有不变量。
+- 验证：`:cfir:analysis-tests:test --tests '*CfirAnalysisLLT*Generated$Ffi*'` 所覆盖的 LightTree 41 项与 PSI 41 项全部通过。定向 `CfirUnscopedCompletionReceiptTest` 48 项与 `CfirCompletionTaskClosureTest` 4 项全部通过。
+
+## 2026-11-25：扩展的签名暴露检查与泛型接口默认实现
+
+- 根因：普通签名检查遍历到了 extend 的泛型约束，两个构建器产生的声明可见性差异因此导致 PSI 多报；继承检查在泛型代换签名上查找未复制的函数体，将具体默认成员误判为抽象。
+- 官方证据：`CheckInternalTypeUse.cpp::CheckNominalDeclAccessLevelValidity` 排除 extend；`StructInheritanceChecker.cpp` 通过底层成员的 ABSTRACT 状态判断实现义务。cjc 1.1.3 实际编译通过条件 CPointer 扩展对应声明，以及有泛型默认成员的 generics 与导入它的 localmain 两个包。
+- Kotlin 参照：`FirExposedVisibilityDeclarationChecker` 按声明类别应用暴露检查；`FirNotImplementedOverrideChecker` 在 use-site scope 中核对成员实现状态及原始身份。
+- 修复：`CfirGeneralSemanticsChecker` 按官方入口边界处理签名暴露；`CfirInheritanceDeepChecker` 从 substitution override 的原声明读取函数体与访问器体。
+- 验证：同轮通过扩展访问控制 8 项、扩展可见性 12 项、父扩展实现与覆盖 24 项。六项 without-alias-expansion 用例被跳过。本轮定向组合总计 132 项，0 失败。
+
+## 2026-11-26：共享推断的 Option 身份、幂目标试算和 lambda 诊断
+
+- 问题族与根因：结构化等式分解成 LOWER/UPPER 后丢失类型身份，incorporation 的 Option 装箱缩层；幂运算的多个指数目标需要独立完整检查；歧义 lambda 的 pending 及正文错误被返回头重复发布。
+- 官方证据：cjc 1.1.3 的 Some(None)、幂重载及 lambda 对照；普通泛型 Option 装箱证据见 `tmp/goal-option-id-inference-authority-20261125`，幂形状证据见 `tmp/goal-pow-overload-shapes-20261125.cj`，新 lambda/resource 隔离数据已由 cjc 确认仅两个裸字面量幂错误。官方 BinaryExpr 的 ChkExpoExprExponent、TypeCheckCall 及 SynLamExpr 保持原语义边界。
+- Kotlin 参照：ConstraintInjector/ConstraintIncorporator、FirOverloadByLambdaReturnTypeResolver、FirCallCompleter、FirCallCompletionResultsWriterTransformer、ResolveUtils 的匿名函数返回类型及 ErrorNodeDiagnosticCollectorComponent。
+- 实现 owner：resolution.common 的约束位置、存储、injector/incorporator；resolve 的独立 RAW trial、Candidate 实际签名计算器及正式参数/完成消费；匿名函数 writer 与诊断 collector。
+- 修复原则：类型身份沿两种 incorporation、去重和 fork 重放传递，混合值子类型约束保留官方装箱许可；每个幂目标拥有新树、候选、CS 与 FULL writer，源签名事实由真实 owner 在试算退出后准备；正文错误保持 InvalidTy，由原正文节点报告。
+- 覆盖数据：option_payload_boxing、call10、全部 pow_* 与新增 pow_inference_isolation，以及 DefaultParameterPkg02/F2 的 Option/try 条件。
+- 验证：统一 `.scratch/run-goal-gradle.ps1` 排队执行的双入口目标组合 **42/0/0/0**。最新 common **14/0/0/0**、resolver **463/0/0/0**。签名消费及独立环境源码 Gate 通过。
+
+## 2026-11-26：真实宏展开、声明载体与字符串换行
+
+- 问题族与根因：宏定义包 define 与 import default.define 不一致，依赖没有装配；宏源物化到子目录导致 cjc -p 返回 0 却没有产物；stable splice 没有进入函数/分支声明列表；CRLF 在原始/hash 字符串状态中成为 ILLEGAL；前置普通注解没有进入首个声明重解析；修饰符子 token 缺少原来源投影。
+- 官方证据：cjc 1.1.3 的包名、空输出目录、原注解参数与多声明反射 probe，见 `tmp/goal-macro-package-authority-20261126`、`tmp/goal-macro-source-root-authority-20261126`、`tmp/goal-macro-annotation-header-authority-20261126`。官方 MacroExpansion/ParseMacro 传递 scope/modifiers/annotations，首个输出消费前置注解。孤立 CR 的词法与值归一化证据见 `tmp/goal-isolated-cr-string-authority-20261126`。
+- Kotlin 参照：默认树 transformer 的 owning children、RawFirNonLocalDeclarationBuilder 的外层 designation/context 恢复、Kotlin.flex 的 raw/string 状态与换行测试入口。
+- 实现 owner：MacroExpandPhase 的 typed owning-list splice；MacroSurface/RawCfirBuilderContext/fragment parser 的完整原词法快照与前置 annotation 输入；共享 raw annotation 模块来源；psi lexer LF/CRLF 与孤立 CR 内容；sourceMap/registry 的纯子 token 投影。宏测试配置按真实 cjc 包目录物化源文件。
+- 数据修正：test_macro_definition 的包名改为官方实际可导入的 default.define。保留仓颉语句，宏主文件补入官方证实遗漏的两条 Deprecated 与两条 unreachable 标记。
+- 覆盖数据：DefaultParameterPkg02 全目录，原宏主文件所有 inline 诊断，局部自定义注解双入口，新增 LF/CRLF raw/hash/dangling parser 回归。
+- 验证：上述双入口组合 **42/0/0/0**；PSI 换行及注解解析组合 **13/0/0/0**；1,434 项扩大组合中完整宏集合无失败；源码来源、parser 模块及 cache Gate 通过。全部临时 trace、dump 指令及 placeholder 文件已清理。
+
+## 2026-11-26：headless 项目释放的写动作所有权
+
+- 根因：外层 root 直接拥有项目 PSI 子树，Disposer 在进入 application 计数回调之前已释放 PsiManager/FileManager，违反平台写访问断言。
+- Kotlin 参照：AbstractCliPipeline 的 root finally 与 disposeRootInWriteAction；KotlinCoreEnvironment 的独立项目计数 lease。
+- 实现 owner：CangJieCoreEnvironment 为每个项目持有私有 lifetime，外层仅注册清理叶子，在实际 application 写动作内释放 PSI、项目及 application lease；新代装配成功后发布，创建失败保留原异常并清理所属根。
+- 验证：compiler:config **18/0/0/0**、compiler:frontend **138/0/0/0**；此前同一写动作错误导致的 21 项 frontend 失败全部闭合；源码生命周期 Gate 通过。
+
+## 2026-11-26：扩大回归的未闭合族
+
+- 扩大组合为 **1,434 项，16 失败**，全部位于八个 LightTree/PSI 成对语义族：binary_call_diagnostic_pivots、generics_00051、infer_multiple_return、lambda_param_05、lambda_param_09、upper_bound_int_binary、upper_bound_float_binary、bitwise_typematch。
+- cjc 1.1.3 已核实上述 fixture 期待，证据位于 `tmp/goal-inference-failure-families-authority-20261126`。这些失败仍需实现归因与修复，尚未记为基线，也不由本轮 42 项通过推定全仓通过。
+
+## 2026-11-26：属性代换消费所属属性的访问器状态
+
+- 根因：属性 STATUS 统一解析 getter/setter 状态后，ClassSubstitutionScope 又单独请求访问器 STATUS；访问器独立 phase 尚未推进，在 STATUS 处理器中触发同阶段 lazy resolve 契约违规。
+- 官方证据：`tmp/goal-inference-failure-families-authority-20261126/generics_00051/diagnostics.json`，cjc 1.1.3 无错误，保留两处不可达模式及其余官方警告。
+- Kotlin 参照：`FirClassSubstitutionScope.createSubstitutionOverrideProperty`、`FirFakeOverrideGenerator.createCopyForFirProperty/buildCopyIfNeeded`、`FirStatusResolveTransformer.transformPropertyAccessor`；访问器复制消费所属属性已发布的状态。
+- 实现 owner：`cfir/providers` 的 `CfirClassSubstitutionScope.substituteAccessorFunction` 删除独立访问器 lazy STATUS 请求，保留所属属性的 STATUS 请求和复制器的 resolved status 不变量。
+- 修复原则：属性统一拥有访问器状态解析，代换按该所有权消费状态。
+- 覆盖与验证：`.scratch/run-goal-gradle.ps1 :cfir:analysis-tests:test --tests '*CfirAnalysisLLT*Generated*Extend*GenericParamDeclCallInMemberFunc*' --tests '*CfirAnalysisLLT*Generated*prop*'`，XML 核验 18 项、0 失败、0 错误、0 跳过，包含 generics_00051 两入口。
+
+## 2026-11-26：非法上界二元综合与目标检查
+
+- 根因：二元综合用左侧结果创建目标检查，接受本应无法提供 primitive 目标的右侧泛型类型；子树重检又仅凭根类型相等返回成功，保留了早先综合失败的子节点诊断。
+- 官方证据：`tmp/goal-inference-failure-families-authority-20261126/{upper_bound_int_binary,upper_bound_float_binary,binary_call_diagnostic_pivots}/diagnostics.json`；`BinaryExpr.cpp::SynLiteralInBinaryExprFromRight` 在右侧目标不合法时结束综合，`ChkArithmeticExpr` 下传真实目标，`TypeManager.cpp::IsGenericSubtype` 可检查声明上界，`Types.cpp::GetPrimitiveUpperBound` 只对实际 lower bound 作转换。
+- Kotlin 参照：`IntegerLiteralAndOperatorApproximationTransformer` 的整棵运算子树类型写回与 FIR 调用完成的真实操作数消费；仓颉 primitive 运算的综合/检查规则由上述官方实现确定。
+- 实现 owner：`CfirExpressionsResolveTransformer.tryResolveBuiltinOperatorCall`、`invalidPrimitiveBoundBinaryOperatorOrNull`、`resolveHomogeneousBuiltinOperatorAgainst`。
+- 修复原则：右侧综合失败保留原根错误，真实外层目标检查完整子树后才提交成功结果；不以根结果类型代替操作数检查。
+- 覆盖数据：上述三份 fixture 两入口，完整 Extend 泛型、Operator、TypeInfer 组合。
+- 验证：47364 定向 16/0/0/0；49516 扩大组合 394/0/0/0，其中 Extend 150、Operator 152、TypeInfer 76、Function 16。
+
+## 2026-11-26：位移实参的独立整数类型
+
+- 根因：同构判定只要求存在一个 receiver/argument 同类型签名，错误地包含支持不同整数位移量的 shift，右侧位移量由此决定左侧结果类型。
+- 官方证据：`bitwise_typematch/diagnostics.json` 无错误；`BinaryExpr.cpp::ChkShiftExpr/SynShiftExpr` 分别检查左值与独立综合右侧位移量，结果来自左值。
+- Kotlin 参照：`IntegerLiteralAndOperatorApproximationTransformer` 按实际运算签名消费 receiver/arguments；仓颉的异型位移量由官方规则许可。
+- 实现 owner：`CfirExpressionsResolveTransformer.hasHomogeneousBuiltinOperatorSignature` 及目标检查入口。
+- 修复原则：同构通道核验当前 receiver 的全部参数签名，异型位移量使用正式独立操作数解析。
+- 覆盖数据：bitwise_typematch 两入口及完整 Operator 152 项。
+- 验证：49516 扩大组合 394/0/0/0。
+
+## 2026-11-26：共享 lambda 的 receiver 依赖与父变量固定权
+
+- 根因：多 owner 成员的错误结果不再携带 VM，实参独立性判断遗漏其真实 receiver；PCLA common base 初始化继承旧外层前缀，前序调用新增的父变量被误当作候选局部变量。
+- 官方证据：`lambda_param_05/diagnostics.json` 零诊断，`lambda_param_09/diagnostics.json` 仅 CHIR unused 警告；官方成员 owner-sum 由外层参数类型收窄，pipeline map/collectArray 共同推断参数与结果。
+- Kotlin 参照：`FirPCLAInferenceSession.baseConstraintStorageForCandidate/processPartiallyResolvedCall`、`NewConstraintSystemImpl.addOuterSystem`、`VariableFixationFinder` 的外层变量就绪规则。
+- 实现 owner：`CfirPCLAInferenceSession.isTrivialArgument`、`Candidate.candidateSystem`。
+- 修复原则：真实 receiver 依赖沿现有共享调用队列消费参数界，候选从实际 common parent 接入时，其全部变量保留外层固定权；private-parent 固定不变量保持严格。
+- 覆盖数据：lambda_param_05/09 两入口、TypeInfer 76 项、已有 Some(None)、Call10 和 PowInferenceIsolation。
+- 验证：4816 定向 10/0/0/0、47364 定向 16/0/0/0、49516 扩大 394/0/0/0；临时所有权异常详情已删除。
+
+## 2026-11-26：Unit 返回字面量的诊断期待校正
+
+- 根因：infer_multiple_return 与 funcDecl2 的 Unit 返回字面量期待仍为 RETURN_TYPE_MISMATCH，官方实际报告 sema_cannot_convert_literal。
+- 官方证据：`infer_multiple_return/diagnostics.json` 第 26 行 `1` 的完整 token 范围；`ReturnExpr.cpp::SynReturnExpr` 将已确定返回类型下传到字面量检查，`LitConstExpr.cpp` 对 Unit 报告不能转换字面量；同族 enum1 已采用 CANNOT_CONVERT_LITERAL。
+- Kotlin 参照：本项为官方诊断定义与现有项目诊断映射的 fixture 校正，未修改生产 checker。
+- 文件：infer_multiple_return.cj 的 return1、funcDecl2.cj 的 help2 return0，源代码保持原样。
+- 修复原则：已有 CANNOT_CONVERT_LITERAL 承载官方精确字面量错误；保留 B<Int64>() 的 RETURN_TYPE_MISMATCH。
+- 验证：49516 扩大组合 394/0/0/0，含两份 fixture 双入口。
+
+上述记录闭合原八个触发族；全仓分析回归与原目标 IDE UI 验收仍需继续，common/resolver 本轮最终结果以随后核验的 XML 为准。
+
+- 后续验证：58607 正式回归 XML 为 resolution.common 14/0/0/0、cfir:resolve 463/0/0/0。
+- 最终源码审查：Bohr 批准属性状态、运算符、receiver 依赖、Candidate/Trial/FULL 四项。Candidate 的外层固定权接线仅用于真实 PCLA 会话；独立试算会话保留普通 setBaseSystem，零前缀不被重新扩大。最新补跑分析矩阵仍待终态。
