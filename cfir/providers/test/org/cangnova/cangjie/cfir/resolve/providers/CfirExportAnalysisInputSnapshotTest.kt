@@ -1573,7 +1573,8 @@ class CfirExportAnalysisInputSnapshotTest {
     fun simpleConstBindingUsesCapturedContainerInitializer() {
         val fixture = Fixture(withSimpleBinding = true)
         val binding = requireNotNull(fixture.simpleBinding)
-        assertNull(binding.variable.initializer)
+        assertNull(binding.variable.ownedInitializer)
+        assertSame(binding.initializer, binding.variable.initializer)
         val analysis = CfirExportAnalysis.analyze(listOf(fixture.file))
         val pattern = analysis.patternOf(binding.container)
         val bindings = analysis.patternBindingsOf(binding.container)
@@ -1585,7 +1586,10 @@ class CfirExportAnalysisInputSnapshotTest {
         assertSame(binding.initializer, analysis.sourceElement(binding.initializer).identity)
         assertNull(analysis.ownerOf(binding.variable))
 
-        binding.container.replaceInitializer(fixture.literal(48L))
+        val replacement = fixture.literal(48L)
+        binding.container.replaceInitializer(replacement)
+        assertNull(binding.variable.ownedInitializer)
+        assertSame(replacement, binding.variable.initializer)
         assertSame(pattern, analysis.patternOf(binding.container))
         assertSame(bindings, analysis.patternBindingsOf(binding.container))
         assertSame(binding.container, analysis.simplePatternOwnerOf(binding.variable))
@@ -1607,10 +1611,10 @@ class CfirExportAnalysisInputSnapshotTest {
         assertDoesNotThrow { analysis.validateSourceUnchanged() }
 
         val nested = complex.pattern.elements[1] as CfirTuplePattern
-        val elements = nested.elements as MutableList<CfirPattern>
-        val first = elements[0]
-        elements[0] = elements[1]
-        elements[1] = first
+        val reversedElements = nested.elements.reversed()
+        nested.replaceElements(reversedElements)
+        assertSame(reversedElements[0], nested.elements[0])
+        assertSame(reversedElements[1], nested.elements[1])
 
         assertSame(bindings, analysis.patternBindingsOf(complex.container))
         complex.bindings.forEachIndexed { index, binding -> assertSame(binding, bindings[index]) }

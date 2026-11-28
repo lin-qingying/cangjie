@@ -269,8 +269,6 @@ internal class CaCfirNamedFunctionSymbol private constructor(
 
     /** 命名函数的不同查询入口共享真实源身份。 */
     override fun equals(other: Any?): Boolean = psiOrSymbolEquals(other)
-
-    override fun equals(other: Any?): Boolean = psiOrSymbolEquals(other)
     override fun hashCode(): Int = psiOrSymbolHashCode()
 }
 

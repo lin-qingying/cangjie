@@ -1,7 +1,5 @@
 package org.cangnova.cangjie.analysis.api.cfir.symbols
 
-import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.llCfirModuleData
-
 import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.api.annotations.CaAnnotationList
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
@@ -9,7 +7,10 @@ import org.cangnova.cangjie.analysis.api.cfir.findPsi
 import org.cangnova.cangjie.analysis.api.cfir.getExplicitCallableReceiverType
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.symbols.CaConstructorSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaModifierExplicitness
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolLocation
+import org.cangnova.cangjie.analysis.api.symbols.CaSymbolUnavailabilityReason
+import org.cangnova.cangjie.analysis.api.symbols.CaSymbolUnavailableException
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolVisibility
 import org.cangnova.cangjie.analysis.api.symbols.CaTypeParameterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaValueParameterSymbol
@@ -19,6 +20,7 @@ import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
+import org.cangnova.cangjie.cfir.resolve.providers.getContainingClass
 import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
 import org.cangnova.cangjie.cfir.types.ConeErrorType
@@ -232,31 +234,24 @@ internal class CaCfirConstructorSymbol private constructor(
     /**
      * CFIR 分支：返回**外层类型**的类型参数。
      *
-     * 两条口径必须统一到「外层类」这一侧：`cfirSymbol.typeParameters` 是构造器**自身**声明的
-     * 类型参数，而官方构造器根本不能声明类型参数
-     * （`external/cangjie_compiler/src/Sema/TypeChecker.cpp:1330-1341` 的
-     * `sema_forbid_generic_constructor`），psi2cfir 也只转换构造器自身列表
-     * （`PsiRawCfirBuilder.kt` 的 `typeParametersForConstructor`），因此那个列表恒为空——
-     * 用它会让没有 PSI 的库构造器在泛型类上少报类型参数，与源码路径给出不同答案。
-     *
-     * 外层类符号构建不出来时抛可分类异常（与 [valueParameters] 同策略），而不是退回空列表。
+     * 优先从构造器声明的 provider 获取真实 owner。二进制符号尚未建立容器映射时，
+     * 按 callableId 在声明模块查询；构造器签名中的类型参数引用不取代 owner 的声明身份。
+     * 找不到 owner 与 [valueParameters] 一样抛可分类异常。
      */
     private fun ownerClassTypeParameters(): List<CaTypeParameterSymbol> {
-        val classId = cfirSymbol.callableId.classId
+        val symbol = cfirSymbol
+        val classId = symbol.callableId.classId
+        val ownerCfirSymbol = symbol.getContainingClass()
+            ?: classId?.let { symbol.cfir.moduleData.session.symbolProvider.getClassLikeSymbolByClassId(it) }
             ?: throw CaSymbolUnavailableException(
                 reason = CaSymbolUnavailabilityReason.MISSING_DECLARATION,
-                message = "Constructor owner class is unavailable",
-            )
-        val ownerCfirSymbol = analysisSession.cfirSession.symbolProvider.getClassLikeSymbolByClassId(classId)
-            ?: throw CaSymbolUnavailableException(
-                reason = CaSymbolUnavailabilityReason.MISSING_DECLARATION,
-                message = "Constructor owner class `$classId` is not in the symbol provider",
+                message = "Constructor owner class is unavailable: ${symbol.callableId}",
             )
         val ownerSymbol = builder.buildSymbol(ownerCfirSymbol)
         return (ownerSymbol as? CaTypeParameterOwnerSymbol)?.typeParameters
             ?: throw CaSymbolUnavailableException(
                 reason = CaSymbolUnavailabilityReason.MISSING_DECLARATION,
-                message = "Type parameters of the constructor owner `$classId` are unavailable",
+                message = "Type parameters of the constructor owner `${ownerCfirSymbol.classId}` are unavailable",
             )
     }
 

@@ -1,12 +1,9 @@
 package org.cangnova.cangjie.analysis.api.cfir.symbols
 
-import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.llCfirModuleData
-
 import org.cangnova.cangjie.analysis.api.annotations.CaAnnotationList
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.findPsi
 import org.cangnova.cangjie.analysis.api.cfir.symbols.pointers.CaCfirValueParameterSymbolPointer
-import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolLocation
@@ -14,22 +11,18 @@ import org.cangnova.cangjie.analysis.api.symbols.CaSymbolModality
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolVisibility
 import org.cangnova.cangjie.analysis.api.symbols.CaValueParameterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.pointers.CaSymbolPointer
-import org.cangnova.cangjie.analysis.api.types.CaClassLikeType
 import org.cangnova.cangjie.analysis.api.types.CaType
-import org.cangnova.cangjie.builtins.StandardNames
+import org.cangnova.cangjie.cfir.CfirFunctionBodyOwner
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.resolve.calls.cangjieVariadicParameterOrNull
 import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
 import org.cangnova.cangjie.cfir.types.ConeErrorType
-import org.cangnova.cangjie.cfir.types.coneTypeOrNull
-import org.cangnova.cangjie.cfir.types.isArray
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.SpecialNames
-import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.psi.CjParameter
+import org.cangnova.cangjie.source.psi
 
 /**
  * 值参数叶子实现。
@@ -150,11 +143,11 @@ internal class CaCfirValueParameterSymbol private constructor(
     /** 指针与仓颉稳定缓存键共享实际 owner 下标；与 Kotlin index 同源，不缓存外部传入值。 */
     internal val index: Int
         get() {
-            val function = checkNotNull(cfirSymbol.containingDeclarationSymbol.cfir as? CfirFunction) {
-                "A value parameter must belong to an actual function."
+            val owner = checkNotNull(cfirSymbol.containingDeclarationSymbol.cfir as? CfirFunctionBodyOwner) {
+                "A value parameter must belong to an actual callable."
             }
-            return function.valueParameters.indexOfFirst { it.symbol === cfirSymbol }.also {
-                check(it >= 0) { "The function must retain its actual value parameter." }
+            return owner.valueParameters.indexOfFirst { it.symbol === cfirSymbol }.also {
+                check(it >= 0) { "The callable must retain its actual value parameter." }
             }
         }
 
@@ -252,13 +245,4 @@ internal class CaCfirValueParameterSymbol private constructor(
     override fun equals(other: Any?): Boolean = psiOrSymbolEquals(other)
 
     override fun hashCode(): Int = psiOrSymbolHashCode()
-
-    /** 声明与使用包装必须按规范 PSI/CFIR 符号身份比较，不能按包装对象比较。 */
-    override fun equals(other: Any?): Boolean = psiOrSymbolEquals(other)
-
-    override fun hashCode(): Int = psiOrSymbolHashCode()
-
-    private companion object {
-        val ARRAY_CLASS_ID = ClassId(StandardNames.FqNames.core, StandardNames.ARRAY)
-    }
 }

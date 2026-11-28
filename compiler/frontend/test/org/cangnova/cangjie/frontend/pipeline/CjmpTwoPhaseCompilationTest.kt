@@ -1062,30 +1062,6 @@ class CjmpTwoPhaseCompilationTest {
 
     @Test
     fun `annotation literal matching normalizes source and CJO values for both frontends`() {
-        val stdCoreOutput = Files.createDirectories(tempDir.resolve("annotation-literals-stdlib"))
-        CjoPackageWriter.write(
-            stdCoreOutput.resolve(CjoConstants.packageNameToPath("std.core")),
-            CjoPackageMetadata(
-                fullPackageName = "std.core",
-                moduleName = "std.core",
-                allFiles = listOf("std-core.cj"),
-                declarations = listOf(
-                    CjoPackageDeclaration(
-                        identifier = "String",
-                        kind = DeclKind.StructDecl,
-                        exportId = "_CNat6StringE",
-                        type = 1u,
-                        info = CjoStructInfo(),
-                    ),
-                ),
-                types = listOf(
-                    CjoTypeMetadata(
-                        kind = PackageFormat.TypeKind.Struct,
-                        semanticInfo = CjoCompositeTypeInfoMetadata(declarationIndex = 1u),
-                    ),
-                ),
-            ),
-        )
         val annotationLibrary = compileNormalCjoLibrary(
             """
             import std.core.*
@@ -1121,7 +1097,6 @@ class CjmpTwoPhaseCompilationTest {
             }
             """.trimIndent(),
             "cjmp_annotations",
-            classpathRoots = listOf(stdCoreOutput),
         )
         val commonSource = """
             import std.core.*
@@ -1174,7 +1149,7 @@ class CjmpTwoPhaseCompilationTest {
                 commonSource,
                 outputDirectoryName = "annotation-literals-common-$useLightTree",
                 useLightTree = useLightTree,
-                classpathRoots = listOf(stdCoreOutput, annotationLibrary),
+                classpathRoots = listOf(annotationLibrary),
             )
             val commonPackage = Package.getRootAsPackage(ByteBuffer.wrap(Files.readAllBytes(commonCjo)))
             val commonDeclarations = (0 until commonPackage.allDeclsLength).mapNotNull(commonPackage::allDecls)
@@ -1226,7 +1201,7 @@ class CjmpTwoPhaseCompilationTest {
             val specific = compileSpecific(
                 content = specificSource,
                 commonCjo = commonCjo,
-                classpathRoots = listOf(stdCoreOutput, annotationLibrary),
+                classpathRoots = listOf(annotationLibrary),
                 useLightTree = useLightTree,
             )
             val diagnosticLocations = specific.diagnostics.joinToString { diagnostic ->
@@ -2647,6 +2622,7 @@ class CjmpTwoPhaseCompilationTest {
                 moduleName = "cjmp_p"
                 addCangJieSourceRoot(source.toString())
                 configure()
+                addHostSdkStdlibRoot()
             }
             val artifact = cfirFrontendPipeline().executePhase(ConfigurationPipelineArtifact(configuration, disposable))
             val cjmpNominalMappings = buildMap<String, List<Pair<String, Map<String, String>>>> {

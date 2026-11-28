@@ -18,6 +18,7 @@ import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirPropertyGetterSymbol
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirPropertySetterSymbol
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirExtendSymbol
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirFileSymbol
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirLocalVariableSymbol
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirPackageSymbol
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirPropertySymbol
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirTypeAliasSymbol
@@ -92,7 +93,6 @@ import org.cangnova.cangjie.cfir.symbols.CfirPatternBindingSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirResourceVariableSymbol
 import org.cangnova.cangjie.cfir.expressions.CfirCatch
 import org.cangnova.cangjie.cfir.expressions.CfirHandleClause
-import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.llCfirModuleData
 import org.cangnova.cangjie.cfir.symbols.CfirPatternVariableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertyAccessorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
@@ -513,9 +513,7 @@ companion object{
         }
 
         private fun buildLocalVariableSymbol(symbol: CfirCallableSymbol<*>): CaVariableSymbol =
-            org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirLocalVariableSymbol(
-                symbol, analysisSession, symbol.llCfirModuleData.caModule, analysisSession.token,
-            )
+            CaCfirLocalVariableSymbol(symbol, analysisSession, analysisSession.token)
 
         /**
          * 构造值参数符号，并在参数来自 substitution override 时映射回原始参数。

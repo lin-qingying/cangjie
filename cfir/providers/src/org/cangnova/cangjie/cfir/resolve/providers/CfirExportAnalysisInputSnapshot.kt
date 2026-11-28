@@ -151,7 +151,7 @@ internal class CfirExportAnalysisInputSnapshot private constructor(
                 unchanged("superTypeReferences", sameIdentities(superTypeReferences, superTypeRefs(declaration))) &&
                 unchanged("body", body === (declaration as? CfirFunction)?.body) &&
                 unchanged("defaultValue", defaultValue === (declaration as? CfirValueParameter)?.defaultValue) &&
-                unchanged("initializer", initializer === (declaration as? CfirVariable)?.initializer) &&
+                unchanged("initializer", initializer === ownedInitializerOf(declaration)) &&
                 unchanged("evaluatedInitializer", evaluatedInitializer === (declaration as? CfirVariable)?.evaluatedInitializer) &&
                 unchanged("initializationDependencies", declaration.initializationDependencies === originalInitializationDependencies) &&
                 unchanged("annotations", annotations == declaration.annotations) &&
@@ -392,6 +392,13 @@ internal class CfirExportAnalysisInputSnapshot private constructor(
             else -> null
         }
 
+        /** 简单模式绑定的 live initializer 投影属于容器；只冻结各声明实际拥有的槽。 */
+        private fun ownedInitializerOf(declaration: CfirDeclaration): CfirExpression? = when (declaration) {
+            is CfirPatternBindingVariable -> declaration.ownedInitializer
+            is CfirVariable -> declaration.initializer
+            else -> null
+        }
+
         private fun accessorsOf(declaration: CfirDeclaration): List<CfirPropertyAccessor> =
             (declaration as? CfirProperty)?.let { listOfNotNull(it.getter, it.setter) }.orEmpty()
 
@@ -409,7 +416,7 @@ internal class CfirExportAnalysisInputSnapshot private constructor(
                 override fun visitElement(element: CfirElement) {
                     if (context.cjoDeclarationOrigin != null &&
                         (context is CfirFunction && element === context.body ||
-                            context is CfirVariable && element === context.initializer ||
+                            context is CfirVariable && element === ownedInitializerOf(context) ||
                             context is CfirValueParameter && element === context.defaultValue)) return
                     add(element)
                 }
@@ -673,11 +680,7 @@ internal class CfirExportAnalysisInputSnapshot private constructor(
                 (declaration as? CfirTypeAlias)?.expandedTypeRef?.coneTypeOrNull, freeze(superTypes), freeze(bounds),
                 freeze((declaration as? CfirTypeParameter)?.explicitUpperBounds.orEmpty().mapNotNull { it.coneTypeOrNull }),
                 (declaration as? CfirFunction)?.body, (declaration as? CfirValueParameter)?.defaultValue,
-                when (declaration) {
-                    is CfirPatternBindingVariable -> declaration.ownedInitializer
-                    is CfirVariable -> declaration.initializer
-                    else -> null
-                },
+                ownedInitializerOf(declaration),
                 declaration.interopInfo?.isFrozen == true,
                 declaration.interopInfo?.abiRequest?.hasExplicitC == true,
                 declaration.annotationInfo?.isIntrinsic == true, freeze(declaration.annotations),

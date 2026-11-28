@@ -1,5 +1,8 @@
 package org.cangnova.cangjie.frontend.pipeline
 
+import org.cangnova.cangjie.config.CompilerConfiguration
+import org.cangnova.cangjie.config.addClasspathRoot
+import org.cangnova.cangjie.config.classpathRoots
 import java.io.File
 import java.io.IOException
 import java.nio.file.Files
@@ -140,6 +143,17 @@ internal fun MacroSdkSelection.Selected.processEnvironment(
         parentEnvironment[pathKey].orEmpty(),
     ).filter(String::isNotBlank).joinToString(File.pathSeparator)
     return mapOf("CANGJIE_HOME" to home.toString(), pathKey to path)
+}
+
+/** Register the selected SDK in the same dependency scope that owns and reads its CJO files. */
+internal fun CompilerConfiguration.addHostSdkStdlibRoot() {
+    val sdk = MacroSdkSelector.select(macroSdkHome) as? MacroSdkSelection.Selected ?: return
+    val root = sdk.home.resolve("modules/${defaultCangjieLibHost()}")
+    if (Files.isRegularFile(root.resolve("std/std.core.cjo")) &&
+        classpathRoots.none { File(it.path).absoluteFile.normalize().toPath() == root }
+    ) {
+        addClasspathRoot(root.toString())
+    }
 }
 
 private fun macroToolName(name: String): String = if (isWindows()) "$name.exe" else name

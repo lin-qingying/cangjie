@@ -4165,6 +4165,7 @@ open class CangJieExpressionParsing(
                     if (depth == 0) return true
                     depth--
                 }
+                advance()
             }
         }
         return true

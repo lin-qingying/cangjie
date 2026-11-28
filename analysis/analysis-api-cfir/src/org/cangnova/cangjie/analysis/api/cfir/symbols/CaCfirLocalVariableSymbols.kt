@@ -16,6 +16,8 @@ import org.cangnova.cangjie.analysis.api.symbols.pointers.CaSymbolPointer
 import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
 import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
+import org.cangnova.cangjie.cfir.expressions.CfirCatch
+import org.cangnova.cangjie.cfir.expressions.CfirHandleClause
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPatternBindingSymbol
 import org.cangnova.cangjie.name.Name
@@ -46,8 +48,16 @@ internal open class CaCfirLocalVariableSymbol(
     final override val token: CaLifetimeToken,
 ) : org.cangnova.cangjie.analysis.api.symbols.CaLocalVariableSymbol(),
     CaCfirPsiSymbol<CjElement, CfirCallableSymbol<*>> {
-    /** catch、command 与资源保留各自规范 PSI，公开符号比较不依赖包装对象的创建次数。 */
-    override val backingPsi: CjElement? = cfirSymbol.cfir.getAllowedPsi(analysisSession.project) as? CjElement
+    /** catch 与 command 的真实宿主提供公开 PSI；绑定节点仍保留用于诊断的名称位置。 */
+    override val backingPsi: CjElement? = run {
+        val declaration = cfirSymbol.cfir
+        val anchor = when (val owner = (declaration as? CfirPatternBindingVariable)?.patternTreeOwner) {
+            is CfirCatch -> owner.pattern
+            is CfirHandleClause -> owner.commandPattern
+            else -> declaration
+        }
+        anchor.getAllowedPsi(analysisSession.project) as? CjElement
+    }
 
     override val lazyCfirSymbol: Lazy<CfirCallableSymbol<*>> = lazyOf(cfirSymbol)
 

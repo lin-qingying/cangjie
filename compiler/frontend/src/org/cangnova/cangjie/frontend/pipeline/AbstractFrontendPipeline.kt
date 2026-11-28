@@ -124,6 +124,7 @@ abstract class AbstractFrontendPipeline<A : CommonCompilerArguments> {
         ) {
             return FrontendPipelineExecutionResult(succeeded = false, artifact = null)
         }
+        invocationConfiguration.addHostSdkStdlibRoot()
         configureDumpOptions(arguments, invocationConfiguration)
         val input = ArgumentsPipelineArtifact(arguments, invocationConfiguration)
         val result = runPhasedPipeline(input)
