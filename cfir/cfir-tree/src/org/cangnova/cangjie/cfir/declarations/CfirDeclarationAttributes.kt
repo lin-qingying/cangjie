@@ -111,6 +111,12 @@ class CfirDeclarationAttributes : AttributeArrayOwner<CfirDeclarationDataKey, An
  * 在不同宿主对象上访问的是同一数组槽位。
  */
 object CfirDeclarationDataRegistry : ConeTypeRegistry<CfirDeclarationDataKey, Any>() {
+    init {
+        // 默认事实可在首次属性访问之前进入 RAW 复制，必须先登记实际 slot 的复制策略。
+        val key = CfirDeclarationExportFactsKey
+        org.cangnova.cangjie.cfir.CfirRawDeclarationDataRegistry.register(key, getId(key::class))
+    }
+
     /** 源声明由调用者持锁；全局槽 ID 稳定，复制只读取源容器中的非空值。 */
     internal fun rawCopySlots(): List<Int> = indices.toList()
 
