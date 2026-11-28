@@ -144,7 +144,7 @@ internal class CjoSourceExportPlan private constructor(
 
         /** SOURCE 和原 CJO FILE 依赖均由完成输入调度；同文件源序和包域保留。 */
         private fun finalRoots(): List<CfirDeclaration> {
-            val selected = roots.filter { selection.shouldExportRoot(it, it in searched) }
+            val selected = roots.filter { selection.shouldExportRoot(it, it in searched) }.map(::savedRoot)
             val byFile = linkedMapOf<CjoDeclarationFile, MutableList<CfirDeclaration>>()
             selected.forEach { byFile.getOrPut(dependencies.fileOf(it)) { ArrayList() } += it }
             val visited = HashSet<CjoDeclarationFile>()
@@ -199,8 +199,9 @@ internal class CjoSourceExportPlan private constructor(
                 visit(root)
             }
             while (pending.isNotEmpty()) {
-                val declaration = pending.removeFirst()
-                if (!searched.add(declaration) || analysis.isDoNotExport(declaration) || family?.doNotExport?.contains(declaration.symbol) == true) continue
+                val candidate = pending.removeFirst()
+                if (!searched.add(candidate) || analysis.isDoNotExport(candidate) || family?.doNotExport?.contains(candidate.symbol) == true) continue
+                val declaration = savedRoot(candidate)
                 when (declaration) {
                     is CfirFunction, is CfirEnumConstructor -> if (analysis.declarationTypeOf(declaration)?.containsErrorType() == false) {
                         val full = selection.isPreContentFunctionCandidate(declaration as CfirCallableDeclaration)
@@ -238,6 +239,10 @@ internal class CjoSourceExportPlan private constructor(
 
         private fun canonical(declaration: CfirDeclaration): CfirDeclaration =
             sources.canonicalDeclarations.getValue(declaration)
+
+        /** 用 symbol 做 family 选择，用实际保存根安排文件依赖和 PRE_CONTENT。 */
+        private fun savedRoot(declaration: CfirDeclaration): CfirDeclaration =
+            if (declaration is CfirPatternBindingVariable) canonical(declaration) else declaration
 
         private fun projected(declaration: CfirDeclaration): CfirDeclaration {
             if (declaration !is CfirPatternVariable || !analysis.isSourceDeclaration(declaration)) return declaration
