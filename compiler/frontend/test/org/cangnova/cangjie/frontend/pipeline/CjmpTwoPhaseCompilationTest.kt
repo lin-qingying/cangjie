@@ -1655,6 +1655,7 @@ class CjmpTwoPhaseCompilationTest {
                         type = 1u,
                         attributes = cjmpAttributeWords(
                             Attribute.GLOBAL,
+                            Attribute.PUBLIC,
                             Attribute.GENERIC,
                             Attribute.COMMON,
                             Attribute.FROM_COMMON_PART,
@@ -1672,6 +1673,7 @@ class CjmpTwoPhaseCompilationTest {
                         type = 3u,
                         attributes = cjmpAttributeWords(
                             Attribute.CONSTRUCTOR,
+                            Attribute.PUBLIC,
                             Attribute.COMMON,
                             Attribute.FROM_COMMON_PART,
                         ),

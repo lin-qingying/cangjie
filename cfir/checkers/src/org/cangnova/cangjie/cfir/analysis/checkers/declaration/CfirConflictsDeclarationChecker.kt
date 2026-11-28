@@ -139,7 +139,7 @@ object CfirConflictsDeclarationChecker : CfirBasicDeclarationChecker(MppCheckerK
             is CfirFile -> {
                 val inspector = CfirDeclarationCollector<CfirBasedSymbol<*>>(context)
                 checkFile(declaration, inspector)
-                reportConflicts(inspector.declarationConflictingSymbols, declaration)
+                reportConflicts(inspector, declaration)
             }
 
             is CfirClassLikeDeclaration -> {
@@ -150,7 +150,7 @@ object CfirConflictsDeclarationChecker : CfirBasicDeclarationChecker(MppCheckerK
                 val inspector = CfirDeclarationCollector<CfirBasedSymbol<*>>(context)
                 inspector.collectClassMembers(declaration)
                 reportConflicts(
-                    declarationConflictingSymbols = inspector.declarationConflictingSymbols,
+                    inspector = inspector,
                     container = declaration,
                     reportLogicalMemberRedeclarationPeerInformation = inspector.hasLogicalMemberRedeclarationContext,
                 )
@@ -164,7 +164,7 @@ object CfirConflictsDeclarationChecker : CfirBasicDeclarationChecker(MppCheckerK
                 val inspector = CfirDeclarationCollector<CfirBasedSymbol<*>>(context)
                 inspector.collectExtendMembers(declaration)
                 reportConflicts(
-                    declarationConflictingSymbols = inspector.declarationConflictingSymbols,
+                    inspector = inspector,
                     container = declaration,
                     reportAllFunctionConflictParticipants = !inspector.hasLogicalMemberRedeclarationContext,
                     reportLogicalMemberRedeclarationPeerInformation = inspector.hasLogicalMemberRedeclarationContext,
@@ -196,13 +196,14 @@ object CfirConflictsDeclarationChecker : CfirBasicDeclarationChecker(MppCheckerK
     @OptIn(InternalDiagnosticFactoryMethod::class)
     context(reporter: DiagnosticReporter, context: CheckerContext)
     private fun reportConflicts(
-        declarationConflictingSymbols: Map<CfirBasedSymbol<*>, SmartSet<CfirBasedSymbol<*>>>,
+        inspector: CfirDeclarationCollector<CfirBasedSymbol<*>>,
         container: CfirDeclaration,
         reportAllFunctionConflictParticipants: Boolean = false,
         reportLogicalMemberRedeclarationPeerInformation: Boolean = false,
     ) {
         val sourceOrder = CfirDeclarationConflictSourceOrder(context.session)
-        val functionConflictGroups = CfirFunctionConflictGroups(declarationConflictingSymbols)
+        val declarationConflictingSymbols = inspector.declarationConflictingSymbols
+        val functionConflictGroups = CfirFunctionConflictGroups(declarationConflictingSymbols, inspector.actualizedOverloadConflicts)
         val groupRepresentativesByGroup = IdentityHashMap<CfirFunctionConflictGroup, Set<CfirBasedSymbol<*>>>()
         val functionConflictReportState = reporter.getOrCreateCollectionState(CfirFunctionConflictReportState.KEY) {
             CfirFunctionConflictReportState()

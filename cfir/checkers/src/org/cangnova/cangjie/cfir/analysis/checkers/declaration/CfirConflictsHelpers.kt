@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
+import java.util.IdentityHashMap
 import java.util.concurrent.ConcurrentHashMap
 import org.cangnova.cangjie.type.model.TypeConstructorMarker
 import org.cangnova.cangjie.cfir.types.ConePlaceholderType
@@ -90,6 +91,7 @@ internal class CfirDeclarationCollector<D : CfirBasedSymbol<*>>(
 ) {
     private val sourceOrder = CfirDeclarationConflictSourceOrder(context.session)
     val declarationConflictingSymbols: HashMap<D, SmartSet<CfirBasedSymbol<*>>> = hashMapOf()
+    val actualizedOverloadConflicts = IdentityHashMap<CfirBasedSymbol<*>, SmartSet<CfirBasedSymbol<*>>>()
     var hasLogicalMemberRedeclarationContext: Boolean = false
         private set
 
@@ -112,7 +114,9 @@ internal class CfirDeclarationCollector<D : CfirBasedSymbol<*>>(
                             substitutorByMap((previous.ownerTypeParameterMapping).entries.associate { (origin, target) -> origin.symbol to target.symbol.constructType() }, context.session),
                         )
                     ) {
-                        recordConflict(currentSymbol, previousSymbol, reported)
+                        val isActualizedOverload = input.isCjmpActualized &&
+                            isFunctionConflictParticipant(currentSymbol) && isFunctionConflictParticipant(previousSymbol)
+                        recordConflict(currentSymbol, previousSymbol, reported, isActualizedOverload)
                     }
                 }
             }
@@ -203,11 +207,20 @@ internal class CfirDeclarationCollector<D : CfirBasedSymbol<*>>(
         current: CfirBasedSymbol<*>,
         previous: CfirBasedSymbol<*>,
         reported: Set<CfirBasedSymbol<*>>?,
+        isActualizedOverload: Boolean = false,
     ) {
         fun record(owner: CfirBasedSymbol<*>, peer: CfirBasedSymbol<*>) {
             if (reported == null || owner in reported) {
                 declarationConflictingSymbols.getOrPut(owner as D) { SmartSet.create() } += peer
             }
+        }
+        if (isActualizedOverload) {
+            // The callable parameters were compared in the same logical owner.
+            actualizedOverloadConflicts.getOrPut(current) { SmartSet.create() } += previous
+            actualizedOverloadConflicts.getOrPut(previous) { SmartSet.create() } += current
+            record(current, previous)
+            record(previous, current)
+            return
         }
         val signature = functionConflictSignature(current)
         if (signature != null && signature == functionConflictSignature(previous)) {
