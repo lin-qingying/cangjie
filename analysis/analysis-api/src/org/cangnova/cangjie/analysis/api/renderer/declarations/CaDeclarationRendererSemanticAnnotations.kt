@@ -9,7 +9,9 @@ import org.cangnova.cangjie.analysis.api.symbols.CaFieldSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaLocalVariableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaNamedFunctionSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPackageSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaPatternBindingSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPropertySymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaSymbolLocation
 import org.cangnova.cangjie.analysis.api.symbols.CaTypeAliasSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaTypeParameterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaValueParameterSymbol
@@ -59,6 +61,12 @@ private fun CaNamedSymbol.semanticKind(): CangJieSemanticKind = when (this) {
     is CaValueParameterSymbol -> CangJieSemanticKind.PARAMETER
     is CaPropertySymbol -> CangJieSemanticKind.PROPERTY
     is CaFieldSymbol -> CangJieSemanticKind.FIELD
+    // 单名与解构叶子都由真实绑定符号提供名字语义；容器不制造变量名。
+    is CaPatternBindingSymbol -> if (location == CaSymbolLocation.TOP_LEVEL) {
+        CangJieSemanticKind.PACKAGE_VARIABLE
+    } else {
+        CangJieSemanticKind.LOCAL_VARIABLE
+    }
     is CaLocalVariableSymbol -> CangJieSemanticKind.LOCAL_VARIABLE
     is CaPackageSymbol -> CangJieSemanticKind.PACKAGE
     else -> CangJieSemanticKind.OTHER

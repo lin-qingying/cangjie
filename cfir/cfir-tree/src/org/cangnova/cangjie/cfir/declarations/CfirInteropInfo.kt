@@ -160,7 +160,9 @@ public data class CfirInteropInfo(
 }
 
 /** Attribute key used to attach the canonical interop snapshot to a declaration. */
-private object CfirInteropInfoKey : CfirDeclarationDataKey()
+private object CfirInteropInfoKey : CfirDeclarationDataKey() {
+    override val rawCopyPolicy get() = org.cangnova.cangjie.cfir.CfirRawDeclarationDataPolicies.interop
+}
 
 /** Canonical declaration-owned interop snapshot. */
 public var CfirDeclaration.interopInfo: CfirInteropInfo? by CfirDeclarationDataRegistry.data(CfirInteropInfoKey)

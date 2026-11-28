@@ -565,6 +565,7 @@ internal class TowerLevelHandler {
         )
 
         return when (info.callKind) {
+            CallKind.SyntheticSelect -> error("Synthetic select candidate must come from its expression producer")
             CallKind.NamedValueAccess -> towerLevel.processCallablesByName(info, processor)
             CallKind.Function,
             CallKind.DelegatingConstructorCall,

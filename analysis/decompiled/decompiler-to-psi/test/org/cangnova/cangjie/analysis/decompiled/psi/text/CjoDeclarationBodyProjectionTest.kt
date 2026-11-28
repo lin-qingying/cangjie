@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.analysis.decompiled.psi.text
 
+import org.cangnova.cangjie.test.bindCjoFixture
 import PackageFormat.Package as CjoPackage
 import com.intellij.psi.PsiErrorElement
 import com.intellij.psi.util.PsiTreeUtil
@@ -303,7 +304,7 @@ class CjoDeclarationBodyProjectionTest : AbstractCfirAnalysisResolveTest() {
         val staticMethod = metadata.declarations.single { it.identifier == "helper" }
         assertTrue(staticMethod.attributes.hasAttribute(Attribute.STATIC))
         assertFalse(staticMethod.attributes.hasAttribute(Attribute.OPEN))
-        val loaded = loadMetadata(metadata)
+        val loaded = loadMetadata(metadata, cfirFile.moduleData)
         val decoded = CjoDeclarationLoader.loadDeclarations(loaded, cfirFile.moduleData)
             .filterIsInstance<CfirClassLikeDeclaration>().single()
         val decodedFunction = decoded.declarations.filterIsInstance<CfirNamedFunction>().single { it.name.asString() == "required" }
@@ -345,7 +346,7 @@ class CjoDeclarationBodyProjectionTest : AbstractCfirAnalysisResolveTest() {
             attributes[word] = attributes[word] or (1uL shl (Attribute.JAVA_MIRROR.ordinal % Long.SIZE_BITS))
             declaration.copy(attributes = attributes)
         })
-        val loaded = loadMetadata(mirrored)
+        val loaded = loadMetadata(mirrored, cfirFile.moduleData)
         val decoded = CjoDeclarationLoader.loadDeclarations(loaded, cfirFile.moduleData)
             .filterIsInstance<CfirClassLikeDeclaration>().single()
         assertTrue(decoded.serializedInteropFacts?.isJavaMirror == true)
@@ -389,7 +390,7 @@ class CjoDeclarationBodyProjectionTest : AbstractCfirAnalysisResolveTest() {
             attributes[word] = attributes[word] or (1uL shl (Attribute.JAVA_MIRROR.ordinal % Long.SIZE_BITS))
             declaration.copy(attributes = attributes)
         })
-        val loaded = loadMetadata(mirrored)
+        val loaded = loadMetadata(mirrored, cfirFile.moduleData)
         val text = buildDecompiledText(CjoFileStubBuilder.buildFileStub(loaded, cfirFile.moduleData))
         val parsed = createCjFile("decompiledMirrorInterface", text)
         val property = PsiTreeUtil.findChildrenOfType(parsed, CjProperty::class.java).single()
@@ -410,7 +411,7 @@ class CjoDeclarationBodyProjectionTest : AbstractCfirAnalysisResolveTest() {
 
     private fun serializeAndLoad(file: CjFile): Pair<CfirFile, LoadedCjoPackage> {
         val cfirFile = resolveSource(file)
-        return cfirFile to loadMetadata(CfirCjoPackageMetadataProducer.produce(listOf(cfirFile)))
+        return cfirFile to loadMetadata(CfirCjoPackageMetadataProducer.produce(listOf(cfirFile)), cfirFile.moduleData)
     }
 
     private fun resolveSource(file: CjFile): CfirFile {
@@ -420,15 +421,17 @@ class CjoDeclarationBodyProjectionTest : AbstractCfirAnalysisResolveTest() {
         return cfirFile
     }
 
-    private fun loadMetadata(metadata: CjoPackageMetadata): LoadedCjoPackage {
+    private fun loadMetadata(metadata: CjoPackageMetadata, moduleData: org.cangnova.cangjie.cfir.common.CfirModuleData): LoadedCjoPackage {
         val bytes = CjoPackageWriter.toByteArray(metadata)
         val pkg = CjoPackage.getRootAsPackage(ByteBuffer.wrap(bytes))
+        val manager = CjoManager(CjoSearchPath { null })
+        bindCjoFixture(moduleData, manager, emptySet())
         return LoadedCjoPackage(
             binaryFile = LightVirtualFile("sample.projection.cjo"),
             packageFqName = FqName("sample.projection"),
             pkg = pkg,
             header = CjoPackageHeader.fromPackage(pkg),
-            cjoManager = CjoManager(CjoSearchPath { null }),
+            cjoManager = manager,
             isVersionSupported = true,
         )
     }

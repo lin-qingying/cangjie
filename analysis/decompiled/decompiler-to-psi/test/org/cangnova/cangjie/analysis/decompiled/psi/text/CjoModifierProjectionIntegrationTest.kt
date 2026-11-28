@@ -2,6 +2,7 @@
 
 package org.cangnova.cangjie.analysis.decompiled.psi.text
 
+import org.cangnova.cangjie.test.cjoFixtureModuleDataProvider
 import PackageFormat.ClassInfo
 import PackageFormat.Decl
 import PackageFormat.DeclKind
@@ -472,7 +473,7 @@ class CjoModifierProjectionIntegrationTest : AbstractAnalysisApiBasedTest() {
             val manager = CjoManager(CjoSearchPath { key -> if (key == "CANGJIE_LIBRARY") libraryPath.toString() else null })
             val loadedPackage = loadObjectPoolPackage(manager)
             val module = TestModule()
-            registerCjoSymbolProvider(module, manager)
+            registerCjoSymbolProvider(module, manager, libraryPath)
             val declarations = CjoDeclarationLoader.loadDeclarations(loadedPackage, module)
             val objectPool = declarations.filterIsInstance<CfirClass>().single { it.name.asString() == OBJECT_POOL_NAME }
             assertTrue(objectPool.status is CfirResolvedDeclarationStatus)
@@ -737,14 +738,15 @@ class CjoModifierProjectionIntegrationTest : AbstractAnalysisApiBasedTest() {
     ) {
         val manager = CjoManager(CjoSearchPath { key -> if (key == "CANGJIE_LIBRARY") libraryPath.toString() else null })
         val module = TestModule()
-        registerCjoSymbolProvider(module, manager)
+        registerCjoSymbolProvider(module, manager, libraryPath)
         action(loadObjectPoolPackage(manager), module)
     }
 
-    private fun registerCjoSymbolProvider(module: TestModule, manager: CjoManager) {
+    private fun registerCjoSymbolProvider(module: TestModule, manager: CjoManager, libraryPath: Path) {
         module.session.register(
             CfirSymbolProvider::class,
-            CfirDeserializedSymbolProvider(module.session, manager, CfirCangJieScopeProvider(), module),
+            CfirDeserializedSymbolProvider(module.session, manager, CfirCangJieScopeProvider(), module,
+                moduleDataProvider = cjoFixtureModuleDataProvider(module, setOf(libraryPath))),
         )
     }
 

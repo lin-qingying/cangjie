@@ -150,6 +150,8 @@ fun main(args: Array<String>) {
                 alias<CfirCallableDeclaration>("CallableDeclarationChecker", false).let {
                     visitAlso<CfirVariable>(it)
                     visitAlso<CfirPatternBindingVariable>(it)
+                    // 资源是专用局部变量，仍须经过 callable 的公共声明检查通道。
+                    visitAlso<CfirResourceVariable>(it)
                 }
                 alias<CfirFunction>("FunctionChecker", false).let {
                     visitAlso<CfirMacroDeclaration>(it)

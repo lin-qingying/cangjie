@@ -1,5 +1,7 @@
 package org.cangnova.cangjie.cfir.serialization.cjo
 
+import org.cangnova.cangjie.test.cjoFixtureModuleDataProvider
+import org.cangnova.cangjie.test.bindCjoFixture
 import PackageFormat.Package
 import org.cangnova.cangjie.cfir.serialization.CjoConstants
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
@@ -175,12 +177,14 @@ class CjoSdkDeserializationIntegrationTest {
             )
             val header = assertNotNull(manager.loadPackageHeader("std.core"), "header")
             val pkg = assertNotNull(manager.loadPackage("std.core"), "pkg")
+            val metadataBinding = bindCjoFixture(DiagModuleData, manager, setOf(tempDir))
             val context = org.cangnova.cangjie.cfir.serialization.deserialize.CfirDeserializationContext(
                 pkg = pkg,
                 header = header,
                 moduleData = DiagModuleData,
                 cjoManager = manager,
-                classSymbolLookup = manager.deserializedSymbolLookups.forModuleData(DiagModuleData),
+                classSymbolLookup = manager.deserializedSymbolLookups.forBinding(metadataBinding, DiagModuleData,
+                    org.cangnova.cangjie.cfir.serialization.deserialize.CjoDeserializationMode.FULL),
             )
 
             val indices = header.topLevelExtendIndices
@@ -294,6 +298,7 @@ class CjoSdkDeserializationIntegrationTest {
                 cjoManager = manager,
                 cangjieScopeProvider = org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider(),
                 libraryModuleData = DiagModuleData,
+                moduleDataProvider = cjoFixtureModuleDataProvider(DiagModuleData, setOf(tempDir)),
             )
             DiagSession.register(org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider::class, provider)
             val extendProvider = org.cangnova.cangjie.cfir.serialization.provider.CfirDeserializedExtendProvider(listOf(provider))
@@ -336,6 +341,7 @@ class CjoSdkDeserializationIntegrationTest {
             cjoManager = manager,
             cangjieScopeProvider = org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider(),
             libraryModuleData = DiagModuleData,
+            moduleDataProvider = cjoFixtureModuleDataProvider(DiagModuleData, setOf(root.toPath())),
         )
         DiagSession.register(org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider::class, provider)
         val extendProvider = org.cangnova.cangjie.cfir.serialization.provider.CfirDeserializedExtendProvider(listOf(provider))
@@ -411,6 +417,7 @@ class CjoSdkDeserializationIntegrationTest {
                 cjoManager = manager,
                 cangjieScopeProvider = org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider(),
                 libraryModuleData = DiagModuleData,
+                moduleDataProvider = cjoFixtureModuleDataProvider(DiagModuleData, setOf(tempDir)),
             )
             DiagSession.register(org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider::class, provider)
             val empty = org.cangnova.cangjie.cfir.resolve.providers.CfirEmptyExtendProvider()

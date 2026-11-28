@@ -43,6 +43,10 @@ import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirInterfaceSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
+import org.cangnova.cangjie.cfir.symbols.CfirPatternVariableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirPatternBindingSymbol
+import org.cangnova.cangjie.cfir.patterns.bindingVariables
+import org.cangnova.cangjie.psi.psiUtil.getStrictParentOfType
 import org.cangnova.cangjie.cfir.symbols.CfirStructSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeAliasSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
@@ -53,6 +57,7 @@ import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.*
 import org.cangnova.cangjie.psi.stubs.impl.CangJieNamedFunctionStubImpl
 import org.cangnova.cangjie.psi.stubs.impl.CangJiePropertyStubImpl
+import org.cangnova.cangjie.psi.stubs.elements.getAllPatternDeclarations
 import org.cangnova.cangjie.utils.ifNotEmpty
 import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
 import kotlin.time.TimeSource
@@ -191,6 +196,9 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
      * 顶层属性符号缓存。
      */
     private val propertyCache = session.cfirCachesFactory.createCache(::loadPropertiesByCallableId)
+
+    /** 每个已编译 global wire 记录的容器与叶子由这一份缓存共同持有。 */
+    private val patternBindingCache = session.cfirCachesFactory.createCache(::loadPatternBindingsByCallableId)
 
     /**
      * 已编译 enum constructor 的包级 callable 视图复用所属 enum CFIR 中的符号对象。
@@ -391,6 +399,27 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
         }
     }
 
+    private fun loadPatternBindingsByCallableId(
+        callableId: CallableId,
+        foundBindings: Collection<CjNamedPattern>?,
+    ): List<CfirPatternBindingSymbol> {
+        val bindings = declarationProvider.getTopLevelPatternBindings(callableId)
+        require(foundBindings == null || foundBindings.toSet() == bindings.toSet()) {
+            "Known pattern bindings must contain the complete declaration-provider result"
+        }
+        return bindings.map { binding ->
+            val owner = checkNotNull(binding.getStrictParentOfType<CjPatternVariable>())
+            check(owner.isTopLevel && owner.pattern === binding) { "CJO global bindings must be single-name projections" }
+            val ownerSymbol = CfirPatternVariableSymbol(CallableId(callableId.packageName, Name.special("<pattern:${callableId.callableName.asString()}>")))
+            val context = StubBasedCfirDeserializationContext.createRootContext(
+                session, session.moduleData, callableId, owner, ownerSymbol,
+                getDeclarationOriginFor(owner.containingCjFile), containerSource = null,
+            )
+            val root = context.memberDeserializer.loadPatternVariable(owner, ownerSymbol)
+            root.pattern.bindingVariables().single().symbol
+        }
+    }
+
     /**
      * 将已编译 enum 的成员构造器投影到包级 callable 查询，同时保留其唯一的 enum-owned CFIR 符号。
      */
@@ -425,6 +454,7 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
         val callableId = CallableId(packageFqName, name)
         destination += functionCache.getCallablesWithoutContext(callableId)
         destination += propertyCache.getCallablesWithoutContext(callableId)
+        destination += patternBindingCache.getCallablesWithoutContext(callableId)
         destination += enumConstructorCache.getCallablesWithoutContext(callableId)
     }
 
@@ -453,6 +483,14 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
 
         callables.filterIsInstance<CjProperty>().ifNotEmpty {
             destination += propertyCache.getValue(callableId, this)
+        }
+        val patternBindings = callables.filterIsInstance<CjPatternVariable>()
+            .flatMap { it.pattern.getAllPatternDeclarations() }
+            .filterIsInstance<CjNamedPattern>()
+            .filter { it.nameAsName == callableId.callableName }
+        if (patternBindings.isNotEmpty()) {
+            // 单 PSI 查询也先完整加载该名字，不能用一个 leaf 把名字缓存截断。
+            destination += patternBindingCache.getCallablesWithoutContext(callableId)
         }
     }
 
@@ -616,10 +654,12 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
         val callableSymbols = when (callableDeclaration) {
             is CjNamedFunction -> functionCache.getValue(callableId)
             is CjProperty -> propertyCache.getValue(callableId)
+            is CjPatternVariable -> patternBindingCache.getValue(callableId)
             else -> null
         }
 
-        return callableSymbols?.singleOrNull { it.cfir.realPsi == callableDeclaration }
+        val declarationPsi = if (callableDeclaration is CjPatternVariable) callableDeclaration.pattern else callableDeclaration
+        return callableSymbols?.singleOrNull { it.cfir.realPsi === declarationPsi }
     }
 
     /**
@@ -638,6 +678,12 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
             }
             propertyCache.cachedValues.forEach { properties ->
                 properties.forEach { add(it.cfir) }
+            }
+            patternBindingCache.cachedValues.forEach { bindings ->
+                bindings.forEach { binding ->
+                    add(binding.cfir)
+                    (binding.cfir.patternTreeOwner as? CfirDeclaration)?.let(::add)
+                }
             }
         }
 

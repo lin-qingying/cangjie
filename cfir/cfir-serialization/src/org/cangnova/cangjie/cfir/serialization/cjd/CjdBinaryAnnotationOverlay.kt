@@ -55,7 +55,8 @@ private class BinaryAnnotationOverlay(
             // 仅查询原始表；禁止为了注解构造器而重入正在物化的父声明。
             val packageName = fqName.parent().asString()
             val pkg = if (packageName == context.header.fullPkgName) context.pkg
-                else context.cjoManager.loadPackage(packageName) ?: return emptyList()
+                else context.packageContextOrNull(packageName)?.pkg
+                    ?: return emptyList()
             if (organizationName != null && pkg.moduleName != organizationName) return emptyList()
             return (0 until pkg.allDeclsLength).mapNotNull { index ->
                 val decl = pkg.allDecls(index) ?: return@mapNotNull null

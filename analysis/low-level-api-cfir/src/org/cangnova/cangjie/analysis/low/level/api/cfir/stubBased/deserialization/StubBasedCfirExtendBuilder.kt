@@ -7,7 +7,6 @@ import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAttributes
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
-import org.cangnova.cangjie.cfir.declarations.DEFAULT_STATUS_FOR_STATUSLESS_DECLARATIONS
 import org.cangnova.cangjie.cfir.declarations.builder.buildExtend
 import org.cangnova.cangjie.cfir.symbols.CfirExtendSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
@@ -61,15 +60,14 @@ internal class StubBasedCfirExtendBuilder(
             origin = context.initialOrigin
             attributes = CfirDeclarationAttributes.EMPTY
             resolvePhase = CfirResolvePhase.ANALYZED_DEPENDENCIES
-            status = DEFAULT_STATUS_FOR_STATUSLESS_DECLARATIONS
+            status = extendPsi.buildResolvedStatus()
             symbol = extendSymbol
             typeParameters += binaryExtend.typeParameters
             extendedTypeRef = binaryExtend.extendedTypeRef
             superTypeRefs += binaryExtend.superTypeRefs
             declarations += buildMembers(extendPsi, local)
         }
-        // 语义对齐二进制声明：status/annotations 与成员的 dispatch receiver、status、annotations、deprecations。
-        extend.replaceStatus(binaryExtend.status)
+        // 状态已从各自的 CJO stub header 恢复；后续成员配对不覆盖语义状态。
         extend.replaceAnnotations(binaryExtend.annotations)
         val binaryMembers = binaryExtend.declarations.filterIsInstance<CfirCallableDeclaration>().toMutableList()
         val psiMembers = extendPsi.declarations.filter { declaration ->
@@ -89,7 +87,6 @@ internal class StubBasedCfirExtendBuilder(
             }
             if (index < 0) return@forEach
             val binary = binaryMembers.removeAt(index)
-            callable.replaceStatus(binary.status)
             callable.replaceAnnotations(binary.annotations)
             callable.replaceDispatchReceiverType(binary.dispatchReceiverType)
             callable.replaceDeprecationsProvider(binary.deprecationsProvider)

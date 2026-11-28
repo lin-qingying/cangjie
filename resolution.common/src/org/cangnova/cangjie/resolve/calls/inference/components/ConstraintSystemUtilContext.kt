@@ -108,9 +108,11 @@ interface ConstraintSystemUtilContext {
      * 为 lambda 的返回类型创建新的类型变量。
      *
      * 当 lambda 返回类型无法从上下文直接确定时，
-     * 推断引擎引入此类型变量，后续通过 lambda 体内的语句收集约束并求解。
+     * 推断引擎取得该原子当前 owner 的变量槽，后续通过 lambda 体内的语句收集约束并求解。
+     *
+     * @param argument 提供真实声明 owner 与外层 candidate 的延迟原子。
      */
-    fun createTypeVariableForLambdaReturnType(): TypeVariableMarker
+    fun createTypeVariableForLambdaReturnType(argument: PostponedAtomWithRevisableExpectedType): TypeVariableMarker
 
     /**
      * 为 lambda 的第 [index] 个参数类型创建新的类型变量。
@@ -126,9 +128,11 @@ interface ConstraintSystemUtilContext {
      * 为可调用引用的返回类型创建新的类型变量。
      *
      * 可调用引用（如 `::foo`）的具体签名在解析前未知，
-     * 推断引擎为其返回类型引入类型变量，再通过重载解析收窄约束。
+     * 推断引擎取得该原子当前表达式 owner 的变量槽，再通过重载解析收窄约束。
+     *
+     * @param argument 提供真实表达式 owner 与外层 candidate 的延迟原子。
      */
-    fun createTypeVariableForCallableReferenceReturnType(): TypeVariableMarker
+    fun createTypeVariableForCallableReferenceReturnType(argument: PostponedAtomWithRevisableExpectedType): TypeVariableMarker
 
     /**
      * 为可调用引用的第 [index] 个参数类型创建新的类型变量。

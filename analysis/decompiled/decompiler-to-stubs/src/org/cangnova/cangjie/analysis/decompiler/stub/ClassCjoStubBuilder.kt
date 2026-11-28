@@ -66,7 +66,7 @@ internal fun createExtendStub(
         superNames = superTypeTexts.map(StringRef::fromString).toTypedArray(),
         receiverTypeName = receiverTypeName,
     )
-    createEmptyDeclarationHeaderStubs(stub, declaration = declaration)
+    createEmptyDeclarationHeaderStubs(stub, createExtendModifierMask(declaration), declaration)
     // 用完整 extendedTypeRef 建 type stub：primitive 走 BASIC_TYPE，避免被当成 user type 再经
     // renderIdentifier 包成 `Unit` / `Int64`
     TypeCjoStubBuilder().createDeclaredTypeReferenceStub(stub, declaration.extendedTypeRef)

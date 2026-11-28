@@ -58,14 +58,17 @@ class TokenBackedMacroFragmentParser(
         }
         // baseline Batch 8: 先按 token-stage 重组到稳定点（newTokens token-stage re-eval）
         val reEvaluatedTokens = MacroTokenReEvaluator.reTokenizeUntilStable(tokens, reTokenize)
-        val source = if (mode == MacroFragmentParser.Mode.CUSTOM_ANNOTATION) {
-            // `@!` 是官方 AST 的 compile-time-visible provenance，不能为了
-            // 让临时 parser 接受文本而把它降成普通 `@`。annotation-only
-            // parser 已经支持 `@!`，因此这里必须把原始 spelling 原样交给它。
-            input.annotationSnapshot!!.rawSyntax.trim()
-        } else {
-            MacroTokenReEvaluator.reTokenizeText(reEvaluatedTokens).trim()
+        val sourceMap = MacroFragmentSourceMap.materialize(reEvaluatedTokens, node.surface.surfaceId).trimmed()
+        val source = sourceMap.text
+        if (mode == MacroFragmentParser.Mode.CUSTOM_ANNOTATION &&
+            source != input.annotationSnapshot!!.rawSyntax.trim()
+        ) {
+            return MacroFragmentResult.Failure(
+                originNode = node,
+                reason = "Custom annotation token text differs from its retained original syntax.",
+            )
         }
+        val reparseInput = input.copy(tokens = reEvaluatedTokens, sourceMap = sourceMap)
         if (source.isEmpty()) {
             if (mode == MacroFragmentParser.Mode.DECLARATION) {
                 return MacroFragmentResult.Success(
@@ -73,6 +76,7 @@ class TokenBackedMacroFragmentParser(
                     tokens = reEvaluatedTokens,
                     mode = mode,
                     payload = MacroDeclarationFragment(emptyList()),
+                    sourceMapping = reparseInput.sourceMapping,
                 )
             }
             return MacroFragmentResult.Failure(
@@ -85,7 +89,7 @@ class TokenBackedMacroFragmentParser(
         // 装配层显式判定无法 reparse；二者诊断信息不同，便于上层定位是 reparse 通道
         // 未注入还是 reparse 真正失败。
         val payload = try {
-            reparse(source, input)
+            reparse(source, reparseInput)
         } catch (failure: Throwable) {
             return MacroFragmentResult.Failure(
                 originNode = node,
@@ -118,6 +122,7 @@ class TokenBackedMacroFragmentParser(
                     originNode = node,
                     payload = annotationPayload,
                     tokens = reEvaluatedTokens,
+                    sourceMapping = reparseInput.sourceMapping,
                 )
             }
             else -> MacroFragmentResult.Success(
@@ -125,6 +130,7 @@ class TokenBackedMacroFragmentParser(
                 tokens = reEvaluatedTokens,
                 mode = mode,
                 payload = payload,
+                sourceMapping = reparseInput.sourceMapping,
             )
         }
     }

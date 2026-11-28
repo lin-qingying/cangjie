@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.analysis.api.cfir.symbols
 
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationStatus
+import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirResolvedDeclarationStatus
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.psi
@@ -19,10 +20,12 @@ import org.cangnova.cangjie.psi.CjFile
 internal val CfirCallableSymbol<*>.symbolDeclarationStatus: CfirDeclarationStatus
     get() {
         if (cfir.isLocal) return rawStatus
-        // 库/反编译声明的状态是序列化时已收敛的 raw status，不会重新发布
+        // 真正的库声明使用序列化时已收敛的 raw status，不会重新发布
         // CfirResolvedDeclarationStatus；此时直接读 rawStatus，不能调用 resolvedStatus
         // （后者会在 lazy resolve 中要求 STATUS 阶段对象并抛异常，导致 Quick Doc 整体失败）。
         val isCompiledDeclaration = (cfir.psi?.containingFile as? CjFile)?.isCompiled == true
-        if (isCompiledDeclaration && cfir.status !is CfirResolvedDeclarationStatus) return rawStatus
+        if (cfir.origin == CfirDeclarationOrigin.Library && isCompiledDeclaration &&
+            cfir.status !is CfirResolvedDeclarationStatus
+        ) return rawStatus
         return resolvedStatus
     }

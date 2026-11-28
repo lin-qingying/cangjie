@@ -152,6 +152,104 @@ internal class MacroSemanticExpansionServiceImpl(private val project: Project) :
         }
     }
 
+    /**
+     * 一次 submit 独占的终态登记；模块 lastOutcome 只是汇总，不能证明某个任务已经收尾。
+     *
+     * 取消方与执行方沿用 started 竞争，终态 CAS 只负责让计数/回调恰好登记一次。
+     * CAS 与模块计数在同一状态锁内完成，宿主回调在锁外调用；回调失败不能触发第二次终态。
+     */
+    private class TaskTerminal(
+        private val session: LLCfirResolvableModuleSession,
+        private val state: ModuleState,
+        private val environment: MacroSemanticExpansionEnvironment,
+        private val onTerminalFinished: () -> Unit,
+    ) {
+        private val terminalClaimed = AtomicBoolean()
+
+        /** 只保存本任务实际返回的 construction outcome；未执行/未返回时为空。 */
+        @Volatile
+        private var constructionOutcome: MacroExpansionOutcome? = null
+
+        /** 原 construct 计时点；未构造的任务不制造耗时值或 started 回调。 */
+        @Volatile
+        private var constructionStartedAtNanos: Long? = null
+
+        fun startConstructionTiming() {
+            constructionStartedAtNanos = System.nanoTime()
+        }
+
+        fun recordConstructionCompletion(completion: MacroExpansionCompletion) {
+            constructionOutcome = completion.outcome
+        }
+
+        fun elapsedMillis(): Long? = constructionStartedAtNanos?.let { startedAt ->
+            TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAt)
+        }
+
+        fun complete(
+            outcome: MacroExpansionOutcome,
+            durationMillis: Long?,
+            updateModuleState: () -> Unit,
+            notifyEnvironment: () -> Unit,
+        ) {
+            val claimed = state.lock.withLock {
+                if (!terminalClaimed.compareAndSet(false, true)) return@withLock false
+                state.lastOutcome = outcome
+                if (durationMillis != null) state.lastDurationMillis = durationMillis
+                if (outcome == MacroExpansionOutcome.PUBLISHED) {
+                    state.published++
+                } else {
+                    state.abandoned++
+                }
+                // 此块仅提交已取得的 revision/结果值，不能调用可能失败的宿主取值或回调。
+                updateModuleState()
+                true
+            }
+            if (claimed) {
+                try {
+                    notifyEnvironment()
+                } finally {
+                    // 回调成功或抛异常都结束本次终态尝试；在途收尾还必须等真实执行体结束。
+                    onTerminalFinished()
+                }
+            }
+        }
+
+        fun abandon(outcome: MacroExpansionOutcome) {
+            complete(
+                outcome = outcome,
+                durationMillis = elapsedMillis(),
+                updateModuleState = {},
+                notifyEnvironment = { environment.onAbandoned(session, outcome) },
+            )
+        }
+
+        /**
+         * 整个已登记任务的异常出口。真实 FAILED 不被后续取消抹掉，PCE/中断原样交回调用方。
+         * 收尾回调或日志再失败时附在原异常上，不能替换原 PCE，也不能重发 onAbandoned。
+         */
+        fun reportFailure(failure: Throwable) {
+            if (failure is InterruptedException) Thread.currentThread().interrupt()
+            val outcome = when {
+                constructionOutcome == MacroExpansionOutcome.FAILED -> MacroExpansionOutcome.FAILED
+                failure is ProcessCanceledException || failure is InterruptedException -> MacroExpansionOutcome.CANCELLED
+                else -> MacroExpansionOutcome.FAILED
+            }
+            try {
+                abandon(outcome)
+            } catch (notificationFailure: Throwable) {
+                if (notificationFailure !== failure) failure.addSuppressed(notificationFailure)
+            }
+            if (failure !is ProcessCanceledException && failure !is InterruptedException) {
+                try {
+                    LOG.error("Failed to execute macro semantic expansion task for ${session.caModule.moduleDescription}", failure)
+                } catch (loggingFailure: Throwable) {
+                    if (loggingFailure !== failure) failure.addSuppressed(loggingFailure)
+                }
+            }
+        }
+    }
+
     private val moduleStates = ConcurrentHashMap<CaModule, ModuleState>()
     private val moduleLocks = ConcurrentHashMap<CaModule, Any>()
     private val inFlightSessions: MutableSet<LLCfirSession> =
@@ -182,14 +280,14 @@ internal class MacroSemanticExpansionServiceImpl(private val project: Project) :
                 return
             }
 
-            // 快照按模块共享：输入 revision 未变化时直接复用，不再为每个新 session 重跑整模块构建。
+            // 仅复用当前 session 已有的同 revision 快照；模块级编排记录不持有另一 session 的 CFIR 树。
             if (session.macroSemanticSnapshot != null) {
                 if (state.publishedRevision == revision) {
                     LOG.info("Reused macro semantic snapshot for ${module.moduleDescription}")
                     return
                 }
 
-                // 快照仍在，但输入已变化：先丢弃模块级快照，再重新构造。
+                // 当前 session 快照仍在，但输入已变化：先退役其语义版本，再重新构造。
                 LOG.info(
                     "Macro semantic snapshot input changed for ${module.moduleDescription}; rebuilding",
                 )
@@ -275,58 +373,110 @@ internal class MacroSemanticExpansionServiceImpl(private val project: Project) :
         if (!inFlightSessions.add(session)) return
 
         val started = AtomicBoolean()
+        // 构造开始/取消回调沿用 started；执行体入口与未进入执行体的取消另行登记在途收尾。
+        val executionClaimed = AtomicBoolean()
+        val finished = AtomicBoolean()
+        val executionFinished = AtomicBoolean()
+        val terminalFinished = AtomicBoolean()
+        fun finishTaskIfSettled() {
+            if (executionFinished.get() && terminalFinished.get() && finished.compareAndSet(false, true)) {
+                inFlightSessions.remove(session)
+                state.taskFinished()
+            }
+        }
+        fun finishTask() {
+            executionFinished.set(true)
+            finishTaskIfSettled()
+        }
+        val taskTerminal = TaskTerminal(session, state, environment) {
+            // 取消方可在执行体之外回调；只在两方都结束后释放在途登记，避免 idle 先于终态。
+            terminalFinished.set(true)
+            finishTaskIfSettled()
+        }
+
         state.taskStarted()
         state.lock.withLock { state.constructionsStarted++ }
         val future: Future<*> = try {
-            AppExecutorUtil.getAppExecutorService().submit {
+            AppExecutorUtil.getAppExecutorService().submit task@ {
+                if (!executionClaimed.compareAndSet(false, true)) return@task
                 try {
                     val lock = moduleLocks.computeIfAbsent(module) { Any() }
                     synchronized(lock) {
-                        if (started.compareAndSet(false, true) &&
-                            session.isValid &&
-                            !project.isDisposed &&
-                            !Thread.currentThread().isInterrupted
-                        ) {
-                            runTask(session, module, state, environment, requestedRevision)
+                        if (started.compareAndSet(false, true)) {
+                            if (session.isValid &&
+                                !project.isDisposed &&
+                                !Thread.currentThread().isInterrupted
+                            ) {
+                                runTask(session, module, state, environment, requestedRevision, taskTerminal)
+                            } else {
+                                taskTerminal.abandon(MacroExpansionOutcome.CANCELLED)
+                            }
                         }
                     }
+                } catch (failure: Throwable) {
+                    // 包含 runTask 最初 revision、复用/构造 started 回调、结果 revision 和终态回调。
+                    taskTerminal.reportFailure(failure)
+                    throw failure
                 } finally {
-                    inFlightSessions.remove(session)
-                    state.taskFinished()
+                    finishTask()
                 }
             }
         } catch (failure: Throwable) {
-            inFlightSessions.remove(session)
-            state.taskFinished()
+            try {
+                taskTerminal.reportFailure(failure)
+            } finally {
+                finishTask()
+            }
             throw failure
         }
 
-        Disposer.register(
-            session.requestDisposable(),
-            Disposable {
-                future.cancel(true)
-                // 任务从未开始：由这里补齐收尾回调，避免宿主等待永不发生的构造。
-                if (started.compareAndSet(false, true)) {
-                    state.lock.withLock {
-                        state.abandoned++
-                        state.lastOutcome = MacroExpansionOutcome.CANCELLED
+        try {
+            Disposer.register(
+                session.requestDisposable(),
+                Disposable {
+                    try {
+                        future.cancel(true)
+                        // 保留原取消回调：执行体可能已进入，但仍在模块锁外等待、尚未开始构造。
+                        if (started.compareAndSet(false, true)) {
+                            taskTerminal.abandon(MacroExpansionOutcome.CANCELLED)
+                        }
+                    } catch (failure: Throwable) {
+                        taskTerminal.reportFailure(failure)
+                        throw failure
+                    } finally {
+                        // 未进入执行体的 Future 取消后不会运行 lambda；其在途登记由取消方收尾。
+                        if (executionClaimed.compareAndSet(false, true)) finishTask()
                     }
-                    environment.onAbandoned(session, MacroExpansionOutcome.CANCELLED)
-                }
-            },
-        )
+                },
+            )
+        } catch (failure: Throwable) {
+            // 父 disposable 登记失败时 Future 可能已运行；取消在锁外，执行体仍由原 finally 收尾。
+            try {
+                future.cancel(true)
+            } catch (cancellationFailure: Throwable) {
+                if (cancellationFailure !== failure) failure.addSuppressed(cancellationFailure)
+            }
+            try {
+                taskTerminal.reportFailure(failure)
+            } finally {
+                if (executionClaimed.compareAndSet(false, true)) finishTask()
+            }
+            throw failure
+        }
     }
 
-    /** 在模块锁内执行一次构造，并按结果更新 revision 记录、回调宿主。 */
+    /** 在模块锁内执行一次构造；所有异常由 submit 的同一任务边界处理。 */
     private fun runTask(
         session: LLCfirResolvableModuleSession,
         module: CaSourceModule,
         state: ModuleState,
         environment: MacroSemanticExpansionEnvironment,
         requestedRevision: MacroExpansionRevision,
+        taskTerminal: TaskTerminal,
     ) {
-        if (project.isDisposed) {
-            LOG.info("Project disposed before macro expansion for ${module.moduleDescription}")
+        // outer guard 之后仍可能退役/关闭/中断；执行方已拥有 started，不能裸返回。
+        if (!session.isValid || project.isDisposed || Thread.currentThread().isInterrupted) {
+            taskTerminal.abandon(MacroExpansionOutcome.CANCELLED)
             return
         }
         // 等待模块锁期间，其它会话可能已完成发布：直接复用，避免再做一次整模块 pre-macro 构建。
@@ -337,32 +487,31 @@ internal class MacroSemanticExpansionServiceImpl(private val project: Project) :
                 "Reused macro semantic snapshot published by another session for ${module.moduleDescription}",
             )
             environment.onConstructionStarted(session)
-            state.lock.withLock {
-                state.published++
-                state.lastOutcome = MacroExpansionOutcome.PUBLISHED
+            if (!session.isValid || project.isDisposed || Thread.currentThread().isInterrupted) {
+                taskTerminal.abandon(MacroExpansionOutcome.CANCELLED)
+                return
             }
-            environment.onPublished(session, emptySet())
+            taskTerminal.complete(
+                outcome = MacroExpansionOutcome.PUBLISHED,
+                durationMillis = null,
+                updateModuleState = {},
+                notifyEnvironment = { environment.onPublished(session, emptySet()) },
+            )
             return
         }
 
-        val startedAtNanos = System.nanoTime()
-        val completion = try {
-            construction.construct(session, module, environment)
-        } catch (cancelled: ProcessCanceledException) {
-            // PCE 不记录日志、必须原样抛出；这里只补齐宿主收尾回调，避免等待者永远收不到结束信号。
-            state.lock.withLock {
-                state.abandoned++
-                state.lastOutcome = MacroExpansionOutcome.CANCELLED
+        taskTerminal.startConstructionTiming()
+        val completion = construction.construct(session, module, environment)
+        taskTerminal.recordConstructionCompletion(completion)
+        val elapsedMillis = checkNotNull(taskTerminal.elapsedMillis())
+        if (!session.isValid || project.isDisposed || Thread.currentThread().isInterrupted) {
+            // 保留实际 FAILED；失效会话的完成结果不能作为 live PUBLISHED 继续通知消费者。
+            val terminalOutcome = if (completion.outcome == MacroExpansionOutcome.PUBLISHED) {
+                MacroExpansionOutcome.CANCELLED
+            } else {
+                completion.outcome
             }
-            environment.onAbandoned(session, MacroExpansionOutcome.CANCELLED)
-            throw cancelled
-        }
-        val elapsedMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAtNanos)
-        if (project.isDisposed) {
-            LOG.info(
-                "Project disposed during macro expansion for ${module.moduleDescription}; " +
-                    "dropping completion callbacks (outcome=${completion.outcome})",
-            )
+            taskTerminal.abandon(terminalOutcome)
             return
         }
         LOG.info(
@@ -371,46 +520,44 @@ internal class MacroSemanticExpansionServiceImpl(private val project: Project) :
         )
 
         val outcomeRevision = environment.revision(module)
-        state.lock.withLock {
-            state.lastOutcome = completion.outcome
-            state.lastDurationMillis = elapsedMillis
-            if (completion.outcome == MacroExpansionOutcome.PUBLISHED) {
-                state.published++
-            } else {
-                state.abandoned++
-            }
-            when (completion.outcome) {
-                MacroExpansionOutcome.PUBLISHED -> {
-                    // 记录快照实际代表的输入 revision；构造/发布期间输入变化不会让新 revision 误命中旧快照。
-                    state.publishedRevision = completion.publishedRevision ?: outcomeRevision
-                    state.failedRevision = null
-                    state.macroCallResolutionSites = completion.macroCallResolutionSites
+        taskTerminal.complete(
+            outcome = completion.outcome,
+            durationMillis = elapsedMillis,
+            updateModuleState = {
+                when (completion.outcome) {
+                    MacroExpansionOutcome.PUBLISHED -> {
+                        // 记录快照实际代表的输入 revision；构造/发布期间输入变化不会让新 revision 误命中旧快照。
+                        state.publishedRevision = completion.publishedRevision ?: outcomeRevision
+                        state.failedRevision = null
+                        state.macroCallResolutionSites = completion.macroCallResolutionSites
+                    }
+
+                    MacroExpansionOutcome.NO_MACRO_SURFACE -> {
+                        state.publishedRevision = null
+                        state.macroCallResolutionSites = emptyList()
+                    }
+
+                    MacroExpansionOutcome.FAILED -> {
+                        // 只有实际取得的结果 revision 才登记失败输入，不能用 requested/use-site 值补造。
+                        state.failedRevision = outcomeRevision
+                        state.macroCallResolutionSites = completion.macroCallResolutionSites
+                    }
+
+                    MacroExpansionOutcome.CANCELLED,
+                    MacroExpansionOutcome.INPUT_CHANGED,
+                        -> Unit
                 }
+            },
+            notifyEnvironment = {
+                when (completion.outcome) {
+                    MacroExpansionOutcome.PUBLISHED ->
+                        environment.onPublished(session, completion.publishedFiles)
 
-                MacroExpansionOutcome.NO_MACRO_SURFACE -> {
-                    state.publishedRevision = null
-                    state.macroCallResolutionSites = emptyList()
+                    else ->
+                        environment.onAbandoned(session, completion.outcome)
                 }
-
-                MacroExpansionOutcome.FAILED -> {
-                    // 记录失败 revision，避免同一输入在没有变化时被反复整模块重试。
-                    state.failedRevision = outcomeRevision
-                    state.macroCallResolutionSites = completion.macroCallResolutionSites
-                }
-
-                MacroExpansionOutcome.CANCELLED,
-                MacroExpansionOutcome.INPUT_CHANGED,
-                    -> Unit
-            }
-        }
-
-        when (completion.outcome) {
-            MacroExpansionOutcome.PUBLISHED ->
-                environment.onPublished(session, completion.publishedFiles)
-
-            else ->
-                environment.onAbandoned(session, completion.outcome)
-        }
+            },
+        )
 
         val snapshotRevision = completion.publishedRevision
         if (completion.outcome == MacroExpansionOutcome.PUBLISHED &&

@@ -36,8 +36,12 @@ import org.cangnova.cangjie.cfir.expressions.CfirStatement
 import org.cangnova.cangjie.cfir.expressions.CfirSuperReceiverExpression
 import org.cangnova.cangjie.cfir.psi
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
+import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.session.builtinTypes
+import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
+import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.contains
 import org.cangnova.cangjie.cfir.types.containsErrorType
 import org.cangnova.cangjie.cfir.types.ConeStubType
@@ -59,6 +63,7 @@ import org.cangnova.cangjie.psi.CjMatchEntry
 import org.cangnova.cangjie.psi.CjMatchExpression
 import org.cangnova.cangjie.psi.CjWhileExpressionBase
 import org.cangnova.cangjie.lexer.CjTokens
+import org.cangnova.cangjie.name.OperatorNameConventions
 import org.cangnova.cangjie.psi.CjNamedFunction
 import org.cangnova.cangjie.psi.CjParameter
 import org.cangnova.cangjie.psi.CjOperationExpression
@@ -450,8 +455,22 @@ internal class CaCfirExpressionTypeProvider(
      * 这样可以避免把普通函数名本身错误地暴露成某个伪类型，同时保留函数值变量、
      * 属性访问等真正有值语义的场景。
      */
-    private fun CfirNamedReference.getCorrespondingTypeIfPossible() =
-        findOuterNamedAccessExpression()?.resolvedType
+    private fun CfirNamedReference.getCorrespondingTypeIfPossible(): ConeCangJieType? =
+        when (val access = findOuterNamedAccessExpression()) {
+            is CfirFunctionCall -> {
+                if ((access.calleeReference as? CfirNamedReference)?.name == OperatorNameConventions.INVOKE) {
+                    access.explicitReceiver?.resolvedType
+                } else {
+                    // 官方 FuncTy 调用直接保留变量 callee；其值类型与整个调用的返回类型分开读取。
+                    when (val symbol = (access.calleeReference as? CfirResolvedNamedReference)?.resolvedSymbol) {
+                        is CfirVariableSymbol<*> -> symbol.resolvedReturnType
+                        is CfirPropertySymbol -> symbol.resolvedReturnType
+                        else -> null
+                    }
+                }
+            }
+            else -> access?.resolvedType
+        }
 
     /**
      * 查找名字引用外层真正承载取值语义的 CFIR 表达式。
@@ -463,6 +482,7 @@ internal class CaCfirExpressionTypeProvider(
         return when (val outerCfirElement = outerExpression.getOrBuildCfir(resolutionFacade)) {
             is CfirAssignment -> outerCfirElement.lValue
             is CfirNamedAccessExpression -> outerCfirElement
+            is CfirFunctionCall -> outerCfirElement
             is CfirOptionalChainExpression -> outerCfirElement.expression as? CfirNamedAccessExpression
             else -> null
         }

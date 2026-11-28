@@ -52,21 +52,18 @@ abstract class LibraryPathFilter {
     /** 判定是否接受给定路径。 */
     abstract fun accepts(path: Path?): Boolean
 
-    /** 接受所有库路径的过滤器，用于单模块或无需路径隔离的反序列化场景。 */
-    object TakeAll : LibraryPathFilter() {
-        /** 始终返回 true，表示当前模块数据对任意库路径可见。 */
-        override fun accepts(path: Path?): Boolean = true
-    }
-
-    /** 仅接受给定路径集合中的库文件，路径比较前会进行标准化。 */
+    /** 接受显式库文件或目录 root 内的真实来源，使用 Path 的目录边界。 */
     class LibraryList(
         /** 当前模块数据允许绑定的库路径集合。 */
-        private val paths: Set<Path>,
+        paths: Set<Path>,
     ) : LibraryPathFilter() {
-        /** 标准化输入路径并检查其是否属于 [paths]。 */
+        /** 所有路径在登记时确定为绝对标准路径，供归属选择与反查共同使用。 */
+        val libs: Set<Path> = paths.mapTo(linkedSetOf()) { it.toAbsolutePath().normalize() }
+
+        /** `.cjo` 来源可以是显式文件或已登记目录内的文件。 */
         override fun accepts(path: Path?): Boolean {
-            val normalizedPath = path?.normalize() ?: return false
-            return normalizedPath in paths
+            val normalizedPath = path?.toAbsolutePath()?.normalize() ?: return false
+            return libs.any { normalizedPath.startsWith(it) }
         }
     }
 }
@@ -97,20 +94,28 @@ class MultipleModuleDataProvider(
         get() = moduleDataWithFilters.keys
 
     /**
-     * 先标准化路径，再按过滤器顺序匹配。
+     * 从真实来源选择已登记 owner；不把未知路径交给常规依赖模块。
      *
-     * 精确路径过滤器（[LibraryPathFilter.LibraryList]）先于兜底过滤器（[LibraryPathFilter.TakeAll]）判定：
-     * CLI 在只有一个普通依赖模块时会给它补 `TakeAll`，若按插入序匹配，它会吞掉 depends-on 模块
-     *（CJMP common part cjo）的专属路径。
+     * 独立库或 CJMP 文件可以位于另一库目录中，最具体的登记 root 表达真实归属。
+     * 同一最具体来源被不同模块同时认领时拒绝，不能按插入顺序选择。
      */
     override fun getModuleData(path: Path?): CfirModuleData? {
-        val normalizedPath = path?.normalize()
-        val (fallbacks, exact) = moduleDataWithFilters.entries.partition { it.value is LibraryPathFilter.TakeAll }
-        for ((moduleData, filter) in exact + fallbacks) {
-            if (filter.accepts(normalizedPath)) {
-                return moduleData
-            }
+        val normalizedPath = path?.toAbsolutePath()?.normalize() ?: return null
+        val matches = moduleDataWithFilters.entries.filter { it.value.accepts(normalizedPath) }
+        if (matches.isEmpty()) return null
+        if (matches.size == 1) return matches.single().key
+
+        val roots = matches.map { (module, filter) ->
+            check(filter is LibraryPathFilter.LibraryList) { "Overlapping library filters have no explicit root ownership" }
+            module to checkNotNull(filter.libs.filter { normalizedPath.startsWith(it) }.maxByOrNull { it.nameCount })
         }
-        return null
+        val depth = roots.maxOf { it.second.nameCount }
+        val owners = roots.filter { it.second.nameCount == depth }
+        check(owners.size == 1) { "Multiple module owners for CJO $normalizedPath: ${owners.map { it.second }}" }
+        return owners.single().first
     }
+
+    /** 反查的路径与来源匹配使用同一登记事实。 */
+    override fun getModuleDataPaths(moduleData: CfirModuleData): Set<Path>? =
+        (moduleDataWithFilters[moduleData] as? LibraryPathFilter.LibraryList)?.libs
 }

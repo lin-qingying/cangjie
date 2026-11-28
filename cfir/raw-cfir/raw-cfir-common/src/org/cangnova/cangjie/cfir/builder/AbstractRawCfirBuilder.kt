@@ -31,6 +31,7 @@ import org.cangnova.cangjie.cfir.CfirLoopTarget
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.common.moduleData
 import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.declarations.builder.buildConstructedClassTypeParameterRef
 import org.cangnova.cangjie.cfir.declarations.builder.buildValueParameter
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
@@ -42,6 +43,8 @@ import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.cfir.types.builder.buildErrorTypeRef
+import org.cangnova.cangjie.cfir.types.builder.buildUserTypeRef
+import org.cangnova.cangjie.builtins.StandardNames
 import org.cangnova.cangjie.descriptors.Modality
 import org.cangnova.cangjie.descriptors.Visibility
 import org.cangnova.cangjie.name.CallableId
@@ -264,6 +267,24 @@ abstract class AbstractRawCfirBuilder<T : Any>(
 
 
 
+    /**
+     * 从实际被构造类型的参数声明创建非 owning 引用。
+     *
+     * 对齐 Kotlin AbstractRawFirBuilder.constructorTypeParametersFromConstructedClass；
+     * refs 继续指向 owner 的原 symbol，不能在 constructor 下重复绑定该声明。
+     */
+    protected fun constructorTypeParametersFromConstructedClass(
+        ownerTypeParameters: List<CfirTypeParameterRef>,
+    ): List<CfirTypeParameterRef> {
+        return ownerTypeParameters.mapNotNull {
+            val declaredTypeParameter = (it as? CfirTypeParameter) ?: return@mapNotNull null
+            buildConstructedClassTypeParameterRef {
+                source = declaredTypeParameter.source?.fakeElement(CjFakeSourceElementKind.ConstructorTypeParameter)
+                symbol = declaredTypeParameter.symbol
+            }
+        }
+    }
+
     /** 将语法节点转换为 CFIR source element。 */
     abstract fun T.toSourceElement(): AbstractCjSourceElement
 
@@ -475,6 +496,21 @@ abstract class AbstractRawCfirBuilder<T : Any>(
             status = DEFAULT_STATUS_FOR_STATUSLESS_DECLARATIONS
             dispatchReceiverType = null
             body = null
+        }
+    }
+
+    /**
+     * 官方 ParseMacroBody 在省略返回类型时补入 Tokens 名称引用。
+     * 仍由文件 import/type scope 解析该引用，不在 raw builder 绑定 ClassId 或推断宏正文。
+     */
+    protected fun buildDefaultMacroReturnTypeRef(source: CjSourceElement): CfirTypeRef {
+        val implicitSource = source.fakeElement(CjFakeSourceElementKind.ImplicitFunctionReturnType)
+        return buildUserTypeRef {
+            this.source = implicitSource
+            qualifier += buildQualifierPart {
+                this.source = implicitSource
+                name = StandardNames.TOKENS
+            }
         }
     }
 

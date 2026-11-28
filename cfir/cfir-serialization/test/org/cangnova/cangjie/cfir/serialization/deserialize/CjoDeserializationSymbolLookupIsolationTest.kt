@@ -1,18 +1,27 @@
 package org.cangnova.cangjie.cfir.serialization.deserialize
 
+import org.cangnova.cangjie.test.bindCjoFixture
+import PackageFormat.FullId
+import PackageFormat.DeclKind
+import com.google.flatbuffers.FlatBufferBuilder
 import org.cangnova.cangjie.LanguageVersionSettingsImpl
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.common.CfirPlatform
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirBuiltInDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.declarations.resolvePhase
 import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoManager
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoSearchPath
-import org.cangnova.cangjie.cfir.serialization.provider.CfirClassLikeSymbolLookup
+import org.cangnova.cangjie.cfir.serialization.cjo.PackageIndex
 import org.cangnova.cangjie.cfir.session.CfirLanguageSettingsComponent
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.lang.declarations.CangJieDeclarationFileType
 import org.cangnova.cangjie.name.ClassId
+import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.parsing.CangJieParserDefinition
 import org.cangnova.cangjie.platform.CangJiePlatforms
@@ -24,14 +33,18 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import kotlin.io.path.isRegularFile
 import kotlin.test.assertTrue
+import kotlin.test.assertEquals
+import kotlin.test.assertIs
+import kotlin.test.assertNotNull as assertValue
+import kotlin.test.assertSame
 
 /**
  * `.cjo` 反序列化期间的 class-like 符号解析只能来自 `.cjo` 头部与 flatbuffer。
  *
  * `.cjo` 的 stub 树由 `StubUpdatingIndex` 在索引期构建，若解析器经 session 的符号提供器取符号，IDE 的 STUBS 来源下会再进 stub 索引，
  * 触发平台的 `Indexing process should not rely on non-indexed file data`。本测试的 session **不注册任何符号提供器**：
- * 一旦仍有任何一处类符号查找经过 session，就会抛 `No 'CfirSymbolProvider' in array`；同时用计数查找断言这条路径确实被走到，
- * 避免"因为从未查找而通过"。
+ * 一旦仍有任何一处类符号查找经过 session，就会抛 `No 'CfirSymbolProvider' in array`。具名声明通过正式 CURRENT FullId 入口读取，
+ * 只统计实际返回的 class-like 符号，并核对 canonical record、ClassId、模块和完成阶段，避免"因为从未查找而通过"。
  *
  * Kotlin 对应：`fir-deserialization` 全模块零 `com.intellij` 导入，库类解析只用元数据。
  */
@@ -66,25 +79,20 @@ class CjoDeserializationSymbolLookupIsolationTest :
             manager.loadPackageSnapshot(packageName),
             "fixture must contain $packageName",
         )
-        val counting = CountingLookup(manager.deserializedSymbolLookups.forModuleData(IsolationModuleData))
-        val context = CfirDeserializationContext(
-            pkg = loaded.pkg,
-            header = loaded.header,
-            moduleData = IsolationModuleData,
-            cjoManager = manager,
-            classSymbolLookup = counting,
-            sourcePath = loaded.sourcePath,
-        )
+        val metadataBinding = bindCjoFixture(IsolationModuleData, manager, setOf(fixtureRoot))
+        val provider = manager.deserializedSymbolLookups.forBinding(metadataBinding, IsolationModuleData, CjoDeserializationMode.FULL)
+        val context = assertValue(provider.getPackageContext(packageName, CjoDeserializationMode.FULL))
+        assertSame(context, context.canonical())
+        assertSame(IsolationModuleData, context.moduleData)
+        assertEquals(loaded.sourcePath, context.sourcePath)
+        val counting = CountingLookup(context)
         val indices = buildList {
             loaded.header.topLevelNameToIndices.values.forEach(::addAll)
             addAll(loaded.header.topLevelExtendIndices)
         }.distinct().sorted()
-        val declDeserializer = context.createDeclDeserializer()
         val declarations = mutableListOf<CfirDeclaration>()
         for (index in indices) {
-            val cached = context.declCache[index]
-            if (cached != null) { declarations.add(cached); continue }
-            declDeserializer.deserializeDecl(index)?.let { declarations.add(it) }
+            declarations.add(counting.deserializeDecl(index))
         }
 
         assertTrue(
@@ -97,12 +105,50 @@ class CjoDeserializationSymbolLookupIsolationTest :
         )
     }
 
-    /** 统计注入的查找入口被调用的次数，委托到 manager 共享的反序列化 provider。 */
-    private class CountingLookup(private val delegate: CfirClassLikeSymbolLookup) : CfirClassLikeSymbolLookup {
+    /**
+     * 正式 FullId 读取就是 fixture 的声明读取工作，不另发 class-id 请求制造覆盖。
+     * count 是该工作实际返回的 class-like 符号数；缓存命中同样核对规范 wire record。
+     */
+    private class CountingLookup(private val context: CfirDeserializationContext) {
         var count = 0
-        override fun getClassLikeSymbolByClassId(classId: ClassId): CfirClassLikeSymbol<*>? {
-            count++
-            return delegate.getClassLikeSymbolByClassId(classId)
+            private set
+
+        fun deserializeDecl(declIndex: Int): CfirDeclaration {
+            val declaration = assertValue(context.pkg.allDecls(declIndex))
+            val symbol = if (declaration.kind == DeclKind.ExtendDecl) {
+                // extend 沿原声明树入口读取，不能把可能无名称的容器改成 named FullId 查询。
+                assertValue(context.createDeclDeserializer().deserializeDecl(declIndex)).symbol
+            } else {
+                val builder = FlatBufferBuilder()
+                val fullIdOffset = FullId.createFullId(builder, PackageIndex.CURRENT.value, 0, (declIndex + 1).toUInt())
+                builder.finish(fullIdOffset)
+                val target = FullId.getRootAsFullId(builder.dataBuffer())
+                context.fullIdResolver.resolveSymbol(target)
+            }
+            val record = assertValue(context.declCache[declIndex], "FullId must return a complete canonical declaration")
+            assertSame(record.wireSymbol, symbol, "FullId must keep the exact wire symbol")
+            assertSame(context.moduleData, symbol.cfir.moduleData, "FullId must keep the actual module owner")
+            assertEquals(CfirResolvePhase.BODY_RESOLVE, record.declarationRoot.resolvePhase)
+            assertEquals(CfirResolvePhase.BODY_RESOLVE, symbol.cfir.resolvePhase)
+            if (declaration.kind in setOf(DeclKind.ClassDecl, DeclKind.InterfaceDecl, DeclKind.StructDecl,
+                    DeclKind.EnumDecl, DeclKind.TypeAliasDecl, DeclKind.BuiltInDecl)) {
+                assertIs<CfirClassLikeDeclaration>(record.declarationRoot)
+                val classLike = assertIs<CfirClassLikeSymbol<*>>(symbol)
+                assertTrue(classLike.isBound)
+                assertSame(record.declarationRoot, classLike.cfir)
+                val expectedClassId = if (declaration.kind == DeclKind.BuiltInDecl) {
+                    assertIs<CfirBuiltInDeclaration>(record.declarationRoot).kind.classId
+                } else {
+                    ClassId(FqName(context.header.fullPkgName), Name.identifier(assertValue(declaration.identifier)))
+                }
+                assertEquals(
+                    expectedClassId,
+                    classLike.classId,
+                    "Class-like identity must come from this exact CURRENT wire declaration",
+                )
+                count++
+            }
+            return record.declarationRoot
         }
     }
 

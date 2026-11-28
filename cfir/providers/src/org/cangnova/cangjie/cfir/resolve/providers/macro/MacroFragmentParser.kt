@@ -39,7 +39,7 @@ interface MacroFragmentParser {
          * 解析入口、custom-annotation fallback、payload 类型语义有变化时递增。
          */
         // v4: declaration fragments carry the complete zero-to-many declaration sequence.
-        const val VERSION: Int = 4
+        const val VERSION: Int = 5
     }
 }
 
@@ -71,6 +71,10 @@ data class MacroFragmentInput(
     val decision: FinalMacroSurfaceDecision,
     /** custom annotation 模式所需的原始 annotation 槽位 snapshot。 */
     val annotationSnapshot: CfirAnnotationSlotSnapshot? = null,
+    /** parser 复扫后生成的稳定文本坐标表；只有 reparse 回调消费它。 */
+    val sourceMap: MacroFragmentSourceMap? = null,
+    /** source factory 确认的来源，随后由 registry/snapshot 消费。 */
+    val sourceMapping: MacroFragmentSourceMapping = MacroFragmentSourceMapping(),
 ) {
     /** 从最终 routing 决策投影出的解析模式。 */
     val mode: MacroFragmentParser.Mode
@@ -111,6 +115,8 @@ sealed class MacroFragmentResult {
         val mode: MacroFragmentParser.Mode,
         /** raw builder 重新解析得到的 construction-only payload，由 stable splicer 消费。 */
         val payload: Any? = null,
+        /** 与 payload 同批构造的原输入/生成来源，不重扫 PSI 恢复。 */
+        val sourceMapping: MacroFragmentSourceMapping = MacroFragmentSourceMapping(),
     ) : MacroFragmentResult()
 
     /**
@@ -127,6 +133,7 @@ sealed class MacroFragmentResult {
         val payload: org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall,
         /** re-evaluation 后稳定的 token 流。 */
         val tokens: List<MacroSurfaceToken>,
+        val sourceMapping: MacroFragmentSourceMapping = MacroFragmentSourceMapping(),
     ) : MacroFragmentResult()
 
     /**
@@ -292,7 +299,9 @@ object MacroTokenReEvaluator {
         for (i in indices) {
             val a = this[i]
             val b = other[i]
-            if (a.text != b.text || a.kindName != b.kindName) return false
+            if (a.text != b.text || a.kindName != b.kindName ||
+                a.sourceSpans != b.sourceSpans || a.isTrivia != b.isTrivia
+            ) return false
         }
         return true
     }
@@ -309,7 +318,12 @@ object MacroTokenReEvaluator {
         return if (text.isEmpty()) {
             emptyList()
         } else {
-            listOf(MacroSurfaceToken(text = text, startOffset = 0, endOffset = text.length))
+            val sourceMap = MacroFragmentSourceMap.materialize(tokens)
+            listOf(MacroSurfaceToken(
+                text = text, startOffset = 0, endOffset = text.length,
+                sourceSpans = sourceMap.spansForRange(0, text.length),
+                isTrivia = tokens.all { it.isTrivia },
+            ))
         }
     }
 }

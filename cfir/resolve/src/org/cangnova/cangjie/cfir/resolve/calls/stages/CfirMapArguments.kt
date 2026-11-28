@@ -110,6 +110,7 @@ object CfirMapArguments : ResolutionStage() {
             }
 
             CallKind.Function,
+            CallKind.SyntheticSelect,
             CallKind.DelegatingConstructorCall,
             -> mapCallableArguments(candidate, argumentAtoms)
 

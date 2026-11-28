@@ -61,6 +61,15 @@ class CfirDeclarationAttributes : AttributeArrayOwner<CfirDeclarationDataKey, An
      */
     fun copy(): CfirDeclarationAttributes = CfirDeclarationAttributes(arrayMap.copy())
 
+    /** 按真实非空槽位导出 RAW policy 输入，检查槽数量保证没有未知值被遗漏。 */
+    internal fun rawCopyEntries(): List<Pair<Int, Any>> {
+        val entries = CfirDeclarationDataRegistry.rawCopySlots().mapNotNull { slot ->
+            get(slot)?.let { slot to it }
+        }
+        check(entries.size == arrayMap.size) { "Declaration-data slot inventory changed during RAW snapshot" }
+        return entries
+    }
+
     /**
      * 声明属性容器的工厂与常用常量。
      */
@@ -82,11 +91,15 @@ class CfirDeclarationAttributes : AttributeArrayOwner<CfirDeclarationDataKey, An
  * 在不同宿主对象上访问的是同一数组槽位。
  */
 object CfirDeclarationDataRegistry : ConeTypeRegistry<CfirDeclarationDataKey, Any>() {
+    /** 源声明由调用者持锁；全局槽 ID 稳定，复制只读取源容器中的非空值。 */
+    internal fun rawCopySlots(): List<Int> = indices.toList()
+
     /**
      * 创建绑定到 [CfirDeclaration] 的属性委托。
      */
     fun <K : CfirDeclarationDataKey> data(key: K): DeclarationDataAccessor {
         val keyClass = key::class
+        org.cangnova.cangjie.cfir.CfirRawDeclarationDataRegistry.register(key, getId(keyClass))
         return DeclarationDataAccessor(generateAnyNullableAccessor(keyClass), keyClass)
     }
 
@@ -97,6 +110,7 @@ object CfirDeclarationDataRegistry : ConeTypeRegistry<CfirDeclarationDataKey, An
      */
     fun <K : CfirDeclarationDataKey> symbolAccessor(key: K): SymbolDataAccessor {
         val keyClass = key::class
+        org.cangnova.cangjie.cfir.CfirRawDeclarationDataRegistry.register(key, getId(keyClass))
         return SymbolDataAccessor(generateAnyNullableAccessor(keyClass), keyClass)
     }
 
@@ -105,6 +119,7 @@ object CfirDeclarationDataRegistry : ConeTypeRegistry<CfirDeclarationDataKey, An
      */
     fun <K : CfirDeclarationDataKey, V : Any> attributesAccessor(key: K): ReadWriteProperty<CfirDeclarationAttributes, V?> {
         val keyClass = key::class
+        org.cangnova.cangjie.cfir.CfirRawDeclarationDataRegistry.register(key, getId(keyClass))
         return AttributeDataAccessor(generateNullableAccessor(keyClass), keyClass)
     }
 

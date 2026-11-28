@@ -1,5 +1,7 @@
 package org.cangnova.cangjie.analysis.api.cfir.symbols
 
+import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.llCfirModuleData
+
 import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.api.annotations.CaAnnotationList
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
@@ -62,10 +64,10 @@ internal class CaCfirConstructorSymbol private constructor(
     )
 
     /**
-     * 构造器所在的 use-site 模块。
+     * 构造器实际声明所属的模块。
      */
     override val containingModule: CaModule
-        get() = analysisSession.useSiteModule
+        get() = withValidityAssertion { cfirSymbol.llCfirModuleData.caModule }
 
     /**
      * 构造器 CFIR member 状态。
@@ -289,4 +291,7 @@ internal class CaCfirConstructorSymbol private constructor(
             backingPsi?.getContainingTypeStatement()?.getClassId()
                 ?: cfirSymbolOrNull?.callableId?.classId
         }
+
+    override fun equals(other: Any?): Boolean = psiOrSymbolEquals(other)
+    override fun hashCode(): Int = psiOrSymbolHashCode()
 }

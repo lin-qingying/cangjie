@@ -146,11 +146,17 @@ internal class LLCangJieSourceSymbolProvider(
         classLikeDeclaration: CjClassLikeDeclaration?,
     ): CfirClassLikeSymbol<*>? {
         return tolerateMissingCachedSymbol(classId) {
-            if (classLikeDeclaration == null) {
-                classLikeCache.getSymbolByClassId(classId, classLikeDeclaration)
-            } else {
-                classLikeCache.getSymbolByPsi<CjClassLikeDeclaration>(classId, classLikeDeclaration) { it }
+            // 名称索引只负责取当前 PSI 候选；canonical symbol 缓存以实际 provider generation 的 PSI 为键。
+            // PSI caches 被清空但文本未改时，ClassId 本身无法区分旧/新源码树。
+            val currentDeclaration = classLikeDeclaration
+                ?: declarationProvider.getClassLikeDeclarationByClassId(classId)
+                ?: return@tolerateMissingCachedSymbol null
+            // 非物理文件由自己的 dangling session 提供声明；普通 ClassId 查询没有精确 PSI context。
+            // 对位 Kotlin 的无 context 路径，避免把非物理声明送进只服务物理 PSI 的精确缓存。
+            if (classLikeDeclaration == null && !currentDeclaration.isPhysical) {
+                return@tolerateMissingCachedSymbol classLikeCache.getSymbolByClassId(classId, context = null)
             }
+            classLikeCache.getSymbolByPsi<CjClassLikeDeclaration>(classId, currentDeclaration) { it }
         }
     }
 
@@ -203,7 +209,6 @@ internal class LLCangJieSourceSymbolProvider(
             // 这里已经拿到了精确 PSI，优先按同一份声明做映射，
             // 避免仅靠 ClassId 路径搜索时被当前 CFIR 结构差异误伤。
             (CfirElementFinder.findDeclaration(file, classLikeDeclaration) as? CfirClassLikeDeclaration)
-                ?: CfirElementFinder.findClassifierWithClassId(file, classId)
         }
     }
 

@@ -18,7 +18,9 @@ interface CfirCodeFragmentContext {
 }
 
 /** code fragment context 在声明数据注册表中的 key。 */
-private object CodeFragmentContextDataKey : CfirDeclarationDataKey()
+private object CodeFragmentContextDataKey : CfirDeclarationDataKey() {
+    override val rawCopyPolicy get() = org.cangnova.cangjie.cfir.CfirRawDeclarationDataPolicies.borrowed<CfirCodeFragmentContext>("ambient code-fragment tower handle")
+}
 
 /** code fragment 声明上挂载的解析上下文快照。 */
 var CfirCodeFragment.codeFragmentContext: CfirCodeFragmentContext? by CfirDeclarationDataRegistry.data(CodeFragmentContextDataKey)

@@ -5,11 +5,13 @@ import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
 import org.cangnova.cangjie.cfir.semantics.ResolutionDiagnostic
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeDiagnostic
+import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability
 import org.cangnova.cangjie.source.AbstractCjSourceElement
@@ -24,6 +26,16 @@ data class MemberLookupBlockedByDeclaredSupertype(
     val ownerSymbol: CfirClassLikeSymbol<*>,
     val rootDiagnostic: ConeDiagnostic,
 ) : ResolutionDiagnostic(CandidateApplicability.HIDDEN)
+
+/**
+ * 官方 CheckWithCache 按当前候选的目标整数类型检查字面量范围。
+ * 范围失败会淘汰该候选，但其根诊断是数值越界，不能改成参数类型不匹配。
+ */
+class LiteralNumericOverflow(
+    val literal: CfirLiteralExpression,
+    val literalText: String,
+    val targetType: ConePrimitiveType,
+) : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE)
 
 /**
  * 调用实参类型与形参期望类型不匹配。

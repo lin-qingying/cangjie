@@ -43,6 +43,9 @@ import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroExpansionCycle
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroForestEvaluator
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentParser
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentInput
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentSourceMap
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentSourceMapping
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroTokenSourceOrigin
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentResult
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroExpansionRegistry
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroExpansionCacheKey
@@ -154,7 +157,7 @@ object FrontendMacroConfigurationKeys {
      * 宏构造短 PSI 阶段的读访问调度器配置键。
      */
     val MACRO_CONSTRUCTION_READ_ACCESS =
-        CompilerConfigurationKey.create<MacroConstructionReadAccess>("MACRO_CONSTRUCTION_READ_ACCESS")
+        MacroConstructionReadAccess.CONFIGURATION_KEY
 
     @JvmField
     /**
@@ -559,11 +562,12 @@ class FrontendMacroConstructionService(
                             registry = registry,
                         )
                     } ?: return@evaluate null
-                    when (val payload = (fragment as? MacroFragmentResult.Success)?.payload) {
-                        is CfirElement -> registry.registerGeneratedCfirElement(payload, surface.surfaceId)
+                    val success = fragment as? MacroFragmentResult.Success
+                    when (val payload = success?.payload) {
+                        is CfirElement -> registry.registerGeneratedCfirElement(payload, surface.surfaceId, checkNotNull(success).sourceMapping)
                         // 声明片段只是构造期容器；来源映射必须落到每个最终 CFIR 声明及其子树上。
                         is MacroDeclarationFragment -> payload.declarations.forEach { declaration ->
-                            registry.registerGeneratedCfirElement(declaration, surface.surfaceId)
+                            registry.registerGeneratedCfirElement(declaration, surface.surfaceId, checkNotNull(success).sourceMapping)
                         }
 
                         null -> Unit
@@ -780,8 +784,10 @@ class FrontendMacroConstructionService(
                 }
             }
         }
-        val callInfo = surface.toMacroCallInfo(entry, node.parentNames, refreshedTokens, preFile)
-        val result = executor.execute(listOf(callInfo)).singleOrNull()
+        val callInput = configuration.macroConstructionReadAccess.compute {
+            surface.toMacroCallInfo(entry, node.parentNames, refreshedTokens, preFile)
+        }
+        val result = executor.execute(listOf(callInput.call)).singleOrNull()
             ?: MacroExpansionResult.Failure(
                 message = "Macro executor returned no result for `${entry.name.asString()}`.",
                 kind = MacroExpansionFailureKind.PROTOCOL_ERROR,
@@ -790,7 +796,7 @@ class FrontendMacroConstructionService(
         return when (result) {
             is MacroExpansionResult.Success -> {
                 recordMacroDiagReports(surface, result.diagnostics, registry)
-                result.tokens.toMacroSurfaceTokens()
+                result.tokens.toMacroSurfaceTokens(callInput.sources)
             }
 
             is MacroExpansionResult.Failure -> {
@@ -885,6 +891,7 @@ class FrontendMacroConstructionService(
                 tokens = tokens,
                 decision = decision,
                 annotationSnapshot = annotationSnapshot,
+                sourceMapping = MacroFragmentSourceMapping(registry::registeredSourceOrigin),
             )
         )
         val fragment = if (surface is BuiltinNonMacroSurface && parsed is MacroFragmentResult.Success) {
@@ -1967,32 +1974,35 @@ private fun MacroFragmentResult.parentVisibleTokens(
     }
 }
 
-/**
- * 将宏表面和解析结果转换为 executor 协议调用信息。
- */
+/** 单次 wire 调用及其输入来源；executor 执行时不读取 PSI。 */
+private data class MacroCallInput(val call: MacroCallInfo, val sources: MacroProtocolSourceMapping)
+
+/** 将宏表面转换为 wire 调用，同时捕获独立于展开文本坐标的原输入来源。 */
 private fun MacroSurface.toMacroCallInfo(
     entry: MacroDefinitionEntry,
     parentNames: List<String>,
     refreshedTokens: RefreshedMacroSurfaceTokens,
     preFile: PreMacroCfirFile?,
-): MacroCallInfo {
-    val linesMapping = preFile?.cfirFile?.sourceFileLinesMapping
-    val start = sourceRange?.startOffset.toSourcePosition(linesMapping)
-    val endOffset = sourceRange?.endOffset?.minus(1)?.coerceAtLeast(sourceRange?.startOffset ?: 0)
-    val end = endOffset.toSourcePosition(linesMapping)
-    val hasAttrs = hasAttr
+): MacroCallInput {
+    val rootSource = sourceRange?.source
+    val sources = MacroProtocolSourceMapping(rootSource, surfaceId)
+    val start = sources.rootPosition(rootSource?.startOffset)
+    val end = sources.rootPosition(rootSource?.endOffset?.minus(1)?.coerceAtLeast(rootSource.startOffset))
     val packageName = entry.executablePackageFqName.asString().takeUnless { it == "<root>" }.orEmpty()
-    return MacroCallInfo(
-        idName = entry.name.asString(),
-        methodName = macroWrapperFunctionName(packageName, hasAttrs, entry.executableName.asString()),
-        packageName = packageName,
-        libPath = entry.libPath.orEmpty(),
-        hasAttrs = hasAttrs,
-        argTokens = refreshedTokens.inputTokens.toTokenInfo(start, end, linesMapping),
-        attrTokens = refreshedTokens.attrTokens.toTokenInfo(start, end, linesMapping),
-        parentNames = parentNames,
-        position = start,
-        endPosition = end,
+    return MacroCallInput(
+        call = MacroCallInfo(
+            idName = entry.name.asString(),
+            methodName = macroWrapperFunctionName(packageName, hasAttr, entry.executableName.asString()),
+            packageName = packageName,
+            libPath = entry.libPath.orEmpty(),
+            hasAttrs = hasAttr,
+            argTokens = refreshedTokens.inputTokens.toTokenInfo(start, end, sources),
+            attrTokens = refreshedTokens.attrTokens.toTokenInfo(start, end, sources),
+            parentNames = parentNames,
+            position = start,
+            endPosition = end,
+        ),
+        sources = sources,
     )
 }
 
@@ -2126,64 +2136,53 @@ private fun MacroSurfaceToken.isInside(range: org.cangnova.cangjie.cfir.resolve.
     return startOffset >= range.startOffset && endOffset <= range.endOffset
 }
 
-/**
- * 将宏表面 token 转换为 executor 协议 token，使用默认位置。
- */
+/** wire token 的位置来自冻结的原输入区间；生成 token 使用调用位置。 */
 private fun List<MacroSurfaceToken>.toTokenInfo(
     defaultBegin: SourcePosition,
     defaultEnd: SourcePosition,
-): List<TokenInfo> = toTokenInfo(defaultBegin, defaultEnd, null)
-
-/**
- * 将宏表面 token 转换为 executor 协议 token。
- */
-private fun List<MacroSurfaceToken>.toTokenInfo(
-    defaultBegin: SourcePosition,
-    defaultEnd: SourcePosition,
-    linesMapping: CjSourceFileLinesMapping?,
+    sources: MacroProtocolSourceMapping,
 ): List<TokenInfo> = flatMap { token ->
     val lexerTokens = if (token.kindName != null) {
         listOf(MacroPayloadToken(token.text, token.startOffset, token.endOffset, token.kindName))
     } else {
         MacroPayloadTokenizer.tokenize(token.text, token.startOffset)
     }
+    val tokenMap = MacroFragmentSourceMap.materialize(listOf(token))
     lexerTokens.mapNotNull { lexerToken ->
         val encoded = MacroTokenKind.fromLexerToken(lexerToken.kindName, lexerToken.text) ?: return@mapNotNull null
-        TokenInfo(
+        val start = lexerToken.startOffset - token.startOffset
+        val end = lexerToken.endOffset - token.startOffset
+        val originSpans = tokenMap.spansForRange(start, end)
+        val original = tokenMap.originalRange(start, end, requireUnique = false, includeTrivia = true)
+        val input = originSpans.firstOrNull()?.origin as? MacroTokenSourceOrigin.Input
+        val info = TokenInfo(
             kind = encoded.kind,
             value = encoded.value,
-            begin = lexerToken.startOffset.toSourcePosition(linesMapping)
-                .takeIf { lexerToken.startOffset >= 0 } ?: defaultBegin,
-            end = lexerToken.endOffset.toSourcePosition(linesMapping)
-                .takeIf { lexerToken.endOffset >= 0 } ?: defaultEnd,
+            delimiterNum = encoded.delimiterNum,
+            begin = if (original != null && input != null) sources.inputPosition(input, original.startOffset) else defaultBegin,
+            end = if (original != null && input != null) sources.inputPosition(input, original.endOffset) else defaultEnd,
         )
+        sources.record(info, lexerToken.text, originSpans)
+        info
     }
 }
 
-/**
- * 将源文件 offset 转换为 executor 协议源码位置。
- */
-private fun Int?.toSourcePosition(linesMapping: CjSourceFileLinesMapping?): SourcePosition {
-    val offset = this ?: return SourcePosition()
-    if (offset < 0 || linesMapping == null) return SourcePosition()
-    val (line, column) = linesMapping.getLineAndColumnByOffset(offset)
-    if (line < 0 || column < 0) return SourcePosition()
-    return SourcePosition(line = line + 1, column = column + 1)
-}
-
-/**
- * 将 executor 返回的 token 重建为宏表面 token。
- */
-private fun List<TokenInfo>.toMacroSurfaceTokens(): List<MacroSurfaceToken> {
+/** 展开文本重建保留每个 wire token 的来源 span，随后 lexer 复扫只变换文本区间。 */
+private fun List<TokenInfo>.toMacroSurfaceTokens(sources: MacroProtocolSourceMapping): List<MacroSurfaceToken> {
     if (isEmpty()) return emptyList()
-    val text = MacroMsgCodec.rebuildExpandedText(this)
-    return listOf(
-        MacroSurfaceToken(
-            text = text,
-            startOffset = 0,
-            endOffset = text.length,
-        )
-    )
+    val rendered = MacroMsgCodec.rebuildExpandedTextWithSpans(this)
+    val spans = rendered.spans.flatMap { span ->
+        val text = rendered.text.substring(span.startOffset, span.endOffset)
+        sources.spansForOutput(this[span.tokenIndex], text).map { origin ->
+            origin.copy(
+                startOffset = span.startOffset + origin.startOffset,
+                endOffset = span.startOffset + origin.endOffset,
+            )
+        }
+    }
+    return listOf(MacroSurfaceToken(
+        text = rendered.text, startOffset = 0, endOffset = rendered.text.length, sourceSpans = spans,
+    ))
 }
 
 /**

@@ -72,4 +72,9 @@ internal class CaCfirPackageSymbol(
     override fun createPointer(): CaSymbolPointer<CaSymbol> = withValidityAssertion {
         CaCfirPackageSymbolPointer(CaCfirPackageSymbolCacheKey(fqName, organizationName))
     }
+
+    override fun equals(other: Any?): Boolean =
+        other is CaCfirPackageSymbol && fqName == other.fqName && organizationName == other.organizationName
+
+    override fun hashCode(): Int = 31 * fqName.hashCode() + (organizationName?.hashCode() ?: 0)
 }

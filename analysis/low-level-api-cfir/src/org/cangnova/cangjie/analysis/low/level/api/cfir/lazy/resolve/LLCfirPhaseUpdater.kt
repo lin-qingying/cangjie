@@ -72,6 +72,9 @@ internal object LLCfirPhaseUpdater {
             is CfirFunction -> {
                 updateFunctionSignatureBody(target)
             }
+            is org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor -> {
+                target.valueParameters.forEach { it.defaultValue?.accept(LocalElementPhaseUpdatingTransformer) }
+            }
 
             is CfirProperty -> {
                 target.getter?.let(::updateFunctionSignatureBody)
@@ -127,6 +130,9 @@ internal object LLCfirPhaseUpdater {
             is CfirFunction -> {
                 element.valueParameters.forEach { updatePhaseForNonLocals(it, newPhase, isTargetDeclaration = false) }
             }
+            is org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor -> {
+                element.valueParameters.forEach { updatePhaseForNonLocals(it, newPhase, isTargetDeclaration = false) }
+            }
             is CfirProperty -> {
                 element.getter?.let { updatePhaseForNonLocals(it, newPhase, isTargetDeclaration = false) }
                 element.setter?.let { updatePhaseForNonLocals(it, newPhase, isTargetDeclaration = false) }
@@ -144,6 +150,10 @@ private object LocalElementPhaseUpdatingTransformer : CfirVisitorVoid() {
      * 更新当前 [element] 的解析状态后继续访问其子节点。
      */
     override fun visitElement(element: CfirElement) {
+        if (element is CfirPatternBindingVariable) {
+            // local phase 发布在完整 completion 后执行，Deferred 不能被误标为 BODY_RESOLVE。
+            org.cangnova.cangjie.analysis.low.level.api.cfir.util.checkReturnTypeRefIsResolved(element)
+        }
         if (element is CfirElementWithResolveState) {
             @OptIn(ResolveStateAccess::class)
             element.resolveState = CfirResolvePhase.BODY_RESOLVE.asResolveState()

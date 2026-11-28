@@ -10,6 +10,8 @@ dependencies {
     api("com.jetbrains.intellij.platform:util:$intellijVersion") { isTransitive = false }
     api("com.jetbrains.intellij.platform:util-base:$intellijVersion") { isTransitive = false }
     api("com.jetbrains.intellij.platform:util-xml-dom:$intellijVersion") { isTransitive = false }
+    // 平台公共 API 的状态类型包含 org.jdom.Element，调用方编译需要同版本 JDOM。
+    api("com.jetbrains.intellij.platform:util-jdom:$intellijVersion") { isTransitive = false }
     // 253 起插件 XML 解析模型拆分到独立的 plugins-parser-impl。
     // analysis-api-impl-base 的 headless 插件装配需要直接访问其中的 RawPluginDescriptor /
     // PluginDescriptorReaderContext / PluginDescriptorBuilder 等类型。

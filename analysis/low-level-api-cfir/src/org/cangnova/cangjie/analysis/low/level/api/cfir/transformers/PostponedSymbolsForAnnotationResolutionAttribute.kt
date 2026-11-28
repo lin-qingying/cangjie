@@ -14,7 +14,9 @@ import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
 /**
  * 存储注解延迟解析符号集合的声明数据键。
  */
-private object PostponedSymbolsForAnnotationResolutionKey : CfirDeclarationDataKey()
+private object PostponedSymbolsForAnnotationResolutionKey : CfirDeclarationDataKey() {
+    override val rawCopyPolicy get() = org.cangnova.cangjie.cfir.CfirRawDeclarationDataPolicies.forbidden<Collection<CfirBasedSymbol<*>>>("annotation lazy-resolution prerequisite queue")
+}
 
 /**
  * 记录当前 callable 在注解参数阶段之前必须先解析的外部符号集合。

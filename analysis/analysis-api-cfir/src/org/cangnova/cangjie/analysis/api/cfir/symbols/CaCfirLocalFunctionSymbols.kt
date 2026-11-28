@@ -1,5 +1,7 @@
 package org.cangnova.cangjie.analysis.api.cfir.symbols
 
+import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.llCfirModuleData
+
 import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.api.annotations.CaAnnotationList
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
@@ -70,10 +72,10 @@ internal class CaCfirAnonymousFunctionSymbol private constructor(
         get() = super<CaCfirCjBasedSymbol>.cfirSymbol
 
     /**
-     * 匿名函数所在的 use-site 模块。
+     * 匿名函数实际声明所属的模块。
      */
     override val containingModule: CaModule
-        get() = analysisSession.useSiteModule
+        get() = withValidityAssertion { cfirSymbol.llCfirModuleData.caModule }
 
     /**
      * 匿名函数 CFIR member 状态。
@@ -269,10 +271,10 @@ internal class CaCfirFinalizerSymbol private constructor(
         get() = super<CaCfirCjBasedSymbol>.cfirSymbol
 
     /**
-     * finalizer 所在的 use-site 模块。
+     * finalizer 实际声明所属的模块。
      */
     override val containingModule: CaModule
-        get() = analysisSession.useSiteModule
+        get() = withValidityAssertion { cfirSymbol.llCfirModuleData.caModule }
 
     /**
      * finalizer CFIR member 状态。

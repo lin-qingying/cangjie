@@ -24,6 +24,8 @@
 
 package org.cangnova.cangjie.analysis.api.cfir.symbols
 
+import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.llCfirModuleData
+
 import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.api.annotations.CaAnnotationList
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
@@ -105,10 +107,10 @@ internal sealed interface CaCfirBasePropertyAccessorSymbol :
         get() = owningCfirProperty.analysisSession
 
     /**
-     * 访问器所在的 use-site 模块。
+     * 访问器实际声明所属的模块。
      */
     override val containingModule: CaModule
-        get() = analysisSession.useSiteModule
+        get() = withValidityAssertion { cfirSymbol.llCfirModuleData.caModule }
 
     /**
      * 访问器 CFIR member 状态。

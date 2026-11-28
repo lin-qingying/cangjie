@@ -39,20 +39,16 @@ import java.util.regex.Pattern
 fun createDefaultCfirSessionFactoryContext(
     configuration: CompilerConfiguration,
 ): CfirDefaultSessionFactory.Context {
-    val classpath = configuration.classpathRoots.map { it.path }.filter { it.isNotBlank() }
+    val classpath = configuration.classpathRoots.map { File(it.path).absoluteFile.normalize() }
     // CJMP specific 编译：common part cjo 所在目录并入库搜索路径（按包头索引即可定位与当前包同名的
     // common part）；其模块归属由 depends-on 依赖的精确路径过滤决定（见 CLI buildSessions）
     val commonPartRoots = configuration.cjmpCommonPartCjoPaths
-        .mapNotNull { File(it).absoluteFile.parentFile?.path }
+        .mapNotNull { File(it).absoluteFile.normalize().parentFile }
         .distinct()
     val librarySearchRoots = (classpath + commonPartRoots).distinct()
     val cjoManager = CjoManager(
-        CjoSearchPath { key ->
-            when (key) {
-                "CANGJIE_LIBRARY" -> librarySearchRoots.takeIf { it.isNotEmpty() }?.joinToString(File.pathSeparator)
-                else -> System.getenv(key)
-            }
-        }
+        // 搜索与依赖 owner 来自同一配置；进程环境不能额外扩大 manager 的二进制可见范围。
+        CjoSearchPath.forRoots(builtinsRoots = emptyList(), libraryRoots = librarySearchRoots)
     )
     val apiLevelProvider = createCfirApiLevelProvider(configuration)
     return CfirDefaultSessionFactory.Context(

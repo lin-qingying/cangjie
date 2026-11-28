@@ -95,9 +95,6 @@ internal object RawCfirNonLocalDeclarationBuilder {
             else -> CfirElementFinder.findDeclaration(
                 cfirFile = rebuiltFile,
                 nonLocalDeclaration = declaration,
-                containerClassIds = designation.path
-                    .filterIsInstance<CfirClassLikeDeclaration>()
-                    .map { classLike -> classLike.symbol.classId },
             )
         }
 

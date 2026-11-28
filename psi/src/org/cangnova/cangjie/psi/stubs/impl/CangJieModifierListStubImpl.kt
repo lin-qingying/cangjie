@@ -25,6 +25,7 @@ package org.cangnova.cangjie.psi.stubs.impl
 
 import org.cangnova.cangjie.lexer.CjKeywordToken
 import org.cangnova.cangjie.psi.CjDeclarationModifierList
+import org.cangnova.cangjie.psi.stubs.CangJieCompiledDeclarationMetadata
 import org.cangnova.cangjie.psi.stubs.CangJieModifierListStub
 import org.cangnova.cangjie.psi.stubs.elements.CjModifierListElementType
 import org.cangnova.cangjie.psi.stubs.impl.ModifierMaskUtils.maskHasModifier
@@ -34,7 +35,12 @@ import com.intellij.psi.stubs.StubElement
 /**
  * 表示 `CangJieModifierListStubImpl`，承载PSI Stub中的语法节点、索引桩或辅助模型。
  */
-class CangJieModifierListStubImpl(parent: StubElement<*>?, @JvmField val mask: Long, elementType: CjModifierListElementType<*>) :
+class CangJieModifierListStubImpl(
+    parent: StubElement<*>?,
+    @JvmField val mask: Long,
+    elementType: CjModifierListElementType<*>,
+    override val compiledDeclarationMetadata: CangJieCompiledDeclarationMetadata? = null,
+) :
     CangJieStubBaseImpl<CjDeclarationModifierList>(parent, elementType), CangJieModifierListStub {
     /**
      * 实现 `hasModifier` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
@@ -57,5 +63,6 @@ class CangJieModifierListStubImpl(parent: StubElement<*>?, @JvmField val mask: L
         parent = newParent,
         mask = mask,
         elementType = stubType as CjModifierListElementType<*>,
+        compiledDeclarationMetadata = compiledDeclarationMetadata,
     )
 }

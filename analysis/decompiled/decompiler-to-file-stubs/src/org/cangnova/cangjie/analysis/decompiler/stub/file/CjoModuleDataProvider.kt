@@ -21,8 +21,25 @@ import org.cangnova.cangjie.cfir.common.CfirModuleData
 interface CjoModuleDataProvider {
     /**
      * 返回指定 `.cjo` 二进制文件所属的 CFIR module data。
+     * 同文件、同 metadata generation 必须与 getPackageContext 的 owner/binding 一致；
+     * detached owner 同样由原 producer 缓存，不能为两个读取接口分别构造。
      */
     fun getModuleData(binaryFile: VirtualFile): CfirModuleData
+
+    /** actual-file 内容、来源、owner、原 metadata binding 在同一次读取中确定。 */
+    fun getPackageContext(
+        binaryFile: VirtualFile,
+        content: ByteArray,
+        mode: org.cangnova.cangjie.cfir.serialization.deserialize.CjoDeserializationMode,
+    ): org.cangnova.cangjie.cfir.serialization.deserialize.CfirDeserializationContext
+
+    /** 调用方已确定实际 binary module/group 时保留该身份；来源仍必须属于该模块。 */
+    fun getPackageContext(
+        binaryFile: VirtualFile,
+        content: ByteArray,
+        mode: org.cangnova.cangjie.cfir.serialization.deserialize.CjoDeserializationMode,
+        ownerModule: org.cangnova.cangjie.analysis.api.projectStructure.CaModule,
+    ): org.cangnova.cangjie.cfir.serialization.deserialize.CfirDeserializationContext
 
     companion object {
         /**

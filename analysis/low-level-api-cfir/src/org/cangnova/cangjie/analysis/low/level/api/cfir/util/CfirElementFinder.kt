@@ -62,67 +62,14 @@ internal class CfirElementFinder : CfirSessionComponent {
             expectedDeclarationAcceptor = { it == targetMemberDeclaration },
         )
 
-        /**
-         * 在 [cfirFile] 中查找 [nonLocalDeclaration] 对应的 CFIR 声明。
-         *
-         * 宏展开输出可能复制 PSI，使 PSI 身份与物理 carrier 不再一致。结构路径失败时，
-         * 仅对**非局部命名函数**增加一个受限回退：同名、非 local、且 owner class 必须属于
-         * 目标 designation 的 class 链。回退仍不唯一时返回 `null`，继续由调用方显式失败。
-         */
+        /** 在当前 CFIR 声明树中按真实 PSI 身份定位；宏输出只能通过正式 source alias 映射恢复。 */
         fun findDeclaration(
             cfirFile: CfirFile,
             nonLocalDeclaration: CjDeclaration,
-            containerClassIds: List<ClassId> = emptyList(),
-        ): CfirDeclaration? {
-            collectDesignationPath(
-                cfirFile = cfirFile,
-                nonLocalDeclaration = nonLocalDeclaration,
-            )?.declarationTarget?.let { return it }
-            if (nonLocalDeclaration !is CjNamedFunction) return null
-            // extend 成员没有可比较的 class-like 容器，禁止唯一同名回退，避免跨 extend 错配。
-            if (nonLocalDeclaration.findExtendDeclarationIn(cfirFile) != null) return null
-            val name = CfirFileStructureNode.mappingNameByPsi(nonLocalDeclaration) ?: return null
-            val classIds = containerClassIds.ifEmpty {
-                val targetClassId = nonLocalDeclaration.containingTypeStatement?.let { typeStatement ->
-                    typeStatement.nameAsName?.let { className ->
-                        ClassId(typeStatement.containingCjFile.packageFqName, className)
-                    }
-                }
-                listOfNotNull(targetClassId)
-            }
-            return findUniqueNonLocalFunction(cfirFile, name, classIds)
-        }
-
-        /**
-         * 返回指定 owner class 链下唯一的同名非局部函数；歧义时返回 `null`。
-         */
-        private fun findUniqueNonLocalFunction(
-            cfirFile: CfirFile,
-            name: Name,
-            containerClassIds: List<ClassId>,
-        ): CfirNamedFunction? {
-            val candidates = mutableListOf<CfirNamedFunction>()
-            cfirFile.accept(object : CfirVisitorVoid() {
-                override fun visitElement(element: CfirElement) {
-                    if (element is CfirNamedFunction && element.name == name && !element.isLocal) {
-                        candidates += element
-                    }
-                    element.acceptChildren(this)
-                }
-            })
-            val scoped = candidates.filter { function ->
-                val ownerClassId = function.containingClassLookupTag()?.classId
-                if (containerClassIds.isEmpty()) {
-                    ownerClassId == null
-                } else {
-                    // 只接受直接 owner（designation 链的最后一个 class-like），避免把祖先类
-                    // 的同名方法当成内层类目标。ClassId 目前只表达顶层类，嵌套类由 CFIR
-                    // 结构本身约束；无法表达时宁可显式失败，不做跨类猜测。
-                    ownerClassId == containerClassIds.last()
-                }
-            }
-            return scoped.singleOrNull()
-        }
+        ): CfirDeclaration? = collectDesignationPath(
+            cfirFile = cfirFile,
+            nonLocalDeclaration = nonLocalDeclaration,
+        )?.declarationTarget
 
         /**
          * 遍历完整 CFIR 文件，按源码 PSI 等价关系查找模式变量。
@@ -158,7 +105,7 @@ internal class CfirElementFinder : CfirSessionComponent {
             containerClassId = nonLocalDeclaration.containingClassLikeIn()?.getClassId(),
             additionalPathPrefix = nonLocalDeclaration.findExtendDeclarationIn(cfirFile)?.let(::listOf).orEmpty(),
             targetDeclarationName = CfirFileStructureNode.mappingNameByPsi(nonLocalDeclaration),
-            expectedDeclarationAcceptor = { it.psi == nonLocalDeclaration },
+            expectedDeclarationAcceptor = { it.psi === nonLocalDeclaration },
         )
 
         /**
@@ -517,7 +464,7 @@ private sealed class CfirFileStructureNode(val element: CfirDeclaration) {
             is CjConstructor<*> -> SpecialNames.INIT
             is CjCodeFragment -> SpecialNames.NO_NAME_PROVIDED
 
-            is CjTypeStatement, is CjTypeAlias, is CjNamedFunction, is CjProperty -> declaration.nameAsSafeName
+            is CjTypeStatement, is CjTypeAlias, is CjNamedFunction, is CjProperty, is CjFieldVariable -> declaration.nameAsSafeName
             else -> null
         }
     }

@@ -35,7 +35,7 @@ class CfirEnumConstructorImpl @CfirImplementationDetail constructor(
     override var dispatchReceiverType: ConeSimpleCangJieType?,
     override val symbol: CfirEnumConstructorSymbol,
     override var status: CfirDeclarationStatus,
-    override val typeParameters: MutableList<CfirTypeParameter>,
+    override val typeParameters: MutableList<CfirTypeParameterRef>,
     override var returnTypeRef: CfirTypeRef,
     override val valueParameters: MutableList<CfirValueParameter>,
     override val name: Name,

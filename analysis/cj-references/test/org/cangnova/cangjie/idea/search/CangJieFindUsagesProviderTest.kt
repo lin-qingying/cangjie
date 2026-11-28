@@ -3,6 +3,8 @@ package org.cangnova.cangjie.idea.search
 import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.analysis.api.standalone.cfir.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
+import org.cangnova.cangjie.analysis.test.framework.services.expressionMarkerProvider
+import org.cangnova.cangjie.psi.CangJieReferenceProvidersService
 import org.cangnova.cangjie.psi.CjBindingPattern
 import org.cangnova.cangjie.psi.CjConstantExpression
 import org.cangnova.cangjie.psi.CjExtend
@@ -13,9 +15,13 @@ import org.cangnova.cangjie.psi.CjParameter
 import org.cangnova.cangjie.psi.CjProperty
 import org.cangnova.cangjie.psi.CjTypeParameter
 import org.cangnova.cangjie.psi.CjTypeStatement
+import org.cangnova.cangjie.psi.CjTypePattern
+import org.cangnova.cangjie.psi.CjVarOrEnumPattern
+import org.cangnova.cangjie.test.services.TestServices
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -70,5 +76,31 @@ class CangJieFindUsagesProviderTest : AbstractAnalysisApiExecutionTest(
 
         val literal = PsiTreeUtil.findChildrenOfType(mainFile, CjConstantExpression::class.java).first()
         assertFalse(provider.canFindUsagesFor(literal))
+    }
+
+    /** 可搜索性必须消费正式语义分类：裸构造器和通配类型模式都没有变量声明身份。 */
+    @Test
+    fun patternSearchabilityUsesCanonicalSemantics(mainFile: CjFile, testServices: TestServices) {
+        val provider = CangJieFindUsagesProvider()
+        val semanticProvider = CangJieReferenceProvidersService.getInstance(mainFile.project)
+        assertEquals(
+            "org.cangnova.cangjie.analysis.references.CangJieReferenceProvidersServiceImpl",
+            semanticProvider::class.java.name,
+            "该测试必须装配正式语义 provider，不能使用仅按 PSI 形状分类的测试替身",
+        )
+        val markers = testServices.expressionMarkerProvider
+        val constructor = markers.getBottommostElementOfTypeAtCaret<CjVarOrEnumPattern>(mainFile, "constructor")
+        val wildcard = markers.getBottommostElementOfTypeAtCaret<CjTypePattern>(mainFile, "wildcard")
+        val bareBinder = markers.getBottommostElementOfTypeAtCaret<CjVarOrEnumPattern>(mainFile, "bareBinder")
+        val typedBinder = markers.getBottommostElementOfTypeAtCaret<CjTypePattern>(mainFile, "typedBinder")
+
+        assertSame(bareBinder, semanticProvider.getNamedDeclarationTarget(bareBinder))
+        assertSame(typedBinder, semanticProvider.getNamedDeclarationTarget(typedBinder))
+        assertTrue(provider.canFindUsagesFor(bareBinder), "裸模式决议为绑定时必须可搜索")
+        assertTrue(provider.canFindUsagesFor(typedBinder), "具名类型模式必须可搜索")
+        assertNull(semanticProvider.getNamedDeclarationTarget(constructor), "Ready 是枚举构造器引用")
+        assertNull(semanticProvider.getNamedDeclarationTarget(wildcard), "_: Int64 不引入变量")
+        assertFalse(provider.canFindUsagesFor(constructor), "构造器模式不能作为 binder 搜索目标")
+        assertFalse(provider.canFindUsagesFor(wildcard), "通配类型模式不能作为 binder 搜索目标")
     }
 }

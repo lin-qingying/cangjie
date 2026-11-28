@@ -367,6 +367,7 @@ internal class Cfir2ChirFileConverter(
             semanticId = Cfir2ChirIds.declarationId(symbol),
             name = when (this) {
                 is CfirFieldVariable -> name.asString()
+                is org.cangnova.cangjie.cfir.declarations.CfirResourceVariable -> name.asString()
                 is org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable -> name.asString()
                 is org.cangnova.cangjie.cfir.declarations.CfirPatternVariable -> pattern::class.simpleName ?: "<pattern>"
                 is CfirValueParameter -> symbol.name.asString()

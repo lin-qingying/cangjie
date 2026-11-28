@@ -26,19 +26,11 @@ package org.cangnova.cangjie.cfir.serialization.deserialize
 
 import PackageFormat.*
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
-import org.cangnova.cangjie.cfir.MutableOrEmptyList
-import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAttributes
-import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
-import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
-import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
-import org.cangnova.cangjie.cfir.declarations.impl.CfirTypeParameterImpl
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagImpl
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.cfir.types.*
-import org.cangnova.cangjie.cfir.types.impl.CfirResolvedTypeRefImpl
-import org.cangnova.cangjie.name.Name
 
 /** 构造最小 Cone 诊断对象，用于反序列化无法恢复类型时保留错误原因。 */
 private fun simpleDiagnostic(reason: String): ConeDiagnostic = object : ConeDiagnostic {
@@ -58,8 +50,10 @@ private fun errorType(reason: String, delegatedType: ConeCangJieType? = null): C
 @OptIn(CfirImplementationDetail::class)
 class CfirTypeDeserializer(
     /** 当前 `.cjo` 包的反序列化上下文与共享缓存。 */
-    private val context: CfirDeserializationContext,
+    context: CfirDeserializationContext,
 ) {
+    private val context = context.canonical()
+
     /** 当前调用栈正在反序列化的 `allTypes` 索引集合，用于检测递归类型引用。 */
     private val typesUnderDeserialization = HashSet<Int>()
 
@@ -68,26 +62,23 @@ class CfirTypeDeserializer(
      *
      * 该入口负责缓存复用、并发锁定与递归引用降级；真正的类型 kind 分派在 [convertSemaTy] 中完成。
      */
-    fun deserializeType(typeIndex: Int): ConeCangJieType {
-        context.typeCache[typeIndex]?.let { return it }
-        val lock = context.typeMaterializationLock(typeIndex)
-        synchronized(lock) {
-            context.typeCache[typeIndex]?.let { return it }
-            if (!typesUnderDeserialization.add(typeIndex)) {
-                return createRecursiveTypeFallback(typeIndex)
-            }
-
+    fun deserializeType(typeIndex: Int): ConeCangJieType = context.materialization.read {
+        // 冷类型与声明共用 metadata 事务；缓存命中也必须等待 owner、约束和跨模块 postCompute 完成。
+        context.typeCache[typeIndex]?.let { return@read it }
+        if (!typesUnderDeserialization.add(typeIndex)) return@read recursiveTypeReference(typeIndex)
+        try {
+            // FlatBuffers 缺失向量或越界抛错也属于本次读取，任何失败退出都必须清除递归守卫。
             val semaTy = context.pkg.allTypes(typeIndex)
-                ?: return errorType("Cannot read type index $typeIndex")
-
-            return try {
-                val result = convertSemaTy(semaTy)
-                context.typeCache.putIfAbsent(typeIndex, result)
-                context.typeCache[typeIndex] ?: result
-            } finally {
-                typesUnderDeserialization.remove(typeIndex)
-                context.releaseTypeMaterializationLock(typeIndex, lock)
-            }
+                ?: return@read errorType("Cannot read type index $typeIndex")
+            val result = convertSemaTy(semaTy)
+            context.typeCache.putIfAbsent(typeIndex, result)
+            context.materialization.onCompletion(
+                publish = {},
+                fail = { context.typeCache.remove(typeIndex, result) },
+            )
+            context.typeCache[typeIndex] ?: result
+        } finally {
+            typesUnderDeserialization.remove(typeIndex)
         }
     }
 
@@ -240,25 +231,19 @@ class CfirTypeDeserializer(
         return ConePointerType(pointeeType = pointeeType)
     }
 
-    /**
-     * 反序列化泛型类型参数引用。
-     *
-     * 当前包类型参数必须复用声明缓存中的 symbol；跨包或尚未 materialized 的类型参数才创建 synthetic symbol。
-     */
+    /** GenericTyInfo.declPtr 是真实 GenericParamDecl 身份；普通和 F-bound 重入共用此入口。 */
     private fun convertGenericType(semaTy: SemaTy): ConeCangJieType {
+        if (semaTy.infoType != SemaTyInfo.GenericTyInfo) return errorType("Generic has the wrong info union")
         val info = semaTy.info(GenericTyInfo()) as? GenericTyInfo
             ?: return errorType("Generic missing GenericTyInfo")
-        val fullId = info.declPtr
-            ?: return errorType("GenericTyInfo missing declPtr")
-        resolveCurrentPackageTypeParameter(fullId)?.let { symbol ->
-            return ConeTypeParameterTypeImpl(symbol.toLookupTag())
+        val fullId = info.declPtr ?: return errorType("GenericTyInfo missing declPtr")
+        val resolved = context.fullIdResolver.resolve(fullId)
+        if (resolved !is ResolvedFullId.Declaration || resolved.declaration.decl.kind != DeclKind.GenericParamDecl) {
+            return errorType("GenericTyInfo target is not a GenericParamDecl: $resolved")
         }
-        val name = context.fullIdResolver.resolveDeclarationName(fullId)
-            ?: return errorType("Cannot resolve generic parameter FullId: ${context.fullIdResolver.describe(fullId)}")
-        val upperBounds = (0 until info.upperBoundsLength).map {
-            deserializeTypeFromField(info.upperBounds(it))
-        }
-        return ConeTypeParameterTypeImpl(createSyntheticTypeParameterSymbol(name, upperBounds).toLookupTag())
+        val symbol = context.fullIdResolver.resolveSymbol(resolved)
+        check(symbol is CfirTypeParameterSymbol && symbol.isBound) { "GenericParamDecl wire record has the wrong symbol family" }
+        return ConeTypeParameterTypeImpl(symbol.toLookupTag())
     }
 
     /**
@@ -308,93 +293,13 @@ class CfirTypeDeserializer(
     private fun materializedTypeAliasOrNull(fullId: FullId): CfirTypeAlias? {
         val resolved = context.fullIdResolver.resolve(fullId) as? ResolvedFullId.Declaration ?: return null
         if (resolved.source != ResolvedFullId.Declaration.Source.CURRENT_PACKAGE) return null
-        return context.declCache[resolved.declaration.zeroBasedIndex] as? CfirTypeAlias
+        return context.headerRecordOrNull(resolved.declaration.zeroBasedIndex)?.declarationRoot as? CfirTypeAlias
     }
 
-    /**
-     * CJO `GenericTyInfo.declPtr` 指向真实的 `GenericParamDecl`。
-     * 当声明反序列化已物化该类型参数时，类型引用必须复用同一个 symbol，
-     * 否则函数/enum constructor 签名中的 `T` 无法被调用候选的 fresh substitutor 命中。
-     */
-    private fun resolveMaterializedTypeParameterSymbol(fullId: FullId): CfirTypeParameterSymbol? {
-        val resolved = context.fullIdResolver.resolve(fullId) as? ResolvedFullId.Declaration ?: return null
-        if (resolved.source != ResolvedFullId.Declaration.Source.CURRENT_PACKAGE) return null
-        val declaration = context.declCache[resolved.declaration.zeroBasedIndex] as? CfirTypeParameter
-            ?: return null
-        return declaration.symbol
-    }
-
-    /**
-     * 为递归类型引用创建可继续传播的 fallback 类型。
-     *
-     * 泛型参数递归优先恢复类型参数 symbol，其他递归形态退化为带原因的错误类型。
-     */
-    private fun createRecursiveTypeFallback(typeIndex: Int): ConeCangJieType {
-        val semaTy = context.pkg.allTypes(typeIndex)
-            ?: return errorType("Recursive type reference: $typeIndex")
-        if (semaTy.kind == TypeKind.Generic) {
-            val info = semaTy.info(GenericTyInfo()) as? GenericTyInfo
-            val fullId = info?.declPtr
-            val symbol = fullId?.let(::resolveCurrentPackageTypeParameter)
-            if (symbol != null) {
-                return ConeTypeParameterTypeImpl(symbol.toLookupTag())
-            }
-            if (fullId != null) {
-                val name = context.fullIdResolver.resolveDeclarationName(fullId)
-                    ?: return errorType("Cannot resolve generic parameter FullId: ${context.fullIdResolver.describe(fullId)}")
-                return ConeTypeParameterTypeImpl(createSyntheticTypeParameterSymbol(name, emptyList()).toLookupTag())
-            }
-        }
-        return errorType("Recursive type reference: $typeIndex")
-    }
-
-    /**
-     * 对齐 Kotlin FIR 反序列化：GenericTy 必须回指声明列表中的类型参数符号。
-     *
-     * fresh type variable substitutor 以声明符号为身份；如果这里临时创建同名
-     * synthetic symbol，`println<T>(value: T)` 这类库函数的形参类型就无法替换成
-     * 调用候选的新鲜类型变量。
-     */
-    private fun resolveCurrentPackageTypeParameter(fullId: FullId): org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol? {
-        val resolved = context.fullIdResolver.resolve(fullId) as? ResolvedFullId.Declaration ?: return null
-        if (resolved.source != ResolvedFullId.Declaration.Source.CURRENT_PACKAGE) return null
-        val declaration = context.declCache[resolved.declaration.zeroBasedIndex] as? CfirTypeParameter ?: return null
-        return declaration.symbol
-    }
-
-    /**
-     * 为无法直接复用声明缓存的泛型参数创建 synthetic symbol。
-     *
-     * 该 symbol 会立即绑定一个最小 [CfirTypeParameter] 声明，使 Cone lookup tag 可被后续类型系统使用。
-     */
-    private fun createSyntheticTypeParameterSymbol(
-        name: Name,
-        upperBounds: List<ConeCangJieType>,
-    ): CfirTypeParameterSymbol {
-        val symbol = CfirTypeParameterSymbol()
-        val boundRefs = upperBounds.mapTo(mutableListOf<CfirTypeRef>()) { upperBound ->
-            CfirResolvedTypeRefImpl(
-                source = null,
-                annotations = MutableOrEmptyList.empty(),
-                customRenderer = false,
-                coneType = upperBound,
-                delegatedTypeRef = null,
-            )
-        }
-        val declaration = CfirTypeParameterImpl(
-            source = null,
-            moduleData = context.moduleData,
-            resolvePhase = CfirResolvePhase.BODY_RESOLVE,
-            annotations = MutableOrEmptyList.empty(),
-            origin = CfirDeclarationOrigin.Library,
-            attributes = CfirDeclarationAttributes.EMPTY,
-            containingDeclarationSymbol = symbol,
-            symbol = symbol,
-            name = name,
-            bounds = boundRefs,
-        )
-        symbol.bind(declaration)
-        return symbol
+    /** Generic F-bound 重入返回同一 bound record；其他真正的类型环保留结构化错误。 */
+    private fun recursiveTypeReference(typeIndex: Int): ConeCangJieType {
+        val semaTy = context.pkg.allTypes(typeIndex) ?: return errorType("Recursive type reference: $typeIndex")
+        return if (semaTy.kind == TypeKind.Generic) convertGenericType(semaTy)
+        else errorType("Recursive type reference: $typeIndex")
     }
 }
-

@@ -9,10 +9,14 @@ import org.cangnova.cangjie.cfir.declarations.CfirDeclarationDataRegistry
 /**
  * 变量常量求值结果在声明属性表中的键。
  */
-private object EvaluatedValue : CfirDeclarationDataKey()
+private object EvaluatedValue : CfirDeclarationDataKey() {
+    override val rawCopyPolicy get() = org.cangnova.cangjie.cfir.CfirRawDeclarationDataPolicies.evaluatedInitializer
+}
 
 /** 已编译变量中是否保留了可读取的 initializer 表达式。 */
-private object SerializedInitializerAvailability : CfirDeclarationDataKey()
+private object SerializedInitializerAvailability : CfirDeclarationDataKey() {
+    override val rawCopyPolicy get() = org.cangnova.cangjie.cfir.CfirRawDeclarationDataPolicies.boolean
+}
 
 /**
  * 变量初始化表达式的常量求值结果。

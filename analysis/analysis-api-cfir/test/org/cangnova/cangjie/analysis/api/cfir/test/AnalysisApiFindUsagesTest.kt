@@ -10,19 +10,23 @@ import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.Processor
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.cjTestModuleStructure
+import org.cangnova.cangjie.analysis.test.framework.services.expressionMarkerProvider
 import org.cangnova.cangjie.analysis.api.standalone.cfir.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
 import org.cangnova.cangjie.idea.search.CangJieReferencesSearchExecutor
 import org.cangnova.cangjie.idea.search.CjGeneratedReference
 import org.cangnova.cangjie.idea.search.CjGeneratedReferenceSearchProvider
+import org.cangnova.cangjie.psi.CangJieResolveResult
 import org.cangnova.cangjie.psi.CjBindingPattern
 import org.cangnova.cangjie.psi.CjExtend
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjImportAlias
 import org.cangnova.cangjie.psi.CjMacroExpression
 import org.cangnova.cangjie.psi.CjNamedFunction
+import org.cangnova.cangjie.psi.CjSimpleNameExpression
 import org.cangnova.cangjie.psi.psiUtil.getStrictParentOfType
 import org.cangnova.cangjie.test.services.TestServices
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -79,7 +83,7 @@ class AnalysisApiFindUsagesTest : AbstractAnalysisApiExecutionTest(
                     project: com.intellij.openapi.project.Project,
                     scope: com.intellij.psi.search.SearchScope,
                     consumer: Processor<in CjGeneratedReference>,
-                ): Boolean = consumer.process(CjGeneratedReference(physicalReference, macroCall))
+                ): Boolean = consumer.process(CjGeneratedReference(physicalReference, macroCall, CangJieResolveResult(declaration)))
             },
         )
 
@@ -141,6 +145,30 @@ class AnalysisApiFindUsagesTest : AbstractAnalysisApiExecutionTest(
         val references = findUsages(bindingPattern)
         assertEquals(2, references.size, "pattern binding usages 数量不正确")
         assertReferencesStayInsideLocalScope(bindingPattern, references)
+    }
+
+    /** 全局 tuple 叶子必须按规范 PSI 搜索原名及全部别名，并排除被局部绑定遮盖的同名用法。 */
+    @Test
+    fun globalPatternLeafWithMultipleAliases(mainFile: CjFile, testServices: TestServices) {
+        val providerFile = testServices.cjTestModuleStructure.allCjFiles.single { it.name == "provider.cj" }
+        val markers = testServices.expressionMarkerProvider
+        val target = markers.getBottommostElementOfTypeAtCaret<CjBindingPattern>(providerFile, "target")
+        val expected = listOf(
+            "firstImport", "secondImport", "originalImport", "firstUse", "secondUse", "originalUse",
+        ).map { markers.getBottommostElementOfTypeAtCaret<CjSimpleNameExpression>(mainFile, it) } +
+            markers.getBottommostElementOfTypeAtCaret<CjSimpleNameExpression>(providerFile, "providerUse")
+
+        val references = findUsages(target)
+        assertEquals(expected.size, references.size, "全局叶子的原名、两个别名及导入引用必须完整且不重复")
+        assertEquals(
+            expected.map { it.containingFile.name to it.textRange }.toSet(),
+            references.map { it.element.containingFile.name to it.rangeInElement.shiftRight(it.element.textRange.startOffset) }.toSet(),
+            "结果必须精确匹配标记位置，不能包含 sibling、声明名称或局部同名引用",
+        )
+        references.forEach { reference ->
+            assertTrue(reference.isReferenceTo(target), "每个搜索结果都必须指向全局叶子")
+            assertSame(target, reference.resolve(), "所有别名必须保持同一个规范叶子 PSI 身份")
+        }
     }
 
     /**

@@ -374,6 +374,8 @@ object PluginStructureProvider {
         // 没有 environment 时 configurator 不触发任何构造，因此可以安全地在 headless 容器装配。
         "org.cangnova.cangjie.llCfirSessionConfigurator",
         "org.cangnova.cangjie.macroExpansionEnvironment",
+        // 与现有 CJO XML 的 binary-stub dispatcher 同步装配，平台 CoreStubTreeLoader 消费此 EP。
+        "com.intellij.filetype.stubBuilder",
         "com.intellij.filetype.decompiler",
         "com.intellij.fileType.fileViewProviderFactory",
         "com.intellij.referencesSearch",

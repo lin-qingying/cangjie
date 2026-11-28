@@ -168,8 +168,16 @@ abstract class CjAbstractClassBody :
      * 暴露 `declarations`，实现仓颉 PSI节点对上层接口的属性契约。
      */
     override val declarations: List<CjDeclaration>
-        get() = stub?.getChildrenByType(CjTokenSets.CLASS_MEMBER_DECLARATION_TYPES, CjDeclaration.ARRAY_FACTORY)?.toList()
-            ?: PsiTreeUtil.getChildrenOfTypeAsList(this, CjDeclaration::class.java)
+        get() {
+            val bodyChildren = greenStub?.childrenStubs?.map { it.psi } ?: children.asList()
+            return bodyChildren.mapNotNull { child ->
+                when (child) {
+                    is CjMacroExpression -> child.unwrappedDeclaration
+                    is CjDeclaration -> child
+                    else -> null
+                }
+            }
+        }
 
     /**
      * 保存 `rBrace`，供仓颉 PSI流程读取节点结构或语义信息。

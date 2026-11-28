@@ -28,12 +28,17 @@ class CjoSearchPath(
 ) {
     /** 标准库 `.cjo` 搜索根目录，来自宿主显式根或 `CANGJIE_STDLIB_MODULE`。 */
     private val stdlibSearchPaths: List<File> by lazy {
-        (explicitStdlibSearchPaths ?: readPaths("CANGJIE_STDLIB_MODULE")).filter(File::isDirectory)
+        (explicitStdlibSearchPaths ?: readPaths("CANGJIE_STDLIB_MODULE"))
+            .filter { it.isDirectory || it.isFile && it.extension.equals("cjo", ignoreCase = true) }
     }
-    /** 普通库 `.cjo` 搜索根目录，来自环境变量及当前 binary library 模块。 */
+    /** 显式模块根可为目录或单个 CJO 文件；单文件 owner 不认领相邻包，仍优先于 SDK。 */
+    private val ownLibrarySearchPaths: List<File> = additionalLibrarySearchPaths
+        .map { it.absoluteFile.normalize() }
+        .filter { it.isDirectory || it.isFile && it.extension.equals("cjo", ignoreCase = true) }
+        .distinct()
+    /** 普通库环境搜索根；未指定模块根时保留原有 stdlib/library 顺序。 */
     private val librarySearchPaths: List<File> by lazy {
-        (readPaths("CANGJIE_LIBRARY") + additionalLibrarySearchPaths.filter(File::isDirectory))
-            .distinctBy(File::getAbsolutePath)
+        readPaths("CANGJIE_LIBRARY").distinctBy(File::getAbsolutePath)
     }
 
     /** 每个根目录按包头 fullPkgName 建出的索引缓存。 */
@@ -65,16 +70,18 @@ class CjoSearchPath(
         ): CjoSearchPath = CjoSearchPath(
             additionalLibrarySearchPaths = libraryRoots.distinctBy(File::getAbsolutePath),
             explicitStdlibSearchPaths = builtinsRoots.distinctBy(File::getAbsolutePath),
+            envProvider = { null },
         )
     }
 
-    /** 根据包名选择搜索根目录；标准库包优先查标准库路径。 */
+    /** 先使用显式模块根；环境查询中的标准库包仍优先查标准库路径。 */
     private fun searchPathsFor(fullPkgName: String): List<File> {
-        return if (isStdlibPackage(fullPkgName)) {
+        val environmentPaths = if (isStdlibPackage(fullPkgName)) {
             stdlibSearchPaths + librarySearchPaths
         } else {
             librarySearchPaths
         }
+        return (ownLibrarySearchPaths + environmentPaths).distinctBy(File::getAbsolutePath)
     }
 
     /** 判断完整包名是否属于 `std` 标准库命名空间。 */
@@ -92,18 +99,13 @@ class CjoSearchPath(
         if (fullPkgName in missingPackages) return null
 
         val searchPaths = searchPathsFor(fullPkgName)
+        val relativePath = CjoConstants.packageNameToPath(fullPkgName)
 
         for (dir in searchPaths) {
-            val indexed = indexDirectoryByHeader(dir)[fullPkgName] ?: continue
-            resolvedByPackage.putIfAbsent(fullPkgName, indexed)
-            missingPackages.remove(fullPkgName)
-            return resolvedByPackage[fullPkgName] ?: indexed
-        }
-
-        val legacyRelativePath = CjoConstants.packageNameToPath(fullPkgName)
-        for (dir in searchPaths) {
-            val candidate = File(dir, legacyRelativePath)
-            if (!candidate.isFile) continue
+            // 每个 root 内完成 header 与标准路径定位后再进入下一 root，不能由低优先级索引越过当前资源。
+            val candidate = indexDirectoryByHeader(dir)[fullPkgName]
+                ?: dir.takeIf(File::isDirectory)?.let { File(it, relativePath).takeIf(File::isFile) }
+                ?: continue
             resolvedByPackage.putIfAbsent(fullPkgName, candidate)
             missingPackages.remove(fullPkgName)
             return resolvedByPackage[fullPkgName] ?: candidate
@@ -116,7 +118,7 @@ class CjoSearchPath(
     /** 枚举当前搜索根目录与解析缓存中已知的包名。 */
     fun getAvailablePackageNames(): Set<String> {
         return buildSet {
-            for (root in stdlibSearchPaths + librarySearchPaths) {
+            for (root in ownLibrarySearchPaths + stdlibSearchPaths + librarySearchPaths) {
                 addAll(indexDirectoryByHeader(root).keys)
             }
             addAll(resolvedByPackage.keys)
@@ -130,6 +132,11 @@ class CjoSearchPath(
      */
     private fun indexDirectoryByHeader(root: File): Map<String, File> {
         return directoryIndexCache.getOrPut(root) {
+            if (root.isFile) {
+                // 实际文件已由初始 owner 限定；named 索引只能指向该文件，不能再次搜索父目录。
+                val name = readPackageNameFromHeader(root) ?: return@getOrPut emptyMap()
+                return@getOrPut mapOf(name to root)
+            }
             if (!root.isDirectory) return@getOrPut emptyMap()
 
             val files = root.walkTopDown()

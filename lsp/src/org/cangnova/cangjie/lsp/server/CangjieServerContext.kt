@@ -243,31 +243,32 @@ class CangjieServerContext(
         if (!enabledFeatures.diagnostics) return
 
         synchronized(macroDiagnosticPublicationLock) {
-            val reports = requestExecutor.compute(CangjieLspRequest.WORKSPACE_DIAGNOSTIC) {
-                withDiagnosticCollection {
+            requestExecutor.compute(CangjieLspRequest.WORKSPACE_DIAGNOSTIC) {
+                // 诊断批次、URI 分类、发布和发布状态在同一个 worker 顺序单元内完成。
+                val reports = withDiagnosticCollection {
                     republishOpenDiagnosticsOnCurrentThread()
                     collectWorkspaceDiagnostics()
                 }
+                val openUris = documentStore.all().mapTo(hashSetOf()) { it.uri }
+                val currentDiagnostics = reports.mapNotNull { report ->
+                    if (!report.isWorkspaceFullDocumentDiagnosticReport) return@mapNotNull null
+                    val fullReport = report.workspaceFullDocumentDiagnosticReport
+                    if (fullReport.uri in openUris) return@mapNotNull null
+
+                    val macroDiagnostics = fullReport.items.filter { diagnostic ->
+                        diagnostic.severity == org.eclipse.lsp4j.DiagnosticSeverity.Error &&
+                            diagnostic.isMacroConstructionDiagnostic()
+                    }
+                    macroDiagnostics.takeIf { it.isNotEmpty() }?.let { fullReport.uri to it }
+                }.toMap()
+
+                val staleUris = (publishedMacroDiagnosticUris - currentDiagnostics.keys - openUris).toList()
+                staleUris.forEach { uri -> publishDiagnostics(uri, emptyList()) }
+                currentDiagnostics.forEach { (uri, diagnostics) -> publishDiagnostics(uri, diagnostics) }
+
+                publishedMacroDiagnosticUris.clear()
+                publishedMacroDiagnosticUris.addAll(currentDiagnostics.keys)
             }.join()
-            val openUris = documentStore.all().mapTo(hashSetOf()) { it.uri }
-            val currentDiagnostics = reports.mapNotNull { report ->
-                if (!report.isWorkspaceFullDocumentDiagnosticReport) return@mapNotNull null
-                val fullReport = report.workspaceFullDocumentDiagnosticReport
-                if (fullReport.uri in openUris) return@mapNotNull null
-
-                val macroDiagnostics = fullReport.items.filter { diagnostic ->
-                    diagnostic.severity == org.eclipse.lsp4j.DiagnosticSeverity.Error &&
-                        diagnostic.isMacroConstructionDiagnostic()
-                }
-                macroDiagnostics.takeIf { it.isNotEmpty() }?.let { fullReport.uri to it }
-            }.toMap()
-
-            val staleUris = (publishedMacroDiagnosticUris - currentDiagnostics.keys - openUris).toList()
-            staleUris.forEach { uri -> publishDiagnostics(uri, emptyList()) }
-            currentDiagnostics.forEach { (uri, diagnostics) -> publishDiagnostics(uri, diagnostics) }
-
-            publishedMacroDiagnosticUris.clear()
-            publishedMacroDiagnosticUris.addAll(currentDiagnostics.keys)
         }
     }
 

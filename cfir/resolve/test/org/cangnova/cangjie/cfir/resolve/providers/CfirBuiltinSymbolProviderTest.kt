@@ -66,8 +66,8 @@ class CfirBuiltinSymbolProviderTest {
      */
     @Test
     fun `builtin provider exposes primitive types as class-like symbols`() {
-        val (session, _) = newSession()
-        val provider = CfirBuiltinSymbolProvider(session)
+        val (session, moduleData) = newSession()
+        val provider = CfirBuiltinSymbolProvider(session, moduleData)
         val primitiveClassId = ClassId(StandardNames.BASIC_PACKAGE_FQ_NAME, Name.identifier("Int64"))
 
         val symbol = provider.getClassLikeSymbolByClassId(primitiveClassId) as? CfirPrimitiveTypeSymbol
@@ -87,8 +87,8 @@ class CfirBuiltinSymbolProviderTest {
      */
     @Test
     fun `builtin provider exposes official std core declarations`() {
-        val (session, _) = newSession()
-        val provider = CfirBuiltinSymbolProvider(session)
+        val (session, moduleData) = newSession()
+        val provider = CfirBuiltinSymbolProvider(session, moduleData)
 
         CfirBuiltInTypeKind.entries.forEach { kind ->
             val symbol = provider.getClassLikeSymbolByClassId(kind.classId) as? CfirBuiltInTypeSymbol
@@ -116,8 +116,8 @@ class CfirBuiltinSymbolProviderTest {
      */
     @Test
     fun `builtin provider exposes parent package namespace from package index`() {
-        val (session, _) = newSession()
-        val provider = CfirBuiltinSymbolProvider(session)
+        val (session, moduleData) = newSession()
+        val provider = CfirBuiltinSymbolProvider(session, moduleData)
 
         assertFalse(provider.hasPackage(FqName("std")))
         assertTrue(provider.hasPackageOrSubpackages(FqName("std")))
@@ -129,8 +129,8 @@ class CfirBuiltinSymbolProviderTest {
      */
     @Test
     fun `builtin pointer type parameter has CType upper bound`() {
-        val (session, _) = newSession()
-        val provider = CfirBuiltinSymbolProvider(session)
+        val (session, moduleData) = newSession()
+        val provider = CfirBuiltinSymbolProvider(session, moduleData)
         val pointer = checkNotNull(
             provider.getClassLikeSymbolByClassId(StdlibClassIds.CPointer) as? CfirBuiltInTypeSymbol,
         ).cfir
@@ -159,8 +159,8 @@ class CfirBuiltinSymbolProviderTest {
      */
     @Test
     fun `primitive symbol exposes builtin operator members`() {
-        val (session, _) = newSession()
-        val provider = CfirBuiltinSymbolProvider(session)
+        val (session, moduleData) = newSession()
+        val provider = CfirBuiltinSymbolProvider(session, moduleData)
         val primitiveClassId = ClassId(StandardNames.BASIC_PACKAGE_FQ_NAME, Name.identifier("Int64"))
         val symbol = provider.getClassLikeSymbolByClassId(primitiveClassId) ?: error("missing builtin Int64 symbol")
         val scope = CfirClassDeclaredMemberScope(symbol)

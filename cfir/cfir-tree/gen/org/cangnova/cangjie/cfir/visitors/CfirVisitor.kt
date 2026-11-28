@@ -140,6 +140,9 @@ abstract class CfirVisitor<out R, in D> {
     open fun visitFieldVariable(fieldVariable: CfirFieldVariable, data: D): R =
         visitElement(fieldVariable, data)
 
+    open fun visitResourceVariable(resourceVariable: CfirResourceVariable, data: D): R =
+        visitElement(resourceVariable, data)
+
     open fun visitPatternVariable(patternVariable: CfirPatternVariable, data: D): R =
         visitElement(patternVariable, data)
 
@@ -151,6 +154,9 @@ abstract class CfirVisitor<out R, in D> {
 
     open fun visitTypeParameter(typeParameter: CfirTypeParameter, data: D): R =
         visitElement(typeParameter, data)
+
+    open fun visitConstructedClassTypeParameterRef(constructedClassTypeParameterRef: CfirConstructedClassTypeParameterRef, data: D): R =
+        visitElement(constructedClassTypeParameterRef, data)
 
     open fun visitDeclarationStatus(declarationStatus: CfirDeclarationStatus, data: D): R =
         visitElement(declarationStatus, data)

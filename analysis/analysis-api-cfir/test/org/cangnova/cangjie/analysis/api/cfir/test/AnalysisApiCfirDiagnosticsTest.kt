@@ -4,6 +4,7 @@ import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.analysis.api.components.CaDiagnosticCheckerFilter
 import org.cangnova.cangjie.analysis.api.diagnostics.CaDiagnosticWithPsi
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
+import org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics.DiagnosticCollectionFailures
 import org.cangnova.cangjie.analysis.api.standalone.cfir.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjNamedFunction
@@ -165,6 +166,35 @@ class AnalysisApiCfirDiagnosticsTest : AbstractAnalysisApiExecutionTest(
             },
             "interface 成员签名中的外层类型参数 `T` 不应在 Analysis API 懒解析链路上退化成 UNRESOLVED_REFERENCE: " +
                 diagnostics.joinToString { diagnostic -> "${diagnostic.factoryName}@${diagnostic.psi.text}" },
+        )
+    }
+
+    /**
+     * Array 形参按仓颉普通变参规则逐元素接收实参；常量 0x00 应使用元素类型 Byte 定型。
+     * 同一 fixture 也守住实现接口的子类型赋给接口属性这一赋值规则。
+     */
+    @Test
+    fun subtypeAssignmentAndArrayVarargByteArgument(mainFile: CjFile) {
+        DiagnosticCollectionFailures.clear()
+        val diagnostics = analyzeForTest(mainFile) {
+            mainFile.collectDiagnostics(CaDiagnosticCheckerFilter.EXTENDED_AND_COMMON_CHECKERS)
+        }
+        val failures = DiagnosticCollectionFailures.drain()
+        val errors = diagnostics.filter { diagnostic -> diagnostic.severity.name == "ERROR" }
+
+        assertTrue(
+            failures.isEmpty(),
+            "诊断收集不能通过隔离异常丢失标准库类型错误：" +
+                failures.joinToString("\n") { failure -> failure.stackTraceToString() },
+        )
+        assertTrue(
+            errors.isEmpty(),
+            "官方编译器接受的接口子类型赋值和 Array 变参调用不应产生错误诊断：" +
+                errors.joinToString { diagnostic ->
+                    diagnostic.factoryName + "@" + diagnostic.textRanges.map { range ->
+                        mainFile.text.substring(range.startOffset, range.endOffset)
+                    }
+                },
         )
     }
 

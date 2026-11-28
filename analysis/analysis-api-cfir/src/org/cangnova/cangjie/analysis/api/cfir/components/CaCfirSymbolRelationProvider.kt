@@ -3,6 +3,8 @@ package org.cangnova.cangjie.analysis.api.cfir.components
 import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirSymbol
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirPatternBindingSymbol
+import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirTypeParameterSymbol
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirValueParameterSymbol
 import org.cangnova.cangjie.analysis.api.cfir.symbols.publicSymbolCacheKeyOrNull
@@ -90,6 +92,12 @@ internal class CaCfirSymbolRelationProvider(
      */
     override val CaSymbol.containingDeclaration: CaDeclarationSymbol?
         get() = withValidityAssertion {
+            if (this@containingDeclaration is CaCfirPatternBindingSymbol) {
+                val owner = cfirSymbol.cfir.patternTreeOwner as? CfirPatternVariable
+                if (owner != null) {
+                    return@withValidityAssertion analysisSession.cfirSymbolBuilder.buildSymbol(owner.symbol) as CaDeclarationSymbol
+                }
+            }
             if (!hasParentSymbol(this@containingDeclaration)) {
                 return@withValidityAssertion null
             }

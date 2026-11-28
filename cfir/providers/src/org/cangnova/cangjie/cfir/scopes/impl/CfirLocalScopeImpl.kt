@@ -5,6 +5,7 @@ import kotlinx.collections.immutable.persistentMapOf
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
+import org.cangnova.cangjie.cfir.declarations.CfirResourceVariable
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
 import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
@@ -126,6 +127,7 @@ class CfirLocalScope private constructor(
     fun storeVariable(variable: CfirVariable, session: CfirSession): CfirLocalScope {
         val name = when (variable) {
             is CfirFieldVariable -> variable.name
+            is CfirResourceVariable -> variable.name
             is CfirPatternBindingVariable -> variable.name
             // PatternVariable 本身不直接入作用域，
             // 它内部的 PatternBindingVariable 才是真正的绑定名

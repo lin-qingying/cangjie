@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.lsp.analysis
 
+import com.intellij.openapi.application.ReadAction
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.lang.CangJieFileType
 import org.cangnova.cangjie.lsp.state.LspTextDocument
@@ -35,16 +36,16 @@ internal class AnalysisApiPsiDocumentFactory(
      *
      * 同一版本的文档会复用已有 PSI，避免语义查询再额外制造一次性快照。
      */
-    fun upsertSnapshot(document: LspTextDocument): CjFile {
+    fun upsertSnapshot(document: LspTextDocument): CjFile = ReadAction.compute<CjFile, RuntimeException> {
         projectStructureState.openDocumentSnapshot(document.uri)?.let { snapshot ->
             if (snapshot.document.version == document.version && snapshot.document.text == document.text) {
-                return snapshot.psiFile
+                return@compute snapshot.psiFile
             }
         }
 
         val psiFile = createPsiFile(document)
         projectStructureState.upsertOpenDocumentSnapshot(document, psiFile)
-        return psiFile
+        psiFile
     }
 
     /**

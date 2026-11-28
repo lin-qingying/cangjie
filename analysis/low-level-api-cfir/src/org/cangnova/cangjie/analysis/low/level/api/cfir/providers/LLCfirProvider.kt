@@ -3,7 +3,6 @@
 package org.cangnova.cangjie.analysis.low.level.api.cfir.providers
 
 import com.intellij.psi.search.GlobalSearchScope
-import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.analysis.api.CaPlatformInterface
 import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirModuleResolveComponents
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
@@ -12,14 +11,12 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLCangJi
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLCangJieSymbolProvider
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLEmptyCangJieSymbolProvider
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLModuleSpecificSymbolProviderAccess
-import org.cangnova.cangjie.analysis.low.level.api.cfir.util.CfirElementFinder
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.LLContainingClassCalculator
 import org.cangnova.cangjie.cfir.ThreadSafeMutableState
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.cfir.expressions.withCfirSymbolEntry
-import org.cangnova.cangjie.cfir.psi
 import org.cangnova.cangjie.cfir.resolve.providers.*
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
@@ -28,9 +25,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirPatternBindingSymbol
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
-import org.cangnova.cangjie.psi.CjBindingPattern
 import org.cangnova.cangjie.psi.CjClassLikeDeclaration
-import org.cangnova.cangjie.psi.CjPatternVariable
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 
 /**
@@ -129,18 +124,10 @@ internal class LLCfirProvider(
     }
 
     /**
-     * 通过绑定模式 PSI 与模块文件结构恢复所属 pattern variable。
-     *
-     * standalone/IDE 源码 provider 不预建主编译器的声明 owner 表，因此 LL 层从共享 CFIR 文件树中
-     * 按 PSI 身份查找 owner。遍历完整树同时覆盖顶层与函数体内的局部 pattern 声明。
+     * 从模式树的唯一反向关系取得声明宿主，保留源码、宏及复制树的节点身份。
      */
     override fun getCfirPatternVariableForBinding(symbol: CfirPatternBindingSymbol): CfirPatternVariable? {
-        val bindingPsi = symbol.cfir.psi as? CjBindingPattern ?: return null
-        val file = getCfirCallableContainerFile(symbol) ?: return null
-        val ownerPsi = PsiTreeUtil.getParentOfType(bindingPsi, CjPatternVariable::class.java, false) ?: return null
-        return CfirElementFinder.findElementIn<CfirPatternVariable>(file) { patternVariable ->
-            patternVariable.psi === ownerPsi
-        }
+        return symbol.cfir.patternTreeOwner as? CfirPatternVariable
     }
 
     /**

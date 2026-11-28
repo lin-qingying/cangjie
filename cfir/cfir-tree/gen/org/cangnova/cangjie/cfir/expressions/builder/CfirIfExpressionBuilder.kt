@@ -16,6 +16,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirIfExpression
 import org.cangnova.cangjie.cfir.expressions.impl.CfirIfExpressionImpl
+import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.source.CjSourceElement
 
@@ -24,6 +25,7 @@ class CfirIfExpressionBuilder {
     var source: CjSourceElement? = null
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
     var coneTypeOrNull: ConeCangJieType? = null
+    var calleeReference: CfirReference = org.cangnova.cangjie.cfir.references.CfirStubReference
     lateinit var condition: CfirExpression
     lateinit var thenBranch: CfirBlock
     var elseBranch: CfirExpression? = null
@@ -34,6 +36,7 @@ class CfirIfExpressionBuilder {
             source,
             annotations.toMutableOrEmpty(),
             coneTypeOrNull,
+            calleeReference,
             condition,
             thenBranch,
             elseBranch,
@@ -59,6 +62,7 @@ inline fun buildIfExpressionCopy(original: CfirIfExpression, init: CfirIfExpress
     copyBuilder.source = original.source
     copyBuilder.annotations.addAll(original.annotations)
     copyBuilder.coneTypeOrNull = original.coneTypeOrNull
+    copyBuilder.calleeReference = original.calleeReference
     copyBuilder.condition = original.condition
     copyBuilder.thenBranch = original.thenBranch
     copyBuilder.elseBranch = original.elseBranch

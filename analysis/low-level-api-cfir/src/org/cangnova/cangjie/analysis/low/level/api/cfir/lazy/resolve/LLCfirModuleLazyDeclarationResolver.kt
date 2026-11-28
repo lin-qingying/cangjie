@@ -10,9 +10,13 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.transformers.LLCfirLazyR
 import org.cangnova.cangjie.analysis.low.level.api.cfir.transformers.PartialBodyAnalysisSuspendedException
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.LLFlightRecorder
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.checkCanceled
+import org.cangnova.cangjie.analysis.low.level.api.cfir.util.checkPhase
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.getContainingFile
+import org.cangnova.cangjie.analysis.low.level.api.cfir.element.builder.getNonLocalContainingOrThisDeclaration
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.checkAnalysisReadiness
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
+import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.psi
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.diagnosticReporter
@@ -43,10 +47,49 @@ internal class LLCfirModuleLazyDeclarationResolver(val moduleComponents: LLCfirM
      * Resolution is performed under the lock specific to each declaration that is going to be resolved.
      */
     fun lazyResolve(target: CfirElementWithResolveState, toPhase: CfirResolvePhase) {
+        // Kotlin designation 的参数/访问器 owner 规则必须早于 readiness 短路。
+        // 不提升请求阶段；TYPES 只解析签名，IMPLICIT_TYPES 仍遵守真实声明的推断协议。
+        val owner = LLCfirResolveDesignationCollector.getResolveOwner(target) ?: return
+        if (owner !== target) {
+            // 与 Kotlin 相同，阶段校验归实际 designation 的 resolver runner。
+            // 正文私有副本可能没有 LL designation；其签名仍由 callable 的 resolved type-ref 校验。
+            lazyResolve(owner, toPhase)
+            return
+        }
         if (
             checkAnalysisReadiness(target, containingDeclarations = null, toPhase) &&
             target.hasImportBindingsForContainingFile()
         ) {
+            return
+        }
+
+        val expressionHost: CfirElement? = when {
+            target is CfirPatternBindingVariable && target.isLocal ->
+                checkNotNull(target.patternTreeOwner as? CfirElement) { "Local pattern binding has no host" }
+            target is org.cangnova.cangjie.cfir.declarations.CfirResourceVariable -> target
+            else -> null
+        }
+        if (expressionHost != null && toPhase >= CfirResolvePhase.IMPLICIT_TYPES) {
+            // 外部 leaf 查询才提升宿主；正文内部的返回类型计算继续当前推断，不重入正文。
+            val host = expressionHost
+            val snapshot = moduleComponents.macroSemanticSnapshotStore.snapshot
+            if (snapshot != null) {
+                // 快照的宏树与 raw 缓存是不同解析单元，必须在当前语义文件中推进原 target。
+                val semanticFile = checkNotNull(snapshot.containerFile(target as CfirDeclaration))
+                lazyResolveRecursively(semanticFile, CfirResolvePhase.BODY_RESOLVE)
+            } else {
+                val sourceFile = checkNotNull(host.psi?.containingFile as? org.cangnova.cangjie.psi.CjFile)
+                val cfirFile = moduleComponents.cfirFileBuilder.buildRawCfirFileWithCaching(sourceFile)
+                val container = if (sourceFile is org.cangnova.cangjie.psi.CjCodeFragment) {
+                    cfirFile.declarations.filterIsInstance<CfirCodeFragment>().single()
+                } else {
+                    val containerPsi = checkNotNull(host.psi?.getNonLocalContainingOrThisDeclaration())
+                    checkNotNull(org.cangnova.cangjie.analysis.low.level.api.cfir.util.CfirElementFinder.findDeclaration(cfirFile, containerPsi))
+                }
+                lazyResolve(container, CfirResolvePhase.BODY_RESOLVE)
+            }
+            org.cangnova.cangjie.analysis.low.level.api.cfir.util.checkReturnTypeRefIsResolved(target as org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration)
+            target.checkPhase(toPhase)
             return
         }
 

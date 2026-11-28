@@ -62,6 +62,7 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
             CfirConstVariableInitializerChecker,
             CfirCFuncVariableInitializerChecker,
             CfirVariableLambdaInitializerTypeMismatchChecker,
+            CfirVariableInitializerTypeMismatchChecker,
             CfirVArrayExtraChecker,
             CfirDeprecatedDeclarationChecker,
             org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirJavaInteropTypePropagationChecker,
@@ -130,7 +131,6 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
     /** 对字段变量初始化和 `this`/`super` 使用规则执行的 checker 集合。 */
     override val fieldVariableCheckers: Set<CfirFieldVariableChecker>
         get() = setOf(
-            CfirFieldVariableInitializerTypeMismatchChecker,
             CfirFieldVariableThisOrSuperInitializerChecker,
         )
 

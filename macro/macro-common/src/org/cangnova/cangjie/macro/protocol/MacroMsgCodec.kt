@@ -328,15 +328,23 @@ object MacroMsgCodec {
      * delimiterNum 恢复字面量，再按 CJC 的相邻 token 空格规则拼接，不能从 token
      * value 猜测语法类别。协议不携带原始单/双引号选择，因此字符串使用双引号规范化。
      */
-    fun rebuildExpandedText(tokens: List<TokenInfo>): String {
-        if (tokens.isEmpty()) return ""
-        return buildString {
-            tokens.forEachIndexed { index, token ->
-                append(tokenToSource(token))
-                val next = tokens.getOrNull(index + 1) ?: return@forEachIndexed
-                if (needsSpaceBetween(token.kind, next.kind)) append(' ')
-            }
+    /** 一次重建同时输出文本和逐 token span，分隔空格不冒充原 token 的坐标。 */
+    data class ExpandedTokenSpan(val tokenIndex: Int, val startOffset: Int, val endOffset: Int)
+    data class ExpandedText(val text: String, val spans: List<ExpandedTokenSpan>)
+
+    fun rebuildExpandedText(tokens: List<TokenInfo>): String = rebuildExpandedTextWithSpans(tokens).text
+
+    fun rebuildExpandedTextWithSpans(tokens: List<TokenInfo>): ExpandedText {
+        val text = StringBuilder()
+        val spans = ArrayList<ExpandedTokenSpan>(tokens.size)
+        tokens.forEachIndexed { index, token ->
+            val start = text.length
+            text.append(tokenToSource(token))
+            spans += ExpandedTokenSpan(index, start, text.length)
+            val next = tokens.getOrNull(index + 1)
+            if (next != null && needsSpaceBetween(token.kind, next.kind)) text.append(' ')
         }
+        return ExpandedText(text.toString(), spans)
     }
 
     private val noSpaceAfterKinds = setOf(

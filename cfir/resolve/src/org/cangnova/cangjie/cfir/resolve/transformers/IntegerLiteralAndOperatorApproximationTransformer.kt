@@ -9,6 +9,7 @@ import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeIdealLiteralType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.IdealTypeResolver
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 
 /**
@@ -43,9 +44,10 @@ class IntegerLiteralAndOperatorApproximationTransformer(
 
     /** 根据期望类型把 ideal literal 或 primitive ideal 类型近似为具体类型。 */
     private fun ConeCangJieType.approximateIntegerLiteralType(expectedType: ConeCangJieType?): ConeCangJieType {
+        val expandedExpectedType = expectedType?.fullyExpandedType(session)
         return when (this) {
-            is ConeIdealLiteralType -> expectedType ?: getApproximatedType()
-            is ConePrimitiveType -> IdealTypeResolver.resolveIfIdeal(this, expectedType)
+            is ConeIdealLiteralType -> getApproximatedType(expandedExpectedType)
+            is ConePrimitiveType -> IdealTypeResolver.resolveIfIdeal(this, expandedExpectedType)
             else -> this
         }
     }

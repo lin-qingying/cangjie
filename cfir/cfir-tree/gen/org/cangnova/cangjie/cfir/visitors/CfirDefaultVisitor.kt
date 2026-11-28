@@ -90,11 +90,17 @@ abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
     override fun visitFieldVariable(fieldVariable: CfirFieldVariable, data: D): R =
         visitVariable(fieldVariable, data)
 
+    override fun visitResourceVariable(resourceVariable: CfirResourceVariable, data: D): R =
+        visitVariable(resourceVariable, data)
+
     override fun visitPatternVariable(patternVariable: CfirPatternVariable, data: D): R =
         visitVariable(patternVariable, data)
 
     override fun visitPatternBindingVariable(patternBindingVariable: CfirPatternBindingVariable, data: D): R =
         visitVariable(patternBindingVariable, data)
+
+    override fun visitConstructedClassTypeParameterRef(constructedClassTypeParameterRef: CfirConstructedClassTypeParameterRef, data: D): R =
+        visitTypeParameterRef(constructedClassTypeParameterRef, data)
 
     override fun visitExpression(expression: CfirExpression, data: D): R =
         visitStatement(expression, data)
@@ -162,12 +168,6 @@ abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
     override fun visitLetPatternExpression(letPatternExpression: CfirLetPatternExpression, data: D): R =
         visitExpression(letPatternExpression, data)
 
-    override fun visitIfExpression(ifExpression: CfirIfExpression, data: D): R =
-        visitExpression(ifExpression, data)
-
-    override fun visitMatchExpression(matchExpression: CfirMatchExpression, data: D): R =
-        visitExpression(matchExpression, data)
-
     override fun visitOrPattern(orPattern: CfirOrPattern, data: D): R =
         visitPattern(orPattern, data)
 
@@ -185,9 +185,6 @@ abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
 
     override fun visitForInExpression(forInExpression: CfirForInExpression, data: D): R =
         visitLoopExpression(forInExpression, data)
-
-    override fun visitTryExpression(tryExpression: CfirTryExpression, data: D): R =
-        visitExpression(tryExpression, data)
 
     override fun visitThrowExpression(throwExpression: CfirThrowExpression, data: D): R =
         visitExpression(throwExpression, data)

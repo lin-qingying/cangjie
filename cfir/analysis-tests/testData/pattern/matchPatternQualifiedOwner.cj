@@ -26,6 +26,10 @@ enum Slot<T> {
     | Used(T)
 }
 
+enum FixedFirstEnum<First, Second> {
+    | Both(First, Second)
+}
+
 enum Box {
     | Wrap(Shape)
     | Empty
@@ -38,6 +42,8 @@ type SlotAlias<T> = Slot<T>
 type IntSlot = Slot<Int64>
 
 type StringSlot = Slot<String>
+
+type FixedFirstAlias<T> = FixedFirstEnum<Int64, T>
 
 type Opt<T> = Option<T>
 
@@ -126,6 +132,13 @@ func ownerTypeArgumentsDiffer(slot: Slot<Int64>): Int64 {
 func ownerAliasTypeArgumentsDiffer(slot: Slot<Int64>): Int64 {
     match (slot) {
         case <!PATTERN_NOT_MATCH!>StringSlot.Free<!> => 0
+        case _ => 1
+    }
+}
+
+func ownerPartiallyInstantiatedAliasArgumentsDiffer(value: FixedFirstEnum<String, Int64>): Int64 {
+    match (value) {
+        case <!PATTERN_NOT_MATCH!>FixedFirstAlias.Both(first, second)<!> => 0
         case _ => 1
     }
 }

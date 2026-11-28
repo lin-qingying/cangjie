@@ -6,6 +6,8 @@ import com.intellij.util.io.StringRef
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 import org.cangnova.cangjie.cfir.expressions.builtInDescriptor
+import org.cangnova.cangjie.cfir.types.coneType
+import org.cangnova.cangjie.cfir.patterns.bindingVariables
 import org.cangnova.cangjie.annotations.CangjieAnnotationIdentity
 import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
 import org.cangnova.cangjie.annotations.BuiltInAnnotationRegistry
@@ -21,6 +23,10 @@ import org.cangnova.cangjie.psi.CjDotQualifiedExpression
 import org.cangnova.cangjie.psi.CjImportList
 import org.cangnova.cangjie.psi.CjTypeParameterList
 import org.cangnova.cangjie.psi.stubs.CangJieFileStubKind
+import org.cangnova.cangjie.psi.stubs.CangJieCompiledDeclarationMetadata
+import org.cangnova.cangjie.psi.stubs.CangJieCompiledSetterParameter
+import org.cangnova.cangjie.psi.stubs.CangJieCompiledDeclarationStatus
+import org.cangnova.cangjie.psi.stubs.CangJieCompiledDeclarationStatus.Flag
 import org.cangnova.cangjie.psi.stubs.CangJieImportDirectiveStub
 import org.cangnova.cangjie.psi.stubs.ImportPathStubData
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
@@ -147,12 +153,12 @@ private fun createNameReferenceStub(parent: StubElement<*>, name: Name) {
 /**
  * 源码 parser 会为声明级节点稳定生成空注解列表和空 modifier list。
  *
- * `.cjo` binary stub 也必须保留这一层级，否则 `CjDecompiledFile.calcStubTree()`
+ * `.cjo` binary stub 也必须保留这一层级及显式传入的声明状态，否则 `CjDecompiledFile.calcStubTree()`
  * 会在 binary stub 与 decompiled text AST stub 之间发生结构不一致。
  */
 internal fun createEmptyDeclarationHeaderStubs(
     parent: StubElement<*>,
-    modifierMask: Long = 0,
+    modifierMask: Long,
     declaration: CfirDeclaration,
 ) {
     val annotationsStub = CangJiePlaceHolderStubImpl<CjAnnotations>(parent, CjStubElementTypes.ANNOTATIONS)
@@ -214,8 +220,61 @@ internal fun createEmptyDeclarationHeaderStubs(
         )
         createAnnotationChildrenStubs(annotationStub, descriptor.sourceName, emptyList())
     }
-    CangJieModifierListStubImpl(parent, modifierMask, CjStubElementTypes.MODIFIER_LIST)
+    // global wire VarDecl 的语义状态属于唯一 named leaf；容器只投影声明结构。
+    val status = when (declaration) {
+        is CfirPatternVariable -> declaration.pattern.bindingVariables().single().status
+        is CfirMemberDeclaration -> declaration.status
+        else -> error("CJO declaration header requires a member declaration: ${declaration::class}")
+    }
+    val property = declaration as? CfirProperty
+    val metadata = CangJieCompiledDeclarationMetadata(
+        status = status.toCompiledStatus(),
+        getterStatus = (declaration as? CfirProperty)?.getter?.status?.toCompiledStatus(),
+        setterStatus = (declaration as? CfirProperty)?.setter?.status?.toCompiledStatus(),
+        declarationIndex = if (declaration is CfirProperty) checkNotNull(declaration.cjoDeclarationIndex)
+            { "CJO property is missing its binary declaration index" } else declaration.cjoDeclarationIndex,
+        setterParameter = property?.let { prop -> prop.setter?.valueParameters?.single()?.let { parameter ->
+            check(parameter.returnTypeRef.coneType == prop.returnTypeRef.coneType)
+                { "CJO setter parameter type disagrees with its property signature" }
+            CangJieCompiledSetterParameter(parameter.name.asString(), parameter.name.isSpecial, parameter.isNamed,
+                parameter.defaultValue != null, parameter.status.toCompiledStatus())
+        } },
+    )
+    CangJieModifierListStubImpl(parent, modifierMask, CjStubElementTypes.MODIFIER_LIST, metadata)
 }
+
+/** 保留 CJO reader 的全部状态事实，不以展示 token、body 占位或声明名字重新推导。 */
+private fun CfirDeclarationStatus.toCompiledStatus(): CangJieCompiledDeclarationStatus =
+    CangJieCompiledDeclarationStatus(
+        visibility = visibility,
+        modality = checkNotNull(modality) { "CJO declaration has no effective modality" },
+        visibilityExplicitness = CangJieCompiledDeclarationStatus.Explicitness.valueOf(visibilityExplicitness.name),
+        modalityExplicitness = CangJieCompiledDeclarationStatus.Explicitness.valueOf(modalityExplicitness.name),
+        bodyPresence = CangJieCompiledDeclarationStatus.BodyPresence.valueOf(bodyPresence.name),
+        flags = buildSet {
+            if (isDeclarationFile) add(Flag.DECLARATION_FILE)
+            if (isVisibilityExplicit) add(Flag.VISIBILITY_EXPLICIT)
+            if (isModalityExplicit) add(Flag.MODALITY_EXPLICIT)
+            if (isAbstractExplicit) add(Flag.ABSTRACT_EXPLICIT)
+            if (isOverride) add(Flag.OVERRIDE)
+            if (isOperator) add(Flag.OPERATOR)
+            if (isStatic) add(Flag.STATIC)
+            if (isConst) add(Flag.CONST)
+            if (isMut) add(Flag.MUT)
+            if (isUnsafe) add(Flag.UNSAFE)
+            if (isForeign) add(Flag.FOREIGN)
+            if (isC) add(Flag.C)
+            if (isCommon) add(Flag.COMMON)
+            if (isFromCommonPart) add(Flag.FROM_COMMON_PART)
+            if (isSpecific) add(Flag.SPECIFIC)
+            if (isCommonWithDefault) add(Flag.COMMON_WITH_DEFAULT)
+            if (isRedef) add(Flag.REDEF)
+            if (isDefault) add(Flag.DEFAULT)
+            if (isAbstract) add(Flag.ABSTRACT)
+            if (isOpen) add(Flag.OPEN)
+            if (isSealed) add(Flag.SEALED)
+        },
+    )
 
 /**
  * `.cjo` 声明 stub 必须物化源码 PSI 同构的类型参数列表。
@@ -279,10 +338,53 @@ internal fun createDeclarationModifierMask(
             }
         },
         hasAdditionalModifier = { keyword ->
-            keyword == CjTokens.FOREIGN_KEYWORD && status.isForeign
+            when (keyword) {
+                CjTokens.FOREIGN_KEYWORD -> status.isForeign
+                CjTokens.CONST_KEYWORD -> declaration is CfirNamedFunction && status.isConst
+                else -> false
+            }
         },
     )
 }
+
+/**
+ * 构造器只投影其语法允许的修饰符。
+ *
+ * 官方 static init 隐含 private，但 STATIC 与访问修饰符互斥；主构造器没有 static/CJMP 修饰符。
+ * const 是函数和构造器修饰符，在追加编码位中保存，不改变既有掩码位序。
+ */
+internal fun createConstructorModifierMask(
+    declaration: CfirCallableDeclaration,
+    isPrimary: Boolean,
+): Long {
+    val status = declaration.status
+    return ModifierMaskUtils.computeMask(
+        hasModifier = { modifier ->
+            when (modifier) {
+                CjTokens.STATIC_KEYWORD -> !isPrimary && status.isStatic
+                CjTokens.PUBLIC_KEYWORD -> !status.isStatic && status.visibility == Visibilities.Public
+                CjTokens.PRIVATE_KEYWORD -> !status.isStatic && status.visibility == Visibilities.Private
+                CjTokens.PROTECTED_KEYWORD -> !status.isStatic && status.visibility == Visibilities.Protected
+                CjTokens.INTERNAL_KEYWORD -> !status.isStatic && status.visibility == Visibilities.Internal
+                CjTokens.COMMON_KEYWORD -> !isPrimary && status.isCommon
+                CjTokens.SPECIFIC_KEYWORD -> !isPrimary && status.isSpecific
+                else -> false
+            }
+        },
+        hasAdditionalModifier = { keyword -> keyword == CjTokens.CONST_KEYWORD && status.isConst },
+    )
+}
+
+/** extend 本身没有访问修饰符；CJMP 的 common/specific 是其独立的合法声明身份。 */
+internal fun createExtendModifierMask(declaration: CfirExtend): Long = ModifierMaskUtils.computeMask(
+    hasModifier = { modifier ->
+        when (modifier) {
+            CjTokens.COMMON_KEYWORD -> declaration.status.isCommon
+            CjTokens.SPECIFIC_KEYWORD -> declaration.status.isSpecific
+            else -> false
+        }
+    },
+)
 
 /** CJMP 与 JavaMirror 抽象类的成员需要 abstract 修饰符才能在重解析时保留抽象性。 */
 private fun CjoStubBuilderContext?.requiresAbstractModifier(status: CfirDeclarationStatus): Boolean {
@@ -362,6 +464,8 @@ internal fun createDeclarationStub(
         is CfirProperty -> createPropertyStub(parent, declaration, context)
         is CfirFieldVariable -> createFieldStub(parent, declaration, context)
         is CfirPatternVariable -> createPatternVariableStub(parent, declaration, context)
+        is org.cangnova.cangjie.cfir.declarations.CfirResourceVariable ->
+            error("Resource variables belong to executable bodies and cannot be library declaration roots")
         is CfirConstructor -> createConstructorStub(parent, declaration, context)
         is CfirPropertyAccessor,
         is CfirCodeFragment,

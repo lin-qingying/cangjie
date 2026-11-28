@@ -30,7 +30,7 @@ abstract class CfirEnumConstructor : CfirCallableDeclaration() {
     abstract override val dispatchReceiverType: ConeSimpleCangJieType?
     abstract override val symbol: CfirEnumConstructorSymbol
     abstract override val status: CfirDeclarationStatus
-    abstract override val typeParameters: List<CfirTypeParameter>
+    abstract override val typeParameters: List<CfirTypeParameterRef>
     abstract override val returnTypeRef: CfirTypeRef
     abstract val valueParameters: List<CfirValueParameter>
     abstract val name: Name

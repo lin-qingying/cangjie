@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.cfir.serialization.provider
 
+import org.cangnova.cangjie.test.cjoFixtureModuleDataProvider
 import org.cangnova.cangjie.LanguageVersionSettingsImpl
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.common.CfirPlatform
@@ -48,6 +49,7 @@ class CjoDeserializationTimingSeamTest {
                 cjoManager = manager,
                 cangjieScopeProvider = CfirCangJieScopeProvider(),
                 libraryModuleData = ProbeModuleData,
+                moduleDataProvider = cjoFixtureModuleDataProvider(ProbeModuleData, setOf(tempDir)),
             )
             val recorder = RecordingObserver()
             ProbeSession.registerCjoDeserializationTimingObserver(recorder)
@@ -108,6 +110,7 @@ class CjoDeserializationTimingSeamTest {
                 cjoManager = manager,
                 cangjieScopeProvider = CfirCangJieScopeProvider(),
                 libraryModuleData = UnobservedModuleData,
+                moduleDataProvider = cjoFixtureModuleDataProvider(UnobservedModuleData, setOf(tempDir)),
             )
 
             assertTrue(

@@ -87,10 +87,10 @@ object CangJieCodeStyleSettingsFactory {
      * 单测、LSP、headless CLI 里没有 plugin.xml 驱动的 application service 注册，
      * 但 IntelliJ code-style 框架在注册 common/custom settings 时仍会强依赖这个 service。
      *
-     * 因此共享 formatter 自己在 MockApplication 中补齐最小可用 service，
+     * 因此共享 formatter 在 MockApplication 中注册现有语言设置 service，
      * 保证规则依旧只从本模块暴露。
      */
-    private fun ensureCodeStyleSettingsServiceRegistered() {
+    internal fun ensureCodeStyleSettingsServiceRegistered() {
         val application = ApplicationManager.getApplication() as? MockApplication ?: return
         if (application.getService(CodeStyleSettingsService::class.java) == null) {
             application.registerService(CodeStyleSettingsService::class.java, HeadlessCodeStyleSettingsService())

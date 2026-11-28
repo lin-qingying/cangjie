@@ -35,6 +35,7 @@ abstract class CaBaseSymbolProvider<T : CaSession> : CaBaseSessionComponent<T>()
     override val CjDeclaration.symbol: CaDeclarationSymbol
         get() = withValidityAssertion {
             when (this) {
+                is org.cangnova.cangjie.psi.CjCatchParameter -> checkNotNull(bindingSymbol)
                 is CjBindingPattern -> resolvePatternBindingSymbol(this)
                 is CjEnumConstructor -> resolveEnumEntrySymbol(this)
 

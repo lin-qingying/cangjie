@@ -1,9 +1,12 @@
 package org.cangnova.cangjie.analysis.api.cfir.symbols
 
+import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.llCfirModuleData
+
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.findPsi
 import org.cangnova.cangjie.analysis.api.cfir.symbols.pointers.CaCfirExtendSymbolPointer
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.annotations.CaAnnotationList
 import org.cangnova.cangjie.analysis.api.symbols.CaAnnotatedSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaExtendSymbol
@@ -128,10 +131,10 @@ internal class CaCfirExtendSymbol private constructor(
         get() = (extendDeclaration as? CfirMemberDeclaration)?.status
 
     /**
-     * extend 所在的 use-site 模块。
+     * extend 实际声明所属的模块。
      */
-    override val containingModule
-        get() = analysisSession.useSiteModule
+    override val containingModule: CaModule
+        get() = withValidityAssertion { cfirSymbol.llCfirModuleData.caModule }
 
     /**
      * extend 公开注解列表。

@@ -6,6 +6,9 @@ import com.intellij.psi.PsiReference
 import com.intellij.psi.search.SearchScope
 import com.intellij.util.Processor
 import org.cangnova.cangjie.extensions.ProjectExtensionDescriptor
+import org.cangnova.cangjie.psi.CangJieResolveResult
+import org.cangnova.cangjie.idea.references.CjReference
+import org.cangnova.cangjie.idea.references.CjReferenceRole
 
 /**
  * 一个由生成语义模型发现的引用，以及它应在编辑器中显示的位置。
@@ -15,9 +18,12 @@ import org.cangnova.cangjie.extensions.ProjectExtensionDescriptor
 data class CjGeneratedReference(
     val reference: PsiReference,
     val navigationElement: PsiElement,
-    /** 最终语义模型解析出的真实目标；临时生成 PSI 无法自行解析时仍保持 usages 身份。 */
-    val resolvedTarget: PsiElement? = null,
-)
+    /** 最终成功符号的规范声明与导航位置，不能用共同宏来源代替目标。 */
+    val resolveResult: CangJieResolveResult,
+) {
+    val referenceRole: CjReferenceRole
+        get() = (reference as? CjReference)?.referenceRole ?: CjReferenceRole.OTHER
+}
 
 /**
  * 为仓颉 Find Usages 提供由生成语义模型发现的引用。

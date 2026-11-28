@@ -2531,6 +2531,7 @@ internal class Cfir2ChirFunctionBodyConverter(
     private fun CfirVariable.nameForChir(): String =
         when (this) {
             is CfirFieldVariable -> name.asString()
+            is org.cangnova.cangjie.cfir.declarations.CfirResourceVariable -> name.asString()
             is CfirPatternBindingVariable -> name.asString()
             is CfirPatternVariable -> throw Cfir2ChirConversionException(
                 "pattern variable container requires pattern binding lowering before CHIR local allocation",

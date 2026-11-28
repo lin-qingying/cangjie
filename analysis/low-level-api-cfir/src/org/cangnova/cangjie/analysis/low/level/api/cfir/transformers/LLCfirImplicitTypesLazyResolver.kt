@@ -25,14 +25,12 @@ import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.expressions.withCfirSymbolEntry
-import org.cangnova.cangjie.cfir.patterns.wholeValueBindingOrNull
+import org.cangnova.cangjie.cfir.patterns.bindingVariables
 
 import org.cangnova.cangjie.cfir.resolve.body.CfirImplicitAwareBodyResolveTransformer
 import org.cangnova.cangjie.cfir.resolve.body.ImplicitBodyResolveComputationSession
-import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
-import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
@@ -59,6 +57,12 @@ internal object LLCfirImplicitTypesLazyResolver : LLCfirLazyResolver(CfirResolve
     override fun phaseSpecificCheckIsResolved(target: CfirElementWithResolveState) {
         if (target !is CfirCallableDeclaration) return
         checkReturnTypeRefIsResolved(target)
+        if (target is CfirEnumConstructor) {
+            target.valueParameters.forEach(::checkReturnTypeRefIsResolved)
+        }
+        if (target is CfirPatternVariable) {
+            target.pattern.bindingVariables().forEach(::checkReturnTypeRefIsResolved)
+        }
     }
 }
 
@@ -208,10 +212,15 @@ internal class LLCfirImplicitBodyTargetResolver(
             }
 
             is CfirPatternBindingVariable -> {
-                // 非局部 pattern binding 的隐式类型必须由 owner 的 pattern 投影写入；
-                // 绑定自身没有 independent initializer，不能走普通变量 body resolve。
-                if (target.returnTypeRef is CfirImplicitTypeRef) {
-                    projectPatternBindingTypeFromOwner(target)
+                // resolveDependencies 已在 leaf 锁之前解析 owner 并完成逐叶投影。
+                checkReturnTypeRefIsResolved(target)
+            }
+
+            is CfirPatternVariable -> {
+                if (target.returnTypeRef is CfirImplicitTypeRef ||
+                    target.pattern.bindingVariables().any { it.returnTypeRef is CfirImplicitTypeRef }
+                ) {
+                    resolve(target, BodyStateKeepers.VARIABLE)
                 }
             }
 
@@ -246,32 +255,14 @@ internal class LLCfirImplicitBodyTargetResolver(
     }
 
     /**
-     * 把 owner pattern 的已解析类型投影到唯一承载完整值的 binding。
-     *
-     * 顶层 `const` / `let` 的 binding 没有独立 initializer；其类型只存在于 owner
-     * pattern variable 上。IMPLICIT_TYPES 直接以 binding 为目标时必须先推进 owner，
-     * 再把同一 `CfirResolvedTypeRef` 投影到 binding，否则阶段完成性检查会看到
-     * `CfirImplicitTypeRef`。拆分绑定由 pattern 形状在 body resolve 中逐元素投影，
-     * 这里不处理。
-     */
-    private fun projectPatternBindingTypeFromOwner(binding: CfirPatternBindingVariable) {
-        val owner = (binding.patternTreeOwner as? CfirPatternVariable)
-            ?: resolveTargetSession.cfirProvider.getCfirPatternVariableForBinding(binding.symbol)
-            ?: return
-        if (!owner.isLocal) {
-            owner.lazyResolveToPhase(CfirResolvePhase.IMPLICIT_TYPES)
-        }
-        val ownerTypeRef = owner.returnTypeRef as? CfirResolvedTypeRef ?: return
-        if (owner.pattern.wholeValueBindingOrNull() === binding) {
-            binding.replaceReturnTypeRef(ownerTypeRef)
-        }
-    }
-
-    /**
      * 执行父类 raw body 解析，并记录 body 已推进到当前阶段。
      */
     override fun rawResolve(target: CfirElementWithResolveState) {
         super.rawResolve(target)
+        if (target is CfirPatternVariable) {
+            // 在 jumping lock 发布 phase 前校验整棵模式，不能将 Deferred 标成解析完成。
+            target.pattern.bindingVariables().forEach(::checkReturnTypeRefIsResolved)
+        }
         LLCfirDeclarationModificationService.bodyResolved(target, resolverPhase)
     }
 }

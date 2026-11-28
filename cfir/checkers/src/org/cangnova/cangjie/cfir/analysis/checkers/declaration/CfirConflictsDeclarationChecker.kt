@@ -609,6 +609,18 @@ private class LocalRedeclarationVisitor(
         }
     }
 
+    override fun visitHandleClause(handleClause: org.cangnova.cangjie.cfir.expressions.CfirHandleClause) {
+        withScope {
+            handleClause.commandPattern.bindingVariable?.let { declare(it.symbol) }
+            handleClause.body.statements.forEach { it.accept(this) }
+        }
+    }
+
+    override fun visitResourceVariable(resourceVariable: org.cangnova.cangjie.cfir.declarations.CfirResourceVariable) {
+        resourceVariable.initializer?.accept(this)
+        declare(resourceVariable.symbol)
+    }
+
     /**
      * 记录局部函数声明。
      */

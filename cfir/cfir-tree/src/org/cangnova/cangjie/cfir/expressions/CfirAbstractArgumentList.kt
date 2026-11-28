@@ -42,6 +42,9 @@ abstract class CfirAbstractArgumentList : CfirArgumentList() {
  * context 参数映射和原始 argument list，以便 call completer、checker 与 renderer 共享同一结果。
  */
 abstract class CfirResolvedArgumentList : CfirArgumentList() {
+    /** 映射是列表自身的存储，快照必须由实际实现同时恢复完整与值参数映射。 */
+    internal abstract fun captureMutableState(): CfirArgumentListMutableState
+
     /**
      * 已解析参数列表沿用原始参数列表的源码位置。
      */
@@ -117,6 +120,25 @@ internal class CfirResolvedArgumentListImpl(
     mapping: LinkedHashMap<CfirExpression, CfirValueParameter>,
     mappingIncludingContextArguments: LinkedHashMap<CfirExpression, CfirValueParameter> = mapping,
 ) : CfirResolvedArgumentList() {
+    internal override fun captureMutableState(): CfirArgumentListMutableState {
+        val originalMapping = mapping
+        val originalMappingIncludingContext = mappingIncludingContextArguments
+        val mappingContents = LinkedHashMap(originalMapping)
+        val contextContents = LinkedHashMap(originalMappingIncludingContext)
+        return object : CfirArgumentListMutableState {
+            override fun restore() {
+                originalMapping.clear()
+                originalMapping.putAll(mappingContents)
+                if (originalMappingIncludingContext !== originalMapping) {
+                    originalMappingIncludingContext.clear()
+                    originalMappingIncludingContext.putAll(contextContents)
+                }
+                this@CfirResolvedArgumentListImpl.mapping = originalMapping
+                this@CfirResolvedArgumentListImpl.mappingIncludingContextArguments = originalMappingIncludingContext
+            }
+        }
+    }
+
     /**
      * 包含显式 context 实参的完整映射。
      */
@@ -180,6 +202,25 @@ internal class CfirResolvedArgumentListForErrorCall(
      */
     private var _mapping: LinkedHashMap<CfirExpression, out CfirValueParameter?>,
 ) : CfirResolvedArgumentList() {
+    internal override fun captureMutableState(): CfirArgumentListMutableState {
+        // 只恢复捕获时已有的条目，不扩大构造器接收的 out 映射的值类型。
+        @Suppress("UNCHECKED_CAST")
+        val originalMapping = _mapping as LinkedHashMap<CfirExpression, CfirValueParameter?>
+        val originalVisibleMapping = mapping
+        val mappingContents = LinkedHashMap(originalMapping)
+        val visibleContents = LinkedHashMap(originalVisibleMapping)
+        return object : CfirArgumentListMutableState {
+            override fun restore() {
+                originalMapping.clear()
+                originalMapping.putAll(mappingContents)
+                originalVisibleMapping.clear()
+                originalVisibleMapping.putAll(visibleContents)
+                this@CfirResolvedArgumentListForErrorCall._mapping = originalMapping
+                this@CfirResolvedArgumentListForErrorCall.mapping = originalVisibleMapping
+            }
+        }
+    }
+
 
     /**
      * 过滤空形参后的 value 实参映射。

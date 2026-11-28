@@ -103,6 +103,10 @@ object LspClientCapabilitiesBuilder {
         positionEncodings: List<String> = listOf(PositionEncodingKind.UTF16),
     ): ClientCapabilities = pullDiagnostics().also { capabilities ->
         capabilities.textDocument = capabilities.textDocument.apply {
+            // fullFeatured 的层级符号正例必须通过真实 initialize 声明该协商位；core 保持未声明。
+            documentSymbol = documentSymbol.apply {
+                hierarchicalDocumentSymbolSupport = true
+            }
             publishDiagnostics = PublishDiagnosticsCapabilities().apply {
                 versionSupport = true
             }

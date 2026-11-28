@@ -10,6 +10,7 @@ import org.cangnova.cangjie.psi.CjExtend
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjMacroDeclaration
 import org.cangnova.cangjie.psi.CjNamedFunction
+import org.cangnova.cangjie.psi.CjNamedPattern
 import org.cangnova.cangjie.psi.CjProperty
 import org.cangnova.cangjie.psi.CjTypeAlias
 import org.cangnova.cangjie.psi.CjTypeStatement
@@ -39,6 +40,8 @@ object CangJieEmptyDeclarationProvider : CangJieDeclarationProvider {
      * 空 provider 不返回顶层属性。
      */
     override fun getTopLevelProperties(callableId: CallableId): List<CjProperty> = emptyList()
+
+    override fun getTopLevelPatternBindings(callableId: CallableId): List<CjNamedPattern> = emptyList()
     /**
      * 空 provider 不返回顶层函数。
      */

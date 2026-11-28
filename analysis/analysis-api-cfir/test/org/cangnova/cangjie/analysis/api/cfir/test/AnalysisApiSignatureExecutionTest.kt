@@ -64,7 +64,7 @@ class AnalysisApiSignatureExecutionTest : AbstractAnalysisApiExecutionTest(
             val (holderT, holderU) = classes.single { it.name == "Holder" }.classSymbol.typeParameters
             val holderFirst = buildSubstitutor { substitution(holderT, buildTypeParameterType(holderU)) }
             val holderSecond = buildSubstitutor { substitution(holderU, userType) }
-            val variables: List<CaVariableSymbol> = listOf(property.symbol, field.symbol, local.symbol)
+            val variables: List<CaVariableSymbol> = listOf(property.symbol, field.symbol, local.symbol.entries.single())
             for (variable in variables) {
                 val signature = variable.asSignature()
                 val substituted = signature.substitute(holderFirst).substitute(holderSecond)

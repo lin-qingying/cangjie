@@ -40,6 +40,8 @@ import org.cangnova.cangjie.cfir.resolve.match.CfirTuplePatternShape
 import org.cangnova.cangjie.cfir.resolve.match.resolveTupleShape
 import org.cangnova.cangjie.cfir.resolve.withExpectedType
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirSpecificTypeResolverTransformer
+import org.cangnova.cangjie.cfir.resolve.inference.CfirPCLAInferenceSession
+import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.CfirPostponedAtomsResolutionContext
 import org.cangnova.cangjie.cfir.resolvedTypeFromPrototype
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.session.builtinTypes
@@ -96,7 +98,7 @@ internal fun CfirPartialBodyResolveTransformer.resolvePatternValueExpressions(
             val argumentTypes = resolveEnumArgumentTypes(pattern, expectedType)
             var valid = true
             pattern.arguments.forEachIndexed { index, argument ->
-                val argumentType = argumentTypes.getOrNull(index).takeIf { valid }
+                val argumentType = argumentTypes.componentType(index).takeIf { valid }
                 if (!resolvePatternValueExpressions(argument, argumentType)) valid = false
             }
             valid
@@ -153,12 +155,13 @@ internal fun CfirPartialBodyResolveTransformer.resolvePatternBindingTypes(
     expectedType: ConeCangJieType?,
     typeResolver: CfirSpecificTypeResolverTransformer,
 ): ConeErrorType? {
+    registerPatternBindingCompletion(pattern, expectedType)
     var firstError: ConeErrorType? = null
     fun recordError(error: ConeErrorType?) {
         if (firstError == null) firstError = error
     }
     when (pattern) {
-        is CfirVarOrEnumPattern -> Unit
+        is CfirVarOrEnumPattern -> pattern.bindingVariable?.replaceBindingType(expectedType)
         is CfirConstPattern -> {
             // 官方 ChkConstPattern 要求字面量与 selector 类型相等，不允许 Option 装箱。
             // fresh selector 的等式必须进入共享推断系统，供 lambda 定义点完成使用。
@@ -198,11 +201,12 @@ internal fun CfirPartialBodyResolveTransformer.resolvePatternBindingTypes(
         }
 
         is CfirTuplePattern -> {
-            val tupleType = expectedType?.fullyExpandedType(session) as? ConeTupleType
+            val projection = resolveTupleBindingTypes(pattern, expectedType)
+            recordError(projection.errorType)
             pattern.elements.forEachIndexed { index, element ->
                 recordError(resolvePatternBindingTypes(
                     pattern = element,
-                    expectedType = tupleType?.elementTypes?.getOrNull(index),
+                    expectedType = projection.componentType(index),
                     typeResolver = typeResolver,
                 ))
             }
@@ -210,10 +214,11 @@ internal fun CfirPartialBodyResolveTransformer.resolvePatternBindingTypes(
 
         is CfirEnumPattern -> {
             val argumentTypes = resolveEnumArgumentTypes(pattern, expectedType)
+            recordError(argumentTypes.errorType)
             pattern.arguments.forEachIndexed { index, argument ->
                 recordError(resolvePatternBindingTypes(
                     pattern = argument,
-                    expectedType = argumentTypes.getOrNull(index),
+                    expectedType = argumentTypes.componentType(index),
                     typeResolver = typeResolver,
                 ))
             }
@@ -225,8 +230,84 @@ internal fun CfirPartialBodyResolveTransformer.resolvePatternBindingTypes(
 
         else -> Unit
     }
+    // 完整投影后登记实际采用的 Option payload；tuple/binding 递归沿同一个正式入口执行。
+    val adoptedElement = firstError ?: expectedType?.optionElementType?.fullyExpandedType(session)
+    if (adoptedElement != null) {
+        context.consumeInferenceType(pattern,
+            org.cangnova.cangjie.cfir.resolve.inference.CfirInferenceVariableRole.OPTION_PATTERN_ELEMENT, adoptedElement)
+    }
     return firstError
 }
+
+/** 保存真正模式宿主及其解析上下文，让 completion 在同一棵树中执行第一次或后续投影。 */
+private fun CfirPartialBodyResolveTransformer.registerPatternBindingCompletion(
+    pattern: CfirPattern,
+    expectedType: ConeCangJieType?,
+) {
+    val inferenceSession = context.inferenceSession as? CfirPCLAInferenceSession ?: return
+    val type = expectedType ?: return
+    if (!inferenceSession.containsRegisteredInferenceVariable(type)) return
+    val owner = pattern.patternTreeOwner ?: return
+    if (owner.patternTreeRoot() !== pattern) return
+    val savedContext = CfirPostponedAtomsResolutionContext(context.towerDataContext, inferenceSession)
+    inferenceSession.registerPatternBindingProjection(owner) { substitutor ->
+        val resolvedType = substitutor.substituteOrSelf(type)
+        // provisional completion 仍未固定 selector 时保留任务，最终 writer 会再次执行同一回调。
+        if (!resolvedType.contains { it is ConeTypeVariableType }) {
+            context.withTemporaryRegularContext(savedContext) {
+                transformer.expressionsTransformer.completePatternBindingProjection(owner, resolvedType)
+            }
+        }
+    }
+}
+
+/**
+ * 模式分量投影的完整结果。Deferred 只表示推断尚未完成，不能与确定的形状失败共用空列表。
+ * 失败沿原诊断传播；模式 checker 仍拥有错误形状的源码诊断。
+ */
+internal sealed interface CfirPatternComponentTypes {
+    val errorType: ConeErrorType?
+
+    data class Matched(val types: List<ConeCangJieType>) : CfirPatternComponentTypes {
+        override val errorType: ConeErrorType? get() = null
+    }
+
+    data class Failed(override val errorType: ConeErrorType) : CfirPatternComponentTypes
+
+    data object Deferred : CfirPatternComponentTypes {
+        override val errorType: ConeErrorType? get() = null
+    }
+
+    fun componentType(index: Int): ConeCangJieType? = when (this) {
+        is Matched -> types[index]
+        is Failed -> errorType
+        Deferred -> null
+    }
+}
+
+/** 当前层的 tuple 形状必须完整匹配，不能以短列表部分配对错误元数的模式。 */
+private fun CfirPartialBodyResolveTransformer.resolveTupleBindingTypes(
+    pattern: CfirTuplePattern,
+    expectedType: ConeCangJieType?,
+): CfirPatternComponentTypes {
+    val currentType = when (val inference = context.inferenceSession) {
+        is CfirPCLAInferenceSession -> expectedType?.let(inference::substituteCurrentType)
+        else -> expectedType
+    }
+    val type = currentType?.fullyExpandedType(session) ?: return CfirPatternComponentTypes.Deferred
+    if (type is ConeErrorType) return CfirPatternComponentTypes.Failed(type)
+    return when (val shape = pattern.resolveTupleShape(type, session)) {
+        CfirTuplePatternShape.Unresolved -> CfirPatternComponentTypes.Deferred
+        is CfirTuplePatternShape.Matched -> CfirPatternComponentTypes.Matched(shape.tupleType.elementTypes)
+        is CfirTuplePatternShape.NotTuple, is CfirTuplePatternShape.WrongSize ->
+            failedPatternProjection("Invalid tuple pattern shape")
+    }
+}
+
+private fun failedPatternProjection(reason: String): CfirPatternComponentTypes.Failed =
+    CfirPatternComponentTypes.Failed(
+        ConeErrorType(ConeUnreportedDuplicateDiagnostic(ConeSimpleDiagnostic(reason))),
+    )
 
 /**
  * 将 pattern 中所有当前作用域可见的 binding variable 注册到局部变量上下文。
@@ -264,24 +345,42 @@ private fun CfirPartialBodyResolveTransformer.patternTypeResolutionConfiguration
 internal fun CfirPartialBodyResolveTransformer.resolveEnumArgumentTypes(
     pattern: CfirEnumPattern,
     expectedType: ConeCangJieType?,
-): List<ConeCangJieType> {
-    val optionArgumentTypes = expectedType?.let { resolveStdlibOptionArgumentTypes(pattern, it, session) }
-    if (optionArgumentTypes != null) return optionArgumentTypes
+): CfirPatternComponentTypes {
+    val currentType = when (val inference = context.inferenceSession) {
+        is CfirPCLAInferenceSession -> expectedType?.let(inference::substituteCurrentType)
+        else -> expectedType
+    }
+    val type = currentType?.fullyExpandedType(session) ?: return CfirPatternComponentTypes.Deferred
+    if (type is ConeErrorType) return CfirPatternComponentTypes.Failed(type)
+    if (type is ConeTypeVariableType) return CfirPatternComponentTypes.Deferred
+    val optionArgumentTypes = resolveStdlibOptionArgumentTypes(pattern, type, session)
+    if (optionArgumentTypes != null) {
+        return if (optionArgumentTypes.size == pattern.arguments.size) {
+            CfirPatternComponentTypes.Matched(optionArgumentTypes)
+        } else {
+            failedPatternProjection("Invalid Option pattern payload")
+        }
+    }
 
-    val enumType = expectedType?.expandedPatternEnumType(session) ?: return emptyList()
+    val enumType = type.expandedPatternEnumType(session) ?: return failedPatternProjection("Pattern target is not an enum")
     val enumDeclaration = (session.symbolProvider.getClassLikeSymbolByClassId(enumType.classId)?.cfir as? CfirEnum)
-        ?: return emptyList()
+        ?: return failedPatternProjection("Enum pattern declaration is unresolved")
 
-    val constructorName = pattern.constructorNameOrNull() ?: return emptyList()
-    if (!pattern.ownerQualifierMatchesSubject(enumType, session)) return emptyList()
+    val constructorName = pattern.constructorNameOrNull() ?: return failedPatternProjection("Enum pattern constructor is unresolved")
+    if (!pattern.ownerQualifierMatchesSubject(enumType, session)) return failedPatternProjection("Enum pattern owner does not match target")
     val enumConstructor = enumDeclaration.declarations
         .filterIsInstance<CfirEnumConstructor>()
         .firstOrNull { candidate ->
             candidate.name == constructorName && candidate.payloadArity() == pattern.arguments.size
         }
-        ?: return emptyList()
+        ?: return failedPatternProjection("Enum pattern constructor or payload arity does not match")
 
-    return enumConstructor.substitutedPayloadParameterTypes(enumDeclaration, enumType)
+    val parameterTypes = enumConstructor.substitutedPayloadParameterTypes(enumDeclaration, enumType)
+    return if (parameterTypes.size == pattern.arguments.size) {
+        CfirPatternComponentTypes.Matched(parameterTypes)
+    } else {
+        failedPatternProjection("Enum pattern payload types are unresolved")
+    }
 }
 
 /**
@@ -303,8 +402,7 @@ private fun resolveStdlibOptionArgumentTypes(
     val optionArgumentType = expectedType.optionElementType?.fullyExpandedType(session) ?: return null
     return when {
         constructorName == OPTION_SOME_CONSTRUCTOR_NAME &&
-                pattern.arguments.size == 1 &&
-                optionArgumentType != null -> listOf(optionArgumentType)
+                pattern.arguments.size == 1 -> listOf(optionArgumentType)
         constructorName == OPTION_NONE_CONSTRUCTOR_NAME &&
                 pattern.arguments.isEmpty() -> emptyList()
         constructorName == OPTION_SOME_CONSTRUCTOR_NAME ||

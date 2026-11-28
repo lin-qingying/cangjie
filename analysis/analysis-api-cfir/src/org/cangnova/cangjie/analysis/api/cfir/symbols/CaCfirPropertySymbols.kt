@@ -1,5 +1,7 @@
 package org.cangnova.cangjie.analysis.api.cfir.symbols
 
+import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.llCfirModuleData
+
 import org.cangnova.cangjie.analysis.api.annotations.CaAnnotationList
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.caSymbolModalityByModifiers
@@ -428,10 +430,10 @@ internal class CaCfirPropertySymbol private constructor(
     )
 
     /**
-     * 属性所在的 use-site 模块。
+     * 属性实际声明所属的模块。
      */
     override val containingModule: CaModule
-        get() = analysisSession.useSiteModule
+        get() = withValidityAssertion { cfirSymbol.llCfirModuleData.caModule }
 
     /**
      * 属性 CFIR member 状态。
@@ -608,4 +610,7 @@ internal class CaCfirPropertySymbol private constructor(
      */
     override val name: Name
         get() = withValidityAssertion { backingPsi?.nameAsSafeName ?: cfirSymbol.name }
+
+    override fun equals(other: Any?): Boolean = psiOrSymbolEquals(other)
+    override fun hashCode(): Int = psiOrSymbolHashCode()
 }

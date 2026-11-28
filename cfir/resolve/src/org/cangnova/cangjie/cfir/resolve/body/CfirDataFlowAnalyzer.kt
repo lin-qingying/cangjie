@@ -1,9 +1,12 @@
 package org.cangnova.cangjie.cfir.resolve.body
 
 import org.cangnova.cangjie.cfir.SessionHolder
+import org.cangnova.cangjie.cfir.types.typeContext
+import org.cangnova.cangjie.type.AbstractTypeChecker
 import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirCodeFragment
+import org.cangnova.cangjie.cfir.declarations.CfirControlFlowGraphOwner
 import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
@@ -12,6 +15,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirAssignment
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
+import org.cangnova.cangjie.cfir.expressions.CfirStatement
 import org.cangnova.cangjie.cfir.expressions.CfirCatch
 import org.cangnova.cangjie.cfir.expressions.CfirCall
 import org.cangnova.cangjie.cfir.expressions.CfirJump
@@ -19,6 +23,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirHandleClause
 import org.cangnova.cangjie.cfir.expressions.CfirIncrementDecrementExpression
+import org.cangnova.cangjie.cfir.expressions.CfirIfExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLoopExpression
 import org.cangnova.cangjie.cfir.expressions.CfirMatchBranch
@@ -31,6 +36,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirTryExpression
 import org.cangnova.cangjie.cfir.expressions.CfirWrappedExpression
 import org.cangnova.cangjie.cfir.references.CfirControlFlowGraphReference
 import org.cangnova.cangjie.cfir.resolve.dfa.CfirControlFlowGraphReferenceImpl
+import org.cangnova.cangjie.cfir.resolve.dfa.controlFlowGraph
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.ControlFlowGraph
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.ControlFlowGraphBuilder.MatchSyntheticElseDecision
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.BodyResolveContext
@@ -109,6 +115,20 @@ class CfirDataFlowAnalyzer(
         variableAssignmentAnalyzer.exitFunctionCall(callCompleted)
     }
 
+    /** 从实际 lexical owner 读取 active/published 图，修订它已有的 node；不借父 currentGraph。 */
+    @org.cangnova.cangjie.cfir.resolve.dfa.cfg.CfgInternals
+    fun updateFunctionCallNodes(
+        original: CfirFunctionCall,
+        replacement: CfirFunctionCall,
+        owner: CfirControlFlowGraphOwner,
+    ) {
+        val inProgress = graphBuilder.graphInProgress(owner)
+        val graph = if (inProgress != null) inProgress else owner.controlFlowGraphReference?.controlFlowGraph
+        if (graph != null) graphBuilder.updateFunctionCallNodes(original, replacement, graph)
+    }
+
+    fun describeFunctionCallNodes(call: CfirFunctionCall): String = graphBuilder.describeFunctionCallNodes(call)
+
     /**
      * 进入 block CFG 节点。
      */
@@ -177,10 +197,11 @@ class CfirDataFlowAnalyzer(
     /**
      * 进入函数 CFG 和局部变量赋值分析作用域。
      */
-    fun enterFunction(function: CfirFunction) {
+    @JvmOverloads
+    fun enterFunction(function: CfirFunction, calledInPlace: Boolean = false) {
         variableAssignmentAnalyzer.enterFunction(function)
         if (function is CfirAnonymousFunction) {
-            graphBuilder.enterAnonymousFunction(function)
+            graphBuilder.enterAnonymousFunction(function, calledInPlace)
         } else {
             graphBuilder.enterFunction(function)
         }
@@ -200,6 +221,16 @@ class CfirDataFlowAnalyzer(
     }
 
     /** 在变量 initializer 求值前写入 CFG declaration enter 节点。 */
+    /** 资源 PRIVATE 执行根独立于复制的 formal try.Main，入口流仍来自保存的父状态。 */
+    fun enterResourceInitializer(resource: org.cangnova.cangjie.cfir.declarations.CfirResourceVariable) =
+        graphBuilder.enterResourceInitializer(resource)
+    fun suspendResourceInitializer(resource: org.cangnova.cangjie.cfir.declarations.CfirResourceVariable) =
+        graphBuilder.suspendResourceInitializer(resource)
+    fun <T> withResourceInitializer(resource: org.cangnova.cangjie.cfir.declarations.CfirResourceVariable, action: () -> T): T =
+        graphBuilder.withResourceInitializer(resource, action)
+    fun finishResourceInitializer(resource: org.cangnova.cangjie.cfir.declarations.CfirResourceVariable): ControlFlowGraph =
+        graphBuilder.finishResourceInitializer(resource)
+
     fun enterVariableDeclaration(variable: CfirVariable) {
         if (hasActiveGraph) {
             graphBuilder.enterVariableDeclaration(variable)
@@ -350,6 +381,31 @@ class CfirDataFlowAnalyzer(
     /**
      * 进入 match 表达式 CFG。
      */
+    /** 进入 if 的条件及独立分支层。 */
+    fun enterIfExpression(expression: CfirIfExpression) {
+        if (hasActiveGraph) graphBuilder.enterIfExpression(expression)
+    }
+
+    /** 条件完成后进入 then，保存 false 输入。 */
+    fun exitIfCondition(expression: CfirIfExpression) {
+        if (hasActiveGraph) graphBuilder.exitIfCondition(expression)
+    }
+
+    /** 使用同一真实条件的 false 输入进入 else。 */
+    fun enterIfElseBranch(expression: CfirIfExpression) {
+        if (hasActiveGraph) graphBuilder.enterIfElseBranch(expression)
+    }
+
+    /** 汇入当前分支自己的正常执行结果。 */
+    fun exitIfBranchResult(expression: CfirIfExpression, isThen: Boolean) {
+        if (hasActiveGraph) graphBuilder.exitIfBranchResult(expression, isThen)
+    }
+
+    /** 正式解析模式决定 postponed 数据流是否仍需交给外层。 */
+    fun exitIfExpression(expression: CfirIfExpression, callCompleted: Boolean) {
+        if (hasActiveGraph) graphBuilder.exitIfExpression(expression, callCompleted)
+    }
+
     fun enterMatchExpression(matchExpression: CfirMatchExpression) {
         if (hasActiveGraph) {
             graphBuilder.enterMatchExpression(matchExpression)
@@ -437,7 +493,10 @@ class CfirDataFlowAnalyzer(
      */
     fun enterCatchClause(catch: CfirCatch) {
         if (hasActiveGraph) {
-            graphBuilder.enterCatchClause(catch)
+            val catchEnter = graphBuilder.enterCatchClause(catch)
+            graphBuilder.refineExceptionDispatch(catchEnter) { actual, expected ->
+                AbstractTypeChecker.isSubtypeOf(session.typeContext, actual, expected)
+            }
         }
     }
 
@@ -603,9 +662,7 @@ class CfirDataFlowAnalyzer(
      * 查询匿名函数 CFG 中收集到的 return 表达式。
      */
     fun returnExpressionsOfAnonymousFunction(function: CfirAnonymousFunction): Collection<CfirAnonymousFunctionReturnExpressionInfo> {
-        return graphBuilder.returnExpressionsOfAnonymousFunction(function)
-            ?.map(::CfirAnonymousFunctionReturnExpressionInfo)
-            .orEmpty()
+        return graphBuilder.returnExpressionsOfAnonymousFunction(function).orEmpty()
     }
 
     /**
@@ -619,8 +676,12 @@ class CfirDataFlowAnalyzer(
      * 匿名函数 return 表达式信息。
      */
     data class CfirAnonymousFunctionReturnExpressionInfo(
-        /** CFG 中记录到的 return 表达式。 */
+        /** CFG 中记录到的 return 结果表达式。 */
         val expression: CfirExpression,
+        /** 来自真实 return jump，而非 block 的尾表达式。 */
+        val isExplicit: Boolean,
+        /** 实际 return 或 block owner；postponed adoption 必须写回该正式槽。 */
+        val containingStatement: CfirStatement,
     )
 
     /**

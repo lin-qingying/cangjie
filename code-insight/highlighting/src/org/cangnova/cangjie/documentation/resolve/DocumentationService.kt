@@ -26,6 +26,7 @@ import org.cangnova.cangjie.analysis.api.symbols.CaSymbolLocation
 import org.cangnova.cangjie.analysis.api.symbols.markers.CaTypeParameterOwnerSymbol
 import org.cangnova.cangjie.analysis.api.symbols.psiSafe
 import org.cangnova.cangjie.analysis.api.symbols.symbol
+import org.cangnova.cangjie.analysis.api.symbols.bindingSymbol
 import org.cangnova.cangjie.documentation.api.DocumentationBody
 import org.cangnova.cangjie.documentation.api.DocumentationContainer
 import org.cangnova.cangjie.documentation.api.DocumentationContent
@@ -41,6 +42,7 @@ import org.cangnova.cangjie.lexer.cdoc.psi.impl.CDocSection
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjAbstractClassBody
 import org.cangnova.cangjie.psi.CjBindingPattern
+import org.cangnova.cangjie.psi.CjNamedPattern
 import org.cangnova.cangjie.psi.CjBasicType
 import org.cangnova.cangjie.psi.CjCallExpression
 import org.cangnova.cangjie.psi.CjCallableDeclaration
@@ -112,7 +114,9 @@ object DefaultDocumentationService : DocumentationService {
 
         return when {
             target.isCangJieModifier() -> DocumentationResolution.NotTarget
-            target is CjBindingPattern -> resolveBindingPattern(target, request)
+            target is CjNamedPattern -> resolveBindingPattern(target, request)
+            target is org.cangnova.cangjie.psi.CjCommandTypePattern || target is org.cangnova.cangjie.psi.CjTryResource ->
+                resolveHostBinding(target as CjElement, request)
             target is CjMacroExpression -> {
                 val declaration = target.referenceExpression?.resolveMacroDeclaration()
                     ?: return DocumentationResolution.NotTarget
@@ -167,7 +171,9 @@ object DefaultDocumentationService : DocumentationService {
 
     context(_: CaSession)
     private fun resolveElement(element: PsiElement, request: DocumentationRequest): DocumentationResolution = when (element) {
-        is CjBindingPattern -> resolveBindingPattern(element, request.copy(element = element))
+        is CjNamedPattern -> resolveBindingPattern(element, request.copy(element = element))
+        is org.cangnova.cangjie.psi.CjCommandTypePattern, is org.cangnova.cangjie.psi.CjTryResource ->
+            resolveHostBinding(element as CjElement, request.copy(element = element))
         is CjDeclaration -> resolveDeclaration(element, request.copy(element = element))
         is CjLightElement<*, *> -> {
             val origin = element.cangjieOrigin ?: return DocumentationResolution.NotTarget
@@ -222,12 +228,23 @@ object DefaultDocumentationService : DocumentationService {
 
     context(_: CaSession)
     private fun resolveBindingPattern(
-        bindingPattern: CjBindingPattern,
+        bindingPattern: CjNamedPattern,
         request: DocumentationRequest,
     ): DocumentationResolution {
-        val symbol = recoverSymbol { bindingPattern.symbol } as? CaDeclarationSymbol
-            ?: return DocumentationResolution.SymbolRecoveryFailed
+        val symbol = bindingPattern.bindingSymbol ?: return DocumentationResolution.NotTarget
         return createResolved(symbol, bindingPattern, request)
+    }
+
+    context(session: CaSession)
+    private fun resolveHostBinding(element: CjElement, request: DocumentationRequest): DocumentationResolution {
+        val symbol = with(session) {
+            when (element) {
+                is org.cangnova.cangjie.psi.CjCommandTypePattern -> element.bindingSymbol
+                is org.cangnova.cangjie.psi.CjTryResource -> element.bindingSymbol
+                else -> null
+            }
+        } ?: return DocumentationResolution.NotTarget
+        return createResolved(symbol, element, request)
     }
 
     context(_: CaSession)

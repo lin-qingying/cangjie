@@ -132,6 +132,7 @@ private fun immediatePatternBindings(element: CfirElement): List<CfirPatternBind
     is CfirVarOrEnumPattern -> listOfNotNull(element.bindingVariable)
     is CfirTypePattern -> listOfNotNull(element.bindingVariable)
     is CfirCatchPattern -> listOfNotNull(element.bindingVariable)
+    is CfirCommandTypePattern -> listOfNotNull(element.bindingVariable)
     else -> emptyList()
 }
 

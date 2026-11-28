@@ -28,8 +28,9 @@ internal class LLCfirFileBuilder(val moduleComponents: LLCfirModuleResolveCompon
     /**
      * 构建或复用指定 PSI 文件的 raw CFIR 文件，并校验 contextual module 与实际文件模块一致。
      */
-    fun buildRawCfirFileWithCaching(cjFile: CjFile): CfirFile = moduleComponents.cache.fileCached(cjFile) {
-        buildRawCfirFile(cjFile)
+    fun buildRawCfirFileWithCaching(cjFile: CjFile): CfirFile {
+        LLCfirSourcePsiGeneration.capture(listOf(cjFile), compareModificationStamps = false).requireCurrent()
+        return moduleComponents.cache.fileCached(cjFile) { buildRawCfirFile(cjFile) }
     }
 
     /**
@@ -54,6 +55,7 @@ internal class LLCfirFileBuilder(val moduleComponents: LLCfirModuleResolveCompon
         bodyBuildingMode: BodyBuildingMode = BodyBuildingMode.LAZY_BODIES,
         macroSurfaceCollectionMode: MacroSurfaceCollectionMode = currentMacroSurfaceCollectionMode(),
     ): CfirFile {
+        LLCfirSourcePsiGeneration.capture(listOf(cjFile), compareModificationStamps = false).requireCurrent()
         val contextualModule = moduleComponents.module
         val actualFileModule = projectStructureProvider.getModule(cjFile, contextualModule)
 

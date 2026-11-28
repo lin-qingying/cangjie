@@ -353,6 +353,17 @@ class MacroExpansionRegistry : org.cangnova.cangjie.cfir.session.CfirSessionComp
     /** 所有生成 source 的身份集合；provenance 冲突不能让 IDE 丢失文件身份。 */
     private val _generatedSources: MutableSet<AbstractCjSourceElement> =
         Collections.newSetFromMap(IdentityHashMap<AbstractCjSourceElement, Boolean>())
+    /** 宏实际输出 source 的身份集合，供非物理 PSI 发布；与语义生成分类分开。 */
+    private val _macroExpansionSources: MutableSet<AbstractCjSourceElement> =
+        Collections.newSetFromMap(IdentityHashMap<AbstractCjSourceElement, Boolean>())
+    /** final source 到 raw factory 实际 reparse source 的关系，保留不同 fragment 的对象身份。 */
+    private val _reparsedSourcesByCreated = IdentityHashMap<AbstractCjSourceElement, MutableList<CjSourceElement>>()
+
+    fun reparsedSourcesFor(source: AbstractCjSourceElement): List<CjSourceElement> =
+        _reparsedSourcesByCreated[source].orEmpty().toList()
+    /** 由宏保留的原输入 source；不进入 generated source/调用点诊断映射。 */
+    private val _preservedSources: MutableSet<AbstractCjSourceElement> =
+        Collections.newSetFromMap(IdentityHashMap<AbstractCjSourceElement, Boolean>())
     /** 精确 source key 对应的全部 surface 来源；多来源 key 必须保持歧义而不能覆盖。 */
     private val _generatedSourceOriginsBySource: MutableMap<AbstractCjSourceElement, MutableSet<Long>> = IdentityHashMap()
     /** stable splice 实际应用的 raw declaration/parameter carrier 到其输出声明的精确身份关系。 */
@@ -418,6 +429,26 @@ class MacroExpansionRegistry : org.cangnova.cangjie.cfir.session.CfirSessionComp
      * PSI/Analysis 导航会对多个符号重复执行此判定；这里保持注册表内部身份集合查询为 O(1)。
      */
     fun isGeneratedSource(source: AbstractCjSourceElement): Boolean = source in _generatedSources
+
+    /** 按 source 对象身份确认它是保留的真实输入。 */
+    fun isPreservedSource(source: AbstractCjSourceElement): Boolean = source in _preservedSources
+
+    /** retained graph 仅通过已登记对象身份传递来源，不重算 AST/PSI。 */
+    fun registeredSourceOrigin(source: AbstractCjSourceElement): MacroCfirSourceOrigin? = when {
+        source in _preservedSources -> MacroCfirSourceOrigin.PreservedInput
+        source in _generatedSources -> MacroCfirSourceOrigin.Generated(checkNotNull(_generatedSourceOriginsBySource[source]).toSet())
+        else -> null
+    }
+
+    val macroExpansionSources: Set<AbstractCjSourceElement>
+        get() = Collections.unmodifiableSet(
+            Collections.newSetFromMap(IdentityHashMap<AbstractCjSourceElement, Boolean>()).also { it.addAll(_macroExpansionSources) },
+        )
+
+    val preservedSources: Set<AbstractCjSourceElement>
+        get() = Collections.unmodifiableSet(
+            Collections.newSetFromMap(IdentityHashMap<AbstractCjSourceElement, Boolean>()).also { it.addAll(_preservedSources) },
+        )
 
     /**
      * 生成 source 到全部 surface 来源的不可变快照。
@@ -616,6 +647,8 @@ class MacroExpansionRegistry : org.cangnova.cangjie.cfir.session.CfirSessionComp
     /** 注册展开产物 source 到原始 surface 的对应关系；source 为空时忽略。 */
     fun registerGeneratedSource(source: AbstractCjSourceElement?, originSurfaceId: Long) {
         if (source != null) {
+            check(source !in _preservedSources) { "Preserved input cannot be reclassified as macro-generated source." }
+            _macroExpansionSources += source
             _generatedSources += source
             val origins = _generatedSourceOriginsBySource.getOrPut(source) { linkedSetOf() }
             origins += originSurfaceId
@@ -655,19 +688,37 @@ class MacroExpansionRegistry : org.cangnova.cangjie.cfir.session.CfirSessionComp
     }
 
     /**
-     * 递归注册展开产物 CFIR 子树中所有 source 与原始 surface 的对应关系。
-     *
-     * 普通 checker 只看到 final CFIR；此映射使诊断 reporter 能把 generated source
-     * 上的错误重定位回 macro 调用位点。
+     * 递归登记构造输出的来源。原输入 source 保留自身 PSI/诊断区间；
+     * 新生成 source 才进入调用点映射。父宏保留子 CFIR 时不能覆盖已登记的 producer。
      */
-    fun registerGeneratedCfirElement(element: CfirElement, originSurfaceId: Long) {
+    fun registerGeneratedCfirElement(
+        element: CfirElement,
+        originSurfaceId: Long,
+        sourceMapping: MacroFragmentSourceMapping = MacroFragmentSourceMapping(),
+    ) {
         element.accept(
             object : CfirDefaultVisitor<Unit, Unit>() {
-                /**
-                 * 访问展开产物中的每个 CFIR 节点，记录其 source 到原始 macro surface 的映射。
-                 */
                 override fun visitElement(element: CfirElement, data: Unit) {
-                    registerGeneratedSource(element.source, originSurfaceId)
+                    element.source?.let { source ->
+                        val incoming = sourceMapping.originForSource(source)
+                        val recorded = registeredSourceOrigin(source)
+                        check(
+                            !(incoming == MacroCfirSourceOrigin.PreservedInput && recorded is MacroCfirSourceOrigin.Generated) &&
+                                !(incoming is MacroCfirSourceOrigin.Generated && recorded == MacroCfirSourceOrigin.PreservedInput)
+                        ) { "A source cannot have conflicting preserved/generated origins." }
+                        // 冲突裁决先于所有集合写入；未知来源不因 source 非空而变成 Generated。
+                        _macroExpansionSources += source
+                        val reparsed = _reparsedSourcesByCreated.getOrPut(source, ::mutableListOf)
+                        sourceMapping.reparsedSourcesFor(source).forEach { raw ->
+                            if (reparsed.none { it === raw }) reparsed += raw
+                        }
+                        when (val origin = incoming ?: recorded) {
+                            MacroCfirSourceOrigin.PreservedInput -> _preservedSources += source
+                            is MacroCfirSourceOrigin.Generated ->
+                                origin.surfaceIds.forEach { registerGeneratedSource(source, it) }
+                            null -> Unit
+                        }
+                    }
                     element.acceptChildren(this, data)
                 }
             },
@@ -716,6 +767,7 @@ class MacroExpansionRegistry : org.cangnova.cangjie.cfir.session.CfirSessionComp
 
     /** 普通 checker 在 generated source 上报错时，反查原 macro 调用 source。 */
     fun originSourceForGeneratedSource(source: AbstractCjSourceElement): CjSourceElement? {
+        if (source in _preservedSources) return null
         val originId = originSurfaceIdForGeneratedSource(source) ?: return null
         return _originSurfaceById[originId]?.sourceRange?.source
     }
@@ -1006,7 +1058,7 @@ interface MacroConstructionService {
          * 主流程顺序、forest 推进策略、宏 token 源码重建、payload/delimiter 语义、
          * splice 语义、degraded placeholder 形态任一变更都必须递增；上游 cache 据此整体失效。
          */
-        const val ALGORITHM_VERSION: Int = 3
+        const val ALGORITHM_VERSION: Int = 4
 
         /**
          * 无宏 identity 实现：把 raw 文件原样打包为可注册输入，

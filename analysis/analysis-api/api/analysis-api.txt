@@ -1430,10 +1430,15 @@ package org.cangnova.cangjie.analysis.api.symbols
 public sealed class CaParameterSymbol : CaVariableSymbol()
 ## org/cangnova/cangjie/analysis/api/symbols/CaPatternBindingSymbol.kt
 package org.cangnova.cangjie.analysis.api.symbols
-public abstract class CaPatternBindingSymbol : CaLocalVariableSymbol()
+public abstract class CaPatternBindingSymbol : CaVariableSymbol()
+CaPatternBindingSymbol.public abstract val isConst: Boolean
 ## org/cangnova/cangjie/analysis/api/symbols/CaPatternVariableSymbol.kt
 package org.cangnova.cangjie.analysis.api.symbols
-public abstract class CaPatternVariableSymbol : CaLocalVariableSymbol()
+public abstract class CaPatternVariableSymbol : CaDeclarationSymbol
+CaPatternVariableSymbol.public abstract val entries: List<CaPatternBindingSymbol>
+CaPatternVariableSymbol.public abstract val isVar: Boolean
+CaPatternVariableSymbol.public abstract val isConst: Boolean
+CaPatternVariableSymbol.public abstract override fun createPointer(): org.cangnova.cangjie.analysis.api.symbols.pointers.CaSymbolPointer<CaPatternVariableSymbol>
 ## org/cangnova/cangjie/analysis/api/symbols/CaPropertyAccessorSymbol.kt
 package org.cangnova.cangjie.analysis.api.symbols
 public sealed class CaPropertyAccessorSymbol : CaFunctionSymbol()
@@ -1502,6 +1507,10 @@ CaSymbolProvider.public val CjFieldVariable.symbol: CaFieldSymbol
 CaSymbolProvider.public val CjEnumConstructor.symbol: CaEnumConstructorSymbol
 CaSymbolProvider.public val CjPatternVariable.symbol: CaPatternVariableSymbol
 CaSymbolProvider.public val CjBindingPattern.symbol: CaPatternBindingSymbol
+CaSymbolProvider.public val CjNamedPattern.bindingSymbol: CaPatternBindingSymbol?
+CaSymbolProvider.public val org.cangnova.cangjie.psi.CjCatchParameter.bindingSymbol: CaLocalVariableSymbol?
+CaSymbolProvider.public val org.cangnova.cangjie.psi.CjCommandTypePattern.bindingSymbol: CaLocalVariableSymbol?
+CaSymbolProvider.public val org.cangnova.cangjie.psi.CjTryResource.bindingSymbol: CaLocalVariableSymbol?
 CaSymbolProvider.public val CjParameter.symbol: CaVariableSymbol
 CaSymbolProvider.public val CjTypeParameter.symbol: CaTypeParameterSymbol
 CaSymbolProvider.public fun getPackageSymbol(fqName: FqName, organizationName: Name? = null): CaPackageSymbol?
@@ -1516,6 +1525,7 @@ CaSymbolProvider.public fun getExtendSymbols(receiverType: CaType): List<CaExten
 CaSymbolProvider.public fun getDeclarationsByNamePrefix( namePrefix: String, isRepeatedInvocation: Boolean = false, ): List<CaDeclarationSymbol>
 public val CjElement.symbol: CaDeclarationSymbol
 public class.simpleName}")
+public val CjNamedPattern.bindingSymbol: CaPatternBindingSymbol?
 ## org/cangnova/cangjie/analysis/api/symbols/CaSymbolUnavailableException.kt
 package org.cangnova.cangjie.analysis.api.symbols
 public open class CaSymbolUnavailableException( val reason: CaSymbolUnavailabilityReason, message: String, cause: Throwable? = null, ) : CangJieRuntimeExceptionWithAttachments(message, cause)

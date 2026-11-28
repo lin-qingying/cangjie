@@ -19,6 +19,10 @@ dependencies {
     compileOnly(intellijCore())
 
     testImplementation(testFixtures(project(":tests:test-infrastructure")))
+    // 正式 LL named-import 集成；FullId 测试留在 serialization 的内部可见边界。
+    testImplementation(project(":analysis:low-level-api-cfir"))
+    testImplementation(project(":analysis:decompiled"))
+    testImplementation(testFixtures(project(":analysis:analysis-api-standalone")))
     testImplementation(kotlin("test"))
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.platform.launcher)

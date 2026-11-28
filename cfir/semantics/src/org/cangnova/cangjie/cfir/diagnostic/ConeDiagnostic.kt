@@ -148,8 +148,15 @@ data class ConeUnmatchedTypeArgumentsError(
 }
 
 /**
- * 携带多个候选的 Cone 诊断。
+ * 对位 Kotlin ConePostponedInferenceDiagnostic：延迟 lambda 结果尚未完成的正式类型占位。
+ * 它与源码语义错误不同，completion 必须在最终发布前替换该类型。
  */
+object ConePostponedInferenceDiagnostic : ConeDiagnostic {
+    override val reason: String
+        get() = "Cone type inference has been postponed due to lambda resolution"
+}
+
+/** 携带多个候选的 Cone 诊断。 */
 interface ConeDiagnosticWithCandidates : ConeDiagnostic {
     /** 参与该诊断的候选集合。 */
     val candidates: Collection<AbstractCandidate>

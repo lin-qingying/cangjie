@@ -69,32 +69,25 @@ class CfirImportResolveTransformer(
         }
     }
 
-    /** 对非声明元素继续递归转换；声明元素转交 [transformDeclaration] 控制阶段推进。 */
-    override fun <E : CfirElement> transformElement(element: E, data: Nothing?): E {
-        if (element is CfirDeclaration) {
-            @Suppress("UNCHECKED_CAST")
-            return transformDeclaration(element, data) as E
-        }
-        return super.transformElement(element, data)
-    }
+    /** 对齐 Kotlin import transformer：导入是文件事实，声明正文保持原 RAW 状态。 */
+    override fun <E : CfirElement> transformElement(element: E, data: Nothing?): E = element
 
-    /** 解析文件 import binding，并将声明推进到 IMPORTS 阶段。 */
-    override fun transformDeclaration(declaration: CfirDeclaration, data: Nothing?): CfirDeclaration {
-        if (declaration is CfirFile && declaration.resolvePhase >= CfirResolvePhase.IMPORTS) {
-            recordImportBindingsIfNeeded(declaration)
-            return declaration
+    override fun transformDeclaration(declaration: CfirDeclaration, data: Nothing?): CfirDeclaration = declaration
+
+    /** 只推进文件 IMPORTS；body/local/lambda 的阶段由其真正的声明解析器负责。 */
+    override fun transformFile(file: CfirFile, data: Nothing?): CfirFile {
+        if (file.resolvePhase >= CfirResolvePhase.IMPORTS) {
+            recordImportBindingsIfNeeded(file)
+            return file
         }
-        if (declaration.resolvePhase < CfirResolvePhase.RAW_CFIR || declaration.resolvePhase >= CfirResolvePhase.IMPORTS) {
-            return declaration
+        if (file.resolvePhase < CfirResolvePhase.RAW_CFIR) {
+            return file
         }
 
-        declaration.transformChildren(this, data)
-        if (declaration is CfirFile) {
-            recordImportBindingsIfNeeded(declaration)
-        }
-
-        declaration.replaceResolvePhase(CfirResolvePhase.IMPORTS)
-        return declaration
+        file.transformChildren(this, data)
+        recordImportBindingsIfNeeded(file)
+        file.replaceResolvePhase(CfirResolvePhase.IMPORTS)
+        return file
     }
 
     /**

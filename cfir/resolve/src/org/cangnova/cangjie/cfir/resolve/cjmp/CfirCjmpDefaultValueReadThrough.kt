@@ -19,6 +19,7 @@ package org.cangnova.cangjie.cfir.resolve.cjmp
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
+import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
 import org.cangnova.cangjie.cfir.session.cjmpHasDefaultValue
 import org.cangnova.cangjie.cfir.session.cjmpMappingStorage
 import org.cangnova.cangjie.cfir.session.isCjmpSpecificCompilationEnabled
@@ -38,8 +39,9 @@ import org.cangnova.cangjie.cfir.session.isCjmpSpecificCompilationEnabled
  * 这种情况仍按既有语义读不到默认值，由后续正常阶段补齐。
  */
 internal fun CfirValueParameter.cjmpHasDefaultValueForCallResolution(): Boolean {
-    ensureCjmpCounterpartEstablished()
-    return cjmpHasDefaultValue()
+    val parameter = unwrapSubstitutionOverrides()
+    parameter.ensureCjmpCounterpartEstablished()
+    return parameter.cjmpHasDefaultValue()
 }
 
 /**

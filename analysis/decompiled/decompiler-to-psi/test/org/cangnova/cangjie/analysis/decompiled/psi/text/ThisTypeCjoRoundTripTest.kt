@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.analysis.decompiled.psi.text
 
+import org.cangnova.cangjie.test.bindCjoFixture
 import PackageFormat.Package as CjoPackage
 import com.intellij.testFramework.LightVirtualFile
 import org.cangnova.cangjie.analysis.decompiler.stub.CjoDeclarationLoader
@@ -75,7 +76,7 @@ class ThisTypeCjoRoundTripTest : AbstractCfirAnalysisResolveTest() {
             buildResolvedTypeRef { coneType = ConeClassLikeType(lookupTag) },
         )
 
-        val loaded = loadMetadata(CfirCjoPackageMetadataProducer.produce(listOf(cfirFile)))
+        val loaded = loadMetadata(CfirCjoPackageMetadataProducer.produce(listOf(cfirFile)), cfirFile.moduleData)
         val decoded = CjoDeclarationLoader.loadDeclarations(loaded, cfirFile.moduleData)
         val decodedWidget = decoded.filterIsInstance<CfirClass>().single()
         val decodedFunctions = decodedWidget.declarations.filterIsInstance<CfirNamedFunction>()
@@ -105,15 +106,17 @@ class ThisTypeCjoRoundTripTest : AbstractCfirAnalysisResolveTest() {
         return cfirFile
     }
 
-    private fun loadMetadata(metadata: CjoPackageMetadata): LoadedCjoPackage {
+    private fun loadMetadata(metadata: CjoPackageMetadata, moduleData: org.cangnova.cangjie.cfir.common.CfirModuleData): LoadedCjoPackage {
         val bytes = CjoPackageWriter.toByteArray(metadata)
         val pkg = CjoPackage.getRootAsPackage(ByteBuffer.wrap(bytes))
+        val manager = CjoManager(CjoSearchPath { null })
+        bindCjoFixture(moduleData, manager, emptySet())
         return LoadedCjoPackage(
             binaryFile = LightVirtualFile("thistype.cjo"),
             packageFqName = FqName("thistype"),
             pkg = pkg,
             header = CjoPackageHeader.fromPackage(pkg),
-            cjoManager = CjoManager(CjoSearchPath { null }),
+            cjoManager = manager,
             isVersionSupported = true,
         )
     }

@@ -2,13 +2,12 @@ package org.cangnova.cangjie.analysis.api.cfir.symbols.pointers
 
 import com.intellij.psi.SmartPointerManager
 import com.intellij.psi.SmartPsiElementPointer
-import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.symbols.CaAnonymousFunctionSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaLocalVariableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPatternBindingSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPatternVariableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaTypeParameterSymbol
-import org.cangnova.cangjie.psi.CjBindingPattern
+import org.cangnova.cangjie.psi.CjNamedPattern
 import org.cangnova.cangjie.psi.CjFunctionLiteral
 import org.cangnova.cangjie.psi.CjPatternVariable
 import org.cangnova.cangjie.psi.CjTypeParameter
@@ -54,7 +53,11 @@ internal class CaCfirLocalVariableSymbolPointer(
     override fun restoreSymbol(session: org.cangnova.cangjie.analysis.api.CaSession): CaLocalVariableSymbol? {
         val cfirSession = restoreSession(session) ?: return null
         val psi = pointer.element ?: return null
-        return with(cfirSession) { (psi as? CjPatternVariable)?.symbol as? CaLocalVariableSymbol }
+        return with(cfirSession) {
+            val success = (psi as? org.cangnova.cangjie.psi.CjElement)?.tryResolveSymbols()
+                as? org.cangnova.cangjie.analysis.api.resolution.CaSymbolResolutionSuccess ?: return@with null
+            success.symbols.singleOrNull { it is CaLocalVariableSymbol && it.psi === psi } as? CaLocalVariableSymbol
+        }
     }
 }
 
@@ -96,7 +99,7 @@ internal class CaCfirPatternBindingSymbolPointer(
     override fun restoreSymbol(session: org.cangnova.cangjie.analysis.api.CaSession): CaPatternBindingSymbol? {
         val cfirSession = restoreSession(session) ?: return null
         val psi = pointer.element ?: return null
-        return with(cfirSession) { (psi as? CjBindingPattern)?.symbol }
+        return with(cfirSession) { (psi as? CjNamedPattern)?.bindingSymbol }
     }
 }
 

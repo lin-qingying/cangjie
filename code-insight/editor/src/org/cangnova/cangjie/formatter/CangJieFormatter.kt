@@ -2,6 +2,10 @@ package org.cangnova.cangjie.formatter
 
 import com.intellij.formatting.Formatter
 import com.intellij.formatting.FormatterImpl
+import com.intellij.formatting.FormattingProgressCallbackFactory
+import com.intellij.formatting.FormattingProgressTaskFactory
+import com.intellij.formatting.service.CoreFormattingService
+import com.intellij.formatting.service.FormattingService
 import com.intellij.lang.LanguageFormatting
 import com.intellij.lang.LanguageFormattingRestriction
 import com.intellij.mock.MockFileDocumentManagerImpl
@@ -14,6 +18,7 @@ import com.intellij.openapi.fileEditor.impl.FileDocumentManagerBase
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.command.CommandProcessor
+import com.intellij.openapi.extensions.LoadingOrder
 import com.intellij.core.CoreApplicationEnvironment
 import com.intellij.mock.MockApplication
 import com.intellij.openapi.vfs.VirtualFile
@@ -59,6 +64,12 @@ object CangJieFormatter {
         if (LanguageFormatting.INSTANCE.forLanguage(CangJieLanguage) == null) {
             LanguageFormatting.INSTANCE.addExplicitExtension(CangJieLanguage, CangJieFormattingModelBuilder())
         }
+    }
+
+    /** 先装配真实格式化/POM 服务，供 ModCommand 构造编辑；此入口不修改任何 PSI。 */
+    fun ensureModifiablePsiServicesRegistered(project: Project) {
+        ensureFormattingModelRegistered()
+        ensureProjectCodeStyleSettingsManager(project)
     }
 
     /**
@@ -123,6 +134,18 @@ object CangJieFormatter {
     private fun ensureFormattingInfrastructureRegistered() {
         val application = ApplicationManager.getApplication() as? MockApplication ?: return
         val extensionArea = application.extensionArea
+        // ModCommand 的延期重排走平台 FormattingService；注册原生 core 引擎并保持其末位顺序。
+        if (!extensionArea.hasExtensionPoint(FormattingService.EP_NAME.name)) {
+            CoreApplicationEnvironment.registerExtensionPoint(
+                extensionArea,
+                FormattingService.EP_NAME.name,
+                FormattingService::class.java,
+            )
+        }
+        val formattingServices = extensionArea.getExtensionPoint<FormattingService>(FormattingService.EP_NAME.name)
+        if (formattingServices.extensionList.none { it is CoreFormattingService }) {
+            formattingServices.registerExtension(CoreFormattingService(), LoadingOrder.LAST, application)
+        }
         if (!extensionArea.hasExtensionPoint(FORMATTER_RESTRICTION_EXTENSION_POINT)) {
             CoreApplicationEnvironment.registerExtensionPoint(
                 extensionArea,
@@ -167,6 +190,10 @@ object CangJieFormatter {
         }
         if (application.getService(Formatter::class.java) == null) {
             application.registerService(Formatter::class.java, FormatterImpl::class.java)
+        }
+        // 复用 LangExtensions.xml 的原生工厂；headless 是否创建回调由平台工厂自身判断。
+        if (application.getService(FormattingProgressCallbackFactory::class.java) == null) {
+            application.registerService(FormattingProgressCallbackFactory::class.java, FormattingProgressTaskFactory::class.java)
         }
         ensureFileDocumentManager(application)
         ensureIndentHelper(application)
@@ -215,6 +242,9 @@ object CangJieFormatter {
         if (mockProject.getService(TreeAspect::class.java) == null) {
             mockProject.registerService(TreeAspect::class.java)
         }
+        if (mockProject.getService(PostprocessReformattingAspect::class.java) == null) {
+            mockProject.registerService(PostprocessReformattingAspect::class.java, PostprocessReformattingAspectImpl::class.java)
+        }
         val pomModel = mockProject.getService(PomModel::class.java)
         if (pomModel?.getModelAspect(PostprocessReformattingAspect::class.java) == null) {
             mockProject.picoContainer.unregisterComponent(PomModel::class.java.name)
@@ -227,6 +257,7 @@ object CangJieFormatter {
      * `AppCodeStyleSettingsManager`，headless 宿主同样需要把这层 service 补齐。
      */
     private fun ensureApplicationCodeStyleSettingsManager(application: MockApplication) {
+        CangJieCodeStyleSettingsFactory.ensureCodeStyleSettingsServiceRegistered()
         if (application.getService(AppCodeStyleSettingsManager::class.java) == null) {
             application.registerService(AppCodeStyleSettingsManager::class.java, AppCodeStyleSettingsManager::class.java)
         }
@@ -378,7 +409,8 @@ private class HeadlessFormattingPomModel(
     /**
      * headless formatter 需要额外暴露的 postprocess reformatting aspect。
      */
-    private val postprocessAspect = PostprocessReformattingAspectImpl(project)
+    // POM 与 ModCommand 共享已注册的真实 project aspect，不能各建一份格式化状态。
+    private val postprocessAspect = checkNotNull(project.getService(PostprocessReformattingAspect::class.java))
 
     /**
      * 返回 PomModel aspect，补齐 PostprocessReformattingAspect。

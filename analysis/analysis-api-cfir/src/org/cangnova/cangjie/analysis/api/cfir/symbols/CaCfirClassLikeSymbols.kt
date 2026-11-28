@@ -1,5 +1,7 @@
 package org.cangnova.cangjie.analysis.api.cfir.symbols
 
+import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.llCfirModuleData
+
 import org.cangnova.cangjie.analysis.api.cfir.*
 
 import com.intellij.openapi.diagnostic.Logger
@@ -89,7 +91,7 @@ internal class CaCfirClassSymbol private constructor(
      * class-like 符号所在模块。
      */
     override val containingModule: CaModule
-        get() = analysisSession.useSiteModule
+        get() = withValidityAssertion { cfirSymbol.llCfirModuleData.caModule }
 
     /**
      * class-like 公开注解列表。
@@ -203,6 +205,9 @@ internal class CaCfirClassSymbol private constructor(
         val stableClassId = classId ?: error("Class symbol `${name}` is missing ClassId")
         CaCfirClassLikeSymbolPointer(CaCfirClassLikeSymbolCacheKey(stableClassId), CaAnnotatedSymbol::class.java)
     }
+
+    override fun equals(other: Any?): Boolean = psiOrSymbolEquals(other)
+    override fun hashCode(): Int = classId?.hashCode() ?: psiOrSymbolHashCode()
 }
 
 /**
@@ -252,7 +257,7 @@ internal class CaCfirTypeAliasSymbol private constructor(
      * typealias 所在模块。
      */
     override val containingModule: CaModule
-        get() = analysisSession.useSiteModule
+        get() = withValidityAssertion { cfirSymbol.llCfirModuleData.caModule }
 
     /**
      * typealias 公开注解列表。
@@ -341,6 +346,9 @@ internal class CaCfirTypeAliasSymbol private constructor(
         val stableClassId = classId ?: error("Type-alias symbol `${name}` is missing ClassId")
         CaCfirClassLikeSymbolPointer(CaCfirClassLikeSymbolCacheKey(stableClassId), CaAnnotatedSymbol::class.java)
     }
+
+    override fun equals(other: Any?): Boolean = psiOrSymbolEquals(other)
+    override fun hashCode(): Int = psiOrSymbolHashCode()
 }
 
 /**

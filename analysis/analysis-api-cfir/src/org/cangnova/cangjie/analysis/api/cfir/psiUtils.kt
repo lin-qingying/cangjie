@@ -326,6 +326,15 @@ internal fun CaCfirSymbol<*>.findLibraryPsi(receiverHint: String? = null): PsiEl
                 }
         }
 
+        is org.cangnova.cangjie.cfir.symbols.CfirPatternBindingSymbol -> {
+            val callableId = symbol.callableId
+            val file = decompiledFile(callableId.packageName) ?: return null
+            // 官方 CJO 将全局解构展开为独立 VarDecl；每个 wire leaf 对应一个单名投影容器。
+            file.declarations.filterIsInstance<org.cangnova.cangjie.psi.CjPatternVariable>()
+                .mapNotNull { it.pattern as? org.cangnova.cangjie.psi.CjBindingPattern }
+                .singleOrNull { it.name == callableId.callableName.asString() }
+        }
+
         is CfirCallableSymbol<*> -> {
             val callableId = symbol.callableId
             val file = decompiledFile(callableId.packageName) ?: return null
@@ -429,6 +438,7 @@ private fun findDeclaredCallable(container: CjDeclarationContainer, name: String
 private fun isCallableNamed(declaration: CjDeclaration, name: String): Boolean = when (declaration) {
     is CjNamedFunction -> declaration.name == name
     is CjProperty -> declaration.name == name
+    is org.cangnova.cangjie.psi.CjFieldVariable -> declaration.name == name
     else -> false
 }
 
@@ -476,6 +486,10 @@ internal fun CfirDeclaration.findReferencePsi(scope: GlobalSearchScope, preferre
             ?.takeIf { psi ->
                 psi.isValid && psi.isPhysical && psi.containingFile?.virtualFile?.let(scope::contains) == true
             }
+    }
+
+    if (this is org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable) {
+        return getAllowedPsi(preferredProject)
     }
 
     return (if (this is CfirCallableDeclaration) {

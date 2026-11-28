@@ -1,5 +1,7 @@
 package org.cangnova.cangjie.analysis.api.cfir.symbols
 
+import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.llCfirModuleData
+
 import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.api.CaImplementationDetail
 import org.cangnova.cangjie.analysis.api.annotations.CaAnnotationList
@@ -38,10 +40,12 @@ import org.cangnova.cangjie.cfir.containingClassLookupTag
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirMacroDeclarationSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirMainFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.lexer.CjModifierKeywordToken
 import org.cangnova.cangjie.lexer.CjTokens
@@ -90,10 +94,10 @@ internal class CaCfirNamedFunctionSymbol private constructor(
     )
 
     /**
-     * 函数所在的 use-site 模块。
+     * 函数实际声明所属的模块。
      */
     override val containingModule: CaModule
-        get() = analysisSession.useSiteModule
+        get() = withValidityAssertion { cfirSymbol.llCfirModuleData.caModule }
 
     /**
      * 函数 CFIR member 状态。
@@ -290,6 +294,8 @@ internal class CaCfirNamedFunctionSymbol private constructor(
         }
     }
 
+    override fun equals(other: Any?): Boolean = psiOrSymbolEquals(other)
+    override fun hashCode(): Int = psiOrSymbolHashCode()
 }
 
 @OptIn(CaImplementationDetail::class)
@@ -471,6 +477,12 @@ internal class CaCfirMainFunctionSymbol(
      */
     override val name: Name
         get() = cfirSymbol.name
+
+    /** main 的公开模型只持有 CFIR 声明，身份比较沿同一个 CFIR 符号。 */
+    override fun equals(other: Any?): Boolean =
+        other is CaCfirMainFunctionSymbol && cfirSymbol === other.cfirSymbol
+
+    override fun hashCode(): Int = cfirSymbol.hashCode()
 }
 
 /**
@@ -510,10 +522,10 @@ internal class CaCfirMacroSymbol private constructor(
         get() = super<CaCfirCjBasedSymbol>.cfirSymbol
 
     /**
-     * macro 所在的 use-site 模块。
+     * macro 实际声明所属的模块。
      */
     override val containingModule: CaModule
-        get() = analysisSession.useSiteModule
+        get() = withValidityAssertion { cfirSymbol.llCfirModuleData.caModule }
 
     /**
      * macro CFIR member 状态。
@@ -673,10 +685,10 @@ internal class CaCfirMacroSymbol private constructor(
      */
     override val valueParameters: List<CaValueParameterSymbol>
         get() = withValidityAssertion {
-            createCaValueParameters() ?: (cfirSymbol.cfir as? CfirFunction)
-                ?.valueParameters
-                ?.map { valueParameter -> builder.variableBuilder.buildValueParameterSymbol(valueParameter.symbol) }
-                .orEmpty()
+            // 宏签名是独立的编译期声明；从其真实 owner 投影参数，不通过正文映射恢复参数。
+            val macro = cfirSymbol
+            macro.lazyResolveToPhase(CfirResolvePhase.TYPES)
+            macro.createCjValueParameters(builder)
         }
 
     /**

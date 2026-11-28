@@ -26,7 +26,6 @@ package org.cangnova.cangjie.analysis.api.cfir.components
 
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.references.CaCfirReference
-import org.cangnova.cangjie.analysis.api.cfir.symbols.publicSymbolCacheKeyOrNull
 import org.cangnova.cangjie.analysis.api.cfir.diagnostics.CJ_DIAGNOSTIC_CONVERTER
 import org.cangnova.cangjie.analysis.api.cfir.components.resolver.resolveSymbol
 import org.cangnova.cangjie.analysis.api.components.asSignature
@@ -54,7 +53,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirResolvable
 import org.cangnova.cangjie.cfir.analysis.diagnostics.toCfirDiagnostics
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
-import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
+import org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRef
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
@@ -90,8 +89,6 @@ import org.cangnova.cangjie.idea.references.mainReference
 import org.cangnova.cangjie.resolve.calls.inference.buildCurrentSubstitutor
 import org.cangnova.cangjie.psi.*
 import org.cangnova.cangjie.psi.psiUtil.getQualifiedExpressionForSelectorOrThis
-import org.cangnova.cangjie.psi.psiUtil.getStrictParentOfType
-import org.cangnova.cangjie.psi.stubs.elements.getAllBindings
 import org.cangnova.cangjie.type.model.TypeConstructorMarker
 import org.cangnova.cangjie.utils.exceptions.checkWithAttachment
 import org.cangnova.cangjie.utils.exceptions.withPsiEntry
@@ -116,17 +113,7 @@ internal class CaCfirResolver(
             resolveCallExpressionToSymbol(this)?.let { return@withValidityAssertion listOf(it) }
         }
 
-        val directSymbols = doResolveToSymbols(this)
-        if (directSymbols.isNotEmpty()) {
-            return@withValidityAssertion directSymbols
-        }
-
-        val branchBindings = restoreMatchBranchPatternBindings(this)
-        if (branchBindings.isNotEmpty()) {
-            return@withValidityAssertion branchBindings.distinctSymbols()
-        }
-
-        return@withValidityAssertion emptyList()
+        return@withValidityAssertion doResolveToSymbols(this)
     }
 
     /**
@@ -441,7 +428,7 @@ internal class CaCfirResolver(
     /** 从通用候选约束状态恢复声明类型参数的最终 CFIR 类型实参。 */
     private fun candidateTypeArgumentMappings(
         candidate: Candidate,
-        typeParameters: List<CfirTypeParameter>,
+        typeParameters: List<CfirTypeParameterRef>,
     ): Map<TypeConstructorMarker, ConeCangJieType> {
         if (typeParameters.isEmpty()) return emptyMap()
         val systemSubstitutor = candidate.system.buildCurrentSubstitutor().asCone()
@@ -629,58 +616,6 @@ internal class CaCfirResolver(
      */
     private fun CfirExpression.toPublicReceiverValue(): CaReceiverValue {
         return CaBaseReceiverValue(analysisSession.cfirSymbolBuilder.typeBuilder.buildType(resolvedType))
-    }
-
-    /**
-     * `match` 分支中的模式绑定属于源码局部声明。
-     *
-     * 它们在当前仓库里还没有完全通过 low-level reference 索引稳定暴露，
-     * 但其语义边界在 PSI 上是明确的：只能解析到当前分支条件侧声明的具名绑定。
-     * 因此这里直接基于 `CjMatchEntry.conditions` 恢复同分支 binding symbol，
-     * 保证不同分支的同名绑定不会混淆。
-     */
-    private fun restoreMatchBranchPatternBindings(reference: CjReferenceExpression): Collection<CaSymbol> {
-        val simpleName = reference as? CjSimpleNameExpression ?: return emptyList()
-        val matchEntry = simpleName.getStrictParentOfType<CjMatchEntry>() ?: return emptyList()
-        val arrow = matchEntry.arrow ?: return emptyList()
-        if (simpleName.textOffset <= arrow.textOffset) {
-            return emptyList()
-        }
-
-        return matchEntry.conditions.asSequence()
-            .flatMap { condition ->
-                sequence {
-                    yieldAll(condition.getAllBindings().asSequence())
-                    yieldAll(com.intellij.psi.util.PsiTreeUtil.findChildrenOfType(condition, CjVarOrEnumPattern::class.java).asSequence())
-                }
-            }
-            .filter { declaration -> declaration.name == simpleName.referencedName }
-            .mapNotNull { declaration ->
-                resolvePatternBindingSymbolByPsi(declaration)
-                    ?: (declaration as? CjVarOrEnumPattern)?.reference?.let(::resolvePatternBindingSymbolByPsi)
-            }
-            .toList()
-    }
-
-    /**
-     * 使用公开缓存键或对象身份对符号集合去重。
-     */
-    private fun Collection<CaSymbol>.distinctSymbols(): List<CaSymbol> {
-        return distinctBy { symbol ->
-            symbol.publicSymbolCacheKeyOrNull() ?: "${symbol::class.qualifiedName}@${System.identityHashCode(symbol)}"
-        }
-    }
-
-    /**
-     * 从模式绑定 PSI 恢复对应的公开 pattern binding 符号。
-     */
-    private fun resolvePatternBindingSymbolByPsi(psi: com.intellij.psi.PsiElement): CaPatternBindingSymbol? {
-        val cfirDeclaration = (psi as? CjElement)
-            ?.getOrBuildCfir(analysisSession.resolutionFacade) as? CfirDeclaration
-            ?: return null
-        return listOf(buildPublicSymbol(cfirDeclaration.symbol))
-            .filterIsInstance<CaPatternBindingSymbol>()
-            .firstOrNull()
     }
 
     /**

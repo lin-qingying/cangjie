@@ -154,19 +154,7 @@ class ConstraintInjector(
         upperType: CangJieTypeMarker,
         position: ConstraintPosition,
     ) {
-        val initialConstraint = InitialConstraint(lowerType, upperType, UPPER, position).also { c.addInitialConstraint(it) }
-        inferenceLogger?.logInitial(initialConstraint, c)
-
-        updateAllowedTypeDepth(lowerType)
-        updateAllowedTypeDepth(upperType)
-
-        inferenceLogger?.withOrigin(initialConstraint) {
-            with(TypeCheckerStateForConstraintInjector(c, IncorporationConstraintPosition(initialConstraint))) {
-                addSubTypeConstraintAndIncorporateIt(lowerType, upperType)
-            }
-        } ?: with(TypeCheckerStateForConstraintInjector(c, IncorporationConstraintPosition(initialConstraint))) {
-            addSubTypeConstraintAndIncorporateIt(lowerType, upperType)
-        }
+        replayInitialConstraint(InitialConstraint(lowerType, upperType, UPPER, position))
     }
 
     /**
@@ -190,21 +178,44 @@ class ConstraintInjector(
             b.typeConstructor() is TypeVariableTypeConstructorMarker -> b to a
             else -> return
         }
-        val initialConstraint = InitialConstraint(typeVariable, equalType, EQUALITY, position).also { c.addInitialConstraint(it) }
+        replayInitialConstraint(InitialConstraint(typeVariable, equalType, EQUALITY, position))
+    }
+
+    /** 保留原 InitialConstraint 身份，incorporation 与 Kotlin 原始 subtype/equality 路径一致。 */
+    context(c: Context)
+    internal fun replayInitialConstraint(
+        initialConstraint: InitialConstraint,
+        a: CangJieTypeMarker = initialConstraint.a,
+        b: CangJieTypeMarker = initialConstraint.b,
+    ) {
+        c.addInitialConstraint(initialConstraint)
         inferenceLogger?.logInitial(initialConstraint, c)
-
-        with(TypeCheckerStateForConstraintInjector(c, IncorporationConstraintPosition(initialConstraint))) {
-            if (!typeVariable.isRigidType()) {
+        when (initialConstraint.constraintKind) {
+            UPPER, LOWER -> {
+                val lowerType = if (initialConstraint.constraintKind == UPPER) a else b
+                val upperType = if (initialConstraint.constraintKind == UPPER) b else a
+                updateAllowedTypeDepth(lowerType)
+                updateAllowedTypeDepth(upperType)
                 inferenceLogger?.withOrigin(initialConstraint) {
-                    addInitialEqualityConstraintThroughSubtyping(typeVariable, equalType)
-                } ?: addInitialEqualityConstraintThroughSubtyping(typeVariable, equalType)
-                return
+                    with(TypeCheckerStateForConstraintInjector(c, IncorporationConstraintPosition(initialConstraint))) {
+                        addSubTypeConstraintAndIncorporateIt(lowerType, upperType)
+                    }
+                } ?: with(TypeCheckerStateForConstraintInjector(c, IncorporationConstraintPosition(initialConstraint))) {
+                    addSubTypeConstraintAndIncorporateIt(lowerType, upperType)
+                }
             }
-
-            updateAllowedTypeDepth(equalType)
-            inferenceLogger?.withOrigin(initialConstraint) {
-                addEqualityConstraintAndIncorporateIt(typeVariable, equalType)
-            } ?: addEqualityConstraintAndIncorporateIt(typeVariable, equalType)
+            EQUALITY -> with(TypeCheckerStateForConstraintInjector(c, IncorporationConstraintPosition(initialConstraint))) {
+                if (a.typeConstructor() !is TypeVariableTypeConstructorMarker || !a.isRigidType()) {
+                    inferenceLogger?.withOrigin(initialConstraint) {
+                        addInitialEqualityConstraintThroughSubtyping(a, b)
+                    } ?: addInitialEqualityConstraintThroughSubtyping(a, b)
+                    return
+                }
+                updateAllowedTypeDepth(b)
+                inferenceLogger?.withOrigin(initialConstraint) {
+                    addEqualityConstraintAndIncorporateIt(a, b)
+                } ?: addEqualityConstraintAndIncorporateIt(a, b)
+            }
         }
     }
 

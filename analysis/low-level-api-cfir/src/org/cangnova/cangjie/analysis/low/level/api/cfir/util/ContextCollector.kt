@@ -45,6 +45,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRefsOwner
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
+import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.resolve.codeFragmentContext
 import org.cangnova.cangjie.cfir.realPsi
 import org.cangnova.cangjie.cfir.resolve.SessionHolderImpl
@@ -598,11 +599,15 @@ private class ContextCollectorVisitor(
      * 访问字段变量。
      */
     override fun visitFieldVariable(fieldVariable: CfirFieldVariable) {
-        visitVariableLike(fieldVariable, fieldVariable.symbol, fieldVariable.initializer)
+        visitVariableLike(fieldVariable, fieldVariable.initializer)
         // 与 pattern binding 同理：字段变量要在 visitVariableLike 的清理之外入作用域。
         if (isActive) {
             context.storeVariable(fieldVariable, fieldVariable.moduleData.session)
         }
+    }
+
+    override fun visitResourceVariable(resourceVariable: org.cangnova.cangjie.cfir.declarations.CfirResourceVariable) {
+        visitVariableLike(resourceVariable, resourceVariable.initializer)
     }
 
     /**
@@ -647,7 +652,7 @@ private class ContextCollectorVisitor(
      * 的 `y` 从作用域里消失。
      */
     override fun visitPatternBindingVariable(patternBindingVariable: CfirPatternBindingVariable) {
-        visitVariableLike(patternBindingVariable, patternBindingVariable.symbol, patternBindingVariable.initializer)
+        visitVariableLike(patternBindingVariable, patternBindingVariable.initializer)
         if (isActive) {
             context.storeVariable(patternBindingVariable, patternBindingVariable.moduleData.session)
         }
@@ -660,21 +665,20 @@ private class ContextCollectorVisitor(
      * 否则清理会把存储回滚。作用域由 [visitPatternVariable] 与 [visitFieldVariable] 负责。
      */
     private fun visitVariableLike(
-        variable: CfirDeclaration,
-        symbol: CfirCallableSymbol<*>,
+        variable: CfirVariable,
         initializer: CfirElement?,
     ) = withProcessor(variable) {
         dumpContext(variable, ContextKind.SELF)
 
-        if (variable is CfirFieldVariable) {
-            processAnnotations(variable)
-            process(variable.returnTypeRef)
-        }
+        processAnnotations(variable)
+        process(variable.returnTypeRef)
 
         onActive {
             context.withLocalVariableBodyCompat {
-                dumpContext(variable, ContextKind.BODY)
-                process(initializer)
+                context.withVariableInitializer(variable) {
+                    dumpContext(variable, ContextKind.BODY)
+                    process(initializer)
+                }
             }
         }
     }
@@ -761,7 +765,46 @@ private class ContextCollectorVisitor(
             process(matchBranch.pattern)
             dumpContext(matchBranch, ContextKind.BODY)
             process(matchBranch.guard)
-            process(matchBranch.body)
+            doVisitBlock(matchBranch.body, isolateBlock = false)
+        }
+    }
+
+    override fun visitTryExpression(tryExpression: org.cangnova.cangjie.cfir.expressions.CfirTryExpression) = withProcessor(tryExpression) {
+        dumpContext(tryExpression, ContextKind.SELF)
+        onActive {
+            context.forBlock(context.file.moduleData.session) {
+                // 与正式 try 解析相同：所有资源名字先进入共同作用域，各 initializer 仅排除自身。
+                tryExpression.resources.forEach { resource ->
+                    context.storeVariable(resource, resource.moduleData.session)
+                }
+                processList(tryExpression.resources)
+                doVisitBlock(tryExpression.tryBlock, isolateBlock = false)
+            }
+            processList(tryExpression.catches)
+            processList(tryExpression.handlers)
+            process(tryExpression.finallyBlock)
+        }
+    }
+
+    override fun visitCatch(catch: org.cangnova.cangjie.cfir.expressions.CfirCatch) = withProcessor(catch) {
+        dumpContext(catch, ContextKind.SELF)
+        onActive {
+            context.forBlock(context.file.moduleData.session) {
+                process(catch.pattern)
+                dumpContext(catch, ContextKind.BODY)
+                doVisitBlock(catch.body, isolateBlock = false)
+            }
+        }
+    }
+
+    override fun visitHandleClause(handleClause: org.cangnova.cangjie.cfir.expressions.CfirHandleClause) = withProcessor(handleClause) {
+        dumpContext(handleClause, ContextKind.SELF)
+        onActive {
+            context.forBlock(context.file.moduleData.session) {
+                process(handleClause.commandPattern)
+                dumpContext(handleClause, ContextKind.BODY)
+                doVisitBlock(handleClause.body, isolateBlock = false)
+            }
         }
     }
 

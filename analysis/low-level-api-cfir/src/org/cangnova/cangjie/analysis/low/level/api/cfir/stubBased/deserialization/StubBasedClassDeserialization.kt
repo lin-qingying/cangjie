@@ -12,12 +12,15 @@ import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.declarations.CfirResolvedDeclarationStatus
+import org.cangnova.cangjie.cfir.declarations.CfirModifierExplicitness
+import org.cangnova.cangjie.cfir.declarations.CfirBodyPresence
 import org.cangnova.cangjie.cfir.declarations.EmptyDeprecationsProvider
 import org.cangnova.cangjie.cfir.declarations.builder.buildClass
 import org.cangnova.cangjie.cfir.declarations.builder.buildEnum
 import org.cangnova.cangjie.cfir.declarations.builder.buildInterface
 import org.cangnova.cangjie.cfir.declarations.builder.buildStruct
-import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
+import org.cangnova.cangjie.cfir.declarations.builder.buildResolvedDeclarationStatus
 import org.cangnova.cangjie.cfir.scopes.CfirScopeProvider
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.toLookupTag
@@ -30,52 +33,25 @@ import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.cfir.toCfirResolvedTypeRef
-import org.cangnova.cangjie.descriptors.Modality
-import org.cangnova.cangjie.descriptors.Visibilities
-import org.cangnova.cangjie.descriptors.Visibility
-import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.name.ClassId
-import org.cangnova.cangjie.psi.CjClass
 import org.cangnova.cangjie.psi.CjConstructor
 import org.cangnova.cangjie.psi.CjDeclaration
 import org.cangnova.cangjie.psi.CjEnumConstructor
 import org.cangnova.cangjie.psi.CjFieldVariable
 import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.CjEnum
-import org.cangnova.cangjie.psi.CjModifierListOwner
 import org.cangnova.cangjie.psi.CjNamedFunction
 import org.cangnova.cangjie.psi.CjProperty
 import org.cangnova.cangjie.psi.CjTypeStatement
+import org.cangnova.cangjie.psi.stubs.CangJieCompiledDeclarationMetadata
+import org.cangnova.cangjie.psi.stubs.CangJieCompiledDeclarationStatus
+import org.cangnova.cangjie.psi.stubs.CangJieCompiledDeclarationStatus.Flag
+import org.cangnova.cangjie.psi.stubs.CangJieModifierListStub
 import org.cangnova.cangjie.serialization.deserialization.descriptors.DeserializedContainerSource
 import org.cangnova.cangjie.source.CjRealPsiSourceElement
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
 import org.cangnova.cangjie.utils.exceptions.withPsiEntry
-
-/**
- * 从 PSI 修饰符列表恢复 CFIR visibility。
- */
-internal val CjModifierListOwner.visibility: Visibility
-    get() = with(modifierList) {
-        when {
-            this == null -> Visibilities.Public
-            hasModifier(CjTokens.PRIVATE_KEYWORD) -> Visibilities.Private
-            hasModifier(CjTokens.PUBLIC_KEYWORD) -> Visibilities.Public
-            hasModifier(CjTokens.PROTECTED_KEYWORD) -> Visibilities.Protected
-            else -> if (hasModifier(CjTokens.INTERNAL_KEYWORD)) Visibilities.Internal else Visibilities.Public
-        }
-    }
-
-/**
- * 从 PSI 修饰符恢复 CFIR modality。
- */
-internal val CjDeclaration.modality: Modality
-    get() = when {
-        hasModifier(CjTokens.SEALED_KEYWORD) -> Modality.SEALED
-        hasModifier(CjTokens.ABSTRACT_KEYWORD) || this is CjClass && isInterface() -> Modality.ABSTRACT
-        hasModifier(CjTokens.OPEN_KEYWORD) -> Modality.OPEN
-        else -> Modality.FINAL
-    }
 
 /** 取 compiled PSI 元素的 backing stub：优先绿色 stub，缺失时即时计算并缓存。 */
 internal inline val <T, reified S> T.compiledStub: S
@@ -101,6 +77,50 @@ private fun <S, T> T.calculateStub(): Stub
         stub
     }
 }
+
+/** 当前声明自己的 CJO 状态快照；缺失是存根协议错误，不能由源码 token 或 consumer session 补齐。 */
+internal val CjDeclaration.compiledDeclarationMetadata: CangJieCompiledDeclarationMetadata
+    get() {
+        val header = checkNotNull(modifierList) { "Compiled declaration has no metadata header: ${this::class}" }
+        val stub: CangJieModifierListStub = header.compiledStub
+        return checkNotNull(stub.compiledDeclarationMetadata) { "Compiled declaration has no CJO status: ${this::class}" }
+    }
+
+/** 在 ANALYZED_DEPENDENCIES 发布之前，从所属声明的完整 metadata 构建 resolved status。 */
+internal fun CjDeclaration.buildResolvedStatus(): CfirResolvedDeclarationStatus =
+    compiledDeclarationMetadata.status.toResolvedStatus()
+
+/** 只改变 CFIR 状态表示形态，逐项保留当前/imported owner 的已解码 CJO 事实。 */
+internal fun CangJieCompiledDeclarationStatus.toResolvedStatus(): CfirResolvedDeclarationStatus =
+    buildResolvedDeclarationStatus {
+        visibility = this@toResolvedStatus.visibility
+        modality = this@toResolvedStatus.modality
+        visibilityExplicitness = CfirModifierExplicitness.valueOf(this@toResolvedStatus.visibilityExplicitness.name)
+        modalityExplicitness = CfirModifierExplicitness.valueOf(this@toResolvedStatus.modalityExplicitness.name)
+        bodyPresence = CfirBodyPresence.valueOf(this@toResolvedStatus.bodyPresence.name)
+        val flags = this@toResolvedStatus.flags
+        isDeclarationFile = Flag.DECLARATION_FILE in flags
+        isVisibilityExplicit = Flag.VISIBILITY_EXPLICIT in flags
+        isModalityExplicit = Flag.MODALITY_EXPLICIT in flags
+        isAbstractExplicit = Flag.ABSTRACT_EXPLICIT in flags
+        isOverride = Flag.OVERRIDE in flags
+        isOperator = Flag.OPERATOR in flags
+        isStatic = Flag.STATIC in flags
+        isConst = Flag.CONST in flags
+        isMut = Flag.MUT in flags
+        isUnsafe = Flag.UNSAFE in flags
+        isForeign = Flag.FOREIGN in flags
+        isC = Flag.C in flags
+        isCommon = Flag.COMMON in flags
+        isFromCommonPart = Flag.FROM_COMMON_PART in flags
+        isSpecific = Flag.SPECIFIC in flags
+        isCommonWithDefault = Flag.COMMON_WITH_DEFAULT in flags
+        isRedef = Flag.REDEF in flags
+        isDefault = Flag.DEFAULT in flags
+        isAbstract = Flag.ABSTRACT in flags
+        isOpen = Flag.OPEN in flags
+        isSealed = Flag.SEALED in flags
+    }
 
 /**
  * 对齐 Kotlin `deserializeClassToSymbol` 的职责边界：
@@ -143,7 +163,7 @@ internal fun deserializeClassToSymbol(
         initialOrigin,
     )
 
-    val status = buildResolvedStatus(classOrObject.visibility, classOrObject.modality)
+    val status = classOrObject.buildResolvedStatus()
     val typeParameters = context.typeDeserializer.ownTypeParameters.map { it.cfir }
     val superTypeRefs = mutableListOf<CfirTypeRef>()
     val declarations = mutableListOf<CfirDeclaration>()
@@ -261,19 +281,6 @@ internal fun deserializeClassToSymbol(
         else -> errorWithAttachment("Unexpected class-like symbol: ${symbol::class}") {
             withPsiEntry("classOrObject", classOrObject)
         }
-    }
-}
-
-/**
- * 根据 visibility 和 modality 构建已解析声明状态。
- */
-private fun buildResolvedStatus(visibility: Visibility, modality: Modality): CfirDeclarationStatusImpl {
-    return CfirDeclarationStatusImpl(visibility, modality).apply {
-        isVisibilityExplicit = visibility != Visibilities.Public
-        isModalityExplicit = modality != Modality.FINAL
-        isAbstract = modality == Modality.ABSTRACT
-        isOpen = modality == Modality.OPEN
-        isSealed = modality == Modality.SEALED
     }
 }
 

@@ -2,7 +2,6 @@
 
 package org.cangnova.cangjie.analysis.low.level.api.cfir.transformers
 
-import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirGlobalResolveComponents
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.targets.LLCfirResolveTarget
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.targets.LLCfirResolveTargetVisitor
@@ -12,7 +11,6 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.api.withCfirDesignationE
 import org.cangnova.cangjie.analysis.low.level.api.cfir.file.builder.LLCfirLockProvider
 import org.cangnova.cangjie.analysis.low.level.api.cfir.lazy.resolve.LLCfirPhaseUpdater
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
-import org.cangnova.cangjie.analysis.low.level.api.cfir.util.CfirElementFinder
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.LLFlightRecorder
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.checkPhase
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.errorWithCfirSpecificEntries
@@ -22,18 +20,13 @@ import org.cangnova.cangjie.cfir.correspondingProperty
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.originalIfFakeOverrideOrDelegated
 import org.cangnova.cangjie.cfir.ScopeSession
-import org.cangnova.cangjie.cfir.psi
-import org.cangnova.cangjie.cfir.resolve.providers.getContainingFile
 import org.cangnova.cangjie.cfir.session.bodyResolvePrerequisitePhase
-import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.checkWithAttachment
 import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
 import org.cangnova.cangjie.utils.exceptions.withCfirEntry
-import org.cangnova.cangjie.psi.CjBindingPattern
-import org.cangnova.cangjie.psi.CjPatternVariable
 
 /**
  * 单个 [CfirResolvePhase] 的低阶目标解析器基类。
@@ -153,23 +146,22 @@ internal sealed class LLCfirTargetResolver(
      * 该步骤在无锁解析之前执行；阶段不需要依赖解析时可通过 [skipDependencyTargetResolutionStep] 跳过。
      */
     private fun resolveDependencies(target: CfirElementWithResolveState) {
+        if (target is CfirCallableDeclaration && target.canHaveDeferredReturnTypeCalculation) {
+            // 签名副本与原声明共享注解；BODY 解析注解参数时也必须先在副本锁外推进真实 owner。
+            target.originalIfFakeOverrideOrDelegated()?.lazyResolveToPhase(resolverPhase)
+            return
+        }
         if (skipDependencyTargetResolutionStep) return
 
         when {
-            // Fake or delegate declaration shared types and annotations from the original one
-            target is CfirCallableDeclaration && target.canHaveDeferredReturnTypeCalculation -> {
-                val originalDeclaration = target.originalIfFakeOverrideOrDelegated()
-                originalDeclaration?.lazyResolveToPhase(resolverPhase)
-            }
-
             target is CfirProperty -> {
                 // We share type references and annotations with the original parameter
                 target.correspondingValueParameterFromPrimaryConstructor?.lazyResolveToPhase(resolverPhase)
             }
 
             target is CfirPatternBindingVariable -> {
-                // Pattern binding variables share implicit type resolution with the owning pattern variable.
-                target.owningPatternVariable?.lazyResolveToPhase(resolverPhase)
+                // 与 Kotlin 解构 entry 的容器依赖一致：必须在 leaf 锁之前推进声明 owner。
+                (target.patternTreeOwner as? CfirPatternVariable)?.lazyResolveToPhase(resolverPhase)
             }
 
             // constructor shares types inside delegation call with the containing class
@@ -423,17 +415,4 @@ private val CfirProperty.correspondingValueParameterFromPrimaryConstructor: Cfir
         val primaryConstructor = ownerClassLike.declarations.firstOrNull { it is CfirConstructor && it.isPrimary } as? CfirConstructor
             ?: return null
         return primaryConstructor.valueParameters.firstOrNull { it.correspondingProperty === this }
-    }
-
-/**
- * 返回 pattern binding 变量所属的外层 pattern 变量。
- *
- * pattern binding 变量的隐式类型状态由所属 pattern 变量承载，解析前需要先推进 owner。
- */
-private val CfirPatternBindingVariable.owningPatternVariable: CfirPatternVariable?
-    get() {
-        val containingFile = moduleData.session.cfirProvider.getContainingFile(symbol) ?: return null
-        val bindingPsi = psi as? CjBindingPattern ?: return null
-        val ownerPsi = PsiTreeUtil.getParentOfType(bindingPsi, CjPatternVariable::class.java, false) ?: return null
-        return CfirElementFinder.findDeclaration(containingFile, ownerPsi) as? CfirPatternVariable
     }

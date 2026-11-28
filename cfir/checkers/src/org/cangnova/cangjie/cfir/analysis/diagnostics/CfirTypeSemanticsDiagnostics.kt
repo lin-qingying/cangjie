@@ -15,16 +15,16 @@ import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.BuiltinPrimitiveOperators
-import org.cangnova.cangjie.cfir.types.ConeEnumType
+import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.ConeVArrayType
-import org.cangnova.cangjie.cfir.types.StdlibClassIds
-import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.isBoolean
 import org.cangnova.cangjie.cfir.types.isFloatType
 import org.cangnova.cangjie.cfir.types.isIntegerType
 import org.cangnova.cangjie.cfir.types.isOption
 import org.cangnova.cangjie.cfir.types.isRune
 import org.cangnova.cangjie.cfir.types.optionElementType
+import org.cangnova.cangjie.cfir.types.typeContext
+import org.cangnova.cangjie.type.AbstractTypeChecker
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.source.text
@@ -46,6 +46,8 @@ internal sealed interface CfirSpecificTypeMismatch {
         val literalDescription: String,
         /** 目标类型。 */
         val expectedType: ConeCangJieType,
+        /** 字面量语法种类；IDE 诊断保留完整相关 token 的范围。 */
+        val literalKind: CfirLiteralKind,
     ) : CfirSpecificTypeMismatch
     /** VArray 数组字面量长度与目标类型长度不一致。 */
     data class VArraySizeMismatch(
@@ -71,6 +73,7 @@ internal fun classifySpecificTypeMismatch(
         return CfirSpecificTypeMismatch.CannotConvertLiteral(
             literalDescription = "character",
             expectedType = expectedType,
+            literalKind = expression.kind,
         )
     }
     val arrayLiteral = expression?.unwrapWrappedExpression() as? CfirArrayLiteral ?: return null
@@ -129,17 +132,22 @@ internal fun literalConversionMismatch(
         return CfirSpecificTypeMismatch.CannotConvertLiteral(
             literal.source?.text?.toString() ?: literal.value.toString(),
             expectedType,
+            literal.kind,
         )
     }
-    val isStringTarget = target.classIdOrPrimitiveClassId == StdlibClassIds.String
-    if (target !is ConeTypeParameterType && !isStringTarget &&
-        !target.isIntegerType && !target.isFloatType && !target.isBoolean && !target.isRune
+    // 官方字面量检查也会拒绝 Array、class、interface 等不能转换/装箱的目标。
+    // 可装箱的接口、Any 与 CType 由共享子类型规则判定；不能按“非标量”直接跳过诊断。
+    val defaultLiteralType = explicitType ?: when (literal.kind) {
+        CfirLiteralKind.INT -> ConePrimitiveType.INT64
+        CfirLiteralKind.FLOAT -> ConePrimitiveType.FLOAT64
+        CfirLiteralKind.BOOLEAN -> ConePrimitiveType.BOOLEAN
+        CfirLiteralKind.RUNE -> ConePrimitiveType.RUNE
+        else -> null
+    }
+    if (target !is ConeTypeParameterType && targetKind == null && defaultLiteralType != null &&
+        AbstractTypeChecker.isSubtypeOf(session.typeContext, defaultLiteralType, target)
     ) {
-        // `@Annotation(target: [...])` 的目标类型是
-        // `std.core.AnnotationKind` 枚举，而不是标量 primitive。官方前端仍将
-        // 数组中的标量字面量归类为 `sema_cannot_convert_literal`；该分类应留在
-        // 共享 literal/type mismatch owner 中，不能让 annotation checker 再复制一套规则。
-        if (target !is ConeEnumType) return null
+        return null
     }
     val description = when (literal.kind) {
         CfirLiteralKind.INT, CfirLiteralKind.BYTE -> "integer".takeIf { !target.isIntegerType }
@@ -151,6 +159,7 @@ internal fun literalConversionMismatch(
     return CfirSpecificTypeMismatch.CannotConvertLiteral(
         literalDescription = description,
         expectedType = expectedType,
+        literalKind = literal.kind,
     )
 }
 

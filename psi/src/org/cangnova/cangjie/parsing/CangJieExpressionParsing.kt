@@ -3538,7 +3538,10 @@ open class CangJieExpressionParsing(
      * @return 宏表达式类型,如果解析失败则返回null
      */
     context(context: ParsingContext)
-    fun parseMacroExpression(declarationParsingMode: DeclarationParsingMode = DeclarationParsingMode.ALL): IElementType? {
+    fun parseMacroExpression(
+        declarationParsingMode: DeclarationParsingMode = DeclarationParsingMode.ALL,
+        scopeKind: CjScopeKind = CjScopeKind.UNKNOWN_SCOPE,
+    ): IElementType? {
 
 
         assert(_at(AT))
@@ -3568,7 +3571,7 @@ open class CangJieExpressionParsing(
             cangJieParsing.parseAnnotations(modifiterDetector)
             cangJieParsing.parseModifierList(modifiterDetector, TokenSet.EMPTY)
 
-            val declType = parseMacroInputExprWithoutParens(modifiterDetector, declarationParsingMode)
+            val declType = parseMacroInputExprWithoutParens(modifiterDetector, declarationParsingMode, scopeKind)
 
             if (declType == null) {
                 error("Macro call has no input")
@@ -3619,13 +3622,14 @@ open class CangJieExpressionParsing(
     private fun parseMacroInputExprWithoutParens(
         modifiterDetector: CangJieParsing.ModifierDetector,
         declarationParsingMode: DeclarationParsingMode = DeclarationParsingMode.ALL,
+        scopeKind: CjScopeKind = CjScopeKind.UNKNOWN_SCOPE,
     ): IElementType? {
         if (declarationParsingMode == DeclarationParsingMode.ENUM_CONSTRUCTOR && at(IDENTIFIER)) {
             cangJieParsing.parseEnumConstructorRest()
             return ENUM_CONSTRUCTOR
         }
 
-        var declType = parseMacroInputExprWithoutParensDeclaration(modifiterDetector, declarationParsingMode)
+        var declType = parseMacroInputExprWithoutParensDeclaration(modifiterDetector, declarationParsingMode, scopeKind)
 
         if (declType == null) {
             if (at(IDENTIFIER) && modifiterDetector.count <= 0) {
@@ -3668,21 +3672,28 @@ open class CangJieExpressionParsing(
     private fun parseMacroInputExprWithoutParensDeclaration(
         modifiterDetector: CangJieParsing.ModifierDetector,
         declarationParsingMode: DeclarationParsingMode,
+        scopeKind: CjScopeKind,
     ): IElementType? {
         return when (getTokenId()) {
-            AT_Id -> with(context.copy(backToken = true)) { parseMacroExpression(declarationParsingMode) }
+            AT_Id -> with(context.copy(backToken = true)) { parseMacroExpression(declarationParsingMode, scopeKind) }
             FUNC_KEYWORD_Id -> cangJieParsing.parseFunction(
                 detector = modifiterDetector,
-                scopeKind = CjScopeKind.UNKNOWN_SCOPE,
+                scopeKind = scopeKind,
             )
             EXTEND_KEYWORD_Id, ENUM_KEYWORD_Id, STRUCT_KEYWORD_Id, INTERFACE_KEYWORD_Id, CLASS_KEYWORD_Id ->
                 cangJieParsing.parseClass(modifiterDetector)
 
-            LET_KEYWORD_Id, VAR_KEYWORD_Id, CONST_KEYWORD_Id -> cangJieParsing.parseVariable()
+            // 宏声明输入继承实际宿主角色；类/结构体成员仍由正式 field parser 读取。
+            LET_KEYWORD_Id, VAR_KEYWORD_Id, CONST_KEYWORD_Id ->
+                if (declarationParsingMode == DeclarationParsingMode.MEMBER) {
+                    cangJieParsing.parseField()
+                } else {
+                    cangJieParsing.parseVariable()
+                }
 
             PROP_KEYWORD_Id -> cangJieParsing.parseProperty(
                 detector = modifiterDetector,
-                scopeKind = CjScopeKind.UNKNOWN_SCOPE,
+                scopeKind = scopeKind,
             )
             INIT_KEYWORD_Id -> {
                 cangJieParsing.parseInitFunc()

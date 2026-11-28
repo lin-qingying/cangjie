@@ -417,8 +417,19 @@ class ExitValueParameterNode(owner: ControlFlowGraph, override val fir: CfirValu
  *
  * @property lambdas 被拆分出来的延期 lambda 函数声明。
  */
-class SplitPostponedLambdasNode(owner: ControlFlowGraph, override val fir: CfirStatement, val lambdas: List<CfirFunction>, level: Int) :
-    CFGNodeWithSubgraphs<CfirStatement>(owner, level) {
+class SplitPostponedLambdasNode(owner: ControlFlowGraph, fir: CfirStatement, val lambdas: List<CfirFunction>, level: Int) :
+    CFGNodeWithSubgraphs<CfirStatement>(owner, level), RevisableFunctionCallNode {
+    private val firState = FunctionCallNodeFirState(fir)
+    override val fir: CfirStatement get() = firState.fir
+
+    @CfgInternals
+    override fun setResolvedFunctionCall(original: CfirFunctionCall, replacement: CfirFunctionCall) {
+        firState.setResolvedFunctionCall(original, replacement)
+    }
+
+    @CfgInternals
+    override fun captureFirState(): RevisableFunctionCallNodeSnapshot = firState.capture(this)
+
     /** 延期 lambda 对应的子控制流图。 */
     override val subGraphs: List<ControlFlowGraph>
         get() = lambdas.mapNotNull { it.controlFlowGraphReference?.controlFlowGraph }
@@ -439,7 +450,18 @@ class PostponedLambdaExitNode(owner: ControlFlowGraph, override val fir: CfirAno
 }
 
 /** 合并所有延期 lambda 出口的节点。 */
-class MergePostponedLambdaExitsNode(owner: ControlFlowGraph, override val fir: CfirElement, level: Int) : CFGNode<CfirElement>(owner, level) {
+class MergePostponedLambdaExitsNode(owner: ControlFlowGraph, fir: CfirElement, level: Int) : CFGNode<CfirElement>(owner, level), RevisableFunctionCallNode {
+    private val firState = FunctionCallNodeFirState(fir)
+    override val fir: CfirElement get() = firState.fir
+
+    @CfgInternals
+    override fun setResolvedFunctionCall(original: CfirFunctionCall, replacement: CfirFunctionCall) {
+        firState.setResolvedFunctionCall(original, replacement)
+    }
+
+    @CfgInternals
+    override fun captureFirState(): RevisableFunctionCallNodeSnapshot = firState.capture(this)
+
     /**
      * 将延期 lambda 出口合并节点分派给 CFG visitor。
      */
@@ -548,12 +570,8 @@ class MatchEnterNode(owner: ControlFlowGraph, override val fir: CfirMatchExpress
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitMatchEnterNode(this, data)
 }
 
-/** match 表达式出口节点，按 union 语义合并各分支。 */
+/** match 的互斥路径出口；对位 Kotlin WhenExitNode，任一正常分支都能继续执行。 */
 class MatchExitNode(owner: ControlFlowGraph, override val fir: CfirMatchExpression, level: Int) : CFGNode<CfirMatchExpression>(owner, level), ExitNodeMarker, TailrecExitNodeMarker {
-    /** match 分支出口需要 union 合并。 */
-    override val isUnion: Boolean
-        get() = true
-
     /**
      * 将 match 出口节点分派给 CFG visitor。
      */
@@ -689,12 +707,25 @@ class IfEnterNode(owner: ControlFlowGraph, override val fir: CfirIfExpression, l
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitIfEnterNode(this, data)
 }
 
-/** if 表达式出口节点，按 union 语义合并 then/else。 */
-class IfExitNode(owner: ControlFlowGraph, override val fir: CfirIfExpression, level: Int) : CFGNode<CfirIfExpression>(owner, level), ExitNodeMarker, TailrecExitNodeMarker {
-    /** if 两个分支出口需要 union 合并。 */
-    override val isUnion: Boolean
-        get() = true
+/** 条件求值完成后的分叉；节点保留真实 if，分支标签不持有另一棵树。 */
+class IfConditionExitNode(owner: ControlFlowGraph, override val fir: CfirIfExpression, level: Int) : CFGNode<CfirIfExpression>(owner, level) {
+    override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitIfConditionExitNode(this, data)
+}
 
+/** 从条件的一条实际成功路径进入 then 或 else。 */
+class IfBranchResultEnterNode(owner: ControlFlowGraph, override val fir: CfirIfExpression, val isThen: Boolean, level: Int) : CFGNode<CfirIfExpression>(owner, level), EnterNodeMarker {
+    init { require(isThen || fir.elseBranch != null) }
+    override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitIfBranchResultEnterNode(this, data)
+}
+
+/** 一条分支自己的正常出口；abrupt 分支仍以 dead 输入接入汇合。 */
+class IfBranchResultExitNode(owner: ControlFlowGraph, override val fir: CfirIfExpression, val isThen: Boolean, level: Int) : CFGNode<CfirIfExpression>(owner, level), ExitNodeMarker {
+    init { require(isThen || fir.elseBranch != null) }
+    override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitIfBranchResultExitNode(this, data)
+}
+
+/** if 的替代路径汇合：只有所有成功输入均 dead，整体才没有正常 continuation。 */
+class IfExitNode(owner: ControlFlowGraph, override val fir: CfirIfExpression, level: Int) : CFGNode<CfirIfExpression>(owner, level), ExitNodeMarker, TailrecExitNodeMarker {
     /**
      * 将 if 出口节点分派给 CFG visitor。
      */
@@ -787,12 +818,70 @@ class TryMainBlockExitNode(owner: ControlFlowGraph, override val fir: CfirTryExp
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitTryMainBlockExitNode(this, data)
 }
 
-/** catch 子句入口节点。 */
-class CatchClauseEnterNode(owner: ControlFlowGraph, override val fir: CfirCatch, level: Int) : CFGNode<CfirCatch>(owner, level), EnterNodeMarker {
+/** catch 子句入口；异常成功分派以真实目标节点为标签。 */
+class CatchClauseEnterNode(owner: ControlFlowGraph, override val fir: CfirCatch, level: Int) : CFGNode<CfirCatch>(owner, level), EnterNodeMarker, EdgeLabel {
+    override val label: String get() = "onCaughtException"
     /**
      * 将 catch 子句入口节点分派给 CFG visitor。
      */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitCatchClauseEnterNode(this, data)
+}
+
+/** 函数异常出口独立于正常 return 出口，不连接 lambda 的重复调用回边。 */
+class ExceptionExitNode(owner: ControlFlowGraph, override val fir: CfirElement, level: Int) :
+    CFGNode<CfirElement>(owner, level), ExitNodeMarker {
+    override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R =
+        visitor.visitExceptionExitNode(this, data)
+}
+
+/** finally 内 abrupt completion 覆盖本层原 completion 的独立程序点。 */
+class CompletionOverrideNode(owner: ControlFlowGraph, val sourceNode: CFGNode<*>, level: Int) :
+    CFGNode<CfirElement>(owner, level) {
+    override val fir: CfirElement get() = sourceNode.fir
+    override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R =
+        visitor.visitCompletionOverrideNode(this, data)
+}
+
+/** 一次异常的控制转移；节点身份同时标识跨 finally 后应恢复的异常。 */
+class ExceptionTransferNode(owner: ControlFlowGraph, val sourceNode: CFGNode<*>, level: Int) :
+    CFGNode<CfirElement>(owner, level), EdgeLabel {
+    override val fir: CfirElement get() = sourceNode.fir
+    override val label: String get() = "resume-exception"
+    /** 显式 throw 有真实静态上界；调用和资源释放的异常集合由运行时确定。 */
+    val exceptionType: org.cangnova.cangjie.cfir.types.ConeCangJieType?
+        get() = (sourceNode.fir as? CfirThrowExpression)?.exception?.coneTypeOrNull
+    override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R =
+        visitor.visitExceptionTransferNode(this, data)
+}
+
+/** 按源码顺序测试一个完整 catch union；失败才进入后续 catch。 */
+class ExceptionDispatchNode(
+    owner: ControlFlowGraph,
+    override val fir: CfirCatch,
+    val transfer: ExceptionTransferNode,
+    val precedingCatches: List<CatchClauseEnterNode>,
+    level: Int,
+) : CFGNode<CfirCatch>(owner, level) {
+    /** union 保留逐项类型；裸 wildcard 使用已解析的 Exception 类型。 */
+    val acceptedTypes: List<org.cangnova.cangjie.cfir.types.ConeCangJieType>
+        get() = if (fir.pattern.typeRefs.isEmpty()) listOf(checkNotNull(fir.pattern.resolvedTypeRef).coneType)
+        else fir.pattern.typeRefs.map { checkNotNull(it as? org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef).coneType }
+
+    override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R =
+        visitor.visitExceptionDispatchNode(this, data)
+}
+
+/**
+ * 资源的隐式释放程序点：先 isClosed，未关闭时 close。
+ * 此节点不是额外的源码调用；已有异常时释放失败保留原异常，否则建立首次释放异常。
+ */
+class ResourceCleanupNode(
+    owner: ControlFlowGraph,
+    override val fir: org.cangnova.cangjie.cfir.declarations.CfirResourceVariable,
+    level: Int,
+) : CFGNode<org.cangnova.cangjie.cfir.declarations.CfirResourceVariable>(owner, level) {
+    override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R =
+        visitor.visitResourceCleanupNode(this, data)
 }
 
 /** catch 子句出口节点。 */
@@ -820,7 +909,9 @@ class HandleClauseExitNode(owner: ControlFlowGraph, override val fir: CfirHandle
 }
 
 /** finally 块入口节点。 */
-class FinallyBlockEnterNode(owner: ControlFlowGraph, override val fir: CfirTryExpression, level: Int) : CFGNode<CfirTryExpression>(owner, level), EnterNodeMarker {
+class FinallyBlockEnterNode(owner: ControlFlowGraph, override val fir: CfirTryExpression, level: Int) : CFGNode<CfirTryExpression>(owner, level), EnterNodeMarker, EdgeLabel {
+    /** 穿越正在执行的 finally 时，废弃该层原 completion。 */
+    override val label: String get() = "override-finally-completion"
     /**
      * 将 finally 块入口节点分派给 CFG visitor。
      */
@@ -926,8 +1017,80 @@ class QualifiedAccessNode(owner: ControlFlowGraph, override val fir: CfirQualifi
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitQualifiedAccessNode(this, data)
 }
 
+/** 函数调用的实际 CFG 承载；最终 AST replacement 只换 fir，不重建求值拓扑。 */
+interface RevisableFunctionCallNode {
+    val fir: CfirElement
+    @CfgInternals
+    fun setResolvedFunctionCall(original: CfirFunctionCall, replacement: CfirFunctionCall)
+    /** 完整 AST 快照同时保存 fir 单元及其实际 graph 索引成员资格。 */
+    @CfgInternals
+    fun captureFirState(): RevisableFunctionCallNodeSnapshot
+}
+
+/** 索引事实属于实际 CFG；隔离图被正式 AST 采用后仍有同一可修订承载。 */
+interface FunctionCallNodeIndexOwner {
+    @CfgInternals
+    fun captureFunctionCallNodeIndex(node: CFGNode<*>): RevisableFunctionCallNodeSnapshot
+}
+
+/** 在任何 AST/cache 写入前验证实际节点归属，再原位恢复 fir 及 alias 成员。 */
+interface RevisableFunctionCallNodeSnapshot {
+    @CfgInternals
+    fun validateRestore()
+    @CfgInternals
+    fun restore()
+}
+
+/** 三类节点共享 fir/index memento；非 call 的 postponed 节点只保存自身 fir。 */
+private class FunctionCallNodeFirState<E : CfirElement>(initialFir: E) {
+    var fir: E = initialFir
+        private set
+
+    @CfgInternals
+    fun setResolvedFunctionCall(original: CfirFunctionCall, replacement: E) {
+        check(fir === original) { "CFG replacement changed its actual call owner" }
+        fir = replacement
+    }
+
+    @CfgInternals
+    fun capture(node: CFGNode<*>): RevisableFunctionCallNodeSnapshot {
+        check(node.fir === fir) { "CFG fir snapshot must belong to the actual node" }
+        val before = fir
+        val indexState = if (before is CfirFunctionCall) node.owner.captureFunctionCallNodeIndex(node) else null
+        return object : RevisableFunctionCallNodeSnapshot {
+            override fun validateRestore() {
+                indexState?.validateRestore()
+            }
+
+            override fun restore() {
+                validateRestore()
+                indexState?.restore()
+                fir = before
+            }
+        }
+    }
+}
+
+/** 对位 Kotlin CFGNodeWithRevisableFunctionCall；仓颉另允许已解析 nested call 的原位替换。 */
+sealed class CFGNodeWithRevisableFunctionCall(
+    owner: ControlFlowGraph,
+    fir: CfirFunctionCall,
+    level: Int,
+) : CFGNode<CfirFunctionCall>(owner, level), RevisableFunctionCallNode {
+    private val firState = FunctionCallNodeFirState(fir)
+    final override val fir: CfirFunctionCall get() = firState.fir
+
+    @CfgInternals
+    final override fun setResolvedFunctionCall(original: CfirFunctionCall, replacement: CfirFunctionCall) {
+        firState.setResolvedFunctionCall(original, replacement)
+    }
+
+    @CfgInternals
+    final override fun captureFirState(): RevisableFunctionCallNodeSnapshot = firState.capture(this)
+}
+
 /** 函数调用参数求值入口节点。 */
-class FunctionCallArgumentsEnterNode(owner: ControlFlowGraph, override val fir: CfirFunctionCall, level: Int) : CFGNode<CfirFunctionCall>(owner, level), EnterNodeMarker {
+class FunctionCallArgumentsEnterNode(owner: ControlFlowGraph, fir: CfirFunctionCall, level: Int) : CFGNodeWithRevisableFunctionCall(owner, fir, level), EnterNodeMarker {
     /**
      * 将函数调用参数入口节点分派给 CFG visitor。
      */
@@ -939,8 +1102,8 @@ class FunctionCallArgumentsEnterNode(owner: ControlFlowGraph, override val fir: 
  *
  * @property explicitReceiverExitNode 显式接收者求值出口节点。
  */
-class FunctionCallArgumentsExitNode(owner: ControlFlowGraph, override val fir: CfirFunctionCall, var explicitReceiverExitNode: CFGNode<*>, level: Int) :
-    CFGNode<CfirFunctionCall>(owner, level), ExitNodeMarker {
+class FunctionCallArgumentsExitNode(owner: ControlFlowGraph, fir: CfirFunctionCall, var explicitReceiverExitNode: CFGNode<*>, level: Int) :
+    CFGNodeWithRevisableFunctionCall(owner, fir, level), ExitNodeMarker {
     /**
      * 将函数调用参数出口节点分派给 CFG visitor。
      */
@@ -948,7 +1111,7 @@ class FunctionCallArgumentsExitNode(owner: ControlFlowGraph, override val fir: C
 }
 
 /** 函数调用执行入口节点。 */
-class FunctionCallEnterNode(owner: ControlFlowGraph, override val fir: CfirFunctionCall, level: Int) : CFGNode<CfirFunctionCall>(owner, level) {
+class FunctionCallEnterNode(owner: ControlFlowGraph, fir: CfirFunctionCall, level: Int) : CFGNodeWithRevisableFunctionCall(owner, fir, level) {
     /**
      * 将函数调用执行入口节点分派给 CFG visitor。
      */
@@ -956,7 +1119,7 @@ class FunctionCallEnterNode(owner: ControlFlowGraph, override val fir: CfirFunct
 }
 
 /** 函数调用执行出口节点，按 union 语义汇合正常和特殊调用路径。 */
-class FunctionCallExitNode(owner: ControlFlowGraph, override val fir: CfirFunctionCall, level: Int) : CFGNode<CfirFunctionCall>(owner, level) {
+class FunctionCallExitNode(owner: ControlFlowGraph, fir: CfirFunctionCall, level: Int) : CFGNodeWithRevisableFunctionCall(owner, fir, level) {
     /** 调用出口需要 union 合并。 */
     override val isUnion: Boolean
         get() = true
@@ -1159,6 +1322,26 @@ class FieldInitializerExitNode(
      * 将字段初始化出口节点分派给 CFG visitor。
      */
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitFieldInitializerExitNode(this, data)
+}
+
+/** 资源 initializer 独立执行根入口；实际资源声明保持原身份。 */
+class ResourceInitializerEnterNode(
+    owner: ControlFlowGraph,
+    override val fir: org.cangnova.cangjie.cfir.declarations.CfirResourceVariable,
+    level: Int,
+) : CFGNode<org.cangnova.cangjie.cfir.declarations.CfirResourceVariable>(owner, level), GraphEnterNodeMarker {
+    override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R =
+        visitor.visitResourceInitializerEnterNode(this, data)
+}
+
+/** 资源 initializer 独立执行根出口；关闭 CFG 不授予 Source/FULL/lease 权限。 */
+class ResourceInitializerExitNode(
+    owner: ControlFlowGraph,
+    override val fir: org.cangnova.cangjie.cfir.declarations.CfirResourceVariable,
+    level: Int,
+) : CFGNode<org.cangnova.cangjie.cfir.declarations.CfirResourceVariable>(owner, level), GraphExitNodeMarker {
+    override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R =
+        visitor.visitResourceInitializerExitNode(this, data)
 }
 
 // ----------------------------------- Spawn (仓颉协程) -----------------------------------

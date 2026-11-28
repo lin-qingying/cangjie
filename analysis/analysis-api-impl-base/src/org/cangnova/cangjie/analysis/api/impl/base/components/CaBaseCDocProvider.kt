@@ -54,6 +54,11 @@ abstract class CaBaseCDocProvider<T : CaSession> : CaBaseSessionComponent<T>(), 
         val cjElement = psi?.navigationElement as? CjDeclaration
         cjElement?.findCDoc()?.let { return it }
 
+        if (this@findCDoc is org.cangnova.cangjie.analysis.api.symbols.CaPatternBindingSymbol) {
+            (containingDeclaration as? org.cangnova.cangjie.analysis.api.symbols.CaPatternVariableSymbol)
+                ?.findCDoc()?.let { return it }
+        }
+
         if (this@findCDoc is CaCallableSymbol) {
             allOverriddenSymbols.forEach { overridden ->
                 overridden.findCDoc()?.let { return it }

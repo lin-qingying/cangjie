@@ -55,9 +55,8 @@ abstract class LLCfirResolvableModuleSession(
     /**
      * 丢弃当前模块已发布的宏语义快照。
      *
-     * 快照按模块共享并跨 session 复用（见 `LLCfirGlobalResolveComponents`），
-     * 因此模块输入（PSI / roots / 编译器设置 / SDK）变化时必须显式失效，
-     * 不能依赖 session 生命周期。
+     * 当前 session 的模块输入（PSI / roots / 编译器设置 / SDK）变化时显式失效；
+     * 新 session 使用自己的 CFIR 快照，避免继续解析旧 session 的声明树。
      */
     fun invalidateMacroSemanticSnapshot() {
         moduleComponents.macroSemanticSnapshotStore.invalidate()
@@ -114,7 +113,7 @@ abstract class LLCfirResolvableModuleSession(
      * 写访问保证已经开始的 Analysis API 读操作先完成，后续读操作则只能观察新快照和新 raw 文件缓存，
      * 不会在同一解析过程中混用两个 CFIR 视图。快照索引应提前由 [prepareMacroSemanticSnapshot] 构造。
      */
-    @OptIn(CaExperimentalApi::class)
+    @OptIn(CaExperimentalApi::class, org.cangnova.cangjie.analysis.api.CaImplementationDetail::class)
     fun publishMacroSemanticSnapshot(
         pre: PreMacroRawBuildResult,
         result: MacroConstructionResult.Recordable,
@@ -134,9 +133,10 @@ abstract class LLCfirResolvableModuleSession(
 
         // 宏 fragment PSI 保存在非物理 CjMacroCallFile 中。为它们设置源模块上下文，
         // 使后续 reference resolve 与已发布快照使用同一模块语义，而不是落入无上下文 dangling session。
-        result.registry.generatedSources
+        result.registry.macroExpansionSources
             .mapNotNull { generatedSource -> generatedSource.psiOrNull?.containingFile as? CjFile }
             .distinct()
+            .filterNot { it.isPhysical }
             .forEach { generatedFile ->
                 check(generatedFile.contextModule == null || generatedFile.contextModule == caModule) {
                     "A macro-generated PSI file cannot belong to multiple Analysis API modules."
@@ -151,6 +151,7 @@ abstract class LLCfirResolvableModuleSession(
             // 写访问屏障阻止分析读者跨过此视图切换；释放屏障前同时淘汰所有旧语义缓存。
             moduleComponents.cache.invalidateRawCfirFiles()
             moduleComponents.fileStructureCache.clear()
+            LLCfirSessionInvalidationService.getInstance(project).invalidateDependentsAfterMacroPublication(caModule)
         }
         return published
     }
@@ -180,6 +181,11 @@ abstract class LLCfirResolvableModuleSession(
         }
         if (sourceFiles.size != result.recordableFiles.files.size) return null
         if (pre.files.indices.any { index -> pre.files[index].sourceFileIdentity !== sourceFiles[index] }) return null
+        // identity 相同还不够：构造期间同一个 VirtualFile 的 PSI provider 可能已经退役。
+        com.intellij.openapi.application.ReadAction.compute<Unit, RuntimeException> {
+            org.cangnova.cangjie.analysis.low.level.api.cfir.file.builder.LLCfirSourcePsiGeneration
+                .capture(sourceFiles).requireCurrent()
+        }
         return sourceFiles
     }
 }

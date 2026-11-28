@@ -36,6 +36,7 @@ import org.cangnova.cangjie.analysis.api.symbols.CaFieldSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaLocalVariableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaMacroSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaParameterSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaPatternBindingSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPropertySymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolLocation
@@ -164,6 +165,15 @@ object CangJieSemanticHighlightingRules {
      */
     fun classifyReference(symbol: CaSymbol): CangJieSemanticHighlighting? = when (symbol) {
         is CaClassifierSymbol -> classifyClassifier(symbol)
+        // 模式叶子保留独立符号族，位置与可变性直接读取当前 Analysis 符号。
+        is CaPatternBindingSymbol -> classifyVariable(
+            kind = if (symbol.location == CaSymbolLocation.TOP_LEVEL) {
+                CangJieSemanticHighlightingKind.PACKAGE_VARIABLE
+            } else {
+                CangJieSemanticHighlightingKind.LOCAL_VARIABLE
+            },
+            isMutable = !symbol.isLet,
+        )
         is CaLocalVariableSymbol -> classifyVariable(
             kind = CangJieSemanticHighlightingKind.LOCAL_VARIABLE,
             isMutable = symbol.psi.localPatternVariable()?.isVar ?: !symbol.isLet,
@@ -187,7 +197,8 @@ object CangJieSemanticHighlightingRules {
 
     /** 函数值调用仍然引用一个变量、参数、字段或属性；这些符号保留自己的引用类别。 */
     fun isValueReferenceSymbol(symbol: CaSymbol): Boolean =
-        symbol is CaLocalVariableSymbol ||
+        symbol is CaPatternBindingSymbol ||
+            symbol is CaLocalVariableSymbol ||
             symbol is CaParameterSymbol ||
             symbol is CaFieldSymbol ||
             symbol is CaPropertySymbol

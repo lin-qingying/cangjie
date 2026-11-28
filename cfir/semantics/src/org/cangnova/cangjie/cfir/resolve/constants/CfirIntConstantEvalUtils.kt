@@ -341,6 +341,26 @@ object CfirIntConstantEvalUtils {
         if (value.signum() < 0) rangeForSignedLiteralTargetType(type) else rangeForPositiveLiteralTargetType(type)
 
     /**
+     * 判断整数字面量是否超出已经按上下文展开的目标整数类型范围。
+     *
+     * 调用实参在完成类型约束时会把 IdealInt 近似到目标整数类型；范围检查必须同时保留
+     * 原始字面量值，不能只检查近似后的 primitive 类型，否则 256 会先变成 UInt8，
+     * 再丢失越界事实。
+     */
+    fun isOutOfRangeForExpectedType(
+        literal: CfirLiteralExpression,
+        expandedTargetType: ConeCangJieType,
+    ): Boolean {
+        if (literal.kind != CfirLiteralKind.INT) return false
+        if (expandedTargetType !is ConePrimitiveType || !expandedTargetType.kind.isInteger ||
+            expandedTargetType.kind.isIdeal
+        ) return false
+        val parsed = parseIntLiteral(literal) ?: return false
+        val range = rangeForIntLiteralValueTargetType(expandedTargetType, parsed.value) ?: return false
+        return !range.contains(parsed.value)
+    }
+
+    /**
      * 取得整数类型的位宽。
      *
      * 目标类型为空时按默认 64 位整数处理；非整数 primitive 返回 `null`。

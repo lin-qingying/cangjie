@@ -14,7 +14,7 @@ import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
  * 而应先保留“它可能是变量绑定，也可能是 enum constructor”的信息，
  * 再在后续语义阶段依据当前作用域可见符号做决议。
  */
-class CjVarOrEnumPattern : CjCasePattern<CangJieVarOrEnumPatternStub>, PsiNameIdentifierOwner {
+class CjVarOrEnumPattern : CjCasePattern<CangJieVarOrEnumPatternStub>, PsiNameIdentifierOwner, CjNamedPattern {
     constructor(node: ASTNode) : super(node)
     constructor(stub: CangJieVarOrEnumPatternStub) : super(stub, CjStubElementTypes.VAR_OR_ENUM_PATTERN)
 
@@ -43,6 +43,9 @@ class CjVarOrEnumPattern : CjCasePattern<CangJieVarOrEnumPatternStub>, PsiNameId
     val nameAsSafeName: Name
         get() = reference?.referencedNameAsName ?: Name.identifier(identifier?.text ?: "")
 
+    override val nameAsName: Name?
+        get() = name?.let(Name::identifier)
+
     /**
      * 实现 `getName` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
      */
@@ -55,7 +58,7 @@ class CjVarOrEnumPattern : CjCasePattern<CangJieVarOrEnumPatternStub>, PsiNameId
     /**
      * 实现 `getNameIdentifier` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
      */
-    override fun getNameIdentifier(): PsiElement? = identifier
+    override fun getNameIdentifier(): PsiElement? = reference?.referencedNameElement ?: identifier
 
     /**
      * 实现 `setName` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。

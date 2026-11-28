@@ -1,5 +1,7 @@
 package org.cangnova.cangjie.cfir.serialization.cjd
 
+import org.cangnova.cangjie.test.bindCjoFixture
+import org.cangnova.cangjie.test.cjoFixtureModuleDataProvider
 import PackageFormat.DeclKind
 import PackageFormat.AnnoKind
 import PackageFormat.TypeKind
@@ -48,9 +50,11 @@ class CjdBinaryAnnotationIntegrationTest : CjParsingTestCase("", "cj.d", CangJie
         val manager = CjoManager(CjoSearchPath { if (it == "CANGJIE_LIBRARY") root.toString() else null })
         val loaded = kotlin.test.assertNotNull(manager.loadPackageSnapshot("test.pkg"))
         assertEquals(path.toAbsolutePath(), loaded.sourcePath)
-        val module = Module()
+        val module = Module(setOf(FqName("ohos.labels.APILevel")))
+        val metadataBinding = bindCjoFixture(module, manager, setOf(root))
         return CfirDeserializationContext(loaded.pkg, loaded.header, module, manager,
-            manager.deserializedSymbolLookups.forModuleData(module), loaded.sourcePath,
+            manager.deserializedSymbolLookups.forBinding(metadataBinding, module,
+                org.cangnova.cangjie.cfir.serialization.deserialize.CjoDeserializationMode.FULL), loaded.sourcePath,
             setOf(FqName("ohos.labels.APILevel")))
     }
 
@@ -73,7 +77,8 @@ class CjdBinaryAnnotationIntegrationTest : CjParsingTestCase("", "cj.d", CangJie
         assertEquals(CangjieOverflowStrategy.WRAPPING, function.interopInfo!!.overflowStrategy)
         assertNotSame(EmptyDeprecationsProvider, function.deprecationsProvider)
         val parameter = function.valueParameters.single()
-        assertSame(parameter, context.declCache[0])
+        assertSame(parameter, context.declCache[0]?.declarationRoot)
+        assertSame(parameter.symbol, context.declCache[0]?.wireSymbol)
         assertEquals("APILevel", parameter.annotations.single().annotationSourceName)
         assertEquals(CfirAnnotationResolveState.TYPE_RESOLVED, (parameter.annotations.single() as CfirAnnotationCall).annotationResolveState)
         assertSame(parameter.symbol, (parameter.annotations.single() as CfirAnnotationCall).containingDeclarationSymbol)
@@ -98,12 +103,14 @@ class CjdBinaryAnnotationIntegrationTest : CjParsingTestCase("", "cj.d", CangJie
         val manager = CjoManager(CjoSearchPath { if (it == "CANGJIE_LIBRARY") root.toString() else null })
         val loaded = kotlin.test.assertNotNull(manager.loadPackageSnapshot("test.pkg"))
         val module = Module()
+        val metadataBinding = bindCjoFixture(module, manager, setOf(root))
         val context = CfirDeserializationContext(
             loaded.pkg,
             loaded.header,
             module,
             manager,
-            manager.deserializedSymbolLookups.forModuleData(module),
+            manager.deserializedSymbolLookups.forBinding(metadataBinding, module,
+                org.cangnova.cangjie.cfir.serialization.deserialize.CjoDeserializationMode.FULL),
             loaded.sourcePath,
         )
 
@@ -148,9 +155,8 @@ class CjdBinaryAnnotationIntegrationTest : CjParsingTestCase("", "cj.d", CangJie
 
     @Test fun testProviderCachesRemainIsolatedAcrossSidecarReplacement() {
         val original = context("@Frozen\nfunc f(x: Int64): Unit")
-        fun provider(context: CfirDeserializationContext) = CfirDeserializedSymbolProvider(
-            context.moduleData.session, context.cjoManager, CfirCangJieScopeProvider(), context.moduleData,
-        ).also { context.moduleData.session.register(org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider::class, it) }
+        fun provider(context: CfirDeserializationContext) = context.cjoManager.deserializedSymbolLookups.forBinding(context.binding, context.moduleData,
+            org.cangnova.cangjie.cfir.serialization.deserialize.CjoDeserializationMode.FULL).also { context.moduleData.session.register(org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider::class, it) }
         fun function(provider: CfirDeserializedSymbolProvider) = provider.getTopLevelFunctionSymbols(
             FqName("test.pkg"), Name.identifier("f"),
         ).single().cfir
@@ -193,23 +199,27 @@ class CjdBinaryAnnotationIntegrationTest : CjParsingTestCase("", "cj.d", CangJie
         """.trimIndent())
         val manager = CjoManager(CjoSearchPath { if (it == "CANGJIE_LIBRARY") root.toString() else null })
         val loaded = kotlin.test.assertNotNull(manager.loadPackageSnapshot("test.pkg"))
-        val module = Module()
+        val module = Module(setOf(FqName("ohos.labels.APILevel")))
+        val metadataBinding = bindCjoFixture(module, manager, setOf(root))
         val context = CfirDeserializationContext(
             loaded.pkg,
             loaded.header,
             module,
             manager,
-            manager.deserializedSymbolLookups.forModuleData(module),
+            manager.deserializedSymbolLookups.forBinding(metadataBinding, module,
+                org.cangnova.cangjie.cfir.serialization.deserialize.CjoDeserializationMode.FULL),
             loaded.sourcePath,
             setOf(FqName("ohos.labels.APILevel")),
         )
         val box = assertIs<CfirClass>(context.createDeclDeserializer().deserializeDecl(owner.toInt() - 1))
         val function = assertIs<CfirNamedFunction>(box.declarations.single())
         assertTrue(box.interopInfo!!.isFrozen)
-        assertSame(function, context.declCache[member.toInt() - 1])
+        assertSame(function, context.declCache[member.toInt() - 1]?.declarationRoot)
+        assertSame(function.symbol, context.declCache[member.toInt() - 1]?.wireSymbol)
         assertNotSame(EmptyDeprecationsProvider, function.deprecationsProvider)
         val valueParameter = function.valueParameters.single()
-        assertSame(valueParameter, context.declCache[parameter.toInt() - 1])
+        assertSame(valueParameter, context.declCache[parameter.toInt() - 1]?.declarationRoot)
+        assertSame(valueParameter.symbol, context.declCache[parameter.toInt() - 1]?.wireSymbol)
         assertEquals("Frozen", valueParameter.annotations.single().annotationSourceName)
         assertSame(valueParameter.symbol, (valueParameter.annotations.single() as CfirAnnotationCall).containingDeclarationSymbol)
         assertEquals(emptyList<CjdBinaryMatchDiagnostic>(), context.sidecar!!.matchDiagnostics)
@@ -224,7 +234,8 @@ class CjdBinaryAnnotationIntegrationTest : CjParsingTestCase("", "cj.d", CangJie
             if (it == "CANGJIE_STDLIB_MODULE") directory else null
         })
         val module = Module()
-        val provider = CfirDeserializedSymbolProvider(module.session, manager, CfirCangJieScopeProvider(), module)
+        val provider = CfirDeserializedSymbolProvider(module.session, manager, CfirCangJieScopeProvider(), module,
+            moduleDataProvider = cjoFixtureModuleDataProvider(module, setOf(Path.of(directory!!))))
         module.session.register(org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider::class, provider)
         val classId = ClassId.topLevel(FqName("std.math.RoundingMode"))
         val declaration = kotlin.test.assertNotNull(provider.getClassLikeSymbolByClassId(classId)).cfir
@@ -249,13 +260,15 @@ class CjdBinaryAnnotationIntegrationTest : CjParsingTestCase("", "cj.d", CangJie
             "Set CANGJIE_CJD_SDK_DIR to enable real SDK validation")
         val manager = CjoManager(CjoSearchPath { if (it == "CANGJIE_STDLIB_MODULE") directory else null })
         val loaded = kotlin.test.assertNotNull(manager.loadPackageSnapshot("std.console"))
-        val module = Module()
+        val module = Module(setOf(FqName("ohos.labels.APILevel")))
+        val metadataBinding = bindCjoFixture(module, manager, setOf(Path.of(directory!!)))
         val context = CfirDeserializationContext(
             loaded.pkg,
             loaded.header,
             module,
             manager,
-            manager.deserializedSymbolLookups.forModuleData(module),
+            manager.deserializedSymbolLookups.forBinding(metadataBinding, module,
+                org.cangnova.cangjie.cfir.serialization.deserialize.CjoDeserializationMode.FULL),
             loaded.sourcePath,
             setOf(FqName("ohos.labels.APILevel")),
         )
@@ -320,13 +333,15 @@ class CjdBinaryAnnotationIntegrationTest : CjParsingTestCase("", "cj.d", CangJie
             val sidecar = CjdSidecarParser.create().parse(path)
             assertTrue(sidecar.isUsable, "$path: ${sidecar.diagnostics}")
             val loaded = kotlin.test.assertNotNull(manager.loadPackageSnapshot(sidecar.annotationContext.packageFqName))
-            val module = Module()
+            val module = Module(setOf(FqName("ohos.labels.APILevel")))
+            val metadataBinding = bindCjoFixture(module, manager, setOf(Path.of(directory!!)))
             val context = CfirDeserializationContext(
                 loaded.pkg,
                 loaded.header,
                 module,
                 manager,
-                manager.deserializedSymbolLookups.forModuleData(module),
+                manager.deserializedSymbolLookups.forBinding(metadataBinding, module,
+                org.cangnova.cangjie.cfir.serialization.deserialize.CjoDeserializationMode.FULL),
                 loaded.sourcePath,
                 setOf(FqName("ohos.labels.APILevel")),
             )
@@ -344,7 +359,7 @@ class CjdBinaryAnnotationIntegrationTest : CjParsingTestCase("", "cj.d", CangJie
         assertTrue(matchedAnnotations > 0)
     }
 
-    private class Module : CfirModuleData() {
+    private class Module(implicitAnnotations: Set<FqName> = emptySet()) : CfirModuleData() {
         override val name = Name.identifier("cjd-test")
         override val dependencies = emptyList<CfirModuleData>()
         override val refinementDependencies = emptyList<CfirModuleData>()
@@ -359,6 +374,8 @@ class CjdBinaryAnnotationIntegrationTest : CjParsingTestCase("", "cj.d", CangJie
                 CfirLanguageSettingsComponent(LanguageVersionSettingsImpl.DEFAULT),
             )
             it.register(CfirCangJieScopeProvider::class, CfirCangJieScopeProvider())
+            it.register(org.cangnova.cangjie.cfir.session.CfirImplicitSystemAnnotationsProvider::class,
+                org.cangnova.cangjie.cfir.session.ConfiguredCfirImplicitSystemAnnotationsProvider(implicitAnnotations))
         }
         init { bindSession(session) }
     }

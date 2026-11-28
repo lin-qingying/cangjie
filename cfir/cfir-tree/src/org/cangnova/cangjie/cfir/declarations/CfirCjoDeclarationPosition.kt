@@ -16,8 +16,18 @@ data class CfirCjoDeclarationPosition(
     val identifierColumn: Int? = null,
 )
 
-private object CjoDeclarationPositionKey : CfirDeclarationDataKey()
+private object CjoDeclarationPositionKey : CfirDeclarationDataKey() {
+    override val rawCopyPolicy get() = org.cangnova.cangjie.cfir.CfirRawDeclarationDataPolicies.cjoPosition
+}
 
 /** CJO 携带的原始声明位置，供 common-part 报告和反序列化候选 note 共用。 */
 var CfirDeclaration.cjoDeclarationPosition: CfirCjoDeclarationPosition?
     by CfirDeclarationDataRegistry.data(CjoDeclarationPositionKey)
+
+private object CjoDeclarationIndexKey : CfirDeclarationDataKey() {
+    override val rawCopyPolicy get() = org.cangnova.cangjie.cfir.CfirRawDeclarationDataPolicies.cjoDeclarationIndex
+}
+
+/** 当前 CJO 的零基 declaration pool 下标，compiled header 用它定位同一份只读 signature。 */
+var CfirDeclaration.cjoDeclarationIndex: Int?
+    by CfirDeclarationDataRegistry.data(CjoDeclarationIndexKey)

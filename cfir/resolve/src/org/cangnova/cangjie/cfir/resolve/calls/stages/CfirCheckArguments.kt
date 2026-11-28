@@ -26,6 +26,7 @@ package org.cangnova.cangjie.cfir.resolve.calls.stages
 
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.diagnostic.InapplicableCandidate
+import org.cangnova.cangjie.cfir.diagnostic.ArgumentTypeMismatch
 import org.cangnova.cangjie.cfir.diagnostic.NonGenericFunctionWithTypeArguments
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirArrayLiteral
@@ -44,6 +45,7 @@ import org.cangnova.cangjie.cfir.resolve.calls.inoutArgumentTargetOrNull
 import org.cangnova.cangjie.cfir.resolve.calls.prepareArgumentType
 import org.cangnova.cangjie.cfir.resolve.calls.substituteExplicitTypeArgumentConstraints
 import org.cangnova.cangjie.cfir.resolve.transformers.ensureResolvedTypeDeclaration
+import org.cangnova.cangjie.cfir.semantics.isSuccess
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
@@ -242,6 +244,14 @@ private fun Candidate.selectVariadicExpectedType(
     )
     if (matchesNormalArrayParameter) return null
 
+    // 正常类型检查失败的诊断与解糖尝试分别保存。变参候选失败时，官方回放正常调用诊断。
+    // 固定前缀已经失败时，不再把最后一个实参激活成变参并覆盖前缀的根错误。
+    if (diagnostics.any { !it.isSuccess }) return null
+    if (cangjieVariadicRegularCallDiagnostics.isEmpty()) {
+        initializeCangjieVariadicRegularCallDiagnostics(
+            listOf(ArgumentTypeMismatch(normalExpectedType, preparedArgumentType, argument, false))
+        )
+    }
     // 官方 cjc 会在普通调用匹配失败后把这部分位置实参收束成 ArrayLit。
     return markVariadicArgument(atom)
 }

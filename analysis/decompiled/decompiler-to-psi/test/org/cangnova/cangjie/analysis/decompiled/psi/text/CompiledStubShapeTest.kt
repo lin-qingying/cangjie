@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.analysis.decompiled.psi.text
 
+import org.cangnova.cangjie.test.cjoFixtureModuleDataProvider
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.util.Disposer
 import com.intellij.psi.PsiFileFactory
@@ -47,7 +48,8 @@ class CompiledStubShapeTest {
             val snapshot = requireNotNull(manager.loadPackageSnapshot("std.core"))
             val module = Module()
             module.session.register(CfirSymbolProvider::class,
-                CfirDeserializedSymbolProvider(module.session, manager, CfirCangJieScopeProvider(), module))
+                CfirDeserializedSymbolProvider(module.session, manager, CfirCangJieScopeProvider(), module,
+                    moduleDataProvider = cjoFixtureModuleDataProvider(module, setOf(library))))
             val binary = CjoFileStubBuilder.buildFileStub(LoadedCjoPackage(
                 LightVirtualFile("std.core.cjo"), FqName("std.core"), snapshot.pkg, snapshot.header,
                 manager, true, snapshot.sourcePath,

@@ -148,6 +148,7 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
                 typeParameters,
                 knownOwnerSubstitutions,
                 csBuilder,
+                candidate,
         )
         candidate.initializeSubstitutorAndVariables(substitutor, freshVariables)
 
@@ -163,6 +164,7 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
         }
 
         // 处理显式类型实参：添加相等约束
+        val currentSubstitutor = candidate.system.buildCurrentSubstitutor().asCone()
         for (index in typeParameters.indices) {
             val freshVariable = freshVariables[index]
             val typeArgument = candidate.typeArgumentMapping[index]
@@ -177,8 +179,8 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
                 ?: continue
 
             csBuilder.addEqualityConstraint(
-                freshVariable.defaultType,
-                argumentType,
+                currentSubstitutor.substituteOrSelf(freshVariable.defaultType),
+                currentSubstitutor.substituteOrSelf(argumentType),
                 ConeExplicitTypeParameterConstraintPosition(sourceTypeArgument),
             )
         }
@@ -199,9 +201,15 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
         typeParameters: List<CfirTypeParameterRef>,
         knownSubstitutions: Map<TypeConstructorMarker, ConeCangJieType>,
         csBuilder: ConstraintSystemOperation,
+        candidate: Candidate,
     ): Pair<ConeSubstitutor, List<ConeTypeVariable>> {
-        val inferenceScope = TypeVariableInferenceScope()
-        val freshTypeVariables = typeParameters.map { ConeTypeParameterBasedTypeVariable(it.symbol, inferenceScope) }
+        val createVariables = {
+            val inferenceScope = TypeVariableInferenceScope()
+            typeParameters.map { ConeTypeParameterBasedTypeVariable(it.symbol, inferenceScope) }
+        }
+        val scope = candidate.implicitTypeComputationScope
+        val freshTypeVariables = if (scope == null) createVariables() else
+            scope.graph.freshVariables(scope, candidate, typeParameters, createVariables)
 
         val useSiteSubstitutor = knownSubstitutions
             .takeIf { it.isNotEmpty() }
@@ -220,19 +228,27 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
 
         // 在约束系统中注册所有新鲜变量
         for (freshVariable in freshTypeVariables) {
-            csBuilder.registerVariable(freshVariable)
+            val previous = candidate.system.allTypeVariables[freshVariable.typeConstructor]
+            if (previous == null) csBuilder.registerVariable(freshVariable)
+            else check(previous === freshVariable) { "A retained call instantiated a second variable for one constructor" }
         }
 
+        val currentSubstitutor = candidate.system.buildCurrentSubstitutor().asCone()
         for ((lower, upper) in collectInitialUpperBoundConstraints(
             declaration = declaration,
             session = session,
             toFreshVariables = toFreshVariables,
             freshTypeVariables = freshTypeVariables,
         )) {
-            csBuilder.addSubtypeConstraint(lower, upper, ConeDeclaredUpperBoundConstraintPosition)
+            // 正式 replay 可以复用已固定的 constructor；约束检查仍保留，但不得向
+            // injector 传入已经固定的变量壳。后续参数检查同样使用这一实际类型视图。
+            csBuilder.addSubtypeConstraint(
+                currentSubstitutor.substituteOrSelf(lower), currentSubstitutor.substituteOrSelf(upper),
+                ConeDeclaredUpperBoundConstraintPosition,
+            )
         }
 
-        return toFreshVariables to freshTypeVariables
+        return chainSubstitutors(toFreshVariables, currentSubstitutor) to freshTypeVariables
     }
 
     /**
@@ -250,14 +266,9 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
     ): Map<TypeConstructorMarker, ConeCangJieType> {
         val substitution = linkedMapOf<TypeConstructorMarker, ConeCangJieType>()
         val freshBySymbol = freshTypeVariables.associateBy { it.typeParameterSymbol }
-        val uniqueFreshByName = freshTypeVariables
-            .groupBy { it.typeParameterSymbol.name }
-            .mapNotNull { (name, variables) -> variables.singleOrNull()?.let { name to it } }
-            .toMap()
 
         fun freshVariableFor(lookupTag: org.cangnova.cangjie.cfir.symbols.ConeTypeParameterLookupTag): ConeTypeParameterBasedTypeVariable? {
             return freshBySymbol[lookupTag.typeParameterSymbol]
-                ?: uniqueFreshByName[lookupTag.typeParameterSymbol.name]
         }
 
         for (freshVariable in freshTypeVariables) {
@@ -575,7 +586,7 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
     ): Map<TypeConstructorMarker, ConeCangJieType> {
         if (declaration !is CfirConstructor) return emptyMap()
         val substitutionScope = candidate.originScope as? CfirClassSubstitutionScope ?: return emptyMap()
-        val ownerClassId = ownerClassIdForCallable(session, candidate) ?: return emptyMap()
+        val ownerClassId = ownerClassIdForCallable(candidate) ?: return emptyMap()
         val ownerDeclaration = session.symbolProvider.getClassLikeSymbolByClassId(ownerClassId)?.cfir
             ?: session.cfirProvider.getCfirClassifierByFqName(ownerClassId)
             ?: return emptyMap()
@@ -606,6 +617,14 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
         if ((declaration as? CfirConstructor)?.typeAliasConstructorInfo != null) {
             return ownTypeParameters
         }
+        if (declaration is CfirEnumConstructor) {
+            // 声明 refs 与 payload/return signature 共用实际 enum 参数，不丢成 ClassId 后重查。
+            val receiver = candidate.bareStaticQualifierExpression()
+            if (receiver != null && receiver.typeArguments.isEmpty()) {
+                collectBareTypeAliasQualifierTypeParameters(receiver)?.let { return it + ownTypeParameters }
+            }
+            return ownTypeParameters
+        }
 
         val extendTypeParameters = precomputedBareStaticExtendTypeParameters
             ?: collectBareStaticQualifierExtendTypeParameters(session, candidate, declaration)
@@ -632,9 +651,7 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
             return typeVariableReceiverOwnerTypeParameters + ownTypeParameters
         }
         if (ownTypeParameters.isNotEmpty()) return ownTypeParameters
-        if (declaration !is CfirConstructor &&
-            declaration !is CfirEnumConstructor
-        ) {
+        if (declaration !is CfirConstructor) {
             return emptyList()
         }
 
@@ -643,7 +660,7 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
             collectBareTypeAliasQualifierTypeParameters(receiver)?.let { return it + ownTypeParameters }
         }
 
-        val ownerClassId = ownerClassIdForCallable(session, candidate)
+        val ownerClassId = ownerClassIdForCallable(candidate)
             ?: return emptyList()
         val ownerDeclaration = session.symbolProvider.getClassLikeSymbolByClassId(ownerClassId)?.cfir
             ?: session.cfirProvider.getCfirClassifierByFqName(ownerClassId)
@@ -847,7 +864,7 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
         val callable = declaration as? CfirCallableDeclaration ?: return emptyList()
         if (callable.status.isStatic || callable is CfirEnumConstructor) return emptyList()
 
-        val ownerClassId = ownerClassIdForCallable(session, candidate)
+        val ownerClassId = ownerClassIdForCallable(candidate)
             ?: return emptyList()
         val ownerDeclaration = session.symbolProvider.getClassLikeSymbolByClassId(ownerClassId)?.cfir
             ?: session.cfirProvider.getCfirClassifierByFqName(ownerClassId)
@@ -951,8 +968,8 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
     }
 
     /**
-     * enum constructor 通过裸 class/typealias qualifier 访问时，owner enum 的类型参数
-     * 来自 qualifier 的 use-site 展开类型，而不是 enum constructor 自身声明。
+     * enum constructor 的替换 key 来自声明持有的实际 owner 参数 refs。
+     * class/typealias qualifier 仅提供该声明泛型槽位的 use-site 实参，不重查参数 symbol。
      */
     private fun createBareEnumConstructorQualifierOwnerSubstitutionMap(
         session: CfirSession,
@@ -980,11 +997,7 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
                     }
                 }
         expandedReceiverType ?: return emptyMap()
-        val ownerClassId = expandedReceiverType.expandedClassIdOrPrimitiveClassId ?: return emptyMap()
-        val ownerDeclaration = session.symbolProvider.getClassLikeSymbolByClassId(ownerClassId)?.cfir
-            ?: session.cfirProvider.getCfirClassifierByFqName(ownerClassId)
-            ?: return emptyMap()
-        val ownerTypeParameters = (ownerDeclaration as? CfirTypeParameterRefsOwner)?.typeParameters.orEmpty()
+        val ownerTypeParameters = declaration.typeParameters
         if (ownerTypeParameters.isEmpty()) return emptyMap()
         if (ownerTypeParameters.size != expandedReceiverType.typeArguments.size) return emptyMap()
 
@@ -1029,23 +1042,15 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
     /**
      * 构造器调用需要把 owner class 的类型参数也纳入候选约束系统。
      *
-     * enum constructor 之前已经做了单独补齐；普通 class/struct constructor 若不走这里，
+     * enum constructor 直接消费声明 refs；普通 class/struct constructor 若不走这里，
      * `Box<T>()` 这类调用里的 `T` 就不会注册成 fresh variable，后续同构造器泛型约束无法下沉到实参级。
      */
     private fun ownerClassIdForCallable(
-        session: CfirSession,
         candidate: Candidate,
     ): org.cangnova.cangjie.name.ClassId? {
         val callableSymbol = candidate.symbol as? CfirCallableSymbol<*> ?: return null
         val originalCallableSymbol = callableSymbol.unwrapSubstitutionOverrides()
 
         return originalCallableSymbol.getContainingClass()?.classId
-            ?: (originalCallableSymbol.cfir as? CfirEnumConstructor)?.let {
-                val receiver = candidate.bareStaticQualifierExpression()
-                receiver?.coneTypeOrNull
-                    ?.fullyExpandedType(session)
-                    ?.expandedClassIdOrPrimitiveClassId
-                    ?: receiver?.resolvedQualifierClassifier(session)?.classId
-            }
     }
 }

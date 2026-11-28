@@ -28,6 +28,7 @@ import org.cangnova.cangjie.cfir.*
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
+import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
@@ -132,6 +133,7 @@ open class ReturnTypeCalculatorWithJump(
         val symbol = declaration.symbol
         val computedReturnType = when (val status = implicitBodyResolveComputationSession.getStatus(symbol)) {
             is CfirImplicitBodyResolveComputationStatus.Computed -> status.resolvedTypeRef
+            is CfirImplicitBodyResolveComputationStatus.ComputedType -> status.resolvedTypeRef
             is CfirImplicitBodyResolveComputationStatus.Computing -> recursionInImplicitTypeRef(declaration)
             is CfirImplicitBodyResolveComputationStatus.NotComputed -> null
         }
@@ -202,9 +204,9 @@ open class ReturnTypeCalculatorWithJump(
         declaration: CfirPatternBindingVariable,
     ): CfirResolvedTypeRef? {
         (declaration.returnTypeRef as? CfirResolvedTypeRef)?.let { return it }
-        val session = declaration.moduleData.session
-
-        val owner = session.cfirProvider.getCfirPatternVariableForBinding(declaration.symbol) ?: return null
+        // 正文中的局部 binder 随当前推断推进，不能从这里重入包含声明的 BODY_RESOLVE。
+        if (declaration.isLocal) return null
+        val owner = declaration.patternTreeOwner as? CfirPatternVariable ?: return null
         if (implicitBodyResolveComputationSession.getStatus(owner.symbol) is CfirImplicitBodyResolveComputationStatus.Computing) {
             return recursionInImplicitTypeRef(declaration)
         }

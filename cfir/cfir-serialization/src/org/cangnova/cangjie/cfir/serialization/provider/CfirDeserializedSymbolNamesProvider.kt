@@ -14,9 +14,11 @@ import org.cangnova.cangjie.name.Name
 class CfirDeserializedSymbolNamesProvider(
     /** 负责读取 `.cjo` 包头并枚举包名的管理器。 */
     private val cjoManager: CjoManager,
+    contextProvider: CjoPackageContextProvider? = null,
+    mode: org.cangnova.cangjie.cfir.serialization.deserialize.CjoDeserializationMode = org.cangnova.cangjie.cfir.serialization.deserialize.CjoDeserializationMode.FULL,
 ) : CfirSymbolNamesProvider() {
     /** 递归解析 public import re-export 后的顶层名称视图。 */
-    private val exportedTopLevelNamesResolver = CjoExportedTopLevelNamesResolver(cjoManager)
+    private val exportedTopLevelNamesResolver = CjoExportedTopLevelNamesResolver(cjoManager, contextProvider, mode)
 
     /** 返回当前搜索路径中可用的包名集合。 */
     override fun getPackageNames(): Set<String>? =

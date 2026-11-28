@@ -1,5 +1,7 @@
 package org.cangnova.cangjie.analysis.decompiler.stub
 
+import org.cangnova.cangjie.test.bindCjoFixture
+import org.cangnova.cangjie.test.cjoFixtureModuleDataProvider
 import PackageFormat.Decl
 import PackageFormat.DeclKind
 import PackageFormat.Package
@@ -82,14 +84,17 @@ class CjdDeclarationLoaderIntegrationTest : CjParsingTestCase("", "cj.d", CangJi
         val manager = CjoManager(CjoSearchPath { if (it == "CANGJIE_LIBRARY") root.toString() else null })
         val loaded = kotlin.test.assertNotNull(manager.loadPackageSnapshot("test.pkg"))
         val module = Module()
-        val provider = CfirDeserializedSymbolProvider(module.session, manager, CfirCangJieScopeProvider(), module)
+        val provider = CfirDeserializedSymbolProvider(module.session, manager, CfirCangJieScopeProvider(), module,
+            moduleDataProvider = cjoFixtureModuleDataProvider(module, setOf(root)))
         module.session.register(org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider::class, provider)
         val classId = ClassId.topLevel(FqName("test.pkg.Box"))
         val fromProvider = assertIs<CfirClass>(kotlin.test.assertNotNull(provider.getClassLikeSymbolByClassId(classId)).cfir)
         // 触发用 VirtualFile 故意不同名，sidecar 必须取实际选中 CJO 的 sibling。
         val input = LoadedCjoPackage(LightVirtualFile("unrelated.cjo"), FqName("test.pkg"), loaded.pkg,
             loaded.header, manager, true, loaded.sourcePath)
-        val fromDecompiler = assertIs<CfirClass>(CjoDeclarationLoader.loadDeclarations(input, Module()).single())
+        val decompilerModule = Module()
+        bindCjoFixture(decompilerModule, manager, setOf(root))
+        val fromDecompiler = assertIs<CfirClass>(CjoDeclarationLoader.loadDeclarations(input, decompilerModule).single())
         fun annotationValues(declaration: CfirClass) = declaration.annotations.map { annotation ->
             val call = assertIs<CfirAnnotationCall>(annotation)
             Triple(call.annotationSourceName,
@@ -103,11 +108,15 @@ class CjdDeclarationLoaderIntegrationTest : CjParsingTestCase("", "cj.d", CangJi
         assertSame(fromProvider, provider.getClassLikeSymbolByClassId(classId)!!.cfir)
         assertEquals(3, fromProvider.annotations.size)
         // 旧的纯内存入口不凭虚拟文件名推导磁盘路径。
-        val withoutPath = assertIs<CfirClass>(CjoDeclarationLoader.loadDeclarations(input.copy(sourcePath = null), Module()).single())
+        val memoryModule = Module()
+        bindCjoFixture(memoryModule, manager, setOf(root))
+        val withoutPath = assertIs<CfirClass>(CjoDeclarationLoader.loadDeclarations(input.copy(sourcePath = null), memoryModule).single())
         assertTrue(withoutPath.annotations.isEmpty())
 
         // 验证生产 CJO → stub 的结果，不借用源码 PSI 或仍持有 AST 的 source stub。
-        val fileStub = CjoFileStubBuilder.buildFileStub(input, Module())
+        val stubModule = Module()
+        bindCjoFixture(stubModule, manager, setOf(root))
+        val fileStub = CjoFileStubBuilder.buildFileStub(input, stubModule)
         val classStub = fileStub.findChildStubByType(
             org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes.CLASS,
         )

@@ -113,7 +113,7 @@ abstract class AbstractCfirAnalysisTestCase : CjParsingTestCase(
                 session,
                 listOf(
                     sourceProvider.symbolProvider,
-                    CfirBuiltinSymbolProvider(session),
+                    CfirBuiltinSymbolProvider(session, moduleData),
                 ),
             )
             session.register(CfirSymbolProvider::class, symbolProvider)

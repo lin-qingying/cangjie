@@ -6,6 +6,7 @@
 package org.cangnova.cangjie.cfir.expressions
 
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
@@ -14,10 +15,11 @@ import org.cangnova.cangjie.source.CjSourceElement
 /**
  * Generated from: [org.cangnova.cangjie.cfir.tree.generator.CfirTree.ifExpression]
  */
-abstract class CfirIfExpression : CfirExpression() {
+abstract class CfirIfExpression : CfirExpression(), CfirResolvable {
     abstract override val source: CjSourceElement?
     abstract override val annotations: List<CfirAnnotation>
     abstract override val coneTypeOrNull: ConeCangJieType?
+    abstract override val calleeReference: CfirReference
     abstract val condition: CfirExpression
     abstract val thenBranch: CfirBlock
     abstract val elseBranch: CfirExpression?
@@ -33,7 +35,11 @@ abstract class CfirIfExpression : CfirExpression() {
 
     abstract override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?)
 
+    abstract override fun replaceCalleeReference(newCalleeReference: CfirReference)
+
     abstract override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirIfExpression
+
+    abstract override fun <D> transformCalleeReference(transformer: CfirTransformer<D>, data: D): CfirIfExpression
 
     abstract fun <D> transformCondition(transformer: CfirTransformer<D>, data: D): CfirIfExpression
 

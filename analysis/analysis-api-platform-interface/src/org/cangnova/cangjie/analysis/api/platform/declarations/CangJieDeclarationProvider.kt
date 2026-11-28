@@ -17,6 +17,7 @@ import org.cangnova.cangjie.psi.CjExtend
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjMacroDeclaration
 import org.cangnova.cangjie.psi.CjNamedFunction
+import org.cangnova.cangjie.psi.CjNamedPattern
 import org.cangnova.cangjie.psi.CjProperty
 import org.cangnova.cangjie.psi.CjTypeAlias
 import org.cangnova.cangjie.psi.CjTypeStatement
@@ -52,6 +53,9 @@ interface CangJieDeclarationProvider : CangJieComposableProvider {
      * 返回指定 callable id 对应的顶层属性声明。
      */
     fun getTopLevelProperties(callableId: CallableId): Collection<CjProperty>
+
+    /** 顶层模式容器没有名字，包级变量索引直接返回其具名叶子。 */
+    fun getTopLevelPatternBindings(callableId: CallableId): Collection<CjNamedPattern>
     /**
      * 返回指定 callable id 对应的顶层函数声明。
      */

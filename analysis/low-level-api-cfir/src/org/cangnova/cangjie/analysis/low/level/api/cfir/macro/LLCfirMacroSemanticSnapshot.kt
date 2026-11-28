@@ -3,6 +3,8 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.macro
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.util.ModificationTracker
+import com.intellij.openapi.project.Project
+import com.intellij.psi.impl.source.resolve.ResolveCache
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
@@ -31,6 +33,9 @@ import org.cangnova.cangjie.source.psi
 import org.cangnova.cangjie.psi.CjClassLikeDeclaration
 import org.cangnova.cangjie.psi.CjDeclaration
 import org.cangnova.cangjie.psi.CjFile
+import org.cangnova.cangjie.psi.CjElement
+import com.intellij.psi.PsiElement
+import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.psi.CjMacroExpression
 import java.lang.ref.SoftReference
 import java.util.Collections
@@ -42,6 +47,9 @@ internal data class LLCfirMacroSemanticSnapshotConstructionInputs(
     val declarationsByFile: IdentityHashMap<CfirFile, List<CfirDeclaration>>,
     val fileByElement: IdentityHashMap<CfirElement, CfirFile>,
     val declarationPsiByCfir: IdentityHashMap<CfirDeclaration, CjDeclaration?>,
+    val reparsedPsiFiles: IdentityHashMap<CjFile, CfirFile>,
+    val reparsedPsiOwners: IdentityHashMap<CjElement, CfirDeclaration>,
+    val canonicalPsiByReparsedPsi: IdentityHashMap<CjElement, CjElement>,
     val macroGeneratedDeclarations: Set<CfirDeclaration>,
     val declarationReplacementSources: List<LLCfirMacroDeclarationReplacementSource>,
     val expressionReplacementSources: List<LLCfirMacroExpressionReplacementSource>,
@@ -203,6 +211,8 @@ class LLCfirMacroSemanticSnapshot internal constructor(
 
     /** 发布时冻结的生成 source 身份集合。 */
     private val generatedSourceIdentities: Set<AbstractCjSourceElement> = registry.generatedSources
+    /** 原输入身份在发布时冻结；replacement 祖先不能把它变成生成声明。 */
+    private val preservedSourceIdentities: Set<AbstractCjSourceElement> = registry.preservedSources
 
     /** 每个最终文件所属的包。 */
     val filesByPackage: Map<FqName, List<CfirFile>>
@@ -244,6 +254,26 @@ class LLCfirMacroSemanticSnapshot internal constructor(
 
     /** 最终 CFIR 声明到其最近宏替换来源的身份索引；值可多来源以显式保留歧义。 */
     private val macroSurfaceIdsByDeclarationIdentity: Map<CfirDeclaration, Set<Long>>
+
+    /** 来自 raw source factory 的 exact producer 关系，不缓存另一份 CFIR 树。 */
+    private val reparsedPsiFiles: Map<CjFile, CfirFile> =
+        Collections.unmodifiableMap(IdentityHashMap(constructionInputs.reparsedPsiFiles))
+    private val reparsedPsiOwners: Map<CjElement, CfirDeclaration> =
+        Collections.unmodifiableMap(IdentityHashMap(constructionInputs.reparsedPsiOwners))
+    private val canonicalPsiByReparsedPsi: Map<CjElement, CjElement> =
+        Collections.unmodifiableMap(IdentityHashMap(constructionInputs.canonicalPsiByReparsedPsi))
+
+    fun ownsReparsedPsi(element: PsiElement): Boolean = reparsedPsiFiles.containsKey(element.containingFile)
+
+    fun fileForReparsedPsi(file: CjFile): CfirFile? = reparsedPsiFiles[file]
+
+    /** 沿语法 ownership 找实际登记的解析 owner，不按名字或 offset 选声明。 */
+    fun declarationForReparsedPsi(element: CjElement): CfirDeclaration? =
+        generateSequence(element as PsiElement) { it.parent }
+            .filterIsInstance<CjElement>().mapNotNull { reparsedPsiOwners[it] }.firstOrNull()
+
+    fun canonicalPsiForReparsedPsi(element: CjElement): CjElement? =
+        canonicalPsiByReparsedPsi[element]
 
     init {
         require(sourceFiles.size == files.size) {
@@ -393,17 +423,26 @@ class LLCfirMacroSemanticSnapshot internal constructor(
         }
 
         val generatedSurfaceIdsByDeclaration = IdentityHashMap<CfirDeclaration, MutableSet<Long>>()
+        val generatedSourceOrigins = registry.generatedSourceOriginsBySource
         for (file in files) {
             file.accept(object : CfirDefaultVisitor<Unit, Set<Long>>() {
-                override fun visitElement(element: CfirElement, inheritedSurfaceIds: Set<Long>) {
+                override fun visitElement(element: CfirElement, data: Set<Long>) {
                     ProgressManager.checkCanceled()
                     val directSurfaceIds = when (element) {
                         is CfirDeclaration -> directSurfaceIdsByDeclaration[element]
                         is CfirExpression -> expressionSurfaceIds[element]
                         else -> null
                     }
-                    val currentSurfaceIds = directSurfaceIds ?: inheritedSurfaceIds
-                    if (element is CfirDeclaration && currentSurfaceIds.isNotEmpty()) {
+                    val exactSourceOrigins = element.source?.let { generatedSourceOrigins[it] }
+                    val currentSurfaceIds = exactSourceOrigins ?: directSurfaceIds ?: data
+                    val preservedInput = element.source?.let { it in preservedSourceIdentities } == true
+                    // 非空但未证实的 source 不能由祖先 surface 猜为生成来源；
+                    // 无 source 的合成声明仍可使用实际 splice 的声明所有权。
+                    val generatedSource = element.source?.let { it in generatedSourceIdentities } == true
+                    val sourceLessOutput = element.source == null && currentSurfaceIds.isNotEmpty()
+                    if (element is CfirDeclaration && !preservedInput &&
+                        (generatedSource || sourceLessOutput) && currentSurfaceIds.isNotEmpty()
+                    ) {
                         generatedSurfaceIdsByDeclaration.getOrPut(element, ::linkedSetOf).addAll(currentSurfaceIds)
                     }
                     element.acceptChildren(this, currentSurfaceIds)
@@ -583,12 +622,12 @@ class LLCfirMacroSemanticSnapshot internal constructor(
 /**
  * 源码模块宏语义快照的原子发布点，同时作为 scope-session 缓存的修改跟踪器。
  */
-class LLCfirMacroSemanticSnapshotStore : ModificationTracker {
+class LLCfirMacroSemanticSnapshotStore(private val project: Project) : ModificationTracker {
     private data class State(
         val modificationCount: Long,
         /**
-         * 快照按模块共享，可能长时间驻留；用软引用让 GC 在真正缺内存时回收，
-         * 而不是每次低内存信号都丢弃并触发整模块重建。
+         * 当前 session 的快照可长时间驻留；软引用允许在内存不足时回收，
+         * 但不会把持有 session 状态的 CFIR 树传给另一个 session。
          */
         val snapshot: SoftReference<LLCfirMacroSemanticSnapshot>?,
     )
@@ -626,6 +665,41 @@ class LLCfirMacroSemanticSnapshotStore : ModificationTracker {
         val resolvedOriginIds = sourceOriginsSnapshot.resolvedOriginIds
         val psiSources = ReadAction.compute<LLCfirMacroPsiSources, RuntimeException> {
             val declarationPsiByCfir = IdentityHashMap<CfirDeclaration, CjDeclaration?>()
+            val reparsedPsiFiles = IdentityHashMap<CjFile, CfirFile>()
+            val reparsedPsiOwners = IdentityHashMap<CjElement, CfirDeclaration>()
+            val canonicalPsiByReparsedPsi = IdentityHashMap<CjElement, CjElement>()
+            fileByElement.forEach { (element, file) ->
+                val source = element.source ?: return@forEach
+                val canonical = source.psi as? CjElement ?: return@forEach
+                registry.reparsedSourcesFor(source).forEach rawSource@ { rawSource ->
+                    val reparsed = rawSource.psi as? CjElement ?: return@rawSource
+                    val psiFile = reparsed.containingFile as? CjFile ?: return@rawSource
+                    if (sourceFiles.any { it === psiFile }) return@rawSource
+                    val previousFile = reparsedPsiFiles.put(psiFile, file)
+                    check(previousFile == null || previousFile === file) { "A reparsed PSI file must belong to one semantic file." }
+                    fun registerAlias(raw: CjElement?, actual: CjElement?) {
+                        if (raw == null || actual == null) return
+                        val previousPsi = canonicalPsiByReparsedPsi.put(raw, actual)
+                        check(previousPsi == null || previousPsi === actual) { "A raw PSI producer cannot acquire a different canonical PSI." }
+                    }
+                    registerAlias(reparsed, canonical)
+                    // Binder 名字 child 的结构关系由实际模式节点提供，不能用名称或位置选 child。
+                    when {
+                        reparsed is org.cangnova.cangjie.psi.CjBindingPattern && canonical is org.cangnova.cangjie.psi.CjBindingPattern ->
+                            registerAlias(reparsed.expression, canonical.expression)
+                        reparsed is org.cangnova.cangjie.psi.CjTypePattern && canonical is org.cangnova.cangjie.psi.CjTypePattern ->
+                            registerAlias(reparsed.reference, canonical.reference)
+                        reparsed is org.cangnova.cangjie.psi.CjVarOrEnumPattern && canonical is org.cangnova.cangjie.psi.CjVarOrEnumPattern ->
+                            registerAlias(reparsed.reference, canonical.reference)
+                    }
+                    if (element is CfirDeclaration &&
+                        (source.kind == CjRealSourceElementKind || source.kind == CjFakeSourceElementKind.PatternBindingVariable)
+                    ) {
+                        val previousOwner = reparsedPsiOwners.put(reparsed, element)
+                        check(previousOwner == null || previousOwner === element) { "A raw declaration producer must have one semantic owner." }
+                    }
+                }
+            }
             declarationsByFile.values.forEach { declarations ->
                 declarations.forEach { declaration ->
                     ProgressManager.checkCanceled()
@@ -700,6 +774,9 @@ class LLCfirMacroSemanticSnapshotStore : ModificationTracker {
 
             LLCfirMacroPsiSources(
                 declarationPsiByCfir = declarationPsiByCfir,
+                reparsedPsiFiles = reparsedPsiFiles,
+                reparsedPsiOwners = reparsedPsiOwners,
+                canonicalPsiByReparsedPsi = canonicalPsiByReparsedPsi,
                 generatedSourceRanges = generatedSourceRanges,
                 macroGeneratedDeclarationSources = macroGeneratedDeclarationSources,
                 declarationReplacementSources = declarationReplacementSources,
@@ -721,6 +798,9 @@ class LLCfirMacroSemanticSnapshotStore : ModificationTracker {
             declarationsByFile = declarationsByFile,
             fileByElement = fileByElement,
             declarationPsiByCfir = psiSources.declarationPsiByCfir,
+            reparsedPsiFiles = psiSources.reparsedPsiFiles,
+            reparsedPsiOwners = psiSources.reparsedPsiOwners,
+            canonicalPsiByReparsedPsi = psiSources.canonicalPsiByReparsedPsi,
             macroGeneratedDeclarations = macroGeneratedDeclarations,
             declarationReplacementSources = psiSources.declarationReplacementSources,
             expressionReplacementSources = psiSources.expressionReplacementSources,
@@ -733,26 +813,37 @@ class LLCfirMacroSemanticSnapshotStore : ModificationTracker {
     internal fun publish(snapshot: LLCfirMacroSemanticSnapshot): Boolean {
         val current = state.get()
         if (current.snapshot?.get() != null) return false
-        state.set(State(current.modificationCount + 1, SoftReference(snapshot)))
+        replaceState(current, snapshot)
         return true
     }
 
     /**
      * 丢弃已发布的快照，允许下一次构造重新准备与发布。
      *
-     * 快照现在按模块共享（见 [org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirGlobalResolveComponents]），
-     * 因此必须在模块输入（PSI / roots / 编译器设置 / SDK）变化时显式失效，不能依赖 session 生命周期。
+     * 快照由当前 LLCfirModuleResolveComponents/session 独占，随该 session 退役。
+     * 同一 session 的输入改变时也需显式失效；即使尚无快照，旧 EMPTY 引用结果仍必须失效。
      */
     @Synchronized
     internal fun invalidate(): Boolean {
         val current = state.get()
-        if (current.snapshot?.get() == null) return false
-        state.set(State(current.modificationCount + 1, null))
-        return true
+        val hadSnapshot = current.snapshot?.get() != null
+        replaceState(current, null)
+        return hadSnapshot
+    }
+
+    /** 同一正式语义版本切换同时撤销平台 cache maps，包含没有携带 session 的 EMPTY 结果。 */
+    private fun replaceState(current: State, snapshot: LLCfirMacroSemanticSnapshot?) {
+        // ResolveCache.getInstance 可检查取消；取得 cache 后再提交版本，避免取消留下旧引用缓存。
+        val resolveCache = ResolveCache.getInstance(project)
+        state.set(State(current.modificationCount + 1, snapshot?.let { SoftReference(it) }))
+        resolveCache.clearCache(true)
     }
 
     private data class LLCfirMacroPsiSources(
         val declarationPsiByCfir: IdentityHashMap<CfirDeclaration, CjDeclaration?>,
+        val reparsedPsiFiles: IdentityHashMap<CjFile, CfirFile>,
+        val reparsedPsiOwners: IdentityHashMap<CjElement, CfirDeclaration>,
+        val canonicalPsiByReparsedPsi: IdentityHashMap<CjElement, CjElement>,
         val generatedSourceRanges: List<MacroGeneratedSourceRange>,
         val macroGeneratedDeclarationSources: List<MacroGeneratedDeclarationSource>,
         val declarationReplacementSources: List<LLCfirMacroDeclarationReplacementSource>,

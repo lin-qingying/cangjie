@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.lsp.analysis
 
+import com.intellij.openapi.application.ReadAction
 import com.google.gson.JsonObject
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.impl.DocumentImpl
@@ -664,7 +665,6 @@ class AnalysisApiCangjieAnalysisFacade(
             val target = resolveImplementationTarget(document, snapshot.psiFile, params.position)
                 ?: return@analyzeSnapshot emptyList()
             val targetPointer = target.createPointer()
-            val targetClassId = target.classId ?: return@analyzeSnapshot emptyList()
 
             val locations = linkedSetOf<Location>()
             semanticSupport.workspaceFiles(context).forEach { workspaceFile ->
@@ -674,8 +674,7 @@ class AnalysisApiCangjieAnalysisFacade(
                     workspaceFile.psiFile.collectDescendantsOfType<CjClassLikeDeclaration>().forEach { declaration ->
                         val declarationSymbol = declaration.toPublicSymbol(this, workspaceFile.psiFile) as? CaClassSymbol
                             ?: return@forEach
-                        val declarationClassId = declarationSymbol.classId ?: return@forEach
-                        if (declarationClassId == targetClassId) return@forEach
+                        if (declarationSymbol == sessionTarget) return@forEach
 
                         val directlyTargetsSuperType = (declaration as? CjTypeStatement)
                             ?.superTypeListEntries
@@ -683,10 +682,10 @@ class AnalysisApiCangjieAnalysisFacade(
                             ?.mapNotNull(CjSuperTypeListEntry::typeAsUserType)
                             ?.mapNotNull(CjUserType::referenceExpression)
                             ?.mapNotNull { superTypeReference ->
-                                semanticSupport.run { targetKeyFor(superTypeReference) as? AnalysisApiLspTargetKey.ClassLike }
+                                semanticSupport.run { targetKeyFor(superTypeReference) }
                             }
-                            ?.any { superTypeTarget: AnalysisApiLspTargetKey.ClassLike ->
-                                superTypeTarget.classId == targetClassId
+                            ?.any { superTypeTarget ->
+                                superTypeTarget.restore(this) == sessionTarget
                             }
                             ?: false
                         val isSubClass = declarationSymbol.isSubClassOf(sessionTarget)
@@ -708,7 +707,7 @@ class AnalysisApiCangjieAnalysisFacade(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
         params: ReferenceParams,
-    ): List<Location> {
+    ): List<Location> = ReadAction.compute<List<Location>, RuntimeException> {
         val targetKeys = semanticSupport.analyzeSnapshot(document) { snapshot ->
             val directReference = semanticSupport.referenceTargetKey(
                 session = this,
@@ -720,40 +719,50 @@ class AnalysisApiCangjieAnalysisFacade(
                 setOf(directReference)
             } else {
                 semanticSupport.findTargetElements(document, snapshot.psiFile, params.position)
-                    .mapNotNull(semanticSupport::targetKeyFor)
+                    .mapNotNull { target -> semanticSupport.run { targetKeyFor(target) } }
                     .toSet()
             }
         }
         if (targetKeys.isEmpty()) {
-            return emptyList()
+            return@compute emptyList()
         }
 
         val locations = linkedSetOf<Location>()
+        val declarationLocations = linkedSetOf<Location>()
         semanticSupport.workspaceFiles(context).forEach { workspaceFile ->
             semanticSupport.analyzeFile(workspaceFile.psiFile) {
                 semanticSupport.referenceLikeElements(workspaceFile.psiFile).forEach { referenceLike ->
-                    if (semanticSupport.run { targetKeyForReferenceLike(referenceLike) } in targetKeys) {
+                    val candidateKey = semanticSupport.run { targetKeyForReferenceLike(referenceLike) }
+                    if (targetKeys.any { it.matches(this, candidateKey) }) {
                         val locationElement = when (referenceLike) {
                             is CjSimpleNameExpression -> referenceLike.referencedNameElement
                             else -> referenceLike
                         }
                         semanticSupport.toLocation(locationElement)?.let(locations::add)
+                        if (params.context.isIncludeDeclaration) {
+                            semanticSupport.run { referenceDeclarationTargets(referenceLike, targetKeys) }
+                                .mapNotNull(semanticSupport::toLocation)
+                                .forEach(declarationLocations::add)
+                        }
                     }
                 }
             }
         }
 
         if (!params.context.isIncludeDeclaration) {
-            return locations.toList()
+            return@compute locations.toList()
         }
 
+        // binary 声明与生成声明不在工作区源码枚举中，位置来自成功解析协议。
+        locations.addAll(declarationLocations)
         val existingKeys = locations.mapTo(linkedSetOf()) { location ->
             "${location.uri}:${location.range.start.line}:${location.range.start.character}:${location.range.end.line}:${location.range.end.character}"
         }
         semanticSupport.workspaceFiles(context).forEach { workspaceFile ->
             semanticSupport.analyzeFile(workspaceFile.psiFile) {
-                workspaceFile.psiFile.collectDescendantsOfType<CjNamedDeclaration>().forEach { declaration ->
-                    if (semanticSupport.targetKeyFor(declaration) !in targetKeys) return@forEach
+                semanticSupport.namedDeclarationElements(workspaceFile.psiFile).forEach { declaration ->
+                    val declarationKey = semanticSupport.run { targetKeyFor(declaration) }
+                    if (targetKeys.none { it.matches(this, declarationKey) }) return@forEach
                     val location = semanticSupport.toLocation(declaration.nameIdentifier ?: declaration) ?: return@forEach
                     val locationKey =
                         "${location.uri}:${location.range.start.line}:${location.range.start.character}:${location.range.end.line}:${location.range.end.character}"
@@ -764,7 +773,7 @@ class AnalysisApiCangjieAnalysisFacade(
             }
         }
 
-        return locations.toList()
+        return@compute locations.toList()
     }
 
     /**
@@ -785,14 +794,16 @@ class AnalysisApiCangjieAnalysisFacade(
             setOf(directReference)
         } else {
             semanticSupport.findTargetElements(document, snapshot.psiFile, params.position)
-                .mapNotNull(semanticSupport::targetKeyFor)
+                .mapNotNull { target -> semanticSupport.run { targetKeyFor(target) } }
                 .toSet()
         }
         if (targetKeys.isEmpty()) return@analyzeSnapshot emptyList()
 
+        val analysisSession = this
         buildList {
             semanticSupport.referenceLikeElements(snapshot.psiFile).forEach { referenceLike ->
-                if (semanticSupport.run { targetKeyForReferenceLike(referenceLike) } in targetKeys) {
+                val candidateKey = semanticSupport.run { targetKeyForReferenceLike(referenceLike) }
+                if (targetKeys.any { it.matches(analysisSession, candidateKey) }) {
                     val rangeSource = when (referenceLike) {
                         is CjSimpleNameExpression -> referenceLike.referencedNameElement
                         else -> referenceLike
@@ -809,8 +820,9 @@ class AnalysisApiCangjieAnalysisFacade(
                 }
             }
 
-            snapshot.psiFile.collectDescendantsOfType<CjNamedDeclaration>().forEach { namedDeclaration ->
-                if (semanticSupport.targetKeyFor(namedDeclaration) in targetKeys) {
+            semanticSupport.namedDeclarationElements(snapshot.psiFile).forEach { namedDeclaration ->
+                val declarationKey = semanticSupport.run { targetKeyFor(namedDeclaration) }
+                if (targetKeys.any { it.matches(analysisSession, declarationKey) }) {
                     val nameIdentifier = namedDeclaration.nameIdentifier ?: return@forEach
                     add(
                         DocumentHighlight().apply {
@@ -832,9 +844,29 @@ class AnalysisApiCangjieAnalysisFacade(
         params: DocumentSymbolParams,
     ): List<Either<SymbolInformation, DocumentSymbol>> {
         val snapshot = psiDocumentFactory.createAnalyzableSnapshot(document)
-        return snapshot.psiFile.declarations
+        val symbols = snapshot.psiFile.declarations
             .mapNotNull { declaration -> buildDocumentSymbol(document, declaration) }
-            .map(Either<SymbolInformation, DocumentSymbol>::forRight)
+        if (context.workspaceState.initializeParams()?.capabilities?.textDocument
+                ?.documentSymbol?.hierarchicalDocumentSymbolSupport == true
+        ) {
+            return symbols.map(Either<SymbolInformation, DocumentSymbol>::forRight)
+        }
+        // 未协商层级协议时逐层发布扁平符号；仍保留真实 kind、完整范围和直接容器。
+        val flatSymbols = buildList<SymbolInformation> {
+            fun appendSymbol(symbol: DocumentSymbol, parentName: String?) {
+                add(SymbolInformation().apply {
+                    name = symbol.name
+                    kind = symbol.kind
+                    location = Location(document.uri, symbol.range)
+                    containerName = parentName
+                    tags = symbol.tags
+                    deprecated = symbol.deprecated
+                })
+                symbol.children.orEmpty().forEach { child -> appendSymbol(child, symbol.name) }
+            }
+            symbols.forEach { symbol -> appendSymbol(symbol, null) }
+        }
+        return flatSymbols.map(Either<SymbolInformation, DocumentSymbol>::forLeft)
     }
 
     /**
@@ -1038,11 +1070,24 @@ class AnalysisApiCangjieAnalysisFacade(
         position: Position,
     ): Either<List<Location>, List<LocationLink>> = Either.forLeft(
         semanticSupport.analyzeSnapshot(document) { snapshot ->
-            semanticSupport.findTargetElements(document, snapshot.psiFile, position)
-                .mapNotNull(semanticSupport::toLocation)
-                .distinctBy { location ->
-                    "${location.uri}:${location.range.start.line}:${location.range.start.character}:${location.range.end.line}:${location.range.end.character}"
+            val targets = semanticSupport.findTargetElements(document, snapshot.psiFile, position)
+            val directReference = semanticSupport.referenceTargetKey(this, document, snapshot.psiFile, position)
+            val targetKeys = if (directReference != null) {
+                listOf(directReference)
+            } else {
+                targets.mapNotNull { target -> semanticSupport.run { targetKeyFor(target) } }
+            }
+            val reference = snapshot.psiFile.findReferenceAt(document.analysisOffsetAt(position))
+            val navigationTargets = if (reference != null) {
+                // 平台 Symbol 返回规范声明；跳转位置来自同一成功解析的正式 navigation target。
+                semanticSupport.run { referenceNavigationTargets(reference.element, targetKeys) }
+            } else {
+                targets.filter { target ->
+                    val targetKey = semanticSupport.run { targetKeyFor(target) }
+                    targetKeys.any { it.matches(this, targetKey) }
                 }
+            }
+            navigationTargets.mapNotNull(semanticSupport::toLocation).distinct()
         },
     )
 

@@ -30,6 +30,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileModule
 import org.cangnova.cangjie.analysis.api.util.withPsiEntry
 import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirModuleResolveComponents
 import org.cangnova.cangjie.analysis.low.level.api.cfir.element.builder.getNonLocalContainingOrThisElement
@@ -134,6 +135,28 @@ class LLResolutionFacade internal constructor(
      * @see org.cangnova.cangjie.analysis.low.level.api.cfir.element.builder.CfirElementBuilder.getOrBuildCfirFor
      */
     internal fun getOrBuildCfirFor(element: CjElement): CfirElement? {
+        val patternDeclaration: CjElement? = when (element) {
+            is CjNamedPattern, is CjPatternVariable, is CjFieldVariable, is CjEnumConstructor -> element
+            else -> when (val parent = element.parent) {
+                is CjBindingPattern -> parent.takeIf { it.expression === element }
+                is CjTypePattern -> parent.takeIf { it.reference === element }
+                is CjVarOrEnumPattern -> parent.takeIf { it.reference === element }
+                else -> null
+            }
+        }
+        if (patternDeclaration != null && patternDeclaration.containingCjFile.isCompiled) {
+            val owningModule = CangJieProjectStructureProvider.getModule(project, patternDeclaration, useSiteModule = null)
+            if (getModuleResolutionStrategy(owningModule) == LLModuleResolutionStrategy.STATIC) {
+                val searcher = org.cangnova.cangjie.analysis.low.level.api.cfir.util.CfirDeclarationForCompiledElementSearcher(getSessionFor(owningModule))
+                val result = when (patternDeclaration) {
+                    is CjNamedPattern -> searcher.findNonLocalPatternBinding(patternDeclaration)
+                    is CjPatternVariable -> searcher.findNonLocalDeclaration(patternDeclaration)
+                    is CjFieldVariable, is CjEnumConstructor -> searcher.findNonLocalDeclaration(patternDeclaration as CjDeclaration)
+                    else -> error("Unexpected compiled pattern target")
+                }
+                return (result as? CfirResolution.Resolved)?.value
+            }
+        }
         val moduleComponents = getModuleComponentsForElement(element)
         return moduleComponents.elementsBuilder.getOrBuildCfirFor(element)
     }
@@ -151,6 +174,12 @@ class LLResolutionFacade internal constructor(
      */
     private fun getModuleComponentsForElement(element: CjElement): LLCfirModuleResolveComponents {
         val module = getModule(element)
+        if (module is CaDanglingFileModule) {
+            val contextSession = sessionProvider.getResolvableSession(module.contextModule)
+            if (contextSession.macroSemanticSnapshot?.ownsReparsedPsi(element) == true) {
+                return contextSession.moduleComponents
+            }
+        }
         return sessionProvider.getResolvableSession(module).moduleComponents
     }
 

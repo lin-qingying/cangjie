@@ -12,4 +12,6 @@ import org.cangnova.cangjie.cfir.CfirDeclarationDataKey
 public var CfirValueParameter.desugaredParameter: CfirValueParameter? by
     CfirDeclarationDataRegistry.data(DesugaredParameterKey)
 
-private object DesugaredParameterKey : CfirDeclarationDataKey()
+private object DesugaredParameterKey : CfirDeclarationDataKey() {
+    override val rawCopyPolicy get() = org.cangnova.cangjie.cfir.CfirRawDeclarationDataPolicies.reference<org.cangnova.cangjie.cfir.declarations.CfirValueParameter>("parameter desugaring reference")
+}

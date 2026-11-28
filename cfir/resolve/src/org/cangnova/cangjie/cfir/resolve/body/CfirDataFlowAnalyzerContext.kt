@@ -90,7 +90,7 @@ class CfirDataFlowAnalyzerContext(
         val originalVariableStorage = variableStorage
         val originalAssignmentCounter = assignmentCounter
 
-        graphBuilder = ControlFlowGraphBuilder()
+        graphBuilder = ControlFlowGraphBuilder(isIsolatedContext = true)
         variableAssignmentAnalyzer = CfirLocalVariableAssignmentAnalyzer()
         variableStorage = VariableStorage()
         assignmentCounter = originalAssignmentCounter
