@@ -1231,7 +1231,7 @@ interface MacroConstructionService {
          * 主流程顺序、forest 推进策略、宏 token 源码重建、payload/delimiter 语义、
          * splice 语义、degraded placeholder 形态任一变更都必须递增；上游 cache 据此整体失效。
          */
-        const val ALGORITHM_VERSION: Int = 6
+        const val ALGORITHM_VERSION: Int = 7
 
         /**
          * 无宏 identity 实现：把 raw 文件原样打包为可注册输入，

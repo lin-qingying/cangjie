@@ -589,6 +589,7 @@ class FrontendMacroConstructionService(
                             preFile = preFile,
                         ) ?: return@evaluate null
 
+                        val inherited = inheritedAnnotationsBySurface(preFile, decision, classification, node)
                         val fragment = configuration.macroConstructionReadAccess.compute {
                             parseAndDesugarFragment(
                                 surface = surface,
@@ -598,7 +599,7 @@ class FrontendMacroConstructionService(
                                 node = node,
                                 parser = parser,
                                 tokens = expandedTokens,
-                                inheritedAnnotationSnapshots = inheritedAnnotationSnapshots(preFile, decision, classification, node),
+                                inheritedAnnotationSnapshots = inherited.values.toList(),
                                 registry = registry,
                             )
                         } ?: return@evaluate null
@@ -635,7 +636,8 @@ class FrontendMacroConstructionService(
                             origin = surface,
                             fragment = fragment,
                             annotationMetadata = preFile.annotationMetadata,
-                            embeddedSurfaceIds = if (fragment is MacroFragmentResult.Success) node.descendantSurfaceIds() else emptySet(),
+                            embeddedSurfaceIds = if (fragment is MacroFragmentResult.Success)
+                                node.descendantSurfaceIds() + inherited.keys else emptySet(),
                         )
                         parentVisibleTokens
                     },
@@ -967,14 +969,14 @@ class FrontendMacroConstructionService(
      * 原 annotations 是独立解析输入，按原槽位顺序交给首个输出声明的正常语法解析。
      * 只有冻结决议确认的普通注解进入该通道，宏本身仍由宏森林求值。
      */
-    private fun inheritedAnnotationSnapshots(
+    private fun inheritedAnnotationsBySurface(
         preFile: PreMacroCfirFile,
         decision: FinalMacroSurfaceDecision,
         classification: MacroDemandClassification,
         node: MacroCallNode,
-    ): List<org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationSlotSnapshot> {
-        if (decision.parserMode != MacroFragmentParser.Mode.DECLARATION) return emptyList()
-        val current = decision.annotationCarrier ?: return emptyList()
+    ): Map<Long, org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationSlotSnapshot> {
+        if (decision.parserMode != MacroFragmentParser.Mode.DECLARATION) return emptyMap()
+        val current = decision.annotationCarrier ?: return emptyMap()
         val metadata = preFile.annotationMetadata
         val enclosingMacroIndex = generateSequence(node.parent) { it.parent }
             .mapNotNull { parent ->
@@ -995,8 +997,9 @@ class FrontendMacroConstructionService(
                     (candidate.resolution is MacroResolution.BuiltinAnnotation || candidate.resolution is MacroResolution.CustomAnnotation)
             }
             .sortedBy { checkNotNull(it.annotationCarrier).annotationIndex }
-            .map { checkNotNull(metadata.snapshot(checkNotNull(it.annotationCarrier))) }
-            .toList()
+            .associate { candidate ->
+                candidate.surface.surfaceId to checkNotNull(metadata.snapshot(checkNotNull(candidate.annotationCarrier)))
+            }
     }
 
     /**
@@ -1851,9 +1854,14 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
                 replacements = replacements,
                 surfaceId = slot.origin.surfaceId,
             )
-            // 嵌套注解宏的 token 已在宏森林求值时并入外层声明宏的输入；外层最终输出决定哪些
-            // token 成为声明。不能把旧 carrier 的 annotation slot 任意绑定到某一个替换声明。
-            annotationSlots.entries.removeIf { (carrier, _) -> carrier.owner === declaration }
+            // 外层已经重解析的后代与继承前缀在进入 splicer 前已排除；其余槽独立写入首个输出。
+            val firstReplacement = replacements.firstOrNull()
+            if (firstReplacement == null) {
+                annotationSlots.entries.removeIf { (carrier, _) -> carrier.owner === declaration }
+                slot.annotationMetadata.replaceAnnotationList(declaration, emptyList())
+            } else {
+                firstReplacement.consumeAnnotationSlotsFromOwner(declaration, annotationSlots, slot.annotationMetadata)
+            }
             iterator.remove()
             for (replacement in replacementElements) {
                 iterator.add(replacement)
@@ -2259,7 +2267,7 @@ private fun MacroSurfaceToken.isInside(range: org.cangnova.cangjie.cfir.resolve.
     return isSourceToken && startOffset >= range.startOffset && endOffset <= range.endOffset
 }
 
-/** wire token 的位置来自冻结的原输入区间；生成 token 使用调用位置。 */
+/** wire token 优先使用原输入位置；子宏生成 token 使用原子宏调用位置。 */
 private fun List<MacroSurfaceToken>.toTokenInfo(
     defaultBegin: SourcePosition,
     defaultEnd: SourcePosition,
@@ -2271,6 +2279,7 @@ private fun List<MacroSurfaceToken>.toTokenInfo(
         MacroPayloadTokenizer.tokenize(token.text, token.startOffset)
     }
     val tokenMap = MacroFragmentSourceMap.materialize(listOf(token))
+    val childPositions = token.sourceRange?.takeUnless { token.isSourceToken }?.let(sources::childCallPositions)
     lexerTokens.mapNotNull { lexerToken ->
         val encoded = MacroTokenKind.fromLexerToken(lexerToken.kindName, lexerToken.text) ?: return@mapNotNull null
         val start = lexerToken.startOffset - token.startOffset
@@ -2282,8 +2291,10 @@ private fun List<MacroSurfaceToken>.toTokenInfo(
             kind = encoded.kind,
             value = encoded.value,
             delimiterNum = encoded.delimiterNum,
-            begin = if (original != null && input != null) sources.inputPosition(input, original.startOffset) else defaultBegin,
-            end = if (original != null && input != null) sources.inputPosition(input, original.endOffset) else defaultEnd,
+            begin = if (original != null && input != null) sources.inputPosition(input, original.startOffset)
+                else childPositions?.first ?: defaultBegin,
+            end = if (original != null && input != null) sources.inputPosition(input, original.endOffset)
+                else childPositions?.second ?: defaultEnd,
         )
         sources.record(info, lexerToken.text, originSpans)
         info

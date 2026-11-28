@@ -3,6 +3,7 @@ package org.cangnova.cangjie.frontend.pipeline
 import org.cangnova.cangjie.annotations.BuiltInAnnotationRegistry
 import org.cangnova.cangjie.CjInMemoryTextSourceFile
 import org.cangnova.cangjie.CjPsiSourceFile
+import org.cangnova.cangjie.cfir.builder.CfirRawSourceElementFactory
 import org.cangnova.cangjie.cfir.builder.toParsingContext
 import org.cangnova.cangjie.cfir.common.CfirModuleCapabilities
 import org.cangnova.cangjie.cfir.common.CfirModuleData
@@ -91,6 +92,8 @@ import org.cangnova.cangjie.cfir.session.macroExpansionRegistry
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.psi.CjPsiFactory
 import org.cangnova.cangjie.source.CjOffsetsOnlySourceElement
+import org.cangnova.cangjie.source.toCjLightSourceElement
+import org.cangnova.cangjie.source.withRange
 import org.cangnova.cangjie.source.toCjPsiSourceElement
 import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
@@ -1088,7 +1091,11 @@ class FrontendMacroConstructionExecutionTest {
         val duplicateCarrier = record(replacement, duplicatedFragmentAnnotation)
         val retainedCarrier = record(replacement, retainedFragmentAnnotation)
         val reparsedAnnotation = annotation("Tag")
-        val file = fileWithDeclarations(moduleData, packageFqName, original)
+        val host = CjInMemoryTextSourceFile(
+            "sample.cj", "testdata/sample.cj",
+            "package sample\n@macros.GenerateDeclaration @!Tag func original() {}\n",
+        )
+        val file = fileWithDeclarations(moduleData, packageFqName, original, hostSource = host)
         val surface = declarationSurface(
             surfaceId = 3100L,
             qualifiedName = FqName("macros.GenerateDeclaration"),
@@ -1109,7 +1116,9 @@ class FrontendMacroConstructionExecutionTest {
                 annotationCarrier = originalCarrier,
             ),
         )
-        val pre = buildPreMacroRawFiles(session, listOf(PreMacroCfirFile(file, listOf(surface, annotationSurface), metadata)))
+        val pre = buildPreMacroRawFiles(
+            session, listOf(freezeFixtureParserInput(file, host, listOf(surface, annotationSurface), metadata)),
+        )
         val configuration = CompilerConfiguration().apply {
             macroExecutorFactory = MacroExecutorFactory {
                 RecordingExecutor(MacroExpansionResult.Success(listOf(tokenInfo("func expanded() {}")), "func expanded() {}"))
@@ -1175,7 +1184,12 @@ class FrontendMacroConstructionExecutionTest {
         val expandedMember = namedFunction(moduleData, packageFqName, "expandedMember")
         val originalClass = namedClass(moduleData, packageFqName, "Outer", listOf(originalMember))
         val expandedClass = namedClass(moduleData, packageFqName, "Outer", listOf(expandedMember))
-        val file = fileWithDeclarations(moduleData, packageFqName, originalClass)
+        val memberMacro = "@macros.ReplaceMember"
+        val hostText = "package sample\n@macros.ReplaceClass class Outer { $memberMacro func originalMember() {} }\n"
+        val host = CjInMemoryTextSourceFile("sample.cj", "testdata/sample.cj", hostText)
+        val file = fileWithDeclarations(moduleData, packageFqName, originalClass, hostSource = host)
+        val childStart = hostText.indexOf(memberMacro)
+        val childEnd = childStart + memberMacro.length
         val parentSurfaceId = 3108L
         val childSurfaceId = 3109L
         val parentSurface = declarationSurface(
@@ -1184,8 +1198,8 @@ class FrontendMacroConstructionExecutionTest {
             packageFqName = packageFqName,
             carrier = originalClass,
         ).copy(
-            inputTokens = listOf(MacroSurfaceToken("@ReplaceMember", 20, 30)),
-            sourceRange = MacroSurfaceSourceRange(source = null, startOffset = 0, endOffset = 100),
+            inputTokens = listOf(MacroSurfaceToken(memberMacro, childStart, childEnd, isSourceToken = true)),
+            sourceRange = MacroSurfaceSourceRange(null, hostText.indexOf("@macros.ReplaceClass"), hostText.length),
         )
         val childSurface = declarationSurface(
             surfaceId = childSurfaceId,
@@ -1193,11 +1207,11 @@ class FrontendMacroConstructionExecutionTest {
             packageFqName = packageFqName,
             carrier = originalMember,
         ).copy(
-            sourceRange = MacroSurfaceSourceRange(source = null, startOffset = 20, endOffset = 30),
+            sourceRange = MacroSurfaceSourceRange(null, childStart, childEnd),
         )
         val pre = buildPreMacroRawFiles(
             session = session,
-            files = listOf(PreMacroCfirFile(file, listOf(parentSurface, childSurface), CfirAnnotationMetadataBuilder())),
+            files = listOf(freezeFixtureParserInput(file, host, listOf(parentSurface, childSurface))),
         )
         val parser = object : MacroFragmentParser {
             override fun parse(input: MacroFragmentInput): MacroFragmentResult {
@@ -1315,7 +1329,11 @@ class FrontendMacroConstructionExecutionTest {
         val function = namedFunction(moduleData, packageFqName, "useMacro").apply {
             replaceBody(buildBlock { statements += local })
         }
-        val file = fileWithDeclarations(moduleData, packageFqName, function)
+        val host = CjInMemoryTextSourceFile(
+            "sample.cj", "testdata/sample.cj",
+            "package sample\nfunc useMacro() { let value = @macros.Generated(arg) }\n",
+        )
+        val file = fileWithDeclarations(moduleData, packageFqName, function, hostSource = host)
         val surface = expressionSurface(
             surfaceId = 3102L,
             qualifiedName = FqName("macros").child(Name.identifier("Generated")),
@@ -1323,7 +1341,7 @@ class FrontendMacroConstructionExecutionTest {
         ).copy(
             replaceHandle = CfirReplaceHandle(3102L, functionBodyMacroOwnerSnapshot(packageFqName, function), carrier),
         )
-        val pre = buildPreMacroRawFiles(session, listOf(PreMacroCfirFile(file, listOf(surface), CfirAnnotationMetadataBuilder())))
+        val pre = buildPreMacroRawFiles(session, listOf(freezeFixtureParserInput(file, host, listOf(surface))))
         val configuration = CompilerConfiguration().apply {
             macroExecutorFactory = MacroExecutorFactory {
                 RecordingExecutor(MacroExpansionResult.Success(listOf(tokenInfo("expanded")), "expanded"))
@@ -1536,6 +1554,7 @@ class FrontendMacroConstructionExecutionTest {
         val packageFqName = FqName("sample")
         val macroFqName = FqName("macros.Generated")
         val sourceText = "package sample\nimport macros.Generated\n@Generated func original() {}\n"
+        val host = CjInMemoryTextSourceFile("sample.cj", "testdata/sample.cj", sourceText)
         val expandedText = "@ConstSafe func expanded() {}"
         val sourceRange = MacroSurfaceSourceRange(null, sourceText.indexOf("@Generated"), sourceText.length)
 
@@ -1558,10 +1577,8 @@ class FrontendMacroConstructionExecutionTest {
                 containingDeclarationSymbol = replacement.symbol
             }
             replacement.replaceAnnotations(listOf(outputAnnotation))
-            val file = buildFileCopy(fileWithDeclarations(moduleData, packageFqName, original)) {
+            val file = buildFileCopy(fileWithDeclarations(moduleData, packageFqName, original, hostSource = host)) {
                 symbol = CfirFileSymbol()
-                sourceFile = CjInMemoryTextSourceFile("sample.cj", "testdata/sample.cj", sourceText)
-                sourceFileLinesMapping = sourceText.toSourceLinesMapping()
                 imports += buildImport {
                     importedFqName = macroFqName
                     isAllUnder = false
@@ -1579,7 +1596,7 @@ class FrontendMacroConstructionExecutionTest {
                 isQualifiedName = qualified,
                 scopeContext = originalSurface.scopeContext.copy(sourceModuleName = parserModule),
             )
-            val pre = buildPreMacroRawFiles(session, listOf(PreMacroCfirFile(file, listOf(surface), CfirAnnotationMetadataBuilder())))
+            val pre = buildPreMacroRawFiles(session, listOf(freezeFixtureParserInput(file, host, listOf(surface))))
             val executor = RecordingExecutor(
                 MacroExpansionResult.Success(listOf(tokenInfo(expandedText)), expandedText),
             )
@@ -1639,36 +1656,22 @@ class FrontendMacroConstructionExecutionTest {
         val moduleData = TestModuleData(session)
         session.register(CfirModuleData::class, moduleData)
         val packageFqName = FqName("sample")
-        val firstFile = fileWithDeclarations(moduleData, packageFqName)
-        val secondFile = fileWithDeclarations(moduleData, packageFqName)
         val macroFqName = FqName("macros.Generated")
-        val firstSurface = expressionSurface(
-            surfaceId = 3010L,
-            qualifiedName = macroFqName,
-            packageFqName = packageFqName,
-            sourceRange = MacroSurfaceSourceRange(
-                source = null,
-                startOffset = 0,
-                endOffset = 20,
-            ),
-        )
-        val secondSurface = expressionSurface(
-            surfaceId = 3011L,
-            qualifiedName = macroFqName,
-            packageFqName = packageFqName,
-            sourceRange = MacroSurfaceSourceRange(
-                source = null,
-                startOffset = 0,
-                endOffset = 20,
-            ),
-        )
-        val pre = buildPreMacroRawFiles(
-            session = session,
-            files = listOf(
-                PreMacroCfirFile(firstFile, listOf(firstSurface), CfirAnnotationMetadataBuilder()),
-                PreMacroCfirFile(secondFile, listOf(secondSurface), CfirAnnotationMetadataBuilder()),
-            ),
-        )
+        val invocation = "@macros.Generated(arg)"
+        val sourceText = "package sample\nfunc useMacro() { $invocation }\n"
+        val startOffset = sourceText.indexOf(invocation)
+        val files = listOf("first.cj", "second.cj").mapIndexed { index, name ->
+            val host = CjInMemoryTextSourceFile(name, "testdata/$name", sourceText)
+            val file = fileWithDeclarations(moduleData, packageFqName, hostSource = host)
+            val surface = expressionSurface(
+                surfaceId = 3010L + index,
+                qualifiedName = macroFqName,
+                packageFqName = packageFqName,
+                sourceRange = MacroSurfaceSourceRange(null, startOffset, startOffset + invocation.length),
+            )
+            freezeFixtureParserInput(file, host, listOf(surface))
+        }
+        val pre = buildPreMacroRawFiles(session = session, files = files)
         val executor = RecordingExecutor(
             MacroExpansionResult.Success(
                 tokens = listOf(org.cangnova.cangjie.macro.TokenInfo(0u.toUByte(), "42")),
@@ -1805,9 +1808,12 @@ class FrontendMacroConstructionExecutionTest {
         ).copy(
             inputTokens = listOf(MacroSurfaceToken("two", 60, 63, isSourceToken = true)),
         )
-        val originalText = " ".repeat(10) + "left" + " ".repeat(6) + "@ChildOne(one)" +
-            " middle" + " ".repeat(9) + "@ChildTwo(two) right" + " ".repeat(30)
-        val fixture = macroSurfaceFixture(listOf(parent, firstChild, secondChild), sourceText = originalText)
+        val originalText = "@Parent(  left      @ChildOne(one) middle         @ChildTwo(two) right" + " ".repeat(29) + ")"
+        val fixture = macroSurfaceFixture(
+            listOf(parent, firstChild, secondChild),
+            sourceText = originalText,
+            captureSourcePositions = true,
+        )
         val executor = RoutingExecutor(
             results = mapOf(
                 "ChildOne" to MacroExpansionResult.Success(listOf(tokenInfo("expandedOne")), "expandedOne"),
@@ -1832,12 +1838,15 @@ class FrontendMacroConstructionExecutionTest {
             listOf("left", "expandedOne", "middle", "expandedTwo", "right"),
             executor.calls.single { it.idName == "Parent" }.argTokens.map { it.value },
         )
-        val parentArguments = executor.calls.single { it.idName == "Parent" }.argTokens
-        assertEquals(SourcePosition(line = 1, column = 11), parentArguments.first().begin)
-        assertEquals(SourcePosition(line = 1, column = 21), parentArguments.single { it.value == "expandedOne" }.begin)
-        assertEquals(SourcePosition(line = 1, column = 35), parentArguments.single { it.value == "expandedOne" }.end)
-        assertEquals(SourcePosition(line = 1, column = 51), parentArguments.single { it.value == "expandedTwo" }.begin)
-        assertEquals(SourcePosition(line = 1, column = 65), parentArguments.single { it.value == "expandedTwo" }.end)
+        val parentCall = executor.calls.single { it.idName == "Parent" }
+        val fileId = parentCall.position.fileId
+        assertEquals(1, fileId)
+        val parentArguments = parentCall.argTokens
+        assertEquals(SourcePosition(fileId = fileId, line = 1, column = 11), parentArguments.first().begin)
+        assertEquals(SourcePosition(fileId = fileId, line = 1, column = 21), parentArguments.single { it.value == "expandedOne" }.begin)
+        assertEquals(SourcePosition(fileId = fileId, line = 1, column = 35), parentArguments.single { it.value == "expandedOne" }.end)
+        assertEquals(SourcePosition(fileId = fileId, line = 1, column = 51), parentArguments.single { it.value == "expandedTwo" }.begin)
+        assertEquals(SourcePosition(fileId = fileId, line = 1, column = 65), parentArguments.single { it.value == "expandedTwo" }.end)
     }
 
     /**
@@ -2499,6 +2508,7 @@ class FrontendMacroConstructionExecutionTest {
         surfaces: List<MacroSurface>,
         sourceText: String = "",
         sourceFileName: String = "sample.cj",
+        captureSourcePositions: Boolean = false,
     ): MacroSurfaceFixture {
         val session = object : CfirSession(CfirSession.Kind.Source) {}
         val moduleData = TestModuleData(session)
@@ -2521,7 +2531,9 @@ class FrontendMacroConstructionExecutionTest {
         return MacroSurfaceFixture(
             file = file,
             surface = surfaces.singleOrNull() ?: surfaces.first(),
-            pre = buildPreMacroRawFiles(session, listOf(freezeFixtureParserInput(file, sourceFile, surfaces))),
+            pre = buildPreMacroRawFiles(
+                session, listOf(freezeFixtureParserInput(file, sourceFile, surfaces, captureSourcePositions = captureSourcePositions)),
+            ),
         )
     }
 
@@ -2530,6 +2542,7 @@ class FrontendMacroConstructionExecutionTest {
         sourceFile: CjInMemoryTextSourceFile,
         surfaces: List<MacroSurface>,
         metadata: CfirAnnotationMetadataBuilder = CfirAnnotationMetadataBuilder(),
+        captureSourcePositions: Boolean = false,
     ): PreMacroCfirFile {
         val disposable = com.intellij.openapi.util.Disposer.newDisposable("macro-execution-host")
         try {
@@ -2539,7 +2552,25 @@ class FrontendMacroConstructionExecutionTest {
             val parsed = CangJieLightParser.parse(CangJieLightParser.createBuilder(sourceFile.text), sourceFile = sourceFile)
             parsed.requireConsistentInput()
             file.publishParsingFileFacts(parsed.fileFacts, parsed.sourceContext)
-            return PreMacroCfirFile(file, surfaces, metadata, parsed.diagnosticPublication, parsed.settings)
+            val actualSurfaces = if (captureSourcePositions) {
+                val root = parsed.tree.root.toCjLightSourceElement(parsed.tree)
+                val text = parsed.sourceContext.snapshot.text
+                val sourceFactory = CfirRawSourceElementFactory.Original()
+                surfaces.map { surface ->
+                    val expression = surface as MacroSurfaceExpr
+                    val range = checkNotNull(expression.sourceRange)
+                    val source = root.withRange(range.startOffset, range.endOffset)
+                    expression.copy(
+                        sourceRange = range.copy(source = source),
+                        capturedRawSyntax = text.substring(range.startOffset, range.endOffset),
+                        inputTokens = expression.inputTokens.map { token ->
+                            check(text.substring(token.startOffset, token.endOffset) == token.text)
+                            sourceFactory.createMacroToken(token, source)
+                        },
+                    )
+                }
+            } else surfaces
+            return PreMacroCfirFile(file, actualSurfaces, metadata, parsed.diagnosticPublication, parsed.settings)
         } finally {
             com.intellij.openapi.util.Disposer.dispose(disposable)
         }
@@ -2584,13 +2615,16 @@ class FrontendMacroConstructionExecutionTest {
         moduleData: CfirModuleData,
         packageFqName: FqName,
         vararg declarations: org.cangnova.cangjie.cfir.declarations.CfirDeclaration,
+        hostSource: CjInMemoryTextSourceFile? = null,
     ): CfirFile = buildFile {
         this.moduleData = moduleData
         resolvePhase = CfirResolvePhase.RAW_CFIR
         origin = CfirDeclarationOrigin.Synthetic.Error
         attributes = CfirDeclarationAttributes.EMPTY
         symbol = CfirFileSymbol()
-        name = "sample.cj"
+        name = hostSource?.name ?: "sample.cj"
+        sourceFile = hostSource
+        sourceFileLinesMapping = hostSource?.text?.toSourceLinesMapping()
         packageDirective = buildPackageDirective {
             this.packageFqName = packageFqName
             isMacroPackage = false

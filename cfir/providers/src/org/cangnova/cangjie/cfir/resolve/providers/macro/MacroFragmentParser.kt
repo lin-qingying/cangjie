@@ -236,7 +236,7 @@ sealed interface MacroFragmentReparseResult {
  * @property handle stable splice 必须使用的 replace handle。
  * @property origin 产生该替换槽位的原始 macro surface。
  * @property fragment 将要写入槽位的 fragment 结果。
- * @property embeddedSurfaceIds 其展开 token 已被本 fragment 重新解析并包含在其中的后代 surface。
+ * @property embeddedSurfaceIds 由当前 fragment 重新解析的后代和继承注解前缀 surface。
  */
 data class MacroReplaceSlot(
     /** stable splice 必须使用的 replace handle。 */
@@ -247,7 +247,7 @@ data class MacroReplaceSlot(
     val fragment: MacroFragmentResult,
     /** 槽位实际所属文件事务；splice 的 owner/index 变化必须在同一次操作中登记。 */
     val annotationMetadata: CfirAnnotationMetadataBuilder,
-    /** 后代 surface 的展开结果已进入本 fragment，因而不再对应原始 final-CFIR 载体。 */
+    /** 已重新解析的后代和继承注解前缀不再对应独立的原始 final-CFIR 载体。 */
     val embeddedSurfaceIds: Set<Long> = emptySet(),
 )
 
