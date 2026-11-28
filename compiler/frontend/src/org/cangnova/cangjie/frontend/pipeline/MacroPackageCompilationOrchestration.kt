@@ -344,7 +344,7 @@ class ExternalCjcMacroPackageCompilationOrchestrator(
     ): MacroPackageCompilationResult {
         if (requests.isEmpty()) return MacroPackageCompilationResult()
 
-        val cjcPath = runCatching { resolveCompilerExecutable(context) }.getOrElse { error ->
+        val cjcPath = runCatching { executableResolver.resolve(context.sdkSelection) }.getOrElse { error ->
             return MacroPackageCompilationResult(
                 diagnostics = requests.map { request ->
                     request.compilationError(
@@ -370,16 +370,6 @@ class ExternalCjcMacroPackageCompilationOrchestrator(
             artifactSearchPaths = artifactSearchPaths.distinct(),
             diagnostics = diagnostics,
         )
-    }
-
-    /**
-     * 解析当前环境中可用的 cjc 可执行文件。
-     */
-    private fun resolveCompilerExecutable(context: MacroPackageCompilationContext): Path {
-        if (executableResolver === DefaultMacroCompilerExecutableResolver) {
-            return DefaultMacroCompilerExecutableResolver.resolve(context.configuration.macroSdkHome)
-        }
-        return executableResolver.resolve()
     }
 
     /** 在不可变输出目录中编译或复用单个宏包 artifact。 */
@@ -503,12 +493,6 @@ class ExternalCjcMacroPackageCompilationOrchestrator(
         }
     }
 
-    /**
-     * 解析当前环境中可用的 cjc 可执行文件。
-     */
-    private fun resolveCompilerExecutable(context: MacroPackageCompilationContext): Path {
-        return executableResolver.resolve(context.sdkSelection)
-    }
     private fun failedPackage(
         request: MacroSourcePackageCompilationRequest,
         message: String,

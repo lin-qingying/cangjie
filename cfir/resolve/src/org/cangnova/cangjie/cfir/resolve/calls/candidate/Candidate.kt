@@ -1337,7 +1337,7 @@ class Candidate(
         val functionType = callableValueInvokeFunctionShape ?: when {
             isSyntheticFunctionTypeInvoke() -> dispatchReceiverExpression()?.coneTypeOrNull?.fullyExpandedType(callInfo.session) as? ConeFunctionType
             declaration is CfirVariable || declaration is CfirProperty ->
-                (declaration as CfirCallableDeclaration).returnTypeRef.resolvedConeTypeOrNull()?.recoverableFunctionTypeOrNull()
+                (declaration as CfirCallableDeclaration).returnTypeRef.resolvedConeTypeOrNull()?.recoverableFunctionTypeOrNull(callInfo.session)
             else -> null
         }
         if (functionType != null) return functionType.isCFunc && functionType.hasVariableLenArg

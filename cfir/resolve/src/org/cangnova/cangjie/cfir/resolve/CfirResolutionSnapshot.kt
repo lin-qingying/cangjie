@@ -26,6 +26,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
 import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.cfir.declarations.CfirResourceVariable
 import org.cangnova.cangjie.cfir.declarations.CfirResolveState
+import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.declarations.ResolveStateAccess
 import org.cangnova.cangjie.cfir.declarations.lambdaParameterShapeExpectedFunctionType
@@ -378,7 +379,7 @@ class CfirResolutionSnapshot private constructor(
                                     if (element.contentSource === CfirContentSource.Owned) {
                                         variableInitializers[element] = element.ownedInitializer
                                     }
-                                is CfirFieldVariable, is CfirPatternVariable, is CfirResourceVariable ->
+                                is CfirFieldVariable, is CfirPatternVariable, is CfirResourceVariable, is CfirValueParameter ->
                                     variableInitializers[element] = element.initializer
                             }
                         }

@@ -2,6 +2,7 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.resolve
 
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getOrBuildCfirFile
 import org.cangnova.cangjie.analysis.low.level.api.cfir.test.configurators.analysisApiCfirSourceTestConfigurator
+import org.cangnova.cangjie.analysis.low.level.api.cfir.test.TargetSourceTestSupport
 import org.cangnova.cangjie.analysis.low.level.api.cfir.test.getResolutionFacadeForTest
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
 import org.cangnova.cangjie.cfir.CfirElement
@@ -65,12 +66,13 @@ class PatternBindingImplicitTypesTest : AbstractAnalysisApiExecutionTest(
     @ValueSource(strings = ["serial", "flag", "tail"])
     fun globalEnumPayloadCold(firstMarker: String, mainFile: CjFile, services: TestServices) {
         val markers = listOf("serial", "flag", "tail")
-        val canonical = markers.map {
-            services.expressionMarkerProvider.getBottommostElementOfTypeAtCaret<CjBindingPattern>(mainFile, it)
-        }
-        val selectedPsi = services.expressionMarkerProvider
-            .getBottommostElementOfTypeAtCaret<CjBindingPattern>(mainFile, firstMarker)
         val cfirFile = mainFile.getOrBuildCfirFile(mainFile.getResolutionFacadeForTest())
+        val sources = TargetSourceTestSupport(cfirFile, mainFile)
+        val canonical = markers.map {
+            val origin = services.expressionMarkerProvider.getBottommostElementOfTypeAtCaret<CjBindingPattern>(mainFile, it)
+            sources.targetElement(origin) as CjBindingPattern
+        }
+        val selectedPsi = canonical[markers.indexOf(firstMarker)]
         val target = collectEnumImplicitBindings(cfirFile).single { it.source?.psi === selectedPsi }
         val owner = target.patternTreeOwner as CfirPatternVariable
         val rawPattern = owner.pattern

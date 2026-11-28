@@ -44,7 +44,9 @@ import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintStorage
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintSystemImpl
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CandidatePCLACompletionState
+import org.cangnova.cangjie.cfir.resolve.body.CfirDataFlowAnalyzer
 import org.cangnova.cangjie.cfir.resolve.body.CfirResourceSourceCompletion
+import org.cangnova.cangjie.cfir.resolve.body.IdentitySnapshotCfirMapper
 import org.cangnova.cangjie.cfir.resolve.body.CfirResourceSourceSnapshot
 import org.cangnova.cangjie.cfir.resolve.body.captureResourceSourceStates
 import org.cangnova.cangjie.cfir.resolve.body.restoreResourceSourceStates
@@ -868,8 +870,9 @@ internal class CfirImplicitTypeComputation(
         }
         val beforeOriginDepth = privateOriginDepth
         val beforePrivateContext = privateInitializerContext
+        val beforePrivateAnalyzer = privateInitializerAnalyzer
         val beforePrivateRootOwner = privateInitializerOwner
-        val beforePrivateFlow = beforePrivateContext?.captureDataFlowAnalyzerContext()
+        val beforePrivateFlow = beforePrivateAnalyzer?.captureDataFlowAnalyzerContext(IdentitySnapshotCfirMapper)
         // 只映射本 private initializer 的实际 CFG owner；借用的外部声明不会被 visitor 展开。
         val beforePrivateGraphs = mutableListOf<Pair<
             org.cangnova.cangjie.cfir.declarations.CfirControlFlowGraphOwner,
@@ -1051,10 +1054,11 @@ internal class CfirImplicitTypeComputation(
             check(privateOriginDepth == beforeOriginDepth) { "Retained replay changed active origin stack" }
             // PRIVATE 根的结构状态随两类重放恢复；reinfer 的实际 CS 和 active AST 保持原有协议。
             privateInitializerContext = beforePrivateContext
+            privateInitializerAnalyzer = beforePrivateAnalyzer
             privateInitializerOwner = beforePrivateRootOwner
             if (beforePrivateFlow != null) {
                 checkNotNull(beforePrivateRootOwner)
-                checkNotNull(beforePrivateContext).restoreDataFlowAnalyzerContext(beforePrivateFlow)
+                checkNotNull(beforePrivateAnalyzer).restoreDataFlowAnalyzerContext(beforePrivateFlow)
                 beforePrivateGraphs.forEach { (owner, graph) ->
                     owner.replaceControlFlowGraphReference(
                         org.cangnova.cangjie.cfir.resolve.dfa.CfirControlFlowGraphReferenceImpl(
@@ -1636,6 +1640,7 @@ internal class CfirImplicitTypeComputation(
     private val formalResourceSources = mutableListOf<CfirResourceSourceCompletion>()
     internal var privateInitializerContext: org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.BodyResolveContext? = null
         private set
+    private var privateInitializerAnalyzer: CfirDataFlowAnalyzer? = null
     internal var privateInitializerOwner: CfirResourceVariable? = null
         private set
 
@@ -1643,8 +1648,9 @@ internal class CfirImplicitTypeComputation(
     internal fun registerPrivateInitializerContext(
         owner: CfirResourceVariable,
         context: org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.BodyResolveContext,
+        analyzer: CfirDataFlowAnalyzer,
     ) {
-        check(privateInitializerContext == null && privateInitializerOwner == null)
+        check(privateInitializerContext == null && privateInitializerAnalyzer == null && privateInitializerOwner == null)
         val root = context.dataFlowAnalyzerContext.graphBuilder.currentGraph
         check(root.kind == org.cangnova.cangjie.cfir.resolve.dfa.cfg.ControlFlowGraph.Kind.ResourceInitializer &&
             root.declaration === owner)
@@ -1652,6 +1658,7 @@ internal class CfirImplicitTypeComputation(
             it.graph === this && it.mode == CfirImplicitTypeComputationMode.PRIVATE
         } == true) { "Resource initializer root belongs to another inference graph" }
         privateInitializerContext = context
+        privateInitializerAnalyzer = analyzer
         privateInitializerOwner = owner
     }
 

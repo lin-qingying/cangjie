@@ -2795,7 +2795,7 @@ class CfirDeclDeserializer private constructor(
             typeParameters = typeParams,
             extendedTypeRef = extendedTypeRef,
             superTypeRefs = superTypeRefs,
-            declarations = members,
+            declarations = members.toMutableList(),
         )
         symbol.bind(cfirExtend)
         cfirExtend.markResolved()

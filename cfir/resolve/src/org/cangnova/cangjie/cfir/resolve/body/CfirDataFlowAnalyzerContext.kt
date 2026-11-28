@@ -28,10 +28,14 @@ class CfirDataFlowAnalyzerContext(
     /** 赋值编号计数器。 */
     var assignmentCounter: Int = 0,
 ) {
+    /** 实际解析位置可能落在最后一个 CFG 节点之前。 */
+    internal var currentSmartCastPosition: Flow? = null
+
     /** 访问全部保留状态，由各实际 owner 枚举自身的完整表与栈，不在 LL 层复制私有状态知识。 */
     fun acceptSourceChildren(visitor: DfaSourceVisitor) {
         graphBuilder.acceptSourceChildren(visitor)
         variableAssignmentAnalyzer.acceptSourceChildren(visitor)
+        currentSmartCastPosition?.let(visitor::visitFlow)
     }
 
     /**
@@ -44,7 +48,10 @@ class CfirDataFlowAnalyzerContext(
      * - 返回真实 [CfirDataFlowAnalyzerContextSnapshot.graphMapping]
      */
     @OptIn(CfgInternals::class)
-    fun createSnapshot(firMapper: SnapshotCfirMapper, smartCastPosition: Flow?): CfirDataFlowAnalyzerContextSnapshot {
+    fun createSnapshot(
+        firMapper: SnapshotCfirMapper,
+        smartCastPosition: Flow? = currentSmartCastPosition,
+    ): CfirDataFlowAnalyzerContextSnapshot {
         val graphCopier = ControlFlowGraphCopier()
         val graphBuilderSnapshot = graphBuilder.createSnapshot(graphCopier)
         graphCopier.finish()
@@ -54,7 +61,7 @@ class CfirDataFlowAnalyzerContext(
                 graphBuilder = graphBuilderSnapshot,
                 variableAssignmentAnalyzer = variableAssignmentAnalyzer.createSnapshot(firMapper),
                 assignmentCounter = assignmentCounter,
-            ),
+            ).also { it.currentSmartCastPosition = smartCastPosition },
             graphMapping = graphCopier.graphMapping,
             smartCastPosition = smartCastPosition,
         )
@@ -68,6 +75,7 @@ class CfirDataFlowAnalyzerContext(
         graphBuilder = source.graphBuilder
         variableAssignmentAnalyzer = source.variableAssignmentAnalyzer
         assignmentCounter = source.assignmentCounter
+        currentSmartCastPosition = source.currentSmartCastPosition
     }
 
     /**
@@ -119,6 +127,12 @@ class CfirDataFlowAnalyzerContextSnapshot(
     /** 保存实际解析位置；调用实参后可以与 builder.lastNode 不同，不能在恢复时重新猜测。 */
     val smartCastPosition: Flow?,
 )
+
+/** 仅复制 CFG / 状态的资源重放保留原 CFIR 元素和符号。 */
+internal object IdentitySnapshotCfirMapper : SnapshotCfirMapper {
+    override fun <T : CfirBasedSymbol<*>> mapSymbol(symbol: T): T = symbol
+    override fun <T : CfirElement> mapElement(element: T): T = element
+}
 
 /**
  * 对位 Kotlin `SnapshotFirMapper`。

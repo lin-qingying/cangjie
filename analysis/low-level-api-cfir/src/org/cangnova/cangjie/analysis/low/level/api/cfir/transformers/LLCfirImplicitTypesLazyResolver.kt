@@ -216,14 +216,6 @@ internal class LLCfirImplicitBodyTargetResolver(
                 checkReturnTypeRefIsResolved(target)
             }
 
-            is CfirPatternVariable -> {
-                if (target.returnTypeRef is CfirImplicitTypeRef ||
-                    target.pattern.bindingVariables().any { it.returnTypeRef is CfirImplicitTypeRef }
-                ) {
-                    resolve(target, BodyStateKeepers.VARIABLE)
-                }
-            }
-
             is CfirCallableDeclaration if target.canHaveDeferredReturnTypeCalculation -> {
                 transformer.context.returnTypeCalculator.callableCopyTypeCalculator.computeReturnType(target)
             }

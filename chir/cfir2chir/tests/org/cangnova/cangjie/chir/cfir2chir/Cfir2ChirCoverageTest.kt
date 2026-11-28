@@ -114,7 +114,9 @@ import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
 import org.cangnova.cangjie.cfir.declarations.builder.buildPatternBindingVariable
+import org.cangnova.cangjie.cfir.patterns.builder.buildBindingPattern
 import org.cangnova.cangjie.cfir.patterns.builder.buildCatchPattern
+import org.cangnova.cangjie.cfir.patterns.builder.buildWildcardPattern
 import org.cangnova.cangjie.cfir.symbols.CfirPatternBindingSymbol
 import org.cangnova.cangjie.chir.core.attribute.ChirStringAttribute
 import org.cangnova.cangjie.chir.core.controlflow.ChirCatchDispatchEntry
@@ -882,12 +884,14 @@ class Cfir2ChirCoverageTest {
             catches += buildCatch {
                 coneTypeOrNull = exceptionType
                 pattern = buildCatchPattern {
-                    bindingName = Name.identifier("err")
-                    isWildcard = false
-                    resolvedTypeRef = org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef {
-                        coneType = exceptionType
+                    val exceptionTypeRef = typeRef(exceptionType)
+                    nestedPattern = buildBindingPattern {
+                        name = errBinding.name
+                        bindingVariable = errBinding
+                        semanticTypeRef = exceptionTypeRef
                     }
-                    this.bindingVariable = errBinding
+                    typeRefs += exceptionTypeRef
+                    semanticTypeRef = exceptionTypeRef
                 }
                 body = buildBlock {
                     coneTypeOrNull = exceptionType
@@ -933,7 +937,7 @@ class Cfir2ChirCoverageTest {
         val warnType = ConeClassLikeType(ConeClassLikeLookupTagImpl(classId("MyWarn")))
         fun catchOf(type: org.cangnova.cangjie.cfir.types.ConeSimpleCangJieType, binding: String): CfirCatch {
             val symbol = CfirPatternBindingSymbol(CallableId(PackageName, Name.identifier(binding)))
-            val bindingVariable = buildPatternBindingVariable {
+            val catchBinding = buildPatternBindingVariable {
                 moduleData = TestModuleData
                 resolvePhase = CfirResolvePhase.BODY_RESOLVE
                 origin = CfirDeclarationOrigin.Synthetic.Default
@@ -948,12 +952,14 @@ class Cfir2ChirCoverageTest {
             return buildCatch {
                 coneTypeOrNull = type
                 pattern = buildCatchPattern {
-                    bindingName = Name.identifier(binding)
-                    isWildcard = false
-                    resolvedTypeRef = org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef {
-                        coneType = type
+                    val exceptionTypeRef = typeRef(type)
+                    nestedPattern = buildBindingPattern {
+                        name = catchBinding.name
+                        bindingVariable = catchBinding
+                        semanticTypeRef = exceptionTypeRef
                     }
-                    this.bindingVariable = bindingVariable
+                    typeRefs += exceptionTypeRef
+                    semanticTypeRef = exceptionTypeRef
                 }
                 body = buildBlock {
                     coneTypeOrNull = ConePrimitiveType.INT32
@@ -1103,9 +1109,7 @@ class Cfir2ChirCoverageTest {
             }
             catches += buildCatch {
                 coneTypeOrNull = intType
-                pattern = buildCatchPattern {
-                    isWildcard = true
-                }
+                pattern = buildWildcardPattern()
                 body = buildBlock {
                     coneTypeOrNull = intType
                     statements += intLiteral(2)

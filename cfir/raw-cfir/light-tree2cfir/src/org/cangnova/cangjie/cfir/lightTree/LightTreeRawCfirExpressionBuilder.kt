@@ -2221,18 +2221,24 @@ class LightTreeRawCfirExpressionBuilder(
             expression = buildErrorExpression(catchNode.toSourceElement(), "Missing catch parameter")
         }
         val wildcard = tree.findChildByType(parameterNode, CjTokens.UNDERLINE)
-        if (wildcard != null) return buildWildcardPattern { source = wildcard.toSource() }
-        val nameNode = tree.findChildByType(parameterNode, CjTokens.IDENTIFIER) ?: return buildExpressionPattern {
-            source = parameterNode.toSource()
-            expression = buildErrorExpression(parameterNode.toSourceElement(), "Missing catch binding name")
-        }
-        val inner = buildBindingPattern {
-            source = nameNode.toSource(); name = Name.identifier(sourceIdentifier(nameNode.asText()))
-            bindingVariable = declarationBuilder.createPatternBindingVariable(
-                source = source, name = name,
-                status = cloneDeclarationStatus(CfirDeclarationStatusImpl(Visibilities.Local, Modality.FINAL)),
-                isLocal = true, isVar = false, returnTypeRef = buildImplicitTypeRef(),
-            )
+        val inner = if (wildcard != null) {
+            val pattern = buildWildcardPattern { source = wildcard.toSource() }
+            if (tree.findChildByType(parameterNode, CjTokens.COLON) == null) return pattern
+            pattern
+        } else {
+            val nameNode = tree.findChildByType(parameterNode, CjTokens.IDENTIFIER) ?: return buildExpressionPattern {
+                source = parameterNode.toSource()
+                expression = buildErrorExpression(parameterNode.toSourceElement(), "Missing catch binding name")
+            }
+            buildBindingPattern {
+                source = nameNode.toSource()
+                name = Name.identifier(sourceIdentifier(nameNode.asText()))
+                bindingVariable = declarationBuilder.createPatternBindingVariable(
+                    source = source, name = name,
+                    status = cloneDeclarationStatus(CfirDeclarationStatusImpl(Visibilities.Local, Modality.FINAL)),
+                    isLocal = true, isVar = false, returnTypeRef = buildImplicitTypeRef(),
+                )
+            }
         }
         return buildCatchPattern {
             source = parameterNode.toSource(); nestedPattern = inner

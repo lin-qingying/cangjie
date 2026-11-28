@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
+import org.cangnova.cangjie.cfir.patterns.ownerQualifier
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.hasInvalidGenericTypeArgument
@@ -151,7 +152,7 @@ object CfirClassifierAsExpressionChecker : CfirQualifiedAccessChecker(MppChecker
  */
 context(context: CheckerContext)
 internal fun CfirQualifiedAccessExpression.isEnumPatternOwnerQualifier(): Boolean =
-    (context.containingElements.lastOrNull { element -> element !== this } as? CfirEnumPattern)?.ownerQualifier === this
+    context.containingElements.filterIsInstance<CfirEnumPattern>().lastOrNull()?.ownerQualifier === this
 
 /** 判断表达式是否为解析到 class / struct / enum 等声明的裸类型名值引用。 */
 internal fun CfirExpression.isResolvedClassLikeValueReference(): Boolean {

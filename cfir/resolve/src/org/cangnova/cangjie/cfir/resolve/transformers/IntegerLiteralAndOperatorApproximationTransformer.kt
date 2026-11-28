@@ -77,10 +77,6 @@ class IntegerLiteralAndOperatorApproximationTransformer(
         return if (element is CfirExpression) transformExpression(element, data) as E else element
     }
 
-    /** 对位 Kotlin transformLiteralExpression，不能依赖生成式 transformer 的父类分发。 */
-    override fun transformLiteralExpression(literal: CfirLiteralExpression, data: ConeCangJieType?): CfirExpression =
-        transformExpression(literal, data)
-
     /** lambda 拥有独立的签名/正文完成域；近似器不提前解析或重写尚未完成的函数 header。 */
     override fun transformAnonymousFunctionExpression(expression: CfirAnonymousFunctionExpression, data: ConeCangJieType?): CfirExpression =
         expression

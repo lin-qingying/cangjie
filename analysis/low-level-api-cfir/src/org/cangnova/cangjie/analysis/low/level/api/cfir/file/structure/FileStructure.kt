@@ -23,6 +23,7 @@ import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.psi
 import org.cangnova.cangjie.cfir.realPsi
 import org.cangnova.cangjie.cfir.resolve.providers.cfirProvider
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
@@ -75,7 +76,8 @@ internal class FileStructure private constructor(
             moduleComponents: LLCfirModuleResolveComponents,
         ): FileStructure {
             val cfirFile = moduleComponents.cfirFileBuilder.getOrBuildFileForResolution(cjFile)
-            return FileStructure(cjFile, cfirFile, moduleComponents)
+            val compilationFile = checkNotNull(cfirFile.psi as? CjFile)
+            return FileStructure(compilationFile, cfirFile, moduleComponents)
         }
 
         /**

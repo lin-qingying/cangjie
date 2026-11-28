@@ -1069,7 +1069,7 @@ private fun AbstractCallCandidate<*>.ambiguousClassifierSignatureNoMatchDiagnost
         startOffset = calleeSource.startOffset,
         endOffset = (calleeSource.startOffset + callInfo.name.asString().length)
             .coerceAtMost(call.source?.endOffset ?: calleeSource.endOffset),
-        sourceAnchor = calleeSource,
+
     )
     return CfirErrors.NO_MATCH_FUNCTION_DECLARATION_FOR_CALL.on(source, session)
 }
@@ -1943,7 +1943,7 @@ private fun CjSourceElement?.callableReferenceSelectorWithTypeArgumentsSource():
             selector.toCjPsiSourceElement().withRange(
                 startOffset = selector.textRange.startOffset,
                 endOffset = typeArgumentList.textRange.endOffset,
-                sourceAnchor = this,
+
             )
         }
 
@@ -1977,7 +1977,7 @@ private fun CjLightSourceElement.callableReferenceSelectorWithTypeArgumentsLight
     return withRange(
         startOffset = treeStructure.getStartOffset(selector),
         endOffset = treeStructure.getEndOffset(typeArgumentList),
-        sourceAnchor = this,
+
     )
 }
 
@@ -2044,7 +2044,7 @@ private fun CjSourceElement.qualifiedAmbiguousUseLightTreeSource(): AbstractCjSo
     return withRange(
         startOffset = treeStructure.getStartOffset(qualifiedNode),
         endOffset = treeStructure.getEndOffset(qualifiedNode),
-        sourceAnchor = this,
+
     )
 }
 
@@ -2065,7 +2065,7 @@ private fun CjSourceElement.qualifiedAmbiguousUseTextSource(): AbstractCjSourceE
     return withRange(
         startOffset = qualifiedStart,
         endOffset = endOffset,
-        sourceAnchor = this,
+
     )
 }
 
@@ -3967,7 +3967,7 @@ private fun CjSourceElement.receiverTokenDiagnosticSource(): AbstractCjSourceEle
     return withRange(
         startOffset + tokenStart,
         (startOffset + tokenEnd).coerceAtMost(endOffset),
-        sourceAnchor = this,
+
     )
 }
 

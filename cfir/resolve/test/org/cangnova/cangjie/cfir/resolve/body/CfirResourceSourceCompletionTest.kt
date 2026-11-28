@@ -995,7 +995,7 @@ class CfirResourceSourceCompletionTest {
 
         fun start() {
             dataFlowAnalyzer.enterResourceInitializer(owner)
-            graph.registerPrivateInitializerContext(owner, context)
+            graph.registerPrivateInitializerContext(owner, context, dataFlowAnalyzer)
             dataFlowAnalyzer.enterVariableDeclaration(owner)
             produce(initialCall)
             dataFlowAnalyzer.exitVariableDeclaration(owner)

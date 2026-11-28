@@ -985,6 +985,7 @@ class MacroPackageCompilationOrchestrationTest {
                 },
                 executorAbiVersion = "executor-abi-v1",
                 cacheContext = MacroCompilationCacheContext(),
+                sdkSelection = MacroSdkSelection.Absent,
             ),
         )
 

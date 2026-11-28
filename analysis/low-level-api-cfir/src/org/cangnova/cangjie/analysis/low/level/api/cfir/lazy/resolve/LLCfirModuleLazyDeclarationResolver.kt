@@ -53,6 +53,17 @@ internal class LLCfirModuleLazyDeclarationResolver(val moduleComponents: LLCfirM
             return
         }
 
+        if (target is CfirPatternBindingVariable && !target.isLocal &&
+            toPhase.publishesCjmpPatternBindings(target.moduleData.session)
+        ) {
+            val owner = checkNotNull(target.patternTreeOwner as? CfirPatternVariable) {
+                "CJMP matching requires the original declaration pattern owner."
+            }
+            lazyResolve(owner, toPhase)
+            target.checkPhase(toPhase)
+            return
+        }
+
         // Kotlin designation 的参数/访问器 owner 规则必须早于 readiness 短路。
         // 不提升请求阶段；TYPES 只解析签名，IMPLICIT_TYPES 仍遵守真实声明的推断协议。
         val owner = LLCfirResolveDesignationCollector.getResolveOwner(target) ?: return

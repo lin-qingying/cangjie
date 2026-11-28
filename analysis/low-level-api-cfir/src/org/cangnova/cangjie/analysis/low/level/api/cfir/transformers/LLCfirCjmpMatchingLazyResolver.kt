@@ -4,6 +4,8 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.lazy.resolve.LLCfirPhase
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.targets.LLCfirResolveTarget
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
+import org.cangnova.cangjie.cfir.declarations.resolvePhase
 import org.cangnova.cangjie.cfir.patterns.bindingVariables
 import org.cangnova.cangjie.cfir.resolve.cjmp.CfirCjmpMatchRunner
 import org.cangnova.cangjie.cfir.resolve.cjmp.CfirCjmpResolver
@@ -25,6 +27,8 @@ internal object LLCfirCjmpMatchingLazyResolver : LLCfirLazyResolver(CfirResolveP
 
     override fun phaseSpecificCheckIsResolved(target: CfirElementWithResolveState) {
         val declaration = target as? CfirMemberDeclaration ?: return
+        // Root 验证全部配对事实（包括依规则停止前进的叶子），叶子不另建 root facts。
+        if (declaration is CfirPatternBindingVariable && declaration.patternTreeOwner is CfirPatternVariable) return
         if (!declaration.moduleData.session.isCjmpSpecificCompilationEnabled()) return
         if (declaration.moduleData.session.requiresDeferredCjmpFinalMatching()) return
         if (!CfirCjmpMatchRunner.canHaveCommonCounterpart(declaration) ||
@@ -58,6 +62,8 @@ private class LLCfirCjmpMatchingTargetResolver(target: LLCfirResolveTarget) : LL
 
     override fun doResolveWithoutLock(target: CfirElementWithResolveState): Boolean {
         if (!resolveTargetSession.isCjmpSpecificCompilationEnabled() || target !is CfirMemberDeclaration) return false
+        // resolveDependencies 已经通过原模式根完成实际配对及所有叶子的阶段发布。
+        if (target is CfirPatternBindingVariable && target.resolvePhase >= resolverPhase) return true
         target.lazyResolveToPhase(resolverPhase.previous)
         if (resolveTargetSession.requiresDeferredCjmpFinalMatching()) {
             if (target !is CfirClassLikeDeclaration && target !is CfirExtend) return false
@@ -149,7 +155,7 @@ private val CJMP_MATCHING_STATE_KEEPER: StateKeeper<CfirMemberDeclaration, Unit>
         else -> Unit
     }
     fun preserveInternals(element: CfirElementWithResolveState) {
-        LLCfirPhaseUpdater.forEachSignatureInternal(element) { child ->
+        LLCfirPhaseUpdater.forEachSignatureInternal(element, publishPatternBindings = true) { child ->
             builder.entity(child, context) { _, _ ->
                 builder.add({ it.resolveState }, { internal, state -> internal.resolveState = state })
             }

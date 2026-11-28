@@ -60,7 +60,7 @@ import org.cangnova.cangjie.cfir.resolve.dfa.cfg.ControlFlowGraph
 import org.cangnova.cangjie.cfir.semantics.ErrorTypeInArguments
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirSpecificTypeResolverTransformer
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.LoopJumpScope
-import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.CfirInferenceSession
+import org.cangnova.cangjie.cfir.resolve.inference.CfirInferenceSession
 import org.cangnova.cangjie.cfir.resolve.withExpectedType
 import org.cangnova.cangjie.cfir.resolvedTypeFromPrototype
 import org.cangnova.cangjie.cfir.patterns.visibleBindingVariables

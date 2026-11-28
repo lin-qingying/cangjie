@@ -2,6 +2,7 @@ package org.cangnova.cangjie.cfir.serialization.cjo
 
 import PackageFormat.Package
 import org.cangnova.cangjie.cfir.serialization.CjoConstants
+import org.cangnova.cangjie.cfir.serialization.provider.CjoDeserializedSymbolLookupHolder
 import org.cangnova.cangjie.cfir.session.CfirCjmpLoadDiagnostic
 import org.cangnova.cangjie.name.FqName
 import java.nio.ByteBuffer
@@ -34,6 +35,7 @@ class CjoManager(
         override val pkg: Package get() = Package.getRootAsPackage(buffer.duplicate())
     }
 
+    val deserializedSymbolLookups: CjoDeserializedSymbolLookupHolder = CjoDeserializedSymbolLookupHolder(this)
     private val snapshots = ConcurrentHashMap<String, CjoLoadedPackage>()
     private val snapshotsByPath = ConcurrentHashMap<Path, Snapshot>()
     /** 显式来源可先在名称枚举中读取。包名和版本门通过后才发布为正式来源。 */

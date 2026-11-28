@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
+import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
@@ -44,7 +45,7 @@ object CfirTryHandleReturnChecker : CfirTryExpressionChecker(MppCheckerKind.Comm
         val tryBodyType = expression.tryBlock.coneTypeOrNull
 
         for (handler in expression.handlers) {
-            if (handler.commandPattern.resolvedTypeRef?.coneType is ConeErrorType) continue
+            if (handler.commandPattern.semanticTypeRef?.coneTypeOrNull is ConeErrorType) continue
             checkHandlerBodyTypeMatch(handler, tryBodyType)
         }
     }

@@ -1245,11 +1245,6 @@ class BodyResolveContext(
     fun captureDataFlowAnalyzerContext(): CfirDataFlowAnalyzerContextSnapshot =
         dataFlowAnalyzerContext.createSnapshot(IdentitySnapshotCfirMapper)
 
-    /** 从快照恢复 DFA/CFG 上下文。 */
-    fun restoreDataFlowAnalyzerContext(snapshot: CfirDataFlowAnalyzerContextSnapshot) {
-        dataFlowAnalyzerContext.resetFrom(snapshot.context)
-    }
-
     /**
      * 保存局部声明的词法入口，供资源依赖跳转从同一准备点开始计算。
      *
@@ -1710,16 +1705,6 @@ class CfirSpecialTowerDataContextsSnapshot(
     /** callable reference postponed context 快照。 */
     val callableReferenceContexts: IdentityHashMap<CfirExpression, CfirPostponedAtomsResolutionContext>,
 )
-
-/** DFA/CFG 快照恢复时使用的恒等映射器。 */
-private object IdentitySnapshotCfirMapper : SnapshotCfirMapper {
-    /** 符号快照恢复保持原符号对象。 */
-    override fun <T : CfirBasedSymbol<*>> mapSymbol(symbol: T): T = symbol
-
-    /** 元素快照恢复保持原元素对象。 */
-    override fun <T : CfirElement> mapElement(element: T): T = element
-}
-
 
 /** 把普通 scope 包装成 tower data element。 */
 private fun CfirScope.asTowerDataElement(isLocal: Boolean): CfirTowerDataElement =

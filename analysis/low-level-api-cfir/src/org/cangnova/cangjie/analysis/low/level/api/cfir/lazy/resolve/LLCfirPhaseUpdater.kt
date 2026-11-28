@@ -10,6 +10,9 @@ import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.patterns.bindingVariables
+import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.isCjmpSpecificCompilationEnabled
+import org.cangnova.cangjie.cfir.session.requiresDeferredCjmpFinalMatching
 import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
 
 /**
@@ -116,16 +119,24 @@ internal object LLCfirPhaseUpdater {
             }
         }
 
-        forEachSignatureInternal(element) { updatePhaseForNonLocals(it, newPhase, isTargetDeclaration = false) }
+        val publishPatternBindings = element is CfirPatternVariable && newPhase.publishesCjmpPatternBindings(element.moduleData.session)
+        forEachSignatureInternal(element, publishPatternBindings) {
+            updatePhaseForNonLocals(it, newPhase, isTargetDeclaration = false)
+        }
     }
 
     /** updater 与声明事务使用同一直接内部节点清单，不保存外围泛型参数或独立成员声明的状态。 */
-    fun forEachSignatureInternal(element: CfirElementWithResolveState, action: (CfirElementWithResolveState) -> Unit) {
+    fun forEachSignatureInternal(
+        element: CfirElementWithResolveState,
+        publishPatternBindings: Boolean,
+        action: (CfirElementWithResolveState) -> Unit,
+    ) {
         if (element is CfirTypeParameterRefsOwner) {
             element.typeParameters.filterIsInstance<CfirTypeParameter>().forEach(action)
         }
         when (element) {
-            is CfirPatternVariable -> element.pattern.bindingVariables().forEach(action)
+            // 普通 BODY_RESOLVE 由每个非局部叶子自己的目标锁发布；CJMP 配对以模式根为事务。
+            is CfirPatternVariable -> if (publishPatternBindings) element.pattern.bindingVariables().forEach(action)
             is CfirFunction -> element.valueParameters.forEach(action)
             is CfirEnumConstructor -> element.valueParameters.forEach(action)
             is CfirProperty -> {
@@ -135,6 +146,13 @@ internal object LLCfirPhaseUpdater {
             else -> Unit
         }
     }
+}
+
+/** 只在 active specific 配对阶段从模式根发布签名叶子阶段。 */
+internal fun CfirResolvePhase.publishesCjmpPatternBindings(session: CfirSession): Boolean = when (this) {
+    CfirResolvePhase.CJMP_MATCHING -> session.isCjmpSpecificCompilationEnabled()
+    CfirResolvePhase.CJMP_FINAL_MATCHING -> session.requiresDeferredCjmpFinalMatching()
+    else -> false
 }
 
 /**

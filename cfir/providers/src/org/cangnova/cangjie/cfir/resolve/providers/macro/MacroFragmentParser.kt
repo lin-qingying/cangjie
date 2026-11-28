@@ -73,17 +73,6 @@ interface MacroFragmentParser {
 }
 
 /**
- * 声明宏重解析阶段的完整输出序列。
- *
- * 该对象只存在于 construction/splice 边界：声明宏可以合法地产生零个、一个或多个
- * 声明，不能把 fragment 收窄成单个声明或额外塞入一个语义 CFIR 包装节点。
- */
-data class MacroDeclarationFragment(
-    /** 按宏输出源码顺序排列的全部重解析声明。 */
-    val declarations: List<CfirDeclaration>,
-)
-
-/**
  * fragment parser 的完整输入。
  *
  * @property node 当前正在解析的 macro forest 节点。

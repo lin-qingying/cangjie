@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.checkTargetTypedExpression
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.explicitDeclaredTypeOrNull
@@ -19,7 +20,7 @@ import org.cangnova.cangjie.source.AbstractCjSourceElement
  *
  * 字段和资源共用显式声明类型与 initializer 的兼容性协议；模式声明保留其 enum/投影专用检查。
  */
-object CfirVariableInitializerTypeMismatchChecker : CfirCallableDeclarationChecker() {
+object CfirVariableInitializerTypeMismatchChecker : CfirCallableDeclarationChecker(MppCheckerKind.Common) {
     /**
      * 检查字段和资源声明的初始化器类型。
      *

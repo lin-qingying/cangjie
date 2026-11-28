@@ -12,6 +12,7 @@ import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.expressions.builder.*
 import org.cangnova.cangjie.cfir.patterns.builder.buildCatchPattern
+import org.cangnova.cangjie.cfir.patterns.builder.buildWildcardPattern
 import org.cangnova.cangjie.cfir.references.builder.buildResolvedNamedReference
 import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures
 import org.cangnova.cangjie.cfir.resolve.dfa.CfirControlFlowGraphReferenceImpl
@@ -138,7 +139,12 @@ class CfirIfCfgSemanticsTest {
     fun conditionalThrowHasNormalAndCaughtCompletionThroughItsRealFinally() {
         val f = Fixture(); val e = f.control()
         val caught = buildCatch {
-            pattern = buildCatchPattern { isWildcard = true; typeRefs.add(f.exceptionType.toCfirResolvedTypeRef()); resolvedTypeRef = f.exceptionType.toCfirResolvedTypeRef() }
+            pattern = buildCatchPattern {
+                val exceptionTypeRef = f.exceptionType.toCfirResolvedTypeRef()
+                nestedPattern = buildWildcardPattern { semanticTypeRef = exceptionTypeRef }
+                typeRefs += exceptionTypeRef
+                semanticTypeRef = exceptionTypeRef
+            }
             body = buildBlock {}
         }
         val t = buildTryExpression { tryBlock = buildBlock { statements.add(e) }; catches.add(caught); finallyBlock = buildBlock {} }

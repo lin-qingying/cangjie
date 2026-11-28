@@ -172,7 +172,7 @@ object CfirDeprecatedDeclarationChecker : CfirCallableDeclarationChecker(MppChec
  * 弃用 class-like 的直接子声明（不含自身注解）按父级严格度报
  * DEPRECATION_OVERRIDE_ERROR / _WARNING；子声明带非 strict 注解时报 DEPRECATION_WEAKENING。
  */
-object CfirDeprecatedClassLikeChecker : CfirClassLikeChecker() {
+object CfirDeprecatedClassLikeChecker : CfirClassLikeChecker(MppCheckerKind.Common) {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirClassLikeDeclaration) {
         val parent = declaration.deprecatedClassLikeSupertype() ?: return

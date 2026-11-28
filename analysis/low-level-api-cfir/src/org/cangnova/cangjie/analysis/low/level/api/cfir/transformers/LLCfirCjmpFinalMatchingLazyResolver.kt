@@ -22,6 +22,8 @@ internal object LLCfirCjmpFinalMatchingLazyResolver : LLCfirLazyResolver(CfirRes
 
     override fun phaseSpecificCheckIsResolved(target: CfirElementWithResolveState) {
         val declaration = target as? CfirMemberDeclaration ?: return
+        // Root 验证全部配对事实（包括依规则停止前进的叶子），叶子不另建 root facts。
+        if (declaration is CfirPatternBindingVariable && declaration.patternTreeOwner is CfirPatternVariable) return
         val session = declaration.moduleData.session
         if (!session.requiresDeferredCjmpFinalMatching() ||
             !declaration.isCjmpMatchingCandidate(CfirCjmpDeclarationRole.SPECIFIC) ||
@@ -45,6 +47,8 @@ private class LLCfirCjmpFinalMatchingTargetResolver(target: LLCfirResolveTarget)
 
     override fun doResolveWithoutLock(target: CfirElementWithResolveState): Boolean {
         if (!resolveTargetSession.requiresDeferredCjmpFinalMatching() || target !is CfirMemberDeclaration) return false
+        // resolveDependencies 已经通过原模式根完成实际配对及所有叶子的阶段发布。
+        if (target is CfirPatternBindingVariable && target.resolvePhase >= resolverPhase) return true
         target.lazyResolveToPhase(resolverPhase.previous)
 
         val structure = resolveTargetSession.cjmpFamilyAggregate.structureFor(target)

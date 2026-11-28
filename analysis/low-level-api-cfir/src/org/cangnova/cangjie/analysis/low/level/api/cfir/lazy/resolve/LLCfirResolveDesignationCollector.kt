@@ -15,7 +15,6 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.lazy.resolve.LLCfirResol
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 import org.cangnova.cangjie.cfir.canHaveDeferredReturnTypeCalculation
 import org.cangnova.cangjie.cfir.declarations.*
-import org.cangnova.cangjie.cfir.resolve.providers.cfirProvider
 
 /**
  * Collects [LLCfirResolveTarget] for requested [CfirElementWithResolveState].
@@ -98,11 +97,6 @@ internal object LLCfirResolveDesignationCollector {
         }
 
         return when (target) {
-            is CfirPatternBindingVariable if !target.isLocal -> getResolveOwner(
-                requireNotNull(target.moduleData.session.cfirProvider.getCfirPatternVariableForBinding(target.symbol)) {
-                    "A declaration binding must have its original pattern owner"
-                },
-            )
             is CfirPropertyAccessor -> getResolveOwner(target.propertySymbol.cfir)
             is CfirTypeParameter -> getResolveOwner(target.containingDeclarationSymbol.cfir)
             is CfirValueParameter -> getResolveOwner(target.containingDeclarationSymbol.cfir)

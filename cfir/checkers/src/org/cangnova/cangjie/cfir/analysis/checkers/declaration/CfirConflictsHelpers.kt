@@ -1,5 +1,14 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
+import java.util.concurrent.ConcurrentHashMap
+import org.cangnova.cangjie.type.model.TypeConstructorMarker
+import org.cangnova.cangjie.cfir.types.ConePlaceholderType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.resolve.substitution.createTypeSubstitutorByTypeConstructor
+import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedTypeUsingAbbreviation
+import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.symbols.constructType
 
 import org.cangnova.cangjie.cfir.resolve.substitution.substitutorByMap
@@ -531,3 +540,57 @@ private fun CfirTypeRef.toStableSignatureKey(): String = when (this) {
  */
 private fun Collection<CfirBasedSymbol<*>>.renderNames(): List<String> =
     asSequence().mapNotNull(CfirRedeclarationPresenter::diagnosticName).distinct().sorted().toList()
+
+internal data class CfirCallableRedeclarationTypes(
+    val dispatchReceiverType: ConeCangJieType?,
+    val parameterTypes: List<ConeCangJieType>,
+)
+
+/**
+ * 以类型参数声明顺序构造 alpha 归一化的类型替换器。
+ *
+ * 同一可调用声明内的第 N 个类型参数会替换为共享的第 N 个规范占位类型，
+ * 因而 `f<T>(T)` 与 `f<U>(U)` 的参数类型结构相等。
+ */
+private fun CfirCallableDeclaration.redeclarationTypeSubstitutor(session: CfirSession): ConeSubstitutor {
+    val replacements = buildMap<TypeConstructorMarker, ConeCangJieType> {
+        typeParameters.forEachIndexed { index, typeParameter ->
+            put(typeParameter.symbol.toLookupTag(), RedeclarationSignatureTypeParameters.at(index))
+        }
+    }
+    return createTypeSubstitutorByTypeConstructor(
+        map = replacements,
+        context = session.typeContext,
+        approximateIntegerLiterals = false,
+    )
+}
+
+/**
+ * 构造当前声明的语义冲突签名类型。尚未解析的参数类型会等待后续解析阶段再比较。
+ */
+internal fun CfirCallableDeclaration.redeclarationTypesForConflict(): CfirCallableRedeclarationTypes? {
+    val parameters: List<CfirValueParameter> = when (this) {
+        is CfirFunction -> valueParameters
+        is CfirConstructor -> valueParameters
+        is CfirEnumConstructor -> valueParameters
+        else -> return null
+    }
+    val session = moduleData.session
+    val substitutor = redeclarationTypeSubstitutor(session)
+    val receiverType = dispatchReceiverType
+        ?.fullyExpandedTypeUsingAbbreviation(session)
+        ?.let(substitutor::substituteOrSelf)
+    val parameterTypes = parameters.map { parameter ->
+        val resolvedType = parameter.returnTypeRef as? CfirResolvedTypeRef ?: return null
+        substitutor.substituteOrSelf(resolvedType.coneType.fullyExpandedTypeUsingAbbreviation(session))
+    }
+    return CfirCallableRedeclarationTypes(receiverType, parameterTypes)
+}
+
+/** 供同一函数签名位置共享的 alpha 规范类型参数占位节点。 */
+private object RedeclarationSignatureTypeParameters {
+    private val canonicalTypes = ConcurrentHashMap<Int, ConePlaceholderType>()
+
+    fun at(index: Int): ConePlaceholderType =
+        canonicalTypes.computeIfAbsent(index) { ConePlaceholderType("__redeclaration_type_parameter_$it") }
+}

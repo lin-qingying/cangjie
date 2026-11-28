@@ -90,7 +90,7 @@ internal fun CfirFile.resolveImportedPackageQualifier(
 internal fun CfirFile.hasExplicitSimpleImportBinding(
     name: Name,
     session: CfirSession,
-): Boolean = session.importBindingStore.requireBindings(this).imports.any { binding ->
+): Boolean = requireImportBindings().imports.any { binding ->
     binding.effectiveName == name && !binding.importDirective.isAllUnder
 }
 

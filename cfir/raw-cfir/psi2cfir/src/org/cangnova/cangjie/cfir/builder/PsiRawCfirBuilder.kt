@@ -1228,7 +1228,7 @@ open class PsiRawCfirBuilder(
                     moduleData = baseModuleData
 
                     attributes = declarationAttributes(psi)
-                    status = convertDeclarationStatus(psi, psi, defaultVisibility = Visibilities.Public)
+                    status = convertDeclarationStatus(psi, defaultVisibility = Visibilities.Public)
                     typeParameters.addAll(typeParametersForExtend)
                     this.extendedTypeRef = extendedTypeRef
                     superTypeRefs.addAll(superTypes)
@@ -3639,19 +3639,24 @@ open class PsiRawCfirBuilder(
                 expression = buildErrorExpression(clause.toSourceElement(), "Missing catch parameter")
             }
             val wildcard = parameter.node.findChildByType(CjTokens.UNDERLINE)?.psi
-            if (wildcard != null) return buildWildcardPattern { source = wildcard.toRawSourceElement() }
-            val name = parameter.name?.let(Name::identifier) ?: return buildExpressionPattern {
-                source = parameter.toRawSourceElement()
-                expression = buildErrorExpression(parameter.toSourceElement(), "Missing catch binding name")
-            }
-            val inner = buildBindingPattern {
-                source = parameter.nameIdentifier?.toRawSourceElement()
-                this.name = name
-                bindingVariable = createPatternBindingVariable(
-                    source = source, name = name,
-                    status = cloneDeclarationStatus(CfirDeclarationStatusImpl(Visibilities.Local, Modality.FINAL)),
-                    isLocal = true, isVar = false, returnTypeRef = buildImplicitTypeRef(),
-                )
+            val inner = if (wildcard != null) {
+                val pattern = buildWildcardPattern { source = wildcard.toRawSourceElement() }
+                if (parameter.colon == null) return pattern
+                pattern
+            } else {
+                val name = parameter.name?.let(Name::identifier) ?: return buildExpressionPattern {
+                    source = parameter.toRawSourceElement()
+                    expression = buildErrorExpression(parameter.toSourceElement(), "Missing catch binding name")
+                }
+                buildBindingPattern {
+                    source = parameter.nameIdentifier?.toRawSourceElement()
+                    this.name = name
+                    bindingVariable = createPatternBindingVariable(
+                        source = source, name = name,
+                        status = cloneDeclarationStatus(CfirDeclarationStatusImpl(Visibilities.Local, Modality.FINAL)),
+                        isLocal = true, isVar = false, returnTypeRef = buildImplicitTypeRef(),
+                    )
+                }
             }
             return buildCatchPattern {
                 source = parameter.toRawSourceElement(); nestedPattern = inner

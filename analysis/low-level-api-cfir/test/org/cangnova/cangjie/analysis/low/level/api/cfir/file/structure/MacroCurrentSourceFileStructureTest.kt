@@ -12,6 +12,7 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.api.DiagnosticCheckerFil
 import org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics.DiagnosticCollectionFailures
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirResolvableModuleSession
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSessionCache
+import org.cangnova.cangjie.analysis.low.level.api.cfir.test.TargetSourceTestSupport
 import org.cangnova.cangjie.analysis.low.level.api.cfir.test.configurators.analysisApiCfirSourceTestConfigurator
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.CfirElementFinder
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiBasedTest
@@ -35,6 +36,7 @@ class MacroCurrentSourceFileStructureTest : AbstractAnalysisApiBasedTest() {
     @Test
     fun actualContextInputsMapToCanonicalFieldsAndAllDiagnosticStructures() = withSource { source, session ->
         val raw = session.moduleComponents.cfirFileBuilder.buildRawCfirFileWithCaching(source)
+        val sources = TargetSourceTestSupport(raw, source)
         val klassPsi = source.declarations.filterIsInstance<CjClass>().single()
         val klass = raw.declarations.filterIsInstance<CfirClass>().single()
         val fieldsPsi = requireNotNull(klassPsi.body).declarations.filterIsInstance<CjFieldVariable>()
@@ -42,7 +44,7 @@ class MacroCurrentSourceFileStructureTest : AbstractAnalysisApiBasedTest() {
         assertEquals(listOf("firstCount", "secondCount"), fields.map { it.name.asString() })
         assertEquals(2, fieldsPsi.size)
         fields.zip(fieldsPsi).forEach { (field, psi) ->
-            assertSame(psi, field.psi)
+            sources.assertTargetElement(psi, field.psi)
             assertSame(field, CfirElementFinder.findDeclaration(raw, psi))
         }
         val structure = FileStructure.build(source, session.moduleComponents)
@@ -50,7 +52,8 @@ class MacroCurrentSourceFileStructureTest : AbstractAnalysisApiBasedTest() {
         assertEquals(5, elements.size, "file、class、两个字段及 probe 函数都必须拥有正式结构")
         fields.zip(fieldsPsi).forEach { (field, psi) ->
             assertSame(field, structure.getStructureElementFor(psi).declaration)
-            assertSame(field, structure.getStructureElementFor(psi).mappings.get(psi))
+            val target = sources.targetElement(psi) as CjFieldVariable
+            assertSame(field, structure.getStructureElementFor(psi).mappings.get(target))
         }
         DiagnosticCollectionFailures.clearAll()
         structure.getAllDiagnosticsForFile(DiagnosticCheckerFilter.ONLY_DEFAULT_CHECKERS)

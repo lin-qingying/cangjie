@@ -1882,7 +1882,7 @@ private class CfirInitializationFlowAnalyzer(
             // 资源名字同时可见，初始化状态仍按源码顺序推进；前向读取必须命中未初始化的真实资源。
             val declaredResources = state.declareAll(
                 trackedVariables = expression.resources.map { resource ->
-                    TrackedVariableInfo(resource.symbol, resource.name, TrackedVariableKind.LOCAL_VARIABLE)
+                    TrackedVariableInfo(symbol = resource.symbol, diagnosticName = resource.name, kind = TrackedVariableKind.LOCAL_VARIABLE)
                 },
                 initializedSymbols = emptySet(),
             )
@@ -1967,7 +1967,7 @@ private class CfirInitializationFlowAnalyzer(
     /** 在语句入口登记资源身份，再分析其 initializer；try 宿主使用批量登记入口。 */
     private fun analyzeResourceVariable(variable: CfirResourceVariable, state: InitializationState): InitializationState {
         val declared = state.declare(
-            TrackedVariableInfo(variable.symbol, variable.name, TrackedVariableKind.LOCAL_VARIABLE),
+            TrackedVariableInfo(symbol = variable.symbol, diagnosticName = variable.name, kind = TrackedVariableKind.LOCAL_VARIABLE),
             initialized = false,
         )
         return analyzeResourceInitializer(variable, declared)
@@ -1990,7 +1990,7 @@ private class CfirInitializationFlowAnalyzer(
         state: InitializationState,
     ): InitializationState {
         val entryState = state.declareAll(
-            trackedVariables = bindings.map { TrackedVariableInfo(it.symbol, it.name, TrackedVariableKind.LOCAL_VARIABLE) },
+            trackedVariables = bindings.map { TrackedVariableInfo(symbol = it.symbol, diagnosticName = it.name, kind = TrackedVariableKind.LOCAL_VARIABLE) },
             initializedSymbols = bindings.mapTo(hashSetOf()) { it.symbol },
         )
         return analyzeScopedBlock(body, entryState).retainOnly(state.tracked.keys)

@@ -12,6 +12,7 @@ import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallKind
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.inference.*
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
+import org.cangnova.cangjie.cfir.resolve.substitution.asCone
 import org.cangnova.cangjie.cfir.resolve.transformers.ReturnTypeCalculator
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.BodyResolveContext
 import org.cangnova.cangjie.cfir.scopes.CallableCopyTypeCalculator
@@ -151,7 +152,7 @@ internal class ResourceVariableReturnTypeCalculator(
         )
         expressionContext(transformer.expressionsTransformer)
         transformer.dataFlowAnalyzer.enterResourceInitializer(resource)
-        graph.registerPrivateInitializerContext(resource, context)
+        graph.registerPrivateInitializerContext(resource, context, transformer.dataFlowAnalyzer)
         if (child != null) {
             val privateAnalyzer = transformer.components.callCompleter.createPostponedArgumentsAnalyzer(transformer.resolutionContext)
             graph.analyzePostponedAtom = { system, atom, candidate, withPcla ->

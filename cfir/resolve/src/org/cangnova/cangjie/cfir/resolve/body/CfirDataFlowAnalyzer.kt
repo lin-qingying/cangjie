@@ -94,8 +94,11 @@ class CfirDataFlowAnalyzer(
     }
 
     /** 当前解析位置的真实流；调用实参结束及子图退出时按既有 CFG 位置恢复。 */
-    var currentSmartCastPosition: Flow? = null
-        private set
+    var currentSmartCastPosition: Flow?
+        get() = context.dataFlowAnalyzerContext.currentSmartCastPosition
+        private set(value) {
+            context.dataFlowAnalyzerContext.currentSmartCastPosition = value
+        }
     /** 当前数据流上下文中的 CFG builder。 */
     private val graphBuilder
         get() = context.dataFlowAnalyzerContext.graphBuilder
@@ -122,11 +125,14 @@ class CfirDataFlowAnalyzer(
     }
 
     fun captureDataFlowAnalyzerContext(firMapper: SnapshotCfirMapper): CfirDataFlowAnalyzerContextSnapshot =
-        context.dataFlowAnalyzerContext.createSnapshot(firMapper, currentSmartCastPosition)
+        context.dataFlowAnalyzerContext.createSnapshot(firMapper)
 
     fun restoreDataFlowAnalyzerContext(snapshot: CfirDataFlowAnalyzerContextSnapshot) {
+        val previous = currentSmartCastPosition
         context.dataFlowAnalyzerContext.resetFrom(snapshot.context)
-        resetSmartCastPositionTo(snapshot.smartCastPosition)
+        val restored = snapshot.smartCastPosition
+        if (previous !== restored) updateImplicitTypes(previous, restored)
+        currentSmartCastPosition = restored
     }
 
     /**
