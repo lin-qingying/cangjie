@@ -12,6 +12,7 @@ import com.intellij.model.psi.PsiSymbolService
 import com.intellij.psi.FileContextProvider
 import com.intellij.psi.PsiReferenceContributor
 import com.intellij.psi.PsiFileFactory
+import com.intellij.psi.PsiManager
 import com.intellij.psi.PsiTreeChangeListener
 import com.intellij.psi.impl.PsiTreeChangePreprocessor
 import com.intellij.psi.search.PsiSearchHelper
@@ -27,6 +28,7 @@ import java.awt.GraphicsEnvironment
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNotSame
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -35,6 +37,58 @@ import org.junit.jupiter.api.Test
  * 覆盖仓颉 core headless 环境的 application、project、写动作和基础配置装配。
  */
 class CangJieCoreEnvironmentTest {
+    /** 两个独立项目保留真实 PSI 服务；释放前者不能撤销后者的全局平台写权限。 */
+    @Test
+    fun `live projects share one application until the last project is disposed`() {
+        val firstRoot = Disposer.newDisposable("first core project")
+        val secondRoot = Disposer.newDisposable("second core project")
+        val first = CangJieCoreEnvironment.createForTests(firstRoot)
+        val second = CangJieCoreEnvironment.createForTests(secondRoot)
+        val application = first.applicationEnvironment.application
+        try {
+            assertSame(application, second.applicationEnvironment.application)
+            assertNotSame(first.project, second.project)
+            PsiManager.getInstance(first.project)
+            PsiManager.getInstance(second.project)
+            application.runWriteAction { Disposer.dispose(firstRoot) }
+            assertTrue(first.project.isDisposed)
+            assertFalse(second.project.isDisposed)
+            assertFalse(application.isDisposed)
+            assertSame(application, ApplicationManager.getApplication())
+            application.runWriteAction {
+                assertTrue(application.isWriteAccessAllowed)
+                assertInstanceOf(CjFile::class.java, PsiFileFactory.getInstance(second.project)
+                    .createFileFromText("remaining.cj", CangJieFileType.INSTANCE, "package remaining\n"))
+            }
+        } finally {
+            application.runWriteAction {
+                Disposer.dispose(firstRoot)
+                Disposer.dispose(secondRoot)
+            }
+        }
+        assertTrue(application.isDisposed)
+    }
+
+    /** 同一个父 lifetime 创建两个真实项目，释放时项目服务必须先于唯一 Application。 */
+    @Test
+    fun `one parent lifetime keeps both project releases before application teardown`() {
+        val root = Disposer.newDisposable("two projects in one core lifetime")
+        val first = CangJieCoreEnvironment.createForTests(root)
+        val second = CangJieCoreEnvironment.createForTests(root)
+        val application = first.applicationEnvironment.application
+        try {
+            assertSame(application, second.applicationEnvironment.application)
+            assertNotSame(first.project, second.project)
+            PsiManager.getInstance(first.project)
+            PsiManager.getInstance(second.project)
+        } finally {
+            application.runWriteAction { Disposer.dispose(root) }
+        }
+        assertTrue(first.project.isDisposed)
+        assertTrue(second.project.isDisposed)
+        assertTrue(application.isDisposed)
+    }
+
     /**
      * 验证 application 环境注册 IntelliJ 平台服务和仓颉依赖的基础扩展点。
      */

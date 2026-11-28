@@ -1,6 +1,7 @@
 package org.cangnova.cangjie
 
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import java.nio.file.Files
@@ -50,6 +51,11 @@ class CangJieCoreEnvironment private constructor(
         get() = projectEnvironment.environment as CangjieCoreApplicationEnvironment
 
     companion object {
+        /** 与 Kotlin CoreEnvironment 相同，所有活跃项目共享唯一平台 Application。 */
+        private val applicationLock = Any()
+        private var applicationEnvironment: CangjieCoreApplicationEnvironment? = null
+        private var activeProjectCount: Int = 0
+
         /**
          * 创建用于单元测试的核心环境。
          */
@@ -65,16 +71,93 @@ class CangJieCoreEnvironment private constructor(
             mode: CangJieCoreEnvironmentMode,
         ): CangJieCoreEnvironment {
             ensureIdeaStandaloneProperties()
-            // Application 必须晚于所有 project 服务关闭。使用独立的生命周期根，避免
-            // IntelliJ ObjectTree 在项目 dispose 回调前就把 application 标记为已销毁。
-            val applicationDisposable = Disposer.newDisposable("Cangjie core application")
-            Disposer.register(parentDisposable) { Disposer.dispose(applicationDisposable) }
-            val applicationEnvironment = CangjieCoreApplicationEnvironment.create(
-                parentDisposable = applicationDisposable,
-                environmentMode = mode,
-            )
-            val projectEnvironment = CangjieCoreProjectEnvironment(parentDisposable, applicationEnvironment)
-            return CangJieCoreEnvironment(projectEnvironment)
+            val projectLifetime = Disposer.newDisposable("Cangjie core project")
+            val applicationEnvironment = try {
+                getOrCreateApplicationEnvironment(projectLifetime, mode)
+            } catch (failure: Throwable) {
+                try {
+                    Disposer.dispose(projectLifetime)
+                } catch (cleanupFailure: Throwable) {
+                    failure.addSuppressed(cleanupFailure)
+                }
+                throw failure
+            }
+            try {
+                val projectEnvironment = CangjieCoreProjectEnvironment(projectLifetime, applicationEnvironment)
+                // 外层只拥有清理叶子，项目 PSI 子树与 application lease 在同一真实写动作内释放。
+                Disposer.register(parentDisposable, object : Disposable {
+                    override fun dispose() {
+                        applicationEnvironment.application.runWriteAction {
+                            Disposer.dispose(projectLifetime)
+                        }
+                    }
+                })
+                return CangJieCoreEnvironment(projectEnvironment)
+            } catch (failure: Throwable) {
+                try {
+                    applicationEnvironment.application.runWriteAction {
+                        Disposer.dispose(projectLifetime)
+                    }
+                } catch (cleanupFailure: Throwable) {
+                    failure.addSuppressed(cleanupFailure)
+                }
+                throw failure
+            }
+        }
+
+        /**
+         * Application 的创建模式由本代第一个项目决定，后续项目复用同一实际平台容器。
+         * 每次创建注册独立的释放对象；项目服务按逆序先释放，最后一个项目才关闭 Application。
+         */
+        private fun getOrCreateApplicationEnvironment(
+            projectDisposable: Disposable,
+            mode: CangJieCoreEnvironmentMode,
+        ): CangjieCoreApplicationEnvironment = synchronized(applicationLock) {
+            if (applicationEnvironment == null) {
+                val applicationDisposable = Disposer.newDisposable("Cangjie core application")
+                val createdEnvironment = try {
+                    CangjieCoreApplicationEnvironment.create(applicationDisposable, mode)
+                } catch (failure: Throwable) {
+                    try {
+                        val createdApplication = ApplicationManager.getApplication()
+                        if (createdApplication == null) {
+                            Disposer.dispose(applicationDisposable)
+                        } else {
+                            createdApplication.runWriteAction { Disposer.dispose(applicationDisposable) }
+                        }
+                    } catch (cleanupFailure: Throwable) {
+                        failure.addSuppressed(cleanupFailure)
+                    }
+                    throw failure
+                }
+                applicationEnvironment = createdEnvironment
+                activeProjectCount = 0
+                Disposer.register(applicationDisposable, object : Disposable {
+                    override fun dispose() {
+                        synchronized(applicationLock) {
+                            applicationEnvironment = null
+                        }
+                    }
+                })
+            }
+            val environment = checkNotNull(applicationEnvironment)
+            // Disposer 根据对象身份去重；同一父 lifetime 下的每个项目都必须拥有自己的计数。
+            Disposer.register(projectDisposable, object : Disposable {
+                override fun dispose() {
+                    synchronized(applicationLock) {
+                        check(applicationEnvironment === environment && activeProjectCount > 0) {
+                            "Core project released outside its owning application generation"
+                        }
+                        activeProjectCount--
+                        if (activeProjectCount == 0) {
+                            applicationEnvironment = null
+                            Disposer.dispose(environment.parentDisposable)
+                        }
+                    }
+                }
+            })
+            activeProjectCount++
+            environment
         }
 
         /**

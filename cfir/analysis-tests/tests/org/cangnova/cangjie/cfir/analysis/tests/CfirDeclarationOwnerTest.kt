@@ -3,6 +3,7 @@ package org.cangnova.cangjie.cfir.analysis.tests
 import PackageFormat.DeclKind
 import PackageFormat.Package
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.util.Disposer
 import com.intellij.lang.LighterASTNode
 import com.intellij.lang.PsiBuilderFactory
@@ -208,7 +209,8 @@ class CfirDeclarationOwnerTest : AbstractCfirAnalysisTestCase() {
                 }
             }
         } finally {
-            Disposer.dispose(disposable)
+            // 真实 frontend 环境包含平台模型；释放同一 owned 项目也遵守其写访问协议。
+            ApplicationManager.getApplication().runWriteAction { Disposer.dispose(disposable) }
         }
     }
 
