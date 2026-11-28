@@ -4,7 +4,25 @@
 
 PR 分支起点为 `92928bd070fb00c06e956237e6c394efa7b9a0ee`，合入的主分支为 `200142275d824efcb4d24f5f835e0376b0a357ad`，共同基线为 `6b6573fd994b1f813796b3ff809ac26b745a216f`。初始 332 个冲突路径，含 317 个双方修改、6 个双方新增和 9 个删除与修改。85 个初始冲突路径为生成文件。全部初始冲突已处理，进入编译与行为验证。[Draft PR #17](https://github.com/lin-qingying/cangjie/pull/17)
 
-本次 Linux 验证使用仓库规定的 Gradle 9.4.0、Temurin 21，以及 Java 17 工具链。按主分支 CI 流程准备 Ubuntu 22.04、仓颉 SDK 1.1.0 和 LLVM 14。R41 与 R42 的数字为历史结果，合并提交的结果在对应测试日志中单独记录。
+| 冲突范围 | 初始路径 | 已解决 |
+| --- | ---: | ---: |
+| CFIR 树、生成器及生成文件 | 102 | 102 |
+| CFIR 其他模块 | 128 | 128 |
+| Analysis、低级 API 及反编译 | 55 | 55 |
+| Compiler、PSI、CHIR 及其他模块 | 47 | 47 |
+| 合计 | 332 | 332 |
+
+Linux 本地验证环境为 Ubuntu 22.04.5、Gradle 9.4.0、Temurin 21.0.13+9、Java 工具链 Temurin 17.0.21.1+2、仓颉 SDK 1.1.0（Linux x86_64 cjnative）及 LLVM 14.0.0。SDK 实际 `std.core.cjo` 的 SHA-256 为 `b1d655e54e4dd27b88ffc3cd62394c36ea7afd222916b73227efa74e4503d452`。CI 发现了 20 个 Linux SDK 变体。首次推送 `21c16e5cb4997b6d92e896293c1fba2342a8b150` 后，获得授权规范化七个提交标题，更新为相同文件树的 `781891ab8db43d3f29c76d095a2170678ee569c5`。后者的 GitHub 提交标题检查、SDK 发现和 LLVM JNI 构建均通过。[Linux CI 运行](https://github.com/lin-qingying/cangjie/actions/runs/46134396153)
+
+| 验证窗口 | 实际受测提交 | 已确认结果 |
+| --- | --- | --- |
+| Linux 定向第 4 轮 | `d23cc86fd6c6466b0c42ee7bb85c0d4237fd2ec3` | 已报告 185 项，124 通过、60 失败、1 跳过。Frontend worker 在宏 token 循环失去进度后被停止。CJO 受 Analysis API 编译阻塞 |
+| Linux 定向第 6 轮 | `21c16e5cb4997b6d92e896293c1fba2342a8b150` | Providers 84/84，导出输入快照 64/64。PSI、Resolve 与 CJO 的测试编译接口差异进入下一轮，相关生产模块已编译 |
+| 主分支回归 | `781891ab8db43d3f29c76d095a2170678ee569c5` | GitHub 已安排 20 个 SDK 矩阵任务。本地完整回归在下一轮定向验证后运行 |
+
+第 6 轮已复验 R42 alias 装配。R41 的 Core 定义输入失败仍有原测试入口 `CfirInitializationDependencySerializationTest.stdCoreProducerInjectsProviderBuiltinsAsPackageRoots`。该用例需要作用域内的真实当前定义产品。已记录的 CJMP 历史分歧包括普通有界 extend 的私有成员导出、Common 静态调用初始化器以及 Common const 和 tuple 的 CJO 槽。SDK 1.1.0 的独立消费端实际执行 Common 静态初始化器，且输出随 specific 对应函数更新。原始断言继续保留。
+
+本地原始日志在 `/workspace/work/cjmp-pr17/validation`。每轮保留实际 SHA、参数、工具链与 SDK 校验值、完整 Gradle 日志、退出码和该轮生成的测试 XML。隔离的枚举、注解、同签名冲突和导入正文复验另有日志。Analysis API 使用 `CaValueParameterSymbol.correspondingField: CaFieldSymbol?` 表达主构造器 `let`／`var` 产生的实际成员字段。原 main 的 `correspondingProperty: CaPropertySymbol?` 调用方已迁移。
 
 原 70 项及 P0–P10 保持开启。沿下文的实施入口继续，重点是 P8/S1–S7 的 PSI 与 LightTree SOURCE → CJO → 正式消费端、限定定义快照、真实 Core 定义输入及作用域内 SDK 选择。保留 R41 Core 和 R42 alias session 的复验入口及原测试断言。
 
