@@ -19,7 +19,12 @@ internal fun CfirSourceGraph.forEachExportLexicalOwner(action: (CfirDeclaration,
         }
         action(declaration, lexical)
     }
-    functionContexts.forEach { (function, context) -> action(function, context.declarationContext) }
+    functionContexts.forEach { (function, context) ->
+        // An accessor executes in the property context. Its export ownership comes from the enclosing declaration above.
+        if (function !is CfirPropertyAccessor || !declarationOwners.containsKey(function)) {
+            action(function, context.declarationContext)
+        }
+    }
     functionHeaders.forEach { (function, header) -> header.parameterLists.flatten().forEach { action(it, function) } }
     generatedDeclarations.forEach { (declaration, context) -> action(declaration, context.owner) }
 }
