@@ -18,7 +18,7 @@ import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
 import org.cangnova.cangjie.cfir.expressions.CfirConstantValue
 
 /** VarDecl 的引用使用唯一 wire binding，声明树和初始化器仍由实际模式根拥有。 */
-internal fun CfirDeclaration.cjoWireDeclaration(kind: DeclKind?): CfirDeclaration =
+internal fun CfirDeclaration.cjoWireDeclaration(kind: UShort?): CfirDeclaration =
     if (this is CfirPatternVariable && kind == DeclKind.VarDecl) pattern.bindingVariables().single() else this
 
 /** 正式库 context 的 SOURCE 能力：同一 snapshot/header/type binder，完整图完成后才发布。 */
