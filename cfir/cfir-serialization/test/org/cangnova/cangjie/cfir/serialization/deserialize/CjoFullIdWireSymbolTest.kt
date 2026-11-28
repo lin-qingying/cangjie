@@ -2,6 +2,7 @@ package org.cangnova.cangjie.cfir.serialization.deserialize
 
 import org.cangnova.cangjie.test.cjoFixtureModuleDataProvider
 import org.cangnova.cangjie.test.bindCjoFixture
+import PackageFormat.CompositeTyInfo
 import PackageFormat.ReferenceInfo
 import PackageFormat.PropInfo
 import PackageFormat.GenericTyInfo
@@ -629,13 +630,17 @@ class CjoFullIdWireSymbolTest {
         val consumer = importedGenericContext(f, "_CN12wire.generic4LinkIG_E_TG1T", CjoDeserializationMode.FULL,
             split.consumer, split.consumerModule, split.consumerManager)
         val target = assertNotNull(split.target.getOwnPackageContext("wire.generic", CjoDeserializationMode.FULL))
-        assertFailsWith<IllegalStateException> {
+        val failure = assertFailsWith<IllegalStateException> {
             consumer.materialization.read {
-                assertIs<ConeTypeParameterType>(consumer.createTypeDeserializer().deserializeType(0))
-                assertTrue(target.typeCache.isNotEmpty())
+                val imported = assertIs<ConeTypeParameterType>(consumer.createTypeDeserializer().deserializeType(0))
+                val staged = assertIs<ConeTypeParameterType>(target.createTypeDeserializer().deserializeType(1))
+                assertSame(imported.lookupTag.typeParameterSymbol, staged.lookupTag.typeParameterSymbol)
+                assertTrue(consumer.typeCache.isEmpty())
+                assertTrue(target.typeCache.isEmpty())
                 consumer.materialization.postCompute { error("injected metadata completion failure") }
             }
         }
+        assertEquals("injected metadata completion failure", failure.message)
         assertTrue(consumer.typeCache.isEmpty())
         assertTrue(target.typeCache.isEmpty())
         assertIs<CjoDeclarationCacheEntry.Failed>(target.declarationEntries[1])
@@ -699,9 +704,16 @@ class CjoFullIdWireSymbolTest {
         val builder = FlatBufferBuilder()
         val key = builder.createString(exportKey)
         val target = FullId.createFullId(builder, 0, key, 0u)
-        val generic = GenericTyInfo.createGenericTyInfo(builder, target, 0)
+        // The native Link<T> parameter's semantic bound is Link<T>, whose argument refers back to this T.
+        val upperBounds = GenericTyInfo.createUpperBoundsVector(builder, uintArrayOf(2u))
+        val generic = GenericTyInfo.createGenericTyInfo(builder, target, upperBounds)
         val type = SemaTy.createSemaTy(builder, TypeKind.Generic, 0, SemaTyInfo.GenericTyInfo, generic)
-        val types = PackageFormat.Package.createAllTypesVector(builder, intArrayOf(type))
+        val linkKey = builder.createString("_CN12wire.generic4LinkIG_E")
+        val linkTarget = FullId.createFullId(builder, 0, linkKey, 0u)
+        val linkInfo = CompositeTyInfo.createCompositeTyInfo(builder, linkTarget, false)
+        val linkArguments = SemaTy.createTypeArgsVector(builder, uintArrayOf(1u))
+        val linkType = SemaTy.createSemaTy(builder, TypeKind.Interface, linkArguments, SemaTyInfo.CompositeTyInfo, linkInfo)
+        val types = PackageFormat.Package.createAllTypesVector(builder, intArrayOf(type, linkType))
         val imports = PackageFormat.Package.createImportsVector(builder, intArrayOf(builder.createString("wire.generic")))
         val name = builder.createString("wire.generic.imported")
         PackageFormat.Package.startPackage(builder)
