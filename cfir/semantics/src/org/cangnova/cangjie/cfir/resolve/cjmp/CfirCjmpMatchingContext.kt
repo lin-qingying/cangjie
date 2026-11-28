@@ -44,6 +44,7 @@ import org.cangnova.cangjie.cfir.resolve.providers.getDeclarationMetadataOwner
 import org.cangnova.cangjie.cfir.resolve.providers.classifyDeclaredSupertype
 import org.cangnova.cangjie.cfir.resolve.providers.ordinarySupertypeTypeOrNull
 import org.cangnova.cangjie.cfir.resolve.toSymbol
+import org.cangnova.cangjie.cfir.resolve.substitution.AbstractConeSubstitutor
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.CfirCjmpMatchingMode
 import org.cangnova.cangjie.cfir.session.getContainingCjmpDeclaration
@@ -52,6 +53,7 @@ import org.cangnova.cangjie.cfir.declarations.cjmpHasCommonDefault
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
@@ -186,11 +188,37 @@ class CfirCjmpMatchingContext(
             ?: return CjmpTypeCompatibility.UNRESOLVED
         val commonReturnType = CfirCjmpMatcher.typeOf(commonConstructor.returnTypeRef)
             ?: return CjmpTypeCompatibility.UNRESOLVED
-        return areTypesEquivalent(
-            ConeFunctionType(specificParameters, specificReturnType),
-            ConeFunctionType(commonParameters, commonReturnType),
-            typeParameterMapping,
-        )
+        val specificSignature = ConeFunctionType(specificParameters, specificReturnType)
+        val commonSignature = ConeFunctionType(commonParameters, commonReturnType)
+        val directComparison = areTypesEquivalent(specificSignature, commonSignature, typeParameterMapping)
+        if (directComparison != CjmpTypeCompatibility.INCOMPATIBLE) return directComparison
+
+        // CheckCJMP::MatchEnumFuncTypes 在配对的外层 enum 下比较完整函数类型。
+        // CJO 的 FullId 仍指向真实 common 声明，只为这次比较投影实际配对的 owner。
+        val specificOwner = specificConstructor.getContainingCjmpDeclaration() as? CfirEnum ?: return directComparison
+        val commonOwner = commonConstructor.getContainingCjmpDeclaration() as? CfirEnum ?: return directComparison
+        val specificOwnerTag = specificOwner.symbol.toLookupTag()
+        val commonOwnerTag = commonOwner.symbol.toLookupTag()
+        if (specificOwnerTag == commonOwnerTag || specificOwnerTag.classId != commonOwnerTag.classId) return directComparison
+        if (specificReturnType !is ConeEnumType || specificReturnType.lookupTag != specificOwnerTag ||
+            commonReturnType !is ConeEnumType || commonReturnType.lookupTag != commonOwnerTag ||
+            specificReturnType.isRefEnum != commonReturnType.isRefEnum
+        ) return directComparison
+
+        val ownerProjection = object : AbstractConeSubstitutor(session.typeContext) {
+            override fun substituteType(type: ConeCangJieType): ConeCangJieType? {
+                if (type !is ConeEnumType || type.lookupTag != commonOwnerTag) return null
+                return ConeEnumType(
+                    lookupTag = specificOwnerTag,
+                    typeArguments = type.typeArguments.mapIndexed { index, argument ->
+                        substituteArgument(argument, index) ?: argument
+                    },
+                    attributes = type.attributes,
+                    isRefEnum = type.isRefEnum,
+                )
+            }
+        }
+        return areTypesEquivalent(specificSignature, ownerProjection.substituteOrSelf(commonSignature), typeParameterMapping)
     }
 
     override fun typeParameters(declaration: CfirBasedSymbol<*>): List<CfirTypeParameterSymbol> =

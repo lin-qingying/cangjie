@@ -3412,6 +3412,33 @@ class CjmpTwoPhaseCompilationTest {
         )
     }
 
+    @Test
+    fun `generic enum cjo owner pairing still rejects a different payload`() {
+        val cjo = compileCommon(
+            """
+            public common enum Box<T> {
+                | Empty
+                | Value(T)
+            }
+            """.trimIndent(),
+        )
+        val result = compileSpecific(
+            """
+            public specific enum Box<U> {
+                | Empty
+                | Value(Bool)
+            }
+            """.trimIndent(),
+            cjo,
+        )
+
+        assertFalse(result.completed, "owner pairing must not erase the payload type difference")
+        assertEquals(
+            listOf("NOT_MATCHED", "NOT_MATCHED"),
+            result.diagnostics.filter { it.severity.isError }.map { it.factoryName.removePrefix("CFIR_") },
+        )
+    }
+
     /** 官方 CollectDecl 只收集 COMMON；common part 中的普通 helper 不要求 specific 实现。 */
     @Test
     fun `unmarked common part helper does not become a required common declaration`() {

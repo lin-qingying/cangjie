@@ -95,6 +95,19 @@ import java.nio.file.Path
 class CfirInitializationDependencySerializationTest :
     CjParsingTestCase("", "cj", CangJieFileType.INSTANCE, CangJieParserDefinition()) {
 
+    @TempDir
+    lateinit var fixtureDirectory: Path
+
+    private val officialCoreRoot: Path by lazy {
+        val root = fixtureDirectory.resolve("official-core")
+        val core = root.resolve(CjoConstants.packageNameToPath("std.core"))
+        Files.createDirectories(core.parent)
+        requireNotNull(javaClass.classLoader.getResourceAsStream(
+            "cjo-sdk/windows_x86_64_cjnative/std/std.core.cjo",
+        )) { "official std.core CJO test fixture must be available" }.use { Files.copy(it, core) }
+        root
+    }
+
     @BeforeEach
     fun setUpFixture() {
         setUp()
@@ -162,14 +175,9 @@ class CfirInitializationDependencySerializationTest :
     }
 
     @Test
-    fun commonProducerRoundTripsStandardLibraryExportIdsFromCjo(@TempDir tempDir: Path) {
-        val stdCoreBytes = requireNotNull(
-            javaClass.classLoader.getResourceAsStream("cjo-sdk/windows_x86_64_cjnative/std/std.core.cjo"),
-        ) { "official std.core CJO test fixture must be available" }.use { it.readBytes() }
-        val stdCorePath = tempDir.resolve(CjoConstants.packageNameToPath("std.core"))
-        Files.createDirectories(stdCorePath.parent)
-        Files.write(stdCorePath, stdCoreBytes)
-
+    fun commonProducerRoundTripsStandardLibraryExportIdsFromCjo() {
+        val coreRoot = officialCoreRoot
+        val coreSearchPath = CjoSearchPath.forRoots(builtinsRoots = listOf(coreRoot.toFile()))
         val fixture = sourceFile(
             CfirCjmpMode.COMMON,
             targetType = ConeTupleType(
@@ -182,12 +190,12 @@ class CfirInitializationDependencySerializationTest :
                 CfirDeserializedSymbolProvider(
                     module.session,
                     CjoManager(
-                        CjoSearchPath(additionalLibrarySearchPaths = listOf(tempDir.toFile())),
+                        coreSearchPath,
                         CjoFormatVersionPolicy.Compilation(LanguageVersionSettingsImpl.DEFAULT),
                     ),
                     CfirCangJieScopeProvider(),
                     module,
-                    moduleDataProvider = cjoFixtureModuleDataProvider(module, setOf(tempDir)),
+                    moduleDataProvider = cjoFixtureModuleDataProvider(module, setOf(coreRoot)),
                 )
             },
         )
@@ -203,11 +211,11 @@ class CfirInitializationDependencySerializationTest :
 
         val encoded = encode(metadata)
         val cjoManager = CjoManager(
-            CjoSearchPath(additionalLibrarySearchPaths = listOf(tempDir.toFile())),
+            coreSearchPath,
             CjoFormatVersionPolicy.Compilation(LanguageVersionSettingsImpl.DEFAULT),
         )
         val decodedType = CfirTypeDeserializer(
-            deserializationContext(encoded, cjoManager, setOf(tempDir)),
+            deserializationContext(encoded, cjoManager, setOf(coreRoot)),
         ).deserializeTypeFromField(metadata.declarations.single { it.identifier == "target" }.type)
         val decodedTuple = assertInstanceOf(ConeTupleType::class.java, decodedType)
         val decodedString = assertInstanceOf(ConeStructType::class.java, decodedTuple.elementTypes[0])
@@ -572,7 +580,7 @@ class CfirInitializationDependencySerializationTest :
         )
 
         val manager = CjoManager(
-            CjoSearchPath(additionalLibrarySearchPaths = listOf(tempDir.toFile())),
+            CjoSearchPath.forRoots(builtinsRoots = emptyList(), libraryRoots = listOf(tempDir.toFile())),
             CjoFormatVersionPolicy.Compilation(org.cangnova.cangjie.LanguageVersionSettingsImpl.DEFAULT),
         )
         val module = Module(CfirCjmpMode.NONE, CfirSession.Kind.Library)
@@ -622,7 +630,7 @@ class CfirInitializationDependencySerializationTest :
         includeCType: Boolean = false,
         dependencies: (CfirModuleData) -> CfirSymbolProvider = { it.session.dependenciesSymbolProvider },
     ): SourceFixture {
-        val module = Module(mode)
+        val module = Module(mode, coreRoot = officialCoreRoot)
         val dependencyProvider = dependencies(module)
         require(!includeCType || targetPackageFqName == FqName("std.core"))
         val packageName = targetPackageFqName
@@ -1011,6 +1019,7 @@ class CfirInitializationDependencySerializationTest :
     private class Module(
         mode: CfirCjmpMode,
         kind: CfirSession.Kind = CfirSession.Kind.Source,
+        private val coreRoot: Path? = null,
     ) : CfirModuleData() {
         override val name = Name.identifier("initialization-dependencies-test")
         private val libraryModule = CfirBinaryDependenciesModuleData(
@@ -1068,7 +1077,10 @@ class CfirInitializationDependencySerializationTest :
          * 注入每个会话自己的检查器。保留真实 alias 的 TYPES 请求与声明 phase 校验。
          */
         private fun sessionFactoryContext(mode: CfirCjmpMode) = CfirDefaultSessionFactory.Context(
-            cjoManager = CjoManager(CjoSearchPath(), CjoFormatVersionPolicy.Compilation(LanguageVersionSettingsImpl.DEFAULT)),
+            cjoManager = CjoManager(
+                CjoSearchPath.forRoots(builtinsRoots = listOfNotNull(coreRoot?.toFile())),
+                CjoFormatVersionPolicy.Compilation(LanguageVersionSettingsImpl.DEFAULT),
+            ),
             cjmpSettings = CfirCjmpSettingsComponent(explicitMode = mode),
             exportSettings = CfirExportAnalysisSettings(),
             registerLibrarySessionComponents = {

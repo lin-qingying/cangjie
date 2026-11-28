@@ -403,7 +403,10 @@ class CjoConstInitializerAstTest {
     @Test
     fun primitiveQualifierUsesTheActualSdkModuleAcrossManagers() = fixture { f ->
         val sdkModule = Module()
-        val sdkManager = CjoManager(CjoSearchPath.forRoots(emptyList(), listOf(f.sdk.toFile())), f.manager.declarationMaterialization)
+        val sdkManager = CjoManager(
+            CjoSearchPath.forRoots(emptyList(), listOf(f.sdk.toFile())),
+            declarationMaterialization = f.manager.declarationMaterialization,
+        )
         val sdkProvider = CfirDeserializedSymbolProvider(sdkModule.session, sdkManager, CfirCangJieScopeProvider(), sdkModule,
             moduleDataProvider = cjoFixtureModuleDataProvider(sdkModule, setOf(f.sdk)))
         val consumer = primitiveCallContext(f, PackageFormat.TypeKind.UInt8, packageProvider = sdkProvider)
@@ -486,7 +489,7 @@ class CjoConstInitializerAstTest {
         val pkg = PackageFormat.Package.getRootAsPackage(b.dataBuffer())
         // 外部 SDK route 属于初始 producer，context 不能在既有 binding 上替换 router authority。
         val producer = if (packageProvider === f.provider) f.provider else CfirDeserializedSymbolProvider(
-            f.module.session, CjoManager(CjoSearchPath { null }, f.manager.declarationMaterialization),
+            f.module.session, CjoManager(CjoSearchPath { null }, declarationMaterialization = f.manager.declarationMaterialization),
             f.provider.deserializationBinding.scopeProvider, f.module,
             moduleDataProvider = cjoFixtureModuleDataProvider(f.module, emptySet()),
             dependencyCjoManager = f.manager,

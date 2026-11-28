@@ -332,6 +332,8 @@ class CfirCjmpTypeCandidateCollectorTest {
             val exported = exports[context] ?: return super.getImportNamespace(context)
             return object : CfirImportNamespace {
                 override fun hasPackage(includeSubpackages: Boolean): Boolean = true
+                override fun classifierNames(): Set<Name> = exported.keys
+                override fun callableNames(): Set<Name> = emptySet()
                 override fun classifiers(name: Name): List<CfirClassLikeSymbol<*>> = exported[name].orEmpty()
                 override fun callables(name: Name): List<CfirCallableSymbol<*>> = emptyList()
                 override fun functions(name: Name): List<CfirNamedFunctionSymbol> = emptyList()

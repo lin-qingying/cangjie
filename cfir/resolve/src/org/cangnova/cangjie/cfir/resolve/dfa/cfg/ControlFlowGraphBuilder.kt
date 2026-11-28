@@ -706,8 +706,13 @@ class ControlFlowGraphBuilder private constructor(
         val accessor = completedAnalysisGraph
         val reference = if (accessor == null) function.controlFlowGraphReference else accessor(function)
         val graph = checkNotNull(reference?.controlFlowGraph) { "Postponed lambda must have its actual completed graph" }
-        // 普通闭包的声明/传递不执行正文；没有立即执行合同，只建立独立正文的重复边。
-        addBackEdge(graph.exitNode, graph.enterNode)
+        if (graph.kind == ControlFlowGraph.Kind.AnonymousFunctionCalledInPlace) {
+            // 调用点取得立即执行的匿名函数正常出口；异常沿原有异常通路传播。
+            addEdge(graph.exitNode, exit)
+        } else {
+            // 普通闭包的声明/传递不执行正文；独立正文只保留重复边。
+            addBackEdge(graph.exitNode, graph.enterNode)
+        }
         anonymousFunctionCaptureNodes.remove(symbol)
         return exit
     }

@@ -934,9 +934,7 @@ class CfirResourceSourceCompletionTest {
         val host = prepareRootLifecycleParent(f)
         val parent = f.context.dataFlowAnalyzerContext.graphBuilder
         val variable = SyntheticVariable(CallResolutionTestFixtures.buildTypedExpression(ConePrimitiveType.INT32))
-        val logic = object : LogicSystem(f.session.typeContext) {
-            override val variableStorage: VariableStorage = f.context.dataFlowAnalyzerContext.variableStorage
-        }
+        val logic = object : LogicSystem(f.session.typeContext) {}
         val mutable = MutableFlow()
         logic.addTypeStatement(mutable, variable typeEq ConePrimitiveType.INT32)
         val flow = mutable.freeze()

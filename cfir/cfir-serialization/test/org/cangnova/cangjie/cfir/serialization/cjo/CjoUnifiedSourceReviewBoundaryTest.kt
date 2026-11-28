@@ -1073,7 +1073,7 @@ class CjoUnifiedSourceReviewBoundaryTest :
         val wire: Package get() = snapshot.pkg
         fun declaration(index: Int): CfirDeclaration = kotlin.test.assertNotNull(provider.deserializeCjoDeclaration(path, metadata.fullPackageName, index))
         fun function(name: String): CfirNamedFunction = assertIs<CfirNamedFunction>(callable(name))
-        fun binding(name: String): CfirPatternBindingVariable = provider.packageVariableBinding(packageName, name)
+        fun binding(name: String): CfirPatternBindingVariable = provider.packageVariableBinding(metadata.fullPackageName, name)
         fun variable(name: String): CfirPatternVariable = assertIs<CfirPatternVariable>(binding(name).patternTreeOwner)
         private fun callable(name: String): CfirDeclaration = provider.getTopLevelCallableSymbols(
             FqName(metadata.fullPackageName), Name.identifier(name)).single().cfir

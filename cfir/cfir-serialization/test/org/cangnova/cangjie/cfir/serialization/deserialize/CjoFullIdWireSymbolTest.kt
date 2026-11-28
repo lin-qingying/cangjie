@@ -172,8 +172,10 @@ class CjoFullIdWireSymbolTest {
             val signatures = full.withMode(CjoDeserializationMode.SIGNATURE_ONLY)
             val order = if (signatureFirst) listOf(signatures, full) else listOf(full, signatures)
             order.forEach { assertIs<CfirPatternVariable>(it.createDeclDeserializer().deserializeDecl(0)) }
-            val fullRecord = full.declCache.getValue(0)
-            val signatureRecord = signatures.declCache.getValue(0)
+            val fullRecord = assertValue(full.headerRecordOrNull(0))
+            val signatureRecord = assertValue(signatures.headerRecordOrNull(0))
+            assertSame(fullRecord.declarationRoot, full.declCache[0])
+            assertSame(signatureRecord.declarationRoot, signatures.declCache[0])
             assertNotSame(fullRecord.wireSymbol, signatureRecord.wireSymbol)
             assertIs<CfirNamedAccessExpression>(assertIs<CfirPatternVariable>(fullRecord.declarationRoot).initializer)
             assertNull(assertIs<CfirPatternVariable>(signatureRecord.declarationRoot).initializer)
@@ -656,7 +658,10 @@ class CjoFullIdWireSymbolTest {
         val consumerModule = Module()
         val targetModule = Module()
         val sdkModule = Module()
-        fun manager(directory: Path) = CjoManager(CjoSearchPath.forRoots(emptyList(), listOf(directory.toFile())), transaction)
+        fun manager(directory: Path) = CjoManager(
+            CjoSearchPath.forRoots(emptyList(), listOf(directory.toFile())),
+            declarationMaterialization = transaction,
+        )
         val sdkManager = manager(sdkDirectory)
         val sdk = CfirDeserializedSymbolProvider(sdkModule.session, sdkManager, CfirCangJieScopeProvider(), sdkModule,
             moduleDataProvider = cjoFixtureModuleDataProvider(sdkModule, setOf(sdkDirectory)))

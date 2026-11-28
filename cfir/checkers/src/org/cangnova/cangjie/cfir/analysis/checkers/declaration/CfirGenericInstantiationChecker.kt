@@ -50,6 +50,8 @@ import org.cangnova.cangjie.cfir.resolve.providers.classifyDeclaredSupertype
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessKind
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityResult
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedTypeUsingAbbreviation
+import org.cangnova.cangjie.cfir.resolve.toOwningClassLikeSymbol
 import org.cangnova.cangjie.cfir.resolve.toSymbol
 import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
@@ -1033,7 +1035,11 @@ private class GenericInstantiationAnalyzer(
         for (owner in session.instantiationExtendOwners(instantiatedDirectExtends(instantiatedType))) {
             val ownerType = owner.extendedTypeRef.coneTypeOrNull ?: continue
             val scopeOwner = CfirMemberScopeOwner.ExtendInstantiation(owner, owner.instantiatedRelatedMemberExtends(extends))
-            val ownerScope = instantiatedUseSiteMemberScopes(
+            // 保留 extend 目标类型的真实声明。未配对 common extend 的固定 CJO 目标
+            // 与触发实例化的 specific 声明可以同名，但属于不同的父图。
+            val ownerClass = ownerType.fullyExpandedTypeUsingAbbreviation(session)
+                .toOwningClassLikeSymbol(session)?.cfir ?: continue
+            val ownerScope = ownerClass.instantiatedUseSiteMemberScopes(
                 instantiatedType = ownerType, scopeOwner = scopeOwner,
             )?.substituted ?: continue
             val substitution = findExtendDeclarationSubstitution(session, owner, instantiatedType) ?: continue

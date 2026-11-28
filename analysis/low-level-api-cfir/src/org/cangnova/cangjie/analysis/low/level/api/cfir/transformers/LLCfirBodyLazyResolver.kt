@@ -914,12 +914,8 @@ private class LLCfirBodyTargetResolver(target: LLCfirResolveTarget) : LLCfirAbst
             is CfirFieldVariable -> resolve(target, BodyStateKeepers.FIELD)
             is CfirPatternVariable -> resolve(target, BodyStateKeepers.PATTERN_VARIABLE)
             is CfirVariable -> resolve(target, BodyStateKeepers.VARIABLE)
-            is CfirTypeAlias,
-                -> {
+            is CfirTypeAlias -> {
                 // No bodies here
-            }
-            is CfirEnumConstructor -> {
-                // 枚举构造器没有函数体；返回类型由所属 enum 在 TYPES 阶段写入。
             }
             else -> throwUnexpectedCfirElementError(target)
         }

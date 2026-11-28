@@ -327,9 +327,9 @@ class CfirIfCfgSemanticsTest {
         f.b.enterJump(statement); f.begin(e); f.emitLambdaCarrier(left); f.endThen(e)
         f.beginElse(e); f.emitLambdaCarrier(right); f.endElse(e); f.b.exitIfExpression(e, false)
         f.b.exitJump(statement); f.b.exitBlock(root.body!!)
-        val rootGraph = f.b.exitAnonymousFunction(root).third
+        val rootGraph = f.b.exitFunction(root).second
         root.replaceControlFlowGraphReference(CfirControlFlowGraphReferenceImpl(rootGraph))
-        f.b.exitCallArguments(); f.b.enterFunctionCall(outer); val outerExit = f.b.exitFunctionCall(outer, true); f.finish()
+        f.b.exitCallArguments(); f.b.enterFunctionCall(outer); val outerExit = f.b.exitFunctionCall(outer, true).value; f.finish()
         val merge = rootGraph.nodes.filterIsInstance<MergePostponedLambdaExitsNode>().single { it.fir === e }
         assertEquals(EdgeKind.DfgForward, merge.edgeTo(outerExit).kind)
         assertSame(PostponedPath, merge.edgeTo(outerExit).label)
@@ -375,7 +375,7 @@ class CfirIfCfgSemanticsTest {
         }
         fun emit(call: CfirFunctionCall, completed: Boolean = true): FunctionCallExitNode {
             b.enterCallArguments(call, emptyList()); b.exitCallArguments(); b.enterFunctionCall(call)
-            return b.exitFunctionCall(call, completed)
+            return b.exitFunctionCall(call, completed).value
         }
         fun begin(e: CfirIfExpression): IfConditionExitNode {
             b.enterIfExpression(e); emit(e.condition as CfirFunctionCall)
@@ -411,10 +411,13 @@ class CfirIfCfgSemanticsTest {
             val lambda = expression.anonymousFunction
             b.enterCallArguments(call, listOf(lambda)); b.enterAnonymousFunctionExpression(expression)
             b.enterAnonymousFunction(lambda); b.enterBlock(lambda.body!!); b.exitBlock(lambda.body!!)
-            val (_, postponed, graph) = b.exitAnonymousFunction(lambda)
+            val (_, graph) = b.exitFunction(lambda)
             lambda.replaceControlFlowGraphReference(CfirControlFlowGraphReferenceImpl(graph))
-            b.exitCallArguments(); b.enterFunctionCall(call); b.exitFunctionCall(call, false)
-            return kotlin.checkNotNull(postponed)
+            val (split, _) = b.exitCallArguments()
+            b.enterFunctionCall(call)
+            b.exitFunctionCall(call, false)
+            return checkNotNull(split).followingNodes.filterIsInstance<PostponedLambdaExitNode>()
+                .single { it.fir === expression }
         }
     }
 

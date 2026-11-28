@@ -123,7 +123,7 @@ class CfirTerminatingNodeCfgTest {
             builder.enterCallArguments(following, emptyList())
             builder.exitCallArguments()
             builder.enterFunctionCall(following)
-            return builder.exitFunctionCall(following, callCompleted = true)
+            return builder.exitFunctionCall(following, callCompleted = true).value
         }
     }
 

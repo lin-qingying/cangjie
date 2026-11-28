@@ -79,7 +79,6 @@ class CfirMapArgumentsTest {
                 parameterTypes = listOf(ConePrimitiveType.INT32, ConePrimitiveType.BOOLEAN, ConePrimitiveType.FLOAT64),
                 parameterNamed = listOf(false, true, true),
                 parameterDefaults = listOf(false, true, true),
-                parameterIsNamed = listOf(false, true, true),
             )
             val arg0 = buildTypedExpression(ConePrimitiveType.INT32)
             val callInfo = buildCallInfo(session, "f", arguments = listOf(arg0))

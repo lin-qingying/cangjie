@@ -3,9 +3,11 @@ package org.cangnova.cangjie.frontend.pipeline
 import org.cangnova.cangjie.cfir.CfirFunctionBodyOwner
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.pipeline.SingleModuleFrontendOutput
+import org.cangnova.cangjie.cfir.resolve.providers.getDeclarationMetadataOwner
 import org.cangnova.cangjie.cfir.session.cjmpFamilyAggregate
 import org.cangnova.cangjie.cfir.session.cjmpSettings
 import org.cangnova.cangjie.cfir.session.CfirCjmpFamilySnapshot
+import org.cangnova.cangjie.cfir.source.CfirImportedSourceGraphProvider
 import org.cangnova.cangjie.cfir.source.importedSourceGraphProvider
 import java.util.Collections
 import java.util.IdentityHashMap
@@ -18,6 +20,15 @@ import java.util.IdentityHashMap
 internal fun prepareCjmpImportedSourceContent(output: SingleModuleFrontendOutput) {
     if (!output.session.cjmpSettings.compileSpecific) return
     val visited = Collections.newSetFromMap(IdentityHashMap<CfirDeclaration, Boolean>())
+    val preparedHeaders = Collections.newSetFromMap(IdentityHashMap<CfirDeclaration, Boolean>())
+    fun prepareHeader(declaration: CfirDeclaration): CfirImportedSourceGraphProvider? {
+        if (declaration.cjoDeclarationOrigin == null) return null
+        val provider = checkNotNull(declaration.moduleData.session.importedSourceGraphProvider)
+        if (preparedHeaders.add(declaration)) {
+            check(provider.sourceHeaderContentsOf(declaration)) { "The selected header content must belong to its actual provider" }
+        }
+        return provider
+    }
     fun owningMembers(owner: CfirDeclaration, physicalMembers: List<CfirDeclaration>, family: CfirCjmpFamilySnapshot): List<CfirDeclaration> {
         if (!family.hasMemberOwner(owner)) return physicalMembers
         val merged = family.membersFor(owner)
@@ -28,22 +39,17 @@ internal fun prepareCjmpImportedSourceContent(output: SingleModuleFrontendOutput
     }
     fun prepare(declaration: CfirDeclaration, family: CfirCjmpFamilySnapshot) {
         if (!visited.add(declaration)) return
-        if (declaration.cjoDeclarationOrigin != null) {
-            val provider = checkNotNull(declaration.moduleData.session.importedSourceGraphProvider)
-            check(provider.sourceHeaderContentsOf(declaration)) { "The selected header content must belong to its actual provider" }
+        prepareHeader(declaration)?.let { provider ->
             if (declaration is CfirVariable && declaration !is CfirValueParameter)
                 provider.sourceInitializerOf(declaration)
-        }
-        if (declaration.cjoDeclarationOrigin != null && declaration is CfirFunctionBodyOwner) {
-            val callable = declaration as CfirCallableDeclaration
-            val provider = checkNotNull(declaration.moduleData.session.importedSourceGraphProvider) {
-                "A loaded CJMP SOURCE declaration requires its owning content provider"
-            }
-            val header = provider.sourceHeaderOf(callable)
-            // 无参数 enum 构造器保存为 VarDecl，没有 F/header/body；不为它生成正文。
-            check(header != null || callable is CfirEnumConstructor)
-            if (header?.bodyAvailable == true) checkNotNull(provider.sourceBodyOf(declaration)) {
-                "The selected saved SOURCE body must be published by its original owner"
+            if (declaration is CfirFunctionBodyOwner) {
+                val callable = declaration as CfirCallableDeclaration
+                val header = provider.sourceHeaderOf(callable)
+                // 无参数 enum 构造器保存为 VarDecl，没有 F/header/body；不为它生成正文。
+                check(header != null || callable is CfirEnumConstructor)
+                if (header?.bodyAvailable == true) checkNotNull(provider.sourceBodyOf(declaration)) {
+                    "The selected saved SOURCE body must be published by its original owner"
+                }
             }
         }
         when (declaration) {
@@ -64,6 +70,10 @@ internal fun prepareCjmpImportedSourceContent(output: SingleModuleFrontendOutput
     }
     for (packageName in output.fir.map { it.packageDirective.packageFqName }.distinct()) {
         val family = output.session.cjmpFamilyAggregate.ensureFamilyComplete(packageName)
+        // 已配对的 common 声明离开导出视图，但平台注解检查仍读取其真实声明元数据。
+        family.matchedCommonForSpecific.values.flatten().forEach { counterpart ->
+            prepareHeader(counterpart.symbol.getDeclarationMetadataOwner())
+        }
         family.packageDeclarationsForExport().forEach { prepare(it, family) }
     }
 }

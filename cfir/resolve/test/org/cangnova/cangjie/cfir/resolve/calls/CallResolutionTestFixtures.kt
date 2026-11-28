@@ -228,7 +228,6 @@ object CallResolutionTestFixtures {
         parameterNames: List<String>? = null,
         parameterNamed: List<Boolean>? = null,
         parameterDefaults: List<Boolean>? = null,
-        parameterIsNamed: List<Boolean>? = null,
         typeParameters: List<CfirTypeParameter> = emptyList(),
     ): CfirNamedFunctionSymbol {
         val symbol = CfirNamedFunctionSymbol(CallableId(FqName.ROOT, Name.identifier(name)))
@@ -239,7 +238,6 @@ object CallResolutionTestFixtures {
                 type = type,
                 isNamed = parameterNamed?.getOrNull(index) ?: false,
                 hasDefault = parameterDefaults?.getOrNull(index) ?: false,
-                isNamed = parameterIsNamed?.getOrNull(index) ?: false,
                 containingDeclarationSymbol = symbol,
             )
         }

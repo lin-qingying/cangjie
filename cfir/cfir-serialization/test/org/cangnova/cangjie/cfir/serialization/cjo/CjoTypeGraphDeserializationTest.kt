@@ -404,7 +404,7 @@ class CjoTypeGraphDeserializationTest {
                 assertParameter(imported, parameter.symbol)
                 assertSame(q2, parameter.moduleData)
                 assertSame(parameter.symbol, assertIs<ConeTypeParameterType>(imported).lookupTag.typeParameterSymbol)
-                assertEquals(selected.sourcePath, context.importedPackageIndices[0]?.sourcePath)
+                assertEquals(selected.sourcePath, context.importedPackageIndices[0]?.context?.sourcePath)
                 assertSame(imported, CfirTypeDeserializer(context).deserializeType(0))
                 val other = assertIs<CfirTypeParameter>(provider.deserializeCjoDeclaration(q1Path, "parent", 1))
                 assertSame(q1, other.moduleData)

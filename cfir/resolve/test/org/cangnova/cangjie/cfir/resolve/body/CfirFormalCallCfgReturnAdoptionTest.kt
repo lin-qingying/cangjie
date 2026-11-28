@@ -150,7 +150,7 @@ class CfirFormalCallCfgReturnAdoptionTest {
             b.exitFunctionCall(original, callCompleted = true)
             returnStatement?.let(b::exitJump)
             b.exitBlock(body)
-            graph = b.exitAnonymousFunction(lambda).third
+            graph = b.exitFunction(lambda).second
             lambda.replaceControlFlowGraphReference(CfirControlFlowGraphReferenceImpl(graph))
             val atom = checkNotNull(ConeResolutionAtom.createRawAtom(expression))
             val info = CallInfo(callSite = outer, callKind = CallKind.Function, name = Name.identifier("acceptLambda"),

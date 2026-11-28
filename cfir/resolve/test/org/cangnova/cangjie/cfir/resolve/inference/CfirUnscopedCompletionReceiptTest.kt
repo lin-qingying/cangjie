@@ -26,6 +26,7 @@ import org.cangnova.cangjie.cfir.resolve.inference.model.ConeFixVariableConstrai
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityChecker
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.resolve.substitution.asCone
+import org.cangnova.cangjie.cfir.resolve.substitution.substitutorByMap
 import org.cangnova.cangjie.cfir.session.CfirBuiltinTypes
 import org.cangnova.cangjie.cfir.resolve.transformers.ReturnTypeCalculator
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.BodyResolveContext
@@ -852,7 +853,7 @@ class CfirUnscopedCompletionReceiptTest {
         first.candidate.system.registerVariable(replacement)
         first.candidate.system.fixVariable(replacement, ConePrimitiveType.INT32, ConeFixVariableConstraintPosition(replacement))
         first.candidate.initializeSubstitutorAndVariables(
-            CfirTypeSubstitutorByMap(mapOf(f.parameter.symbol.toLookupTag() to replacement.defaultType)), listOf(replacement))
+            substitutorByMap(mapOf(f.parameter.symbol to replacement.defaultType), f.session), listOf(replacement))
         assertNotSame(f.variable, replacement)
         val second = f.child(first.call)
         f.install(second)
@@ -1236,7 +1237,7 @@ class CfirUnscopedCompletionReceiptTest {
             val call = carrier ?: call()
             val candidate = candidate(call, work, system.captureStorage())
             candidate.initializeSubstitutorAndVariables(
-                CfirTypeSubstitutorByMap(mapOf(parameter.symbol.toLookupTag() to variable.defaultType)), listOf(variable))
+                substitutorByMap(mapOf(parameter.symbol to variable.defaultType), session), listOf(variable))
             assertNull(candidate.implicitTypeComputationScope)
             return Call(call, candidate).also { if (carrier == null) install(it) }
         }

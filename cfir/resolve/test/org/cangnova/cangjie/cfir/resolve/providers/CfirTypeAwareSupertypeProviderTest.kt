@@ -134,7 +134,7 @@ class CfirTypeAwareSupertypeProviderTest {
         val (session, module) = ExtendTestFixtures.newSessionAndModule()
         val core = CoreModel(module)
         session.register(CfirCangJieScopeProvider::class, CfirCangJieScopeProvider())
-        val arrayDeclaration = requireNotNull(CfirBuiltinSymbolProvider(session)
+        val arrayDeclaration = requireNotNull(CfirBuiltinSymbolProvider(session, module)
             .getClassLikeSymbolByClassId(StdlibClassIds.RawArray)).cfir
         val interfaceId = ClassId(FqName("sample.rawlayout"), Name.identifier("ElementView"))
         val interfaceParameter = ExtendTestFixtures.newTypeParameter(module, "Element")

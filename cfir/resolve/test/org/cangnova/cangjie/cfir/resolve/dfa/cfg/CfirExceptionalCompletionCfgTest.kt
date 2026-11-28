@@ -178,7 +178,7 @@ class CfirExceptionalCompletionCfgTest {
         f.builder.enterBlock(checkNotNull(lambda.body))
         val thrown = f.builder.exitThrowExceptionNode(f.thrown)
         f.builder.exitBlock(checkNotNull(lambda.body))
-        val lambdaGraph = f.builder.exitAnonymousFunction(lambda).third
+        val lambdaGraph = f.builder.exitFunction(lambda).second
         f.builder.exitBlock(t.tryBlock)
         f.builder.exitTryMainBlock()
         val definitionCatch = f.catchBody(t.catches.single())
@@ -340,7 +340,7 @@ class CfirExceptionalCompletionCfgTest {
         f.builder.enterBlock(checkNotNull(lambda.body))
         val thrown = f.builder.exitThrowExceptionNode(f.thrown)
         f.builder.exitBlock(checkNotNull(lambda.body))
-        f.builder.exitAnonymousFunction(lambda)
+        f.builder.exitFunction(lambda)
         f.builder.exitBlock(t.tryBlock)
         f.builder.exitTryMainBlock()
         val caught = f.catchBody(t.catches.single())
@@ -382,7 +382,7 @@ class CfirExceptionalCompletionCfgTest {
         val outerFinally = f.finallyBody(outer)
         f.builder.exitTryExpression(true)
         f.builder.exitBlock(checkNotNull(lambda.body))
-        val graph = f.builder.exitAnonymousFunction(lambda).third
+        val graph = f.builder.exitFunction(lambda).second
         lambda.replaceControlFlowGraphReference(org.cangnova.cangjie.cfir.resolve.dfa.CfirControlFlowGraphReferenceImpl(graph))
         val returns = checkNotNull(f.builder.returnExpressionsOfAnonymousFunction(lambda))
         assertSame(returnedValue, returns.single().expression)
@@ -460,7 +460,7 @@ class CfirExceptionalCompletionCfgTest {
         f.finallyBody(t) { f.builder.exitThrowExceptionNode(f.thrown) }
         f.builder.exitTryExpression(true)
         f.builder.exitBlock(checkNotNull(lambda.body))
-        val graph = f.builder.exitAnonymousFunction(lambda).third
+        val graph = f.builder.exitFunction(lambda).second
         lambda.replaceControlFlowGraphReference(org.cangnova.cangjie.cfir.resolve.dfa.CfirControlFlowGraphReferenceImpl(graph))
         assertTrue(checkNotNull(f.builder.returnExpressionsOfAnonymousFunction(lambda)).isEmpty())
         assertTrue(checkNotNull(f.builder.returnExpressionsOfFunction(lambda)).isEmpty())
@@ -494,7 +494,7 @@ class CfirExceptionalCompletionCfgTest {
         f.finallyBody(t) { f.builder.enterJump(newReturn); f.builder.exitJump(newReturn) }
         f.builder.exitTryExpression(true)
         f.builder.exitBlock(checkNotNull(lambda.body))
-        val graph = f.builder.exitAnonymousFunction(lambda).third
+        val graph = f.builder.exitFunction(lambda).second
         lambda.replaceControlFlowGraphReference(org.cangnova.cangjie.cfir.resolve.dfa.CfirControlFlowGraphReferenceImpl(graph))
         val arguments = checkNotNull(f.builder.returnExpressionsOfAnonymousFunction(lambda))
         assertSame(newValue, arguments.single().expression)
@@ -520,7 +520,7 @@ class CfirExceptionalCompletionCfgTest {
         val tail = f.call(f.classType("Box2")).fir
         checkNotNull(lambda.body).replaceStatements(listOf(t, tail))
         f.builder.exitBlock(checkNotNull(lambda.body))
-        val graph = f.builder.exitAnonymousFunction(lambda).third
+        val graph = f.builder.exitFunction(lambda).second
         lambda.replaceControlFlowGraphReference(org.cangnova.cangjie.cfir.resolve.dfa.CfirControlFlowGraphReferenceImpl(graph))
         val arguments = checkNotNull(f.builder.returnExpressionsOfAnonymousFunction(lambda))
         assertSame(tail, arguments.single().expression)
@@ -606,7 +606,7 @@ class CfirExceptionalCompletionCfgTest {
             call.fir.replaceConeTypeOrNull(ConePrimitiveType.NOTHING)
             val graph = when (kind) {
                 "function" -> f.builder.exitFunction(f.owner).second
-                "lambda" -> f.builder.exitAnonymousFunction(lambda).third
+                "lambda" -> f.builder.exitFunction(lambda).second
                 "field" -> f.builder.exitFieldInitializer().second
                 "default" -> f.builder.exitDefaultArguments().second
                 else -> f.builder.exitCodeFragment().second
@@ -638,7 +638,7 @@ class CfirExceptionalCompletionCfgTest {
         copier.finish()
         f.builder = resumed
         childCall.fir.replaceConeTypeOrNull(ConePrimitiveType.NOTHING)
-        val childGraph = f.builder.exitAnonymousFunction(child).third
+        val childGraph = f.builder.exitFunction(child).second
         assertNotSame(originalChildGraph, childGraph)
         assertFalse(reachable(copiedChildCall, childGraph.exitNode, normalOnly = true))
         assertTrue(reachable(copiedChildCall, checkNotNull(childGraph.exceptionExitNode)))
@@ -667,7 +667,7 @@ class CfirExceptionalCompletionCfgTest {
             f.builder.enterBlock(checkNotNull(child.body))
             f.builder.exitThrowExceptionNode(f.thrown)
             f.builder.exitBlock(checkNotNull(child.body))
-            childGraph = f.builder.exitAnonymousFunction(child).third
+            childGraph = f.builder.exitFunction(child).second
         }
         f.builder.exitTryExpression(true)
         f.finish()
@@ -750,7 +750,7 @@ class CfirExceptionalCompletionCfgTest {
         f.builder.exitBlock(outer.tryBlock); f.builder.exitTryMainBlock()
         f.finallyBody(outer); f.builder.exitTryExpression(true)
         f.builder.exitBlock(checkNotNull(lambda.body))
-        val graph = f.builder.exitAnonymousFunction(lambda).third
+        val graph = f.builder.exitFunction(lambda).second
         lambda.replaceControlFlowGraphReference(org.cangnova.cangjie.cfir.resolve.dfa.CfirControlFlowGraphReferenceImpl(graph))
         val info = checkNotNull(f.builder.returnExpressionsOfAnonymousFunction(lambda)).single()
         assertSame(newValue, info.expression)
@@ -837,10 +837,10 @@ class CfirExceptionalCompletionCfgTest {
             f.builder.enterBlock(checkNotNull(child.body))
             val thrown = f.builder.exitThrowExceptionNode(f.thrown)
             f.builder.exitBlock(checkNotNull(child.body))
-            val childGraph = f.builder.exitAnonymousFunction(child).third
+            val childGraph = f.builder.exitFunction(child).second
             val boundary = when (kind) {
                 "function" -> f.builder.exitFunction(f.owner).second
-                "lambda" -> f.builder.exitAnonymousFunction(enclosingLambda).third
+                "lambda" -> f.builder.exitFunction(enclosingLambda).second
                 "field" -> f.builder.exitFieldInitializer().second
                 "default" -> f.builder.exitDefaultArguments().second
                 else -> f.builder.exitCodeFragment().second
@@ -891,7 +891,7 @@ class CfirExceptionalCompletionCfgTest {
         f.builder.exitJump(statement)
         val deadThrow = f.builder.exitThrowExceptionNode(f.thrown)
         f.builder.exitBlock(checkNotNull(child.body))
-        val childGraph = f.builder.exitAnonymousFunction(child).third
+        val childGraph = f.builder.exitFunction(child).second
         val boundary = f.finish()
         val exceptionalExit = checkNotNull(boundary.exceptionExitNode)
         assertTrue(deadThrow.isDead)
@@ -938,7 +938,7 @@ class CfirExceptionalCompletionCfgTest {
         copier.finish()
         f.builder = resumed
         f.builder.exitBlock(checkNotNull(child.body))
-        val childGraph = f.builder.exitAnonymousFunction(child).third
+        val childGraph = f.builder.exitFunction(child).second
         f.builder.exitBlock(checkNotNull(t.finallyBlock))
         f.builder.exitFinallyBlock()
         f.builder.exitTryExpression(true)
@@ -1002,11 +1002,14 @@ class CfirExceptionalCompletionCfgTest {
         f.builder.enterBlock(checkNotNull(child.body))
         val thrown = f.builder.exitThrowExceptionNode(f.thrown)
         f.builder.exitBlock(checkNotNull(child.body))
-        val (childExit, postponedExit, childGraph) = f.builder.exitAnonymousFunction(child)
+        val (childExit, childGraph) = f.builder.exitFunction(child)
         child.replaceControlFlowGraphReference(org.cangnova.cangjie.cfir.resolve.dfa.CfirControlFlowGraphReferenceImpl(childGraph))
         f.builder.exitCallArguments()
         f.builder.enterFunctionCall(call)
-        val callExit = f.builder.exitFunctionCall(call, true)
+        val completedCall = f.builder.exitFunctionCall(call, true)
+        val callExit = completedCall.value
+        val postponedExit = completedCall.lambdaExitNodes.filterIsInstance<PostponedLambdaExitNode>()
+            .singleOrNull { it.fir === expression }
         val boundary = f.finish()
         val exceptionalExit = checkNotNull(boundary.exceptionExitNode)
         val paths = ControlFlowGraphCompletionTraversal(boundary).collect(Unit, { _, state -> state }, { _, _ -> Unit }).keys
@@ -1081,7 +1084,7 @@ class CfirExceptionalCompletionCfgTest {
             builder.enterCallArguments(call, emptyList())
             builder.exitCallArguments()
             builder.enterFunctionCall(call)
-            return builder.exitFunctionCall(call, completed)
+            return builder.exitFunctionCall(call, completed).value
         }
         fun catchBody(clause: CfirCatch, action: () -> Unit = {}): CatchClauseEnterNode {
             val entry = builder.enterCatchClause(clause)
