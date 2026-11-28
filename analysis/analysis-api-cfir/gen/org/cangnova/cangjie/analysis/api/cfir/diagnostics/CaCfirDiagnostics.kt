@@ -1165,6 +1165,10 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
         override val diagnosticClass get() = CoreObjectNotFoundWhenNoPrelude::class
     }
 
+    interface NoCoreObject : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = NoCoreObject::class
+    }
+
     interface AccessibilityWithMainHint : CaCfirDiagnostic<PsiElement> {
         override val diagnosticClass get() = AccessibilityWithMainHint::class
         val declarationKind: String

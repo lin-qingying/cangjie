@@ -1,6 +1,6 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
-import org.cangnova.cangjie.cfir.patterns.ownerQualifier
+import org.cangnova.cangjie.cfir.declarations.ownerQualifier
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.hasInvalidGenericTypeArgument

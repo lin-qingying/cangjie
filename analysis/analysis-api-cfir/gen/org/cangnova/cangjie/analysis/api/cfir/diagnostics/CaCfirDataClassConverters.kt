@@ -1319,6 +1319,12 @@ private fun CaDiagnosticConverterBuilder.addConversions49() {
             token,
         )
     }
+    add(CfirErrors.NO_CORE_OBJECT) { cfirDiagnostic ->
+        NoCoreObjectImpl(
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
 }
 
 private fun CaDiagnosticConverterBuilder.addConversions50() {

@@ -1393,6 +1393,11 @@ internal class CoreObjectNotFoundWhenNoPreludeImpl(
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.CoreObjectNotFoundWhenNoPrelude
 
+internal class NoCoreObjectImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.NoCoreObject
+
 internal class AccessibilityWithMainHintImpl(
     override val declarationKind: String,
     override val memberName: Name,

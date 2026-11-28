@@ -379,8 +379,9 @@ class CfirResolutionSnapshot private constructor(
                                     if (element.contentSource === CfirContentSource.Owned) {
                                         variableInitializers[element] = element.ownedInitializer
                                     }
-                                is CfirFieldVariable, is CfirPatternVariable, is CfirResourceVariable, is CfirValueParameter ->
+                                is CfirFieldVariable, is CfirPatternVariable, is CfirResourceVariable ->
                                     variableInitializers[element] = element.initializer
+                                is CfirValueParameter -> Unit
                             }
                         }
                         if (element is CfirArgumentList) {
