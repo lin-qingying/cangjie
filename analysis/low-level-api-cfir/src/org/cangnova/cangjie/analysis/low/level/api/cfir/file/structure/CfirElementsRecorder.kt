@@ -16,6 +16,7 @@ import org.cangnova.cangjie.cfir.patterns.CfirBindingPattern
 import org.cangnova.cangjie.cfir.patterns.CfirEnumPattern
 import org.cangnova.cangjie.cfir.patterns.CfirTypePattern
 import org.cangnova.cangjie.cfir.patterns.CfirVarOrEnumPattern
+import org.cangnova.cangjie.cfir.patterns.simpleVariableBindingOrNull
 import org.cangnova.cangjie.cfir.references.*
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.cfir.types.impl.CfirResolvedTypeRefImpl
@@ -81,6 +82,9 @@ internal open class CfirElementsRecorder : CfirVisitor<Unit, MutableMap<CjElemen
         cacheElement(element, data)
         element.acceptChildren(this, data)
     }
+
+    /** 惰性块尚无可记录的源码节点，必须在函数体解析后建立内部映射。 */
+    override fun visitLazyBlock(lazyBlock: CfirLazyBlock, data: MutableMap<CjElement, CfirElement>) = Unit
 
     /**
      * 记录 where/type constraint 中 subject 名称到类型参数声明的映射。
@@ -151,18 +155,19 @@ internal open class CfirElementsRecorder : CfirVisitor<Unit, MutableMap<CjElemen
             is CjVarOrEnumPattern -> psi.reference
             else -> null
         }
-        reference?.let { cache(it, enumPattern.constructorReference, data) }
+        val constructorReference = enumPattern.constructorReference
+        if (reference != null && constructorReference != null) cache(reference, constructorReference, data)
     }
 
     /**
-     * 记录 type pattern 到语义绑定变量，并访问类型引用。
+     * Type 的绑定属于真实 inner；外层语法映射与 inner 的名字/类型遍历分别保留。
      */
     override fun visitTypePattern(typePattern: CfirTypePattern, data: MutableMap<CjElement, CfirElement>) {
         typePattern.typeRef.accept(this, data)
-        typePattern.bindingVariable?.accept(this, data)
+        typePattern.nestedPattern.accept(this, data)
         // 派生 returnTypeRef 可能复用同一模式 source；完成 children 后再登记规范 binder，
         // 防止该类型节点覆盖模式/名字的声明身份。type child 仍保留自己的独立映射。
-        recordPatternBindingVariable(typePattern, typePattern.bindingVariable, data)
+        recordPatternBindingVariable(typePattern, typePattern.nestedPattern.simpleVariableBindingOrNull(), data)
     }
 
     //@formatter:off
@@ -257,12 +262,12 @@ internal open class CfirElementsRecorder : CfirVisitor<Unit, MutableMap<CjElemen
 
     override fun visitCatchPattern(catchPattern: org.cangnova.cangjie.cfir.patterns.CfirCatchPattern, data: MutableMap<CjElement, CfirElement>) {
         catchPattern.acceptChildren(this, data)
-        recordPatternBindingVariable(catchPattern, catchPattern.bindingVariable, data)
+        recordPatternBindingVariable(catchPattern, catchPattern.nestedPattern.simpleVariableBindingOrNull(), data)
     }
 
     override fun visitCommandTypePattern(commandTypePattern: org.cangnova.cangjie.cfir.patterns.CfirCommandTypePattern, data: MutableMap<CjElement, CfirElement>) {
         commandTypePattern.acceptChildren(this, data)
-        recordPatternBindingVariable(commandTypePattern, commandTypePattern.bindingVariable, data)
+        recordPatternBindingVariable(commandTypePattern, commandTypePattern.nestedPattern.simpleVariableBindingOrNull(), data)
     }
 
     override fun visitResourceVariable(resourceVariable: org.cangnova.cangjie.cfir.declarations.CfirResourceVariable, data: MutableMap<CjElement, CfirElement>) {

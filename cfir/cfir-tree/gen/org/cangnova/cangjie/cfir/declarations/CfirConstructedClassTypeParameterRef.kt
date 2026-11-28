@@ -6,6 +6,7 @@
 package org.cangnova.cangjie.cfir.declarations
 
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.CfirPureAbstractElement
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
@@ -19,10 +20,18 @@ abstract class CfirConstructedClassTypeParameterRef : CfirPureAbstractElement(),
     abstract override val source: CjSourceElement?
     abstract override val symbol: CfirTypeParameterSymbol
 
+    /** 访问本节点拥有的完整来源子图；独立于 ordinary visitor 的语法子树。 */
+    @CfirImplementationDetail
+    override fun <R, D> acceptSourceChildren(visitor: CfirVisitor<R, D>, data: D) {
+    }
+
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitConstructedClassTypeParameterRef(this, data)
 
     @Suppress("UNCHECKED_CAST")
     override fun <E : CfirElement, D> transform(transformer: CfirTransformer<D>, data: D): E =
         transformer.transformConstructedClassTypeParameterRef(this, data) as E
+
+    @CfirImplementationDetail
+    abstract override fun replaceSource(newSource: CjSourceElement?)
 }

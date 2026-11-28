@@ -34,6 +34,7 @@ import com.intellij.psi.stubs.IStubElementType
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.IncorrectOperationException
 import org.cangnova.cangjie.psi.stubs.CangJieFunctionStub
+import org.cangnova.cangjie.psi.stubs.CangJieFileStub
 
 /**
  * 表示 `CjFunctionImpl`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
@@ -51,6 +52,10 @@ abstract class CjFunctionImpl<Stub: CangJieFunctionStub<F>,F: CjFunction> :
      */
     override val valueParameterList: CjParameterList?
         get() = getStubOrPsiChild(CjStubElementTypes.VALUE_PARAMETER_LIST)
+
+    /** 直接读取同一 stub/PSI owner 的全部列表，不为重复列表丢弃参数。 */
+    override val valueParameterLists: List<CjParameterList>
+        get() = getStubOrPsiChildrenAsList(CjStubElementTypes.VALUE_PARAMETER_LIST)
 
     /**
      * 实现 `toString` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
@@ -233,17 +238,23 @@ abstract class CjFunctionImpl<Stub: CangJieFunctionStub<F>,F: CjFunction> :
      * 暴露 `valueParameters`，实现仓颉 PSI节点对上层接口的属性契约。
      */
     override val valueParameters: List<CjParameter>
-        get() {
-
-            val list = valueParameterList
-            return list?.parameters ?: emptyList()
-        }
+        get() = valueParameterLists.flatMap { it.parameters }
 
     /**
      * 暴露 `isLocal`，实现仓颉 PSI节点对上层接口的属性契约。
      */
     override val isLocal: Boolean
         get() {
+            val functionStub = stub
+            if (functionStub != null) {
+                // 文件 stub 可尚未关联 PSI；局部性由实际直接容器决定，不能借空 parent PSI 推断。
+                val owner = functionStub.parentStub
+                return owner !is CangJieFileStub &&
+                    owner.stubType != CjStubElementTypes.CLASS_BODY &&
+                    owner.stubType != CjStubElementTypes.INTERFACE_BODY &&
+                    owner.stubType != CjStubElementTypes.ENUM_BODY &&
+                    owner.stubType != CjStubElementTypes.FOREIGN_BODY
+            }
             val parent = parent
             return !(parent is CjFile || parent is CjAbstractClassBody || parent is CjForeignBody)
         }

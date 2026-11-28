@@ -17,6 +17,7 @@ import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.expressions.impl.CfirAnnotationArgumentMappingImpl
 import org.cangnova.cangjie.cfir.expressions.impl.CfirEmptyAnnotationArgumentMapping
+import org.cangnova.cangjie.cfir.patterns.CfirPattern
 import org.cangnova.cangjie.cfir.patterns.CfirPatternTreeOwner
 import org.cangnova.cangjie.cfir.patterns.CfirTypePatternMatchingKind
 import org.cangnova.cangjie.cfir.scopes.CfirScopeProvider
@@ -46,6 +47,14 @@ class CfirDefaultRawCopyContext(
     private val types = CfirRawTypeCopier(state, ::diagnostic, ::borrowedHandle)
 
     override fun validateRawNode(source: CfirElement) {
+        // 先验证内容来源，避免扫描时访问来自 Library 快照的 getter。
+        if (source is CfirDeclaration) contentSource(source.contentSource)
+        if (source is CfirExpression) check(source.mappedExpression == null) {
+            "RAW cannot import a published expression mapping"
+        }
+        if (source is CfirPattern) check(source.contextExpression == null) {
+            "RAW cannot import a published pattern context back-reference"
+        }
         if (source is CfirElementWithResolveState) {
             check(source.resolveState is CfirResolvedToPhaseState && source.resolveState.resolvePhase == CfirResolvePhase.RAW_CFIR) {
                 "RAW copier cannot import resolved/in-progress declaration state: ${source.resolveState}"
@@ -115,6 +124,7 @@ class CfirDefaultRawCopyContext(
             is CfirExtendSymbol -> CfirExtendSymbol()
             is CfirEnumConstructorSymbol -> CfirEnumConstructorSymbol(symbol.callableId)
             is CfirInvalidDeclarationSymbol -> CfirInvalidDeclarationSymbol()
+            is CfirMacroExpansionDeclarationSymbol -> CfirMacroExpansionDeclarationSymbol()
         }
         state.registerDeclaredSymbol(owner, symbol, fresh)
         if (symbol is CfirClassLikeSymbol<*> && fresh is CfirClassLikeSymbol<*>) {
@@ -163,6 +173,8 @@ class CfirDefaultRawCopyContext(
             CfirRawCopyMetadataKind.TYPE_PATTERN_KIND -> typePatternKind(value as CfirTypePatternMatchingKind)
             CfirRawCopyMetadataKind.ASSIGNMENT_MISMATCH -> error("RAW cannot import a resolved assignment mismatch")
             CfirRawCopyMetadataKind.ANNOTATION_IDENTITY -> annotationIdentity(value as CangjieAnnotationIdentity)
+            CfirRawCopyMetadataKind.CONTENT_SOURCE -> contentSource(value as CfirContentSource)
+            CfirRawCopyMetadataKind.PATTERN_CONSTANT -> patternConstant(value as CfirConstantValue)
         }
     }
 
@@ -186,6 +198,14 @@ class CfirDefaultRawCopyContext(
             }
         }
     }
+
+    override fun contentSource(value: CfirContentSource): CfirContentSource.Owned {
+        check(value === CfirContentSource.Owned) { "RAW cannot import published declaration content" }
+        return CfirContentSource.Owned
+    }
+
+    override fun patternConstant(value: CfirConstantValue): CfirConstantValue =
+        error("RAW cannot import a published pattern constant")
 
     override fun source(value: CjSourceElement): CjSourceElement = value
     override fun moduleData(value: CfirModuleData): CfirModuleData = borrowedHandle(value)

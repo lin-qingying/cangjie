@@ -7,8 +7,11 @@ import org.cangnova.cangjie.chir.core.controlflow.ChirUnwindTerminator
 import org.cangnova.cangjie.chir.core.declaration.ChirFunctionDeclaration
 import org.cangnova.cangjie.chir.core.expression.ChirBinaryExpression
 import org.cangnova.cangjie.chir.core.expression.ChirCallExpression
+import org.cangnova.cangjie.chir.core.expression.ChirConstantExpression
+import org.cangnova.cangjie.chir.core.expression.ChirFieldExpression
 import org.cangnova.cangjie.chir.core.expression.ChirMemoryExpression
 import org.cangnova.cangjie.chir.core.expression.ChirOtherExpression
+import org.cangnova.cangjie.chir.core.expression.ChirTupleExpression
 import org.cangnova.cangjie.chir.core.expression.ChirUnaryExpression
 import org.cangnova.cangjie.chir.core.identity.ChirSemanticId
 import org.cangnova.cangjie.chir.core.type.ChirTypeRef
@@ -23,10 +26,11 @@ object ChirReachabilityAnalysis {
      * 计算函数入口可达的基本块标识集合。
      */
     fun reachableBlocks(function: ChirFunctionDeclaration): Set<ChirSemanticId> {
+        require(function.hasBody) { "cannot analyze reachability for bodyless function ${function.semanticId}" }
         val blockById = function.blocks.associateBy { it.semanticId }
         val visited = linkedSetOf<ChirSemanticId>()
         val worklist = ArrayDeque<ChirSemanticId>()
-        worklist += function.entryBlockId
+        worklist += requireNotNull(function.entryBlockId) { "bodyful function ${function.semanticId} has no entry block" }
 
         while (worklist.isNotEmpty()) {
             val current = worklist.removeFirst()
@@ -88,12 +92,16 @@ object ChirConstValueAnalysis {
                     }
                     is ChirCallExpression -> {
                         collectValue(expression.callee, map)
+                        expression.dispatchReceiver?.let { collectValue(it, map) }
                         expression.arguments.forEach { collectValue(it, map) }
                     }
+                    is ChirTupleExpression -> expression.elements.forEach { collectValue(it, map) }
+                    is ChirFieldExpression -> collectValue(expression.base, map)
                     is ChirMemoryExpression -> {
                         collectValue(expression.address, map)
                         expression.value?.let { collectValue(it, map) }
                     }
+                    is ChirConstantExpression -> collectValue(expression.value, map)
                     is ChirOtherExpression -> expression.operands.forEach { collectValue(it, map) }
                 }
             }

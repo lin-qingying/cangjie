@@ -32,7 +32,10 @@ class CfirDeclarationAttributes : AttributeArrayOwner<CfirDeclarationDataKey, An
     /**
      * 创建空的声明属性容器。
      */
-    constructor() : super()
+    constructor() : super() {
+        // 初始事实走与其他声明附加事实相同的 registry；不存在 unknown→默认值的读取旁路。
+        registerComponent(CfirDeclarationExportFactsKey::class, CfirDeclarationExportFacts())
+    }
 
     /**
      * 基于已有数组映射创建副本容器。
@@ -61,6 +64,18 @@ class CfirDeclarationAttributes : AttributeArrayOwner<CfirDeclarationDataKey, An
      */
     fun copy(): CfirDeclarationAttributes = CfirDeclarationAttributes(arrayMap.copy())
 
+    /** 复制框架按注册键枚举原值，不通过反射猜测 payload 字段。 */
+    internal fun forEachOwnedCopyEntry(action: (String, Any) -> Unit) {
+        typeRegistry.allValuesThreadUnsafeForRendering().forEach { (key, id) ->
+            arrayMap[id]?.let { action(key, it) }
+        }
+    }
+
+    /** 只在复制产品发布前写入；所有 payload 由显式所有权协议复制。 */
+    internal fun putOwnedCopyEntry(key: String, value: Any) {
+        registerComponent(key, value)
+    }
+
     /** 按真实非空槽位导出 RAW policy 输入，检查槽数量保证没有未知值被遗漏。 */
     internal fun rawCopyEntries(): List<Pair<Int, Any>> {
         val entries = CfirDeclarationDataRegistry.rawCopySlots().mapNotNull { slot ->
@@ -79,6 +94,11 @@ class CfirDeclarationAttributes : AttributeArrayOwner<CfirDeclarationDataKey, An
          *
          * 这里每次返回新实例，而不是共享单例，避免调用方对空属性容器写入时污染其他声明。
          */
+        internal fun emptyForOwnedCopy(): CfirDeclarationAttributes =
+            CfirDeclarationAttributes().also { attributes ->
+                attributes.removeComponent(CfirDeclarationExportFactsKey::class)
+            }
+
         val EMPTY: CfirDeclarationAttributes
             get() = CfirDeclarationAttributes()
     }
@@ -91,6 +111,12 @@ class CfirDeclarationAttributes : AttributeArrayOwner<CfirDeclarationDataKey, An
  * 在不同宿主对象上访问的是同一数组槽位。
  */
 object CfirDeclarationDataRegistry : ConeTypeRegistry<CfirDeclarationDataKey, Any>() {
+    init {
+        // 默认事实可在首次属性访问之前进入 RAW 复制，必须先登记实际 slot 的复制策略。
+        val key = CfirDeclarationExportFactsKey
+        org.cangnova.cangjie.cfir.CfirRawDeclarationDataRegistry.register(key, getId(key::class))
+    }
+
     /** 源声明由调用者持锁；全局槽 ID 稳定，复制只读取源容器中的非空值。 */
     internal fun rawCopySlots(): List<Int> = indices.toList()
 

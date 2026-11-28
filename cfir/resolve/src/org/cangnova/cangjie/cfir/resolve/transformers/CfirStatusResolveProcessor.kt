@@ -24,33 +24,20 @@
 
 package org.cangnova.cangjie.cfir.resolve.transformers
 
-import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
-import org.cangnova.cangjie.annotations.CangjieCallingConvention
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.withFileAnalysisExceptionWrapping
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.builder.buildResolvedDeclarationStatus
-import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
-import org.cangnova.cangjie.cfir.expressions.CfirAnnotationResolveState
-import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
-import org.cangnova.cangjie.cfir.expressions.CfirNamedArgumentExpression
-import org.cangnova.cangjie.cfir.expressions.CfirResolvedArgumentList
-import org.cangnova.cangjie.cfir.expressions.toAnnotationArgumentView
-import org.cangnova.cangjie.cfir.patterns.bindingVariables
-import org.cangnova.cangjie.cfir.scopes.unsubstitutedScope
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.session.ProcessorAction
-import org.cangnova.cangjie.cfir.session.cfirAbiPolicy
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.classId
 import org.cangnova.cangjie.cfir.types.coneType
 import org.cangnova.cangjie.cfir.visitors.transformSingle
-import org.cangnova.cangjie.descriptors.Modality
-import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.util.PrivateForInline
+import org.cangnova.cangjie.cfir.patterns.bindingVariables
 
 /**
  * CFIR STATUS 阶段的主处理器。
@@ -369,6 +356,7 @@ open class AbstractCfirStatusResolveTransformer(
                     else -> Unit
                 }
             }
+            target.resolveDeprecationsProviderIfNeeded()
             target.replaceResolvePhase(CfirResolvePhase.STATUS)
             statusComputationSession.endComputing(target)
         } catch (failure: Throwable) {
@@ -728,6 +716,7 @@ open class AbstractCfirStatusResolveTransformer(
     ): CfirPatternVariable {
         val resolvedPatternVariable = withResolvedStatusPhase(patternVariable) {
             transformVariableStatusWithoutPhaseGuard(patternVariable)
+            patternVariable.pattern.bindingVariables().forEach { it.replaceResolvePhase(CfirResolvePhase.STATUS) }
         }
         // @Deprecated 修饰的是整个 pattern variable 声明；每个绑定名都作为独立 callable symbol
         // 发布，因此需要让所有绑定声明消费同一组注解和按注解构建的弃用信息。
@@ -750,13 +739,14 @@ open class AbstractCfirStatusResolveTransformer(
      * 参数不能再回到 generic phase guard，否则会因为宿主 callable 已推进 phase 而跳过 status 发布。
      */
     fun transformValueParameterStatusWithoutPhaseGuard(valueParameter: CfirValueParameter) {
+        valueParameter.ownedDefaultParameterHelper?.transformSingle(this, null)
         valueParameter.publishResolvedStatusIfNeeded()
         valueParameter.replaceResolvePhase(CfirResolvePhase.STATUS)
         statusComputationSession.endComputing(valueParameter)
     }
 
     /**
-     * 只计算并发布变量自身 STATUS。
+     * 计算变量声明头的 STATUS；模式外壳同时拥有原始 binding 的声明头。
      *
      * 仓颉的 pattern variable / pattern binding variable 是可被符号恢复直接消费的
      * `CfirVariable`，但 Kotlin FIR 没有同名节点；它们在 STATUS 阶段对位 Kotlin
@@ -764,6 +754,11 @@ open class AbstractCfirStatusResolveTransformer(
      */
     fun transformVariableStatusWithoutPhaseGuard(variable: CfirVariable) {
         variable.replaceStatus(statusResolver.resolveStatus(variable, containingClass, isLocal = false))
+        if (variable is CfirPatternVariable) {
+            variable.pattern.bindingVariables().forEach { binding ->
+                transformVariableStatusWithoutPhaseGuard(binding)
+            }
+        }
     }
 
     /** 推进类型参数 bounds 并发布类型参数 STATUS phase。 */
@@ -837,525 +832,4 @@ private fun CfirMemberDeclaration.publishResolvedStatusIfNeeded() {
             modality = currentModality
         }
     )
-}
-
-/**
- * 在 STATUS 阶段发布声明级 FFI 元数据。
- *
- * `isForeign` 是现有声明修饰符，保留在 status；显式 `@C`、Java/ObjC 标记、
- * 外部名称和当前 ABI 结果集中保存到 [CfirInteropInfo]。该快照由后续类型、checker、
- * Analysis API 和 backend adapter 消费，后续阶段不再从 source 文本重新猜测。
- */
-
-/**
- * 仓颉 STATUS 主干对位 Kotlin `FirStatusResolver` 的最小同构实现。
- *
- * 当前仓颉 tree 没有 Kotlin 的 `Unknown visibility/modality` raw 状态。raw builder 已按仓颉语法
- * 把普通声明缺省可见性物化为 `internal`、interface 成员物化为 `public`；STATUS 只能解析模态等
- * 尚未稳定的事实，不能把未显式写可见性的 override/redef 改写成父成员可见性。
- */
-class CfirStatusResolver(
-    /** 查询符号、scope 和可见性规则时使用的会话。 */
-    private val session: CfirSession,
-    /** 查询成员 scope 时复用的 scope 缓存会话。 */
-    private val scopeSession: ScopeSession,
-) {
-
-    /** 查询属性在当前 class-like 容器中的直接覆盖属性。 */
-    fun getOverriddenProperties(
-        property: CfirProperty,
-        containingClass: CfirClassLikeDeclaration?,
-    ): List<CfirProperty> {
-        val scope = containingClass?.unsubstitutedScope(
-            useSiteSession = session,
-            scopeSession = scopeSession,
-            withForcedTypeCalculator = false,
-            memberRequiredPhase = null,
-        ) ?: return emptyList()
-        val result = linkedSetOf<CfirProperty>()
-        scope.processDirectOverriddenPropertiesWithBaseScope(property.symbol) { overriddenSymbol, _ ->
-            result += overriddenSymbol.cfir
-            ProcessorAction.NEXT
-        }
-        return result.toList()
-    }
-
-    /** 查询具名函数在当前 class-like 容器中的直接覆盖函数。 */
-    fun getOverriddenFunctions(
-        function: CfirNamedFunction,
-        containingClass: CfirClassLikeDeclaration?,
-    ): List<CfirNamedFunction> {
-        val scope = containingClass?.unsubstitutedScope(
-            useSiteSession = session,
-            scopeSession = scopeSession,
-            withForcedTypeCalculator = false,
-            memberRequiredPhase = null,
-        ) ?: return emptyList()
-        val result = linkedSetOf<CfirNamedFunction>()
-        scope.processDirectOverriddenFunctionsWithBaseScope(function.symbol) { overriddenSymbol, _ ->
-            result += overriddenSymbol.cfir
-            ProcessorAction.NEXT
-        }
-        return result.toList()
-    }
-
-    /** 计算 class 声明的 resolved status。 */
-    fun resolveStatus(
-        declaration: CfirClass,
-        containingClass: CfirClassLikeDeclaration?,
-        isLocal: Boolean,
-    ): CfirResolvedDeclarationStatus {
-        return resolveStatus(
-            declaration = declaration,
-            status = declaration.status,
-            containingClass = containingClass,
-            containingProperty = null,
-            isLocal = isLocal,
-        )
-    }
-
-    /** 计算 interface 声明的 resolved status。 */
-    fun resolveStatus(
-        declaration: CfirInterface,
-        containingClass: CfirClassLikeDeclaration?,
-        isLocal: Boolean,
-    ): CfirResolvedDeclarationStatus {
-        return resolveStatus(
-            declaration = declaration,
-            status = declaration.status,
-            containingClass = containingClass,
-            containingProperty = null,
-            isLocal = isLocal,
-        )
-    }
-
-    /** 计算 struct 声明的 resolved status。 */
-    fun resolveStatus(
-        declaration: CfirStruct,
-        containingClass: CfirClassLikeDeclaration?,
-        isLocal: Boolean,
-    ): CfirResolvedDeclarationStatus {
-        return resolveStatus(
-            declaration = declaration,
-            status = declaration.status,
-            containingClass = containingClass,
-            containingProperty = null,
-            isLocal = isLocal,
-        )
-    }
-
-    /** 计算 enum 声明的 resolved status。 */
-    fun resolveStatus(
-        declaration: CfirEnum,
-        containingClass: CfirClassLikeDeclaration?,
-        isLocal: Boolean,
-    ): CfirResolvedDeclarationStatus {
-        return resolveStatus(
-            declaration = declaration,
-            status = declaration.status,
-            containingClass = containingClass,
-            containingProperty = null,
-            isLocal = isLocal,
-        )
-    }
-
-    /** 计算 typealias 声明的 resolved status。 */
-    fun resolveStatus(
-        declaration: CfirTypeAlias,
-        containingClass: CfirClassLikeDeclaration?,
-        isLocal: Boolean,
-    ): CfirResolvedDeclarationStatus {
-        return resolveStatus(
-            declaration = declaration,
-            status = declaration.status,
-            containingClass = containingClass,
-            containingProperty = null,
-            isLocal = isLocal,
-        )
-    }
-
-    /** 计算非具名函数类声明的 resolved status。 */
-    fun resolveStatus(
-        declaration: CfirFunction,
-        containingClass: CfirClassLikeDeclaration?,
-        isLocal: Boolean,
-    ): CfirResolvedDeclarationStatus {
-        return resolveStatus(
-            declaration = declaration,
-            status = declaration.status,
-            containingClass = containingClass,
-            containingProperty = null,
-            isLocal = isLocal,
-        )
-    }
-
-    /** 计算普通构造器声明的 resolved status。 */
-    fun resolveStatus(
-        declaration: CfirConstructor,
-        containingClass: CfirClassLikeDeclaration?,
-        isLocal: Boolean,
-    ): CfirResolvedDeclarationStatus {
-        return resolveStatus(
-            declaration = declaration,
-            status = declaration.status,
-            containingClass = containingClass,
-            containingProperty = null,
-            isLocal = isLocal,
-        )
-    }
-
-    /** 计算 enum constructor 声明的 resolved status。 */
-    fun resolveStatus(
-        declaration: CfirEnumConstructor,
-        containingClass: CfirClassLikeDeclaration?,
-        isLocal: Boolean,
-    ): CfirResolvedDeclarationStatus {
-        return resolveStatus(
-            declaration = declaration,
-            status = declaration.status,
-            containingClass = containingClass,
-            containingProperty = null,
-            isLocal = isLocal,
-        )
-    }
-
-    /** 根据覆盖属性状态计算属性声明的 resolved status。 */
-    fun resolveStatus(
-        declaration: CfirProperty,
-        containingClass: CfirClassLikeDeclaration?,
-        isLocal: Boolean,
-        overriddenStatuses: List<CfirResolvedDeclarationStatus>,
-    ): CfirResolvedDeclarationStatus {
-        return resolveStatus(
-            declaration = declaration,
-            status = declaration.status,
-            containingClass = containingClass,
-            containingProperty = null,
-            isLocal = isLocal,
-            overriddenStatuses = overriddenStatuses,
-        )
-    }
-
-    /** 根据覆盖函数状态计算具名函数的 resolved status。 */
-    fun resolveStatus(
-        declaration: CfirNamedFunction,
-        containingClass: CfirClassLikeDeclaration?,
-        isLocal: Boolean,
-        overriddenStatuses: List<CfirResolvedDeclarationStatus>,
-    ): CfirResolvedDeclarationStatus {
-        return resolveStatus(
-            declaration = declaration,
-            status = declaration.status,
-            containingClass = containingClass,
-            containingProperty = null,
-            isLocal = isLocal,
-            overriddenStatuses = overriddenStatuses,
-        )
-    }
-
-    /** 根据所属属性和覆盖访问器状态计算属性访问器的 resolved status。 */
-    fun resolveStatus(
-        declaration: CfirPropertyAccessor,
-        containingClass: CfirClassLikeDeclaration?,
-        containingProperty: CfirProperty?,
-        isLocal: Boolean,
-        overriddenStatuses: List<CfirResolvedDeclarationStatus>,
-    ): CfirResolvedDeclarationStatus {
-        return resolveStatus(
-            declaration = declaration,
-            status = declaration.status,
-            containingClass = containingClass,
-            containingProperty = containingProperty,
-            isLocal = isLocal,
-            overriddenStatuses = overriddenStatuses,
-        )
-    }
-
-    /** 计算变量类声明的 resolved status。 */
-    fun resolveStatus(
-        declaration: CfirVariable,
-        containingClass: CfirClassLikeDeclaration?,
-        isLocal: Boolean,
-    ): CfirResolvedDeclarationStatus {
-        return resolveStatus(
-            declaration = declaration,
-            status = declaration.status,
-            containingClass = containingClass,
-            containingProperty = null,
-            isLocal = isLocal,
-        )
-    }
-
-    /** 计算 extend 容器声明的 resolved status。 */
-    fun resolveStatus(
-        declaration: CfirExtend,
-        containingClass: CfirClassLikeDeclaration?,
-        isLocal: Boolean,
-    ): CfirResolvedDeclarationStatus {
-        return resolveStatus(
-            declaration = declaration,
-            status = declaration.status,
-            containingClass = containingClass,
-            containingProperty = null,
-            isLocal = isLocal,
-        )
-    }
-
-    /**
-     * resolved status 的统一构造入口。
-     *
-     * 该函数保留 raw status 中的显式修饰符标志，并按声明种类、容器和覆盖状态补齐默认可见性与模态。
-     */
-    private fun resolveStatus(
-        declaration: CfirDeclaration,
-        status: CfirDeclarationStatus,
-        containingClass: CfirClassLikeDeclaration?,
-        containingProperty: CfirProperty?,
-        isLocal: Boolean,
-        overriddenStatuses: List<CfirResolvedDeclarationStatus> = emptyList(),
-    ): CfirResolvedDeclarationStatus {
-        if (status is CfirResolvedDeclarationStatus) return status
-
-        declaration.publishInteropInfo(session)
-
-        if (declaration.origin == CfirDeclarationOrigin.Library) {
-            return buildResolvedDeclarationStatus {
-                source = status.source
-                visibility = status.visibility
-                visibilityExplicitness = status.visibilityExplicitness
-                modalityExplicitness = status.modalityExplicitness
-                bodyPresence = status.bodyPresence
-                isDeclarationFile = status.isDeclarationFile
-                isVisibilityExplicit = status.isVisibilityExplicit
-                isModalityExplicit = status.isModalityExplicit
-                isAbstractExplicit = status.isAbstractExplicit
-                isOverride = status.isOverride
-                isOperator = status.isOperator
-                isStatic = status.isStatic
-                isConst = status.isConst
-                isMut = status.isMut
-                isUnsafe = status.isUnsafe
-                isForeign = status.isForeign
-                isC = status.isC
-                isCommon = status.isCommon
-                isFromCommonPart = status.isFromCommonPart
-                isSpecific = status.isSpecific
-                isCommonWithDefault = status.isCommonWithDefault
-                isRedef = status.isRedef
-                isDefault = status.isDefault
-                isAbstract = status.isAbstract
-                isOpen = status.isOpen
-                isSealed = status.isSealed
-                modality = checkNotNull(status.modality) { "Library declaration must have an effective modality" }
-            }
-        }
-
-        val visibility = if (status.isVisibilityExplicit) {
-            status.visibility
-        } else {
-            resolveVisibility(declaration, status, containingProperty, overriddenStatuses, isLocal)
-        }
-
-        val effectiveFlags = effectiveStatusFlags(status, declaration, containingClass)
-
-        val modality = if (effectiveFlags.isAbstract) {
-            Modality.ABSTRACT
-        } else if (effectiveFlags.modality != null) {
-            effectiveFlags.modality
-        } else {
-            resolveModality(
-                declaration,
-                containingProperty,
-                containingClass,
-                effectiveFlags.isOverride,
-            )
-        }
-
-        val resolvedIsAbstract = effectiveFlags.isAbstract ||
-                declaration is CfirCallableDeclaration && modality == Modality.ABSTRACT
-
-        return buildResolvedDeclarationStatus {
-            source = status.source
-            this.visibility = visibility
-            visibilityExplicitness = status.visibilityExplicitness
-            modalityExplicitness = effectiveFlags.modalityExplicitness
-            bodyPresence = status.bodyPresence
-            isDeclarationFile = status.isDeclarationFile
-            isVisibilityExplicit = status.isVisibilityExplicit
-            isModalityExplicit = effectiveFlags.modalityExplicitness == CfirModifierExplicitness.EXPLICIT
-            isAbstractExplicit = status.isAbstractExplicit
-            isOverride = effectiveFlags.isOverride
-            isOperator = effectiveFlags.isOperator
-            isStatic = effectiveFlags.isStatic
-            isConst = status.isConst
-            isMut = status.isMut
-            isUnsafe = status.isUnsafe
-            isForeign = status.isForeign
-            isC = declaration.interopInfo?.isC == true
-            isCommon = status.isCommon
-            isFromCommonPart = status.isFromCommonPart
-            isSpecific = status.isSpecific
-            isCommonWithDefault = status.isCommonWithDefault
-            isRedef = status.isRedef
-            isDefault = status.isDefault
-            isAbstract = resolvedIsAbstract
-            isOpen = effectiveFlags.isOpen
-            isSealed = status.isSealed
-            this.modality = modality
-        }
-    }
-
-    /**
-     * 解析默认可见性。
-     *
-     * 局部声明固定为 local，访问器继承所属属性；其它声明保留 raw builder / deserializer
-     * 已按仓颉语法写入的默认可见性。与 Kotlin 的 Unknown raw visibility 不同，仓颉 override/redef
-     * 未写可见性时 raw status 已是 internal，不能继承父成员的 public/protected。
-     */
-    private fun resolveVisibility(
-        declaration: CfirDeclaration,
-        status: CfirDeclarationStatus,
-        containingProperty: CfirProperty?,
-        overriddenStatuses: List<CfirResolvedDeclarationStatus>,
-        isLocal: Boolean,
-    ) = when {
-        isLocal -> Visibilities.Local
-        declaration is CfirPropertyAccessor && containingProperty != null -> containingProperty.status.visibility
-        else -> status.visibility
-    }
-
-    /**
-     * 解析默认模态。
-     *
-     * class-like、顶层 callable、interface 成员和 override 成员各自遵循不同默认规则。
-     *
-     * ⚠️ interface 成员的抽象性**以 raw builder 写入的 [CfirDeclarationStatus.isAbstract] 为准**，
-     * 不在这里按"有没有 body"重新推导。raw builder 的 `isAbstract` 来自
-     * `CjMemberBodyPolicy`（官方 parser 的隐式 ABSTRACT 决策），其中函数过程在 `.cj.d`
-     * 下整体跳过、属性过程不受 `parseDeclFile` 门禁；若 STATUS 阶段再次按 body 推导，
-     * 就会撤销 `.cj.d` 的声明文件抑制，并让 DEFAULT 与 ABSTRACT 同时成立。
-     */
-    private fun resolveModality(
-        declaration: CfirDeclaration,
-        containingProperty: CfirProperty?,
-        containingClass: CfirClassLikeDeclaration?,
-        isOverride: Boolean,
-    ): Modality {
-        return when (declaration) {
-            is CfirInterface -> Modality.ABSTRACT
-            is CfirClass, is CfirStruct, is CfirEnum -> Modality.FINAL
-            is CfirCallableDeclaration -> {
-                val containingPropertyModality = containingProperty?.status?.modality
-                when {
-                    containingClass == null -> Modality.FINAL
-                    declaration is CfirPropertyAccessor && containingPropertyModality != null -> containingPropertyModality
-                    containingClass is CfirInterface -> {
-                        when {
-                            declaration.status.isStatic -> Modality.FINAL
-                            declaration.status.visibility == Visibilities.Private -> Modality.FINAL
-                            declaration.status.isAbstract -> Modality.ABSTRACT
-                            else -> Modality.OPEN
-                        }
-                    }
-
-                    isOverride && declaration is CfirFunction && declaration.status.bodyPresence == CfirBodyPresence.PRESENT ->
-                        Modality.FINAL
-                    isOverride && declaration.status.isDeclarationFile &&
-                            declaration.status.bodyPresence == CfirBodyPresence.ABSENT -> Modality.FINAL
-                    isOverride -> Modality.OPEN
-                    else -> Modality.FINAL
-                }
-            }
-
-            else -> Modality.FINAL
-        }
-    }
-
-    /**
-     * 将 raw declaration status 投影为后续语义阶段可消费的有效状态。
-     *
-     * Raw CFIR 忠实保留源码的全部 modifier，供 modifier checker 报告组合或目标错误；
-     * STATUS phase 则必须移除不能共同形成成员语义的状态位。这样继承、open 和缺失函数体
-     * checker 都只消费同一个 resolved status，不再各自处理修饰符组合。
-     */
-    private fun effectiveStatusFlags(
-        status: CfirDeclarationStatus,
-        declaration: CfirDeclaration,
-        containingClass: CfirClassLikeDeclaration?,
-    ): EffectiveStatusFlags {
-        val incompatibleStaticOverride = status.isStatic && status.isOverride
-        val incompatibleStaticOpen = status.isStatic && status.isOpen
-        val incompatibleStaticOperator = status.isStatic && status.isOperator
-        val incompatibleConstOpen = status.isConst && status.isOpen
-        val incompatibleRedefOpen = status.isRedef && status.isOpen
-        val invalidStaticAbstractClassMember =
-            declaration is CfirCallableDeclaration &&
-                    containingClass is CfirClass &&
-                    status.isStatic &&
-                    status.isAbstractExplicit &&
-                    !status.isForeign
-
-        val effectiveStatic = status.isStatic &&
-                !incompatibleStaticOverride &&
-                !incompatibleStaticOpen &&
-                !incompatibleStaticOperator
-        val effectiveOverride = status.isOverride && !incompatibleStaticOverride
-        // 原始 status 供冲突诊断使用；后续声明检查只能消费去除冲突项后的有效状态。
-        val explicitOpenIsEffective = status.isOpen &&
-                !incompatibleStaticOpen &&
-                !incompatibleConstOpen &&
-                !incompatibleRedefOpen
-        // 官方 CheckInterfaceAttribute 为所有接口实例成员设置 OPEN，包括抽象成员。
-        val effectiveOpen = explicitOpenIsEffective || containingClass is CfirInterface && !status.isStatic
-        val effectiveOperator = status.isOperator && !incompatibleStaticOperator
-        val effectiveAbstract = status.isAbstract && !invalidStaticAbstractClassMember
-        // 显式性记录实际源码事实；非法 modifier 被移除语义后也不能改称源码省略了它。
-        val effectiveModalityExplicitness = status.modalityExplicitness
-        val effectiveModality = status.modality?.takeIf {
-            effectiveModalityExplicitness == CfirModifierExplicitness.EXPLICIT &&
-                    !(status.isOpen && !explicitOpenIsEffective || status.isAbstract && !effectiveAbstract)
-        }
-
-        return EffectiveStatusFlags(
-            isStatic = effectiveStatic,
-            isOverride = effectiveOverride,
-            isOperator = effectiveOperator,
-            isAbstract = effectiveAbstract,
-            isOpen = effectiveOpen,
-            modalityExplicitness = effectiveModalityExplicitness,
-            modality = effectiveModality,
-        )
-    }
-
-    /** STATUS phase 中 raw status 的有效成员修饰符视图。 */
-    private data class EffectiveStatusFlags(
-        val isStatic: Boolean,
-        val isOverride: Boolean,
-        val isOperator: Boolean,
-        val isAbstract: Boolean,
-        val isOpen: Boolean,
-        val modalityExplicitness: CfirModifierExplicitness,
-        val modality: Modality?,
-    )
-}
-
-/**
- * 读取声明当前 status，如果该声明类型本身不携带 status 则返回 null。
- *
- * 该函数仅作为默认可见性回退使用，不负责发布或推进 STATUS phase。
- */
-private fun CfirDeclaration.statusOrNull(): CfirDeclarationStatus? {
-    return when (this) {
-        is CfirClass -> status
-        is CfirInterface -> status
-        is CfirStruct -> status
-        is CfirEnum -> status
-        is CfirFunction -> status
-        is CfirProperty -> status
-        is CfirEnumConstructor -> status
-        is CfirVariable -> status
-        is CfirExtend -> status
-        is CfirTypeAlias -> status
-        else -> null
-    }
 }

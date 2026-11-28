@@ -72,6 +72,7 @@
  * - [STATUS]
  * - [EXTENSIONS]
  * - [IMPLICIT_TYPES]
+ * - [CJMP_FINAL_MATCHING]
  * - [BODY_RESOLVE]
  *
  * 其中当前允许 same-phase lazy resolve 的阶段为：
@@ -191,42 +192,44 @@ enum class CfirResolvePhase(
     EXTENSIONS,
 
     /**
-     * 声明边界隐式类型推断阶段。
-     *
-     * 输入：
-     * - [EXTENSIONS] 完成。
-     *
-     * 输出：
-     * - 省略的声明级类型完成推断（或诊断）。
-     * - 为 [BODY_RESOLVE] 提供稳定的声明边界类型。
-     *
-     * 说明：
-     * - 该阶段被视为 jumping phase。
-     */
-    IMPLICIT_TYPES,
-
-    /**
      * CJMP（common/specific）配对阶段。
      *
      * 输入：
      * - [STATUS] 完成（声明 status 已装填 isCommon/isSpecific）。
-     * - [IMPLICIT_TYPES] 完成（成员签名可用）。
+     * - [EXTENSIONS] 完成（结构签名可用，specific 返回类型可仍为 Quest）。
      *
      * 输出：
-     * - specific 声明的配对结果写入 `CfirCjmpMappingStorage`（specific session 组件，单侧写）。
+     * - nominal、extend 与实例字段的结构关系已建立；
+     * - alpha.68 及更新版本发布 callable 完整匹配，alpha.66 保留结构事实并等待推断后裁决。
      *
      * 说明：
-     * - 对齐 Kotlin `FirResolvePhase.EXPECT_ACTUAL_MATCHING`（docs/fir/k2_kmp.md）；
-     * - 必须早于 [BODY_RESOLVE]：默认值读穿与类型精化消费配对结果（D7 次序硬约束）；
+     * - 仅 alpha.68 及更新版本直接决定 callable counterpart；alpha.66 的调用候选过滤按查询时签名执行；
      * - 版本/模式门关闭时 transformer 早退（门禁管行为，D16/§8.5）。
      */
     CJMP_MATCHING,
 
     /**
+     * 声明边界隐式类型推断阶段。
+     *
+     * [CJMP_MATCHING] 完成后推断省略的声明级类型；alpha.66 的完整 CJMP 匹配在 [CJMP_FINAL_MATCHING] 消费这些稳定签名。
+     * 该阶段允许 jumping 请求；common 源签名在 specific CJMP 目标锁外预备。
+     */
+    IMPLICIT_TYPES,
+
+    /**
+     * 推断后 CJMP 最终匹配阶段。
+     *
+     * 输入：[IMPLICIT_TYPES] 完成的声明签名。
+     * 输出：alpha.66 完成官方 PostTypeCheck 的 callable/variable 匹配并发布最终结果；较新版本为空阶段。
+     * 此阶段不得由 [IMPLICIT_TYPES] 的调用解析或默认参数 consumer 请求。
+     */
+    CJMP_FINAL_MATCHING,
+
+    /**
      * 函数体语义解析阶段。
      *
      * 输入：
-     * - [IMPLICIT_TYPES] 完成。
+     * - [CJMP_FINAL_MATCHING] 完成。
      *
      * 输出：
      * - 表达式类型、调用绑定、控制流相关语义信息可用。

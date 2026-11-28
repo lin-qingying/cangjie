@@ -42,6 +42,14 @@ abstract class CfirAbstractArgumentList : CfirArgumentList() {
  * context 参数映射和原始 argument list，以便 call completer、checker 与 renderer 共享同一结果。
  */
 abstract class CfirResolvedArgumentList : CfirArgumentList() {
+    /** 原列表和被改写的 context 实参仍由此调用拥有，来源迁移不能只读当前 mapping keys。 */
+    @org.cangnova.cangjie.cfir.CfirImplementationDetail
+    override fun <R, D> acceptSourceChildren(visitor: CfirVisitor<R, D>, data: D) {
+        super.acceptSourceChildren(visitor, data)
+        originalArgumentList?.accept(visitor, data)
+        mappingIncludingContextArguments.keys.forEach { it.accept(visitor, data) }
+    }
+
     /** 映射是列表自身的存储，快照必须由实际实现同时恢复完整与值参数映射。 */
     internal abstract fun captureMutableState(): CfirArgumentListMutableState
 
@@ -50,6 +58,17 @@ abstract class CfirResolvedArgumentList : CfirArgumentList() {
      */
     final override val source: CjSourceElement?
         get() = originalArgumentList?.source
+
+    /** 已解析列表的源始终由原始实参列表拥有，不能新增旁路源槽位。 */
+    @org.cangnova.cangjie.cfir.CfirImplementationDetail
+    final override fun replaceSource(newSource: CjSourceElement?) {
+        val original = originalArgumentList
+        if (original == null) {
+            require(newSource == null)
+            return
+        }
+        original.replaceSource(newSource)
+    }
 
     /**
      * 解析前的原始参数列表；错误恢复或 synthetic 调用中可能为空。
@@ -74,11 +93,15 @@ abstract class CfirResolvedArgumentList : CfirArgumentList() {
      */
     abstract val mappingIncludingContextArguments: LinkedHashMap<CfirExpression, CfirValueParameter>
 
+    /** C ellipsis 的完成实参角色；extra 没有 formal，不能进入错误映射。 */
+    abstract val cVariadicArguments: CfirCVariadicArguments<CfirExpression>?
+    /** 已实际执行 Array 变参语法糖；与 C ellipsis 的函数类型位无关。 */
+    abstract val usesCangjieVariadicCall: Boolean
+
     /**
      * 按 value 参数映射顺序暴露实参表达式。
      */
-    override val arguments: List<CfirExpression>
-        get() = mapping.keys.toList()
+    abstract override val arguments: List<CfirExpression>
 
 
     /**
@@ -119,26 +142,66 @@ internal class CfirResolvedArgumentListImpl(
     override val originalArgumentList: CfirArgumentList?,
     mapping: LinkedHashMap<CfirExpression, CfirValueParameter>,
     mappingIncludingContextArguments: LinkedHashMap<CfirExpression, CfirValueParameter> = mapping,
+    cVariadicArguments: CfirCVariadicArguments<CfirExpression>? = null,
+    arguments: List<CfirExpression> = mapping.keys.toList() + cVariadicArguments?.extraArguments.orEmpty(),
+    usesCangjieVariadicCall: Boolean = false,
 ) : CfirResolvedArgumentList() {
+    private var valueArguments: List<CfirExpression> = java.util.Collections.unmodifiableList(arguments.toList())
+    override val arguments: List<CfirExpression> get() = valueArguments
+    override var cVariadicArguments: CfirCVariadicArguments<CfirExpression>? = cVariadicArguments
+        private set
+    override var usesCangjieVariadicCall: Boolean = usesCangjieVariadicCall
+        private set
+
+    /** grouped owned-copy 第二遍完成所有实参/形参身份后才发布成功列表。 */
+    internal fun replaceCompletedArgumentsForOwnedCopy(
+        arguments: List<CfirExpression>,
+        cVariadicArguments: CfirCVariadicArguments<CfirExpression>?,
+        usesCangjieVariadicCall: Boolean,
+    ) {
+        valueArguments = java.util.Collections.unmodifiableList(arguments.toList())
+        this.cVariadicArguments = cVariadicArguments
+        this.usesCangjieVariadicCall = usesCangjieVariadicCall
+        validateCompletedArguments()
+    }
+
+    private fun validateCompletedArguments() {
+        val cArguments = cVariadicArguments
+        require(cArguments == null || !usesCangjieVariadicCall)
+        if (cArguments != null) require(mapping.size == cArguments.fixedParameterCount) {
+            "A successful C ellipsis call must bind every fixed parameter"
+        }
+        val completed = mapping.keys.toList() + cArguments?.extraArguments.orEmpty()
+        require(completed.size == valueArguments.size && completed.indices.all { completed[it] === valueArguments[it] }) {
+            "Completed value arguments must preserve the ordered fixed and C-extra roles"
+        }
+        require(cArguments?.extraArguments?.none { it in mapping } != false)
+    }
+    /** 参数映射及 context 映射的共享身份属于同一可恢复事务。 */
     internal override fun captureMutableState(): CfirArgumentListMutableState {
         val originalMapping = mapping
-        val originalMappingIncludingContext = mappingIncludingContextArguments
-        val mappingContents = LinkedHashMap(originalMapping)
-        val contextContents = LinkedHashMap(originalMappingIncludingContext)
+        val originalContextMapping = mappingIncludingContextArguments
+        val values = LinkedHashMap(originalMapping)
+        val contextValues = LinkedHashMap(originalContextMapping)
+        val originalArguments = valueArguments
+        val originalCArguments = cVariadicArguments
+        val originalVariadicKind = usesCangjieVariadicCall
         return object : CfirArgumentListMutableState {
             override fun restore() {
                 originalMapping.clear()
-                originalMapping.putAll(mappingContents)
-                if (originalMappingIncludingContext !== originalMapping) {
-                    originalMappingIncludingContext.clear()
-                    originalMappingIncludingContext.putAll(contextContents)
+                originalMapping.putAll(values)
+                if (originalContextMapping !== originalMapping) {
+                    originalContextMapping.clear()
+                    originalContextMapping.putAll(contextValues)
                 }
-                this@CfirResolvedArgumentListImpl.mapping = originalMapping
-                this@CfirResolvedArgumentListImpl.mappingIncludingContextArguments = originalMappingIncludingContext
+                mapping = originalMapping
+                mappingIncludingContextArguments = originalContextMapping
+                valueArguments = originalArguments
+                cVariadicArguments = originalCArguments
+                usesCangjieVariadicCall = originalVariadicKind
             }
         }
     }
-
     /**
      * 包含显式 context 实参的完整映射。
      */
@@ -152,6 +215,8 @@ internal class CfirResolvedArgumentListImpl(
     override var mapping: LinkedHashMap<CfirExpression, CfirValueParameter> = mapping
         private set
 
+    init { validateCompletedArguments() }
+
     /**
      * 转换映射 key 中的实参表达式，并保持原有形参映射关系。
      *
@@ -162,9 +227,12 @@ internal class CfirResolvedArgumentListImpl(
      * 即触发指数爆炸，全量回归挂死在该 fixture 上）。
      */
     override fun <D> transformArguments(transformer: CfirTransformer<D>, data: D): CfirArgumentList {
-        val transformedKeys = HashMap<CfirExpression, CfirExpression>()
+        val transformedKeys = java.util.IdentityHashMap<CfirExpression, CfirExpression>()
         fun transformKeyOnce(key: CfirExpression): CfirExpression =
             transformedKeys.getOrPut(key) { key.transformSingle(transformer, data) }
+
+        val newArguments = valueArguments.map(::transformKeyOnce)
+        val newCArguments = cVariadicArguments?.map(::transformKeyOnce)
 
         val aliased = mappingIncludingContextArguments === mapping
         val newMapping = LinkedHashMap<CfirExpression, CfirValueParameter>(mapping.size)
@@ -182,6 +250,9 @@ internal class CfirResolvedArgumentListImpl(
             }
             mappingIncludingContextArguments = newMappingIncludingContext
         }
+        valueArguments = java.util.Collections.unmodifiableList(newArguments)
+        cVariadicArguments = newCArguments
+        validateCompletedArguments()
         return this
     }
 }
@@ -202,6 +273,18 @@ internal class CfirResolvedArgumentListForErrorCall(
      */
     private var _mapping: LinkedHashMap<CfirExpression, out CfirValueParameter?>,
 ) : CfirResolvedArgumentList() {
+    override val cVariadicArguments: CfirCVariadicArguments<CfirExpression>? get() = null
+    override val usesCangjieVariadicCall: Boolean get() = false
+    /** 复制器读取全部实参，包括没有形参绑定的错误项。 */
+    internal val rawMappingForOwnedCopy: Map<CfirExpression, CfirValueParameter?>
+        get() = _mapping
+
+    /** 新节点壳完成第二遍后，发布同一份完整映射与过滤投影。 */
+    internal fun replaceMappingForOwnedCopy(values: LinkedHashMap<CfirExpression, CfirValueParameter?>) {
+        _mapping = values
+        mapping = computeMapping()
+    }
+
     internal override fun captureMutableState(): CfirArgumentListMutableState {
         // 只恢复捕获时已有的条目，不扩大构造器接收的 out 映射的值类型。
         @Suppress("UNCHECKED_CAST")
@@ -265,8 +348,11 @@ fun buildResolvedArgumentList(
     originalArgumentList: CfirArgumentList,
     mapping: LinkedHashMap<CfirExpression, CfirValueParameter>,
     mappingIncludingContextArguments: LinkedHashMap<CfirExpression, CfirValueParameter> = mapping,
+    cVariadicArguments: CfirCVariadicArguments<CfirExpression>? = null,
+    arguments: List<CfirExpression> = mapping.keys.toList() + cVariadicArguments?.extraArguments.orEmpty(),
+    usesCangjieVariadicCall: Boolean = false,
 ): CfirResolvedArgumentList {
-    return CfirResolvedArgumentListImpl(originalArgumentList, mapping, mappingIncludingContextArguments)
+    return CfirResolvedArgumentListImpl(originalArgumentList, mapping, mappingIncludingContextArguments, cVariadicArguments, arguments, usesCangjieVariadicCall)
 }
 
 /**

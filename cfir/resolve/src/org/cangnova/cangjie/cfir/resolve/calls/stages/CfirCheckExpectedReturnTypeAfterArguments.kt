@@ -1,5 +1,7 @@
 package org.cangnova.cangjie.cfir.resolve.calls.stages
 
+import org.cangnova.cangjie.cfir.types.asCone
+
 import org.cangnova.cangjie.cfir.diagnostic.InapplicableCandidateByExpectedReturnType
 import org.cangnova.cangjie.cfir.resolve.ResolutionMode
 import org.cangnova.cangjie.cfir.resolve.expectedType
@@ -12,7 +14,7 @@ import org.cangnova.cangjie.cfir.resolve.calls.isBareNoArgumentEnumValueAccess
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CheckerSink
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.yieldDiagnostic
-import org.cangnova.cangjie.cfir.types.asCone
+import org.cangnova.cangjie.cfir.resolve.substitution.asCone
 import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.type.AbstractTypeChecker
 import org.cangnova.cangjie.type.model.safeSubstitute

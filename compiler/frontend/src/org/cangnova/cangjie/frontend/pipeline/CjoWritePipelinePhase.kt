@@ -9,6 +9,20 @@ import org.cangnova.cangjie.config.cjoOutputDirectory
 import org.cangnova.cangjie.config.cjoOutputFile
 import org.cangnova.cangjie.config.messageCollector
 import org.cangnova.cangjie.messages.CompilerMessageSeverity
+import org.cangnova.cangjie.cfir.entrypoint.configuration.cjmpChirOutput
+import org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisSettings
+import org.cangnova.cangjie.cfir.resolve.providers.dependenciesSymbolProvider
+import org.cangnova.cangjie.cfir.resolve.source.CfirSourceGraphProducer
+import org.cangnova.cangjie.cfir.serialization.cjo.CjoExportOptions
+import org.cangnova.cangjie.cfir.serialization.cjo.CjoExportSourceSnapshots
+import org.cangnova.cangjie.cfir.session.CfirCjmpFamilySnapshot
+import org.cangnova.cangjie.cfir.session.CfirCjmpMode
+import org.cangnova.cangjie.cfir.session.cjmpFamilyAggregate
+import org.cangnova.cangjie.cfir.session.cjmpSettings
+import org.cangnova.cangjie.config.compileCjd
+import org.cangnova.cangjie.config.enableCompileTest
+import org.cangnova.cangjie.config.nativeMetadataExportConfiguration
+import org.cangnova.cangjie.name.FqName
 import java.nio.file.Files
 import java.nio.file.Path
 
@@ -53,10 +67,41 @@ object CjoWritePipelinePhase : PipelinePhase<DefaultCfirFrontendPipelineArtifact
         return try {
             Files.createDirectories(outputDirectory)
             val packages = outputs
-                .flatMap { it.fir }
-                .groupBy { it.packageDirective.packageFqName.asString() }
-            packages.forEach { (packageName, files) ->
-                val metadata = CfirCjoPackageMetadataProducer.produce(files)
+                .flatMap { output -> output.fir.map { output.session to it } }
+                .groupBy { (_, file) -> file.packageDirective.packageFqName.asString() }
+            packages.forEach { (packageName, outputFiles) ->
+                val sessions = outputFiles.map { it.first }.distinct()
+                val files = outputFiles.map { it.second }
+                val specificSessions = sessions.filter { it.cjmpSettings.mode == CfirCjmpMode.SPECIFIC }
+                val families = specificSessions.map { it.cjmpFamilyAggregate.ensureFamilyComplete(FqName(packageName)) }
+                val family = when (families.size) {
+                    0 -> null
+                    1 -> families.single()
+                    else -> CfirCjmpFamilySnapshot.combine(
+                        FqName(packageName),
+                        families,
+                        families.flatMap { it.packageDeclarationsForExport() }.distinctBy { it.symbol },
+                    )
+                }
+                val loadedPackages = CjoExportSourceSnapshots.uniqueLoadedPackages(specificSessions.zip(families).flatMap { (session, snapshot) ->
+                    CjoExportSourceSnapshots.loadedPackages(session.dependenciesSymbolProvider, snapshot)
+                })
+                val metadata = CfirCjoPackageMetadataProducer.produce(
+                    files, family, loadedPackages,
+                    CjoExportOptions(
+                        exportForIncremental = false,
+                        exportContent = configuration.nativeMetadataExportConfiguration.importSourceCode,
+                        serializingCommon = configuration.cjmpChirOutput,
+                        isMacroPackage = files.map { it.packageDirective.isMacroPackage }.distinct().single(),
+                        analysisSettings = CfirExportAnalysisSettings(
+                            noSubPackages = configuration.nativeMetadataExportConfiguration.noSubPackages,
+                            exportForTest = configuration.nativeMetadataExportConfiguration.exportForTest,
+                            canInline = configuration.nativeMetadataExportConfiguration.canInlineSource(configuration.enableCompileTest),
+                            compileCjd = configuration.compileCjd,
+                        ),
+                    ),
+                    canonicalSources = listOf(CfirSourceGraphProducer.produce(files, family)),
+                )
                 val target = outputDirectory.resolve(CjoConstants.packageNameToPath(packageName))
                 Files.createDirectories(target.parent)
                 CjoPackageWriter.write(target, metadata)

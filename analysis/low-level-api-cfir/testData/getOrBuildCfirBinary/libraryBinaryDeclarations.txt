@@ -13,7 +13,9 @@ FILE: libraryBinaryDeclarations.cj
     package lowlevel.getorbuild.binary
     internal? class Box<T> {
         internal? let value: R|T|
-        internal? let count: R|Int64|
+        internal? let count: R|Int64| = ...
+            initializer:
+                <element: CfirLazyExpression>
         init(value: R|T|) {
             <element: CfirLazyBlock>
         }
@@ -51,7 +53,9 @@ FILE: libraryBinaryDeclarations.cj
     package lowlevel.getorbuild.binary
     internal? class Box<T> {
         internal? let value: R|T|
-        internal? let count: R|Int64|
+        internal? let count: R|Int64| = ...
+            initializer:
+                <element: CfirLazyExpression>
         init(value: R|T|) {
             <element: CfirLazyBlock>
         }
@@ -93,7 +97,9 @@ FILE: libraryBinaryDeclarations.cj
     package lowlevel.getorbuild.binary
     internal? class Box<T> {
         internal? let value: R|T|
-        internal? let count: R|Int64|
+        internal? let count: R|Int64| = ...
+            initializer:
+                <element: CfirLazyExpression>
         init(value: R|T|) {
             <element: CfirLazyBlock>
         }
@@ -133,7 +139,9 @@ FILE: libraryBinaryDeclarations.cj
     package lowlevel.getorbuild.binary
     internal? class Box<T> {
         internal? let value: R|T|
-        internal? let count: R|Int64|
+        internal? let count: R|Int64| = ...
+            initializer:
+                <element: CfirLazyExpression>
         init(value: R|T|) {
             <element: CfirLazyBlock>
         }

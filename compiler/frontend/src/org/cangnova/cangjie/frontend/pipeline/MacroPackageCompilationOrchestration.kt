@@ -127,6 +127,8 @@ data class MacroPackageCompilationContext(
      * 影响宏展开缓存键的编译环境上下文。
      */
     val cacheContext: MacroCompilationCacheContext,
+    /** 同一编译调用的 SDK 快照，不从组件内部重新发现。 */
+    val sdkSelection: MacroSdkSelection = MacroSdkSelector.select(configuration.macroSdkHome),
 )
 
 /**
@@ -342,7 +344,7 @@ class ExternalCjcMacroPackageCompilationOrchestrator(
     ): MacroPackageCompilationResult {
         if (requests.isEmpty()) return MacroPackageCompilationResult()
 
-        val cjcPath = runCatching { resolveCompilerExecutable(context) }.getOrElse { error ->
+        val cjcPath = runCatching { executableResolver.resolve(context.sdkSelection) }.getOrElse { error ->
             return MacroPackageCompilationResult(
                 diagnostics = requests.map { request ->
                     request.compilationError(
@@ -368,16 +370,6 @@ class ExternalCjcMacroPackageCompilationOrchestrator(
             artifactSearchPaths = artifactSearchPaths.distinct(),
             diagnostics = diagnostics,
         )
-    }
-
-    /**
-     * 解析当前环境中可用的 cjc 可执行文件。
-     */
-    private fun resolveCompilerExecutable(context: MacroPackageCompilationContext): Path {
-        if (executableResolver === DefaultMacroCompilerExecutableResolver) {
-            return DefaultMacroCompilerExecutableResolver.resolve(context.configuration.macroSdkHome)
-        }
-        return executableResolver.resolve()
     }
 
     /** 在不可变输出目录中编译或复用单个宏包 artifact。 */
@@ -446,6 +438,7 @@ class ExternalCjcMacroPackageCompilationOrchestrator(
                 sourceRoot = sourceRoot,
                 request = request,
                 outputDirectory = outputDirectory,
+                sdkSelection = context.sdkSelection,
                 compilerEnvironment = context.configuration.macroCompilerEnvironment,
             )
             val execution = runCatching { commandRunner.run(command) }.getOrElse { failure ->
@@ -516,6 +509,7 @@ class ExternalCjcMacroPackageCompilationOrchestrator(
         sourceRoot: Path,
         request: MacroSourcePackageCompilationRequest,
         outputDirectory: Path,
+        sdkSelection: MacroSdkSelection,
         compilerEnvironment: Map<String, String>,
     ): MacroCompilerCommand {
         val arguments = buildList {
@@ -534,6 +528,7 @@ class ExternalCjcMacroPackageCompilationOrchestrator(
         }
         val environment = buildMap {
             putAll(compilerEnvironment)
+            (sdkSelection as? MacroSdkSelection.Selected)?.let { putAll(it.processEnvironment(System.getenv() + compilerEnvironment)) }
             val classpath = request.classpath
                 .map(String::trim)
                 .filter(String::isNotEmpty)
@@ -744,7 +739,7 @@ class ExternalCjcMacroPackageCompilationOrchestrator(
             val attributes = Files.readAttributes(cjcPath, java.nio.file.attribute.BasicFileAttributes::class.java)
             update("${attributes.size()}:${attributes.lastModifiedTime().toMillis()}")
         }
-        update(context.configuration.macroSdkHome)
+        update(context.sdkSelection.identity)
         context.configuration.macroCompilerEnvironment.toSortedMap().forEach { (name, value) ->
             update(name)
             update(value)
@@ -808,7 +803,7 @@ fun interface MacroCompilerExecutableResolver {
     /**
      * 返回可执行 cjc 路径。
      */
-    fun resolve(): Path
+    fun resolve(sdkSelection: MacroSdkSelection): Path
 }
 
 /**
@@ -861,89 +856,13 @@ fun interface MacroCompilerCommandRunner {
  * 默认 cjc 可执行文件解析器。
  */
 object DefaultMacroCompilerExecutableResolver : MacroCompilerExecutableResolver {
-    /**
-     * 使用默认 SDK 配置解析 cjc。
-     */
-    override fun resolve(): Path = resolve(DEFAULT_MACRO_SDK_HOME)
-
-    /**
-     * 使用指定 SDK 根解析 cjc。
-     */
-    fun resolve(sdkHome: String): Path {
-        return resolve(
-            sdkHome = sdkHome,
-            cangjieHome = System.getenv("CANGJIE_HOME"),
-            cjcHome = System.getProperty("cjc.home"),
-            pathValue = System.getenv("PATH"),
-            userHome = Path.of(System.getProperty("user.home")),
-        )
+    /** 只验证选中 SDK 的组件；显式 SDK 不可用时禁止静默改用另一安装。 */
+    override fun resolve(sdkSelection: MacroSdkSelection): Path {
+        val sdk = sdkSelection.requireSelected()
+        val executable = sdk.compilerExecutable
+        check(Files.isRegularFile(executable)) { "Selected macro SDK has no cjc executable: $executable" }
+        return executable
     }
-
-    /**
-     * 按 SDK、环境变量、系统属性、PATH 和用户目录兜底顺序解析 cjc。
-     */
-    internal fun resolve(
-        sdkHome: String,
-        cangjieHome: String?,
-        cjcHome: String?,
-        pathValue: String?,
-        userHome: Path,
-    ): Path {
-        val executableName = if (isWindows()) "cjc.exe" else "cjc"
-
-        if (sdkHome.isNotBlank()) {
-            return Path.of(sdkHome, "bin", executableName)
-                .takeIf(Path::exists)
-                ?: error("Configured macro SDK `$sdkHome` does not contain `bin/$executableName`.")
-        }
-        cangjieHome?.takeIf(String::isNotBlank)?.let { home ->
-            Path.of(home, "bin", executableName).takeIf(Path::exists)?.let { return it }
-        }
-        cjcHome?.takeIf(String::isNotBlank)?.let { home ->
-            Path.of(home, "bin", executableName).takeIf(Path::exists)?.let { return it }
-        }
-        findOnPath(executableName, pathValue.orEmpty())?.let { return it }
-
-        val installedSdkRoots = sequence {
-            for (sdkDirectory in listOf(
-                userHome.resolve(".cangjie").resolve("sdks"),
-                userHome.resolve("sdk"),
-            )) {
-                sdkDirectory.toFile().listFiles()
-                    ?.asSequence()
-                    ?.filter(File::isDirectory)
-                    ?.sortedByDescending { it.name }
-                    ?.forEach { installedSdk ->
-                        yield(installedSdk.toPath().resolve("cangjie"))
-                        yield(installedSdk.toPath())
-                    }
-            }
-        }
-        installedSdkRoots
-            .map { it.resolve("bin").resolve(executableName) }
-            .firstOrNull(Path::exists)
-            ?.let { return it }
-
-        error("Cannot find `$executableName`. Set CANGJIE_HOME or cjc.home, or place cjc on PATH.")
-    }
-
-    /**
-     * 在 PATH 环境变量中查找可执行文件。
-     */
-    private fun findOnPath(executableName: String, pathValue: String): Path? {
-        if (pathValue.isBlank()) return null
-        return pathValue.split(File.pathSeparatorChar)
-            .asSequence()
-            .map(String::trim)
-            .filter(String::isNotEmpty)
-            .map { Path.of(it).resolve(executableName) }
-            .firstOrNull(Path::exists)
-    }
-
-    /**
-     * 当前系统是否为 Windows。
-     */
-    private fun isWindows(): Boolean = System.getProperty("os.name").lowercase().contains("win")
 }
 
 /**

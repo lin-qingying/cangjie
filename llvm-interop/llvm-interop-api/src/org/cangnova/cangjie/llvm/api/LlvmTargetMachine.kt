@@ -8,6 +8,8 @@ enum class LlvmCodeGenOptimizationLevel {
     LESS,
     DEFAULT,
     AGGRESSIVE,
+    SIZE,
+    SIZE_AGGRESSIVE,
 }
 
 /**

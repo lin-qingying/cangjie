@@ -38,10 +38,46 @@ public data class CfirDeclarationAnnotationInfo(
 )
 
 /** [CfirDeclaration.annotationInfo] 扩展属性使用的声明数据键。 */
-private object CfirDeclarationAnnotationInfoKey : CfirDeclarationDataKey() {
+internal object CfirDeclarationAnnotationInfoKey : CfirDeclarationDataKey() {
     override val rawCopyPolicy get() = org.cangnova.cangjie.cfir.CfirRawDeclarationDataPolicies.annotationInfo
 }
+internal object CfirOwnedDeclarationAnnotationInfoKey : CfirDeclarationDataKey()
+internal object CfirSerializedAnnotationHeaderRegisteredKey : CfirDeclarationDataKey()
+
+/** 完成产品和拥有复制共用字段 owner 的值冻结；raw 与 derived 分别保存，不能互相覆盖。 */
+internal fun CfirDeclarationAnnotationInfo.frozenCopy(): CfirDeclarationAnnotationInfo = copy(
+    annotationTargets = java.util.Collections.unmodifiableSet(LinkedHashSet(annotationTargets)),
+    attributes = java.util.Collections.unmodifiableList(ArrayList(attributes)),
+)
 
 /** annotation owner 发布的不可变语义快照，复制声明 attributes 时完整保留。 */
-public var CfirDeclaration.annotationInfo: CfirDeclarationAnnotationInfo? by
+private var CfirDeclaration.rawSerializedAnnotationHeaderInfo: CfirDeclarationAnnotationInfo? by
     CfirDeclarationDataRegistry.data(CfirDeclarationAnnotationInfoKey)
+private var CfirDeclaration.serializedAnnotationHeaderRegistered: Boolean? by CfirDeclarationDataRegistry.data(CfirSerializedAnnotationHeaderRegisteredKey)
+private var CfirDeclaration.ownedDerivedAnnotationInfo: CfirDeclarationAnnotationInfo? by CfirDeclarationDataRegistry.data(CfirOwnedDeclarationAnnotationInfoKey)
+
+/** 保存事实只登记一次，包含真正的null；后续getter/再绑定只能核对原事实，不覆盖。 */
+public var CfirDeclaration.serializedAnnotationHeaderInfo: CfirDeclarationAnnotationInfo?
+    get() = rawSerializedAnnotationHeaderInfo
+    set(value) {
+        if (serializedAnnotationHeaderRegistered == true) {
+            check(rawSerializedAnnotationHeaderInfo == value) { "Serialized annotation header facts cannot be replaced" }
+            return
+        }
+        rawSerializedAnnotationHeaderInfo = value
+        serializedAnnotationHeaderRegistered = true
+    }
+
+/** Library语义结果和普通注解同代读取；未选header仅持有原保存事实，不冒充完成语义。 */
+public var CfirDeclaration.annotationInfo: CfirDeclarationAnnotationInfo?
+    get() = when (val selectedSource = contentSource) {
+        org.cangnova.cangjie.cfir.CfirContentSource.Owned -> ownedDerivedAnnotationInfo
+        is org.cangnova.cangjie.cfir.CfirContentSource.Published -> when (val content = selectedSource.snapshot().annotations(this)) {
+            org.cangnova.cangjie.cfir.CfirPublishedAnnotations.Unselected -> serializedAnnotationHeaderInfo
+            is org.cangnova.cangjie.cfir.CfirPublishedAnnotations.Complete -> content.annotationInfo
+        }
+    }
+    set(value) {
+        check(contentSource === org.cangnova.cangjie.cfir.CfirContentSource.Owned) { "Published annotation metadata requires its package completion product" }
+        ownedDerivedAnnotationInfo = value
+    }

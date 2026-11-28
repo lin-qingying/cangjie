@@ -1380,16 +1380,16 @@ class CfirAnalysisMacroPsiTestGenerated : AbstractCfirPsiMacroDiagnosticsTest() 
                     runTest("cfir/analysis-tests/testData/macro/llt/annotation/ifavailable/err_lambda_with_param.cj")
                 }
 
-                @TestMetadata("err_not_lambda.cj")
-                @Test
-                fun testErrNotLambda() {
-                    runTest("cfir/analysis-tests/testData/macro/llt/annotation/ifavailable/err_not_lambda.cj")
-                }
-
                 @TestMetadata("err_not_literal.cj")
                 @Test
                 fun testErrNotLiteral() {
                     runTest("cfir/analysis-tests/testData/macro/llt/annotation/ifavailable/err_not_literal.cj")
+                }
+
+                @TestMetadata("err_unknown_arg_name.cj")
+                @Test
+                fun testErrUnknownArgName() {
+                    runTest("cfir/analysis-tests/testData/macro/llt/annotation/ifavailable/err_unknown_arg_name.cj")
                 }
 
                 @TestMetadata("err_without_import.cj")

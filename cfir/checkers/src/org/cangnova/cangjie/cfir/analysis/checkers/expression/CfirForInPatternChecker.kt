@@ -25,6 +25,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.checkTypeMismatch
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
@@ -50,7 +51,7 @@ import org.cangnova.cangjie.source.AbstractCjSourceElement
  * - 不可反驳性检查（`sema_forin_pattern_must_be_irrefutable`），不依赖元素类型，
  *   对齐官方 `IsIrrefutablePattern`（`TypeCheckMatchExpr.cpp`）。
  */
-object CfirForInPatternChecker : CfirBasicExpressionChecker() {
+object CfirForInPatternChecker : CfirBasicExpressionChecker(MppCheckerKind.Common) {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirStatement) {
         val forIn = expression as? CfirForInExpression ?: return
@@ -81,15 +82,15 @@ object CfirForInPatternChecker : CfirBasicExpressionChecker() {
             )
         }
 
-        // 元素类型由 resolver 写入 variable.returnTypeRef；合法性检查以可用的
+        // 元素类型由 resolver 写入 pattern.semanticTypeRef；合法性检查以可用的
         // 元素类型为前提（官方 probe 10：迭代对象无效时不报告 param-size 等 legality 诊断）。
-        val elementType = forIn.variable.returnTypeRef.coneTypeOrNull
+        val elementType = forIn.pattern.semanticTypeRef?.coneTypeOrNull
         if (elementType != null) {
-            CfirMatchPatternLegalityChecker.checkPattern(forIn.variable.pattern, elementType)
+            CfirMatchPatternLegalityChecker.checkPattern(forIn.pattern, elementType)
         }
 
         // 不可反驳性检查不依赖元素类型（官方 probe 10：迭代对象无效时仍报告）。
-        if (!forIn.variable.pattern.isIrrefutablePattern(elementType, context)) {
+        if (!forIn.pattern.isIrrefutablePattern(elementType, context)) {
             reporter.reportOn(
                 source = forIn.source,
                 factory = CfirErrors.FORIN_PATTERN_MUST_BE_IRREFUTABLE,

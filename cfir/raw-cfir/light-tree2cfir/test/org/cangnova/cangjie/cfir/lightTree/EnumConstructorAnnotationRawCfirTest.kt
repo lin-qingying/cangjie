@@ -16,11 +16,10 @@ import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
 import org.cangnova.cangjie.cfir.expressions.CfirNamedArgumentExpression
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
-import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationMetadataRegistry
+import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationMetadataBuilder
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroCallSite
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurface
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceContainerContext.OuterDeclarationKind
-import org.cangnova.cangjie.cfir.session.annotationMetadataRegistry
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.source.toSourceLinesMapping
@@ -42,42 +41,42 @@ import kotlin.test.assertTrue
 class EnumConstructorAnnotationRawCfirTest : AbstractLightTree2CfirConverterTestCase() {
     fun testPsiKeepsEnumPayloadAndAnnotationOwners() {
         val session = createTestSession()
-        val builder = PsiRawCfirBuilder(session, BodyBuildingMode.NORMAL)
+        val builder = PsiRawCfirBuilder(session, BodyBuildingMode.NORMAL, CfirAnnotationMetadataBuilder())
         val file = builder.buildCfirFile(createCjFile("enumAnnotations", SOURCE))
-        assertEnumAnnotationContract(file, session.annotationMetadataRegistry, builder.consumeCollectedMacroSurfaces())
+        assertEnumAnnotationContract(file, builder.annotationMetadata, builder.consumeCollectedMacroSurfaces())
     }
 
     fun testLightTreeKeepsEnumPayloadAndAnnotationOwners() {
         val session = createTestSession()
         val sourceFile = CjInMemoryTextSourceFile("enumAnnotations.cj", null, SOURCE)
-        val (file, surfaces) = LightTree2Cfir(session, session.cangjieScopeProvider)
-            .buildCfirFileWithSurfaces(parseLightTree(SOURCE), sourceFile, SOURCE.toSourceLinesMapping())
-        assertEnumAnnotationContract(file, session.annotationMetadataRegistry, surfaces)
+        val built = LightTree2Cfir(session, session.cangjieScopeProvider)
+            .buildPreMacroCfirFile(parseLightFile(SOURCE), sourceFile, SOURCE.toSourceLinesMapping())
+        assertEnumAnnotationContract(built.cfirFile, built.annotationMetadata, built.surfaces)
     }
 
     /** 文件起点的短注解名不能因合成调用前缀过长而偏移其参数 source。 */
     fun testPsiKeepsAnnotationArgumentOffsetsAtFileStart() {
         val session = createTestSession()
-        val builder = PsiRawCfirBuilder(session, BodyBuildingMode.NORMAL)
+        val builder = PsiRawCfirBuilder(session, BodyBuildingMode.NORMAL, CfirAnnotationMetadataBuilder())
         val file = builder.buildCfirFile(createCjFile("fileStartAnnotation", FILE_START_SOURCE))
-        assertFileStartAnnotationOffsets(file, session.annotationMetadataRegistry, builder.consumeCollectedMacroSurfaces())
+        assertFileStartAnnotationOffsets(file, builder.annotationMetadata, builder.consumeCollectedMacroSurfaces())
     }
 
     /** LightTree 路径也必须使用原始方括号位置，不能依赖额外前缀的 padding。 */
     fun testLightTreeKeepsAnnotationArgumentOffsetsAtFileStart() {
         val session = createTestSession()
         val sourceFile = CjInMemoryTextSourceFile("fileStartAnnotation.cj", null, FILE_START_SOURCE)
-        val (file, surfaces) = LightTree2Cfir(session, session.cangjieScopeProvider)
-            .buildCfirFileWithSurfaces(
-                parseLightTree(FILE_START_SOURCE), sourceFile, FILE_START_SOURCE.toSourceLinesMapping(),
+        val built = LightTree2Cfir(session, session.cangjieScopeProvider)
+            .buildPreMacroCfirFile(
+                parseLightFile(FILE_START_SOURCE), sourceFile, FILE_START_SOURCE.toSourceLinesMapping(),
             )
-        assertFileStartAnnotationOffsets(file, session.annotationMetadataRegistry, surfaces)
+        assertFileStartAnnotationOffsets(built.cfirFile, built.annotationMetadata, built.surfaces)
     }
 
     /** Attribute、Overflow 和 When 的专用语法都必须进入 Raw CFIR，不能只留在 PSI 节点。 */
     fun testPsiPreservesSpecialBuiltinAnnotationArguments() {
         val session = createTestSession()
-        val builder = PsiRawCfirBuilder(session, BodyBuildingMode.NORMAL)
+        val builder = PsiRawCfirBuilder(session, BodyBuildingMode.NORMAL, CfirAnnotationMetadataBuilder())
         val file = builder.buildCfirFile(createCjFile("specialBuiltinAnnotations", SPECIAL_BUILTIN_SOURCE))
         assertSpecialBuiltinAnnotationArguments(file)
     }
@@ -86,13 +85,13 @@ class EnumConstructorAnnotationRawCfirTest : AbstractLightTree2CfirConverterTest
     fun testLightTreePreservesSpecialBuiltinAnnotationArguments() {
         val session = createTestSession()
         val sourceFile = CjInMemoryTextSourceFile("specialBuiltinAnnotations.cj", null, SPECIAL_BUILTIN_SOURCE)
-        val (file, _) = LightTree2Cfir(session, session.cangjieScopeProvider)
-            .buildCfirFileWithSurfaces(
-                parseLightTree(SPECIAL_BUILTIN_SOURCE),
+        val built = LightTree2Cfir(session, session.cangjieScopeProvider)
+            .buildPreMacroCfirFile(
+                parseLightFile(SPECIAL_BUILTIN_SOURCE),
                 sourceFile,
                 SPECIAL_BUILTIN_SOURCE.toSourceLinesMapping(),
             )
-        assertSpecialBuiltinAnnotationArguments(file)
+        assertSpecialBuiltinAnnotationArguments(built.cfirFile)
     }
 
     private fun assertSpecialBuiltinAnnotationArguments(file: CfirFile) {
@@ -115,26 +114,26 @@ class EnumConstructorAnnotationRawCfirTest : AbstractLightTree2CfirConverterTest
     /** 非法注解表达式不能让 attr 中的声明逃逸到 PSI Raw CFIR。 */
     fun testPsiRecoversMalformedAnnotationAttributeWithoutLeakingDeclarations() {
         val session = createTestSession()
-        val builder = PsiRawCfirBuilder(session, BodyBuildingMode.NORMAL)
+        val builder = PsiRawCfirBuilder(session, BodyBuildingMode.NORMAL, CfirAnnotationMetadataBuilder())
         val file = builder.buildCfirFile(createCjFile("malformedEnumAnnotation", RECOVERY_SOURCE))
-        assertMalformedAttributeRecovery(file, session.annotationMetadataRegistry, builder.consumeCollectedMacroSurfaces())
+        assertMalformedAttributeRecovery(file, builder.annotationMetadata, builder.consumeCollectedMacroSurfaces())
     }
 
     /** LightTree 使用同一原始 attr 边界，恢复时仍保留后续枚举 payload。 */
     fun testLightTreeRecoversMalformedAnnotationAttributeWithoutLeakingDeclarations() {
         val session = createTestSession()
         val sourceFile = CjInMemoryTextSourceFile("malformedEnumAnnotation.cj", null, RECOVERY_SOURCE)
-        val (file, surfaces) = LightTree2Cfir(session, session.cangjieScopeProvider)
-            .buildCfirFileWithSurfaces(
-                parseLightTree(RECOVERY_SOURCE), sourceFile, RECOVERY_SOURCE.toSourceLinesMapping(),
+        val built = LightTree2Cfir(session, session.cangjieScopeProvider)
+            .buildPreMacroCfirFile(
+                parseLightFile(RECOVERY_SOURCE), sourceFile, RECOVERY_SOURCE.toSourceLinesMapping(),
             )
-        assertMalformedAttributeRecovery(file, session.annotationMetadataRegistry, surfaces)
+        assertMalformedAttributeRecovery(built.cfirFile, built.annotationMetadata, built.surfaces)
     }
 
     /** 只验证语法恢复和来源；非法 attr 的参数无需成为有效语义表达式。 */
     private fun assertMalformedAttributeRecovery(
         file: CfirFile,
-        metadata: CfirAnnotationMetadataRegistry,
+        metadata: CfirAnnotationMetadataBuilder,
         surfaces: List<MacroSurface>,
     ) {
         fun originalText(source: CjSourceElement?): String {
@@ -176,7 +175,7 @@ class EnumConstructorAnnotationRawCfirTest : AbstractLightTree2CfirConverterTest
 
     private fun assertFileStartAnnotationOffsets(
         file: CfirFile,
-        metadata: CfirAnnotationMetadataRegistry,
+        metadata: CfirAnnotationMetadataBuilder,
         surfaces: List<MacroSurface>,
     ) {
         fun assertRange(source: CjSourceElement?, start: Int, end: Int, text: String) {
@@ -218,7 +217,7 @@ class EnumConstructorAnnotationRawCfirTest : AbstractLightTree2CfirConverterTest
 
     private fun assertEnumAnnotationContract(
         file: CfirFile,
-        metadata: CfirAnnotationMetadataRegistry,
+        metadata: CfirAnnotationMetadataBuilder,
         surfaces: List<MacroSurface>,
     ) {
         val enums = file.declarations.filterIsInstance<CfirEnum>()
@@ -323,7 +322,7 @@ class EnumConstructorAnnotationRawCfirTest : AbstractLightTree2CfirConverterTest
         enclosingEnum: CfirEnum,
         owner: CfirDeclaration,
         expectedAnnotations: List<ExpectedAnnotation>,
-        metadata: CfirAnnotationMetadataRegistry,
+        metadata: CfirAnnotationMetadataBuilder,
         surfaces: List<MacroSurface>,
     ) {
         assertEquals(expectedAnnotations.size, owner.annotations.size)

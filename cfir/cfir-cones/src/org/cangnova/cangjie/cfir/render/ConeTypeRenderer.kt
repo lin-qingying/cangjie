@@ -12,6 +12,7 @@ import org.cangnova.cangjie.cfir.types.ConeClassifierType
 import org.cangnova.cangjie.cfir.types.ConeDiagnostic
 import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.types.ConeInvalidType
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConeIdealFloatConstantType
 import org.cangnova.cangjie.cfir.types.ConeIdealFloatLiteralType
@@ -139,6 +140,7 @@ open class ConeTypeRenderer(
     protected open fun renderType(type: ConeCangJieType) {
         type.renderAttributes()
         when (type) {
+            ConeInvalidType -> builder.append("<invalid>")
             is ConePrimitiveType -> builder.append(type.kind.typeName)
             is ConeIdealLiteralType -> renderIdealLiteralType(type)
             is ConeClassLikeType -> renderClassLikeType(type)

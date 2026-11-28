@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
 import org.cangnova.cangjie.cfir.analysis.checkers.diagnosticFactoryForReturnTypeMismatch
 import org.cangnova.cangjie.cfir.analysis.checkers.hasUninferredOmittedLambdaParameterType
@@ -54,7 +55,7 @@ import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
  * body block 按返回值检查；显式 Unit 返回类型只综合分析函数体，后续插入
  * `return ()`，不把普通尾表达式强制当作 Unit 返回值。
  */
-object CfirFunctionBodyTypeMismatchChecker : CfirBasicExpressionChecker() {
+object CfirFunctionBodyTypeMismatchChecker : CfirBasicExpressionChecker(MppCheckerKind.Common) {
     /** 检查函数体 block 尾表达式是否满足显式返回类型。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirStatement) {

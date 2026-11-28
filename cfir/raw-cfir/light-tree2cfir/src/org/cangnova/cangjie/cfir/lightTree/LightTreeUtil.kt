@@ -2,6 +2,7 @@ package org.cangnova.cangjie.cfir.lightTree
 
 import com.intellij.lang.LighterASTNode
 import com.intellij.openapi.util.Ref
+import org.cangnova.cangjie.parsing.isParsingErrorElementType
 import com.intellij.psi.TokenType
 import com.intellij.psi.tree.IElementType
 import com.intellij.psi.tree.TokenSet
@@ -93,6 +94,18 @@ fun FlyweightCapableTreeStructure<LighterASTNode>.findChildByType(
         if (child.tokenType == type) return child
     }
     return null
+}
+
+/** 只穿透当前语法层的 ERROR 包装，保留非法修饰符与声明关键字，不读取嵌套语义节点。 */
+fun FlyweightCapableTreeStructure<LighterASTNode>.childrenThroughErrors(node: LighterASTNode): Sequence<LighterASTNode> = sequence {
+    for (child in getChildrenArray(node)) {
+        if (child == null) break
+        if (child.tokenType.isParsingErrorElementType()) {
+            yieldAll(childrenThroughErrors(child))
+        } else {
+            yield(child)
+        }
+    }
 }
 
 /**

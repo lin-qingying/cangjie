@@ -315,6 +315,7 @@ private val PHASE_COMPACT_NAMES = run {
             CfirResolvePhase.IMPLICIT_TYPES -> 16
             // 17 = CJMP_MATCHING（1.1.0 起；不得复用已废弃编号）
             CfirResolvePhase.CJMP_MATCHING -> 17
+            CfirResolvePhase.CJMP_FINAL_MATCHING -> 18
         }
     }
 }

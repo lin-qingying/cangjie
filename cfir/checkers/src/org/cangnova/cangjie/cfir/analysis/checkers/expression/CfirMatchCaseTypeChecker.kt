@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
@@ -19,7 +20,7 @@ import org.cangnova.cangjie.cfir.types.ConeErrorType
  * 这里刻意不处理有 selector 的 pattern-match，因为那部分语义由 pattern legality /
  * exhaustiveness 以及后续 body resolve 共同负责。
  */
-object CfirMatchCaseTypeChecker : CfirMatchExpressionChecker() {
+object CfirMatchCaseTypeChecker : CfirMatchExpressionChecker(MppCheckerKind.Common) {
     /**
      * 检查无 selector 的 match 分支是否拥有有效分支类型。
      *

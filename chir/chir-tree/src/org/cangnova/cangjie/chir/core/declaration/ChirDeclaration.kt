@@ -5,6 +5,9 @@ import org.cangnova.cangjie.chir.core.controlflow.ChirBlock
 import org.cangnova.cangjie.chir.core.identity.ChirSemanticId
 import org.cangnova.cangjie.chir.core.model.ChirNode
 import org.cangnova.cangjie.chir.core.type.ChirTypeRef
+import org.cangnova.cangjie.chir.core.type.ChirTypeDeclarationId
+import org.cangnova.cangjie.chir.core.type.ChirEnumCaseType
+import org.cangnova.cangjie.chir.core.type.ChirFunctionType
 
 /**
  * CHIR 类型定义声明的分类。
@@ -41,6 +44,10 @@ interface ChirTypeDeclaration : ChirDeclaration {
      * 类型声明的泛型参数名称列表。
      */
     val typeParameters: List<String>
+
+    /** 泛型参数的完整类型身份与约束；名字列表用于源码显示和兼容查询。 */
+    val typeParameterTypes: List<ChirTypeRef>
+        get() = emptyList()
 }
 
 /**
@@ -56,6 +63,12 @@ interface ChirCustomTypeDeclaration : ChirTypeDeclaration {
      * 自定义类型包含的成员声明列表。
      */
     val memberDeclarations: List<ChirDeclaration>
+}
+
+/** 有稳定名义类型身份、可被类型引用索引的 class/struct/enum 定义。 */
+interface ChirNominalTypeDeclaration : ChirCustomTypeDeclaration {
+    /** 定义与所有类型引用共享的结构化身份。 */
+    val typeDeclarationId: ChirTypeDeclarationId
 }
 
 /**
@@ -93,20 +106,41 @@ interface ChirFunctionDeclaration : ChirDeclaration {
     val parameters: List<ChirVariableDeclaration>
 
     /**
+     * 函数自身声明的泛型形参，顺序与官方 CHIR 的 genericTypeParams 一致。
+     *
+     * 该信息用于后端构造函数隐藏 TypeInfo ABI 和校验泛型调用点；不能仅由函数参数类型推断，
+     * 因为合法泛型函数可以不在值参数中直接使用某些类型形参。
+     */
+    val genericTypeParameters: List<ChirTypeRef>
+        get() = emptyList()
+
+    /** 函数是否以静态类型成员身份声明。 */
+    val isStatic: Boolean
+        get() = false
+
+    /**
      * 函数控制流基本块列表。
      */
     val blocks: List<ChirBlock>
 
+    /** 函数是否具有可执行的 CFG；仅有签名的导入声明必须明确标记为 false。 */
+    val hasBody: Boolean
+        get() = true
+
+    /** 此函数是否以外部导入声明存在，而不是本包定义。 */
+    val isImported: Boolean
+        get() = false
+
     /**
      * 函数入口基本块语义标识。
      */
-    val entryBlockId: ChirSemanticId
+    val entryBlockId: ChirSemanticId?
 }
 
 /**
  * CHIR 类声明接口。
  */
-interface ChirClassDeclaration : ChirCustomTypeDeclaration {
+interface ChirClassDeclaration : ChirNominalTypeDeclaration {
     /**
      * 类直接父类型列表。
      */
@@ -116,7 +150,51 @@ interface ChirClassDeclaration : ChirCustomTypeDeclaration {
      * 类实现的接口或扩展类型列表。
      */
     val implementedTypes: List<ChirTypeRef>
+
+    /** 此 class definition 是否声明接口类型。 */
+    val isInterface: Boolean
+        get() = false
+
+    /** 官方 CHIR 的按引入类型分组的有序虚方法表。 */
+    val virtualMethodTables: List<ChirVirtualMethodTable>
+        get() = emptyList()
 }
+
+/** 官方 CHIR 中一个引入类型对应的有序虚方法槽位组。 */
+data class ChirVirtualMethodTable(
+    /** 声明该组虚方法槽位的类或接口类型。 */
+    val sourceParentType: ChirTypeRef,
+
+    /** 按官方 CHIR 槽位序号排列的方法；列表索引就是组内分派 offset。 */
+    val methods: List<ChirVirtualMethod>,
+)
+
+/** 官方虚方法槽位的签名、来源和当前实现事实。 */
+data class ChirVirtualMethod(
+    /** 仓颉源码方法标识符。 */
+    val sourceCodeIdentifier: String,
+
+    /** 虚方法未实例化的原始函数签名。 */
+    val signatureType: ChirFunctionType,
+
+    /** 方法声明的泛型参数，顺序与签名一致。 */
+    val genericTypeParameters: List<ChirTypeRef>,
+
+    /** 当前类型在此槽位选择的函数；null 表示抽象或尚无实现。 */
+    val implementationSemanticId: ChirSemanticId?,
+
+    /** 官方虚方法记录上的声明属性。 */
+    val attributes: Set<ChirAttribute>,
+
+    /** 此方法最初声明时的类型。 */
+    val originalType: ChirTypeRef,
+
+    /** 当前槽位所属的方法父类型。 */
+    val parentType: ChirTypeRef,
+
+    /** 官方记录中的返回类型。 */
+    val returnType: ChirTypeRef,
+)
 
 /**
  * CHIR 接口声明接口。
@@ -134,7 +212,7 @@ interface ChirInterfaceDeclaration : ChirCustomTypeDeclaration {
 /**
  * CHIR 结构体声明接口。
  */
-interface ChirStructDeclaration : ChirCustomTypeDeclaration {
+interface ChirStructDeclaration : ChirNominalTypeDeclaration {
     /**
      * 结构体字段声明列表。
      */
@@ -144,11 +222,15 @@ interface ChirStructDeclaration : ChirCustomTypeDeclaration {
 /**
  * CHIR 枚举声明接口。
  */
-interface ChirEnumDeclaration : ChirCustomTypeDeclaration {
+interface ChirEnumDeclaration : ChirNominalTypeDeclaration {
     /**
      * 枚举 case 名称列表。
      */
     val cases: List<String>
+
+    /** 枚举构造器的名字及 payload 类型，保留完整声明期布局。 */
+    val caseTypes: List<ChirEnumCaseType>
+        get() = cases.map(::ChirEnumCaseType)
 }
 
 /**
@@ -189,6 +271,9 @@ data class DefaultChirTypeDeclaration(
      * 声明属性集合。
      */
     override val attributes: Set<ChirAttribute> = emptySet(),
+
+    /** 声明期泛型参数引用，保留其稳定身份与上界。 */
+    override val typeParameterTypes: List<ChirTypeRef> = emptyList(),
 ) : ChirTypeDeclaration
 
 /**
@@ -204,6 +289,11 @@ data class DefaultChirClassDeclaration(
      * 类名称。
      */
     override val name: String,
+
+    /**
+     * 类定义的稳定类型身份。
+     */
+    override val typeDeclarationId: ChirTypeDeclarationId,
 
     /**
      * 类类型参数名称列表。
@@ -229,6 +319,15 @@ data class DefaultChirClassDeclaration(
      * 类声明属性集合。
      */
     override val attributes: Set<ChirAttribute> = emptySet(),
+
+    /** 声明期泛型参数引用，保留其稳定身份与上界。 */
+    override val typeParameterTypes: List<ChirTypeRef> = emptyList(),
+
+    /** 声明是接口时为 true；该事实参与 classfile 和动态调用指令生成。 */
+    override val isInterface: Boolean = false,
+
+    /** 官方 CHIR 的有序虚方法表，供类 vtable 和接口 MTable lowering 共用。 */
+    override val virtualMethodTables: List<ChirVirtualMethodTable> = emptyList(),
 ) : ChirClassDeclaration {
     /**
      * 类声明的固定定义分类。
@@ -291,6 +390,11 @@ data class DefaultChirStructDeclaration(
     override val name: String,
 
     /**
+     * 结构体定义的稳定类型身份。
+     */
+    override val typeDeclarationId: ChirTypeDeclarationId,
+
+    /**
      * 结构体类型参数名称列表。
      */
     override val typeParameters: List<String> = emptyList(),
@@ -309,6 +413,9 @@ data class DefaultChirStructDeclaration(
      * 结构体声明属性集合。
      */
     override val attributes: Set<ChirAttribute> = emptySet(),
+
+    /** 声明期泛型参数引用，保留其稳定身份与上界。 */
+    override val typeParameterTypes: List<ChirTypeRef> = emptyList(),
 ) : ChirStructDeclaration {
     /**
      * 结构体声明的固定定义分类。
@@ -331,6 +438,11 @@ data class DefaultChirEnumDeclaration(
     override val name: String,
 
     /**
+     * 枚举定义的稳定类型身份。
+     */
+    override val typeDeclarationId: ChirTypeDeclarationId,
+
+    /**
      * 枚举类型参数名称列表。
      */
     override val typeParameters: List<String> = emptyList(),
@@ -349,6 +461,12 @@ data class DefaultChirEnumDeclaration(
      * 枚举声明属性集合。
      */
     override val attributes: Set<ChirAttribute> = emptySet(),
+
+    /** 声明期泛型参数引用，保留其稳定身份与上界。 */
+    override val typeParameterTypes: List<ChirTypeRef> = emptyList(),
+
+    /** 与 [cases] 对齐的完整构造器签名。 */
+    override val caseTypes: List<ChirEnumCaseType> = cases.map(::ChirEnumCaseType),
 ) : ChirEnumDeclaration {
     /**
      * 枚举声明的固定定义分类。
@@ -394,6 +512,9 @@ data class DefaultChirExtendDeclaration(
      * extend 声明属性集合。
      */
     override val attributes: Set<ChirAttribute> = emptySet(),
+
+    /** 声明期泛型参数引用，保留其稳定身份与上界。 */
+    override val typeParameterTypes: List<ChirTypeRef> = emptyList(),
 ) : ChirExtendDeclaration {
     /**
      * extend 声明的固定定义分类。
@@ -493,10 +614,22 @@ data class DefaultChirFunctionDeclaration(
     /**
      * 函数入口基本块标识。
      */
-    override val entryBlockId: ChirSemanticId,
+    override val entryBlockId: ChirSemanticId?,
 
     /**
      * 函数声明属性集合。
      */
     override val attributes: Set<ChirAttribute> = emptySet(),
+
+    /** 此函数是否携带可执行 CFG。 */
+    override val hasBody: Boolean = true,
+
+    /** 此函数是否为外部导入声明。 */
+    override val isImported: Boolean = false,
+
+    /** 函数声明期泛型形参；保留官方 CHIR 顺序与类型身份。 */
+    override val genericTypeParameters: List<ChirTypeRef> = emptyList(),
+
+    /** 函数是否以静态类型成员身份声明。 */
+    override val isStatic: Boolean = false,
 ) : ChirFunctionDeclaration

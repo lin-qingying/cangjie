@@ -15,6 +15,8 @@ import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeDiagnostic
+import org.cangnova.cangjie.cfir.types.DiagnosticSourceOwner
+import org.cangnova.cangjie.cfir.types.DiagnosticSourceSlot
 import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability
 import org.cangnova.cangjie.source.CjSourceElement
 
@@ -201,8 +203,16 @@ class ConeAmbiguityError(
      * 类型解析必须保留整个 user type，而不是只保留最终 classifier token；诊断层据此绕过
      * 普通 qualified reference 的名称定位策略，完整标记 `A<X, Y>` 这类类型使用。
      */
-    val typeUseSource: CjSourceElement? = null,
-) : ConeDiagnosticWithCandidates, ConeClassifierAmbiguityDiagnostic {
+    typeUseSource: CjSourceElement? = null,
+) : ConeDiagnosticWithCandidates, ConeClassifierAmbiguityDiagnostic, DiagnosticSourceOwner {
+    /** 同一诊断身份随来源代次迁移；类型语义与候选、支配关系始终保留。 */
+    var typeUseSource: CjSourceElement? = typeUseSource
+        private set
+
+    override val diagnosticSourceSlots: List<DiagnosticSourceSlot> = listOf(DiagnosticSourceSlot(
+        { this.typeUseSource },
+        { this.typeUseSource = it as CjSourceElement },
+    ))
     /** 面向普通诊断渲染的失败原因。 */
     override val reason: String get() = "Ambiguity: $name, ${candidateSymbols.map { describeSymbol(it) }}"
 

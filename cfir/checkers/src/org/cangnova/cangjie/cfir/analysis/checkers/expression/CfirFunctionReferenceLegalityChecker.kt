@@ -1,16 +1,17 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
-import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
-import org.cangnova.cangjie.cfir.declarations.CfirFinalizer
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
+import org.cangnova.cangjie.cfir.expressions.CfirCallExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
+import org.cangnova.cangjie.cfir.patterns.CfirEnumPattern
 import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
@@ -27,7 +28,7 @@ import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
  * - 普通函数调用会走 `CfirFunctionCall`，这里显式跳过，避免与调用语义重叠。
  * - 该规则只基于已经解析完成的函数符号，不做额外候选决议。
  */
-object CfirFunctionReferenceLegalityChecker : CfirQualifiedAccessChecker() {
+object CfirFunctionReferenceLegalityChecker : CfirQualifiedAccessChecker(MppCheckerKind.Common) {
     /** 检查函数名作为值访问时是否违反 mut/unsafe 或 enum 构造器参数规则。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirQualifiedAccessExpression) {
@@ -56,6 +57,10 @@ object CfirFunctionReferenceLegalityChecker : CfirQualifiedAccessChecker() {
         val diagnosticSource = expression.calleeReference.source ?: expression.source ?: return
 
         if (targetDeclaration is CfirEnumConstructor && targetDeclaration.valueParameters.isNotEmpty()) {
+            // 模式拥有真正的 constructor 访问；其载荷由模式检查器独立验证。
+            val enumPattern = context.containingElements.filterIsInstance<CfirEnumPattern>().lastOrNull()
+            val constructor = enumPattern?.constructor
+            if (constructor === expression || (constructor as? CfirCallExpression)?.base === expression) return
             reporter.reportOn(
                 source = diagnosticSource,
                 factory = CfirErrors.ENUM_CONSTRUCTOR_WITH_PARAM_MUST_HAVE_ARGS,
@@ -66,16 +71,6 @@ object CfirFunctionReferenceLegalityChecker : CfirQualifiedAccessChecker() {
 
         val targetFunction = targetDeclaration as? CfirNamedFunction ?: return
         val explicitReceiver = expression.explicitReceiver
-
-        if (context.findClosestDeclaration<CfirFinalizer>() != null &&
-            targetFunction.dispatchReceiverType != null && !targetFunction.status.isStatic
-        ) {
-            reporter.reportOn(
-                source = diagnosticSource,
-                factory = CfirErrors.INSTANCE_FUNC_CANNOT_BE_USED_IN_FINALIZER,
-                a = "function",
-            )
-        }
 
         // 仅显式 struct 接收者触发 USE_MUTABLE_FUNC_ALONE；bare 名字（隐式 this）由
         // IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION 管辖，interface 接收者整体跳过。

@@ -64,6 +64,7 @@ jobs:
         run: |
           llvm_config="$LLVM_DIR/bin/llvm-config"
           llvm_lib_dir="$("$llvm_config" --libdir)"
+          llvm_include_dir="$("$llvm_config" --includedir)"
           llvm_link_flags="$("$llvm_config" --link-shared --ldflags --libs all --system-libs all | tr '\n' ' ')"
           read -r -a llvm_link_args <<< "$llvm_link_flags"
           ./gradlew :llvm-interop:llvm-interop-jni:aggregateNativeArtifacts --no-daemon
@@ -76,6 +77,7 @@ jobs:
           "$native_compiler" -std=c++17 -fPIC -shared \
             -I"$JAVA_HOME/include" \
             -I"$JAVA_HOME/include/linux" \
+            -I"$llvm_include_dir" \
             -I"$LLVM_DIR/include" \
             llvm-interop/llvm-interop-jni/native/*.cpp \
             -Wl,--no-as-needed \

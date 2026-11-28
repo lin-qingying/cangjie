@@ -1,15 +1,14 @@
 package org.cangnova.cangjie.analysis.api.cfir.types
 
 import org.cangnova.cangjie.analysis.api.cfir.CaSymbolByCfirBuilder
-import org.cangnova.cangjie.analysis.api.cfir.utils.asCaType
 import org.cangnova.cangjie.analysis.api.impl.base.CaMapBackedSubstitutor
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
+import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.symbols.CaTypeParameterSymbol
 import org.cangnova.cangjie.analysis.api.types.CaSubstitutor
 import org.cangnova.cangjie.analysis.api.types.CaType
-import org.cangnova.cangjie.cfir.types.CfirTypeSubstitutorByMap
-import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
+import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutorByMap
 
 /**
  * CFIR substitutor 的统一抽象基类。
@@ -38,10 +37,9 @@ internal abstract class AbstractCaCfirSubstitutor<T : ConeSubstitutor>(
     /**
      * 尝试替换公开类型，并在底层替换器无结果时返回 null。
      */
-    final override fun substituteOrNull(type: CaType): CaType? {
-        val cfirType = type as? CaCfirType
-            ?: error("仅支持对 CFIR Analysis API 类型执行替换：${type::class.simpleName}")
-        return substitutor.substituteOrNull(cfirType.coneType)?.asCaType(builder.analysisSession)
+    final override fun substituteOrNull(type: CaType): CaType? = withValidityAssertion {
+        require(type is CaCfirType)
+        return substitutor.substituteOrNull(type.coneType)?.let { builder.typeBuilder.buildType(it) }
     }
 }
 
@@ -59,27 +57,18 @@ internal class CaCfirGenericSubstitutor(
  * 可还原成“类型参数符号 -> 类型”映射的 CFIR substitutor。
  */
 internal class CaCfirMapBackedSubstitutor(
-    /**
-     * 公开 API 层可见的替换映射。
-     */
-    internal val mappings: List<Pair<CaTypeParameterSymbol, CaType>>,
-    substitutor: CfirTypeSubstitutorByMap,
+    substitutor: ConeSubstitutorByMap,
     builder: CaSymbolByCfirBuilder,
-) : AbstractCaCfirSubstitutor<CfirTypeSubstitutorByMap>(substitutor, builder), CaMapBackedSubstitutor {
+) : AbstractCaCfirSubstitutor<ConeSubstitutorByMap>(substitutor, builder), CaMapBackedSubstitutor {
     /**
      * 返回保持插入顺序的公开替换映射。
      */
-    override fun getAsMap(): Map<CaTypeParameterSymbol, CaType> = mappings.toMap(linkedMapOf())
+    override fun getAsMap(): Map<CaTypeParameterSymbol, CaType> = withValidityAssertion {
+        val result = mutableMapOf<CaTypeParameterSymbol, CaType>()
+        for ((typeParameter, type) in substitutor.substitution) {
+            val typeParameterSymbol = builder.classifierBuilder.buildTypeParameterSymbol(typeParameter)
+            result[typeParameterSymbol] = builder.typeBuilder.buildType(type)
+        }
+        return result
+    }
 }
-
-/**
- * CFIR substitutor 缓存键。
- *
- * 相同类型映射必须在同一 session 内复用同一个公开 substitutor 实例。
- */
-internal data class CaCfirSubstitutorCacheKey(
-    /**
-     * CFIR 类型参数符号到 Cone 类型的底层替换映射。
-     */
-    val mappings: List<Pair<org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol, ConeCangJieType>>,
-)

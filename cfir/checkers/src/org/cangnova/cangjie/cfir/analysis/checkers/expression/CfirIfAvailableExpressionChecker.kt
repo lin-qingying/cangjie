@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
@@ -22,7 +23,7 @@ import org.cangnova.cangjie.type.AbstractTypeChecker
  * 该节点已经在 parser/raw CFIR 中完成形状建模，因此 checker 只消费结构化
  * 条件、分支和文件 import，不再扫描普通 annotation 文本或重新解释 macro surface。
  */
-object CfirIfAvailableExpressionChecker : CfirBasicExpressionChecker() {
+object CfirIfAvailableExpressionChecker : CfirBasicExpressionChecker(MppCheckerKind.Common) {
     private val deviceInfoPackage = FqName("ohos.device_info")
     private val basePackage = FqName("ohos.base")
 

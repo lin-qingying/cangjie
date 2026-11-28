@@ -8,6 +8,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.annotations.CangjieAnnotationOrigin
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.LanguageFeature
 import org.cangnova.cangjie.cfir.analysis.checkers.requireFeatureSupport
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
@@ -25,7 +26,7 @@ import org.cangnova.cangjie.cfir.expressions.annotationVersionSupport
  * 官方 parser 只允许 `@NonProduct` 出现在 FeaturesDirective 上；该规则
  * 不能由 declaration checker 代替，因为 directive 不属于 declarations。
  */
-object CfirFeaturesDirectiveChecker : CfirFileChecker() {
+object CfirFeaturesDirectiveChecker : CfirFileChecker(MppCheckerKind.Common) {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirFile) {
         val featuresDirective = declaration.featuresDirective ?: return

@@ -37,6 +37,11 @@ fun main(args: Array<String>) {
                 .mapNotNull { it.builder } + builderConfigurator.intermediateBuilders,
             ::BuilderPrinter
         )
+        generatedFiles += OwnedGraphCopyPrinter.generate(
+            generationPath, treeGeneratorReadme, implementations,
+            builderConfigurator.intermediateBuilders.mapTo(mutableSetOf()) { it.typeName },
+        )
+
         printVisitors(
             model,
             listOf(

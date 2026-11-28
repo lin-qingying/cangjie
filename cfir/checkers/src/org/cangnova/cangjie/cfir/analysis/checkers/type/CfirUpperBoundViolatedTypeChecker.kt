@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.type
 
 import org.cangnova.cangjie.cfir.analysis.checkers.CfirExtendSemantics
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.checkUpperBoundViolated
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
@@ -15,7 +16,7 @@ import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
  * 对齐 Kotlin FIR `FirUpperBoundViolatedTypeChecker`：类型解析阶段只构造类型，
  * 上界违反诊断在 resolved type ref checker 中基于已解析类型和原始 source ref 产生。
  */
-object CfirUpperBoundViolatedTypeChecker : CfirResolvedTypeRefChecker() {
+object CfirUpperBoundViolatedTypeChecker : CfirResolvedTypeRefChecker(MppCheckerKind.Common) {
     /** 对一个已解析类型引用执行 use-site 泛型上界检查，并跳过类型别名本体等特殊上下文。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(typeRef: CfirResolvedTypeRef) {

@@ -2,12 +2,13 @@ package org.cangnova.cangjie.cfir.resolve.body
 
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.CfirResolvedQualifier
 import org.cangnova.cangjie.cfir.expressions.CfirResolvable
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.resolve.services.CfirResolvedImportTarget
+import org.cangnova.cangjie.cfir.resolve.services.requireImportBindings
 import org.cangnova.cangjie.cfir.scopes.impl.CfirPackageMemberScope
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.session.importBindingStore
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 
@@ -17,32 +18,37 @@ import org.cangnova.cangjie.name.Name
  * Kotlin FIR 不允许直接导入包；这里沿用 FIR 的 import binding / scope 分层，
  * 但把仓颉官方 `PackageDecl` lookup 语义映射为 package member scope。
  */
-internal data class CfirImportedPackageQualifier(
-    /**
-     * 源码中作为包限定符使用的短名或导入别名。
-     */
-    val name: Name,
-    /**
-     * 该短名可解析到的包限定名集合。
-     */
-    val packages: List<CfirResolvedImportTarget.Package>,
-    /**
-     * 是否存在同名但未成功解析目标的导入。
-     */
-    val hasUnresolvedImport: Boolean = false,
-) {
-    /**
-     * 当前包限定符是否同时命中多个包。
-     */
-    val isAmbiguous: Boolean get() = packages.size > 1
-    /**
-     * 当前包限定符是否只来自未解析导入。
-     */
-    val isUnresolved: Boolean get() = packages.isEmpty() && hasUnresolvedImport
-    /**
-     * 唯一解析成功的包限定名；歧义或未解析时为空。
-     */
-    val packageFqName: FqName? get() = packages.singleOrNull()?.fqName
+internal sealed interface CfirImportedPackageQualifier {
+    /** 源码中作为包限定符使用的短名或导入别名。 */
+    val name: Name
+
+    /** 成功解析出的包目标；只有 [UniquePackage] 可作为静态成员作用域。 */
+    val packages: List<CfirResolvedImportTarget.Package>
+
+    /** 唯一解析成功的包限定名；歧义或未解析时为空。 */
+    val packageFqName: FqName?
+        get() = (this as? UniquePackage)?.target?.fqName
+
+    /** 唯一的导入包结果。 */
+    data class UniquePackage(
+        override val name: Name,
+        val target: CfirResolvedImportTarget.Package,
+    ) : CfirImportedPackageQualifier {
+        override val packages: List<CfirResolvedImportTarget.Package> = listOf(target)
+    }
+
+    /** 同一短名或别名命中多个包的歧义结果。 */
+    data class AmbiguousPackages(
+        override val name: Name,
+        override val packages: List<CfirResolvedImportTarget.Package>,
+    ) : CfirImportedPackageQualifier
+
+    /** 短名或别名只对应未解析导入的结果。 */
+    data class UnresolvedImport(
+        override val name: Name,
+    ) : CfirImportedPackageQualifier {
+        override val packages: List<CfirResolvedImportTarget.Package> = emptyList()
+    }
 }
 
 /**
@@ -52,7 +58,7 @@ internal fun CfirFile.resolveImportedPackageQualifier(
     name: Name,
     session: CfirSession,
 ): CfirImportedPackageQualifier? {
-    val bindings = session.importBindingStore.requireBindings(this).imports
+    val bindings = requireImportBindings().imports
     val matchingBindings = bindings
         .asSequence()
         .filter { binding -> binding.effectiveName == name && !binding.importDirective.isAllUnder }
@@ -67,12 +73,12 @@ internal fun CfirFile.resolveImportedPackageQualifier(
         .distinct()
         .toList()
     val hasUnresolvedImport = matchingBindings.any { binding -> binding.targets.isEmpty() }
-    if (packages.isEmpty() && !hasUnresolvedImport) return null
-    return CfirImportedPackageQualifier(
-        name = name,
-        packages = packages,
-        hasUnresolvedImport = hasUnresolvedImport,
-    )
+    return when {
+        packages.size > 1 -> CfirImportedPackageQualifier.AmbiguousPackages(name, packages)
+        packages.singleOrNull() != null -> CfirImportedPackageQualifier.UniquePackage(name, packages.single())
+        hasUnresolvedImport -> CfirImportedPackageQualifier.UnresolvedImport(name)
+        else -> null
+    }
 }
 
 /**
@@ -84,7 +90,7 @@ internal fun CfirFile.resolveImportedPackageQualifier(
 internal fun CfirFile.hasExplicitSimpleImportBinding(
     name: Name,
     session: CfirSession,
-): Boolean = session.importBindingStore.requireBindings(this).imports.any { binding ->
+): Boolean = requireImportBindings().imports.any { binding ->
     binding.effectiveName == name && !binding.importDirective.isAllUnder
 }
 
@@ -101,6 +107,8 @@ internal fun CfirExpression.importedPackageQualifierOrNull(
     file: CfirFile,
     session: CfirSession,
 ): CfirImportedPackageQualifier? {
+    if (this is CfirResolvedQualifier) return if (qualifierSymbol == null)
+        CfirImportedPackageQualifier.UniquePackage(referenceName, CfirResolvedImportTarget.Package(packageFqName, organizationName)) else null
     val name = importedPackageQualifierNameOrNull() ?: return null
     return file.resolveImportedPackageQualifier(name, session)
 }
@@ -110,6 +118,7 @@ internal fun CfirExpression.importedPackageQualifierScopeOrNull(
     file: CfirFile,
     session: CfirSession,
 ): CfirPackageMemberScope? {
-    val target = importedPackageQualifierOrNull(file, session)?.packages?.singleOrNull() ?: return null
+    val target = (importedPackageQualifierOrNull(file, session) as? CfirImportedPackageQualifier.UniquePackage)
+        ?.target ?: return null
     return CfirPackageMemberScope(target.fqName, session, organizationName = target.organizationName)
 }

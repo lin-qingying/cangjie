@@ -1,7 +1,11 @@
 FILE: classWithMembers.cj
     internal? class WithMembers {
-        internal? var x: R|Int64|
-        internal? let name: R|String|
+        internal? var x: R|Int64| = ...
+            initializer:
+                <element: CfirLazyExpression>
+        internal? let name: R|String| = ...
+            initializer:
+                <element: CfirLazyExpression>
         internal? func greet(): R|Unit| {
             <element: CfirLazyBlock>
         }

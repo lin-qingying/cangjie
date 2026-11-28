@@ -1,0 +1,88 @@
+{
+  "before": {
+    "utc": "2026-11-17T19:25:04.5023350Z",
+    "fileCount": 6839,
+    "aggregateSha256": "D98C2C5221AD66991203C0AC85F68C246138D73851399B57C181243FC3F47C3B",
+    "roots": [
+      "common",
+      "cfir",
+      "analysis/low-level-api-cfir",
+      "analysis/analysis-api-cfir",
+      "compiler/frontend",
+      "compiler/config",
+      "compiler/phaser",
+      "compiler/arguments",
+      "psi",
+      "resolution.common",
+      "macro"
+    ],
+    "include": [
+      "*.kt",
+      "*.cj",
+      "*.kts"
+    ],
+    "exclude": "**/build/**",
+    "method": "rg --files --hidden --no-ignore, / normalized and Sort-Object -CaseSensitive; SHA256 of UTF8 LF joined path TAB length TAB uppercaseSHA256, no final LF",
+    "scope": "Reference parent product and normal Array completed getter, original SOURCE14 plus two official referenceInstantiation SOURCE cases"
+  },
+  "after": {
+    "utc": "2026-11-17T19:41:04.1351805Z",
+    "fileCount": 6839,
+    "aggregateSha256": "D98C2C5221AD66991203C0AC85F68C246138D73851399B57C181243FC3F47C3B",
+    "roots": [
+      "common",
+      "cfir",
+      "analysis/low-level-api-cfir",
+      "analysis/analysis-api-cfir",
+      "compiler/frontend",
+      "compiler/config",
+      "compiler/phaser",
+      "compiler/arguments",
+      "psi",
+      "resolution.common",
+      "macro"
+    ],
+    "include": [
+      "*.kt",
+      "*.cj",
+      "*.kts"
+    ],
+    "exclude": "**/build/**",
+    "method": "rg --files --hidden --no-ignore, / normalized and Sort-Object -CaseSensitive; SHA256 of UTF8 LF joined path TAB length TAB uppercaseSHA256, no final LF",
+    "scope": "Reference parent SOURCE16 run stopped at resolve compilation; no JUnit or old XML accepted",
+    "unchanged": true
+  },
+  "queue": {
+    "id": "6ce21178",
+    "args": [
+      "--gradle-user-home",
+      ".gradle/cjmp-export-home",
+      ":cfir:analysis-tests:test",
+      "--rerun",
+      "--tests",
+      "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExport*Test",
+      "--tests",
+      "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjo*Test.publicInterfaceDefaultBodyPromotesReferencedPrivateFunction",
+      "--tests",
+      "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjo*Test.referencedPrivateDefaultHelperIsCollectedOutsideClassBody",
+      "--no-build-cache",
+      "--console=plain",
+      "--max-workers=1",
+      "--continue"
+    ],
+    "pid": 40644,
+    "owner": "pid@40644",
+    "submitAt": 1794943564649,
+    "startedAt": 1794943564783,
+    "finishedAt": 1794944296881,
+    "exitCode": 1,
+    "status": "DONE"
+  },
+  "testsExecuted": 0,
+  "xml": [],
+  "compileErrors": [
+    "e: file:///C:/Users/lin17/.codex/worktrees/cjmp-framework-implementation/cangjie/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirAppliedCallReferenceFactory.kt:28:40 Unresolved reference 'ConeTypeParameterLookupTag'.This build uses unsafe internal compiler arguments:",
+    "e: file:///C:/Users/lin17/.codex/worktrees/cjmp-framework-implementation/cangjie/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirAppliedCallReferenceFactory.kt:118:82 Unresolved reference 'ConeTypeParameterLookupTag'."
+  ],
+  "scope": "Original SOURCE14 plus two new SOURCE reference cases were requested; resolve compilation failed before JUnit, no old XML accepted"
+}

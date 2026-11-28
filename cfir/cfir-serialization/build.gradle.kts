@@ -9,16 +9,20 @@ dependencies {
     api(project(":cfir:cfir-cones"))
     api(project(":cfir:cfir-tree"))
     api(project(":cfir:providers"))
+    api(project(":compiler:compiler.version"))
     // 浮点字面量载荷的解析与官方边界表由该 owner 提供。
     api(project(":cfir:semantics"))
     implementation(project(":flatbuffers-gen"))
     implementation(project(":common"))
+    implementation(project(":common:diagnostics"))
     implementation(project(":util"))
     implementation(libs.flatbuffers.java)
     api(project(":psi"))
     compileOnly(intellijCore())
 
     testImplementation(testFixtures(project(":tests:test-infrastructure")))
+    testImplementation(project(":cfir:raw-cfir:raw-cfir-common"))
+    testImplementation(project(":cfir:resolve"))
     // 正式 LL named-import 集成；FullId 测试留在 serialization 的内部可见边界。
     testImplementation(project(":analysis:low-level-api-cfir"))
     testImplementation(project(":analysis:decompiled"))

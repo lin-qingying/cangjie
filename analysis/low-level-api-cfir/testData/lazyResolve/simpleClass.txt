@@ -78,6 +78,22 @@ EXTENSIONS:
         <element: CfirLazyBlock>
     }
 
+CJMP_MATCHING:
+[ResolvedTo(IMPORTS)] FILE: simpleClass.cj
+    package sample.lowlevel.lazy
+    [ResolvedTo(CJMP_MATCHING)] internal? class Box<T> {
+        [ResolvedTo(IMPORTS)] public abstract? prop value: R|T|
+        [ResolvedTo(IMPORTS)] init([ResolvedTo(IMPORTS)] value: R|T|) {
+            <element: CfirLazyBlock>
+        }
+        [ResolvedTo(IMPORTS)] public func unwrap(): R|T| {
+            <element: CfirLazyBlock>
+        }
+    }
+    [ResolvedTo(IMPORTS)] internal? func consume([ResolvedTo(IMPORTS)] box: R|Box<R|Int64|>|): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+
 IMPLICIT_TYPES:
 [ResolvedTo(IMPORTS)] FILE: simpleClass.cj
     package sample.lowlevel.lazy
@@ -94,10 +110,10 @@ IMPLICIT_TYPES:
         <element: CfirLazyBlock>
     }
 
-CJMP_MATCHING:
+CJMP_FINAL_MATCHING:
 [ResolvedTo(IMPORTS)] FILE: simpleClass.cj
     package sample.lowlevel.lazy
-    [ResolvedTo(IMPLICIT_TYPES)] internal? class Box<T> {
+    [ResolvedTo(CJMP_FINAL_MATCHING)] internal? class Box<T> {
         [ResolvedTo(IMPORTS)] public abstract? prop value: R|T|
         [ResolvedTo(IMPORTS)] init([ResolvedTo(IMPORTS)] value: R|T|) {
             <element: CfirLazyBlock>

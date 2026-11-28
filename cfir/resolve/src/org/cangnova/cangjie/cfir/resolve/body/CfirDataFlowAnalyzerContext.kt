@@ -2,7 +2,8 @@ package org.cangnova.cangjie.cfir.resolve.body
 
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.resolve.dfa.CfirLocalVariableAssignmentAnalyzer
-import org.cangnova.cangjie.cfir.resolve.dfa.VariableStorage
+import org.cangnova.cangjie.cfir.resolve.dfa.DfaSourceVisitor
+import org.cangnova.cangjie.cfir.resolve.dfa.Flow
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.CfgInternals
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.ControlFlowGraph
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.ControlFlowGraphBuilder
@@ -12,10 +13,9 @@ import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 /**
  * CFIR 数据流上下文，对位 Kotlin FIR `DataFlowAnalyzerContext`。
  *
- * 正式状态面只保留四项：
+ * 状态由 CFG、mini 赋值分析器和赋值编号持有；变量规范表属于每条 Flow。
  * - [graphBuilder]：CFG 构造器
  * - [variableAssignmentAnalyzer]：局部变量赋值分析器
- * - [variableStorage]：数据流变量承载
  * - [assignmentCounter]：赋值编号计数器
  *
  * 不再保留旧的 frame-only 兼容层。
@@ -25,22 +25,33 @@ class CfirDataFlowAnalyzerContext(
     var graphBuilder: ControlFlowGraphBuilder = ControlFlowGraphBuilder(),
     /** 局部变量赋值分析器。 */
     var variableAssignmentAnalyzer: CfirLocalVariableAssignmentAnalyzer = CfirLocalVariableAssignmentAnalyzer(),
-    /** 数据流变量承载存储。 */
-    var variableStorage: VariableStorage = VariableStorage(),
     /** 赋值编号计数器。 */
     var assignmentCounter: Int = 0,
 ) {
+    /** 实际解析位置可能落在最后一个 CFG 节点之前。 */
+    internal var currentSmartCastPosition: Flow? = null
+
+    /** 访问全部保留状态，由各实际 owner 枚举自身的完整表与栈，不在 LL 层复制私有状态知识。 */
+    fun acceptSourceChildren(visitor: DfaSourceVisitor) {
+        graphBuilder.acceptSourceChildren(visitor)
+        variableAssignmentAnalyzer.acceptSourceChildren(visitor)
+        currentSmartCastPosition?.let(visitor::visitFlow)
+    }
+
     /**
      * 创建可恢复的 DFA 快照。
      *
      * 语义对位 Kotlin FIR：
      * - 使用真实 [ControlFlowGraphCopier] 深拷贝 CFG 状态
-     * - 深拷贝赋值分析器与变量存储
+     * - 深拷贝赋值分析器；CFG 节点共享其不可变 Flow，分叉独立修改全部变量表
      * - 原样复制 [assignmentCounter]
      * - 返回真实 [CfirDataFlowAnalyzerContextSnapshot.graphMapping]
      */
     @OptIn(CfgInternals::class)
-    fun createSnapshot(firMapper: SnapshotCfirMapper): CfirDataFlowAnalyzerContextSnapshot {
+    fun createSnapshot(
+        firMapper: SnapshotCfirMapper,
+        smartCastPosition: Flow? = currentSmartCastPosition,
+    ): CfirDataFlowAnalyzerContextSnapshot {
         val graphCopier = ControlFlowGraphCopier()
         val graphBuilderSnapshot = graphBuilder.createSnapshot(graphCopier)
         graphCopier.finish()
@@ -49,10 +60,10 @@ class CfirDataFlowAnalyzerContext(
             context = CfirDataFlowAnalyzerContext(
                 graphBuilder = graphBuilderSnapshot,
                 variableAssignmentAnalyzer = variableAssignmentAnalyzer.createSnapshot(firMapper),
-                variableStorage = variableStorage.createSnapshot(),
                 assignmentCounter = assignmentCounter,
-            ),
+            ).also { it.currentSmartCastPosition = smartCastPosition },
             graphMapping = graphCopier.graphMapping,
+            smartCastPosition = smartCastPosition,
         )
     }
 
@@ -63,19 +74,18 @@ class CfirDataFlowAnalyzerContext(
         reset()
         graphBuilder = source.graphBuilder
         variableAssignmentAnalyzer = source.variableAssignmentAnalyzer
-        variableStorage = source.variableStorage
         assignmentCounter = source.assignmentCounter
+        currentSmartCastPosition = source.currentSmartCastPosition
     }
 
     /**
-     * 仅重置 builder / assignment analyzer / variable storage。
+     * 仅重置 builder / assignment analyzer；Flow 随实际 CFG 生命周期持有。
      *
      * 与 Kotlin FIR 对位：`assignmentCounter` 不在这里回零。
      */
     fun reset() {
         graphBuilder.reset()
         variableAssignmentAnalyzer.reset()
-        variableStorage.reset()
     }
 
     /**
@@ -87,12 +97,10 @@ class CfirDataFlowAnalyzerContext(
     fun <T> withIsolatedContext(block: () -> T): T {
         val originalGraphBuilder = graphBuilder
         val originalVariableAssignmentAnalyzer = variableAssignmentAnalyzer
-        val originalVariableStorage = variableStorage
         val originalAssignmentCounter = assignmentCounter
 
         graphBuilder = ControlFlowGraphBuilder(isIsolatedContext = true)
         variableAssignmentAnalyzer = CfirLocalVariableAssignmentAnalyzer()
-        variableStorage = VariableStorage()
         assignmentCounter = originalAssignmentCounter
 
         return try {
@@ -100,7 +108,6 @@ class CfirDataFlowAnalyzerContext(
         } finally {
             graphBuilder = originalGraphBuilder
             variableAssignmentAnalyzer = originalVariableAssignmentAnalyzer
-            variableStorage = originalVariableStorage
             assignmentCounter = originalAssignmentCounter
         }
     }
@@ -117,7 +124,15 @@ class CfirDataFlowAnalyzerContextSnapshot(
     val context: CfirDataFlowAnalyzerContext,
     /** 原 CFG 到复制后 CFG 的映射。 */
     val graphMapping: Map<ControlFlowGraph, ControlFlowGraph>,
+    /** 保存实际解析位置；调用实参后可以与 builder.lastNode 不同，不能在恢复时重新猜测。 */
+    val smartCastPosition: Flow?,
 )
+
+/** 仅复制 CFG / 状态的资源重放保留原 CFIR 元素和符号。 */
+internal object IdentitySnapshotCfirMapper : SnapshotCfirMapper {
+    override fun <T : CfirBasedSymbol<*>> mapSymbol(symbol: T): T = symbol
+    override fun <T : CfirElement> mapElement(element: T): T = element
+}
 
 /**
  * 对位 Kotlin `SnapshotFirMapper`。

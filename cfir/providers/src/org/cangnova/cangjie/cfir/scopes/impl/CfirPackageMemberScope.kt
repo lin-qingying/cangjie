@@ -7,7 +7,7 @@ import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirImportNamespaceContext
 import org.cangnova.cangjie.cfir.scopes.CfirPackageScope
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
@@ -90,13 +90,9 @@ class CfirPackageMemberScope(
      * 按名称处理包级 classifier。
      */
     override fun processClassifiersByName(name: Name, processor: (CfirClassLikeSymbol<*>) -> Unit) {
+        if (name.asString().isEmpty() || name in excludedNames) return
         val symbols = classifierCache.getOrPut(name) {
-            val knownNames = symbolProvider.symbolNamesProvider.getTopLevelClassifierNamesInPackage(packageFqName).orEmpty()
-            if (name !in knownNames) {
-                emptyList()
-            } else {
-                namespace.classifiers(name)
-            }
+            namespace.classifiers(name)
         }
         symbols.forEach(processor)
     }
@@ -105,6 +101,7 @@ class CfirPackageMemberScope(
      * 按名称处理包级函数。
      */
     override fun processFunctionsByName(name: Name, processor: (CfirNamedFunctionSymbol) -> Unit) {
+        if (name in excludedNames) return
         val symbols = functionCache.getOrPut(name) {
             namespace.functions(name)
         }
@@ -115,6 +112,7 @@ class CfirPackageMemberScope(
      * 按名称处理包级 callable。
      */
     override fun processCallablesByName(name: Name, processor: (CfirCallableSymbol<*>) -> Unit) {
+        if (name in excludedNames) return
         val symbols = callableCache.getOrPut(name) {
             namespace.callables(name)
         }
@@ -125,6 +123,7 @@ class CfirPackageMemberScope(
      * 按名称处理包级属性。
      */
     override fun processPropertiesByName(name: Name, processor: (CfirPropertySymbol) -> Unit) {
+        if (name in excludedNames) return
         val symbols = propertyCache.getOrPut(name) {
             namespace.properties(name)
         }

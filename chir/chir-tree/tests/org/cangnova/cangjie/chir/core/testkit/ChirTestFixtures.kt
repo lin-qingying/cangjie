@@ -7,8 +7,10 @@ import org.cangnova.cangjie.chir.core.declaration.DefaultChirFunctionDeclaration
 import org.cangnova.cangjie.chir.core.declaration.DefaultChirVariableDeclaration
 import org.cangnova.cangjie.chir.core.expression.ChirCallExpression
 import org.cangnova.cangjie.chir.core.expression.ChirBinaryExpression
+import org.cangnova.cangjie.chir.core.expression.ChirFieldExpression
 import org.cangnova.cangjie.chir.core.expression.ChirMemoryExpression
 import org.cangnova.cangjie.chir.core.expression.ChirOtherExpression
+import org.cangnova.cangjie.chir.core.expression.ChirTupleExpression
 import org.cangnova.cangjie.chir.core.expression.ChirUnaryExpression
 import org.cangnova.cangjie.chir.core.identity.ChirSemanticId
 import org.cangnova.cangjie.chir.core.model.ChirModule
@@ -18,6 +20,7 @@ import org.cangnova.cangjie.chir.core.type.ChirFunctionType
 import org.cangnova.cangjie.chir.core.type.ChirPrimitiveType
 import org.cangnova.cangjie.chir.core.type.ChirRefType
 import org.cangnova.cangjie.chir.core.type.ChirResolvedTypeRef
+import org.cangnova.cangjie.chir.core.type.ChirTupleType
 import org.cangnova.cangjie.chir.core.value.ChirConstantValue
 import org.cangnova.cangjie.chir.core.value.ChirImportedFunctionValue
 import org.cangnova.cangjie.chir.core.value.ChirLocalValue
@@ -32,6 +35,7 @@ object ChirTestFixtures {
     fun codecPackage(): ChirPackage {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
         val boolType = ChirResolvedTypeRef(ChirPrimitiveType.BOOL)
+        val unitType = ChirResolvedTypeRef(ChirPrimitiveType.UNIT)
         val refIntType = ChirResolvedTypeRef(ChirRefType(intType, mutable = true))
         val helperType = ChirResolvedTypeRef(
             ChirFunctionType(
@@ -80,11 +84,36 @@ object ChirTestFixtures {
                             address = slot,
                             resultType = intType,
                         ),
+                        ChirMemoryExpression(
+                            semanticId = ChirSemanticId("expr:store-member"),
+                            operation = "store.element.by.name",
+                            address = slot,
+                            value = constOne,
+                            resultType = unitType,
+                            memberNames = listOf("start"),
+                        ),
                         ChirCallExpression(
                             semanticId = ChirSemanticId("expr:call"),
                             callee = helper,
                             arguments = listOf(constOne),
                             resultType = intType,
+                            instantiatedTypeArguments = listOf(intType),
+                            thisType = ChirResolvedTypeRef(ChirRefType(intType)),
+                        ),
+                        ChirTupleExpression(
+                            semanticId = ChirSemanticId("expr:tuple"),
+                            elements = listOf(constOne, condition),
+                            resultType = ChirResolvedTypeRef(ChirTupleType(listOf(intType, boolType))),
+                        ),
+                        ChirFieldExpression(
+                            semanticId = ChirSemanticId("expr:field"),
+                            base = ChirLocalValue(
+                                semanticId = ChirSemanticId("expr:tuple"),
+                                type = ChirResolvedTypeRef(ChirTupleType(listOf(intType, boolType))),
+                                name = "tuple",
+                            ),
+                            path = listOf(1uL),
+                            resultType = boolType,
                         ),
                         ChirOtherExpression(
                             semanticId = ChirSemanticId("expr:select"),

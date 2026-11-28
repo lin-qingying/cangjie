@@ -46,6 +46,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
+import org.cangnova.cangjie.cfir.symbols.CfirThisOwnerSymbol
 
 /**
  * 负责单个 CFIR 文件的声明 header 登记和顶层声明转换。
@@ -82,7 +83,7 @@ internal class Cfir2ChirFileConverter(
                 declarations = emptyList(),
             ),
         )
-        file.declarations.forEach(::registerDeclarationHeaders)
+        file.declarations.forEach { declaration -> registerDeclarationHeaders(declaration, receiverOwner = null) }
     }
 
     /**
@@ -100,19 +101,26 @@ internal class Cfir2ChirFileConverter(
     /**
      * 递归登记声明 header，保证函数体转换前所有可调用/变量符号已经可查。
      */
-    private fun registerDeclarationHeaders(declaration: CfirDeclaration) {
+    private fun registerDeclarationHeaders(
+        declaration: CfirDeclaration,
+        receiverOwner: CfirThisOwnerSymbol<*>?,
+    ) {
         when (declaration) {
-            is CfirFunction -> registerFunctionHeader(declaration)
+            is CfirFunction -> registerFunctionHeader(declaration, receiverOwner)
             is CfirEnumConstructor -> registerEnumConstructorHeader(declaration)
             is CfirProperty -> {
                 registerVariableHeader(declaration)
-                declaration.getter?.let(::registerDeclarationHeaders)
-                declaration.setter?.let(::registerDeclarationHeaders)
+                declaration.getter?.let { registerDeclarationHeaders(it, receiverOwner) }
+                declaration.setter?.let { registerDeclarationHeaders(it, receiverOwner) }
             }
             is CfirVariable -> registerVariableHeader(declaration)
             is CfirCodeFragment -> Unit
-            is CfirClassLikeDeclaration -> declaration.declarations.forEach(::registerDeclarationHeaders)
-            is CfirExtend -> declaration.declarations.forEach(::registerDeclarationHeaders)
+            is CfirClassLikeDeclaration -> declaration.declarations.forEach { member ->
+                registerDeclarationHeaders(member, declaration.symbol)
+            }
+            is CfirExtend -> declaration.declarations.forEach { member ->
+                registerDeclarationHeaders(member, declaration.symbol)
+            }
             else -> Unit
         }
     }
@@ -120,18 +128,28 @@ internal class Cfir2ChirFileConverter(
     /**
      * 登记普通 CFIR 函数的 CHIR 函数 header。
      */
-    internal fun registerFunctionHeader(function: CfirFunction) {
+    internal fun registerFunctionHeader(
+        function: CfirFunction,
+        receiverOwner: CfirThisOwnerSymbol<*>? = null,
+    ) {
         if (storage.hasFunctionHeader(function.symbol)) return
-        val functionId = Cfir2ChirIds.callableId(function)
+        val functionId = components.callableId(function)
         val parameters = function.valueParameters.map { parameter ->
             convertValueParameter(functionId, parameter)
         }
+        val receiverType = function.dispatchReceiverType?.let(typeMapper::mapConeTypeRef)
+        val dispatchReceiverParameter = components.dispatchReceiverParameter(function, functionId)
         val header = ChirFunctionHeader(
             semanticId = functionId,
             name = function.nameForChir(),
             returnType = typeMapper.mapTypeRef(function.returnTypeRef),
             parameters = parameters,
-            receiverType = function.dispatchReceiverType?.let(typeMapper::mapConeTypeRef),
+            dispatchReceiverParameter = dispatchReceiverParameter,
+            receiverOwnerSymbol = receiverOwner,
+            receiverType = receiverType,
+            ownerType = receiverOwner?.let(components::ownerType),
+            isStatic = function.status.isStatic,
+            genericTypeParameters = typeMapper.mapTypeParameters(function.typeParameters),
         )
         storage.registerFunctionHeader(function.symbol, header)
     }
@@ -141,7 +159,7 @@ internal class Cfir2ChirFileConverter(
      */
     private fun registerEnumConstructorHeader(constructor: CfirEnumConstructor) {
         if (storage.hasFunctionHeader(constructor.symbol)) return
-        val functionId = Cfir2ChirIds.declarationId(constructor.symbol)
+        val functionId = components.declarationId(constructor.symbol)
         val parameters = constructor.valueParameters.map { parameter ->
             convertValueParameter(functionId, parameter)
         }
@@ -217,63 +235,87 @@ internal class Cfir2ChirFileConverter(
             is CfirVariable -> declaration.toChirVariableDeclaration()
             is CfirCodeFragment -> convertCodeFragment(declaration)
             is CfirPrimitiveTypeDeclaration -> DefaultChirTypeDeclaration(
-                semanticId = Cfir2ChirIds.declarationId(declaration.symbol),
+                semanticId = components.declarationId(declaration.symbol),
                 name = declaration.name.asString(),
                 typeParameters = declaration.typeParameters.map { it.symbol.name.asString() },
+                typeParameterTypes = typeMapper.mapTypeParameters(declaration.typeParameters),
                 attributes = setOf(
                     ChirStringAttribute("cfir.kind", "primitiveType"),
                     ChirStringAttribute("cfir.primitive.kind", declaration.kind.name),
                 ),
             )
-            is CfirInterface -> DefaultChirInterfaceDeclaration(
-                semanticId = Cfir2ChirIds.declarationId(declaration.symbol),
+            is CfirInterface -> DefaultChirClassDeclaration(
+                semanticId = components.declarationId(declaration.symbol),
                 name = declaration.name.asString(),
+                typeDeclarationId = declaration.symbol.classId.toChirTypeDeclarationId(),
                 typeParameters = declaration.typeParameters.map { it.name.asString() },
-                superInterfaceTypes = declaration.superTypeRefs.map(typeMapper::mapTypeRef),
+                typeParameterTypes = typeMapper.mapTypeParameters(declaration.typeParameters),
+                implementedTypes = declaration.superTypeRefs.map(typeMapper::mapHierarchyTypeRef),
                 memberDeclarations = declaration.declarations.mapNotNull(::convertMemberDeclaration),
                 attributes = setOf(ChirStringAttribute("cfir.kind", "interface")),
+                isInterface = true,
             )
-            is org.cangnova.cangjie.cfir.declarations.CfirClass -> DefaultChirClassDeclaration(
-                semanticId = Cfir2ChirIds.declarationId(declaration.symbol),
-                name = declaration.name.asString(),
-                typeParameters = declaration.typeParameters.map { it.name.asString() },
-                superTypes = declaration.superTypeRefs.map(typeMapper::mapTypeRef),
-                memberDeclarations = declaration.declarations.mapNotNull(::convertMemberDeclaration),
-            )
+            is org.cangnova.cangjie.cfir.declarations.CfirClass -> {
+                val (implementedTypeRefs, superclassTypeRefs) = declaration.superTypeRefs.partition(
+                    typeMapper::isInterfaceHierarchyType,
+                )
+                if (superclassTypeRefs.size > 1) {
+                    throw Cfir2ChirConversionException(
+                        "class ${declaration.name} has more than one resolved superclass type",
+                        declaration,
+                    )
+                }
+                DefaultChirClassDeclaration(
+                    semanticId = components.declarationId(declaration.symbol),
+                    name = declaration.name.asString(),
+                    typeDeclarationId = declaration.symbol.classId.toChirTypeDeclarationId(),
+                    typeParameters = declaration.typeParameters.map { it.name.asString() },
+                    typeParameterTypes = typeMapper.mapTypeParameters(declaration.typeParameters),
+                    superTypes = superclassTypeRefs.map(typeMapper::mapHierarchyTypeRef),
+                    implementedTypes = implementedTypeRefs.map(typeMapper::mapHierarchyTypeRef),
+                    memberDeclarations = declaration.declarations.mapNotNull(::convertMemberDeclaration),
+                )
+            }
             is CfirStruct -> {
                 val members = declaration.declarations.mapNotNull(::convertMemberDeclaration)
                 DefaultChirStructDeclaration(
-                    semanticId = Cfir2ChirIds.declarationId(declaration.symbol),
+                    semanticId = components.declarationId(declaration.symbol),
                     name = declaration.name.asString(),
+                    typeDeclarationId = declaration.symbol.classId.toChirTypeDeclarationId(),
                     typeParameters = declaration.typeParameters.map { it.name.asString() },
+                    typeParameterTypes = typeMapper.mapTypeParameters(declaration.typeParameters),
                     fieldDeclarations = members.filterIsInstance<ChirVariableDeclaration>(),
                     memberDeclarations = members,
                 )
             }
             is CfirEnum -> DefaultChirEnumDeclaration(
-                semanticId = Cfir2ChirIds.declarationId(declaration.symbol),
+                semanticId = components.declarationId(declaration.symbol),
                 name = declaration.name.asString(),
+                typeDeclarationId = declaration.symbol.classId.toChirTypeDeclarationId(),
                 typeParameters = declaration.typeParameters.map { it.name.asString() },
+                typeParameterTypes = typeMapper.mapTypeParameters(declaration.typeParameters),
                 cases = declaration.declarations.filterIsInstance<CfirEnumConstructor>().map { it.name.asString() },
                 memberDeclarations = declaration.declarations.mapNotNull(::convertMemberDeclaration),
                 attributes = setOf(ChirStringAttribute("cfir.enum.kind", if (declaration.isRefEnum) "ref" else "value")),
             )
             is CfirExtend -> DefaultChirExtendDeclaration(
-                semanticId = Cfir2ChirIds.declarationId(declaration.symbol),
+                semanticId = components.declarationId(declaration.symbol),
                 name = declaration.extendedTypeRef.renderNameForDeclaration(),
                 targetType = typeMapper.mapTypeRef(declaration.extendedTypeRef),
-                extendedTypes = declaration.superTypeRefs.map(typeMapper::mapTypeRef),
+                extendedTypes = declaration.superTypeRefs.map(typeMapper::mapHierarchyTypeRef),
                 typeParameters = declaration.typeParameters.map { it.name.asString() },
+                typeParameterTypes = typeMapper.mapTypeParameters(declaration.typeParameters),
                 memberDeclarations = declaration.declarations.mapNotNull(::convertMemberDeclaration),
             )
             is CfirTypeAlias -> DefaultChirTypeDeclaration(
-                semanticId = Cfir2ChirIds.declarationId(declaration.symbol),
+                semanticId = components.declarationId(declaration.symbol),
                 name = declaration.name.asString(),
                 typeParameters = declaration.typeParameters.map { it.name.asString() },
+                typeParameterTypes = typeMapper.mapTypeParameters(declaration.typeParameters),
                 attributes = setOf(ChirStringAttribute("cfir.expandedType", declaration.expandedTypeRef.renderNameForDeclaration())),
             )
             is CfirTypeParameter -> DefaultChirTypeDeclaration(
-                semanticId = Cfir2ChirIds.declarationId(declaration.symbol),
+                semanticId = components.declarationId(declaration.symbol),
                 name = declaration.name.asString(),
                 typeParameters = emptyList(),
                 attributes = declaration.bounds.mapIndexedTo(linkedSetOf()) { index, bound ->
@@ -324,7 +366,7 @@ internal class Cfir2ChirFileConverter(
         val returnType = codeFragment.block.coneTypeOrNull?.let(typeMapper::mapConeTypeRef)
             ?: throw Cfir2ChirConversionException("code fragment block must carry resolved Cone type before CHIR lowering", codeFragment.block)
         val header = ChirFunctionHeader(
-            semanticId = Cfir2ChirIds.declarationId(codeFragment.symbol),
+            semanticId = components.declarationId(codeFragment.symbol),
             name = "<code-fragment>",
             returnType = returnType,
             parameters = emptyList(),
@@ -364,7 +406,7 @@ internal class Cfir2ChirFileConverter(
      */
     private fun CfirVariable.toChirVariableDeclaration(): DefaultChirVariableDeclaration =
         DefaultChirVariableDeclaration(
-            semanticId = Cfir2ChirIds.declarationId(symbol),
+            semanticId = components.declarationId(symbol),
             name = when (this) {
                 is CfirFieldVariable -> name.asString()
                 is org.cangnova.cangjie.cfir.declarations.CfirResourceVariable -> name.asString()
@@ -381,7 +423,7 @@ internal class Cfir2ChirFileConverter(
      */
     private fun CfirProperty.toChirPropertyDeclaration(): DefaultChirPropertyDeclaration =
         DefaultChirPropertyDeclaration(
-            semanticId = Cfir2ChirIds.declarationId(symbol),
+            semanticId = components.declarationId(symbol),
             name = name.asString(),
             type = typeMapper.mapTypeRef(returnTypeRef),
             mutable = setter != null,

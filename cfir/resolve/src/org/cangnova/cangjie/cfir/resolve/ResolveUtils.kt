@@ -24,6 +24,8 @@
 
 package org.cangnova.cangjie.cfir.resolve
 
+import org.cangnova.cangjie.cfir.resolve.substitution.asCone
+
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRefsOwner
@@ -34,6 +36,21 @@ import org.cangnova.cangjie.cfir.diagnostic.*
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
+import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
+import org.cangnova.cangjie.cfir.declarations.CfirProperty
+import org.cangnova.cangjie.cfir.declarations.CfirPropertyAccessor
+import org.cangnova.cangjie.cfir.declarations.CfirExtend
+import org.cangnova.cangjie.cfir.resolve.providers.getContainingExtend
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessContext
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessKind
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityResult
+import org.cangnova.cangjie.cfir.resolve.providers.findExtendDeclarationSubstitution
+import org.cangnova.cangjie.cfir.resolve.providers.semanticExtendedType
+import org.cangnova.cangjie.cfir.session.accessibilityChecker
+import org.cangnova.cangjie.resolve.calls.tasks.ExplicitReceiverKind
 import org.cangnova.cangjie.cfir.expressions.CfirResolvable
 import org.cangnova.cangjie.cfir.references.*
 import org.cangnova.cangjie.cfir.references.builder.buildErrorNamedReference
@@ -45,7 +62,7 @@ import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirErrorReferenceWithC
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.substituteExplicitTypeArgumentConstraints
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintMismatch
@@ -54,6 +71,56 @@ import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability
 import org.cangnova.cangjie.type.model.safeSubstitute
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.withCfirEntry
+
+/**
+ * 仓颉 class 与 extend 都只有一个运行时对象槽。
+ * extend 的 chosen extension 是实际对象，candidate dispatch 可以只是查找宿主；
+ * 普通成员和函数值 invoke 保留其正式 dispatch，不改变推断阶段 D/E 两种角色。
+ */
+internal fun Candidate.selectedInstanceReceiverExpression(): CfirExpression? {
+    // 外层 invoke 的 symbol 仍指向内层成员；对象是已取得的函数值，不能再取内层 extend E。
+    if (callInfo.candidateForCommonInvokeReceiver != null) return dispatchReceiverExpression()
+    return if (instanceExtendOwnerOrNull() != null) chosenExtensionReceiverExpression() else dispatchReceiverExpression()
+}
+
+private fun Candidate.instanceExtendOwnerOrNull(): CfirExtend? {
+    val declaration = symbol.cfir as? CfirCallableDeclaration ?: return null
+    val isInstanceMember = !declaration.status.isStatic && !declaration.isLocal &&
+        (declaration is CfirFieldVariable || declaration is CfirProperty || declaration is CfirNamedFunction ||
+            declaration is CfirPropertyAccessor)
+    return if (isInstanceMember) (symbol as? CfirCallableSymbol<*>)?.getContainingExtend() else null
+}
+
+/** 成员检查、fresh receiver 规约与 completion 共用正式 extend 声明/用点代换期望类型。 */
+internal fun Candidate.expectedExtensionReceiverType(session: CfirSession): ConeCangJieType? {
+    val owner = (symbol as? CfirCallableSymbol<*>)?.getContainingExtend() ?: return null
+    val access = CfirAccessContext(callInfo.containingFile, callInfo.containingDeclarations,
+        receiverType = givenExtensionReceiver?.expression?.coneTypeOrNull, kind = CfirAccessKind.EXTEND)
+    if (session.accessibilityChecker.checkExtend(owner, access) !is CfirAccessibilityResult.Accessible) return null
+    val actualType = givenExtensionReceiver?.expression?.coneTypeOrNull
+    if (actualType != null) {
+        findExtendDeclarationSubstitution(session, owner, actualType)?.substitutedReceiverType?.let { return it }
+    }
+    // 尚未取得实例化代换时，约束检查的输入仍是该已绑定 extend 自己的声明类型。
+    return owner.semanticExtendedType(session)
+}
+
+/** 物理 receiver 的正式期望类型独立于其当前表达式类型；函数值调用消费已取得的 callee 类型。 */
+internal fun Candidate.selectedInstanceReceiverExpectedType(session: CfirSession): ConeCangJieType? = when {
+    callInfo.callKind == CallKind.Function && isFunctionTypeCallableValueCall -> dispatchReceiverExpression()?.coneTypeOrNull
+    instanceExtendOwnerOrNull() != null -> if (isSuccessful) expectedExtensionReceiverType(session) else null
+    else -> (symbol as? CfirCallableSymbol<*>)?.dispatchReceiverType
+}
+
+/** 同一次候选完成发布对象；成功显式成员访问同步到同一个完成后的对象 identity。 */
+internal fun CfirQualifiedAccessExpression.replaceCandidateReceivers(receiver: CfirExpression?, candidate: Candidate) {
+    replaceDispatchReceiver(receiver)
+    if (candidate.isSuccessful && receiver != null &&
+        (candidate.explicitReceiverKind == ExplicitReceiverKind.DISPATCH_RECEIVER ||
+            candidate.explicitReceiverKind == ExplicitReceiverKind.EXTENSION_RECEIVER)) {
+        replaceExplicitReceiver(receiver)
+    }
+}
 
 /**
  * 取得候选在当前调用语法中的初始表达式类型，并应用候选当前 substitutor。
@@ -157,10 +224,10 @@ fun BodyResolveComponents.typeFromCallee(calleeReference: CfirReference): ConeCa
 
         is CfirResolvedAppliedCallableReference -> {
             if (calleeReference.isFunctionValue) {
-                calleeReference.substitutedReturnType
+                calleeReference.callSiteType
                     ?: ConeErrorType(ConeSimpleDiagnostic("Applied function value has no function type"))
             } else if (calleeReference.resolvedSymbol.cfir is CfirEnumConstructor) {
-                calleeReference.substitutedReturnType
+                calleeReference.callSiteType
                     ?: typeFromSymbol(calleeReference.resolvedSymbol)
             } else {
                 typeFromSymbol(calleeReference.resolvedSymbol)

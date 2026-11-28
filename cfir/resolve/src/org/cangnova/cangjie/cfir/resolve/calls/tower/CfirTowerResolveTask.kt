@@ -31,6 +31,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.resolve.BodyResolveComponents
 import org.cangnova.cangjie.cfir.resolve.body.CfirTowerDataContext
 import org.cangnova.cangjie.cfir.resolve.body.importedPackageQualifierScopeOrNull
+import org.cangnova.cangjie.cfir.expressions.CfirResolvedQualifier
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallInfo
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallKind
@@ -314,7 +315,7 @@ internal open class CfirTowerResolveTask(
             ScopeBasedTowerLevel(
                 components = components,
                 scope = callableScope,
-                dispatchReceiver = if (packageQualifierScope == null) ExpressionReceiverValue(receiverExpression) else null,
+                dispatchReceiver = if (packageQualifierScope == null && receiverExpression !is CfirResolvedQualifier) ExpressionReceiverValue(receiverExpression) else null,
             ),
             info,
             CfirTowerGroup.EXPLICIT_MEMBER,

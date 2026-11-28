@@ -1,0 +1,47 @@
+{
+  "utc": "2026-11-18T21:27:28.6647014Z",
+  "queueId": "6a7fdb7f",
+  "scope": "Read-only inspection of both freshly built production jars: real compiler build class and namespaced resource, no backend execution and no extraction/writes",
+  "artifacts": [
+    {
+      "path": "prepare/frontend/build/libs/frontend-1.1.1.jar",
+      "bytes": 18137651,
+      "sha256": "CEFC494016629F8D52355726D9D5EA9AB0595AF07D8B298474B306C0F2A86076",
+      "lastWriteUtc": "2026-11-18T21:20:29.2728482Z",
+      "entries": [
+        {
+          "path": "org/cangnova/cangjie/config/CangJieCompilerVersion.class",
+          "bytes": 2070,
+          "sha256": "47B6E6A2AE36331DAFD582DA1557E12D57494FB5A82E6C20C36D47B04F64CCA6",
+          "text": null
+        },
+        {
+          "path": "META-INF/cangjie/compiler.version",
+          "bytes": 6,
+          "sha256": "CC52F678848B814373757B460383BF61960E4943C203735ADDE0A350B3E50989",
+          "text": "1.1.1\n"
+        }
+      ]
+    },
+    {
+      "path": "prepare/ide-plugin-dependencies/cangjie-frontend-cfir-for-ide/build/libs/cangjie-frontend-cfir-for-ide-1.1.1.jar",
+      "bytes": 11588033,
+      "sha256": "5254A25F8DAD6683899F8964D52B6142BF064726377373483A375B54A2896760",
+      "lastWriteUtc": "2026-11-18T21:20:30.4287838Z",
+      "entries": [
+        {
+          "path": "org/cangnova/cangjie/config/CangJieCompilerVersion.class",
+          "bytes": 2070,
+          "sha256": "47B6E6A2AE36331DAFD582DA1557E12D57494FB5A82E6C20C36D47B04F64CCA6",
+          "text": null
+        },
+        {
+          "path": "META-INF/cangjie/compiler.version",
+          "bytes": 6,
+          "sha256": "CC52F678848B814373757B460383BF61960E4943C203735ADDE0A350B3E50989",
+          "text": "1.1.1\n"
+        }
+      ]
+    }
+  ]
+}

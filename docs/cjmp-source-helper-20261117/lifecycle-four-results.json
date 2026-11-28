@@ -1,0 +1,44 @@
+{
+  "scope": "Four actual ordinary PSI/LT helper lifecycle tests; no full S1/S2 closure",
+  "queue": "d6b88fc8",
+  "results": {
+    "capturedUtc": "2026-11-16T21:38:11.4727220Z",
+    "xml": [
+      {
+        "suite": "org.cangnova.cangjie.cfir.analysis.tests.CfirDeclarationOwnerTest",
+        "path": "cfir/analysis-tests/build/test-results/test/TEST-org.cangnova.cangjie.cfir.analysis.tests.CfirDeclarationOwnerTest.xml",
+        "timestamp": "2026-11-16T21:37:18.809Z",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "length": 930,
+        "sha256": "4992D9A8A27F64A88824BF0B75544F3348F12AF4D3F081D420D2C6BE17A185F7",
+        "gzipBase64": "H4sIAAAAAAAACr2TwU7CQBCG7yR9h3VPemjpQgNI2hICMZoQOVgvEg6bMoXV7W4zswV5ewMoQYMHE/U2M/9M8v0zmXjwWmq2BiRlTcJFEHIGJrcLZZYJf8xu/B4fpF4jdkCOauWAGVlCwi0ug1yapbFruQ+eFQR5oTCQRuotKQr2I8GoUDiGXEuUTlkz3RjADMhxttcTHnFGL6qqYJHwkLNCKl0j0D4BRIuH0KkSyMmySngrbHV8IXzRyVqi3+72RS/ohddPnK0suQPf5O7+MJPwMBCtiKdeg7G4QlsBOgXUPBR2ELmkD1sVqTEUstbuFnQFOFEF5Ntcw+UVZ7mWRL9n/x0ujLr8PIxWy5XLEOAT0rR2gA8rubCbv4SKfgT1H3sS7W+Qvh7tfzYkjmejLTkofVu7NL6YjcbDbDibz9O4eSKcNgLi+cad4DXi5vHZUq/xBr5+LPmiAwAA",
+        "roundTripVerified": true,
+        "cases": [
+          {
+            "key": "org.cangnova.cangjie.cfir.analysis.tests.CfirDeclarationOwnerTest#psiDefaultHelperLifecycle()",
+            "status": "passed",
+            "message": ""
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.analysis.tests.CfirDeclarationOwnerTest#lightTreeDefaultHelperOuterShadow()",
+            "status": "passed",
+            "message": ""
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.analysis.tests.CfirDeclarationOwnerTest#lightTreeDefaultHelperLifecycle()",
+            "status": "passed",
+            "message": ""
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.analysis.tests.CfirDeclarationOwnerTest#psiDefaultHelperOuterShadow()",
+            "status": "passed",
+            "message": ""
+          }
+        ]
+      }
+    ]
+  }
+}

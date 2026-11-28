@@ -9,19 +9,28 @@ package org.cangnova.cangjie.cfir.patterns.builder
 
 import kotlin.contracts.*
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
+import org.cangnova.cangjie.cfir.expressions.CfirConstantValue
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.patterns.CfirOrPattern
 import org.cangnova.cangjie.cfir.patterns.CfirPattern
 import org.cangnova.cangjie.cfir.patterns.impl.CfirOrPatternImpl
+import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.source.CjSourceElement
 
 @CfirBuilderDsl
 class CfirOrPatternBuilder {
     var source: CjSourceElement? = null
+    var semanticTypeRef: CfirTypeRef? = null
+    val constantValues: MutableList<CfirConstantValue> = mutableListOf()
+    var contextExpression: CfirExpression? = null
     val alternatives: MutableList<CfirPattern> = mutableListOf()
 
     fun build(): CfirOrPattern {
         return CfirOrPatternImpl(
             source,
+            semanticTypeRef,
+            constantValues,
+            contextExpression,
             alternatives,
         )
     }

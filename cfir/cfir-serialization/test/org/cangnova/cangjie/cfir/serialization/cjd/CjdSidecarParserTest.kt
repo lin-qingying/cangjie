@@ -53,13 +53,106 @@ class CjdSidecarParserTest : CjParsingTestCase("", "cj.d", CangJieDeclarationFil
         assertEquals(api.rawText, text.substring(api.range.startOffset, api.range.endOffset))
     }
 
+    /** 磁盘侧车的 CRLF/LF 不应改变声明、系统注解或多行签名的语义结构。 */
+    @Test fun testDiskCrLfAndLfSidecarsHaveEquivalentDeclarationsAndAnnotations() {
+        val lf = """
+            package sample.sdk
+            import std.collection.*
+
+            @!APILevel[
+                since: "22",
+                permission: "a" & "b"
+            ]
+            public class Sample {
+                @!APILevel[
+                    since: "23"
+                ]
+                public init(
+                    value: Int64
+                )
+
+                @!APILevel[
+                    since: "24"
+                ]
+                public func transform(
+                    @!APILevel[since: "25"] value: Int64,
+                    operation: (Int64) -> Int64
+                ): Int64
+            }
+
+            @!APILevel[since: "26"]
+            public func topLevel(
+                value: Int64
+            ): Unit
+        """.trimIndent() + "\n"
+        val crlf = lf.replace("\n", "\r\n")
+        fun parseDisk(text: String): CjdSidecarIndex {
+            val path = Files.createTempFile("cjd-line-endings-", ".cj.d")
+            return try {
+                Files.writeString(path, text, Charsets.UTF_8)
+                CjdSidecarParser.create().parse(path)
+            } finally {
+                Files.deleteIfExists(path)
+            }
+        }
+
+        val lfIndex = parseDisk(lf)
+        val crlfIndex = parseDisk(crlf)
+        assertTrue(lfIndex.isUsable, lfIndex.diagnostics.toString())
+        assertTrue(crlfIndex.isUsable, crlfIndex.diagnostics.toString())
+        assertEquals(emptyList<CjdDiagnostic>(), lfIndex.diagnostics)
+        assertEquals(emptyList<CjdDiagnostic>(), crlfIndex.diagnostics)
+        assertEquals(lfIndex.annotationContext, crlfIndex.annotationContext)
+        assertEquals(listOf("Sample", "topLevel"), lfIndex.declarations.map { it.key.identifier })
+        val sample = lfIndex.declarations.first()
+        assertEquals(listOf("init", "transform"), sample.members.map { it.key.identifier })
+        assertEquals("APILevel", sample.annotations.single().name)
+        assertEquals("\"22\"", sample.annotations.single().arguments.first().expressionText)
+        val transform = sample.members[1]
+        assertEquals(listOf("value", "operation"), (transform.key as DeclarationMatchKey.Function).parameters.map { it.name })
+        assertEquals("\"25\"", transform.parameterAnnotations[0].single().arguments.single().expressionText)
+
+        fun assertAnnotations(expected: List<CjdAnnotation>, actual: List<CjdAnnotation>) {
+            assertEquals(expected.size, actual.size)
+            for ((left, right) in expected.zip(actual)) {
+                assertEquals(left.name, right.name)
+                assertEquals(left.forcedCustom, right.forcedCustom)
+                assertEquals(left.rawText, right.rawText.replace("\r\n", "\n"))
+                assertEquals(left.argumentText, right.argumentText?.replace("\r\n", "\n"))
+                assertEquals(left.arguments.map { it.name to it.expressionText }, right.arguments.map { it.name to it.expressionText })
+                assertEquals(left.arguments.map { it.expression.syntaxKind }, right.arguments.map { it.expression.syntaxKind })
+                // 现有 CjdSourceRange 契约对应原始磁盘文本；CRLF 偏移不应被误当作 LF 偏移。
+                assertEquals(left.rawText, lf.substring(left.range.startOffset, left.range.endOffset))
+                assertEquals(right.rawText, crlf.substring(right.range.startOffset, right.range.endOffset))
+            }
+        }
+
+        fun assertDeclarations(expected: List<CjdDeclarationEntry>, actual: List<CjdDeclarationEntry>) {
+            assertEquals(expected.size, actual.size)
+            for ((left, right) in expected.zip(actual)) {
+                assertEquals(left.key, right.key)
+                assertAnnotations(left.annotations, right.annotations)
+                assertEquals(left.parameterAnnotations.size, right.parameterAnnotations.size)
+                left.parameterAnnotations.zip(right.parameterAnnotations).forEach { (leftParameters, rightParameters) ->
+                    assertAnnotations(leftParameters, rightParameters)
+                }
+                assertEquals(
+                    lf.substring(left.range.startOffset, left.range.endOffset),
+                    crlf.substring(right.range.startOffset, right.range.endOffset).replace("\r\n", "\n"),
+                )
+                assertDeclarations(left.members, right.members)
+            }
+        }
+        assertDeclarations(lfIndex.declarations, crlfIndex.declarations)
+    }
+
     @Test fun testSignaturesAndNestedTypes() {
         val index = parseBoth("""
             package sample
             class Box<T> where T <: A & B {
                 Box(x: T)
                 init(x: Int64)
-                public func f<U>(x!: pkg.Outer<T>.Inner<U>, cb: (Int64) -> ?T): Unit where U <: A
+                public func f<U>(x!: pkg.Outer<T>.Inner<U>, cb!: (Int64) -> ?T): Unit where U <: A
                 prop value: T
                 let stored: T
             }
@@ -82,6 +175,20 @@ class CjdSidecarParserTest : CjParsingTestCase("", "cj.d", CangJieDeclarationFil
         val constructors = index.declarations[4].members
         assertIs<DeclarationMatchKey.Variable>(constructors[0].key)
         assertEquals(listOf("p1", "p2"), (constructors[1].key as DeclarationMatchKey.Function).parameters.map { it.name })
+    }
+
+    @Test fun testNamedParameterOrderSyntaxDiagnosticMatchesBothTrees() {
+        val valid = parseBoth("public func f(positional: Int64, named!: String): Unit {}")
+        assertEquals(emptyList<CjdDiagnostic>(), valid.diagnostics)
+
+        val text = "public func f(named!: Int64, positional: String): Unit {}"
+        val index = parseBoth(text)
+        val diagnostic = index.diagnostics.single()
+        val diagnosticStart = text.indexOf(": String")
+        assertEquals(CjdDiagnosticKind.SYNTAX, diagnostic.kind)
+        assertEquals("unnamed parameters must come before named parameters", diagnostic.message)
+        assertEquals(CjdSourceRange(diagnosticStart, diagnosticStart + ": String".length), diagnostic.range)
+        assertFalse(index.isUsable)
     }
 
     @Test fun testReturnModifiersDefaultsDoNotAffectKey() {

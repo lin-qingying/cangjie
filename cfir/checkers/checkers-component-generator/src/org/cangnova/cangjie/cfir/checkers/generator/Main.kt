@@ -60,6 +60,7 @@ fun main(args: Array<String>) {
                 visitAlso<CfirUnresolvedTypeRef>(it)
                 visitAlso<CfirUserTypeRef>(it)
                 visitAlso<CfirBasicTypeRef>(it)
+                visitAlso<CfirParenthesizedTypeRef>(it)
                 visitAlso<CfirFunctionTypeRef>(it)
                 visitAlso<CfirOptionTypeRef>(it)
                 visitAlso<CfirTupleTypeRef>(it)

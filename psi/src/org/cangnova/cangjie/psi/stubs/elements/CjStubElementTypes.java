@@ -29,6 +29,9 @@ import org.jetbrains.annotations.NotNull;
 
 public interface CjStubElementTypes {
 
+    CjPlaceHolderStubElementType<CjInvalidDeclaration> INVALID_DECLARATION =
+            new CjPlaceHolderStubElementType<>("INVALID_DECLARATION", CjInvalidDeclaration.class);
+
 
     CjEnumConstructorElementType ENUM_CONSTRUCTOR = new CjEnumConstructorElementType("ENUM_CONSTRUCTOR");
 

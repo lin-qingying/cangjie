@@ -1,0 +1,26 @@
+{
+  "utc": "2026-11-18T07:49:07.0531187Z",
+  "fileCount": 6849,
+  "aggregateSha256": "FA1E6A562BB881A9D20676A77EEB4F030E1C717CECF860CA3B02F0136A375240",
+  "roots": [
+    "common",
+    "cfir",
+    "analysis/low-level-api-cfir",
+    "analysis/analysis-api-cfir",
+    "compiler/frontend",
+    "compiler/config",
+    "compiler/phaser",
+    "compiler/arguments",
+    "psi",
+    "resolution.common",
+    "macro"
+  ],
+  "include": [
+    "*.kt",
+    "*.cj",
+    "*.kts"
+  ],
+  "exclude": "**/build/**",
+  "method": "rg --files --hidden --no-ignore, / normalized and Sort-Object -CaseSensitive; SHA256 of UTF8 LF joined path TAB length TAB uppercaseSHA256, no final LF",
+  "scope": "Frozen type encoder R1-R6 revisions, exact bindings/domains and canonical annotation plan; original176 plus RawArray native layout2 current-byte verification"
+}

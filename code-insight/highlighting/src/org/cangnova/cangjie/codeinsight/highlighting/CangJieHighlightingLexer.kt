@@ -36,7 +36,7 @@ import com.intellij.psi.tree.IElementType
  *
  * 负责把普通仓颉 lexer、CDoc lexer、字符串/字符字面量 lexer 组合成 IntelliJ 高亮框架可消费的分层 lexer。
  */
-class CangJieHighlightingLexer : LayeredLexer(CangJieLexer()) {
+class CangJieHighlightingLexer : LayeredLexer(CangJieLexer(coalesceMacroEscapes = true)) {
     init {
 
         registerSelfStoppingLayer(

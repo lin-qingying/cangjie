@@ -1,0 +1,26 @@
+{
+  "utc": "2026-11-17T12:46:24.6708383Z",
+  "fileCount": 6834,
+  "aggregateSha256": "D0B4301B0DDE43D021C7496CA64F7B7DB2D0487255D7A7899AEF01E85B4F8C9A",
+  "roots": [
+    "common",
+    "cfir",
+    "analysis/low-level-api-cfir",
+    "analysis/analysis-api-cfir",
+    "compiler/frontend",
+    "compiler/config",
+    "compiler/phaser",
+    "compiler/arguments",
+    "psi",
+    "resolution.common",
+    "macro"
+  ],
+  "include": [
+    "*.kt",
+    "*.cj",
+    "*.kts"
+  ],
+  "exclude": "**/build/**",
+  "method": "rg --files --hidden --no-ignore, / normalized and Sort-Object -CaseSensitive; SHA256 of UTF8 LF joined path TAB length TAB uppercaseSHA256, no final LF",
+  "scope": "S3 third eight after function-value base and write-only subscript canonical dispatch fixes"
+}

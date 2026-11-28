@@ -6,7 +6,7 @@
 package org.cangnova.cangjie.analysis.low.level.api.cfir.api.targets
 
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.CfirDesignation
-import org.cangnova.cangjie.cfir.declarations.CfirClass
+import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 
 /**
@@ -27,7 +27,7 @@ internal class LLCfirClassSpecificMembersResolveTarget(
     /**
      * 将 visitor 动作应用到本 target 持有的指定成员列表。
      */
-    override fun visitMembers(visitor: LLCfirResolveTargetVisitor, cfirClass: CfirClass) {
+    override fun visitMembers(visitor: LLCfirResolveTargetVisitor, cfirClass: CfirClassLikeDeclaration) {
         members.forEach(visitor::performAction)
     }
 

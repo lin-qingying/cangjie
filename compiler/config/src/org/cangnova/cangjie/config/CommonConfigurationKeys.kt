@@ -4,6 +4,8 @@ import org.cangnova.cangjie.LanguageVersionSettings
 import org.cangnova.cangjie.LanguageVersionSettingsImpl
 import org.cangnova.cangjie.cfir.diagnostics.impl.BaseDiagnosticsCollector
 import org.cangnova.cangjie.messages.MessageCollector
+import org.cangnova.cangjie.messages.ParsingDiagnosticSettings
+import org.cangnova.cangjie.parsing.CjParsingBackend
 import org.cangnova.cangjie.config.CommonConfigurationKeys.DIAGNOSTICS_COLLECTOR
 import org.cangnova.cangjie.incremental.components.EnumMatchTracker
 import org.cangnova.cangjie.incremental.components.ICFileMappingTracker
@@ -17,6 +19,11 @@ import org.cangnova.cangjie.platform.TargetPlatform
  * 对齐 Kotlin 声明：`org.jetbrains.kotlin.config.CommonConfigurationKeys`。
  */
 object CommonConfigurationKeys {
+    /** 调用级 parser WARNING 策略，独立于语言版本/semantic factory 的 warning level。 */
+    @JvmField
+    val PARSING_DIAGNOSTIC_SETTINGS = CompilerConfigurationKey.create<ParsingDiagnosticSettings>("PARSING_DIAGNOSTIC_SETTINGS")
+    @JvmField
+    val PARSER_BACKEND = CompilerConfigurationKey.create<CjParsingBackend>("PARSER_BACKEND")
     /**
      * 编译消息收集器配置键。
      */
@@ -120,6 +127,18 @@ object CommonConfigurationKeys {
     @JvmField
     val JVM_CLASS_OUTPUT_DIRECTORY = CompilerConfigurationKey.create<String>("JVM_CLASS_OUTPUT_DIRECTORY")
 }
+
+/** 每次编译调用都捕获独立不可变选项，重解析和 publication 消费相同值。 */
+var CompilerConfiguration.parsingDiagnosticSettings: ParsingDiagnosticSettings
+    get() = get(CommonConfigurationKeys.PARSING_DIAGNOSTIC_SETTINGS) ?: ParsingDiagnosticSettings()
+    set(value) { put(CommonConfigurationKeys.PARSING_DIAGNOSTIC_SETTINGS, value) }
+
+var CompilerConfiguration.parserBackend: CjParsingBackend
+    get() = get(CommonConfigurationKeys.PARSER_BACKEND) ?: CjParsingBackend.CJNATIVE
+    set(value) { put(CommonConfigurationKeys.PARSER_BACKEND, value) }
+
+val CompilerConfiguration.parserSettings: org.cangnova.cangjie.parsing.CjParserSettings
+    get() = org.cangnova.cangjie.parsing.CjParserSettings(languageVersionSettings.languageVersion, parsingDiagnosticSettings, parserBackend)
 
 /**
  * 语言版本设置扩展属性。

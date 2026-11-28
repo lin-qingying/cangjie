@@ -2,65 +2,122 @@ package org.cangnova.cangjie.cfir.session
 
 import java.util.concurrent.CopyOnWriteArraySet
 
-/**
- * CJMP common-part cjo 加载门诊断类别。
- *
- * 对位官方 `ASTLoader::PreloadCommonPartOfPackage` 的门序列与诊断名（计划 §8.3）：
- * - [CJO_VERSION]：格式版本门（官方 `CheckCjoVersion`，缺版本即拒）；
- * - [WRONG_PACKAGE]：包名一致门（官方 `module_common_cjo_wrong_package`）；
- * - [FEATURE_NOT_SUBSET]：features 子集门（官方 `feature_is_not_subset_of_child_set`）；
- * - [OPTIONS_MISMATCH]：编译选项匹配门（官方 `module_common_cjo_{debug,opt}_mismatch`，含
- *   缺失选项的 `module_common_cjo_no_options`）。
- */
+/** CJMP common-part CJO 加载阶段产生的语义诊断类别。 */
 public enum class CfirCjmpLoadDiagnosticKind {
     CJO_VERSION,
     WRONG_PACKAGE,
     FEATURE_NOT_SUBSET,
-    OPTIONS_MISMATCH,
+    OPTIONS_MISSING,
+    DEBUG_MISMATCH,
+    OPT_LEVEL_MISMATCH,
+    INPUT_FILE_INVALID,
 }
 
 /**
- * 加载期（session/checker 之前）产生的 CJMP 诊断。
+ * 加载期产生、由反序列化符号 provider 暴露给共享 CFIR checker 的 CJMP 事实。
  *
- * 通道约定（计划 G17）：加载门发生在 `DiagnosticReporter` 可用之前，因此按 cjd 家族的
- * collector-list 先例——加载器把结构化诊断放进 session 组件，装配层（编译输出 / LLT 断言）
- * 读取该列表外显，而不是在加载层直接上报。
- *
- * @property kind 诊断类别。
- * @property packageName 出错包的完整包名。
- * @property message 面向用户的消息文本（对位官方诊断文案）。
- * @property isError 是否为错误级（官方 `module_common_cjo_no_options` 为 WARNING，其余加载门均为 ERROR）。
+ * requestedPackageName 标识触发本次加载请求的包；packageName 是诊断所指向的包。包名门失败时，
+ * 两者有意不同，以便 checker 仍能把诊断定位回消费侧的 import。
  */
-public data class CfirCjmpLoadDiagnostic(
-    val kind: CfirCjmpLoadDiagnosticKind,
-    val packageName: String,
-    val message: String,
-    val isError: Boolean = true,
-)
+public sealed interface CfirCjmpLoadDiagnostic {
+    public val requestedPackageName: String
+    public val packageName: String
+    public val kind: CfirCjmpLoadDiagnosticKind
+    public val isError: Boolean
+
+    /** common CJO 的格式版本不受当前 reader 支持。 */
+    public data class CjoVersion(
+        override val requestedPackageName: String,
+        val actualVersion: String?,
+        val supportedMajor: Int,
+        val supportedMinor: Int,
+    ) : CfirCjmpLoadDiagnostic {
+        override val packageName: String get() = requestedPackageName
+        override val kind: CfirCjmpLoadDiagnosticKind get() = CfirCjmpLoadDiagnosticKind.CJO_VERSION
+        override val isError: Boolean get() = true
+    }
+
+    /** 显式 common CJO 的包名与请求包不一致。 */
+    public data class WrongPackage(
+        override val requestedPackageName: String,
+        val actualPackageName: String,
+    ) : CfirCjmpLoadDiagnostic {
+        override val packageName: String get() = actualPackageName
+        override val kind: CfirCjmpLoadDiagnosticKind get() = CfirCjmpLoadDiagnosticKind.WRONG_PACKAGE
+        override val isError: Boolean get() = true
+    }
+
+    /** common CJO 中有 specific 侧未启用的语言 feature。 */
+    public data class FeaturesNotSubset(
+        override val requestedPackageName: String,
+        val commonFileName: String,
+        val extraFeatures: List<String>,
+    ) : CfirCjmpLoadDiagnostic {
+        override val packageName: String get() = requestedPackageName
+        override val kind: CfirCjmpLoadDiagnosticKind get() = CfirCjmpLoadDiagnosticKind.FEATURE_NOT_SUBSET
+        override val isError: Boolean get() = true
+    }
+
+    /** 旧 common CJO 没有序列化 options；官方语义为告警并继续加载。 */
+    public data class OptionsMissing(
+        override val requestedPackageName: String,
+    ) : CfirCjmpLoadDiagnostic {
+        override val packageName: String get() = requestedPackageName
+        override val kind: CfirCjmpLoadDiagnosticKind get() = CfirCjmpLoadDiagnosticKind.OPTIONS_MISSING
+        override val isError: Boolean get() = false
+    }
+
+    /** common 与当前编译的 debug 模式不一致。 */
+    public data class DebugMismatch(
+        override val requestedPackageName: String,
+        val commonDebug: Boolean,
+        val currentDebug: Boolean,
+    ) : CfirCjmpLoadDiagnostic {
+        override val packageName: String get() = requestedPackageName
+        override val kind: CfirCjmpLoadDiagnosticKind get() = CfirCjmpLoadDiagnosticKind.DEBUG_MISMATCH
+        override val isError: Boolean get() = true
+    }
+
+    /** common 与当前编译的优化级别不一致。 */
+    public data class OptLevelMismatch(
+        override val requestedPackageName: String,
+        val commonOptLevel: String,
+        val currentOptLevel: String,
+    ) : CfirCjmpLoadDiagnostic {
+        override val packageName: String get() = requestedPackageName
+        override val kind: CfirCjmpLoadDiagnosticKind get() = CfirCjmpLoadDiagnosticKind.OPT_LEVEL_MISMATCH
+        override val isError: Boolean get() = true
+    }
+
+    /** 显式 common CJO 输入路径不可用。 */
+    public data class InputFileInvalid(
+        override val requestedPackageName: String,
+        val path: String,
+    ) : CfirCjmpLoadDiagnostic {
+        override val packageName: String get() = requestedPackageName
+        override val kind: CfirCjmpLoadDiagnosticKind get() = CfirCjmpLoadDiagnosticKind.INPUT_FILE_INVALID
+        override val isError: Boolean get() = true
+    }
+}
 
 /**
- * 当前编译调用收集到的 CJMP 加载门诊断。
+ * 单个反序列化 provider 生命周期内累积的 CJMP 加载事实。
  *
- * 可变组件：一次编译内可累积多个包的加载结果；同一 provider 的重复加载由加载缓存保证只记一次。
- * 生命周期 = 一次编译调用：由 session 工厂上下文创建一个实例，同时注册到库会话（记录方，
- * 反序列化 provider 所在）与源码会话（外显方，装配层从这里取）。
+ * 加载结果随 provider 公开，而不依赖 CLI 配置或进程级共享收集器，因此 IDE、LLT 与 CLI
+ * 可以由同一个 checker 读取；同一包因重复符号查询而重新观察到的事实只保留一份。
  */
-public open class CfirCjmpLoadDiagnosticsComponent : CfirSessionComponent {
+public class CfirCjmpLoadDiagnosticsCollector {
     private val recorded = CopyOnWriteArraySet<CfirCjmpLoadDiagnostic>()
 
     /** 已收集诊断的只读快照。 */
     public val diagnostics: List<CfirCjmpLoadDiagnostic> get() = recorded.toList()
 
-    /** 记录一条加载门诊断（同一诊断重复记录只保留一次：缺失包可能被多次查询）。 */
+    /** 指定加载请求包的诊断快照。 */
+    public fun diagnosticsForPackage(requestedPackageName: String): List<CfirCjmpLoadDiagnostic> =
+        recorded.filter { it.requestedPackageName == requestedPackageName }
+
+    /** 记录一条加载事实。 */
     public fun record(diagnostic: CfirCjmpLoadDiagnostic) {
         recorded += diagnostic
     }
 }
-
-/**
- * 当前 session 的 CJMP 加载门诊断收集器；未注册（LL/测试会话等无外显通道的装配）时为 null。
- *
- * 刻意不提供共享默认实例：可变收集器若以进程级默认值兜底，会在无关会话之间串扰。
- */
-public val CfirSession.cjmpLoadDiagnostics: CfirCjmpLoadDiagnosticsComponent? by
-    CfirSession.nullableSessionComponentAccessor()

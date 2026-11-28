@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
@@ -26,7 +27,7 @@ import org.cangnova.cangjie.name.FqName
  *
  * 锚点沿用官方：`quote` 锚整个表达式（官方传 `qe`），`synchronized` 锚锁对象（官方传 `*se.mutex`）。
  */
-object CfirExpressionImportChecker : CfirBasicExpressionChecker() {
+object CfirExpressionImportChecker : CfirBasicExpressionChecker(MppCheckerKind.Common) {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirStatement) {
         when (expression) {

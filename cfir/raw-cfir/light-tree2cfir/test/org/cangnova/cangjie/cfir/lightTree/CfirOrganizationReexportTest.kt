@@ -1,7 +1,11 @@
 package org.cangnova.cangjie.cfir.lightTree
 
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
+
 import org.cangnova.cangjie.cfir.builder.BodyBuildingMode
 import org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder
+import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationMetadataBuilder
+import org.cangnova.cangjie.cfir.resolve.providers.macro.PreMacroCfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
@@ -15,9 +19,10 @@ import org.cangnova.cangjie.cfir.resolve.providers.macro.buildPreMacroRawFiles
 import org.cangnova.cangjie.cfir.resolve.providers.macro.recordExpandedRawFilesOnce
 import org.cangnova.cangjie.cfir.resolve.resolveImportBinding
 import org.cangnova.cangjie.cfir.resolve.services.CfirResolvedImportTarget
+import org.cangnova.cangjie.cfir.resolve.services.resolveSymbols
 import org.cangnova.cangjie.cfir.scopes.impl.CfirExplicitStarImportingScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirPackageMemberScope
-import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.resolve.providers.cfirProvider
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.name.ClassId
@@ -42,10 +47,16 @@ class CfirOrganizationReexportTest : AbstractLightTree2CfirConverterTestCase() {
         for (alias in listOf(false, true)) {
             val session = createTestSession()
             val provider = session.cfirProvider as CfirProviderImpl
-            fun file(name: String, text: String): CfirFile = if (useLightTree) {
-                buildCfirFileFromLightTree(text, session, "$name.cj")
-            } else {
-                PsiRawCfirBuilder(session, BodyBuildingMode.NORMAL).buildCfirFile(createCjFile(name, text))
+            val preFiles = mutableListOf<PreMacroCfirFile>()
+            fun file(name: String, text: String): CfirFile {
+                val built = if (useLightTree) {
+                    buildPreMacroCfirFileFromLightTree(text, session, "$name.cj")
+                } else {
+                    PsiRawCfirBuilder(session, BodyBuildingMode.NORMAL, CfirAnnotationMetadataBuilder())
+                        .buildPreMacroCfirFile(createCjFile(name, text))
+                }
+                preFiles += built
+                return built.cfirFile
             }
             val importedName = if (alias) "b" else "ArrayList"
             val library = file("collection", "package std.collection\npublic class ArrayList<T> {}")
@@ -59,7 +70,7 @@ class CfirOrganizationReexportTest : AbstractLightTree2CfirConverterTestCase() {
             assertEquals(FqName.ROOT, importer.packageDirective.packageFqName)
             assertEquals(consumer.packageDirective.packageFqName, importer.packageDirective.packageFqName)
             val files = listOf(library, consumer, importer)
-            val pre = buildPreMacroRawFiles(session, files)
+            val pre = buildPreMacroRawFiles(session, preFiles)
             val result = MacroConstructionService.successOf(pre, files, MacroExpansionRegistry.EMPTY)
             recordExpandedRawFilesOnce(provider, result.recordableFiles, result.registry)
             val expected = library.declarations.filterIsInstance<CfirClass>().single().symbol
@@ -76,10 +87,16 @@ class CfirOrganizationReexportTest : AbstractLightTree2CfirConverterTestCase() {
     private fun assertOrganizationReexports(useLightTree: Boolean) {
         val session = createTestSession()
         val provider = session.cfirProvider as CfirProviderImpl
-        fun file(name: String, source: String): CfirFile = if (useLightTree) {
-            buildCfirFileFromLightTree(source, session, "$name.cj")
-        } else {
-            PsiRawCfirBuilder(session, BodyBuildingMode.NORMAL).buildCfirFile(createCjFile(name, source))
+        val preFiles = mutableListOf<PreMacroCfirFile>()
+        fun file(name: String, source: String): CfirFile {
+            val built = if (useLightTree) {
+                buildPreMacroCfirFileFromLightTree(source, session, "$name.cj")
+            } else {
+                PsiRawCfirBuilder(session, BodyBuildingMode.NORMAL, CfirAnnotationMetadataBuilder())
+                    .buildPreMacroCfirFile(createCjFile(name, source))
+            }
+            preFiles += built
+            return built.cfirFile
         }
         val files = listOf(
             file("unqualified", "package shared\npublic class Box {}\npublic func same(): Unit {}"),
@@ -98,7 +115,7 @@ class CfirOrganizationReexportTest : AbstractLightTree2CfirConverterTestCase() {
         )
         val classes = files.take(3).map { it.declarations.filterIsInstance<CfirClass>().single() }
         val functions = files.take(3).map { it.declarations.filterIsInstance<CfirNamedFunction>().single() }
-        val pre = buildPreMacroRawFiles(session, files)
+        val pre = buildPreMacroRawFiles(session, preFiles)
         val result = MacroConstructionService.successOf(pre, files, MacroExpansionRegistry.EMPTY)
         recordExpandedRawFilesOnce(provider, result.recordableFiles, result.registry)
         val symbols = provider.symbolProvider
@@ -115,9 +132,17 @@ class CfirOrganizationReexportTest : AbstractLightTree2CfirConverterTestCase() {
         // 查询导入也由相同 raw builder 解析，组织限定的是 bridge 而不是最终声明的包。
         fun query(source: String) = file("query", "package consumer\nimport $source").imports.single()
         val bridgeBinding = session.resolveImportBinding(query("org1::bridge.Box"), CfirLookupOrigin.EXPLICIT_IMPORT)
-        assertEquals(listOf(classes[2].symbol), bridgeBinding.targets.filterIsInstance<CfirResolvedImportTarget.ClassLike>().map { it.symbol })
+        assertEquals(
+            listOf(classes[2].symbol),
+            bridgeBinding.targets.filterIsInstance<CfirResolvedImportTarget.ClassLike>()
+                .flatMap { it.resolveSymbols(symbols) },
+        )
         val reverseBridge = session.resolveImportBinding(query("org2::bridge.Box"), CfirLookupOrigin.EXPLICIT_IMPORT)
-        assertEquals(listOf(classes[1].symbol), reverseBridge.targets.filterIsInstance<CfirResolvedImportTarget.ClassLike>().map { it.symbol })
+        assertEquals(
+            listOf(classes[1].symbol),
+            reverseBridge.targets.filterIsInstance<CfirResolvedImportTarget.ClassLike>()
+                .flatMap { it.resolveSymbols(symbols) },
+        )
         val composite = CfirCompositeSymbolProvider(session, listOf(symbols))
         val namespace = composite.getImportNamespace(CfirImportNamespaceContext(FqName("bridge"), Name.identifier("org1")))
         assertEquals(listOf(classes[2].symbol), namespace.classifiers(Name.identifier("Box")))

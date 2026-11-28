@@ -10,4 +10,6 @@ dependencies {
     compileOnly(intellijCore())
 
     testImplementation(libs.junit.jupiter)
+    testImplementation(intellijCore())
+    testRuntimeOnly(libs.junit.platform.launcher)
 }

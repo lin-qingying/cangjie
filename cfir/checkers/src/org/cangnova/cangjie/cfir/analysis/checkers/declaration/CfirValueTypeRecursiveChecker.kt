@@ -25,12 +25,13 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.name.ClassId
 
@@ -45,7 +46,7 @@ import org.cangnova.cangjie.name.ClassId
  * - 只有环内全部节点都是 struct 时报告，enum 只参与遍历不触发递归值类型诊断；
  * - class、interface、ref enum 等引用语义类型不会构成值类型递归。
  */
-object CfirValueTypeRecursiveChecker : CfirClassLikeChecker() {
+object CfirValueTypeRecursiveChecker : CfirClassLikeChecker(MppCheckerKind.Common) {
     /**
      * 检查当前值类型声明是否参与递归值类型环。
      */

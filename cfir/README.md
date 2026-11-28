@@ -14,6 +14,7 @@ CFIR 是仓颉前端的中间表示（Cangjie Frontend IR），对齐 Kotlin K2 
 | `cfir-cones` | 类型系统核心（`ConeCangjieType` / `ConeClassLikeType` / `ConePrimitiveType` 等） |
 | `cfir-tree` | 生成式 CFIR 节点（声明 / 表达式 / 类型引用 / visitor / transformer），由 `cfir-tree/tree-generator` 生成 |
 | `semantics` | CFIR 语义工具 |
+| `semantics.api` | 声明检查与 resolve 共用的语义服务接口，对位 Kotlin FIR semantics.api |
 | `providers` | 符号 / 扩展点 providers |
 | `diagnostic-renderers` | 诊断渲染器 |
 

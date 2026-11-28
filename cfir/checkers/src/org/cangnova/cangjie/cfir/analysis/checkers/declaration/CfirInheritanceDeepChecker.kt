@@ -24,9 +24,17 @@
 
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
+import org.cangnova.cangjie.cfir.resolve.substitution.createTypeSubstitutorByTypeConstructor
+
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.accessContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
+import org.cangnova.cangjie.cfir.scopes.CfirDeclarationInheritanceInput
+import org.cangnova.cangjie.cfir.scopes.CfirMappedInheritedMember
+import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.compileCjd
+import org.cangnova.cangjie.cfir.scopes.CfirInheritanceMemberKind
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.resolve.providers.createExtendDeclarationSubstitution
 import org.cangnova.cangjie.cfir.resolve.providers.createExtendDeclarationSubstitutionForConstraintDerivation
@@ -36,6 +44,7 @@ import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityResult
 import org.cangnova.cangjie.cfir.resolve.providers.CfirLookupOrigin
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
+import org.cangnova.cangjie.cfir.diagnostics.withRelatedInformation
 import org.cangnova.cangjie.cfir.resolve.providers.findExtendDeclarationSubstitution
 import org.cangnova.cangjie.cfir.resolve.providers.getContainingExtend
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
@@ -55,13 +64,16 @@ import org.cangnova.cangjie.cfir.scopes.processCallablesByNameWithLookupProvenan
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
 import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.session.extendProvider
-import org.cangnova.cangjie.cfir.session.isCjmpShadowedCommonDeclaration
+import org.cangnova.cangjie.cfir.session.CfirCjmpDeclarationRole
+import org.cangnova.cangjie.cfir.session.cjmpFamilySnapshotFor
+import org.cangnova.cangjie.cfir.session.isCjmpMatchingCandidate
 import org.cangnova.cangjie.cfir.session.accessibilityChecker
 import org.cangnova.cangjie.cfir.session.extendRuleQueryServiceOrNull
 import org.cangnova.cangjie.cfir.session.services.CfirExtendRuleQueryService
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.session.typeAwareSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
@@ -93,7 +105,7 @@ import org.cangnova.cangjie.type.model.TypeConstructorMarker
  *
  * 注册为 classLikeCheckers
  */
-object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
+object CfirInheritanceDeepChecker : CfirClassLikeChecker(MppCheckerKind.Common) {
     /**
      * 对 class-like 声明执行继承深层语义检查。
      *
@@ -125,14 +137,70 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         // `RETURN_TYPE_INCOMPATIBLE` 可能由两条独立路径产生（own member × 接口、接口默认实现
         // 互比），官方只报一条（f4/extend_function_conflict_invalid_6）；共享去重集避免双报。
         val sharedReturnTypeDedup = mutableSetOf<String>()
+        val prepared = context.session.cangjieScopeProvider.getDeclarationInheritanceInput(declaration, context.session, context.scopeSession)
+            ?: return
+        checkPreparedExtendHeader(prepared)
+        checkPreparedExtendExportDependence(prepared)
         checkInheritedMemberKindConsistency(
             subject = declaration.memberInheritanceSubject(),
             excludingExtend = declaration,
             sharedReturnTypeDedup = sharedReturnTypeDedup,
+            prepared = prepared,
         )
-        checkSuperMembersKindConsistency(declaration.memberInheritanceSubject())
-        checkExtendTargetMemberCompatibility(declaration, sharedReturnTypeDedup)
-        checkInheritedMemberTypeConsistency(declaration.memberInheritanceSubject())
+        val handledRequirements = checkExtendTargetMemberCompatibility(declaration, sharedReturnTypeDedup, prepared)
+        checkPreparedExtendFinalMembers(prepared, handledRequirements)
+    }
+
+    /** 接口 header 已完成归并；冲突在 own 更新前报告，不重新发现父 scope。 */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkPreparedExtendHeader(input: CfirDeclarationInheritanceInput) {
+        for ((name, members) in input.interfaceRequirements.groupBy { it.name }) {
+            if (members.size > 1 && members.any { it.kind != CfirInheritanceMemberKind.FUNCTION }) {
+                reporter.reportOn(input.owner.source, CfirErrors.INHERIT_SUPER_MEMBER_KIND_INCONSISTENT, name)
+                continue
+            }
+            for (member in members) {
+                if (member.kind == CfirInheritanceMemberKind.PROPERTY && member.inconsistentTypes.isNotEmpty()) {
+                    reporter.reportOn(input.owner.source, CfirErrors.INHERIT_MEMBER_TYPE_INCONSISTENT, "types", "property", name)
+                }
+            }
+        }
+    }
+
+    /** 消费清理前最终表；不可见 peer 不在此表，default/abstract 由真实归并结果决定。 */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkPreparedExtendFinalMembers(input: CfirDeclarationInheritanceInput, handledRequirements: Set<String>) {
+        if (context.session.compileCjd || input.owner.status.isForeign) return
+        val unimplemented = ArrayList<CfirMappedInheritedMember>()
+        for (member in input.finalMembers) {
+            if (member.kind == CfirInheritanceMemberKind.VARIABLE || member.sourceExtend != null) continue
+            val info = member.inheritanceInfo(context)
+            if (info.requirementDiagnosticKey() in handledRequirements) continue
+            if (input.owner.builtinPrimitiveOperatorImplementation(info, context) != null) continue
+            val declarationOwner = member.physicalOwner
+            val ownerStatus = when (declarationOwner) {
+                is CfirClassLikeDeclaration -> declarationOwner.status
+                is CfirExtend -> declarationOwner.status
+                else -> null
+            }
+            if (ownerStatus?.isForeign == true || member.flags.isAbstract &&
+                (ownerStatus?.isAbstract == true || !member.isInheritedInterface)) continue
+            when {
+                member.flags.isAbstract -> unimplemented += member
+                member.shouldBeImplemented -> reporter.reportOn(input.owner.source,
+                    CfirErrors.INTERFACE_MEMBER_MUST_BE_IMPLEMENTED, info.kind, member.name, input.owner.targetDisplayName())
+                member.logicalOwner !== input.owner && member.inconsistentTypes.isNotEmpty() -> reporter.reportOn(input.owner.source,
+                    CfirErrors.INHERIT_MEMBER_TYPE_INCONSISTENT,
+                    if (member.kind == CfirInheritanceMemberKind.FUNCTION) "return types" else "types", info.kind, member.name)
+            }
+        }
+        if (unimplemented.isNotEmpty()) {
+            val notes = unimplemented.map { member ->
+                member.declaration.cfir.relatedInformationAtDeclarationBegin("unimplemented interface ${member.inheritanceInfo(context).kind} '${member.name.asString()}'")
+            }
+            reporter.reportOn(input.owner.source?.firstCharacterDiagnosticSource(), CfirErrors.NEED_MEMBER_IMPLEMENTATION,
+                input.owner.targetDisplayName(), context = context.withRelatedInformation(notes))
+        }
     }
 
     /**
@@ -148,7 +216,9 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         val receiverType = declaration.declarationSelfTypeOrNull() ?: return
         val targetScope = CfirClassUseSiteMemberScope.createForUseSiteType(
             session = context.session,
+            scopeSession = context.scopeSession,
             ownerType = receiverType,
+            memberRequiredPhase = CfirResolvePhase.STATUS,
         ) ?: return
         val memberAccessContext = context.accessContext(CfirAccessKind.CALLABLE).copy(
             receiverType = receiverType,
@@ -228,278 +298,65 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
      * 因此诊断落在 extend 声明本身。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
-    private fun checkExtendTargetMemberCompatibility(extend: CfirExtend, sharedReturnTypeDedup: MutableSet<String>) {
-        val receiverType = extend.extendedTypeRef.coneTypeOrNull ?: return
-        val targetScope = CfirClassUseSiteMemberScope.createForUseSiteType(
-            session = context.session,
-            ownerType = receiverType,
-            excludingExtend = extend,
-        ) ?: return
-        val memberAccessContext = context.accessContext(CfirAccessKind.CALLABLE).copy(
-            receiverType = receiverType,
-            lookupOrigin = CfirLookupOrigin.MEMBER,
-        )
-        val targetClassId = (extend.extendedTypeRef as? CfirResolvedTypeRef)
-            ?.coneType
-            ?.expandedClassIdOrPrimitiveClassId
-        val ownMemberInfosByName = extend.declarations
-            .mapNotNull { it.directMemberInfoOrNull(context) }
-            .groupBy { it.name }
-        val inheritedDefaultImplementationsByName = extend.collectInheritedDefaultInterfaceImplementationsByName()
-        checkDefaultInterfaceMemberConflicts(extend, targetScope, targetClassId, ownMemberInfosByName)
-
-        val reportedMutConflicts = mutableSetOf<Name>()
-        val reportedWeakVisibilities = mutableSetOf<String>()
-        val reportedPropertyTypeConflicts = mutableSetOf<String>()
-        val reportedPropertyMutabilityConflicts = mutableSetOf<String>()
-        // 与 checkInheritedMemberKindConsistency 共享同一 RETURN 去重集（f4 双报根因）。
-        val reportedFunctionReturnTypeConflicts = sharedReturnTypeDedup
-        val reportedIncompleteSuperExtendMembers = mutableSetOf<String>()
-        val nonExportExtendDependencyNames = linkedSetOf<Name>()
-        val currentExtendIsExported = context.session.accessibilityChecker.isExtendExported(extend)
-        var hasUnimplementedMember = false
-
-        for (superTypeRef in extend.superTypeRefs) {
-            if (superTypeRef.coneTypeOrNull?.containsErrorType() == true) continue
-            val superDecl = superTypeRef.resolvedClassLikeDeclaration() ?: continue
-            for (superInfo in superTypeRef.collectInterfaceRequirementMemberInfos(superDecl)) {
-                val builtinOperatorImplementation = extend.builtinPrimitiveOperatorImplementation(superInfo, context)
-                if (
-                    builtinOperatorImplementation is BuiltinPrimitiveOperatorImplementation.ReturnTypeMismatch &&
-                    reportedFunctionReturnTypeConflicts.add(superInfo.requirementDiagnosticKey())
-                ) {
-                    reporter.reportOn(
-                        source = extend.source,
-                        factory = CfirErrors.RETURN_TYPE_INCOMPATIBLE,
-                        a = superInfo.name,
-                    )
+    private fun checkExtendTargetMemberCompatibility(
+        extend: CfirExtend,
+        sharedReturnTypeDedup: MutableSet<String>,
+        prepared: CfirDeclarationInheritanceInput,
+    ): Set<String> {
+        val receiverType = extend.extendedTypeRef.coneTypeOrNull ?: return emptySet()
+        val handledRequirements = linkedSetOf<String>()
+        for (requirement in prepared.interfaceRequirements) {
+            val info = requirement.inheritanceInfo(context)
+            val key = info.requirementDiagnosticKey()
+            val builtin = extend.builtinPrimitiveOperatorImplementation(info, context)
+            if (builtin != null) {
+                handledRequirements += key
+                if (builtin is BuiltinPrimitiveOperatorImplementation.ReturnTypeMismatch && sharedReturnTypeDedup.add(key)) {
+                    reporter.reportOn(extend.source, CfirErrors.RETURN_TYPE_INCOMPATIBLE, info.name)
                 }
-
-                val ownImplementations = ownMemberInfosByName[superInfo.name].orEmpty()
-                    .filter { it.canImplement(superInfo) }
-                val implementationCandidates = buildList {
-                    if (ownImplementations.isEmpty()) context.session.accessibilityChecker.processAccessibleCallablesByName(
-                        scope = targetScope,
-                        name = superInfo.name,
-                        context = memberAccessContext,
-                    ) { candidate ->
-                        candidate.symbol.inheritedMemberInfoOrNull(context)?.let { info ->
-                            add(
-                                ExtendImplementationCandidate(
-                                    info = info,
-                                    diagnosticSource = extend.extendedTypeRef.source,
-                                    declarationSource = null,
-                                    lookupProvenance = candidate.provenance,
-                                    origin = ExtendImplementationOrigin.TARGET_MEMBER,
-                                )
-                            )
-                        }
-                    }
-                    for (info in ownImplementations) {
-                        add(
-                            ExtendImplementationCandidate(
-                                info = info,
-                                diagnosticSource = info.nameSource ?: info.source ?: extend.source,
-                                declarationSource = info.source,
-                                lookupProvenance = CfirCallableLookupProvenance.directExtendMember(extend),
-                                origin = ExtendImplementationOrigin.OWN_MEMBER,
-                            )
-                        )
-                    }
-                    if (ownImplementations.isEmpty()) for (info in inheritedDefaultImplementationsByName[superInfo.name].orEmpty()) {
-                        add(
-                            ExtendImplementationCandidate(
-                                info = info,
-                                diagnosticSource = info.nameSource ?: info.source ?: superTypeRef.source,
-                                declarationSource = null,
-                                lookupProvenance = CfirCallableLookupProvenance.None,
-                                origin = ExtendImplementationOrigin.INTERFACE_DEFAULT,
-                            )
-                        )
-                    }
-                }
-
-                for (candidate in implementationCandidates) {
-                    val implementationInfo = candidate.info
-                    if (!implementationInfo.canImplement(superInfo)) continue
-
-                    val implementationExtend = candidate.lookupProvenance.sourceExtend
-                    if (
-                        currentExtendIsExported &&
-                        !implementationInfo.isAbstract &&
-                        implementationExtend != null &&
-                        implementationExtend !== extend &&
-                        superInfo.hasExportedClassLikeOwner(context) &&
-                        !context.session.accessibilityChecker.isExtendExported(implementationExtend)
-                    ) {
-                        nonExportExtendDependencyNames += superInfo.name
-                    }
-
-                    // 尚未归并的接口默认属性是实现要求的输入，类型冲突归属于继承声明；
-                    // 只有实际实现成员才承担 PROPERTY_OVERRIDE_IMPLEMENT_TYPE_DIFF。
-                    val propertyTypeMismatch = if (candidate.origin == ExtendImplementationOrigin.INTERFACE_DEFAULT) {
-                        null
-                    } else {
-                        implementationInfo.propertyTypeMismatch(superInfo)
-                    }
-                    if (propertyTypeMismatch != null) {
-                        val key = implementationInfo.overrideDiagnosticKey(superInfo)
-                        if (reportedPropertyTypeConflicts.add(key)) {
-                            reporter.reportOn(
-                                source = implementationInfo.nameSource ?: candidate.diagnosticSource,
-                                factory = CfirErrors.PROPERTY_OVERRIDE_IMPLEMENT_TYPE_DIFF,
-                                a = propertyTypeMismatch.implementationType,
-                                b = propertyTypeMismatch.baseType,
-                                c = superInfo.name,
-                            )
-                        }
-                    }
-
-                    val propertyMutabilityConflict = if (propertyTypeMismatch == null) {
-                        implementationInfo.propertyMutabilityConflict(superInfo)
-                    } else {
-                        null
-                    }
-                    if (propertyMutabilityConflict != null) {
-                        val key = implementationInfo.overrideDiagnosticKey(superInfo)
-                        if (reportedPropertyMutabilityConflicts.add(key)) {
-                            reporter.reportOn(
-                                source = candidate.declarationSource
-                                  ,
-                                factory = when (propertyMutabilityConflict) {
-                                    PropertyMutabilityConflict.MutExpected ->
-                                        CfirErrors.PROPERTY_HAVE_SAME_DECLARATION_IN_INHERIT_MUT
-
-                                    PropertyMutabilityConflict.ImmutExpected ->
-                                        CfirErrors.PROPERTY_HAVE_SAME_DECLARATION_IN_INHERIT_IMMUT
-                                },
-                                a = superInfo.name,
-                            )
-                        }
-                    }
-
-                    if (candidate.declarationSource == null) {
-                        val functionReturnTypeConflict = if (builtinOperatorImplementation == null) {
-                            implementationInfo.functionReturnTypeConflict(superInfo, context)
-                        } else {
-                            null
-                        }
-                        if (functionReturnTypeConflict != null) {
-                            val key = implementationInfo.overrideDiagnosticKey(superInfo)
-                            if (reportedFunctionReturnTypeConflicts.add(key)) {
-                                functionReturnTypeConflict.report(
-                                    source = superInfo.nameSource ?: candidate.diagnosticSource,
-                                    name = superInfo.name,
-                                    reporter = reporter,
-                                )
-                            }
-                        }
-                    }
-
-                    if (extend.hasStructTarget() &&
-                        implementationInfo.hasMutFunctionConflict(superInfo) &&
-                        reportedMutConflicts.add(superInfo.name)
-                    ) {
-                        // 锚定到 extend 内实现成员的 `public` 修饰符（单字符），与该组 fixture 的标记一致；
-                        // 若冲突成员并非在 extend 内声明（仅由被扩展 struct 继承而来），则回退到 `extend` 子句
-                        // （如 extend_mutable_function_invalid_1.cj 锚定在 `e`）。
-                        val ownMemberSource = implementationCandidates.firstOrNull { cand ->
-                            cand.origin == ExtendImplementationOrigin.OWN_MEMBER &&
-                                cand.declarationSource != null &&
-                                cand.info.canImplement(superInfo)
-                        }?.declarationSource
-                        val source = ownMemberSource
-                            ?.realSourceModifiers()
-                            ?.modifierByToken(CjTokens.PUBLIC_KEYWORD)
-                            ?.source
-
-                            ?: ownMemberSource
-                            ?: extend.source
-                            ?: superTypeRef.source
-                        reporter.reportOn(
-                            source = source,
-                            factory = CfirErrors.INCOMPATIBLE_MUT_MODIFIER_BETWEEN_STRUCT_AND_INTERFACE,
-                        )
-                    }
-
-                    if (implementationInfo.hasWeakVisibilityComparedTo(superInfo)) {
-                        val key = implementationInfo.overrideDiagnosticKey(superInfo)
-                        if (reportedWeakVisibilities.add(key)) {
-                            reporter.reportOn(
-                                source = candidate.diagnosticSource,
-                                factory = CfirErrors.WEAK_VISIBILITY,
-                                a = superInfo.name,
-                                b = superInfo.visibility,
-                            )
-                        }
-                    }
-                }
-
-                val incompleteSuperExtendImplementations = receiverType
-                    .collectConstraintInapplicableEffectiveExtendMemberInfos(
-                        name = superInfo.name,
-                        context = context,
-                        includeReceiver = false,
-                        checkingReceiverType = receiverType,
-                    )
-                    .filter { implementation -> implementation.canImplement(superInfo) }
-
-                if (superInfo.isDefaultInterfaceMember(context) &&
-                    incompleteSuperExtendImplementations.isNotEmpty()
-                ) {
-                    val diagnosticKey = superInfo.requirementDiagnosticKey()
-                    if (reportedIncompleteSuperExtendMembers.add(diagnosticKey)) {
-                        reporter.reportOn(
-                            source = extend.extendedTypeRef.source ?: extend.source,
-                            factory = CfirErrors.CANNOT_OVERRIDE,
-                            a = superInfo.kind,
-                            b = superInfo.name,
-                        )
-                    }
-                    continue
-                }
-
-                val hasSatisfiedImplementation = implementationCandidates.any { candidate ->
-                    val implementationInfo = candidate.info
-                    implementationInfo.canImplement(superInfo) &&
-                        implementationInfo.satisfiesExtendInterfaceRequirement(context)
-                } || builtinOperatorImplementation != null
-                if (hasSatisfiedImplementation) continue
-
-                if (incompleteSuperExtendImplementations.isNotEmpty()) {
-                    val diagnosticKey = superInfo.requirementDiagnosticKey()
-                    if (reportedIncompleteSuperExtendMembers.add(diagnosticKey)) {
-                        reporter.reportOn(
-                            source = extend.extendedTypeRef.source ?: extend.source,
-                            factory = CfirErrors.INTERFACE_MEMBER_MUST_BE_IMPLEMENTED,
-                            a = superInfo.kind,
-                            b = superInfo.name,
-                            c = extend.targetDisplayName(),
-                        )
-                    }
-                    continue
-                }
-
-                if (superInfo.isAbstract) {
-                    hasUnimplementedMember = true
-                }
+                continue
+            }
+            // nominal 父链的不完整约束实现仍独立于本目标的 invisible peer 表。
+            val incomplete = receiverType.collectConstraintInapplicableEffectiveExtendMemberInfos(
+                name = info.name, context = context, includeReceiver = false, checkingReceiverType = receiverType,
+            ).any { it.canImplement(info) }
+            if (!incomplete) continue
+            if (info.isDefaultInterfaceMember(context)) {
+                if (handledRequirements.add(key)) reporter.reportOn(extend.extendedTypeRef.source,
+                    CfirErrors.CANNOT_OVERRIDE, info.kind, info.name)
+            } else if (prepared.visibleImplementations.none {
+                    val implementation = it.inheritanceInfo(context)
+                    implementation.canImplement(info) && implementation.satisfiesExtendInterfaceRequirement(context)
+                }) {
+                if (handledRequirements.add(key)) reporter.reportOn(extend.extendedTypeRef.source,
+                    CfirErrors.INTERFACE_MEMBER_MUST_BE_IMPLEMENTED, info.kind, info.name, extend.targetDisplayName())
             }
         }
+        return handledRequirements
+    }
 
-        if (hasUnimplementedMember) {
-            reporter.reportOn(
-                source = extend.source  ?: extend.extendedTypeRef.source,
-                factory = CfirErrors.NEED_MEMBER_IMPLEMENTATION,
-                a = extend.targetDisplayName(),
-            )
+    /** 更新前实现表决定导出依赖，own 覆盖不消除已存在的非导出来源。 */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkPreparedExtendExportDependence(input: CfirDeclarationInheritanceInput) {
+        if (!context.session.accessibilityChecker.isExtendExported(input.owner)) return
+        val dependencies = linkedMapOf<Name, CfirExtend>()
+        for (requirement in input.interfaceRequirements) {
+            val required = requirement.inheritanceInfo(context)
+            if (!required.hasExportedClassLikeOwner(context)) continue
+            for (member in input.initialVisibleImplementations) {
+                if (member.name != requirement.name || member.kind != requirement.kind) continue
+                val implementation = member.inheritanceInfo(context)
+                if (!implementation.canImplement(required)) continue
+                val source = member.function?.lookupProvenance?.sourceExtend
+                    ?: member.physicalOwner as? CfirExtend ?: continue
+                if (!context.session.accessibilityChecker.isExtendExported(source)) dependencies[requirement.name] = source
+            }
         }
-        if (nonExportExtendDependencyNames.isNotEmpty()) {
-            reporter.reportOn(
-                source = extend.source,
-                factory = CfirErrors.EXPORT_EXTEND_DEPEND_NON_EXPORT_EXTEND,
-                a = nonExportExtendDependencyNames,
-            )
-        }
+        if (dependencies.isNotEmpty()) reporter.reportOn(input.owner.source,
+            CfirErrors.EXPORT_EXTEND_DEPEND_NON_EXPORT_EXTEND, dependencies.keys,
+            context = context.withRelatedInformation(dependencies.values.distinct().map {
+                it.relatedInformationAtDeclarationBegin("following extension cannot be exported")
+            }))
     }
 
     /**
@@ -517,8 +374,10 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         val receiverType = extend.extendedTypeRef.coneTypeOrNull ?: return
         val targetScope = CfirClassUseSiteMemberScope.createForUseSiteType(
             session = context.session,
+            scopeSession = context.scopeSession,
             ownerType = receiverType,
             excludingExtend = extend,
+            memberRequiredPhase = CfirResolvePhase.STATUS,
         ) ?: return
         val targetClassId = (extend.extendedTypeRef as? CfirResolvedTypeRef)
             ?.coneType
@@ -534,25 +393,6 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
             importedContext = importedContext,
         )
     }
-
-    /**
-     * 同一条 `extend T <: A & B` 中，接口 `A` 的默认成员可以满足接口 `B`
-     * 的同签名抽象要求。官方继承检查在合并接口成员表后判断实现状态，
-     * 因此这里把当前 extend 的默认接口成员纳入共享实现候选，而不是在
-     * 某个 fixture 上特殊跳过缺实现诊断。
-     */
-    context(context: CheckerContext)
-    private fun CfirExtend.collectInheritedDefaultInterfaceImplementationsByName(): Map<Name, List<InheritedMemberInfo>> =
-        buildList {
-            for (superTypeRef in superTypeRefs) {
-                val superDecl = superTypeRef.resolvedClassLikeDeclaration() ?: continue
-                for (info in superTypeRef.collectInterfaceRequirementMemberInfos(superDecl)) {
-                    if (info.isDefaultInterfaceMember(context)) {
-                        add(info)
-                    }
-                }
-            }
-        }.groupBy { it.name }
 
     /**
      * 多个 default interface member 在同一目标类型的 use-site 发生同签名合并时，
@@ -1174,8 +1014,9 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         subject: MemberInheritanceSubject,
         excludingExtend: CfirExtend? = null,
         sharedReturnTypeDedup: MutableSet<String> = mutableSetOf(),
+        prepared: CfirDeclarationInheritanceInput? = null,
     ) {
-        val ownMembers = subject.declarations.mapNotNull { member ->
+        val ownMembers = if (prepared != null) emptyMap() else subject.declarations.mapNotNull { member ->
             when (member) {
                 is CfirNamedFunction -> InheritedMemberInfo(
                     name = member.name,
@@ -1244,7 +1085,248 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         val reportedInvalidAbstractOverrides = mutableSetOf<String>()
         val reportedWeakVisibilities = mutableSetOf<String>()
         val reportedExtendOverrides = mutableSetOf<String>()
+        val reportedPeerShadows = mutableSetOf<String>()
+        val reportedPropertyTypeConflicts = mutableSetOf<String>()
+        val reportedPropertyMutabilityConflicts = mutableSetOf<String>()
+        val reportedNamedConflicts = mutableSetOf<String>()
+        val reportedThisConflicts = mutableSetOf<String>()
+        fun diagnose(ownInfo: InheritedMemberInfo, superInfo: InheritedMemberInfo,
+            inheritedSource: InheritedMemberSource, superClassId: ClassId?, superType: ConeCangJieType) {
+            val classDecl = subject.classLikeDeclaration
+            val parentName = superInfo.ownerName ?: superClassId?.shortClassName ?: Name.identifier("extended type")
+            val hasStaticConflict = ownInfo.isStatic != superInfo.isStatic
+            if (hasStaticConflict) {
+                if (reportedStaticConflicts.add(ownInfo.name)) {
+                    reporter.reportOn(
+                        source = ownInfo.nameSource ?: ownInfo.source ?: subject.source,
+                        factory = CfirErrors.STATIC_AND_NON_STATIC_MEMBER_CANNOT_HAVE_SAME_NAME,
+                        a = ownInfo.staticKind,
+                        b = ownInfo.name,
+                        c = superInfo.staticKind,
+                        d = if (subject.isExtendSubject) "extended type" else "parent class or interfaces",
+                    )
+                }
+            }
+
+            if (ownInfo.kind != superInfo.kind) {
+                if (!hasStaticConflict && reportedKindConflicts.add(ownInfo.name)) {
+                    if (subject.isExtendSubject &&
+                        superClassId != null && superInfo.requiresExtendShadowDiagnostic(inheritedSource, superClassId, context)
+                    ) {
+                        reporter.reportOn(
+                            source = ownInfo.nameSource ?: subject.source,
+                            factory = CfirErrors.EXTEND_MEMBER_CANNOT_SHADOW,
+                            a = ownInfo.name,
+                            b = parentName,
+                        )
+                    } else {
+                        reporter.reportOn(
+                            source = ownInfo.nameSource ?: subject.source,
+                            factory = CfirErrors.INHERIT_MEMBER_KIND_INCONSISTENT,
+                            a = ownInfo.kind,
+                            b = ownInfo.name,
+                            c = superInfo.kind,
+                            d = parentName,
+                        )
+                    }
+                }
+                return
+            }
+
+            val preparedPair = ownInfo.mapped != null && superInfo.mapped != null
+            val sameSignature = preparedPair && ownInfo.canImplement(superInfo)
+            val childHeader = ownInfo.mapped
+            val parentHeader = superInfo.mapped
+            val namedConflict = sameSignature && ownInfo.kind == "function" && childHeader != null && parentHeader != null &&
+                (childHeader.namedParameters != parentHeader.namedParameters || childHeader.namedParameters.indices.any { index ->
+                    childHeader.namedParameters[index] && childHeader.parameterNames[index] != parentHeader.parameterNames[index]
+                })
+            if (namedConflict && reportedNamedConflicts.add(ownInfo.overrideDiagnosticKey(superInfo))) reporter.reportOn(ownInfo.nameSource ?: ownInfo.source ?: subject.source,
+                CfirErrors.PARAM_NAMED_MISMATCHED, ownInfo.name)
+            val thisConflict = sameSignature && !namedConflict && parentHeader?.returnType.let { it is ConeClassLikeType && it.isThisType } &&
+                childHeader?.returnType.let { it !is ConeClassLikeType || !it.isThisType }
+            if (thisConflict && reportedThisConflicts.add(ownInfo.overrideDiagnosticKey(superInfo))) reporter.reportOn(ownInfo.nameSource ?: ownInfo.source ?: subject.source, CfirErrors.INHERIT_NOT_RETURN_THIS)
+
+            if ((!hasStaticConflict || preparedPair) && ownInfo.hasConstFunctionConflict(superInfo)) {
+                val key = ownInfo.overrideDiagnosticKey(superInfo)
+                if (reportedConstConflicts.add(key)) {
+                    reporter.reportOn(
+                        source = ownInfo.nameSource ?: ownInfo.source ?: subject.source,
+                        factory = CfirErrors.INHERIT_MEMBER_KIND_INCONSISTENT,
+                        a = "non-constant function",
+                        b = ownInfo.name,
+                        c = "'const' function",
+                        d = parentName,
+                    )
+                }
+            }
+
+            if (!hasStaticConflict && (subject.classLikeDeclaration is CfirStruct || prepared?.owner?.hasStructTarget() == true) && ownInfo.hasMutFunctionConflict(superInfo)) {
+                val key = ownInfo.overrideDiagnosticKey(superInfo)
+                if (reportedMutConflicts.add(key)) {
+                    reporter.reportOn(
+                        source = ownInfo.source?.firstCharacterDiagnosticSource()
+                            ?: ownInfo.nameSource
+                            ?: subject.source,
+                        factory = CfirErrors.INCOMPATIBLE_MUT_MODIFIER_BETWEEN_STRUCT_AND_INTERFACE,
+                    )
+                }
+            }
+
+            val returnTypeConflict = if ((!hasStaticConflict || preparedPair) && !namedConflict && !thisConflict) {
+                ownInfo.functionReturnTypeConflict(superInfo, context)
+            } else {
+                null
+            }
+            if (returnTypeConflict != null) {
+                val key = ownInfo.overrideDiagnosticKey(superInfo)
+                if (reportedReturnTypeConflicts.add(key)) {
+                    returnTypeConflict.report(
+                        source = ownInfo.nameSource ?: ownInfo.source ?: subject.source,
+                        name = superInfo.name,
+                        reporter = reporter,
+                    )
+                }
+            }
+            if (preparedPair && superInfo.mapped?.sourceExtend != null &&
+                (ownInfo.kind == "property" || sameSignature) && reportedPeerShadows.add(ownInfo.overrideDiagnosticKey(superInfo))) {
+                reporter.reportOn(ownInfo.nameSource ?: ownInfo.source ?: subject.source, CfirErrors.EXTEND_MEMBER_CANNOT_SHADOW,
+                    ownInfo.name, parentName)
+            }
+            if (preparedPair && ownInfo.kind == "property" && childHeader != null && parentHeader != null) {
+                val mismatch = ownInfo.propertyTypeMismatch(superInfo)
+                if (mismatch != null && reportedPropertyTypeConflicts.add(ownInfo.overrideDiagnosticKey(superInfo))) reporter.reportOn(ownInfo.source?.firstCharacterDiagnosticSource(),
+                    CfirErrors.PROPERTY_OVERRIDE_IMPLEMENT_TYPE_DIFF, mismatch.implementationType, mismatch.baseType, ownInfo.name)
+                if (childHeader.flags.isVar != parentHeader.flags.isVar && reportedPropertyMutabilityConflicts.add(ownInfo.overrideDiagnosticKey(superInfo))) reporter.reportOn(ownInfo.source,
+                    if (parentHeader.flags.isVar) CfirErrors.PROPERTY_HAVE_SAME_DECLARATION_IN_INHERIT_MUT else CfirErrors.PROPERTY_HAVE_SAME_DECLARATION_IN_INHERIT_IMMUT,
+                    ownInfo.name)
+                if ((parentHeader.flags.isDefault || parentHeader.flags.isAbstract) && parentHeader.flags.isVar && childHeader.flags.isVar &&
+                    (!childHeader.flags.hasGetter || !childHeader.flags.hasSetter)) reporter.reportOn(ownInfo.nameSource ?: ownInfo.source ?: subject.source,
+                    CfirErrors.PROPERTY_MUST_IMPLEMENT_BOTH, ownInfo.name)
+            }
+            if (sameSignature && !namedConflict && !thisConflict && returnTypeConflict == null && !hasStaticConflict &&
+                childHeader != null && parentHeader != null && childHeader.typeParameters.size != parentHeader.typeParameters.size)
+                reporter.reportOn(ownInfo.nameSource ?: ownInfo.source ?: subject.source, CfirErrors.GENERIC_MEMBER_TYPE_ARGUMENT_DIFFERENT, ownInfo.name)
+            if (sameSignature && !namedConflict && !thisConflict && returnTypeConflict == null && !hasStaticConflict &&
+                childHeader != null && parentHeader != null && childHeader.typeParameters.size == parentHeader.typeParameters.size) {
+                val mapping = parentHeader.typeParameters.zip(childHeader.typeParameters).associate { (origin, target) ->
+                    origin.toLookupTag() as TypeConstructorMarker to target.constructType()
+                }
+                val parameterMapping = createTypeSubstitutorByTypeConstructor(mapping, context.session.typeContext, false)
+                val incompatible = org.cangnova.cangjie.cfir.resolve.CfirGenericConstraintCompatibility.findIncompatiblePreparedBounds(
+                    childHeader.typeParameters.map { childHeader.upperBounds.getValue(it) },
+                    parentHeader.typeParameters.map { parentHeader.upperBounds.getValue(it).map(parameterMapping::substituteOrSelf) },
+                    context.session.typeContext)
+                for (index in incompatible) reporter.reportOn(childHeader.typeParameters[index].cfir.source ?: ownInfo.nameSource ?: subject.source,
+                    CfirErrors.GENERIC_CONSTRAINT_NOT_LOOSER)
+            }
+
+            if (subject.classLikeDeclaration != null && ownInfo.overridesExtendMember(superInfo, superType, context)) {
+                val key = ownInfo.overrideDiagnosticKey(superInfo)
+                if (reportedExtendOverrides.add(key)) {
+                    reporter.reportOn(
+                        source = ownInfo.nameSource ?: ownInfo.source ?: subject.source,
+                        factory = CfirErrors.EXTEND_FUNCTION_CANNOT_OVERRIDDEN,
+                        a = ownInfo.kind,
+                        b = ownInfo.name,
+                    )
+                }
+                return
+            }
+
+            val cannotOverride = classDecl?.let {
+                ownInfo.canNotOverride(superInfo, it, context)
+            } == true
+            if (subject.isExtendSubject &&
+                (inheritedSource.isExtendTarget || preparedPair) &&
+                returnTypeConflict == null &&
+                superInfo.isImplementableForVisibility(context) &&
+                ownInfo.hasWeakVisibilityComparedTo(superInfo)
+            ) {
+                val key = ownInfo.overrideDiagnosticKey(superInfo)
+                if (reportedWeakVisibilities.add(key)) {
+                    reporter.reportOn(
+                        source = ownInfo.nameSource ?: ownInfo.source ?: subject.source,
+                        factory = CfirErrors.WEAK_VISIBILITY,
+                        a = superInfo.name,
+                        b = superInfo.visibility,
+                    )
+                }
+            }
+            if (classDecl != null &&
+                !cannotOverride &&
+                !ownInfo.isOverride &&
+                !ownInfo.isRedef &&
+                returnTypeConflict == null &&
+                ownInfo.hasWeakVisibilityComparedTo(superInfo)
+            ) {
+                val key = ownInfo.overrideDiagnosticKey(superInfo)
+                if (reportedWeakVisibilities.add(key)) {
+                    reporter.reportOn(
+                        source = ownInfo.source ?: ownInfo.nameSource ?: subject.source,
+                        factory = CfirErrors.CANNOT_WEAKEN_ACCESS_PRIVILEGE,
+                        a = superInfo.name,
+                        b = superInfo.visibility,
+                    )
+                }
+            }
+
+            if (!hasStaticConflict && ownInfo.kind == "variable" && reportedVariableShadows.add(ownInfo.name)) {
+                reporter.reportOn(
+                    source = ownInfo.source?.firstCharacterDiagnosticSource() ?: subject.source,
+                    factory = CfirErrors.MEMBER_VARIABLE_CAN_NOT_SHADOW,
+                    a = ownInfo.name,
+                )
+            }
+
+            if (cannotOverride) {
+                val key = ownInfo.overrideDiagnosticKey(superInfo)
+                if (reportedCannotOverrides.add(key)) {
+                    reporter.reportOn(
+                        source = ownInfo.nameSource ?: ownInfo.source ?: subject.source,
+                        factory = CfirErrors.CANNOT_OVERRIDE,
+                        a = ownInfo.kind,
+                        b = ownInfo.name,
+                    )
+                }
+            } else if (classDecl != null && ownInfo.invalidAbstractOverrideInClass(superInfo, classDecl, context)) {
+                val key = ownInfo.overrideDiagnosticKey(superInfo)
+                if (reportedInvalidAbstractOverrides.add(key)) {
+                    reporter.reportOn(
+                        source = ownInfo.source?.firstCharacterDiagnosticSource()
+                            ?: ownInfo.nameSource
+                            ?: subject.source,
+                        factory = CfirErrors.INVALID_OVERRIDE_MEMBER_IN_CLASS,
+                        a = ownInfo.kind,
+                        b = ownInfo.name,
+                    )
+                }
+            }
+        }
+        prepared?.steps?.forEach { step ->
+            val child = step.member.inheritanceInfo(context)
+            for (parent in step.visibleParents + step.invisibleParents) {
+                if (parent.logicalOwner === step.member.logicalOwner) continue
+                diagnose(child, parent.inheritanceInfo(context), InheritedMemberSource(prepared.owner.extendedTypeRef, false, false),
+                    parent.structType.classIdOrPrimitiveClassId, parent.structType)
+            }
+        }
+        if (prepared != null) {
+            // Native 接口要求对全部 post-own 同名成员执行同一关系检查；private own
+            // 仍是访问弱化/实现关系的输入，kind/static 检查必须早于函数签名过滤。
+            for (requirement in prepared.interfaceRequirements) {
+                for (implementation in prepared.visibleImplementations) {
+                    if (implementation.name != requirement.name) continue
+                    if (implementation.declaration === requirement.declaration && implementation.structType == requirement.structType) continue
+                    diagnose(implementation.inheritanceInfo(context), requirement.inheritanceInfo(context),
+                        InheritedMemberSource(prepared.requirementSources.getValue(requirement), false, false),
+                        requirement.structType.classIdOrPrimitiveClassId, requirement.structType)
+                }
+            }
+            return
+        }
         for (inheritedSource in subject.inheritedSources) {
+            if (prepared != null && inheritedSource.isExtendTarget) continue
             val superType = (inheritedSource.typeRef as? CfirResolvedTypeRef)?.coneType ?: continue
             if (superType.containsErrorType()) continue
             val superClassId = (superType as? ConeClassLikeType)?.classId ?: continue
@@ -1294,166 +1376,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                     val ownSameNameMembers = ownMembers[superInfo.name].orEmpty()
 
                     for (ownInfo in ownSameNameMembers) {
-                        val hasStaticConflict = ownInfo.isStatic != superInfo.isStatic
-                        if (hasStaticConflict) {
-                            if (reportedStaticConflicts.add(ownInfo.name)) {
-                                reporter.reportOn(
-                                    source = ownInfo.nameSource ?: ownInfo.source ?: subject.source,
-                                    factory = CfirErrors.STATIC_AND_NON_STATIC_MEMBER_CANNOT_HAVE_SAME_NAME,
-                                    a = ownInfo.staticKind,
-                                    b = ownInfo.name,
-                                    c = superInfo.staticKind,
-                                    d = if (subject.isExtendSubject) "extended type" else "parent class or interfaces",
-                                )
-                            }
-                        }
-
-                        if (ownInfo.kind != superInfo.kind) {
-                            if (!hasStaticConflict && reportedKindConflicts.add(ownInfo.name)) {
-                                if (subject.isExtendSubject &&
-                                    superInfo.requiresExtendShadowDiagnostic(inheritedSource, superClassId, context)
-                                ) {
-                                    reporter.reportOn(
-                                        source = ownInfo.nameSource ?: subject.source,
-                                        factory = CfirErrors.EXTEND_MEMBER_CANNOT_SHADOW,
-                                        a = ownInfo.name,
-                                        b = superInfo.ownerName ?: superClassId.shortClassName,
-                                    )
-                                } else {
-                                    reporter.reportOn(
-                                        source = ownInfo.nameSource ?: subject.source,
-                                        factory = CfirErrors.INHERIT_MEMBER_KIND_INCONSISTENT,
-                                        a = ownInfo.kind,
-                                        b = ownInfo.name,
-                                        c = superInfo.kind,
-                                        d = superInfo.ownerName ?: superClassId.shortClassName,
-                                    )
-                                }
-                            }
-                            continue
-                        }
-
-                        if (!hasStaticConflict && ownInfo.hasConstFunctionConflict(superInfo)) {
-                            val key = ownInfo.overrideDiagnosticKey(superInfo)
-                            if (reportedConstConflicts.add(key)) {
-                                reporter.reportOn(
-                                    source = ownInfo.nameSource ?: ownInfo.source ?: subject.source,
-                                    factory = CfirErrors.INHERIT_MEMBER_KIND_INCONSISTENT,
-                                    a = "non-constant function",
-                                    b = ownInfo.name,
-                                    c = "'const' function",
-                                    d = superInfo.ownerName ?: superClassId.shortClassName,
-                                )
-                            }
-                        }
-
-                        if (!hasStaticConflict && subject.classLikeDeclaration is CfirStruct && ownInfo.hasMutFunctionConflict(superInfo)) {
-                            val key = ownInfo.overrideDiagnosticKey(superInfo)
-                            if (reportedMutConflicts.add(key)) {
-                                reporter.reportOn(
-                                    source = ownInfo.source  ?: ownInfo.nameSource
-                                        ?: subject.source,
-                                    factory = CfirErrors.INCOMPATIBLE_MUT_MODIFIER_BETWEEN_STRUCT_AND_INTERFACE,
-                                )
-                            }
-                        }
-
-                        val returnTypeConflict = if (!hasStaticConflict) {
-                            ownInfo.functionReturnTypeConflict(superInfo, context)
-                        } else {
-                            null
-                        }
-                        if (returnTypeConflict != null) {
-                            val key = ownInfo.overrideDiagnosticKey(superInfo)
-                            if (reportedReturnTypeConflicts.add(key)) {
-                                returnTypeConflict.report(
-                                    source = ownInfo.nameSource ?: ownInfo.source ?: subject.source,
-                                    name = superInfo.name,
-                                    reporter = reporter,
-                                )
-                            }
-                        }
-
-                        if (subject.classLikeDeclaration != null && ownInfo.overridesExtendMember(superInfo, superType, context)) {
-                            val key = ownInfo.overrideDiagnosticKey(superInfo)
-                            if (reportedExtendOverrides.add(key)) {
-                                reporter.reportOn(
-                                    source = ownInfo.nameSource ?: ownInfo.source ?: subject.source,
-                                    factory = CfirErrors.EXTEND_FUNCTION_CANNOT_OVERRIDDEN,
-                                    a = ownInfo.kind,
-                                    b = ownInfo.name,
-                                )
-                            }
-                            continue
-                        }
-
-                        val cannotOverride = classDecl?.let {
-                            ownInfo.canNotOverride(superInfo, it, context)
-                        } == true
-                        if (subject.isExtendSubject &&
-                            inheritedSource.isExtendTarget &&
-                            returnTypeConflict == null &&
-                            superInfo.isImplementableForVisibility(context) &&
-                            ownInfo.hasWeakVisibilityComparedTo(superInfo)
-                        ) {
-                            val key = ownInfo.overrideDiagnosticKey(superInfo)
-                            if (reportedWeakVisibilities.add(key)) {
-                                reporter.reportOn(
-                                    source = ownInfo.nameSource ?: ownInfo.source ?: subject.source,
-                                    factory = CfirErrors.WEAK_VISIBILITY,
-                                    a = superInfo.name,
-                                    b = superInfo.visibility,
-                                )
-                            }
-                        }
-                        if (classDecl != null &&
-                            !cannotOverride &&
-                            !ownInfo.isOverride &&
-                            !ownInfo.isRedef &&
-                            returnTypeConflict == null &&
-                            ownInfo.hasWeakVisibilityComparedTo(superInfo)
-                        ) {
-                            val key = ownInfo.overrideDiagnosticKey(superInfo)
-                            if (reportedWeakVisibilities.add(key)) {
-                                reporter.reportOn(
-                                    source = ownInfo.source ?: ownInfo.nameSource ?: subject.source,
-                                    factory = CfirErrors.CANNOT_WEAKEN_ACCESS_PRIVILEGE,
-                                    a = superInfo.name,
-                                    b = superInfo.visibility,
-                                )
-                            }
-                        }
-
-                        if (!hasStaticConflict && ownInfo.kind == "variable" && reportedVariableShadows.add(ownInfo.name)) {
-                            reporter.reportOn(
-                                source = ownInfo.source  ?: subject.source,
-                                factory = CfirErrors.MEMBER_VARIABLE_CAN_NOT_SHADOW,
-                                a = ownInfo.name,
-                            )
-                        }
-
-                        if (cannotOverride) {
-                            val key = ownInfo.overrideDiagnosticKey(superInfo)
-                            if (reportedCannotOverrides.add(key)) {
-                                reporter.reportOn(
-                                    source = ownInfo.nameSource ?: ownInfo.source ?: subject.source,
-                                    factory = CfirErrors.CANNOT_OVERRIDE,
-                                    a = ownInfo.kind,
-                                    b = ownInfo.name,
-                                )
-                            }
-                        } else if (classDecl != null && ownInfo.invalidAbstractOverrideInClass(superInfo, classDecl, context)) {
-                            val key = ownInfo.overrideDiagnosticKey(superInfo)
-                            if (reportedInvalidAbstractOverrides.add(key)) {
-                                reporter.reportOn(
-                                    source = ownInfo.source  ?: ownInfo.nameSource
-                                        ?: subject.source,
-                                    factory = CfirErrors.INVALID_OVERRIDE_MEMBER_IN_CLASS,
-                                    a = ownInfo.kind,
-                                    b = ownInfo.name,
-                                )
-                            }
-                        }
+                        diagnose(ownInfo, superInfo, inheritedSource, superClassId, superType)
                     }
                 }
             }
@@ -1475,26 +1398,34 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         if (kind != "function") return null
         val implementationSymbol = symbol as? CfirFunctionSymbol<*> ?: return null
         val baseSymbol = superInfo.symbol as? CfirFunctionSymbol<*> ?: return null
-        val implementationType = implementationSymbol.resolvedReturnTypeOrNull(context) ?: return null
-        val unsubstitutedBaseType = baseSymbol.resolvedReturnTypeOrNull(context) ?: return null
-        val typeParameterSubstitutor = createCallableTypeParameterSubstitutorForOverride(
+        val implementationType = mapped?.returnType ?: implementationSymbol.resolvedReturnTypeOrNull(context)?.let(ownerSubstitutor::substituteOrSelf) ?: return null
+        val unsubstitutedBaseType = superInfo.mapped?.returnType ?: baseSymbol.resolvedReturnTypeOrNull(context)?.let(superInfo.ownerSubstitutor::substituteOrSelf) ?: return null
+        val typeParameterSubstitutor = if (mapped != null && superInfo.mapped != null) {
+            val child = mapped
+            val parent = superInfo.mapped
+            val values = if (child.typeParameters.size == parent.typeParameters.size) parent.typeParameters.zip(child.typeParameters)
+                .associate { (origin, target) -> origin.toLookupTag() as TypeConstructorMarker to target.constructType() } else emptyMap()
+            createTypeSubstitutorByTypeConstructor(values, context.session.typeContext, false)
+        } else createCallableTypeParameterSubstitutorForOverride(
             overriding = implementationSymbol,
             overridden = baseSymbol,
             context = context.session.typeContext,
         ) ?: return null
         val baseType = typeParameterSubstitutor.substituteOrSelf(unsubstitutedBaseType)
         if (implementationType is ConeErrorType || baseType is ConeErrorType) return null
-        if (implementationType.hasGenericReturnTypeInvarianceAgainst(baseType, context)) {
-            return FunctionReturnTypeConflict.Invariance(baseType)
-        }
-        if (implementationType.hasOfficialReturnTypeInvarianceAgainst(baseType, context)) {
-            return FunctionReturnTypeConflict.Invariance(baseType)
-        }
-        if (AbstractTypeChecker.isSubtypeOf(context.session.typeContext, implementationType, baseType)) return null
-        return FunctionReturnTypeConflict.Mismatch(
-            implementationType = implementationType,
-            baseType = baseType,
-        )
+        val inconsistentTypes = superInfo.mapped?.inconsistentTypes.orEmpty().map(typeParameterSubstitutor::substituteOrSelf)
+        val genericInvariant = mapped?.let { member ->
+            implementationType is ConeTypeParameterType &&
+                !AbstractTypeChecker.equalTypes(context.session.typeContext, implementationType, baseType) &&
+                member.returnUpperBounds.none { it !is ConeTypeParameterType && !it.isInterfaceType(context) }
+        } ?: implementationType.hasGenericReturnTypeInvarianceAgainst(baseType, context)
+        val extensionInvariant = implementationType.hasOfficialReturnTypeInvarianceAgainst(baseType, context)
+        val compatible = !genericInvariant && !extensionInvariant &&
+            (listOf(baseType) + inconsistentTypes).all { AbstractTypeChecker.isSubtypeOf(context.session.typeContext, implementationType, it) }
+        if (compatible) return null
+        if (genericInvariant || extensionInvariant) return FunctionReturnTypeConflict.Invariance(baseType, baseSymbol.cfir)
+        return FunctionReturnTypeConflict.Mismatch(implementationType, baseType, inconsistentTypes,
+            if (inconsistentTypes.isEmpty()) baseSymbol.cfir else implementationSymbol.cfir)
     }
 
     /**
@@ -1546,19 +1477,22 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         if (superInfo.kind != "function" || !superInfo.isAbstract) return null
         val superSymbol = superInfo.symbol as? CfirFunctionSymbol<*> ?: return null
         val superFunction = superSymbol.cfir as? CfirNamedFunction ?: return null
-        if (!superFunction.status.isOperator) return null
+        val mapped = superInfo.mapped
+        if (!(if (mapped == null) superFunction.status.isOperator else mapped.flags.isOperator)) return null
 
         val receiverType = BuiltinPrimitiveOperators.normalizePrimitiveOperand(extendedTypeRef.coneTypeOrNull)
             ?: return null
-        val parameterTypes = superFunction.valueParameters.map { parameter ->
-            BuiltinPrimitiveOperators.normalizePrimitiveOperand(parameter.returnTypeRef.coneTypeOrNull) ?: return null
+        val parameters = if (mapped == null) superFunction.valueParameters.map { it.returnTypeRef.coneTypeOrNull }
+            else mapped.parameterTypes
+        val parameterTypes = parameters.map { parameter ->
+            BuiltinPrimitiveOperators.normalizePrimitiveOperand(parameter) ?: return null
         }
         val builtinMatch = BuiltinPrimitiveOperators.resolve(
             name = superInfo.name,
             receiverType = receiverType,
             argumentTypes = parameterTypes,
         ) ?: return null
-        val interfaceReturnType = superSymbol.resolvedReturnTypeOrNull(context) ?: return null
+        val interfaceReturnType = if (mapped == null) superSymbol.resolvedReturnTypeOrNull(context) ?: return null else mapped.returnType
         if (interfaceReturnType is ConeErrorType) return null
         return if (AbstractTypeChecker.equalTypes(context.session.typeContext, builtinMatch.returnType, interfaceReturnType)) {
             BuiltinPrimitiveOperatorImplementation.Compatible
@@ -1766,8 +1700,10 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
     ): List<InheritedMemberInfo> {
         val provider = context.session.extendProvider
         val targetKey = receiverType.expandedExtendTargetKey ?: return emptyList()
+        val extends = provider.getExtendsForTarget(targetKey)
+        val nonExportedCommonMembers = extends.cjmpNonExportedCommonMembers(context)
         return buildList {
-            for (extend in provider.getExtendsForTarget(targetKey)) {
+            for (extend in extends) {
                 if (extend === excludingExtend) continue
                 if (
                     context.session.accessibilityChecker.checkExtend(
@@ -1778,7 +1714,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                 val substitution = findExtendDeclarationSubstitution(context.session, extend, receiverType)
                     ?: continue
                 for (member in extend.declarations) {
-                    if (context.session.isCjmpShadowedCommonDeclaration(member)) continue
+                    if (member.symbol in nonExportedCommonMembers) continue
                     when (member) {
                         is CfirNamedFunction -> {
                             if (member.name != name) continue
@@ -1817,12 +1753,28 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         excludingExtend: CfirExtend? = null,
     ): List<InheritedMemberInfo> {
         val visited = linkedSetOf<ConeCangJieType>()
+        val orderedTypes = mutableListOf<ConeCangJieType>()
+        fun collect(type: ConeCangJieType) {
+            if (!visited.add(type)) return
+            orderedTypes += type
+            for (supertype in type.declaredNonInterfaceSupertypes(context)) collect(supertype)
+        }
+        if (includeReceiver) {
+            collect(this@collectConstraintInapplicableEffectiveExtendMemberInfos)
+        } else {
+            for (supertype in declaredNonInterfaceSupertypes(context)) collect(supertype)
+        }
+        val extendsByType = orderedTypes.associateWith { type ->
+            type.expandedExtendTargetKey?.let { targetKey ->
+                context.session.extendProvider.getExtendsForTarget(targetKey)
+            }.orEmpty()
+        }
+        val nonExportedCommonMembers = extendsByType.values.flatten().distinct().cjmpNonExportedCommonMembers(context)
         return buildList {
-            fun visit(type: ConeCangJieType) {
-                if (!visited.add(type)) return
+            for (type in orderedTypes) {
                 val targetKey = type.expandedExtendTargetKey
                 if (targetKey != null) {
-                    for (extend in context.session.extendProvider.getExtendsForTarget(targetKey)) {
+                    for (extend in extendsByType.getValue(type)) {
                         if (extend === excludingExtend) continue
                         if (
                             context.session.accessibilityChecker.checkExtend(
@@ -1857,7 +1809,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                         }
 
                         for (member in extend.declarations) {
-                            if (context.session.isCjmpShadowedCommonDeclaration(member)) continue
+                            if (member.symbol in nonExportedCommonMembers) continue
                             val symbol = when (member) {
                                 is CfirNamedFunction -> member.symbol?.takeIf { member.name == name }
                                 is CfirProperty -> member.symbol.takeIf { member.name == name }
@@ -1869,19 +1821,18 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                         }
                     }
                 }
-
-                for (supertype in type.declaredNonInterfaceSupertypes(context)) {
-                    visit(supertype)
-                }
             }
+        }
+    }
 
-            if (includeReceiver) {
-                visit(this@collectConstraintInapplicableEffectiveExtendMemberInfos)
-            } else {
-                for (supertype in declaredNonInterfaceSupertypes(context)) {
-                    visit(supertype)
-                }
-            }
+    /** 在完整 specific owner 集合上先派生 family 导出面，再过滤 common 成员。 */
+    private fun List<CfirExtend>.cjmpNonExportedCommonMembers(
+        context: CheckerContext,
+    ): Set<CfirBasedSymbol<*>> = buildSet {
+        for (specificExtend in this@cjmpNonExportedCommonMembers) {
+            if (!specificExtend.isCjmpMatchingCandidate(CfirCjmpDeclarationRole.SPECIFIC)) continue
+            val family = context.session.cjmpFamilySnapshotFor(specificExtend) ?: continue
+            addAll(family.doNotExport)
         }
     }
 
@@ -2225,7 +2176,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
             typeParameters.zip(type.typeArguments).associate { (typeParameter, argument) ->
                 typeParameter.symbol.toLookupTag() to argument.type
             }
-        return replacements.takeIf { it.isNotEmpty() }?.let(::CfirTypeSubstitutorByMap) ?: ConeSubstitutor.Empty
+        return replacements.takeIf { it.isNotEmpty() }?.let { createTypeSubstitutorByTypeConstructor(it, moduleData.session.typeContext, false) } ?: ConeSubstitutor.Empty
     }
 
     /**
@@ -2236,6 +2187,16 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
      */
     private fun InheritedMemberInfo.hasSameOverrideSignature(superInfo: InheritedMemberInfo): Boolean {
         if (kind == "property") return true
+        val child = mapped
+        val parent = superInfo.mapped
+        if (child != null && parent != null) {
+            val session = checkNotNull(comparisonSession)
+            val values = if (child.typeParameters.size == parent.typeParameters.size) parent.typeParameters.zip(child.typeParameters)
+                .associate { (origin, target) -> origin.toLookupTag() as TypeConstructorMarker to target.constructType() } else emptyMap()
+            val substitutor = createTypeSubstitutorByTypeConstructor(values, session.typeContext, false)
+            return org.cangnova.cangjie.cfir.types.areFunctionParameterTypesIdentical(child.parameterTypes, parent.parameterTypes,
+                ConeSubstitutor.Empty, substitutor, session.typeContext)
+        }
         val ownSymbol = symbol ?: return false
         val superSymbol = superInfo.symbol ?: return false
         return ownSymbol.overrideSignatureKey(ownerSubstitutor) ==
@@ -2247,7 +2208,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
      */
     private fun InheritedMemberInfo.canImplement(superInfo: InheritedMemberInfo): Boolean {
         if (kind != superInfo.kind) return false
-        if (isStatic != superInfo.isStatic) return false
+        if (isStatic != superInfo.isStatic && (mapped == null || superInfo.mapped == null)) return false
         if (kind != "function" && kind != "property") return false
         return hasSameOverrideSignature(superInfo)
     }
@@ -2269,16 +2230,13 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
      */
     private fun InheritedMemberInfo.hasWeakVisibilityComparedTo(superInfo: InheritedMemberInfo): Boolean {
         if (!canImplement(superInfo)) return false
-        val compareResult = Visibilities.compare(visibility, superInfo.visibility)
-        return compareResult == null || compareResult < 0
+        return isVisibilityWeakerThan(visibility, superInfo.visibility)
     }
 
     /** 官方 CheckAccessVisibility 对接口、open/abstract 和 static 父成员执行可见性比较。 */
     private fun InheritedMemberInfo.isImplementableForVisibility(context: CheckerContext): Boolean {
-        val callable = symbol ?: return false
-        val declaration = callable.cfir
-        if (declaration.status.isAbstract || declaration.status.isOpen || declaration.status.isStatic) return true
-        return context.ownerClassSymbol(callable)?.cfir is CfirInterface
+        mapped?.flags?.let { return it.isAbstract || it.isOpen || it.isStatic || it.isInterfaceOwner }
+        return symbol?.isImplementableForVisibility(context) == true
     }
 
     /**
@@ -2293,15 +2251,31 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         val baseSymbol = superInfo.symbol as? CfirPropertySymbol ?: return null
         if (!implementationSymbol.isBound || !baseSymbol.isBound) return null
 
-        val implementationType = context.returnTypeCalculator.tryCalculateReturnType(implementationSymbol.cfir).coneType
-        val baseType = context.returnTypeCalculator.tryCalculateReturnType(baseSymbol.cfir).coneType
+        val implementationType = mapped?.returnType ?: ownerSubstitutor.substituteOrSelf(context.returnTypeCalculator.tryCalculateReturnType(implementationSymbol.cfir).coneType)
+        val baseType = superInfo.mapped?.returnType ?: superInfo.ownerSubstitutor.substituteOrSelf(context.returnTypeCalculator.tryCalculateReturnType(baseSymbol.cfir).coneType)
         if (implementationType is ConeErrorType || baseType is ConeErrorType) return null
-        if (AbstractTypeChecker.equalTypes(context.session.typeContext, implementationType, baseType)) return null
+        if (superInfo.mapped?.inconsistentTypes.orEmpty().isEmpty() && AbstractTypeChecker.equalTypes(context.session.typeContext, implementationType, baseType)) return null
 
         return PropertyTypeMismatch(
             implementationType = implementationType,
             baseType = baseType,
         )
+    }
+
+    private fun CfirMappedInheritedMember.inheritanceInfo(context: CheckerContext): InheritedMemberInfo {
+        val member = declaration.cfir
+        val binary = member.cjoDeclarationSourceElement
+        val declarationSource = if (binary == null) member.source else binary
+        val nameSource = if (binary != null) binary.identifierSourceElementOrNull() else when (member) { is CfirNamedFunction -> member.functionNameDiagnosticSource()
+            is CfirProperty -> member.propertyNameDiagnosticSource()
+            is CfirFieldVariable -> member.fieldVariableNameDiagnosticSource()
+            else -> member.source }
+        return InheritedMemberInfo(name, when (kind) {
+            org.cangnova.cangjie.cfir.scopes.CfirInheritanceMemberKind.FUNCTION -> "function"
+            org.cangnova.cangjie.cfir.scopes.CfirInheritanceMemberKind.PROPERTY -> "property"
+            org.cangnova.cangjie.cfir.scopes.CfirInheritanceMemberKind.VARIABLE -> "variable"
+        }, flags.isStatic, flags.isOverride, flags.isRedef, flags.isConst, flags.isMut, flags.isDefault, flags.isAbstract,
+            flags.visibility, declarationSource, nameSource, null, declaration, ConeSubstitutor.Empty, this, context.session)
     }
 
     /**
@@ -2356,9 +2330,9 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
             append(':')
             append(name.asString())
             append(':')
-            append(symbol?.overrideSignatureKey(ownerSubstitutor).orEmpty())
+            append(storedSignatureKey())
             append(':')
-            append(superInfo.symbol?.overrideSignatureKey(superInfo.ownerSubstitutor).orEmpty())
+            append(superInfo.storedSignatureKey())
         }
 
     /**
@@ -2372,14 +2346,20 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
             append(':')
             append(isStatic)
             append(':')
-            append(symbol?.overrideSignatureKey(ownerSubstitutor).orEmpty())
+            append(storedSignatureKey())
         }
+
+    /** 冻结输入的去重键只读存储参数，不再解析活动符号 header。 */
+    private fun InheritedMemberInfo.storedSignatureKey(): String = mapped?.let { member ->
+        "${member.name}:${member.flags.isStatic}:${member.typeParameters.size}:${member.parameterTypes}"
+    } ?: symbol?.overrideSignatureKey(ownerSubstitutor).orEmpty()
 
     /**
      * 判断成员是否为接口中的 default 成员。
      */
     private fun InheritedMemberInfo.isDefaultInterfaceMember(context: CheckerContext): Boolean {
         if (!isDefault) return false
+        mapped?.flags?.let { return it.isInterfaceOwner }
         val owner = symbol?.let { context.ownerClassSymbol(it)?.cfir }
         return owner is CfirInterface
     }
@@ -2453,38 +2433,13 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         val symbol: CfirCallableSymbol<*>?,
         /** 成员 owner 在当前继承 use-site 的类型参数替换器。 */
         val ownerSubstitutor: ConeSubstitutor = ConeSubstitutor.Empty,
+        val mapped: CfirMappedInheritedMember? = null,
+        val comparisonSession: CfirSession? = null,
     ) {
         /**
          * 返回 static/non-static 的诊断展示文本。
          */
         val staticKind: String get() = if (isStatic) "static" else "non-static"
-    }
-
-    /**
-     * extend 接口实现检查中的实现候选。
-     *
-     * @property info 候选成员的统一继承信息。
-     * @property diagnosticSource 默认诊断位置，通常来自被检查的 type ref 或成员名称。
-     * @property declarationSource 候选来自当前 extend 声明时的声明 source。
-     */
-    private data class ExtendImplementationCandidate(
-        /** 候选成员的统一继承信息。 */
-        val info: InheritedMemberInfo,
-        /** 默认诊断位置，通常来自被检查的 type ref 或成员名称。 */
-        val diagnosticSource: AbstractCjSourceElement?,
-        /** 候选来自当前 extend 声明时的声明 source。 */
-        val declarationSource: CjSourceElement?,
-        /** 候选在 effective member graph 中的真实 extend/interface 来源。 */
-        val lookupProvenance: CfirCallableLookupProvenance,
-        /** 区分实际实现与当前接口列表尚未归并的默认输入。 */
-        val origin: ExtendImplementationOrigin,
-    )
-
-    /** 接口实现候选进入当前 extend 检查的语义来源。 */
-    private enum class ExtendImplementationOrigin {
-        TARGET_MEMBER,
-        OWN_MEMBER,
-        INTERFACE_DEFAULT,
     }
 
     /**
@@ -2539,6 +2494,9 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
             val implementationType: ConeCangJieType,
             /** 被实现的父返回类型。 */
             val baseType: ConeCangJieType,
+            /** 保存全部冲突返回要求，后续诊断呈现不能只恢复代表声明的返回类型。 */
+            val inconsistentTypes: List<ConeCangJieType>,
+            val noteDeclaration: CfirDeclaration,
         ) : FunctionReturnTypeConflict()
 
         /**
@@ -2549,6 +2507,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         data class Invariance(
             /** 触发不变性约束的接口类型。 */
             val interfaceType: ConeCangJieType,
+            val noteDeclaration: CfirDeclaration,
         ) : FunctionReturnTypeConflict()
     }
 
@@ -2562,17 +2521,20 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         reporter: DiagnosticReporter,
     ) {
         when (this) {
-            is FunctionReturnTypeConflict.Mismatch -> reporter.reportOn(
-                source = source,
-                factory = CfirErrors.RETURN_TYPE_INCOMPATIBLE,
-                a = name,
-            )
+            is FunctionReturnTypeConflict.Mismatch -> {
+                val renderer = org.cangnova.cangjie.cfir.analysis.diagnostics.CfirDiagnosticRenderers
+                val requiredTypes = if (inconsistentTypes.isEmpty()) "'${renderer.renderStoredType(baseType)}'"
+                    else renderer.renderStoredTypeConflictSet(inconsistentTypes, implementationType) { first, second ->
+                        AbstractTypeChecker.equalTypes(context.session.typeContext, first, second)
+                    }
+                val note = noteDeclaration.relatedInformation("'${renderer.renderStoredType(implementationType)}' is not a subtype of $requiredTypes")
+                reporter.reportOn(source, CfirErrors.RETURN_TYPE_INCOMPATIBLE, name,
+                    context = context.withRelatedInformation(listOf(note)))
+            }
 
             is FunctionReturnTypeConflict.Invariance -> reporter.reportOn(
-                source = source,
-                factory = CfirErrors.RETURN_TYPE_INVARIANCE,
-                a = name,
-                b = interfaceType,
+                source = source, factory = CfirErrors.RETURN_TYPE_INVARIANCE, a = name, b = interfaceType,
+                context = context.withRelatedInformation(listOf(noteDeclaration.relatedInformation("cannot override/implement the following function"))),
             )
         }
     }
@@ -2592,7 +2554,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
      * 但官方继承检查把它们作为 VAR_DECL 参与同名成员 shadow 规则。
      */
     private fun CfirProperty.inheritanceMemberKind(): String =
-        if (source?.kind == CjFakeSourceElementKind.PropertyFromParameter) "variable" else "property"
+        "property"
 
     /**
      * 继承成员一致性检查的统一主体。
@@ -2697,54 +2659,9 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
      */
     context(context: CheckerContext)
     private fun ConeCangJieType.resolvedUseSiteMemberScope(excludingExtend: CfirExtend? = null): CfirTypeScope? {
-        val classId = expandedClassIdOrPrimitiveClassId
-        if (classId != null) {
-            val symbol = context.session.symbolProvider.getClassLikeSymbolByClassId(classId) ?: return null
-            val rawScope = CfirClassUseSiteMemberScope(
-                session = context.session,
-                classSymbol = symbol,
-                symbolProvider = context.session.symbolProvider,
-                extendProvider = context.session.extendProvider,
-                directSupertypeProvider = context.session.directSupertypeProviderOrNull,
-                ownerType = this,
-                dispatchReceiverType = this,
-                scopeKind = CfirClassMemberScopeKind.DECLARATION_SITE,
-                excludingExtend = excludingExtend,
-            )
-            return CfirClassSubstitutionScope(
-                session = context.session,
-                useSiteMemberScope = rawScope,
-                dispatchReceiverType = this,
-                substitutionOwnerType = this,
-            )
-        }
-
-        val targetKey = expandedExtendTargetKey ?: return null
-        if (targetKey.classIdOrNull != null) return null
-        val scopes = buildList {
-            val builtinExtendScope = CfirExtendMemberScope(
-                targetKey = targetKey,
-                extendProvider = context.session.extendProvider,
-                session = context.session,
-                receiverType = this@resolvedUseSiteMemberScope,
-                excludingExtend = excludingExtend,
-            )
-            add(
-                CfirClassSubstitutionScope(
-                    session = context.session,
-                    useSiteMemberScope = builtinExtendScope,
-                    dispatchReceiverType = this@resolvedUseSiteMemberScope,
-                    substitutionOwnerType = this@resolvedUseSiteMemberScope,
-                )
-            )
-            for (supertype in context.session.typeAwareSupertypeProviderOrNull
-                ?.getDirectSupertypes(this@resolvedUseSiteMemberScope)
-                .orEmpty()
-            ) {
-                supertype.resolvedUseSiteMemberScope(excludingExtend)?.let(::add)
-            }
-        }
-        return CfirCompositeTypeScope(scopes, context.session)
+        return context.session.cangjieScopeProvider.getDeclarationSiteMemberScopeForType(
+            context.session, context.scopeSession, this, excludingExtend, CfirResolvePhase.STATUS,
+        )
     }
 
 }
@@ -2752,7 +2669,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
 /**
  * extend 声明也属于官方 `InheritableDecl`，需要进入同一组继承成员一致性检查。
  */
-object CfirExtendInheritanceDeepChecker : CfirExtendChecker() {
+object CfirExtendInheritanceDeepChecker : CfirExtendChecker(MppCheckerKind.Common) {
     /**
      * 将 extend 声明转发到继承深层检查器。
      */

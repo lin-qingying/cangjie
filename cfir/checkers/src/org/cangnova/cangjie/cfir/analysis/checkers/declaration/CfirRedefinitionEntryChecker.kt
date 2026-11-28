@@ -25,12 +25,13 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirMainFunction
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
-import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.resolve.providers.cfirProvider
 
 /**
  * 包内多个 `main` 入口检查（官方 `sema_redefinition_entry`）。
@@ -44,7 +45,7 @@ import org.cangnova.cangjie.cfir.session.cfirProvider
  * 取包内第一个 `main` 作为被登记者，本文件内其余 `main` 逐个报告。
  * 诊断锚定 `main` 名称 token（官方 `Diagnose(fd)` 的首字符即 `main` 关键字）。
  */
-object CfirRedefinitionEntryChecker : CfirFileChecker() {
+object CfirRedefinitionEntryChecker : CfirFileChecker(MppCheckerKind.Common) {
     override val requiresImplementation: Boolean get() = true
 
     context(context: CheckerContext, reporter: DiagnosticReporter)

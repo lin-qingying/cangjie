@@ -24,11 +24,18 @@
 
 package org.cangnova.cangjie.cfir.resolve.inference
 
+import org.cangnova.cangjie.cfir.resolvedTypeFromPrototype
+
+import org.cangnova.cangjie.cfir.resolve.substitution.createTypeSubstitutorByTypeConstructor
+
+import org.cangnova.cangjie.cfir.resolve.substitution.asCone
+
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.CfirFunctionTarget
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.SessionAndScopeSessionHolder
 import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.declarations.utils.ownTypeParameters
 import org.cangnova.cangjie.cfir.diagnostic.*
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
@@ -38,6 +45,10 @@ import org.cangnova.cangjie.cfir.expressions.builder.buildReturnExpression
 import org.cangnova.cangjie.cfir.lookupTracker
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
+import org.cangnova.cangjie.cfir.references.CfirResolvedBuiltinOperatorReference
+import org.cangnova.cangjie.cfir.references.CfirErrorNamedReference
+import org.cangnova.cangjie.cfir.declarations.builtinOperatorSignature
+import org.cangnova.cangjie.cfir.resolve.body.CfirBuiltinOperatorResolver
 import org.cangnova.cangjie.cfir.references.builder.buildResolvedNamedReference
 import org.cangnova.cangjie.cfir.resolve.*
 import org.cangnova.cangjie.cfir.resolve.body.CfirDataFlowAnalyzer
@@ -67,7 +78,7 @@ import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.firstSourceEr
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.isPostponedInference
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.builtinTypes
-import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.resolve.providers.cfirProvider
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
@@ -170,10 +181,12 @@ class CfirCallCompletionResultsWriterTransformer(
         )
 
         qualifiedAccessExpression.replaceCalleeReference(resolvedReference)
-        qualifiedAccessExpression.replaceDispatchReceiver(
-            subCandidate.dispatchReceiverExpression()
-                ?.transformSingle(integerOperatorApproximator, null)
-                ?.withCompletedEnumConstructorReceiverType(subCandidate)
+        val expectedReceiverType = subCandidate.selectedInstanceReceiverExpectedType(session)?.substituteType(subCandidate)
+        qualifiedAccessExpression.replaceCandidateReceivers(
+            subCandidate.selectedInstanceReceiverExpression()
+                ?.transformSingle(integerOperatorApproximator, expectedReceiverType)
+                ?.withCompletedEnumConstructorReceiverType(subCandidate),
+            subCandidate,
         )
         qualifiedAccessExpression.replaceTypeArguments(computeTypeArguments(qualifiedAccessExpression, subCandidate))
         qualifiedAccessExpression.replaceConeTypeOrNull(type)
@@ -321,7 +334,7 @@ class CfirCallCompletionResultsWriterTransformer(
             if (!AbstractTypeChecker.equalTypes(session.typeContext, initialArgument, expectedArgument)) return null
         }
         if (substitution.isEmpty()) return null
-        return CfirTypeSubstitutorByMap(substitution)
+        return createTypeSubstitutorByTypeConstructor(substitution, session.typeContext, false)
     }
 
     /**
@@ -342,6 +355,7 @@ class CfirCallCompletionResultsWriterTransformer(
     ): List<CfirExpression> {
         return when {
             this.isError -> originalArgumentList.arguments
+            candidate.cVariadicArguments != null -> candidate.arguments.unwrapAtoms()
             predefinedMapping != null -> predefinedMapping.keys.toList()
             else -> candidate.argumentMapping.keys.unwrapAtoms()
         }
@@ -389,7 +403,30 @@ class CfirCallCompletionResultsWriterTransformer(
         if (!prepareCandidateExpressionForCompletion(functionCall)) return functionCall
         restoreExplicitCompletionReference(functionCall)
         val calleeReference = functionCall.calleeReference as? CfirNamedReferenceWithCandidate
-            ?: return functionCall.also { result -> completionCandidates[functionCall]?.let { recordFinalCompletion(it, result) } }
+        if (calleeReference == null) {
+            val reference = functionCall.calleeReference
+            val completedCandidate = completionCandidates[functionCall]
+            if (completedCandidate == null && (reference is CfirResolvedBuiltinOperatorReference ||
+                    functionCall.origin == CfirFunctionCallOrigin.Operator && reference is CfirNamedReference &&
+                    reference !is CfirResolvedNamedReference && reference !is CfirErrorNamedReference)
+            ) {
+                functionCall.transformChildren(this, data)
+                functionCall.coneTypeOrNull?.let { functionCall.replaceConeTypeOrNull(finallySubstituteOrSelf(it)) }
+                if (reference !is CfirResolvedBuiltinOperatorReference) {
+                    val receiver = functionCall.explicitReceiver ?: functionCall.dispatchReceiver
+                    val receiverType = receiver?.coneTypeOrNull
+                    val argumentTypes = functionCall.argumentList.arguments.mapNotNull { it.coneTypeOrNull }
+                    if (receiverType != null && argumentTypes.size == functionCall.argumentList.arguments.size) {
+                        CfirBuiltinOperatorResolver.tryResolveBuiltinOperator(reference.name, receiverType, argumentTypes)?.let { match ->
+                            CfirBuiltinOperatorResolver.publishResult(functionCall, match.signature, match.returnType)
+                        }
+                    }
+                }
+                functionCall.transformSingle(integerOperatorApproximator, data?.getExpectedType(functionCall))
+            }
+            completedCandidate?.let { recordFinalCompletion(it, functionCall) }
+            return functionCall
+        }
         if (!mayWriteCompletion(calleeReference.candidate)) return functionCall
         val expectedTypeRootMismatchOnly =
             calleeReference.isExpectedTypeRootMismatchOnly(functionCall, context)
@@ -417,7 +454,7 @@ class CfirCallCompletionResultsWriterTransformer(
         }
         val allArgs = calleeReference.computeAllArguments(originalArgumentList)
         val argumentMappingFailed = candidate.argumentMappingOutcome?.hasMappingFailure == true
-        val (regularMapping, allArgsMapping) = if (argumentMappingFailed) {
+        val (regularMapping, allArgsMapping, cVariadicArguments, usesCangjieVariadicCall) = if (argumentMappingFailed) {
             // 映射失败时保留原始实参结构；partial mapping 只用于解释候选失败，
             // 不能触发变参解糖或把部分实参伪装成已经完成的 resolved argument list。
             ResultingArgumentsMapping(
@@ -443,8 +480,27 @@ class CfirCallCompletionResultsWriterTransformer(
                 regularMapping = regularMapping,
                 allArgsMapping = allArgsMapping,
                 forErrorReference = calleeReference.isError,
+                cVariadicArguments = cVariadicArguments,
+                usesCangjieVariadicCall = usesCangjieVariadicCall,
             )
         )
+
+        if (mode == Mode.Normal && candidate.requiresCompletedCFunctionArgumentCheck &&
+            candidate.diagnostics.none { it is UnitCannotBeCFunctionArgument }) {
+            val unitArgument = result.argumentList.arguments.firstOrNull { argument ->
+                argument.coneTypeOrNull?.let(::finallySubstituteOrSelf)?.isUnit == true
+            }
+            if (unitArgument != null) {
+                candidate.addDiagnostic(UnitCannotBeCFunctionArgument(unitArgument))
+                val diagnostic = checkNotNull(candidate.callFailureDiagnosticForResultType())
+                result.replaceCalleeReference(calleeReference.toErrorReference(diagnostic))
+                // 这是完成后发现的真实错误调用；错误列表保留全部完成实参，合法extra不充当formal。
+                val completed = result.argumentList as CfirResolvedArgumentList
+                result.replaceArgumentList(buildArgumentListForErrorCall(originalArgumentList,
+                    completed.arguments.associateWithTo(LinkedHashMap()) { completed.mapping[it] }))
+            }
+        }
+
         val callDiagnostic = calleeReference.callDiagnosticForResultType(
             ignoreExpectedTypeRootMismatch = expectedTypeRootMismatchOnly,
         )
@@ -465,6 +521,15 @@ class CfirCallCompletionResultsWriterTransformer(
             expectedTypeRootMismatchOnly = expectedTypeRootMismatchOnly,
         )
         result.replaceConeTypeOrNull(resultType)
+        if (resultType !is ConeErrorType) {
+            val reference = result.calleeReference as? CfirNamedReference
+            if (reference != null) result.replaceCalleeReference(resolvedReferenceFor(calleeReference, reference, resultType))
+        }
+        val builtinSignature = (candidate.symbol.cfir as? CfirNamedFunction)?.builtinOperatorSignature
+        if (builtinSignature != null && result.calleeReference is CfirResolvedNamedReference && resultType !is ConeErrorType) {
+            CfirBuiltinOperatorResolver.publishResult(result, builtinSignature, resultType)
+            result.transformSingle(integerOperatorApproximator, callExpectedType)
+        }
         session.lookupTracker?.recordTypeResolveAsLookup(resultType, functionCall.source, context.file.source)
         result.addNonFatalDiagnostics(candidate)
         recordFinalCompletion(candidate, result)
@@ -534,8 +599,9 @@ class CfirCallCompletionResultsWriterTransformer(
      * receiver 子树，避免 lambda 参数和返回类型停留在候选阶段的旧占位类型上。
      */
     private fun CfirFunctionCall.transformCompletedFunctionCallReceiver(candidate: Candidate) {
-        val dispatchReceiver = candidate.dispatchReceiverExpression() ?: return
-        val expectedReceiverType = dispatchReceiver.coneTypeOrNull?.substituteType(candidate)
+        // 首次发布可能替换了 receiver；第二阶段继续同一已发布产品，不回读 raw candidate 节点。
+        val dispatchReceiver = dispatchReceiver ?: return
+        val expectedReceiverType = candidate.selectedInstanceReceiverExpectedType(session)?.substituteType(candidate)
         val receiverData = expectedReceiverType?.toExpectedType(argumentReplacements = null)
 
         val completedReceiver = if (explicitReceiver === dispatchReceiver) {
@@ -548,7 +614,7 @@ class CfirCallCompletionResultsWriterTransformer(
                 .transformSingle(integerOperatorApproximator, expectedReceiverType)
         }?.withCompletedEnumConstructorReceiverType(candidate)
 
-        replaceDispatchReceiver(completedReceiver)
+        replaceCandidateReceivers(completedReceiver, candidate)
     }
 
     /**
@@ -703,6 +769,8 @@ class CfirCallCompletionResultsWriterTransformer(
         regularMapping: LinkedHashMap<CfirExpression, CfirValueParameter>,
         allArgsMapping: LinkedHashMap<CfirExpression, CfirValueParameter?>,
         forErrorReference: Boolean,
+        cVariadicArguments: CfirCVariadicArguments<CfirExpression>? = null,
+        usesCangjieVariadicCall: Boolean = false,
     ): CfirArgumentList {
         return withCallCfgOwner(candidate.callCfgOwner()) {
             val transformedRegularMapping = LinkedHashMap<CfirExpression, CfirValueParameter>(regularMapping.size)
@@ -726,11 +794,18 @@ class CfirCallCompletionResultsWriterTransformer(
             for ((argument, parameter) in regularMapping) {
                 transformedRegularMapping[transform(argument, parameter)] = parameter
             }
+            val transformedCArguments = cVariadicArguments?.map { transform(it, null) }
+            if (forErrorReference) transformedCArguments?.extraArguments?.forEach { transformedAllArgsMapping[it] = null }
 
             if (forErrorReference) {
                 buildArgumentListForErrorCall(originalArgumentList, transformedAllArgsMapping)
             } else {
-                buildResolvedArgumentList(originalArgumentList, transformedRegularMapping)
+                buildResolvedArgumentList(
+                    originalArgumentList,
+                    transformedRegularMapping,
+                    cVariadicArguments = transformedCArguments,
+                    usesCangjieVariadicCall = usesCangjieVariadicCall,
+                )
             }
         }
     }
@@ -879,6 +954,13 @@ class CfirCallCompletionResultsWriterTransformer(
                     registerExpectedType(unwrappedArgument, expectedType)
                 }
             }
+            cVariadicArguments?.extraArguments?.forEach { atom ->
+                val expectedType = substituteExplicitTypeArgumentConstraints(
+                    finallySubstituteOrSelf(substitutor.substituteOrSelf(CfirCTypeSemantics.constraintType())))
+                registerExpectedType(atom.expression, expectedType)
+                val unwrapped = atom.unwrapAtom()
+                if (unwrapped !== atom.expression) registerExpectedType(unwrapped, expectedType)
+            }
 
             val argumentReplacements = this@createArgumentsMapping.argumentReplacements
             argumentReplacements?.forEach { (original, replacement) ->
@@ -950,6 +1032,9 @@ class CfirCallCompletionResultsWriterTransformer(
         val regularMapping: LinkedHashMap<CfirExpression, CfirValueParameter>,
         /** 包含所有原始/合成实参的映射，未映射项值为空。 */
         val allArgsMapping: LinkedHashMap<CfirExpression, CfirValueParameter?>,
+        /** C extras 正式角色与仅供错误恢复的nullable映射分开，不向null formal中塞合法extra。 */
+        val cVariadicArguments: CfirCVariadicArguments<CfirExpression>? = null,
+        val usesCangjieVariadicCall: Boolean = false,
     )
 
     /**
@@ -962,6 +1047,11 @@ class CfirCallCompletionResultsWriterTransformer(
         precomputedArgumentMapping: LinkedHashMap<CfirExpression, CfirValueParameter>? = null,
     ): ResultingArgumentsMapping {
         val argumentMapping = precomputedArgumentMapping ?: this.argumentMapping.unwrapAtoms()
+        cVariadicArguments?.let { cArguments ->
+            val completedCArguments = cArguments.map { it.expression }
+            if (isSuccessful) check(argumentMapping.size == cArguments.fixedParameterCount)
+            return ResultingArgumentsMapping(argumentMapping, LinkedHashMap(argumentMapping), completedCArguments)
+        }
         val variadicParameter = cangjieVariadicParameterForCall
         val hasMarkedVariadicArgument = argumentList.any { isMarkedVariadicArgument(it) }
         val hasArgumentMappedToVariadicParameter = argumentMapping.any { (_, parameter) -> parameter == variadicParameter }
@@ -983,6 +1073,7 @@ class CfirCallCompletionResultsWriterTransformer(
             ResultingArgumentsMapping(
                 argumentMappingWithAllArgs.filterValuesNotNullToLinkedMap(),
                 argumentMappingWithAllArgs,
+                usesCangjieVariadicCall = true,
             )
         } else {
             ResultingArgumentsMapping(
@@ -1098,7 +1189,15 @@ class CfirCallCompletionResultsWriterTransformer(
         }
 
         val calleeReference = qualifiedAccessExpression.calleeReference as? CfirNamedReferenceWithCandidate
-            ?: return qualifiedAccessExpression.also { result -> completionCandidates[result]?.let { recordFinalCompletion(it, result) } }
+        if (calleeReference == null) {
+            // PCLA 的参数引用已经绑定 symbol，但其使用点类型仍需应用 final substitutor。
+            qualifiedAccessExpression.transformChildren(this, data)
+            qualifiedAccessExpression.coneTypeOrNull?.let {
+                qualifiedAccessExpression.replaceConeTypeOrNull(finallySubstituteOrSelf(it))
+            }
+            completionCandidates[qualifiedAccessExpression]?.let { recordFinalCompletion(it, qualifiedAccessExpression) }
+            return qualifiedAccessExpression
+        }
         val candidate = calleeReference.candidate
         if (!mayWriteCompletion(candidate)) return qualifiedAccessExpression
         /*
@@ -1152,6 +1251,14 @@ class CfirCallCompletionResultsWriterTransformer(
                 expectedTypeRootMismatchOnly = expectedTypeRootMismatchOnly,
             )
             result.replaceConeTypeOrNull(approximatedType)
+            if (approximatedType !is ConeErrorType) {
+                val reference = result.calleeReference as? CfirNamedReference
+                if (reference != null) {
+                    val callableReturnType = if (candidate.symbol.cfir is CfirFunction && approximatedType is ConeFunctionType)
+                        approximatedType.returnType else approximatedType
+                    result.replaceCalleeReference(resolvedReferenceFor(calleeReference, reference, callableReturnType))
+                }
+            }
             session.lookupTracker?.recordTypeResolveAsLookup(
                 approximatedType,
                 qualifiedAccessExpression.source,
@@ -1924,6 +2031,7 @@ class CfirCallCompletionResultsWriterTransformer(
                 approximatedType.toCfirResolvedTypeRef(anonymousFunction.typeRef.source, anonymousFunction.typeRef),
             )
         }
+        if (mode == Mode.Normal) declarationsTransformer.publishCompletedFunctionBodyPhase(anonymousFunction)
         return anonymousFunctionExpression
     }
 
@@ -2012,7 +2120,8 @@ class CfirCallCompletionResultsWriterTransformer(
     ): List<ConeCangJieType> {
         val declaration = candidate.symbol.cfir as? CfirCallableDeclaration ?: return emptyList()
 
-        return declaration.typeParameters.map {
+        // 写回的类型实参对应调用点语法 `f<...>`，只覆盖 callable 自有泛型。
+        return declaration.typeParameters.ownTypeParameters.map {
             val typeParameter = ConeTypeParameterTypeImpl(it.symbol.toLookupTag())
             val substitution = candidate.substitutor.substituteOrSelf(typeParameter)
             finallySubstituteOrSelf(substitution).let { substitutedType ->
@@ -2059,22 +2168,8 @@ class CfirCallCompletionResultsWriterTransformer(
                 return@mapIndexed sourceTypeArgument
             }
 
-            val source = sourceTypeArgument?.source
-            val delegatedTypeRef = sourceTypeArgument?.delegatedTypeRef ?: sourceTypeArgument
-            when (type) {
-                is ConeErrorType -> buildErrorTypeRef {
-                    this.source = source
-                    coneType = type
-                    this.delegatedTypeRef = delegatedTypeRef
-                    diagnostic = type.diagnostic
-                }
-
-                else -> buildResolvedTypeRef {
-                    this.source = source
-                    coneType = type
-                    this.delegatedTypeRef = delegatedTypeRef
-                }
-            }
+            if (sourceTypeArgument != null) sourceTypeArgument.withReplacedConeType(type)
+            else type.toCfirResolvedTypeRef()
         }
 
         if (typeArguments.size >= access.typeArguments.size) return typeArguments
@@ -2100,11 +2195,12 @@ class CfirCallCompletionResultsWriterTransformer(
      */
     private fun resolvedReferenceFor(
         calleeReference: CfirNamedReferenceWithCandidate,
+        resolved: CfirNamedReference,
         resultType: ConeCangJieType,
     ): CfirNamedReference {
-        val resolved = calleeReference.toResolvedReference()
         return if (resolved is CfirResolvedNamedReference && resolved !is CfirDiagnosticHolder) {
-            buildAppliedCallableReference(calleeReference.name, calleeReference.candidate, resultType, finalSubstitutor)
+            buildAppliedCallableReference(resolved.name, calleeReference.candidate, resultType, finalSubstitutor, resolved.source,
+                completeReferenceParentType(calleeReference.candidate, finalSubstitutor))
         } else {
             resolved
         }
@@ -2185,12 +2281,13 @@ class CfirCallCompletionResultsWriterTransformer(
             !entry.pass.owner.isUnscopedCompletionPassActive(entry.pass) || !mayWriteCompletion(entry.pass.owner) ||
             !entry.matchesCandidate() || !candidate.isSuccessful || candidate.postponedAtoms.any { !it.analyzed }
         ) return
-        val reference = (result as? CfirResolvable)?.calleeReference as? CfirResolvedNamedReference ?: return
+        val reference = (result as? CfirResolvable)?.calleeReference ?: return
         val type = result.coneTypeOrNull ?: return
-        if (reference is CfirDiagnosticHolder || reference.resolvedSymbol !== entry.target ||
+        if (!entry.matchesResolvedReference(reference) ||
             type.contains { it is ConeTypeVariableType || it is ConeStubType || it is ConeErrorType }
         ) return
         if (result is CfirFunctionCall && candidate.callInfo.callKind == CallKind.Function &&
+            reference !is CfirResolvedBuiltinOperatorReference &&
             !AbstractTypeChecker.equalTypes(session.typeContext,
                 finalSubstitutor.substituteOrSelf(candidate.substitutedReturnTypeFromCalculator()), type)
         ) return
@@ -2351,21 +2448,21 @@ class CfirCallCompletionResultsWriterTransformer(
         val candidate = completionCandidates[expression] ?: return
         if (!mayWriteCompletion(candidate)) return
         val reference = expression.calleeReference
-        if (reference !is CfirResolvedNamedReference || reference is CfirDiagnosticHolder) return
-        if (candidate.implicitTypeComputationScope == null) {
-            check(reference.resolvedSymbol === candidate.symbol) {
-                "PCLA completion atom differs from the actual resolved target"
-            }
+        if (reference is CfirDiagnosticHolder ||
+            reference !is CfirResolvedNamedReference && reference !is CfirResolvedBuiltinOperatorReference
+        ) return
+        val scope = candidate.implicitTypeComputationScope
+        val matchesTarget = if (scope != null) {
+            scope.graph.matchesResolvedCompletionReference(scope, candidate, expression, reference)
+        } else when (reference) {
+            is CfirResolvedNamedReference -> reference.resolvedSymbol === candidate.symbol
+            is CfirResolvedBuiltinOperatorReference -> candidate.matchesBuiltinOperatorReference(expression, reference)
+            else -> false
         }
-        candidate.implicitTypeComputationScope?.let { scope ->
-            val matchesTarget = scope.graph.matchesResolvedCompletionTarget(scope, candidate, reference.resolvedSymbol)
-            check(matchesTarget) {
-                "PCLA completion atom differs from the actual resolved target"
-            }
-            if (completionSystem != null && scope.mode == CfirImplicitTypeComputationMode.FORMAL &&
-                scope.graph.isFormalCallWrittenByLease(scope, candidate, expression, checkNotNull(completionLeases[scope.graph]))
-            ) return
-        }
+        check(matchesTarget) { "PCLA completion atom differs from the actual resolved target" }
+        if (scope != null && completionSystem != null && scope.mode == CfirImplicitTypeComputationMode.FORMAL &&
+            scope.graph.isFormalCallWrittenByLease(scope, candidate, expression, checkNotNull(completionLeases[scope.graph]))
+        ) return
         expression.replaceCalleeReference(CfirNamedReferenceWithCandidate(reference.source, candidate.callInfo.name, candidate))
     }
 
@@ -2940,28 +3037,6 @@ private fun ConeCangJieType.approximateIntegerLiteralType(): ConeCangJieType =
         else -> this
     }
 
-/**
- * 基于原类型引用创建 resolved/error type ref。
- */
-private fun org.cangnova.cangjie.cfir.types.CfirTypeRef.resolvedTypeFromPrototype(
-    type: ConeCangJieType,
-    source: org.cangnova.cangjie.source.CjSourceElement?,
-): CfirResolvedTypeRef {
-    return when (type) {
-        is ConeErrorType -> buildErrorTypeRef {
-            this.source = source ?: this@resolvedTypeFromPrototype.source
-            coneType = type
-            delegatedTypeRef = this@resolvedTypeFromPrototype
-            diagnostic = type.diagnostic
-        }
-
-        else -> buildResolvedTypeRef {
-            this.source = source ?: this@resolvedTypeFromPrototype.source
-            coneType = type
-            delegatedTypeRef = this@resolvedTypeFromPrototype
-        }
-    }
-}
 
 /**
  * 将 atom 集合展开为对应表达式列表。

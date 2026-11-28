@@ -1,5 +1,7 @@
 package org.cangnova.cangjie.cfir.resolve.inference
 
+import org.cangnova.cangjie.cfir.resolve.substitution.asCone
+
 import org.cangnova.cangjie.AnalysisFlags
 import org.cangnova.cangjie.cfir.*
 import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction

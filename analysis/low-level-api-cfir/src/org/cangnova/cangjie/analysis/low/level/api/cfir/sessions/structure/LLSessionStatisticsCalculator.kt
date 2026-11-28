@@ -9,7 +9,7 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsO
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLCangJieStubBasedLibrarySymbolProvider
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLModuleWithDependenciesSymbolProvider
 import org.cangnova.cangjie.cfir.CfirElement
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
 import kotlin.time.DurationUnit
 

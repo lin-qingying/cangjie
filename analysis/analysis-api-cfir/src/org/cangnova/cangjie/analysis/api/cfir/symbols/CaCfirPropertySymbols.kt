@@ -19,7 +19,6 @@ import org.cangnova.cangjie.analysis.api.impl.base.util.callableId
 import org.cangnova.cangjie.analysis.api.impl.base.util.callableIdForName
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
-import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.symbols.CaFunctionSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPropertyGetterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPropertySetterSymbol
@@ -36,7 +35,6 @@ import org.cangnova.cangjie.analysis.api.symbols.pointers.CaSymbolPointer
 import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
-import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
@@ -430,12 +428,6 @@ internal class CaCfirPropertySymbol private constructor(
     )
 
     /**
-     * 属性实际声明所属的模块。
-     */
-    override val containingModule: CaModule
-        get() = withValidityAssertion { cfirSymbol.llCfirModuleData.caModule }
-
-    /**
      * 属性 CFIR member 状态。
      *
      * 局部属性与局部函数一样在 BODY_RESOLVE 中创建，由 [symbolDeclarationStatus]
@@ -546,19 +538,19 @@ internal class CaCfirPropertySymbol private constructor(
      * 属性是否为 static。
      */
     override val isStatic: Boolean
-        get() = withValidityAssertion { backingPsi?.hasModifier(CjTokens.STATIC_KEYWORD) ?: (status?.isStatic == true) }
+        get() = withValidityAssertion { status.isStatic }
 
     /**
      * 属性是否为 const。
      */
     override val isConst: Boolean
-        get() = withValidityAssertion { backingPsi?.hasModifier(CjTokens.CONST_KEYWORD) ?: (status?.isConst == true) }
+        get() = withValidityAssertion { status.isConst }
 
     /**
      * 属性是否为 mutating。
      */
     override val isMutating: Boolean
-        get() = withValidityAssertion { backingPsi?.hasModifier(CjTokens.MUT_KEYWORD) ?: (status?.isMut == true) }
+        get() = withValidityAssertion { status.isMut }
 
     /**
      * 属性是否为 override。
@@ -570,13 +562,13 @@ internal class CaCfirPropertySymbol private constructor(
      * 属性是否为 unsafe。
      */
     override val isUnsafe: Boolean
-        get() = withValidityAssertion { backingPsi?.hasModifier(CjTokens.UNSAFE_KEYWORD) ?: (status?.isUnsafe == true) }
+        get() = withValidityAssertion { status.isUnsafe }
 
     /**
-     * 属性是否为 foreign。
+     * 属性是否为 foreign；源码 token 不能覆盖 parser 清空或继承后的语义状态。
      */
     override val isForeign: Boolean
-        get() = withValidityAssertion { backingPsi?.hasModifier(CjTokens.FOREIGN_KEYWORD) ?: (status?.isForeign == true) }
+        get() = withValidityAssertion { status.isForeign }
 
     /**
      * 属性类型参数列表。
@@ -611,6 +603,8 @@ internal class CaCfirPropertySymbol private constructor(
     override val name: Name
         get() = withValidityAssertion { backingPsi?.nameAsSafeName ?: cfirSymbol.name }
 
+    /** 属性与其访问器各自按符号类型及真实源身份比较。 */
     override fun equals(other: Any?): Boolean = psiOrSymbolEquals(other)
+
     override fun hashCode(): Int = psiOrSymbolHashCode()
 }

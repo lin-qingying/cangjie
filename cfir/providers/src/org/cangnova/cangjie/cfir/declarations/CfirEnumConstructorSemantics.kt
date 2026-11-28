@@ -25,15 +25,17 @@
 package org.cangnova.cangjie.cfir.declarations
 
 import org.cangnova.cangjie.cfir.calls.resolvedQualifierClassifier
+import org.cangnova.cangjie.cfir.resolve.substitution.createTypeSubstitutorByTypeConstructor
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.CfirCallExpression
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.patterns.CfirEnumPattern
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.session.cfirProvider
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.cfirProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirEnumSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
@@ -143,7 +145,7 @@ fun CfirEnumConstructor.substitutedPayloadParameterTypes(
     }.toMap()
     if (replacements.isEmpty()) return payloadTypes
 
-    val substitutor = CfirTypeSubstitutorByMap(replacements)
+    val substitutor = createTypeSubstitutorByTypeConstructor(replacements, enumDeclaration.moduleData.session.typeContext, false)
     return payloadTypes.map(substitutor::substituteOrSelf)
 }
 
@@ -170,11 +172,19 @@ fun ConeCangJieType.expandedPatternEnumType(session: CfirSession): ConeEnumType?
 /**
  * enum pattern 的 constructor 短名。
  *
- * 限定名模式的 owner 由 [CfirEnumPattern.ownerQualifier] 单独承载，引用里只有 `.` 之后的名字；
+ * 限定名模式的 owner 从实际 constructor receiver 读取，引用里只有 `.` 之后的名字；
  * 语法恢复产生的占位引用（special name）返回 null。
  */
 fun CfirEnumPattern.constructorNameOrNull(): Name? =
     (constructorReference as? CfirNamedReference)?.name?.takeUnless { name -> name.isSpecial }
+
+/** 读取实际 constructor 的限定符，保持源与 CJO 只有一个拥有入口。 */
+val CfirEnumPattern.ownerQualifier: CfirExpression?
+    get() = when (val access = constructor) {
+        is CfirQualifiedAccessExpression -> access.explicitReceiver
+        is CfirCallExpression -> (access.base as? CfirQualifiedAccessExpression)?.explicitReceiver
+        else -> null
+    }
 
 /**
  * 判断 enum pattern 的 owner 限定符是否指向 subject 类型。

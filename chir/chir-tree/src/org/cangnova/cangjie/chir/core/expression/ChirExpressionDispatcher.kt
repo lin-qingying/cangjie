@@ -25,6 +25,21 @@ interface ChirExpressionDomainHandler<T> {
     fun handleCall(expression: ChirCallExpression): T
 
     /**
+     * 处理按结果类型布局的聚合表达式。
+     */
+    fun handleTuple(expression: ChirTupleExpression): T
+
+    /**
+     * 处理值字段投影。
+     */
+    fun handleField(expression: ChirFieldExpression): T
+
+    /**
+     * 处理将字面量物化为局部值的常量表达式。
+     */
+    fun handleConstant(expression: ChirConstantExpression): T
+
+    /**
      * 处理其他表达式。
      */
     fun handleOthers(expression: ChirOtherExpression): T
@@ -46,6 +61,9 @@ object ChirExpressionDispatcher {
             is ChirBinaryExpression -> handler.handleBinary(expression)
             is ChirMemoryExpression -> handler.handleMemory(expression)
             is ChirCallExpression -> handler.handleCall(expression)
+            is ChirTupleExpression -> handler.handleTuple(expression)
+            is ChirFieldExpression -> handler.handleField(expression)
+            is ChirConstantExpression -> handler.handleConstant(expression)
             is ChirOtherExpression -> handler.handleOthers(expression)
             else -> error("unsupported expression type: ${expression::class.qualifiedName}")
         }

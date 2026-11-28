@@ -3,7 +3,7 @@ package org.cangnova.cangjie.llvm.api
 /**
  * LLVM 互操作层异常基类。
  */
-open class LlvmException(
+open class LlvmException @JvmOverloads constructor(
     message: String,
     cause: Throwable? = null,
 ) : RuntimeException(message, cause)

@@ -17,11 +17,17 @@ import org.cangnova.cangjie.chir.core.declaration.ChirTypeDeclaration
 import org.cangnova.cangjie.chir.core.declaration.ChirVariableDeclaration
 import org.cangnova.cangjie.chir.core.expression.ChirBinaryExpression
 import org.cangnova.cangjie.chir.core.expression.ChirBinaryOperator
+import org.cangnova.cangjie.chir.core.expression.ChirBinaryOperatorFamily
 import org.cangnova.cangjie.chir.core.expression.ChirCallExpression
+import org.cangnova.cangjie.chir.core.expression.ChirConstantExpression
+import org.cangnova.cangjie.chir.core.expression.ChirExpression
+import org.cangnova.cangjie.chir.core.expression.ChirFieldExpression
+import org.cangnova.cangjie.chir.core.expression.ChirIntrinsicKind
 import org.cangnova.cangjie.chir.core.expression.ChirMemoryExpression
 import org.cangnova.cangjie.chir.core.expression.ChirMemoryOperation
 import org.cangnova.cangjie.chir.core.expression.ChirOtherExpression
 import org.cangnova.cangjie.chir.core.expression.ChirOtherOperation
+import org.cangnova.cangjie.chir.core.expression.ChirTupleExpression
 import org.cangnova.cangjie.chir.core.expression.ChirUnaryExpression
 import org.cangnova.cangjie.chir.core.expression.ChirUnaryOperator
 import org.cangnova.cangjie.chir.core.identity.ChirSemanticId
@@ -45,8 +51,10 @@ import org.cangnova.cangjie.chir.core.type.ChirThisType
 import org.cangnova.cangjie.chir.core.type.ChirTupleType
 import org.cangnova.cangjie.chir.core.type.ChirType
 import org.cangnova.cangjie.chir.core.type.ChirTypeRef
+import org.cangnova.cangjie.chir.core.type.ChirTypeRelations
 import org.cangnova.cangjie.chir.core.type.ChirUnresolvedTypeRef
 import org.cangnova.cangjie.chir.core.type.ChirVArrayType
+import org.cangnova.cangjie.chir.core.value.ChirConstantValue
 import org.cangnova.cangjie.chir.core.value.ChirValue
 
 /**
@@ -96,11 +104,15 @@ class DefaultChirValidator : ChirValidator {
             }
         }
 
-        val importedFunctionIds = chirPackage.members.importedFunctions.mapTo(hashSetOf()) { it.semanticId }
         allDeclarations
             .filterIsInstance<ChirFunctionDeclaration>()
-            .filterNot { it.semanticId in importedFunctionIds }
-            .forEach { function -> validateFunction(function, issues) }
+            .forEach { function ->
+                if (function.isImported) {
+                    validateImportedFunction(function, issues)
+                } else {
+                    validateFunction(function, issues)
+                }
+            }
 
         val functionById = allDeclarations
             .filterIsInstance<ChirFunctionDeclaration>()
@@ -150,9 +162,11 @@ class DefaultChirValidator : ChirValidator {
         }
         val returnType = function.returnType
         val isUnitReturn = returnType is ChirResolvedTypeRef && returnType.type == ChirPrimitiveType.UNIT
+        val expressionByResultValueId = linkedMapOf<ChirSemanticId, ChirSemanticId>()
 
         function.blocks.forEach { block ->
             block.expressions.forEach { expression ->
+                validateExpressionResult(expression, expressionByResultValueId, issues)
                 when (expression) {
                     is ChirBinaryExpression -> {
                         val operator = ChirBinaryOperator.parse(expression.operator)
@@ -167,11 +181,44 @@ class DefaultChirValidator : ChirValidator {
                                 nodeId = expression.semanticId,
                             )
                         }
-                        if (expression.left.type != expression.right.type) {
+                        val hasCompatibleOperands = when (operator) {
+                            ChirBinaryOperator.POWER -> {
+                                val leftType = expression.left.type.typeOrNull()
+                                val rightType = expression.right.type.typeOrNull()
+                                when (leftType) {
+                                    ChirPrimitiveType.INT64 -> rightType == ChirPrimitiveType.UINT64
+                                    ChirPrimitiveType.FLOAT64 -> rightType == ChirPrimitiveType.INT64 || rightType == ChirPrimitiveType.FLOAT64
+                                    else -> false
+                                }
+                            }
+                            ChirBinaryOperator.SHIFT_LEFT,
+                            ChirBinaryOperator.SIGNED_SHIFT_RIGHT,
+                            ChirBinaryOperator.UNSIGNED_SHIFT_RIGHT,
+                            -> expression.left.type.isIntegerLikeMemorySize() &&
+                                expression.right.type.typeOrNull() == ChirPrimitiveType.INT64
+                            else -> ChirTypeRelations.areEquivalent(expression.left.type, expression.right.type)
+                        }
+                        if (!hasCompatibleOperands) {
                             issues += ChirValidationIssue(
                                 code = "BINARY_OPERAND_TYPE_MISMATCH",
                                 severity = ChirValidationSeverity.ERROR,
-                                message = "binary expression operands must have the same type",
+                                message = when {
+                                    operator == ChirBinaryOperator.POWER ->
+                                        "power expression operands do not match the official power type signatures"
+                                    operator?.family == ChirBinaryOperatorFamily.SHIFT ->
+                                        "shift expression requires an integer value and an Int64 shift count"
+                                    else -> "binary expression operands must have the same type"
+                                },
+                                nodeId = expression.semanticId,
+                            )
+                        }
+                        if (operator == ChirBinaryOperator.POWER &&
+                            !ChirTypeRelations.areEquivalent(expression.left.type, expression.resultType)
+                        ) {
+                            issues += ChirValidationIssue(
+                                code = "BINARY_RESULT_TYPE_MISMATCH",
+                                severity = ChirValidationSeverity.ERROR,
+                                message = "power expression result type must match its base type",
                                 nodeId = expression.semanticId,
                             )
                         }
@@ -192,22 +239,110 @@ class DefaultChirValidator : ChirValidator {
                     is ChirCallExpression -> {
                         validateTypeRef(expression.callee.type, expression.callee.semanticId, "call.callee", issues)
                         validateTypeRef(expression.resultType, expression.semanticId, "call.result", issues)
-                        val functionType = (expression.callee.type as? ChirResolvedTypeRef)?.type as? ChirFunctionType
-                        if (functionType != null) {
-                            val expectedArgumentTypes = buildList {
-                                functionType.receiverType?.let(::add)
-                                addAll(functionType.parameterTypes)
+                        expression.dispatchReceiver?.let { receiver ->
+                            validateTypeRef(receiver.type, receiver.semanticId, "call.dispatchReceiver", issues)
+                        }
+                        if (expression.virtualMethodContext == null && expression.dispatchReceiver != null) {
+                            issues += ChirValidationIssue(
+                                code = "CALL_DISPATCH_RECEIVER_WITHOUT_VIRTUAL_CONTEXT",
+                                severity = ChirValidationSeverity.ERROR,
+                                message = "direct call carries a dynamic dispatch receiver",
+                                nodeId = expression.semanticId,
+                            )
+                        }
+                        expression.instantiatedTypeArguments.forEachIndexed { index, typeArgument ->
+                            validateTypeRef(typeArgument, expression.semanticId, "call.instantiatedTypeArgument#$index", issues)
+                        }
+                        expression.thisType?.let { typeRef ->
+                            validateTypeRef(typeRef, expression.semanticId, "call.thisType", issues)
+                        }
+                        expression.virtualMethodContext?.let { context ->
+                            if (context.sourceCodeIdentifier.isBlank()) {
+                                issues += ChirValidationIssue(
+                                    code = "CALL_VIRTUAL_METHOD_IDENTIFIER_MISSING",
+                                    severity = ChirValidationSeverity.ERROR,
+                                    message = "virtual call has no source code identifier",
+                                    nodeId = expression.semanticId,
+                                )
                             }
-                            if (expectedArgumentTypes.size != expression.arguments.size) {
+                            validateTypeRef(
+                                ChirResolvedTypeRef(context.originalFunctionType),
+                                expression.semanticId,
+                                "call.virtualMethodContext.originalFunctionType",
+                                issues,
+                            )
+                            context.genericTypeParameters.forEachIndexed { index, typeParameter ->
+                                validateTypeRef(
+                                    typeParameter,
+                                    expression.semanticId,
+                                    "call.virtualMethodContext.genericTypeParameter#$index",
+                                    issues,
+                                )
+                                if ((typeParameter as? ChirResolvedTypeRef)?.type !is ChirGenericType) {
+                                    issues += ChirValidationIssue(
+                                        code = "CALL_VIRTUAL_METHOD_TYPE_PARAMETER_INVALID",
+                                        severity = ChirValidationSeverity.ERROR,
+                                        message = "virtual call generic type parameter #$index is not a generic type",
+                                        nodeId = expression.semanticId,
+                                    )
+                                }
+                            }
+                        }
+                        val functionType = expression.virtualMethodContext?.originalFunctionType
+                            ?: (expression.callee.type as? ChirResolvedTypeRef)?.type as? ChirFunctionType
+                        if (functionType != null) {
+                            val substitutions = linkedMapOf<String, ChirTypeRef>()
+                            val expectedArgumentTypes = if (expression.virtualMethodContext == null) {
+                                buildList {
+                                    functionType.receiverType?.let(::add)
+                                    addAll(functionType.parameterTypes)
+                                }
+                            } else {
+                                val receiverType = functionType.parameterTypes.firstOrNull()
+                                val dispatchReceiver = expression.dispatchReceiver
+                                if (receiverType == null) {
+                                    issues += ChirValidationIssue(
+                                        code = "CALL_VIRTUAL_METHOD_RECEIVER_MISSING",
+                                        severity = ChirValidationSeverity.ERROR,
+                                        message = "virtual call function type has no receiver parameter",
+                                        nodeId = expression.semanticId,
+                                    )
+                                } else if (dispatchReceiver == null) {
+                                    issues += ChirValidationIssue(
+                                        code = "CALL_VIRTUAL_METHOD_DISPATCH_RECEIVER_MISSING",
+                                        severity = ChirValidationSeverity.ERROR,
+                                        message = "virtual call has no separate dispatch receiver value",
+                                        nodeId = expression.semanticId,
+                                    )
+                                } else if (!ChirTypeRelations.constrain(receiverType, dispatchReceiver.type, substitutions)) {
+                                    issues += ChirValidationIssue(
+                                        code = "CALL_VIRTUAL_METHOD_RECEIVER_TYPE_MISMATCH",
+                                        severity = ChirValidationSeverity.ERROR,
+                                        message = "virtual call receiver type ${dispatchReceiver.type.renderName} does not match ${receiverType.renderName}",
+                                        nodeId = expression.semanticId,
+                                    )
+                                }
+                                functionType.parameterTypes.drop(1)
+                            }
+                            val fixedArgumentCount = expectedArgumentTypes.size
+                            val hasInvalidArgumentCount = expression.arguments.size < fixedArgumentCount ||
+                                (!functionType.hasVarArg && expression.arguments.size != fixedArgumentCount)
+                            if (hasInvalidArgumentCount) {
+                                val expectedArgumentCount = if (functionType.hasVarArg) {
+                                    "at least $fixedArgumentCount"
+                                } else {
+                                    fixedArgumentCount.toString()
+                                }
                                 issues += ChirValidationIssue(
                                     code = "CALL_ARGUMENT_COUNT_MISMATCH",
                                     severity = ChirValidationSeverity.ERROR,
-                                    message = "call argument count mismatch: expected ${expectedArgumentTypes.size}, actual ${expression.arguments.size}",
+                                    message = "call argument count mismatch: expected $expectedArgumentCount, actual ${expression.arguments.size}",
                                     nodeId = expression.semanticId,
                                 )
                             } else {
-                                expression.arguments.zip(expectedArgumentTypes).forEachIndexed { index, (argument, expectedType) ->
-                                    if (argument.type != expectedType) {
+                                expression.arguments.take(fixedArgumentCount).zip(expectedArgumentTypes)
+                                    .forEachIndexed { index, (argument, expectedType) ->
+                                    if (!ChirTypeRelations.constrain(expectedType, argument.type, substitutions)) {
                                         issues += ChirValidationIssue(
                                             code = "CALL_ARGUMENT_TYPE_MISMATCH",
                                             severity = ChirValidationSeverity.ERROR,
@@ -217,9 +352,35 @@ class DefaultChirValidator : ChirValidator {
                                     }
                                 }
                             }
+                            if (!ChirTypeRelations.constrain(functionType.returnType, expression.resultType, substitutions)) {
+                                issues += ChirValidationIssue(
+                                    code = "CALL_RESULT_TYPE_MISMATCH",
+                                    severity = ChirValidationSeverity.ERROR,
+                                    message = "call result type ${expression.resultType.renderName} does not match callee return type ${functionType.returnType.renderName}",
+                                    nodeId = expression.semanticId,
+                                )
+                            }
                         }
                         expression.arguments.forEachIndexed { index, argument ->
                             validateTypeRef(argument.type, argument.semanticId, "call.argument#$index", issues)
+                        }
+                    }
+                    is ChirTupleExpression -> validateTupleExpression(expression, issues)
+                    is ChirFieldExpression -> validateFieldExpression(expression, issues)
+                    is ChirConstantExpression -> {
+                        validateTypeRef(expression.value.type, expression.value.semanticId, "constant.value", issues)
+                        validateTypeRef(expression.resultType, expression.semanticId, "constant.result", issues)
+                        if (!ChirTypeRelations.isOfficialChirTypeCompatible(
+                                expression.resultType,
+                                expression.value.type,
+                            )
+                        ) {
+                            issues += ChirValidationIssue(
+                                code = "CONSTANT_RESULT_TYPE_MISMATCH",
+                                severity = ChirValidationSeverity.ERROR,
+                                message = "constant result type ${expression.resultType.renderName} differs from literal type ${expression.value.type.renderName}",
+                                nodeId = expression.semanticId,
+                            )
                         }
                     }
                     is ChirMemoryExpression -> {
@@ -235,6 +396,24 @@ class DefaultChirValidator : ChirValidator {
                                 nodeId = expression.semanticId,
                             )
                         }
+                        val nameBasedOperation = operation == ChirMemoryOperation.GET_ELEMENT_BY_NAME ||
+                            operation == ChirMemoryOperation.STORE_ELEMENT_BY_NAME
+                        if (nameBasedOperation && expression.memberNames.isEmpty()) {
+                            issues += ChirValidationIssue(
+                                code = "MEMORY_MEMBER_PATH_MISSING",
+                                severity = ChirValidationSeverity.ERROR,
+                                message = "member-name memory operation must declare a non-empty member path",
+                                nodeId = expression.semanticId,
+                            )
+                        }
+                        if (!nameBasedOperation && expression.memberNames.isNotEmpty()) {
+                            issues += ChirValidationIssue(
+                                code = "MEMORY_MEMBER_PATH_UNEXPECTED",
+                                severity = ChirValidationSeverity.ERROR,
+                                message = "memory operation ${expression.operation} cannot carry a member-name path",
+                                nodeId = expression.semanticId,
+                            )
+                        }
                         when (operation) {
                             ChirMemoryOperation.ALLOCA -> {
                                 if (expression.value != null) {
@@ -245,11 +424,7 @@ class DefaultChirValidator : ChirValidator {
                                         nodeId = expression.semanticId,
                                     )
                                 }
-                                if (expression.resultType == null) {
-                                    validateLocalAllocaAddress(expression.address, expression, issues)
-                                } else {
-                                    validatePointerAlloca(expression, issues)
-                                }
+                                validateAlloca(expression, issues)
                             }
                             ChirMemoryOperation.LOAD -> {
                                 val targetType = validateMemoryAddress(expression.address, expression, issues)
@@ -295,7 +470,9 @@ class DefaultChirValidator : ChirValidator {
                                         nodeId = expression.semanticId,
                                     )
                                 }
-                                if (targetType != null && expression.value != null && expression.value.type != targetType) {
+                                if (targetType != null && expression.value != null &&
+                                    !ChirTypeRelations.isAssignable(expression.value.type, targetType)
+                                ) {
                                     issues += ChirValidationIssue(
                                         code = "MEMORY_STORE_VALUE_TYPE_MISMATCH",
                                         severity = ChirValidationSeverity.ERROR,
@@ -307,6 +484,58 @@ class DefaultChirValidator : ChirValidator {
                             ChirMemoryOperation.GET_ELEMENT_PTR,
                             ChirMemoryOperation.GET_ELEMENT_PTR_INBOUNDS,
                             null -> Unit
+                            ChirMemoryOperation.GET_ELEMENT_BY_NAME -> {
+                                if (expression.value != null) {
+                                    issues += ChirValidationIssue(
+                                        code = "MEMORY_GET_ELEMENT_BY_NAME_VALUE_PRESENT",
+                                        severity = ChirValidationSeverity.ERROR,
+                                        message = "get-element-by-name expression must not carry a stored value",
+                                        nodeId = expression.semanticId,
+                                    )
+                                }
+                                if (expression.resultType == null) {
+                                    issues += ChirValidationIssue(
+                                        code = "MEMORY_GET_ELEMENT_BY_NAME_RESULT_MISSING",
+                                        severity = ChirValidationSeverity.ERROR,
+                                        message = "get-element-by-name expression must declare its result type",
+                                        nodeId = expression.semanticId,
+                                    )
+                                }
+                                if (expression.address.type.typeOrNull() !is ChirRefType) {
+                                    issues += ChirValidationIssue(
+                                        code = "MEMORY_GET_ELEMENT_BY_NAME_ADDRESS_NOT_REFERENCE",
+                                        severity = ChirValidationSeverity.ERROR,
+                                        message = "get-element-by-name address must be a reference value",
+                                        nodeId = expression.semanticId,
+                                    )
+                                }
+                            }
+                            ChirMemoryOperation.STORE_ELEMENT_BY_NAME -> {
+                                if (expression.value == null) {
+                                    issues += ChirValidationIssue(
+                                        code = "MEMORY_STORE_ELEMENT_BY_NAME_VALUE_MISSING",
+                                        severity = ChirValidationSeverity.ERROR,
+                                        message = "store-element-by-name expression must carry a stored value",
+                                        nodeId = expression.semanticId,
+                                    )
+                                }
+                                if (expression.resultType?.typeOrNull() != ChirPrimitiveType.UNIT) {
+                                    issues += ChirValidationIssue(
+                                        code = "MEMORY_STORE_ELEMENT_BY_NAME_RESULT_NOT_UNIT",
+                                        severity = ChirValidationSeverity.ERROR,
+                                        message = "store-element-by-name expression must have Unit result type",
+                                        nodeId = expression.semanticId,
+                                    )
+                                }
+                                if (expression.address.type.typeOrNull() !is ChirRefType) {
+                                    issues += ChirValidationIssue(
+                                        code = "MEMORY_STORE_ELEMENT_BY_NAME_ADDRESS_NOT_REFERENCE",
+                                        severity = ChirValidationSeverity.ERROR,
+                                        message = "store-element-by-name address must be a reference value",
+                                        nodeId = expression.semanticId,
+                                    )
+                                }
+                            }
                         }
                     }
                     is ChirOtherExpression -> {
@@ -315,7 +544,10 @@ class DefaultChirValidator : ChirValidator {
                             validateTypeRef(operand.type, operand.semanticId, "other.operand#$index", issues)
                         }
                         expression.resultType?.let { validateTypeRef(it, expression.semanticId, "other.result", issues) }
-                        if (operation == null) {
+                        expression.debugMetadata?.accurateEnvironmentObjectType?.let {
+                            validateTypeRef(it, expression.semanticId, "debug.accurate-environment-object", issues)
+                        }
+                        if (operation == null && expression.intrinsicKind == null && expression.debugMetadata == null) {
                             // attributes 进入诊断消息：cfir.* 占位的 fallbackReason 等
                             // 键是定位真实降级原因的第一手信息。
                             val attributeDetails = expression.attributes
@@ -329,11 +561,173 @@ class DefaultChirValidator : ChirValidator {
                                 nodeId = expression.semanticId,
                             )
                         }
+                        expression.intrinsicKind?.let { intrinsicKind ->
+                            if (expression.operation != intrinsicKind.canonicalName) {
+                                issues += ChirValidationIssue(
+                                    code = "INTRINSIC_OPERATION_KIND_MISMATCH",
+                                    severity = ChirValidationSeverity.ERROR,
+                                    message = "intrinsic operation name does not match its typed kind",
+                                    nodeId = expression.semanticId,
+                                )
+                            }
+                            expression.intrinsicTypeArguments.forEachIndexed { index, type ->
+                                validateTypeRef(type, expression.semanticId, "intrinsic.typeArgument#$index", issues)
+                            }
+                            if (expression.resultType == null) {
+                                issues += ChirValidationIssue(
+                                    code = "INTRINSIC_RESULT_TYPE_MISSING",
+                                    severity = ChirValidationSeverity.ERROR,
+                                    message = "intrinsic expression must declare its result type",
+                                    nodeId = expression.semanticId,
+                                )
+                            }
+                        }
+                        if (expression.intrinsicKind == null && expression.intrinsicTypeArguments.isNotEmpty()) {
+                            issues += ChirValidationIssue(
+                                code = "INTRINSIC_TYPE_ARGUMENTS_WITHOUT_KIND",
+                                severity = ChirValidationSeverity.ERROR,
+                                message = "intrinsic type arguments require a typed intrinsic kind",
+                                nodeId = expression.semanticId,
+                            )
+                        }
+                        if (expression.intrinsicKind == ChirIntrinsicKind.ARRAY_GET_UNCHECKED &&
+                            expression.operands.size != 2
+                        ) {
+                            issues += ChirValidationIssue(
+                                code = "ARRAY_GET_UNCHECKED_OPERAND_COUNT_MISMATCH",
+                                severity = ChirValidationSeverity.ERROR,
+                                message = "unchecked array access requires an array and an index operand",
+                                nodeId = expression.semanticId,
+                            )
+                        }
+                        if (operation?.typeCastOverflowStrategy != null) {
+                            if (expression.operands.size != 1) {
+                                issues += ChirValidationIssue(
+                                    code = "TYPECAST_OPERAND_COUNT_MISMATCH",
+                                    severity = ChirValidationSeverity.ERROR,
+                                    message = "Cangjie typecast must have one source operand",
+                                    nodeId = expression.semanticId,
+                                )
+                            }
+                            if (expression.resultType == null) {
+                                issues += ChirValidationIssue(
+                                    code = "TYPECAST_RESULT_TYPE_MISSING",
+                                    severity = ChirValidationSeverity.ERROR,
+                                    message = "Cangjie typecast must declare its target result type",
+                                    nodeId = expression.semanticId,
+                                )
+                            }
+                        }
+                        if (operation == ChirOtherOperation.RAW_ARRAY_ALLOCATE) {
+                            if (expression.operands.size != 1 ||
+                                expression.operands.singleOrNull()?.type?.typeOrNull() != ChirPrimitiveType.INT64
+                            ) {
+                                issues += ChirValidationIssue(
+                                    code = "RAW_ARRAY_ALLOCATE_SIZE_TYPE_MISMATCH",
+                                    severity = ChirValidationSeverity.ERROR,
+                                    message = "raw array allocation requires one Int64 size operand",
+                                    nodeId = expression.semanticId,
+                                )
+                            }
+                            val resultType = expression.resultType?.typeOrNull()
+                            val allocatedType = when (resultType) {
+                                is ChirRawArrayType -> resultType
+                                is ChirRefType -> resultType.referencedType.typeOrNull() as? ChirRawArrayType
+                                else -> null
+                            }
+                            if (allocatedType == null) {
+                                issues += ChirValidationIssue(
+                                    code = "RAW_ARRAY_ALLOCATE_RESULT_TYPE_MISMATCH",
+                                    severity = ChirValidationSeverity.ERROR,
+                                    message = "raw array allocation result must be a raw array or reference to a raw array",
+                                    nodeId = expression.semanticId,
+                                )
+                            }
+                        }
+                        if (operation == ChirOtherOperation.RAW_ARRAY_LITERAL_INIT) {
+                            val arrayType = expression.operands.firstOrNull()?.type?.typeOrNull()?.let { type ->
+                                when (type) {
+                                    is ChirRawArrayType -> type
+                                    is ChirRefType -> type.referencedType.typeOrNull() as? ChirRawArrayType
+                                    else -> null
+                                }
+                            }
+                            if (arrayType == null) {
+                                issues += ChirValidationIssue(
+                                    code = "RAW_ARRAY_LITERAL_INIT_TARGET_TYPE_MISMATCH",
+                                    severity = ChirValidationSeverity.ERROR,
+                                    message = "raw array literal initialization requires a raw array destination",
+                                    nodeId = expression.semanticId,
+                                )
+                            } else {
+                                expression.operands.drop(1).forEachIndexed { index, element ->
+                                    if (!ChirTypeRelations.areEquivalent(arrayType.elementType, element.type)) {
+                                        issues += ChirValidationIssue(
+                                            code = "RAW_ARRAY_LITERAL_INIT_ELEMENT_TYPE_MISMATCH",
+                                            severity = ChirValidationSeverity.ERROR,
+                                            message = "raw array literal element $index has type ${element.type.renderName}, expected ${arrayType.elementType.renderName}",
+                                            nodeId = expression.semanticId,
+                                        )
+                                    }
+                                }
+                            }
+                            if (expression.resultType?.typeOrNull() !in setOf(null, ChirPrimitiveType.UNIT, ChirPrimitiveType.VOID)) {
+                                issues += ChirValidationIssue(
+                                    code = "RAW_ARRAY_LITERAL_INIT_HAS_RESULT_TYPE",
+                                    severity = ChirValidationSeverity.ERROR,
+                                    message = "raw array literal initialization must have no result or a Unit/Void result",
+                                    nodeId = expression.semanticId,
+                                )
+                            }
+                        }
+                        if (operation == ChirOtherOperation.RAW_ARRAY_INIT_BY_VALUE) {
+                            val arrayType = expression.operands.firstOrNull()?.type?.typeOrNull()?.let { type ->
+                                when (type) {
+                                    is ChirRawArrayType -> type
+                                    is ChirRefType -> type.referencedType.typeOrNull() as? ChirRawArrayType
+                                    else -> null
+                                }
+                            }
+                            if (expression.operands.size != 3 || arrayType == null) {
+                                issues += ChirValidationIssue(
+                                    code = "RAW_ARRAY_INIT_BY_VALUE_OPERANDS_MISMATCH",
+                                    severity = ChirValidationSeverity.ERROR,
+                                    message = "raw array initialization by value requires a destination, element count, and value",
+                                    nodeId = expression.semanticId,
+                                )
+                            } else {
+                                if (!expression.operands[1].type.isInt64RawArraySize()) {
+                                    issues += ChirValidationIssue(
+                                        code = "RAW_ARRAY_INIT_BY_VALUE_SIZE_TYPE_MISMATCH",
+                                        severity = ChirValidationSeverity.ERROR,
+                                        message = "raw array initialization element count must be Int64",
+                                        nodeId = expression.semanticId,
+                                    )
+                                }
+                                if (!ChirTypeRelations.isAssignable(expression.operands[2].type, arrayType.elementType)) {
+                                    issues += ChirValidationIssue(
+                                        code = "RAW_ARRAY_INIT_BY_VALUE_ELEMENT_TYPE_MISMATCH",
+                                        severity = ChirValidationSeverity.ERROR,
+                                        message = "raw array initialization value type ${expression.operands[2].type.renderName} is incompatible with ${arrayType.elementType.renderName}",
+                                        nodeId = expression.semanticId,
+                                    )
+                                }
+                            }
+                            if (expression.resultType?.typeOrNull() !in setOf(null, ChirPrimitiveType.UNIT, ChirPrimitiveType.VOID)) {
+                                issues += ChirValidationIssue(
+                                    code = "RAW_ARRAY_INIT_BY_VALUE_HAS_RESULT_TYPE",
+                                    severity = ChirValidationSeverity.ERROR,
+                                    message = "raw array initialization by value must have no result or a Unit/Void result",
+                                    nodeId = expression.semanticId,
+                                )
+                            }
+                        }
                     }
                 }
             }
 
             when (val terminator = block.terminator) {
+                null -> Unit
                 is ChirReturnTerminator -> {
                     val returnValue = terminator.returnValue
                     validateTypeRef(returnType, function.semanticId, "function.return", issues)
@@ -345,7 +739,7 @@ class DefaultChirValidator : ChirValidator {
                             nodeId = function.semanticId,
                         )
                     }
-                    if (returnValue != null && returnValue.type != returnType) {
+                    if (returnValue != null && !ChirTypeRelations.areEquivalent(returnValue.type, returnType)) {
                         validateTypeRef(returnValue.type, terminator.semanticId, "return.value", issues)
                         issues += ChirValidationIssue(
                             code = "RETURN_TYPE_MISMATCH",
@@ -358,7 +752,7 @@ class DefaultChirValidator : ChirValidator {
                 is ChirBranchTerminator -> Unit
                 is ChirConditionalBranchTerminator -> {
                     validateTypeRef(terminator.condition.type, terminator.semanticId, "branch.condition", issues)
-                    if (terminator.condition.type != ChirResolvedTypeRef(ChirPrimitiveType.BOOL)) {
+                    if (!ChirTypeRelations.areEquivalent(terminator.condition.type, ChirResolvedTypeRef(ChirPrimitiveType.BOOL))) {
                         issues += ChirValidationIssue(
                             code = "BRANCH_CONDITION_TYPE_MISMATCH",
                             severity = ChirValidationSeverity.ERROR,
@@ -377,6 +771,71 @@ class DefaultChirValidator : ChirValidator {
                     )
                 }
             }
+        }
+    }
+
+    private fun validateImportedFunction(function: ChirFunctionDeclaration, issues: MutableList<ChirValidationIssue>) {
+        validateMinimalControlFlow(function).forEach { message ->
+            issues += ChirValidationIssue(
+                code = "INVALID_IMPORTED_FUNCTION_BODY",
+                severity = ChirValidationSeverity.ERROR,
+                message = message,
+                nodeId = function.semanticId,
+            )
+        }
+    }
+
+    /**
+     * 校验表达式结果的 VALUE 身份、结果类型及反向定义关系。
+     */
+    private fun validateExpressionResult(
+        expression: ChirExpression,
+        expressionByResultValueId: MutableMap<ChirSemanticId, ChirSemanticId>,
+        issues: MutableList<ChirValidationIssue>,
+    ) {
+        val resultLocal = expression.resultLocalValue
+        val resultType = expression.resultType
+        if (resultLocal == null && resultType == null) return
+        if (resultLocal == null) {
+            issues += ChirValidationIssue(
+                code = "EXPRESSION_RESULT_LOCAL_MISSING",
+                severity = ChirValidationSeverity.ERROR,
+                message = "expression with a result type must define its result local value",
+                nodeId = expression.semanticId,
+            )
+            return
+        }
+        if (resultType == null) {
+            issues += ChirValidationIssue(
+                code = "EXPRESSION_RESULT_TYPE_MISSING",
+                severity = ChirValidationSeverity.ERROR,
+                message = "expression result local value has no result type",
+                nodeId = expression.semanticId,
+            )
+        } else if (!ChirTypeRelations.areEquivalent(resultLocal.type, resultType)) {
+            issues += ChirValidationIssue(
+                code = "EXPRESSION_RESULT_LOCAL_TYPE_MISMATCH",
+                severity = ChirValidationSeverity.ERROR,
+                message = "expression result local type ${resultLocal.type.renderName} does not match result type ${resultType.renderName}",
+                nodeId = expression.semanticId,
+            )
+        }
+        if (resultLocal.associatedExpressionId != expression.semanticId) {
+            issues += ChirValidationIssue(
+                code = "EXPRESSION_RESULT_LOCAL_BACKLINK_MISMATCH",
+                severity = ChirValidationSeverity.ERROR,
+                message = "expression result local does not point back to its defining expression",
+                nodeId = expression.semanticId,
+            )
+        }
+        val previousExpressionId = expressionByResultValueId.putIfAbsent(resultLocal.semanticId, expression.semanticId)
+        if (previousExpressionId != null) {
+            issues += ChirValidationIssue(
+                code = "DUPLICATE_EXPRESSION_RESULT_LOCAL_ID",
+                severity = ChirValidationSeverity.ERROR,
+                message = "result local ${resultLocal.semanticId.value} is defined by multiple expressions",
+                nodeId = expression.semanticId,
+            )
         }
     }
 
@@ -404,43 +863,197 @@ class DefaultChirValidator : ChirValidator {
     }
 
     /**
-     * 校验本地 alloca 使用 ref 地址承载分配目标。
+     * 校验局部引用分配与 C 指针动态分配的显式结果类型及元素数量。
      */
-    private fun validateLocalAllocaAddress(
-        address: ChirValue,
+    private fun validateAlloca(
         expression: ChirMemoryExpression,
         issues: MutableList<ChirValidationIssue>,
     ) {
-        if (((address.type as? ChirResolvedTypeRef)?.type as? ChirRefType) == null) {
+        val resultType = expression.resultType?.typeOrNull()
+        if (resultType !is ChirRefType && resultType !is ChirCPointerType) {
             issues += ChirValidationIssue(
-                code = "MEMORY_ALLOCA_ADDRESS_TYPE_MISMATCH",
+                code = if (expression.resultType == null) {
+                    "MEMORY_ALLOCA_RESULT_MISSING"
+                } else {
+                    "MEMORY_ALLOCA_RESULT_TYPE_MISMATCH"
+                },
                 severity = ChirValidationSeverity.ERROR,
-                message = "local alloca without resultType requires ref address, actual ${address.type.renderName}",
+                message = "alloca result must be an explicit ref or cpointer type, actual ${expression.resultType?.renderName}",
                 nodeId = expression.semanticId,
             )
-        }
-    }
-
-    /**
-     * 校验指针 alloca 的结果类型和 size 操作数类型。
-     */
-    private fun validatePointerAlloca(
-        expression: ChirMemoryExpression,
-        issues: MutableList<ChirValidationIssue>,
-    ) {
-        if (((expression.resultType as? ChirResolvedTypeRef)?.type as? ChirCPointerType) == null) {
-            issues += ChirValidationIssue(
-                code = "MEMORY_ALLOCA_RESULT_TYPE_MISMATCH",
-                severity = ChirValidationSeverity.ERROR,
-                message = "pointer alloca with resultType must produce cpointer, actual ${expression.resultType?.renderName}",
-                nodeId = expression.semanticId,
-            )
+            return
         }
         if (!expression.address.type.isIntegerLikeMemorySize()) {
             issues += ChirValidationIssue(
                 code = "MEMORY_ALLOCA_SIZE_TYPE_MISMATCH",
                 severity = ChirValidationSeverity.ERROR,
                 message = "pointer alloca size operand must be integer-like, actual ${expression.address.type.renderName}",
+                nodeId = expression.semanticId,
+            )
+        }
+        if (resultType is ChirRefType) {
+            val size = (expression.address as? ChirConstantValue)?.literal?.toLongOrNull()
+            if (size != 1L) {
+                issues += ChirValidationIssue(
+                    code = "MEMORY_ALLOCA_REFERENCE_COUNT_INVALID",
+                    severity = ChirValidationSeverity.ERROR,
+                    message = "reference alloca must allocate exactly one local object",
+                    nodeId = expression.semanticId,
+                )
+            }
+        }
+    }
+
+    /**
+     * 校验 CHIR 聚合构造表达式与其结果布局一致。
+     */
+    private fun validateTupleExpression(
+        expression: ChirTupleExpression,
+        issues: MutableList<ChirValidationIssue>,
+    ) {
+        expression.elements.forEachIndexed { index, element ->
+            validateTypeRef(element.type, element.semanticId, "tuple.element#$index", issues)
+        }
+        validateTypeRef(expression.resultType, expression.semanticId, "tuple.result", issues)
+
+        if (expression.elements.isEmpty()) {
+            issues += ChirValidationIssue(
+                code = "TUPLE_OPERAND_MISSING",
+                severity = ChirValidationSeverity.ERROR,
+                message = "official CHIR tuple construction requires at least one operand",
+                nodeId = expression.semanticId,
+            )
+            return
+        }
+
+        val resultType = expression.resultType.typeOrNull()
+        if (resultType is ChirEnumType) {
+            val selector = expression.elements.firstOrNull()
+            if (selector !is ChirConstantValue) {
+                issues += ChirValidationIssue(
+                    code = "TUPLE_ENUM_SELECTOR_INVALID",
+                    severity = ChirValidationSeverity.ERROR,
+                    message = "enum aggregate construction requires a constant selector value",
+                    nodeId = expression.semanticId,
+                )
+                return
+            }
+
+            val caseIndex = when (resultType.selectorType) {
+                ChirPrimitiveType.BOOL -> if (selector.type.typeOrNull() == ChirPrimitiveType.BOOL) when (selector.literal) {
+                    "0", "false" -> 0
+                    "1", "true" -> 1
+                    else -> null
+                } else null
+                ChirPrimitiveType.UINT32 -> if (selector.type.typeOrNull() == ChirPrimitiveType.UINT32) selector.literal.toULongOrNull()
+                    ?.takeIf { it <= Int.MAX_VALUE.toULong() }
+                    ?.toInt() else null
+                else -> null
+            }
+            if (caseIndex == null) {
+                issues += ChirValidationIssue(
+                    code = "TUPLE_ENUM_SELECTOR_INVALID",
+                    severity = ChirValidationSeverity.ERROR,
+                    message = "enum aggregate selector must be a ${resultType.selectorType.renderName} constant with a valid literal",
+                    nodeId = expression.semanticId,
+                )
+                return
+            }
+            val payloadTypes = ChirTypeRelations.instantiatedEnumPayloadTypes(resultType, caseIndex)
+            if (payloadTypes == null) {
+                issues += ChirValidationIssue(
+                    code = "TUPLE_ENUM_SELECTOR_OUT_OF_RANGE",
+                    severity = ChirValidationSeverity.ERROR,
+                    message = "enum aggregate selector $caseIndex does not identify a constructor in ${resultType.renderName}",
+                    nodeId = expression.semanticId,
+                )
+                return
+            }
+            val actualPayloads = expression.elements.drop(1)
+            if (actualPayloads.size != payloadTypes.size) {
+                issues += ChirValidationIssue(
+                    code = "TUPLE_ENUM_PAYLOAD_ARITY_MISMATCH",
+                    severity = ChirValidationSeverity.ERROR,
+                    message = "enum constructor $caseIndex expects ${payloadTypes.size} payload values but got ${actualPayloads.size}",
+                    nodeId = expression.semanticId,
+                )
+                return
+            }
+            actualPayloads.zip(payloadTypes).forEachIndexed { index, (actual, expected) ->
+                if (!ChirTypeRelations.areEquivalent(expected, actual.type)) {
+                    issues += ChirValidationIssue(
+                        code = "TUPLE_ENUM_PAYLOAD_TYPE_MISMATCH",
+                        severity = ChirValidationSeverity.ERROR,
+                        message = "enum constructor $caseIndex payload #$index has type ${actual.type.renderName}, expected ${expected.renderName}",
+                        nodeId = expression.semanticId,
+                    )
+                }
+            }
+            return
+        }
+
+        val fieldTypes = when (resultType) {
+            is ChirTupleType -> resultType.elementTypes
+            is ChirStructType -> ChirTypeRelations.instantiatedStructFieldTypes(resultType)
+            else -> {
+                issues += ChirValidationIssue(
+                    code = "TUPLE_RESULT_TYPE_UNSUPPORTED",
+                    severity = ChirValidationSeverity.ERROR,
+                    message = "official CHIR tuple construction result must be a tuple, struct, or enum type",
+                    nodeId = expression.semanticId,
+                )
+                return
+            }
+        }
+
+        if (expression.elements.size != fieldTypes.size) {
+            issues += ChirValidationIssue(
+                code = "TUPLE_ARITY_MISMATCH",
+                severity = ChirValidationSeverity.ERROR,
+                message = "aggregate element count ${expression.elements.size} does not match result field count ${fieldTypes.size}",
+                nodeId = expression.semanticId,
+            )
+            return
+        }
+
+        expression.elements.zip(fieldTypes).forEachIndexed { index, (element, fieldType) ->
+            if (!ChirTypeRelations.areEquivalent(fieldType, element.type)) {
+                issues += ChirValidationIssue(
+                    code = "TUPLE_ELEMENT_TYPE_MISMATCH",
+                    severity = ChirValidationSeverity.ERROR,
+                    message = "aggregate element #$index type ${element.type.renderName} does not match field type ${fieldType.renderName}",
+                    nodeId = expression.semanticId,
+                )
+            }
+        }
+    }
+
+    /**
+     * 校验值字段投影路径与操作数聚合布局、结果类型一致。
+     */
+    private fun validateFieldExpression(
+        expression: ChirFieldExpression,
+        issues: MutableList<ChirValidationIssue>,
+    ) {
+        validateTypeRef(expression.base.type, expression.base.semanticId, "field.base", issues)
+        validateTypeRef(expression.resultType, expression.semanticId, "field.result", issues)
+        val projection = ChirTypeRelations.projectFieldType(expression.base.type, expression.path)
+        if (projection == null) {
+            issues += ChirValidationIssue(
+                code = "FIELD_PATH_INVALID",
+                severity = ChirValidationSeverity.ERROR,
+                message = "field path ${expression.path} is not valid for ${expression.base.type.renderName}",
+                nodeId = expression.semanticId,
+            )
+            return
+        }
+        val resultTypeMatches = ChirTypeRelations.areEquivalent(projection.resultType, expression.resultType)
+        if (!resultTypeMatches) {
+            issues += ChirValidationIssue(
+                code = "FIELD_RESULT_TYPE_MISMATCH",
+                severity = ChirValidationSeverity.ERROR,
+                message = "field path ${expression.path} has type ${projection.resultType.renderName}, " +
+                    "not ${expression.resultType.renderName}",
                 nodeId = expression.semanticId,
             )
         }
@@ -453,6 +1066,13 @@ class DefaultChirValidator : ChirValidator {
         val primitive = (this as? ChirResolvedTypeRef)?.type as? ChirPrimitiveType ?: return false
         return primitive in integerLikeMemorySizeTypes
     }
+
+    private fun ChirTypeRef.isInt64RawArraySize(): Boolean = typeOrNull() == ChirPrimitiveType.INT64
+
+    /**
+     * 读取已解析类型；未解析类型不会参与结构化语义检查。
+     */
+    private fun ChirTypeRef.typeOrNull(): ChirType? = (this as? ChirResolvedTypeRef)?.type
 
     /**
      * 校验包初始化函数引用是否指向包内函数。
@@ -478,6 +1098,21 @@ class DefaultChirValidator : ChirValidator {
      * 校验声明中出现的类型引用。
      */
     private fun validateDeclarationTypes(declaration: ChirDeclaration, issues: MutableList<ChirValidationIssue>) {
+        if (declaration is ChirTypeDeclaration) {
+            if (declaration.typeParameterTypes.isNotEmpty() &&
+                declaration.typeParameterTypes.size != declaration.typeParameters.size
+            ) {
+                issues += ChirValidationIssue(
+                    code = "INVALID_TYPE_PARAMETER_SHAPE",
+                    severity = ChirValidationSeverity.ERROR,
+                    message = "type declaration ${declaration.name} has mismatched generic parameter names and types",
+                    nodeId = declaration.semanticId,
+                )
+            }
+            declaration.typeParameterTypes.forEachIndexed { index, typeRef ->
+                validateTypeRef(typeRef, declaration.semanticId, "type:${declaration.name}.parameter#$index", issues)
+            }
+        }
         when (declaration) {
             is ChirVariableDeclaration -> validateTypeRef(
                 declaration.type,
@@ -524,7 +1159,24 @@ class DefaultChirValidator : ChirValidator {
                 }
             }
 
-            is ChirEnumDeclaration -> Unit
+            is ChirEnumDeclaration -> declaration.caseTypes.forEachIndexed { caseIndex, case ->
+                case.payloadTypes.forEachIndexed { payloadIndex, typeRef ->
+                    validateTypeRef(
+                        typeRef,
+                        declaration.semanticId,
+                        "enum:${declaration.name}.case:${case.name}.payload#$payloadIndex",
+                        issues,
+                    )
+                }
+                if (case.name != declaration.cases.getOrNull(caseIndex)) {
+                    issues += ChirValidationIssue(
+                        code = "INVALID_ENUM_CASE_SHAPE",
+                        severity = ChirValidationSeverity.ERROR,
+                        message = "enum declaration ${declaration.name} has misaligned case metadata",
+                        nodeId = declaration.semanticId,
+                    )
+                }
+            }
             is ChirTypeDeclaration -> Unit
 
             is ChirExtendDeclaration -> {

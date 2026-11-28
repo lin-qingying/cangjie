@@ -6,13 +6,18 @@ import org.cangnova.cangjie.chir.core.controlflow.ChirReturnTerminator
 import org.cangnova.cangjie.chir.core.controlflow.ChirThrowTerminator
 import org.cangnova.cangjie.chir.core.declaration.DefaultChirFunctionDeclaration
 import org.cangnova.cangjie.chir.core.expression.ChirBinaryExpression
+import org.cangnova.cangjie.chir.core.expression.ChirConstantExpression
 import org.cangnova.cangjie.chir.core.identity.ChirSemanticId
 import org.cangnova.cangjie.chir.core.model.ChirModule
 import org.cangnova.cangjie.chir.core.model.ChirPackage
+import org.cangnova.cangjie.chir.core.type.ChirClassType
 import org.cangnova.cangjie.chir.core.type.ChirCPointerType
 import org.cangnova.cangjie.chir.core.type.ChirPrimitiveType
+import org.cangnova.cangjie.chir.core.type.ChirRefType
 import org.cangnova.cangjie.chir.core.type.ChirResolvedTypeRef
+import org.cangnova.cangjie.chir.core.type.ChirTypeDeclarationId
 import org.cangnova.cangjie.chir.core.value.ChirConstantValue
+import org.cangnova.cangjie.chir.core.value.ChirLocalValue
 import org.cangnova.cangjie.chir.core.value.ChirParameterValue
 import org.cangnova.cangjie.codegen.api.ChirCodegenInput
 import org.cangnova.cangjie.codegen.api.CodegenOptions
@@ -25,6 +30,58 @@ import org.junit.jupiter.api.assertThrows
  * LLVM lowering 类型契约校验的集成测试。
  */
 class TypeContractIntegrationTest {
+    /**
+     * 即使官方 CHIR 检查器允许 `Any` 兼容，也不能把不同 LLVM 表示直接写入结果槽。
+     */
+    @Test
+    fun `rejects official compatible constant without a representable value conversion`() {
+        val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
+        val anyReferenceType = ChirResolvedTypeRef(
+            ChirRefType(ChirResolvedTypeRef(ChirClassType(ChirTypeDeclarationId.CORE_ANY))),
+        )
+        val resultLocal = ChirLocalValue(
+            semanticId = ChirSemanticId("value:any"),
+            type = anyReferenceType,
+            name = "anyValue",
+        )
+
+        val error = assertThrows<CodegenLoweringException> {
+            generate(
+                function = DefaultChirFunctionDeclaration(
+                    semanticId = ChirSemanticId("fn:constant_representation_mismatch"),
+                    name = "constant_representation_mismatch",
+                    returnType = anyReferenceType,
+                    parameters = emptyList(),
+                    blocks = listOf(
+                        ChirBlock(
+                            semanticId = ChirSemanticId("block:entry"),
+                            name = "entry",
+                            expressions = listOf(
+                                ChirConstantExpression(
+                                    semanticId = ChirSemanticId("expr:constant"),
+                                    value = ChirConstantValue(
+                                        semanticId = ChirSemanticId("const:int"),
+                                        type = intType,
+                                        literal = "1",
+                                    ),
+                                    resultType = anyReferenceType,
+                                    resultLocalValue = resultLocal,
+                                ),
+                            ),
+                            terminator = ChirReturnTerminator(
+                                semanticId = ChirSemanticId("term:return"),
+                                returnValue = resultLocal,
+                            ),
+                        ),
+                    ),
+                    entryBlockId = ChirSemanticId("block:entry"),
+                ),
+            )
+        }
+
+        assertTrue(error.message?.contains("without a value conversion") == true, error.message)
+    }
+
     /**
      * 验证返回值类型与函数返回类型不一致时会失败。
      */

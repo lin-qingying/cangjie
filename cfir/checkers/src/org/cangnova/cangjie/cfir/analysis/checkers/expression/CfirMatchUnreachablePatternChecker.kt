@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.accessContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
@@ -24,7 +25,7 @@ import org.cangnova.cangjie.cfir.types.ConeErrorType
  * 不消费局部变量的运行时值、CFG 或常量流事实。由常量传播得到的分支不可达属于独立
  * CFA pass，必须在函数 CFG 上按真实 success/failure edge 判定。
  */
-object CfirMatchUnreachablePatternChecker : CfirMatchExpressionChecker() {
+object CfirMatchUnreachablePatternChecker : CfirMatchExpressionChecker(MppCheckerKind.Common) {
     /**
      * 检查 selector-based match 分支是否被前序无 guard 分支完全覆盖。
      *

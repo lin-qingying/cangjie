@@ -2,6 +2,7 @@ package org.cangnova.cangjie.arguments.description
 
 import org.cangnova.cangjie.arguments.dsl.base.*
 import org.cangnova.cangjie.arguments.dsl.types.*
+import org.cangnova.cangjie.messages.WarningGroup
 
 /**
  * 仓颉编译器参数定义
@@ -10,6 +11,30 @@ import org.cangnova.cangjie.arguments.dsl.types.*
 val cangjieCompilerArguments = compilerArguments {
     topLevel(CompilerArgumentsLevelNames.commonToolArguments) {
         subLevel(CompilerArgumentsLevelNames.commonCompilerArguments) {
+            compilerArgument {
+                name = "warn-off"
+                shortName = "-Woff"
+                description = "Suppress warnings in one warning group".asReleaseDependent()
+                argumentType = StringArrayType()
+                valueType = StringArrayType()
+                delimiter = CangJieCompilerArgument.Delimiter.None
+                acceptsJoinedAliasValues = true
+                allowedValues = WarningGroup.commandLineValues
+                lifecycle(CangJieReleaseVersion.V_1_0_0)
+            }
+
+            compilerArgument {
+                name = "warn-on"
+                shortName = "-Won"
+                description = "Enable warnings in one warning group".asReleaseDependent()
+                argumentType = StringArrayType()
+                valueType = StringArrayType()
+                delimiter = CangJieCompilerArgument.Delimiter.None
+                acceptsJoinedAliasValues = true
+                allowedValues = WarningGroup.commandLineValues
+                lifecycle(CangJieReleaseVersion.V_1_0_0)
+            }
+
             compilerArgument {
                 name = "language-version"
                 description = "Language version".asReleaseDependent()
@@ -52,6 +77,25 @@ val cangjieCompilerArguments = compilerArguments {
                 argumentType = BooleanType(defaultValue = ReleaseDependent(false), isNullable = ReleaseDependent(false))
                 valueType = BooleanType(defaultValue = ReleaseDependent(false), isNullable = ReleaseDependent(false))
                 // 官方 v1.0.0 Options.inc 已声明 -d；1.0.5 不是该能力的引入版本。
+                lifecycle(CangJieReleaseVersion.V_1_0_0)
+            }
+
+            compilerArgument {
+                name = "g"
+                compilerName = "debug"
+                description = "Enable debug compilation options".asReleaseDependent()
+                argumentType = BooleanType(defaultValue = ReleaseDependent(false), isNullable = ReleaseDependent(false))
+                valueType = BooleanType(defaultValue = ReleaseDependent(false), isNullable = ReleaseDependent(false))
+                lifecycle(CangJieReleaseVersion.V_1_0_0)
+            }
+
+            compilerArgument {
+                name = "O"
+                compilerName = "optimizationLevel"
+                description = "Set the optimization level".asReleaseDependent()
+                argumentType = StringType(defaultValue = ReleaseDependent(null))
+                valueType = StringType(defaultValue = ReleaseDependent(null))
+                shortOptionValueMode = CangJieShortOptionValueMode.AttachedOptional(valueWhenOmitted = "1")
                 lifecycle(CangJieReleaseVersion.V_1_0_0)
             }
 
@@ -254,26 +298,6 @@ val cangjieCompilerArguments = compilerArguments {
                 description = "Diagnostic format. Candidate modes: json, txt".asReleaseDependent()
                 argumentType = StringType(defaultValue = ReleaseDependent(null))
                 valueType = StringType(defaultValue = ReleaseDependent(null))
-                lifecycle(CangJieReleaseVersion.V_1_0_0)
-            }
-
-            compilerArgument {
-                name = "warn-on"
-                compilerName = "warnOn"
-                description = "Report a specific group of warning".asReleaseDependent()
-                argumentType = StringArrayType()
-                valueType = StringArrayType()
-                delimiter = CangJieCompilerArgument.Delimiter.Semicolon
-                lifecycle(CangJieReleaseVersion.V_1_0_0)
-            }
-
-            compilerArgument {
-                name = "warn-off"
-                compilerName = "warnOff"
-                description = "Suppress a specific group of warning".asReleaseDependent()
-                argumentType = StringArrayType()
-                valueType = StringArrayType()
-                delimiter = CangJieCompilerArgument.Delimiter.Semicolon
                 lifecycle(CangJieReleaseVersion.V_1_0_0)
             }
 

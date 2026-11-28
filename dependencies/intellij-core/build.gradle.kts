@@ -5,6 +5,8 @@ plugins {
 val intellijVersion = property("intellijSdkVersion") as String
 
 dependencies {
+    // SDK 公开签名使用 CoroutineScope；其 POM 的 runtime 依赖不会自动进入编译 API。
+    api(libs.intellij.coroutines.core)
     api("com.jetbrains.intellij.platform:util-rt:$intellijVersion") { isTransitive = false }
     api("com.jetbrains.intellij.platform:util-class-loader:$intellijVersion") { isTransitive = false }
     api("com.jetbrains.intellij.platform:util:$intellijVersion") { isTransitive = false }
@@ -26,6 +28,9 @@ dependencies {
     // Language 支持（ParserDefinition, Language, FileType, PsiBuilder 等）
     api("com.jetbrains.intellij.platform:lang:$intellijVersion") { isTransitive = false }
     api("com.jetbrains.intellij.platform:lang-impl:$intellijVersion") { isTransitive = false }
+    // 可修改 PSI 的标准服务直接使用公开 CodeStyleManager/Postprocess 实现，必须进入编译 API。
+    api("com.jetbrains.intellij.platform:code-style:$intellijVersion") { isTransitive = false }
+    api("com.jetbrains.intellij.platform:code-style-impl:$intellijVersion") { isTransitive = false }
     // Analysis & Indexing
     api("com.jetbrains.intellij.platform:analysis:$intellijVersion") { isTransitive = false }
     api("com.jetbrains.intellij.platform:analysis-impl:$intellijVersion") { isTransitive = false }

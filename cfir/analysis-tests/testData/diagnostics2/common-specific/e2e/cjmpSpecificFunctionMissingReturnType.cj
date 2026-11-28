@@ -2,7 +2,7 @@
 // RUN_PIPELINE_TILL: FRONTEND
 // cjc 1.1.3 `cjmp_probe113/probe_results6.txt`, CASE specific_toplevel_bodyless:
 // `specific func Pf()` reports the missing return type on `func` (specific.cj:7:17). The local
-// CFIR factory currently uses ACTUAL_DECLARATION_NAME, so the local marker is on `Pf`.
+// Shared parser owns this syntax error; this fixture only expects the unmatched semantic declaration.
 
 // MODULE: common
 // CJMP_MODE: COMMON
@@ -18,4 +18,4 @@ public common func Platform(): String {
 // FILE: specific.cj
 package cjmp_p
 
-<!NOT_MATCHED!>public specific func <!PARSE_SPECIFIC_FUNCTION_MUST_HAVE_RETURN_TYPE!>Pf<!>()<!>
+<!NOT_MATCHED!>public specific func Pf()<!>

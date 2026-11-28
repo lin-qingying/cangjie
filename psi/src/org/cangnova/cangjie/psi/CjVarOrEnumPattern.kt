@@ -41,7 +41,7 @@ class CjVarOrEnumPattern : CjCasePattern<CangJieVarOrEnumPatternStub>, PsiNameId
      * 保存 `nameAsSafeName`，供仓颉 PSI流程读取节点结构或语义信息。
      */
     val nameAsSafeName: Name
-        get() = reference?.referencedNameAsName ?: Name.identifier(identifier?.text ?: "")
+        get() = reference?.referencedNameAsName ?: Name.identifier(CjPsiUtil.unquoteIdentifier(identifier?.text ?: ""))
 
     override val nameAsName: Name?
         get() = name?.let(Name::identifier)

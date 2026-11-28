@@ -3,36 +3,42 @@ package org.cangnova.cangjie.frontend.pipeline
 import org.cangnova.cangjie.cfir.session.ExplicitCfirConditionalCompilationSettings
 import org.cangnova.cangjie.config.MockSupportKind
 import org.cangnova.cangjie.frontend.arguments.CommonCompilerArguments
+import org.cangnova.cangjie.frontend.arguments.configureWarningOptions
+import org.cangnova.cangjie.frontend.pipeline.CheckCompilationErrors.CheckDiagnosticCollector
 import org.cangnova.cangjie.cfir.entrypoint.configuration.cjmpChirOutput
-import org.cangnova.cangjie.cfir.entrypoint.configuration.cjmpCommonPartChirPaths
-import org.cangnova.cangjie.cfir.entrypoint.configuration.cjmpCommonPartCjoPaths
+import org.cangnova.cangjie.cfir.entrypoint.configuration.CjmpCommonPartInputConsumer
+import org.cangnova.cangjie.cfir.entrypoint.configuration.CjmpCommonPartInputResolution
+import org.cangnova.cangjie.cfir.entrypoint.configuration.cjmpModuleDebug
+import org.cangnova.cangjie.cfir.entrypoint.configuration.cjmpModuleOptLevel
+import org.cangnova.cangjie.cfir.entrypoint.configuration.configureCjmpCommonPartInputs
+import org.cangnova.cangjie.cfir.session.CfirCjmpOptimizationLevel
 import org.cangnova.cangjie.config.CompilerConfiguration
 import org.cangnova.cangjie.config.addClasspathRoot
 import org.cangnova.cangjie.config.cjoOutputDirectory
 import org.cangnova.cangjie.config.cjoOutputFile
 import org.cangnova.cangjie.config.configureLanguageVersionSettings
 import org.cangnova.cangjie.config.messageCollector
-import org.cangnova.cangjie.config.moduleName
-import org.cangnova.cangjie.config.compileMacro
-import org.cangnova.cangjie.config.debugMacro
-import org.cangnova.cangjie.config.parallelMacroExpansion
-import org.cangnova.cangjie.config.exportForTest
-import org.cangnova.cangjie.config.compileTestsOnly
-import org.cangnova.cangjie.config.diagnosticFormat
-import org.cangnova.cangjie.config.errorCountLimit
-import org.cangnova.cangjie.config.warningGroupsEnabled
-import org.cangnova.cangjie.config.dumpTokens
-import org.cangnova.cangjie.config.dumpParse
-import org.cangnova.cangjie.config.dumpAst
-import org.cangnova.cangjie.config.dumpMacro
-import org.cangnova.cangjie.config.typecheckOnly
 import org.cangnova.cangjie.cfir.entrypoint.configuration.conditionalCompilationSettings
 import org.cangnova.cangjie.cfir.entrypoint.configuration.noPrelude
 import org.cangnova.cangjie.cfir.entrypoint.configuration.noSubPackage
-import org.cangnova.cangjie.config.enableCompileTest
+import org.cangnova.cangjie.config.compileMacro
+import org.cangnova.cangjie.config.compileTestsOnly
+import org.cangnova.cangjie.config.debugMacro
+import org.cangnova.cangjie.config.diagnosticFormat
+import org.cangnova.cangjie.config.dumpAst
+import org.cangnova.cangjie.config.dumpMacro
+import org.cangnova.cangjie.config.dumpParse
+import org.cangnova.cangjie.config.dumpTokens
 import org.cangnova.cangjie.config.enableChirJvmCodegen
+import org.cangnova.cangjie.config.enableCompileTest
+import org.cangnova.cangjie.config.errorCountLimit
+import org.cangnova.cangjie.config.exportForTest
 import org.cangnova.cangjie.config.jvmClassOutputDirectory
 import org.cangnova.cangjie.config.mockSupportKind
+import org.cangnova.cangjie.config.moduleName
+import org.cangnova.cangjie.config.parallelMacroExpansion
+import org.cangnova.cangjie.config.typecheckOnly
+import org.cangnova.cangjie.messages.CangJieParsingBundle
 import org.cangnova.cangjie.messages.CompilerMessageSeverity
 import org.cangnova.cangjie.messages.MessageCollector
 import org.cangnova.cangjie.phaser.CompilerPhase
@@ -61,24 +67,68 @@ abstract class AbstractFrontendPipeline<A : CommonCompilerArguments> {
     /**
      * 从命令行参数和编译配置启动前端管线。
      */
-    fun execute(arguments: A, configuration: CompilerConfiguration): Boolean {
-        // 参数应用在隔离副本上完成；验证失败时不把半套参数写回调用方，
-        // 复用同一个基准配置时也不会累积本轮 import path。
+    fun execute(arguments: A, configuration: CompilerConfiguration): Boolean =
+        executeWithArtifact(arguments, configuration).succeeded
+
+    /**
+     * 执行前端管线并返回最终阶段产物，供后续 CHIR 转换、链接与后端阶段消费。
+     */
+    fun executeWithArtifact(
+        arguments: A,
+        configuration: CompilerConfiguration,
+    ): FrontendPipelineExecutionResult {
         val invocationConfiguration = configuration.copy()
+        if (!invocationConfiguration.configureWarningOptions(arguments)) {
+            return FrontendPipelineExecutionResult(succeeded = false, artifact = null)
+        }
+        // 一个 CompilerConfiguration 可以被多个 frontend invocation 复用；
+        // 输出路径是本次执行的事实，不能继承上一次 .cj.d 编译的状态。
         invocationConfiguration.cjoOutputDirectory = null
         invocationConfiguration.cjoOutputFile = null
-        if (arguments.compileCjd) {
-            invocationConfiguration.cjoOutputDirectory = arguments.outputDirectory
-            invocationConfiguration.cjoOutputFile = arguments.outputFile
+        if (arguments.outputDirectory != null && arguments.outputFile?.let { Path.of(it).isAbsolute } == true) {
+            invocationConfiguration.messageCollector.report(
+                CompilerMessageSeverity.ERROR,
+                CangJieParsingBundle.message("cli.error.output.file.absolute.with.output.dir"),
+            )
+            return FrontendPipelineExecutionResult(succeeded = false, artifact = null)
         }
-        if (!invocationConfiguration.configureLanguageVersionSettings(arguments.languageVersion)) return false
-        if (!configureInputAndModuleOptions(arguments, invocationConfiguration)) return false
-        if (!configureDiagnosticsOptions(arguments, invocationConfiguration)) return false
-        if (!configureTestAndMacroOptions(arguments, invocationConfiguration)) return false
-        if (!configureCjmpCommonPartInputs(arguments, invocationConfiguration)) return false
+        invocationConfiguration.cjoOutputDirectory = arguments.outputDirectory
+        invocationConfiguration.cjoOutputFile = arguments.outputFile
+        if (!arguments.compileCjd && arguments.cjmpCompileCommon &&
+            arguments.outputDirectory == null && arguments.outputFile == null
+        ) {
+            // 官方 cjc 未指定输出参数时以当前目录作为输出目录；common 模式必须落盘其 CJO。
+            invocationConfiguration.cjoOutputDirectory = "."
+        }
+        if (!invocationConfiguration.configureLanguageVersionSettings(arguments.languageVersion)) {
+            return FrontendPipelineExecutionResult(succeeded = false, artifact = null)
+        }
+        val requestedOptimizationLevel = arguments.optimizationLevel
+        val optimizationLevel = requestedOptimizationLevel?.let(CfirCjmpOptimizationLevel::fromCommandLineValue)
+        if (requestedOptimizationLevel != null && optimizationLevel == null) {
+            invocationConfiguration.messageCollector.report(
+                CompilerMessageSeverity.ERROR,
+                CangJieParsingBundle.message(
+                    "cli.error.invalid.cjmp.optimization.level",
+                    requestedOptimizationLevel,
+                ),
+            )
+            return FrontendPipelineExecutionResult(succeeded = false, artifact = null)
+        }
+        invocationConfiguration.cjmpModuleDebug = arguments.debug
+        invocationConfiguration.cjmpModuleOptLevel = optimizationLevel ?: CfirCjmpOptimizationLevel.O0
+        if (!configureInputAndModuleOptions(arguments, invocationConfiguration) ||
+            !configureDiagnosticsOptions(arguments, invocationConfiguration) ||
+            !configureTestAndMacroOptions(arguments, invocationConfiguration) ||
+            !configureCjmpCommonPartInputs(arguments, invocationConfiguration)
+        ) {
+            return FrontendPipelineExecutionResult(succeeded = false, artifact = null)
+        }
+        invocationConfiguration.addHostSdkStdlibRoot()
         configureDumpOptions(arguments, invocationConfiguration)
         val input = ArgumentsPipelineArtifact(arguments, invocationConfiguration)
-        return runPhasedPipeline(input)
+        val result = runPhasedPipeline(input)
+        return if (CheckDiagnosticCollector.checkHasErrors(invocationConfiguration)) result.copy(succeeded = false) else result
     }
 
     /**
@@ -171,8 +221,7 @@ abstract class AbstractFrontendPipeline<A : CommonCompilerArguments> {
     /**
      * 把诊断控制选项落到配置上。
      *
-     * `--diagnostic-format` 只接受官方两种模式；warn 开关按“后者生效”的官方语义
-     * 计算最终启用的告警组集合；`--error-count-limit` 保存原始文本，由诊断报告端解释。
+     * `--diagnostic-format` 只接受官方两种模式。`--error-count-limit` 保存原始文本，由诊断报告端解释。
      */
     private fun configureDiagnosticsOptions(arguments: A, configuration: CompilerConfiguration): Boolean {
         val format = arguments.diagnosticFormat?.lowercase()
@@ -186,8 +235,6 @@ abstract class AbstractFrontendPipeline<A : CommonCompilerArguments> {
         }
         configuration.diagnosticFormat = arguments.diagnosticFormat
         configuration.errorCountLimit = arguments.errorCountLimit
-        val enabledGroups = arguments.warnOn.toSet() - arguments.warnOff.toSet()
-        configuration.warningGroupsEnabled = enabledGroups
         return true
     }
 
@@ -257,26 +304,25 @@ abstract class AbstractFrontendPipeline<A : CommonCompilerArguments> {
     }
 
     /**
-     * 把 CJMP 编译模式输入落到配置上，供 session 工厂推导编译模式：
-     * - common-part 输入（`-Xcjmp-common-part` / `-Xcjmp-common-part-chir`，官方
-     *   `--common-part-cjo` / `--common-part-chir` 对位）非空即 specific 编译；
-     * - `-Xcjmp-compile-common`（官方 `--output-type=chir` 对位）即 common 编译。
-     *
-     * 两个列表必须一一配对（官方 `driver_require_common_chir_for_each_common_cjo`）；
-     * 违反时按 driver 错误报告并终止，而不是留到 session 构造期以异常形式暴露。
+     * 按语言版本解析 common-part 参数并写入唯一配置结果。
+     * 旧协议保留最后一个 CJO；alpha.20 起按顺序配对 CJO/CHIR，配对错误在进入前端阶段前报告。
+     * common 编译模式由独立的 CHIR 输出选项决定。
      */
     private fun configureCjmpCommonPartInputs(arguments: A, configuration: CompilerConfiguration): Boolean {
         val cjoPaths = arguments.cjmpCommonPart.toList()
         val chirPaths = arguments.cjmpCommonPartChir.toList()
-        if (cjoPaths.size != chirPaths.size) {
+        val resolution = configuration.configureCjmpCommonPartInputs(
+            commonPartCjoPaths = cjoPaths,
+            commonPartChirPaths = chirPaths,
+            consumer = CjmpCommonPartInputConsumer.COMPILATION_DRIVER,
+        )
+        if (resolution is CjmpCommonPartInputResolution.Invalid) {
             configuration.messageCollector.report(
                 CompilerMessageSeverity.ERROR,
-                "common .chir files count should be equal to common .cjo files count",
+                resolution.message,
             )
             return false
         }
-        configuration.cjmpCommonPartCjoPaths = cjoPaths
-        configuration.cjmpCommonPartChirPaths = chirPaths
         configuration.cjmpChirOutput = arguments.cjmpCompileCommon
         return true
     }
@@ -289,17 +335,39 @@ abstract class AbstractFrontendPipeline<A : CommonCompilerArguments> {
      * 完全一致（不取单调时钟、不分配记录对象）。报告在管线退出时统一输出——即使管线因编译错误
      * 中断，已经跑过的 phase 耗时也要留下，这正是排查失败位置需要的信息。
      */
-    private fun runPhasedPipeline(input: ArgumentsPipelineArtifact<A>): Boolean {
+    private fun runPhasedPipeline(input: ArgumentsPipelineArtifact<A>): FrontendPipelineExecutionResult {
         val compoundPhase = createCompoundPhase(input.arguments)
         val profiler = createPhaseProfiler(input.arguments)
         val phaseConfig = PhaseConfig(profiler = profiler)
         val context = PipelineContext(input.configuration)
 
         return try {
-            compoundPhase.invokeToplevel(phaseConfig, context, input)
-            true
+            val output = compoundPhase.invokeToplevel(phaseConfig, context, input)
+            val artifact = output as? PipelineArtifact
+                ?: error("Frontend pipeline must finish with a PipelineArtifact")
+            FrontendPipelineExecutionResult(
+                succeeded = true,
+                artifact = artifact,
+            )
         } catch (e: PipelineStepException) {
-            !e.definitelyCompilationError
+            // 阶段中断可以是正常提前退出；结合明确错误标记和两个收集器的实际错误判定成败。
+            val configuration = input.configuration
+            if (e.definitelyCompilationError || CheckDiagnosticCollector.checkHasErrors(configuration)) {
+                FrontendPipelineExecutionResult(
+                    succeeded = false,
+                    artifact = null,
+                )
+            } else {
+                FrontendPipelineExecutionResult(
+                    succeeded = true,
+                    artifact = null,
+                )
+            }
+        } catch (_: SuccessfulPipelineExecutionException) {
+            FrontendPipelineExecutionResult(
+                succeeded = true,
+                artifact = null,
+            )
         } finally {
             profiler?.let { emitPhaseProfile(it, input) }
         }

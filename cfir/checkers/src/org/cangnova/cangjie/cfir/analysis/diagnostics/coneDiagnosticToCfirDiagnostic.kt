@@ -24,6 +24,10 @@
 
 package org.cangnova.cangjie.cfir.analysis.diagnostics
 
+import org.cangnova.cangjie.cfir.resolve.substitution.asCone
+
+import org.cangnova.cangjie.cfir.resolve.substitution.createTypeSubstitutorByTypeConstructor
+
 import com.intellij.psi.PsiElement
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.lang.LighterASTNode
@@ -33,6 +37,7 @@ import org.cangnova.cangjie.cfir.calls.resolvedQualifierClassifier
 import org.cangnova.cangjie.cfir.calls.resolvedQualifierTypeParameter
 import org.cangnova.cangjie.cfir.nameConflictsTracker
 import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.declarations.utils.ownTypeParameters
 import org.cangnova.cangjie.cfir.diagnostic.*
 import org.cangnova.cangjie.cfir.diagnostics.*
 import org.cangnova.cangjie.cfir.expressions.*
@@ -52,6 +57,7 @@ import org.cangnova.cangjie.cfir.semantics.AbstractCallKind
 import org.cangnova.cangjie.cfir.semantics.AbstractCallCandidate
 import org.cangnova.cangjie.cfir.semantics.BareEnumConstructorInsufficientInformation
 import org.cangnova.cangjie.cfir.semantics.AmbiguousClassifierTypeInCandidateSignature
+import org.cangnova.cangjie.cfir.semantics.ConeCyclicTypeBound
 import org.cangnova.cangjie.cfir.semantics.ErrorTypeInCandidateSignature
 import org.cangnova.cangjie.cfir.semantics.ErrorTypeInArguments
 import org.cangnova.cangjie.cfir.semantics.InvalidCallableReturnTypeInOverloadSet
@@ -60,7 +66,7 @@ import org.cangnova.cangjie.cfir.semantics.hasBareGenericFunctionReferencePayloa
 import org.cangnova.cangjie.cfir.semantics.isSuccess
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.languageVersionSettings
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
@@ -95,7 +101,7 @@ fun ConeDiagnostic.toCfirDiagnostics(
     returnExpressionSource: AbstractCjSourceElement? = null,
     allowErrorTypeMismatch: Boolean = false,
 ): List<CjDiagnostic> {
-    if (this is ConeUnreportedDuplicateDiagnostic) return emptyList()
+    if (this is ConeUnreportedDuplicateDiagnostic || this is ConeCyclicTypeBound) return emptyList()
     return when (this) {
         is ConeIncompatibleExpressionTypesError -> listOfNotNull(
             CfirErrors.TYPE_INCOMPATIBLE.on(source ?: return emptyList(), constructName, session)
@@ -790,6 +796,14 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
                 session,
             )
 
+            is UnitCannotBeCFunctionArgument -> CfirErrors.UNIT_CANNOT_BE_CFUNC_ARGUMENT.on(
+                (rootCause.argument.source ?: source ?: return@mapNotNull null).let { argumentSource ->
+                    // 固定native调用级Unit诊断只持begin位置，literal及推断为Unit的调用都锚首字符。
+                    argumentSource.firstCharacterDiagnosticSource()
+                },
+                session,
+            )
+
             is LiteralNumericOverflow -> CfirErrors.LITERAL_NUMERIC_OVERFLOW.on(
                 rootCause.literal.source ?: source ?: return@mapNotNull null,
                 rootCause.literalText,
@@ -1055,6 +1069,7 @@ private fun AbstractCallCandidate<*>.ambiguousClassifierSignatureNoMatchDiagnost
         startOffset = calleeSource.startOffset,
         endOffset = (calleeSource.startOffset + callInfo.name.asString().length)
             .coerceAtMost(call.source?.endOffset ?: calleeSource.endOffset),
+
     )
     return CfirErrors.NO_MATCH_FUNCTION_DECLARATION_FOR_CALL.on(source, session)
 }
@@ -1928,6 +1943,7 @@ private fun CjSourceElement?.callableReferenceSelectorWithTypeArgumentsSource():
             selector.toCjPsiSourceElement().withRange(
                 startOffset = selector.textRange.startOffset,
                 endOffset = typeArgumentList.textRange.endOffset,
+
             )
         }
 
@@ -1961,6 +1977,7 @@ private fun CjLightSourceElement.callableReferenceSelectorWithTypeArgumentsLight
     return withRange(
         startOffset = treeStructure.getStartOffset(selector),
         endOffset = treeStructure.getEndOffset(typeArgumentList),
+
     )
 }
 
@@ -2027,6 +2044,7 @@ private fun CjSourceElement.qualifiedAmbiguousUseLightTreeSource(): AbstractCjSo
     return withRange(
         startOffset = treeStructure.getStartOffset(qualifiedNode),
         endOffset = treeStructure.getEndOffset(qualifiedNode),
+
     )
 }
 
@@ -2047,6 +2065,7 @@ private fun CjSourceElement.qualifiedAmbiguousUseTextSource(): AbstractCjSourceE
     return withRange(
         startOffset = qualifiedStart,
         endOffset = endOffset,
+
     )
 }
 
@@ -2620,6 +2639,11 @@ private fun ConeDiagnostic.mapOtherDiagnostic(
 
             DiagnosticKind.DuplicateSupertype -> null
 
+            DiagnosticKind.NoCoreObject -> CfirErrors.NO_CORE_OBJECT.on(diagnosticSource, session)
+            DiagnosticKind.NoNonParamConstructorInSuperClass -> CfirErrors.NO_NON_PARAM_CONSTRUCTOR_IN_SUPER_CLASS.on(
+                diagnosticSource, session, SourceElementPositioningStrategies.ACTUAL_DECLARATION_NAME,
+            )
+
             DiagnosticKind.GenericTypeWithoutTypeArgument ->
                 CfirErrors.GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT.on(
                     diagnosticSource,
@@ -2966,7 +2990,7 @@ private fun AbstractCallCandidate<*>.explicitTypeArgumentConstraintDiagnostics(
 ): List<CjDiagnostic> {
     val typeParameters = explicitConstraintTypeParameters(session)
     val storage = system.asReadOnlyStorage()
-    val explicitTypeSubstitutor = storage.explicitTypeArgumentsSubstitutor()
+    val explicitTypeSubstitutor = storage.explicitTypeArgumentsSubstitutor(session.typeContext)
     val explicitArgumentsByVariable = storage.initialConstraints.mapNotNull { constraint ->
         val position = constraint.position as? ConeExplicitTypeParameterConstraintPosition ?: return@mapNotNull null
         if (constraint.constraintKind != ConstraintKind.EQUALITY) return@mapNotNull null
@@ -3221,7 +3245,7 @@ private fun org.cangnova.cangjie.cfir.expressions.CfirExpression.genericInferenc
 
     val callableSymbol = qualifiedAccess.genericInferenceCallableSymbolOrNull()
     if (callableSymbol != null) {
-        if (callableSymbol.cfir.typeParameters.isEmpty()) return null
+        if (callableSymbol.cfir.typeParameters.ownTypeParameters.isEmpty()) return null
         val source = qualifiedAccess.genericInferenceCalleeSource() ?: return null
         return CfirErrors.NEW_INFERENCE_ERROR.on(
             source,
@@ -3251,7 +3275,7 @@ private fun org.cangnova.cangjie.cfir.expressions.CfirExpression.genericInferenc
     if (qualifiedAccess.typeArguments.isNotEmpty()) return null
 
     val callableSymbol = qualifiedAccess.genericInferenceCallableSymbolOrNull() ?: return null
-    if (callableSymbol.cfir.typeParameters.isEmpty()) return null
+    if (callableSymbol.cfir.typeParameters.ownTypeParameters.isEmpty()) return null
 
     val diagnostic = (qualifiedAccess.coneTypeOrNull as? ConeErrorType)?.diagnostic ?: return null
     if (diagnostic !is ConeCannotInferGenericFunctionTypeParameterType &&
@@ -3405,7 +3429,7 @@ private fun AbstractCallCandidate<*>.sourceOfCallToSymbolWith(typeVariable: org.
 
             if (element is CfirQualifiedAccessExpression) {
                 val symbol = (element.calleeReference as? CfirResolvedNamedReference)?.resolvedSymbol as? CfirCallableSymbol<*>
-                if (symbol != null && symbol.cfir.typeParameters.any { it.symbol == declaredTypeParameter }) {
+                if (symbol != null && symbol.cfir.typeParameters.ownTypeParameters.any { it.symbol == declaredTypeParameter }) {
                     narrowedSource = element.calleeReference.source
                     return
                 }
@@ -3453,7 +3477,7 @@ private fun CjLightSourceElement.lightTreeCallCalleeSource(): CjSourceElement {
     val childrenRef = Ref<Array<LighterASTNode>>()
     treeStructure.getChildren(lighterASTNode, childrenRef)
     val callee = childrenRef.get().firstOrNull { child ->
-        child.tokenType != CjTokens.WHITE_SPACE && child.tokenType !in CjTokens.COMMENTS
+        child.tokenType !in CjTokens.ALL_WHITESPACE_TOKENS && child.tokenType !in CjTokens.COMMENTS
     } ?: return this
     return callee.toCjLightSourceElement(
         tree = treeStructure,
@@ -3545,7 +3569,17 @@ private fun AbstractCallCandidate<*>.hasExplicitTypeArgumentsInCall(): Boolean {
  */
 private fun AbstractCallCandidate<*>.hasExplicitCallableTypeArgumentsInCall(): Boolean {
     val callable = symbol.cfir as? CfirCallableDeclaration ?: return false
-    if (callable.typeParameters.isEmpty()) return false
+    // 内建构造候选为接入统一约束系统而以函数承载类型参数；这些参数属于被构造类型，
+    // 不代表源码声明了泛型函数，不能据此改变实参诊断归属。
+    when (callable.origin) {
+        CfirDeclarationOrigin.Synthetic.BuiltinArrayConstructor,
+        CfirDeclarationOrigin.Synthetic.BuiltinPointerConstructor,
+        CfirDeclarationOrigin.Synthetic.BuiltinCStringConstructor,
+        CfirDeclarationOrigin.Synthetic.BuiltinCFuncConstructor,
+        -> return false
+        else -> Unit
+    }
+    if (callable.typeParameters.ownTypeParameters.isEmpty()) return false
     return callInfo.typeArguments.isNotEmpty()
 }
 
@@ -3843,7 +3877,7 @@ private fun AbstractCallCandidate<*>.genericInferenceDeclaredTypeParameters(
  */
 private fun AbstractCallCandidate<*>.isImplicitGenericCallWithTypeParameters(): Boolean {
     val callableSymbol = symbol as? CfirCallableSymbol<*> ?: return false
-    return callableSymbol.cfir.typeParameters.isNotEmpty() && !hasExplicitTypeArgumentsInCall()
+    return callableSymbol.cfir.typeParameters.ownTypeParameters.isNotEmpty() && !hasExplicitTypeArgumentsInCall()
 }
 
 /**
@@ -3863,7 +3897,7 @@ private fun AbstractCallCandidate<*>.looksLikeImplicitGenericCallInferenceFailur
     qualifiedAccessSource: CjSourceElement?,
 ): Boolean {
     val callableSymbol = symbol as? CfirCallableSymbol<*> ?: return false
-    if (callableSymbol.cfir.typeParameters.isEmpty()) return false
+    if (callableSymbol.cfir.typeParameters.ownTypeParameters.isEmpty()) return false
     if (hasExplicitTypeArgumentsInCall()) return false
     val calleeSource = source ?: return false
     val callSource = qualifiedAccessSource ?: callInfo.callSite.source ?: return false
@@ -3933,6 +3967,7 @@ private fun CjSourceElement.receiverTokenDiagnosticSource(): AbstractCjSourceEle
     return withRange(
         startOffset + tokenStart,
         (startOffset + tokenEnd).coerceAtMost(endOffset),
+
     )
 }
 
@@ -4074,7 +4109,8 @@ private fun <A> CjDiagnosticFactory1<A>.on(
 private fun CjDiagnosticFactory0.on(
     source: AbstractCjSourceElement,
     session: CfirSession,
-): CjDiagnostic? = on(source, null, diagnosticContext(session))
+    positioningStrategy: AbstractSourceElementPositioningStrategy? = null,
+): CjDiagnostic? = on(source, positioningStrategy, diagnosticContext(session))
 
 /**
  * 使用当前 session 上下文创建二参数诊断。

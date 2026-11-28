@@ -25,26 +25,36 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
+import org.cangnova.cangjie.cfir.analysis.checkers.CjmpGate
 import org.cangnova.cangjie.cfir.analysis.checkers.context.accessContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityResult
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessKind
 import org.cangnova.cangjie.cfir.resolve.providers.CfirLookupOrigin
+import org.cangnova.cangjie.cfir.resolve.providers.createCallableOwnerUseSiteSubstitutor
 import org.cangnova.cangjie.cfir.resolve.providers.getContainingExtend
+import org.cangnova.cangjie.cfir.resolve.providers.classifyExtendPeerPackageRelation
+import org.cangnova.cangjie.cfir.resolve.providers.memberOwnerAccessContext
 import org.cangnova.cangjie.cfir.scopes.CfirCallableLookupProvenance
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirCjmpMemberScopeView
 import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
 import org.cangnova.cangjie.cfir.scopes.processCallablesByNameWithLookupProvenance
 import org.cangnova.cangjie.cfir.session.accessibilityChecker
 import org.cangnova.cangjie.cfir.session.extendRuleQueryService
 import org.cangnova.cangjie.cfir.session.extendRuleQueryServiceOrNull
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.session.services.CfirExtendMemberPeerDisposition
+import org.cangnova.cangjie.cfir.session.isCjmpSpecificCompilationEnabled
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
+import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.cfir.types.BuiltinPrimitiveOperators
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
@@ -67,7 +77,7 @@ import org.cangnova.cangjie.annotations.CangjiePlatformAnnotationKind
  * - EXTEND_A_JAVA_TYPE: 不能 extend @Java 标注的类型
  * - EXTEND_REF_TARGET_CANNOT_BE_JAVA_IMPL: extend 不能指向 @JavaImpl 声明
  */
-object CfirExtendExtraChecker : CfirExtendChecker() {
+object CfirExtendExtraChecker : CfirExtendChecker(MppCheckerKind.Common) {
     /**
      * Java 实现类型注解名称。
      */
@@ -224,8 +234,15 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
         excludingExtend: CfirExtend,
     ): CfirTypeScope? = CfirClassUseSiteMemberScope.createForUseSiteType(
         session = context.session,
+        scopeSession = context.scopeSession,
         ownerType = this,
         excludingExtend = excludingExtend,
+        memberRequiredPhase = if (context.session.isCjmpSpecificCompilationEnabled()) CfirResolvePhase.CJMP_MATCHING else CfirResolvePhase.STATUS,
+        memberScopeView = if (context.session.isCjmpSpecificCompilationEnabled()) {
+            CfirCjmpMemberScopeView.CJMP_ACTUALIZED
+        } else {
+            CfirCjmpMemberScopeView.RAW
+        },
     )
 
     /**
@@ -246,7 +263,10 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
             is CfirProperty -> symbol
             else -> return false
         }
-        val signature = symbol.overrideSignatureKey()
+        symbol.lazyResolveToPhase(CfirResolvePhase.TYPES)
+        val signature = symbol.overrideSignatureKey(
+            createCallableOwnerUseSiteSubstitutor(context.session, symbol, targetType),
+        )
         val accessContext = context.accessContext(CfirAccessKind.CALLABLE).copy(
             receiverType = targetType,
             lookupOrigin = CfirLookupOrigin.MEMBER,
@@ -282,7 +302,15 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
             if (!accessible && !candidate.symbol.isShadowRelevantProtectedClassMember()) {
                 return@processCallablesByNameWithLookupProvenance
             }
-            if (candidate.symbol.canShadowThis(this, signature, candidate.provenance, context, importedContext != null)) {
+            if (candidate.symbol.canShadowThis(
+                    currentMember = this,
+                    currentSignature = signature,
+                    targetType = targetType,
+                    provenance = candidate.provenance,
+                    context = context,
+                    ignoreInheritedExtendRelations = importedContext != null,
+                )
+            ) {
                 found = true
             }
         }
@@ -304,12 +332,13 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
     /**
      * 判断目标 callable 符号是否会被当前 extend 成员遮蔽。
      *
-     * 过滤未绑定符号、当前成员自身的 substitution override、private 成员以及接口抽象需求，
-     * 剩余成员通过 override 签名 key 判断是否真正同签名。
+     * 过滤未绑定符号、当前成员自身的 substitution override、private 声明期特例和接口抽象需求；
+     * 剩余成员先归一到当前目标类型的声明参数空间，再通过 override 签名 key 判断是否同签名。
      */
     private fun org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol<*>.canShadowThis(
         currentMember: CfirDeclaration,
         currentSignature: String,
+        targetType: ConeCangJieType,
         provenance: CfirCallableLookupProvenance,
         context: CheckerContext,
         ignoreInheritedExtendRelations: Boolean,
@@ -317,6 +346,7 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
         if (!isBound) return false
         val original = unwrapSubstitutionOverrides()
         if (original.cfir === currentMember) return false
+        original.lazyResolveToPhase(CfirResolvePhase.TYPES)
 
         // 同一目标上的父子 extend 关系已经由接口继承图归并；子 extend 的成员不应
         // 反向把父 extend 的具体实现判为 shadow。无关 sibling extend 仍必须继续
@@ -341,14 +371,38 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
 
         if (original.isSyntheticPrimitiveBuiltinOperatorExcludedFromShadow(currentMember, context)) return false
         if (original.isInterfaceRequirementMember(context)) return false
-        if (original.isIndependentInterfaceDefault(currentMember, provenance, context)) return false
+        if (original.shouldExcludeInterfaceDefaultFromShadow(currentMember, provenance, context)) return false
         if (!original.cfir.hasSameShadowMemberKind(currentMember)) {
             // 官方 CheckSameNameInheritanceInfo 对 inherited-interface 的 cross-kind 成员
             // 只报告 kind inconsistency；只有目标类型自身的不同种类成员才继续进入 shadow 分类。
             if (context.ownerClassSymbol(original)?.cfir is CfirInterface) return false
             return original.cfir.shadowMemberStaticStatus() == currentMember.shadowMemberStaticStatus()
         }
-        return overrideSignatureKey() == currentSignature
+        val candidateOwnerType = provenance.requirementInterfaceType ?: targetType
+        val candidateSignature = original.overrideSignatureKey(
+            createCallableOwnerUseSiteSubstitutor(context.session, original, candidateOwnerType),
+        )
+        if (candidateSignature != currentSignature) return false
+
+        val inheritedDeclaration = original.cfir as? CfirMemberDeclaration ?: return true
+        val implementationDeclaration = currentMember as? CfirMemberDeclaration ?: return true
+        val isUnrelatedSiblingExtend = currentExtend != null && sourceExtend != null &&
+            currentExtend !== sourceExtend &&
+            context.session.extendRuleQueryServiceOrNull?.areExtendsInInheritRelation(
+                currentExtend,
+                sourceExtend,
+            ) == false
+        if (
+            isUnrelatedSiblingExtend &&
+            original.isImplementableForVisibility(context) &&
+            isVisibilityWeakerThan(
+                implementationDeclaration.status.visibility,
+                inheritedDeclaration.status.visibility,
+            )
+        ) {
+            return false
+        }
+        return true
     }
 
     /**
@@ -437,13 +491,14 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
     }
 
     /**
-     * 判断是否不应把 peer extend 的 interface default 当作当前成员的 shadow parent。
+     * 判断 peer extend 的 interface default 是否不应作为当前成员的 shadow parent。
      *
-     * 当前 private 成员与 peer interface default 的可见性关系由继承检查器报告；把该候选
-     * 留在 shadow 检查中会错误地产生 EXTEND_MEMBER_CANNOT_SHADOW。泛型实例化仍由 owner
-     * 成员图保留当前 extend 的 private 声明并与 default 比较。
+     * private 当前成员只由可见性检查报告，不能额外产生 EXTEND_MEMBER_CANNOT_SHADOW；它仍留在
+     * owner 成员图中参与泛型实例化检查。其它成员使用与官方 peer 收集相同的 owner/peer 接口顺序：
+     * 只有 peer 是 current 的严格子接口时排除；父接口、同接口和无关接口都纳入，顺序不确定时
+     * 也纳入 peer 并由独立的顺序诊断报告。
      */
-    private fun org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol<*>.isIndependentInterfaceDefault(
+    private fun org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol<*>.shouldExcludeInterfaceDefaultFromShadow(
         currentMember: CfirDeclaration,
         provenance: CfirCallableLookupProvenance,
         context: CheckerContext,
@@ -457,17 +512,23 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
             is CfirProperty -> currentMember.symbol
             else -> return false
         }.getContainingExtend() ?: return false
-        val implementsInterface = currentExtend.superTypeRefs.any { superTypeRef ->
-            val classId = (superTypeRef as? CfirResolvedTypeRef)
-                ?.coneType
-                ?.classIdOrPrimitiveClassId
-                ?: return@any false
-            context.session.symbolProvider.getClassLikeSymbolByClassId(classId)?.cfir is CfirInterface
-        }
         val currentMemberIsPrivate =
             (currentMember as? CfirMemberDeclaration)?.status?.visibility == Visibilities.Private
-        return (implementsInterface || currentMemberIsPrivate) &&
-                !context.session.extendRuleQueryService.areExtendsInInheritRelation(currentExtend, sourceExtend)
+        if (currentMemberIsPrivate) return true
+
+        val session = context.session
+        val packageRelation = session.classifyExtendPeerPackageRelation(
+            owner = currentExtend,
+            peer = sourceExtend,
+            currentAccessContext = context.accessContext(CfirAccessKind.EXTEND),
+            ownerAccessContext = session.memberOwnerAccessContext(currentExtend),
+        )
+        if (!packageRelation.appliesInterfaceOrdering) return false
+
+        return session.extendRuleQueryService.extendMemberPeerDecision(
+            ownerDeclaration = currentExtend,
+            peerDeclaration = sourceExtend,
+        ).disposition == CfirExtendMemberPeerDisposition.EXCLUDE
     }
 
     /**
@@ -487,7 +548,7 @@ private fun CfirDeclaration.isCjmpCounterpartOf(
     candidate: org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol<*>,
     context: CheckerContext,
 ): Boolean {
-    if (!context.languageVersionSettings.supportsFeature(org.cangnova.cangjie.LanguageFeature.CommonSpecificDeclarations)) {
+    if (!CjmpGate.isVersionSupported(context.languageVersionSettings)) {
         return false
     }
     val own = (this as? org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration)?.status ?: return false

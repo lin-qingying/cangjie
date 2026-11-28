@@ -1,0 +1,32 @@
+{
+  "utc": "2026-11-18T22:14:16.5416546Z",
+  "fileCount": 7282,
+  "aggregateSha256": "8F6DFD7639D19A1CAC634EF89925D53CD03F64B12569FAF858BAEF966F709FB6",
+  "roots": [
+    "common",
+    "cfir",
+    "analysis/low-level-api-cfir",
+    "analysis/analysis-api-cfir",
+    "compiler/frontend",
+    "compiler/config",
+    "compiler/phaser",
+    "compiler/arguments",
+    "compiler/compiler.version",
+    "psi",
+    "resolution.common",
+    "macro",
+    "settings.gradle.kts",
+    "prepare/frontend",
+    "prepare/ide-plugin-dependencies/cangjie-frontend-cfir-for-ide"
+  ],
+  "include": [
+    "*.kt",
+    "*.cj",
+    "*.kts",
+    "*.java",
+    "**/resources/META-INF/cangjie/compiler.version"
+  ],
+  "exclude": "**/build/**",
+  "method": "rg --files --hidden --no-ignore, / normalized and Sort-Object -CaseSensitive; SHA256 of UTF8 LF joined path TAB length TAB uppercaseSHA256, no final LF",
+  "scope": "c7a559e7 production and test compilation passed. SOURCE canonical inherited TypeRef product includes native Object; fresh48 source/alias/ABI/lifecycle/Cextras verification. Original expectations and bodies unchanged. Full S4/S5/S6 and constructor preparation remain open."
+}

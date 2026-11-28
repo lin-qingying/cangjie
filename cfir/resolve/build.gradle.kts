@@ -12,6 +12,7 @@ dependencies {
     api(project(":common"))
     api(project(":util"))
     api(project(":cfir:semantics"))
+    api(project(":cfir:semantics.api"))
     api(project(":cfir:providers"))
 
     implementation(libs.kotlinx.collections.immutable)

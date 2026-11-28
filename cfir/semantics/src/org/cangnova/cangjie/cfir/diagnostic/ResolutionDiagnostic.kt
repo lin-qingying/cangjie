@@ -12,6 +12,8 @@ import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeDiagnostic
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
+import org.cangnova.cangjie.cfir.types.DiagnosticSourceOwner
+import org.cangnova.cangjie.cfir.types.DiagnosticSourceSlot
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability
 import org.cangnova.cangjie.source.AbstractCjSourceElement
@@ -96,6 +98,9 @@ class CStructCannotAutobox(
     /** 官方诊断消息中展示的目标参数类型。 */
     val expectedType: ConeCangJieType,
 ) : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE)
+
+/** Native sema_unit_cannot_as_cfunc_arg：C声明调用的直接Unit实参禁令，不改变全局CType关系。 */
+class UnitCannotBeCFunctionArgument(val argument: CfirExpression) : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE)
 
 /**
  * Lambda 参数列表个数与目标函数类型参数个数不匹配。
@@ -237,10 +242,17 @@ class TooManyArguments(
  */
 class WrongNumberOfArguments(
     /** 参数列表或调用参数区域的精确源码区间。 */
-    val source: AbstractCjSourceElement,
+    source: AbstractCjSourceElement,
     val expectedCount: Int,
     val actualCount: Int,
-) : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE_ARGUMENTS_MAPPING_ERROR)
+) : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE_ARGUMENTS_MAPPING_ERROR), DiagnosticSourceOwner {
+    var source: AbstractCjSourceElement = source
+        private set
+
+    override val diagnosticSourceSlots: List<DiagnosticSourceSlot> = listOf(DiagnosticSourceSlot(
+        { this.source }, { this.source = it },
+    ))
+}
 
 /**
  * `CPointer` 内建构造器的参数数量错误。
@@ -250,20 +262,41 @@ class WrongNumberOfArguments(
  */
 class BuiltinPointerConstructorTooManyArguments(
     /** 官方 pointer call 的诊断范围。 */
-    val source: AbstractCjSourceElement,
-) : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE_ARGUMENTS_MAPPING_ERROR)
+    source: AbstractCjSourceElement,
+) : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE_ARGUMENTS_MAPPING_ERROR), DiagnosticSourceOwner {
+    var source: AbstractCjSourceElement = source
+        private set
+
+    override val diagnosticSourceSlots: List<DiagnosticSourceSlot> = listOf(DiagnosticSourceSlot(
+        { this.source }, { this.source = it },
+    ))
+}
 
 /** `CPointer` 唯一值参数不是 pointer/CFunc。 */
 class BuiltinPointerConstructorArgumentType(
     /** 官方 `PointerExpr` 的完整调用 source。 */
-    val source: AbstractCjSourceElement,
-) : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE)
+    source: AbstractCjSourceElement,
+) : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE), DiagnosticSourceOwner {
+    var source: AbstractCjSourceElement = source
+        private set
+
+    override val diagnosticSourceSlots: List<DiagnosticSourceSlot> = listOf(DiagnosticSourceSlot(
+        { this.source }, { this.source = it },
+    ))
+}
 
 /** `CFunc` 构造器的实参数量错误。 */
 class BuiltinCFuncConstructorTooManyArguments(
     /** 官方 `CFunc` callee source，不包含调用参数表。 */
-    val source: AbstractCjSourceElement,
-) : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE_ARGUMENTS_MAPPING_ERROR)
+    source: AbstractCjSourceElement,
+) : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE_ARGUMENTS_MAPPING_ERROR), DiagnosticSourceOwner {
+    var source: AbstractCjSourceElement = source
+        private set
+
+    override val diagnosticSourceSlots: List<DiagnosticSourceSlot> = listOf(DiagnosticSourceSlot(
+        { this.source }, { this.source = it },
+    ))
+}
 
 /** `CFunc` 构造器实参不是 CPointer。 */
 class BuiltinCFuncConstructorArgumentType(
@@ -296,12 +329,19 @@ class NamedParameterNotFound(
      */
     val argument: CfirExpression,
     /** 命名实参名称 token 的源码区间。 */
-    val source: AbstractCjSourceElement,
+    source: AbstractCjSourceElement,
     /**
      * 不存在的形参名。
      */
     val name: Name,
-) : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE_ARGUMENTS_MAPPING_ERROR)
+) : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE_ARGUMENTS_MAPPING_ERROR), DiagnosticSourceOwner {
+    var source: AbstractCjSourceElement = source
+        private set
+
+    override val diagnosticSourceSlots: List<DiagnosticSourceSlot> = listOf(DiagnosticSourceSlot(
+        { this.source }, { this.source = it },
+    ))
+}
 
 /**
  * 对齐 Kotlin FIR：当候选自身没有更细粒度的结构化错误类型时，
@@ -433,30 +473,51 @@ class ArgumentPassedTwice(
      */
     val argument: CfirExpression,
     /** 应由诊断覆盖的名称 token 或尾随 closure 左花括号。 */
-    val source: AbstractCjSourceElement,
+    source: AbstractCjSourceElement,
     /**
      * 被重复绑定的形参。
      */
     val parameter: CfirValueParameter,
-) : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE_ARGUMENTS_MAPPING_ERROR)
+) : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE_ARGUMENTS_MAPPING_ERROR), DiagnosticSourceOwner {
+    var source: AbstractCjSourceElement = source
+        private set
+
+    override val diagnosticSourceSlots: List<DiagnosticSourceSlot> = listOf(DiagnosticSourceSlot(
+        { this.source }, { this.source = it },
+    ))
+}
 
 /**
  * 函数值调用不支持命名实参，但该错误不阻断按位置映射和逐实参类型检查。
  */
 class UnsupportedNamedArgument(
     /** 命名实参名称 token 的源码区间。 */
-    val source: AbstractCjSourceElement,
-) : ResolutionDiagnostic(CandidateApplicability.RESOLVED)
+    source: AbstractCjSourceElement,
+) : ResolutionDiagnostic(CandidateApplicability.RESOLVED), DiagnosticSourceOwner {
+    var source: AbstractCjSourceElement = source
+        private set
+
+    override val diagnosticSourceSlots: List<DiagnosticSourceSlot> = listOf(DiagnosticSourceSlot(
+        { this.source }, { this.source = it },
+    ))
+}
 
 /**
  * 尾随 closure 在参数数量正确且最后形参尚未绑定时只能传给函数类型形参。
  */
 class TrailingLambdaCannotUsedForNonFunction(
     /** 完整尾随 closure 的源码区间。 */
-    val source: AbstractCjSourceElement,
+    source: AbstractCjSourceElement,
     /** 最后形参的实际类型。 */
     val parameterType: ConeCangJieType,
-) : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE_ARGUMENTS_MAPPING_ERROR)
+) : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE_ARGUMENTS_MAPPING_ERROR), DiagnosticSourceOwner {
+    var source: AbstractCjSourceElement = source
+        private set
+
+    override val diagnosticSourceSlots: List<DiagnosticSourceSlot> = listOf(DiagnosticSourceSlot(
+        { this.source }, { this.source = it },
+    ))
+}
 
 /**
  * 目标调用不允许命名实参。
@@ -471,12 +532,19 @@ class NamedArgumentsNotAllowed(
      */
     val argument: CfirExpression,
     /** 命名实参名称 token 的源码区间。 */
-    val source: AbstractCjSourceElement,
+    source: AbstractCjSourceElement,
     /**
      * 目标调用的可读描述。
      */
     val targetDescription: String,
-) : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE_ARGUMENTS_MAPPING_ERROR)
+) : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE_ARGUMENTS_MAPPING_ERROR), DiagnosticSourceOwner {
+    var source: AbstractCjSourceElement = source
+        private set
+
+    override val diagnosticSourceSlots: List<DiagnosticSourceSlot> = listOf(DiagnosticSourceSlot(
+        { this.source }, { this.source = it },
+    ))
+}
 
 /**
  * 调用混用了命名实参和位置实参。

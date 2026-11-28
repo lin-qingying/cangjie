@@ -25,6 +25,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.*
@@ -37,8 +38,8 @@ import org.cangnova.cangjie.cfir.expressions.CfirLazyBlock
 import org.cangnova.cangjie.cfir.expressions.CfirReturnExpression
 import org.cangnova.cangjie.cfir.references.CfirResolvedErrorReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
-import org.cangnova.cangjie.cfir.session.cfirProvider
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.cfirProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
 import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
 import org.cangnova.cangjie.name.ClassId
@@ -52,7 +53,7 @@ import org.cangnova.cangjie.name.ClassId
  * - 一旦构造依赖回到当前类型，报告闭环上的构造调用；
  * - 同一个 cycle 只由源文件中最早的类型声明报告，保持官方全局 DFS 的单报语义。
  */
-object CfirRecursiveConstructorCallChecker : CfirClassLikeChecker() {
+object CfirRecursiveConstructorCallChecker : CfirClassLikeChecker(MppCheckerKind.Common) {
     /**
      * 检查 class/struct 声明是否存在递归构造调用闭环。
      */

@@ -1,7 +1,7 @@
 package org.cangnova.cangjie.cfir.resolve.calls.overloads
 
 import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.resolve.BodyResolveComponents
@@ -10,7 +10,7 @@ import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirCreateFreshTypeVariabl
 import org.cangnova.cangjie.cfir.resolve.inference.InferenceComponents
 import org.cangnova.cangjie.cfir.resolve.providers.getContainingExtend
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.types.createTypeSubstitutorByTypeConstructor
+import org.cangnova.cangjie.cfir.resolve.substitution.createTypeSubstitutorByTypeConstructor
 import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeParameterBasedTypeVariable
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.session.ProcessorAction
@@ -1207,13 +1207,7 @@ class ConeOverloadConflictResolver(
                     this
                 }
             }
-            is ConeClassLikeType -> ConeClassLikeType(
-                lookupTag = lookupTag,
-                typeArguments = typeArguments.restoreArguments(),
-                attributes = attributes,
-                isInterface = isInterface,
-                isThisType = isThisType,
-            )
+            is ConeClassLikeType -> withArguments(typeArguments.restoreArguments())
             is ConeStructType -> ConeStructType(
                 lookupTag = lookupTag,
                 typeArguments = typeArguments.restoreArguments(),

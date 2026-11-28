@@ -189,6 +189,8 @@ open class CjProperty : CjTypeParameterListOwnerStub<CangJiePropertyStub>, CjVar
      * 暴露 `valueParameterList`，实现仓颉 PSI节点对上层接口的属性契约。
      */
     override val valueParameterList: CjParameterList? = null
+
+    override val valueParameterLists: List<CjParameterList> = emptyList()
     /**
      * 暴露 `valueParameters`，实现仓颉 PSI节点对上层接口的属性契约。
      */

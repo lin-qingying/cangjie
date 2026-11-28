@@ -24,6 +24,13 @@ interface CaSourceModule : CaModule {
     val languageVersionSettings: LanguageVersionSettings
 
     /**
+     * 模块显式配置的 CJMP 编译角色；null 表示未指定，角色由模块图推导。
+     * 显式 NONE 保持关闭；配置属于模块，不能随着弱缓存中的 session 回收而消失。
+     */
+    val cjmpCompilationMode: CaCjmpCompilationMode?
+        get() = null
+
+    /**
      * PSI 视角下的源码根集合。
      */
     val psiRoots: List<PsiFileSystemItem>

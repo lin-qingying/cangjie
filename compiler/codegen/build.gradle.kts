@@ -17,6 +17,7 @@ dependencies {
     implementation(project(":chir:chir-tree"))
     implementation(project(":llvm-interop:llvm-interop-api"))
     implementation(project(":llvm-interop:llvm-interop-jni"))
+    testImplementation(project(":chir:cfir2chir"))
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.junit4)
     testRuntimeOnly(libs.junit.vintage.engine)

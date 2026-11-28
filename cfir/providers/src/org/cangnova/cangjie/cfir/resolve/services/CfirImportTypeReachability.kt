@@ -4,13 +4,14 @@ import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.resolve.providers.CfirImportNamespaceContext
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.importBindingStore
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.name.ClassId
 
 /**
  * 判断 [classId] 是否通过当前包、显式 import 或语言默认 import 在 [CfirFile] 中名字可达。
  *
- * 本服务只读取 IMPORTS 阶段建立的结构 binding。缺失 binding 是阶段契约错误，不能退回
+ * 本服务只读取 owner session 在 IMPORTS 阶段建立的文件 binding，以及当前 session 的默认 binding。
+ * 缺失 binding 是阶段契约错误，不能退回
  * `DefaultImportsProvider` 或 symbol provider 现场回放，否则 extend、类型与调用解析会形成
  * 不同的导入语义。
  */
@@ -22,7 +23,7 @@ fun CfirFile.isClassIdReachableByImports(
 
     val store = session.importBindingStore
     return sequenceOf(
-        store.requireBindings(this).imports,
+        requireImportBindings().imports,
         store.requireDefaultImportBindings(CfirDefaultImportPriority.HIGH),
         store.requireDefaultImportBindings(CfirDefaultImportPriority.LOW),
     ).flatten().any { binding -> binding.reachesClassId(session, classId) }
@@ -31,7 +32,8 @@ fun CfirFile.isClassIdReachableByImports(
 /** 判断单条已解析 binding 是否把 [classId] 暴露给当前文件。 */
 fun CfirResolvedImportBinding.reachesClassId(session: CfirSession, classId: ClassId): Boolean = targets.any { target ->
     when (target) {
-        is CfirResolvedImportTarget.ClassLike -> target.classId == classId
+        is CfirResolvedImportTarget.ClassLike ->
+            target.classId == classId && target.resolveSymbols(session.symbolProvider).isNotEmpty()
         is CfirResolvedImportTarget.Package -> {
             (target.organizationName == null && target.fqName == classId.packageFqName) || session.symbolProvider
                 .getImportNamespace(CfirImportNamespaceContext(target.fqName, target.organizationName))

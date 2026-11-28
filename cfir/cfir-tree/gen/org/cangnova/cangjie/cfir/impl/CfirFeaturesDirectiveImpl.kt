@@ -8,6 +8,7 @@
 package org.cangnova.cangjie.cfir.impl
 
 import org.cangnova.cangjie.cfir.CfirFeaturesDirective
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.MutableOrEmptyList
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
@@ -17,7 +18,7 @@ import org.cangnova.cangjie.cfir.visitors.transformInplace
 import org.cangnova.cangjie.source.CjSourceElement
 
 internal class CfirFeaturesDirectiveImpl(
-    override val source: CjSourceElement?,
+    override var source: CjSourceElement?,
     override var annotations: MutableOrEmptyList<CfirAnnotation>,
     override val featureIds: MutableList<String>,
 ) : CfirFeaturesDirective() {
@@ -34,6 +35,11 @@ internal class CfirFeaturesDirectiveImpl(
     override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirFeaturesDirectiveImpl {
         annotations.transformInplace(transformer, data)
         return this
+    }
+
+    @CfirImplementationDetail
+    override fun replaceSource(newSource: CjSourceElement?) {
+        source = newSource
     }
 
     override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>) {

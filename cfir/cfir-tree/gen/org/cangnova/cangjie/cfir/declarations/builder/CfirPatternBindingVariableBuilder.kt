@@ -8,6 +8,7 @@
 package org.cangnova.cangjie.cfir.declarations.builder
 
 import kotlin.contracts.*
+import org.cangnova.cangjie.cfir.CfirContentSource
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
@@ -15,6 +16,7 @@ import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.impl.CfirPatternBindingVariableImpl
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.symbols.CfirPatternBindingSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeSimpleCangJieType
@@ -33,10 +35,12 @@ class CfirPatternBindingVariableBuilder {
     var deprecationsProvider: DeprecationsProvider = UnresolvedDeprecationProvider
     var dispatchReceiverType: ConeSimpleCangJieType? = null
     lateinit var status: CfirDeclarationStatus
+    var contentSource: CfirContentSource = CfirContentSource.Owned
     var isVar: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
     var isTypeImplicit: Boolean = false
-    lateinit var symbol: CfirPatternBindingSymbol
     val typeParameters: MutableList<CfirTypeParameter> = mutableListOf()
+    lateinit var symbol: CfirPatternBindingSymbol
+    var ownedInitializer: CfirExpression? = null
     lateinit var returnTypeRef: CfirTypeRef
     lateinit var name: Name
 
@@ -53,10 +57,12 @@ class CfirPatternBindingVariableBuilder {
             deprecationsProvider,
             dispatchReceiverType,
             status,
+            contentSource,
             isVar,
             isTypeImplicit,
-            symbol,
             typeParameters,
+            symbol,
+            ownedInitializer,
             returnTypeRef,
             name,
         )
@@ -91,6 +97,7 @@ inline fun buildPatternBindingVariableCopy(original: CfirPatternBindingVariable,
     copyBuilder.isVar = original.isVar
     copyBuilder.isTypeImplicit = original.isTypeImplicit
     copyBuilder.typeParameters.addAll(original.typeParameters)
+    copyBuilder.ownedInitializer = original.ownedInitializer
     copyBuilder.returnTypeRef = original.returnTypeRef
     copyBuilder.name = original.name
     return copyBuilder.apply(init).build()

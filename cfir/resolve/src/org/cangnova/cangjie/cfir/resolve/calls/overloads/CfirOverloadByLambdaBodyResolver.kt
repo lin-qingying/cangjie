@@ -204,7 +204,7 @@ class CfirOverloadByLambdaBodyResolver(
                 }
             }
             if (rollback) {
-                components.context.dataFlowAnalyzerContext.withIsolatedContext {
+                components.dataFlowAnalyzer.withIsolatedContext {
                     analyze()
                 }
             } else {

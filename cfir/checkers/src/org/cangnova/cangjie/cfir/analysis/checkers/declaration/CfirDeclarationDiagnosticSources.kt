@@ -26,9 +26,17 @@ package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import com.intellij.lang.LighterASTNode
 import com.intellij.openapi.util.Ref
+import com.intellij.openapi.util.TextRange
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.diff.FlyweightCapableTreeStructure
+import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticRelatedInformation
+import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticRelatedSourceLocation
+import org.cangnova.cangjie.cfir.diagnostics.DiagnosticContext
+import org.cangnova.cangjie.cfir.diagnostics.SourceElementPositioningStrategies
+import org.cangnova.cangjie.cfir.resolve.providers.getContainingFile
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.name.Name
@@ -36,6 +44,29 @@ import org.cangnova.cangjie.name.OperatorNameConventions.asOperatorString
 import org.cangnova.cangjie.psi.*
 import org.cangnova.cangjie.source.*
 import org.cangnova.cangjie.psi.CjClassLikeDeclaration as CjPsiClassLikeDeclaration
+
+/**
+ * 让诊断按其 source 的真实声明 owner 文件提交。
+ *
+ * 在平台 session 中检查 common 声明时，诊断源可能属于另一个 session 的文件。若沿用当前
+ * specific 文件的 pending source context，source offset 会被 specific 文件中的同偏移节点消费。
+ * 这里保留 checker 的 suppression 语义，同时让跨文件 source 走明确的 owner 路径。
+ */
+internal fun CheckerContext.forDiagnosticSourceOwner(
+    declaration: CfirBasedSymbol<*>,
+    source: AbstractCjSourceElement?,
+): DiagnosticContext {
+    val declarationFile = declaration.getContainingFile()
+    val sourceFilePath = (source as? CjBinarySourceElement)?.binaryFilePath
+        ?: declarationFile?.sourceFile?.path
+        ?: (source as? CjPsiSourceElement)?.psi?.containingFile?.virtualFile?.path
+    if (sourceFilePath == null || sourceFilePath == containingFilePath) return this
+
+    return object : DiagnosticContext by this {
+        override val containingFilePath: String = sourceFilePath
+        override val isCrossFileDiagnostic: Boolean = true
+    }
+}
 
 /**
  * CFIR checker 统一使用的声明名称诊断位置。
@@ -264,6 +295,15 @@ internal fun CfirTypeAlias.typeAliasNameDiagnosticSource(): AbstractCjSourceElem
     return (source as? CjSourceElement)?.findTypeAliasNameSource(name) ?: source
 }
 
+/**
+ * 官方 cjc 的部分声明级诊断锚定在声明节点起始位置，JSON 主范围只有首字符。
+ * 使用 offsets-only source 避免 PSI 默认范围扩展到整条声明。
+ */
+internal fun AbstractCjSourceElement.firstCharacterDiagnosticSource(): AbstractCjSourceElement =
+    if (this is CjBinarySourceElement) this else CjOffsetsOnlySourceElement(
+        startOffset = startOffset,
+        endOffset = (startOffset + 1).coerceAtMost(endOffset),
+    )
 
 /** extend 没有独立声明名；声明级诊断覆盖完整的 extend 关键字。 */
 internal fun CfirExtend.extendKeywordDiagnosticSource(): AbstractCjSourceElement? {
@@ -303,6 +343,61 @@ internal fun CfirNamedFunction.functionNameDiagnosticSource(): AbstractCjSourceE
     }
         ?: (source as? CjSourceElement)?.findFunctionNameSource(name)
         ?: source
+
+/**
+ * 构造以声明名称为锚点的相关说明；CJO 与源码声明在这里统一解析位置。
+ * CJO 使用其序列化的 identifierPos，源码声明通过共享定位策略保留名称 token 的 PSI/LightTree 身份。
+ */
+internal fun CfirDeclaration.relatedInformation(message: String): CjDiagnosticRelatedInformation {
+    val cjoSource = cjoDeclarationSourceElement
+    if (cjoSource != null) {
+        val sourceLocation = cjoSource.relatedInformationLocation?.let { location ->
+            CjDiagnosticRelatedSourceLocation(location.filePath, location.line, location.column)
+        }
+        return CjDiagnosticRelatedInformation(cjoSource, message, sourceLocation)
+    }
+
+    val declarationSource = source as? CjSourceElement ?: return CjDiagnosticRelatedInformation(null, message)
+    val range = SourceElementPositioningStrategies.ACTUAL_DECLARATION_NAME
+        .markOrNull(declarationSource)
+        ?.singleOrNull()
+        ?: return CjDiagnosticRelatedInformation(null, message)
+    val source = declarationSource.sourceElementAt(range)
+    return CjDiagnosticRelatedInformation(source, message)
+}
+
+/** Native 未实现成员说明使用声明 GetBegin；它与返回冲突的名称锚点是不同协议。 */
+internal fun CfirDeclaration.relatedInformationAtDeclarationBegin(message: String): CjDiagnosticRelatedInformation {
+    val binary = cjoDeclarationSourceElement
+    if (binary != null) {
+        val location = binary.declarationPosition?.declarationLocation
+        return CjDiagnosticRelatedInformation(binary, message, location?.let {
+            CjDiagnosticRelatedSourceLocation(it.filePath, it.line, it.column)
+        })
+    }
+    return CjDiagnosticRelatedInformation(source?.firstCharacterDiagnosticSource(), message)
+}
+
+/** 将共享定位策略给出的名称范围还原为具体 PSI/LightTree token，以保留 IDE 导航身份。 */
+private fun CjSourceElement.sourceElementAt(range: TextRange): CjSourceElement? = when (this) {
+    is CjPsiSourceElement -> psi.containingFile?.findElementAt(range.startOffset)
+        ?.takeIf { it.textRange == range }
+        ?.toCjPsiSourceElement(kind)
+
+    is CjLightSourceElement -> collectLeafTokens()
+        .singleOrNull { token ->
+            treeStructure.getStartOffset(token) == range.startOffset &&
+                treeStructure.getEndOffset(token) == range.endOffset
+        }
+        ?.toCjLightSourceElement(
+            tree = treeStructure,
+            kind = kind,
+            startOffset = range.startOffset,
+            endOffset = range.endOffset,
+        )
+
+    else -> null
+}
 
 /**
  * 函数名的 offsets-only 诊断位置。

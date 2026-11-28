@@ -22,10 +22,10 @@ import org.cangnova.cangjie.cfir.caches.cfirCachesFactory
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.patterns.bindingVariables
 import org.cangnova.cangjie.cfir.resolve.providers.CfirCompositeCachedSymbolNamesProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolNamesProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProviderInternals
-import org.cangnova.cangjie.cfir.patterns.bindingVariables
 import org.cangnova.cangjie.cfir.psi
 import org.cangnova.cangjie.cfir.realPsi
 import org.cangnova.cangjie.cfir.symbols.*
@@ -425,15 +425,15 @@ internal class LLCangJieSourceSymbolProvider(
      * 顶层 callable 一视同仁，否则跨文件引用包级常量/变量会全部退化为 unresolved。
      */
     private inline fun <reified TYPE : CfirCallableSymbol<*>> CfirFile.collectCallableSymbolsOfTypeTo(result: MutableList<TYPE>, name: Name) {
-        declarations.mapNotNullTo(result) { declaration ->
+        for (declaration in declarations) {
+            // pattern 外壳负责阶段与锁，名称查找返回原有 binding；与 eager source provider 保持同一符号身份。
             if (declaration is CfirPatternVariable) {
-                declaration.pattern.bindingVariables()
-                    .firstOrNull { binding -> binding.name == name }
-                    ?.symbol
-                    ?.let { symbol -> symbol as? TYPE }
+                declaration.pattern.bindingVariables().mapNotNullTo(result) { binding ->
+                    if (binding.name == name) binding.symbol as? TYPE else null
+                }
             } else if (declaration is CfirCallableDeclaration && declaration.symbol.name == name) {
-                declaration.symbol as? TYPE
-            } else null
+                (declaration.symbol as? TYPE)?.let(result::add)
+            }
         }
     }
 

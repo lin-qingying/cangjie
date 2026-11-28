@@ -25,6 +25,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.accessContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessKind
@@ -41,6 +42,15 @@ import org.cangnova.cangjie.cfir.declarations.CfirFinalizer
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.declarations.CfirInterface
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.unwrapForDeclarationMetadataLookup
+import org.cangnova.cangjie.cfir.resolve.providers.getContainingClass
+import org.cangnova.cangjie.cfir.resolve.providers.getContainingExtend
+import org.cangnova.cangjie.cfir.resolve.providers.semanticExtendedType
+import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.constructType
+import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
@@ -55,6 +65,9 @@ import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.references.CfirErrorNamedReference
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.patterns.CfirCatchPattern
+import org.cangnova.cangjie.cfir.patterns.CfirPattern
+import org.cangnova.cangjie.cfir.patterns.CfirWildcardPattern
+import org.cangnova.cangjie.cfir.patterns.CfirExpressionPattern
 import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
 import org.cangnova.cangjie.cfir.references.CfirResolvedErrorReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
@@ -75,7 +88,6 @@ import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertyAccessorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
-import org.cangnova.cangjie.cfir.symbols.toLookupTag
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
 import org.cangnova.cangjie.source.CjSourceElement
@@ -100,7 +112,7 @@ import java.math.BigInteger
  * 官方没有 NaN/Infinity 的独立字面量诊断（`sema_exceed_float_literal_range` 只有声明、
  * 无生产者），因此这里不设该分支；浮点 NaN/Inf 统一由 `flowStatus` 的 `OVER` 覆盖。
  */
-object CfirFloatLiteralRangeChecker : CfirLiteralExpressionChecker() {
+object CfirFloatLiteralRangeChecker : CfirLiteralExpressionChecker(MppCheckerKind.Common) {
     /**
      * 检查浮点字面量转成目标位宽后的溢出与下溢。
      */
@@ -150,7 +162,7 @@ object CfirFloatLiteralRangeChecker : CfirLiteralExpressionChecker() {
  * 的 ErrorNode collector 映射。仓颉的 `UNABLE_TO_INFER_EXPR` 仍由既有
  * Cone diagnostic -> CFIR diagnostic 映射产生。
  */
-object CfirExpressionWithErrorTypeChecker : CfirBasicExpressionChecker() {
+object CfirExpressionWithErrorTypeChecker : CfirBasicExpressionChecker(MppCheckerKind.Common) {
     /**
      * 将表达式自身携带的 Cone 错误类型诊断映射到 CFIR 诊断。
      *
@@ -251,7 +263,7 @@ private fun ConeDiagnostic.unwrapUnreportedDuplicateDiagnostic(): ConeDiagnostic
  *
  * 对齐 C++ DiagKind::sema_use_mutable_func_alone
  */
-object CfirMutFuncReferenceChecker : CfirQualifiedAccessChecker() {
+object CfirMutFuncReferenceChecker : CfirQualifiedAccessChecker(MppCheckerKind.Common) {
     /**
      * 检查 `mut` 函数是否被单独引用而非调用。
      */
@@ -292,7 +304,7 @@ object CfirMutFuncReferenceChecker : CfirQualifiedAccessChecker() {
  *
  * 对齐 C++ DiagKind::sema_unsafe_func_can_only_be_called
  */
-object CfirUnsafeFuncReferenceChecker : CfirQualifiedAccessChecker() {
+object CfirUnsafeFuncReferenceChecker : CfirQualifiedAccessChecker(MppCheckerKind.Common) {
     /**
      * 检查 `unsafe` 函数是否被单独引用而非调用。
      */
@@ -331,7 +343,7 @@ object CfirUnsafeFuncReferenceChecker : CfirQualifiedAccessChecker() {
  * `CfirThisReceiverExpression` 不是 `CfirQualifiedAccessExpression`，因此这里必须挂在
  * basic expression 分发上，而不能挂在 qualified access 分发上。
  */
-object CfirFinalizerThisUsageChecker : CfirBasicExpressionChecker() {
+object CfirFinalizerThisUsageChecker : CfirBasicExpressionChecker(MppCheckerKind.Common) {
     /**
      * 检查 finalizer 中裸 `this` 的非法使用。
      *
@@ -340,36 +352,82 @@ object CfirFinalizerThisUsageChecker : CfirBasicExpressionChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirStatement) {
         if (expression !is CfirThisReceiverExpression) return
-        val finalizer = context.findClosestDeclaration<CfirFinalizer>() ?: return
-        val containingFunction = context.findClosestDeclaration<CfirFunction>() ?: return
+        if (expression.calleeReference.isImplicit) return
+        context.finalizerContext() ?: return
 
         val parent = context.callsOrAssignments
             .lastOrNull() as? CfirQualifiedAccessExpression
-        if (parent?.explicitReceiver === expression) {
-            val memberFunction = when (val reference = parent.calleeReference) {
-                is CfirResolvedNamedReference -> reference.resolvedSymbol as? CfirNamedFunctionSymbol
-                is CfirNamedReferenceWithCandidateBase -> reference.candidateSymbol as? CfirNamedFunctionSymbol
-                else -> null
-            }?.takeIf { it.isBound }?.cfir as? CfirNamedFunction
-            if (containingFunction !== finalizer &&
-                memberFunction?.dispatchReceiverType != null && !memberFunction.status.isStatic
-            ) {
-                val memberName = (parent.calleeReference as? CfirNamedReference)?.name ?: Name.identifier("this")
-                reporter.reportOn(
-                    source = expression.source ?: expression.calleeReference.source,
-                    factory = CfirErrors.CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC,
-                    a = memberName,
-                    b = "finalizer",
-                )
-            }
-            return
-        }
+        if (parent?.explicitReceiver === expression || parent?.dispatchReceiver === expression) return
 
         reporter.reportOn(
-            source = expression.source ?: expression.calleeReference.source,
+            source = expression.calleeReference.source ?: expression.source,
             factory = CfirErrors.THIS_AS_EXPRESSION_IN_FUNC,
             a = "finalizer",
         )
+    }
+}
+
+/** 最外层真实函数决定 finalizer 语境；nested callable 继承原声明环境，类边界独立隔离。 */
+private fun CheckerContext.finalizerContext(): Pair<CfirClassSymbol, CfirFinalizer>? {
+    val ownerIndex = containingDeclarations.indexOfLast { it is CfirClassLikeSymbol<*> || it is CfirExtendSymbol }
+    if (ownerIndex < 0) return null
+    val owner = containingDeclarations[ownerIndex] as? CfirClassSymbol ?: return null
+    val function = containingDeclarations.drop(ownerIndex + 1).filterIsInstance<CfirFunctionSymbol<*>>()
+        .firstOrNull()?.cfir as? CfirFinalizer ?: return null
+    return owner to function
+}
+
+/**
+ * finalizer 的函数/属性禁令与 capture 禁令独立消费同一个真实源码访问。
+ * 只接受裸成员、直接 this/super 路线；普通字段、static/local 和 other 对象不因此被禁止。
+ */
+object CfirFinalizerMemberAccessChecker : CfirQualifiedAccessChecker(MppCheckerKind.Common) {
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    override fun check(expression: CfirQualifiedAccessExpression) {
+        val (owner, _) = context.finalizerContext() ?: return
+        if (!expression.hasFinalizerInstance(owner)) return
+        val selected = when (val reference = expression.calleeReference) {
+            is CfirResolvedNamedReference -> reference.resolvedSymbol
+            is CfirResolvedErrorReference -> reference.resolvedSymbol
+            is CfirNamedReferenceWithCandidateBase -> reference.candidateSymbol
+            is CfirErrorNamedReference -> (reference.diagnostic as? ConeDiagnosticWithSingleCandidate)?.candidateSymbol
+            else -> null
+        } ?: return
+        val original = selected.unwrapForDeclarationMetadataLookup() as? CfirCallableSymbol<*> ?: return
+        val declaration = original.cfir
+        if (declaration.isLocal || declaration.status.isStatic ||
+            declaration !is CfirNamedFunction && declaration !is CfirProperty) return
+        val extend = original.getContainingExtend()
+        val declaringClass = original.getContainingClass()
+        if (extend == null && declaringClass == null) return
+        val currentType = checkNotNull(declarationSelfType(owner))
+        val targetType = if (extend != null) extend.semanticExtendedType(context.session)
+            else checkNotNull(declarationSelfType(checkNotNull(declaringClass)))
+        val state = context.session.typeContext.newTypeCheckerState(
+            errorTypesEqualToAnything = false, stubTypesEqualToAnything = false,
+        )
+        // 未解析的 extend 类型不证明 owner subtype；原类型诊断保留，capture 的角色判定独立。
+        if (targetType != null && AbstractTypeChecker.isSubtypeOf(state, currentType, targetType)) {
+            reporter.reportOn(
+                source = expression.calleeReference.source ?: expression.source,
+                factory = CfirErrors.INSTANCE_FUNC_CANNOT_BE_USED_IN_FINALIZER,
+                a = if (declaration is CfirProperty) "property" else "function",
+            )
+        }
+        // 声明 owner 的 subtype 结果不决定 capture：泛型父类的真实 TP 不做 alpha/receiver 代换。
+        reporter.reportOn(
+            source = expression.explicitReceiver?.source ?: expression.calleeReference.source ?: expression.source,
+            factory = CfirErrors.CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC,
+            a = original.name, b = "finalizer",
+        )
+    }
+
+    private fun CfirQualifiedAccessExpression.hasFinalizerInstance(owner: CfirClassSymbol): Boolean {
+        val syntax = explicitReceiver?.unwrapSmartcastExpression()
+        if (syntax != null && syntax !is CfirThisReceiverExpression && syntax !is CfirSuperReceiverExpression) return false
+        var receiver = (dispatchReceiver ?: explicitReceiver)?.unwrapSmartcastExpression() ?: return false
+        if (receiver is CfirSuperReceiverExpression) receiver = receiver.dispatchReceiver?.unwrapSmartcastExpression() ?: return false
+        return receiver is CfirThisReceiverExpression && receiver.calleeReference.boundSymbol === owner
     }
 }
 
@@ -380,7 +438,7 @@ object CfirFinalizerThisUsageChecker : CfirBasicExpressionChecker() {
  * “constructor of inheritable class”，因此 lambda 或局部函数体中的裸 `this`
  * 仍继承外层构造器语义；`this.member` 只是成员访问接收者，不由本规则报告。
  */
-object CfirOpenConstructorThisUsageChecker : CfirBasicExpressionChecker() {
+object CfirOpenConstructorThisUsageChecker : CfirBasicExpressionChecker(MppCheckerKind.Common) {
     /**
      * 检查 open/abstract class 构造器中的裸显式 `this`。
      *
@@ -413,7 +471,7 @@ object CfirOpenConstructorThisUsageChecker : CfirBasicExpressionChecker() {
  * 属性时，显式 `this` 访问实例成员会报告 `sema_static_members_cannot_call_members`。
  * `this` 被用作静态成员的接收者时只由对象访问规则报告，不重复诊断。
  */
-object CfirStaticContextThisUsageChecker : CfirBasicExpressionChecker() {
+object CfirStaticContextThisUsageChecker : CfirBasicExpressionChecker(MppCheckerKind.Common) {
     /**
      * 检查 static 函数体内的显式实例 `this`。
      */
@@ -473,7 +531,7 @@ private fun CheckerContext.enclosingStructMemberFunctions(): List<CfirFunction> 
  * 对齐官方 `TypeCheckReference.cpp::CheckUsageOfThis`：最外层函数带 `mut` 且裸 `this` 不是成员访问
  * 接收者时非法；嵌套函数 / lambda 内的裸 `this` 归为捕获（见 [CfirThisCaptureInMutFuncChecker]）。
  */
-object CfirThisAsExpressionInMutFuncChecker : CfirBasicExpressionChecker() {
+object CfirThisAsExpressionInMutFuncChecker : CfirBasicExpressionChecker(MppCheckerKind.Common) {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirStatement) {
         if (expression !is CfirThisReceiverExpression) return
@@ -501,7 +559,7 @@ object CfirThisAsExpressionInMutFuncChecker : CfirBasicExpressionChecker() {
  * 与 [CfirInstanceFieldCaptureChecker]（处理 `this.i` / 裸实例字段）互补：本检查覆盖裸 `this`
  * 本身作为被捕获值的情况。是否捕获取决于最外层成员函数是否带 `mut`。
  */
-object CfirThisCaptureInMutFuncChecker : CfirBasicExpressionChecker() {
+object CfirThisCaptureInMutFuncChecker : CfirBasicExpressionChecker(MppCheckerKind.Common) {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirStatement) {
         if (expression !is CfirThisReceiverExpression) return
@@ -530,7 +588,7 @@ object CfirThisCaptureInMutFuncChecker : CfirBasicExpressionChecker() {
  * 有 static 函数声明时报告 static function 诊断；当前函数体来自 lambda
  * 时报告 static lambda 诊断。这里基于已解析 symbol 判断目标成员，避免重复名字查找。
  */
-object CfirStaticContextNonStaticMemberAccessChecker : CfirQualifiedAccessChecker() {
+object CfirStaticContextNonStaticMemberAccessChecker : CfirQualifiedAccessChecker(MppCheckerKind.Common) {
     /**
      * 检查 static 上下文中对当前实例成员的隐式访问。
      */
@@ -645,7 +703,7 @@ private enum class StaticNonStaticAccessKind {
  * 中的实例函数/属性统一生效，排除 constructor 与 static 成员。CFIR 侧按 resolved
  * callable 的 dispatch receiver 判断实例成员，并覆盖调用、函数引用与属性访问。
  */
-object CfirOpenConstructorMemberAccessChecker : CfirQualifiedAccessChecker() {
+object CfirOpenConstructorMemberAccessChecker : CfirQualifiedAccessChecker(MppCheckerKind.Common) {
     /**
      * 检查 open/abstract class 构造器中对实例成员的访问。
      *
@@ -745,7 +803,7 @@ object CfirOpenConstructorMemberAccessChecker : CfirQualifiedAccessChecker() {
  * 官方语义将 `super.abstractFunc()` 与 `super.abstractProp` 都视为直接访问抽象成员。
  * 这里在解析后的 qualified access 上检查目标 callable 状态，并把诊断落在完整的 `super` token。
  */
-object CfirAbstractSuperMemberAccessChecker : CfirQualifiedAccessChecker() {
+object CfirAbstractSuperMemberAccessChecker : CfirQualifiedAccessChecker(MppCheckerKind.Common) {
     /**
      * 检查通过 `super` 直接访问抽象函数或属性的场景。
      */
@@ -796,7 +854,7 @@ private fun CheckerContext.openClassConstructorOwner(): CfirClass? {
  * - resolve 阶段产生的 subscript operator 错误由 Cone 诊断统一映射；
  * - 这里只检查不依赖 operator resolve 的 VArray 与 tuple 内建下标语义。
  */
-object CfirSubscriptAssignmentChecker : CfirSubscriptExpressionChecker() {
+object CfirSubscriptAssignmentChecker : CfirSubscriptExpressionChecker(MppCheckerKind.Common) {
     /**
      * 检查内建下标表达式的共享语义。
      *
@@ -892,7 +950,7 @@ object CfirSubscriptAssignmentChecker : CfirSubscriptExpressionChecker() {
  * - 被抛表达式必须是 `std.core.Exception` 或 `std.core.Error` 的子类型；
  * - `throw` 表达式本身在 resolve 阶段保持 `Nothing`，这里只负责诊断。
  */
-object CfirThrowExpressionTypeChecker : CfirThrowExpressionChecker() {
+object CfirThrowExpressionTypeChecker : CfirThrowExpressionChecker(MppCheckerKind.Common) {
     /**
      * 检查 `throw` 后表达式是否为 Exception 或 Error 子类型。
      */
@@ -917,7 +975,7 @@ object CfirThrowExpressionTypeChecker : CfirThrowExpressionChecker() {
  * - catch 类型合法性和整体模式类型由 resolve 记录到 type-ref，统一由错误节点收集器报告；
  * - 后续 catch 类型若已被前面的 catch 类型覆盖，报告 `USELESS_EXCEPTION_TYPE`。
  */
-object CfirCatchTypeChecker : CfirTryExpressionChecker() {
+object CfirCatchTypeChecker : CfirTryExpressionChecker(MppCheckerKind.Common) {
     /**
      * 检查已解析 catch 类型之间的覆盖关系。
      *
@@ -928,7 +986,7 @@ object CfirCatchTypeChecker : CfirTryExpressionChecker() {
         val includedTypes = mutableListOf<ConeCangJieType>()
 
         for (catchClause in expression.catches) {
-            val resolvedPatternType = catchClause.pattern.resolvedTypeRef?.coneType ?: return
+            val resolvedPatternType = catchClause.pattern.semanticTypeRef?.coneTypeOrNull ?: return
             for ((catchType, source) in catchClause.pattern.resolvedCatchTypes()) {
                 if (catchType is ConeErrorType) continue
 
@@ -951,13 +1009,10 @@ object CfirCatchTypeChecker : CfirTryExpressionChecker() {
  *
  * 无显式类型时按官方默认 Exception 类型处理，并保留源码范围用于诊断定位。
  */
-private fun CfirCatchPattern.resolvedCatchTypes(): List<Pair<ConeCangJieType, CjSourceElement?>> {
-    if (typeRefs.isEmpty()) {
-        return listOf(
-            org.cangnova.cangjie.cfir.types.ConeClassLikeType(StdlibClassIds.Exception.toLookupTag()) to source,
-        )
-    }
-
+private fun CfirPattern.resolvedCatchTypes(): List<Pair<ConeCangJieType, CjSourceElement?>> {
+    if (this is CfirWildcardPattern) return listOf(checkNotNull(semanticTypeRef?.coneTypeOrNull) to source)
+    if (this is CfirExpressionPattern) return emptyList()
+    check(this is CfirCatchPattern)
     return typeRefs.mapNotNull { typeRef ->
         val coneType = (typeRef as? CfirResolvedTypeRef)?.coneType ?: return@mapNotNull null
         coneType to typeRef.source
@@ -970,9 +1025,15 @@ private fun CfirCatchPattern.resolvedCatchTypes(): List<Pair<ConeCangJieType, Cj
 private fun ConeCangJieType.isSubtypeOfExceptionOrError(
     context: CheckerContext,
 ): Boolean {
-    val exceptionType = org.cangnova.cangjie.cfir.types.ConeClassLikeType(StdlibClassIds.Exception.toLookupTag())
-    val errorType = org.cangnova.cangjie.cfir.types.ConeClassLikeType(StdlibClassIds.Error.toLookupTag())
+    val exceptionType = context.stdlibExceptionRootType(StdlibClassIds.Exception) ?: return false
+    val errorType = context.stdlibExceptionRootType(StdlibClassIds.Error) ?: return false
     return isSubtypeOf(exceptionType, context) || isSubtypeOf(errorType, context)
+}
+
+/** 标准异常根来自本会话的真实 core ClassDecl；类型 marker 不能另造同名 ClassId 标签。 */
+private fun CheckerContext.stdlibExceptionRootType(classId: ClassId): ConeCangJieType? {
+    val symbol = session.symbolProvider.getClassLikeSymbolByClassId(classId) as? CfirClassSymbol ?: return null
+    return symbol.constructType()
 }
 
 /**

@@ -1,0 +1,153 @@
+{
+  "before": {
+    "utc": "2026-11-17T20:09:37.0955759Z",
+    "fileCount": 6841,
+    "aggregateSha256": "67FD10BD7415A3C378F52B2FD48CB6EB26E9F25550E47A5C72896756FED01207",
+    "roots": [
+      "common",
+      "cfir",
+      "analysis/low-level-api-cfir",
+      "analysis/analysis-api-cfir",
+      "compiler/frontend",
+      "compiler/config",
+      "compiler/phaser",
+      "compiler/arguments",
+      "psi",
+      "resolution.common",
+      "macro"
+    ],
+    "include": [
+      "*.kt",
+      "*.cj",
+      "*.kts"
+    ],
+    "exclude": "**/build/**",
+    "method": "rg --files --hidden --no-ignore, / normalized and Sort-Object -CaseSensitive; SHA256 of UTF8 LF joined path TAB length TAB uppercaseSHA256, no final LF",
+    "scope": "Call-completion native generic/receiver facts and SOURCE18, preserving original14 and 69 plus42 official references"
+  },
+  "after": {
+    "utc": "2026-11-17T20:22:58.3695806Z",
+    "fileCount": 6841,
+    "aggregateSha256": "2B8B8977ED8B118D05CE8A5E9C22D130277C1F7140C21030DA57D53E16F72DAE",
+    "roots": [
+      "common",
+      "cfir",
+      "analysis/low-level-api-cfir",
+      "analysis/analysis-api-cfir",
+      "compiler/frontend",
+      "compiler/config",
+      "compiler/phaser",
+      "compiler/arguments",
+      "psi",
+      "resolution.common",
+      "macro"
+    ],
+    "include": [
+      "*.kt",
+      "*.cj",
+      "*.kts"
+    ],
+    "exclude": "**/build/**",
+    "method": "rg --files --hidden --no-ignore, / normalized and Sort-Object -CaseSensitive; SHA256 of UTF8 LF joined path TAB length TAB uppercaseSHA256, no final LF",
+    "scope": "SOURCE18 stopped at new harness interpolation compile failure, production compiled; no JUnit and no old XML accepted",
+    "unchanged": false
+  },
+  "queue": {
+    "id": "a00e6a2d",
+    "args": [
+      "--gradle-user-home",
+      ".gradle/cjmp-export-home",
+      ":cfir:analysis-tests:test",
+      "--rerun",
+      "--tests",
+      "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExport*Test",
+      "--tests",
+      "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjo*Test.publicInterfaceDefaultBodyPromotesReferencedPrivateFunction",
+      "--tests",
+      "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjo*Test.referencedPrivateDefaultHelperIsCollectedOutsideClassBody",
+      "--no-build-cache",
+      "--console=plain",
+      "--max-workers=1",
+      "--continue"
+    ],
+    "pid": 28920,
+    "owner": "pid@28920",
+    "submitAt": 1794946263918,
+    "startedAt": 1794946264034,
+    "finishedAt": 1794946726864,
+    "exitCode": 1,
+    "status": "DONE"
+  },
+  "testsExecuted": 0,
+  "xml": [],
+  "compiledTasks": [
+    ":cfir:resolve:compileKotlin",
+    ":compiler:frontend:compileKotlin"
+  ],
+  "compileErrors": [
+    "e: file:///C:/Users/lin17/.codex/worktrees/cjmp-framework-implementation/cangjie/cfir/analysis-tests/tests/org/cangnova/cangjie/cfir/analysis/tests/CfirSourceExpressionExportTest.kt:501:99 Unresolved reference 'name的全部调用'.> Task :cfir:analysis-tests:compileTestKotlin FAILED"
+  ],
+  "generationWindowFiles": [
+    {
+      "Path": "cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisMacroTestGenerated.kt",
+      "Length": 93713,
+      "LastWriteUtc": "2026-11-17T20:17:27.7329976Z",
+      "Sha256": "54AE254B90553B6E12C15D45974656F02BB4BD94E3D0318C51E4E48119AED09F"
+    },
+    {
+      "Path": "cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisMacroPsiTestGenerated.kt",
+      "Length": 93260,
+      "LastWriteUtc": "2026-11-17T20:17:27.8163931Z",
+      "Sha256": "21A5602EAF86DED2720890893078E3060720224AF0E91E3D93090453C745594F"
+    },
+    {
+      "Path": "cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisLLTTestGenerated.kt",
+      "Length": 797703,
+      "LastWriteUtc": "2026-11-17T20:17:26.6930908Z",
+      "Sha256": "BB37C2C94A9F120BF79791261C7A2D15404E6F7E8FB627A4AB40D28F99EECAEF"
+    },
+    {
+      "Path": "cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisLLTPsiTestGenerated.kt",
+      "Length": 795096,
+      "LastWriteUtc": "2026-11-17T20:17:27.5993240Z",
+      "Sha256": "AD05FA8ED1D72AEBF4F0A58DD20600ACBED36C97A305414868E820D468B40B6D"
+    },
+    {
+      "Path": "cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisDiagnosticsWithoutAliasExpansionTestGenerated.kt",
+      "Length": 48019,
+      "LastWriteUtc": "2026-11-17T20:17:24.8746000Z",
+      "Sha256": "1A3EB3321816E6BEF4AB9762755320D8D92290808CF601342E016DA45D7207B5"
+    },
+    {
+      "Path": "cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisDiagnosticsTestGenerated.kt",
+      "Length": 47242,
+      "LastWriteUtc": "2026-11-17T20:17:24.7886053Z",
+      "Sha256": "19F6AD7E63E12EBF56F517799944B3824EE34D02E9AC789BA9243250EFBE48BD"
+    },
+    {
+      "Path": "cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisDiagnosticsPsiTestGenerated.kt",
+      "Length": 46993,
+      "LastWriteUtc": "2026-11-17T20:17:24.9328250Z",
+      "Sha256": "ED4DBF7EA9270BD712A3E75511C0A8662BE1EDBDC620CE3245531CCF5C14F79F"
+    },
+    {
+      "Path": "cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisDiagnostics2WithoutAliasExpansionTestGenerated.kt",
+      "Length": 97769,
+      "LastWriteUtc": "2026-11-17T20:17:25.2378083Z",
+      "Sha256": "0FE81A280A8225DE45A04F9229EA972CB1724042C058E382F1F0977E8EDB9695"
+    },
+    {
+      "Path": "cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisDiagnostics2TestGenerated.kt",
+      "Length": 96761,
+      "LastWriteUtc": "2026-11-17T20:17:25.1459130Z",
+      "Sha256": "2A9BBE2938FD362989F11660C0D56284D16560D9AC10EA8A6763BC9D0A668164"
+    },
+    {
+      "Path": "cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisDiagnostics2PsiTestGenerated.kt",
+      "Length": 96435,
+      "LastWriteUtc": "2026-11-17T20:17:25.3291135Z",
+      "Sha256": "6685C2A518A23D86F9FFE4E1C8EF55B734ABA066410089A2500B35ABF45B8836"
+    }
+  ],
+  "inputDriftNote": "Ten tests-gen Kotlin files were written by generateTestGeneratorForCfirAnalysisTestsTests inside this queue window. Aggregate input SHA differs; no same-generation unchanged claim and no old XML accepted."
+}

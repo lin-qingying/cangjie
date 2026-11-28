@@ -9,6 +9,7 @@ import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeInferenceContext
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
+import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
@@ -16,6 +17,8 @@ import org.cangnova.cangjie.type.AbstractTypeChecker
 import org.cangnova.cangjie.type.model.CangJieTypeMarker
 import org.cangnova.cangjie.type.model.TypeConstructorMarker
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -87,6 +90,63 @@ class CfirTypeRelationsTest {
         assertFalse(AbstractTypeChecker.isSubtypeOf(context, ConePrimitiveType.BOOLEAN, ConePrimitiveType.INT32))
         assertFalse(AbstractTypeChecker.isSubtypeOf(context, ConePrimitiveType.INT32, ConePrimitiveType.BOOLEAN))
     }
+
+    /** native IsArraySubtype 同时比较维度与不变叶子，不能因相同 classifier/实参走捷径。 */
+    @Test
+    fun `raw array dimensions and leaf types are invariant`() {
+        val one = rawArray(ConePrimitiveType.INT64)
+        val two = rawArray(ConePrimitiveType.INT64, 2u)
+        assertFalse(AbstractTypeChecker.equalTypes(context, one, two))
+        assertFalse(AbstractTypeChecker.isSubtypeOf(context, one, two))
+        assertFalse(AbstractTypeChecker.isSubtypeOf(context, two, one))
+        assertFalse(AbstractTypeChecker.isSubtypeOf(context, rawArray(TYPE_CHILD), rawArray(TYPE_PARENT)))
+    }
+
+    @Test
+    fun `nested source and flat loaded raw arrays share native type semantics`() {
+        val nested = rawArray(rawArray(ConePrimitiveType.INT64))
+        val loaded = rawArray(ConePrimitiveType.INT64, 2u)
+        assertTrue(AbstractTypeChecker.equalTypes(context, nested, loaded))
+        with(context) {
+            assertEquals(1, nested.argumentsCount())
+            assertSame(ConePrimitiveType.INT64, nested.getArgument(0))
+            val replaced = nested.replaceArguments(listOf(ConePrimitiveType.BOOLEAN)) as ConeClassLikeType
+            assertEquals(2u, requireNotNull(replaced.rawArrayLayout).dimensions)
+            assertSame(ConePrimitiveType.BOOLEAN, requireNotNull(replaced.rawArrayLayout).element)
+        }
+    }
+
+    /** native GetTypeArgs 与 Ty.typeArgs 分别提供降一维的声明视图和规范叶子。 */
+    @Test
+    fun `raw array declaration argument view is stable and dimension aware`() {
+        val array = rawArray(ConePrimitiveType.INT64, 3u)
+        val argument = array.rawArrayTypeArguments.single() as ConeClassLikeType
+        assertSame(argument, array.rawArrayTypeArguments.single())
+        assertEquals(2u, requireNotNull(argument.rawArrayLayout).dimensions)
+        assertSame(ConePrimitiveType.INT64, requireNotNull(argument.rawArrayLayout).element)
+        assertSame(ConePrimitiveType.INT64, rawArray(ConePrimitiveType.INT64).rawArrayTypeArguments.single())
+    }
+
+    @Test
+    fun `raw array marker overloads and deep replacement use one leaf domain`() {
+        val nested = rawArray(rawArray(ConePrimitiveType.INT64))
+        val flat = rawArray(ConePrimitiveType.INT64, 2u)
+        with(context) {
+            for (input in listOf(nested, flat)) {
+                val identity = input.replaceArguments { it } as ConeClassLikeType
+                val deepIdentity = input.replaceArgumentsDeeply { it } as ConeClassLikeType
+                assertEquals(2u, requireNotNull(identity.rawArrayLayout).dimensions)
+                assertEquals(2u, requireNotNull(deepIdentity.rawArrayLayout).dimensions)
+                assertTrue(AbstractTypeChecker.equalTypes(context, input, identity))
+                val changed = input.replaceArgumentsDeeply { ConePrimitiveType.BOOLEAN } as ConeClassLikeType
+                assertEquals(2u, requireNotNull(changed.rawArrayLayout).dimensions)
+                assertSame(ConePrimitiveType.BOOLEAN, requireNotNull(changed.rawArrayLayout).element)
+            }
+        }
+    }
+
+    private fun rawArray(element: ConeCangJieType, dimensions: UInt = 1u): ConeClassLikeType =
+        ConeClassLikeType(ConeClassLikeLookupTagImpl(StdlibClassIds.RawArray), listOf(element), rawArrayDimensions = dimensions)
 }
 
 /**

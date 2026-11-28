@@ -31,6 +31,8 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.element.builder.getNonLo
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirResolvableModuleSession
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSessionCache
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.llCfirResolvableSession
+import org.cangnova.cangjie.analysis.low.level.api.cfir.file.builder.LLCfirFileSourceGeneration
+import org.cangnova.cangjie.analysis.low.level.api.cfir.file.builder.LLCfirFileSourceReplacement
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.codeFragment
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.errorWithCfirSpecificEntries
 import org.cangnova.cangjie.analysis.utils.printer.parentOfType
@@ -39,6 +41,18 @@ import org.cangnova.cangjie.cfir.declarations.CfirCodeFragment
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
+import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.declarations.CfirPropertyAccessor
+import org.cangnova.cangjie.cfir.declarations.parsingFileFacts
+import org.cangnova.cangjie.cfir.declarations.parsingSourceContext
+import org.cangnova.cangjie.cfir.declarations.replaceParsingSourceContext
+import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.session.languageVersionSettings
+import org.cangnova.cangjie.cfir.session.rawMacroSurfaceUsageStoreOrNull
+import org.cangnova.cangjie.cfir.session.annotationMetadataRegistryOrNull
+import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirRawMacroUsageSlot
+import org.cangnova.cangjie.parsing.parsedFileFacts
 import org.cangnova.cangjie.lang.CangJieLanguage
 import org.cangnova.cangjie.psi.*
 import org.cangnova.cangjie.psi.psiUtil.isAncestorOf
@@ -71,7 +85,9 @@ class LLCfirDeclarationModificationService(val project: Project) : Disposable {
                  * 同时避免在 PSI 树仍处于中间状态时访问 CFIR 缓存。
                  */
                 override fun writeActionFinished(action: Any) {
-                    flushDeferredModifications()
+                    if (modificationQueue != null) {
+                        ApplicationManager.getApplication().runWriteAction { flushDeferredModifications() }
+                    }
                 }
             },
             this,
@@ -98,9 +114,7 @@ class LLCfirDeclarationModificationService(val project: Project) : Disposable {
      * 因为后续查询会从惰性入口自然完成解析。
      */
     private fun addModificationToQueue(modification: LLModificationLocality.Deferrable) {
-        // There is no sense to add elements into the queue with an unresolved body.
-        if (modification is LLModificationLocality.InBlock && !modification.affectedElement.hasCfirBody) return
-
+        // target 是不可变整树。即使 body 尚未 resolve，已缓存的 raw 图也必须换代，否则 lazy 会读旧正文。
         val queue = modificationQueue ?: HashSet<LLModificationLocality.Deferrable>().also { modificationQueue = it }
         queue += modification
     }
@@ -145,13 +159,13 @@ class LLCfirDeclarationModificationService(val project: Project) : Disposable {
      * This action is required to fix inconsistencies in [CfirFile][org.cangnova.cangjie.cfir.declarations.CfirFile] tree.
      */
     fun flushDeferredModifications() {
-        ApplicationManager.getApplication().assertWriteIntentLockAcquired()
-
-        processQueue { value, _ ->
-            handleDeferredModification(value)
-        }
-
+        ApplicationManager.getApplication().assertWriteAccessAllowed()
+        val modifications = mutableListOf<LLModificationLocality.Deferrable>()
+        processQueue { value, _ -> modifications += value }
         modificationQueue = null
+        modifications.groupBy { it.module to it.affectedElement.containingCjFile }.forEach { (key, values) ->
+            handleFileModification(key.second, key.first, values)
+        }
     }
 
     /**
@@ -246,66 +260,84 @@ class LLCfirDeclarationModificationService(val project: Project) : Disposable {
      * 空白修改只需要重置文件结构中的诊断相关缓存；块内修改需要回退对应 CFIR body、
      * 清理文件结构缓存，并发布块内修改主题。
      */
-    private fun handleDeferredModification(modificationLocality: LLModificationLocality.Deferrable) {
-        when (modificationLocality) {
-            is LLModificationLocality.Whitespace ->
-                handleWhitespaceModification(modificationLocality.affectedElement, modificationLocality.module)
+    @OptIn(org.cangnova.cangjie.cfir.CfirImplementationDetail::class)
+    private fun handleFileModification(file: CjFile, module: CaModule, modifications: List<LLModificationLocality.Deferrable>) {
+        val session = module.getResolutionFacade(project).sessionProvider.getResolvableSession(module)
+        val components = session.moduleComponents
+        // 此入口读取的是产品有效时已登记的关联；原树修改后不能 resolveToCfirSymbol 或反查旧 correspondence。
+        val previous = components.cache.getFileSourceForModification(file) ?: return
+        val modifiedBodies = modifications.filterIsInstance<LLModificationLocality.InBlock>()
+            .mapTo(linkedSetOf()) { it.affectedElement }
+        val product = components.cfirFileBuilder.parseFile(file)
+        var adopted = false
+        product.withTargetFile { targetFile ->
+            synchronized(session) {
+                val next = LLCfirFileSourceGeneration(product, previous.cfirFile, session.languageVersionSettings)
+                if (!previous.semantics.canRetain(next.semantics, modifiedBodies)) return@synchronized
+                val rebuiltOwners = modifiedBodies + previous.semantics.replacedBodyOwners(next.semantics)
+                val declarations = rebuiltOwners.map { owner ->
+                    previous.declarationForModification(owner) ?: return@synchronized
+                }
+                if (declarations.any { !canInvalidateAfterInBlockModification(it) }) return@synchronized
+                val invalidation = LLCfirSourceGenerationInvalidationPlan(previous.cfirFile, declarations)
+                val sources = LLCfirFileSourceReplacement(
+                    previous, next, invalidation.discardedRoots, invalidation.discardedGraphs, declarations.toSet(),
+                )
+                if (!sources.prepare()) return@synchronized
+                next.inheritDeclarationOwners(previous)
+                val cfirFile = previous.cfirFile
+                val oldParserSource = checkNotNull(cfirFile.parsingSourceContext)
+                val newParserSource = checkNotNull(product.actualInputSeed.sourceContext)
+                val facts = checkNotNull(targetFile.parsedFileFacts)
+                check(cfirFile.parsingFileFacts == facts)
+                val usage = checkNotNull(session.rawMacroSurfaceUsageStoreOrNull)
+                val discardedSlots = declarations.mapTo(linkedSetOf()) { declaration ->
+                    CfirRawMacroUsageSlot(declaration, when (declaration) {
+                        is CfirFunction -> CfirRawMacroUsageSlot.Kind.BODY
+                        is CfirCodeFragment -> CfirRawMacroUsageSlot.Kind.CODE_FRAGMENT
+                        is CfirProperty -> CfirRawMacroUsageSlot.Kind.INITIALIZER
+                        else -> error("Unexpected modification slot")
+                    })
+                }
+                val usageUpdate = usage.prepareSourceFileReplacement(
+                    cfirFile, previous.product.file, targetFile, discardedSlots, sources::mapSurface,
+                )
+                val metadataUpdate = checkNotNull(session.annotationMetadataRegistryOrNull).prepareSourceReplacement(
+                    sources.retainedDeclarations, product,
+                    mapSource = { source -> checkNotNull(sources.mapSource(source)) }, mapTokens = sources::mapTokens,
+                )
+                sources.validate()
+                usageUpdate.validate()
+                metadataUpdate.validate()
+                invalidation.validate()
 
-            is LLModificationLocality.InBlock ->
-                handleInBlockModification(modificationLocality.affectedElement, modificationLocality.module)
+                // 所有映射和保留条件均已验证；写动作及 session 锁内提交整个产品，无重新绑定声明。
+                sources.commit()
+                cfirFile.replaceSourceFile(product.sourceFile)
+                cfirFile.replaceSourceFileLinesMapping(product.sourceFileLinesMapping)
+                cfirFile.replaceParsingSourceContext(oldParserSource, newParserSource, facts,
+                    product.diagnosticPublication, product.actualInputSeed.settings)
+                usageUpdate.commit()
+                metadataUpdate.commit()
+                invalidation.retireGraphEdges()
+                declarations.forEach { check(invalidateAfterInBlockModification(it)) }
+                invalidation.dependentContainers.forEach(::invalidateSourceGenerationContainerGraph)
+                components.cache.replaceFileSource(previous, next)
+                components.fileStructureCache.invalidateFile(previous.product.file)
+                components.diagnosticsCollector.invalidateSourceGeneration()
+                rebuiltOwners.forEach { it.hasCfirBody = false }
+                adopted = true
+            }
         }
-    }
-
-    /**
-     * @see LLModificationLocality.Whitespace
-     */
-    private fun handleWhitespaceModification(element: CjElement, module: CaModule) {
-        val resolvableSession = module.getResolutionFacade(project).sessionProvider.getResolvableSession(module)
-
-        val fileStructure = resolvableSession.moduleComponents.fileStructureCache
-            .getCachedFileStructure(element.containingCjFile)
-            ?: return
-
-        // To reset diagnostics, we have to invalidate the file structure cache for the affected element.
-        fileStructure.invalidateElement(element)
-    }
-
-    /**
-     * @see LLModificationLocality.InBlock
-     */
-    private fun handleInBlockModification(declaration: CjElement, module: CaModule) {
-        val resolutionFacade = module.getResolutionFacade(project)
-        val cfirDeclaration = when (declaration) {
-            is CjCodeFragment -> declaration.getOrBuildCfirFile(resolutionFacade).codeFragment
-            is CjDeclaration -> declaration.resolveToCfirSymbol(resolutionFacade).cfir
-            else -> errorWithCfirSpecificEntries(
-                "Unexpected declaration kind: ${declaration::class.simpleName}",
-                psi = declaration,
-            )
+        if (!adopted) {
+            // 当前 header/owner/角色产品不能独立证明可保留，必须发布模块失效，随后创建新 session 和 symbol。
+            handleOutOfBlockModification(file)
+            return
         }
-
-        // 1. Invalidate CFIR
-        invalidateAfterInBlockModification(cfirDeclaration)
-        declaration.hasCfirBody = false
-
-        val moduleSession = cfirDeclaration.llCfirResolvableSession ?: errorWithCfirSpecificEntries(
-            "${LLCfirResolvableModuleSession::class.simpleName} is not found",
-            cfir = cfirDeclaration,
-            psi = declaration,
-        ) {
-            withEntry("session", resolutionFacade) { it.toString() }
+        modifiedBodies.forEach { declaration ->
+            project.analysisMessageBus.syncPublisher(LLCfirDeclarationModificationTopics.IN_BLOCK_MODIFICATION)
+                .afterModification(declaration, module)
         }
-
-        // 2. Invalidate caches
-        moduleSession.moduleComponents
-            .fileStructureCache
-            .getCachedFileStructure(declaration.containingCjFile)
-            ?.invalidateElement(declaration)
-
-        // 3. Publish event
-        project.analysisMessageBus
-            .syncPublisher(LLCfirDeclarationModificationTopics.IN_BLOCK_MODIFICATION)
-            .afterModification(declaration, module)
     }
 
     /**
@@ -366,7 +398,10 @@ class LLCfirDeclarationModificationService(val project: Project) : Disposable {
                 else -> return
             }
 
-            val declaration = element.source?.psi as? CjAnnotated ?: return
+            val source = element.source ?: return
+            val components = element.llCfirResolvableSession?.moduleComponents ?: return
+            val declaration = components.cache.originalSource(source)?.let { (it as? org.cangnova.cangjie.source.CjPsiSourceElement)?.psi }
+                as? CjAnnotated ?: return
             when (declaration) {
                 is CjNamedFunction -> {
                     if (declaration.isReanalyzableContainer()) {

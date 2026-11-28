@@ -14,6 +14,7 @@ import org.cangnova.cangjie.chir.core.value.ChirLocalValue
 import org.cangnova.cangjie.chir.core.value.ChirParameterValue
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirThisOwnerSymbol
 import java.util.IdentityHashMap
 
 /**
@@ -156,6 +157,18 @@ class Cfir2ChirDeclarationStorage {
         }
     }
 
+    /** Update the SSA address when lowering another copy of the same finally body. */
+    internal fun replaceLocalVariableAddress(
+        symbol: CfirBasedSymbol<*>,
+        previous: ChirLocalVariableHeader,
+        replacement: ChirLocalVariableHeader,
+    ) {
+        check(replacement.declaration === previous.declaration && replacement.ownerFunctionId == previous.ownerFunctionId) {
+            "Relowered local variable changed its declaration owner: ${symbol.debugName}"
+        }
+        check(localVariablesBySymbol.replace(symbol, previous, replacement))
+    }
+
     /**
      * 获取指定 CFIR 局部变量符号对应的 CHIR 局部变量 header。
      */
@@ -190,16 +203,30 @@ data class ChirFunctionHeader(
      * 函数形参声明列表。
      */
     val parameters: List<ChirVariableDeclaration>,
+    /** 实例成员 ABI 中排在用户形参之前的隐式 dispatch receiver。 */
+    val dispatchReceiverParameter: ChirVariableDeclaration? = null,
+    /** 该 receiver 绑定的 CFIR this owner；用于拒绝把外层 receiver 错当成当前 this。 */
+    val receiverOwnerSymbol: CfirThisOwnerSymbol<*>? = null,
     /**
      * 成员函数或扩展函数的接收者类型；普通函数为空。
      */
     val receiverType: ChirTypeRef? = null,
+    /** 声明所属 class-like 或 extend 类型；静态成员也必须保留。 */
+    val ownerType: ChirTypeRef? = null,
+    /** 函数声明是否带有静态成员语义。 */
+    val isStatic: Boolean = false,
+    /** 函数自身声明的泛型参数身份。 */
+    val genericTypeParameters: List<ChirTypeRef> = emptyList(),
 ) {
+    /** 按官方 CHIR ABI 顺序排列的函数形参。 */
+    val abiParameters: List<ChirVariableDeclaration> =
+        listOfNotNull(dispatchReceiverParameter) + parameters
+
     /**
-     * 由形参、返回类型和接收者类型组合出的 CHIR 函数类型。
+     * 由 ABI 形参与返回类型组合出的 CHIR 函数类型。
      */
     val functionType: ChirResolvedTypeRef =
-        ChirResolvedTypeRef(ChirFunctionType(parameters.map { it.type }, returnType, receiverType = receiverType))
+        ChirResolvedTypeRef(ChirFunctionType(abiParameters.map { it.type }, returnType))
 
     /**
      * 将函数 header 转换为可在表达式中引用的函数值。
@@ -293,13 +320,17 @@ data class ChirLocalVariableHeader(
      * 局部变量所属函数的语义 ID。
      */
     val ownerFunctionId: ChirSemanticId,
+    /**
+     * 局部变量地址的 SSA 身份；它必须与创建该地址的 ALLOCA 表达式身份相同。
+     */
+    val addressSemanticId: ChirSemanticId,
 ) {
     /**
      * 将局部变量 header 转换为可写地址值。
      */
     fun asAddressValue(): ChirLocalValue =
         ChirLocalValue(
-            semanticId = declaration.semanticId,
+            semanticId = addressSemanticId,
             type = ChirResolvedTypeRef(ChirRefType(declaration.type, declaration.mutable)),
             name = declaration.name,
         )

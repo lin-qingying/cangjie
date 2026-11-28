@@ -271,7 +271,12 @@ class CfirRawQualifiedTypeResolutionTest {
             },
             effectiveName = Name.identifier("std"),
             targets = if (explicitlyBind) {
-                listOf(CfirResolvedImportTarget.ClassLike(classId, declaration.symbol))
+                listOf(CfirResolvedImportTarget.ClassLike(
+                    packageFqName = classId.packageFqName,
+                    organizationName = null,
+                    name = classId.shortClassName,
+                    classId = classId,
+                ))
             } else {
                 emptyList()
             },

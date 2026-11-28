@@ -6,11 +6,10 @@ import com.intellij.openapi.util.Ref
 import com.intellij.psi.tree.IElementType
 import com.intellij.util.diff.FlyweightCapableTreeStructure
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
-import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
+import org.cangnova.cangjie.cfir.analysis.checkers.modifier.ModifierTarget
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
-import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.lexer.CjKeywordToken
@@ -23,8 +22,6 @@ import org.cangnova.cangjie.source.CjRealSourceElementKind
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.source.toCjLightSourceElement
 import org.cangnova.cangjie.source.toCjPsiSourceElement
-import org.cangnova.cangjie.LanguageFeature
-import org.cangnova.cangjie.lexer.CjTokens
 
 /** 从真实源码中提取出的单个修饰符 token 及其 source。 */
 internal data class SourceModifier(
@@ -38,7 +35,6 @@ internal data class SourceModifier(
 internal fun List<SourceModifier>.modifierByToken(token: CjKeywordToken): SourceModifier? {
     return firstOrNull { it.token == token }
 }
-
 /** 检查两个修饰符之间的兼容性，并按兼容性分类上报重复、冗余、弃用或冲突诊断。 */
 context(reporter: DiagnosticReporter, context: CheckerContext)
 internal fun checkCompatibilityType(
@@ -46,48 +42,17 @@ internal fun checkCompatibilityType(
     secondModifier: SourceModifier,
     reportedNodes: MutableSet<SourceModifier>,
     owner: Any?,
+    target: ModifierTarget?,
 ) {
     val firstModifierToken = firstModifier.token
     val secondModifierToken = secondModifier.token
 
-    // CJMP 版本门：1.0.x 下 common/specific 不具备修饰符地位，组合诊断整族短路（D16 门禁纪律）。
-    if ((firstModifierToken.isCjmpModifierToken || secondModifierToken.isCjmpModifierToken) &&
-        !context.languageVersionSettings.supportsFeature(LanguageFeature.CommonSpecificDeclarations)
-    ) {
-        return
-    }
-
-    // `common private` extension members use the dedicated Common-mode diagnostic rather than
-    // the generic pair-conflict diagnostics. The common extension checker reports that rule.
-    if (owner is CfirMemberDeclaration &&
-        setOf(firstModifierToken, secondModifierToken) == setOf(CjTokens.COMMON_KEYWORD, CjTokens.PRIVATE_KEYWORD)
-    ) {
-        val containingExtend = context.findClosestDeclaration<CfirExtend>()
-        if (containingExtend != null && containingExtend !== owner && containingExtend.status.isCommon) return
-    }
-
-    when (val compatibilityType = compatibility(firstModifierToken, secondModifierToken)) {
+    when (val compatibilityType = compatibility(firstModifierToken, secondModifierToken, target)) {
         Compatibility.COMPATIBLE -> Unit
         Compatibility.REPEATED -> {
             if (reportedNodes.add(secondModifier)) {
                 reporter.reportOn(secondModifier.source, CfirErrors.REPEATED_MODIFIER, secondModifierToken)
             }
-        }
-        Compatibility.REDUNDANT -> {
-            reporter.reportOn(
-                secondModifier.source,
-                CfirErrors.REDUNDANT_MODIFIER,
-                secondModifierToken,
-                firstModifierToken,
-            )
-        }
-        Compatibility.REVERSE_REDUNDANT -> {
-            reporter.reportOn(
-                firstModifier.source,
-                CfirErrors.REDUNDANT_MODIFIER,
-                firstModifierToken,
-                secondModifierToken,
-            )
         }
         Compatibility.DEPRECATED -> {
             reporter.reportOn(
@@ -135,10 +100,31 @@ internal fun checkModifiersCompatibility(
     owner: Any?,
     modifiers: List<SourceModifier>,
     reportedNodes: MutableSet<SourceModifier>,
+    target: ModifierTarget? = null,
+    excludedModifiers: Set<SourceModifier> = emptySet(),
 ) {
-    for ((secondIndex, secondModifier) in modifiers.withIndex()) {
-        for (firstIndex in 0 until secondIndex) {
-            checkCompatibilityType(modifiers[firstIndex], secondModifier, reportedNodes, owner)
+    for (secondIndex in modifiers.indices) {
+        checkModifierCompatibility(owner, modifiers, secondIndex, reportedNodes, target, excludedModifiers)
+    }
+}
+
+/** 只检查列表中当前修饰符与其前序修饰符，供声明检查器保留逐项诊断顺序。 */
+context(reporter: DiagnosticReporter, context: CheckerContext)
+internal fun checkModifierCompatibility(
+    owner: Any?,
+    modifiers: List<SourceModifier>,
+    secondIndex: Int,
+    reportedNodes: MutableSet<SourceModifier>,
+    target: ModifierTarget? = null,
+    excludedModifiers: Set<SourceModifier> = emptySet(),
+) {
+    val secondModifier = modifiers[secondIndex]
+    if (secondModifier in excludedModifiers) return
+
+    for (firstIndex in 0 until secondIndex) {
+        val firstModifier = modifiers[firstIndex]
+        if (firstModifier !in excludedModifiers) {
+            checkCompatibilityType(firstModifier, secondModifier, reportedNodes, owner, target)
         }
     }
 }
@@ -245,7 +231,3 @@ private fun FlyweightCapableTreeStructure<LighterASTNode>.findChildByType(
 ): LighterASTNode? {
     return getChildrenArray(node).firstOrNull { it?.tokenType == type }
 }
-
-/** 是否为 CJMP（common/specific）修饰符 token。 */
-private val CjKeywordToken.isCjmpModifierToken: Boolean
-    get() = this == CjTokens.COMMON_KEYWORD || this == CjTokens.SPECIFIC_KEYWORD

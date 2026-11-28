@@ -67,7 +67,7 @@ internal object CfirStaticMemberCompleteness {
         if (symbol.cfir !is CfirInterface) return emptySet()
 
         val members = symbol
-            .staticScopeForQualifierType(context.session, context.scopeSession, expandedType)
+            .staticScopeForQualifierType(context.session, context.scopeSession, expandedType, memberRequiredPhase = CfirResolvePhase.STATUS)
             .collectStaticCallables()
         if (members.isEmpty()) return emptySet()
 
@@ -120,7 +120,7 @@ internal object CfirStaticMemberCompleteness {
     private fun ConeCangJieType.staticMemberScopeOrNull(): CfirContainingNamesAwareScope? {
         val expandedType = fullyExpandedType(context.session)
         val symbol = expandedType.toSymbol(context.session) as? CfirClassLikeSymbol<*> ?: return null
-        return symbol.staticScopeForQualifierType(context.session, context.scopeSession, expandedType)
+        return symbol.staticScopeForQualifierType(context.session, context.scopeSession, expandedType, memberRequiredPhase = CfirResolvePhase.STATUS)
     }
 
     /**
@@ -239,6 +239,7 @@ internal object CfirStaticMemberCompleteness {
             context.session,
             context.scopeSession,
             expandedFinalType,
+            memberRequiredPhase = CfirResolvePhase.STATUS,
         )
 
         var implementation: CfirCallableSymbol<*>? = null

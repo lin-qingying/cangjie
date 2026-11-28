@@ -7,6 +7,7 @@
 
 package org.cangnova.cangjie.cfir.references.impl
 
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.references.CfirSuperReference
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
@@ -14,7 +15,7 @@ import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.source.CjSourceElement
 
 internal class CfirSuperReferenceImpl(
-    override val source: CjSourceElement?,
+    override var source: CjSourceElement?,
     override var superTypeRef: CfirTypeRef,
 ) : CfirSuperReference() {
 
@@ -25,6 +26,11 @@ internal class CfirSuperReferenceImpl(
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirSuperReferenceImpl {
         superTypeRef = superTypeRef.transform(transformer, data)
         return this
+    }
+
+    @CfirImplementationDetail
+    override fun replaceSource(newSource: CjSourceElement?) {
+        source = newSource
     }
 
     override fun replaceSuperTypeRef(newSuperTypeRef: CfirTypeRef) {

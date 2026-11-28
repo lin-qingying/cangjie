@@ -70,6 +70,7 @@ class CangJieNamedFunctionStubImpl(
      * 保存 `origin`，供PSI Stub流程读取节点结构或语义信息。
      */
     val origin: CangJieStubOrigin?,
+    private val hasEmptyBlockBody: Boolean,
 ) : CangJieStubBaseImpl<CjNamedFunction>(parent, element), CangJieNamedFunctionStub {
     init {
         if (isTopLevel && fqName == null) {
@@ -98,6 +99,8 @@ class CangJieNamedFunctionStubImpl(
      * 实现 `hasBody` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
      */
     override fun hasBody() = hasBody
+
+    override fun hasEmptyBlockBody(): Boolean = hasEmptyBlockBody
     /**
      * 实现 `hasTypeParameterListBeforeFunctionName` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
      */
@@ -116,6 +119,7 @@ class CangJieNamedFunctionStubImpl(
         hasBody = hasBody,
         hasTypeParameterListBeforeFunctionName = hasTypeParameterListBeforeFunctionName,
         origin = origin,
+        hasEmptyBlockBody = hasEmptyBlockBody,
     )
 
     companion object

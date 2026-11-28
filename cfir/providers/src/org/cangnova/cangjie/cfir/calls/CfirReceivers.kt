@@ -44,17 +44,19 @@ import org.cangnova.cangjie.cfir.scopes.CfirCompositeScope
 import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
+import org.cangnova.cangjie.cfir.scopes.impl.CfirCjmpMemberScopeView
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassSubstitutionScope
-import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirCompositeTypeScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirExtendMemberScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirUnionTypeScope
 import org.cangnova.cangjie.cfir.scopes.impl.staticScopeForBuiltinQualifierType
 import org.cangnova.cangjie.cfir.scopes.impl.staticScopeForQualifierType
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
+import org.cangnova.cangjie.cfir.session.isCjmpSpecificCompilationEnabled
 import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.session.extendProvider
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.session.typeAwareSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.*
@@ -383,6 +385,11 @@ private fun CfirExpression.memberScopeKind(): CfirClassMemberScopeKind = when (t
     else -> CfirClassMemberScopeKind.USE_SITE
 }
 
+/** specific body 的 receiver lookup 消费 CJMP_MATCHING 阶段发布的成员图。 */
+private fun CfirSession.cjmpMemberScopeView(): CfirCjmpMemberScopeView =
+    if (isCjmpSpecificCompilationEnabled()) CfirCjmpMemberScopeView.CJMP_ACTUALIZED
+    else CfirCjmpMemberScopeView.RAW
+
 /**
  * 将 receiver 类型转换为可查找成员的类型 scope。
  *
@@ -521,8 +528,6 @@ private fun collectTypeScopes(
                     type = type,
                     scopeKind = scopeKind,
                     destination = destination,
-                    visitedTypes = visitedTypes,
-                    visitedTypeParameters = visitedTypeParameters,
                 )
             ) {
                 return
@@ -548,36 +553,20 @@ private fun collectTypeScopes(
             } else {
                 type
             }
-            val rawScope = when (declaration) {
-                is CfirClass -> CfirClassUseSiteMemberScope(
-                    session,
-                    symbol,
-                    session.symbolProvider,
-                    session.extendProvider,
-                    session.directSupertypeProviderOrNull,
-                    ownerType = semanticOwnerType,
-                    scopeKind = scopeKind,
-                )
-                is CfirExtend -> CfirClassUseSiteMemberScope(
-                    session,
-                    symbol,
-                    session.symbolProvider,
-                    session.extendProvider,
-                    session.directSupertypeProviderOrNull,
-                    ownerType = semanticOwnerType,
-                    scopeKind = scopeKind,
-                )
-                else -> CfirClassUseSiteMemberScope(
-                    session,
-                    symbol,
-                    session.symbolProvider,
-                    session.extendProvider,
-                    session.directSupertypeProviderOrNull,
-                    ownerType = semanticOwnerType,
-                    scopeKind = scopeKind,
-                )
-            }
-            destination += CfirClassSubstitutionScope(session, rawScope, semanticOwnerType)
+            fun prepareRaw() = session.cangjieScopeProvider.getUseSiteMemberScope(
+                useSiteSession = session,
+                classSymbol = symbol,
+                scopeSession = scopeSession,
+                ownerType = semanticOwnerType,
+                scopeKind = scopeKind,
+                memberScopeView = session.cjmpMemberScopeView(),
+                memberRequiredPhase = if (session.isCjmpSpecificCompilationEnabled()) {
+                    CfirResolvePhase.CJMP_MATCHING
+                } else {
+                    CfirResolvePhase.STATUS
+                },
+            )
+            destination += session.cangjieScopeProvider.getClassSubstitutionScope(session, scopeSession, ::prepareRaw, semanticOwnerType).value
         }
     }
 }
@@ -593,37 +582,19 @@ private fun collectNonClassBuiltinExtendScopes(
     type: ConeCangJieType,
     scopeKind: CfirClassMemberScopeKind,
     destination: MutableSet<CfirTypeScope>,
-    visitedTypes: MutableSet<ConeCangJieType>,
-    visitedTypeParameters: MutableSet<ConeTypeParameterLookupTag>,
 ): Boolean {
     val targetKey = type.expandedExtendTargetKey ?: return false
     if (targetKey.classIdOrNull != null) return false
 
-    if (scopeKind == CfirClassMemberScopeKind.USE_SITE) {
-        destination += CfirExtendMemberScope(
-            targetKey = targetKey,
-            extendProvider = session.extendProvider,
-            session = session,
-            receiverType = type,
-        )
-    }
-
-    val directSupertypes = if (scopeKind == CfirClassMemberScopeKind.DECLARATION_SITE) {
-        emptyList()
-    } else {
-        session.typeAwareSupertypeProviderOrNull?.getDirectSupertypes(type).orEmpty()
-    }
-    for (supertype in directSupertypes) {
-        collectTypeScopes(
-            session,
-            scopeSession,
-            supertype,
-            scopeKind,
-            destination,
-            visitedTypes,
-            visitedTypeParameters,
-        )
-    }
+    val scope = session.cangjieScopeProvider.getMemberScopeForUseSiteType(
+        session, type, scopeSession,
+        excludingExtend = null,
+        scopeOwner = org.cangnova.cangjie.cfir.scopes.CfirMemberScopeOwner.UseSite,
+        memberScopeView = session.cjmpMemberScopeView(),
+        memberRequiredPhase = if (session.isCjmpSpecificCompilationEnabled()) CfirResolvePhase.CJMP_MATCHING else CfirResolvePhase.STATUS,
+        scopeKind = scopeKind,
+    )
+    if (scope != null && scope !== CfirTypeScope.Empty) destination += scope
     return true
 }
 
@@ -734,8 +705,9 @@ fun CfirExpression.resolvedQualifierClassifier(session: CfirSession): CfirClassL
  * typealias qualifier 会展开到最终 class-like symbol。
  */
 fun CfirExpression.resolvedQualifierSymbol(session: CfirSession): CfirClassifierSymbol<*>? {
-    val resolvedSymbol = ((this as? CfirResolvable)?.calleeReference as? CfirResolvedNamedReference)?.resolvedSymbol
-        ?: return null
+    val resolvedSymbol = if (this is CfirResolvedQualifier) qualifierSymbol else
+        ((this as? CfirResolvable)?.calleeReference as? CfirResolvedNamedReference)?.resolvedSymbol
+    if (resolvedSymbol == null) return null
     return when (resolvedSymbol) {
         is CfirTypeAliasSymbol -> resolvedSymbol.expandedClassLikeSymbol(session)
         is CfirClassifierSymbol<*> -> resolvedSymbol
@@ -770,13 +742,27 @@ fun CfirExpression.qualifierScopeOrNull(
 ): CfirScope? {
     resolvedQualifierClassifier(session)?.let { classifier ->
         val qualifierType = coneTypeOrNull ?: classifier.constructType()
-        return classifier.staticScopeForQualifierType(session, scopeSession, qualifierType)
+        return classifier.staticScopeForQualifierType(
+            session,
+            scopeSession,
+            qualifierType,
+            memberScopeView = session.cjmpMemberScopeView(),
+            memberRequiredPhase = if (session.isCjmpSpecificCompilationEnabled()) CfirResolvePhase.CJMP_MATCHING else CfirResolvePhase.STATUS,
+        )
     }
 
-    builtinTypeQualifierOrNull(session)?.staticScopeForBuiltinQualifierType(session, scopeSession)?.let { return it }
+    builtinTypeQualifierOrNull(session)
+        ?.staticScopeForBuiltinQualifierType(
+            session, scopeSession, session.cjmpMemberScopeView(),
+            memberRequiredPhase = if (session.isCjmpSpecificCompilationEnabled()) CfirResolvePhase.CJMP_MATCHING else CfirResolvePhase.STATUS,
+        )
+        ?.let { return it }
 
     val typeParameter = resolvedQualifierTypeParameter() ?: return null
-    return typeParameter.staticScopeForQualifierType(session, scopeSession)
+    return typeParameter.staticScopeForQualifierType(
+        session, scopeSession, session.cjmpMemberScopeView(),
+        memberRequiredPhase = if (session.isCjmpSpecificCompilationEnabled()) CfirResolvePhase.CJMP_MATCHING else CfirResolvePhase.STATUS,
+    )
 }
 
 /**

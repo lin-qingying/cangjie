@@ -22,6 +22,10 @@ interface DiagnosticBaseContext {
     /** 主诊断附带的相关源码位置；常规诊断为空。 */
     val relatedInformation: List<CjDiagnosticRelatedInformation>
         get() = emptyList()
+
+    /** 正规 parser 报告的原生身份、类别、主/辅助提示和 note；SEMA 诊断没有此文法事件。 */
+    val parsingDiagnostic: org.cangnova.cangjie.messages.ParsingDiagnostic?
+        get() = null
 }
 
 /** 一条指向另一源码位置的诊断说明。 */

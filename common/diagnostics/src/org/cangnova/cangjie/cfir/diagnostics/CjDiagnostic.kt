@@ -50,6 +50,7 @@ sealed class CjDiagnostic {
      */
     fun renderMessage(): String {
         val primaryMessage = factory.cjRenderer.render(this)
+        if (context.parsingDiagnostic != null) return primaryMessage
         if (relatedInformation.isEmpty()) return primaryMessage
         return buildString {
             append(primaryMessage)
@@ -63,6 +64,9 @@ sealed class CjDiagnostic {
     /** 主诊断之外的相关源码位置与说明，不改变主诊断的工厂、严重级别或高亮范围。 */
     val relatedInformation: List<CjDiagnosticRelatedInformation>
         get() = context.relatedInformation
+
+    /** Parser 的提示/notes 由输出协议独立渲染，主消息始终保持 DiagnosticParser.def 的正文。 */
+    val parsingDiagnostic: org.cangnova.cangjie.messages.ParsingDiagnostic? get() = context.parsingDiagnostic
 }
 
 /**

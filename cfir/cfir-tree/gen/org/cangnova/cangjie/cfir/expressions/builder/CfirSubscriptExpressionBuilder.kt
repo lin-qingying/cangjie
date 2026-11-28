@@ -8,6 +8,7 @@
 package org.cangnova.cangjie.cfir.expressions.builder
 
 import kotlin.contracts.*
+import org.cangnova.cangjie.annotations.CangjieOverflowStrategy
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
@@ -24,8 +25,11 @@ class CfirSubscriptExpressionBuilder {
     var source: CjSourceElement? = null
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
     var coneTypeOrNull: ConeCangJieType? = null
+    var mappedExpression: CfirExpression? = null
+    var overflowStrategy: CangjieOverflowStrategy? = null
     lateinit var receiver: CfirExpression
     val indices: MutableList<CfirExpression> = mutableListOf()
+    var isTupleAccess: Boolean = false
     var resolvedGetCall: CfirFunctionCall? = null
     var resolvedSetCall: CfirFunctionCall? = null
 
@@ -35,8 +39,11 @@ class CfirSubscriptExpressionBuilder {
             source,
             annotations.toMutableOrEmpty(),
             coneTypeOrNull,
+            mappedExpression,
+            overflowStrategy,
             receiver,
             indices,
+            isTupleAccess,
             resolvedGetCall,
             resolvedSetCall,
         )
@@ -61,8 +68,11 @@ inline fun buildSubscriptExpressionCopy(original: CfirSubscriptExpression, init:
     copyBuilder.source = original.source
     copyBuilder.annotations.addAll(original.annotations)
     copyBuilder.coneTypeOrNull = original.coneTypeOrNull
+    copyBuilder.mappedExpression = original.mappedExpression
+    copyBuilder.overflowStrategy = original.overflowStrategy
     copyBuilder.receiver = original.receiver
     copyBuilder.indices.addAll(original.indices)
+    copyBuilder.isTupleAccess = original.isTupleAccess
     copyBuilder.resolvedGetCall = original.resolvedGetCall
     copyBuilder.resolvedSetCall = original.resolvedSetCall
     return copyBuilder.apply(init).build()

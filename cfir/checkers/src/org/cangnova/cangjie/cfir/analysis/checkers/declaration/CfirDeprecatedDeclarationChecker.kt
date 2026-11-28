@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
@@ -15,7 +16,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
@@ -30,7 +31,7 @@ import org.cangnova.cangjie.cfir.types.ConeClassLikeType
  *
  * 注册为 callableDeclarationCheckers
  */
-object CfirDeprecatedDeclarationChecker : CfirCallableDeclarationChecker() {
+object CfirDeprecatedDeclarationChecker : CfirCallableDeclarationChecker(MppCheckerKind.Common) {
     /**
      * Deprecated 注解名。
      */
@@ -171,7 +172,7 @@ object CfirDeprecatedDeclarationChecker : CfirCallableDeclarationChecker() {
  * 弃用 class-like 的直接子声明（不含自身注解）按父级严格度报
  * DEPRECATION_OVERRIDE_ERROR / _WARNING；子声明带非 strict 注解时报 DEPRECATION_WEAKENING。
  */
-object CfirDeprecatedClassLikeChecker : CfirClassLikeChecker() {
+object CfirDeprecatedClassLikeChecker : CfirClassLikeChecker(MppCheckerKind.Common) {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirClassLikeDeclaration) {
         val parent = declaration.deprecatedClassLikeSupertype() ?: return

@@ -25,6 +25,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.CfirExtendSemantics
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.declaredUpperBoundTypesInCurrentContext
 import org.cangnova.cangjie.cfir.analysis.checkers.hasInvalidDeclaredUpperBoundsInCurrentContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
@@ -55,10 +56,9 @@ import org.cangnova.cangjie.cfir.resolve.toSymbol
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassSubstitutionScope
-import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
 import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.session.extendProvider
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirExtendSymbol
@@ -84,6 +84,7 @@ import org.cangnova.cangjie.source.CjPsiSourceElement
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.source.toCjLightSourceElement
 import org.cangnova.cangjie.source.toCjPsiSourceElement
+import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
 
 /**
  * 对齐官方 `mut/immutable` 核心语义的第一步：
@@ -93,7 +94,7 @@ import org.cangnova.cangjie.source.toCjPsiSourceElement
  * 1. 赋值到当前实例字段；
  * 2. 调用当前实例上的 mut 成员函数。
  */
-object CfirImmutableFunctionCannotModifyFieldChecker : CfirAssignmentChecker() {
+object CfirImmutableFunctionCannotModifyFieldChecker : CfirAssignmentChecker(MppCheckerKind.Common) {
     /**
      * 检查不可变 struct 成员函数中是否写入当前实例的可变字段，或通过属性 setter
      * 访问可变属性。
@@ -134,7 +135,7 @@ object CfirImmutableFunctionCannotModifyFieldChecker : CfirAssignmentChecker() {
 /**
  * 不可变 struct/interface 成员函数中禁止调用当前实例的 mut 成员函数。
  */
-object CfirImmutableFunctionCannotAccessMutableFunctionChecker : CfirFunctionCallChecker() {
+object CfirImmutableFunctionCannotAccessMutableFunctionChecker : CfirFunctionCallChecker(MppCheckerKind.Common) {
     /**
      * 检查当前实例接收者上的 mut 函数调用。
      */
@@ -173,7 +174,7 @@ object CfirImmutableFunctionCannotAccessMutableFunctionChecker : CfirFunctionCal
  * 官方把这类引用从普通不可变函数修改规则中分离：构造器使用
  * `ILLEGAL_CAPTURE_THIS`，mut 函数使用 `CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC`。
  */
-object CfirInstanceFieldCaptureChecker : CfirQualifiedAccessChecker() {
+object CfirInstanceFieldCaptureChecker : CfirQualifiedAccessChecker(MppCheckerKind.Common) {
     /** 对当前实例字段的嵌套捕获报告专用诊断。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirQualifiedAccessExpression) {
@@ -229,7 +230,7 @@ object CfirInstanceFieldCaptureChecker : CfirQualifiedAccessChecker() {
  * 对齐官方 `TypeCheckAccess::CheckLetInstanceAccessMutableFunc`：`let`/`const`
  * 的 struct 值、属性值以及非 class-like 的临时值，不能作为 mut 函数调用的接收者。
  */
-object CfirImmutableValueCannotAccessMutableFunctionChecker : CfirFunctionCallChecker() {
+object CfirImmutableValueCannotAccessMutableFunctionChecker : CfirFunctionCallChecker(MppCheckerKind.Common) {
     /**
      * 检查不可变 struct 值作为接收者调用 mut 成员函数的场景。
      */
@@ -265,7 +266,7 @@ object CfirImmutableValueCannotAccessMutableFunctionChecker : CfirFunctionCallCh
  * 非调用的取值形式（`return foo`、`let a = cc`），这些形式此前错误落入 `USE_MUTABLE_FUNC_ALONE`
  * （显式 struct 接收者的取值形式），而 interface / struct 语境下 bare 名字都应命中本规则（见 §1 证据）。
  */
-object CfirImmutableFunctionBareReferenceChecker : CfirQualifiedAccessChecker() {
+object CfirImmutableFunctionBareReferenceChecker : CfirQualifiedAccessChecker(MppCheckerKind.Common) {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirQualifiedAccessExpression) {
         // 仅处理隐式 `this` 的 bare 名字引用：显式接收者由 USE_MUTABLE / 其它规则管辖，
@@ -759,8 +760,9 @@ private fun ConeCangJieType.useSiteMemberScopeForInvalidStructUpperBoundOrNull()
     if (!classSymbol.isBound) return null
     classSymbol.lazyResolveToPhase(CfirResolvePhase.TYPES)
 
-    val rawScope = CfirClassUseSiteMemberScope(
-        session = context.session,
+    val rawScope = context.session.cangjieScopeProvider.getUseSiteMemberScope(
+        scopeSession = context.scopeSession,
+        useSiteSession = context.session,
         classSymbol = classSymbol,
         symbolProvider = context.session.symbolProvider,
         extendProvider = context.session.extendProvider,
@@ -768,6 +770,7 @@ private fun ConeCangJieType.useSiteMemberScopeForInvalidStructUpperBoundOrNull()
         ownerType = expandedType,
         dispatchReceiverType = expandedType,
         scopeKind = CfirClassMemberScopeKind.USE_SITE,
+        memberRequiredPhase = CfirResolvePhase.STATUS,
     )
     return CfirClassSubstitutionScope(
         session = context.session,

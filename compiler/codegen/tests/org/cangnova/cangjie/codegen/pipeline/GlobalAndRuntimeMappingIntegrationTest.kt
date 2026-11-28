@@ -5,6 +5,7 @@ import org.cangnova.cangjie.chir.core.controlflow.ChirBlock
 import org.cangnova.cangjie.chir.core.controlflow.ChirReturnTerminator
 import org.cangnova.cangjie.chir.core.declaration.DefaultChirFunctionDeclaration
 import org.cangnova.cangjie.chir.core.declaration.DefaultChirVariableDeclaration
+import org.cangnova.cangjie.chir.core.expression.ChirMemoryExpression
 import org.cangnova.cangjie.chir.core.identity.ChirSemanticId
 import org.cangnova.cangjie.chir.core.model.ChirModule
 import org.cangnova.cangjie.chir.core.model.ChirPackage
@@ -12,6 +13,8 @@ import org.cangnova.cangjie.chir.core.model.ChirPackageMembers
 import org.cangnova.cangjie.chir.core.type.ChirPrimitiveType
 import org.cangnova.cangjie.chir.core.type.ChirResolvedTypeRef
 import org.cangnova.cangjie.chir.core.value.ChirConstantValue
+import org.cangnova.cangjie.chir.core.value.ChirGlobalValue
+import org.cangnova.cangjie.chir.core.value.ChirImportedVariableValue
 import org.cangnova.cangjie.codegen.api.ChirCodegenInput
 import org.cangnova.cangjie.codegen.api.CodegenOptions
 import org.cangnova.cangjie.codegen.diagnostics.CodegenLoweringException
@@ -176,5 +179,101 @@ class GlobalAndRuntimeMappingIntegrationTest {
 
         assertTrue(error.message?.contains("cangjie.package.init") == true, error.message)
         assertTrue(error.message?.contains("fn:missing-init") == true, error.message)
+    }
+
+    /**
+     * 官方 CHIR 的全局变量引用与声明必须使用同一个 mangled LLVM 符号。
+     */
+    @Test
+    fun `uses official identities for global variable declarations and references`() {
+        val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT64)
+        val pointerType = ChirResolvedTypeRef(org.cangnova.cangjie.chir.core.type.ChirCPointerType(intType))
+        val globalId = ChirSemanticId("@_CNat10MS_PER_SECE")
+        val importedGlobalId = ChirSemanticId("@_CNat11EXTERNAL_VARV")
+        val functionId = ChirSemanticId("fn:write-official-globals")
+        val function = DefaultChirFunctionDeclaration(
+            semanticId = functionId,
+            name = "writeOfficialGlobals",
+            returnType = intType,
+            parameters = emptyList(),
+            blocks = listOf(
+                ChirBlock(
+                    semanticId = ChirSemanticId("block:write-official-globals"),
+                    name = "entry",
+                    expressions = listOf(
+                        ChirMemoryExpression(
+                            semanticId = ChirSemanticId("expr:store-official-global"),
+                            operation = "store",
+                            address = ChirGlobalValue(globalId, pointerType, "_CNat10MS_PER_SECE"),
+                            value = ChirConstantValue(ChirSemanticId("const:global-value"), intType, "1"),
+                        ),
+                        ChirMemoryExpression(
+                            semanticId = ChirSemanticId("expr:store-official-imported-global"),
+                            operation = "store",
+                            address = ChirImportedVariableValue(
+                                importedGlobalId,
+                                pointerType,
+                                "_CNat11EXTERNAL_VARV",
+                            ),
+                            value = ChirConstantValue(ChirSemanticId("const:imported-global-value"), intType, "2"),
+                        ),
+                    ),
+                    terminator = ChirReturnTerminator(
+                        semanticId = ChirSemanticId("term:return-official-globals"),
+                        returnValue = ChirConstantValue(ChirSemanticId("const:return-official-globals"), intType, "0"),
+                    ),
+                ),
+            ),
+            entryBlockId = ChirSemanticId("block:write-official-globals"),
+        )
+
+        val output = DefaultChirToLlvmCodeGenerator().generate(
+            ChirCodegenInput(
+                chirPackage = ChirPackage(
+                    semanticId = ChirSemanticId("pkg:official-globals"),
+                    name = "official-globals",
+                    modules = listOf(
+                        ChirModule(
+                            semanticId = ChirSemanticId("mod:official-globals"),
+                            name = "official-globals",
+                            declarations = listOf(function),
+                        ),
+                    ),
+                    members = ChirPackageMembers(
+                        globalVariables = listOf(
+                            DefaultChirVariableDeclaration(
+                                semanticId = globalId,
+                                name = "MS_PER_SEC",
+                                type = intType,
+                                mutable = true,
+                            ),
+                        ),
+                        importedVariables = listOf(
+                            DefaultChirVariableDeclaration(
+                                semanticId = importedGlobalId,
+                                name = "EXTERNAL_VAR",
+                                type = intType,
+                                mutable = true,
+                            ),
+                        ),
+                    ),
+                ),
+                options = CodegenOptions(
+                    enabled = true,
+                    validateChirBeforeLowering = true,
+                    verifyBeforeWrite = true,
+                    emitBitcode = false,
+                    emitComments = false,
+                    emitModuleHeader = false,
+                    emitRuntimeDeclarations = false,
+                ),
+            ),
+        )
+
+        val ir = output.modules.single().ir
+        assertTrue(ir.contains("@_CNat10MS_PER_SECE = global i64 0"), ir)
+        assertTrue(ir.contains("store i64 1, ptr @_CNat10MS_PER_SECE"), ir)
+        assertTrue(ir.contains("@_CNat11EXTERNAL_VARV = external global i64"), ir)
+        assertTrue(ir.contains("store i64 2, ptr @_CNat11EXTERNAL_VARV"), ir)
     }
 }

@@ -15,7 +15,7 @@ import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.source.CjSourceElement
 
 class CfirConstructedClassTypeParameterRefImpl @CfirImplementationDetail constructor(
-    override val source: CjSourceElement?,
+    override var source: CjSourceElement?,
     override val symbol: CfirTypeParameterSymbol,
 ) : CfirConstructedClassTypeParameterRef() {
 
@@ -23,5 +23,10 @@ class CfirConstructedClassTypeParameterRefImpl @CfirImplementationDetail constru
 
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirConstructedClassTypeParameterRefImpl {
         return this
+    }
+
+    @CfirImplementationDetail
+    override fun replaceSource(newSource: CjSourceElement?) {
+        source = newSource
     }
 }

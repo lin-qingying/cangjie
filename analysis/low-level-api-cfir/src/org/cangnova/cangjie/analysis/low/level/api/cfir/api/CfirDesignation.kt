@@ -14,13 +14,13 @@ import org.cangnova.cangjie.analysis.utils.errors.unexpectedElementError
 import org.cangnova.cangjie.cfir.*
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.resolve.getContainingClassSymbol
-import org.cangnova.cangjie.cfir.resolve.toClassSymbol
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
-import org.cangnova.cangjie.cfir.session.cfirProvider
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.cfirProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.types.toPrimitiveTypeKindOrNull
 import org.cangnova.cangjie.name.ClassId
+import org.cangnova.cangjie.psi.CjClassLikeDeclaration
 import org.cangnova.cangjie.psi.CjDeclaration
 import org.cangnova.cangjie.psi.CjExtend
 import org.cangnova.cangjie.psi.CjTypeStatement
@@ -164,6 +164,7 @@ private fun tryCollectDesignation(providedFile: CfirFile?, target: CfirElementWi
             // class-like 容器：优先用 CFIR lookup tag（Kotlin containingClassLookupTag()?.classId 的形状），
             // 缺失时回退到 PSI class-like 容器；extend 不是 class-like，已在上面按前缀处理。
             val containingClassId = target.containingClassLookupTag()?.classId
+                ?: ((target.psi as? CjDeclaration)?.containingTypeStatement as? CjClassLikeDeclaration)?.getClassId()
             collectDesignationPathWithContainingClass(providedFile, target, containingClassId)
         }
 

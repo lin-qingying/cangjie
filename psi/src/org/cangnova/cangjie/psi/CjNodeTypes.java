@@ -46,7 +46,7 @@ public interface CjNodeTypes {
     IElementType OPTIONAL_TYPE = CjStubElementTypes.OPTIONAL_TYPE;
 
 
-    IElementType INVALID_DECLARATION = new CjNodeType("INVALID_DECLARATION", null);
+    IElementType INVALID_DECLARATION = CjStubElementTypes.INVALID_DECLARATION;
     IElementType INTERFACE = CjStubElementTypes.INTERFACE;
     IElementType STRUCT = CjStubElementTypes.STRUCT;
     IElementType PROPERTY = CjStubElementTypes.PROPERTY;
@@ -270,6 +270,8 @@ public interface CjNodeTypes {
     CjTypeCodeFragmentType TYPE_CODE_FRAGMENT = new CjTypeCodeFragmentType();
     CjExpressionCodeFragmentType EXPRESSION_CODE_FRAGMENT = new CjExpressionCodeFragmentType();
     CjBlockCodeFragmentType BLOCK_CODE_FRAGMENT = new CjBlockCodeFragmentType();
+    CjMacroCodeFragmentType MACRO_CODE_FRAGMENT = new CjMacroCodeFragmentType();
+    IElementType MACRO_FRAGMENT_CONTENTS = new CjNodeType("MACRO_FRAGMENT_CONTENTS", CjMacroFragmentContents.class);
 
 
     IElementType MATCH_CONDITION_EXPRESSION = new CjNodeType("MATCH_CONDITION_WITH_EXPRESSION", CjMatchConditionWithExpression.class);

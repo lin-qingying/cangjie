@@ -58,6 +58,7 @@ class CfirExtendProviderComposerCycleTest {
 
     private fun emptyProvider(): CfirExtendProvider = object : CfirExtendProvider {
         override fun getAllExtends(): List<CfirExtend> = emptyList()
+        override val modificationCount: Long get() = 0
         override fun getExtendsForTarget(targetKey: CfirExtendTargetKey): List<CfirExtend> = emptyList()
         override fun getExtendsForClass(classId: ClassId): List<CfirExtend> = emptyList()
         override fun getExtendsInPackage(packageFqName: FqName): List<CfirExtend> = emptyList()
@@ -74,6 +75,7 @@ class CfirExtendProviderComposerCycleTest {
             return emptyList()
         }
 
+        override val modificationCount: Long get() = 0
         override fun getExtendsForTarget(targetKey: CfirExtendTargetKey): List<CfirExtend> = emptyList()
         override fun getExtendsForClass(classId: ClassId): List<CfirExtend> = emptyList()
         override fun getExtendsInPackage(packageFqName: FqName): List<CfirExtend> = emptyList()

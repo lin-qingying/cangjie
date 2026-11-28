@@ -1,0 +1,377 @@
+{
+  "before": {
+    "utc": "2026-11-18T09:35:02.8899282Z",
+    "fileCount": 6849,
+    "aggregateSha256": "B42F2AAC89054DD39E1F7DCBC414753801EA6086C18AB5C69DD5492485ECB4EA",
+    "roots": [
+      "common",
+      "cfir",
+      "analysis/low-level-api-cfir",
+      "analysis/analysis-api-cfir",
+      "compiler/frontend",
+      "compiler/config",
+      "compiler/phaser",
+      "compiler/arguments",
+      "psi",
+      "resolution.common",
+      "macro"
+    ],
+    "include": [
+      "*.kt",
+      "*.cj",
+      "*.kts"
+    ],
+    "exclude": "**/build/**",
+    "method": "rg --files --hidden --no-ignore, / normalized and Sort-Object -CaseSensitive; SHA256 of UTF8 LF joined path TAB length TAB uppercaseSHA256, no final LF",
+    "scope": "F4-C semantic repeated TP binding equality and provider29 including original SOURCE18 plus Raw2 and relations7"
+  },
+  "after": {
+    "utc": "2026-11-18T09:43:19.9306260Z",
+    "fileCount": 6849,
+    "aggregateSha256": "B42F2AAC89054DD39E1F7DCBC414753801EA6086C18AB5C69DD5492485ECB4EA",
+    "roots": [
+      "common",
+      "cfir",
+      "analysis/low-level-api-cfir",
+      "analysis/analysis-api-cfir",
+      "compiler/frontend",
+      "compiler/config",
+      "compiler/phaser",
+      "compiler/arguments",
+      "psi",
+      "resolution.common",
+      "macro"
+    ],
+    "include": [
+      "*.kt",
+      "*.cj",
+      "*.kts"
+    ],
+    "exclude": "**/build/**",
+    "method": "rg --files --hidden --no-ignore, / normalized and Sort-Object -CaseSensitive; SHA256 of UTF8 LF joined path TAB length TAB uppercaseSHA256, no final LF",
+    "scope": "Actual29 F4-C semantic equality (mixed nested/flat repeated TP provider), plus fullSOURCE18/Raw2/relations7; fullS4 and original frontend remain OPEN",
+    "unchanged": true
+  },
+  "queue": {
+    "id": "d4288e8a",
+    "args": [
+      "--gradle-user-home",
+      ".gradle/cjmp-export-home",
+      ":cfir:resolve:test",
+      "--rerun",
+      "--tests",
+      "org.cangnova.cangjie.cfir.resolve.CfirTypeRelationsTest",
+      "--tests",
+      "org.cangnova.cangjie.cfir.resolve.providers.CfirTypeAwareSupertypeProviderTest.raw array extend uses declaration arguments for nested and loaded receivers",
+      "--tests",
+      "org.cangnova.cangjie.cfir.resolve.providers.CfirTypeAwareSupertypeProviderTest.repeated extend parameter accepts all equal raw array representations",
+      ":cfir:cfir-serialization:test",
+      "--rerun",
+      "--tests",
+      "org.cangnova.cangjie.cfir.serialization.cjo.CjoRawArrayLayoutTest",
+      ":cfir:analysis-tests:test",
+      "--rerun",
+      "--tests",
+      "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExport*Test",
+      "--tests",
+      "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjo*Test.publicInterfaceDefaultBodyPromotesReferencedPrivateFunction",
+      "--tests",
+      "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjo*Test.referencedPrivateDefaultHelperIsCollectedOutsideClassBody",
+      "--no-build-cache",
+      "--console=plain",
+      "--max-workers=1",
+      "--continue"
+    ],
+    "pid": 41192,
+    "owner": "pid@41192",
+    "submitAt": 1794994625651,
+    "startedAt": 1794994625752,
+    "finishedAt": 1794994814514,
+    "exitCode": 0,
+    "status": "DONE"
+  },
+  "total": 29,
+  "passed": 29,
+  "failed": 0,
+  "errors": 0,
+  "skipped": 0,
+  "allXmlWithinWindow": true,
+  "scope": "Actual29 F4-C semantic equality (mixed nested/flat repeated TP provider), plus fullSOURCE18/Raw2/relations7; fullS4 and original frontend remain OPEN",
+  "extraPassedTasks": [],
+  "cases": [
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoLightTreeTest",
+      "name": "publicInterfaceDefaultBodyPromotesReferencedPrivateFunction()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoLightTreeTest",
+      "name": "referencedPrivateDefaultHelperIsCollectedOutsideClassBody()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoTest",
+      "name": "publicInterfaceDefaultBodyPromotesReferencedPrivateFunction()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoTest",
+      "name": "referencedPrivateDefaultHelperIsCollectedOutsideClassBody()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportLightTreeTest",
+      "name": "controlFlow()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportLightTreeTest",
+      "name": "operatorsConversions()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportLightTreeTest",
+      "name": "declarationsCalls()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportLightTreeTest",
+      "name": "referenceInstantiation()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportLightTreeTest",
+      "name": "exceptionsResources()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportLightTreeTest",
+      "name": "originalDefaultAssignmentFactsAndFinalSelection()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportLightTreeTest",
+      "name": "referenceDerivedInstantiation()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportTest",
+      "name": "controlFlow()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportTest",
+      "name": "operatorsConversions()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportTest",
+      "name": "declarationsCalls()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportTest",
+      "name": "referenceInstantiation()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportTest",
+      "name": "exceptionsResources()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportTest",
+      "name": "originalDefaultAssignmentFactsAndFinalSelection()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportTest",
+      "name": "referenceDerivedInstantiation()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.serialization.cjo.CjoRawArrayLayoutTest",
+      "name": "argumentReplacementAndNestedConstructionKeepThePublishedLayout()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.serialization.cjo.CjoRawArrayLayoutTest",
+      "name": "loadedArrayKeepsNativeUnsignedDimensionsAndIdentity()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.resolve.CfirTypeRelationsTest",
+      "name": "raw array declaration argument view is stable and dimension aware()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.resolve.CfirTypeRelationsTest",
+      "name": "raw array dimensions and leaf types are invariant()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.resolve.CfirTypeRelationsTest",
+      "name": "nested source and flat loaded raw arrays share native type semantics()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.resolve.CfirTypeRelationsTest",
+      "name": "child type is subtype of parent()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.resolve.CfirTypeRelationsTest",
+      "name": "raw array marker overloads and deep replacement use one leaf domain()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.resolve.CfirTypeRelationsTest",
+      "name": "same primitive type is identical()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.resolve.CfirTypeRelationsTest",
+      "name": "unrelated primitive types are incompatible()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirTypeAwareSupertypeProviderTest",
+      "name": "repeated extend parameter accepts all equal raw array representations()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirTypeAwareSupertypeProviderTest",
+      "name": "raw array extend uses declaration arguments for nested and loaded receivers()",
+      "status": "PASSED",
+      "failureMessage": null
+    }
+  ],
+  "xml": [
+    {
+      "path": "cfir/analysis-tests/build/test-results/test/TEST-org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoLightTreeTest.xml",
+      "bytes": 775,
+      "sha256": "F03B371A140A498528E392D8E07011EE70EB4886AB86F8937EC524F07E56698B",
+      "timestamp": "2026-11-18T09:39:26.744Z",
+      "lastWriteUtc": "2026-11-18T09:40:12.5395737Z",
+      "withinQueueWindow": true,
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "gzipBase64": "H4sIAAAAAAAACr2SQU/jQAyF75X6H4Y57R46bUIJBSVBbCq0lboL2g0XEIdh4pQpk5nIdir671EagRDizM3285PeZzm9eGmc2AGSDT6TkZpJAd6EyvpNJm/Lq8lCXuTjUcpATJ1lEF43kMmAG2W03/iw04dia0GZ2qLSXrs9WVIHiypqi8W2af9zQKj+QPMIuPLE2rPVbIMvtmFtN09cIkAJxFIcjJmMpaBn27ZQZXImRa2t6xDo0ABiwKFk2wCxbtpMxrM4mUTRJFqUs7Pz47PzOFGn8/mdFE+BeAi+Xv0dPJmMEnUcJTIfj4RIWwwtIFug6TDoUxhNb8Bt9+isWXkGrLWBJdS6c/wrVPsbDE1goH9QA4I3UN2g3WmGq86bnvDHTymM00TfcLoBbK5OkhP5NQh+jrkcUH6DawFXVATnwDBU1x2TraDok/ec34+h5vHijYL2xNBMQsd5enRfLC/Ly/uHhzydfhA+LgLi14u9MB6l0/ePzsejV31yovcHAwAA",
+      "archiveVerified": true
+    },
+    {
+      "path": "cfir/analysis-tests/build/test-results/test/TEST-org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoTest.xml",
+      "bytes": 1005,
+      "sha256": "B9186AB28F42C52EBF5BFAFC19F21AFCA501A77305F06CF396319D59F4CCF0A0",
+      "timestamp": "2026-11-18T09:39:43.065Z",
+      "lastWriteUtc": "2026-11-18T09:40:12.5320447Z",
+      "withinQueueWindow": true,
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "gzipBase64": "H4sIAAAAAAAACr2TQWsbMRCF7wb/B1WXtAcrXjsxSfA6uA6hhjQNqUuhIQdFmrUn0UpiZtZk/32x3bSmFAKF9iJGo/eG7w1ofP5cB7UGYkyx1IXpawXRJY9xWeovi8veiT6fdDtjARZuUEBFW0OpEy2Ns3EZ09pui0cE4yokY6MNLSObrcXMKqTZY50/SyLwH6F+AJpHFhsFrWCKs8e0ABattvpSD7TiJ8wZfKn7WlUWQ0PA2wsQJdqVgjWw2DqXetAfjHpF0StOFv3Ts+Hp2dHQ9EfH37RaJZYd79X8eucp9dCMiqGedDtKjTOlDCQIfLhrbCCc5ZeYuXkI6OZRgCrr4AIq2wR5n3x7Q6lOAnwLFRBEB/6GcG0FLpvoNrnevtPKBcv87xa2jTMwR8VI/xmffof7EeADhAw051kKAZyA/9QIo4fZhneT7n/BF6Y4PX6B55YF6l5qZDJ+cze7mC6md/f3k/Hh3sO+EIh+Cb9Ob6/P1FQE6ixKkgrJevUErTrIjIYDQDYYzdoG9CitcStwTweqSqRiEtWCbC3gFcESWajtdl4ZitER1BDFBkOQLTEYD1lWJmCN8vfD0YNZbQ54dqHx4E2FAfiVgfu72uym2xkf/vy3k27nOzYyfC/tAwAA",
+      "archiveVerified": true
+    },
+    {
+      "path": "cfir/analysis-tests/build/test-results/test/TEST-org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportLightTreeTest.xml",
+      "bytes": 1446,
+      "sha256": "604F2FF9C4BD612CE54B9BF9E8B2FF8538FF01CD8A24703FFC036018F1BFF26E",
+      "timestamp": "2026-11-18T09:39:46.682Z",
+      "lastWriteUtc": "2026-11-18T09:40:12.5345676Z",
+      "withinQueueWindow": true,
+      "tests": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "gzipBase64": "H4sIAAAAAAAACsWUP2/bMBDFdwP+DiyndjAtyn8iB5ICw46BAEGHRl0aZCCok8KWIoU7ynW+fSG5DTLE6FR1O/LdkT++BzC9OTWWHQHJeJdxKSLOwGlfGldn/GtxmCX8Jp9O0gAUqDMBmFMNZNxjLbRytfNHNRTfDQhdGRTKKftChsQwInaVwQffoYbbU4tA/UW3p9ZjuDf1cygQoAAKnA3tGb/ijH6YtoUy4xFnlTK2Q6BhAYgez2UwDVBQTZvxOIrXMylnMimizfVic71ci3USf+Ps2VM4497ffT7PZFyuxSJOeD6dMJa26FvAYIDm542eQiv680ztXUBvD9b//PiJM20V0T8zYMCLRXTF34fpUVXwSDvvfkdGo1Et5AWqErRVqEJPs1PWjoUUiU2yvMCEUAGC03DnKCgXzIA3EthKyFV8AQxOGtrBqi9Aw5HjJRhHlyL0aGrjlN1DpTobtkSmdg24cFA60NaVh159AAt6RB9jsdys/hbwHtAcofwfOUsh5WvO9EIBmpnvQp5+eNztt8X28ekpT+dvhLeNgPh+Yy9MJ+n89cPNp5NfAo3DbqYFAAA=",
+      "archiveVerified": true
+    },
+    {
+      "path": "cfir/analysis-tests/build/test-results/test/TEST-org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportTest.xml",
+      "bytes": 1373,
+      "sha256": "1FBFB7195BE7F2496D1A21E22447CB883252514E1D14517E0040E628A38DBE6C",
+      "timestamp": "2026-11-18T09:40:03.014Z",
+      "lastWriteUtc": "2026-11-18T09:40:12.5365734Z",
+      "withinQueueWindow": true,
+      "tests": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "gzipBase64": "H4sIAAAAAAAACr2UwW7bMAyG7wHyDppO2yGKnLZuUtgugqQBCgw7tNllRQ+CTHvaZMkg6Sx9+8LO1vXQYJelN0okxY/8CWXX+8aLHSC5GHKZKC0FBBtLF+pcft1uJnN5XYxHGQMxdY5BBNNALiPWyppQh7gzg/HDgbKVQ2WC8U/kSA0palU5vI8dWrjZtwjUF7rZtxF5C8RSDFG5vJSCfrq2hTKXWorKON8h0HAAxIgHk10DxKZpcznTs3SSJJNkvtWLq3N9pc+UTs6/SfE9Eh8oP99+OeTk8lKdzReyGI+EyFqMLSA7oOnhooewhv40Z2NgjH7j46+Pn6Sw3hD977YHqETpVL7N0BMajkirGH7rQ6eGmaWzIzQlWG/QcE+xMt6fGEWrNE2OoCBUgBAs3AZiE9gNVKceTXJMJ9hbaIe53AEND51cpmR2dGnQ1S4Yv4bKdJ6XRK4ODQTeGMu0DOWm996DB/suQ7u4+JeIa0C3g/IdtdRq8Xe36IkYmknsuMg+PKzWy+3y4fGxyKavHK8DAfHtwN4xHmXTl3+yGI+eAaT1uVJdBQAA",
+      "archiveVerified": true
+    },
+    {
+      "path": "cfir/cfir-serialization/build/test-results/test/TEST-org.cangnova.cangjie.cfir.serialization.cjo.CjoRawArrayLayoutTest.xml",
+      "bytes": 695,
+      "sha256": "10A18FD7F40981D6ACA27F295EFAC1BCEDE3B51777D0D241C3B4F9E80FFCEB8A",
+      "timestamp": "2026-11-18T09:39:12.738Z",
+      "lastWriteUtc": "2026-11-18T09:39:16.9240956Z",
+      "withinQueueWindow": true,
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "gzipBase64": "H4sIAAAAAAAACrWST0/DMAzF75P2HUJOcFjWdhL7o7aoGkJCoAmhcgFxCI3XebRJFbuD8elRV0A7cITbS54d/Z6d+OK9rsQOPKGziQxVIAXYwhm0ZSIf8qvRTF6kw0HMQEwtMgira0ik86UqtC2t2+mD2CKoYo1eEXjUFX5oRmdVsXVquXX3+i3zXu9v9d61nAOxFIcnExlJQa/YNGASGUix1li1HuhwAO+d7yVjDcS6bhIZBdH5KAxH4SwP5ovJfBFGajqZPUqxccQ93+31qu9J5ETNwkimw4EQceNdA54RaNxfdBCFpu9Y2pdtDZbvoal0AZ3MrFkBMZils8S+LbpcNwBNvoG79qVC2oDpc52eSVFUmujvZvSVYDo9l78TV04bMIfGDopWmnEHD5awtGAusQbb7ZYya64NWEbe/xdmoIJg8o1Je2KoR67lND55Wl5mefb0/JzG4yPjuBC8/72wM4aDePzzA9Ph4BNW7gTutwIAAA==",
+      "archiveVerified": true
+    },
+    {
+      "path": "cfir/resolve/build/test-results/test/TEST-org.cangnova.cangjie.cfir.resolve.CfirTypeRelationsTest.xml",
+      "bytes": 1435,
+      "sha256": "55C2B5E6193ED60FD8A3FFA92F1ABB3D6F11BCAE4003C4CE1EEBA8B491CF41EA",
+      "timestamp": "2026-11-18T09:39:09.367Z",
+      "lastWriteUtc": "2026-11-18T09:39:10.1185565Z",
+      "withinQueueWindow": true,
+      "tests": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "gzipBase64": "H4sIAAAAAAAACr3UTW/TQBAG4Huk/IdhT3CI6yRV0lZxqqoICQlxqMKFqoepd5wO3Q9rZu2Qf49sk1Ihqh4I3MbeXe/jeddeXX73DloS5RgKM81yAxTKaDlsC/Nl82FyZi7X49EqkSZtOBEE9FSYKNusxLANscW++MaUlRVLJqTRtZRdVyybfU035DBxDLohTQb6BxVmaUAfua7JFiY3UCG7Rkj7CxKJMpSJPWlCXxdmls8Wk+l0Mj3b5OcX8/OL/DybL5ZfDTxETYPq08fPw5rC5NnpYmHW4xHAqpZYkyQmPRludIgS9fAygjtAEdyDpdKh9F5A2TaeQoKWaQesoAnvHQEGC5Y9ha5ngDsUevvOQOlQ9W+b85OeL82r0oNAe5AjrCDta1JAIeDQojCGdHTZfPoCLZAmsqCxkXJoUuUwgYtoycITXEEfOmHAxC31ZFDyGBKXenRtPntBWz6ws8PuXbLNfV/GCmoU+gdty6evJupRHkkgtiRd04ZcLVENQrXDkvrD2ChBDDQEbqNHDsfHnr6AVfQEtbDnX+GxAlvq4kP3//JrgnRLyP7GORz/MvoaE9+743+b+fxg0r0m8pPYpPXqze31+6vN1e3d3Xp18mzg+UQS+fPEbmA8Wp08/WXX49EP7kkzxpsFAAA=",
+      "archiveVerified": true
+    },
+    {
+      "path": "cfir/resolve/build/test-results/test/TEST-org.cangnova.cangjie.cfir.resolve.providers.CfirTypeAwareSupertypeProviderTest.xml",
+      "bytes": 765,
+      "sha256": "0EDF883C908D569C585B47FA34871F44F1DA796E979FE453F2D57F74BC2CC4D9",
+      "timestamp": "2026-11-18T09:39:09.838Z",
+      "lastWriteUtc": "2026-11-18T09:39:10.1145564Z",
+      "withinQueueWindow": true,
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "gzipBase64": "H4sIAAAAAAAACr2SwWrbQBCG7wa/w2RP6cGyJEORg6RgEgqBUgpVLw05DNJvdxtpdzuzcuK3L7KdkEN7bG6z+88u3zdMef089LSHqPWuMlmSGoJrfWfdrjLfm0+LwlzX81kZoVFHG0GOB1TGyy5p2e2c3/Ox+GWRtFsriUB9v0cSxO9tB9HkZmulOQRsnljwbQyQeAj4es4baDR0/L8yuSF9tCGgq0xqaMu2HwV6PEDEy6mMdoBGHkJl8jT/uMiyRVY06fpqtb5K10mxKn4Y+uk1nmA/3305valMmmT5ytTzGVEZxE8sFro8XUwQLeuLoyCAIzrCc4TrKLDwgAghbluEqMR9T/g9ck/CT8QifCBBEChc5Gi908sPhtqeVf/T3M5W6Xpl/mHxSnbWGBVKHdqe5YhILLtxgItKWy/koJMzu456zx06ErSw0468l0tevLjoQSOGhR9jXV7c39xums39w0NdLt8Ebxsh8vfGKZjPyuXrHtfz2R/WGmi3/QIAAA==",
+      "archiveVerified": true
+    }
+  ]
+}

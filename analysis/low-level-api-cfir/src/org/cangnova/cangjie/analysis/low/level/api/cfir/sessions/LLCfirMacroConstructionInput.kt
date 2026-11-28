@@ -9,12 +9,10 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.file.builder.LLCfirSourc
 import org.cangnova.cangjie.CjSourceKind
 import org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLCangJieSymbolProvider
-import org.cangnova.cangjie.cfir.declarations.CfirFile
-import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurface
+import org.cangnova.cangjie.cfir.resolve.providers.macro.PreMacroCfirFile
 import org.cangnova.cangjie.cfir.resolve.providers.macro.PreMacroRawBuildResult
 import org.cangnova.cangjie.cfir.resolve.providers.macro.buildPreMacroRawFiles
-import org.cangnova.cangjie.cfir.session.cfirProvider
-import org.cangnova.cangjie.cfir.session.ensureRawMacroSurfaceUsageStore
+import org.cangnova.cangjie.cfir.resolve.providers.cfirProvider
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.psi.CjAnnotation
@@ -38,18 +36,9 @@ fun LLCfirSession.buildPreMacroRawBuildResultForModule(): PreMacroRawBuildResult
 
     val resolvableSession = this as? LLCfirResolvableModuleSession ?: return null
 
-    /*
-     * 必须在构建前取得（必要时创建）surface store，并在构建后从**同一实例**读取。
-     *
-     * store 是懒创建的：raw builder 记录 surface 时会调用 ensureRawMacroSurfaceUsageStore()。
-     * 如果这里只读 rawMacroSurfaceUsageStoreOrNull，新 session 的第一次构造就会拿到 null，
-     * 录制到新建 store 里的 surface 全部被丢弃，表现为"有宏调用但 allSurfaces 为空"。
-     */
-    val surfaceStore = ensureRawMacroSurfaceUsageStore()
-
     val sourceFiles = collectModuleSourceFiles() ?: return null
     if (sourceFiles.isEmpty()) {
-        return buildPreMacroRawFiles(session = this, rawCfirFiles = emptyList())
+        return buildPreMacroRawFiles(session = this, files = emptyList())
     }
 
     val fileBuilder = resolvableSession.moduleComponents.cfirFileBuilder
@@ -57,29 +46,19 @@ fun LLCfirSession.buildPreMacroRawBuildResultForModule(): PreMacroRawBuildResult
         LLCfirSourcePsiGeneration.capture(sourceFiles)
     }
     val buildCounter = ensurePreMacroRawBuildCounter()
-    val cfirFiles = ArrayList<CfirFile>(sourceFiles.size)
-    val fileSurfaces = ArrayList<List<MacroSurface>>(sourceFiles.size)
+    val files = ArrayList<PreMacroCfirFile>(sourceFiles.size)
     for (file in sourceFiles) {
         ProgressManager.checkCanceled()
-        val built = ReadAction.compute<Pair<CfirFile, List<MacroSurface>>, RuntimeException> {
+        files += ReadAction.compute<PreMacroCfirFile, RuntimeException> {
             sourceGeneration.requireCurrent()
-            val cfirFile = fileBuilder.buildRawCfirFileUncached(file)
-            cfirFile to surfaceStore.surfaces(cfirFile).orEmpty()
+            fileBuilder.buildPreMacroRawFileUncached(file)
         }
-        cfirFiles += built.first
-        fileSurfaces += built.second
         buildCounter.increment()
     }
 
     // 较早文件的 PSI 可能在下一文件的读访问前被替换；不可把两个 generation 合并成一批输入。
     sourceGeneration.requireCurrent()
-
-    return buildPreMacroRawFiles(
-        session = this,
-        rawCfirFiles = cfirFiles,
-        fileSurfaces = fileSurfaces,
-        sourceFileIdentities = sourceFiles,
-    )
+    return buildPreMacroRawFiles(session = this, files = files)
 }
 
 /**

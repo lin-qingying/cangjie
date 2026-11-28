@@ -36,10 +36,10 @@ import org.cangnova.cangjie.test.CangJieTestInfo
 import org.cangnova.cangjie.test.NonGroupingPhaseTestConfiguration
 import org.cangnova.cangjie.test.builders.TestConfigurationBuilder
 import org.cangnova.cangjie.test.builders.testConfiguration
+import org.cangnova.cangjie.test.runners.AbstractCangjieCompilerTest
 import org.cangnova.cangjie.test.model.DependencyKind
 import org.cangnova.cangjie.test.model.FrontendKinds
 import org.cangnova.cangjie.test.model.TestModuleStructure
-import org.cangnova.cangjie.test.directives.LanguageSettingsDirectives
 import org.cangnova.cangjie.test.directives.model.DirectivesContainer
 import org.cangnova.cangjie.test.services.TemporaryDirectoryManager
 import org.cangnova.cangjie.test.services.AssertionsService
@@ -373,8 +373,7 @@ abstract class AbstractAnalysisApiBasedTest : TestWithDisposable() {
      */
     private fun createTestConfiguration(): NonGroupingPhaseTestConfiguration {
         return testConfiguration(testDataPath.toString()) {
-            // 对齐 Kotlin 默认指令容器；先注册规范语言指令，具体 configurator 才能在其上配置。
-            useDirectives(LanguageSettingsDirectives)
+            useDirectives(*AbstractCangjieCompilerTest.defaultDirectiveContainers.toTypedArray())
             configureTest(this)
             globalDefaults {
                 frontend = FrontendKinds.CFIR

@@ -19,6 +19,7 @@ import org.cangnova.cangjie.cfir.serialization.cjd.CjdSidecarLocator
 import org.cangnova.cangjie.cfir.serialization.cjd.cjdAnnotationProvenance
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoManager
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoSearchPath
+import org.cangnova.cangjie.cfir.serialization.cjo.CjoFormatVersionPolicy
 import org.cangnova.cangjie.cfir.serialization.provider.CfirDeserializedSymbolProvider
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.types.ConePointerType
@@ -81,7 +82,10 @@ class CjdDeclarationLoaderIntegrationTest : CjParsingTestCase("", "cj.d", CangJi
             @Deprecated[message: "second"]
             class Box {}
         """.trimIndent())
-        val manager = CjoManager(CjoSearchPath { if (it == "CANGJIE_LIBRARY") root.toString() else null })
+        val manager = CjoManager(
+            CjoSearchPath { if (it == "CANGJIE_LIBRARY") root.toString() else null },
+            CjoFormatVersionPolicy.Compilation(org.cangnova.cangjie.LanguageVersionSettingsImpl.DEFAULT),
+        )
         val loaded = kotlin.test.assertNotNull(manager.loadPackageSnapshot("test.pkg"))
         val module = Module()
         val provider = CfirDeserializedSymbolProvider(module.session, manager, CfirCangJieScopeProvider(), module,

@@ -18,6 +18,8 @@ data class LlvmPassPipeline(val pipelineText: String) {
                 LlvmCodeGenOptimizationLevel.LESS -> LlvmPassPipeline("default<O1>")
                 LlvmCodeGenOptimizationLevel.DEFAULT -> LlvmPassPipeline("default<O2>")
                 LlvmCodeGenOptimizationLevel.AGGRESSIVE -> LlvmPassPipeline("default<O3>")
+                LlvmCodeGenOptimizationLevel.SIZE -> LlvmPassPipeline("default<Os>")
+                LlvmCodeGenOptimizationLevel.SIZE_AGGRESSIVE -> LlvmPassPipeline("default<Oz>")
             }
     }
 }

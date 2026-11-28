@@ -6,6 +6,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirResolvedArgumentList
 import org.cangnova.cangjie.cfir.expressions.CfirResolvedArgumentListForErrorCall
 import org.cangnova.cangjie.cfir.expressions.CfirResolvedArgumentListImpl
+import org.cangnova.cangjie.cfir.expressions.CfirCVariadicArguments
 
 /**
  * 为错误调用构造保留原始实参列表的 resolved argument list。
@@ -29,6 +30,10 @@ fun buildArgumentListForErrorCall(
 fun buildResolvedArgumentList(
     original: CfirArgumentList?,
     mapping: LinkedHashMap<CfirExpression, CfirValueParameter>,
+    cVariadicArguments: CfirCVariadicArguments<CfirExpression>? = null,
+    arguments: List<CfirExpression> = mapping.keys.toList() + cVariadicArguments?.extraArguments.orEmpty(),
+    usesCangjieVariadicCall: Boolean = false,
 ): CfirResolvedArgumentList {
-    return CfirResolvedArgumentListImpl(original, mapping)
+    return CfirResolvedArgumentListImpl(original, mapping, cVariadicArguments = cVariadicArguments, arguments = arguments,
+        usesCangjieVariadicCall = usesCangjieVariadicCall)
 }

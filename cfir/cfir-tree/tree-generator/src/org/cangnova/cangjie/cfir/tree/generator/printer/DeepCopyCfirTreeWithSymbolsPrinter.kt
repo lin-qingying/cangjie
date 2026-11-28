@@ -65,6 +65,8 @@ internal class DeepCopyCfirTreeWithSymbolsPrinter(
         register("$base.types", "ConeSimpleCangJieType", "type", "CONE_TYPE")
         register("$base.types", "ConeDiagnostic", "diagnostic", "DIAGNOSTIC")
         register(base, "CfirTarget", "target", "TARGET")
+        register(base, "CfirContentSource", "contentSource", "CONTENT_SOURCE")
+        register("$base.expressions", "CfirConstantValue", "patternConstant", "PATTERN_CONSTANT")
         register("$base.patterns", "CfirPatternTreeOwner", "patternOwner", "PATTERN_OWNER")
         register("$base.expressions", "CfirAnnotationArgumentMapping", "annotationMapping", "ANNOTATION_MAPPING")
         register("$base.expressions", "CfirAnnotationArgumentView", "annotationView", "ANNOTATION_VIEW")
@@ -84,6 +86,10 @@ internal class DeepCopyCfirTreeWithSymbolsPrinter(
         "$BASE_PACKAGE.expressions.CfirComparisonOp", "$BASE_PACKAGE.expressions.CfirTypeOperationKind",
         "$BASE_PACKAGE.expressions.CfirFunctionCallOrigin", "$BASE_PACKAGE.expressions.CfirAnnotationResolveState",
         "$BASE_PACKAGE.declarations.CfirModifierExplicitness", "$BASE_PACKAGE.declarations.CfirBodyPresence",
+        "$BASE_PACKAGE.source.CfirSourceOperator", "$BASE_PACKAGE.source.CfirSourceCallKind",
+        "$BASE_PACKAGE.source.CfirSourceForInKind", "$BASE_PACKAGE.source.CfirSourceStringKind",
+        "$BASE_PACKAGE.types.CfirTypeRefOrigin", "$BASE_PACKAGE.types.BuiltinPrimitiveOperatorSignature",
+        "org.cangnova.cangjie.annotations.CangjieOverflowStrategy",
         "org.cangnova.cangjie.annotations.BuiltInAnnotationKind",
         "org.cangnova.cangjie.annotations.CangjieAnnotationOrigin", "org.cangnova.cangjie.annotations.CangjieAnnotationTarget",
     )
@@ -262,7 +268,10 @@ internal class DeepCopyCfirTreeWithSymbolsPrinter(
             if (field !in impl.fieldsInConstructor) writeKind(field, impl)
         }
         if (impl.element == CfirTree.errorTypeRef) {
-            val expected = setOf("source", "annotations", "customRenderer", "coneType", "delegatedTypeRef", "diagnostic", "partiallyResolvedTypeRef")
+            val expected = setOf(
+                "source", "annotations", "customRenderer", "coneType", "delegatedTypeRef",
+                "diagnostic", "partiallyResolvedTypeRef", "typeUseOrigin",
+            )
             check(impl.allFields.map { it.name }.toSet() == expected) { "Handwritten error type-ref constructor schema changed: $impl" }
         }
     }

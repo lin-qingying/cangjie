@@ -18,7 +18,7 @@ FILE: lambdaArguments.cj
         RETURN {
             LAMBDA(value: R|Int64|) {
                 RETURN {
-                    FUNCTION_CALL(*operator_plus) {
+                    FUNCTION_CALL(*operator_plus -> BUILTIN(BuiltinPrimitiveOperatorSignature(name=*operator_plus, receiverKind=INT64, parameterKinds=[INT64], returnKind=INT64))) {
                         receiver:
                             NAMED_ACCESS(value -> CfirValueParameterSymbol(value))
                         arguments:

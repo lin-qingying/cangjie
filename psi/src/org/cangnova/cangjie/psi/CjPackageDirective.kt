@@ -251,7 +251,9 @@ class CjPackageDirective : CjDeclarationStub<CangJiePackageDirectiveStub> {
                 val expressionText = packageNameExpression?.text.orEmpty()
                 val organizationSeparator = expressionText.indexOf("::")
                 qualifiedNameCache = if (organizationSeparator >= 0) {
-                    expressionText.substring(organizationSeparator + 2).replace("::", ".")
+                    org.cangnova.cangjie.name.CangJieUnicode.normalizeIdentifier(
+                        expressionText.substring(organizationSeparator + 2).replace("::", "."),
+                    )
                 } else {
                     getQualifiedNameOf(null)
                 }
@@ -267,7 +269,7 @@ class CjPackageDirective : CjDeclarationStub<CangJiePackageDirectiveStub> {
             val organizationSeparator = expressionText.indexOf("::")
             return organizationSeparator
                 .takeIf { it > 0 }
-                ?.let { identifier(expressionText.substring(0, it).trim()) }
+                ?.let { identifier(CjPsiUtil.unquoteIdentifier(expressionText.substring(0, it).trim())) }
         }
 
     /**

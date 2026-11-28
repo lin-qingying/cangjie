@@ -18,6 +18,7 @@ import org.cangnova.cangjie.chir.core.type.ChirNamedType
 import org.cangnova.cangjie.chir.core.type.ChirPrimitiveType
 import org.cangnova.cangjie.chir.core.type.ChirResolvedTypeRef
 import org.cangnova.cangjie.chir.core.type.ChirStructType
+import org.cangnova.cangjie.chir.core.type.ChirTypeDeclarationId
 import org.cangnova.cangjie.chir.core.type.ChirThisType
 import org.cangnova.cangjie.chir.core.value.ChirConstantValue
 import org.cangnova.cangjie.codegen.api.ChirCodegenInput
@@ -31,6 +32,63 @@ import org.junit.jupiter.api.assertThrows
  * LLVM nominal type declaration 收集与发射的集成测试。
  */
 class TypeDeclarationIntegrationTest {
+    /** 已定义的无字段 class 仍是 LLVM sized type，供 alloca 等内存操作使用。 */
+    @Test
+    fun `emits a sized empty class layout`() {
+        val classId = ChirTypeDeclarationId("demo", "EmptyClass")
+        val classType = ChirResolvedTypeRef(ChirClassType(classId))
+        val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
+        val function = DefaultChirFunctionDeclaration(
+            semanticId = ChirSemanticId("fn:empty-class-layout"),
+            name = "emptyClassLayout",
+            returnType = intType,
+            parameters = listOf(
+                DefaultChirVariableDeclaration(
+                    semanticId = ChirSemanticId("param:empty-class-layout"),
+                    name = "value",
+                    type = classType,
+                    mutable = false,
+                ),
+            ),
+            blocks = listOf(
+                ChirBlock(
+                    semanticId = ChirSemanticId("block:empty-class-layout"),
+                    name = "entry",
+                    expressions = emptyList(),
+                    terminator = ChirReturnTerminator(
+                        semanticId = ChirSemanticId("term:empty-class-layout:return"),
+                        returnValue = ChirConstantValue(ChirSemanticId("const:empty-class-layout"), intType, "0"),
+                    ),
+                ),
+            ),
+            entryBlockId = ChirSemanticId("block:empty-class-layout"),
+        )
+
+        val ir = generateIr(
+            ChirPackage(
+                semanticId = ChirSemanticId("pkg:empty-class-layout"),
+                name = "empty_class_layout",
+                modules = listOf(
+                    ChirModule(
+                        semanticId = ChirSemanticId("mod:empty-class-layout"),
+                        name = "main",
+                        declarations = listOf(function),
+                    ),
+                ),
+                typeDefinitions = listOf(
+                    DefaultChirClassDeclaration(
+                        semanticId = ChirSemanticId("type:empty-class-layout"),
+                        name = classId.qualifiedName,
+                        typeDeclarationId = classId,
+                    ),
+                ),
+            ),
+        )
+
+        assertTrue("%class.demo_EmptyClass = type { }" in ir, ir)
+        assertTrue("%class.demo_EmptyClass = type opaque" !in ir, ir)
+    }
+
     /**
      * 验证所有 CHIR 使用点中的 nominal 类型都会收集为 LLVM type declaration。
      */
@@ -39,14 +97,15 @@ class TypeDeclarationIntegrationTest {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
         val recordType = ChirResolvedTypeRef(
             ChirStructType(
-                name = "demo:Record<Int32>",
+                declarationId = ChirTypeDeclarationId("demo", "Record"),
                 fieldTypes = listOf(intType),
+                typeArguments = listOf(intType),
             ),
         )
         val boxRecordType = ChirResolvedTypeRef(ChirBoxType(recordType))
         val resultEnumType = ChirResolvedTypeRef(
             ChirEnumType(
-                name = "demo:Result",
+                declarationId = ChirTypeDeclarationId("demo", "Result"),
                 cases = listOf(ChirEnumCaseType("ok", payloadTypes = listOf(recordType))),
             ),
         )
@@ -101,11 +160,11 @@ class TypeDeclarationIntegrationTest {
             ),
         )
 
-        assertTrue(ir.contains("%struct.demo_Record_Int32 = type { i32 }"), ir)
-        assertTrue(ir.contains("%box.demo_Record_Int32 = type { %struct.demo_Record_Int32 }"), ir)
+        assertTrue(ir.contains("%struct.demo_Record_int32 = type { i32 }"), ir)
+        assertTrue(ir.contains("%box.demo_Record_int32 = type { %struct.demo_Record_int32 }"), ir)
         assertTrue(ir.contains("%enum.demo_Result = type { i32 }"), ir)
         assertTrue(
-            ir.contains("define %struct.demo_Record_Int32 @make_record(%box.demo_Record_Int32 %box, %enum.demo_Result %state)"),
+            ir.contains("define %struct.demo_Record_int32 @make_record(%box.demo_Record_int32 %box, %enum.demo_Result %state)"),
             ir,
         )
     }
@@ -118,14 +177,14 @@ class TypeDeclarationIntegrationTest {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
         val aliasType = ChirResolvedTypeRef(
             ChirNamedType(
-                renderName = "demo:Alias",
+                name = "demo:Alias",
                 typeArguments = listOf(intType),
             ),
         )
         val thisType = ChirResolvedTypeRef(ChirThisType("demo:Widget"))
         val classType = ChirResolvedTypeRef(
             ChirClassType(
-                name = "demo:Widget",
+                declarationId = ChirTypeDeclarationId("demo", "Widget"),
                 fieldTypes = listOf(intType),
             ),
         )
@@ -181,6 +240,7 @@ class TypeDeclarationIntegrationTest {
                     DefaultChirClassDeclaration(
                         semanticId = ChirSemanticId("type:widget"),
                         name = "demo:Widget",
+                        typeDeclarationId = ChirTypeDeclarationId("demo", "Widget"),
                         memberDeclarations = listOf(
                             DefaultChirVariableDeclaration(
                                 semanticId = ChirSemanticId("field:value"),
@@ -271,7 +331,7 @@ class TypeDeclarationIntegrationTest {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
         val recordType = ChirResolvedTypeRef(
             ChirStructType(
-                name = "demo:GlobalRecord",
+                declarationId = ChirTypeDeclarationId("demo", "GlobalRecord"),
                 fieldTypes = listOf(intType),
             ),
         )

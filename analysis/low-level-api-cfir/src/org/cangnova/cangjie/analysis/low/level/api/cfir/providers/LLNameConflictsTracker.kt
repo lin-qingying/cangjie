@@ -2,11 +2,13 @@
 
 package org.cangnova.cangjie.analysis.low.level.api.cfir.providers
 
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
+
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.getAllClassLikeSymbolsByClassIdOrSingle
 import org.cangnova.cangjie.cfir.CfirNameConflictsTracker
 import org.cangnova.cangjie.cfir.declarations.CfirFile
-import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.resolve.providers.cfirProvider
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.name.ClassId
 

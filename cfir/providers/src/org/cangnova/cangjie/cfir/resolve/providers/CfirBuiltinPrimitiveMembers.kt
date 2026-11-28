@@ -4,6 +4,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.DEFAULT_STATUS_FOR_STATUSLESS_DECLARATIONS
 import org.cangnova.cangjie.cfir.declarations.EmptyDeprecationsProvider
+import org.cangnova.cangjie.cfir.declarations.builtinOperatorSignature
 import org.cangnova.cangjie.cfir.declarations.builder.buildNamedFunction
 import org.cangnova.cangjie.cfir.declarations.builder.buildValueParameter
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
@@ -15,6 +16,7 @@ import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
 import org.cangnova.cangjie.cfir.types.classId
+import org.cangnova.cangjie.descriptors.Modality
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.Name
 
@@ -59,9 +61,9 @@ internal object CfirBuiltinPrimitiveMembers {
                 }
             }
 
-            val status = CfirDeclarationStatusImpl().apply {
+            val status = CfirDeclarationStatusImpl(modality = Modality.FINAL).apply {
                 isOperator = true
-            }
+            }.let { it.resolved(it.visibility, Modality.FINAL) }
             buildNamedFunction {
                 this.moduleData = moduleData
                 resolvePhase = CfirResolvePhase.BODY_RESOLVE
@@ -77,6 +79,6 @@ internal object CfirBuiltinPrimitiveMembers {
                 symbol = functionSymbol
                 name = signature.name
                 isMut = false
-            }
+            }.apply { builtinOperatorSignature = signature }
         }
 }

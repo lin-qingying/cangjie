@@ -2,6 +2,8 @@ package org.cangnova.cangjie.cfir.analysis.checkers
 
 import org.cangnova.cangjie.LanguageFeature
 import org.cangnova.cangjie.LanguageFeatureSupportStatus
+import org.cangnova.cangjie.CjmpLanguageFeature
+import org.cangnova.cangjie.CjmpLanguageFeatureGate
 import org.cangnova.cangjie.featureSupportStatus
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
@@ -27,6 +29,22 @@ internal fun CheckerContext.requireFeatureSupport(
         source = source ?: containingFileSymbol?.cfir?.source,
         factory = CfirErrors.UNSUPPORTED_FEATURE,
         a = feature to languageVersionSettings,
+    )
+    return false
+}
+
+/** CJMP 专用版本门经共享特性映射判定，并保留通用 unsupported-feature 诊断载荷。 */
+internal fun CheckerContext.requireCjmpFeatureSupport(
+    feature: CjmpLanguageFeature,
+    source: AbstractCjSourceElement?,
+    reporter: DiagnosticReporter,
+): Boolean {
+    if (CjmpLanguageFeatureGate.supports(languageVersionSettings, feature)) return true
+    val languageFeature = CjmpLanguageFeatureGate.languageFeature(feature)
+    reporter.reportOn(
+        source = source ?: containingFileSymbol?.cfir?.source,
+        factory = CfirErrors.UNSUPPORTED_FEATURE,
+        a = languageFeature to languageVersionSettings,
     )
     return false
 }

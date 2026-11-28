@@ -12,6 +12,7 @@ import org.cangnova.cangjie.cfir.CfirQualifierPart
 import org.cangnova.cangjie.cfir.MutableOrEmptyList
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.CfirTypeRefOrigin
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.cfir.visitors.transformInplace
@@ -19,8 +20,9 @@ import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.CjSourceElement
 
 class CfirQualifierPartImpl @CfirImplementationDetail constructor(
-    override val source: CjSourceElement?,
+    override var source: CjSourceElement?,
     override val name: Name,
+    override var typeUseOrigin: CfirTypeRefOrigin,
     override var typeArguments: MutableOrEmptyList<CfirTypeRef>,
 ) : CfirQualifierPart() {
 
@@ -36,6 +38,15 @@ class CfirQualifierPartImpl @CfirImplementationDetail constructor(
     override fun <D> transformTypeArguments(transformer: CfirTransformer<D>, data: D): CfirQualifierPartImpl {
         typeArguments.transformInplace(transformer, data)
         return this
+    }
+
+    @CfirImplementationDetail
+    override fun replaceSource(newSource: CjSourceElement?) {
+        source = newSource
+    }
+
+    override fun replaceTypeUseOrigin(newTypeUseOrigin: CfirTypeRefOrigin) {
+        typeUseOrigin = newTypeUseOrigin
     }
 
     override fun replaceTypeArguments(newTypeArguments: List<CfirTypeRef>) {

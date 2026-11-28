@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.CfirQualifierPart
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
@@ -22,7 +23,7 @@ import org.cangnova.cangjie.cfir.types.containsErrorType
  * 除内层具体错误外，还会在 RHS 根类型上报告 `sema_not_a_type`。CFIR 在解析阶段
  * 会把内层错误包装成外层 [CfirErrorTypeRef]，这里负责补齐声明侧根诊断。
  */
-object CfirTypeAliasExpandedTypeChecker : CfirTypeAliasChecker() {
+object CfirTypeAliasExpandedTypeChecker : CfirTypeAliasChecker(MppCheckerKind.Common) {
     /**
      * 检查 typealias RHS 根类型是否应补报 `NOT_A_TYPE`。
      *

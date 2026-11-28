@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.hasInvalidGenericTypeArgument
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirStaticMemberCompleteness
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
@@ -33,7 +34,7 @@ import org.cangnova.cangjie.source.CjSourceElement
  * 还会在 interface static 默认实现体递归引用未实现 static 成员时，把诊断挂到外层调用。
  * 这里把两条规则放在 qualified access 层，统一覆盖 `A.f()`、`Alias.f()` 和 static property 访问。
  */
-object CfirInterfaceCallWithUnimplementedCallChecker : CfirQualifiedAccessChecker() {
+object CfirInterfaceCallWithUnimplementedCallChecker : CfirQualifiedAccessChecker(MppCheckerKind.Common) {
     /**
      * 检查 static 成员访问是否落到未实现的抽象目标，或默认实现体依赖未实现目标。
      */

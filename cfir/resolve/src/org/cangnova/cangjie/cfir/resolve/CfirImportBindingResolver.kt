@@ -7,7 +7,7 @@ import org.cangnova.cangjie.cfir.resolve.providers.CfirImportNamespaceContext
 import org.cangnova.cangjie.cfir.resolve.services.CfirResolvedImportBinding
 import org.cangnova.cangjie.cfir.resolve.services.CfirResolvedImportTarget
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.ImportPath
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
@@ -108,13 +108,16 @@ internal class CfirImportBindingResolver(
                 for (packageFqName in memberPackageCandidates) {
                     val namespace = session.symbolProvider.getImportNamespace(CfirImportNamespaceContext(packageFqName, organizationName))
                     namespace.classifiers(memberName).forEach { symbol ->
-                        if (targets.none { it is CfirResolvedImportTarget.ClassLike && it.symbol == symbol }) {
-                            targets += CfirResolvedImportTarget.ClassLike(
-                                // import 路径可以命中其它包 public import 出来的声明；binding 必须保存
-                                // 最终声明身份，effectiveName 已单独保留使用点名称，不能把两者混为一体。
-                                classId = symbol.classId,
-                                symbol = symbol,
-                            )
+                        val target = CfirResolvedImportTarget.ClassLike(
+                            packageFqName = packageFqName,
+                            organizationName = organizationName,
+                            name = memberName,
+                            // import 路径可以命中其它包 public import 出来的声明；同时保留查找命名空间，
+                            // 使消费方只能通过同一导入边重新物化该目标。
+                            classId = symbol.classId,
+                        )
+                        if (target !in targets) {
+                            targets += target
                         }
                     }
 
@@ -123,7 +126,7 @@ internal class CfirImportBindingResolver(
                         targets += CfirResolvedImportTarget.Callable(
                             packageFqName = packageFqName,
                             name = memberName,
-                            symbols = callableSymbols,
+                            organizationName = organizationName,
                         )
                     }
                 }

@@ -1,6 +1,8 @@
 package org.cangnova.cangjie.cfir.patterns
 
 import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
+import org.cangnova.cangjie.cfir.patterns.impl.CfirConstPatternImpl
+import org.cangnova.cangjie.cfir.patterns.impl.CfirExpressionPatternImpl
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 
 /**
@@ -23,7 +25,22 @@ interface CfirPatternMutableState {
         /**
          * 捕获指定 pattern 当前可恢复状态。
          */
-        fun capture(pattern: CfirPattern): CfirPatternMutableState? = when (pattern) {
+        fun capture(pattern: CfirPattern): CfirPatternMutableState {
+            val type = pattern.semanticTypeRef
+            val values = pattern.constantValues.toList()
+            val context = pattern.contextExpression
+            val specific = captureSpecific(pattern)
+            return object : CfirPatternMutableState {
+                override fun restore() {
+                    specific?.restore()
+                    pattern.replaceSemanticTypeRef(type)
+                    pattern.replaceConstantValues(values)
+                    pattern.replaceContextExpression(context)
+                }
+            }
+        }
+
+        private fun captureSpecific(pattern: CfirPattern): CfirPatternMutableState? = when (pattern) {
             is CfirBindingPattern -> {
                 CfirBindingPatternMutableState(
                     pattern = pattern,
@@ -37,8 +54,10 @@ interface CfirPatternMutableState {
                 CfirTypePatternMutableState(
                     pattern = pattern,
                     typeRef = pattern.typeRef,
-                    bindingVariable = pattern.bindingVariable,
+                    nestedPattern = pattern.nestedPattern,
                     matchingKind = pattern.matchingKind,
+                    matchBeforeRuntime = pattern.matchBeforeRuntime,
+                    needRuntimeTypeCheck = pattern.needRuntimeTypeCheck,
                 )
             }
 
@@ -49,7 +68,80 @@ interface CfirPatternMutableState {
                 )
             }
 
-            else -> null
+            is CfirTuplePattern -> {
+                val elements = pattern.elements.toList()
+                object : CfirPatternMutableState {
+                    override fun restore() {
+                        pattern.replaceElements(elements)
+                    }
+                }
+            }
+
+            is CfirEnumPattern -> {
+                val constructor = pattern.constructor
+                val arguments = pattern.arguments.toList()
+                object : CfirPatternMutableState {
+                    override fun restore() {
+                        pattern.replaceConstructor(constructor)
+                        pattern.replaceArguments(arguments)
+                    }
+                }
+            }
+
+            is CfirOrPattern -> {
+                val alternatives = pattern.alternatives.toList()
+                object : CfirPatternMutableState {
+                    override fun restore() {
+                        pattern.replaceAlternatives(alternatives)
+                    }
+                }
+            }
+
+            is CfirConstPattern -> {
+                val impl = pattern as CfirConstPatternImpl
+                val expression = impl.expression
+                val type = expression.coneTypeOrNull
+                val operatorCall = impl.operatorCall
+                object : CfirPatternMutableState {
+                    override fun restore() {
+                        impl.expression = expression
+                        expression.replaceConeTypeOrNull(type)
+                        impl.replaceOperatorCall(operatorCall)
+                    }
+                }
+            }
+
+            is CfirExpressionPattern -> {
+                val impl = pattern as CfirExpressionPatternImpl
+                val expression = impl.expression
+                object : CfirPatternMutableState {
+                    override fun restore() {
+                        impl.expression = expression
+                    }
+                }
+            }
+
+            is CfirCatchPattern -> {
+                val inner = pattern.nestedPattern
+                val refs = pattern.typeRefs.toList()
+                object : CfirPatternMutableState {
+                    override fun restore() {
+                        pattern.replaceNestedPattern(inner)
+                        pattern.replaceTypeRefs(refs)
+                    }
+                }
+            }
+            is CfirCommandTypePattern -> {
+                val inner = pattern.nestedPattern
+                val refs = pattern.typeRefs.toList()
+                object : CfirPatternMutableState {
+                    override fun restore() {
+                        pattern.replaceNestedPattern(inner)
+                        pattern.replaceTypeRefs(refs)
+                    }
+                }
+            }
+            is CfirWildcardPattern -> null
         }
     }
 }
@@ -98,19 +190,23 @@ private class CfirTypePatternMutableState(
      */
     private val typeRef: CfirTypeRef,
     /**
-     * 捕获时的绑定变量。
+     * 捕获时的拥有模式。
      */
-    private val bindingVariable: CfirPatternBindingVariable?,
+    private val nestedPattern: CfirPattern,
     /** 捕获时的类型模式判定形式。 */
     private val matchingKind: CfirTypePatternMatchingKind,
+    private val matchBeforeRuntime: Boolean,
+    private val needRuntimeTypeCheck: Boolean,
 ) : CfirPatternMutableState {
     /**
      * 恢复 type pattern 的类型引用、绑定变量和判定形式。
      */
     override fun restore() {
         pattern.replaceTypeRef(typeRef)
-        pattern.replaceBindingVariable(bindingVariable)
+        pattern.replaceNestedPattern(nestedPattern)
         pattern.replaceMatchingKind(matchingKind)
+        pattern.replaceMatchBeforeRuntime(matchBeforeRuntime)
+        pattern.replaceNeedRuntimeTypeCheck(needRuntimeTypeCheck)
     }
 }
 

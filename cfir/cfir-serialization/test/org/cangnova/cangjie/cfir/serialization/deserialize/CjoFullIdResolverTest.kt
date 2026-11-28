@@ -1,6 +1,6 @@
 package org.cangnova.cangjie.cfir.serialization.deserialize
 
-import org.cangnova.cangjie.test.bindCjoFixture
+import org.cangnova.cangjie.test.cjoFixtureModuleDataProvider
 import PackageFormat.ClassInfo
 import PackageFormat.CjoVersion
 import PackageFormat.CompositeTyInfo
@@ -16,14 +16,26 @@ import com.google.flatbuffers.FlatBufferBuilder
 import org.cangnova.cangjie.cfir.common.CfirModuleCapabilities
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.common.CfirPlatform
+import org.cangnova.cangjie.cfir.resolve.providers.CfirBuiltinSymbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirCompositeSymbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
+import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
 import org.cangnova.cangjie.cfir.serialization.CjoConstants
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoManager
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoSearchPath
+import org.cangnova.cangjie.cfir.serialization.cjo.CjoFormatVersionPolicy
+import org.cangnova.cangjie.LanguageVersionSettingsImpl
+import org.cangnova.cangjie.cfir.serialization.provider.CfirDeserializedSymbolProvider
+import org.cangnova.cangjie.cfir.session.CfirLanguageSettingsComponent
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagImpl
+import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
+import org.cangnova.cangjie.cfir.symbols.CfirBuiltInTypeSymbol
+import org.cangnova.cangjie.cfir.types.ConeClassLikeLookupTag
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.name.ClassId
+import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.platform.CangJiePlatforms
 import org.cangnova.cangjie.platform.isCommon
@@ -31,6 +43,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Test
 import java.nio.ByteBuffer
+import java.nio.file.Path
 import kotlin.io.path.createTempDirectory
 
 @OptIn(ExperimentalUnsignedTypes::class)
@@ -53,6 +66,11 @@ class CjoFullIdResolverTest {
         assertEquals(
             "dep.pkg.Outer",
             resolver.resolveClassId(createFullId(pkgId = 0, decl = "dep::Outer"))?.asFqNameString(),
+        )
+        assertEquals(
+            null,
+            resolver.resolveClassId(createFullId(pkgId = 0, decl = "Outer")),
+            "a declaration identifier is not an alias when its package declares an exportId",
         )
         assertEquals(
             "dep.pkg.Leaf",
@@ -93,17 +111,36 @@ class CjoFullIdResolverTest {
         )
     }
 
-    /**
-     * 官方 std.core FullId 使用 exportId，而运行时可能没有单独可加载的 std.core CJO。
-     */
+    /** A standard-library FullId must resolve through the referenced package's declaration index. */
     @Test
-    fun `resolver restores only official std core Any export id without package cjo`() {
-        val fixture = FullIdTestFixture.create(imports = listOf("std.core"), includeTypeReferences = false)
-        val resolver = fixture.context.fullIdResolver
+    fun `resolver resolves standard library export id through its package declaration`() {
+        val missingPackageFixture = FullIdTestFixture.create(
+            imports = listOf("std.core"),
+            includeTypeReferences = false,
+        )
+        assertEquals(
+            null,
+            missingPackageFixture.context.fullIdResolver
+                .resolveClassId(createFullId(pkgId = 0, decl = "_CNat3AnyE")),
+        )
 
+        val fixture = FullIdTestFixture.create(
+            imports = listOf("std.core"),
+            includeTypeReferences = false,
+            includeOfficialStdCoreCjo = true,
+        )
+        val resolver = fixture.context.fullIdResolver
         assertEquals(
             "std.core.Any",
             resolver.resolveClassId(createFullId(pkgId = 0, decl = "_CNat3AnyE"))?.asFqNameString(),
+        )
+        assertEquals(
+            "std.core.String",
+            resolver.resolveClassId(createFullId(pkgId = 0, decl = "_CNat6StringE"))?.asFqNameString(),
+        )
+        assertEquals(
+            "std.core.Object",
+            resolver.resolveClassId(createFullId(pkgId = 0, decl = "_CNat6ObjectE"))?.asFqNameString(),
         )
         assertEquals(
             null,
@@ -114,19 +151,52 @@ class CjoFullIdResolverTest {
             resolver.resolveClassId(createFullId(pkgId = 0, decl = "_CNat3UnknownE")),
         )
 
-        val unrelatedPackageFixture = FullIdTestFixture.create()
+        val unrelatedPackageFixture = FullIdTestFixture.create(imports = listOf("stdx.effect"), includeTypeReferences = false)
         assertEquals(
             null,
             unrelatedPackageFixture.context.fullIdResolver
                 .resolveClassId(createFullId(pkgId = 0, decl = "_CNat3AnyE")),
         )
+    }
 
-        val effectFixture = FullIdTestFixture.create(imports = listOf("stdx.effect"), includeTypeReferences = false)
+    /**
+     * 缺少 `std.core` CJO 时，provider 中的 builtin 声明不能把 FullId 的 opaque key 当作短名称。
+     */
+    @Test
+    fun `resolver does not reinterpret missing std core export ids as builtin declaration names`() {
+        val missingPackageFixture = FullIdTestFixture.create(
+            imports = listOf("std.core"),
+            includeTypeReferences = false,
+        )
+        val resolver = missingPackageFixture.context.fullIdResolver
+
         assertEquals(
             null,
-            effectFixture.context.fullIdResolver
-                .resolveClassId(createFullId(pkgId = 0, decl = "Command")),
+            resolver.resolveClassId(createFullId(pkgId = 0, decl = "_CNat8RawArrayIG_E")),
         )
+        assertEquals(
+            null,
+            resolver.resolveClassId(createFullId(pkgId = 0, decl = "_CNat8CPointerIG_E")),
+        )
+
+        val packagePresentFixture = FullIdTestFixture.create(
+            imports = listOf("std.core"),
+            includeTypeReferences = false,
+            includeOfficialStdCoreCjo = true,
+        )
+        assertEquals(
+            "std.core.RawArray",
+            packagePresentFixture.context.fullIdResolver
+                .resolveClassId(createFullId(pkgId = 0, decl = "_CNat8RawArrayIG_E"))?.asFqNameString(),
+        )
+        assertEquals(
+            "std.core.CPointer",
+            packagePresentFixture.context.fullIdResolver
+                .resolveClassId(createFullId(pkgId = 0, decl = "_CNat8CPointerIG_E"))?.asFqNameString(),
+        )
+        val builtInSymbol = packagePresentFixture.context.moduleData.session.symbolProvider
+            .getClassLikeSymbolByClassId(ClassId(FqName("std.core"), Name.identifier("RawArray")))
+        assertInstanceOf(CfirBuiltInTypeSymbol::class.java, builtInSymbol)
     }
 
     /**
@@ -163,6 +233,7 @@ class CjoFullIdResolverTest {
             fun create(
                 imports: List<String> = listOf("dep.pkg"),
                 includeTypeReferences: Boolean = true,
+                includeOfficialStdCoreCjo: Boolean = false,
             ): FullIdTestFixture {
                 val tempDir = createTempDirectory("cjo-fullid-test").toFile()
 
@@ -181,6 +252,17 @@ class CjoFullIdResolverTest {
                         ),
                     ),
                 )
+
+                if (includeOfficialStdCoreCjo) {
+                    val stdCoreFile = tempDir.resolve(CjoConstants.packageNameToPath("std.core"))
+                    stdCoreFile.parentFile.mkdirs()
+                    val officialStdCoreCjo = requireNotNull(
+                        CjoFullIdResolverTest::class.java.classLoader.getResourceAsStream(
+                            "cjo-sdk/windows_x86_64_cjnative/std/std.core.cjo",
+                        ),
+                    ) { "official std.core CJO test fixture must be available" }.use { it.readBytes() }
+                    stdCoreFile.writeBytes(officialStdCoreCjo)
+                }
 
                 tempDir.resolve("main.cjo").writeBytes(
                     buildPackageBytes(
@@ -214,21 +296,8 @@ class CjoFullIdResolverTest {
                         else -> null
                     }
                 }
-                val cjoManager = CjoManager(searchPath)
-                val pkg = requireNotNull(cjoManager.loadPackage("main.pkg"))
-                val header = requireNotNull(cjoManager.loadPackageHeader("main.pkg"))
-
-                val metadataBinding = bindCjoFixture(TestModuleData, cjoManager, setOf(tempDir.toPath()))
-                return FullIdTestFixture(
-                    CfirDeserializationContext(
-                        pkg = pkg,
-                        header = header,
-                        moduleData = TestModuleData,
-                        cjoManager = cjoManager,
-                        classSymbolLookup = cjoManager.deserializedSymbolLookups.forBinding(metadataBinding, TestModuleData,
-                            CjoDeserializationMode.FULL),
-                    ),
-                )
+                val cjoManager = CjoManager(searchPath, CjoFormatVersionPolicy.Compilation(LanguageVersionSettingsImpl.DEFAULT))
+                return FullIdTestFixture(createContext(cjoManager, tempDir.toPath()))
             }
 
             /**
@@ -280,20 +349,29 @@ class CjoFullIdResolverTest {
                         else -> null
                     }
                 }
-                val cjoManager = CjoManager(searchPath)
-                val pkg = requireNotNull(cjoManager.loadPackage("main.pkg"))
-                val header = requireNotNull(cjoManager.loadPackageHeader("main.pkg"))
+                val cjoManager = CjoManager(searchPath, CjoFormatVersionPolicy.Compilation(LanguageVersionSettingsImpl.DEFAULT))
 
-                val metadataBinding = bindCjoFixture(TestModuleData, cjoManager, setOf(tempDir.toPath()))
-                return FullIdTestFixture(
-                    CfirDeserializationContext(
-                        pkg = pkg,
-                        header = header,
-                        moduleData = TestModuleData,
-                        cjoManager = cjoManager,
-                        classSymbolLookup = cjoManager.deserializedSymbolLookups.forBinding(metadataBinding, TestModuleData,
-                            CjoDeserializationMode.FULL),
-                    ),
+                return FullIdTestFixture(createContext(cjoManager, tempDir.toPath()))
+            }
+
+            /** 每个夹具持有自己的库会话；跨包类型使用同一 manager 所选快照的 canonical 声明。 */
+            private fun createContext(cjoManager: CjoManager, ownedRoot: Path): CfirDeserializationContext {
+                val moduleData = TestModuleData()
+                val session = moduleData.session
+                val provider = CfirDeserializedSymbolProvider(
+                    session,
+                    cjoManager,
+                    session.cangjieScopeProvider,
+                    moduleData,
+                    moduleDataProvider = cjoFixtureModuleDataProvider(moduleData, setOf(ownedRoot)),
+                )
+                // FullId 与正式 provider 使用同一份绑定和 package context。
+                session.register(
+                    CfirSymbolProvider::class,
+                    CfirCompositeSymbolProvider(session, listOf(CfirBuiltinSymbolProvider(session, moduleData), provider)),
+                )
+                return requireNotNull(
+                    provider.getOwnPackageContext("main.pkg", CjoDeserializationMode.FULL),
                 )
             }
         }
@@ -341,7 +419,7 @@ class CjoFullIdResolverTest {
         )
 
         /**
-         * 构造最小 CJO Package FlatBuffers 字节数组。
+         * 构造带完整 ClassInfo 的 CJO Package FlatBuffers 字节数组。
          */
         private fun buildPackageBytes(
             fullPackageName: String,
@@ -357,12 +435,12 @@ class CjoFullIdResolverTest {
             val declOffsets = decls.map { spec ->
                 val identifierOffset = builder.createString(spec.identifier)
                 val exportIdOffset = spec.exportId?.let(builder::createString) ?: 0
-                val infoOffset = if (spec.bodyFormattedDeclIndices.isNotEmpty()) {
-                    val bodyOffset = ClassInfo.createBodyVector(builder, spec.bodyFormattedDeclIndices)
-                    ClassInfo.createClassInfo(builder, 0, bodyOffset, 0, false, 0u, false, 0u)
-                } else {
-                    0
-                }
+                // 空类仍有真实 ClassInfo 和空成员/继承向量；嵌套负例保留原 body 索引。
+                val inheritedTypesOffset = ClassInfo.createInheritedTypesVector(builder, uintArrayOf())
+                val bodyOffset = ClassInfo.createBodyVector(builder, spec.bodyFormattedDeclIndices)
+                val infoOffset = ClassInfo.createClassInfo(
+                    builder, inheritedTypesOffset, bodyOffset, 0, false, 0u, false, 0u,
+                )
 
                 Decl.startDecl(builder)
                 Decl.addKind(builder, DeclKind.ClassDecl)
@@ -372,10 +450,8 @@ class CjoFullIdResolverTest {
                 if (exportIdOffset != 0) {
                     Decl.addExportId(builder, exportIdOffset)
                 }
-                if (infoOffset != 0) {
-                    Decl.addInfoType(builder, DeclInfo.ClassInfo)
-                    Decl.addInfo(builder, infoOffset)
-                }
+                Decl.addInfoType(builder, DeclInfo.ClassInfo)
+                Decl.addInfo(builder, infoOffset)
                 Decl.endDecl(builder)
             }
 
@@ -448,8 +524,9 @@ class CjoFullIdResolverTest {
          * 从反序列化类型中提取已解析的 classId。
          */
         private fun ConeCangJieType.requireResolvedClassId(): ClassId {
+            // CJO classifier 的 fixed tag 与普通 tag 共享此抽象，ClassId 断言不依赖其具体表示。
             val lookupTag = assertInstanceOf(
-                ConeClassLikeLookupTagImpl::class.java,
+                ConeClassLikeLookupTag::class.java,
                 assertInstanceOf(ConeClassLikeType::class.java, this).lookupTag,
             )
             return lookupTag.classId
@@ -458,11 +535,15 @@ class CjoFullIdResolverTest {
         /**
          * FullId 测试使用的库 session。
          */
-        private object TestSession : CfirSession(Kind.Library) {
+        private class TestSession : CfirSession(Kind.Library) {
             init {
-                register(org.cangnova.cangjie.cfir.session.CfirLanguageSettingsComponent::class,
-                    org.cangnova.cangjie.cfir.session.CfirLanguageSettingsComponent(org.cangnova.cangjie.LanguageVersionSettingsImpl.DEFAULT))
+                register(
+                    CfirLanguageSettingsComponent::class,
+                    CfirLanguageSettingsComponent(LanguageVersionSettingsImpl.DEFAULT),
+                )
+                register(CfirCangJieScopeProvider::class, CfirCangJieScopeProvider())
             }
+
             /**
              * 返回稳定的测试 session 名称，便于断言失败时定位。
              */
@@ -472,7 +553,7 @@ class CjoFullIdResolverTest {
         /**
          * FullId 测试使用的模块数据。
          */
-        private object TestModuleData : CfirModuleData() {
+        private class TestModuleData : CfirModuleData() {
             /**
              * 测试模块名称。
              */
@@ -512,11 +593,11 @@ class CjoFullIdResolverTest {
             /**
              * 绑定到测试库 session。
              */
-            override val session: CfirSession
-                get() = TestSession
+            override val session: CfirSession = TestSession()
 
             init {
-                bindSession(TestSession)
+                bindSession(session)
+                session.register(CfirModuleData::class, this)
             }
         }
     }

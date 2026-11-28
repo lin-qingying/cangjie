@@ -5,6 +5,7 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders
 import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.CfirCjmpLoadDiagnostic
 import org.cangnova.cangjie.cfir.serialization.provider.AbstractCfirDeserializedSymbolProvider
 import org.cangnova.cangjie.cfir.resolve.providers.*
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
@@ -119,8 +120,10 @@ internal class LLModuleWithDependenciesSymbolProvider(
 
     /** 枚举身份候选时透传所有模块与依赖结果，不能复用首项查询后再做组织过滤。 */
     override fun getClassLikeSymbolsByClassId(classId: ClassId): List<CfirClassLikeSymbol<*>> =
-        (providers.flatMap { it.getClassLikeSymbolsByClassId(classId) } +
-            dependencyProvider.getClassLikeSymbolsByClassId(classId)).distinct()
+        selectCompositeClassifierCandidates(
+            providers.flatMap { it.getClassLikeSymbolsByClassId(classId) } +
+                    dependencyProvider.getClassLikeSymbolsByClassId(classId),
+        )
 
     /**
      * 仅在当前模块自身 [providers] 中查找 [classId]，不读取依赖符号。
@@ -231,6 +234,19 @@ internal class LLModuleWithDependenciesSymbolProvider(
         hasPackageWithoutDependencies(fqName)
                 || dependencyProvider.hasPackage(fqName)
 
+    override fun getCjmpLoadDiagnostics(packageFqName: FqName): List<CfirCjmpLoadDiagnostic> =
+        (providers + dependencyProvider.providers)
+            .flatMap { it.getCjmpLoadDiagnostics(packageFqName) }
+            .distinct()
+
+    override fun getCjmpLoadDiagnostics(
+        packageFqName: FqName,
+        consumerSession: CfirSession,
+    ): List<CfirCjmpLoadDiagnostic> =
+        (providers + dependencyProvider.providers)
+            .flatMap { it.getCjmpLoadDiagnostics(packageFqName, consumerSession) }
+            .distinct()
+
     /**
      * 仅判断当前模块自身 [providers] 中是否存在 [fqName] 包。
      */
@@ -282,7 +298,7 @@ internal class LLDependenciesSymbolProvider(
 
     /** 与普通单结果查询分离，保留跨依赖同名声明供组织和可用性判定。 */
     override fun getClassLikeSymbolsByClassId(classId: ClassId): List<CfirClassLikeSymbol<*>> =
-        providers.flatMap { it.getClassLikeSymbolsByClassId(classId) }.distinct()
+        selectCompositeClassifierCandidates(providers.flatMap { it.getClassLikeSymbolsByClassId(classId) })
 
     /**
      * 按依赖顺序追加匹配 [packageFqName]/[name] 的顶层 callable 符号。
@@ -318,4 +334,13 @@ internal class LLDependenciesSymbolProvider(
      * 判断任一依赖提供器中是否存在 [fqName] 包。
      */
     override fun hasPackage(fqName: FqName): Boolean = providers.any { it.hasPackage(fqName) }
+
+    override fun getCjmpLoadDiagnostics(packageFqName: FqName): List<CfirCjmpLoadDiagnostic> =
+        providers.flatMap { it.getCjmpLoadDiagnostics(packageFqName) }.distinct()
+
+    override fun getCjmpLoadDiagnostics(
+        packageFqName: FqName,
+        consumerSession: CfirSession,
+    ): List<CfirCjmpLoadDiagnostic> =
+        providers.flatMap { it.getCjmpLoadDiagnostics(packageFqName, consumerSession) }.distinct()
 }

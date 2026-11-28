@@ -3,6 +3,9 @@ package org.cangnova.cangjie.cfir.resolve.providers
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedTypeUsingAbbreviation
+import org.cangnova.cangjie.cfir.resolve.isReferenceCycleTarget
+import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirInterface
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
@@ -245,6 +248,32 @@ fun DeclaredSupertypeClassification.constructorDependencyTypeOrNull(): ConeClass
 /** 仅合法声明父边能够提供继承成员。 */
 fun DeclaredSupertypeClassification.scopeTraversalTypeOrNull(): ConeClassLikeType? =
     (this as? DeclaredSupertypeClassification.ValidNominal)?.type
+
+/** 普通成员父边的统一 owner 投影；接口只能继承接口，循环目标不给子声明贡献成员。 */
+fun CfirTypeRef.ordinaryMemberSupertypeOrNull(
+    owner: CfirClassLikeDeclaration,
+    session: CfirSession,
+    expandType: (ConeCangJieType) -> ConeCangJieType = { it.fullyExpandedTypeUsingAbbreviation(session) },
+    symbolProvider: CfirSymbolProvider = session.symbolProvider,
+): ConeClassLikeType? {
+    return ordinaryMemberSupertypeOrNull(owner, session, expandType, symbolProvider) {
+        it.isReferenceCycleTarget(session, symbolProvider)
+    }
+}
+
+/** 工作拓扑与完成消费显式提供各自循环结论，不能用查询时的 live 标记代替发布产品。 */
+fun CfirTypeRef.ordinaryMemberSupertypeOrNull(
+    owner: CfirClassLikeDeclaration,
+    session: CfirSession,
+    expandType: (ConeCangJieType) -> ConeCangJieType,
+    symbolProvider: CfirSymbolProvider,
+    isCycleTarget: (ConeCangJieType) -> Boolean,
+): ConeClassLikeType? {
+    val type = classifyDeclaredSupertype(expandType).ordinarySupertypeTypeOrNull() ?: return null
+    if (owner is CfirInterface && !type.isInterface) return null
+    if (isCycleTarget(type)) return null
+    return type
+}
 
 /** 返回继承环背后的 nominal 类型，供独立的父类修饰符检查使用。 */
 fun DeclaredSupertypeClassification.loopDelegatedNominalTypeOrNull(): ConeClassLikeType? =

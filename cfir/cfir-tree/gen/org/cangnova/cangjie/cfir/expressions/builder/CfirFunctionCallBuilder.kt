@@ -8,6 +8,7 @@
 package org.cangnova.cangjie.cfir.expressions.builder
 
 import kotlin.contracts.*
+import org.cangnova.cangjie.annotations.CangjieOverflowStrategy
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
@@ -23,6 +24,8 @@ open class CfirFunctionCallBuilder : CfirAbstractFunctionCallBuilder {
     override var source: CjSourceElement? = null
     override val annotations: MutableList<CfirAnnotation> = mutableListOf()
     override var coneTypeOrNull: ConeCangJieType? = null
+    override var mappedExpression: CfirExpression? = null
+    override var overflowStrategy: CangjieOverflowStrategy? = null
     override lateinit var calleeReference: CfirReference
     override var dispatchReceiver: CfirExpression? = null
     override var explicitReceiver: CfirExpression? = null
@@ -31,6 +34,7 @@ open class CfirFunctionCallBuilder : CfirAbstractFunctionCallBuilder {
     override var origin: CfirFunctionCallOrigin = CfirFunctionCallOrigin.Regular
     override var hasTrailingLambda: Boolean = false
     override var varraySizeLiteral: String? = null
+    override var sourceCallHasSideEffect: Boolean = false
 
     @OptIn(CfirImplementationDetail::class)
     override fun build(): CfirFunctionCall {
@@ -38,6 +42,8 @@ open class CfirFunctionCallBuilder : CfirAbstractFunctionCallBuilder {
             source,
             annotations.toMutableOrEmpty(),
             coneTypeOrNull,
+            mappedExpression,
+            overflowStrategy,
             calleeReference,
             dispatchReceiver,
             explicitReceiver,
@@ -46,6 +52,7 @@ open class CfirFunctionCallBuilder : CfirAbstractFunctionCallBuilder {
             origin,
             hasTrailingLambda,
             varraySizeLiteral,
+            sourceCallHasSideEffect,
         )
     }
 
@@ -68,6 +75,8 @@ inline fun buildFunctionCallCopy(original: CfirFunctionCall, init: CfirFunctionC
     copyBuilder.source = original.source
     copyBuilder.annotations.addAll(original.annotations)
     copyBuilder.coneTypeOrNull = original.coneTypeOrNull
+    copyBuilder.mappedExpression = original.mappedExpression
+    copyBuilder.overflowStrategy = original.overflowStrategy
     copyBuilder.calleeReference = original.calleeReference
     copyBuilder.dispatchReceiver = original.dispatchReceiver
     copyBuilder.explicitReceiver = original.explicitReceiver
@@ -76,5 +85,6 @@ inline fun buildFunctionCallCopy(original: CfirFunctionCall, init: CfirFunctionC
     copyBuilder.origin = original.origin
     copyBuilder.hasTrailingLambda = original.hasTrailingLambda
     copyBuilder.varraySizeLiteral = original.varraySizeLiteral
+    copyBuilder.sourceCallHasSideEffect = original.sourceCallHasSideEffect
     return copyBuilder.apply(init).build()
 }

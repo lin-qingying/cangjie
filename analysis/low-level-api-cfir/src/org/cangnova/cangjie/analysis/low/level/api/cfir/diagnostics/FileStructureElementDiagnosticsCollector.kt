@@ -7,33 +7,42 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics
 
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.CaDiagnosticCheckerSet
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.DiagnosticCheckerFilter
+import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirModuleResolveComponents
 import org.cangnova.cangjie.cfir.analysis.collectors.CheckerRunningDiagnosticCollectorVisitor
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics.cfir.LLCfirStructureElementDiagnosticsCollector
 import org.cangnova.cangjie.cfir.analysis.collectors.DiagnosticCollectorComponents
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticContext
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLDiagnosticsStatistics
 import org.cangnova.cangjie.cfir.session.macroExpansionRegistry
 import kotlin.time.TimeSource
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.llCfirResolvableSession
 
 /**
  * 对单个 CFIR structure element 执行 diagnostics 收集并返回按 PSI 元素索引的结果。
  */
 internal fun collectForStructureElement(
     cfirDeclaration: CfirDeclaration,
+    checkerComponents: LLCfirModuleResolveComponents,
     filter: DiagnosticCheckerFilter,
+    mppCheckerKind: MppCheckerKind?,
     createVisitor: (components: DiagnosticCollectorComponents) -> CheckerRunningDiagnosticCollectorVisitor,
     diagnosticsStatistics: LLDiagnosticsStatistics?,
 ): FileStructureElementDiagnosticList {
-    val session = cfirDeclaration.moduleData.session
+    val sourceSession = cfirDeclaration.moduleData.session
     val reporter = LLCfirDiagnosticReporter(
-        sourceMapper = { source -> session.macroExpansionRegistry?.originSourceForGeneratedSource(source) },
+        sourceMapper = { source ->
+            val origin = sourceSession.macroExpansionRegistry?.originSourceForGeneratedSource(source) ?: source
+            cfirDeclaration.llCfirResolvableSession?.moduleComponents?.cache?.originalSource(origin) ?: origin
+        },
     )
     reporter.beginDiagnosticCollection()
     val collector = LLCfirStructureElementDiagnosticsCollector(
-        session,
+        checkerComponents.session,
         createVisitor,
         filter,
+        mppCheckerKind,
     )
     // 组合 filter（多个 checker 集合同时启用）在 checkerSet 上没有唯一取值，此时不上报
     // checkerPass，而不是把它算进某个集合里给出错误的归因。

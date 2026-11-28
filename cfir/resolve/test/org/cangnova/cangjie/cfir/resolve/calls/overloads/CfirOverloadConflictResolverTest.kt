@@ -9,7 +9,7 @@ import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.buildC
 import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.buildFunctionSymbol
 import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.buildTypedExpression
 import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.newResolutionContext
-import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.newStubBodyResolveComponents
+import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.newBodyResolveComponents
 import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.newTestSession
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.inference.inferenceComponents
@@ -41,7 +41,7 @@ class CfirOverloadConflictResolverTest {
         resolver = ConeOverloadConflictResolver(
             TypeSpecificityComparator.NONE,
             session.inferenceComponents,
-            newStubBodyResolveComponents(session),
+            newBodyResolveComponents(session),
         )
     }
 

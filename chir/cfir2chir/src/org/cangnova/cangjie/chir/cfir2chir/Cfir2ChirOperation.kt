@@ -25,7 +25,6 @@ internal enum class Cfir2ChirOperation(
     CFIR_PATTERN_MATCH("cfir.pattern_match"),
     CFIR_ENUM_CONSTRUCTOR("cfir.enum_constructor"),
     CFIR_ARRAY_LITERAL("cfir.array_literal"),
-    CFIR_TUPLE_LITERAL("cfir.tuple_literal"),
     CFIR_STRING_INTERPOLATION("cfir.string_interpolation"),
     CFIR_RANGE("cfir.range"),
     CFIR_SUBSCRIPT("cfir.subscript"),

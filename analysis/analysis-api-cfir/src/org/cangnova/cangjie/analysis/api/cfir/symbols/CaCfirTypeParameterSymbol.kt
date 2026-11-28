@@ -6,19 +6,10 @@ import org.cangnova.cangjie.analysis.api.annotations.CaAnnotationList
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.findPsi
 import org.cangnova.cangjie.analysis.api.cfir.location
-import org.cangnova.cangjie.analysis.api.cfir.symbols.pointers.CaCfirSourceTypeParameterSymbolPointer
-import org.cangnova.cangjie.analysis.api.cfir.symbols.pointers.CaCfirTypeParameterSymbolPointer
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
-import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
-import org.cangnova.cangjie.analysis.api.symbols.CaAnnotatedSymbol
-import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolLocation
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolModality
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolVisibility
-import org.cangnova.cangjie.analysis.api.symbols.CaTypeParameterSymbol
-import org.cangnova.cangjie.analysis.api.symbols.pointers.CaSymbolPointer
-import org.cangnova.cangjie.analysis.api.symbols.markers.CaNamedSymbol
-import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.name.Name
@@ -41,12 +32,7 @@ internal class CaCfirTypeParameterSymbol private constructor(
      * 延迟取得的底层 CFIR 类型参数符号。
      */
     override val lazyCfirSymbol: Lazy<CfirTypeParameterSymbol>,
-    /**
-     * 类型参数在 owner 类型参数列表中的稳定下标。
-     */
-    internal val stableParameterIndex: Int? = null,
-) : CaTypeParameterSymbol,
-    CaNamedSymbol,
+) : CaCfirTypeParameterSymbolBase<org.cangnova.cangjie.psi.CjTypeParameter>(),
     CaCfirCjBasedSymbol<org.cangnova.cangjie.psi.CjTypeParameter, CfirTypeParameterSymbol> {
     /**
      * 类型参数底层 CFIR 符号。
@@ -60,18 +46,11 @@ internal class CaCfirTypeParameterSymbol private constructor(
         lazyCfirSymbol = lazyCfirSymbol(declaration, session),
     )
 
-    constructor(symbol: CfirTypeParameterSymbol, session: CaCfirSession, stableParameterIndex: Int? = null) : this(
+    constructor(symbol: CfirTypeParameterSymbol, session: CaCfirSession) : this(
         backingPsi = symbol.backingPsiIfApplicable as? org.cangnova.cangjie.psi.CjTypeParameter,
         analysisSession = session,
         lazyCfirSymbol = lazyOf(symbol),
-        stableParameterIndex = stableParameterIndex,
     )
-
-    /**
-     * 类型参数实际声明所属的模块，保持与 owner 的模块身份一致。
-     */
-    override val containingModule: CaModule
-        get() = withValidityAssertion { cfirSymbol.llCfirModuleData.caModule }
 
     /**
      * 类型参数对应的 PSI。
@@ -90,12 +69,6 @@ internal class CaCfirTypeParameterSymbol private constructor(
      */
     override val name: Name
         get() = withValidityAssertion { backingPsi?.nameAsSafeName ?: cfirSymbol.name }
-
-    /**
-     * 类型参数上界类型列表。
-     */
-    override val upperBounds: List<CaType>
-        get() = withValidityAssertion { cfirSymbol.resolvedBounds.map(builder.typeBuilder::buildType) }
 
     /**
      * 类型参数可见性固定为 local。
@@ -133,22 +106,4 @@ internal class CaCfirTypeParameterSymbol private constructor(
             }
         }
 
-    /**
-     * 创建基于 owner pointer 或源码 PSI 的类型参数 pointer。
-     */
-    override fun createPointer(): CaSymbolPointer<CaAnnotatedSymbol> = withValidityAssertion {
-        val owner = builder.buildSymbol(cfirSymbol.containingDeclarationSymbol)
-        if (owner == null) {
-            val sourcePsi = psi ?: error("Source-only type parameter `${name}` is missing PSI")
-            return@withValidityAssertion CaCfirSourceTypeParameterSymbolPointer(sourcePsi)
-        }
-
-        val parameterIndex = stableParameterIndex
-            ?: error("Type parameter `${name}` is missing a stable owner index")
-        val ownerPointer: CaSymbolPointer<CaSymbol> = owner.createPointer()
-        CaCfirTypeParameterSymbolPointer(ownerPointer, name, parameterIndex)
-    }
-
-    override fun equals(other: Any?): Boolean = psiOrSymbolEquals(other)
-    override fun hashCode(): Int = psiOrSymbolHashCode()
 }

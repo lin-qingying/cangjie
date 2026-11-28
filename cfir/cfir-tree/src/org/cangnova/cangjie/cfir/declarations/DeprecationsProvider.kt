@@ -5,6 +5,7 @@
 
 package org.cangnova.cangjie.cfir.declarations
 
+import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 import org.cangnova.cangjie.LanguageVersionSettings
 import org.cangnova.cangjie.cfir.caches.CfirCache
 import org.cangnova.cangjie.cfir.caches.CfirCachesFactory
@@ -109,6 +110,29 @@ object UnresolvedDeprecationProvider : DeprecationsProvider() {
      */
     override fun getDeprecationsInfo(languageVersionSettings: LanguageVersionSettings): DeprecationsPerUseSite? {
         return null
+    }
+}
+
+/**
+ * 在 declaration header 可用时发布弃用元数据。
+ *
+ * 弃用信息只依赖声明注解和注解实参，不应为了读取它而解析函数体；
+ * 普通 resolve 与 low-level resolve 共用该入口，保证 STATUS 阶段的元数据一致。
+ */
+fun CfirElementWithResolveState.resolveDeprecationsProviderIfNeeded() {
+    if (this is CfirDeclaration) check(ownedGraphAnnotationsUnselected != true) { "Deprecation completion cannot treat unselected annotation content as empty" }
+    when (this) {
+        is CfirCallableDeclaration -> {
+            if (deprecationsProvider is UnresolvedDeprecationProvider) {
+                replaceDeprecationsProvider(buildDeprecationsProvider(annotations))
+            }
+        }
+
+        is CfirClassLikeDeclaration -> {
+            if (deprecationsProvider is UnresolvedDeprecationProvider) {
+                replaceDeprecationsProvider(buildDeprecationsProvider(annotations))
+            }
+        }
     }
 }
 

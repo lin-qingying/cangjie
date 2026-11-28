@@ -1,6 +1,8 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
+import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.diagnostic.ConeResumeThrowingMismatchTypeError
@@ -34,7 +36,7 @@ import org.cangnova.cangjie.type.AbstractTypeChecker
  * - RESUMPTION_INCORRECT_RETURN_TYPE: resumption 返回类型不匹配
  * - COMMAND_RESUMPTION_MISMATCH: command-resumption 类型不匹配
  */
-object CfirTryHandleReturnChecker : CfirTryExpressionChecker() {
+object CfirTryHandleReturnChecker : CfirTryExpressionChecker(MppCheckerKind.Common) {
     /**
      * 对已完成命令模式检查的 handler 校验正文类型。命令模式失败由其显式类型引用报告。
      */
@@ -43,7 +45,7 @@ object CfirTryHandleReturnChecker : CfirTryExpressionChecker() {
         val tryBodyType = expression.tryBlock.coneTypeOrNull
 
         for (handler in expression.handlers) {
-            if (handler.commandPattern.resolvedTypeRef?.coneType is ConeErrorType) continue
+            if (handler.commandPattern.semanticTypeRef?.coneTypeOrNull is ConeErrorType) continue
             checkHandlerBodyTypeMatch(handler, tryBodyType)
         }
     }
@@ -74,7 +76,7 @@ object CfirTryHandleReturnChecker : CfirTryExpressionChecker() {
  * 该检查器覆盖不能单独挂在 try expression 分发上的 effects 表达式规则，包括 handle body
  * 控制流限制和 `resume with` 类型约束。
  */
-object CfirEffectsBasicChecker : CfirBasicExpressionChecker() {
+object CfirEffectsBasicChecker : CfirBasicExpressionChecker(MppCheckerKind.Common) {
     /**
      * 分发表达式级 effects 检查。
      */

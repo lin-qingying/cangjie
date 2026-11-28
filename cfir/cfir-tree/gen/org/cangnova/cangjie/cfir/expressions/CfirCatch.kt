@@ -5,8 +5,10 @@
 
 package org.cangnova.cangjie.cfir.expressions
 
+import org.cangnova.cangjie.annotations.CangjieOverflowStrategy
 import org.cangnova.cangjie.cfir.CfirElement
-import org.cangnova.cangjie.cfir.patterns.CfirCatchPattern
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.patterns.CfirPattern
 import org.cangnova.cangjie.cfir.patterns.CfirPatternTreeOwner
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
@@ -20,15 +22,25 @@ abstract class CfirCatch : CfirExpression(), CfirPatternTreeOwner {
     abstract override val source: CjSourceElement?
     abstract override val annotations: List<CfirAnnotation>
     abstract override val coneTypeOrNull: ConeCangJieType?
+    abstract override val mappedExpression: CfirExpression?
+    abstract override val overflowStrategy: CangjieOverflowStrategy?
     /**
      * 异常模式子树具有唯一 owner；浅拷贝必须由调用方显式提供独立模式树。
      */
-    abstract val pattern: CfirCatchPattern
+    abstract val pattern: CfirPattern
     abstract val body: CfirBlock
 
     abstract override fun patternTreeRoot(): org.cangnova.cangjie.cfir.CfirElement
     abstract override fun validatePatternTreeRoot(newPatternTreeRoot: org.cangnova.cangjie.cfir.CfirElement)
     abstract override fun replacePatternTreeRoot(newPatternTreeRoot: org.cangnova.cangjie.cfir.CfirElement)
+
+    /** 访问本节点拥有的完整来源子图；独立于 ordinary visitor 的语法子树。 */
+    @CfirImplementationDetail
+    override fun <R, D> acceptSourceChildren(visitor: CfirVisitor<R, D>, data: D) {
+        annotations.forEach { it.accept(visitor, data) }
+        pattern.accept(visitor, data)
+        body.accept(visitor, data)
+    }
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitCatch(this, data)
@@ -37,11 +49,18 @@ abstract class CfirCatch : CfirExpression(), CfirPatternTreeOwner {
     override fun <E : CfirElement, D> transform(transformer: CfirTransformer<D>, data: D): E =
         transformer.transformCatch(this, data) as E
 
+    @CfirImplementationDetail
+    abstract override fun replaceSource(newSource: CjSourceElement?)
+
     abstract override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
 
     abstract override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?)
 
-    abstract fun replacePattern(newPattern: CfirCatchPattern)
+    abstract override fun replaceMappedExpression(newMappedExpression: CfirExpression?)
+
+    abstract override fun replaceOverflowStrategy(newOverflowStrategy: CangjieOverflowStrategy?)
+
+    abstract fun replacePattern(newPattern: CfirPattern)
 
     abstract override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirCatch
 

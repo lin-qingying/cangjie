@@ -90,7 +90,8 @@ class CangJieParserDefinition : ParserDefinition {
     override fun createElement(astNode: ASTNode): PsiElement {
         return when (val elementType = astNode.elementType) {
             is CjStubElementType<*, *> -> elementType.createPsiFromAst(astNode)
-            CjNodeTypes.TYPE_CODE_FRAGMENT, CjNodeTypes.EXPRESSION_CODE_FRAGMENT, CjNodeTypes.BLOCK_CODE_FRAGMENT -> ASTWrapperPsiElement(
+            CjNodeTypes.TYPE_CODE_FRAGMENT, CjNodeTypes.EXPRESSION_CODE_FRAGMENT, CjNodeTypes.BLOCK_CODE_FRAGMENT,
+            CjNodeTypes.MACRO_CODE_FRAGMENT -> ASTWrapperPsiElement(
                 astNode,
             )
 

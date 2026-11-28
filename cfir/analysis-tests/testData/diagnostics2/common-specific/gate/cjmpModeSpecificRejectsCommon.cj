@@ -11,7 +11,8 @@ public common func specificApi(): Int64 { 1 }
 // MODULE: specific()()(common)
 // CJMP_MODE: SPECIFIC
 // FILE: specific.cj
-<!PARSE_COMMON_IN_NON_COMMON_FILE!>package cjmp_gate<!>
+// 文件角色错误由共享 parser 报告，CFIR fixture 不登记语法工厂。
+package cjmp_gate
 
 public specific func specificApi(): Int64 { 1 }
 public common func misplacedCommon(): Int64 { 1 }

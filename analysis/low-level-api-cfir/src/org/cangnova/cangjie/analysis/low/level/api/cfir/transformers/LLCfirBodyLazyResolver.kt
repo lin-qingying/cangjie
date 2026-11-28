@@ -47,6 +47,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.cfir.types.hasResolvedType
 import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
+import org.cangnova.cangjie.cfir.patterns.bindingVariables
 import org.cangnova.cangjie.psi.*
 import org.cangnova.cangjie.source.CjPsiSourceElement
 import org.cangnova.cangjie.source.CjRealSourceElementKind
@@ -80,6 +81,7 @@ internal object LLCfirBodyLazyResolver : LLCfirLazyResolver(CfirResolvePhase.BOD
                 checkDelegatedConstructorIsResolved(target)
                 checkBodyIsResolved(target)
             }
+            is CfirEnumConstructor -> checkBodyIsResolved(target)
             is CfirFunction -> checkBodyIsResolved(target)
         }
     }
@@ -207,14 +209,12 @@ private class CfirPartialBodyExpressionResolveTransformer(
             }
         }
 
-        // 部分 body 分析契约：只支持 ContextIndependent 模式。带期望类型（withExpectedType）
-        // 等 ContextDependent 模式的函数体（如 resolveToCfirSymbol 完整解析带声明返回类型的
-        // 多语句函数）直接走完整解析，避免硬性 require 误伤。
+        // 仓颉显式返回类型的块体具有 expected type。局部路径共用普通 block 的语句消费规则，
+        // 只给真正尾语句传递该类型；不能因为 typed body 就把 partial 请求退化为完整解析。
         val state = declaration.partialBodyAnalysisState
 
         performTopmostBlockAnalysis {
-            if (data is ResolutionMode.ContextIndependent &&
-                target is LLCfirPartialBodyResolveTarget &&
+            if (target is LLCfirPartialBodyResolveTarget &&
                 (state == null || state.performedAnalysesCount < MAX_ANALYSES_COUNT)
             ) {
                 transformPartially(target.request, block, data, state)
@@ -295,10 +295,10 @@ private class CfirPartialBodyExpressionResolveTransformer(
         // Run analysis with the previous tower data context
         context.withTowerDataContext(resolveSnapshot.towerDataContext) {
             val dataFlowSnapshot = resolveSnapshot.dataFlowAnalyzerContext.createSnapshot(
-                LLSnapshotCfirMapper(listOf(block, declaration))
+                LLSnapshotCfirMapper(listOf(block, declaration)), resolveSnapshot.smartCastPosition,
             )
             patchControlFlowGraphReferences(listOf(block, declaration), dataFlowSnapshot.graphMapping)
-            context.dataFlowAnalyzerContext.resetFrom(dataFlowSnapshot.context)
+            dataFlowAnalyzer.restoreDataFlowAnalyzerContext(dataFlowSnapshot)
 
             /** No [BodyResolveContext.forBlock] as here we manually restore the tower data context from the snapshot. */
             val isAnalyzedEntirely = transformStatementsPartially(
@@ -469,14 +469,15 @@ private class CfirPartialBodyExpressionResolveTransformer(
                                 defaultParameterValues = collectDefaultParameterValues(declaration)
                             ),
                             towerDataContext = context.towerDataContext.createSnapshot(keepMutable = true),
-                            dataFlowAnalyzerContext = context.dataFlowAnalyzerContext
+                            dataFlowAnalyzerContext = context.dataFlowAnalyzerContext,
+                            smartCastPosition = dataFlowAnalyzer.currentSmartCastPosition,
                         )
                     )
 
                     throw PartialBodyAnalysisSuspendedException
                 }
 
-                val newStatement = statement.transform<CfirStatement, ResolutionMode>(transformer, data)
+                val newStatement = transformStatementInBlock(statement, !iterator.hasNext(), data)
                 if (statement !== newStatement) {
                     iterator.set(newStatement)
                 }
@@ -907,16 +908,14 @@ private class LLCfirBodyTargetResolver(target: LLCfirResolveTarget) : LLCfirAbst
                 // extend 自身不拥有独立 body，成员会作为独立目标继续推进到 BODY_RESOLVE。
             }
             is CfirConstructor -> resolve(target, BodyStateKeepers.CONSTRUCTOR)
+            is CfirEnumConstructor -> resolve(target, BodyStateKeepers.ENUM_CONSTRUCTOR)
             is CfirFunction -> resolve(target, BodyStateKeepers.FUNCTION)
             is CfirProperty -> resolve(target, BodyStateKeepers.PROPERTY)
             is CfirFieldVariable -> resolve(target, BodyStateKeepers.FIELD)
+            is CfirPatternVariable -> resolve(target, BodyStateKeepers.PATTERN_VARIABLE)
             is CfirVariable -> resolve(target, BodyStateKeepers.VARIABLE)
-            is CfirTypeAlias,
-                -> {
+            is CfirTypeAlias -> {
                 // No bodies here
-            }
-            is CfirEnumConstructor -> {
-                // 枚举构造器没有函数体；返回类型由所属 enum 在 TYPES 阶段写入。
             }
             else -> throwUnexpectedCfirElementError(target)
         }
@@ -946,6 +945,18 @@ private class LLCfirBodyTargetResolver(target: LLCfirResolveTarget) : LLCfirAbst
  * BODY_RESOLVE 阶段使用的状态保持器集合。
  */
 internal object BodyStateKeepers {
+    /** enum F 的正文与 CFG 和 payload 类型在同一次 BODY 事务内保留。 */
+    val ENUM_CONSTRUCTOR: StateKeeper<CfirEnumConstructor, CfirDesignation> = stateKeeper { builder, declaration, designation ->
+        builder.add(CfirEnumConstructor::returnTypeRef, CfirEnumConstructor::replaceReturnTypeRef)
+        builder.add(CfirEnumConstructor::body, CfirEnumConstructor::replaceBody, ::blockGuard)
+        builder.add(CfirEnumConstructor::controlFlowGraphReference, CfirEnumConstructor::replaceControlFlowGraphReference)
+        builder.entityList(declaration.valueParameters, ENUM_PAYLOAD_PARAMETER, designation)
+    }
+
+    private val ENUM_PAYLOAD_PARAMETER: StateKeeper<CfirValueParameter, CfirDesignation> = stateKeeper { builder, _, _ ->
+        builder.add(CfirValueParameter::returnTypeRef, CfirValueParameter::replaceReturnTypeRef)
+    }
+
     /**
      * code fragment block 状态保持器。
      */
@@ -969,6 +980,8 @@ internal object BodyStateKeepers {
      * 函数 body、返回类型、参数默认值和 CFG 引用状态保持器。
      */
     val FUNCTION: StateKeeper<CfirFunction, CfirDesignation> = stateKeeper { builder, function, designation ->
+        @OptIn(ResolveStateAccess::class)
+        builder.add({ it.resolveState }, { declaration, state -> declaration.resolveState = state })
         if (function.isCertainlyResolved) {
             if (!isCallableWithSpecialBody(function)) {
                 builder.entityList(function.valueParameters, VALUE_PARAMETER, designation)
@@ -1020,10 +1033,30 @@ internal object BodyStateKeepers {
         }
     }
 
+    /** root 的 initializer、模式引用与真实绑定字段共同回滚，不能留下已完成的子节点阶段。 */
+    val PATTERN_VARIABLE: StateKeeper<CfirPatternVariable, CfirDesignation> = stateKeeper { builder, variable, designation ->
+        builder.add(VARIABLE, designation)
+        builder.entity(variable.pattern, PatternStateKeepers.BODY, Unit)
+        builder.entityList(variable.pattern.bindingVariables(), PATTERN_BINDING, designation)
+    }
+
+    private val PATTERN_BINDING: StateKeeper<CfirPatternBindingVariable, CfirDesignation> = stateKeeper { builder, _, _ ->
+        builder.add(CfirVariable::returnTypeRef, CfirVariable::replaceReturnTypeRef)
+        builder.add(CfirVariable::initializer, CfirVariable::replaceInitializer)
+        @OptIn(ResolveStateAccess::class)
+        builder.add({ it.resolveState }, { binding, state -> binding.resolveState = state })
+    }
+
     /**
      * 值参数默认值、求值 initializer 和 CFG 引用状态保持器。
      */
-    private val VALUE_PARAMETER: StateKeeper<CfirValueParameter, CfirDesignation> = stateKeeper { builder, valueParameter, _ ->
+    private val VALUE_PARAMETER: StateKeeper<CfirValueParameter, CfirDesignation> = stateKeeper { builder, valueParameter, designation ->
+        // 默认 helper 由参数 metadata 拥有；其正文/CFG/phase 与原默认值共用本次恢复边界。
+        valueParameter.defaultValueMetadata?.function?.let { builder.entity(it, FUNCTION, designation) }
+        builder.add({ it.defaultValueMetadata }, { parameter, metadata -> parameter.defaultValueMetadata = metadata })
+        // 默认值属于参数自己的正文；函数块内换代不重新准备已完成的参数区域。
+        if (valueParameter.resolvePhase >= CfirResolvePhase.BODY_RESOLVE) return@stateKeeper
+
         if (valueParameter.defaultValue != null) {
             builder.add(CfirValueParameter::defaultValue, CfirValueParameter::replaceDefaultValue, ::expressionGuard)
             builder.add(

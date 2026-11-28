@@ -12,7 +12,6 @@ import org.cangnova.cangjie.analysis.api.cfir.findPsi
 import org.cangnova.cangjie.analysis.api.cfir.location
 import org.cangnova.cangjie.analysis.api.cfir.symbols.pointers.CaCfirClassLikeSymbolPointer
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
-import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.symbols.CaAnnotatedSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassKind
 import org.cangnova.cangjie.analysis.api.symbols.CaClassSymbol
@@ -86,12 +85,6 @@ internal class CaCfirClassSymbol private constructor(
      */
     private val status
         get() = (cfirSymbol.cfir as? CfirMemberDeclaration)?.status
-
-    /**
-     * class-like 符号所在模块。
-     */
-    override val containingModule: CaModule
-        get() = withValidityAssertion { cfirSymbol.llCfirModuleData.caModule }
 
     /**
      * class-like 公开注解列表。
@@ -206,7 +199,9 @@ internal class CaCfirClassSymbol private constructor(
         CaCfirClassLikeSymbolPointer(CaCfirClassLikeSymbolCacheKey(stableClassId), CaAnnotatedSymbol::class.java)
     }
 
+    /** 对位 Kotlin KaFirNamedClassSymbolBase：不同构建入口仍按同一声明身份比较 nominal。 */
     override fun equals(other: Any?): Boolean = psiOrSymbolEquals(other)
+
     override fun hashCode(): Int = classId?.hashCode() ?: psiOrSymbolHashCode()
 }
 
@@ -252,12 +247,6 @@ internal class CaCfirTypeAliasSymbol private constructor(
      */
     private val status
         get() = (cfirSymbol.cfir as? CfirMemberDeclaration)?.status
-
-    /**
-     * typealias 所在模块。
-     */
-    override val containingModule: CaModule
-        get() = withValidityAssertion { cfirSymbol.llCfirModuleData.caModule }
 
     /**
      * typealias 公开注解列表。
@@ -347,7 +336,9 @@ internal class CaCfirTypeAliasSymbol private constructor(
         CaCfirClassLikeSymbolPointer(CaCfirClassLikeSymbolCacheKey(stableClassId), CaAnnotatedSymbol::class.java)
     }
 
+    /** typealias 与类符号共同遵循公开源对象身份契约。 */
     override fun equals(other: Any?): Boolean = psiOrSymbolEquals(other)
+
     override fun hashCode(): Int = psiOrSymbolHashCode()
 }
 

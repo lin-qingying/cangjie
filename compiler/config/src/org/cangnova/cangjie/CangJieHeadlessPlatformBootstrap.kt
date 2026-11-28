@@ -45,7 +45,8 @@ import com.intellij.openapi.vfs.VirtualFileSet
 import com.intellij.openapi.vfs.VirtualFileSetFactory
 import com.intellij.platform.locking.impl.NestedLocksThreadingSupport
 import com.intellij.pom.PomModel
-import com.intellij.pom.core.impl.PomModelImpl
+import com.intellij.psi.codeStyle.CodeStyleManager
+import com.intellij.psi.impl.source.codeStyle.CodeStyleManagerImpl
 import com.intellij.pom.tree.TreeAspect
 import com.intellij.psi.FileContextProvider
 import com.intellij.psi.PsiFile
@@ -190,6 +191,7 @@ internal object CangJieHeadlessPlatformBootstrap {
         registerExtensionPoint(area, UseScopeEnlarger.EP_NAME.name, UseScopeEnlarger::class.java)
         registerExtensionPoint(area, "com.intellij.referencesSearch", QueryExecutor::class.java)
         registerExtensionPoint(area, "com.intellij.targetElementEvaluator", LanguageExtensionPoint::class.java)
+        registerExtensionPoint(area, "com.intellij.tree.CustomLanguageASTComparator", LanguageExtensionPoint::class.java)
         registerExtensionPoint(area, "com.intellij.targetElementUtilExtender", TargetElementUtilExtender::class.java)
     }
 
@@ -203,6 +205,11 @@ internal object CangJieHeadlessPlatformBootstrap {
         applicationEnvironment.registerFileType(CangJieBuiltInFileType, CangJieBuiltInFileType.defaultExtension)
 
         applicationEnvironment.registerParserDefinition(CangJieParserDefinition())
+        applicationEnvironment.addExplicitExtension(
+            com.intellij.psi.tree.CustomLanguageASTComparator.EXTENSION_POINT_NAME,
+            org.cangnova.cangjie.lang.CangJieLanguage,
+            org.cangnova.cangjie.parsing.CangJieParsingDataComparator(),
+        )
     }
 
     /**
@@ -348,7 +355,10 @@ internal object CangJieHeadlessPlatformBootstrap {
             project.registerService(TreeAspect::class.java)
         }
         if (project.getService(PomModel::class.java) == null) {
-            project.registerService(PomModel::class.java, PomModelImpl::class.java)
+            project.registerService(PomModel::class.java, CangJieHeadlessPomModel(project))
+        }
+        if (project.getService(CodeStyleManager::class.java) == null) {
+            project.registerService(CodeStyleManager::class.java, CodeStyleManagerImpl(project))
         }
     }
 

@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.cfir.references
 
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.source.CjSourceElement
@@ -10,6 +11,11 @@ import org.cangnova.cangjie.source.CjSourceElement
  */
 object CfirStubReference : CfirReference {
     override val source: CjSourceElement? get() = null
+
+    @CfirImplementationDetail
+    override fun replaceSource(newSource: CjSourceElement?) {
+        require(newSource == null) { "A stub reference cannot hold a source." }
+    }
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {}
 

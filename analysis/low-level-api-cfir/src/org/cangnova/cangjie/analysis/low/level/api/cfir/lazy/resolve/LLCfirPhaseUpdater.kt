@@ -9,6 +9,10 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.util.body
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.patterns.bindingVariables
+import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.isCjmpSpecificCompilationEnabled
+import org.cangnova.cangjie.cfir.session.requiresDeferredCjmpFinalMatching
 import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
 
 /**
@@ -72,7 +76,7 @@ internal object LLCfirPhaseUpdater {
             is CfirFunction -> {
                 updateFunctionSignatureBody(target)
             }
-            is org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor -> {
+            is CfirEnumConstructor -> {
                 target.valueParameters.forEach { it.defaultValue?.accept(LocalElementPhaseUpdatingTransformer) }
             }
 
@@ -115,31 +119,40 @@ internal object LLCfirPhaseUpdater {
             }
         }
 
-        if (element is CfirTypeParameterRefsOwner) {
-            element.typeParameters.forEach { typeParameter ->
-                // if it is not a type parameter of outer declaration
-                if (typeParameter is CfirTypeParameter) {
-                    updatePhaseForNonLocals(typeParameter, newPhase, isTargetDeclaration = false)
-                }
-            }
-        }
-
-        when (element) {
-            is CfirClass -> {
-            }
-            is CfirFunction -> {
-                element.valueParameters.forEach { updatePhaseForNonLocals(it, newPhase, isTargetDeclaration = false) }
-            }
-            is org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor -> {
-                element.valueParameters.forEach { updatePhaseForNonLocals(it, newPhase, isTargetDeclaration = false) }
-            }
-            is CfirProperty -> {
-                element.getter?.let { updatePhaseForNonLocals(it, newPhase, isTargetDeclaration = false) }
-                element.setter?.let { updatePhaseForNonLocals(it, newPhase, isTargetDeclaration = false) }
-            }
-            else -> {}
+        val publishPatternBindings = element is CfirPatternVariable && newPhase.publishesCjmpPatternBindings(element.moduleData.session)
+        forEachSignatureInternal(element, publishPatternBindings) {
+            updatePhaseForNonLocals(it, newPhase, isTargetDeclaration = false)
         }
     }
+
+    /** updater 与声明事务使用同一直接内部节点清单，不保存外围泛型参数或独立成员声明的状态。 */
+    fun forEachSignatureInternal(
+        element: CfirElementWithResolveState,
+        publishPatternBindings: Boolean,
+        action: (CfirElementWithResolveState) -> Unit,
+    ) {
+        if (element is CfirTypeParameterRefsOwner) {
+            element.typeParameters.filterIsInstance<CfirTypeParameter>().forEach(action)
+        }
+        when (element) {
+            // 普通 BODY_RESOLVE 由每个非局部叶子自己的目标锁发布；CJMP 配对以模式根为事务。
+            is CfirPatternVariable -> if (publishPatternBindings) element.pattern.bindingVariables().forEach(action)
+            is CfirFunction -> element.valueParameters.forEach(action)
+            is CfirEnumConstructor -> element.valueParameters.forEach(action)
+            is CfirProperty -> {
+                element.getter?.let(action)
+                element.setter?.let(action)
+            }
+            else -> Unit
+        }
+    }
+}
+
+/** 只在 active specific 配对阶段从模式根发布签名叶子阶段。 */
+internal fun CfirResolvePhase.publishesCjmpPatternBindings(session: CfirSession): Boolean = when (this) {
+    CfirResolvePhase.CJMP_MATCHING -> session.isCjmpSpecificCompilationEnabled()
+    CfirResolvePhase.CJMP_FINAL_MATCHING -> session.requiresDeferredCjmpFinalMatching()
+    else -> false
 }
 
 /**

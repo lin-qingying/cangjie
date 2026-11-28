@@ -1,0 +1,13 @@
+{
+  "scope": "s1-current-final-89 candidate",
+  "inputManifest": "s1-current-final-89-inputs.json",
+  "queueId": "a5191dd0",
+  "sessionId": 14029,
+  "terminal": "DONE",
+  "exitCode": 1,
+  "failedTask": ":cfir:analysis-tests:compileTestKotlin",
+  "diagnostic": "CfirDeclarationOwnerTest.kt:954:54 Unresolved reference 'coneTypeOrNull'",
+  "testEvidencePolicy": "Analysis tests did not execute; existing owner XML is the previous four-test run and must not be counted as this 89 run. Copy/providers reports are not merged with stale analysis XML.",
+  "subsequentRepair": "Missing type-ref extension import was added with apply_patch; no expected value or source fixture changed.",
+  "postInputPolicy": "No unchanged-window assertion after the subsequent import repair. This file records the actual compilation terminal, not behavioral 89 pass."
+}

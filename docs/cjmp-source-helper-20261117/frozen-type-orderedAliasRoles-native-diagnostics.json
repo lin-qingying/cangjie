@@ -1,0 +1,273 @@
+{
+  "exitCode": 0,
+  "commandLine": "cjc orderedAliasRoles.cj --output-type=staticlib --output-dir build/source-frozen-type-roles-v113/orderedAliasRoles --dump-ast --diagnostic-format=json",
+  "diagnostics": {
+    "Diags": [
+      {
+        "DiagKind": "chir_dce_unused_variable",
+        "Severity": "warning",
+        "WarnGroup": "unused",
+        "DiagCategory": "chir",
+        "Message": "unused variable:'first'",
+        "Location": {
+          "File": "cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\source-frozen-types\\orderedAliasRoles.cj",
+          "Line": 19,
+          "Column": 24
+        },
+        "MainHint": {
+          "Content": "unused variable",
+          "Range": {
+            "Begin": {
+              "File": "cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\source-frozen-types\\orderedAliasRoles.cj",
+              "Line": 19,
+              "Column": 24
+            },
+            "End": {
+              "File": "cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\source-frozen-types\\orderedAliasRoles.cj",
+              "Line": 19,
+              "Column": 29
+            }
+          }
+        },
+        "OtherHints": [],
+        "Notes": [
+          {
+            "Message": "this warning can be suppressed by setting the compiler option `-Woff unused`",
+            "MainHint": null,
+            "OtherHints": [],
+            "Help": null
+          }
+        ],
+        "Helps": []
+      },
+      {
+        "DiagKind": "chir_dce_unused_variable",
+        "Severity": "warning",
+        "WarnGroup": "unused",
+        "DiagCategory": "chir",
+        "Message": "unused variable:'last'",
+        "Location": {
+          "File": "cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\source-frozen-types\\orderedAliasRoles.cj",
+          "Line": 19,
+          "Column": 45
+        },
+        "MainHint": {
+          "Content": "unused variable",
+          "Range": {
+            "Begin": {
+              "File": "cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\source-frozen-types\\orderedAliasRoles.cj",
+              "Line": 19,
+              "Column": 45
+            },
+            "End": {
+              "File": "cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\source-frozen-types\\orderedAliasRoles.cj",
+              "Line": 19,
+              "Column": 49
+            }
+          }
+        },
+        "OtherHints": [],
+        "Notes": [
+          {
+            "Message": "this warning can be suppressed by setting the compiler option `-Woff unused`",
+            "MainHint": null,
+            "OtherHints": [],
+            "Help": null
+          }
+        ],
+        "Helps": []
+      },
+      {
+        "DiagKind": "chir_dce_unused_variable",
+        "Severity": "warning",
+        "WarnGroup": "unused",
+        "DiagCategory": "chir",
+        "Message": "unused variable:'first'",
+        "Location": {
+          "File": "cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\source-frozen-types\\orderedAliasRoles.cj",
+          "Line": 33,
+          "Column": 26
+        },
+        "MainHint": {
+          "Content": "unused variable",
+          "Range": {
+            "Begin": {
+              "File": "cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\source-frozen-types\\orderedAliasRoles.cj",
+              "Line": 33,
+              "Column": 26
+            },
+            "End": {
+              "File": "cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\source-frozen-types\\orderedAliasRoles.cj",
+              "Line": 33,
+              "Column": 31
+            }
+          }
+        },
+        "OtherHints": [],
+        "Notes": [
+          {
+            "Message": "this warning can be suppressed by setting the compiler option `-Woff unused`",
+            "MainHint": null,
+            "OtherHints": [],
+            "Help": null
+          }
+        ],
+        "Helps": []
+      },
+      {
+        "DiagKind": "chir_dce_unused_variable",
+        "Severity": "warning",
+        "WarnGroup": "unused",
+        "DiagCategory": "chir",
+        "Message": "unused variable:'last'",
+        "Location": {
+          "File": "cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\source-frozen-types\\orderedAliasRoles.cj",
+          "Line": 33,
+          "Column": 54
+        },
+        "MainHint": {
+          "Content": "unused variable",
+          "Range": {
+            "Begin": {
+              "File": "cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\source-frozen-types\\orderedAliasRoles.cj",
+              "Line": 33,
+              "Column": 54
+            },
+            "End": {
+              "File": "cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\source-frozen-types\\orderedAliasRoles.cj",
+              "Line": 33,
+              "Column": 58
+            }
+          }
+        },
+        "OtherHints": [],
+        "Notes": [
+          {
+            "Message": "this warning can be suppressed by setting the compiler option `-Woff unused`",
+            "MainHint": null,
+            "OtherHints": [],
+            "Help": null
+          }
+        ],
+        "Helps": []
+      },
+      {
+        "DiagKind": "chir_dce_unused_variable",
+        "Severity": "warning",
+        "WarnGroup": "unused",
+        "DiagCategory": "chir",
+        "Message": "unused variable:'middle'",
+        "Location": {
+          "File": "cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\source-frozen-types\\orderedAliasRoles.cj",
+          "Line": 37,
+          "Column": 41
+        },
+        "MainHint": {
+          "Content": "unused variable",
+          "Range": {
+            "Begin": {
+              "File": "cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\source-frozen-types\\orderedAliasRoles.cj",
+              "Line": 37,
+              "Column": 41
+            },
+            "End": {
+              "File": "cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\source-frozen-types\\orderedAliasRoles.cj",
+              "Line": 37,
+              "Column": 47
+            }
+          }
+        },
+        "OtherHints": [],
+        "Notes": [
+          {
+            "Message": "this warning can be suppressed by setting the compiler option `-Woff unused`",
+            "MainHint": null,
+            "OtherHints": [],
+            "Help": null
+          }
+        ],
+        "Helps": []
+      },
+      {
+        "DiagKind": "chir_dce_unused_variable",
+        "Severity": "warning",
+        "WarnGroup": "unused",
+        "DiagCategory": "chir",
+        "Message": "unused variable:'last'",
+        "Location": {
+          "File": "cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\source-frozen-types\\orderedAliasRoles.cj",
+          "Line": 37,
+          "Column": 56
+        },
+        "MainHint": {
+          "Content": "unused variable",
+          "Range": {
+            "Begin": {
+              "File": "cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\source-frozen-types\\orderedAliasRoles.cj",
+              "Line": 37,
+              "Column": 56
+            },
+            "End": {
+              "File": "cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\source-frozen-types\\orderedAliasRoles.cj",
+              "Line": 37,
+              "Column": 60
+            }
+          }
+        },
+        "OtherHints": [],
+        "Notes": [
+          {
+            "Message": "this warning can be suppressed by setting the compiler option `-Woff unused`",
+            "MainHint": null,
+            "OtherHints": [],
+            "Help": null
+          }
+        ],
+        "Helps": []
+      },
+      {
+        "DiagKind": "chir_dce_unused_variable",
+        "Severity": "warning",
+        "WarnGroup": "unused",
+        "DiagCategory": "chir",
+        "Message": "unused variable:'last'",
+        "Location": {
+          "File": "cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\source-frozen-types\\orderedAliasRoles.cj",
+          "Line": 41,
+          "Column": 42
+        },
+        "MainHint": {
+          "Content": "unused variable",
+          "Range": {
+            "Begin": {
+              "File": "cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\source-frozen-types\\orderedAliasRoles.cj",
+              "Line": 41,
+              "Column": 42
+            },
+            "End": {
+              "File": "cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\source-frozen-types\\orderedAliasRoles.cj",
+              "Line": 41,
+              "Column": 46
+            }
+          }
+        },
+        "OtherHints": [],
+        "Notes": [
+          {
+            "Message": "this warning can be suppressed by setting the compiler option `-Woff unused`",
+            "MainHint": null,
+            "OtherHints": [],
+            "Help": null
+          }
+        ],
+        "Helps": []
+      }
+    ],
+    "Num": {
+      "Errors": 0,
+      "PrintedErrors": 0,
+      "Warnings": 7,
+      "PrintedWarnings": 7
+    }
+  }
+}

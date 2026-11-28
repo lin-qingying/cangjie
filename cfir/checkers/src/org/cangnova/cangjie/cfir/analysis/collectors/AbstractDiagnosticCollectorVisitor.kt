@@ -171,6 +171,13 @@ abstract class AbstractDiagnosticCollectorVisitor(
         }
     }
 
+    /** 构造项与其它声明共用声明栈和注解上下文，保留 eager/LL 两入口的真实外层 enum。 */
+    override fun visitEnumConstructor(enumConstructor: CfirEnumConstructor, data: Nothing?) {
+        withAnnotationContainer(enumConstructor) {
+            visitWithDeclaration(enumConstructor)
+        }
+    }
+
     /** 访问 extend 声明节点，并保留其注解容器上下文。 */
     override fun visitExtend(extend: CfirExtend, data: Nothing?) {
         withAnnotationContainer(extend) {
@@ -358,6 +365,7 @@ abstract class AbstractDiagnosticCollectorVisitor(
         declaration: CfirDeclaration,
         block: () -> Unit = { visitNestedElements(declaration) }
     ) {
+        declaration.requireOwnedGraphAnalysisReady()
         if (shouldVisitDeclaration(declaration)) {
             checkElement(declaration)
             withDeclaration(declaration) {

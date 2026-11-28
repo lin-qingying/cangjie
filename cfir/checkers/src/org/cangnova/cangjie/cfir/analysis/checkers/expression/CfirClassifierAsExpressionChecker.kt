@@ -1,6 +1,8 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
+import org.cangnova.cangjie.cfir.declarations.ownerQualifier
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.hasInvalidGenericTypeArgument
 import org.cangnova.cangjie.cfir.analysis.diagnostics.renderInvalidBinaryOperatorType
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
@@ -28,7 +30,7 @@ import org.cangnova.cangjie.name.OperatorNameConventions
  * 本地 CFIR 暂无独立 qualifier 节点，类型名会以 `CfirResolvedNamedReference`
  * 暂存，因此在 qualified-access checker 层对齐官方仓颉 `sema_ref_not_be_type`。
  */
-object CfirClassifierAsExpressionChecker : CfirQualifiedAccessChecker() {
+object CfirClassifierAsExpressionChecker : CfirQualifiedAccessChecker(MppCheckerKind.Common) {
     /**
      * 检查 qualified access 是否把类型名当作表达式值使用。
      *
@@ -150,7 +152,7 @@ object CfirClassifierAsExpressionChecker : CfirQualifiedAccessChecker() {
  */
 context(context: CheckerContext)
 internal fun CfirQualifiedAccessExpression.isEnumPatternOwnerQualifier(): Boolean =
-    (context.containingElements.lastOrNull { element -> element !== this } as? CfirEnumPattern)?.ownerQualifier === this
+    context.containingElements.filterIsInstance<CfirEnumPattern>().lastOrNull()?.ownerQualifier === this
 
 /** 判断表达式是否为解析到 class / struct / enum 等声明的裸类型名值引用。 */
 internal fun CfirExpression.isResolvedClassLikeValueReference(): Boolean {

@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
@@ -15,7 +16,7 @@ import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
  * 对齐官方 Cangjie `TypeAliasCircleCheck`：在别名替换前完成环检查，
  * 对环上的每个 type alias 声明节点报告 `sema_typealias_cycle`。
  */
-object CfirTypeAliasCycleChecker : CfirTypeAliasChecker() {
+object CfirTypeAliasCycleChecker : CfirTypeAliasChecker(MppCheckerKind.Common) {
     /**
      * 检查 typealias 展开结果是否携带递归展开错误。
      *

@@ -9,11 +9,13 @@ package cjmp_p
 
 public common class Repo {
     public common init()
+    private common init(value: Int64)
     public common func get(): Int64
 }
 
 public common struct Point {
     public common init()
+    private common init(value: Int64)
 }
 
 public common func platform(): String
@@ -29,11 +31,13 @@ package cjmp_p
 
 public specific class Repo {
     public specific init() {}
+    private specific init(value: Int64) {}
     public specific func get(): Int64 { 1 }
 }
 
 public specific struct Point {
     public specific init() {}
+    private specific init(value: Int64) {}
 }
 
 public specific func platform(): String {

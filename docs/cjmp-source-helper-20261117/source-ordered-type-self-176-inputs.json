@@ -1,0 +1,26 @@
+{
+  "utc": "2026-11-18T04:06:42.3820878Z",
+  "fileCount": 6845,
+  "aggregateSha256": "EEF0D85AD40A34F5249F3518ED84387C8DB575EBAEA8EFB6A7DF33E962414679",
+  "roots": [
+    "common",
+    "cfir",
+    "analysis/low-level-api-cfir",
+    "analysis/analysis-api-cfir",
+    "compiler/frontend",
+    "compiler/config",
+    "compiler/phaser",
+    "compiler/arguments",
+    "psi",
+    "resolution.common",
+    "macro"
+  ],
+  "include": [
+    "*.kt",
+    "*.cj",
+    "*.kts"
+  ],
+  "exclude": "**/build/**",
+  "method": "rg --files --hidden --no-ignore, / normalized and Sort-Object -CaseSensitive; SHA256 of UTF8 LF joined path TAB length TAB uppercaseSHA256, no final LF",
+  "scope": "Frozen declaration self types consumed by encoder and native generic self assertions, complete176 current-byte verification"
+}

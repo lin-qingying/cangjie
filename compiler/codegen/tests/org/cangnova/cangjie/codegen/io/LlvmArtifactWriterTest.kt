@@ -5,6 +5,8 @@ import org.cangnova.cangjie.codegen.api.writeLlvmArtifacts
 import org.cangnova.cangjie.codegen.ir.LlvmModuleArtifact
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.nio.charset.StandardCharsets
@@ -87,6 +89,30 @@ class LlvmArtifactWriterTest {
         assertThrows<IllegalArgumentException> {
             output.writeLlvmArtifacts(tempDir, emitBitcode = true)
         }
+        assertFalse(Files.exists(tempDir.resolve("missing-bitcode.ll")))
+    }
+
+    /** 验证任何目标文件写入失败前都不会留下同一输出事务的部分工件。 */
+    @Test
+    fun `does not leave llvm ir when bitcode target is a directory`() {
+        val tempDir = Files.createTempDirectory("llvm-writer")
+        Files.createDirectory(tempDir.resolve("sample-module.bc"))
+        val output = ChirCodegenOutput(
+            modules = listOf(
+                LlvmModuleArtifact(
+                    name = "sample-module",
+                    ir = "define void @f() { ret void }",
+                    functions = emptyList(),
+                    bitcode = byteArrayOf(0x42),
+                ),
+            ),
+        )
+
+        assertThrows<IllegalArgumentException> {
+            output.writeLlvmArtifacts(tempDir, emitBitcode = true)
+        }
+        assertFalse(Files.exists(tempDir.resolve("sample-module.ll")))
+        assertTrue(Files.isDirectory(tempDir.resolve("sample-module.bc")))
     }
 
     /**

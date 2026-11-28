@@ -24,7 +24,7 @@
 
 package org.cangnova.cangjie.cfir.resolve.body
 
-import org.cangnova.cangjie.cfir.resolve.cjmp.cjmpHasDefaultValueForCallResolution
+import org.cangnova.cangjie.cfir.resolve.substitution.asCone
 
 import org.cangnova.cangjie.builtins.StandardNames
 import org.cangnova.cangjie.cfir.CfirElement
@@ -33,15 +33,15 @@ import org.cangnova.cangjie.cfir.calls.qualifierScopeOrNull
 import org.cangnova.cangjie.cfir.calls.resolvedQualifierClassifier
 import org.cangnova.cangjie.cfir.common.moduleData
 import org.cangnova.cangjie.cfir.declarations.*
-import org.cangnova.cangjie.LanguageFeature
-import org.cangnova.cangjie.cfir.session.cjmpMappingStorageOrNull
 import org.cangnova.cangjie.cfir.declarations.builder.buildProperty
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
+import org.cangnova.cangjie.cfir.declarations.utils.ownTypeParameters
 import org.cangnova.cangjie.cfir.diagnostic.*
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.expressions.*
+import org.cangnova.cangjie.cfir.expressions.builder.buildResolvedQualifier
 import org.cangnova.cangjie.cfir.expressions.builder.buildFunctionCallCopy
 import org.cangnova.cangjie.cfir.expressions.builder.buildNamedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.builder.buildNamedAccessExpressionCopy
@@ -78,9 +78,9 @@ import org.cangnova.cangjie.cfir.resolve.findCorrespondingClassLikeSupertype
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessContext
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessKind
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityResult
+import org.cangnova.cangjie.cfir.resolve.providers.getContainingClass
 import org.cangnova.cangjie.cfir.resolve.providers.getContainingExtend
 import org.cangnova.cangjie.cfir.resolve.providers.getContainingFile
-import org.cangnova.cangjie.cfir.resolve.providers.semanticExtendedType
 import org.cangnova.cangjie.cfir.resolve.withExpectedType
 import org.cangnova.cangjie.cfir.resolve.inference.inferenceComponents
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
@@ -88,7 +88,6 @@ import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeParameterBasedTypeVariabl
 import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassSubstitutionScope
-import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
 import org.cangnova.cangjie.cfir.semantics.AbstractCallCandidate
 import org.cangnova.cangjie.cfir.semantics.AbstractCandidate
 import org.cangnova.cangjie.cfir.semantics.ErrorTypeInArguments
@@ -96,10 +95,11 @@ import org.cangnova.cangjie.cfir.semantics.InvalidCallableReturnTypeInOverloadSe
 import org.cangnova.cangjie.cfir.semantics.ResolutionDiagnostic
 import org.cangnova.cangjie.cfir.semantics.isSuccess
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
 import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.session.builtinTypes
 import org.cangnova.cangjie.cfir.session.accessibilityChecker
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
@@ -353,6 +353,39 @@ class CfirCallResolver(
         }
         if (
             !classLikeCallResolved &&
+            result.candidates.isNotEmpty() &&
+            !result.hasExcludedCallableLookup &&
+            !isCollectionLiteralCall
+        ) {
+            val classifier = findClassifierForCall(functionCall, callee.name)
+            val classifierAtCurrentTowerPriority = classifier?.takeIf { matchedClassifier ->
+                functionCall.explicitReceiver != null || towerResolver.classifierLookupHasPriorityOver(
+                    name = callee.name,
+                    target = matchedClassifier,
+                    candidates = result.candidates,
+                )
+            }
+            val constructorResult = classifierAtCurrentTowerPriority?.let { matchedClassifier ->
+                builtinCallResolver.tryResolveClassConstructor(
+                    functionCall = functionCall,
+                    classifier = matchedClassifier,
+                    resolutionMode = resolutionMode,
+                )?.toResolutionResult(functionCall)
+                    ?: collectClassConstructorCandidates(
+                        functionCall = functionCall,
+                        classifier = matchedClassifier,
+                        resolutionMode = resolutionMode,
+                    )
+            }
+            if (constructorResult != null && constructorResult.candidates.isNotEmpty()) {
+                // 同一 Tower scope 中的 class/function 非法重名仍按仓颉 class-constructor 解析；
+                // 来自更内层 scope 的普通 callable 则已由优先级比较保留。
+                effectiveResult = constructorResult
+                classLikeCallResolved = true
+            }
+        }
+        if (
+            !classLikeCallResolved &&
             result.candidates.isEmpty() &&
             !result.hasExcludedCallableLookup &&
             !isCollectionLiteralCall
@@ -501,13 +534,17 @@ class CfirCallResolver(
         annotationClass.lazyResolveToPhase(CfirResolvePhase.STATUS)
         annotation.replaceAnnotationClassId(classId)
         annotation.replaceConeTypeOrNull(annotationType)
-        val declarationScope = CfirClassUseSiteMemberScope(
-            session = session,
+        val declarationScope = session.cangjieScopeProvider.getUseSiteMemberScope(
+            scopeSession = components.scopeSession,
+            useSiteSession = session,
             classSymbol = annotationClass,
             symbolProvider = session.symbolProvider,
             ownerType = expandedType,
             dispatchReceiverType = expandedType,
             scopeKind = CfirClassMemberScopeKind.DECLARATION_SITE,
+            extendProvider = null,
+            directSupertypeProvider = null,
+            memberRequiredPhase = CfirResolvePhase.STATUS,
         )
         val constructorScope = CfirClassSubstitutionScope(
             session = session, useSiteMemberScope = declarationScope, dispatchReceiverType = expandedType,
@@ -528,6 +565,7 @@ class CfirCallResolver(
         val factory = CandidateFactory(transformer.resolutionContext, info)
         val constructors = buildList<CfirConstructorSymbol> { constructorScope.processDeclaredConstructors(::add) }
         val candidates = constructors.mapNotNull { constructor ->
+            if (constructor.cfir.exportFacts.hasUnexportedSignature) return@mapNotNull null
             val accessibility = prefilterConstructorVisibilityBeforeCreateCandidate(
                 session = session, callInfo = info, constructorSymbol = constructor, originScope = constructorScope,
             ) ?: return@mapNotNull null
@@ -547,14 +585,15 @@ class CfirCallResolver(
         resolutionMode: ResolutionMode,
         discoveries: List<CfirCallableCandidateDiscovery>,
     ): Pair<Candidate, CfirFunctionCall>? {
-        if (discoveries.isEmpty() || discoveries.size == 1 && !resolutionMode.isOperatorOperandInference) return null
+        val callableDiscoveries = discoveries.filterNot { it.symbol.cfir.exportFacts.hasUnexportedSignature }
+        if (callableDiscoveries.isEmpty() || callableDiscoveries.size == 1 && !resolutionMode.isOperatorOperandInference) return null
         val callee = functionCall.calleeReference as? CfirNamedReference ?: return null
         val callKind = when {
-            discoveries.all { discovery ->
+            callableDiscoveries.all { discovery ->
                 discovery.symbol.takeIf { it.isBound }?.cfir is CfirEnumConstructor
             } -> CallKind.EnumConstructorCall
 
-            discoveries.all { discovery ->
+            callableDiscoveries.all { discovery ->
                 discovery.symbol.takeIf { it.isBound }?.cfir is CfirFunction
             } -> CallKind.Function
 
@@ -568,9 +607,9 @@ class CfirCallResolver(
             resolutionMode = resolutionMode,
         )
         val selectedDiscoveries = if (resolutionMode.isOperatorOperandInference) {
-            discoveries
+            callableDiscoveries
         } else {
-            listOf(uniquePrecollectedCandidateByExpectedReturnType(info, discoveries) ?: return null)
+            listOf(uniquePrecollectedCandidateByExpectedReturnType(info, callableDiscoveries) ?: return null)
         }
         val factory = CandidateFactory(transformer.resolutionContext, info)
         val freshCandidates = selectedDiscoveries.map { discovery ->
@@ -638,16 +677,17 @@ class CfirCallResolver(
         resolutionMode: ResolutionMode,
     ): CfirFunctionCall {
         val callee = functionCall.calleeReference as? CfirNamedReference ?: return functionCall
-        targetDeclaration.symbol.lazyResolveToPhase(CfirResolvePhase.STATUS)
+        targetDeclaration.symbol.lazyResolveToPhase(CfirResolvePhase.CJMP_MATCHING)
         val actualTarget = targetDeclaration.symbol.cfir
         val callInfo = createDelegatingConstructorCallInfo(functionCall, actualTarget, resolutionMode)
-        val declaredMemberScope = CfirClassUseSiteMemberScope(
-            session = session,
-            classSymbol = actualTarget.symbol,
-            symbolProvider = session.symbolProvider,
+        val declaredMemberScope = session.cangjieScopeProvider.getUseSiteMemberScope(
+            classSymbol = actualTarget.symbol as CfirClassLikeSymbol<*>,
+            useSiteSession = session,
+            scopeSession = components.scopeSession,
             ownerType = constructedTargetType,
             dispatchReceiverType = constructedTargetType,
             scopeKind = CfirClassMemberScopeKind.DECLARATION_SITE,
+            memberRequiredPhase = CfirResolvePhase.CJMP_MATCHING,
         )
         val constructorScope = CfirClassSubstitutionScope(
             session = session,
@@ -659,6 +699,7 @@ class CfirCallResolver(
         }
         val candidateFactory = CandidateFactory(transformer.resolutionContext, callInfo)
         val constructorCandidates = constructorSymbols.mapNotNull { constructorSymbol ->
+            if (constructorSymbol.cfir.exportFacts.hasUnexportedSignature) return@mapNotNull null
             val precheck = prefilterConstructorVisibilityBeforeCreateCandidate(
                 session = session,
                 callInfo = callInfo,
@@ -696,6 +737,18 @@ class CfirCallResolver(
             candidates = reducedCandidates,
             forwardedDiagnostics = emptyList(),
         ).reduceCandidatesByLambdaBody(functionCall)
+
+        if (functionCall.origin == CfirFunctionCallOrigin.ImplicitConstructorDelegationSuper &&
+            reducedResult.candidates.none { it.isSuccessful } &&
+            (constructorCandidates.isEmpty() || reducedResult.candidates.isNotEmpty() && reducedResult.candidates.all { it.hasOnlyArityMappingErrors() })) {
+            // 失败来自同一完整候选解析；隐式 super 的无参/访问失败属于专用构造器诊断。
+            functionCall.replaceCalleeReference(buildErrorNamedReference {
+                source = functionCall.source
+                name = callee.name
+                diagnostic = ConeSimpleDiagnostic("no accessible non-parameter constructor in super class", DiagnosticKind.NoNonParamConstructorInSuperClass)
+            })
+            return functionCall
+        }
 
         val nameReference = createResolvedNamedReference(
             callee,
@@ -746,7 +799,11 @@ class CfirCallResolver(
     /** 判断候选失败是否完全由缺失或多余实参构成。 */
     private fun Candidate.hasOnlyArityMappingErrors(): Boolean =
         diagnostics.isNotEmpty() && diagnostics.all { diagnostic ->
-            diagnostic is NoValueForParameter || diagnostic is TooManyArguments
+            // 仓颉普通/委托构造与函数值映射使用原生数量诊断，和参数级缺失/多余
+            // 诊断同属纯 arity 失败；其它可见性、类型或约束错误不能进入该分类。
+            diagnostic is NoValueForParameter || diagnostic is TooManyArguments ||
+                diagnostic is org.cangnova.cangjie.cfir.diagnostic.WrongNumberOfArguments ||
+                diagnostic is org.cangnova.cangjie.cfir.diagnostic.WrongArgumentCount
         }
 
     /** 计算实参数量到候选真实可接受 arity 区间的距离。 */
@@ -767,15 +824,18 @@ class CfirCallResolver(
      * 无条件当作可省略参数。
      */
     private fun Candidate.requiredAcceptedArity(): Int {
+        cVariadicArguments?.let { return it.fixedParameterCount }
         val variadicParameter = cangjieVariadicParameterForCall
-        return declaredParametersForMapping().count { parameter ->
-            parameter != variadicParameter && !parameter.cjmpHasDefaultValueForCallResolution()
+        val parameters = declaredParametersForMapping()
+        val defaultParameterStates = defaultParameterStates(parameters)
+        return parameters.count { parameter ->
+            parameter != variadicParameter && !defaultParameterStates.hasDefaultValue(parameter)
         }
     }
 
     /** 计算本次参数映射形状下的最大可接受实参数量；仓颉变参路径没有有限上界。 */
     private fun Candidate.maximumAcceptedArity(): Int =
-        if (cangjieVariadicParameterForCall != null) Int.MAX_VALUE else declaredParametersForMapping().size
+        if (cVariadicArguments != null || cangjieVariadicParameterForCall != null) Int.MAX_VALUE else declaredParametersForMapping().size
 
     /**
      * 解析命名值访问并选择候选。
@@ -799,6 +859,59 @@ class CfirCallResolver(
             callSite = callSite,
             purpose = purpose,
         ) { true }
+    }
+
+    /**
+     * 将包限定符的唯一、歧义或未解析结果一次性物化到访问节点。
+     *
+     * receiver 解析和普通命名值解析共享此边界，避免先写入普通引用错误后再清除错误并重跑名称解析。
+     */
+    internal fun resolveImportedPackageQualifier(
+        qualifiedAccess: CfirQualifiedAccessExpression,
+        qualifier: CfirImportedPackageQualifier,
+    ): CfirExpression {
+        val callee = qualifiedAccess.calleeReference as CfirNamedReference
+        check(callee.name == qualifier.name) {
+            "Imported package qualifier `${qualifier.name}` does not match access `${callee.name}`"
+        }
+
+        when (qualifier) {
+            is CfirImportedPackageQualifier.AmbiguousPackages -> {
+                val diagnostic = ConePackageNameConflictError(qualifier.name)
+                qualifiedAccess.replaceCalleeReference(
+                    buildErrorNamedReference {
+                        source = callee.source
+                        name = qualifier.name
+                        this.diagnostic = diagnostic
+                    }
+                )
+                qualifiedAccess.replaceConeTypeOrNull(components.typeFromCallee(qualifiedAccess))
+            }
+
+            is CfirImportedPackageQualifier.UnresolvedImport -> {
+                val diagnostic = ConeUnreportedDuplicateDiagnostic(ConeUnresolvedNameError(qualifier.name))
+                qualifiedAccess.replaceCalleeReference(
+                    buildErrorNamedReference {
+                        source = callee.source?.fakeElement(CjFakeSourceElementKind.UnresolvedImportQualifier)
+                        name = qualifier.name
+                        this.diagnostic = diagnostic
+                    }
+                )
+                qualifiedAccess.replaceConeTypeOrNull(ConeErrorType(diagnostic))
+            }
+
+            is CfirImportedPackageQualifier.UniquePackage -> {
+                return buildResolvedQualifier {
+                    source = qualifiedAccess.source
+                    packageFqName = qualifier.target.fqName
+                    organizationName = qualifier.target.organizationName
+                    referenceName = qualifier.name
+                    explicitParent = qualifiedAccess.explicitReceiver as? CfirResolvedQualifier
+                    coneTypeOrNull = session.builtinTypes.unitType
+                }
+            }
+        }
+        return qualifiedAccess
     }
 
     @Deprecated(
@@ -898,32 +1011,7 @@ class CfirCallResolver(
         if (isUsedAsReceiver) {
             val importedPackageQualifier = components.file.resolveImportedPackageQualifier(callee.name, session)
             if (importedPackageQualifier != null) {
-                if (importedPackageQualifier.isAmbiguous) {
-                    transformedAccess.replaceCalleeReference(
-                        buildErrorNamedReference {
-                            source = callee.source
-                            name = callee.name
-                            diagnostic = ConePackageNameConflictError(callee.name)
-                        }
-                    )
-                } else if (importedPackageQualifier.isUnresolved) {
-                    val diagnostic = ConeUnresolvedNameError(callee.name)
-                    val unreportedDiagnostic = ConeUnreportedDuplicateDiagnostic(diagnostic)
-                    transformedAccess.replaceCalleeReference(
-                        buildErrorNamedReference {
-                            source = callee.source?.fakeElement(CjFakeSourceElementKind.UnresolvedImportQualifier)
-                            name = callee.name
-                            this.diagnostic = unreportedDiagnostic
-                        }
-                    )
-                    transformedAccess.replaceConeTypeOrNull(ConeErrorType(unreportedDiagnostic))
-                } else {
-                    // 当前 CFIR 没有 Kotlin `FirResolvedQualifier` 的独立节点。
-                    // 已确认的导入包限定符在表达式管线中需要一个非错误、无值的稳定类型，
-                    // 后续成员查找仍由 import binding 推导出的 package member scope 承担。
-                    transformedAccess.replaceConeTypeOrNull(session.builtinTypes.unitType)
-                }
-                return transformedAccess
+                return resolveImportedPackageQualifier(transformedAccess, importedPackageQualifier)
             }
         }
 
@@ -1089,6 +1177,9 @@ class CfirCallResolver(
             val candidate = reducedCandidates.single()
             reportBodyResolutionErrorToOverloadByLambdaCandidate(nameReference, candidate)
             candidate.updateSourcesOfReceivers()
+            // 与固定 K 的命名值 fast path 一致：符号与对象在同一次候选选择中发布。
+            // local/parameter 的候选没有 dispatch，不能从其 callableId 推造实例。
+            transformedAccess.replaceCandidateReceivers(candidate.selectedInstanceReceiverExpression(), candidate)
         } else {
             reportBodyResolutionErrorToOverloadByLambdaCandidate(nameReference, null)
         }
@@ -1684,27 +1775,6 @@ class CfirCallResolver(
     }
 
     /**
-     * CJMP 消费侧遮蔽（D1 的 `FilterOutCommonCandidatesIfSpecificExist` 对位）。
-     *
-     * specific 模式下，若候选指向的 common 声明已在当前模块完成配对（存储中存在 specific 绑定），
-     * 该 common 候选从解析候选中剔除——specific 声明遮蔽依赖模块的 common 同名声明。
-     *
-     * 门禁纪律（§8.5.5）：版本门关闭或存储为空时不激活，1.0.x 行为零变化。
-     */
-    private fun reduceCjmpShadowedCommonCandidates(candidates: Set<Candidate>): Set<Candidate> {
-        if (candidates.isEmpty()) return candidates
-        if (!session.languageVersionSettings.supportsFeature(LanguageFeature.CommonSpecificDeclarations)) return candidates
-        val storage = session.cjmpMappingStorageOrNull ?: return candidates
-        if (storage.isEmpty) return candidates
-        return candidates.filterTo(linkedSetOf()) { candidate ->
-            val declaration = candidate.symbol.takeIf { it.isBound }?.cfir ?: return@filterTo true
-            val isCommon = (declaration as? CfirMemberDeclaration)?.status?.isCommon == true
-            if (!isCommon) return@filterTo true
-            storage.specificBindingsFor(declaration).isEmpty()
-        }
-    }
-
-    /**
      * 运行 tower resolver 并规约候选集合。
      *
      * 规约顺序为 tower 收集、适用性分组、函数值 expected type 过滤、
@@ -1718,7 +1788,6 @@ class CfirCallResolver(
         val resultCollector = towerResolver.runResolver(info, resolutionContext, collector)
         var (reducedCandidates, applicability) = reduceCandidates(resultCollector, info = info)
         reducedCandidates = reduceFunctionValueCandidatesByExpectedType(info, reducedCandidates)
-        reducedCandidates = reduceCjmpShadowedCommonCandidates(reducedCandidates)
         val callSite = info.callSite
         var result = ResolutionResult(
             info = info,
@@ -1874,6 +1943,9 @@ class CfirCallResolver(
             val valueReceiver = buildNamedAccessExpressionCopy(valueAccess) {
                 coneTypeOrNull = valueDeclaration?.returnTypeRef?.coneTypeOrNull
             }
+            // common invoke 的内层值访问是独立选定产品，必须先完成自己的 receiver 来源。
+            // 外层 D 是携带该 candidate 的非 leaf atom，外层更新不会代做内层更新。
+            valueCandidate.updateSourcesOfReceivers()
             candidateFactory.createCallableValueInvokeCandidate(
                 callInfo = invokeInfo.copy(candidateForCommonInvokeReceiver = valueCandidate),
                 callableValueCandidate = valueCandidate,
@@ -2333,6 +2405,12 @@ class CfirCallResolver(
                 reduceFreshTypeVariableReceiverCandidates(expectedTypeFilteredCandidates)?.let {
                     return@reduceCollectedCandidates it
                 }
+                reduceConstructorCandidatesByOwnerTypeInference(
+                    candidates = expectedTypeFilteredCandidates,
+                    hasExplicitTypeArguments = info.hasExplicitTypeArguments,
+                )?.let {
+                    return@reduceCollectedCandidates it
+                }
                 // 官方对多个合法 enum constructor 不执行普通函数的 most-specific 规约。
                 // payload 必须留在各候选分支中按 expected type 检查，否则会提前提交某个
                 // owner，并错误丢失泛型/非泛型 constructor 之间的真实歧义。
@@ -2428,8 +2506,9 @@ class CfirCallResolver(
             }
 
             val variadicParameter = candidate.cangjieVariadicParameterForMapping(parameters)
+            val defaultParameterStates = candidate.defaultParameterStates(parameters)
             val requiredCount = parameters.count { parameter ->
-                parameter != variadicParameter && !parameter.cjmpHasDefaultValueForCallResolution()
+                parameter != variadicParameter && !defaultParameterStates.hasDefaultValue(parameter)
             }
             argumentCount >= requiredCount &&
                     (variadicParameter != null || argumentCount <= parameters.size)
@@ -2657,34 +2736,10 @@ class CfirCallResolver(
         val receiverExpression = freshTypeVariableReceiverExpression() ?: return null
         val receiverType = when (receiverExpression) {
             dispatchReceiverExpression() -> callableSymbol.dispatchReceiverType
-            givenExtensionReceiver?.expression -> expectedExtensionReceiverType()
+            givenExtensionReceiver?.expression -> expectedExtensionReceiverType(session)
             else -> null
         } ?: return null
         return normalizeFreshReceiverShapeType(receiverType)
-    }
-
-    /** 计算 extension 候选在当前 use-site 下的 receiver 类型。 */
-    private fun Candidate.expectedExtensionReceiverType(): ConeCangJieType? {
-        val callableSymbol = symbol as? CfirCallableSymbol<*> ?: return null
-        val ownerExtend = callableSymbol.getContainingExtend()
-            ?.takeIf {
-                session.accessibilityChecker.checkExtend(
-                    it,
-                    CfirAccessContext(
-                        useSiteFile = components.file,
-                        containingDeclarations = transformer.components.containingDeclarations,
-                        kind = CfirAccessKind.EXTEND,
-                    ),
-                ) is CfirAccessibilityResult.Accessible
-            }
-            ?: return null
-        val actualReceiverType = givenExtensionReceiver?.expression?.coneTypeOrNull
-        if (actualReceiverType != null) {
-            findExtendDeclarationSubstitution(session, ownerExtend, actualReceiverType)
-                ?.substitutedReceiverType
-                ?.let { return it }
-        }
-        return ownerExtend.semanticExtendedType(session)
     }
 
     /**
@@ -2710,13 +2765,7 @@ class CfirCallResolver(
             map { projection -> normalizeFreshReceiverTypeArguments(projection.type) }
 
         return when (type) {
-            is ConeClassLikeType -> ConeClassLikeType(
-                lookupTag = type.lookupTag,
-                typeArguments = type.typeArguments.normalizeProjections(),
-                attributes = type.attributes,
-                isInterface = type.isInterface,
-                isThisType = type.isThisType,
-            )
+            is ConeClassLikeType -> type.withArguments(type.typeArguments.normalizeProjections())
 
             is ConeStructType -> ConeStructType(
                 lookupTag = type.lookupTag,
@@ -3421,7 +3470,7 @@ class CfirCallResolver(
     private fun Candidate.isGenericFunctionReferenceWithoutTypeArguments(): Boolean {
         if (!callInfo.isStandaloneFunctionValueAccess() || callInfo.hasExplicitTypeArguments) return false
         val function = symbol.takeIf { it.isBound }?.cfir as? CfirFunction ?: return false
-        return function.typeParameters.isNotEmpty()
+        return function.typeParameters.ownTypeParameters.isNotEmpty()
     }
 
     /**
@@ -3685,7 +3734,7 @@ class CfirCallResolver(
         resolutionMode: ResolutionMode,
     ): ResolutionResult {
         val actualClassifier = (classifier as? CfirTypeAliasSymbol)?.fullyExpandedClass(session) ?: classifier
-        actualClassifier.lazyResolveToPhase(CfirResolvePhase.STATUS)
+        actualClassifier.lazyResolveToPhase(CfirResolvePhase.CJMP_MATCHING)
         val actualDeclaration = actualClassifier.cfir
         if (actualDeclaration is CfirEnum) {
             return ResolutionResult(
@@ -3712,13 +3761,14 @@ class CfirCallResolver(
             classifier.cfir.scopeProvider
                 .getTypealiasConstructorScope(classifier.cfir, session, components.scopeSession)
         } else {
-            val declaredMemberScope = CfirClassUseSiteMemberScope(
-                session = session,
+            val declaredMemberScope = session.cangjieScopeProvider.getUseSiteMemberScope(
                 classSymbol = actualClassifier,
-                symbolProvider = session.symbolProvider,
+                useSiteSession = session,
+                scopeSession = components.scopeSession,
                 ownerType = constructedType,
                 dispatchReceiverType = constructedType,
                 scopeKind = CfirClassMemberScopeKind.DECLARATION_SITE,
+                memberRequiredPhase = CfirResolvePhase.CJMP_MATCHING,
             )
             CfirClassSubstitutionScope(session, declaredMemberScope, constructedType)
         }
@@ -3737,6 +3787,7 @@ class CfirCallResolver(
         val callInfo = createClassifierCallInfo(functionCall, classifier, resolutionMode)
         val candidateFactory = CandidateFactory(transformer.resolutionContext, callInfo)
         val constructorCandidates = constructorSymbols.mapNotNull { constructorSymbol ->
+            if (constructorSymbol.cfir.exportFacts.hasUnexportedSignature) return@mapNotNull null
             val precheck = prefilterConstructorVisibilityBeforeCreateCandidate(
                 session = session,
                 callInfo = callInfo,
@@ -3789,6 +3840,25 @@ class CfirCallResolver(
      * 所有成员签名是否冲突；因此 `A(0)` 这类调用不能让不含 `T` 的 `init(Int64)`
      * 抢走结果类型代表，否则 owner `T` 会在 completion 阶段退化成“无法推断”。
      */
+    private fun reduceConstructorCandidatesByOwnerTypeInference(
+        candidates: Set<Candidate>,
+        hasExplicitTypeArguments: Boolean,
+    ): Set<Candidate>? {
+        if (hasExplicitTypeArguments || candidates.size <= 1) return null
+        val ownerClassSymbols = candidates.map { candidate ->
+            if (candidate.symbol.takeIf(CfirBasedSymbol<*>::isBound)?.cfir !is CfirConstructor) return null
+            candidate.symbol.getContainingClass() ?: return null
+        }
+        val ownerClassIds = ownerClassSymbols.mapTo(linkedSetOf()) { it.classId }
+        if (ownerClassIds.size != 1) return null
+        val ownerDeclaration = ownerClassSymbols.first().cfir as? CfirClassLikeDeclaration ?: return null
+        return reduceConstructorCandidatesByOwnerTypeInference(
+            candidates = candidates,
+            ownerTypeParameters = ownerDeclaration.typeParameters,
+            hasExplicitTypeArguments = hasExplicitTypeArguments,
+        )
+    }
+
     private fun reduceConstructorCandidatesByOwnerTypeInference(
         candidates: Set<Candidate>,
         ownerTypeParameters: List<CfirTypeParameterRef>,

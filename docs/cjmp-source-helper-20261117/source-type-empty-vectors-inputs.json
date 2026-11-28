@@ -1,0 +1,26 @@
+{
+  "utc": "2026-11-18T02:09:43.9614364Z",
+  "fileCount": 6841,
+  "aggregateSha256": "B1D42124F585E1C8A2D83B54BEDBA44E45F1EBDD0C0DFE027EAA6DB3D4089EC0",
+  "roots": [
+    "common",
+    "cfir",
+    "analysis/low-level-api-cfir",
+    "analysis/analysis-api-cfir",
+    "compiler/frontend",
+    "compiler/config",
+    "compiler/phaser",
+    "compiler/arguments",
+    "psi",
+    "resolution.common",
+    "macro"
+  ],
+  "include": [
+    "*.kt",
+    "*.cj",
+    "*.kts"
+  ],
+  "exclude": "**/build/**",
+  "method": "rg --files --hidden --no-ignore, / normalized and Sort-Object -CaseSensitive; SHA256 of UTF8 LF joined path TAB length TAB uppercaseSHA256, no final LF",
+  "scope": "S4 native required present-empty type vectors: CjoPackageWriterTest and fullSOURCE18 regression"
+}

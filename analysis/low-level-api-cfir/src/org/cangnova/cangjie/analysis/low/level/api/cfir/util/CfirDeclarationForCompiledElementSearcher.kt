@@ -25,8 +25,8 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.symbols.map
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.realPsi
 import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.session.extendProviderOrNull
-import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol

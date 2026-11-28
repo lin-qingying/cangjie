@@ -8,6 +8,7 @@
 package org.cangnova.cangjie.cfir.declarations.builder
 
 import kotlin.contracts.*
+import org.cangnova.cangjie.cfir.CfirContentSource
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
@@ -15,6 +16,7 @@ import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.impl.CfirEnumConstructorImpl
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
+import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeSimpleCangJieType
@@ -26,17 +28,19 @@ class CfirEnumConstructorBuilder {
     var source: CjSourceElement? = null
     lateinit var moduleData: CfirModuleData
     lateinit var resolvePhase: CfirResolvePhase
+    var contentSource: CfirContentSource = CfirContentSource.Owned
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
     lateinit var origin: CfirDeclarationOrigin
     lateinit var attributes: CfirDeclarationAttributes
+    val typeParameters: MutableList<CfirTypeParameterRef> = mutableListOf()
     var isLocal: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
+    lateinit var returnTypeRef: CfirTypeRef
     var deprecationsProvider: DeprecationsProvider = UnresolvedDeprecationProvider
     var dispatchReceiverType: ConeSimpleCangJieType? = null
+    val valueParameters: MutableList<CfirValueParameter> = mutableListOf()
+    var body: CfirBlock? = null
     lateinit var symbol: CfirEnumConstructorSymbol
     lateinit var status: CfirDeclarationStatus
-    val typeParameters: MutableList<CfirTypeParameterRef> = mutableListOf()
-    lateinit var returnTypeRef: CfirTypeRef
-    val valueParameters: MutableList<CfirValueParameter> = mutableListOf()
     lateinit var name: Name
 
     @OptIn(CfirImplementationDetail::class)
@@ -45,17 +49,19 @@ class CfirEnumConstructorBuilder {
             source,
             moduleData,
             resolvePhase,
+            contentSource,
             annotations.toMutableOrEmpty(),
             origin,
             attributes,
+            typeParameters,
             isLocal,
+            returnTypeRef,
             deprecationsProvider,
             dispatchReceiverType,
+            valueParameters,
+            body,
             symbol,
             status,
-            typeParameters,
-            returnTypeRef,
-            valueParameters,
             name,
         )
     }
@@ -82,13 +88,14 @@ inline fun buildEnumConstructorCopy(original: CfirEnumConstructor, init: CfirEnu
     copyBuilder.annotations.addAll(original.annotations)
     copyBuilder.origin = original.origin
     copyBuilder.attributes = original.attributes.copy()
+    copyBuilder.typeParameters.addAll(original.typeParameters)
     copyBuilder.isLocal = original.isLocal
+    copyBuilder.returnTypeRef = original.returnTypeRef
     copyBuilder.deprecationsProvider = original.deprecationsProvider
     copyBuilder.dispatchReceiverType = original.dispatchReceiverType
-    copyBuilder.status = original.status
-    copyBuilder.typeParameters.addAll(original.typeParameters)
-    copyBuilder.returnTypeRef = original.returnTypeRef
     copyBuilder.valueParameters.addAll(original.valueParameters)
+    copyBuilder.body = original.body
+    copyBuilder.status = original.status
     copyBuilder.name = original.name
     return copyBuilder.apply(init).build()
 }

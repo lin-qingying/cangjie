@@ -1,9 +1,13 @@
 package org.cangnova.cangjie.cfir.scopes.impl
 
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
+
 import org.cangnova.cangjie.cfir.resolve.providers.CfirLookupOrigin
 import org.cangnova.cangjie.cfir.resolve.providers.CfirLookupOriginScope
 import org.cangnova.cangjie.cfir.resolve.services.CfirResolvedImportBinding
 import org.cangnova.cangjie.cfir.resolve.services.CfirResolvedImportTarget
+import org.cangnova.cangjie.cfir.resolve.services.resolveSymbols
+import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.scopes.CfirImportScope
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
@@ -22,6 +26,8 @@ import org.cangnova.cangjie.name.Name
  */
 class CfirExplicitSimpleImportingScope(
     resolvedImports: List<CfirResolvedImportBinding>,
+    /** 当前查找使用的 provider；文件 binding 本身只保存结构身份。 */
+    private val symbolProvider: CfirSymbolProvider,
 ) : CfirImportScope(), CfirLookupOriginScope {
 
     /** 当前 simple import scope 的结构性来源。 */
@@ -47,7 +53,9 @@ class CfirExplicitSimpleImportingScope(
      */
     override fun processClassifiersByName(name: Name, processor: (CfirClassLikeSymbol<*>) -> Unit) {
         resolvedImportsByName[name]
-            ?.forEachTarget<CfirResolvedImportTarget.ClassLike> { processor(it.symbol) }
+            ?.forEachTarget<CfirResolvedImportTarget.ClassLike> { target ->
+                target.resolveSymbols(symbolProvider).forEach(processor)
+            }
     }
 
     /**
@@ -92,7 +100,7 @@ class CfirExplicitSimpleImportingScope(
         processor: (S) -> Unit,
     ) {
         forEachTarget<CfirResolvedImportTarget.Callable> { target ->
-            target.symbols.filterIsInstance<S>().forEach(processor)
+            target.resolveSymbols(symbolProvider).filterIsInstance<S>().forEach(processor)
         }
     }
 }

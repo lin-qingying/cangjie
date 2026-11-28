@@ -68,7 +68,7 @@ class CjFunctionElementType(debugName: String) : CjStubElementType<CangJieNamedF
             hasBody,
             psi.hasTypeParameterListBeforeFunctionName(), //                psi.mayHaveContract(),
             null,
-
+            hasEmptyBlockBody = psi.hasEmptyBlockBody(),
         )
     }
 
@@ -85,6 +85,7 @@ class CjFunctionElementType(debugName: String) : CjStubElementType<CangJieNamedF
 
         dataStream.writeBoolean(stub.hasBlockBody())
         dataStream.writeBoolean(stub.hasBody())
+        dataStream.writeBoolean(stub.hasEmptyBlockBody())
         dataStream.writeBoolean(stub.hasTypeParameterListBeforeFunctionName())
 
         if (stub is CangJieNamedFunctionStubImpl) {
@@ -105,6 +106,7 @@ class CjFunctionElementType(debugName: String) : CjStubElementType<CangJieNamedF
 
         val hasBlockBody = dataStream.readBoolean()
         val hasBody = dataStream.readBoolean()
+        val hasEmptyBlockBody = dataStream.readBoolean()
         val hasTypeParameterListBeforeFunctionName = dataStream.readBoolean()
         //        bool mayHaveContract = dataStream.readBoolean();
         return CangJieNamedFunctionStubImpl(
@@ -113,6 +115,7 @@ class CjFunctionElementType(debugName: String) : CjStubElementType<CangJieNamedF
             //                mayHaveContract ? CangJieNamedFunctionStubImpl.Companion.deserializeContract(dataStream) :
 
             deserialize(dataStream),
+            hasEmptyBlockBody = hasEmptyBlockBody,
         )
     }
 

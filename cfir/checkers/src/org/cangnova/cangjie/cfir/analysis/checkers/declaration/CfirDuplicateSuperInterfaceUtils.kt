@@ -32,7 +32,7 @@ import org.cangnova.cangjie.cfir.types.ConeTupleType
 import org.cangnova.cangjie.cfir.types.ConeUnionType
 import org.cangnova.cangjie.cfir.types.ConeVArrayType
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
-import org.cangnova.cangjie.cfir.types.createTypeSubstitutorByTypeConstructor
+import org.cangnova.cangjie.cfir.resolve.substitution.createTypeSubstitutorByTypeConstructor
 import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.name.Name

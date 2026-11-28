@@ -63,6 +63,7 @@ open class CangJieExtendStubImpl(
     private val superNames: Array<StringRef>,
 
     receiverTypeName: String?,
+    override val cjmpNominalSyntaxFacts: org.cangnova.cangjie.parsing.CjmpNominalSyntaxFacts? = null,
 
     ) : CangJieStubBaseImpl<CjExtend>(parent, type), CangJieExtendStub {
     /**
@@ -117,6 +118,7 @@ open class CangJieExtendStubImpl(
         extendIdRef = extendIdRef,
         superNames = superNames,
         receiverTypeName = receiverTypeName,
+        cjmpNominalSyntaxFacts = cjmpNominalSyntaxFacts,
     )
 
     private companion object {

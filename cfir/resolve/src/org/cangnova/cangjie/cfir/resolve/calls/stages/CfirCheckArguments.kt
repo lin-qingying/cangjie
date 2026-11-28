@@ -24,7 +24,11 @@
 
 package org.cangnova.cangjie.cfir.resolve.calls.stages
 
+import org.cangnova.cangjie.cfir.types.asCone
+
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
+import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.declarations.interopInfo
 import org.cangnova.cangjie.cfir.diagnostic.InapplicableCandidate
 import org.cangnova.cangjie.cfir.diagnostic.ArgumentTypeMismatch
 import org.cangnova.cangjie.cfir.diagnostic.NonGenericFunctionWithTypeArguments
@@ -48,8 +52,9 @@ import org.cangnova.cangjie.cfir.resolve.transformers.ensureResolvedTypeDeclarat
 import org.cangnova.cangjie.cfir.semantics.isSuccess
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.CfirCTypeSemantics
 import org.cangnova.cangjie.cfir.types.ConeErrorType
-import org.cangnova.cangjie.cfir.types.asCone
+import org.cangnova.cangjie.cfir.resolve.substitution.asCone
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.contains
 import org.cangnova.cangjie.resolve.calls.inference.isSubtypeConstraintCompatible
@@ -74,6 +79,11 @@ object CfirCheckArguments : ResolutionStage() {
         if (candidate.argumentMappingOutcome?.hasMappingFailure == true) return
         // 实例化已失败；错误候选的完整重放也不能继续产生实参类型不匹配。
         if (NonGenericFunctionWithTypeArguments in candidate.diagnostics) return
+
+        val function = candidate.symbol.takeIf { it.isBound }?.cfir as? CfirFunction
+        if (!candidate.isCallableValueCall && function?.interopInfo?.resolvedAbi?.isCFunction == true) {
+            candidate.requireCompletedCFunctionArgumentCheck()
+        }
 
         val contextArgumentsOfInvoke = candidate.expectedContextParameterCountForInvoke ?: 0
         val argumentMapping = candidate.argumentMapping
@@ -141,6 +151,7 @@ object CfirCheckArguments : ResolutionStage() {
             isReceiver,
             false,
             isInoutArgument = argument.inoutArgumentTargetOrNull() != null,
+            isCVariadicExtra = isCVariadicExtra(atom),
         )
     }
 }
@@ -174,6 +185,10 @@ private fun Candidate.prepareExpectedType(
     argument: CfirExpression,
     parameter: CfirValueParameter?,
 ): ConeCangJieType? {
+    if (isCVariadicExtra(atom)) {
+        val declared = substitutor.substituteOrSelf(CfirCTypeSemantics.constraintType())
+        return substituteExplicitTypeArgumentConstraints(system.buildCurrentSubstitutor().safeSubstitute(system, declared).asCone())
+    }
     if (parameter == null) return null
     /*
      * 形参类型引用可能尚未解析——lazy resolve 期间它仍是非解析的 `CfirBasicTypeRefImpl`，

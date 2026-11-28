@@ -269,10 +269,9 @@ sealed class CjFakeSourceElementKind(
     object UnresolvedWhenConditionSubject : CjFakeSourceElementKind()
 
     /**
-     * for primary constructor parameter the corresponding class property is generated
-     * with a fake sources which refers to this the corresponding parameter
+     * 主构造成员参数反糖生成字段；假来源指向原参数，参数与字段仍保留独立声明身份。
      */
-    object PropertyFromParameter : CjFakeSourceElementKind(shouldSkipErrorTypeReporting = true)
+    object FieldFromParameter : CjFakeSourceElementKind(shouldSkipErrorTypeReporting = true)
 
     /**
      * `if (true) 1` --> `if(true) { 1 }`
@@ -744,6 +743,8 @@ class CjOffsetsOnlySourceElement(
      * 源元素在文件文本中的结束偏移。
      */
     override val endOffset: Int,
+    /** 从其派生偏移的语法锚点；保留 source mapping 所需的文件/树身份。 */
+    val sourceAnchor: CjSourceElement? = null,
 ) : AbstractCjSourceElement()
 
 /**

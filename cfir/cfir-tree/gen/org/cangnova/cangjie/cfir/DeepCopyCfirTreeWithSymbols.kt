@@ -75,6 +75,7 @@ class DeepCopyCfirTreeWithSymbols(
                 CfirConstructorImpl::class.java -> copyCfirConstructorImpl(source as CfirConstructorImpl)
                 CfirPrimaryConstructor::class.java -> copyCfirPrimaryConstructor(source as CfirPrimaryConstructor)
                 CfirInvalidDeclarationImpl::class.java -> copyCfirInvalidDeclarationImpl(source as CfirInvalidDeclarationImpl)
+                CfirMacroExpansionDeclarationImpl::class.java -> copyCfirMacroExpansionDeclarationImpl(source as CfirMacroExpansionDeclarationImpl)
                 CfirPropertyImpl::class.java -> copyCfirPropertyImpl(source as CfirPropertyImpl)
                 CfirPropertyAccessorImpl::class.java -> copyCfirPropertyAccessorImpl(source as CfirPropertyAccessorImpl)
                 CfirFieldVariableImpl::class.java -> copyCfirFieldVariableImpl(source as CfirFieldVariableImpl)
@@ -85,6 +86,22 @@ class DeepCopyCfirTreeWithSymbols(
                 CfirTypeParameterImpl::class.java -> copyCfirTypeParameterImpl(source as CfirTypeParameterImpl)
                 CfirConstructedClassTypeParameterRefImpl::class.java -> copyCfirConstructedClassTypeParameterRefImpl(source as CfirConstructedClassTypeParameterRefImpl)
                 CfirExpressionStub::class.java -> copyCfirExpressionStub(source as CfirExpressionStub)
+                CfirNativeMatchExpressionImpl::class.java -> copyCfirNativeMatchExpressionImpl(source as CfirNativeMatchExpressionImpl)
+                CfirNativeMatchCaseImpl::class.java -> copyCfirNativeMatchCaseImpl(source as CfirNativeMatchCaseImpl)
+                CfirNativeConditionMatchExpressionImpl::class.java -> copyCfirNativeConditionMatchExpressionImpl(source as CfirNativeConditionMatchExpressionImpl)
+                CfirNativeConditionMatchCaseImpl::class.java -> copyCfirNativeConditionMatchCaseImpl(source as CfirNativeConditionMatchCaseImpl)
+                CfirLetPatternDestructorExpressionImpl::class.java -> copyCfirLetPatternDestructorExpressionImpl(source as CfirLetPatternDestructorExpressionImpl)
+                CfirNativeCatchImpl::class.java -> copyCfirNativeCatchImpl(source as CfirNativeCatchImpl)
+                CfirNativeTryExpressionImpl::class.java -> copyCfirNativeTryExpressionImpl(source as CfirNativeTryExpressionImpl)
+                CfirPrimitiveTypeExpressionImpl::class.java -> copyCfirPrimitiveTypeExpressionImpl(source as CfirPrimitiveTypeExpressionImpl)
+                CfirWildcardExpressionImpl::class.java -> copyCfirWildcardExpressionImpl(source as CfirWildcardExpressionImpl)
+                CfirFunctionArgumentImpl::class.java -> copyCfirFunctionArgumentImpl(source as CfirFunctionArgumentImpl)
+                CfirCallExpressionImpl::class.java -> copyCfirCallExpressionImpl(source as CfirCallExpressionImpl)
+                CfirUnaryExpressionImpl::class.java -> copyCfirUnaryExpressionImpl(source as CfirUnaryExpressionImpl)
+                CfirBinaryExpressionImpl::class.java -> copyCfirBinaryExpressionImpl(source as CfirBinaryExpressionImpl)
+                CfirArrayCreationExpressionImpl::class.java -> copyCfirArrayCreationExpressionImpl(source as CfirArrayCreationExpressionImpl)
+                CfirPointerExpressionImpl::class.java -> copyCfirPointerExpressionImpl(source as CfirPointerExpressionImpl)
+                CfirResolvedSpawnExpressionImpl::class.java -> copyCfirResolvedSpawnExpressionImpl(source as CfirResolvedSpawnExpressionImpl)
                 CfirBlockImpl::class.java -> copyCfirBlockImpl(source as CfirBlockImpl)
                 CfirLazyBlockImpl::class.java -> copyCfirLazyBlockImpl(source as CfirLazyBlockImpl)
                 CfirLazyExpressionImpl::class.java -> copyCfirLazyExpressionImpl(source as CfirLazyExpressionImpl)
@@ -101,6 +118,8 @@ class DeepCopyCfirTreeWithSymbols(
                 CfirAnnotationCallImpl::class.java -> copyCfirAnnotationCallImpl(source as CfirAnnotationCallImpl)
                 CfirSuperReferenceImpl::class.java -> copyCfirSuperReferenceImpl(source as CfirSuperReferenceImpl)
                 CfirThisReferenceImpl::class.java -> copyCfirThisReferenceImpl(source as CfirThisReferenceImpl)
+                CfirResolvedQualifierImpl::class.java -> copyCfirResolvedQualifierImpl(source as CfirResolvedQualifierImpl)
+                CfirErrorResolvedQualifierImpl::class.java -> copyCfirErrorResolvedQualifierImpl(source as CfirErrorResolvedQualifierImpl)
                 CfirNamedAccessExpressionImpl::class.java -> copyCfirNamedAccessExpressionImpl(source as CfirNamedAccessExpressionImpl)
                 CfirQualifiedAccessExpressionImpl::class.java -> copyCfirQualifiedAccessExpressionImpl(source as CfirQualifiedAccessExpressionImpl)
                 CfirSuperReceiverExpressionImpl::class.java -> copyCfirSuperReceiverExpressionImpl(source as CfirSuperReceiverExpressionImpl)
@@ -153,6 +172,7 @@ class DeepCopyCfirTreeWithSymbols(
                 CfirTypePatternImpl::class.java -> copyCfirTypePatternImpl(source as CfirTypePatternImpl)
                 CfirResolvedTypeRefImpl::class.java -> copyCfirResolvedTypeRefImpl(source as CfirResolvedTypeRefImpl)
                 CfirQualifierPartImpl::class.java -> copyCfirQualifierPartImpl(source as CfirQualifierPartImpl)
+                CfirParenthesizedTypeRefImpl::class.java -> copyCfirParenthesizedTypeRefImpl(source as CfirParenthesizedTypeRefImpl)
                 CfirUserTypeRefImpl::class.java -> copyCfirUserTypeRefImpl(source as CfirUserTypeRefImpl)
                 CfirBasicTypeRefImpl::class.java -> copyCfirBasicTypeRefImpl(source as CfirBasicTypeRefImpl)
                 CfirImplicitTypeRefImpl::class.java -> copyCfirImplicitTypeRefImpl(source as CfirImplicitTypeRefImpl)
@@ -163,6 +183,7 @@ class DeepCopyCfirTreeWithSymbols(
                 CfirErrorTypeRefImpl::class.java -> copyCfirErrorTypeRefImpl(source as CfirErrorTypeRefImpl)
                 CfirNamedReferenceImpl::class.java -> copyCfirNamedReferenceImpl(source as CfirNamedReferenceImpl)
                 CfirResolvedNamedReferenceImpl::class.java -> copyCfirResolvedNamedReferenceImpl(source as CfirResolvedNamedReferenceImpl)
+                CfirResolvedBuiltinOperatorReferenceImpl::class.java -> copyCfirResolvedBuiltinOperatorReferenceImpl(source as CfirResolvedBuiltinOperatorReferenceImpl)
                 CfirErrorReferenceImpl::class.java -> copyCfirErrorReferenceImpl(source as CfirErrorReferenceImpl)
                 ResolvedImplicitTypeRef::class.java -> recordExternal(source, context.resolvedImplicitTypeRef(source as ResolvedImplicitTypeRef))
                 CfirDeclarationStatusImpl::class.java -> recordExternal(source, context.status(source as CfirDeclarationStatusImpl))
@@ -213,6 +234,7 @@ class DeepCopyCfirTreeWithSymbols(
             CfirConstructorImpl::class.java -> scanCfirConstructorImpl(source as CfirConstructorImpl)
             CfirPrimaryConstructor::class.java -> scanCfirPrimaryConstructor(source as CfirPrimaryConstructor)
             CfirInvalidDeclarationImpl::class.java -> scanCfirInvalidDeclarationImpl(source as CfirInvalidDeclarationImpl)
+            CfirMacroExpansionDeclarationImpl::class.java -> scanCfirMacroExpansionDeclarationImpl(source as CfirMacroExpansionDeclarationImpl)
             CfirPropertyImpl::class.java -> scanCfirPropertyImpl(source as CfirPropertyImpl)
             CfirPropertyAccessorImpl::class.java -> scanCfirPropertyAccessorImpl(source as CfirPropertyAccessorImpl)
             CfirFieldVariableImpl::class.java -> scanCfirFieldVariableImpl(source as CfirFieldVariableImpl)
@@ -223,6 +245,22 @@ class DeepCopyCfirTreeWithSymbols(
             CfirTypeParameterImpl::class.java -> scanCfirTypeParameterImpl(source as CfirTypeParameterImpl)
             CfirConstructedClassTypeParameterRefImpl::class.java -> scanCfirConstructedClassTypeParameterRefImpl(source as CfirConstructedClassTypeParameterRefImpl)
             CfirExpressionStub::class.java -> scanCfirExpressionStub(source as CfirExpressionStub)
+            CfirNativeMatchExpressionImpl::class.java -> scanCfirNativeMatchExpressionImpl(source as CfirNativeMatchExpressionImpl)
+            CfirNativeMatchCaseImpl::class.java -> scanCfirNativeMatchCaseImpl(source as CfirNativeMatchCaseImpl)
+            CfirNativeConditionMatchExpressionImpl::class.java -> scanCfirNativeConditionMatchExpressionImpl(source as CfirNativeConditionMatchExpressionImpl)
+            CfirNativeConditionMatchCaseImpl::class.java -> scanCfirNativeConditionMatchCaseImpl(source as CfirNativeConditionMatchCaseImpl)
+            CfirLetPatternDestructorExpressionImpl::class.java -> scanCfirLetPatternDestructorExpressionImpl(source as CfirLetPatternDestructorExpressionImpl)
+            CfirNativeCatchImpl::class.java -> scanCfirNativeCatchImpl(source as CfirNativeCatchImpl)
+            CfirNativeTryExpressionImpl::class.java -> scanCfirNativeTryExpressionImpl(source as CfirNativeTryExpressionImpl)
+            CfirPrimitiveTypeExpressionImpl::class.java -> scanCfirPrimitiveTypeExpressionImpl(source as CfirPrimitiveTypeExpressionImpl)
+            CfirWildcardExpressionImpl::class.java -> scanCfirWildcardExpressionImpl(source as CfirWildcardExpressionImpl)
+            CfirFunctionArgumentImpl::class.java -> scanCfirFunctionArgumentImpl(source as CfirFunctionArgumentImpl)
+            CfirCallExpressionImpl::class.java -> scanCfirCallExpressionImpl(source as CfirCallExpressionImpl)
+            CfirUnaryExpressionImpl::class.java -> scanCfirUnaryExpressionImpl(source as CfirUnaryExpressionImpl)
+            CfirBinaryExpressionImpl::class.java -> scanCfirBinaryExpressionImpl(source as CfirBinaryExpressionImpl)
+            CfirArrayCreationExpressionImpl::class.java -> scanCfirArrayCreationExpressionImpl(source as CfirArrayCreationExpressionImpl)
+            CfirPointerExpressionImpl::class.java -> scanCfirPointerExpressionImpl(source as CfirPointerExpressionImpl)
+            CfirResolvedSpawnExpressionImpl::class.java -> scanCfirResolvedSpawnExpressionImpl(source as CfirResolvedSpawnExpressionImpl)
             CfirBlockImpl::class.java -> scanCfirBlockImpl(source as CfirBlockImpl)
             CfirLazyBlockImpl::class.java -> scanCfirLazyBlockImpl(source as CfirLazyBlockImpl)
             CfirLazyExpressionImpl::class.java -> scanCfirLazyExpressionImpl(source as CfirLazyExpressionImpl)
@@ -239,6 +277,8 @@ class DeepCopyCfirTreeWithSymbols(
             CfirAnnotationCallImpl::class.java -> scanCfirAnnotationCallImpl(source as CfirAnnotationCallImpl)
             CfirSuperReferenceImpl::class.java -> scanCfirSuperReferenceImpl(source as CfirSuperReferenceImpl)
             CfirThisReferenceImpl::class.java -> scanCfirThisReferenceImpl(source as CfirThisReferenceImpl)
+            CfirResolvedQualifierImpl::class.java -> scanCfirResolvedQualifierImpl(source as CfirResolvedQualifierImpl)
+            CfirErrorResolvedQualifierImpl::class.java -> scanCfirErrorResolvedQualifierImpl(source as CfirErrorResolvedQualifierImpl)
             CfirNamedAccessExpressionImpl::class.java -> scanCfirNamedAccessExpressionImpl(source as CfirNamedAccessExpressionImpl)
             CfirQualifiedAccessExpressionImpl::class.java -> scanCfirQualifiedAccessExpressionImpl(source as CfirQualifiedAccessExpressionImpl)
             CfirSuperReceiverExpressionImpl::class.java -> scanCfirSuperReceiverExpressionImpl(source as CfirSuperReceiverExpressionImpl)
@@ -291,6 +331,7 @@ class DeepCopyCfirTreeWithSymbols(
             CfirTypePatternImpl::class.java -> scanCfirTypePatternImpl(source as CfirTypePatternImpl)
             CfirResolvedTypeRefImpl::class.java -> scanCfirResolvedTypeRefImpl(source as CfirResolvedTypeRefImpl)
             CfirQualifierPartImpl::class.java -> scanCfirQualifierPartImpl(source as CfirQualifierPartImpl)
+            CfirParenthesizedTypeRefImpl::class.java -> scanCfirParenthesizedTypeRefImpl(source as CfirParenthesizedTypeRefImpl)
             CfirUserTypeRefImpl::class.java -> scanCfirUserTypeRefImpl(source as CfirUserTypeRefImpl)
             CfirBasicTypeRefImpl::class.java -> scanCfirBasicTypeRefImpl(source as CfirBasicTypeRefImpl)
             CfirImplicitTypeRefImpl::class.java -> scanCfirImplicitTypeRefImpl(source as CfirImplicitTypeRefImpl)
@@ -301,6 +342,7 @@ class DeepCopyCfirTreeWithSymbols(
             CfirErrorTypeRefImpl::class.java -> scanCfirErrorTypeRefImpl(source as CfirErrorTypeRefImpl)
             CfirNamedReferenceImpl::class.java -> scanCfirNamedReferenceImpl(source as CfirNamedReferenceImpl)
             CfirResolvedNamedReferenceImpl::class.java -> scanCfirResolvedNamedReferenceImpl(source as CfirResolvedNamedReferenceImpl)
+            CfirResolvedBuiltinOperatorReferenceImpl::class.java -> scanCfirResolvedBuiltinOperatorReferenceImpl(source as CfirResolvedBuiltinOperatorReferenceImpl)
             CfirErrorReferenceImpl::class.java -> scanCfirErrorReferenceImpl(source as CfirErrorReferenceImpl)
             ResolvedImplicitTypeRef::class.java -> scanOwned((source as ResolvedImplicitTypeRef).typeRef)
             CfirDeclarationStatusImpl::class.java -> context.collectOwnedMetadata(CfirRawCopyMetadataKind.STATUS, source, ::scanOwned)
@@ -327,6 +369,8 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
             expression = context.state.copyOwned(source.expression),
         )
         context.state.remember(source, target)
@@ -340,6 +384,7 @@ class DeepCopyCfirTreeWithSymbols(
             scanOwned(value)
         }
         source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
         scanOwned(source.expression)
     }
 
@@ -348,6 +393,8 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
             expression = context.state.copyOwned(source.expression),
         )
         context.state.remember(source, target)
@@ -361,6 +408,7 @@ class DeepCopyCfirTreeWithSymbols(
             scanOwned(value)
         }
         source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
         scanOwned(source.expression)
     }
 
@@ -369,6 +417,8 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
             conditionName = context.name(source.conditionName),
             conditionArgumentSource = source.conditionArgumentSource?.let { value -> context.source(value) },
             conditionNameSource = source.conditionNameSource?.let { value -> context.source(value) },
@@ -387,6 +437,7 @@ class DeepCopyCfirTreeWithSymbols(
             scanOwned(value)
         }
         source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.NAME, source.conditionName, ::scanOwned)
         source.conditionArgumentSource?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
         source.conditionNameSource?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
@@ -481,6 +532,7 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             moduleData = context.moduleData(source.moduleData),
             resolvePhase = context.resolvePhase(source),
+            contentSource = context.contentSource(source.contentSource),
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             origin = context.origin(source.origin),
             attributes = context.attributes(source.attributes),
@@ -503,6 +555,7 @@ class DeepCopyCfirTreeWithSymbols(
     private fun scanCfirFileImpl(source: CfirFileImpl) {
         source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.MODULE_DATA, source.moduleData, ::scanOwned)
+        context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONTENT_SOURCE, source.contentSource, ::scanOwned)
         source.annotations.forEach { value ->
             scanOwned(value)
         }
@@ -530,6 +583,7 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             moduleData = context.moduleData(source.moduleData),
             resolvePhase = context.resolvePhase(source),
+            contentSource = context.contentSource(source.contentSource),
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             origin = context.origin(source.origin),
             attributes = context.attributes(source.attributes),
@@ -544,6 +598,7 @@ class DeepCopyCfirTreeWithSymbols(
     private fun scanCfirCodeFragmentImpl(source: CfirCodeFragmentImpl) {
         source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.MODULE_DATA, source.moduleData, ::scanOwned)
+        context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONTENT_SOURCE, source.contentSource, ::scanOwned)
         source.annotations.forEach { value ->
             scanOwned(value)
         }
@@ -558,13 +613,14 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             moduleData = context.moduleData(source.moduleData),
             resolvePhase = context.resolvePhase(source),
+            contentSource = context.contentSource(source.contentSource),
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             origin = context.origin(source.origin),
             attributes = context.attributes(source.attributes),
             deprecationsProvider = context.deprecationsProvider(source.deprecationsProvider),
             scopeProvider = context.scopeProvider(source.scopeProvider),
-            status = context.state.copyOwned(source.status),
             typeParameters = source.typeParameters.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
+            status = context.state.copyOwned(source.status),
             symbol = context.state.declaredSymbol(source.symbol),
             superTypeRefs = source.superTypeRefs.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
             declarations = source.declarations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
@@ -579,6 +635,7 @@ class DeepCopyCfirTreeWithSymbols(
     private fun scanCfirClassImpl(source: CfirClassImpl) {
         source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.MODULE_DATA, source.moduleData, ::scanOwned)
+        context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONTENT_SOURCE, source.contentSource, ::scanOwned)
         source.annotations.forEach { value ->
             scanOwned(value)
         }
@@ -587,10 +644,10 @@ class DeepCopyCfirTreeWithSymbols(
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.DEPRECATIONS, source.deprecationsProvider, ::scanOwned)
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.SCOPE_PROVIDER, source.scopeProvider, ::scanOwned)
         source.controlFlowGraphReference?.let(::scanOwned)
-        scanOwned(source.status)
         source.typeParameters.forEach { value ->
             scanOwned(value)
         }
+        scanOwned(source.status)
         context.registerDeclaredSymbol(source, source.symbol)
         source.superTypeRefs.forEach { value ->
             scanOwned(value)
@@ -606,13 +663,14 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             moduleData = context.moduleData(source.moduleData),
             resolvePhase = context.resolvePhase(source),
+            contentSource = context.contentSource(source.contentSource),
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             origin = context.origin(source.origin),
             attributes = context.attributes(source.attributes),
             deprecationsProvider = context.deprecationsProvider(source.deprecationsProvider),
             scopeProvider = context.scopeProvider(source.scopeProvider),
-            status = context.state.copyOwned(source.status),
             typeParameters = source.typeParameters.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
+            status = context.state.copyOwned(source.status),
             symbol = context.state.declaredSymbol(source.symbol),
             superTypeRefs = source.superTypeRefs.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
             declarations = source.declarations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
@@ -627,6 +685,7 @@ class DeepCopyCfirTreeWithSymbols(
     private fun scanCfirInterfaceImpl(source: CfirInterfaceImpl) {
         source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.MODULE_DATA, source.moduleData, ::scanOwned)
+        context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONTENT_SOURCE, source.contentSource, ::scanOwned)
         source.annotations.forEach { value ->
             scanOwned(value)
         }
@@ -635,10 +694,10 @@ class DeepCopyCfirTreeWithSymbols(
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.DEPRECATIONS, source.deprecationsProvider, ::scanOwned)
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.SCOPE_PROVIDER, source.scopeProvider, ::scanOwned)
         source.controlFlowGraphReference?.let(::scanOwned)
-        scanOwned(source.status)
         source.typeParameters.forEach { value ->
             scanOwned(value)
         }
+        scanOwned(source.status)
         context.registerDeclaredSymbol(source, source.symbol)
         source.superTypeRefs.forEach { value ->
             scanOwned(value)
@@ -654,13 +713,14 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             moduleData = context.moduleData(source.moduleData),
             resolvePhase = context.resolvePhase(source),
+            contentSource = context.contentSource(source.contentSource),
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             origin = context.origin(source.origin),
             attributes = context.attributes(source.attributes),
             deprecationsProvider = context.deprecationsProvider(source.deprecationsProvider),
             scopeProvider = context.scopeProvider(source.scopeProvider),
-            status = context.state.copyOwned(source.status),
             typeParameters = source.typeParameters.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
+            status = context.state.copyOwned(source.status),
             symbol = context.state.declaredSymbol(source.symbol),
             superTypeRefs = source.superTypeRefs.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
             declarations = source.declarations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
@@ -675,6 +735,7 @@ class DeepCopyCfirTreeWithSymbols(
     private fun scanCfirStructImpl(source: CfirStructImpl) {
         source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.MODULE_DATA, source.moduleData, ::scanOwned)
+        context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONTENT_SOURCE, source.contentSource, ::scanOwned)
         source.annotations.forEach { value ->
             scanOwned(value)
         }
@@ -683,10 +744,10 @@ class DeepCopyCfirTreeWithSymbols(
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.DEPRECATIONS, source.deprecationsProvider, ::scanOwned)
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.SCOPE_PROVIDER, source.scopeProvider, ::scanOwned)
         source.controlFlowGraphReference?.let(::scanOwned)
-        scanOwned(source.status)
         source.typeParameters.forEach { value ->
             scanOwned(value)
         }
+        scanOwned(source.status)
         context.registerDeclaredSymbol(source, source.symbol)
         source.superTypeRefs.forEach { value ->
             scanOwned(value)
@@ -702,13 +763,14 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             moduleData = context.moduleData(source.moduleData),
             resolvePhase = context.resolvePhase(source),
+            contentSource = context.contentSource(source.contentSource),
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             origin = context.origin(source.origin),
             attributes = context.attributes(source.attributes),
             deprecationsProvider = context.deprecationsProvider(source.deprecationsProvider),
             scopeProvider = context.scopeProvider(source.scopeProvider),
-            status = context.state.copyOwned(source.status),
             typeParameters = source.typeParameters.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
+            status = context.state.copyOwned(source.status),
             symbol = context.state.declaredSymbol(source.symbol),
             superTypeRefs = source.superTypeRefs.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
             declarations = source.declarations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
@@ -725,6 +787,7 @@ class DeepCopyCfirTreeWithSymbols(
     private fun scanCfirEnumImpl(source: CfirEnumImpl) {
         source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.MODULE_DATA, source.moduleData, ::scanOwned)
+        context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONTENT_SOURCE, source.contentSource, ::scanOwned)
         source.annotations.forEach { value ->
             scanOwned(value)
         }
@@ -733,10 +796,10 @@ class DeepCopyCfirTreeWithSymbols(
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.DEPRECATIONS, source.deprecationsProvider, ::scanOwned)
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.SCOPE_PROVIDER, source.scopeProvider, ::scanOwned)
         source.controlFlowGraphReference?.let(::scanOwned)
-        scanOwned(source.status)
         source.typeParameters.forEach { value ->
             scanOwned(value)
         }
+        scanOwned(source.status)
         context.registerDeclaredSymbol(source, source.symbol)
         source.superTypeRefs.forEach { value ->
             scanOwned(value)
@@ -752,20 +815,23 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             moduleData = context.moduleData(source.moduleData),
             resolvePhase = context.resolvePhase(source),
+            contentSource = context.contentSource(source.contentSource),
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             origin = context.origin(source.origin),
             attributes = context.attributes(source.attributes),
+            typeParameters = source.typeParameters.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
             isLocal = source.isLocal,
+            returnTypeRef = context.state.copyOwned(source.returnTypeRef),
             deprecationsProvider = context.deprecationsProvider(source.deprecationsProvider),
             dispatchReceiverType = source.dispatchReceiverType?.let { value -> context.type(value) },
+            valueParameters = source.valueParameters.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
+            body = source.body?.let { value -> context.state.copyOwned(value) },
             symbol = context.state.declaredSymbol(source.symbol),
             status = context.state.copyOwned(source.status),
-            typeParameters = source.typeParameters.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
-            returnTypeRef = context.state.copyOwned(source.returnTypeRef),
-            valueParameters = source.valueParameters.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
             name = context.name(source.name),
         )
         context.state.remember(source, target)
+        target.replaceControlFlowGraphReference(source.controlFlowGraphReference?.let { value -> context.state.copyOwned(value) })
         context.validateCopiedNode(source, target)
         return target
     }
@@ -773,22 +839,25 @@ class DeepCopyCfirTreeWithSymbols(
     private fun scanCfirEnumConstructorImpl(source: CfirEnumConstructorImpl) {
         source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.MODULE_DATA, source.moduleData, ::scanOwned)
+        context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONTENT_SOURCE, source.contentSource, ::scanOwned)
         source.annotations.forEach { value ->
             scanOwned(value)
         }
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.ORIGIN, source.origin, ::scanOwned)
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.ATTRIBUTES, source.attributes, ::scanOwned)
-        context.collectOwnedMetadata(CfirRawCopyMetadataKind.DEPRECATIONS, source.deprecationsProvider, ::scanOwned)
-        source.dispatchReceiverType?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
-        context.registerDeclaredSymbol(source, source.symbol)
-        scanOwned(source.status)
         source.typeParameters.forEach { value ->
             scanOwned(value)
         }
         scanOwned(source.returnTypeRef)
+        context.collectOwnedMetadata(CfirRawCopyMetadataKind.DEPRECATIONS, source.deprecationsProvider, ::scanOwned)
+        source.dispatchReceiverType?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.controlFlowGraphReference?.let(::scanOwned)
         source.valueParameters.forEach { value ->
             scanOwned(value)
         }
+        source.body?.let(::scanOwned)
+        context.registerDeclaredSymbol(source, source.symbol)
+        scanOwned(source.status)
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.NAME, source.name, ::scanOwned)
     }
 
@@ -797,12 +866,13 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             moduleData = context.moduleData(source.moduleData),
             resolvePhase = context.resolvePhase(source),
+            contentSource = context.contentSource(source.contentSource),
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             origin = context.origin(source.origin),
             attributes = context.attributes(source.attributes),
+            typeParameters = source.typeParameters.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
             symbol = context.state.declaredSymbol(source.symbol),
             status = context.state.copyOwned(source.status),
-            typeParameters = source.typeParameters.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
             extendedTypeRef = context.state.copyOwned(source.extendedTypeRef),
             superTypeRefs = source.superTypeRefs.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
             declarations = source.declarations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
@@ -815,16 +885,17 @@ class DeepCopyCfirTreeWithSymbols(
     private fun scanCfirExtendImpl(source: CfirExtendImpl) {
         source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.MODULE_DATA, source.moduleData, ::scanOwned)
+        context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONTENT_SOURCE, source.contentSource, ::scanOwned)
         source.annotations.forEach { value ->
             scanOwned(value)
         }
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.ORIGIN, source.origin, ::scanOwned)
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.ATTRIBUTES, source.attributes, ::scanOwned)
-        context.registerDeclaredSymbol(source, source.symbol)
-        scanOwned(source.status)
         source.typeParameters.forEach { value ->
             scanOwned(value)
         }
+        context.registerDeclaredSymbol(source, source.symbol)
+        scanOwned(source.status)
         scanOwned(source.extendedTypeRef)
         source.superTypeRefs.forEach { value ->
             scanOwned(value)
@@ -839,6 +910,7 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             moduleData = context.moduleData(source.moduleData),
             resolvePhase = context.resolvePhase(source),
+            contentSource = context.contentSource(source.contentSource),
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             origin = context.origin(source.origin),
             attributes = context.attributes(source.attributes),
@@ -846,9 +918,9 @@ class DeepCopyCfirTreeWithSymbols(
             declarations = source.declarations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
             superTypeRefs = source.superTypeRefs.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
             scopeProvider = context.scopeProvider(source.scopeProvider),
+            typeParameters = source.typeParameters.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
             symbol = context.state.declaredSymbol(source.symbol),
             status = context.state.copyOwned(source.status),
-            typeParameters = source.typeParameters.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
             name = context.name(source.name),
             expandedTypeRef = context.state.copyOwned(source.expandedTypeRef),
         )
@@ -860,6 +932,7 @@ class DeepCopyCfirTreeWithSymbols(
     private fun scanCfirTypeAliasImpl(source: CfirTypeAliasImpl) {
         source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.MODULE_DATA, source.moduleData, ::scanOwned)
+        context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONTENT_SOURCE, source.contentSource, ::scanOwned)
         source.annotations.forEach { value ->
             scanOwned(value)
         }
@@ -873,11 +946,11 @@ class DeepCopyCfirTreeWithSymbols(
             scanOwned(value)
         }
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.SCOPE_PROVIDER, source.scopeProvider, ::scanOwned)
-        context.registerDeclaredSymbol(source, source.symbol)
-        scanOwned(source.status)
         source.typeParameters.forEach { value ->
             scanOwned(value)
         }
+        context.registerDeclaredSymbol(source, source.symbol)
+        scanOwned(source.status)
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.NAME, source.name, ::scanOwned)
         scanOwned(source.expandedTypeRef)
     }
@@ -887,18 +960,19 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             moduleData = context.moduleData(source.moduleData),
             resolvePhase = context.resolvePhase(source),
+            contentSource = context.contentSource(source.contentSource),
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             origin = context.origin(source.origin),
             attributes = context.attributes(source.attributes),
             isLocal = source.isLocal,
+            returnTypeRef = context.state.copyOwned(source.returnTypeRef),
             deprecationsProvider = context.deprecationsProvider(source.deprecationsProvider),
             dispatchReceiverType = source.dispatchReceiverType?.let { value -> context.type(value) },
+            body = source.body?.let { value -> context.state.copyOwned(value) },
             status = context.state.copyOwned(source.status),
-            typeParameters = source.typeParameters.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
-            returnTypeRef = context.state.copyOwned(source.returnTypeRef),
             valueParameters = source.valueParameters.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
             hasVariableLenArg = source.hasVariableLenArg,
-            body = source.body?.let { value -> context.state.copyOwned(value) },
+            typeParameters = source.typeParameters.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
             symbol = context.state.declaredSymbol(source.symbol),
             name = context.name(source.name),
             isMut = source.isMut,
@@ -912,23 +986,24 @@ class DeepCopyCfirTreeWithSymbols(
     private fun scanCfirNamedFunctionImpl(source: CfirNamedFunctionImpl) {
         source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.MODULE_DATA, source.moduleData, ::scanOwned)
+        context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONTENT_SOURCE, source.contentSource, ::scanOwned)
         source.annotations.forEach { value ->
             scanOwned(value)
         }
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.ORIGIN, source.origin, ::scanOwned)
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.ATTRIBUTES, source.attributes, ::scanOwned)
+        scanOwned(source.returnTypeRef)
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.DEPRECATIONS, source.deprecationsProvider, ::scanOwned)
         source.dispatchReceiverType?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
         source.controlFlowGraphReference?.let(::scanOwned)
+        source.body?.let(::scanOwned)
         scanOwned(source.status)
-        source.typeParameters.forEach { value ->
-            scanOwned(value)
-        }
-        scanOwned(source.returnTypeRef)
         source.valueParameters.forEach { value ->
             scanOwned(value)
         }
-        source.body?.let(::scanOwned)
+        source.typeParameters.forEach { value ->
+            scanOwned(value)
+        }
         context.registerDeclaredSymbol(source, source.symbol)
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.NAME, source.name, ::scanOwned)
     }
@@ -938,18 +1013,19 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             moduleData = context.moduleData(source.moduleData),
             resolvePhase = context.resolvePhase(source),
+            contentSource = context.contentSource(source.contentSource),
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             origin = context.origin(source.origin),
             attributes = context.attributes(source.attributes),
             isLocal = source.isLocal,
+            returnTypeRef = context.state.copyOwned(source.returnTypeRef),
             deprecationsProvider = context.deprecationsProvider(source.deprecationsProvider),
             dispatchReceiverType = source.dispatchReceiverType?.let { value -> context.type(value) },
+            body = source.body?.let { value -> context.state.copyOwned(value) },
             status = context.state.copyOwned(source.status),
-            typeParameters = source.typeParameters.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
-            returnTypeRef = context.state.copyOwned(source.returnTypeRef),
             valueParameters = source.valueParameters.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
             hasVariableLenArg = source.hasVariableLenArg,
-            body = source.body?.let { value -> context.state.copyOwned(value) },
+            typeParameters = source.typeParameters.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
             symbol = context.state.declaredSymbol(source.symbol),
         )
         context.state.remember(source, target)
@@ -961,23 +1037,24 @@ class DeepCopyCfirTreeWithSymbols(
     private fun scanCfirMainFunctionImpl(source: CfirMainFunctionImpl) {
         source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.MODULE_DATA, source.moduleData, ::scanOwned)
+        context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONTENT_SOURCE, source.contentSource, ::scanOwned)
         source.annotations.forEach { value ->
             scanOwned(value)
         }
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.ORIGIN, source.origin, ::scanOwned)
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.ATTRIBUTES, source.attributes, ::scanOwned)
+        scanOwned(source.returnTypeRef)
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.DEPRECATIONS, source.deprecationsProvider, ::scanOwned)
         source.dispatchReceiverType?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
         source.controlFlowGraphReference?.let(::scanOwned)
+        source.body?.let(::scanOwned)
         scanOwned(source.status)
-        source.typeParameters.forEach { value ->
-            scanOwned(value)
-        }
-        scanOwned(source.returnTypeRef)
         source.valueParameters.forEach { value ->
             scanOwned(value)
         }
-        source.body?.let(::scanOwned)
+        source.typeParameters.forEach { value ->
+            scanOwned(value)
+        }
         context.registerDeclaredSymbol(source, source.symbol)
     }
 
@@ -986,18 +1063,19 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             moduleData = context.moduleData(source.moduleData),
             resolvePhase = context.resolvePhase(source),
+            contentSource = context.contentSource(source.contentSource),
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             origin = context.origin(source.origin),
             attributes = context.attributes(source.attributes),
             isLocal = source.isLocal,
+            returnTypeRef = context.state.copyOwned(source.returnTypeRef),
             deprecationsProvider = context.deprecationsProvider(source.deprecationsProvider),
             dispatchReceiverType = source.dispatchReceiverType?.let { value -> context.type(value) },
+            body = source.body?.let { value -> context.state.copyOwned(value) },
             status = context.state.copyOwned(source.status),
-            typeParameters = source.typeParameters.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
-            returnTypeRef = context.state.copyOwned(source.returnTypeRef),
             valueParameters = source.valueParameters.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
             hasVariableLenArg = source.hasVariableLenArg,
-            body = source.body?.let { value -> context.state.copyOwned(value) },
+            typeParameters = source.typeParameters.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
             symbol = context.state.declaredSymbol(source.symbol),
             name = context.name(source.name),
         )
@@ -1010,23 +1088,24 @@ class DeepCopyCfirTreeWithSymbols(
     private fun scanCfirMacroDeclarationImpl(source: CfirMacroDeclarationImpl) {
         source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.MODULE_DATA, source.moduleData, ::scanOwned)
+        context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONTENT_SOURCE, source.contentSource, ::scanOwned)
         source.annotations.forEach { value ->
             scanOwned(value)
         }
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.ORIGIN, source.origin, ::scanOwned)
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.ATTRIBUTES, source.attributes, ::scanOwned)
+        scanOwned(source.returnTypeRef)
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.DEPRECATIONS, source.deprecationsProvider, ::scanOwned)
         source.dispatchReceiverType?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
         source.controlFlowGraphReference?.let(::scanOwned)
+        source.body?.let(::scanOwned)
         scanOwned(source.status)
-        source.typeParameters.forEach { value ->
-            scanOwned(value)
-        }
-        scanOwned(source.returnTypeRef)
         source.valueParameters.forEach { value ->
             scanOwned(value)
         }
-        source.body?.let(::scanOwned)
+        source.typeParameters.forEach { value ->
+            scanOwned(value)
+        }
         context.registerDeclaredSymbol(source, source.symbol)
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.NAME, source.name, ::scanOwned)
     }
@@ -1036,18 +1115,19 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             moduleData = context.moduleData(source.moduleData),
             resolvePhase = context.resolvePhase(source),
+            contentSource = context.contentSource(source.contentSource),
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             origin = context.origin(source.origin),
             attributes = context.attributes(source.attributes),
             isLocal = source.isLocal,
+            returnTypeRef = context.state.copyOwned(source.returnTypeRef),
             deprecationsProvider = context.deprecationsProvider(source.deprecationsProvider),
             dispatchReceiverType = source.dispatchReceiverType?.let { value -> context.type(value) },
+            body = source.body?.let { value -> context.state.copyOwned(value) },
             status = context.state.copyOwned(source.status),
-            typeParameters = source.typeParameters.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
-            returnTypeRef = context.state.copyOwned(source.returnTypeRef),
             valueParameters = source.valueParameters.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
             hasVariableLenArg = source.hasVariableLenArg,
-            body = source.body?.let { value -> context.state.copyOwned(value) },
+            typeParameters = source.typeParameters.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
             symbol = context.state.declaredSymbol(source.symbol),
         )
         context.state.remember(source, target)
@@ -1059,23 +1139,24 @@ class DeepCopyCfirTreeWithSymbols(
     private fun scanCfirFinalizerImpl(source: CfirFinalizerImpl) {
         source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.MODULE_DATA, source.moduleData, ::scanOwned)
+        context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONTENT_SOURCE, source.contentSource, ::scanOwned)
         source.annotations.forEach { value ->
             scanOwned(value)
         }
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.ORIGIN, source.origin, ::scanOwned)
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.ATTRIBUTES, source.attributes, ::scanOwned)
+        scanOwned(source.returnTypeRef)
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.DEPRECATIONS, source.deprecationsProvider, ::scanOwned)
         source.dispatchReceiverType?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
         source.controlFlowGraphReference?.let(::scanOwned)
+        source.body?.let(::scanOwned)
         scanOwned(source.status)
-        source.typeParameters.forEach { value ->
-            scanOwned(value)
-        }
-        scanOwned(source.returnTypeRef)
         source.valueParameters.forEach { value ->
             scanOwned(value)
         }
-        source.body?.let(::scanOwned)
+        source.typeParameters.forEach { value ->
+            scanOwned(value)
+        }
         context.registerDeclaredSymbol(source, source.symbol)
     }
 
@@ -1084,18 +1165,19 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             moduleData = context.moduleData(source.moduleData),
             resolvePhase = context.resolvePhase(source),
+            contentSource = context.contentSource(source.contentSource),
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             origin = context.origin(source.origin),
             attributes = context.attributes(source.attributes),
+            typeParameters = source.typeParameters.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
             isLocal = source.isLocal,
+            returnTypeRef = context.state.copyOwned(source.returnTypeRef),
             deprecationsProvider = context.deprecationsProvider(source.deprecationsProvider),
             dispatchReceiverType = source.dispatchReceiverType?.let { value -> context.type(value) },
+            body = source.body?.let { value -> context.state.copyOwned(value) },
             status = context.state.copyOwned(source.status),
-            typeParameters = source.typeParameters.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
-            returnTypeRef = context.state.copyOwned(source.returnTypeRef),
             valueParameters = source.valueParameters.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
             hasVariableLenArg = source.hasVariableLenArg,
-            body = source.body?.let { value -> context.state.copyOwned(value) },
             symbol = context.state.declaredSymbol(source.symbol),
         )
         context.state.remember(source, target)
@@ -1107,23 +1189,24 @@ class DeepCopyCfirTreeWithSymbols(
     private fun scanCfirConstructorImpl(source: CfirConstructorImpl) {
         source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.MODULE_DATA, source.moduleData, ::scanOwned)
+        context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONTENT_SOURCE, source.contentSource, ::scanOwned)
         source.annotations.forEach { value ->
             scanOwned(value)
         }
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.ORIGIN, source.origin, ::scanOwned)
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.ATTRIBUTES, source.attributes, ::scanOwned)
-        context.collectOwnedMetadata(CfirRawCopyMetadataKind.DEPRECATIONS, source.deprecationsProvider, ::scanOwned)
-        source.dispatchReceiverType?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
-        source.controlFlowGraphReference?.let(::scanOwned)
-        scanOwned(source.status)
         source.typeParameters.forEach { value ->
             scanOwned(value)
         }
         scanOwned(source.returnTypeRef)
+        context.collectOwnedMetadata(CfirRawCopyMetadataKind.DEPRECATIONS, source.deprecationsProvider, ::scanOwned)
+        source.dispatchReceiverType?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.controlFlowGraphReference?.let(::scanOwned)
+        source.body?.let(::scanOwned)
+        scanOwned(source.status)
         source.valueParameters.forEach { value ->
             scanOwned(value)
         }
-        source.body?.let(::scanOwned)
         context.registerDeclaredSymbol(source, source.symbol)
     }
 
@@ -1132,18 +1215,19 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             moduleData = context.moduleData(source.moduleData),
             resolvePhase = context.resolvePhase(source),
+            contentSource = context.contentSource(source.contentSource),
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             origin = context.origin(source.origin),
             attributes = context.attributes(source.attributes),
+            typeParameters = source.typeParameters.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
             isLocal = source.isLocal,
+            returnTypeRef = context.state.copyOwned(source.returnTypeRef),
             deprecationsProvider = context.deprecationsProvider(source.deprecationsProvider),
             dispatchReceiverType = source.dispatchReceiverType?.let { value -> context.type(value) },
+            body = source.body?.let { value -> context.state.copyOwned(value) },
             status = context.state.copyOwned(source.status),
-            typeParameters = source.typeParameters.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
-            returnTypeRef = context.state.copyOwned(source.returnTypeRef),
             valueParameters = source.valueParameters.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
             hasVariableLenArg = source.hasVariableLenArg,
-            body = source.body?.let { value -> context.state.copyOwned(value) },
             symbol = context.state.declaredSymbol(source.symbol),
         )
         context.state.remember(source, target)
@@ -1155,23 +1239,24 @@ class DeepCopyCfirTreeWithSymbols(
     private fun scanCfirPrimaryConstructor(source: CfirPrimaryConstructor) {
         source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.MODULE_DATA, source.moduleData, ::scanOwned)
+        context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONTENT_SOURCE, source.contentSource, ::scanOwned)
         source.annotations.forEach { value ->
             scanOwned(value)
         }
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.ORIGIN, source.origin, ::scanOwned)
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.ATTRIBUTES, source.attributes, ::scanOwned)
-        context.collectOwnedMetadata(CfirRawCopyMetadataKind.DEPRECATIONS, source.deprecationsProvider, ::scanOwned)
-        source.dispatchReceiverType?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
-        source.controlFlowGraphReference?.let(::scanOwned)
-        scanOwned(source.status)
         source.typeParameters.forEach { value ->
             scanOwned(value)
         }
         scanOwned(source.returnTypeRef)
+        context.collectOwnedMetadata(CfirRawCopyMetadataKind.DEPRECATIONS, source.deprecationsProvider, ::scanOwned)
+        source.dispatchReceiverType?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.controlFlowGraphReference?.let(::scanOwned)
+        source.body?.let(::scanOwned)
+        scanOwned(source.status)
         source.valueParameters.forEach { value ->
             scanOwned(value)
         }
-        source.body?.let(::scanOwned)
         context.registerDeclaredSymbol(source, source.symbol)
     }
 
@@ -1180,6 +1265,7 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             moduleData = context.moduleData(source.moduleData),
             resolvePhase = context.resolvePhase(source),
+            contentSource = context.contentSource(source.contentSource),
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             symbol = context.state.declaredSymbol(source.symbol),
             origin = context.origin(source.origin),
@@ -1194,6 +1280,35 @@ class DeepCopyCfirTreeWithSymbols(
     private fun scanCfirInvalidDeclarationImpl(source: CfirInvalidDeclarationImpl) {
         source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.MODULE_DATA, source.moduleData, ::scanOwned)
+        context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONTENT_SOURCE, source.contentSource, ::scanOwned)
+        source.annotations.forEach { value ->
+            scanOwned(value)
+        }
+        context.registerDeclaredSymbol(source, source.symbol)
+        context.collectOwnedMetadata(CfirRawCopyMetadataKind.ORIGIN, source.origin, ::scanOwned)
+        context.collectOwnedMetadata(CfirRawCopyMetadataKind.ATTRIBUTES, source.attributes, ::scanOwned)
+    }
+
+    private fun copyCfirMacroExpansionDeclarationImpl(source: CfirMacroExpansionDeclarationImpl): CfirMacroExpansionDeclarationImpl {
+        val target = CfirMacroExpansionDeclarationImpl(
+            source = source.source?.let { value -> context.source(value) },
+            moduleData = context.moduleData(source.moduleData),
+            resolvePhase = context.resolvePhase(source),
+            contentSource = context.contentSource(source.contentSource),
+            annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
+            symbol = context.state.declaredSymbol(source.symbol),
+            origin = context.origin(source.origin),
+            attributes = context.attributes(source.attributes),
+        )
+        context.state.remember(source, target)
+        context.validateCopiedNode(source, target)
+        return target
+    }
+
+    private fun scanCfirMacroExpansionDeclarationImpl(source: CfirMacroExpansionDeclarationImpl) {
+        source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
+        context.collectOwnedMetadata(CfirRawCopyMetadataKind.MODULE_DATA, source.moduleData, ::scanOwned)
+        context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONTENT_SOURCE, source.contentSource, ::scanOwned)
         source.annotations.forEach { value ->
             scanOwned(value)
         }
@@ -1207,15 +1322,16 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             moduleData = context.moduleData(source.moduleData),
             resolvePhase = context.resolvePhase(source),
+            contentSource = context.contentSource(source.contentSource),
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             origin = context.origin(source.origin),
             attributes = context.attributes(source.attributes),
             isLocal = source.isLocal,
             deprecationsProvider = context.deprecationsProvider(source.deprecationsProvider),
             dispatchReceiverType = source.dispatchReceiverType?.let { value -> context.type(value) },
+            typeParameters = source.typeParameters.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
             symbol = context.state.declaredSymbol(source.symbol),
             status = context.state.copyOwned(source.status),
-            typeParameters = source.typeParameters.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
             returnTypeRef = context.state.copyOwned(source.returnTypeRef),
             name = context.name(source.name),
             getter = source.getter?.let { value -> context.state.copyOwned(value) },
@@ -1231,6 +1347,7 @@ class DeepCopyCfirTreeWithSymbols(
     private fun scanCfirPropertyImpl(source: CfirPropertyImpl) {
         source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.MODULE_DATA, source.moduleData, ::scanOwned)
+        context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONTENT_SOURCE, source.contentSource, ::scanOwned)
         source.annotations.forEach { value ->
             scanOwned(value)
         }
@@ -1239,11 +1356,11 @@ class DeepCopyCfirTreeWithSymbols(
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.DEPRECATIONS, source.deprecationsProvider, ::scanOwned)
         source.dispatchReceiverType?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
         source.controlFlowGraphReference?.let(::scanOwned)
-        context.registerDeclaredSymbol(source, source.symbol)
-        scanOwned(source.status)
         source.typeParameters.forEach { value ->
             scanOwned(value)
         }
+        context.registerDeclaredSymbol(source, source.symbol)
+        scanOwned(source.status)
         scanOwned(source.returnTypeRef)
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.NAME, source.name, ::scanOwned)
         source.getter?.let(::scanOwned)
@@ -1256,18 +1373,19 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             moduleData = context.moduleData(source.moduleData),
             resolvePhase = context.resolvePhase(source),
+            contentSource = context.contentSource(source.contentSource),
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             origin = context.origin(source.origin),
             attributes = context.attributes(source.attributes),
             isLocal = source.isLocal,
+            returnTypeRef = context.state.copyOwned(source.returnTypeRef),
             deprecationsProvider = context.deprecationsProvider(source.deprecationsProvider),
             dispatchReceiverType = source.dispatchReceiverType?.let { value -> context.type(value) },
+            body = source.body?.let { value -> context.state.copyOwned(value) },
             status = context.state.copyOwned(source.status),
-            typeParameters = source.typeParameters.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
-            returnTypeRef = context.state.copyOwned(source.returnTypeRef),
             valueParameters = source.valueParameters.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
             hasVariableLenArg = source.hasVariableLenArg,
-            body = source.body?.let { value -> context.state.copyOwned(value) },
+            typeParameters = source.typeParameters.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
             symbol = context.state.declaredSymbol(source.symbol),
             propertySymbol = context.state.referencedSymbol(source.propertySymbol),
             isGetter = source.isGetter,
@@ -1281,23 +1399,24 @@ class DeepCopyCfirTreeWithSymbols(
     private fun scanCfirPropertyAccessorImpl(source: CfirPropertyAccessorImpl) {
         source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.MODULE_DATA, source.moduleData, ::scanOwned)
+        context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONTENT_SOURCE, source.contentSource, ::scanOwned)
         source.annotations.forEach { value ->
             scanOwned(value)
         }
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.ORIGIN, source.origin, ::scanOwned)
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.ATTRIBUTES, source.attributes, ::scanOwned)
+        scanOwned(source.returnTypeRef)
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.DEPRECATIONS, source.deprecationsProvider, ::scanOwned)
         source.dispatchReceiverType?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
         source.controlFlowGraphReference?.let(::scanOwned)
+        source.body?.let(::scanOwned)
         scanOwned(source.status)
-        source.typeParameters.forEach { value ->
-            scanOwned(value)
-        }
-        scanOwned(source.returnTypeRef)
         source.valueParameters.forEach { value ->
             scanOwned(value)
         }
-        source.body?.let(::scanOwned)
+        source.typeParameters.forEach { value ->
+            scanOwned(value)
+        }
         context.registerDeclaredSymbol(source, source.symbol)
     }
 
@@ -1313,11 +1432,12 @@ class DeepCopyCfirTreeWithSymbols(
             deprecationsProvider = context.deprecationsProvider(source.deprecationsProvider),
             dispatchReceiverType = source.dispatchReceiverType?.let { value -> context.type(value) },
             status = context.state.copyOwned(source.status),
+            contentSource = context.contentSource(source.contentSource),
             initializer = source.initializer?.let { value -> context.state.copyOwned(value) },
             isVar = source.isVar,
             isTypeImplicit = source.isTypeImplicit,
-            symbol = context.state.declaredSymbol(source.symbol),
             typeParameters = source.typeParameters.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
+            symbol = context.state.declaredSymbol(source.symbol),
             returnTypeRef = context.state.copyOwned(source.returnTypeRef),
             name = context.name(source.name),
         )
@@ -1337,11 +1457,12 @@ class DeepCopyCfirTreeWithSymbols(
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.DEPRECATIONS, source.deprecationsProvider, ::scanOwned)
         source.dispatchReceiverType?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
         scanOwned(source.status)
+        context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONTENT_SOURCE, source.contentSource, ::scanOwned)
         source.initializer?.let(::scanOwned)
-        context.registerDeclaredSymbol(source, source.symbol)
         source.typeParameters.forEach { value ->
             scanOwned(value)
         }
+        context.registerDeclaredSymbol(source, source.symbol)
         scanOwned(source.returnTypeRef)
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.NAME, source.name, ::scanOwned)
     }
@@ -1358,6 +1479,7 @@ class DeepCopyCfirTreeWithSymbols(
             deprecationsProvider = context.deprecationsProvider(source.deprecationsProvider),
             dispatchReceiverType = source.dispatchReceiverType?.let { value -> context.type(value) },
             status = context.state.copyOwned(source.status),
+            contentSource = context.contentSource(source.contentSource),
             initializer = source.initializer?.let { value -> context.state.copyOwned(value) },
             isVar = source.isVar,
             isTypeImplicit = source.isTypeImplicit,
@@ -1382,6 +1504,7 @@ class DeepCopyCfirTreeWithSymbols(
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.DEPRECATIONS, source.deprecationsProvider, ::scanOwned)
         source.dispatchReceiverType?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
         scanOwned(source.status)
+        context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONTENT_SOURCE, source.contentSource, ::scanOwned)
         source.initializer?.let(::scanOwned)
         context.registerDeclaredSymbol(source, source.symbol)
         source.typeParameters.forEach { value ->
@@ -1403,11 +1526,12 @@ class DeepCopyCfirTreeWithSymbols(
             deprecationsProvider = context.deprecationsProvider(source.deprecationsProvider),
             dispatchReceiverType = source.dispatchReceiverType?.let { value -> context.type(value) },
             status = context.state.copyOwned(source.status),
+            contentSource = context.contentSource(source.contentSource),
             initializer = source.initializer?.let { value -> context.state.copyOwned(value) },
             isVar = source.isVar,
             isTypeImplicit = source.isTypeImplicit,
-            symbol = context.state.declaredSymbol(source.symbol),
             typeParameters = source.typeParameters.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
+            symbol = context.state.declaredSymbol(source.symbol),
             returnTypeRef = context.state.copyOwned(source.returnTypeRef),
             pattern = context.state.copyOwned(source.pattern),
         )
@@ -1427,11 +1551,12 @@ class DeepCopyCfirTreeWithSymbols(
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.DEPRECATIONS, source.deprecationsProvider, ::scanOwned)
         source.dispatchReceiverType?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
         scanOwned(source.status)
+        context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONTENT_SOURCE, source.contentSource, ::scanOwned)
         source.initializer?.let(::scanOwned)
-        context.registerDeclaredSymbol(source, source.symbol)
         source.typeParameters.forEach { value ->
             scanOwned(value)
         }
+        context.registerDeclaredSymbol(source, source.symbol)
         scanOwned(source.returnTypeRef)
         scanOwned(source.pattern)
     }
@@ -1448,10 +1573,12 @@ class DeepCopyCfirTreeWithSymbols(
             deprecationsProvider = context.deprecationsProvider(source.deprecationsProvider),
             dispatchReceiverType = source.dispatchReceiverType?.let { value -> context.type(value) },
             status = context.state.copyOwned(source.status),
+            contentSource = context.contentSource(source.contentSource),
             isVar = source.isVar,
             isTypeImplicit = source.isTypeImplicit,
-            symbol = context.state.declaredSymbol(source.symbol),
             typeParameters = source.typeParameters.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
+            symbol = context.state.declaredSymbol(source.symbol),
+            ownedInitializer = source.ownedInitializer?.let { value -> context.state.copyOwned(value) },
             returnTypeRef = context.state.copyOwned(source.returnTypeRef),
             name = context.name(source.name),
         )
@@ -1474,10 +1601,12 @@ class DeepCopyCfirTreeWithSymbols(
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.DEPRECATIONS, source.deprecationsProvider, ::scanOwned)
         source.dispatchReceiverType?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
         scanOwned(source.status)
-        context.registerDeclaredSymbol(source, source.symbol)
+        context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONTENT_SOURCE, source.contentSource, ::scanOwned)
         source.typeParameters.forEach { value ->
             scanOwned(value)
         }
+        context.registerDeclaredSymbol(source, source.symbol)
+        source.ownedInitializer?.let(::scanOwned)
         source.patternTreeOwner?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.PATTERN_OWNER, it, ::scanOwned) }
         scanOwned(source.returnTypeRef)
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.NAME, source.name, ::scanOwned)
@@ -1494,12 +1623,13 @@ class DeepCopyCfirTreeWithSymbols(
             isLocal = source.isLocal,
             deprecationsProvider = context.deprecationsProvider(source.deprecationsProvider),
             dispatchReceiverType = source.dispatchReceiverType?.let { value -> context.type(value) },
+            contentSource = context.contentSource(source.contentSource),
             isTypeImplicit = source.isTypeImplicit,
+            typeParameters = source.typeParameters.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
             symbol = context.state.declaredSymbol(source.symbol),
             containingDeclarationSymbol = context.state.referencedSymbol(source.containingDeclarationSymbol),
             isNamed = source.isNamed,
             status = context.state.copyOwned(source.status),
-            typeParameters = source.typeParameters.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
             returnTypeRef = context.state.copyOwned(source.returnTypeRef),
             name = context.name(source.name),
             defaultValue = source.defaultValue?.let { value -> context.state.copyOwned(value) },
@@ -1520,12 +1650,13 @@ class DeepCopyCfirTreeWithSymbols(
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.ATTRIBUTES, source.attributes, ::scanOwned)
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.DEPRECATIONS, source.deprecationsProvider, ::scanOwned)
         source.dispatchReceiverType?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONTENT_SOURCE, source.contentSource, ::scanOwned)
         source.controlFlowGraphReference?.let(::scanOwned)
-        context.registerDeclaredSymbol(source, source.symbol)
-        scanOwned(source.status)
         source.typeParameters.forEach { value ->
             scanOwned(value)
         }
+        context.registerDeclaredSymbol(source, source.symbol)
+        scanOwned(source.status)
         scanOwned(source.returnTypeRef)
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.NAME, source.name, ::scanOwned)
         source.defaultValue?.let(::scanOwned)
@@ -1536,6 +1667,7 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             moduleData = context.moduleData(source.moduleData),
             resolvePhase = context.resolvePhase(source),
+            contentSource = context.contentSource(source.contentSource),
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             origin = context.origin(source.origin),
             attributes = context.attributes(source.attributes),
@@ -1552,6 +1684,7 @@ class DeepCopyCfirTreeWithSymbols(
     private fun scanCfirTypeParameterImpl(source: CfirTypeParameterImpl) {
         source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.MODULE_DATA, source.moduleData, ::scanOwned)
+        context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONTENT_SOURCE, source.contentSource, ::scanOwned)
         source.annotations.forEach { value ->
             scanOwned(value)
         }
@@ -1583,6 +1716,8 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
         )
         context.state.remember(source, target)
         context.validateCopiedNode(source, target)
@@ -1595,6 +1730,426 @@ class DeepCopyCfirTreeWithSymbols(
             scanOwned(value)
         }
         source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
+    }
+
+    private fun copyCfirNativeMatchExpressionImpl(source: CfirNativeMatchExpressionImpl): CfirNativeMatchExpressionImpl {
+        val target = CfirNativeMatchExpressionImpl(
+            source = source.source?.let { value -> context.source(value) },
+            annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
+            coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
+            selector = context.state.copyOwned(source.selector),
+            cases = source.cases.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
+        )
+        context.state.remember(source, target)
+        context.validateCopiedNode(source, target)
+        return target
+    }
+
+    private fun scanCfirNativeMatchExpressionImpl(source: CfirNativeMatchExpressionImpl) {
+        source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
+        source.annotations.forEach { value ->
+            scanOwned(value)
+        }
+        source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
+        scanOwned(source.selector)
+        source.cases.forEach { value ->
+            scanOwned(value)
+        }
+    }
+
+    private fun copyCfirNativeMatchCaseImpl(source: CfirNativeMatchCaseImpl): CfirNativeMatchCaseImpl {
+        val target = CfirNativeMatchCaseImpl(
+            source = source.source?.let { value -> context.source(value) },
+            annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
+            coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
+            patterns = source.patterns.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
+            guard = source.guard?.let { value -> context.state.copyOwned(value) },
+            body = context.state.copyOwned(source.body),
+        )
+        context.state.remember(source, target)
+        context.validateCopiedNode(source, target)
+        return target
+    }
+
+    private fun scanCfirNativeMatchCaseImpl(source: CfirNativeMatchCaseImpl) {
+        source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
+        source.annotations.forEach { value ->
+            scanOwned(value)
+        }
+        source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
+        source.patterns.forEach { value ->
+            scanOwned(value)
+        }
+        source.guard?.let(::scanOwned)
+        scanOwned(source.body)
+    }
+
+    private fun copyCfirNativeConditionMatchExpressionImpl(source: CfirNativeConditionMatchExpressionImpl): CfirNativeConditionMatchExpressionImpl {
+        val target = CfirNativeConditionMatchExpressionImpl(
+            source = source.source?.let { value -> context.source(value) },
+            annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
+            coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
+            cases = source.cases.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
+        )
+        context.state.remember(source, target)
+        context.validateCopiedNode(source, target)
+        return target
+    }
+
+    private fun scanCfirNativeConditionMatchExpressionImpl(source: CfirNativeConditionMatchExpressionImpl) {
+        source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
+        source.annotations.forEach { value ->
+            scanOwned(value)
+        }
+        source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
+        source.cases.forEach { value ->
+            scanOwned(value)
+        }
+    }
+
+    private fun copyCfirNativeConditionMatchCaseImpl(source: CfirNativeConditionMatchCaseImpl): CfirNativeConditionMatchCaseImpl {
+        val target = CfirNativeConditionMatchCaseImpl(
+            source = source.source?.let { value -> context.source(value) },
+            annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
+            coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
+            condition = context.state.copyOwned(source.condition),
+            body = context.state.copyOwned(source.body),
+        )
+        context.state.remember(source, target)
+        context.validateCopiedNode(source, target)
+        return target
+    }
+
+    private fun scanCfirNativeConditionMatchCaseImpl(source: CfirNativeConditionMatchCaseImpl) {
+        source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
+        source.annotations.forEach { value ->
+            scanOwned(value)
+        }
+        source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
+        scanOwned(source.condition)
+        scanOwned(source.body)
+    }
+
+    private fun copyCfirLetPatternDestructorExpressionImpl(source: CfirLetPatternDestructorExpressionImpl): CfirLetPatternDestructorExpressionImpl {
+        val target = CfirLetPatternDestructorExpressionImpl(
+            source = source.source?.let { value -> context.source(value) },
+            annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
+            coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
+            initializer = context.state.copyOwned(source.initializer),
+            patterns = source.patterns.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
+        )
+        context.state.remember(source, target)
+        context.validateCopiedNode(source, target)
+        return target
+    }
+
+    private fun scanCfirLetPatternDestructorExpressionImpl(source: CfirLetPatternDestructorExpressionImpl) {
+        source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
+        source.annotations.forEach { value ->
+            scanOwned(value)
+        }
+        source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
+        scanOwned(source.initializer)
+        source.patterns.forEach { value ->
+            scanOwned(value)
+        }
+    }
+
+    private fun copyCfirNativeCatchImpl(source: CfirNativeCatchImpl): CfirNativeCatchImpl {
+        val target = CfirNativeCatchImpl(
+            source = source.source?.let { value -> context.source(value) },
+            pattern = context.state.copyOwned(source.pattern),
+            body = context.state.copyOwned(source.body),
+        )
+        context.state.remember(source, target)
+        context.validateCopiedNode(source, target)
+        return target
+    }
+
+    private fun scanCfirNativeCatchImpl(source: CfirNativeCatchImpl) {
+        source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
+        scanOwned(source.pattern)
+        scanOwned(source.body)
+    }
+
+    private fun copyCfirNativeTryExpressionImpl(source: CfirNativeTryExpressionImpl): CfirNativeTryExpressionImpl {
+        val target = CfirNativeTryExpressionImpl(
+            source = source.source?.let { value -> context.source(value) },
+            annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
+            coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
+            resources = source.resources.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
+            tryBlock = context.state.copyOwned(source.tryBlock),
+            catches = source.catches.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
+            finallyBlock = source.finallyBlock?.let { value -> context.state.copyOwned(value) },
+        )
+        context.state.remember(source, target)
+        context.validateCopiedNode(source, target)
+        return target
+    }
+
+    private fun scanCfirNativeTryExpressionImpl(source: CfirNativeTryExpressionImpl) {
+        source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
+        source.annotations.forEach { value ->
+            scanOwned(value)
+        }
+        source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
+        source.resources.forEach { value ->
+            scanOwned(value)
+        }
+        scanOwned(source.tryBlock)
+        source.catches.forEach { value ->
+            scanOwned(value)
+        }
+        source.finallyBlock?.let(::scanOwned)
+    }
+
+    private fun copyCfirPrimitiveTypeExpressionImpl(source: CfirPrimitiveTypeExpressionImpl): CfirPrimitiveTypeExpressionImpl {
+        val target = CfirPrimitiveTypeExpressionImpl(
+            source = source.source?.let { value -> context.source(value) },
+            annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
+            coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
+        )
+        context.state.remember(source, target)
+        context.validateCopiedNode(source, target)
+        return target
+    }
+
+    private fun scanCfirPrimitiveTypeExpressionImpl(source: CfirPrimitiveTypeExpressionImpl) {
+        source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
+        source.annotations.forEach { value ->
+            scanOwned(value)
+        }
+        source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
+    }
+
+    private fun copyCfirWildcardExpressionImpl(source: CfirWildcardExpressionImpl): CfirWildcardExpressionImpl {
+        val target = CfirWildcardExpressionImpl(
+            source = source.source?.let { value -> context.source(value) },
+            annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
+            coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
+        )
+        context.state.remember(source, target)
+        context.validateCopiedNode(source, target)
+        return target
+    }
+
+    private fun scanCfirWildcardExpressionImpl(source: CfirWildcardExpressionImpl) {
+        source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
+        source.annotations.forEach { value ->
+            scanOwned(value)
+        }
+        source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
+    }
+
+    private fun copyCfirFunctionArgumentImpl(source: CfirFunctionArgumentImpl): CfirFunctionArgumentImpl {
+        val target = CfirFunctionArgumentImpl(
+            source = source.source?.let { value -> context.source(value) },
+            annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
+            coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
+            value = source.value?.let { value -> context.state.copyOwned(value) },
+            isDefaultValue = source.isDefaultValue,
+            withInout = source.withInout,
+        )
+        context.state.remember(source, target)
+        context.validateCopiedNode(source, target)
+        return target
+    }
+
+    private fun scanCfirFunctionArgumentImpl(source: CfirFunctionArgumentImpl) {
+        source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
+        source.annotations.forEach { value ->
+            scanOwned(value)
+        }
+        source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
+        source.value?.let(::scanOwned)
+    }
+
+    private fun copyCfirCallExpressionImpl(source: CfirCallExpressionImpl): CfirCallExpressionImpl {
+        val target = CfirCallExpressionImpl(
+            source = source.source?.let { value -> context.source(value) },
+            annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
+            coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
+            base = context.state.copyOwned(source.base),
+            arguments = source.arguments.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
+            callKind = source.callKind,
+            hasSideEffect = source.hasSideEffect,
+        )
+        context.state.remember(source, target)
+        context.validateCopiedNode(source, target)
+        return target
+    }
+
+    private fun scanCfirCallExpressionImpl(source: CfirCallExpressionImpl) {
+        source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
+        source.annotations.forEach { value ->
+            scanOwned(value)
+        }
+        source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
+        scanOwned(source.base)
+        source.arguments.forEach { value ->
+            scanOwned(value)
+        }
+    }
+
+    private fun copyCfirUnaryExpressionImpl(source: CfirUnaryExpressionImpl): CfirUnaryExpressionImpl {
+        val target = CfirUnaryExpressionImpl(
+            source = source.source?.let { value -> context.source(value) },
+            annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
+            coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
+            operand = context.state.copyOwned(source.operand),
+            operation = source.operation,
+        )
+        context.state.remember(source, target)
+        context.validateCopiedNode(source, target)
+        return target
+    }
+
+    private fun scanCfirUnaryExpressionImpl(source: CfirUnaryExpressionImpl) {
+        source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
+        source.annotations.forEach { value ->
+            scanOwned(value)
+        }
+        source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
+        scanOwned(source.operand)
+    }
+
+    private fun copyCfirBinaryExpressionImpl(source: CfirBinaryExpressionImpl): CfirBinaryExpressionImpl {
+        val target = CfirBinaryExpressionImpl(
+            source = source.source?.let { value -> context.source(value) },
+            annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
+            coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
+            left = context.state.copyOwned(source.left),
+            right = context.state.copyOwned(source.right),
+            operation = source.operation,
+        )
+        context.state.remember(source, target)
+        context.validateCopiedNode(source, target)
+        return target
+    }
+
+    private fun scanCfirBinaryExpressionImpl(source: CfirBinaryExpressionImpl) {
+        source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
+        source.annotations.forEach { value ->
+            scanOwned(value)
+        }
+        source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
+        scanOwned(source.left)
+        scanOwned(source.right)
+    }
+
+    private fun copyCfirArrayCreationExpressionImpl(source: CfirArrayCreationExpressionImpl): CfirArrayCreationExpressionImpl {
+        val target = CfirArrayCreationExpressionImpl(
+            source = source.source?.let { value -> context.source(value) },
+            annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
+            coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
+            arguments = source.arguments.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
+            initializerSymbol = source.initializerSymbol?.let { value -> context.state.referencedSymbol(value) },
+            isValueArray = source.isValueArray,
+        )
+        context.state.remember(source, target)
+        context.validateCopiedNode(source, target)
+        return target
+    }
+
+    private fun scanCfirArrayCreationExpressionImpl(source: CfirArrayCreationExpressionImpl) {
+        source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
+        source.annotations.forEach { value ->
+            scanOwned(value)
+        }
+        source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
+        source.arguments.forEach { value ->
+            scanOwned(value)
+        }
+    }
+
+    private fun copyCfirPointerExpressionImpl(source: CfirPointerExpressionImpl): CfirPointerExpressionImpl {
+        val target = CfirPointerExpressionImpl(
+            source = source.source?.let { value -> context.source(value) },
+            annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
+            coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
+            argument = source.argument?.let { value -> context.state.copyOwned(value) },
+        )
+        context.state.remember(source, target)
+        context.validateCopiedNode(source, target)
+        return target
+    }
+
+    private fun scanCfirPointerExpressionImpl(source: CfirPointerExpressionImpl) {
+        source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
+        source.annotations.forEach { value ->
+            scanOwned(value)
+        }
+        source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
+        source.argument?.let(::scanOwned)
+    }
+
+    private fun copyCfirResolvedSpawnExpressionImpl(source: CfirResolvedSpawnExpressionImpl): CfirResolvedSpawnExpressionImpl {
+        val target = CfirResolvedSpawnExpressionImpl(
+            source = source.source?.let { value -> context.source(value) },
+            annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
+            coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
+            argument = source.argument?.let { value -> context.state.copyOwned(value) },
+            future = context.state.copyOwned(source.future),
+        )
+        context.state.remember(source, target)
+        context.validateCopiedNode(source, target)
+        return target
+    }
+
+    private fun scanCfirResolvedSpawnExpressionImpl(source: CfirResolvedSpawnExpressionImpl) {
+        source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
+        source.annotations.forEach { value ->
+            scanOwned(value)
+        }
+        source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
+        source.argument?.let(::scanOwned)
+        scanOwned(source.future)
     }
 
     private fun copyCfirBlockImpl(source: CfirBlockImpl): CfirBlockImpl {
@@ -1602,7 +2157,10 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
             statements = source.statements.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
+            isUnsafe = source.isUnsafe,
         )
         context.state.remember(source, target)
         context.validateCopiedNode(source, target)
@@ -1615,6 +2173,7 @@ class DeepCopyCfirTreeWithSymbols(
             scanOwned(value)
         }
         source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
         source.statements.forEach { value ->
             scanOwned(value)
         }
@@ -1622,6 +2181,8 @@ class DeepCopyCfirTreeWithSymbols(
 
     private fun copyCfirLazyBlockImpl(source: CfirLazyBlockImpl): CfirLazyBlockImpl {
         val target = CfirLazyBlockImpl(
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
         )
         context.state.remember(source, target)
         context.validateCopiedNode(source, target)
@@ -1629,10 +2190,14 @@ class DeepCopyCfirTreeWithSymbols(
     }
 
     private fun scanCfirLazyBlockImpl(source: CfirLazyBlockImpl) {
+        source.mappedExpression?.let(::scanOwned)
     }
 
     private fun copyCfirLazyExpressionImpl(source: CfirLazyExpressionImpl): CfirLazyExpressionImpl {
         val target = CfirLazyExpressionImpl(
+            source = source.source?.let { value -> context.source(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
         )
         context.state.remember(source, target)
         context.validateCopiedNode(source, target)
@@ -1640,6 +2205,8 @@ class DeepCopyCfirTreeWithSymbols(
     }
 
     private fun scanCfirLazyExpressionImpl(source: CfirLazyExpressionImpl) {
+        source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
     }
 
     private fun copyCfirLiteralExpressionImpl(source: CfirLiteralExpressionImpl): CfirLiteralExpressionImpl {
@@ -1647,8 +2214,11 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
             kind = source.kind,
             value = source.value?.let { value -> context.literalValue(value) },
+            stringKind = source.stringKind,
         )
         context.state.remember(source, target)
         context.validateCopiedNode(source, target)
@@ -1661,6 +2231,7 @@ class DeepCopyCfirTreeWithSymbols(
             scanOwned(value)
         }
         source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
         source.value?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.LITERAL_VALUE, it, ::scanOwned) }
     }
 
@@ -1669,6 +2240,8 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
             parts = source.parts.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
         )
         context.state.remember(source, target)
@@ -1682,6 +2255,7 @@ class DeepCopyCfirTreeWithSymbols(
             scanOwned(value)
         }
         source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
         source.parts.forEach { value ->
             scanOwned(value)
         }
@@ -1708,18 +2282,19 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             moduleData = context.moduleData(source.moduleData),
             resolvePhase = context.resolvePhase(source),
+            contentSource = context.contentSource(source.contentSource),
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             origin = context.origin(source.origin),
             attributes = context.attributes(source.attributes),
+            typeParameters = source.typeParameters.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
             isLocal = source.isLocal,
+            returnTypeRef = context.state.copyOwned(source.returnTypeRef),
             deprecationsProvider = context.deprecationsProvider(source.deprecationsProvider),
             dispatchReceiverType = source.dispatchReceiverType?.let { value -> context.type(value) },
+            body = source.body?.let { value -> context.state.copyOwned(value) },
             status = context.state.copyOwned(source.status),
-            typeParameters = source.typeParameters.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
-            returnTypeRef = context.state.copyOwned(source.returnTypeRef),
             valueParameters = source.valueParameters.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
             hasVariableLenArg = source.hasVariableLenArg,
-            body = source.body?.let { value -> context.state.copyOwned(value) },
             symbol = context.state.declaredSymbol(source.symbol),
             isPrimary = source.isPrimary,
             diagnostic = context.diagnostic(source.diagnostic),
@@ -1733,23 +2308,24 @@ class DeepCopyCfirTreeWithSymbols(
     private fun scanCfirErrorPrimaryConstructorImpl(source: CfirErrorPrimaryConstructorImpl) {
         source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.MODULE_DATA, source.moduleData, ::scanOwned)
+        context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONTENT_SOURCE, source.contentSource, ::scanOwned)
         source.annotations.forEach { value ->
             scanOwned(value)
         }
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.ORIGIN, source.origin, ::scanOwned)
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.ATTRIBUTES, source.attributes, ::scanOwned)
-        context.collectOwnedMetadata(CfirRawCopyMetadataKind.DEPRECATIONS, source.deprecationsProvider, ::scanOwned)
-        source.dispatchReceiverType?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
-        source.controlFlowGraphReference?.let(::scanOwned)
-        scanOwned(source.status)
         source.typeParameters.forEach { value ->
             scanOwned(value)
         }
         scanOwned(source.returnTypeRef)
+        context.collectOwnedMetadata(CfirRawCopyMetadataKind.DEPRECATIONS, source.deprecationsProvider, ::scanOwned)
+        source.dispatchReceiverType?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.controlFlowGraphReference?.let(::scanOwned)
+        source.body?.let(::scanOwned)
+        scanOwned(source.status)
         source.valueParameters.forEach { value ->
             scanOwned(value)
         }
-        source.body?.let(::scanOwned)
         context.registerDeclaredSymbol(source, source.symbol)
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.DIAGNOSTIC, source.diagnostic, ::scanOwned)
     }
@@ -1759,6 +2335,8 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
             calleeReference = context.state.copyOwned(source.calleeReference),
             dispatchReceiver = source.dispatchReceiver?.let { value -> context.state.copyOwned(value) },
             explicitReceiver = source.explicitReceiver?.let { value -> context.state.copyOwned(value) },
@@ -1767,6 +2345,7 @@ class DeepCopyCfirTreeWithSymbols(
             origin = source.origin,
             hasTrailingLambda = source.hasTrailingLambda,
             varraySizeLiteral = source.varraySizeLiteral,
+            sourceCallHasSideEffect = source.sourceCallHasSideEffect,
         )
         context.state.remember(source, target)
         context.validateCopiedNode(source, target)
@@ -1779,6 +2358,7 @@ class DeepCopyCfirTreeWithSymbols(
             scanOwned(value)
         }
         source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
         scanOwned(source.calleeReference)
         source.dispatchReceiver?.let(::scanOwned)
         source.explicitReceiver?.let(::scanOwned)
@@ -1793,6 +2373,8 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
             isPrefix = source.isPrefix,
             operationName = context.name(source.operationName),
             expression = context.state.copyOwned(source.expression),
@@ -1809,6 +2391,7 @@ class DeepCopyCfirTreeWithSymbols(
             scanOwned(value)
         }
         source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.NAME, source.operationName, ::scanOwned)
         scanOwned(source.expression)
         source.operationSource?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
@@ -1853,6 +2436,8 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
             expression = context.state.copyOwned(source.expression),
         )
         context.state.remember(source, target)
@@ -1866,6 +2451,7 @@ class DeepCopyCfirTreeWithSymbols(
             scanOwned(value)
         }
         source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
         scanOwned(source.expression)
     }
 
@@ -1874,6 +2460,8 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
             expression = context.state.copyOwned(source.expression),
             argumentName = context.name(source.argumentName),
             nameSource = source.nameSource?.let { value -> context.source(value) },
@@ -1889,6 +2477,7 @@ class DeepCopyCfirTreeWithSymbols(
             scanOwned(value)
         }
         source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
         scanOwned(source.expression)
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.NAME, source.argumentName, ::scanOwned)
         source.nameSource?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
@@ -1899,6 +2488,8 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
             typeRef = context.state.copyOwned(source.typeRef),
             argumentMapping = context.state.copyOwned(source.argumentMapping),
             annotationClassId = source.annotationClassId?.let { value -> context.classId(value) },
@@ -1927,6 +2518,7 @@ class DeepCopyCfirTreeWithSymbols(
             scanOwned(value)
         }
         source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
         scanOwned(source.typeRef)
         scanOwned(source.argumentMapping)
         source.annotationClassId?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CLASS_ID, it, ::scanOwned) }
@@ -1968,11 +2560,97 @@ class DeepCopyCfirTreeWithSymbols(
         source.diagnostic?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.DIAGNOSTIC, it, ::scanOwned) }
     }
 
+    private fun copyCfirResolvedQualifierImpl(source: CfirResolvedQualifierImpl): CfirResolvedQualifierImpl {
+        val target = CfirResolvedQualifierImpl(
+            source = source.source?.let { value -> context.source(value) },
+            annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
+            coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
+            packageFqName = context.fqName(source.packageFqName),
+            relativeClassFqName = source.relativeClassFqName?.let { value -> context.fqName(value) },
+            qualifierSymbol = source.qualifierSymbol?.let { value -> context.state.referencedSymbol(value) },
+            explicitParent = source.explicitParent?.let { value -> context.state.copyOwned(value) },
+            nonFatalDiagnostics = source.nonFatalDiagnostics.mapTo(mutableListOf()) { value -> context.diagnostic(value) }.toMutableOrEmpty(),
+            typeArguments = source.typeArguments.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
+            organizationName = source.organizationName?.let { value -> context.name(value) },
+            referenceName = context.name(source.referenceName),
+        )
+        context.state.remember(source, target)
+        context.validateCopiedNode(source, target)
+        return target
+    }
+
+    private fun scanCfirResolvedQualifierImpl(source: CfirResolvedQualifierImpl) {
+        source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
+        source.annotations.forEach { value ->
+            scanOwned(value)
+        }
+        source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
+        context.collectOwnedMetadata(CfirRawCopyMetadataKind.FQ_NAME, source.packageFqName, ::scanOwned)
+        source.relativeClassFqName?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.FQ_NAME, it, ::scanOwned) }
+        source.explicitParent?.let(::scanOwned)
+        source.nonFatalDiagnostics.forEach { value ->
+            context.collectOwnedMetadata(CfirRawCopyMetadataKind.DIAGNOSTIC, value, ::scanOwned)
+        }
+        source.typeArguments.forEach { value ->
+            scanOwned(value)
+        }
+        source.organizationName?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.NAME, it, ::scanOwned) }
+        context.collectOwnedMetadata(CfirRawCopyMetadataKind.NAME, source.referenceName, ::scanOwned)
+    }
+
+    private fun copyCfirErrorResolvedQualifierImpl(source: CfirErrorResolvedQualifierImpl): CfirErrorResolvedQualifierImpl {
+        val target = CfirErrorResolvedQualifierImpl(
+            source = source.source?.let { value -> context.source(value) },
+            annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
+            coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
+            packageFqName = context.fqName(source.packageFqName),
+            relativeClassFqName = source.relativeClassFqName?.let { value -> context.fqName(value) },
+            qualifierSymbol = source.qualifierSymbol?.let { value -> context.state.referencedSymbol(value) },
+            explicitParent = source.explicitParent?.let { value -> context.state.copyOwned(value) },
+            nonFatalDiagnostics = source.nonFatalDiagnostics.mapTo(mutableListOf()) { value -> context.diagnostic(value) }.toMutableOrEmpty(),
+            typeArguments = source.typeArguments.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
+            organizationName = source.organizationName?.let { value -> context.name(value) },
+            referenceName = context.name(source.referenceName),
+            diagnostic = context.diagnostic(source.diagnostic),
+        )
+        context.state.remember(source, target)
+        context.validateCopiedNode(source, target)
+        return target
+    }
+
+    private fun scanCfirErrorResolvedQualifierImpl(source: CfirErrorResolvedQualifierImpl) {
+        source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
+        source.annotations.forEach { value ->
+            scanOwned(value)
+        }
+        source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
+        context.collectOwnedMetadata(CfirRawCopyMetadataKind.FQ_NAME, source.packageFqName, ::scanOwned)
+        source.relativeClassFqName?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.FQ_NAME, it, ::scanOwned) }
+        source.explicitParent?.let(::scanOwned)
+        source.nonFatalDiagnostics.forEach { value ->
+            context.collectOwnedMetadata(CfirRawCopyMetadataKind.DIAGNOSTIC, value, ::scanOwned)
+        }
+        source.typeArguments.forEach { value ->
+            scanOwned(value)
+        }
+        source.organizationName?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.NAME, it, ::scanOwned) }
+        context.collectOwnedMetadata(CfirRawCopyMetadataKind.NAME, source.referenceName, ::scanOwned)
+        context.collectOwnedMetadata(CfirRawCopyMetadataKind.DIAGNOSTIC, source.diagnostic, ::scanOwned)
+    }
+
     private fun copyCfirNamedAccessExpressionImpl(source: CfirNamedAccessExpressionImpl): CfirNamedAccessExpressionImpl {
         val target = CfirNamedAccessExpressionImpl(
             source = source.source?.let { value -> context.source(value) },
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
             calleeReference = context.state.copyOwned(source.calleeReference),
             dispatchReceiver = source.dispatchReceiver?.let { value -> context.state.copyOwned(value) },
             typeArguments = source.typeArguments.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
@@ -1989,6 +2667,7 @@ class DeepCopyCfirTreeWithSymbols(
             scanOwned(value)
         }
         source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
         scanOwned(source.calleeReference)
         source.dispatchReceiver?.let(::scanOwned)
         source.typeArguments.forEach { value ->
@@ -2002,6 +2681,8 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
             calleeReference = context.state.copyOwned(source.calleeReference),
             dispatchReceiver = source.dispatchReceiver?.let { value -> context.state.copyOwned(value) },
             explicitReceiver = source.explicitReceiver?.let { value -> context.state.copyOwned(value) },
@@ -2018,6 +2699,7 @@ class DeepCopyCfirTreeWithSymbols(
             scanOwned(value)
         }
         source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
         scanOwned(source.calleeReference)
         source.dispatchReceiver?.let(::scanOwned)
         source.explicitReceiver?.let(::scanOwned)
@@ -2031,6 +2713,8 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
             dispatchReceiver = source.dispatchReceiver?.let { value -> context.state.copyOwned(value) },
             explicitReceiver = source.explicitReceiver?.let { value -> context.state.copyOwned(value) },
             typeArguments = source.typeArguments.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
@@ -2047,6 +2731,7 @@ class DeepCopyCfirTreeWithSymbols(
             scanOwned(value)
         }
         source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
         source.dispatchReceiver?.let(::scanOwned)
         source.explicitReceiver?.let(::scanOwned)
         source.typeArguments.forEach { value ->
@@ -2060,22 +2745,23 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             moduleData = context.moduleData(source.moduleData),
             resolvePhase = context.resolvePhase(source),
+            contentSource = context.contentSource(source.contentSource),
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             origin = context.origin(source.origin),
             attributes = context.attributes(source.attributes),
+            typeParameters = source.typeParameters.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
             deprecationsProvider = context.deprecationsProvider(source.deprecationsProvider),
             dispatchReceiverType = source.dispatchReceiverType?.let { value -> context.type(value) },
+            body = source.body?.let { value -> context.state.copyOwned(value) },
             status = context.state.copyOwned(source.status),
-            typeParameters = source.typeParameters.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
             valueParameters = source.valueParameters.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
             hasVariableLenArg = source.hasVariableLenArg,
-            body = source.body?.let { value -> context.state.copyOwned(value) },
             diagnostic = context.diagnostic(source.diagnostic),
             symbol = context.state.declaredSymbol(source.symbol),
         )
         context.state.remember(source, target)
-        target.replaceControlFlowGraphReference(source.controlFlowGraphReference?.let { value -> context.state.copyOwned(value) })
         target.replaceReturnTypeRef(context.state.copyOwned(source.returnTypeRef))
+        target.replaceControlFlowGraphReference(source.controlFlowGraphReference?.let { value -> context.state.copyOwned(value) })
         context.validateCopiedNode(source, target)
         return target
     }
@@ -2083,23 +2769,24 @@ class DeepCopyCfirTreeWithSymbols(
     private fun scanCfirErrorFunctionImpl(source: CfirErrorFunctionImpl) {
         source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.MODULE_DATA, source.moduleData, ::scanOwned)
+        context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONTENT_SOURCE, source.contentSource, ::scanOwned)
         source.annotations.forEach { value ->
             scanOwned(value)
         }
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.ORIGIN, source.origin, ::scanOwned)
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.ATTRIBUTES, source.attributes, ::scanOwned)
-        context.collectOwnedMetadata(CfirRawCopyMetadataKind.DEPRECATIONS, source.deprecationsProvider, ::scanOwned)
-        source.dispatchReceiverType?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
-        source.controlFlowGraphReference?.let(::scanOwned)
-        scanOwned(source.status)
         source.typeParameters.forEach { value ->
             scanOwned(value)
         }
         scanOwned(source.returnTypeRef)
+        context.collectOwnedMetadata(CfirRawCopyMetadataKind.DEPRECATIONS, source.deprecationsProvider, ::scanOwned)
+        source.dispatchReceiverType?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.controlFlowGraphReference?.let(::scanOwned)
+        source.body?.let(::scanOwned)
+        scanOwned(source.status)
         source.valueParameters.forEach { value ->
             scanOwned(value)
         }
-        source.body?.let(::scanOwned)
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.DIAGNOSTIC, source.diagnostic, ::scanOwned)
         context.registerDeclaredSymbol(source, source.symbol)
     }
@@ -2109,6 +2796,7 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             moduleData = context.moduleData(source.moduleData),
             resolvePhase = context.resolvePhase(source),
+            contentSource = context.contentSource(source.contentSource),
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             origin = context.origin(source.origin),
             attributes = context.attributes(source.attributes),
@@ -2129,6 +2817,7 @@ class DeepCopyCfirTreeWithSymbols(
     private fun scanCfirErrorNamedValueImpl(source: CfirErrorNamedValueImpl) {
         source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.MODULE_DATA, source.moduleData, ::scanOwned)
+        context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONTENT_SOURCE, source.contentSource, ::scanOwned)
         source.annotations.forEach { value ->
             scanOwned(value)
         }
@@ -2151,9 +2840,13 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
             lValue = context.state.copyOwned(source.lValue),
             rValue = context.state.copyOwned(source.rValue),
             augmentedOperation = source.augmentedOperation?.let { value -> context.name(value) },
+            operation = source.operation,
+            isCompound = source.isCompound,
             typeMismatchOutcome = source.typeMismatchOutcome?.let { value -> context.assignmentMismatch(value) },
         )
         context.state.remember(source, target)
@@ -2167,6 +2860,7 @@ class DeepCopyCfirTreeWithSymbols(
             scanOwned(value)
         }
         source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
         scanOwned(source.lValue)
         scanOwned(source.rValue)
         source.augmentedOperation?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.NAME, it, ::scanOwned) }
@@ -2178,6 +2872,8 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
             operation = context.name(source.operation),
             operationSource = source.operationSource?.let { value -> context.source(value) },
             leftArgument = context.state.copyOwned(source.leftArgument),
@@ -2194,6 +2890,7 @@ class DeepCopyCfirTreeWithSymbols(
             scanOwned(value)
         }
         source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.NAME, source.operation, ::scanOwned)
         source.operationSource?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
         scanOwned(source.leftArgument)
@@ -2205,6 +2902,8 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
             kind = source.kind,
             left = context.state.copyOwned(source.left),
             right = context.state.copyOwned(source.right),
@@ -2220,6 +2919,7 @@ class DeepCopyCfirTreeWithSymbols(
             scanOwned(value)
         }
         source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
         scanOwned(source.left)
         scanOwned(source.right)
     }
@@ -2229,6 +2929,8 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
             operation = source.operation,
             left = context.state.copyOwned(source.left),
             right = context.state.copyOwned(source.right),
@@ -2244,6 +2946,7 @@ class DeepCopyCfirTreeWithSymbols(
             scanOwned(value)
         }
         source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
         scanOwned(source.left)
         scanOwned(source.right)
     }
@@ -2253,6 +2956,8 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
             operation = source.operation,
             argument = context.state.copyOwned(source.argument),
             typeRef = context.state.copyOwned(source.typeRef),
@@ -2268,6 +2973,7 @@ class DeepCopyCfirTreeWithSymbols(
             scanOwned(value)
         }
         source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
         scanOwned(source.argument)
         scanOwned(source.typeRef)
     }
@@ -2277,6 +2983,8 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
             argument = context.state.copyOwned(source.argument),
             targetTypeRef = context.state.copyOwned(source.targetTypeRef),
         )
@@ -2291,6 +2999,7 @@ class DeepCopyCfirTreeWithSymbols(
             scanOwned(value)
         }
         source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
         scanOwned(source.argument)
         scanOwned(source.targetTypeRef)
     }
@@ -2300,6 +3009,8 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
             initializer = context.state.copyOwned(source.initializer),
             pattern = context.state.copyOwned(source.pattern),
         )
@@ -2314,6 +3025,7 @@ class DeepCopyCfirTreeWithSymbols(
             scanOwned(value)
         }
         source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
         scanOwned(source.initializer)
         scanOwned(source.pattern)
     }
@@ -2323,6 +3035,8 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
             calleeReference = context.state.copyOwned(source.calleeReference),
             condition = context.state.copyOwned(source.condition),
             thenBranch = context.state.copyOwned(source.thenBranch),
@@ -2339,6 +3053,7 @@ class DeepCopyCfirTreeWithSymbols(
             scanOwned(value)
         }
         source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
         scanOwned(source.calleeReference)
         scanOwned(source.condition)
         scanOwned(source.thenBranch)
@@ -2350,6 +3065,8 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
             calleeReference = context.state.copyOwned(source.calleeReference),
             subject = source.subject?.let { value -> context.state.copyOwned(value) },
             branches = source.branches.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
@@ -2366,6 +3083,7 @@ class DeepCopyCfirTreeWithSymbols(
             scanOwned(value)
         }
         source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
         scanOwned(source.calleeReference)
         source.subject?.let(::scanOwned)
         source.branches.forEach { value ->
@@ -2377,6 +3095,9 @@ class DeepCopyCfirTreeWithSymbols(
     private fun copyCfirOrPatternImpl(source: CfirOrPatternImpl): CfirOrPatternImpl {
         val target = CfirOrPatternImpl(
             source = source.source?.let { value -> context.source(value) },
+            semanticTypeRef = source.semanticTypeRef?.let { value -> context.state.copyOwned(value) },
+            constantValues = source.constantValues.mapTo(mutableListOf()) { value -> context.patternConstant(value) },
+            contextExpression = source.contextExpression?.let { value -> context.state.copyOwned(value) },
             alternatives = source.alternatives.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
         )
         context.state.remember(source, target)
@@ -2389,6 +3110,11 @@ class DeepCopyCfirTreeWithSymbols(
 
     private fun scanCfirOrPatternImpl(source: CfirOrPatternImpl) {
         source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
+        source.semanticTypeRef?.let(::scanOwned)
+        source.constantValues.forEach { value ->
+            context.collectOwnedMetadata(CfirRawCopyMetadataKind.PATTERN_CONSTANT, value, ::scanOwned)
+        }
+        source.contextExpression?.let(::scanOwned)
         source.patternTreeOwner?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.PATTERN_OWNER, it, ::scanOwned) }
         source.alternatives.forEach { value ->
             scanOwned(value)
@@ -2398,6 +3124,9 @@ class DeepCopyCfirTreeWithSymbols(
     private fun copyCfirExpressionPatternImpl(source: CfirExpressionPatternImpl): CfirExpressionPatternImpl {
         val target = CfirExpressionPatternImpl(
             source = source.source?.let { value -> context.source(value) },
+            semanticTypeRef = source.semanticTypeRef?.let { value -> context.state.copyOwned(value) },
+            constantValues = source.constantValues.mapTo(mutableListOf()) { value -> context.patternConstant(value) },
+            contextExpression = source.contextExpression?.let { value -> context.state.copyOwned(value) },
             expression = context.state.copyOwned(source.expression),
         )
         context.state.remember(source, target)
@@ -2410,6 +3139,11 @@ class DeepCopyCfirTreeWithSymbols(
 
     private fun scanCfirExpressionPatternImpl(source: CfirExpressionPatternImpl) {
         source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
+        source.semanticTypeRef?.let(::scanOwned)
+        source.constantValues.forEach { value ->
+            context.collectOwnedMetadata(CfirRawCopyMetadataKind.PATTERN_CONSTANT, value, ::scanOwned)
+        }
+        source.contextExpression?.let(::scanOwned)
         source.patternTreeOwner?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.PATTERN_OWNER, it, ::scanOwned) }
         scanOwned(source.expression)
     }
@@ -2419,6 +3153,8 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
             pattern = context.state.copyOwned(source.pattern),
             guard = source.guard?.let { value -> context.state.copyOwned(value) },
             body = context.state.copyOwned(source.body),
@@ -2434,6 +3170,7 @@ class DeepCopyCfirTreeWithSymbols(
             scanOwned(value)
         }
         source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
         scanOwned(source.pattern)
         source.guard?.let(::scanOwned)
         scanOwned(source.body)
@@ -2442,11 +3179,11 @@ class DeepCopyCfirTreeWithSymbols(
     private fun copyCfirCatchPatternImpl(source: CfirCatchPatternImpl): CfirCatchPatternImpl {
         val target = CfirCatchPatternImpl(
             source = source.source?.let { value -> context.source(value) },
-            bindingName = source.bindingName?.let { value -> context.name(value) },
-            isWildcard = source.isWildcard,
+            semanticTypeRef = source.semanticTypeRef?.let { value -> context.state.copyOwned(value) },
+            constantValues = source.constantValues.mapTo(mutableListOf()) { value -> context.patternConstant(value) },
+            contextExpression = source.contextExpression?.let { value -> context.state.copyOwned(value) },
+            nestedPattern = context.state.copyOwned(source.nestedPattern),
             typeRefs = source.typeRefs.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
-            resolvedTypeRef = source.resolvedTypeRef?.let { value -> context.state.copyOwned(value) },
-            bindingVariable = source.bindingVariable?.let { value -> context.state.copyOwned(value) },
         )
         context.state.remember(source, target)
         context.state.deferReference {
@@ -2458,13 +3195,16 @@ class DeepCopyCfirTreeWithSymbols(
 
     private fun scanCfirCatchPatternImpl(source: CfirCatchPatternImpl) {
         source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
+        source.semanticTypeRef?.let(::scanOwned)
+        source.constantValues.forEach { value ->
+            context.collectOwnedMetadata(CfirRawCopyMetadataKind.PATTERN_CONSTANT, value, ::scanOwned)
+        }
+        source.contextExpression?.let(::scanOwned)
         source.patternTreeOwner?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.PATTERN_OWNER, it, ::scanOwned) }
-        source.bindingName?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.NAME, it, ::scanOwned) }
+        scanOwned(source.nestedPattern)
         source.typeRefs.forEach { value ->
             scanOwned(value)
         }
-        source.resolvedTypeRef?.let(::scanOwned)
-        source.bindingVariable?.let(::scanOwned)
     }
 
     private fun copyCfirCatchImpl(source: CfirCatchImpl): CfirCatchImpl {
@@ -2472,6 +3212,8 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
             pattern = context.state.copyOwned(source.pattern),
             body = context.state.copyOwned(source.body),
         )
@@ -2486,6 +3228,7 @@ class DeepCopyCfirTreeWithSymbols(
             scanOwned(value)
         }
         source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
         scanOwned(source.pattern)
         scanOwned(source.body)
     }
@@ -2493,10 +3236,10 @@ class DeepCopyCfirTreeWithSymbols(
     private fun copyCfirCommandTypePatternImpl(source: CfirCommandTypePatternImpl): CfirCommandTypePatternImpl {
         val target = CfirCommandTypePatternImpl(
             source = source.source?.let { value -> context.source(value) },
-            bindingName = source.bindingName?.let { value -> context.name(value) },
-            isWildcard = source.isWildcard,
-            resolvedTypeRef = source.resolvedTypeRef?.let { value -> context.state.copyOwned(value) },
-            bindingVariable = source.bindingVariable?.let { value -> context.state.copyOwned(value) },
+            semanticTypeRef = source.semanticTypeRef?.let { value -> context.state.copyOwned(value) },
+            constantValues = source.constantValues.mapTo(mutableListOf()) { value -> context.patternConstant(value) },
+            contextExpression = source.contextExpression?.let { value -> context.state.copyOwned(value) },
+            nestedPattern = context.state.copyOwned(source.nestedPattern),
             typeRefs = source.typeRefs.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
         )
         context.state.remember(source, target)
@@ -2509,10 +3252,13 @@ class DeepCopyCfirTreeWithSymbols(
 
     private fun scanCfirCommandTypePatternImpl(source: CfirCommandTypePatternImpl) {
         source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
+        source.semanticTypeRef?.let(::scanOwned)
+        source.constantValues.forEach { value ->
+            context.collectOwnedMetadata(CfirRawCopyMetadataKind.PATTERN_CONSTANT, value, ::scanOwned)
+        }
+        source.contextExpression?.let(::scanOwned)
         source.patternTreeOwner?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.PATTERN_OWNER, it, ::scanOwned) }
-        source.bindingName?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.NAME, it, ::scanOwned) }
-        source.resolvedTypeRef?.let(::scanOwned)
-        source.bindingVariable?.let(::scanOwned)
+        scanOwned(source.nestedPattern)
         source.typeRefs.forEach { value ->
             scanOwned(value)
         }
@@ -2523,6 +3269,8 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
             commandPattern = context.state.copyOwned(source.commandPattern),
             body = context.state.copyOwned(source.body),
         )
@@ -2537,6 +3285,7 @@ class DeepCopyCfirTreeWithSymbols(
             scanOwned(value)
         }
         source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
         scanOwned(source.commandPattern)
         scanOwned(source.body)
     }
@@ -2546,6 +3295,8 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
             condition = context.state.copyOwned(source.condition),
             body = context.state.copyOwned(source.body),
             isDoWhile = source.isDoWhile,
@@ -2561,6 +3312,7 @@ class DeepCopyCfirTreeWithSymbols(
             scanOwned(value)
         }
         source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
         scanOwned(source.condition)
         scanOwned(source.body)
     }
@@ -2570,12 +3322,13 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
-            condition = context.state.copyOwned(source.condition),
-            isDoWhile = source.isDoWhile,
-            variable = context.state.copyOwned(source.variable),
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
+            pattern = context.state.copyOwned(source.pattern),
             iterable = context.state.copyOwned(source.iterable),
             patternGuard = source.patternGuard?.let { value -> context.state.copyOwned(value) },
             body = context.state.copyOwned(source.body),
+            iterationKind = source.iterationKind,
         )
         context.state.remember(source, target)
         context.validateCopiedNode(source, target)
@@ -2588,8 +3341,8 @@ class DeepCopyCfirTreeWithSymbols(
             scanOwned(value)
         }
         source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
-        scanOwned(source.condition)
-        scanOwned(source.variable)
+        source.mappedExpression?.let(::scanOwned)
+        scanOwned(source.pattern)
         scanOwned(source.iterable)
         source.patternGuard?.let(::scanOwned)
         scanOwned(source.body)
@@ -2600,6 +3353,8 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
             calleeReference = context.state.copyOwned(source.calleeReference),
             resources = source.resources.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
             tryBlock = context.state.copyOwned(source.tryBlock),
@@ -2618,6 +3373,7 @@ class DeepCopyCfirTreeWithSymbols(
             scanOwned(value)
         }
         source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
         scanOwned(source.calleeReference)
         source.resources.forEach { value ->
             scanOwned(value)
@@ -2637,6 +3393,8 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
             exception = context.state.copyOwned(source.exception),
         )
         context.state.remember(source, target)
@@ -2650,6 +3408,7 @@ class DeepCopyCfirTreeWithSymbols(
             scanOwned(value)
         }
         source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
         scanOwned(source.exception)
     }
 
@@ -2671,6 +3430,8 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
             expression = context.state.copyOwned(source.expression),
         )
         context.state.remember(source, target)
@@ -2684,6 +3445,7 @@ class DeepCopyCfirTreeWithSymbols(
             scanOwned(value)
         }
         source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
         scanOwned(source.expression)
     }
 
@@ -2692,6 +3454,8 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
             withExpression = source.withExpression?.let { value -> context.state.copyOwned(value) },
             throwingExpression = source.throwingExpression?.let { value -> context.state.copyOwned(value) },
         )
@@ -2706,6 +3470,7 @@ class DeepCopyCfirTreeWithSymbols(
             scanOwned(value)
         }
         source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
         source.withExpression?.let(::scanOwned)
         source.throwingExpression?.let(::scanOwned)
     }
@@ -2715,6 +3480,8 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
             target = context.target(source.target),
             result = context.state.copyOwned(source.result),
         )
@@ -2729,6 +3496,7 @@ class DeepCopyCfirTreeWithSymbols(
             scanOwned(value)
         }
         source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.TARGET, source.target, ::scanOwned)
         scanOwned(source.result)
     }
@@ -2738,6 +3506,8 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
             target = context.target(source.target),
         )
         context.state.remember(source, target)
@@ -2751,6 +3521,7 @@ class DeepCopyCfirTreeWithSymbols(
             scanOwned(value)
         }
         source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.TARGET, source.target, ::scanOwned)
     }
 
@@ -2759,6 +3530,8 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
             target = context.target(source.target),
         )
         context.state.remember(source, target)
@@ -2772,6 +3545,7 @@ class DeepCopyCfirTreeWithSymbols(
             scanOwned(value)
         }
         source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.TARGET, source.target, ::scanOwned)
     }
 
@@ -2780,18 +3554,19 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             moduleData = context.moduleData(source.moduleData),
             resolvePhase = context.resolvePhase(source),
+            contentSource = context.contentSource(source.contentSource),
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             origin = context.origin(source.origin),
             attributes = context.attributes(source.attributes),
             isLocal = source.isLocal,
+            returnTypeRef = context.state.copyOwned(source.returnTypeRef),
             deprecationsProvider = context.deprecationsProvider(source.deprecationsProvider),
             dispatchReceiverType = source.dispatchReceiverType?.let { value -> context.type(value) },
+            body = source.body?.let { value -> context.state.copyOwned(value) },
             status = context.state.copyOwned(source.status),
-            typeParameters = source.typeParameters.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
-            returnTypeRef = context.state.copyOwned(source.returnTypeRef),
             valueParameters = source.valueParameters.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
             hasVariableLenArg = source.hasVariableLenArg,
-            body = source.body?.let { value -> context.state.copyOwned(value) },
+            typeParameters = source.typeParameters.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
             symbol = context.state.declaredSymbol(source.symbol),
             hasExplicitParameterList = source.hasExplicitParameterList,
             isLambda = source.isLambda,
@@ -2807,23 +3582,24 @@ class DeepCopyCfirTreeWithSymbols(
     private fun scanCfirAnonymousFunctionImpl(source: CfirAnonymousFunctionImpl) {
         source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.MODULE_DATA, source.moduleData, ::scanOwned)
+        context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONTENT_SOURCE, source.contentSource, ::scanOwned)
         source.annotations.forEach { value ->
             scanOwned(value)
         }
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.ORIGIN, source.origin, ::scanOwned)
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.ATTRIBUTES, source.attributes, ::scanOwned)
+        scanOwned(source.returnTypeRef)
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.DEPRECATIONS, source.deprecationsProvider, ::scanOwned)
         source.dispatchReceiverType?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
         source.controlFlowGraphReference?.let(::scanOwned)
+        source.body?.let(::scanOwned)
         scanOwned(source.status)
-        source.typeParameters.forEach { value ->
-            scanOwned(value)
-        }
-        scanOwned(source.returnTypeRef)
         source.valueParameters.forEach { value ->
             scanOwned(value)
         }
-        source.body?.let(::scanOwned)
+        source.typeParameters.forEach { value ->
+            scanOwned(value)
+        }
         context.registerDeclaredSymbol(source, source.symbol)
         scanOwned(source.typeRef)
         source.matchingParameterFunctionType?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
@@ -2850,8 +3626,11 @@ class DeepCopyCfirTreeWithSymbols(
     private fun copyCfirAnonymousFunctionExpressionImpl(source: CfirAnonymousFunctionExpressionImpl): CfirAnonymousFunctionExpressionImpl {
         val target = CfirAnonymousFunctionExpressionImpl(
             source = source.source?.let { value -> context.source(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
             anonymousFunction = context.state.copyOwned(source.anonymousFunction),
             isTrailingLambda = source.isTrailingLambda,
+            supportMock = source.supportMock,
         )
         context.state.remember(source, target)
         context.validateCopiedNode(source, target)
@@ -2860,6 +3639,7 @@ class DeepCopyCfirTreeWithSymbols(
 
     private fun scanCfirAnonymousFunctionExpressionImpl(source: CfirAnonymousFunctionExpressionImpl) {
         source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
         scanOwned(source.anonymousFunction)
     }
 
@@ -2868,6 +3648,8 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
             start = context.state.copyOwned(source.start),
             end = context.state.copyOwned(source.end),
             step = source.step?.let { value -> context.state.copyOwned(value) },
@@ -2884,6 +3666,7 @@ class DeepCopyCfirTreeWithSymbols(
             scanOwned(value)
         }
         source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
         scanOwned(source.start)
         scanOwned(source.end)
         source.step?.let(::scanOwned)
@@ -2894,7 +3677,10 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
             elements = source.elements.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
+            initializerSymbol = source.initializerSymbol?.let { value -> context.state.referencedSymbol(value) },
         )
         context.state.remember(source, target)
         context.validateCopiedNode(source, target)
@@ -2907,6 +3693,7 @@ class DeepCopyCfirTreeWithSymbols(
             scanOwned(value)
         }
         source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
         source.elements.forEach { value ->
             scanOwned(value)
         }
@@ -2917,6 +3704,8 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
             elements = source.elements.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
         )
         context.state.remember(source, target)
@@ -2930,6 +3719,7 @@ class DeepCopyCfirTreeWithSymbols(
             scanOwned(value)
         }
         source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
         source.elements.forEach { value ->
             scanOwned(value)
         }
@@ -2940,6 +3730,8 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
             body = context.state.copyOwned(source.body),
             threadContextArgument = source.threadContextArgument?.let { value -> context.state.copyOwned(value) },
         )
@@ -2954,6 +3746,7 @@ class DeepCopyCfirTreeWithSymbols(
             scanOwned(value)
         }
         source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
         scanOwned(source.body)
         source.threadContextArgument?.let(::scanOwned)
     }
@@ -2963,6 +3756,8 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
             monitor = context.state.copyOwned(source.monitor),
             body = context.state.copyOwned(source.body),
         )
@@ -2977,6 +3772,7 @@ class DeepCopyCfirTreeWithSymbols(
             scanOwned(value)
         }
         source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
         scanOwned(source.monitor)
         scanOwned(source.body)
     }
@@ -2986,6 +3782,8 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
             body = context.state.copyOwned(source.body),
         )
         context.state.remember(source, target)
@@ -2999,6 +3797,7 @@ class DeepCopyCfirTreeWithSymbols(
             scanOwned(value)
         }
         source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
         scanOwned(source.body)
     }
 
@@ -3007,6 +3806,8 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
             rawText = source.rawText,
             interpolations = source.interpolations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
         )
@@ -3021,6 +3822,7 @@ class DeepCopyCfirTreeWithSymbols(
             scanOwned(value)
         }
         source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
         source.interpolations.forEach { value ->
             scanOwned(value)
         }
@@ -3031,8 +3833,11 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             coneTypeOrNull = source.coneTypeOrNull?.let { value -> context.type(value) },
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
             receiver = context.state.copyOwned(source.receiver),
             indices = source.indices.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
+            isTupleAccess = source.isTupleAccess,
             resolvedGetCall = source.resolvedGetCall?.let { value -> context.state.copyOwned(value) },
             resolvedSetCall = source.resolvedSetCall?.let { value -> context.state.copyOwned(value) },
         )
@@ -3047,6 +3852,7 @@ class DeepCopyCfirTreeWithSymbols(
             scanOwned(value)
         }
         source.coneTypeOrNull?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.CONE_TYPE, it, ::scanOwned) }
+        source.mappedExpression?.let(::scanOwned)
         scanOwned(source.receiver)
         source.indices.forEach { value ->
             scanOwned(value)
@@ -3059,6 +3865,8 @@ class DeepCopyCfirTreeWithSymbols(
         val target = CfirErrorExpressionImpl(
             source = source.source?.let { value -> context.source(value) },
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
+            mappedExpression = source.mappedExpression?.let { value -> context.state.copyOwned(value) },
+            overflowStrategy = source.overflowStrategy,
             diagnostic = context.diagnostic(source.diagnostic),
             expression = source.expression?.let { value -> context.state.copyOwned(value) },
             nonExpressionElement = source.nonExpressionElement?.let { value -> context.state.copyOwned(value) },
@@ -3073,6 +3881,7 @@ class DeepCopyCfirTreeWithSymbols(
         source.annotations.forEach { value ->
             scanOwned(value)
         }
+        source.mappedExpression?.let(::scanOwned)
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.DIAGNOSTIC, source.diagnostic, ::scanOwned)
         source.expression?.let(::scanOwned)
         source.nonExpressionElement?.let(::scanOwned)
@@ -3081,7 +3890,11 @@ class DeepCopyCfirTreeWithSymbols(
     private fun copyCfirConstPatternImpl(source: CfirConstPatternImpl): CfirConstPatternImpl {
         val target = CfirConstPatternImpl(
             source = source.source?.let { value -> context.source(value) },
+            semanticTypeRef = source.semanticTypeRef?.let { value -> context.state.copyOwned(value) },
+            constantValues = source.constantValues.mapTo(mutableListOf()) { value -> context.patternConstant(value) },
+            contextExpression = source.contextExpression?.let { value -> context.state.copyOwned(value) },
             expression = context.state.copyOwned(source.expression),
+            operatorCall = source.operatorCall?.let { value -> context.state.copyOwned(value) },
         )
         context.state.remember(source, target)
         context.state.deferReference {
@@ -3093,13 +3906,22 @@ class DeepCopyCfirTreeWithSymbols(
 
     private fun scanCfirConstPatternImpl(source: CfirConstPatternImpl) {
         source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
+        source.semanticTypeRef?.let(::scanOwned)
+        source.constantValues.forEach { value ->
+            context.collectOwnedMetadata(CfirRawCopyMetadataKind.PATTERN_CONSTANT, value, ::scanOwned)
+        }
+        source.contextExpression?.let(::scanOwned)
         source.patternTreeOwner?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.PATTERN_OWNER, it, ::scanOwned) }
         scanOwned(source.expression)
+        source.operatorCall?.let(::scanOwned)
     }
 
     private fun copyCfirWildcardPatternImpl(source: CfirWildcardPatternImpl): CfirWildcardPatternImpl {
         val target = CfirWildcardPatternImpl(
             source = source.source?.let { value -> context.source(value) },
+            semanticTypeRef = source.semanticTypeRef?.let { value -> context.state.copyOwned(value) },
+            constantValues = source.constantValues.mapTo(mutableListOf()) { value -> context.patternConstant(value) },
+            contextExpression = source.contextExpression?.let { value -> context.state.copyOwned(value) },
         )
         context.state.remember(source, target)
         context.state.deferReference {
@@ -3111,12 +3933,20 @@ class DeepCopyCfirTreeWithSymbols(
 
     private fun scanCfirWildcardPatternImpl(source: CfirWildcardPatternImpl) {
         source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
+        source.semanticTypeRef?.let(::scanOwned)
+        source.constantValues.forEach { value ->
+            context.collectOwnedMetadata(CfirRawCopyMetadataKind.PATTERN_CONSTANT, value, ::scanOwned)
+        }
+        source.contextExpression?.let(::scanOwned)
         source.patternTreeOwner?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.PATTERN_OWNER, it, ::scanOwned) }
     }
 
     private fun copyCfirBindingPatternImpl(source: CfirBindingPatternImpl): CfirBindingPatternImpl {
         val target = CfirBindingPatternImpl(
             source = source.source?.let { value -> context.source(value) },
+            semanticTypeRef = source.semanticTypeRef?.let { value -> context.state.copyOwned(value) },
+            constantValues = source.constantValues.mapTo(mutableListOf()) { value -> context.patternConstant(value) },
+            contextExpression = source.contextExpression?.let { value -> context.state.copyOwned(value) },
             name = context.name(source.name),
             typeRef = source.typeRef?.let { value -> context.state.copyOwned(value) },
             bindingVariable = source.bindingVariable?.let { value -> context.state.copyOwned(value) },
@@ -3132,6 +3962,11 @@ class DeepCopyCfirTreeWithSymbols(
 
     private fun scanCfirBindingPatternImpl(source: CfirBindingPatternImpl) {
         source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
+        source.semanticTypeRef?.let(::scanOwned)
+        source.constantValues.forEach { value ->
+            context.collectOwnedMetadata(CfirRawCopyMetadataKind.PATTERN_CONSTANT, value, ::scanOwned)
+        }
+        source.contextExpression?.let(::scanOwned)
         source.patternTreeOwner?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.PATTERN_OWNER, it, ::scanOwned) }
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.NAME, source.name, ::scanOwned)
         source.typeRef?.let(::scanOwned)
@@ -3142,6 +3977,9 @@ class DeepCopyCfirTreeWithSymbols(
     private fun copyCfirVarOrEnumPatternImpl(source: CfirVarOrEnumPatternImpl): CfirVarOrEnumPatternImpl {
         val target = CfirVarOrEnumPatternImpl(
             source = source.source?.let { value -> context.source(value) },
+            semanticTypeRef = source.semanticTypeRef?.let { value -> context.state.copyOwned(value) },
+            constantValues = source.constantValues.mapTo(mutableListOf()) { value -> context.patternConstant(value) },
+            contextExpression = source.contextExpression?.let { value -> context.state.copyOwned(value) },
             name = context.name(source.name),
             bindingVariable = source.bindingVariable?.let { value -> context.state.copyOwned(value) },
         )
@@ -3155,6 +3993,11 @@ class DeepCopyCfirTreeWithSymbols(
 
     private fun scanCfirVarOrEnumPatternImpl(source: CfirVarOrEnumPatternImpl) {
         source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
+        source.semanticTypeRef?.let(::scanOwned)
+        source.constantValues.forEach { value ->
+            context.collectOwnedMetadata(CfirRawCopyMetadataKind.PATTERN_CONSTANT, value, ::scanOwned)
+        }
+        source.contextExpression?.let(::scanOwned)
         source.patternTreeOwner?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.PATTERN_OWNER, it, ::scanOwned) }
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.NAME, source.name, ::scanOwned)
         source.bindingVariable?.let(::scanOwned)
@@ -3163,6 +4006,9 @@ class DeepCopyCfirTreeWithSymbols(
     private fun copyCfirTuplePatternImpl(source: CfirTuplePatternImpl): CfirTuplePatternImpl {
         val target = CfirTuplePatternImpl(
             source = source.source?.let { value -> context.source(value) },
+            semanticTypeRef = source.semanticTypeRef?.let { value -> context.state.copyOwned(value) },
+            constantValues = source.constantValues.mapTo(mutableListOf()) { value -> context.patternConstant(value) },
+            contextExpression = source.contextExpression?.let { value -> context.state.copyOwned(value) },
             elements = source.elements.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
         )
         context.state.remember(source, target)
@@ -3175,6 +4021,11 @@ class DeepCopyCfirTreeWithSymbols(
 
     private fun scanCfirTuplePatternImpl(source: CfirTuplePatternImpl) {
         source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
+        source.semanticTypeRef?.let(::scanOwned)
+        source.constantValues.forEach { value ->
+            context.collectOwnedMetadata(CfirRawCopyMetadataKind.PATTERN_CONSTANT, value, ::scanOwned)
+        }
+        source.contextExpression?.let(::scanOwned)
         source.patternTreeOwner?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.PATTERN_OWNER, it, ::scanOwned) }
         source.elements.forEach { value ->
             scanOwned(value)
@@ -3184,8 +4035,10 @@ class DeepCopyCfirTreeWithSymbols(
     private fun copyCfirEnumPatternImpl(source: CfirEnumPatternImpl): CfirEnumPatternImpl {
         val target = CfirEnumPatternImpl(
             source = source.source?.let { value -> context.source(value) },
-            ownerQualifier = source.ownerQualifier?.let { value -> context.state.copyOwned(value) },
-            constructorReference = context.state.copyOwned(source.constructorReference),
+            semanticTypeRef = source.semanticTypeRef?.let { value -> context.state.copyOwned(value) },
+            constantValues = source.constantValues.mapTo(mutableListOf()) { value -> context.patternConstant(value) },
+            contextExpression = source.contextExpression?.let { value -> context.state.copyOwned(value) },
+            constructor = context.state.copyOwned(source.constructor),
             arguments = source.arguments.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
         )
         context.state.remember(source, target)
@@ -3198,9 +4051,13 @@ class DeepCopyCfirTreeWithSymbols(
 
     private fun scanCfirEnumPatternImpl(source: CfirEnumPatternImpl) {
         source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
+        source.semanticTypeRef?.let(::scanOwned)
+        source.constantValues.forEach { value ->
+            context.collectOwnedMetadata(CfirRawCopyMetadataKind.PATTERN_CONSTANT, value, ::scanOwned)
+        }
+        source.contextExpression?.let(::scanOwned)
         source.patternTreeOwner?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.PATTERN_OWNER, it, ::scanOwned) }
-        source.ownerQualifier?.let(::scanOwned)
-        scanOwned(source.constructorReference)
+        scanOwned(source.constructor)
         source.arguments.forEach { value ->
             scanOwned(value)
         }
@@ -3209,10 +4066,14 @@ class DeepCopyCfirTreeWithSymbols(
     private fun copyCfirTypePatternImpl(source: CfirTypePatternImpl): CfirTypePatternImpl {
         val target = CfirTypePatternImpl(
             source = source.source?.let { value -> context.source(value) },
+            semanticTypeRef = source.semanticTypeRef?.let { value -> context.state.copyOwned(value) },
+            constantValues = source.constantValues.mapTo(mutableListOf()) { value -> context.patternConstant(value) },
+            contextExpression = source.contextExpression?.let { value -> context.state.copyOwned(value) },
             matchingKind = context.typePatternKind(source.matchingKind),
             typeRef = context.state.copyOwned(source.typeRef),
-            bindingName = source.bindingName?.let { value -> context.name(value) },
-            bindingVariable = source.bindingVariable?.let { value -> context.state.copyOwned(value) },
+            nestedPattern = context.state.copyOwned(source.nestedPattern),
+            matchBeforeRuntime = source.matchBeforeRuntime,
+            needRuntimeTypeCheck = source.needRuntimeTypeCheck,
         )
         context.state.remember(source, target)
         context.state.deferReference {
@@ -3224,11 +4085,15 @@ class DeepCopyCfirTreeWithSymbols(
 
     private fun scanCfirTypePatternImpl(source: CfirTypePatternImpl) {
         source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
+        source.semanticTypeRef?.let(::scanOwned)
+        source.constantValues.forEach { value ->
+            context.collectOwnedMetadata(CfirRawCopyMetadataKind.PATTERN_CONSTANT, value, ::scanOwned)
+        }
+        source.contextExpression?.let(::scanOwned)
         source.patternTreeOwner?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.PATTERN_OWNER, it, ::scanOwned) }
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.TYPE_PATTERN_KIND, source.matchingKind, ::scanOwned)
         scanOwned(source.typeRef)
-        source.bindingName?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.NAME, it, ::scanOwned) }
-        source.bindingVariable?.let(::scanOwned)
+        scanOwned(source.nestedPattern)
     }
 
     private fun copyCfirResolvedTypeRefImpl(source: CfirResolvedTypeRefImpl): CfirResolvedTypeRefImpl {
@@ -3236,6 +4101,7 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             customRenderer = source.customRenderer,
+            typeUseOrigin = source.typeUseOrigin,
             coneType = context.type(source.coneType),
             delegatedTypeRef = source.delegatedTypeRef?.let { value -> context.state.copyOwned(value) },
         )
@@ -3257,6 +4123,7 @@ class DeepCopyCfirTreeWithSymbols(
         val target = CfirQualifierPartImpl(
             source = source.source?.let { value -> context.source(value) },
             name = context.name(source.name),
+            typeUseOrigin = source.typeUseOrigin,
             typeArguments = source.typeArguments.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
         )
         context.state.remember(source, target)
@@ -3272,10 +4139,32 @@ class DeepCopyCfirTreeWithSymbols(
         }
     }
 
+    private fun copyCfirParenthesizedTypeRefImpl(source: CfirParenthesizedTypeRefImpl): CfirParenthesizedTypeRefImpl {
+        val target = CfirParenthesizedTypeRefImpl(
+            source = source.source?.let { value -> context.source(value) },
+            annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
+            customRenderer = source.customRenderer,
+            typeUseOrigin = source.typeUseOrigin,
+            innerTypeRef = context.state.copyOwned(source.innerTypeRef),
+        )
+        context.state.remember(source, target)
+        context.validateCopiedNode(source, target)
+        return target
+    }
+
+    private fun scanCfirParenthesizedTypeRefImpl(source: CfirParenthesizedTypeRefImpl) {
+        source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
+        source.annotations.forEach { value ->
+            scanOwned(value)
+        }
+        scanOwned(source.innerTypeRef)
+    }
+
     private fun copyCfirUserTypeRefImpl(source: CfirUserTypeRefImpl): CfirUserTypeRefImpl {
         val target = CfirUserTypeRefImpl(
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             customRenderer = source.customRenderer,
+            typeUseOrigin = source.typeUseOrigin,
             source = context.source(source.source),
             qualifier = source.qualifier.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
         )
@@ -3299,6 +4188,7 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             customRenderer = source.customRenderer,
+            typeUseOrigin = source.typeUseOrigin,
             name = context.name(source.name),
         )
         context.state.remember(source, target)
@@ -3318,6 +4208,7 @@ class DeepCopyCfirTreeWithSymbols(
         val target = CfirImplicitTypeRefImpl(
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             customRenderer = source.customRenderer,
+            typeUseOrigin = source.typeUseOrigin,
         )
         context.state.remember(source, target)
         context.validateCopiedNode(source, target)
@@ -3335,6 +4226,7 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             customRenderer = source.customRenderer,
+            typeUseOrigin = source.typeUseOrigin,
             parameterTypeRefs = source.parameterTypeRefs.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
             returnTypeRef = context.state.copyOwned(source.returnTypeRef),
         )
@@ -3358,6 +4250,7 @@ class DeepCopyCfirTreeWithSymbols(
         val target = CfirOptionTypeRefImpl(
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             customRenderer = source.customRenderer,
+            typeUseOrigin = source.typeUseOrigin,
             source = context.source(source.source),
             componentTypeRef = context.state.copyOwned(source.componentTypeRef),
         )
@@ -3379,6 +4272,7 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             customRenderer = source.customRenderer,
+            typeUseOrigin = source.typeUseOrigin,
             elementTypeRefs = source.elementTypeRefs.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) },
         )
         context.state.remember(source, target)
@@ -3401,6 +4295,7 @@ class DeepCopyCfirTreeWithSymbols(
             source = source.source?.let { value -> context.source(value) },
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
             customRenderer = source.customRenderer,
+            typeUseOrigin = source.typeUseOrigin,
             elementTypeRef = context.state.copyOwned(source.elementTypeRef),
             sizeLiteral = source.sizeLiteral,
         )
@@ -3422,6 +4317,7 @@ class DeepCopyCfirTreeWithSymbols(
         val target = CfirErrorTypeRefImpl(
             source = source.source?.let { value -> context.source(value) },
             annotations = source.annotations.mapTo(mutableListOf()) { value -> context.state.copyOwned(value) }.toMutableOrEmpty(),
+            typeUseOrigin = source.typeUseOrigin,
             typeOrNull = context.type(source.coneType),
             delegatedTypeRef = source.delegatedTypeRef?.let { value -> context.state.copyOwned(value) },
             diagnostic = context.diagnostic(source.diagnostic),
@@ -3470,6 +4366,22 @@ class DeepCopyCfirTreeWithSymbols(
     }
 
     private fun scanCfirResolvedNamedReferenceImpl(source: CfirResolvedNamedReferenceImpl) {
+        source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
+        context.collectOwnedMetadata(CfirRawCopyMetadataKind.NAME, source.name, ::scanOwned)
+    }
+
+    private fun copyCfirResolvedBuiltinOperatorReferenceImpl(source: CfirResolvedBuiltinOperatorReferenceImpl): CfirResolvedBuiltinOperatorReferenceImpl {
+        val target = CfirResolvedBuiltinOperatorReferenceImpl(
+            source = source.source?.let { value -> context.source(value) },
+            name = context.name(source.name),
+            signature = source.signature,
+        )
+        context.state.remember(source, target)
+        context.validateCopiedNode(source, target)
+        return target
+    }
+
+    private fun scanCfirResolvedBuiltinOperatorReferenceImpl(source: CfirResolvedBuiltinOperatorReferenceImpl) {
         source.source?.let { context.collectOwnedMetadata(CfirRawCopyMetadataKind.SOURCE, it, ::scanOwned) }
         context.collectOwnedMetadata(CfirRawCopyMetadataKind.NAME, source.name, ::scanOwned)
     }

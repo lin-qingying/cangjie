@@ -21,7 +21,7 @@ import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.declaredUpperBoundRefsAfterTypeResolve
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
 

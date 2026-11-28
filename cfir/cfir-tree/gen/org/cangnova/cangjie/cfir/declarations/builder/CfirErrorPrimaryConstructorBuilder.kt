@@ -8,6 +8,7 @@
 package org.cangnova.cangjie.cfir.declarations.builder
 
 import kotlin.contracts.*
+import org.cangnova.cangjie.cfir.CfirContentSource
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
 import org.cangnova.cangjie.cfir.common.CfirModuleData
@@ -26,18 +27,19 @@ class CfirErrorPrimaryConstructorBuilder {
     var source: CjSourceElement? = null
     lateinit var moduleData: CfirModuleData
     lateinit var resolvePhase: CfirResolvePhase
+    var contentSource: CfirContentSource = CfirContentSource.Owned
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
     lateinit var origin: CfirDeclarationOrigin
     lateinit var attributes: CfirDeclarationAttributes
+    val typeParameters: MutableList<CfirTypeParameterRef> = mutableListOf()
     var isLocal: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
+    lateinit var returnTypeRef: CfirTypeRef
     var deprecationsProvider: DeprecationsProvider = UnresolvedDeprecationProvider
     var dispatchReceiverType: ConeSimpleCangJieType? = null
+    var body: CfirBlock? = null
     lateinit var status: CfirDeclarationStatus
-    val typeParameters: MutableList<CfirTypeParameter> = mutableListOf()
-    lateinit var returnTypeRef: CfirTypeRef
     val valueParameters: MutableList<CfirValueParameter> = mutableListOf()
     var hasVariableLenArg: Boolean = false
-    var body: CfirBlock? = null
     lateinit var symbol: CfirConstructorSymbol
     var isPrimary: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
     lateinit var diagnostic: ConeDiagnostic
@@ -47,18 +49,19 @@ class CfirErrorPrimaryConstructorBuilder {
             source,
             moduleData,
             resolvePhase,
+            contentSource,
             annotations.toMutableOrEmpty(),
             origin,
             attributes,
+            typeParameters,
             isLocal,
+            returnTypeRef,
             deprecationsProvider,
             dispatchReceiverType,
+            body,
             status,
-            typeParameters,
-            returnTypeRef,
             valueParameters,
             hasVariableLenArg,
-            body,
             symbol,
             isPrimary,
             diagnostic,

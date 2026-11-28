@@ -1,0 +1,128 @@
+{
+  "before": {
+    "utc": "2026-11-17T13:04:44.1743834Z",
+    "fileCount": 6834,
+    "aggregateSha256": "51193353A76107C123D4B0C8B746BB06E19B3669B4D5F1B9219A5643C0BAB2BC",
+    "roots": [
+      "common",
+      "cfir",
+      "analysis/low-level-api-cfir",
+      "analysis/analysis-api-cfir",
+      "compiler/frontend",
+      "compiler/config",
+      "compiler/phaser",
+      "compiler/arguments",
+      "psi",
+      "resolution.common",
+      "macro"
+    ],
+    "include": [
+      "*.kt",
+      "*.cj",
+      "*.kts"
+    ],
+    "exclude": "**/build/**",
+    "method": "rg --files --hidden --no-ignore, / normalized and Sort-Object -CaseSensitive; SHA256 of UTF8 LF joined path TAB length TAB uppercaseSHA256, no final LF",
+    "scope": "S3 conversions two after Array get semantic production; other six not repeated in this window"
+  },
+  "after": {
+    "utc": "2026-11-17T13:21:34.6518660Z",
+    "fileCount": 6834,
+    "aggregateSha256": "51193353A76107C123D4B0C8B746BB06E19B3669B4D5F1B9219A5643C0BAB2BC",
+    "roots": [
+      "common",
+      "cfir",
+      "analysis/low-level-api-cfir",
+      "analysis/analysis-api-cfir",
+      "compiler/frontend",
+      "compiler/config",
+      "compiler/phaser",
+      "compiler/arguments",
+      "psi",
+      "resolution.common",
+      "macro"
+    ],
+    "include": [
+      "*.kt",
+      "*.cj",
+      "*.kts"
+    ],
+    "exclude": "**/build/**",
+    "method": "rg --files --hidden --no-ignore, / normalized and Sort-Object -CaseSensitive; SHA256 of UTF8 LF joined path TAB length TAB uppercaseSHA256, no final LF",
+    "scope": "S3 conversions both parsers pass after actual Array member binding production; separate two-case window",
+    "unchanged": true
+  },
+  "queue": {
+    "id": "f0891368",
+    "args": [
+      "--gradle-user-home",
+      ".gradle/cjmp-export-home",
+      ":cfir:analysis-tests:test",
+      "--rerun",
+      "--tests",
+      "*CfirSourceCanonicalGraph*Test.operatorsConversions",
+      "--no-build-cache",
+      "--console=plain",
+      "--max-workers=1"
+    ],
+    "pid": 53028,
+    "owner": "pid@53028",
+    "submitAt": 1794920752167,
+    "startedAt": 1794920752259,
+    "finishedAt": 1794921443545,
+    "exitCode": 0,
+    "status": "DONE"
+  },
+  "total": 2,
+  "passed": 2,
+  "failed": 0,
+  "errors": 0,
+  "skipped": 0,
+  "allXmlWithinWindow": true,
+  "scope": "S3 conversions both parsers pass after actual Array member binding production; separate two-case window",
+  "extraPassedTasks": [],
+  "cases": [
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceCanonicalGraphLightTreeTest",
+      "name": "operatorsConversions()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceCanonicalGraphTest",
+      "name": "operatorsConversions()",
+      "status": "PASSED",
+      "failureMessage": null
+    }
+  ],
+  "xml": [
+    {
+      "path": "cfir/analysis-tests/build/test-results/test/TEST-org.cangnova.cangjie.cfir.analysis.tests.CfirSourceCanonicalGraphLightTreeTest.xml",
+      "bytes": 514,
+      "sha256": "4449AD3C3EA9F02727000D347414F019B28502A26B0126CE11865FB19F85B7A5",
+      "timestamp": "2026-11-17T13:16:54.643Z",
+      "lastWriteUtc": "2026-11-17T13:17:21.5480677Z",
+      "withinQueueWindow": true,
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "gzipBase64": "H4sIAAAAAAAACrVRwU7CQBC9N+k/rHPSQxdaChrSlpAajQnxYr1IOGzKUFbb3WZmS+TvDS0SDl69vZn3XvLmTbL4bmpxQGJtTQqhHINAU9qtNlUK78VT8ACLzPcSh+y40w6FUQ2mYKmSpTKVsQfVg0+Nstxpksqo+siaZW+R+U7Tm+2oxFwZa3Sp6mdS7X6lq70rCLFAdiB6cQohCP7SbYvbFMYgdkrXHSH3AxJZGqDTDbJTTZtCNI5mQRgG4X0RTubhbD6N5SyefIDYW3ZD2NXL6+BJIYrkNJ5A5ntCJC3ZFslp5NGwOKUoFV+ObJGUs8S5NeeO+PYORFkr5n/q4TdlFMVwTsVHdtgEtnNZcrPOH5fFcr3ZZMnoirgWItHfwhPhe8no8szM934AY195IgICAAA=",
+      "archiveVerified": true
+    },
+    {
+      "path": "cfir/analysis-tests/build/test-results/test/TEST-org.cangnova.cangjie.cfir.analysis.tests.CfirSourceCanonicalGraphTest.xml",
+      "bytes": 672,
+      "sha256": "394515894FBC38E013EECF3F302FA5781809616E166B8045A3CE1980EE7F5AC6",
+      "timestamp": "2026-11-17T13:17:17.190Z",
+      "lastWriteUtc": "2026-11-17T13:17:21.5531975Z",
+      "withinQueueWindow": true,
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "gzipBase64": "H4sIAAAAAAAACq1STWvbQBC9C/QfNntJc/Ba60LdGEnBuLQUSg6NQyEhh2U1tqde7S4zY1P9+xI5TXzLpbf5eO/x3jD1zZ8+qCMQY4qNtqbSCqJPHcZto+/XXyef9U1bFrUACx9QQEXXQ6MTbY13cRvT0Y3FbwTjN0jGRRcGRjYjxaw2SHfpQB5WLqaI3oVv5PJuDSxajZhGW614jzlD1+hKq43DcCDgsQGiRKdSsAcW1+dGz6rZp4m1Eztf248LO1/YubHX1YNWu8Ry8vjj++2J0+iZsdbqtiyUqjOlDCQIPD0Nnk14x6/RMpCTRLxK8eUy/OFKKx8c8/9N/89bda1fvPDAAv0kHaStLx5XX5br5ePTU1tPzxbnQCB6A/5a/rxdqKUI9FmUJBWS69QeBnWZGQ0HgGwwmqML2KEMxu/A7y/VJpGKSdQAMlKgUwRbZKGhLN4RxegJeojigiHIjhhMB1l2JmCP8o74ebTnKGVRT19frS2Lv7aZ2K+gAgAA",
+      "archiveVerified": true
+    }
+  ]
+}

@@ -138,7 +138,7 @@ internal class LLCfirProvider(
      */
     override fun getCfirFilesByPackage(fqName: FqName): List<CfirFile> =
         moduleComponents.macroSemanticSnapshotStore.snapshot?.let { snapshot -> snapshot.filesInPackage(fqName) }
-            ?: symbolProvider.declarationProvider.findFilesForFacadeByPackage(fqName)
+            ?: symbolProvider.declarationProvider.getPackageFiles(fqName)
                 .distinct()
                 .map(moduleComponents.cfirFileBuilder::buildRawCfirFileWithCaching)
 

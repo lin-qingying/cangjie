@@ -1,8 +1,8 @@
 package org.cangnova.cangjie.cfir.resolve
 
+import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
 import org.cangnova.cangjie.cfir.declarations.declarationAvailabilityProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessContext
-import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessKind
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityResult
 import org.cangnova.cangjie.cfir.resolve.providers.CfirLookupOrigin
 import org.cangnova.cangjie.cfir.resolve.providers.lookupOriginForAccessibility
@@ -10,6 +10,8 @@ import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.accessibilityChecker
+import org.cangnova.cangjie.cfir.session.languageVersionSettings
+import org.cangnova.cangjie.supportsCjmpDeclarationModel
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.declarations.declarationSiteId
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
@@ -35,13 +37,15 @@ internal class CfirTypeCandidateCollector(
         val symbol: CfirClassifierSymbol<*>,
         val substitutor: ConeSubstitutor?,
         val lookupOrigin: CfirLookupOrigin,
+        /** 产生候选的确切 scope；已知 ClassId 的 provider 聚合没有词法 scope。 */
+        val scope: CfirScope? = null,
     )
 
     /**
      * 返回第一个含可访问候选的 scope 层，并保留该层全部候选。
      *
-     * 不可发现的 classifier 不会阻断低优先级 scope；同层多个可访问候选由上层解析器
-     * 继续执行歧义处理，不能在 collector 内任意选择一个符号。
+     * 不可发现的 classifier 不会阻断低优先级 scope；同层先按官方 SPECIFIC 类型名优先级
+     * 选择，否则保留全部可访问候选，由上层解析器执行歧义处理。
      */
     fun firstVisibleScopeCandidates(
         scopes: Iterable<CfirScope>,
@@ -163,52 +167,34 @@ internal class CfirTypeCandidateCollector(
         val result = mutableListOf<TypeCandidate>()
         scope.processClassifiersByNameWithSubstitution(name) { symbol, substitutor ->
             if (isAccessible(symbol, lookupOrigin)) {
-                result += TypeCandidate(symbol, substitutor, lookupOrigin)
+                result += TypeCandidate(symbol, substitutor, lookupOrigin, scope)
             }
         }
-        return result.distinctBy(TypeCandidate::symbol)
+        return selectTypeNameCandidates(result.distinctBy(TypeCandidate::symbol))
     }
 
     /**
      * 聚合已确定 [classId] 的完整重声明候选。
      *
-     * [preferredCandidate] 保留首次 scope lookup 的真实 origin/substitutor；provider 冲突
-     * 候选使用 [lookupOrigin]，但仍逐个经过同一 checker，不能因已知 ClassId 绕过访问控制。
+     * 此入口用于已确定的包限定域；词法 scope 查询直接消费该层候选，不再扩展到 provider。
+     * 聚合候选仍逐个经过同一 checker，不能因已知 ClassId 绕过访问控制。
      */
     fun collectClassIdCandidates(
         classId: ClassId,
-        preferredCandidate: TypeCandidate?,
         lookupOrigin: CfirLookupOrigin,
-    ): List<TypeCandidate> {
-        /*
-         * 同一处源码声明可能同时存在于实时 raw 树与宏展开树，两者成员可能不同，但声明位置相同；
-         * 展开树（availability provider 在快照发布后给出的视图）是权威视图。这里按声明位置收敛，
-         * 丢弃 scope lookup 带来的同位置旧视图，只让**不同源码位置**的同名声明构成重声明歧义。
-         */
-        val availabilityCandidates = session.declarationAvailabilityProvider.classLikeCandidates(classId)
-        val availabilitySites = availabilityCandidates.mapNotNull { symbol ->
-            symbol.declarationSiteId()
-        }.toSet()
-        return buildList {
-            preferredCandidate?.let { candidate ->
-                val site = (candidate.symbol as? CfirClassLikeSymbol<*>)?.declarationSiteId()
-                if (site == null || site !in availabilitySites) {
-                    add(candidate)
-                }
-            }
-            availabilityCandidates.forEach { symbol ->
-                add(
-                    TypeCandidate(
-                        symbol = symbol,
-                        substitutor = null,
-                        lookupOrigin = lookupOrigin,
-                    )
-                )
-            }
-        }.distinctBy(TypeCandidate::symbol).filter { candidate ->
-            isAccessible(candidate.symbol, candidate.lookupOrigin)
+    ): List<TypeCandidate> = selectTypeNameCandidates(buildList {
+        session.declarationAvailabilityProvider.classLikeCandidates(classId).forEach { symbol ->
+            add(
+                TypeCandidate(
+                    symbol = symbol,
+                    substitutor = null,
+                    lookupOrigin = lookupOrigin,
+                ),
+            )
         }
-    }
+    }.distinctBy(TypeCandidate::symbol).filter { candidate ->
+        isAccessible(candidate.symbol, candidate.lookupOrigin)
+    })
 
     /**
      * 收集已经由 package namespace 选出的 class-like 候选并执行统一可访问性检查。
@@ -219,7 +205,7 @@ internal class CfirTypeCandidateCollector(
     fun collectPackageNamespaceCandidates(
         symbols: Iterable<CfirClassLikeSymbol<*>>,
         lookupOrigin: CfirLookupOrigin,
-    ): List<TypeCandidate> = symbols.map { symbol ->
+    ): List<TypeCandidate> = selectTypeNameCandidates(symbols.map { symbol ->
         TypeCandidate(
             symbol = symbol,
             substitutor = null,
@@ -227,6 +213,13 @@ internal class CfirTypeCandidateCollector(
         )
     }.distinctBy(TypeCandidate::symbol).filter { candidate ->
         isAccessible(candidate.symbol, candidate.lookupOrigin)
+    })
+
+    /** 官方 PreCheck 在已确定的同一查找层优先首个 SPECIFIC，不检查配对、种类或泛型。 */
+    private fun selectTypeNameCandidates(candidates: List<TypeCandidate>): List<TypeCandidate> {
+        if (!session.languageVersionSettings.supportsCjmpDeclarationModel()) return candidates
+        val specific = candidates.firstOrNull { (it.symbol.cfir as? CfirMemberDeclaration)?.status?.isSpecific == true }
+        return if (specific == null) candidates else listOf(specific)
     }
 
     /** classifier 以其真实查找来源进入唯一可访问性服务。 */
@@ -239,7 +232,6 @@ internal class CfirTypeCandidateCollector(
             classLike,
             context.copy(
                 lookupOrigin = lookupOrigin,
-                kind = CfirAccessKind.TYPE,
             ),
         )
         return result is CfirAccessibilityResult.Accessible

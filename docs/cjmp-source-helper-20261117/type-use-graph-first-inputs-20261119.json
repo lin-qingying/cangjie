@@ -1,0 +1,26 @@
+{
+  "utc": "2026-11-18T19:20:39.0930351Z",
+  "fileCount": 6855,
+  "aggregateSha256": "3FEABB729B310B3A4E64F4DA734C5F9200542CDC96C354B93ED7EF2884BB16C4",
+  "roots": [
+    "common",
+    "cfir",
+    "analysis/low-level-api-cfir",
+    "analysis/analysis-api-cfir",
+    "compiler/frontend",
+    "compiler/config",
+    "compiler/phaser",
+    "compiler/arguments",
+    "psi",
+    "resolution.common",
+    "macro"
+  ],
+  "include": [
+    "*.kt",
+    "*.cj",
+    "*.kts"
+  ],
+  "exclude": "**/build/**",
+  "method": "rg --files --hidden --no-ignore, / normalized and Sort-Object -CaseSensitive; SHA256 of UTF8 LF joined path TAB length TAB uppercaseSHA256, no final LF",
+  "scope": "TypeUseGraph first candidate: per-node native alias eligibility after linkage convergence, independent declaration/RHS/explicit header/functionBody ret/super types; recoveredAlias2 and snapshot/provider regression. Includes all latest Nov19 origin and version bytes."
+}

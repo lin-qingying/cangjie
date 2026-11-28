@@ -45,7 +45,10 @@ class MacroConstructionArchitectureTest {
         val macro = fixture.macroDeclaration("LocalMacro", "test.pkg")
         val file = fixture.file(packageName = "test.pkg", declarations = listOf(macro), isMacroPackage = true)
         val provider = CfirProviderImpl(fixture.session)
-        val pre = buildPreMacroRawFiles(fixture.session, listOf(file))
+        val pre = buildPreMacroRawFiles(
+            fixture.session,
+            listOf(PreMacroCfirFile(file, annotationMetadata = CfirAnnotationMetadataBuilder())),
+        )
 
         val index = buildMacroSymbolIndex(pre)
 
@@ -75,7 +78,10 @@ class MacroConstructionArchitectureTest {
                 fixture.import("lib.all", isAllUnder = true),
             ),
         )
-        val pre = buildPreMacroRawFiles(fixture.session, listOf(file))
+        val pre = buildPreMacroRawFiles(
+            fixture.session,
+            listOf(PreMacroCfirFile(file, annotationMetadata = CfirAnnotationMetadataBuilder())),
+        )
         val index = buildMacroSymbolIndex(
             pre = pre,
             libraryDefinitions = listOf(explicit),
@@ -129,7 +135,10 @@ class MacroConstructionArchitectureTest {
             declarations = listOf(fixture.macroDeclaration("Conflict", "test.pkg")),
             isMacroPackage = true,
         )
-        val pre = buildPreMacroRawFiles(fixture.session, listOf(file))
+        val pre = buildPreMacroRawFiles(
+            fixture.session,
+            listOf(PreMacroCfirFile(file, annotationMetadata = CfirAnnotationMetadataBuilder())),
+        )
         val index = buildMacroSymbolIndex(
             pre = pre,
             libraryDefinitions = listOf(macroEntry("lib.macros.Conflict", MacroDefinitionEntry.Source.LIBRARY)),
@@ -151,15 +160,24 @@ class MacroConstructionArchitectureTest {
     @Test
     fun `builtin non-macro surface is not treated as executor macro`() {
         val fixture = Fixture()
-        val pre = buildPreMacroRawFiles(fixture.session, listOf(fixture.file(packageName = "test.pkg")))
+        val pre = buildPreMacroRawFiles(
+            fixture.session,
+            listOf(PreMacroCfirFile(fixture.file(packageName = "test.pkg"), annotationMetadata = CfirAnnotationMetadataBuilder())),
+        )
         val context = bindMacroImports(pre, buildMacroSymbolIndex(pre))
 
         val resolution = context.resolveMacroCall(
             FqName("test.pkg"), null, Name.identifier("IfAvailable"),
             sourceModuleName = BuiltInAnnotationRegistry.sourceModuleName(FqName("test.pkg")),
         )
+        val forcedResolution = context.resolveMacroCall(
+            FqName("test.pkg"), null, Name.identifier("IfAvailable"),
+            sourceModuleName = BuiltInAnnotationRegistry.sourceModuleName(FqName("test.pkg")),
+            kind = MacroSurface.Kind.FORCED,
+        )
 
         assertTrue(resolution is MacroResolution.BuiltinNonMacro)
+        assertTrue(forcedResolution is MacroResolution.Unresolved)
     }
 
     /** ConstSafe 的裸名称只在 std 包身份下走内置注解路由。 */
@@ -170,8 +188,7 @@ class MacroConstructionArchitectureTest {
             val surface = declarationRoutingSurface(1L, "ConstSafe", packageName)
             val pre = buildPreMacroRawFiles(
                 fixture.session,
-                listOf(fixture.file(packageName)),
-                listOf(listOf(surface)),
+                listOf(PreMacroCfirFile(fixture.file(packageName), listOf(surface), CfirAnnotationMetadataBuilder())),
             )
             assertEquals(FqName("$packageName.ConstSafe"), surface.qualifiedName)
             assertFalse(surface.isQualifiedName)
@@ -198,8 +215,7 @@ class MacroConstructionArchitectureTest {
         assertTrue(qualified.isQualifiedName)
         val pre = buildPreMacroRawFiles(
             fixture.session,
-            listOf(fixture.file(packageName)),
-            listOf(listOf(bare, qualified)),
+            listOf(PreMacroCfirFile(fixture.file(packageName), listOf(bare, qualified), CfirAnnotationMetadataBuilder())),
         )
 
         val decisions = MacroDemandClassification.create(pre).freezeFinal()
@@ -226,8 +242,7 @@ class MacroConstructionArchitectureTest {
             )
             val pre = buildPreMacroRawFiles(
                 fixture.session,
-                listOf(fixture.file("app", imports = imports)),
-                listOf(surfaces),
+                listOf(PreMacroCfirFile(fixture.file("app", imports = imports), surfaces, CfirAnnotationMetadataBuilder())),
             )
             val decisions = MacroDemandClassification.create(pre, defaultMacroImports = defaultImports)
                 .freezeFinal(libraryDefinitions = listOf(target))
@@ -251,8 +266,7 @@ class MacroConstructionArchitectureTest {
         )
         val pre = buildPreMacroRawFiles(
             fixture.session,
-            listOf(fixture.file("app")),
-            listOf(surfaces),
+            listOf(PreMacroCfirFile(fixture.file("app"), surfaces, CfirAnnotationMetadataBuilder())),
         )
         val classification = MacroDemandClassification.create(pre)
         assertEquals(
@@ -269,6 +283,31 @@ class MacroConstructionArchitectureTest {
         assertFalse(decisions[2].executorRequired)
     }
 
+    /** 官方未声明调用豁免只接受未限定的普通调用，不应吞掉 @! 宏调用。 */
+    @Test
+    fun `IfAvailable builtin non-macro routing is limited to unqualified plain surfaces`() {
+        val fixture = Fixture()
+        val expression = expressionRoutingSurface(1L, "IfAvailable", "app")
+        val forcedExpression = expressionRoutingSurface(2L, "IfAvailable", "app")
+            .copy(kind = MacroSurface.Kind.FORCED)
+        val declaration = declarationRoutingSurface(3L, "IfAvailable", "app")
+        val pre = buildPreMacroRawFiles(
+            fixture.session,
+            listOf(PreMacroCfirFile(fixture.file("app"), listOf(expression, forcedExpression, declaration), CfirAnnotationMetadataBuilder())),
+        )
+
+        val classification = MacroDemandClassification.create(pre)
+        assertEquals(
+            listOf(Name.identifier("IfAvailable"), null, Name.identifier("IfAvailable")),
+            classification.preArtifactSnapshot.decisions.map { it.builtinNonMacroResult },
+        )
+
+        val decisions = classification.freezeFinal()
+        assertTrue(decisions[0].resolution is MacroResolution.BuiltinNonMacro)
+        assertTrue(decisions[1].resolution is MacroResolution.Unresolved)
+        assertTrue(decisions[2].resolution is MacroResolution.BuiltinNonMacro)
+    }
+
     /**
      * 验证两个宏导入共享同一个别名时会记录所有冲突目标。
      */
@@ -282,7 +321,10 @@ class MacroConstructionArchitectureTest {
                 fixture.import("lib.two.Trace", alias = "Log"),
             ),
         )
-        val pre = buildPreMacroRawFiles(fixture.session, listOf(file))
+        val pre = buildPreMacroRawFiles(
+            fixture.session,
+            listOf(PreMacroCfirFile(file, annotationMetadata = CfirAnnotationMetadataBuilder())),
+        )
         val index = buildMacroSymbolIndex(
             pre = pre,
             libraryDefinitions = listOf(
@@ -314,7 +356,10 @@ class MacroConstructionArchitectureTest {
                 fixture.import("lib.two.Right", alias = "Clash"),
             ),
         )
-        val pre = buildPreMacroRawFiles(fixture.session, listOf(file))
+        val pre = buildPreMacroRawFiles(
+            fixture.session,
+            listOf(PreMacroCfirFile(file, annotationMetadata = CfirAnnotationMetadataBuilder())),
+        )
         val context = bindMacroImports(pre, buildMacroSymbolIndex(pre))
 
         assertTrue(context.aliasConflicts.isEmpty())
@@ -328,7 +373,10 @@ class MacroConstructionArchitectureTest {
     fun `recordExpandedRawFilesOnce finalizes provider and rejects duplicate record`() {
         val fixture = Fixture()
         val provider = CfirProviderImpl(fixture.session)
-        val pre = buildPreMacroRawFiles(fixture.session, listOf(fixture.file(packageName = "test.pkg")))
+        val pre = buildPreMacroRawFiles(
+            fixture.session,
+            listOf(PreMacroCfirFile(fixture.file(packageName = "test.pkg"), annotationMetadata = CfirAnnotationMetadataBuilder())),
+        )
         val result = MacroConstructionService.successOf(
             pre = pre,
             files = pre.files.map { it.cfirFile },
@@ -357,8 +405,7 @@ class MacroConstructionArchitectureTest {
         val file = fixture.file(packageName = "test.pkg")
         val pre = buildPreMacroRawFiles(
             session = fixture.session,
-            rawCfirFiles = listOf(file),
-            fileSurfaces = listOf(listOf(surface)),
+            files = listOf(PreMacroCfirFile(file, listOf(surface), CfirAnnotationMetadataBuilder())),
         )
 
         assertEquals(listOf(surface), pre.allSurfaces)
@@ -424,7 +471,7 @@ class MacroConstructionArchitectureTest {
         val expressionSurface = expressionRoutingSurface(id = 901L, sourceName = "a11", packageName = "test.pkg")
         val declarationSurface = declarationRoutingSurface(id = 902L, sourceName = "decl", packageName = "test.pkg")
         val surfaces = listOf(expressionSurface, declarationSurface)
-        val store = CfirRawMacroSurfaceUsageStore()
+        val store = CfirRawMacroSurfaceUsageStore(fixture.session)
         val sourceIdentity = Any()
 
         store.recordSurfaces(file, sourceIdentity, surfaces)
@@ -547,6 +594,13 @@ class MacroConstructionArchitectureTest {
                 qualifiedName = if (explicitlyQualified) spelledName else FqName(packageName).child(spelledName.shortName()),
                 isQualifiedName = explicitlyQualified,
                 kind = MacroSurface.Kind.PLAIN,
+                parsingFacts = org.cangnova.cangjie.parsing.MacroParsingFacts(
+                    org.cangnova.cangjie.parsing.MacroParsingScope.Declaration(
+                        org.cangnova.cangjie.parsing.CjScopeKind.TOPLEVEL,
+                    ),
+                    org.cangnova.cangjie.parsing.CjMacroFragmentParent.OTHER,
+                    null,
+                ),
                 hasParenthesis = false,
                 attrTokens = emptyList(),
                 hasAttr = false,
@@ -567,7 +621,7 @@ class MacroConstructionArchitectureTest {
                     isInsideEnumBody = false,
                     isInsideBlock = false,
                 ),
-                replaceHandle = CfirReplaceHandle(id),
+                replaceHandle = CfirReplaceHandle(id, topLevelMacroOwnerSnapshot(FqName(packageName))),
             )
         }
 
@@ -580,6 +634,13 @@ class MacroConstructionArchitectureTest {
                 qualifiedName = FqName(name),
                 isQualifiedName = '.' in name,
                 kind = MacroSurface.Kind.PLAIN,
+                parsingFacts = org.cangnova.cangjie.parsing.MacroParsingFacts(
+                    org.cangnova.cangjie.parsing.MacroParsingScope.Expression(
+                        org.cangnova.cangjie.parsing.CjExprKind.UNKNOWN_EXPR,
+                    ),
+                    org.cangnova.cangjie.parsing.CjMacroFragmentParent.OTHER,
+                    null,
+                ),
                 hasParenthesis = true,
                 attrTokens = emptyList(),
                 hasAttr = false,
@@ -604,7 +665,7 @@ class MacroConstructionArchitectureTest {
                     isInsideEnumBody = false,
                     isInsideBlock = true,
                 ),
-                replaceHandle = CfirReplaceHandle(id),
+                replaceHandle = CfirReplaceHandle(id, topLevelMacroOwnerSnapshot(FqName(packageName))),
             )
         }
     }

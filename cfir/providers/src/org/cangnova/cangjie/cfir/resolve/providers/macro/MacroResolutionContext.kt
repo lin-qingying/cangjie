@@ -139,8 +139,8 @@ class MacroResolutionContext internal constructor(
      * 返回结果优先级（baseline 第 8 节 + 第 12 节 Batch 5）：
      *
      * 1. 同包 def/call 检测 — 命中即诊断为非法，且覆盖 builtin 名称。
-     * 2. builtin non-macro surface（如 `@IfAvailable`） — 不送 executor，
-     *    必须在 stable splice 前 desugar。
+     * 2. builtin non-macro（如 `@IfAvailable`） — 不送 executor；完整 invocation
+     *    按原文法重解析后仍通过原 surface 的 stable splice 槽位替换。
      * 3. builtin macro（`sourcePackage` / `sourceFile` / `sourceLine`） — 内建 evaluator 入口。
      * 4. qualifier 形式（含包前缀） — 直接 fqn lookup。
      * 5. explicit import 命中（aliasName / shortName 匹配）。
@@ -163,6 +163,7 @@ class MacroResolutionContext internal constructor(
         kind: MacroSurface.Kind = MacroSurface.Kind.PLAIN,
         hasParenthesis: Boolean = true,
         allowsDeclarationInputParenthesisOmission: Boolean = false,
+        allowBuiltinNonMacro: Boolean = true,
     ): MacroResolution {
         // 1. 同包 def/call 禁止。该规则覆盖 builtin 名称，防止同包宏定义劫持 annotation site。
         val samePackageDef = if (qualifier == null || qualifier == callPackage) {
@@ -200,7 +201,7 @@ class MacroResolutionContext internal constructor(
         }
 
         // 3. builtin non-macro
-        if (name in builtinRegistries.nonMacros) {
+        if (allowBuiltinNonMacro && kind == MacroSurface.Kind.PLAIN && name in builtinRegistries.nonMacros) {
             return MacroResolution.BuiltinNonMacro(name)
         }
 
@@ -323,7 +324,7 @@ sealed class MacroResolution {
     data class Builtin(val entry: MacroDefinitionEntry) : MacroResolution()
 
     /**
-     * builtin non-macro surface（如 `@IfAvailable`），需在 splice 前 desugar。
+     * 不送 external executor 的 builtin invocation；它仍须按原调用上下文重解析并替换真实槽位。
      *
      * @property name builtin non-macro 名称。
      */

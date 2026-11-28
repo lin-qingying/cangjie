@@ -30,8 +30,8 @@
 
 ## 独立项目
 
-- [IntelliJ Platform 插件](../intellij-ide/README.zh-CN.md)
-- [DevEco 集成](../deveco/README.zh-CN.md)
+- [IntelliJ Platform 插件](intellij-ide.zh-CN.md)
+- [DevEco 集成](deveco.zh-CN.md)
 
 ## 文档边界
 

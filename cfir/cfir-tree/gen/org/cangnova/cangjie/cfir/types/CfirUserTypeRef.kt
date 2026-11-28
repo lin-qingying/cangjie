@@ -6,6 +6,7 @@
 package org.cangnova.cangjie.cfir.types
 
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.CfirQualifierPart
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
@@ -18,8 +19,16 @@ import org.cangnova.cangjie.source.CjSourceElement
 abstract class CfirUserTypeRef : CfirUnresolvedTypeRef() {
     abstract override val annotations: List<CfirAnnotation>
     abstract override val customRenderer: Boolean
+    abstract override val typeUseOrigin: CfirTypeRefOrigin
     abstract override val source: CjSourceElement
     abstract val qualifier: List<CfirQualifierPart>
+
+    /** 访问本节点拥有的完整来源子图；独立于 ordinary visitor 的语法子树。 */
+    @CfirImplementationDetail
+    override fun <R, D> acceptSourceChildren(visitor: CfirVisitor<R, D>, data: D) {
+        annotations.forEach { it.accept(visitor, data) }
+        qualifier.forEach { it.accept(visitor, data) }
+    }
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitUserTypeRef(this, data)
@@ -29,6 +38,11 @@ abstract class CfirUserTypeRef : CfirUnresolvedTypeRef() {
         transformer.transformUserTypeRef(this, data) as E
 
     abstract override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
+
+    abstract override fun replaceTypeUseOrigin(newTypeUseOrigin: CfirTypeRefOrigin)
+
+    @CfirImplementationDetail
+    abstract override fun replaceSource(newSource: CjSourceElement?)
 
     abstract fun replaceQualifier(newQualifier: List<CfirQualifierPart>)
 

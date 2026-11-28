@@ -7,40 +7,23 @@
 
 package org.cangnova.cangjie.cfir.session
 
-import org.cangnova.cangjie.LanguageFeature
-import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.CjmpLanguageFeature
+import org.cangnova.cangjie.cfir.common.moduleData
+import org.cangnova.cangjie.supportsCjmpDeclarationModel
+import org.cangnova.cangjie.supportsCjmpFeature
 
 /** specific 编译期启用 CJMP 类型/候选行为的唯一 session 判据。 */
 public fun CfirSession.isCjmpSpecificCompilationEnabled(): Boolean =
-    languageVersionSettings.supportsFeature(LanguageFeature.CommonSpecificDeclarations) &&
+    languageVersionSettings.supportsCjmpDeclarationModel() &&
             cjmpSettings.mode == CfirCjmpMode.SPECIFIC
 
-/**
- * 返回当前 session 在进入函数体解析前必须达到的阶段。
- *
- * CJMP 只在启用 specific 编译时属于 body resolve 的前置阶段；关闭 CJMP 门时，
- * [CfirResolvePhase.IMPLICIT_TYPES] 已提供完整的声明签名边界。
- */
-public val CfirSession.bodyResolvePrerequisitePhase: CfirResolvePhase
-    get() = if (isCjmpSpecificCompilationEnabled()) {
-        CfirResolvePhase.CJMP_MATCHING
-    } else {
-        CfirResolvePhase.IMPLICIT_TYPES
-    }
+/** alpha.66 的签名匹配必须等声明级隐式类型推断完成；后续版本在早期匹配阶段绑定。 */
+public fun CfirSession.requiresDeferredCjmpFinalMatching(): Boolean =
+    isCjmpSpecificCompilationEnabled() &&
+            !languageVersionSettings.supportsCjmpFeature(CjmpLanguageFeature.PostMatchReturnTypeCheck)
 
-/**
- * 判断 common 成员是否已由当前 specific session 中成功配对的 specific 成员替代。
- *
- * 只有对应项从配对存储中可见时才过滤 common 成员；未配对的 common 默认实现仍参与普通查找。
- */
-public fun CfirSession.isCjmpShadowedCommonDeclaration(declaration: CfirDeclaration): Boolean {
-    if (!isCjmpSpecificCompilationEnabled()) return false
-    val member = declaration as? CfirMemberDeclaration ?: return false
-    if (!member.status.isCommon) return false
-    val storage = cjmpMappingStorage
-    return storage.specificBindingsFor(declaration).any { specific ->
-        storage.commonCounterpartsFor(specific).any { common -> common === declaration }
-    }
-}
+/** 只有 language-version 启用且本次输入确实包含多个 common parent 时才采用逐 parent 匹配。 */
+public fun CfirSession.hasMultipleCjmpCommonParents(): Boolean =
+    isCjmpSpecificCompilationEnabled() &&
+            languageVersionSettings.supportsCjmpFeature(CjmpLanguageFeature.MultipleCommonParents) &&
+            moduleData.refinementDependencies.size > 1

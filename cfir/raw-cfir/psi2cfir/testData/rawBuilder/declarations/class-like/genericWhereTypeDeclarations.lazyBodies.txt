@@ -3,16 +3,19 @@ FILE: genericWhereTypeDeclarations.cj
     }
     internal? class GenericClass<T> {
         init()
-        internal? var value: R|T|
+        internal? var value: R|T| = ...
+            initializer:
+                <element: CfirLazyExpression>
     }
     internal? interface GenericInterface<T> {
         public? var value: R|T|
     }
     internal? struct GenericStruct<T> {
         init()
-        internal? var value: R|T|
+        internal? var value: R|T| = ...
+            initializer:
+                <element: CfirLazyExpression>
     }
     internal? enum GenericEnum<T> {
         Value(R|T|)
-        init()
     }

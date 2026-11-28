@@ -19,7 +19,6 @@ import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFailurePolicy
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroResolution
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroResolutionContext
 import org.cangnova.cangjie.cfir.resolve.providers.macro.PreMacroRawBuildResult
-import org.cangnova.cangjie.cfir.session.beginAnnotationMetadataRegistryGeneration
 import org.cangnova.cangjie.cfir.session.ensureAnnotationMetadataRegistry
 import org.cangnova.cangjie.macro.expansion.MacroExpansionOutcome
 import org.cangnova.cangjie.macro.expansion.MacroConstructionReadAccess
@@ -149,7 +148,6 @@ internal class MacroSemanticExpansionConstruction(private val project: Project) 
         val readAccess = environment.readAccess()
         val revisionBeforeBuild = readAccess.compute<MacroExpansionRevision?> {
             if (!session.isValid || project.isDisposed) return@compute null
-            session.beginAnnotationMetadataRegistryGeneration()
             environment.revision(module)
         } ?: return AttemptResult(MacroExpansionAttempt.COMPLETED, MacroExpansionOutcome.CANCELLED)
 

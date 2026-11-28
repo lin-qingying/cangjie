@@ -25,13 +25,13 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
+import org.cangnova.cangjie.cfir.analysis.checkers.CjmpGate
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirInitializationAssignmentClassifier
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirInitializationAssignmentKind
-import org.cangnova.cangjie.cfir.analysis.checkers.declaration.isPrimaryConstructorParameterProperty
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.calls.isResolvedTypeQualifier
-import org.cangnova.cangjie.cfir.correspondingProperty
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
@@ -66,9 +66,9 @@ import org.cangnova.cangjie.source.AbstractCjSourceElement
  * - `let`/不可变变量、只读属性 -> `CANNOT_ASSIGN_TO_IMMUTABLE`
  * - 函数名、类型名等非左值名字 -> `UNQUALIFIED_LEFT_VALUE_ASSIGNED`
  *
- * `subscript` 赋值仍交由独立的 `operator set` 语义链处理，这里暂不重复判定。
+ * 普通重载下标仍交由独立的 `operator set` 语义链处理；内建 VArray 下标按其值来源检查可写性。
  */
-object CfirAssignmentLegalityChecker : CfirAssignmentChecker() {
+object CfirAssignmentLegalityChecker : CfirAssignmentChecker(MppCheckerKind.Common) {
     /**
      * 检查普通赋值表达式的左值是否可写。
      *
@@ -109,6 +109,14 @@ object CfirAssignmentLegalityChecker : CfirAssignmentChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkSubscriptTarget(lValue: CfirSubscriptExpression, expression: CfirAssignment) {
         when (val target = CfirMutationTargetClassifier.classifySubscriptAssignment(lValue, expression)) {
+            is CfirMutationTargetClassifier.MutationTarget.CommonImmutableFieldInConstructor -> {
+                reporter.reportOn(
+                    source = expression.source ?: lValue.source,
+                    factory = CfirErrors.COMMON_ASSIGN_TO_COMMON_IMMUTABLE_IN_CTOR,
+                    a = target.name,
+                )
+            }
+
             is CfirMutationTargetClassifier.MutationTarget.ImmutableValue -> {
                 reporter.reportOn(
                     source = expression.source ?: lValue.source,
@@ -152,6 +160,14 @@ object CfirAssignmentLegalityChecker : CfirAssignmentChecker() {
         }
 
         when (val target = CfirMutationTargetClassifier.classifyAssignment(access, expression)) {
+            is CfirMutationTargetClassifier.MutationTarget.CommonImmutableFieldInConstructor -> {
+                reporter.reportOn(
+                    source = selectorSource,
+                    factory = CfirErrors.COMMON_ASSIGN_TO_COMMON_IMMUTABLE_IN_CTOR,
+                    a = target.name,
+                )
+            }
+
             is CfirMutationTargetClassifier.MutationTarget.ImmutableValue -> {
                 reporter.reportOn(
                     source = selectorSource,
@@ -181,7 +197,7 @@ object CfirAssignmentLegalityChecker : CfirAssignmentChecker() {
  * `CheckLetFlag`，主诊断范围是整个自增自减表达式。因此这里复用修改目标分类器，
  * 只负责表达式自身是否能被修改，不在这一层处理数值类型或运算符类型检查。
  */
-object CfirIncrementDecrementLegalityChecker : CfirIncrementDecrementExpressionChecker() {
+object CfirIncrementDecrementLegalityChecker : CfirIncrementDecrementExpressionChecker(MppCheckerKind.Common) {
     /**
      * 检查 `++` / `--` 的目标是否可被修改。
      *
@@ -190,11 +206,20 @@ object CfirIncrementDecrementLegalityChecker : CfirIncrementDecrementExpressionC
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirIncrementDecrementExpression) {
-        val access = expression.expression as? CfirQualifiedAccessExpression ?: return
-        val accessSource = access.calleeReference.source ?: access.source ?: expression.source ?: return
-        val expressionSource = expression.source ?: access.source ?: access.calleeReference.source ?: return
+        val operand = expression.expression
+        val access = operand as? CfirQualifiedAccessExpression
+        val accessSource = access?.calleeReference?.source ?: operand.source ?: expression.source ?: return
+        val expressionSource = expression.source ?: accessSource
 
-        when (val target = CfirMutationTargetClassifier.classifyMutation(access)) {
+        when (val target = CfirMutationTargetClassifier.classifyMutation(operand)) {
+            is CfirMutationTargetClassifier.MutationTarget.CommonImmutableFieldInConstructor -> {
+                reporter.reportOn(
+                    source = expressionSource,
+                    factory = CfirErrors.COMMON_ASSIGN_TO_COMMON_IMMUTABLE_IN_CTOR,
+                    a = target.name,
+                )
+            }
+
             is CfirMutationTargetClassifier.MutationTarget.ImmutableValue -> {
                 reporter.reportOn(
                     source = expressionSource,
@@ -223,7 +248,7 @@ object CfirIncrementDecrementLegalityChecker : CfirIncrementDecrementExpressionC
  * 官方语义要求 `++` / `--` 只作用于整数类型；表达式结果类型由 resolve 阶段固定为
  * `Unit`，这里仅补充操作数类型约束，避免把非整数目标误当作合法自增表达式。
  */
-object CfirIncrementDecrementTypeChecker : CfirIncrementDecrementExpressionChecker() {
+object CfirIncrementDecrementTypeChecker : CfirIncrementDecrementExpressionChecker(MppCheckerKind.Common) {
     /**
      * 检查 `++` / `--` 操作数是否为整数类型。
      *
@@ -282,19 +307,7 @@ internal object CfirMutationTargetClassifier {
         if (expandedReceiver is ConeTupleType) {
             return MutationTarget.NonAssignableName(TUPLE_ELEMENT_TARGET_NAME)
         }
-        if (expandedReceiver !is ConeVArrayType) return null
-
-        return when (val receiver = subscript.receiver) {
-            is CfirSubscriptExpression -> MutationTarget.ImmutableValue
-            is CfirFunctionCall -> MutationTarget.ImmutableValue
-            is CfirQualifiedAccessExpression -> when (val target = receiver.mutationTarget(assignment)) {
-                MutationTarget.Assignable -> MutationTarget.Assignable
-                is MutationTarget.ImmutableValue -> target
-                is MutationTarget.NonAssignableName -> MutationTarget.ImmutableValue
-                null -> null
-            }
-            else -> MutationTarget.ImmutableValue
-        }
+        return classifyVArraySubscriptMutation(subscript, assignment)
     }
 
     /**
@@ -330,8 +343,39 @@ internal object CfirMutationTargetClassifier {
      * 自增、自减等语义没有初始化赋值上下文，因此这里不传入 [CfirAssignment]。
      */
     context(context: CheckerContext)
-    fun classifyMutation(access: CfirQualifiedAccessExpression): MutationTarget? {
-        return access.mutationTarget(assignment = null)
+    fun classifyMutation(expression: CfirExpression): MutationTarget? = when (expression) {
+        is CfirQualifiedAccessExpression -> expression.mutationTarget(assignment = null)
+        is CfirSubscriptExpression -> classifyVArraySubscriptMutation(expression, assignment = null)
+        else -> null
+    }
+
+    /**
+     * 对内建 VArray 下标沿官方可变存储链检查 base；普通重载下标不在此处重新判定。
+     * 嵌套下标和调用结果是访问器返回的临时值，不能作为可修改的 VArray 存储来源。
+     */
+    context(context: CheckerContext)
+    private fun classifyVArraySubscriptMutation(
+        subscript: CfirSubscriptExpression,
+        assignment: CfirAssignment?,
+    ): MutationTarget? {
+        val expandedReceiver = subscript.receiver.coneTypeOrNull?.fullyExpandedType(context.session)
+        if (expandedReceiver !is ConeVArrayType) return null
+
+        return when (val receiver = subscript.receiver) {
+            is CfirSubscriptExpression,
+            is CfirFunctionCall,
+                -> MutationTarget.ImmutableValue
+
+            is CfirQualifiedAccessExpression -> when (val target = receiver.mutationTarget(assignment)) {
+                MutationTarget.Assignable -> MutationTarget.Assignable
+                is MutationTarget.CommonImmutableFieldInConstructor -> target
+                is MutationTarget.ImmutableValue -> target
+                is MutationTarget.NonAssignableName -> MutationTarget.ImmutableValue
+                null -> null
+            }
+
+            else -> MutationTarget.ImmutableValue
+        }
     }
 
     /**
@@ -346,10 +390,13 @@ internal object CfirMutationTargetClassifier {
         val directTarget = when (resolvedSymbol) {
             is CfirFieldVariableSymbol -> {
                 val field = resolvedSymbol.takeIf { it.isBound }?.cfir
-                if (field != null && isImmutableFieldAssignmentForbidden(field, assignment)) {
-                    MutationTarget.ImmutableValue
-                } else {
-                    MutationTarget.Assignable
+                val commonImmutableTarget = field?.commonImmutableFieldConstructorMutationTarget(this)
+                when {
+                    field == null -> MutationTarget.Assignable
+                    commonImmutableTarget != null -> commonImmutableTarget
+
+                    isImmutableFieldAssignmentForbidden(field, assignment) -> MutationTarget.ImmutableValue
+                    else -> MutationTarget.Assignable
                 }
             }
 
@@ -364,10 +411,7 @@ internal object CfirMutationTargetClassifier {
 
             is CfirPropertySymbol -> {
                 val property = resolvedSymbol.takeIf { it.isBound }?.cfir as? CfirProperty
-                if (property != null &&
-                    !property.isEffectivelyWritable() &&
-                    !property.isPrimaryConstructorInitializationAssignment(assignment)
-                ) {
+                if (property != null && !property.isEffectivelyWritable()) {
                     MutationTarget.ImmutableValue
                 } else {
                     MutationTarget.Assignable
@@ -391,7 +435,10 @@ internal object CfirMutationTargetClassifier {
             null -> null
             else -> null
         }
-        if (directTarget is MutationTarget.ImmutableValue || directTarget is MutationTarget.NonAssignableName) {
+        if (directTarget is MutationTarget.CommonImmutableFieldInConstructor ||
+            directTarget is MutationTarget.ImmutableValue ||
+            directTarget is MutationTarget.NonAssignableName
+        ) {
             return directTarget
         }
         if (isImmutableStructReceiverMutationForbidden()) return MutationTarget.ImmutableValue
@@ -421,19 +468,22 @@ internal object CfirMutationTargetClassifier {
     private fun CfirProperty.isEffectivelyWritable(): Boolean = status.isMut
 
     /**
-     * 主构造成员参数的 `let` 属性允许在实例构造器中完成一次 backing storage 初始化。
-     * 后续赋值仍由初始化流分类为重复赋值，并继续报告不可变目标。
+     * 判断 common let 字段在构造器中的不可变语义，并按引用形态选择对应诊断。
+     * 未限定引用使用 CJMP 专用诊断，显式成员访问保留通用不可变诊断；两者都不可写，
+     * 即使字段首次赋值或带有声明初始化器。构造器和字段的 static 身份必须一致。
      */
     context(context: CheckerContext)
-    private fun CfirProperty.isPrimaryConstructorInitializationAssignment(
-        assignment: CfirAssignment?,
-    ): Boolean {
-        if (!isPrimaryConstructorParameterProperty()) return false
-        if (assignment == null) return false
-        val constructor = context.findClosestDeclaration<CfirConstructor>() ?: return false
-        if (constructor.status.isStatic) return false
-        return CfirInitializationAssignmentClassifier.classifyAssignment(assignment, context) ==
-                CfirInitializationAssignmentKind.INITIALIZATION
+    private fun CfirFieldVariable.commonImmutableFieldConstructorMutationTarget(
+        access: CfirQualifiedAccessExpression,
+    ): MutationTarget? {
+        if (isVar || !status.isCommon || !CjmpGate.isEnabled(context)) return null
+        val constructor = context.findClosestDeclaration<CfirConstructor>() ?: return null
+        if (status.isStatic != constructor.status.isStatic) return null
+        return if (access.explicitReceiver == null) {
+            MutationTarget.CommonImmutableFieldInConstructor(name)
+        } else {
+            MutationTarget.ImmutableValue
+        }
     }
 
     /**
@@ -459,7 +509,6 @@ internal object CfirMutationTargetClassifier {
         if (field.isVar) return false
         val constructor = context.findClosestDeclaration<CfirConstructor>() ?: return true
         if (field.status.isStatic != constructor.status.isStatic) return true
-        if (field.hasSameNamePrimaryConstructorPropertyInOwner()) return true
         if (field.initializer != null) return true
         return when (assignment?.let { CfirInitializationAssignmentClassifier.classifyAssignment(it, context) }) {
             CfirInitializationAssignmentKind.INITIALIZATION,
@@ -471,22 +520,6 @@ internal object CfirMutationTargetClassifier {
             null,
             -> true
         }
-    }
-
-    /**
-     * 显式 `let` 字段与主构造参数生成属性同名时，官方 Sema 把字段视为已被构造参数占用。
-     * 因此构造器体里的后续赋值不能作为 `let` 字段首次初始化。
-     */
-    context(context: CheckerContext)
-    private fun CfirFieldVariable.hasSameNamePrimaryConstructorPropertyInOwner(): Boolean {
-        val owner = context.findClosestDeclaration<CfirClassLikeDeclaration>() ?: return false
-        val targetName = name
-        return owner.declarations
-            .asSequence()
-            .filterIsInstance<CfirConstructor>()
-            .flatMap { constructor -> constructor.valueParameters.asSequence() }
-            .mapNotNull { parameter -> parameter.correspondingProperty }
-            .any { property -> property.name == targetName }
     }
 
     /**
@@ -529,7 +562,8 @@ internal object CfirMutationTargetClassifier {
     /**
      * 修改目标分类结果。
      *
-     * 该密封层级表达左值语义的三种结论：可写、不可变值、以及语法上是名字但不是可赋值实体。
+     * 该密封层级表达可写目标、普通不可变目标、需要 CJMP 专用不可变诊断的 common 字段，
+     * 以及语法上是名字但不是可赋值实体四种结论。
      */
     sealed interface MutationTarget {
         /**
@@ -541,6 +575,9 @@ internal object CfirMutationTargetClassifier {
          * 表示目标是合法值但不可写，例如 `let` 变量、只读属性或临时 VArray 值。
          */
         data object ImmutableValue : MutationTarget
+
+        /** 构造器内通过非限定引用写入 common let 字段，应报告 CJMP 专用诊断。 */
+        data class CommonImmutableFieldInConstructor(val name: Name) : MutationTarget
 
         /**
          * 表示引用解析到函数、类型等非左值名字。

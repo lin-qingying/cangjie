@@ -7,6 +7,7 @@
 
 package org.cangnova.cangjie.cfir.expressions.impl
 
+import org.cangnova.cangjie.annotations.CangjieOverflowStrategy
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.MutableOrEmptyList
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
@@ -14,6 +15,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirAssignment
 import org.cangnova.cangjie.cfir.expressions.CfirAssignmentTypeMismatchOutcome
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.source.CfirSourceOperator
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
@@ -22,12 +24,16 @@ import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.CjSourceElement
 
 class CfirAssignmentImpl @CfirImplementationDetail constructor(
-    override val source: CjSourceElement?,
+    override var source: CjSourceElement?,
     override var annotations: MutableOrEmptyList<CfirAnnotation>,
     override var coneTypeOrNull: ConeCangJieType?,
+    override var mappedExpression: CfirExpression?,
+    override var overflowStrategy: CangjieOverflowStrategy?,
     override var lValue: CfirExpression,
     override var rValue: CfirExpression,
     override val augmentedOperation: Name?,
+    override var operation: CfirSourceOperator,
+    override var isCompound: Boolean,
     override var typeMismatchOutcome: CfirAssignmentTypeMismatchOutcome?,
 ) : CfirAssignment() {
 
@@ -59,12 +65,33 @@ class CfirAssignmentImpl @CfirImplementationDetail constructor(
         return this
     }
 
+    @CfirImplementationDetail
+    override fun replaceSource(newSource: CjSourceElement?) {
+        source = newSource
+    }
+
     override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>) {
         annotations = newAnnotations.toMutableOrEmpty()
     }
 
     override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?) {
         coneTypeOrNull = newConeTypeOrNull
+    }
+
+    override fun replaceMappedExpression(newMappedExpression: CfirExpression?) {
+        mappedExpression = newMappedExpression
+    }
+
+    override fun replaceOverflowStrategy(newOverflowStrategy: CangjieOverflowStrategy?) {
+        overflowStrategy = newOverflowStrategy
+    }
+
+    override fun replaceOperation(newOperation: CfirSourceOperator) {
+        operation = newOperation
+    }
+
+    override fun replaceIsCompound(newIsCompound: Boolean) {
+        isCompound = newIsCompound
     }
 
     override fun replaceTypeMismatchOutcome(newTypeMismatchOutcome: CfirAssignmentTypeMismatchOutcome?) {

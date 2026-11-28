@@ -24,6 +24,8 @@ import org.cangnova.cangjie.cli.common.arguments.parseCommandLineArguments
 import org.cangnova.cangjie.config.CompilerConfiguration
 import org.cangnova.cangjie.config.messageCollector
 import org.cangnova.cangjie.frontend.arguments.CommonCompilerArguments
+import org.cangnova.cangjie.frontend.arguments.configureWarningOptions
+import org.cangnova.cangjie.config.parsingDiagnosticSettings
 import org.cangnova.cangjie.messages.CompilerMessageSeverity
 
 /** 命令行解析与执行的返回状态。 */
@@ -53,6 +55,9 @@ public abstract class CangJieCLICompiler<A : CommonCompilerArguments>(
         configuration: CompilerConfiguration,
     ): Boolean
 
+    /** 在解析每次调用前重置由具体 compiler 持有的派生配置状态。 */
+    protected open fun prepareConfiguration(configuration: CompilerConfiguration) = Unit
+
     /**
      * 从原始命令行 token 开始执行；参数错误经 compiler message collector 报告且不会进入 frontend。
      */
@@ -60,13 +65,19 @@ public abstract class CangJieCLICompiler<A : CommonCompilerArguments>(
         args: List<String>,
         configuration: CompilerConfiguration,
     ): CangJieCLIExecutionResult<A> {
+        prepareConfiguration(configuration)
         val parsing = parseCommandLineArguments(
             args = args,
             result = createArguments(),
             schema = schema,
             compilerRelease = compilerRelease,
         )
+        parsing.arguments.explicitArgumentOccurrences = parsing.explicitArgumentOccurrences
+        if (!parsing.hasErrors && !configuration.configureWarningOptions(parsing.arguments)) {
+            return CangJieCLIExecutionResult(parsing, frontendSucceeded = false)
+        }
         for (issue in parsing.issues) {
+            if (!issue.isError && (parsing.hasErrors || configuration.parsingDiagnosticSettings.isSuppressed(issue.warningGroup))) continue
             configuration.messageCollector.report(
                 if (issue.isError) CompilerMessageSeverity.ERROR else CompilerMessageSeverity.WARNING,
                 issue.message,

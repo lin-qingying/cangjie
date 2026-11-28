@@ -8,6 +8,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.type
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
@@ -29,7 +30,7 @@ import org.cangnova.cangjie.cfir.types.type
  * 在 `@ObjCMirror`/`@ObjCImpl` 声明成员上检查。挂在 resolved type-ref checker 后，
  * 参数、返回值、字段、属性、局部值、typealias 展开和泛型实例化都会经过同一个 owner。
  */
-object CfirObjCTypeArgumentChecker : CfirResolvedTypeRefChecker() {
+object CfirObjCTypeArgumentChecker : CfirResolvedTypeRefChecker(MppCheckerKind.Common) {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(typeRef: CfirResolvedTypeRef) {
         val type = typeRef.coneType.fullyExpandedType(context.session)

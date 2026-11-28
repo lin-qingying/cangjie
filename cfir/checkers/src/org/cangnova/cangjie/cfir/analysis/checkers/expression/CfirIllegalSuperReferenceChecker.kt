@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.CfirExtendSemantics
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
@@ -22,7 +23,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirSuperReceiverExpression
  *
  * 统一处理 `super` 的引用级合法性：声明域限制、裸 super 表达式以及非 class 场景。
  */
-object CfirIllegalSuperReferenceChecker : CfirSuperReceiverExpressionChecker() {
+object CfirIllegalSuperReferenceChecker : CfirSuperReceiverExpressionChecker(MppCheckerKind.Common) {
     /** 检查当前 `super` 接收者是否出现在不允许使用 super 的声明上下文中。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirSuperReceiverExpression) {

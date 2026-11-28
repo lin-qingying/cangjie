@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.checkUpperBoundViolated
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.checkUpperBoundViolatedForTypealiasExpansion
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.accessContext
@@ -20,7 +21,7 @@ import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.providers.createCallableOwnerUseSiteSubstitutionMap
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessKind
 import org.cangnova.cangjie.cfir.scopes.impl.typeAliasConstructorInfo
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
@@ -39,7 +40,7 @@ import org.cangnova.cangjie.type.model.TypeConstructorMarker
  * 仓颉成员函数的上界可以引用外层类型参数，因此这里额外从 receiver 类型构造
  * use-site 替换，对齐官方 C++ `GenerateTypeMappingForBaseExpr` 的语义。
  */
-object CfirUpperBoundViolatedQualifiedAccessExpressionChecker : CfirQualifiedAccessChecker() {
+object CfirUpperBoundViolatedQualifiedAccessExpressionChecker : CfirQualifiedAccessChecker(MppCheckerKind.Common) {
     /** 检查限定访问显式类型实参是否满足 callable 类型参数上界。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirQualifiedAccessExpression) {

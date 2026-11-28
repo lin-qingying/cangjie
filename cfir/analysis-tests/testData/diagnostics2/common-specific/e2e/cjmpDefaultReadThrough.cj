@@ -13,6 +13,10 @@ public func use(): Int64 {
     a()
 }
 
+public common open class Base {
+    public common init(x!: Int64 = 1) {}
+}
+
 // MODULE: specific()()(common)
 // CJMP_MODE: SPECIFIC
 // FILE: specific.cj
@@ -23,3 +27,13 @@ public specific func a(x!: Int64): Int64 { x }
 public func use2(): Int64 {
     a()
 }
+
+public specific open class Base {
+    public specific init(x!: Int64) {}
+}
+
+public class Child <: Base {
+    public init() {}
+}
+
+public func useChild(): Child { Child() }

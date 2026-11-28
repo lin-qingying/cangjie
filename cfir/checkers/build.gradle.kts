@@ -13,6 +13,7 @@ dependencies {
  
 
     api(project(":cfir:semantics"))
+    api(project(":cfir:semantics.api"))
 
     api(project(":cfir:diagnostic-renderers"))
     api(project(":cfir:cfir-cones"))

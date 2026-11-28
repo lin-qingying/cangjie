@@ -7,6 +7,7 @@ import com.intellij.util.PathUtil
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.renderer.CfirRenderer
+import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationMetadataBuilder
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import com.intellij.psi.PsiElement
@@ -43,7 +44,7 @@ abstract class AbstractRawCfirBuilderSourceElementMappingTestCase : AbstractRawC
         val target = found.minByOrNull {
             val source = it.source
             if (source == null) Int.MAX_VALUE else source.endOffset - source.startOffset
-        } ?: PsiRawCfirBuilder(createTestSession()).buildElement(selected)
+        } ?: PsiRawCfirBuilder(createTestSession(), annotationMetadata = CfirAnnotationMetadataBuilder()).buildElement(selected)
 
         val rendered = CfirRenderer.withGoldenCompat().renderElementAsString(target)
         val expectedPath = resolvedFilePath.replace(".cj", ".txt")

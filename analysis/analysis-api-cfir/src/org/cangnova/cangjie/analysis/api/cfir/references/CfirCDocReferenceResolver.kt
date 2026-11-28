@@ -13,7 +13,7 @@ import org.cangnova.cangjie.analysis.api.cfir.components.createUseSiteMemberCall
 import org.cangnova.cangjie.analysis.api.cfir.components.declarationSiteMemberScope
 import org.cangnova.cangjie.analysis.api.cfir.scopes.CaCfirBasedScope
 import org.cangnova.cangjie.analysis.api.components.CaScopeKind
-import org.cangnova.cangjie.analysis.api.components.correspondingProperty
+import org.cangnova.cangjie.analysis.api.components.correspondingField
 import org.cangnova.cangjie.analysis.api.components.deprecationStatus
 import org.cangnova.cangjie.analysis.api.components.memberScope
 import org.cangnova.cangjie.analysis.api.components.containingDeclaration
@@ -245,8 +245,8 @@ internal object CfirCDocReferenceResolver {
                         parameter.isPropertyParameter() &&
                         mode == ContextDeclarationHandlingMode.PROPERTY_SYMBOLS_FOR_PROPERTY_PARAMETERS
                     ) {
-                        val propertySymbol = (parameterSymbol as? CaValueParameterSymbol)?.correspondingProperty
-                        if (propertySymbol != null) add(propertySymbol)
+                        val field = (parameterSymbol as? CaValueParameterSymbol)?.correspondingField
+                        if (field != null) add(field)
                     } else {
                         add(parameterSymbol)
                     }

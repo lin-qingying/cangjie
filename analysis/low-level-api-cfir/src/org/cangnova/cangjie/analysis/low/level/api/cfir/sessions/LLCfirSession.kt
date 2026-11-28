@@ -113,8 +113,12 @@ abstract class LLCfirSession(
             project: Project,
             searchPath: org.cangnova.cangjie.cfir.serialization.cjo.CjoSearchPath,
         ): org.cangnova.cangjie.cfir.serialization.cjo.CjoManager =
-            org.cangnova.cangjie.cfir.serialization.cjo.CjoManager(searchPath,
-                org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirGlobalResolveComponents.getInstance(project).cjoMaterialization)
+            org.cangnova.cangjie.cfir.serialization.cjo.CjoManager(
+                searchPath = searchPath,
+                formatVersionPolicy = org.cangnova.cangjie.cfir.serialization.cjo.CjoFormatVersionPolicy.Decompilation,
+                declarationMaterialization =
+                    org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirGlobalResolveComponents.getInstance(project).cjoMaterialization,
+            )
     }
 
     /**

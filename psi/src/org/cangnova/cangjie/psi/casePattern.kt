@@ -32,6 +32,7 @@ import com.intellij.psi.search.SearchScope
 import com.intellij.psi.stubs.IStubElementType
 import com.intellij.psi.stubs.StubElement
 import com.intellij.psi.tree.IElementType
+import com.intellij.util.ArrayFactory
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.stubs.CangJieBindingPatternStub
@@ -42,11 +43,23 @@ import org.cangnova.cangjie.psi.stubs.CangJieTuplePatternStub
 import org.cangnova.cangjie.psi.stubs.CangJieTypePatternStub
 import org.cangnova.cangjie.psi.stubs.CangJieWildcardPatternStub
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
+import org.cangnova.cangjie.psi.stubs.elements.CjTokenSets
+import org.cangnova.cangjie.psi.psiUtil.CjStubbedPsiUtil
 
 /**
  * 模式匹配 PSI 元素的基础接口
  */
-interface CjCasePatternElement : CjElement, ValueArgument, CjExpression
+interface CjCasePatternElement : CjElement, ValueArgument, CjExpression {
+    companion object {
+        @JvmStatic
+        val EMPTY_ARRAY: Array<CjCasePatternElement?> = emptyArray()
+
+        @JvmStatic
+        val ARRAY_FACTORY: ArrayFactory<CjCasePatternElement?> = ArrayFactory { count ->
+            if (count == 0) EMPTY_ARRAY else arrayOfNulls<CjCasePatternElement>(count)
+        }
+    }
+}
 
 /**
  * 具有名称的模式元素接口
@@ -63,6 +76,12 @@ abstract class CjCasePattern<T : StubElement<*>> : CjElementImplStub<T>, CjCaseP
 
     constructor(stub: T, nodeType: IStubElementType<*, *>) : super(stub, nodeType)
     constructor(node: ASTNode) : super(node)
+
+    /** 真实模式子节点从 stub-or-PSI 读取；已选槽的缺失不能被过滤成另一种模式形状。 */
+    protected fun patternChildren(): List<CjCasePatternElement> =
+        getStubOrPsiChildren(CjTokenSets.CASE_PATTERN_TYPES, CjCasePatternElement.ARRAY_FACTORY).map {
+            requireNotNull(it) { "A pattern stub child must retain its actual PSI" }
+        }
 
     /**
      * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
@@ -283,7 +302,7 @@ class CjTypePattern : CjCasePattern<CangJieTypePatternStub>, PsiNameIdentifierOw
         if (stub != null) {
             return stub.name
         }
-        return identifierElement?.text
+        return identifierElement?.text?.let(CjPsiUtil::unquoteIdentifier)
     }
     /**
      * 保存 `variable`，供仓颉 PSI流程读取节点结构或语义信息。
@@ -382,7 +401,7 @@ class CjTuplePattern : CjCasePattern<CangJieTuplePatternStub>, CjEnumAndTuplePat
      * 暴露 `patterns`，实现仓颉 PSI节点对上层接口的属性契约。
      */
     override val patterns: List<CjCasePatternElement>
-        get() = findChildrenByClass(CjCasePatternElement::class.java).toList()
+        get() = patternChildren()
 }
 
 /**
@@ -415,20 +434,19 @@ class CjEnumPattern : CjCasePattern<CangJieEnumPatternStub>, CjEnumAndTuplePatte
      * 保存 `type`，供仓颉 PSI流程读取节点结构或语义信息。
      */
     val type: CjTypeReference?
-        get() = findChildByType(CjNodeTypes.TYPE_REFERENCE)
+        get() = getStubOrPsiChild(CjStubElementTypes.TYPE_REFERENCE)
 
     /**
      * 保存 `expression`，供仓颉 PSI流程读取节点结构或语义信息。
      */
     val expression: CjExpression?
-        get() = findChildByType(CjNodeTypes.REFERENCE_EXPRESSION)
-            ?: findChildByType(CjNodeTypes.DOT_QUALIFIED_EXPRESSION)
+        get() = CjStubbedPsiUtil.getStubOrPsiChild(this, CjTokenSets.INSIDE_DIRECTIVE_EXPRESSIONS, CjExpression.ARRAY_FACTORY)
 
     /**
      * 暴露 `patterns`，实现仓颉 PSI节点对上层接口的属性契约。
      */
     override val patterns: List<CjCasePatternElement>
-        get() = findChildrenByClass(CjCasePatternElement::class.java).toList()
+        get() = patternChildren()
 }
 
 /**

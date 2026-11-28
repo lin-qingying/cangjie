@@ -13,10 +13,25 @@ import org.cangnova.cangjie.source.CjSourceElement
  * 对象字段、枚举载荷和 tuple 元素是值图，不能再次作为源语法进行 resolve 或诊断遍历。
  */
 public class CfirConstantValueExpression(
-    override val source: CjSourceElement?,
+    override var source: CjSourceElement?,
     public val constantValue: CfirConstantValue,
     annotations: List<CfirAnnotation> = emptyList(),
 ) : CfirExpression() {
+    override var mappedExpression: CfirExpression? = null
+        private set
+    override var overflowStrategy: org.cangnova.cangjie.annotations.CangjieOverflowStrategy? = null
+        private set
+
+    override fun replaceMappedExpression(newMappedExpression: CfirExpression?) { mappedExpression = newMappedExpression }
+    override fun replaceOverflowStrategy(newOverflowStrategy: org.cangnova.cangjie.annotations.CangjieOverflowStrategy?) {
+        overflowStrategy = newOverflowStrategy
+    }
+
+    /** 已求值的对象/常量身份独立于语法源代次。 */
+    @org.cangnova.cangjie.cfir.CfirImplementationDetail
+    override fun replaceSource(newSource: CjSourceElement?) {
+        source = newSource
+    }
     override var annotations: List<CfirAnnotation> = annotations
         private set
 

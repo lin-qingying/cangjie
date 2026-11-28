@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.diagnostic.ConeDiagnosticWithSingleCandidate
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
@@ -38,7 +39,7 @@ import java.util.IdentityHashMap
  * 直接捕获可变变量的闭包作为值使用时报 `USE_FUNC_CAPTURE_VAR_ALONE`；仅通过调用其他闭包
  * 形成的传递捕获按赋值、返回、参数或普通表达式分别报告专用诊断。
  */
-object CfirClosureCaptureUsageChecker : CfirBasicExpressionChecker() {
+object CfirClosureCaptureUsageChecker : CfirBasicExpressionChecker(MppCheckerKind.Common) {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirStatement) {
         when (expression) {

@@ -16,10 +16,11 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.element.builder.getNonLo
 import org.cangnova.cangjie.analysis.low.level.api.cfir.element.builder.isAutonomousElement
 import org.cangnova.cangjie.analysis.low.level.api.cfir.file.builder.LLCfirFileBuilder
 import org.cangnova.cangjie.analysis.low.level.api.cfir.providers.LLCfirProvider
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.llCfirResolvableSession
 import org.cangnova.cangjie.builtins.StandardNames
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.patterns.bindingVariables
@@ -40,7 +41,7 @@ internal fun CjDeclaration.findSourceNonLocalCfirDeclaration(
     cfirFileBuilder: LLCfirFileBuilder,
     provider: CfirProvider,
 ): CfirDeclaration = findSourceNonLocalCfirDeclaration(
-    cfirFileBuilder.buildRawCfirFileWithCaching(containingCjFile),
+    cfirFileBuilder.getOrBuildFileForResolution(containingCjFile),
     provider,
 )
 
@@ -50,6 +51,14 @@ internal fun CjDeclaration.findSourceNonLocalCfirDeclaration(
  * “Non-local” 表示非局部 class、函数、属性等声明。
  */
 internal fun CjDeclaration.findSourceNonLocalCfirDeclaration(cfirFile: CfirFile, provider: CfirProvider): CfirDeclaration {
+    val components = checkNotNull(cfirFile.llCfirResolvableSession).moduleComponents
+    val snapshot = components.macroSemanticSnapshotStore.snapshot
+    if (snapshot != null && snapshot.fileForSource(containingCjFile) === cfirFile) {
+        snapshot.declarationForSource(this)?.let { return it }
+    }
+    val target = components.cache.compilationElement(this) as? CjDeclaration
+        ?: errorWithCfirSpecificEntries("The source declaration has no current target grammar correspondence", psi = this, cfir = cfirFile)
+    if (target !== this) return target.findSourceNonLocalCfirDeclaration(cfirFile, provider)
     // TODO test what way faster
     if (isPhysical) {
         // do not request providers with non-physical psi in order not to leak them there and
@@ -147,6 +156,7 @@ private fun CjDeclaration.findSourceNonLocalCfirDeclarationByProvider(
         is CjMacroDeclaration,
         is CjFinalizer,
         is CjConstructor<*>,
+        is CjEnumConstructor,
         is CjTypeAlias,
         is CjEnumConstructor,
             -> firDeclarationProvider(this)

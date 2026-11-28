@@ -15,6 +15,7 @@ import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.ImplicitInvokeMode
 import org.cangnova.cangjie.cfir.scopes.CfirCallableLookupProvenance
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
+import org.cangnova.cangjie.cfir.resolve.substitution.asCone
 import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeParameterBasedTypeVariable
 import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeVariableForLambdaReturnType
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
@@ -31,6 +32,8 @@ import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.expressions.CfirResolvable
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
+import org.cangnova.cangjie.cfir.references.CfirReference
+import org.cangnova.cangjie.cfir.references.CfirResolvedBuiltinOperatorReference
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithCandidate
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeArgumentConstraintPosition
 import org.cangnova.cangjie.resolve.calls.inference.addEqualityConstraintIfCompatible
@@ -41,7 +44,9 @@ import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintStorage
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintSystemImpl
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CandidatePCLACompletionState
+import org.cangnova.cangjie.cfir.resolve.body.CfirDataFlowAnalyzer
 import org.cangnova.cangjie.cfir.resolve.body.CfirResourceSourceCompletion
+import org.cangnova.cangjie.cfir.resolve.body.IdentitySnapshotCfirMapper
 import org.cangnova.cangjie.cfir.resolve.body.CfirResourceSourceSnapshot
 import org.cangnova.cangjie.cfir.resolve.body.captureResourceSourceStates
 import org.cangnova.cangjie.cfir.resolve.body.restoreResourceSourceStates
@@ -176,7 +181,7 @@ internal class CfirImplicitTypeComputation(
         val instantiation: Instantiation,
         val candidate: Candidate,
         val carrier: CfirExpression,
-        val reference: CfirResolvedNamedReference,
+        val reference: CfirReference,
         val type: ConeCangJieType,
     )
     /** 创建实际 FORMAL writer 时绑定其将写回的实例与 terminal，完成证明不能追认后到代次。 */
@@ -190,7 +195,7 @@ internal class CfirImplicitTypeComputation(
         val binding: FormalCompletionBinding,
         val candidate: Candidate,
         val carrier: CfirExpression,
-        val reference: CfirResolvedNamedReference,
+        val reference: CfirReference,
         val type: ConeCangJieType,
     )
     private data class ExpressionUse(val generation: Generation, val type: ConeCangJieType, val accepted: Boolean)
@@ -504,8 +509,8 @@ internal class CfirImplicitTypeComputation(
     /** 已执行的 source terminal/binding 只读消费；不创建 lease、分配实例或登记新的 replay。 */
     internal fun hasCompletedSourceCallResult(call: CfirExpression): Boolean {
         if (retired || registry[resource] !== this) return false
-        val reference = (call as? CfirResolvable)?.calleeReference as? CfirResolvedNamedReference ?: return false
-        if (reference is CfirDiagnosticHolder) return false
+        val reference = (call as? CfirResolvable)?.calleeReference ?: return false
+        if (!reference.isSuccessfulResolvedCallReference()) return false
         val type = call.coneTypeOrNull ?: return false
         var formalResult = false
         collectCompletedFormalCallCarriers(setOf(call)) { carrier, _ ->
@@ -523,7 +528,7 @@ internal class CfirImplicitTypeComputation(
                 terminal.reference === reference && terminal.type === type &&
                 selectedInstantiations[instance.key] === instance && instance.key == scope.key(candidate) &&
                 instance.outcome == CfirRetainedCallOutcome.COMPLETED && instance.terminalTarget == instance.key.target &&
-                matchesResolvedCompletionTarget(scope, candidate, reference.resolvedSymbol) &&
+                matchesResolvedCompletionReference(scope, candidate, call, reference) &&
                 candidate.hasSuccessfulSourceResult(type)
         }
     }
@@ -535,6 +540,21 @@ internal class CfirImplicitTypeComputation(
         )
         return actual == scope.target(candidate)
     }
+
+    fun matchesResolvedCompletionReference(
+        scope: CfirImplicitTypeComputationScope,
+        candidate: Candidate,
+        call: CfirExpression,
+        reference: CfirReference,
+    ): Boolean = when (reference) {
+        is CfirResolvedNamedReference -> reference !is CfirDiagnosticHolder &&
+            matchesResolvedCompletionTarget(scope, candidate, reference.resolvedSymbol)
+        is CfirResolvedBuiltinOperatorReference -> candidate.matchesBuiltinOperatorReference(call, reference)
+        else -> false
+    }
+
+    private fun CfirReference.isSuccessfulResolvedCallReference(): Boolean =
+        this is CfirResolvedBuiltinOperatorReference || this is CfirResolvedNamedReference && this !is CfirDiagnosticHolder
 
     /**
      * 将已执行 FULL 写回的 canonical FORMAL carrier 交给本次真实 AST writer。
@@ -562,10 +582,8 @@ internal class CfirImplicitTypeComputation(
             ) { "Completed formal carrier changed its actual candidate or source ownership" }
             val reference = (carrier as CfirResolvable).calleeReference
             // 未完成的新引用仍由原 AST/atom collector 处理；错误引用不发布成功 carrier。
-            if (reference !is org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference ||
-                reference is CfirDiagnosticHolder
-            ) continue
-            check(matchesResolvedCompletionTarget(scope, candidate, reference.resolvedSymbol)) {
+            if (!reference.isSuccessfulResolvedCallReference()) continue
+            check(matchesResolvedCompletionReference(scope, candidate, carrier, reference)) {
                 "Completed formal carrier changed its actual resolved declaration"
             }
             // 先核验真实声明；同一声明的新引用或类型仍不能继承旧 binding。
@@ -615,13 +633,12 @@ internal class CfirImplicitTypeComputation(
             return false
         }
         // isSuccessful 只是 applicability；还必须通过最终 writer、atom 和变量替换证明。
-        if (reference !is org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference ||
+        if (!reference.isSuccessfulResolvedCallReference() ||
             type.contains { it is ConeTypeVariableType } || candidate.postponedAtoms.any { !it.analyzed }) {
             recordCallAttempt(scope, candidate, CfirRetainedCallOutcome.PARTIAL)
             return false
         }
-        check(matchesResolvedCompletionTarget(scope, candidate,
-            (reference as org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference).resolvedSymbol)) {
+        check(matchesResolvedCompletionReference(scope, candidate, call, reference)) {
             "Completion candidate differs from the actual resolved target"
         }
         val formalBinding = if (scope.mode == CfirImplicitTypeComputationMode.FORMAL) {
@@ -853,8 +870,9 @@ internal class CfirImplicitTypeComputation(
         }
         val beforeOriginDepth = privateOriginDepth
         val beforePrivateContext = privateInitializerContext
+        val beforePrivateAnalyzer = privateInitializerAnalyzer
         val beforePrivateRootOwner = privateInitializerOwner
-        val beforePrivateFlow = beforePrivateContext?.captureDataFlowAnalyzerContext()
+        val beforePrivateFlow = beforePrivateAnalyzer?.captureDataFlowAnalyzerContext(IdentitySnapshotCfirMapper)
         // 只映射本 private initializer 的实际 CFG owner；借用的外部声明不会被 visitor 展开。
         val beforePrivateGraphs = mutableListOf<Pair<
             org.cangnova.cangjie.cfir.declarations.CfirControlFlowGraphOwner,
@@ -1036,10 +1054,11 @@ internal class CfirImplicitTypeComputation(
             check(privateOriginDepth == beforeOriginDepth) { "Retained replay changed active origin stack" }
             // PRIVATE 根的结构状态随两类重放恢复；reinfer 的实际 CS 和 active AST 保持原有协议。
             privateInitializerContext = beforePrivateContext
+            privateInitializerAnalyzer = beforePrivateAnalyzer
             privateInitializerOwner = beforePrivateRootOwner
             if (beforePrivateFlow != null) {
                 checkNotNull(beforePrivateRootOwner)
-                checkNotNull(beforePrivateContext).restoreDataFlowAnalyzerContext(beforePrivateFlow)
+                checkNotNull(beforePrivateAnalyzer).restoreDataFlowAnalyzerContext(beforePrivateFlow)
                 beforePrivateGraphs.forEach { (owner, graph) ->
                     owner.replaceControlFlowGraphReference(
                         org.cangnova.cangjie.cfir.resolve.dfa.CfirControlFlowGraphReferenceImpl(
@@ -1621,6 +1640,7 @@ internal class CfirImplicitTypeComputation(
     private val formalResourceSources = mutableListOf<CfirResourceSourceCompletion>()
     internal var privateInitializerContext: org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.BodyResolveContext? = null
         private set
+    private var privateInitializerAnalyzer: CfirDataFlowAnalyzer? = null
     internal var privateInitializerOwner: CfirResourceVariable? = null
         private set
 
@@ -1628,8 +1648,9 @@ internal class CfirImplicitTypeComputation(
     internal fun registerPrivateInitializerContext(
         owner: CfirResourceVariable,
         context: org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.BodyResolveContext,
+        analyzer: CfirDataFlowAnalyzer,
     ) {
-        check(privateInitializerContext == null && privateInitializerOwner == null)
+        check(privateInitializerContext == null && privateInitializerAnalyzer == null && privateInitializerOwner == null)
         val root = context.dataFlowAnalyzerContext.graphBuilder.currentGraph
         check(root.kind == org.cangnova.cangjie.cfir.resolve.dfa.cfg.ControlFlowGraph.Kind.ResourceInitializer &&
             root.declaration === owner)
@@ -1637,6 +1658,7 @@ internal class CfirImplicitTypeComputation(
             it.graph === this && it.mode == CfirImplicitTypeComputationMode.PRIVATE
         } == true) { "Resource initializer root belongs to another inference graph" }
         privateInitializerContext = context
+        privateInitializerAnalyzer = analyzer
         privateInitializerOwner = owner
     }
 

@@ -15,10 +15,18 @@ import org.cangnova.cangjie.source.CjSourceElement
 interface CfirTargetElement : CfirElement {
     override val source: CjSourceElement?
 
+    /** 访问本节点拥有的完整来源子图；独立于 ordinary visitor 的语法子树。 */
+    @CfirImplementationDetail
+    override fun <R, D> acceptSourceChildren(visitor: CfirVisitor<R, D>, data: D) {
+    }
+
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitTargetElement(this, data)
 
     @Suppress("UNCHECKED_CAST")
     override fun <E : CfirElement, D> transform(transformer: CfirTransformer<D>, data: D): E =
         transformer.transformTargetElement(this, data) as E
+
+    @CfirImplementationDetail
+    override fun replaceSource(newSource: CjSourceElement?)
 }

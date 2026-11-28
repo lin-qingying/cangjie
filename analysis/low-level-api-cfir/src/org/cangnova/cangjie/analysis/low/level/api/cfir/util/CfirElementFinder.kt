@@ -11,6 +11,7 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.api.CfirDesignation
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.findExtendDeclarationIn
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.patchDesignationPathIfNeeded
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.llCfirSession
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.llCfirResolvableSession
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.containingClassLookupTag
 import org.cangnova.cangjie.cfir.patterns.bindingVariables
@@ -100,13 +101,17 @@ internal class CfirElementFinder : CfirSessionComponent {
         fun collectDesignationPath(
             cfirFile: CfirFile,
             nonLocalDeclaration: CjDeclaration,
-        ): CfirDesignation? = collectDesignationPath(
-            cfirFile = cfirFile,
-            containerClassId = nonLocalDeclaration.containingClassLikeIn()?.getClassId(),
-            additionalPathPrefix = nonLocalDeclaration.findExtendDeclarationIn(cfirFile)?.let(::listOf).orEmpty(),
-            targetDeclarationName = CfirFileStructureNode.mappingNameByPsi(nonLocalDeclaration),
-            expectedDeclarationAcceptor = { it.psi === nonLocalDeclaration },
-        )
+        ): CfirDesignation? {
+            val cache = checkNotNull(cfirFile.llCfirResolvableSession).moduleComponents.cache
+            val targetDeclaration = cache.compilationElement(nonLocalDeclaration) as? CjDeclaration ?: return null
+            return collectDesignationPath(
+                cfirFile = cfirFile,
+                containerClassId = targetDeclaration.containingClassLikeIn()?.getClassId(),
+                additionalPathPrefix = targetDeclaration.findExtendDeclarationIn(cfirFile)?.let(::listOf).orEmpty(),
+                targetDeclarationName = CfirFileStructureNode.mappingNameByPsi(targetDeclaration),
+                expectedDeclarationAcceptor = { it.psi === targetDeclaration },
+            )
+        }
 
         /**
          * 返回 [this] 的 class-like 容器；extend 容器不是 class-like，这里返回 `null`。

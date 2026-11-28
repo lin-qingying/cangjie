@@ -1,5 +1,7 @@
 package org.cangnova.cangjie.cfir.resolve.inference
 
+import org.cangnova.cangjie.cfir.types.asCone
+
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguityError
 import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguousFunctionReferenceError
@@ -40,7 +42,7 @@ import org.cangnova.cangjie.cfir.session.builtinTypes
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
-import org.cangnova.cangjie.cfir.types.asCone
+import org.cangnova.cangjie.cfir.resolve.substitution.asCone
 import org.cangnova.cangjie.cfir.types.commonSuperTypeOrNull
 import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.resolve.calls.inference.addSubtypeConstraintIfCompatible

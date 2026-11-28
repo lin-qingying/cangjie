@@ -24,6 +24,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
@@ -31,7 +32,7 @@ import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCallOrigin
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
 
 /**
@@ -42,12 +43,12 @@ import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
  * `this(...)`/`super(...)` 委托调用豁免（CFIR 中它们是独立的
  * 委托调用 origin，不进入本 checker）。
  */
-object CfirAbstractClassInstantiationChecker : CfirFunctionCallChecker() {
+object CfirAbstractClassInstantiationChecker : CfirFunctionCallChecker(MppCheckerKind.Common) {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirFunctionCall) {
         // this(...)/super(...) 委托调用豁免（官方 :2527-2531 的 isSuper/isThis 分支）。
         if (expression.origin == CfirFunctionCallOrigin.ConstructorDelegationThis ||
-            expression.origin == CfirFunctionCallOrigin.ConstructorDelegationSuper
+            expression.origin.isSuperConstructorDelegation
         ) {
             return
         }

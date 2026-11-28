@@ -2,6 +2,7 @@
 #include <jni.h>
 
 extern "C" void Java_org_cangnova_cangjie_llvm_jni_LlvmNative_targetInitializeAll();
+extern "C" void Java_org_cangnova_cangjie_llvm_jni_LlvmNative_llvmVersion();
 extern "C" void Java_org_cangnova_cangjie_llvm_jni_LlvmNative_targetDefaultTriple();
 extern "C" void Java_org_cangnova_cangjie_llvm_jni_LlvmNative_targetCreateMachine();
 extern "C" void Java_org_cangnova_cangjie_llvm_jni_LlvmNative_targetDisposeMachine();
@@ -95,6 +96,7 @@ extern "C" void Java_org_cangnova_cangjie_llvm_jni_LlvmNative_writeBitcodeToMemo
 #pragma clang diagnostic ignored "-Wwritable-strings"
 #endif
 static JNINativeMethod kLlvmNativeMethods[] = {
+    {"llvmVersion", "()Ljava/lang/String;", reinterpret_cast<void*>(Java_org_cangnova_cangjie_llvm_jni_LlvmNative_llvmVersion)},
     {"targetInitializeAll", "()V", reinterpret_cast<void*>(Java_org_cangnova_cangjie_llvm_jni_LlvmNative_targetInitializeAll)},
     {"targetDefaultTriple", "()Ljava/lang/String;", reinterpret_cast<void*>(Java_org_cangnova_cangjie_llvm_jni_LlvmNative_targetDefaultTriple)},
     {"targetCreateMachine", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;III)J", reinterpret_cast<void*>(Java_org_cangnova_cangjie_llvm_jni_LlvmNative_targetCreateMachine)},

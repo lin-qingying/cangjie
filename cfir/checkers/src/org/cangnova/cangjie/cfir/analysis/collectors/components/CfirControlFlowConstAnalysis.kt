@@ -57,7 +57,7 @@ import org.cangnova.cangjie.cfir.resolve.dfa.cfg.MatchPatternDecisionNode
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.QualifiedAccessNode
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.VariableAssignmentNode
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.VariableDeclarationExitNode
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
@@ -350,10 +350,8 @@ internal class CfirControlFlowConstAnalysis {
         return when (this) {
             is CfirEnumPattern -> {
                 val enumValue = value as? ConstValue.Enum ?: return null
-                val resolvedConstructor = constructorReference.resolvedEnumConstructorSymbolOrNull()
-                if (resolvedConstructor != null && resolvedConstructor != enumValue.constructor) return false
-                if (resolvedConstructor == null && constructorNameOrNull() != enumValue.constructor.name) return false
-                true
+                val resolvedConstructor = constructorReference?.resolvedEnumConstructorSymbolOrNull() ?: return null
+                resolvedConstructor == enumValue.constructor
             }
 
             is CfirConstPattern -> expression.matchesConstantExpression(value, state)

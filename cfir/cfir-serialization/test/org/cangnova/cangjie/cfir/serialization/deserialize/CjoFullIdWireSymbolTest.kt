@@ -2,6 +2,7 @@ package org.cangnova.cangjie.cfir.serialization.deserialize
 
 import org.cangnova.cangjie.test.cjoFixtureModuleDataProvider
 import org.cangnova.cangjie.test.bindCjoFixture
+import PackageFormat.CompositeTyInfo
 import PackageFormat.ReferenceInfo
 import PackageFormat.PropInfo
 import PackageFormat.GenericTyInfo
@@ -63,7 +64,7 @@ class CjoFullIdWireSymbolTest {
         val symbol = assertIs<CfirPatternBindingSymbol>(reader.deserializeSymbol(0))
         assertSame(symbol, assertIs<CfirResolvedNamedReference>(reference.calleeReference).resolvedSymbol)
         assertSame(symbol, f.provider.getTopLevelCallableSymbols(FqName("wire.current"), Name.identifier("first")).single())
-        assertSame(context.declCache.getValue(0).wireSymbol, symbol)
+        assertSame(checkNotNull(context.headerRecordOrNull(0)).wireSymbol, symbol)
         assertSame(root, root.pattern.bindingVariables().single().patternTreeOwner)
         assertSame(root.initializer, root.pattern.bindingVariables().single().initializer)
         assertEquals(context.createTypeDeserializer().deserializeTypeFromField(context.pkg.allExprs(1)!!.type), reference.coneTypeOrNull)
@@ -78,7 +79,7 @@ class CjoFullIdWireSymbolTest {
         val root = assertIs<CfirPatternVariable>(context.createDeclDeserializer().deserializeDecl(1))
         val reference = assertIs<CfirResolvedNamedReference>(assertIs<CfirNamedAccessExpression>(root.initializer).calleeReference)
         assertEquals("other", reference.name.asString())
-        assertSame(context.declCache.getValue(0).wireSymbol, reference.resolvedSymbol)
+        assertSame(checkNotNull(context.headerRecordOrNull(0)).wireSymbol, reference.resolvedSymbol)
     }
 
     @Test
@@ -89,7 +90,7 @@ class CjoFullIdWireSymbolTest {
         val reference = assertIs<CfirResolvedNamedReference>(access.calleeReference)
         assertEquals("visibleAlias", reference.name.asString())
         assertEquals("first", assertIs<CfirPatternBindingSymbol>(reference.resolvedSymbol).name.asString())
-        assertSame(f.context("wire.current").declCache.getValue(0).wireSymbol, reference.resolvedSymbol)
+        assertSame(checkNotNull(f.context("wire.current").headerRecordOrNull(0)).wireSymbol, reference.resolvedSymbol)
         assertSame(reference.resolvedSymbol, f.provider.getTopLevelCallableSymbols(FqName("wire.current"), Name.identifier("first")).single())
         val wire = context.pkg.allExprs(0)!!.info(ReferenceInfo()) as ReferenceInfo
         assertEquals("_CN12wire.current5firstE", wire.target!!.decl)
@@ -172,8 +173,10 @@ class CjoFullIdWireSymbolTest {
             val signatures = full.withMode(CjoDeserializationMode.SIGNATURE_ONLY)
             val order = if (signatureFirst) listOf(signatures, full) else listOf(full, signatures)
             order.forEach { assertIs<CfirPatternVariable>(it.createDeclDeserializer().deserializeDecl(0)) }
-            val fullRecord = full.declCache.getValue(0)
-            val signatureRecord = signatures.declCache.getValue(0)
+            val fullRecord = assertNotNull(full.headerRecordOrNull(0))
+            val signatureRecord = assertNotNull(signatures.headerRecordOrNull(0))
+            assertSame(fullRecord.declarationRoot, full.declCache[0])
+            assertSame(signatureRecord.declarationRoot, signatures.declCache[0])
             assertNotSame(fullRecord.wireSymbol, signatureRecord.wireSymbol)
             assertIs<CfirNamedAccessExpression>(assertIs<CfirPatternVariable>(fullRecord.declarationRoot).initializer)
             assertNull(assertIs<CfirPatternVariable>(signatureRecord.declarationRoot).initializer)
@@ -182,9 +185,9 @@ class CjoFullIdWireSymbolTest {
             val targetSignatures = targetFull.withMode(CjoDeserializationMode.SIGNATURE_ONLY)
             val stub = CfirDeclDeserializer.forCompiledFileStub(targetFull, targetFull.createTypeDeserializer())
             assertIs<CfirPatternVariable>(stub.deserializeDecl(0))
-            assertNull(assertIs<CfirPatternVariable>(targetSignatures.declCache.getValue(0).declarationRoot).initializer)
-            assertNotSame(targetFull.declCache.getValue(0).wireSymbol, targetSignatures.declCache.getValue(0).wireSymbol)
-            assertSame(targetSignatures.declCache.getValue(0).wireSymbol, stub.deserializeSymbol(0))
+            assertNull(assertIs<CfirPatternVariable>(checkNotNull(targetSignatures.headerRecordOrNull(0)).declarationRoot).initializer)
+            assertNotSame(checkNotNull(targetFull.headerRecordOrNull(0)).wireSymbol, checkNotNull(targetSignatures.headerRecordOrNull(0)).wireSymbol)
+            assertSame(checkNotNull(targetSignatures.headerRecordOrNull(0)).wireSymbol, stub.deserializeSymbol(0))
         }
     }
 
@@ -215,7 +218,7 @@ class CjoFullIdWireSymbolTest {
             assertFailsWith<java.util.concurrent.TimeoutException> { second.get(100, TimeUnit.MILLISECONDS) }
             release.countDown()
             assertSame(first.get(10, TimeUnit.SECONDS), second.get(10, TimeUnit.SECONDS))
-            assertIs<CfirNamedAccessExpression>(assertIs<CfirPatternVariable>(context.declCache.getValue(1).declarationRoot).initializer)
+            assertIs<CfirNamedAccessExpression>(assertIs<CfirPatternVariable>(checkNotNull(context.headerRecordOrNull(1)).declarationRoot).initializer)
         } finally { release.countDown(); callers.shutdownNow() }
     }
 
@@ -285,7 +288,7 @@ class CjoFullIdWireSymbolTest {
             val bound = assertIs<ConeClassLikeType>(parameter.cfir.bounds.single().coneType)
             assertEquals("Link", bound.classId.shortClassName.asString())
             assertSame(parameter, assertIs<ConeTypeParameterType>(bound.typeArguments.single().type).lookupTag.typeParameterSymbol)
-            assertSame(context.declCache.getValue(3).wireSymbol, parameter)
+            assertSame(checkNotNull(context.headerRecordOrNull(3)).wireSymbol, parameter)
             assertSame(type, context.createTypeDeserializer().deserializeType(3))
             parameter
         }
@@ -323,7 +326,7 @@ class CjoFullIdWireSymbolTest {
             val owner = assertIs<CfirInterface>(target.createDeclDeserializer().deserializeDecl(0))
             assertSame(parameter, type.lookupTag.typeParameterSymbol)
             assertSame(owner.symbol, parameter.cfir.containingDeclarationSymbol)
-            assertSame(target.declCache.getValue(1).wireSymbol, parameter)
+            assertSame(checkNotNull(target.headerRecordOrNull(1)).wireSymbol, parameter)
             val selfBound = assertIs<ConeClassLikeType>(parameter.cfir.bounds.single().coneType)
             assertSame(parameter, assertIs<ConeTypeParameterType>(selfBound.typeArguments.single().type).lookupTag.typeParameterSymbol)
         }
@@ -387,7 +390,7 @@ class CjoFullIdWireSymbolTest {
                 assertSame(target, consumer.importedContext("wire.current"))
                 assertSame(split.targetModule, symbol.cfir.moduleData)
                 assertNotSame(consumer.moduleData, symbol.cfir.moduleData)
-                assertSame(target.declCache.getValue(0).wireSymbol, symbol)
+                assertSame(checkNotNull(target.headerRecordOrNull(0)).wireSymbol, symbol)
                 assertSame(symbol, before ?: named.getTopLevelCallableSymbols(FqName("wire.current"), Name.identifier("first")).single())
                 if (mode == CjoDeserializationMode.FULL) {
                     val root = assertIs<CfirPatternVariable>(consumer.createDeclDeserializer().deserializeDecl(0))
@@ -417,7 +420,7 @@ class CjoFullIdWireSymbolTest {
         assertSame(split.sdkModule, named.cfir.moduleData)
         assertSame(sdk, consumer.importedContext("std.core"))
         val index = sdk.header.fullIdReferenceKeyToIndex.getValue("_CNat14AnnotationKind4TypeKE")
-        assertSame(sdk.declCache.getValue(index).wireSymbol, named)
+        assertSame(checkNotNull(sdk.headerRecordOrNull(index)).wireSymbol, named)
     }
 
     @Test
@@ -433,7 +436,7 @@ class CjoFullIdWireSymbolTest {
             assertSame(parameter, type.lookupTag.typeParameterSymbol)
             assertSame(owner.symbol, parameter.cfir.containingDeclarationSymbol)
             assertSame(split.targetModule, parameter.cfir.moduleData)
-            assertSame(parameter, target.declCache.getValue(1).wireSymbol)
+            assertSame(parameter, checkNotNull(target.headerRecordOrNull(1)).wireSymbol)
             assertSame(parameter, assertIs<ConeTypeParameterType>(
                 assertIs<ConeClassLikeType>(parameter.cfir.bounds.single().coneType).typeArguments.single().type).lookupTag.typeParameterSymbol)
             assertSame(target, consumer.importedContext("wire.generic"))
@@ -627,13 +630,17 @@ class CjoFullIdWireSymbolTest {
         val consumer = importedGenericContext(f, "_CN12wire.generic4LinkIG_E_TG1T", CjoDeserializationMode.FULL,
             split.consumer, split.consumerModule, split.consumerManager)
         val target = assertNotNull(split.target.getOwnPackageContext("wire.generic", CjoDeserializationMode.FULL))
-        assertFailsWith<IllegalStateException> {
+        val failure = assertFailsWith<IllegalStateException> {
             consumer.materialization.read {
-                assertIs<ConeTypeParameterType>(consumer.createTypeDeserializer().deserializeType(0))
-                assertTrue(target.typeCache.isNotEmpty())
+                val imported = assertIs<ConeTypeParameterType>(consumer.createTypeDeserializer().deserializeType(0))
+                val staged = assertIs<ConeTypeParameterType>(target.createTypeDeserializer().deserializeType(1))
+                assertSame(imported.lookupTag.typeParameterSymbol, staged.lookupTag.typeParameterSymbol)
+                assertTrue(consumer.typeCache.isEmpty())
+                assertTrue(target.typeCache.isEmpty())
                 consumer.materialization.postCompute { error("injected metadata completion failure") }
             }
         }
+        assertEquals("injected metadata completion failure", failure.message)
         assertTrue(consumer.typeCache.isEmpty())
         assertTrue(target.typeCache.isEmpty())
         assertIs<CjoDeclarationCacheEntry.Failed>(target.declarationEntries[1])
@@ -656,7 +663,10 @@ class CjoFullIdWireSymbolTest {
         val consumerModule = Module()
         val targetModule = Module()
         val sdkModule = Module()
-        fun manager(directory: Path) = CjoManager(CjoSearchPath.forRoots(emptyList(), listOf(directory.toFile())), transaction)
+        fun manager(directory: Path) = CjoManager(
+            CjoSearchPath.forRoots(emptyList(), listOf(directory.toFile())),
+            declarationMaterialization = transaction,
+        )
         val sdkManager = manager(sdkDirectory)
         val sdk = CfirDeserializedSymbolProvider(sdkModule.session, sdkManager, CfirCangJieScopeProvider(), sdkModule,
             moduleDataProvider = cjoFixtureModuleDataProvider(sdkModule, setOf(sdkDirectory)))
@@ -694,9 +704,16 @@ class CjoFullIdWireSymbolTest {
         val builder = FlatBufferBuilder()
         val key = builder.createString(exportKey)
         val target = FullId.createFullId(builder, 0, key, 0u)
-        val generic = GenericTyInfo.createGenericTyInfo(builder, target, 0)
+        // The native Link<T> parameter's semantic bound is Link<T>, whose argument refers back to this T.
+        val upperBounds = GenericTyInfo.createUpperBoundsVector(builder, uintArrayOf(2u))
+        val generic = GenericTyInfo.createGenericTyInfo(builder, target, upperBounds)
         val type = SemaTy.createSemaTy(builder, TypeKind.Generic, 0, SemaTyInfo.GenericTyInfo, generic)
-        val types = PackageFormat.Package.createAllTypesVector(builder, intArrayOf(type))
+        val linkKey = builder.createString("_CN12wire.generic4LinkIG_E")
+        val linkTarget = FullId.createFullId(builder, 0, linkKey, 0u)
+        val linkInfo = CompositeTyInfo.createCompositeTyInfo(builder, linkTarget, false)
+        val linkArguments = SemaTy.createTypeArgsVector(builder, uintArrayOf(1u))
+        val linkType = SemaTy.createSemaTy(builder, TypeKind.Interface, linkArguments, SemaTyInfo.CompositeTyInfo, linkInfo)
+        val types = PackageFormat.Package.createAllTypesVector(builder, intArrayOf(type, linkType))
         val imports = PackageFormat.Package.createImportsVector(builder, intArrayOf(builder.createString("wire.generic")))
         val name = builder.createString("wire.generic.imported")
         PackageFormat.Package.startPackage(builder)

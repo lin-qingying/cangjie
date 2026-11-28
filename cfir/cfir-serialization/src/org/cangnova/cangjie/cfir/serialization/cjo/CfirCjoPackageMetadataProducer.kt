@@ -2,45 +2,60 @@
 
 package org.cangnova.cangjie.cfir.serialization.cjo
 
-import com.intellij.psi.PsiNameIdentifierOwner
-import com.intellij.lang.LighterASTNode
-import com.intellij.openapi.util.Ref
+
 import PackageFormat.AnnoKind
 import PackageFormat.DeclKind
-import PackageFormat.ExprKind
-import PackageFormat.LitConstKind
-import PackageFormat.StringKind
 import PackageFormat.SemaTyInfo
-import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
-import org.cangnova.cangjie.annotations.CangjieAnnotationIdentity
+import org.cangnova.cangjie.builtins.StandardNames
 import org.cangnova.cangjie.descriptors.Visibilities
-import org.cangnova.cangjie.descriptors.Modality
 import org.cangnova.cangjie.LanguageVersion
 import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.isMemberParameter
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
-import org.cangnova.cangjie.cfir.expressions.CfirArrayLiteral
+import org.cangnova.cangjie.cfir.expressions.CfirConstantValue
+import org.cangnova.cangjie.cfir.expressions.CfirConstantValueExpression
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.CfirLazyExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
-import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
-import org.cangnova.cangjie.cfir.expressions.platformAnnotationDescriptor
+import org.cangnova.cangjie.cfir.patterns.bindingVariables
+import org.cangnova.cangjie.cfir.CfirEvaluatorResult
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
-import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
-import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
-import org.cangnova.cangjie.cfir.session.CfirCjmpMode
-import org.cangnova.cangjie.cfir.session.cjmpHasCommonDefault
+import org.cangnova.cangjie.cfir.symbols.CfirFieldVariableSymbol
+import org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysis
+import org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputPreparation
+import org.cangnova.cangjie.cfir.resolve.providers.CfirDeclarationExportAnalysis
+import org.cangnova.cangjie.cfir.resolve.providers.CfirExportTypeUse
+import org.cangnova.cangjie.config.CangJieCompilerVersion
+import org.cangnova.cangjie.cfir.resolve.providers.CfirExportSourceElement
+import org.cangnova.cangjie.cfir.resolve.providers.CfirExportTypeElement
+import org.cangnova.cangjie.cfir.resolve.providers.CfirExportTypePayload
+import org.cangnova.cangjie.cfir.resolve.providers.CfirExportNominalTypeKind
+import org.cangnova.cangjie.cfir.resolve.providers.CfirExportConstantGraph
+import org.cangnova.cangjie.cfir.resolve.providers.CfirExportConstantNode
+import org.cangnova.cangjie.cfir.resolve.providers.CfirExportConstantIdentity
+import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.source.*
+import org.cangnova.cangjie.cfir.session.CfirCjmpFamilySnapshot
+import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
+import org.cangnova.cangjie.cfir.declarations.cjmpHasCommonDefault
+import org.cangnova.cangjie.cfir.declarations.utils.evaluatedInitializer
 import org.cangnova.cangjie.cfir.session.cjmpSettings
+import org.cangnova.cangjie.cfir.resolve.providers.dependenciesSymbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.session.languageVersionSettings
-import org.cangnova.cangjie.cfir.references.CfirNamedReference
+import org.cangnova.cangjie.cfir.diagnostics.SourceElementPositioningStrategies
+import org.cangnova.cangjie.resolve.calls.mpp.CjmpInitializationDependencies
 import org.cangnova.cangjie.cfir.types.*
-import org.cangnova.cangjie.cfir.types.coneTypeOrNull
+import org.cangnova.cangjie.cfir.serialization.deserialize.CjoConstValueReader
 import org.cangnova.cangjie.metadata.model.Attribute as CfirAttribute
 import org.cangnova.cangjie.name.ClassId
-import org.cangnova.cangjie.lexer.CjTokens
-import org.cangnova.cangjie.psi.CjNodeTypes
-import org.cangnova.cangjie.psi.CjConstructor
-import org.cangnova.cangjie.psi.CjPrimaryConstructor
 import org.cangnova.cangjie.source.CjLightSourceElement
 import org.cangnova.cangjie.source.CjPsiSourceElement
+import org.cangnova.cangjie.source.text
 import java.util.IdentityHashMap
+import java.nio.file.Path
+import java.math.BigInteger
 
 /**
  * Live CFIR-to-CJO metadata producer.
@@ -51,186 +66,245 @@ import java.util.IdentityHashMap
  * producer boundary instead of silently emitting a partial CJO.
  */
 object CfirCjoPackageMetadataProducer {
-    fun produce(files: Collection<CfirFile>): CjoPackageMetadata {
+    fun produce(
+        files: Collection<CfirFile>,
+        familySnapshot: CfirCjmpFamilySnapshot? = null,
+        loadedPackages: Collection<CjoLoadedPackage> = emptyList(),
+        exportOptions: CjoExportOptions = CjoExportOptions.forSourceFiles(files, familySnapshot),
+        canonicalSources: Collection<CfirSourceGraph> = emptyList(),
+    ): CjoPackageMetadata {
         require(files.isNotEmpty()) { "Cannot serialize an empty CFIR module" }
-        return Context(files).produce()
+        val prepared = Preparation(files, familySnapshot, loadedPackages, exportOptions, canonicalSources).prepare()
+        return prepared.publicationInputs.withReadOnlyInput {
+            prepared.analysis.withReadOnlyInput {
+                prepared.publicationInputs.validateUnchanged()
+                Context(prepared).produce().also { prepared.publicationInputs.validateUnchanged() }
+            }
+        }
     }
 
-    private class Context(private val files: Collection<CfirFile>) {
-        private val declarations = ArrayList<CfirDeclaration>()
-        private val declarationIndex = IdentityHashMap<CfirDeclaration, UInt>()
-        private val topLevel = IdentityHashMap<CfirDeclaration, Boolean>()
-        private val declarationFiles = IdentityHashMap<CfirDeclaration, CfirFile>()
-        private val fileIndices = IdentityHashMap<CfirFile, UInt>()
-        private val classIndex = linkedMapOf<ClassId, UInt>()
-        private val externalImports = linkedSetOf<String>()
-        private val types = ArrayList<CjoTypeMetadata>()
-        private val typeIndex = HashMap<ConeCangJieType, UInt>()
-        private val expressions = ArrayList<CjoExpressionMetadata>()
-        private val expressionIndex = IdentityHashMap<Any, UInt>()
-        private val languageVersion = files.first().moduleData.session.languageVersionSettings.languageVersion
-        private val cjmpSettings = files.first().moduleData.session.cjmpSettings
+    /** 语义和格式来源全部完成之后，才创建拥有输出 d/e/t/v 池的 Context。 */
+    private class PreparedInputs(
+        val files: List<CfirFile>,
+        val family: CfirCjmpFamilySnapshot?,
+        val options: CjoExportOptions,
+        val roots: List<CfirDeclaration>,
+        val builtins: List<CfirBuiltInDeclaration>,
+        val sourceFiles: Map<CfirBasedSymbol<*>, CfirFile>,
+        val analysis: CfirDeclarationExportAnalysis,
+        val sources: CjoFrozenSourceInputs,
+        val plan: CjoSourceExportPlan,
+        val sourceFormats: CjoSourceFormatInputs,
+        val initializationInputs: CjoInitializationDependencyInputs,
+        val publicationInputs: CjoSourcePublicationInputs,
+        val attributeInputs: CjoDeclarationAttributeInputs,
+        val dependencyInputs: CjoDeclarationDependencyInputs,
+    )
 
-        /**
-         * 本次写出的是否为 CJMP common part cjo（官方 common part 编译 = CHIR 输出模式，
-         * `ASTWriter` 此时写 `Package.options` 与 `FileInfo.feature`）。
-         */
-        private val writesCjmpCommonPart =
-            languageVersion >= LanguageVersion.CANGJIE_1_1_0 && cjmpSettings.mode == CfirCjmpMode.COMMON
+    private class Preparation(
+        private val files: Collection<CfirFile>,
+        private val familySnapshot: CfirCjmpFamilySnapshot?,
+        private val loadedPackages: Collection<CjoLoadedPackage>,
+        private val exportOptions: CjoExportOptions,
+        private val canonicalSources: Collection<CfirSourceGraph>,
+    ) {
+        private data class SourceDeclarationIdentity(
+            val declarationType: String,
+            val sourcePath: Path,
+            val startOffset: Int,
+            val endOffset: Int,
+        )
 
-        fun produce(): CjoPackageMetadata {
-            val packageNames = files.map { it.packageDirective.packageFqName.asString() }.distinct()
-            require(packageNames.size == 1) { "A CJO package must contain exactly one package" }
-            files.forEachIndexed { index, file -> fileIndices[file] = index.toUInt() + 1u }
-            collectDeclarations()
-            val declarationMetadata = declarations.mapIndexed { index, declaration ->
-                declarationMetadata(declaration, index + 1, topLevel[declaration] == true)
+        private data class SessionDeclarationIdentity(val symbol: CfirBasedSymbol<*>)
+
+        private data class ExportNodeIdentity(
+            val declaration: Any,
+            val owner: ExportNodeIdentity?,
+        )
+
+        private val sourceFilesBySymbol = IdentityHashMap<CfirBasedSymbol<*>, CfirFile>().apply {
+            fun visit(declaration: CfirDeclaration, file: CfirFile) {
+                putIfAbsent(declaration.symbol, file)
+                physicalDeclarationChildren(declaration).forEach { visit(it, file) }
+                if (declaration is CfirValueParameter) declaration.ownedDefaultParameterHelper
+                    ?.takeIf { it.origin.fromSource }?.let { visit(it, file) }
             }
-            val module = files.first().moduleData.name.asString()
-            return CjoPackageMetadata(
-                fullPackageName = packageNames.single(),
-                moduleName = module,
-                schemaProfile = when {
-                    writesCjmpCommonPart -> CjoSchemaProfile.OFFICIAL_CJMP
-                    languageVersion >= LanguageVersion.CANGJIE_1_1_0 -> CjoSchemaProfile.OFFICIAL_V1_1_3
-                    else -> CjoSchemaProfile.OFFICIAL_V1_0_0
-                },
-                // 官方 `ASTWriter::SaveOptions`：common part cjo 内嵌 debug 与优化级别，供 specific
-                // 编译的加载门比对（`ASTLoader::ValidateOptions`）
-                options = if (writesCjmpCommonPart) {
-                    CjoModuleOptionMetadata(
-                        debug = cjmpSettings.moduleDebug,
-                        optLevel = CjmpCommonPartLoadGate.optLevelOrdinal(cjmpSettings.moduleOptLevel),
-                    )
-                } else {
-                    null
-                },
-                declarations = declarationMetadata,
-                imports = externalImports.toList(),
-                // Match ASTWriter::SaveFileInfo when absolute paths are not
-                // requested: package identity plus the source-owned basename.
-                // Do not serialize an absolute path or derive a name from PSI
-                // text; CfirFile.name is shared by PSI and LightTree lowering.
-                // 官方 `SaveFileInfo`：common part（serializingCommon）写源文件完整路径，specific 编译据此定位
-                // common 方向诊断（G20）；其余情形写 package/basename
-                allFiles = files.map { file ->
-                    file.sourceFile?.path?.takeIf { writesCjmpCommonPart }
-                        ?: "${packageNames.single()}/${file.name}"
-                },
-                fileInfo = if (languageVersion >= LanguageVersion.CANGJIE_1_1_0) {
-                    files.mapNotNull(::fileInfo)
-                } else {
-                    emptyList()
-                },
-                types = types,
-                expressions = expressions,
-            )
+            files.forEach { file -> file.declarations.forEach { visit(it, file) } }
         }
+        private val familyExportMembersByOwner = HashMap<ExportNodeIdentity, List<CfirDeclaration>>()
+        private val familyOutputOwners = IdentityHashMap<CfirDeclaration, CfirDeclaration>()
+        private val packageSnapshots = CjoExportSourceSnapshots.uniqueLoadedPackages(loadedPackages)
+            .associateBy { it.sourcePath.toAbsolutePath().normalize() }.toMutableMap()
+        private val lexicalOwners = IdentityHashMap<CfirDeclaration, CfirDeclaration?>()
 
-        private fun collectDeclarations() {
-            files.forEach { file -> file.declarations.forEach { collect(it, true, file) } }
-            require(declarations.isNotEmpty()) { "CFIR package has no serializable declarations" }
-        }
-
-        private fun collect(declaration: CfirDeclaration, isTopLevel: Boolean, file: CfirFile) {
-            val canonicalDeclaration = canonicalDeclaration(declaration)
-            require(canonicalDeclaration.origin == CfirDeclarationOrigin.Source) {
-                "Cannot serialize non-source declaration ${canonicalDeclaration::class.simpleName} from live CFIR"
-            }
-            if (declarationIndex.putIfAbsent(canonicalDeclaration, declarations.size.toUInt() + 1u) == null) {
-                declarations += canonicalDeclaration
-                topLevel[canonicalDeclaration] = isTopLevel
-                declarationFiles[canonicalDeclaration] = file
-                if (canonicalDeclaration is CfirClassLikeDeclaration) {
-                    classIndex[(canonicalDeclaration.symbol as CfirClassLikeSymbol<*>).classId] =
-                        declarationIndex[canonicalDeclaration]!!
+        fun prepare(): PreparedInputs {
+            val roots = familySnapshot?.let(::collectFamilyExportGraph)
+                ?: files.flatMap { file -> file.declarations.flatMap(::packageDeclarationProjection) }
+            val commonRoots = familySnapshot?.let { family ->
+                family.familyCommonDeclarations().filter { family.physicalOwnerFor(it) == null }
+            }.orEmpty()
+            val builtins = prepareStdCoreBuiltins()
+            val completeRoots = (files.flatMap { it.declarations.flatMap(::packageDeclarationProjection) } +
+                commonRoots + roots + builtins).distinctBy { it.symbol }
+            val definitionInputs = ArrayList<CfirDeclaration>()
+            val visited = java.util.Collections.newSetFromMap(IdentityHashMap<CfirDeclaration, Boolean>())
+            fun definitions(declaration: CfirDeclaration, owner: CfirDeclaration?) {
+                if (!visited.add(declaration)) return
+                lexicalOwners[declaration] = owner
+                definitionInputs += declaration
+                when (declaration) {
+                    is CfirClassLikeDeclaration, is CfirExtend -> exportMemberInput(declaration).forEach { definitions(it, declaration) }
+                    is CfirProperty -> listOfNotNull(declaration.getter, declaration.setter).forEach { definitions(it, owner) }
+                    else -> Unit
                 }
-                declarationChildren(canonicalDeclaration).forEach { collect(it, false, file) }
             }
-        }
-
-        /** 所有 CJO 对类型参数的引用都归一到 symbol 绑定的 GenericParamDecl 实例。 */
-        private fun canonicalDeclaration(declaration: CfirDeclaration): CfirDeclaration =
-            (declaration as? CfirTypeParameter)?.symbol?.cfir ?: declaration
-
-        /** Convert a real CFIR source offset to the official package position. */
-        private fun position(file: CfirFile, offset: Int): CjoPositionMetadata? {
-            val mapping = file.sourceFileLinesMapping ?: return null
-            if (offset < 0) return null
-            val (line, column) = mapping.getLineAndColumnByOffset(offset.coerceAtMost(mapping.lastOffset))
-            if (line < 0 || column < 0) return null
-            // 官方 `Position` 行列均 1 基（cjc 1.1.3 cjo 实测 `func f` 位于 3:1）；行映射为 0 基
-            return CjoPositionMetadata(
-                file = fileIndices.getValue(file),
-                pkgId = 0u,
-                line = line + 1,
-                column = column + 1,
-            )
-        }
-
-        private fun fileInfo(file: CfirFile): CjoFileInfoMetadata? {
-            val mapping = file.sourceFileLinesMapping ?: return null
-            val begin = position(file, 0) ?: return null
-            val end = position(file, mapping.lastOffset) ?: return null
-            // 官方 `SaveFileInfo`：文件带 features 指令时一并写出（仅 CJMP common part 档位可编码）
-            val feature = file.featuresDirective
-                ?.takeIf { writesCjmpCommonPart }
-                ?.let { directive ->
-                    CjoFeaturesDirectiveMetadata(directive.featureIds.map { it.split('.') })
-                }
-            return CjoFileInfoMetadata(fileIndices.getValue(file), begin, end, feature)
-        }
-
-        private fun declarationPositions(declaration: CfirDeclaration): Pair<CjoPositionMetadata?, CjoPositionMetadata?> {
-            val file = declarationFiles[declaration] ?: return null to null
-            val source = declaration.source ?: return null to null
-            return position(file, source.startOffset) to position(file, source.endOffset)
-        }
-
-        /** Official `Decl.identifierPos` points at the declaration name, independently of modifiers. */
-        private fun declarationIdentifierPosition(declaration: CfirDeclaration): CjoPositionMetadata? {
-            val file = declarationFiles[declaration] ?: return null
-            val source = declaration.source ?: return null
-            val identifierOffset = when (source) {
-                is CjPsiSourceElement -> {
-                    val identifier = when (val psi = source.psi) {
-                        is CjPrimaryConstructor -> psi.identifier
-                        is CjConstructor<*> -> psi.getIdentifyingElement()
-                        is PsiNameIdentifierOwner -> psi.nameIdentifier
-                        else -> null
+            completeRoots.forEach { definitions(it, null) }
+            // 定义自身的 header/annotation 及 borrowed 依赖先完成，才能获取其 SOURCE 保存产品。
+            val work = CfirExportAnalysisInputPreparation.Work(files, completeRoots, ::exportMemberInput)
+            work.complete(canonicalSources)
+            val includeContent = exportOptions.exportContent && !exportOptions.isMacroPackage
+            CjoExportSourceSnapshots.sourceExportSnapshots(definitionInputs, includeContent)
+            while (true) {
+                val before = CjoExportSourceSnapshots.completedInputs(definitionInputs, includeContent, canonicalSources, work.declarations)
+                val savedTypes = savedTypes(before.snapshots)
+                val revision = work.dependencyRevision
+                work.complete(before.graphs, savedTypes,
+                    definitionInputs + sourceFilesBySymbol.keys.map { it.cfir } +
+                        before.snapshots.flatMap { it.declarations.values } + before.graphs.flatMap { it.declarationOwners.keys } +
+                        familySnapshot?.familyCommonDeclarations().orEmpty())
+                val after = CjoExportSourceSnapshots.completedInputs(definitionInputs, includeContent, canonicalSources, work.declarations)
+                if (revision != work.dependencyRevision || !before.sameInputs(after)) continue
+                // 空图 owner 与全部 borrowed header owner 同样受护；此处仍未交付 Result。
+                val prepared = after.withReadOnlyInput {
+                    work.withReadOnlyInput freeze@{
+                        val final = CjoExportSourceSnapshots.completedInputs(definitionInputs, includeContent, canonicalSources, work.declarations)
+                        if (!after.sameInputs(final)) return@freeze null
+                        final.validateUnchanged()
+                        val initializationInputs = CjoInitializationDependencyInputs.capture(work.declarations)
+                        check(initializationInputs.declarations.all { target -> work.declarations.any { it === target } }) {
+                            "Final initialization dependencies must belong to the completed work set"
+                        }
+                        val preparedInput = work.freeze()
+                        val analysis = CfirExportAnalysis.analyze(files, completeRoots, ::exportMemberInput, exportOptions.analysisSettings,
+                            familySnapshot?.let { family -> family.familyCommonDeclarations().filter { family.specificBindingsFor(it).isNotEmpty() }.toSet() }.orEmpty(),
+                            canonicalSources = final.graphs, additionalTypeInputs = savedTypes,
+                            additionalDeclarationInputs = initializationInputs.declarations, preparedInput = preparedInput)
+                        final.validateUnchanged()
+                        finishPreparation(roots, builtins, analysis, initializationInputs, final)
                     }
-                    identifier?.textRange?.startOffset
                 }
-                is CjLightSourceElement -> source.declarationIdentifierOffset(declaration)
-                else -> null
-            } ?: return null
-            return position(file, identifierOffset)
-        }
-
-        /** LightTree 源区间覆盖整条声明；按 token kind 取标识符，与 PSI 的 identifying-element 契约一致。 */
-        private fun CjLightSourceElement.declarationIdentifierOffset(declaration: CfirDeclaration): Int? {
-            val identifierTokenType = when (declaration) {
-                is CfirConstructor -> if (declaration.isPrimary) CjTokens.IDENTIFIER else CjTokens.INIT_KEYWORD
-                else -> null
+                if (prepared != null) return prepared
             }
-            val childrenRef = Ref<Array<LighterASTNode?>>()
-            val childCount = treeStructure.getChildren(lighterASTNode, childrenRef)
-            if (childCount <= 0) return null
-            val identifier = childrenRef.get()?.take(childCount)?.filterNotNull()?.firstOrNull { child ->
-                if (identifierTokenType != null) {
-                    child.tokenType == identifierTokenType
-                } else {
-                    child.tokenType == CjTokens.IDENTIFIER || child.tokenType == CjNodeTypes.OPERATION_NAME
-                }
-            } ?: return null
-            return treeStructure.getStartOffset(identifier)
         }
 
-        private fun declarationChildren(declaration: CfirDeclaration): List<CfirDeclaration> = buildList {
+        private fun savedTypes(snapshots: List<CjoSourceExportSnapshot>): Map<org.cangnova.cangjie.cfir.session.CfirSession, List<ConeCangJieType>> {
+            val saved = IdentityHashMap<org.cangnova.cangjie.cfir.session.CfirSession, List<ConeCangJieType>>()
+            snapshots.forEach { snapshot ->
+                val storageTypes = snapshot.constants.values.filterIsInstance<CjoSavedConstantStorage.Composite>().flatMap { layout -> layout.fields.map { it.type } } +
+                    snapshot.constantRoots.values.map { it.type }
+                val seenTypes = java.util.Collections.newSetFromMap(IdentityHashMap<ConeCangJieType, Boolean>())
+                saved[snapshot.domain] = (saved[snapshot.domain].orEmpty() + snapshot.types.values + storageTypes).filter(seenTypes::add)
+            }
+            return java.util.Collections.unmodifiableMap(saved)
+        }
+
+        private fun finishPreparation(roots: List<CfirDeclaration>, builtins: List<CfirBuiltInDeclaration>,
+            analysis: CfirDeclarationExportAnalysis, initializationInputs: CjoInitializationDependencyInputs,
+            final: CjoSourcePublicationInputs): PreparedInputs = analysis.withReadOnlyInput {
+                val sources = CjoFrozenSourceInputs.capture(analysis, final.snapshots, packageSnapshots.values, exportOptions, final.graphs)
+                val sourceFormats = CjoSourceFormatInputs(files.toList(), analysis, exportOptions, builtins)
+                val attributeInputs = CjoDeclarationAttributeInputs(analysis, sources, sourceFormats)
+                val dependencyInputs = CjoDeclarationDependencyInputs(analysis, sources, familySnapshot)
+                val plan = CjoSourceExportPlan.prepare(
+                    roots, builtins, analysis, sources, exportOptions, familySnapshot, files.toList(), attributeInputs,
+                    java.util.Collections.unmodifiableMap(IdentityHashMap(familyOutputOwners)),
+                )
+                analysis.validateSourceUnchanged()
+                sourceFormats.validateUnchanged()
+                initializationInputs.validateUnchanged()
+                final.validateUnchanged()
+                PreparedInputs(java.util.Collections.unmodifiableList(files.toList()), familySnapshot, exportOptions,
+                    java.util.Collections.unmodifiableList(roots.toList()), java.util.Collections.unmodifiableList(builtins.toList()),
+                    java.util.Collections.unmodifiableMap(IdentityHashMap(sourceFilesBySymbol)), analysis, sources, plan, sourceFormats, initializationInputs,
+                    final, attributeInputs, dependencyInputs)
+        }
+
+        private fun cjoDeclarationOriginKey(declaration: CfirDeclaration): CjoSnapshotTableEntry? {
+            val origin = declaration.cjoDeclarationOrigin ?: return null
+            val path = Path.of(origin.packagePath).toAbsolutePath().normalize()
+            val source = checkNotNull(CjoExportSourceSnapshots.loadedPackage(declaration.moduleData.session.symbolProvider, path))
+            check(packageSnapshots.putIfAbsent(path, source).let { it == null || it === source })
+            return CjoSnapshotTableEntry(source, CjoSnapshotTableDomain.DECLARATION, origin.declarationIndex)
+        }
+
+        private fun canonicalDeclaration(declaration: CfirDeclaration): CfirDeclaration {
+            if (declaration is CfirTypeParameter) return declaration.symbol.cfir
+            return if (declaration is CfirCallableDeclaration) declaration.unwrapSubstitutionOverrides() else declaration
+        }
+
+        private fun familyExportNodeIdentity(declaration: CfirDeclaration): ExportNodeIdentity =
+            ExportNodeIdentity(exportDeclarationIdentity(declaration), lexicalOwners[declaration]?.let(::familyExportNodeIdentity))
+
+        private fun exportMemberInput(owner: CfirDeclaration): List<CfirDeclaration> {
+            val family = familySnapshot
+            val isFamilyOwner = family?.hasMemberOwner(owner) == true
+            val members = if (isFamilyOwner) checkNotNull(family).let {
+                familyExportMembersByOwner[familyExportNodeIdentity(owner)] ?: family.membersFor(owner)
+            } else when (owner) {
+                is CfirClassLikeDeclaration -> owner.declarations
+                is CfirExtend -> owner.declarations
+                else -> error("Only class-like and extend declarations have member input")
+            }
+            // 外部类型仅消费自己的正规 header；它不属于本次 family 的合并/抑制产品。
+            return if (isFamilyOwner) familyPackageDeclarations(checkNotNull(family), members)
+                else members.flatMap(::packageDeclarationProjection)
+        }
+
+        private fun collectFamilyExportGraph(family: CfirCjmpFamilySnapshot): List<CfirDeclaration> =
+            familyPackageDeclarations(family, family.packageDeclarationsForExport())
+                .groupBy(::exportDeclarationIdentity)
+                .values
+                .map { candidates -> collectFamilyExportNode(candidates, owner = null, family) }
+
+        private fun collectFamilyExportNode(
+            candidates: List<CfirDeclaration>,
+            owner: ExportNodeIdentity?,
+            family: CfirCjmpFamilySnapshot,
+        ): CfirDeclaration {
+            val declaration = canonicalDeclaration(candidates.first())
+            val nodeIdentity = ExportNodeIdentity(exportDeclarationIdentity(declaration), owner)
+            if (declaration is CfirClassLikeDeclaration || declaration is CfirExtend) {
+                val addedSpecific = java.util.Collections.newSetFromMap(IdentityHashMap<CfirDeclaration, Boolean>())
+                val orderedMembers = buildList {
+                    candidates.flatMap(family::mergedDeclarationsFor).forEach { member ->
+                        if ((member as? CfirMemberDeclaration)?.status?.isSpecific == true && member in addedSpecific) return@forEach
+                        family.specificBindingsFor(member).forEach { specific ->
+                            addedSpecific += specific
+                            add(specific)
+                        }
+                        add(member)
+                    }
+                }
+                val exportedMembers = familyPackageDeclarations(family, orderedMembers)
+                    .groupBy(::exportDeclarationIdentity)
+                    .values
+                    .map { childCandidates -> collectFamilyExportNode(childCandidates, nodeIdentity, family) }
+                // 被保留的 common 定义仍有原语义 owner，输出包含关系由实际合并成员表决定。
+                exportedMembers.forEach { member ->
+                    check(familyOutputOwners.putIfAbsent(member, declaration).let { it == null || it === declaration }) {
+                        "A merged declaration belongs to two output containers: ${member.symbol}"
+                    }
+                }
+                familyExportMembersByOwner[nodeIdentity] = exportedMembers
+            }
+            return declaration
+        }
+
+        private fun physicalDeclarationChildren(declaration: CfirDeclaration): List<CfirDeclaration> = buildList {
             when (declaration) {
                 is CfirEnum -> {
                     addAll(declaration.typeParameters.filterIsInstance<CfirTypeParameter>())
-                    addAll(declaration.cjoBodyDeclarations())
+                    addAll(declaration.declarations.filterNot { it is CfirConstructor && it.isPrimary })
                 }
                 is CfirClassLikeDeclaration -> {
                     addAll(declaration.typeParameters.filterIsInstance<CfirTypeParameter>())
@@ -241,11 +315,12 @@ object CfirCjoPackageMetadataProducer {
                     addAll(declaration.declarations)
                 }
                 is CfirFunction -> {
-                    addAll(declaration.typeParameters)
+                    // 构造器的 constructed-class 引用不是物理声明，只导出自有类型参数。
+                    addAll(declaration.typeParameters.filterIsInstance<CfirTypeParameter>())
                     addAll(declaration.valueParameters)
                 }
-                // ASTWriter::SaveGeneric deliberately excludes enum constructors.
                 is CfirEnumConstructor -> addAll(declaration.valueParameters)
+                is CfirPatternVariable -> addAll(declaration.pattern.bindingVariables())
                 is CfirProperty -> {
                     declaration.getter?.let(::add)
                     declaration.setter?.let(::add)
@@ -254,28 +329,453 @@ object CfirCjoPackageMetadataProducer {
             }
         }
 
+        private fun packageDeclarationProjection(declaration: CfirDeclaration): List<CfirDeclaration> =
+            when (declaration) {
+                is CfirPatternVariable -> declaration.pattern.bindingVariables()
+                else -> listOf(declaration)
+            }
+
+        /** Family 的屏蔽关系位于 binding identity，必须在 pattern root 展开后应用。 */
+        private fun familyPackageDeclarations(
+            family: CfirCjmpFamilySnapshot,
+            declarations: Iterable<CfirDeclaration>,
+        ): List<CfirDeclaration> = declarations
+            .flatMap(::packageDeclarationProjection)
+            .filterNot { it.symbol in family.doNotExport }
+
+        private fun exportDeclarationIdentity(declaration: CfirDeclaration): Any {
+            cjoDeclarationOriginKey(declaration)?.let { origin ->
+                return origin
+            }
+            val filePath = sourceFilesBySymbol[declaration.symbol]?.sourceFile?.path
+            val source = declaration.source
+            if (declaration.origin.fromSource && filePath != null && source != null) {
+                return SourceDeclarationIdentity(
+                    declarationType = declaration::class.qualifiedName ?: declaration::class.java.name,
+                    sourcePath = Path.of(filePath).toAbsolutePath().normalize(),
+                    startOffset = source.startOffset,
+                    endOffset = source.endOffset,
+                )
+            }
+            return SessionDeclarationIdentity(declaration.symbol)
+        }
+
+        private fun prepareStdCoreBuiltins(): List<CfirBuiltInDeclaration> {
+            if (files.first().packageDirective.packageFqName != StandardNames.STD_CORE_PACKAGE_FQ_NAME) return emptyList()
+
+            val declarationsByKind = LinkedHashMap<CfirBuiltInTypeKind, CfirBuiltInDeclaration>()
+            files.forEach { file ->
+                val provider = file.moduleData.session.dependenciesSymbolProvider
+                CfirBuiltInTypeKind.entries.forEach kindLoop@{ kind ->
+                    val declaration = provider.getClassLikeSymbolByClassId(kind.classId)?.cfir as? CfirBuiltInDeclaration
+                        ?: return@kindLoop
+                    if (declaration.cjoDeclarationOrigin != null) return@kindLoop
+
+                    check(declaration.origin == CfirDeclarationOrigin.Synthetic.Default) {
+                        "A source std.core BuiltInDecl must be supplied by the builtin symbol provider"
+                    }
+                    check(declaration.kind == kind && declaration.symbol.classId == kind.classId) {
+                        "The builtin symbol provider returned a declaration under the wrong std.core identity"
+                    }
+                    check(declaration.typeParameters.size == kind.typeParameterCount) {
+                        "${kind.classId.asFqNameString()} has an invalid builtin type-parameter shape"
+                    }
+                    check(declaration.declarations.isEmpty() && declaration.superTypeRefs.isEmpty()) {
+                        "A BuiltInDecl root cannot carry ordinary members or supertype edges"
+                    }
+                    declarationsByKind.putIfAbsent(kind, declaration)
+                }
+            }
+
+            val missingKinds = CfirBuiltInTypeKind.entries.filterNot(declarationsByKind::containsKey)
+            check(missingKinds.isEmpty()) {
+                "std.core CJO self-build is missing builtin declaration roots: " +
+                    missingKinds.joinToString { it.classId.asFqNameString() }
+            }
+
+            return CfirBuiltInTypeKind.entries.map { kind ->
+                val declaration = checkNotNull(declarationsByKind[kind])
+                declaration
+            }
+        }
+
+    }
+
+    private class Context(private val prepared: PreparedInputs) : CjoCanonicalSourceEncodingContext {
+        private val files = prepared.files
+        private val familySnapshot = prepared.family
+        private val exportOptions = prepared.options
+        override val sourceEncodingContract: CjoSourceEncodingContract get() = exportOptions.sourceEncodingContract
+        private val frozenSources = prepared.sources
+        private val sourceFormats = prepared.sourceFormats
+
+        private data class ExternalCjoDeclarationReference(
+            val packageName: String,
+            val declarationKey: String,
+        )
+
+        private data class SourceDeclarationIdentity(
+            val declarationType: String,
+            val sourcePath: Path,
+            val startOffset: Int,
+            val endOffset: Int,
+        )
+
+        private data class SessionDeclarationIdentity(val symbol: CfirBasedSymbol<*>)
+
+        private data class ExportNodeIdentity(
+            val declaration: Any,
+            val owner: ExportNodeIdentity?,
+        )
+
+        private val declarations = ArrayList<CfirDeclaration>()
+        /** SOURCE 与正式 loaded 声明共用同一 append-only d 池，只有实际声明身份可登记。 */
+        private val declarationTable = CjoGraphTable<CjoPackageDeclaration>("declaration")
+        private val declarationIndex = IdentityHashMap<CfirDeclaration, UInt>()
+        private val topLevel = IdentityHashMap<CfirDeclaration, Boolean>()
+        private val declarationFiles = IdentityHashMap<CfirDeclaration, CfirFile>()
+        private val declarationOwners = IdentityHashMap<CfirDeclaration, CfirDeclaration?>()
+        private val syntheticStdCoreBuiltins = IdentityHashMap<CfirBuiltInDeclaration, Boolean>()
+        private var stdCoreBuiltinRoots: List<CfirBuiltInDeclaration> = emptyList()
+        private val patternBindingOwners = IdentityHashMap<CfirPatternBindingVariable, CfirPatternVariable>()
+        private val sourceFilesBySymbol = prepared.sourceFiles
+        private val familyExportMembersByOwner = HashMap<ExportNodeIdentity, List<CfirDeclaration>>()
+        private val fileIndices = IdentityHashMap<CfirFile, UInt>()
+        private val packageFiles = ArrayList<String>()
+        private val cjoFileIndices = HashMap<CjoSnapshotTableEntry, UInt>()
+        private val loadedPackagesByPath = frozenSources.packages
+        private val classIndex = linkedMapOf<ClassId, UInt>()
+        private val externalImports = linkedSetOf<String>()
+        private val typeTable = CjoGraphTable<CjoTypeMetadata>("type")
+        /** Cone 对象只作为本代来源身份；表驻留键读取完整冻结 shape，不使用 Cone.equals。 */
+        private val typeIndex = HashMap<FrozenTypeShape, UInt>()
+        private val typeShapes = IdentityHashMap<CfirExportTypeElement, IdentityHashMap<TypeParameterProjection, FrozenTypeShape>>()
+        private val sourceTypeIndices = IdentityHashMap<CfirExportTypeElement, IdentityHashMap<TypeParameterProjection, UInt>>()
+        private val typeProjections = IdentityHashMap<CfirDeclaration, TypeParameterProjection>()
+        private val emptyTypeProjection = TypeParameterProjection(emptyMap())
+        private val genericTypeInputs = HashMap<GenericTypeAnchor, List<FrozenTypeShape>>()
+        private val pendingGenericTypeInputs = HashSet<GenericTypeAnchor>()
+        private val pendingGenericTypeBounds = ArrayDeque<PendingGenericTypeBounds>()
+        private val specificSelfTypes = HashMap<FrozenTypeShape, FrozenTypeShape>()
+        private var invalidTypeIndex: UInt? = null
+        private val expressionTable = CjoGraphTable<CjoExpressionMetadata>("expression")
+        private val expressionIndex = IdentityHashMap<CfirSourceExpressionIdentity, UInt>()
+        private val filledExpressions = java.util.Collections.newSetFromMap(IdentityHashMap<CfirSourceExpressionIdentity, Boolean>())
+        private val fillingExpressions = java.util.Collections.newSetFromMap(IdentityHashMap<CfirSourceExpressionIdentity, Boolean>())
+        private val importedDeclarationIndices = HashMap<CjoSnapshotTableEntry, UInt>()
+        private val commonCounterpartDeclarationIndices = HashMap<CjoSnapshotTableEntry, UInt>()
+        private val valueTable = CjoGraphTable<CjoCompositeValueMetadata>("value")
+        private val valueIndices = HashMap<org.cangnova.cangjie.cfir.resolve.providers.CfirExportConstantIdentity, UInt>()
+        private val valueNodes = HashMap<org.cangnova.cangjie.cfir.resolve.providers.CfirExportConstantIdentity, org.cangnova.cangjie.cfir.resolve.providers.CfirExportConstantNode>()
+        private val languageVersion = sourceFormats.languageVersion
+        private var activeDeclaration: CfirDeclaration? = null
+        private val exportAnalysis = prepared.analysis
+        private val exportPlan = prepared.plan
+        private val canonicalDefinitions = exportPlan.canonicalDefinitions
+        private var activeExpression: CfirSourceExpressionIdentity? = null
+        private val canonicalEncoder by lazy { CjoCanonicalSourceEncoder(exportAnalysis.canonicalSourceGraphs(), this) }
+
+        /** 固定家族投影只重定位绑定；不能制造替换 Cone 后重新查询 provider 或类型展开。 */
+        private class TypeParameterProjection(val parameters: Map<CfirTypeParameter, CfirTypeParameter>) {
+            override fun equals(other: Any?): Boolean = other is TypeParameterProjection && parameters.size == other.parameters.size &&
+                parameters.all { (source, target) -> other.parameters[source] === target }
+            override fun hashCode(): Int = parameters.entries.sumOf { (source, target) ->
+                System.identityHashCode(source) xor System.identityHashCode(target)
+            }
+        }
+
+        private class TypeDeclarationIdentity(val declaration: CfirDeclaration) {
+            override fun equals(other: Any?): Boolean = other is TypeDeclarationIdentity && declaration === other.declaration
+            override fun hashCode(): Int = System.identityHashCode(declaration)
+        }
+
+        /** Generic 身份锚点保留捕获域和固定投影；其上界回边单独完成，不能递归进入驻留键。 */
+        private data class GenericTypeAnchor(
+            val parameter: TypeDeclarationIdentity,
+            val domain: org.cangnova.cangjie.cfir.session.CfirSession,
+            val projection: TypeParameterProjection,
+        )
+
+        private data class PendingGenericTypeBounds(
+            val anchor: GenericTypeAnchor,
+            val payload: CfirExportTypePayload.Generic,
+            val context: CfirDeclaration,
+            val projection: TypeParameterProjection,
+        )
+
+        /** Generic 的声明绑定是回环锚点；有序子 shape 与全部语义标记共同决定其它类型身份。 */
+        private data class FrozenTypeShape(
+            val kind: UShort,
+            val declaration: TypeDeclarationIdentity? = null,
+            val arguments: List<FrozenTypeShape> = emptyList(),
+            val returnType: FrozenTypeShape? = null,
+            val isThisType: Boolean = false,
+            val isRefEnum: Boolean = false,
+            val isC: Boolean = false,
+            val isClosure: Boolean = false,
+            val hasVariableLenArg: Boolean = false,
+            val dimsOrSize: Long? = null,
+            val genericAnchor: GenericTypeAnchor? = null,
+            val serializedTarget: CjoFrozenDeclarationTarget? = null,
+        )
+
         /**
-         * Enum 的 CFIR 声明树会携带合成 primary constructor；官方 `EnumInfo.body` 只保存 enum variant 与显式成员。
-        */
-        private fun CfirEnum.cjoBodyDeclarations(): List<CfirDeclaration> =
-            declarations.filterNot { it is CfirConstructor && it.isPrimary }
+         * 本次写出的是否为 CJMP common part cjo（官方 common part 编译 = CHIR 输出模式，
+         * `ASTWriter` 此时写 `Package.options` 与 `FileInfo.feature`）。
+         */
+        private val writesCjmpCommonPart = sourceFormats.writesCjmpCommonPart
+
+        fun produce(): CjoPackageMetadata {
+            val packageName = sourceFormats.packageName
+            sourceFormats.files.forEach { input ->
+                fileIndices[input.file] = input.index
+                packageFiles += input.name
+            }
+            registerDeclarationIdentities()
+            indexCommonCounterpartDeclarationIndices()
+            consumeSavePlan()
+            check(declarations.size == declarationTable.size)
+            val declarationMetadata = declarationTable.finish()
+            val types = typeTable.finish()
+            val expressions = expressionTable.finish()
+            val values = valueTable.finish()
+            check(pendingGenericTypeInputs.isEmpty()) { "CJO types cannot publish unfinished Generic bound inputs" }
+            exportAnalysis.validateSourceUnchanged()
+            sourceFormats.validateUnchanged()
+            prepared.initializationInputs.validateUnchanged()
+            prepared.publicationInputs.validateUnchanged()
+            val module = sourceFormats.moduleName
+            val schemaProfile = when {
+                writesCjmpCommonPart -> CjoSchemaProfile.OFFICIAL_CJMP
+                languageVersion >= LanguageVersion.CANGJIE_1_1_0 -> CjoSchemaProfile.OFFICIAL_V1_1_3
+                else -> CjoSchemaProfile.OFFICIAL_V1_0_0
+            }
+            return CjoPackageMetadata(
+                fullPackageName = packageName,
+                moduleName = module,
+                // native AST2FB写CANGJIE_VERSION，与二进制CjoVersion及语言选项各自独立。
+                version = CangJieCompilerVersion.VERSION,
+                schemaProfile = schemaProfile,
+                // 官方 `ASTWriter::SaveOptions`：common part cjo 内嵌 debug 与优化级别，供 specific
+                // 编译的加载门比对（`ASTLoader::ValidateOptions`）
+                options = sourceFormats.moduleOptions,
+                declarations = CjoSourceDeclarationKeys(
+                    packageName = packageName,
+                    declarations = declarationMetadata,
+                    types = types,
+                    imports = externalImports.toList(),
+                    sourceFiles = declarations.mapNotNull { declaration ->
+                        sourceFormats.declarations[declaration]?.sourcePath?.let { path ->
+                            (declarationIndex.getValue(declaration).toInt() - 1) to path
+                        }
+                    }.toMap(),
+                    sourceOffsets = declarations.mapNotNull { declaration ->
+                        sourceFormats.declarations[declaration]?.sourceOffset?.let { offset ->
+                            (declarationIndex.getValue(declaration).toInt() - 1) to offset
+                        }
+                    }.toMap(),
+                    sourceDeclarations = declarations.filter { sourceFormats.declarations.containsKey(it) }
+                        .mapTo(mutableSetOf()) { declarationIndex.getValue(it).toInt() - 1 },
+                    localDeclarations = declarations.filter { (sourceFormats.declarations[it]?.isLocal ?: frozenSources.formats[it]?.isLocal) == true }
+                        .mapTo(mutableSetOf()) { declarationIndex.getValue(it).toInt() - 1 },
+                    owners = declarations.map { declaration ->
+                        declarationOwners[declaration]?.let { owner ->
+                            if (owner is CfirAnonymousFunction) null
+                            else checkNotNull(declarationIndex[canonicalDeclaration(owner)]).toInt() - 1
+                        }
+                    },
+                ).publish(),
+                imports = externalImports.toList(),
+                // Match ASTWriter::SaveFileInfo when absolute paths are not
+                // requested: package identity plus the source-owned basename.
+                // Do not serialize an absolute path or derive a name from PSI
+                // text; CfirFile.name is shared by PSI and LightTree lowering.
+                // 官方 `SaveFileInfo`：common part（serializingCommon）写源文件完整路径，specific 编译据此定位
+                // common 方向诊断（G20）；其余情形写 package/basename
+                allFiles = packageFiles,
+                fileInfo = if (languageVersion >= LanguageVersion.CANGJIE_1_1_0) {
+                    sourceFormats.files.mapNotNull { it.info }
+                } else {
+                    emptyList()
+                },
+                types = types,
+                expressions = expressions,
+                values = values,
+                sourceEncodingContract = exportOptions.sourceEncodingContract,
+            )
+        }
+
+        /** 编号归输出 Context；定义身份和拥有 parent 已由 Preparation 的计划封闭。 */
+        private fun registerDeclarationIdentities() {
+            stdCoreBuiltinRoots = prepared.builtins
+            stdCoreBuiltinRoots.forEach { syntheticStdCoreBuiltins[it] = true }
+            exportPlan.declarations.forEachIndexed { ordinal, declaration ->
+                val index = ordinal.toUInt() + 1u
+                check(declarationIndex.put(declaration, index) == null)
+                declarations += declaration
+                topLevel[declaration] = exportPlan.topLevel.getValue(declaration)
+                declarationOwners[declaration] = exportPlan.parents.getValue(declaration)
+                if (exportAnalysis.isSourceDeclaration(declaration)) {
+                    declarationFiles[declaration] = checkNotNull(exportAnalysis.sourceFileOf(declaration))
+                }
+                frozenSources.formats[declaration]?.origin?.let { origin ->
+                    check(importedDeclarationIndices.put(origin, index) == null)
+                }
+            }
+        }
+
+        /** 一个事件流完成 reserve/type/子槽/fill；填充调用不能扩大 d/e 输入。 */
+        private fun consumeSavePlan() {
+            exportPlan.events.forEach { event ->
+                when (event) {
+                    is CjoSourceSaveEvent.ReserveDeclaration ->
+                        check(declarationTable.reserve() == declarationIndex.getValue(event.declaration))
+                    is CjoSourceSaveEvent.Type -> type(event.use, event.context)
+                    is CjoSourceSaveEvent.ReserveExpression -> {
+                        check(!expressionIndex.containsKey(event.identity))
+                        reserveExpression(event.identity)
+                    }
+                    is CjoSourceSaveEvent.SaveExpression -> {
+                        check(activeExpression == null)
+                        activeExpression = event.identity
+                        try { canonicalEncoder.expression(event.identity) } finally { activeExpression = null }
+                    }
+                    is CjoSourceSaveEvent.SaveDeclaration -> {
+                        val index = declarationIndex.getValue(event.declaration)
+                        declarationTable.fill(index, declarationMetadata(event.declaration, index.toInt(),
+                            topLevel.getValue(event.declaration)))
+                    }
+                    is CjoSourceSaveEvent.Constant -> reserveConstant(event.graph, event.context)
+                }
+            }
+        }
+
+        /**
+         * 把 common CJO 中被 specific 声明实现的 wire identity 指向 specific 输出项。
+         * 函数体、类型图和初始化依赖都会引用原 common allDecls，不能因 common 声明不导出而悬空。
+         */
+        private fun indexCommonCounterpartDeclarationIndices() {
+            val family = familySnapshot ?: return
+            for (specific in declarations) {
+                val specificIndex = declarationIndex[canonicalDeclaration(specific)] ?: continue
+                for (common in family.commonCounterpartsFor(specific)) {
+                    indexCommonCounterpartDeclaration(common, specificIndex)
+                }
+                typeProjectionFor(specific).parameters.forEach { (common, specificParameter) ->
+                    val specificParameterIndex = declarationIndex[canonicalDeclaration(specificParameter)]
+                        ?: error("Specific owner type parameter is absent from the exported declaration graph")
+                    indexCommonCounterpartDeclaration(common, specificParameterIndex)
+                }
+            }
+        }
+
+        private fun indexCommonCounterpartDeclaration(common: CfirDeclaration, specificIndex: UInt) {
+            val key = cjoDeclarationOriginKey(common) ?: return
+            val previous = commonCounterpartDeclarationIndices.putIfAbsent(key, specificIndex)
+            require(previous == null || previous == specificIndex) {
+                "A common CJO declaration maps to multiple specific output declarations: $key"
+            }
+        }
+
+        /** 完成输入已固定 canonical declaration 和实际 CJO 来源，编码期只有 lookup。 */
+        private fun canonicalDeclaration(declaration: CfirDeclaration): CfirDeclaration =
+            frozenSources.canonicalDeclarations.getValue(declaration)
+
+        private fun cjoDeclarationOriginKey(declaration: CfirDeclaration): CjoSnapshotTableEntry? =
+            frozenSources.declarationOrigins[declaration]
+
+        private fun externalCjoDeclarationReference(declaration: CfirDeclaration): ExternalCjoDeclarationReference {
+            val value = frozenSources.externalDeclarations.getValue(canonicalDeclaration(declaration))
+            return ExternalCjoDeclarationReference(value.packageName, value.declarationKey)
+        }
+
+        private fun frozenTarget(target: CjoFrozenDeclarationTarget): CjoExpressionTargetMetadata = when (target) {
+            CjoFrozenDeclarationTarget.Invalid -> CjoExpressionTargetMetadata(pkgId = PackageIndex.INVALID.value)
+            is CjoFrozenDeclarationTarget.Package -> CjoExpressionTargetMetadata(pkgId = PackageIndex.PACKAGE_REFERENCE.value,
+                decl = target.packageName, index = target.index)
+            is CjoFrozenDeclarationTarget.External -> CjoExpressionTargetMetadata(pkgId = externalPackageIndex(target.packageName), decl = target.declarationKey)
+            is CjoFrozenDeclarationTarget.Current -> currentTarget(target.declaration)
+        }
+
+        private fun currentTarget(declaration: CfirDeclaration): CjoExpressionTargetMetadata {
+            val canonical = canonicalDeclaration(declaration)
+            val index = declarationIndex[canonical] ?: cjoDeclarationOriginKey(canonical)?.let {
+                commonCounterpartDeclarationIndices[it] ?: importedDeclarationIndices[it]
+            } ?: error("A current reference has no selected canonical declaration")
+            return CjoExpressionTargetMetadata(pkgId = PackageIndex.CURRENT.value, index = index)
+        }
+
+        private fun CjoExpressionTargetMetadata.toCjoAnnotationTargetMetadata(): CjoAnnotationTargetMetadata =
+            CjoAnnotationTargetMetadata(pkgId = pkgId, decl = decl, index = index)
+
+        private fun externalPackageIndex(packageName: String): Int {
+            externalImports += packageName
+            return externalImports.indexOf(packageName)
+        }
+
+        private fun frozenPosition(position: CjoFrozenSourcePosition?): CjoPositionMetadata? = position?.let {
+            val file = it.file?.let { identity -> cjoFileIndices[identity] ?: run {
+                val index = packageFiles.size.toUInt() + 1u
+                packageFiles += frozenSources.fileNames.getValue(identity)
+                cjoFileIndices[identity] = index
+                index
+            } } ?: it.savedFile
+            CjoPositionMetadata(file = file,
+                pkgId = it.importedPackage?.let { packageName -> externalPackageIndex(packageName).toUInt() + 1u } ?: 0u,
+                line = it.line, column = it.column, ignore = it.ignore)
+        }
+        private fun declarationPositions(declaration: CfirDeclaration): Pair<CjoPositionMetadata?, CjoPositionMetadata?> {
+            frozenSources.formats[declaration]?.let { return frozenPosition(it.begin) to frozenPosition(it.end) }
+            val input = sourceFormats.declarations.getValue(declaration)
+            return input.begin to input.end
+        }
+
+        private fun simplePatternOwner(binding: CfirPatternBindingVariable): CfirPatternVariable? {
+            return exportAnalysis.simplePatternOwnerOf(binding)
+        }
+
+        /** 原名称 token 的位置已在 Preparation 捕获，编码不能再读 PSI/LightTree。 */
+        private fun declarationIdentifierPosition(declaration: CfirDeclaration): CjoPositionMetadata? =
+            frozenSources.formats[declaration]?.let { frozenPosition(it.identifierPosition) }
+                ?: sourceFormats.declarations[declaration]?.identifierPosition
+
+        /** specific 导出使用 P3 最终成员图，确保未遮蔽的 common 成员进入容器 body。 */
+
+        private fun declaredMembers(owner: CfirDeclaration): List<CfirDeclaration> = exportAnalysis.memberDeclarationsOf(owner)
+
+        /** 最终 Class/Struct/Enum/Interface/Extend body，仅由原生模式与本次 linkage 结果选择。 */
+        private fun bodyMembers(owner: CfirDeclaration): List<CfirDeclaration> =
+            exportPlan.bodyMembers.getValue(owner)
 
         private fun genericMetadata(declaration: CfirDeclaration): CjoGenericMetadata? {
+            if (frozenSources.formats.containsKey(declaration)) return frozenSources.formats.getValue(declaration).generic?.let { generic ->
+                CjoGenericMetadata(generic.parameters.map(::ref), generic.constraints.map { constraint ->
+                    CjoConstraintMetadata(type(constraint.type, declaration), constraint.upperBounds.map { type(it, declaration) },
+                        constraint.isImplicitlyIntroduced, frozenPosition(constraint.begin), frozenPosition(constraint.end))
+                })
+            }
+            val hasGenericMetadata = exportAnalysis.hasOwnGenericNode(declaration) ||
+                (declaration is CfirBuiltInDeclaration && exportAnalysis.typeParametersOf(declaration).isNotEmpty())
+            if (!hasGenericMetadata || declaration is CfirConstructor || declaration is CfirEnumConstructor) return null
             val parameters = when (declaration) {
-                is CfirClassLikeDeclaration -> declaration.typeParameters.filterIsInstance<CfirTypeParameter>()
+                is CfirClassLikeDeclaration -> exportAnalysis.typeParametersOf(declaration)
                 is CfirConstructor -> emptyList()
-                is CfirFunction -> declaration.typeParameters
-                is CfirExtend -> declaration.typeParameters
+                is CfirFunction -> exportAnalysis.typeParametersOf(declaration)
+                is CfirExtend -> exportAnalysis.typeParametersOf(declaration)
                 else -> emptyList()
             }
-            if (parameters.isEmpty()) return null
             return CjoGenericMetadata(
                 typeParameters = parameters.map(::ref),
-                constraints = parameters.map { parameter ->
-                    CjoConstraintMetadata(
-                        type = type(ConeTypeParameterTypeImpl(parameter.symbol.toLookupTag())),
-                        upperBounds = parameter.bounds.map(::typeOf).map(::type),
-                    )
+                constraints = parameters.mapNotNull { parameter ->
+                    val upperBounds = exportAnalysis.explicitUpperBoundsOf(parameter).map { type(it, declaration) }
+                    if (upperBounds.isEmpty()) {
+                        null
+                    } else {
+                        CjoConstraintMetadata(
+                            type = capturedDeclarationTypeReference(parameter),
+                            upperBounds = upperBounds,
+                        )
+                    }
                 },
             )
         }
@@ -285,149 +785,193 @@ object CfirCjoPackageMetadataProducer {
             index: Int,
             topLevel: Boolean,
         ): CjoPackageDeclaration {
-            val name = declarationName(declaration)
-            val kind = declarationKind(declaration)
-            val info = declarationInfo(declaration)
-            val (begin, end) = declarationPositions(declaration)
-            return CjoPackageDeclaration(
-                identifier = name,
-                kind = kind,
-                isTopLevel = topLevel,
-                type = declarationType(declaration),
-                begin = begin,
-                end = end,
-                identifierPosition = declarationIdentifierPosition(declaration),
-                generic = genericMetadata(declaration),
-                attributes = attributes(declaration, topLevel),
-                annotations = annotations(declaration),
-                info = info,
+            val previousDeclaration = activeDeclaration
+            val rawDeclaration = frozenSources.formats[declaration]
+            activeDeclaration = declaration
+            return try {
+                val name = declarationName(declaration)
+                val kind = declarationKind(declaration)
+                val info = declarationInfo(declaration)
+                val (begin, end) = declarationPositions(declaration)
+                CjoPackageDeclaration(
+                    identifier = name,
+                    kind = kind,
+                    isTopLevel = topLevel,
+                    fullPackageName = rawDeclaration?.fullPackageName,
+                    exportId = rawDeclaration?.exportId,
+                    mangledName = rawDeclaration?.mangledName,
+                    mangledBeforeSema = rawDeclaration?.mangledBeforeSema,
+                    declarationHash = rawDeclaration?.hash,
+                    genericDecl = rawDeclaration?.genericDecl?.let { genericDecl ->
+                        frozenTarget(genericDecl).toCjoAnnotationTargetMetadata()
+                    },
+                    type = declarationType(declaration),
+                    begin = begin,
+                    end = end,
+                    identifierPosition = declarationIdentifierPosition(declaration),
+                    generic = genericMetadata(declaration),
+                    attributes = prepared.attributeInputs.attributesOf(declaration).words,
+                    annotations = annotations(declaration),
+                    info = info,
+                    dependencies = initializationDependencyMetadata(declaration),
+                )
+            } finally {
+                activeDeclaration = previousDeclaration
+            }
+        }
+
+        /** 参数、accessor 与泛型子声明继承其物理容器成员的 common → specific owner 映射。 */
+        private fun typeProjectionFor(declaration: CfirDeclaration): TypeParameterProjection = typeProjections.getOrPut(declaration) {
+            val mapping = familySnapshot?.ownerTypeParameterMappingForDescendant(
+                declaration,
+                generateSequence(exportAnalysis.ownerOf(declaration)) { exportAnalysis.ownerOf(it) },
+            ).orEmpty()
+            if (mapping.isEmpty()) emptyTypeProjection else TypeParameterProjection(
+                java.util.Collections.unmodifiableMap(IdentityHashMap<CfirTypeParameter, CfirTypeParameter>().apply { putAll(mapping) }),
             )
         }
 
-        private fun declarationName(declaration: CfirDeclaration): String = when (declaration) {
-            is CfirClassLikeDeclaration -> declaration.name.asString()
-            // Official ASTWriter keeps ExtendDecl.identifier empty; CJD matching
-            // deliberately ignores it and matches Decl.type + ExtendInfo.
-            is CfirExtend -> ""
-            is CfirCallableDeclaration -> declaration.symbol.name.asString()
-            is CfirTypeParameter -> declaration.name.asString()
-            else -> error("Unsupported CJO declaration ${declaration::class.simpleName}")
-        }
-
-        private fun declarationKind(declaration: CfirDeclaration): UShort = when (declaration) {
-            is CfirClass -> DeclKind.ClassDecl
-            is CfirInterface -> DeclKind.InterfaceDecl
-            is CfirStruct -> DeclKind.StructDecl
-            is CfirEnum -> DeclKind.EnumDecl
-            is CfirTypeAlias -> DeclKind.TypeAliasDecl
-            is CfirProperty -> DeclKind.PropDecl
-            is CfirEnumConstructor -> if (declaration.valueParameters.isEmpty()) DeclKind.VarDecl else DeclKind.FuncDecl
-            is CfirFunction -> DeclKind.FuncDecl
-            is CfirValueParameter -> DeclKind.FuncParam
-            is CfirTypeParameter -> DeclKind.GenericParamDecl
-            is CfirVariable -> DeclKind.VarDecl
-            is CfirExtend -> DeclKind.ExtendDecl
-            else -> error("Unsupported CJO declaration ${declaration::class.simpleName}")
-        }
-
-        private fun declarationType(declaration: CfirDeclaration): UInt = when (declaration) {
-            is CfirClass -> type(ConeClassLikeType(declaration.symbol.toLookupTag()))
-            is CfirInterface -> type(ConeClassLikeType(declaration.symbol.toLookupTag(), isInterface = true))
-            is CfirStruct -> type(ConeStructType(declaration.symbol.toLookupTag()))
-            is CfirEnum -> type(ConeEnumType(declaration.symbol.toLookupTag()))
-            // 对齐 ASTWriter::SaveTypeAliasDecl：Decl.type 来自
-            // typeManager.ObtainsAliasType(typeAliasDecl.type)，必须写展开后的
-            // 语义类型。别名身份由 DeclInfo.AliasInfo 承载；把别名符号编码为
-            // Class 类型会丢失该契约，使二进制类型消费者把别名当普通 class。
-            is CfirTypeAlias -> typeOf(declaration.expandedTypeRef).let(::type)
-            is CfirExtend -> typeOf(declaration.extendedTypeRef).let(::type)
-            is CfirTypeParameter -> type(ConeTypeParameterTypeImpl(declaration.symbol.toLookupTag()))
-            is CfirEnumConstructor -> if (declaration.valueParameters.isEmpty()) {
-                typeOf(declaration.returnTypeRef).let(::type)
-            } else {
-                type(functionType(declaration.valueParameters, declaration.returnTypeRef, false, false))
+        /** 与规划器使用同一冻结依赖和 planned 集合，填充期只投影已预留 FullId。 */
+        private fun initializationDependencyMetadata(declaration: CfirDeclaration): List<CjoAnnotationTargetMetadata> {
+            if (!writesCjmpCommonPart && !frozenSources.formats.containsKey(declaration)) return emptyList()
+            return prepared.dependencyInputs.plannedTargets(declaration, declarationIndex.keys).map {
+                frozenTarget(it).toCjoAnnotationTargetMetadata()
             }
-            is CfirFunction -> type(functionType(declaration.valueParameters, declaration.returnTypeRef, declaration.interopInfo?.resolvedAbi?.isCFunction == true, declaration.hasVariableLenArg))
-            is CfirCallableDeclaration -> type(declaration.returnTypeRef.coneTypeOrNull ?: unsupported("unresolved return type"))
+        }
+
+        private fun declarationName(declaration: CfirDeclaration): String =
+            frozenSources.formats[declaration]?.identifier ?: sourceFormats.declarations.getValue(declaration).identifier
+
+        private fun declarationKind(declaration: CfirDeclaration): UShort =
+            frozenSources.formats[declaration]?.kind ?: sourceFormats.declarations.getValue(declaration).kind
+
+        private fun declarationType(declaration: CfirDeclaration): UInt = if (prepared.attributeInputs.attributesOf(declaration).omitsType) 0u else if (frozenSources.formats.containsKey(declaration)) frozenSources.formats.getValue(declaration).type?.let { type(it, declaration) } ?: 0u else when (declaration) {
+            // 声明self type由语义输入一次捕获；encoder不能另造丢失自身T实参的bare类型。
+            is CfirBuiltInDeclaration, is CfirClass, is CfirInterface, is CfirStruct, is CfirEnum -> capturedDeclarationTypeReference(declaration)
+            // TypeAliasDecl 的 self 是原生 Type；RHS 独立写入 AliasInfo.aliasedTy。
+            is CfirTypeAlias -> capturedDeclarationTypeReference(declaration)
+            is CfirExtend -> capturedDeclarationTypeReference(declaration)
+            is CfirTypeParameter -> capturedDeclarationTypeReference(declaration)
+            is CfirEnumConstructor -> capturedDeclarationTypeReference(declaration)
+            is CfirFunction -> capturedDeclarationTypeReference(declaration)
+            is CfirCallableDeclaration -> capturedDeclarationTypeReference(declaration)
             else -> unsupported("missing declaration type")
         }
 
-        private fun functionType(
-            parameters: List<CfirValueParameter>,
-            returnType: CfirTypeRef,
-            isCFunction: Boolean,
-            hasVariableLenArg: Boolean,
-        ): ConeFunctionType = ConeFunctionType(
-            parameterTypes = parameters.map { typeOf(it.returnTypeRef) },
-            returnType = typeOf(returnType),
-            isCFunc = isCFunction,
-            hasVariableLenArg = hasVariableLenArg,
+        private fun capturedDeclarationTypeReference(declaration: CfirDeclaration): UInt = type(
+            exportAnalysis.typeUseGraph().declarationType(declaration) ?: unsupported("A declaration has no captured completed type use"),
+            declaration,
         )
 
-        private fun typeOf(ref: CfirTypeRef): ConeCangJieType =
-            ref.coneTypeOrNull ?: unsupported("unresolved CFIR type reference")
 
-        private fun declarationInfo(declaration: CfirDeclaration): CjoDeclarationInfo? = when (declaration) {
-            is CfirEnumConstructor -> if (declaration.valueParameters.isEmpty()) {
-                CjoVariableInfo(isVar = false, isConst = false)
-            } else {
-                CjoFunctionInfo(
-                    body = CjoFunctionBodyInfo(
-                        parameterLists = listOf(declaration.valueParameters.map { ref(it) }),
-                        desugaredParameterLists = listOf(declaration.valueParameters.map { ref(it.desugaredParameter ?: it) }),
-                        returnType = typeOf(declaration.returnTypeRef).let(::type),
-                    ),
+        private fun typeOf(ref: CfirTypeRef): ConeCangJieType =
+            exportAnalysis.sourceElement(ref).resolvedType ?: unsupported("unresolved captured CFIR type reference")
+
+        /** F header 与本次 body 选择分开，SOURCE/loaded 都调用同一 canonical encoder。 */
+        private fun sourceFunctionBodyInfo(function: CfirCallableDeclaration): CjoFunctionBodyInfo {
+            if (function is CfirFunction && exportPlan.isPartialFunction(function)) return CjoFunctionBodyInfo()
+            val header = frozenSources.formats[function]?.function?.header
+            val selected = exportPlan.sourceContent(function)?.root
+            val parameters = exportAnalysis.valueParametersOf(function)
+            val signature = header?.signature ?: checkNotNull(exportAnalysis.declarationTypeOf(function)).let { type ->
+                if (type is ConeFunctionType) CfirSourceCallableSignature.Resolved(type.returnType)
+                else {
+                    check(function is CfirEnumConstructor) { "A captured function signature must be FuncTy" }
+                    CfirSourceCallableSignature.Resolved(type)
+                }
+            }
+            return canonicalEncoder.functionBody(CfirSourceFunctionBody(function, parameters,
+                signature,
+                selected, header?.captureKind ?: 0, header?.always ?: false, header))
+        }
+
+        private fun declarationInitializer(variable: CfirVariable): UInt {
+            val selected = exportPlan.sourceContent(variable)?.root
+            val owning = if (variable in canonicalDefinitions && exportAnalysis.hasCanonicalSourceOf(variable))
+                exportAnalysis.canonicalSourceGraphOf(variable).initializers[variable] else null
+            return (owning ?: selected)?.let(canonicalEncoder::expression) ?: 0u
+        }
+
+        private fun declarationInfo(declaration: CfirDeclaration): CjoDeclarationInfo? {
+            val format = frozenSources.formats[declaration]
+            if (format?.infoType == PackageFormat.DeclInfo.NONE) return null
+            fun inherited(): List<UInt> = exportAnalysis.typeUseGraph().superTypes(declaration).map { type(it, declaration) }
+            fun functionInfo(function: CfirCallableDeclaration): CjoFunctionInfo {
+                val info = format?.function
+                return CjoFunctionInfo(
+                    overflowStrategy = sourceFormats.declarations[declaration]?.overflow,
+                    operation = info?.operation ?: 0u,
+                    body = sourceFunctionBodyInfo(function),
+                    hasFunctionBody = info?.hasFunctionBody ?: true,
+                    autoDiff = info?.autoDiff,
+                    isConst = info?.isConst ?: exportAnalysis.statusOf(declaration).isConst,
+                    isInline = exportAnalysis.precedingFactsOf(declaration).isInline && !exportAnalysis.isInInstantiatedDeclaration(declaration),
+                    isFastNative = info?.isFastNative ?: sourceFormats.declarations.getValue(declaration).fastNative,
+                    encodedOverflowPolicy = info?.overflowPolicy,
                 )
             }
-            is CfirFunction -> CjoFunctionInfo(
-                overflowStrategy = declaration.annotationInfo?.overflowStrategy ?: declaration.interopInfo?.overflowStrategy,
-                body = CjoFunctionBodyInfo(
-                    parameterLists = listOf(declaration.valueParameters.map { ref(it) }),
-                    desugaredParameterLists = listOf(declaration.valueParameters.map { ref(it.desugaredParameter ?: it) }),
-                    returnType = typeOf(declaration.returnTypeRef).let(::type),
-                ),
-                isConst = declaration.status.isConst,
-                isFastNative = declaration.interopInfo?.isFastNative == true,
-            )
-            is CfirTypeAlias -> CjoAliasInfo(typeOf(declaration.expandedTypeRef).let(::type))
-            is CfirClass -> CjoClassInfo(
-                inheritedTypes = declaration.superTypeRefs.map(::typeOf).map(::type),
-                body = declaration.declarations.map(::ref),
-                isAnnotation = declaration.annotationInfo?.isAnnotation == true,
-                annotationTargets = declaration.annotationInfo?.annotationTargets.toCjoTargetMask().first,
-                annotationTargets2 = declaration.annotationInfo?.annotationTargets.toCjoTargetMask().second,
-                runtimeVisible = declaration.annotationInfo?.runtimeVisible == true,
-            )
-            is CfirInterface -> CjoInterfaceInfo(
-                inheritedTypes = declaration.superTypeRefs.map(::typeOf).map(::type),
-                body = declaration.declarations.map(::ref),
-            )
-            is CfirStruct -> CjoStructInfo(
-                inheritedTypes = declaration.superTypeRefs.map(::typeOf).map(::type),
-                body = declaration.declarations.map(::ref),
-            )
-            is CfirEnum -> CjoEnumInfo(
-                inheritedTypes = declaration.superTypeRefs.map(::typeOf).map(::type),
-                body = declaration.cjoBodyDeclarations().map(::ref),
-                hasArguments = declaration.declarations.filterIsInstance<CfirEnumConstructor>()
-                    .any { it.valueParameters.isNotEmpty() },
-                nonExhaustive = declaration.isNonExhaustive,
-            )
-            is CfirProperty -> CjoPropertyInfo(
-                isConst = declaration.status.isConst,
-                isMutable = declaration.status.isMut,
-                getters = listOfNotNull(declaration.getter?.let { ref(it) }),
-                setters = listOfNotNull(declaration.setter?.let { ref(it) }),
-            )
-            is CfirValueParameter -> null
-            is CfirTypeParameter -> null
-            is CfirVariable -> CjoVariableInfo(isVar = declaration.isVar, isConst = declaration.status.isConst)
-            is CfirExtend -> CjoExtendInfo(
-                inheritedTypes = declaration.superTypeRefs.map(::typeOf).map(::type),
-                body = declaration.declarations.map(::ref),
-            )
-            else -> null
+            return when (declaration) {
+                is CfirBuiltInDeclaration -> CjoBuiltInInfo(checkNotNull(format?.builtin ?: sourceFormats.declarations.getValue(declaration).builtin).toCjoBuiltInType())
+                is CfirEnumConstructor -> if (declarationKind(declaration) == DeclKind.VarDecl)
+                    CjoVariableInfo(isVar = false, isConst = false) else functionInfo(declaration)
+                is CfirFunction -> functionInfo(declaration)
+                is CfirTypeAlias -> CjoAliasInfo(type(exportAnalysis.typeUseGraph().aliasRightHandSide(declaration), declaration))
+                is CfirClass -> CjoClassInfo(
+                    inheritedTypes = inherited(), body = bodyMembers(declaration).map(::ref),
+                    autoDiff = format?.nominal?.autoDiff,
+                    isAnnotation = format?.nominal?.isAnnotation ?: sourceFormats.declarations.getValue(declaration).isAnnotation,
+                    annotationTargets = format?.nominal?.annotationTargets ?: sourceFormats.declarations.getValue(declaration).annotationTargets,
+                    annotationTargets2 = format?.nominal?.annotationTargets2 ?: sourceFormats.declarations.getValue(declaration).annotationTargets2,
+                    runtimeVisible = format?.nominal?.runtimeVisible ?: sourceFormats.declarations.getValue(declaration).runtimeVisible,
+                )
+                is CfirInterface -> CjoInterfaceInfo(inherited(), bodyMembers(declaration).map(::ref))
+                is CfirStruct -> CjoStructInfo(inherited(), bodyMembers(declaration).map(::ref), format?.nominal?.autoDiff)
+                is CfirEnum -> CjoEnumInfo(
+                    inheritedTypes = inherited(), body = bodyMembers(declaration).filterNot { it is CfirConstructor && it.isPrimary }.map(::ref),
+                    autoDiff = format?.nominal?.autoDiff,
+                    hasArguments = format?.nominal?.hasArguments ?: declaredMembers(declaration).filterIsInstance<CfirEnumConstructor>().any { exportAnalysis.parameterCountOf(it) != 0 },
+                    nonExhaustive = format?.nominal?.nonExhaustive ?: sourceFormats.declarations.getValue(declaration).nonExhaustive,
+                    ellipsisPosition = frozenPosition(format?.nominal?.ellipsis),
+                )
+                is CfirProperty -> CjoPropertyInfo(
+                    isConst = format?.isConst ?: exportAnalysis.statusOf(declaration).isConst,
+                    isMutable = format?.isMutable ?: sourceFormats.declarations.getValue(declaration).isMutable,
+                    getters = if (exportOptions.analysisSettings.compileCjd) emptyList() else
+                        (format?.getters ?: sourceFormats.declarations.getValue(declaration).getters).map(::ref),
+                    setters = if (exportOptions.analysisSettings.compileCjd) emptyList() else
+                        (format?.setters ?: sourceFormats.declarations.getValue(declaration).setters).map(::ref),
+                )
+                is CfirValueParameter -> CjoParameterInfo(
+                    isNamed = format?.isNamedParameter ?: sourceFormats.declarations.getValue(declaration).isNamed,
+                    isMember = format?.isMemberParameter ?: sourceFormats.declarations.getValue(declaration).isMember,
+                    defaultValue = exportPlan.sourceContent(declaration)?.root?.let(canonicalEncoder::expression) ?: 0u,
+                )
+                is CfirTypeParameter -> null
+                is CfirVariable -> if (declaration is CfirPatternVariable && format?.kind != DeclKind.VarDecl) {
+                    check(exportAnalysis.hasCanonicalSourceOf(declaration) && declaration in canonicalDefinitions)
+                    CjoVarWithPatternInfo(format?.isVar ?: sourceFormats.declarations.getValue(declaration).isVar, format?.isConst ?: exportAnalysis.statusOf(declaration).isConst,
+                        canonicalEncoder.declarationPattern(declaration), declarationInitializer(declaration))
+                } else CjoVariableInfo(
+                    isVar = format?.isVar ?: sourceFormats.declarations.getValue(declaration).isVar,
+                    isConst = format?.isConst ?: exportAnalysis.statusOf(declaration).isConst,
+                    isMemberParam = format?.isMemberParameter ?: sourceFormats.declarations.getValue(declaration).isMember,
+                    initializer = declarationInitializer(declaration),
+                    constValue = if (hasValueSlot(declaration)) constantValue(
+                        checkNotNull(exportAnalysis.constantValueOf(declaration)) { "A selected value slot has no completed typed constant" }, declaration) else null,
+                )
+                is CfirExtend -> CjoExtendInfo(inherited(), bodyMembers(declaration).map(::ref))
+                else -> null
+            }
         }
+
+        private fun CfirBuiltInTypeKind.toCjoBuiltInType(): UByte = when (this) {
+            CfirBuiltInTypeKind.ARRAY -> PackageFormat.BuiltInType.Array
+            CfirBuiltInTypeKind.VARRAY -> PackageFormat.BuiltInType.VArray
+            CfirBuiltInTypeKind.CPOINTER -> PackageFormat.BuiltInType.CPointer
+            CfirBuiltInTypeKind.CSTRING -> PackageFormat.BuiltInType.CString
+            CfirBuiltInTypeKind.CFUNC -> PackageFormat.BuiltInType.CFunc
+        }
+
 
         private fun ref(declaration: CfirDeclaration): UInt {
             val canonicalDeclaration = canonicalDeclaration(declaration)
@@ -435,298 +979,439 @@ object CfirCjoPackageMetadataProducer {
                 ?: error("CJO declaration reference was not indexed: ${declarationName(canonicalDeclaration)}")
         }
 
-        /**
-         * 写出 CJMP 属性位（官方 `Attribute::COMMON / SPECIFIC / FROM_COMMON_PART /
-         * COMMON_WITH_DEFAULT`）。
-         *
-         * 证据（cjc 1.1.3 产出的 cjo 实测，`.workbuddy/tmp/cjmp_probe113/full` 目录下的 cjo）：
-         * - `specific func` → 只带 `SPECIFIC`；
-         * - `common func`（有体）→ `COMMON + FROM_COMMON_PART + COMMON_WITH_DEFAULT`。
-         *
-         * `COMMON_WITH_DEFAULT` 按官方 `SetCJMPAttrs` 在写侧派生：函数/构造器体、属性访问器、变量初值，
-         * 以及 class/interface/struct/enum/extend 的全部 common 成员均有默认实现时置位。
-         * `FROM_COMMON_PART` 表示本包元数据来自 common-part 编译，故该档位写出的每个声明都携带此位。
-         */
-        private fun addCjmpAttributes(
-            values: MutableSet<CfirAttribute>,
-            declaration: CfirDeclaration,
-            status: org.cangnova.cangjie.cfir.declarations.CfirDeclarationStatus,
-        ) {
-            if (writesCjmpCommonPart) values += CfirAttribute.FROM_COMMON_PART
-            if (status.isSpecific) values += CfirAttribute.SPECIFIC
-            if (!status.isCommon) return
-            values += CfirAttribute.COMMON
-            if (status.isCommonWithDefault || declaration.cjmpHasCommonDefault()) {
-                values += CfirAttribute.COMMON_WITH_DEFAULT
+        /** CJO desugar 引用只能指向当前 source package 收录的 helper。 */
+        private fun defaultHelperOf(parameter: CfirValueParameter): CfirNamedFunction? {
+            if (exportAnalysis.isSourceDeclaration(parameter)) return exportAnalysis.defaultHelperOf(parameter) as? CfirNamedFunction
+            val owner = checkNotNull(exportAnalysis.ownerOf(parameter))
+            val header = if (exportAnalysis.hasCanonicalSourceOf(owner))
+                exportAnalysis.canonicalSourceGraphOf(owner).functionHeaders[owner] else frozenSources.formats[owner]?.function?.header
+            if (header == null) return null
+            header.parameterLists.zip(header.desugaredParameterLists).forEach { (parameters, helpers) ->
+                val index = parameters.indexOfFirst { it === parameter }
+                if (index >= 0) return if (helpers.isEmpty()) null else helpers[index]
             }
+            error("A saved parameter has no actual FuncBody group")
         }
 
-        private fun attributes(declaration: CfirDeclaration, topLevel: Boolean): List<ULong> {
-            val values = linkedSetOf<CfirAttribute>()
-            if (topLevel) values += CfirAttribute.GLOBAL
-            val status = (declaration as? CfirMemberDeclaration)?.status ?: return emptyList()
-            // CJO 中构造器同样写为 FuncDecl，必须保留官方身份位供反序列化恢复声明种类。
-            if (declaration is CfirConstructor) {
-                values += CfirAttribute.CONSTRUCTOR
-                if (declaration.isPrimary) values += CfirAttribute.PRIMARY_CONSTRUCTOR
-            } else if (declaration is CfirEnumConstructor) {
-                values += CfirAttribute.ENUM_CONSTRUCTOR
-            }
-            if (status.isC || declaration.interopInfo?.resolvedAbi?.kind == CfirAbiKind.C) values += CfirAttribute.C
-            if (status.isForeign) values += CfirAttribute.FOREIGN
-            if (status.isStatic) values += CfirAttribute.STATIC
-            if (status.isAbstract) values += CfirAttribute.ABSTRACT
-            // 官方语义检查会把接口等隐式开放成员的有效 OPEN 写入 AttributePack。
-            if (status.isOpen || status.modality == Modality.OPEN) values += CfirAttribute.OPEN
-            if (status.isDefault) values += CfirAttribute.DEFAULT
-            if (status.isSealed) values += CfirAttribute.SEALED
-            if (status.isOverride) values += CfirAttribute.OVERRIDE
-            if (status.isRedef) values += CfirAttribute.REDEF
-            if (status.isUnsafe) values += CfirAttribute.UNSAFE
-            if (status.isMut) values += CfirAttribute.MUT
-            addCjmpAttributes(values, declaration, status)
-            val hasGenericTypeParameters = when (declaration) {
-                is CfirClassLikeDeclaration -> declaration.typeParameters.filterIsInstance<CfirTypeParameter>().isNotEmpty()
-                is CfirConstructor -> false
-                is CfirFunction -> declaration.typeParameters.isNotEmpty()
-                is CfirExtend -> declaration.typeParameters.isNotEmpty()
-                else -> false
-            }
-            // Attribute.GENERIC 同时标记 class-like 与 extend owner，供 CJO 消费端的实例化筛选使用。
-            if (hasGenericTypeParameters) values += CfirAttribute.GENERIC
-            if (declaration.annotationInfo?.isIntrinsic == true) values += CfirAttribute.INTRINSIC
-            if (declaration.annotationInfo?.isMockSupported == true) values += CfirAttribute.MOCK_SUPPORTED
-            when (declaration.status.visibility) {
-                Visibilities.Public -> values += CfirAttribute.PUBLIC
-                Visibilities.Private -> values += CfirAttribute.PRIVATE
-                Visibilities.Protected -> values += CfirAttribute.PROTECTED
-                Visibilities.Internal -> values += CfirAttribute.INTERNAL
-                else -> Unit
-            }
-            val max = values.maxOfOrNull { it.ordinal } ?: return emptyList()
-            val words = ULongArray(max / 64 + 1)
-            values.forEach { words[it.ordinal / 64] = words[it.ordinal / 64] or (1uL shl (it.ordinal % 64)) }
-            return words.toList()
+        private fun defaultHelperReference(parameter: CfirValueParameter): UInt = defaultHelperOf(parameter)?.let(::ref) ?: 0u
+
+        private fun canonicalAnnotations(declaration: CfirDeclaration): List<CfirSourceAnnotation> {
+            val owner = patternMetadataOwner(declaration)
+            if (exportAnalysis.hasCanonicalSourceOf(owner)) return exportAnalysis.canonicalSourceGraphOf(owner).annotations.getValue(owner)
+            check(exportAnalysis.annotationsOf(owner).isEmpty()) { "Annotation content requires its completed canonical graph" }
+            return emptyList()
         }
 
         private fun annotations(declaration: CfirDeclaration): List<CjoAnnotationMetadata> =
-            declaration.annotations.filterIsInstance<CfirAnnotationCall>().mapNotNull { annotation ->
-                /*
-                 * Match the official ASTWriter::SaveAnnotations contract.  The
-                 * wire kind is selected from resolved identity, never from the
-                 * spelling of the annotation.  C/FFI and parser-only builtins
-                 * are represented by Decl attributes/FuncInfo and therefore do
-                 * not become Anno records. Custom 注解除编译期可见性外，还按
-                 * 1.1 起的 COMMON/SPECIFIC 一致性检查要求保留；来源位不参与该规则。
-                 */
-                val kind = when (val identity = annotation.annotationIdentity) {
-                    is CangjieAnnotationIdentity.LanguageBuiltIn -> when (identity.kind) {
-                        BuiltInAnnotationKind.DEPRECATED -> AnnoKind.Deprecated
-                        BuiltInAnnotationKind.FROZEN -> AnnoKind.Frozen
-                        BuiltInAnnotationKind.ATTRIBUTE ->
-                            AnnoKind.TestRegistration.takeIf {
-                                declaration.annotationInfo?.attributes?.contains("TEST_REGISTER") == true
-                            }
-                        BuiltInAnnotationKind.ANNOTATION ->
-                            AnnoKind.Annotation.takeIf {
-                                languageVersion >= LanguageVersion.CANGJIE_1_1_0 &&
-                                    annotation.argumentList.arguments.isNotEmpty()
-                            }
-                        else -> null
+            canonicalEncoder.annotations(patternMetadataOwner(declaration), canonicalAnnotations(declaration))
+
+        private fun patternMetadataOwner(declaration: CfirDeclaration): CfirDeclaration =
+            (declaration as? CfirPatternBindingVariable)?.let(::simplePatternOwner) ?: declaration
+
+        override fun reserveExpression(identity: CfirSourceExpressionIdentity): UInt =
+            expressionIndex[identity] ?: expressionTable.reserve().also { expressionIndex[identity] = it }
+
+        override fun expressionIndex(identity: CfirSourceExpressionIdentity): UInt =
+            expressionIndex.getValue(identity)
+
+        override fun beginExpression(identity: CfirSourceExpressionIdentity): Boolean {
+            if (identity in filledExpressions) return false
+            check(activeExpression === identity) { "Expression fill attempted to discover a child outside the completed save plan" }
+            check(fillingExpressions.add(identity)) { "Canonical SOURCE has a cyclic owning edge" }
+            return true
+        }
+
+        override fun fillExpression(index: UInt, metadata: CjoExpressionMetadata) {
+            expressionTable.fill(index, metadata)
+            val identity = expressionIndex.entries.single { it.value == index }.key
+            check(fillingExpressions.remove(identity) && filledExpressions.add(identity))
+        }
+
+        override fun declarationReference(declaration: CfirDeclaration): UInt = ref(declaration)
+        override fun declarationTarget(declaration: CfirDeclaration, kind: CfirSourceReferenceKind): CjoExpressionTargetMetadata =
+            when (kind) {
+                CfirSourceReferenceKind.CURRENT -> currentTarget(declaration)
+                CfirSourceReferenceKind.IMPORTED -> frozenTarget(frozenSources.externalDeclarations.getValue(canonicalDeclaration(declaration)))
+                CfirSourceReferenceKind.SOURCE -> sourceExpressionTarget(declaration)
+            }
+        override fun ownedDeclarationTarget(declaration: CfirDeclaration): CjoExpressionTargetMetadata = currentTarget(declaration)
+        override fun savedReferenceTarget(reference: CfirSourceSavedReference): CjoExpressionTargetMetadata? {
+            val saved = frozenSources.savedReferences.getValue(reference)
+            val target = saved.target ?: return null
+            val encoded = frozenTarget(target)
+            return if (target is CjoFrozenDeclarationTarget.Current) encoded.copy(decl = saved.declarationKey)
+                else encoded.copy(decl = saved.declarationKey, index = saved.index)
+        }
+        override fun typeReference(type: ConeCangJieType, context: CfirDeclaration): UInt = type(type, context)
+        override fun typeReference(ref: CfirTypeRef, context: CfirDeclaration): UInt = type(exportAnalysis.typeUseGraph().reference(ref), context)
+        override fun functionReturnTypeReference(function: CfirCallableDeclaration): UInt = when (function) {
+            is CfirFunction -> exportAnalysis.typeUseGraph().functionReturn(function)?.let { type(it, function) } ?: 0u
+            is CfirEnumConstructor -> exportAnalysis.typeUseGraph().enumConstructorReturn(function)?.let { type(it, function) } ?: 0u
+            else -> error("A saved F requires its actual callable owner")
+        }
+        override fun invalidTypeReference(): UInt = type(FrozenTypeShape(PackageFormat.TypeKind.Invalid))
+        override fun parameterDesugar(parameter: CfirValueParameter): UInt = defaultHelperReference(parameter)
+        override fun positions(context: CfirDeclaration, span: CfirSourceSpan?, imported: CfirSourceImportedPosition?): Pair<CjoPositionMetadata?, CjoPositionMetadata?> {
+            if (imported != null) return imported.beginIdentity?.let { frozenPosition(frozenSources.positions.getValue(it)) } to
+                imported.endIdentity?.let { frozenPosition(frozenSources.positions.getValue(it)) }
+            return sourceFormats.positions(context, span)
+        }
+        override fun annotationArgumentName(name: org.cangnova.cangjie.name.Name?, owner: CfirDeclaration): String? =
+            if (exportAnalysis.isSourceDeclaration(owner)) name?.asString() ?: "" else name?.asString()
+
+        override fun constantValues(pattern: CfirSourcePattern, owner: CfirDeclaration): List<CjoConstValueInfo> {
+            if (pattern.constantValues.isEmpty()) return emptyList()
+            check(exportOptions.sourceEncodingContract == CjoSourceEncodingContract.TYPED_SCHEMA) {
+                "Fixed native SOURCE does not produce Pattern.values"
+            }
+            return exportAnalysis.constantValuesOf(pattern).map { constantValue(it, owner) }
+        }
+
+        /** 保存槽是原输入/显式 schema 合同的事实；native SOURCE 不制造值池。 */
+        private fun hasValueSlot(variable: CfirVariable): Boolean {
+            val saved = frozenSources.formats[variable]
+            if (saved != null) {
+                if (saved.hasConstantValue) check(sourceEncodingContract == CjoSourceEncodingContract.TYPED_SCHEMA) {
+                    "A saved VarInfo value requires explicit typed-schema re-export"
+                }
+                return saved.hasConstantValue
+            }
+            return sourceEncodingContract == CjoSourceEncodingContract.TYPED_SCHEMA && exportAnalysis.constantValueOf(variable) != null
+        }
+
+        private fun reserveConstant(graph: CfirExportConstantGraph, owner: CfirDeclaration) {
+            graph.nodes.forEach { node ->
+                val previous = valueNodes.putIfAbsent(node.identity, node)
+                check(previous == null || previous == node) { "A frozen constant identity has multiple records" }
+            }
+            val visited = HashSet<CfirExportConstantIdentity>()
+            fun visit(identity: CfirExportConstantIdentity) {
+                if (!visited.add(identity)) return
+                val node = valueNodes.getValue(identity)
+                when (val storage = frozenSources.constants.getValue(identity)) {
+                    is CjoFrozenConstantStorage.Scalar -> Unit
+                    CjoFrozenConstantStorage.Array -> constantChildren(node).forEach(::visit)
+                    is CjoFrozenConstantStorage.Composite -> {
+                        if (!valueIndices.containsKey(identity)) valueIndices[identity] = valueTable.reserve() - 1u
+                        storage.fields.forEach { visit(it.value) }
                     }
-                    is CangjieAnnotationIdentity.PlatformDerived ->
-                        annotation.platformAnnotationDescriptor?.officialKind?.toCjoAnnoKind(languageVersion)
-                    // 官方 1.1 ASTWriter::SaveAnnotations 保留 common/specific 上的 custom 注解，
-                    // 供跨分部一致性检查使用；FROM_COMMON_PART 单独存在不触发这个例外。
-                    is CangjieAnnotationIdentity.Custom ->
-                        AnnoKind.Custom.takeIf {
-                            val status = (declaration as? CfirMemberDeclaration)?.status
-                            annotation.isCompileTimeVisible == true ||
-                                    languageVersion >= LanguageVersion.CANGJIE_1_1_0 &&
-                                    (status?.isCommon == true || status?.isSpecific == true)
+                }
+            }
+            check(exportAnalysis.containsDeclaration(owner))
+            visit(graph.root)
+        }
+
+        private fun constantChildren(node: CfirExportConstantNode): List<CfirExportConstantIdentity> = when (node) {
+            is CfirExportConstantNode.Tuple -> node.elements
+            is CfirExportConstantNode.Array -> node.elements
+            is CfirExportConstantNode.VArray -> node.elements
+            else -> error("ArrayValue storage requires its actual ordered element product")
+        }
+
+        private val filledValues = HashSet<CfirExportConstantIdentity>()
+        private val fillingValues = HashSet<CfirExportConstantIdentity>()
+
+        private fun constantValue(graph: CfirExportConstantGraph, owner: CfirDeclaration): CjoConstValueInfo {
+            reserveConstant(graph, owner)
+            fun value(identity: CfirExportConstantIdentity): CjoConstValueInfo {
+                val node = valueNodes.getValue(identity)
+                return when (val storage = frozenSources.constants.getValue(identity)) {
+                    is CjoFrozenConstantStorage.Scalar -> storage.value
+                    CjoFrozenConstantStorage.Array -> CjoArrayConstValue(constantChildren(node).map(::value))
+                    is CjoFrozenConstantStorage.Composite -> {
+                        val index = valueIndices.getValue(identity)
+                        if (identity !in filledValues && fillingValues.add(identity)) {
+                            val fields = storage.fields.map { field ->
+                                CjoCompositeValueFieldMetadata(field.name, type(CfirExportTypeUse.Semantic(exportAnalysis.typeElement(field.type, storage.domain)), owner), value(field.value))
+                            }
+                            valueTable.fill(index + 1u, CjoCompositeValueMetadata(type(CfirExportTypeUse.Semantic(exportAnalysis.typeElement(node.type, storage.domain)), owner), fields))
+                            check(fillingValues.remove(identity) && filledValues.add(identity))
                         }
-                    else -> null
-                } ?: return@mapNotNull null
-                val identifier = when (val identity = annotation.annotationIdentity) {
-                    is CangjieAnnotationIdentity.LanguageBuiltIn -> identity.sourceName
-                    is CangjieAnnotationIdentity.Custom ->
-                        annotation.annotationSourceName ?: identity.classFqName?.shortName()?.asString()
-                    else -> annotation.annotationSourceName
-                } ?: unsupported("CJO annotation has no resolved identifier")
-                CjoAnnotationMetadata(
-                        kind = kind,
-                        identifier = identifier,
-                    arguments = annotationArguments(annotation, kind),
-                )
-            }
-
-        private fun annotationArguments(
-            annotation: CfirAnnotationCall,
-            kind: UShort,
-        ): List<CjoAnnotationArgumentMetadata> = annotation.argumentList.arguments.mapNotNull { argument ->
-            val named = argument as? org.cangnova.cangjie.cfir.expressions.CfirNamedArgumentExpression
-            val expression = named?.expression ?: argument
-            val index = expressionOrNull(expression)
-            if (index == null && kind == AnnoKind.Annotation) {
-                unsupported("CJO @Annotation argument is not representable by the expression pool")
-            }
-            index?.let { CjoAnnotationArgumentMetadata(named?.argumentName?.asString(), it) }
-        }
-
-        private fun expressionOrNull(expression: org.cangnova.cangjie.cfir.expressions.CfirExpression): UInt? {
-            val index = expressions.size.toUInt() + 1u
-            val metadata = when (expression) {
-                is CfirLiteralExpression -> CjoExpressionMetadata(
-                    kind = ExprKind.LitConstExpr,
-                    literal = CjoLiteralExpressionMetadata(
-                        value = expression.value?.toString(),
-                        constKind = expression.kind.toCjoLiteralKind(),
-                        stringKind = StringKind.Normal,
-                    ),
-                )
-                is CfirArrayLiteral -> CjoExpressionMetadata(
-                    kind = ExprKind.ArrayLit,
-                    operands = expression.elements.map {
-                        expressionOrNull(it) ?: unsupported("CJO expression array element is not representable")
-                    },
-                )
-                is org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression -> {
-                    val name = (expression.calleeReference as? CfirNamedReference)?.name?.asString()
-                        ?: return null
-                    CjoExpressionMetadata(
-                        kind = ExprKind.RefExpr,
-                        reference = CjoReferenceExpressionMetadata(reference = name),
-                    )
-                }
-                else -> return null
-            }
-            expressions += metadata
-            return index
-        }
-
-        private fun BuiltInAnnotationKind.toCjoAnnoKind(version: LanguageVersion): UShort? {
-            if (version < LanguageVersion.CANGJIE_1_1_0) return null
-            return when (this) {
-                BuiltInAnnotationKind.JAVA_MIRROR -> AnnoKind.JavaMirror
-                BuiltInAnnotationKind.JAVA_IMPL -> AnnoKind.JavaImpl
-                BuiltInAnnotationKind.JAVA_HAS_DEFAULT -> AnnoKind.JavaHasDefault
-                BuiltInAnnotationKind.OBJ_C_MIRROR -> AnnoKind.ObjCMirror
-                BuiltInAnnotationKind.OBJ_C_IMPL -> AnnoKind.ObjCImpl
-                BuiltInAnnotationKind.FOREIGN_NAME -> AnnoKind.ForeignName
-                else -> null // official ASTWriter skips ObjCInit/Optional/getter/setter
-            }
-        }
-
-        private fun type(type: ConeCangJieType): UInt {
-            /*
-             * 官方 `ASTWriter::SaveType` 写的是 `TypeManager::ObtainsAliasType(&node)`：解析阶段把
-             * 别名展开成底层类型并保留 `AbbreviatedTypeAttribute`，写出时仍以别名身份（`TypeKind.Type`）
-             * 落盘。这里必须同样优先写缩写类型，否则默认流水线（`expandTypeAliasesInTypeResolution=true`）
-             * 下 `Array<Byte>` 会被写成 `Array<UInt8>`，与官方 `.cjo` 不等价、反编译也丢失别名。
-             */
-            val abbreviated = type.abbreviatedType as? ConeTypeAliasType
-            if (abbreviated != null && type !is ConeTypeAliasType) {
-                return type(abbreviated)
-            }
-            typeIndex[type]?.let { return it }
-            require(type !in typeIndex) { "Recursive CJO type is not serializable yet: $type" }
-            val index = types.size.toUInt() + 1u
-            typeIndex[type] = index
-            // 上界、类型实参及函数子类型会递归增加类型表；先占住本节点的格式索引，递归后再回填，
-            // 保证 CJO 中所有引用仍指向其预先分配的 1-based type index。
-            types += CjoTypeMetadata(PackageFormat.TypeKind.Invalid)
-            val metadata = when (type) {
-                is ConePrimitiveType -> CjoTypeMetadata(type.kind.toCjoTypeKind())
-                is ConeTypeParameterType -> {
-                    val declaration = type.lookupTag.typeParameterSymbol.cfir
-                    val index = declarationIndex[declaration]
-                        ?: unsupported("CJO generic type parameter was not indexed: ${declaration.name}")
-                    CjoTypeMetadata(
-                        kind = PackageFormat.TypeKind.Generic,
-                        semanticInfo = CjoGenericTypeInfoMetadata(
-                            declarationIndex = index,
-                            upperBounds = declaration.bounds.map { bound -> type(typeOf(bound)) },
-                        ),
-                    )
-                }
-                is ConeClassLikeType -> CjoTypeMetadata(
-                    kind = if (type.isInterface) PackageFormat.TypeKind.Interface else PackageFormat.TypeKind.Class,
-                    typeArguments = type.typeArguments.map { projectionType(it) },
-                    // 官方 `CompositeTyInfo.isThisTy`：类体内的 `This` 必须随签名落盘，
-                    // 否则 `.cjo` 往返会把它静默当成普通 class-like 类型。
-                    semanticInfo = compositeInfo(type.classId, isThisType = type.isThisType),
-                )
-                is ConeStructType -> CjoTypeMetadata(
-                    kind = PackageFormat.TypeKind.Struct,
-                    typeArguments = type.typeArguments.map { projectionType(it) },
-                    semanticInfo = compositeInfo(type.classId),
-                )
-                is ConeEnumType -> CjoTypeMetadata(
-                    kind = PackageFormat.TypeKind.Enum,
-                    typeArguments = type.typeArguments.map { projectionType(it) },
-                    semanticInfo = compositeInfo(type.classId),
-                )
-                /*
-                 * typealias 类型按官方 `SaveNominalTy` 写：`TypeKind.Type` + 别名声明 FullId + use-site 实参。
-                 * 读出侧（`CfirTypeDeserializer.convertTypeAliasType`）按同一契约恢复，
-                 * 保证「写出 → 读入」对别名保持别名身份，而不是被静默展开或报 unsupported。
-                 */
-                is ConeTypeAliasType -> CjoTypeMetadata(
-                    kind = PackageFormat.TypeKind.Type,
-                    typeArguments = type.typeArguments.map { projectionType(it) },
-                    semanticInfo = compositeInfo(type.classId),
-                )
-                is ConeTupleType -> CjoTypeMetadata(PackageFormat.TypeKind.Tuple, type.elementTypes.map(::type))
-                is ConeVArrayType -> CjoTypeMetadata(
-                    PackageFormat.TypeKind.VArray,
-                    listOf(type(type.elementType)),
-                    semanticInfo = CjoArrayTypeInfoMetadata(type.size),
-                )
-                is ConePointerType -> CjoTypeMetadata(PackageFormat.TypeKind.CPointer, listOf(type(type.pointeeType)))
-                is ConeCStringType -> CjoTypeMetadata(PackageFormat.TypeKind.CString)
-                is ConeFunctionType -> CjoTypeMetadata(
-                    PackageFormat.TypeKind.Func,
-                    type.parameterTypes.map(::type),
-                    semanticInfo = CjoFunctionTypeInfoMetadata(type(type.returnType), type.isCFunc, type.hasVariableLenArg),
-                )
-                else -> unsupported("unsupported live CJO type ${type::class.qualifiedName} ($type)")
-            }
-            types[index.toInt() - 1] = metadata
-            return index
-        }
-
-        private fun projectionType(projection: ConeTypeProjection): UInt = type(projection.type)
-
-        private fun compositeInfo(classId: ClassId, isThisType: Boolean = false): CjoCompositeTypeInfoMetadata {
-            classIndex[classId]?.let { return CjoCompositeTypeInfoMetadata(it, isThisType = isThisType) }
-            val packageName = classId.packageFqName.asString()
-            val packageIndex = externalImports.indexOf(packageName).let { existing ->
-                if (existing >= 0) existing else {
-                    externalImports += packageName
-                    externalImports.size - 1
+                        CjoCompositeConstValue(index)
+                    }
                 }
             }
-            return CjoCompositeTypeInfoMetadata(
-                declarationIndex = 0u,
-                packageId = packageIndex,
-                // 官方 std.core.Any 在 FullId 中使用稳定 exportId；它可能没有单独可加载的
-                // std.core CJO，因此不能把短类名 Any 写成普通 imported-package reference。
-                declarationKey = if (classId == StdlibClassIds.Any) {
-                    "_CNat3AnyE"
-                } else {
-                    classId.relativeClassName.asString()
-                },
-                isThisType = isThisType,
+            return value(graph.root)
+        }
+
+        /**
+         * 与官方 `ASTWriter::GetFullDeclIndex` 一致，将已解析引用分类为当前包、导入包或 INVALID。
+         * 已解析但无法落入这三类的声明必须使 CJO 写出失败，不能静默丢失符号身份。
+         */
+        private fun sourceExpressionTarget(declaration: CfirDeclaration?): CjoExpressionTargetMetadata {
+            declaration ?: return CjoExpressionTargetMetadata(pkgId = PackageIndex.INVALID.value)
+            val canonicalDeclaration = canonicalDeclaration(declaration)
+            if (exportAnalysis.isDoNotExport(declaration) || familySnapshot?.doNotExport?.contains(declaration.symbol) == true) {
+                return CjoExpressionTargetMetadata(pkgId = PackageIndex.INVALID.value)
+            }
+
+            // IMPORTED 是引用身份，不因重导出正文先登记了本地声明槽而改变；对位 GetFullDeclIndex。
+            if (exportAnalysis.precedingFactsOf(canonicalDeclaration).isImported) {
+                val externalReference = externalCjoDeclarationReference(canonicalDeclaration)
+                return CjoExpressionTargetMetadata(
+                    pkgId = externalPackageIndex(externalReference.packageName),
+                    decl = externalReference.declarationKey,
+                )
+            }
+
+            val index = declarationIndex[canonicalDeclaration]
+                ?: cjoDeclarationOriginKey(canonicalDeclaration)?.let { origin ->
+                    commonCounterpartDeclarationIndices[origin] ?: importedDeclarationIndices[origin]
+                }
+            if (index != null) {
+                return CjoExpressionTargetMetadata(pkgId = PackageIndex.CURRENT.value, index = index)
+            }
+
+            val origin = cjoDeclarationOriginKey(canonicalDeclaration)
+            if (origin != null) {
+                val externalReference = externalCjoDeclarationReference(canonicalDeclaration)
+                return CjoExpressionTargetMetadata(
+                    pkgId = externalPackageIndex(externalReference.packageName),
+                    decl = externalReference.declarationKey,
+                )
+            }
+
+            unsupported(
+                "Resolved CJO expression target is outside the emitted declaration graph: " +
+                    declarationName(canonicalDeclaration),
             )
         }
 
-        private fun CfirLiteralKind.toCjoLiteralKind(): UByte = when (this) {
-            CfirLiteralKind.INT, CfirLiteralKind.BYTE -> LitConstKind.Integer
-            CfirLiteralKind.FLOAT -> LitConstKind.Float
-            CfirLiteralKind.RUNE -> LitConstKind.Rune
-            CfirLiteralKind.STRING -> LitConstKind.String
-            CfirLiteralKind.BOOLEAN -> LitConstKind.Bool
-            CfirLiteralKind.UNIT -> LitConstKind.Unit
+        private fun type(type: ConeCangJieType, context: CfirDeclaration): UInt {
+            val input = exportAnalysis.typeElement(type, context)
+            val projection = typeProjectionFor(context)
+            val indices = sourceTypeIndices.getOrPut(input) { IdentityHashMap() }
+            indices[projection]?.let { return it }
+            val shape = frozenTypeShape(input, context, projection)
+            prepareGenericTypeBounds()
+            val index = type(shape)
+            indices[projection] = index
+            return index
+        }
+
+        /** 节点用途在 providers 已裁决；这里仅消费冻结图并应用当前 owner 的固定 TP 投影。 */
+        private fun type(use: CfirExportTypeUse, context: CfirDeclaration): UInt {
+            val shape = frozenTypeUseShape(use, context, typeProjectionFor(context))
+            prepareGenericTypeBounds()
+            return type(shape)
+        }
+
+        private fun frozenTypeUseShape(
+            use: CfirExportTypeUse,
+            context: CfirDeclaration,
+            projection: TypeParameterProjection,
+        ): FrozenTypeShape = when (use) {
+            is CfirExportTypeUse.Semantic -> frozenTypeShape(use.type, context, projection)
+            is CfirExportTypeUse.Arguments -> {
+                val base = frozenTypeShape(use.type, context, projection)
+                val arguments = java.util.Collections.unmodifiableList(use.arguments.map { frozenTypeUseShape(it, context, projection) })
+                // Native SubstituteTypeArgs→GetArrayTy在选择后再次归一叶子与累计维度。
+                if (base.kind == PackageFormat.TypeKind.Array && arguments.single().kind == PackageFormat.TypeKind.Array) {
+                    val element = arguments.single()
+                    base.copy(arguments = element.arguments, dimsOrSize = Math.addExact(checkNotNull(base.dimsOrSize), checkNotNull(element.dimsOrSize)))
+                } else base.copy(arguments = arguments)
+            }
+            is CfirExportTypeUse.Function -> frozenTypeShape(use.type, context, projection).copy(
+                arguments = java.util.Collections.unmodifiableList(use.parameters.map { frozenTypeUseShape(it, context, projection) }),
+                returnType = frozenTypeUseShape(use.returnType, context, projection),
+                isC = use.isC,
+            )
+            CfirExportTypeUse.Invalid -> FrozenTypeShape(PackageFormat.TypeKind.Invalid)
+        }
+
+        private fun frozenTypeShape(
+            type: ConeCangJieType,
+            context: CfirDeclaration,
+            projection: TypeParameterProjection,
+            visiting: MutableSet<CfirExportTypeElement> = java.util.Collections.newSetFromMap(IdentityHashMap()),
+        ): FrozenTypeShape = frozenTypeShape(exportAnalysis.typeElement(type, context), context, projection, visiting)
+
+        /** 只遍历冻结角色列表；Generic 以投影后的实际参数身份结束 shape 递归。 */
+        private fun frozenTypeShape(
+            input: CfirExportTypeElement,
+            context: CfirDeclaration,
+            projection: TypeParameterProjection,
+            visiting: MutableSet<CfirExportTypeElement> = java.util.Collections.newSetFromMap(IdentityHashMap()),
+        ): FrozenTypeShape {
+            val shapes = typeShapes.getOrPut(input) { IdentityHashMap() }
+            shapes[projection]?.let { return it }
+            // self 关系只登记双身份；是否复用已有 specific 槽由 reserve/fill owner 按 native 顺序裁决。
+            var specificSelf: CfirDeclaration? = null
+            val nominal = input.payload as? CfirExportTypePayload.Nominal
+            if (nominal != null && nominal.kind in setOf(CfirExportNominalTypeKind.CLASS,
+                    CfirExportNominalTypeKind.STRUCT, CfirExportNominalTypeKind.ENUM) && !nominal.isThisType) {
+                val declaration = nominal.declaration
+                val ownParameters = declaration?.let(exportAnalysis::typeParametersOf).orEmpty()
+                val declaredPayload = declaration?.let(exportAnalysis::declarationTypeOf)?.let {
+                    exportAnalysis.typeElement(it, checkNotNull(declaration)).payload as? CfirExportTypePayload.Nominal
+                }
+                // native TypeManager 驻留使同 classifier、相同有序 own TP 的 normal 类型就是 decl.ty；
+                // CFIR 的多个 Cone 对象以这些完整冻结绑定确认同一 self，绝不使用名字或 Cone.equals。
+                val hasSelfBindings = declaredPayload != null && declaredPayload.kind == nominal.kind &&
+                    declaredPayload.isRefEnum == nominal.isRefEnum && nominal.arguments.size == ownParameters.size &&
+                    nominal.arguments.indices.all { index ->
+                        (exportAnalysis.typeElement(nominal.arguments[index], input.domain).payload as? CfirExportTypePayload.Generic)
+                            ?.parameter === ownParameters[index]
+                    }
+                if (declaration != null && (exportAnalysis.declarationTypeOf(declaration) === input.identity || hasSelfBindings)) {
+                    val bindings = familySnapshot?.specificBindingsFor(declaration).orEmpty()
+                    if (bindings.isNotEmpty()) {
+                        check(bindings.size == 1)
+                        specificSelf = bindings.single()
+                    }
+                }
+            }
+            val genericPayload = input.payload as? CfirExportTypePayload.Generic
+            if (genericPayload != null) {
+                val payload = genericPayload
+                val anchor = GenericTypeAnchor(
+                    TypeDeclarationIdentity(projection.parameters[payload.parameter] ?: payload.parameter), input.domain, projection,
+                )
+                val shape = FrozenTypeShape(PackageFormat.TypeKind.Generic, declaration = anchor.parameter, genericAnchor = anchor)
+                // 结构 DFS 只登记锚点，上界在独立队列中准备，I<T> -> T -> I<T> 不成为结构环。
+                shapes[projection] = shape
+                if (anchor !in genericTypeInputs && pendingGenericTypeInputs.add(anchor)) {
+                    pendingGenericTypeBounds.addLast(PendingGenericTypeBounds(anchor, payload, context, projection))
+                }
+                return shape
+            }
+            check(visiting.add(input)) { "A completed type has a structural cycle outside its Generic binding" }
+            fun child(value: ConeCangJieType): FrozenTypeShape =
+                frozenTypeShape(exportAnalysis.typeElement(value, input.domain), context, projection, visiting)
+            fun arguments(values: List<ConeCangJieType>): List<FrozenTypeShape> =
+                java.util.Collections.unmodifiableList(values.map(::child))
+            val shape = when (val payload = input.payload) {
+                CfirExportTypePayload.Invalid -> FrozenTypeShape(PackageFormat.TypeKind.Invalid)
+                is CfirExportTypePayload.Primitive -> FrozenTypeShape(payload.kind.toCjoTypeKind())
+                is CfirExportTypePayload.Nominal -> FrozenTypeShape(
+                    kind = when (payload.kind) {
+                        CfirExportNominalTypeKind.CLASS -> PackageFormat.TypeKind.Class
+                        CfirExportNominalTypeKind.INTERFACE -> PackageFormat.TypeKind.Interface
+                        CfirExportNominalTypeKind.STRUCT -> PackageFormat.TypeKind.Struct
+                        CfirExportNominalTypeKind.ENUM -> PackageFormat.TypeKind.Enum
+                    },
+                    declaration = TypeDeclarationIdentity(checkNotNull(payload.declaration) {
+                        "External CJO type has no class-like declaration: ${payload.classId.asFqNameString()}"
+                    }),
+                    arguments = arguments(payload.arguments),
+                    isThisType = payload.isThisType,
+                    isRefEnum = payload.isRefEnum,
+                    serializedTarget = frozenSources.typeTarget(input.identity, input.domain),
+                )
+                is CfirExportTypePayload.Alias -> FrozenTypeShape(
+                    kind = PackageFormat.TypeKind.Type,
+                    declaration = TypeDeclarationIdentity(checkNotNull(payload.declaration) {
+                        "An alias export type requires its captured declaration binding"
+                    }),
+                    arguments = arguments(payload.arguments),
+                    serializedTarget = frozenSources.typeTarget(input.identity, input.domain),
+                )
+                is CfirExportTypePayload.Generic -> error("Generic input must be prepared before structural shape traversal")
+                is CfirExportTypePayload.Function -> FrozenTypeShape(
+                    kind = PackageFormat.TypeKind.Func,
+                    arguments = arguments(payload.parameters),
+                    returnType = child(payload.returnType),
+                    isC = payload.isC,
+                    isClosure = payload.isClosure,
+                    hasVariableLenArg = payload.hasVariableLenArg,
+                )
+                is CfirExportTypePayload.Tuple -> FrozenTypeShape(PackageFormat.TypeKind.Tuple, arguments = arguments(payload.elements))
+                is CfirExportTypePayload.RawArray -> FrozenTypeShape(
+                    PackageFormat.TypeKind.Array, arguments = listOf(child(payload.layout.element)), dimsOrSize = payload.layout.dimensions.toLong(),
+                )
+                is CfirExportTypePayload.VArray -> FrozenTypeShape(
+                    PackageFormat.TypeKind.VArray, arguments = listOf(child(payload.element)), dimsOrSize = payload.size,
+                )
+                is CfirExportTypePayload.Pointer -> FrozenTypeShape(PackageFormat.TypeKind.CPointer, arguments = listOf(child(payload.pointee)))
+                CfirExportTypePayload.CString -> FrozenTypeShape(PackageFormat.TypeKind.CString)
+                is CfirExportTypePayload.Unrepresentable -> if (frozenSources.isSavedInvalid(input.identity, input.domain))
+                    FrozenTypeShape(PackageFormat.TypeKind.Invalid)
+                else unsupported("A captured type has no SOURCE wire role")
+            }
+            visiting.remove(input)
+            shapes[projection] = shape
+            specificSelf?.let { specific ->
+                specificSelfTypes[shape] = frozenTypeShape(checkNotNull(exportAnalysis.declarationTypeOf(specific)),
+                    specific, typeProjectionFor(specific), visiting)
+            }
+            return shape
+        }
+
+        /** 当前结构 shape 完成后排空上界，保存引用和捕获域之后才允许编码 Generic 槽。 */
+        private fun prepareGenericTypeBounds() {
+            while (pendingGenericTypeBounds.isNotEmpty()) {
+                val pending = pendingGenericTypeBounds.removeFirst()
+                genericTypeInputs[pending.anchor] = java.util.Collections.unmodifiableList(pending.payload.explicitBounds.map {
+                    frozenTypeShape(exportAnalysis.typeElement(it, pending.anchor.domain), pending.context, pending.projection)
+                })
+                check(pendingGenericTypeInputs.remove(pending.anchor))
+            }
+            check(pendingGenericTypeInputs.isEmpty())
+        }
+
+        /** 同一 t 池先 reserve 再递归 fill；声明/Generic 回边只返回已预留的真实槽。 */
+        private fun type(shape: FrozenTypeShape): UInt {
+            typeIndex[shape]?.let { return it }
+            val specific = specificSelfTypes[shape]
+            specific?.let { specificShape ->
+                typeIndex[specificShape]?.let { index ->
+                    typeIndex[shape] = index
+                    return index
+                }
+            }
+            val index = typeTable.reserve()
+            typeIndex[shape] = index
+            // 两身份均未保存时预登记双方，并继续编码输入 shape 的正文，不能改写为 specific 输入。
+            if (specific != null) typeIndex[specific] = index
+            val metadata = when (shape.kind) {
+                PackageFormat.TypeKind.Generic -> {
+                    val parameter = checkNotNull(shape.declaration).declaration as CfirTypeParameter
+                    val target = sourceExpressionTarget(parameter)
+                    CjoTypeMetadata(
+                        kind = shape.kind,
+                        semanticInfo = CjoGenericTypeInfoMetadata(
+                            declarationIndex = target.index,
+                            packageId = target.pkgId,
+                            declarationKey = target.decl,
+                            upperBounds = genericTypeInputs.getValue(checkNotNull(shape.genericAnchor)).map(::type),
+                        ),
+                    )
+                }
+                PackageFormat.TypeKind.Type, PackageFormat.TypeKind.Class, PackageFormat.TypeKind.Interface,
+                PackageFormat.TypeKind.Struct, PackageFormat.TypeKind.Enum -> CjoTypeMetadata(
+                    kind = shape.kind,
+                    typeArguments = shape.arguments.map(::type),
+                    semanticInfo = compositeInfo(checkNotNull(shape.declaration).declaration, shape.isThisType, shape.serializedTarget),
+                )
+                PackageFormat.TypeKind.Array, PackageFormat.TypeKind.VArray -> CjoTypeMetadata(
+                    kind = shape.kind,
+                    typeArguments = shape.arguments.map(::type),
+                    semanticInfo = CjoArrayTypeInfoMetadata(checkNotNull(shape.dimsOrSize)),
+                )
+                PackageFormat.TypeKind.Func -> {
+                    check(!shape.isClosure && (!shape.hasVariableLenArg || shape.isC)) {
+                        "SOURCE function types require the completed native AST ABI"
+                    }
+                    CjoTypeMetadata(
+                        kind = shape.kind,
+                        typeArguments = shape.arguments.map(::type),
+                        semanticInfo = CjoFunctionTypeInfoMetadata(type(checkNotNull(shape.returnType)), shape.isC, shape.hasVariableLenArg),
+                    )
+                }
+                else -> CjoTypeMetadata(shape.kind, shape.arguments.map(::type))
+            }
+            typeTable.fill(index, metadata)
+            return index
+        }
+
+        private fun compositeInfo(declaration: CfirDeclaration, isThisType: Boolean, saved: CjoFrozenDeclarationTarget?): CjoCompositeTypeInfoMetadata {
+            val target = if (saved == null) sourceExpressionTarget(declaration) else frozenTarget(saved)
+            return CjoCompositeTypeInfoMetadata(
+                declarationIndex = target.index,
+                packageId = target.pkgId,
+                declarationKey = target.decl,
+                isThisType = isThisType,
+            )
         }
 
         private fun PrimitiveTypeKind.toCjoTypeKind(): UShort = when (this) {
@@ -752,10 +1437,6 @@ object CfirCjoPackageMetadataProducer {
 
         private fun unsupported(message: String): Nothing = error(message)
 
-        private fun Set<org.cangnova.cangjie.annotations.CangjieAnnotationTarget>?.toCjoTargetMask(): Pair<UByte, UByte> {
-            if (isNullOrEmpty()) return 0.toUByte() to 0.toUByte()
-            val mask = fold(0) { result, target -> result or (1 shl target.bitPosition) }
-            return mask.toUByte() to (mask ushr 8).toUByte()
-        }
+
     }
 }

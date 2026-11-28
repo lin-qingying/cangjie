@@ -7,6 +7,7 @@
 
 package org.cangnova.cangjie.cfir.declarations.impl
 
+import org.cangnova.cangjie.cfir.CfirContentSource
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.MutableOrEmptyList
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
@@ -25,27 +26,62 @@ import org.cangnova.cangjie.source.CjSourceElement
 
 @OptIn(CfirImplementationDetail::class, ResolveStateAccess::class)
 class CfirPropertyImpl @CfirImplementationDetail constructor(
-    override val source: CjSourceElement?,
+    source: CjSourceElement?,
     override val moduleData: CfirModuleData,
     resolvePhase: CfirResolvePhase,
-    override var annotations: MutableOrEmptyList<CfirAnnotation>,
+    override val contentSource: CfirContentSource = CfirContentSource.Owned,
+    annotations: MutableOrEmptyList<CfirAnnotation>,
     override val origin: CfirDeclarationOrigin,
     override val attributes: CfirDeclarationAttributes,
     override val isLocal: Boolean,
-    override var deprecationsProvider: DeprecationsProvider,
+    deprecationsProvider: DeprecationsProvider,
     override var dispatchReceiverType: ConeSimpleCangJieType?,
+    override val typeParameters: MutableList<CfirTypeParameter>,
     override val symbol: CfirPropertySymbol,
     override var status: CfirDeclarationStatus,
-    override val typeParameters: MutableList<CfirTypeParameter>,
     override var returnTypeRef: CfirTypeRef,
     override val name: Name,
     override var getter: CfirPropertyAccessor?,
     override var setter: CfirPropertyAccessor?,
     override var bodyResolveState: CfirPropertyBodyResolveState,
 ) : CfirProperty() {
+    override var source: CjSourceElement? = source
+        set(value) {
+            require(value != null || origin != CfirDeclarationOrigin.Source) {
+                "A Source-origin declaration must retain its source element."
+            }
+            field = value
+        }
+    override var annotations: MutableOrEmptyList<CfirAnnotation> = annotations
+        get() = when (val selectedSource = contentSource) {
+            CfirContentSource.Owned -> field
+            is CfirContentSource.Published -> selectedSource.snapshot().annotations(this).values
+        }
+        set(value) {
+            check(contentSource === CfirContentSource.Owned) {
+                "Published Library content cannot be changed through an ordinary setter"
+            }
+            field = value
+        }
+    override var deprecationsProvider: DeprecationsProvider = deprecationsProvider
+        get() = when (val selectedSource = contentSource) {
+            CfirContentSource.Owned -> field
+            is CfirContentSource.Published -> selectedSource.snapshot().deprecations(this)
+        }
+        set(value) {
+            check(contentSource === CfirContentSource.Owned) {
+                "Published Library content cannot be changed through an ordinary setter"
+            }
+            field = value
+        }
     override var controlFlowGraphReference: CfirControlFlowGraphReference? = null
 
     init {
+        if (contentSource is CfirContentSource.Published) {
+            require(origin == CfirDeclarationOrigin.Library) { "Published content requires a Library declaration" }
+            require(annotations.isEmpty()) { "Published content must be supplied by its completed snapshot" }
+            require(deprecationsProvider === UnresolvedDeprecationProvider) { "Published content must be supplied by its completed snapshot" }
+        }
         @Suppress("SENSELESS_COMPARISON")
         require(source != null || origin != CfirDeclarationOrigin.Source) { "${this::class.simpleName} with Source origin was instantiated without a source element." }
         symbol.bind(this)
@@ -56,15 +92,18 @@ class CfirPropertyImpl @CfirImplementationDetail constructor(
         annotations.forEach { it.accept(visitor, data) }
         controlFlowGraphReference?.accept(visitor, data)
         typeParameters.forEach { it.accept(visitor, data) }
+        status.accept(visitor, data)
         returnTypeRef.accept(visitor, data)
         getter?.accept(visitor, data)
         setter?.accept(visitor, data)
     }
 
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirPropertyImpl {
+        check(contentSource === CfirContentSource.Owned) { "Published Library children require an owned graph before transformation" }
         transformAnnotations(transformer, data)
         controlFlowGraphReference = controlFlowGraphReference?.transform(transformer, data)
         transformTypeParameters(transformer, data)
+        transformStatus(transformer, data)
         transformReturnTypeRef(transformer, data)
         transformGetter(transformer, data)
         transformSetter(transformer, data)
@@ -72,32 +111,44 @@ class CfirPropertyImpl @CfirImplementationDetail constructor(
     }
 
     override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirPropertyImpl {
+        check(contentSource === CfirContentSource.Owned) { "Published Library children require an owned graph before transformation" }
         annotations.transformInplace(transformer, data)
         return this
     }
 
-    override fun <D> transformStatus(transformer: CfirTransformer<D>, data: D): CfirPropertyImpl {
-        return this
-    }
-
     override fun <D> transformTypeParameters(transformer: CfirTransformer<D>, data: D): CfirPropertyImpl {
+        check(contentSource === CfirContentSource.Owned) { "Published Library children require an owned graph before transformation" }
         typeParameters.transformInplace(transformer, data)
         return this
     }
 
+    override fun <D> transformStatus(transformer: CfirTransformer<D>, data: D): CfirPropertyImpl {
+        check(contentSource === CfirContentSource.Owned) { "Published Library children require an owned graph before transformation" }
+        status = status.transform(transformer, data)
+        return this
+    }
+
     override fun <D> transformReturnTypeRef(transformer: CfirTransformer<D>, data: D): CfirPropertyImpl {
+        check(contentSource === CfirContentSource.Owned) { "Published Library children require an owned graph before transformation" }
         returnTypeRef = returnTypeRef.transform(transformer, data)
         return this
     }
 
     override fun <D> transformGetter(transformer: CfirTransformer<D>, data: D): CfirPropertyImpl {
+        check(contentSource === CfirContentSource.Owned) { "Published Library children require an owned graph before transformation" }
         getter = getter?.transform(transformer, data)
         return this
     }
 
     override fun <D> transformSetter(transformer: CfirTransformer<D>, data: D): CfirPropertyImpl {
+        check(contentSource === CfirContentSource.Owned) { "Published Library children require an owned graph before transformation" }
         setter = setter?.transform(transformer, data)
         return this
+    }
+
+    @CfirImplementationDetail
+    override fun replaceSource(newSource: CjSourceElement?) {
+        source = newSource
     }
 
     override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>) {

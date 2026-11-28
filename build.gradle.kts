@@ -37,6 +37,7 @@ import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
@@ -144,8 +145,8 @@ abstract class ValidateDocumentationTask : DefaultTask() {
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val settingsFile: RegularFileProperty
 
-    @get:InputDirectory
-    @get:PathSensitive(PathSensitivity.RELATIVE)
+    /** 路径解析基准不作为递归输入；真实输入由 documentationFiles 与 settingsFile 声明。 */
+    @get:Internal
     abstract val repositoryRoot: DirectoryProperty
 
     @TaskAction
@@ -309,8 +310,9 @@ abstract class ValidateDocumentationTask : DefaultTask() {
             "docs/README.md" to "docs/README.zh-CN.md",
             "docs/cjfir-compiler-stages.md" to "docs/cjfir-compiler-stages.zh-CN.md",
             "docs/project-architecture-diagram.md" to "docs/project-architecture-diagram.zh-CN.md",
-            "intellij-ide/README.md" to "intellij-ide/README.zh-CN.md",
-            "deveco/README.md" to "deveco/README.zh-CN.md",
+            // 独立宿主 checkout 各自版本管理；前端工作树的双语集成合同由本仓库 docs 拥有。
+            "docs/intellij-ide.md" to "docs/intellij-ide.zh-CN.md",
+            "docs/deveco.md" to "docs/deveco.zh-CN.md",
         )
     }
 }
@@ -365,7 +367,7 @@ val validateDocumentation by tasks.registering(ValidateDocumentationTask::class)
                 "**/*gap-register.md",
                 "**/*state-inventory.md",
             )
-        },
+        }.files,
     )
     settingsFile.set(layout.projectDirectory.file("settings.gradle.kts"))
     repositoryRoot.set(layout.projectDirectory)

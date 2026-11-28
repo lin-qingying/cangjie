@@ -4,6 +4,7 @@ package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.analysis.CheckersComponentInternal
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.isFromDeclarationFile
 import org.cangnova.cangjie.cfir.analysis.checkersComponent
@@ -26,10 +27,13 @@ class DeclarationCheckersDiagnosticComponent(
     reporter: PendingDiagnosticReporter,
     private val checkers: DeclarationCheckers,
 ) : AbstractDiagnosticCollectorComponent(session, reporter) {
-    constructor(session: CfirSession, reporter: PendingDiagnosticReporter) : this(
+    constructor(session: CfirSession, reporter: PendingDiagnosticReporter, mppKind: MppCheckerKind) : this(
         session,
         reporter,
-        session.checkersComponent.declarationCheckers
+        when (mppKind) {
+            MppCheckerKind.Common -> session.checkersComponent.commonDeclarationCheckers
+            MppCheckerKind.Platform -> session.checkersComponent.platformDeclarationCheckers
+        }
     )
 
     override fun visitElement(element: CfirElement, data: CheckerContext) {

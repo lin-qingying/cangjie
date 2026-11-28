@@ -1,8 +1,10 @@
 package org.cangnova.cangjie.cfir.resolve.dfa.cfg
 
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.expressions.CfirMatchBranch
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
+import org.cangnova.cangjie.cfir.resolve.dfa.DfaSourceVisitor
 
 /**
  * 对位 Kotlin FIR `ControlFlowGraph` 的完整图模型。
@@ -28,6 +30,15 @@ class ControlFlowGraph(
      */
     val kind: Kind,
 ) : FunctionCallNodeIndexOwner {
+    private val pendingSemanticTransfers: MutableSet<CfirElement> =
+        java.util.Collections.newSetFromMap(java.util.IdentityHashMap<CfirElement, Boolean>())
+
+    /** 尚无独立 CFG node 的实际判别也必须保留完成义务，不能因 visibleBindings 为空被漏掉。 */
+    val hasPendingSemanticTransfers: Boolean get() = pendingSemanticTransfers.isNotEmpty()
+
+    @CfgInternals
+    fun requireSemanticTransfer(element: CfirElement) { pendingSemanticTransfers += element }
+
     /** 完成图与隔离 probe 的正式采用都保留实际 node/index 事实，生命周期不依赖 builder 栈。 */
     private val functionCallNodes: MutableMap<CfirFunctionCall, MutableList<CFGNode<*>>> = java.util.IdentityHashMap()
     private val functionCallNodeAliases: MutableMap<CFGNode<*>, MutableSet<CfirFunctionCall>> = java.util.IdentityHashMap()
@@ -135,11 +146,37 @@ class ControlFlowGraph(
     val subGraphs: List<ControlFlowGraph>
         get() = nodes.flatMap { (it as? CFGNodeWithSubgraphs<*>)?.subGraphs ?: emptyList() }
 
+    /** 完成图使用冻结节点，partial 图使用只读前缀排序；访问不写入 nodes、不推进构造状态。 */
+    @OptIn(CfgInternals::class)
+    fun acceptSourceChildren(visitor: DfaSourceVisitor) {
+        declaration?.let(visitor::visitElement)
+        pendingSemanticTransfers.forEach(visitor::visitElement)
+        val sourceNodes = if (::nodes.isInitialized) nodes else orderNodes(isComplete = false)
+        sourceNodes.forEach(visitor::visitNode)
+    }
+
+    /** 只读取实际子图；partial 图尚未冻结 nodes 时也不能改用语法或偏移推断依赖。 */
+    @OptIn(CfgInternals::class)
+    fun sourceSubGraphs(): List<ControlFlowGraph> =
+        (if (::nodes.isInitialized) nodes else orderNodes(isComplete = false))
+            .flatMap { (it as? CFGNodeWithSubgraphs<*>)?.subGraphs.orEmpty() }
+
+    /** 已证明退休的图解除跨图边，不改变保留成员的内部边、flow 或声明/symbol。 */
+    @OptIn(CfgInternals::class)
+    fun detachCrossGraphEdges() {
+        val sourceNodes = (if (::nodes.isInitialized) nodes else orderNodes(isComplete = false)) + enterNode + exitNode
+        sourceNodes.distinct().forEach { node ->
+            node.previousNodes.toList().filter { it.owner !== this }.forEach { CFGNode.removeEdge(it, node) }
+            node.followingNodes.toList().filter { it.owner !== this }.forEach { CFGNode.removeEdge(node, it) }
+        }
+    }
+
     /**
      * 复制图关系数据。`nodeCount` 故意不从旧图覆盖，因为新图节点 id 在创建时已分配。
      */
     @CfgInternals
     fun copyData(from: ControlFlowGraph, mapper: ControlFlowNodeMapper) {
+        pendingSemanticTransfers.addAll(from.pendingSemanticTransfers)
         if (from::nodes.isInitialized) {
             nodes = from.nodes.map(mapper::get)
         }

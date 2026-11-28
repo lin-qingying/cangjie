@@ -25,6 +25,18 @@ fun enumConstructorPayloadParameterName(index: Int): Name = Name.identifier("enu
 fun CfirEnumConstructor.payloadArity(): Int = valueParameters.size
 
 /**
+ * CJMP 的函数参数视图直接读取真实声明。
+ *
+ * 官方 payload enum 是 FuncDecl；CFIR 使用独立的构造项节点，因此在声明数据层统一参数视图，
+ * 供 resolver 与 checker 共用，不合成函数声明或复制符号。
+ */
+fun CfirCallableDeclaration.cjmpValueParameters(): List<CfirValueParameter> = when (this) {
+    is CfirFunction -> valueParameters
+    is CfirEnumConstructor -> valueParameters
+    else -> error("CJMP parameter facts require a function or an enum constructor: ${this::class.simpleName}")
+}
+
+/**
  * 返回 enum constructor payload 参数类型列表。
  *
  * 如果任一参数尚未形成可用 cone type，则返回空列表，表示该构造器 payload 类型当前不可消费。

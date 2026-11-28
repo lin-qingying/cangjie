@@ -30,6 +30,9 @@ class CfirSessionExtendProvider(
     private val indexStore: CfirExtendIndexStore,
 ) : CfirExtendProvider {
 
+    override val modificationCount: Long
+        get() = indexStore.modificationCount
+
     override fun getAllExtends(): List<CfirExtend> =
         indexStore.allModels().map(CfirExtendSemanticModel::declaration)
 
@@ -39,6 +42,11 @@ class CfirSessionExtendProvider(
     override fun getExtendsForTarget(targetKey: CfirExtendTargetKey): List<CfirExtend> {
         return indexStore.modelsForTarget(targetKey).map(CfirExtendSemanticModel::declaration)
     }
+
+    override fun getExtendsForTarget(targetKey: CfirExtendTargetKey, packageFqName: FqName): List<CfirExtend> =
+        indexStore.modelsForTarget(targetKey)
+            .filter { it.packageFqName == packageFqName }
+            .map(CfirExtendSemanticModel::declaration)
 
     /**
      * 查询指定类或接口目标上的 extend 声明。

@@ -33,6 +33,16 @@ open class LightTreePositioningStrategy {
     }
 
     /**
+     * 仅当策略能从轻量树中找到实际锚点时返回范围；未找到时返回 null，不构造整节点回退范围。
+     */
+    open fun markOrNull(
+        node: LighterASTNode,
+        startOffset: Int,
+        endOffset: Int,
+        tree: FlyweightCapableTreeStructure<LighterASTNode>,
+    ): List<TextRange>? = null
+
+    /**
      * 判断轻量树节点是否可作为有效诊断位置。
      */
     open fun isValid(node: LighterASTNode, tree: FlyweightCapableTreeStructure<LighterASTNode>): Boolean {
@@ -107,7 +117,7 @@ private fun LighterASTNode.nonFillerLastChildOrSelf(tree: FlyweightCapableTreeSt
  * 判断轻量树节点是否为空白或注释填充节点。
  */
 private fun LighterASTNode.isFiller(): Boolean {
-    return tokenType == TokenType.WHITE_SPACE ||
+    return tokenType in CjTokens.ALL_WHITESPACE_TOKENS ||
             tokenType == CjTokens.EOL_COMMENT ||
             tokenType == CjTokens.BLOCK_COMMENT ||
             tokenType == CjTokens.SHEBANG_COMMENT ||

@@ -37,6 +37,25 @@ interface CompilerMessageSourceLocation : Serializable {
     val lineContent: String? // related to the (start) line/column only, used to show start position in the console output
 }
 
+/** 同一条编译器消息关联的辅助源码位置。 */
+data class CompilerMessageRelatedLocation(
+    /** 辅助位置的源码范围。 */
+    val location: CompilerMessageSourceLocation,
+    /** 辅助位置的显示文字；null 表示只标记范围。 */
+    val message: String?,
+) : Serializable
+
+/** 支持将主位置与同一条诊断的辅助位置一并传给消息收集器。 */
+interface CompilerMessageLocationWithRelatedLocations : CompilerMessageSourceLocation {
+    /** 与主位置关联的辅助源码位置。 */
+    val relatedLocations: List<CompilerMessageRelatedLocation>
+    /** 主提示和无位置 note 分别传递，不能拼进主消息或辅助源码 label。 */
+    val mainHint: String? get() = null
+    val notes: List<String> get() = emptyList()
+    val nativeDiagnosticKind: String? get() = null
+    val diagnosticCategory: ParsingDiagnostic.Category? get() = null
+}
+
 /**
  * 只包含单点位置的编译器消息位置。
  */
@@ -116,8 +135,13 @@ data class CompilerMessageLocationWithRange private constructor(
     /**
      * 起始行文本内容。
      */
-    override val lineContent: String?
-) : CompilerMessageSourceLocation {
+    override val lineContent: String?,
+    override val relatedLocations: List<CompilerMessageRelatedLocation>,
+    override val mainHint: String?,
+    override val notes: List<String>,
+    override val nativeDiagnosticKind: String?,
+    override val diagnosticCategory: ParsingDiagnostic.Category?,
+) : CompilerMessageLocationWithRelatedLocations {
     /**
      * 渲染为 `path (line:column)` 形式的调试文本。
      */
@@ -137,7 +161,45 @@ data class CompilerMessageLocationWithRange private constructor(
             columnEnd: Int?,
             lineContent: String?
         ): CompilerMessageLocationWithRange? =
-            if (path == null) null else CompilerMessageLocationWithRange(path, lineStart, columnStart, lineEnd ?: -1, columnEnd ?: -1, lineContent)
+            if (path == null) null else CompilerMessageLocationWithRange(
+                path,
+                lineStart,
+                columnStart,
+                lineEnd ?: -1,
+                columnEnd ?: -1,
+                lineContent,
+                emptyList(),
+                null, emptyList(), null, null,
+            )
+
+        /** 创建包含主源码范围及关联辅助范围的消息位置。 */
+        @JvmStatic
+        fun createWithRelatedLocations(
+            path: String?,
+            lineStart: Int,
+            columnStart: Int,
+            lineEnd: Int?,
+            columnEnd: Int?,
+            lineContent: String?,
+            relatedLocations: List<CompilerMessageRelatedLocation>,
+            mainHint: String? = null,
+            notes: List<String> = emptyList(),
+            nativeDiagnosticKind: String? = null,
+            diagnosticCategory: ParsingDiagnostic.Category? = null,
+        ): CompilerMessageLocationWithRange? =
+            if (path == null) null else CompilerMessageLocationWithRange(
+                path,
+                lineStart,
+                columnStart,
+                lineEnd ?: -1,
+                columnEnd ?: -1,
+                lineContent,
+                java.util.Collections.unmodifiableList(relatedLocations.toList()),
+                mainHint,
+                java.util.Collections.unmodifiableList(notes.toList()),
+                nativeDiagnosticKind,
+                diagnosticCategory,
+            )
 
         /**
          * 序列化兼容版本号。

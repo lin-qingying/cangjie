@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import com.intellij.lang.LighterASTNode
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import com.intellij.openapi.util.Ref
 import com.intellij.psi.tree.IElementType
 import com.intellij.util.diff.FlyweightCapableTreeStructure
@@ -31,16 +32,20 @@ import org.cangnova.cangjie.cfir.resolve.providers.isUnusedImportCheckExempt
 import org.cangnova.cangjie.cfir.resolve.providers.hasPackageOrSubpackages
 import org.cangnova.cangjie.cfir.resolve.services.CfirResolvedImportBinding
 import org.cangnova.cangjie.cfir.resolve.services.CfirResolvedImportTarget
+import org.cangnova.cangjie.cfir.resolve.services.importBindingsOrNull
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceExpr
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.CfirCjmpLoadDiagnostic
 import org.cangnova.cangjie.cfir.session.annotationMetadataRegistryOrNull
-import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.resolve.providers.cfirProvider
 import org.cangnova.cangjie.cfir.session.accessibilityChecker
 import org.cangnova.cangjie.cfir.session.extendProviderOrNull
-import org.cangnova.cangjie.cfir.session.importBindingStoreOrNull
+import org.cangnova.cangjie.cfir.session.extendRuleQueryServiceOrNull
 import org.cangnova.cangjie.cfir.session.macroExpansionRegistry
 import org.cangnova.cangjie.cfir.session.rawMacroSurfaceUsageStoreOrNull
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
+import org.cangnova.cangjie.cfir.session.services.CfirExtendMemberPeerDisposition
+import org.cangnova.cangjie.cfir.session.services.CfirExtendMemberPeerSequenceConflict
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirUserTypeRef
@@ -69,7 +74,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
  * 该检查器负责基于导入解析阶段产出的 binding 检查 import 的可解析性、命名冲突、
  * 别名冲突以及未使用导入，并把所有诊断统一落在原始 import 指令或其具体路径片段上。
  */
-object CfirImportsChecker : CfirFileChecker() {
+object CfirImportsChecker : CfirFileChecker(MppCheckerKind.Common) {
     /**
      * 对单个 CFIR 文件执行导入相关诊断检查。
      *
@@ -79,7 +84,9 @@ object CfirImportsChecker : CfirFileChecker() {
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirFile) {
-        val resolvedImports = context.session.importBindingStoreOrNull?.getBindings(declaration)?.imports.orEmpty()
+        val resolvedImports = declaration.importBindingsOrNull()?.imports.orEmpty()
+        val reportedCjmpLoadDiagnostics = linkedSetOf<CfirCjmpLoadDiagnostic>()
+        reportCjmpLoadDiagnosticsForFilePackage(declaration, reportedCjmpLoadDiagnostics)
         val importBindingsByImport = resolvedImports.associateBy { it.importDirective }
         val conflictingNameImports = resolvedImports
             .filter { it.targets.isNotEmpty() && it.importDirective.aliasName == null }
@@ -94,7 +101,12 @@ object CfirImportsChecker : CfirFileChecker() {
 
         declaration.imports.forEach { import ->
             if (import.source?.kind?.shouldSkipErrorTypeReporting == true) return@forEach
-            reportImportResolutionDiagnostic(declaration, import, importBindingsByImport)
+            reportImportResolutionDiagnostic(
+                declaration,
+                import,
+                importBindingsByImport,
+                reportedCjmpLoadDiagnostics,
+            )
 
             if (import in conflictingNameImports) {
                 val effectiveName = import.importedFqName?.shortName()
@@ -132,6 +144,7 @@ object CfirImportsChecker : CfirFileChecker() {
         declaration: CfirFile,
     ) {
         val provider = context.session.extendProviderOrNull ?: return
+        val query = context.session.extendRuleQueryServiceOrNull ?: return
         val useSiteAccessContext = context.accessContext(CfirAccessKind.EXTEND)
         val importedExtends = provider.getAllExtends().filter { extend ->
             provider.getPackageFqName(extend) != declaration.packageDirective.packageFqName &&
@@ -143,6 +156,25 @@ object CfirImportsChecker : CfirFileChecker() {
             val participatingExtends = group.toSet()
             for (extend in group) {
                 val importedContext = CfirImportedExtendCheckContext(participatingExtends, extend, declaration, context)
+                val ownerPackage = provider.getPackageFqName(extend)
+                val sequenceConflicts = group.mapNotNull { peer ->
+                    if (peer === extend || provider.getPackageFqName(peer) == ownerPackage) return@mapNotNull null
+                    val decision = query.extendMemberPeerDecision(extend, peer)
+                    if (decision.disposition != CfirExtendMemberPeerDisposition.UNDECIDABLE) return@mapNotNull null
+                    CfirExtendMemberPeerSequenceConflict(
+                        peerDeclaration = peer,
+                        witness = checkNotNull(decision.conflictWitness) {
+                            "Undecidable imported extend order must retain its interface witness"
+                        },
+                    )
+                }
+                val diagnosticSource = extend.source?.firstCharacterDiagnosticSource()
+                    ?: extend.extendedTypeRef.source?.firstCharacterDiagnosticSource()
+                reporter.reportExtendCheckSequenceConflicts(
+                    conflicts = sequenceConflicts,
+                    context = importedContext,
+                    source = importedContext.sourceForDeclaration(diagnosticSource),
+                )
                 CfirExtendExtraChecker.checkMemberShadowing(extend, importedContext)
                 CfirInheritanceDeepChecker.checkImportedExtendDefaultInterfaceMemberConflicts(extend, importedContext)
             }
@@ -202,8 +234,13 @@ object CfirImportsChecker : CfirFileChecker() {
         declaration: CfirFile,
         import: CfirImport,
         importBindingsByImport: Map<CfirImport, CfirResolvedImportBinding>,
+        reportedCjmpLoadDiagnostics: MutableSet<CfirCjmpLoadDiagnostic>,
     ) {
         val importedFqName = import.importedFqName?.takeUnless { it.isRoot } ?: return
+
+        // 加载门拒绝 CJO 时，provider 仍保留失败事实。先由本文件 checker 报到消费侧路径，
+        // 并阻止同一加载失败再退化成“包不存在”的普通 unresolved-import 诊断。
+        if (reportCjmpLoadDiagnosticsForImport(import, importedFqName, reportedCjmpLoadDiagnostics)) return
 
         // 宏 import 在 construction 阶段由独立的 macro binding 消费，普通 IMPORTS
         // binding 可能没有 class/callable target。只要 construction registry 已记录该
@@ -242,6 +279,123 @@ object CfirImportsChecker : CfirFileChecker() {
     }
 
     /**
+     * 把符号 provider 汇总的 CJMP 加载事实报告在对应 import 包路径上。
+     *
+     * 查询每个路径前缀是为了区分 `import package.Type` 中的包与终端声明；每条加载事实
+     * 携带原始请求包名，因此不会用 CJO header 中的错误包名反向猜测消费侧位置。
+     *
+     * @return 是否有错误级加载门诊断；错误级事实已解释该 import 失败，不再报告 unresolved import。
+     */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun reportCjmpLoadDiagnosticsForFilePackage(
+        declaration: CfirFile,
+        reportedDiagnostics: MutableSet<CfirCjmpLoadDiagnostic>,
+    ) {
+        val packageFqName = declaration.packageDirective.packageFqName
+        val firstFileInModule = context.session.cfirProvider.getCfirFilesByPackage(packageFqName)
+            .firstOrNull { it.moduleData == declaration.moduleData }
+        if (firstFileInModule != null && firstFileInModule !== declaration) return
+
+        val source = declaration.packageDirective.source ?: declaration.source
+        context.session.symbolProvider.getCjmpLoadDiagnostics(packageFqName, context.session).forEach { diagnostic ->
+            if (reportedDiagnostics.add(diagnostic)) {
+                reportCjmpLoadDiagnostic(source, diagnostic)
+            }
+        }
+    }
+
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun reportCjmpLoadDiagnosticsForImport(
+        import: CfirImport,
+        importedFqName: FqName,
+        reportedDiagnostics: MutableSet<CfirCjmpLoadDiagnostic>,
+    ): Boolean {
+        val pathSegments = importedFqName.pathSegments()
+        val symbolProvider = context.session.symbolProvider
+        var hasErrors = false
+
+        for (prefixLength in 1..pathSegments.size) {
+            val packageFqName = FqName.fromSegments(pathSegments.take(prefixLength).map(Name::asString))
+            val diagnostics = symbolProvider.getCjmpLoadDiagnostics(packageFqName, context.session)
+            if (diagnostics.isEmpty()) continue
+
+            val indexFromLast = pathSegments.size - prefixLength
+            val source = import.getSourceForImportSegment(indexFromLast) ?: import.source
+            for (diagnostic in diagnostics) {
+                if (reportedDiagnostics.add(diagnostic)) {
+                    reportCjmpLoadDiagnostic(source, diagnostic)
+                }
+                hasErrors = hasErrors || diagnostic.isError
+            }
+        }
+        return hasErrors
+    }
+
+    /** 以 CFIR 诊断工厂报告一个具体的 CJO 加载事实。 */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun reportCjmpLoadDiagnostic(
+        source: CjSourceElement?,
+        diagnostic: CfirCjmpLoadDiagnostic,
+    ) {
+        when (diagnostic) {
+            is CfirCjmpLoadDiagnostic.CjoVersion -> reporter.reportOn(
+                source,
+                CfirErrors.CJMP_COMMON_CJO_FORMAT_VERSION,
+                diagnostic.requestedPackageName,
+                diagnostic.actualVersion ?: "missing",
+                diagnostic.supportedMajor.toString(),
+                diagnostic.supportedMinor.toString(),
+            )
+
+            is CfirCjmpLoadDiagnostic.WrongPackage -> reporter.reportOn(
+                source,
+                CfirErrors.CJMP_COMMON_CJO_PACKAGE_MISMATCH,
+                diagnostic.requestedPackageName,
+                diagnostic.actualPackageName,
+            )
+
+            is CfirCjmpLoadDiagnostic.FeaturesNotSubset -> reporter.reportOn(
+                source,
+                CfirErrors.CJMP_COMMON_CJO_FEATURES_NOT_SUBSET,
+                diagnostic.requestedPackageName,
+                diagnostic.commonFileName,
+                diagnostic.extraFeatures,
+            )
+
+            is CfirCjmpLoadDiagnostic.OptionsMissing -> reporter.reportOn(
+                source,
+                CfirErrors.CJMP_COMMON_CJO_OPTIONS_MISSING,
+                diagnostic.requestedPackageName,
+            )
+
+            is CfirCjmpLoadDiagnostic.DebugMismatch -> reporter.reportOn(
+                source,
+                CfirErrors.CJMP_COMMON_CJO_DEBUG_MISMATCH,
+                diagnostic.requestedPackageName,
+                diagnostic.commonDebug.toDebugModeName(),
+                diagnostic.currentDebug.toDebugModeName(),
+            )
+
+            is CfirCjmpLoadDiagnostic.OptLevelMismatch -> reporter.reportOn(
+                source,
+                CfirErrors.CJMP_COMMON_CJO_OPT_LEVEL_MISMATCH,
+                diagnostic.requestedPackageName,
+                diagnostic.commonOptLevel,
+                diagnostic.currentOptLevel,
+            )
+
+            is CfirCjmpLoadDiagnostic.InputFileInvalid -> reporter.reportOn(
+                source,
+                CfirErrors.CJMP_COMMON_CJO_INPUT_FILE_INVALID,
+                diagnostic.requestedPackageName,
+                diagnostic.path,
+            )
+        }
+    }
+
+    private fun Boolean.toDebugModeName(): String = if (this) "enabled" else "disabled"
+
+    /**
      * 未使用导入检查与 Analysis API 的 import optimization 语义保持一致：
      * - 只统计真实代码中的简单名引用，不把 import 自身计为使用；
      * - `*` 导入默认不参与 unused 判定；
@@ -257,8 +411,7 @@ object CfirImportsChecker : CfirFileChecker() {
         // 官方 sema_unused_import 自 v1.0.2 起才存在（v1.0.0 双 SDK 实测零诊断），
         // 旧语言版本下整个 unused-import 检查关闭。
         if (!context.languageVersionSettings.supportsFeature(LanguageFeature.UnusedImportCheck)) return
-        val importBindingsByImport = context.session.importBindingStoreOrNull
-            ?.getBindings(declaration)
+        val importBindingsByImport = declaration.importBindingsOrNull()
             ?.imports
             .orEmpty()
             .associateBy { it.importDirective }

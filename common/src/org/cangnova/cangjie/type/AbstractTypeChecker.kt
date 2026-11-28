@@ -86,6 +86,27 @@ object AbstractTypeChecker {
     }
 
     /**
+     * 对位 TypeManager::IsSubtype(..., implicitBoxed=false)。
+     * 继承返回兼容禁止值类型隐式装箱到接口；Option 装箱由其独立状态控制。
+     */
+    fun isSubtypeOfWithoutImplicitBoxing(
+        context: TypeCheckerProviderContext,
+        subType: CangJieTypeMarker,
+        superType: CangJieTypeMarker,
+    ): Boolean = isSubtypeOfWithoutImplicitBoxing(
+        context.newTypeCheckerState(errorTypesEqualToAnything = false, stubTypesEqualToAnything = false),
+        subType, superType,
+    )
+
+    fun isSubtypeOfWithoutImplicitBoxing(
+        state: TypeCheckerState,
+        subType: CangJieTypeMarker,
+        superType: CangJieTypeMarker,
+    ): Boolean = state.runWithImplicitBoxing(allowed = false) {
+        completeIsSubTypeOf(this, subType, superType)
+    }
+
+    /**
      * 按函数引用目标类型规则检查子类型关系。
      *
      * 官方函数引用候选筛选不把普通值到 `Option<T>` 的自动提升作为函数参数兼容关系；
@@ -369,6 +390,7 @@ object AbstractTypeChecker {
         checkSubtypeForFunctionType(state, subType, superType)?.let { return it }
         checkSubtypeForTupleType(state, subType, superType)?.let { return it }
         checkSubtypeForVArrayType(state, subType, superType)?.let { return it }
+        checkSubtypeForRawArrayType(state, subType, superType)?.let { return it }
         checkSubtypeForPointerType(state, subType, superType)?.let { return it }
 
         // 同构造器 + 无参数 → true
@@ -534,11 +556,20 @@ object AbstractTypeChecker {
         }
     }
 
-    /**
-     * 同构造器类型的参数子类型检查。
-     *
-     * 仓颉泛型是不变的（invariant），所以只检查参数相等。
-     */
+    /** RawArray 的源端嵌套表示和装载端单叶子表示共用原生累计布局进行不变比较。 */
+    private fun checkSubtypeForRawArrayType(
+        state: TypeCheckerState,
+        subType: RigidTypeMarker,
+        superType: RigidTypeMarker,
+    ): Boolean? = with(state.typeSystemContext) {
+        // 非数组对端仍可属于 Any/扩展接口；数组之间按 native IsArraySubtype 的不变叶子和维度判断。
+        if (!subType.isRawArrayType() || !superType.isRawArrayType()) return null
+        if (subType.extractDimensionsForRawArrayType() != superType.extractDimensionsForRawArrayType()) return false
+        val element = subType.extractElementTypeForRawArrayType()
+        state.runWithArgumentsSettings(element) { equalTypes(state, element, superType.extractElementTypeForRawArrayType()) }
+    }
+
+    /** 同构造器的普通泛型实参不变；结构类型由各自的语义分派先行处理。 */
     private fun isSubtypeForSameConstructor(
         state: TypeCheckerState,
         subType: RigidTypeMarker,

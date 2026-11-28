@@ -4,10 +4,8 @@ import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.findPsi
 import org.cangnova.cangjie.analysis.api.cfir.symbols.pointers.CaCfirPatternVariableSymbolPointer
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
-import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.symbols.*
 import org.cangnova.cangjie.analysis.api.symbols.pointers.CaSymbolPointer
-import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.llCfirModuleData
 import org.cangnova.cangjie.cfir.patterns.bindingVariables
 import org.cangnova.cangjie.cfir.symbols.CfirPatternVariableSymbol
 import org.cangnova.cangjie.psi.CjPatternVariable
@@ -28,9 +26,6 @@ internal class CaCfirPatternVariableSymbol private constructor(
 
     override val cfirSymbol: CfirPatternVariableSymbol
         get() = super<CaCfirCjBasedSymbol>.cfirSymbol
-
-    override val containingModule: CaModule
-        get() = withValidityAssertion { cfirSymbol.llCfirModuleData.caModule }
 
     override val psi
         get() = withValidityAssertion { backingPsiOrFindCurrentPsi { findPsi() } }

@@ -28,6 +28,7 @@ import com.intellij.lang.ASTNode
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.util.NlsSafe
 import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiErrorElement
 import com.intellij.psi.search.SearchScope
 import com.intellij.psi.stubs.IStubElementType
 import com.intellij.psi.stubs.StubElement
@@ -91,6 +92,8 @@ class CjPatternVariable : CjVariable<CangJieVariableStub> {
     override val valueParameterList: CjParameterList?
         get() = null
 
+    override val valueParameterLists: List<CjParameterList> = emptyList()
+
     /**
      * 暴露 `valueParameters`，实现仓颉 PSI节点对上层接口的属性契约。
      */
@@ -136,13 +139,28 @@ class CjPatternVariable : CjVariable<CangJieVariableStub> {
      * 使用 [getAllBindings] 扩展函数获取所有绑定的变量名。
      */
     val pattern: CjCasePatternElement?
-        get() = getStubOrPsiChildByTypes(
-            CjStubElementTypes.BINDING_PATTERN,
-            CjStubElementTypes.TUPLE_PATTERN,
-            CjStubElementTypes.ENUM_PATTERN,
-            CjStubElementTypes.TYPE_PATTERN,
-            CjStubElementTypes.WILDCARD_PATTERN
-        )
+        get() {
+            val direct: CjCasePatternElement? = getStubOrPsiChildByTypes(
+                CjStubElementTypes.BINDING_PATTERN,
+                CjStubElementTypes.TUPLE_PATTERN,
+                CjStubElementTypes.ENUM_PATTERN,
+                CjStubElementTypes.TYPE_PATTERN,
+                CjStubElementTypes.WILDCARD_PATTERN
+            )
+            if (direct != null) return direct
+            // parser 的范围错误可包裹一个已完成的根模式；只穿透错误包装，不进入嵌套模式。
+            fun insideError(error: PsiErrorElement): CjCasePatternElement? {
+                for (child in error.children) {
+                    if (child is CjCasePatternElement) return child
+                    if (child is PsiErrorElement) insideError(child)?.let { return it }
+                }
+                return null
+            }
+            for (child in children) {
+                if (child is PsiErrorElement) insideError(child)?.let { return it }
+            }
+            return null
+        }
 
     /**
      * 获取模式类型

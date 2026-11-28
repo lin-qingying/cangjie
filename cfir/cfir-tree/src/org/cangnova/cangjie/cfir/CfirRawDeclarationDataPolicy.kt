@@ -41,18 +41,25 @@ object CfirRawDeclarationDataPolicies {
         }
 
     inline fun <reified V : CfirElement> reference(description: String): CfirRawDeclarationDataPolicy<V> =
-        object : CfirRawDeclarationDataPolicy<V> {
-            override val description: String = description
-            override fun decode(value: Any): V {
-                require(value is V) { "RAW declaration-data reference does not match $description" }
-                return value
-            }
-            override fun collectOwned(value: V, context: CfirRawCopyContext, visit: (CfirElement) -> Unit) {}
-            override fun copy(value: V, context: CfirRawCopyContext, install: (V) -> Unit) {
-                // ancestor 尚在构造时不能假装它是 borrowed；所有 owned 节点记入同一 cache 后才安装。
-                context.state.deferReference { install(context.state.referencedElement(value)) }
-            }
+        referenceValue(description) { value, context -> context.state.referencedElement(value) }
+
+    /** 含有借用边的值对象必须等所有拥有节点进入同一缓存后才重绑。 */
+    inline fun <reified V : Any> referenceValue(
+        description: String,
+        crossinline rebind: (V, CfirRawCopyContext) -> V,
+    ): CfirRawDeclarationDataPolicy<V> = object : CfirRawDeclarationDataPolicy<V> {
+        override val description: String = description
+        override fun decode(value: Any): V {
+            require(value is V) { "RAW declaration-data reference does not match $description" }
+            return value
         }
+
+        override fun collectOwned(value: V, context: CfirRawCopyContext, visit: (CfirElement) -> Unit) {}
+
+        override fun copy(value: V, context: CfirRawCopyContext, install: (V) -> Unit) {
+            context.state.deferReference { install(rebind(value, context)) }
+        }
+    }
 
     val boolean: CfirRawDeclarationDataPolicy<Boolean> = value("Boolean source fact") { value, _ -> value }
 
@@ -99,17 +106,11 @@ object CfirRawDeclarationDataPolicies {
         CfirIfAvailableBranchContext(value.kind, value.conditionName, value.conditionValue)
     }
 
-    val annotationInfo: CfirRawDeclarationDataPolicy<CfirDeclarationAnnotationInfo> = value("declaration annotation source/wire facts") { value, _ ->
-        CfirDeclarationAnnotationInfo(
-            value.isAnnotation, value.annotationTargets.toSet(), value.annotationTargetResolutionStatus,
-            value.isIntrinsic, value.isConstSafe, value.isEnsurePreparedToMock, value.isMockSupported,
-            value.attributes.toList(), value.overflowStrategy, value.runtimeVisible,
-        )
-    }
+    val annotationInfo: CfirRawDeclarationDataPolicy<CfirDeclarationAnnotationInfo> =
+        value("declaration annotation source/wire facts") { value, _ -> value.frozenCopy() }
 
-    val cjoPosition: CfirRawDeclarationDataPolicy<CfirCjoDeclarationPosition> = value("CJO source position") { value, _ ->
-        CfirCjoDeclarationPosition(value.filePath, value.line, value.column, value.identifierLine, value.identifierColumn)
-    }
+    val cjoPosition: CfirRawDeclarationDataPolicy<CfirCjoDeclarationPosition> =
+        value("CJO source position") { value, _ -> value.copy() }
 
     /** CJO pool 下标是不可变 provenance，不能从声明名字反推。 */
     val cjoDeclarationIndex: CfirRawDeclarationDataPolicy<Int> = value("CJO declaration index") { value, _ -> value }
@@ -118,44 +119,9 @@ object CfirRawDeclarationDataPolicies {
         value("CJO declaration attribute words") { value, _ -> CfirSerializedDeclarationAttributes(value.words.toList()) }
 
     val serializedInterop: CfirRawDeclarationDataPolicy<CfirSerializedInteropFacts> = value("CJO interop facts") { value, _ ->
-        CfirSerializedInteropFacts(
-            value.hasExplicitC, value.callingConvention, value.overflowStrategy, value.isIntrinsic,
-            value.isFastNative, value.isMockSupported, value.isJavaMirror, value.isJavaMirrorSubtype,
-            value.hasJavaDefault, value.isJavaMirrorSyntheticWrapper, value.isJavaApplication,
-            value.isJavaExtension, value.isJavaCjMapping, value.isJavaInterfaceForward, value.isJavaInterfaceDefault,
-            value.isObjCMirror, value.isObjCMirrorSubtype, value.isObjCInit, value.isObjCOptional,
-            value.isObjCMirrorSyntheticWrapper, value.isObjCCjMapping, value.isObjCInterfaceForward,
-            value.attributeNames.toList(), value.cjmpTarget,
-        )
+        value.copy(attributeNames = value.attributeNames.toList())
     }
 
-    val interop: CfirRawDeclarationDataPolicy<CfirInteropInfo> = value("canonical declaration interop snapshot") { value, _ ->
-        CfirInteropInfo(
-            abiRequest = CfirAbiRequest(value.abiRequest.isForeign, value.abiRequest.hasExplicitC, value.abiRequest.callingConvention, value.abiRequest.isFunction),
-            resolvedAbi = CfirResolvedAbi(value.resolvedAbi.kind, value.resolvedAbi.isCFunction, value.resolvedAbi.effectiveCallingConvention),
-            foreignName = value.foreignName,
-            foreignGetterName = value.foreignGetterName,
-            foreignSetterName = value.foreignSetterName,
-            java = value.java?.let { info -> CfirJavaInteropInfo(
-                info.isMirror, info.isMirrorSubtype, info.isImpl, info.hasDefault, info.isSyntheticWrapper,
-                info.isApplication, info.isExtension, info.isInterfaceForward, info.isInterfaceDefault,
-                info.externalName, info.generatedDeclarationIds.toList(),
-            ) },
-            objc = value.objc?.let { info -> CfirObjCInteropInfo(
-                info.isMirror, info.isMirrorSubtype, info.isImpl, info.isInit, info.isOptional,
-                info.isSyntheticWrapper, info.isInterfaceForward, info.externalName, info.generatedDeclarationIds.toList(),
-            ) },
-            cjmp = value.cjmp?.let { info -> CfirCjmpMappingInfo(
-                info.target, info.declarationKind, info.isSupportedOnCommon, info.isSupportedOnSpecific,
-            ) },
-            overflowStrategy = value.overflowStrategy,
-            isFastNative = value.isFastNative,
-            isFrozen = value.isFrozen,
-            externalSymbolName = value.externalSymbolName,
-            ffiAnnotationKinds = value.ffiAnnotationKinds.toSet(),
-            platformAnnotationKinds = value.platformAnnotationKinds.toSet(),
-            ffiAnnotationNames = value.ffiAnnotationNames.toList(),
-            platformAnnotationNames = value.platformAnnotationNames.toList(),
-        )
-    }
+    val interop: CfirRawDeclarationDataPolicy<CfirInteropInfo> =
+        value("canonical declaration interop snapshot") { value, _ -> value.frozenCopy() }
 }

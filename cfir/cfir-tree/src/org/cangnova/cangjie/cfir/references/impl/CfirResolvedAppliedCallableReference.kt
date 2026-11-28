@@ -2,6 +2,7 @@ package org.cangnova.cangjie.cfir.references.impl
 
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
+import org.cangnova.cangjie.cfir.references.CfirReferenceParentType
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
@@ -18,7 +19,7 @@ import org.cangnova.cangjie.source.CjSourceElement
  * @property source 引用源码位置。
  * @property name 被解析的 callable 名称。
  * @property resolvedSymbol 解析命中的 callable 符号。
- * @property substitutedReturnType 替换后的返回类型；没有可用返回类型时为 `null`。
+ * @property substitutedReturnType callee完成签名的返回类型，保留DynamicBindingThisType的ClassThis/Generic角色。
  * @property substitutedParameterTypes 替换后的参数类型列表。
  * @property isFunctionValue 是否表示函数名作为值的访问，而不是函数调用结果。
  */
@@ -26,7 +27,7 @@ class CfirResolvedAppliedCallableReference @CfirImplementationDetail constructor
     /**
      * 引用表达式在源码中的位置。
      */
-    override val source: CjSourceElement?,
+    override var source: CjSourceElement?,
     /**
      * 源码中被解析的 callable 名称。
      */
@@ -51,7 +52,16 @@ class CfirResolvedAppliedCallableReference @CfirImplementationDetail constructor
      * owner 在构造引用时发布，避免后续重新猜测调用形态。
      */
     val isFunctionValue: Boolean = false,
+    /** 候选完成阶段发布的真实父类型状态；格式层不得从 receiver 或声明 owner 反推。 */
+    val matchedParentType: CfirReferenceParentType,
+    /** 引用所在表达式的完成类型；GetCallTy结果/函数值与callee签名返回各自保存。 */
+    val callSiteType: ConeCangJieType?,
 ) : CfirResolvedNamedReference {
+    /** 保留已解析符号和替换类型，仅迁移实际源关联。 */
+    @org.cangnova.cangjie.cfir.CfirImplementationDetail
+    override fun replaceSource(newSource: CjSourceElement?) {
+        source = newSource
+    }
 
     /**
      * 已解析 callable 引用没有 CFIR 子节点。

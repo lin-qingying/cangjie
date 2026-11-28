@@ -29,13 +29,25 @@ import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.builder.buildValueParameter
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
+import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.expressions.CfirArrayLiteral
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
-import org.cangnova.cangjie.cfir.expressions.CfirResolvable
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
+import org.cangnova.cangjie.cfir.expressions.CfirInaccessibleReceiverExpression
+import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
+import org.cangnova.cangjie.cfir.expressions.CfirResolvable
+import org.cangnova.cangjie.cfir.expressions.CfirSmartCastExpression
+import org.cangnova.cangjie.cfir.expressions.CfirThisReceiverExpression
+import org.cangnova.cangjie.cfir.expressions.buildInaccessibleReceiverExpressionCopy
+import org.cangnova.cangjie.cfir.expressions.buildSmartCastExpressionCopy
+import org.cangnova.cangjie.cfir.expressions.buildThisReceiverExpressionCopy
+import org.cangnova.cangjie.cfir.expressions.builder.buildNamedAccessExpressionCopy
+import org.cangnova.cangjie.cfir.expressions.impl.CfirExpressionStub
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
+import org.cangnova.cangjie.cfir.references.CfirReference
+import org.cangnova.cangjie.cfir.references.CfirResolvedBuiltinOperatorReference
 import org.cangnova.cangjie.type.AbstractTypeChecker
 import org.cangnova.cangjie.cfir.resolve.CfirSamResolver
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
@@ -44,11 +56,15 @@ import org.cangnova.cangjie.cfir.resolve.calls.ArgumentMappingOutcome
 import org.cangnova.cangjie.cfir.resolve.calls.ConePostponedResolvedAtom
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtom
 import org.cangnova.cangjie.cfir.resolve.calls.ConeAtomWithCandidate
+import org.cangnova.cangjie.cfir.resolve.calls.ConeSimpleLeafResolutionAtom
+import org.cangnova.cangjie.source.CjFakeSourceElementKind
+import org.cangnova.cangjie.source.fakeElement
 import org.cangnova.cangjie.cfir.resolve.calls.stages.TypeArgumentMapping
 import org.cangnova.cangjie.cfir.resolve.inference.InferenceComponents
 import org.cangnova.cangjie.cfir.resolve.inference.CfirInferenceVariableRole
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityResult
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
+import org.cangnova.cangjie.cfir.resolve.substitution.asCone
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.BodyResolveContext
 import org.cangnova.cangjie.cfir.resolve.transformers.ReturnTypeCalculator
 import org.cangnova.cangjie.cfir.scopes.CfirScope
@@ -58,8 +74,6 @@ import org.cangnova.cangjie.cfir.semantics.ResolutionDiagnostic
 import org.cangnova.cangjie.cfir.semantics.hasBareGenericFunctionReferencePayloadArgument
 import org.cangnova.cangjie.cfir.semantics.isSuccess
 import org.cangnova.cangjie.cfir.resolve.recoverableFunctionTypeOrNull
-import org.cangnova.cangjie.cfir.session.cfirProvider
-import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
@@ -130,6 +144,12 @@ internal class CfirUnscopedCompletionEntry(val pass: CfirUnscopedCompletionPass,
     val freshVariables = candidate.freshVariables.toList()
     val additionalVariables = candidate.additionalCompletionVariables.toList()
 
+    fun matchesResolvedReference(reference: CfirReference): Boolean = when (reference) {
+        is CfirResolvedNamedReference -> reference !is CfirDiagnosticHolder && reference.resolvedSymbol === target
+        is CfirResolvedBuiltinOperatorReference -> candidate.matchesBuiltinOperatorReference(carrier, reference)
+        else -> false
+    }
+
     fun matchesCandidate(): Boolean =
         !candidate.isSourceCompletionWithdrawn && candidateSystem.withParentRebaseSuspended {
             atom.candidate === candidate && atom.expression === carrier && candidate.implicitTypeComputationScope == null &&
@@ -152,7 +172,7 @@ internal class CfirUnscopedFixedBinding(val variable: ConeTypeVariable, val type
  */
 internal class CfirUnscopedCompletionReceipt(
     val entry: CfirUnscopedCompletionEntry,
-    val reference: CfirResolvedNamedReference,
+    val reference: CfirReference,
     val type: ConeCangJieType,
     private val bindings: List<CfirUnscopedFixedBinding>,
 ) {
@@ -197,7 +217,7 @@ internal class CfirUnscopedCompletionReceipt(
             if (owner.isSourceCompletionWithdrawn || entry.pass.owner !== owner || entry.atom !== atom || entry.pass.system !== system ||
                 entry.pass.ownerSystem !== owner.withConstraintSystemForCompletionResults { it } || entry.pass.ownerGeneration !== owner.unscopedCompletionGeneration || !entry.pass.matchesProducerFact() ||
                 owner.implicitTypeComputationScope?.graph?.isCandidateWithdrawn(owner) == true || !entry.matchesCandidate() ||
-                reference.resolvedSymbol !== entry.target || !entry.candidate.hasSuccessfulSourceResult(type) ||
+                !entry.matchesResolvedReference(reference) || !entry.candidate.hasSuccessfulSourceResult(type) ||
                 entry.candidate.arguments.size != candidateArguments.size ||
                 !entry.candidate.arguments.zip(candidateArguments).all { (a, b) -> a === b } ||
                 entry.candidate.argumentMapping.size != mapping.size ||
@@ -503,6 +523,32 @@ class Candidate(
             implicitTypeComputationScope?.mode == currentScope?.mode
     }
 
+    /** 内建引用保存原生签名；实际完成 candidate 仍由拥有它的 atom 或 lease 确认。 */
+    internal fun matchesBuiltinOperatorReference(
+        expression: CfirExpression,
+        reference: CfirResolvedBuiltinOperatorReference,
+    ): Boolean {
+        if (!symbol.isBound || expression !is CfirFunctionCall) return false
+        val declared = (symbol.cfir as? CfirNamedFunction)?.builtinOperatorSignature ?: return false
+        val signature = reference.signature
+        if (reference.name != declared.name || signature.name != declared.name ||
+            signature.parameterKinds.size != declared.parameterKinds.size
+        ) return false
+
+        fun specializes(original: PrimitiveTypeKind, final: PrimitiveTypeKind): Boolean =
+            original == final || original == PrimitiveTypeKind.IDEAL_INT && final.isInteger ||
+                original == PrimitiveTypeKind.IDEAL_FLOAT && final.isFloat
+
+        if (!specializes(declared.receiverKind, signature.receiverKind) ||
+            !specializes(declared.returnKind, signature.returnKind) ||
+            !declared.parameterKinds.zip(signature.parameterKinds).all { (original, final) -> specializes(original, final) }
+        ) return false
+        val receiverType = (expression.explicitReceiver ?: expression.dispatchReceiver)?.coneTypeOrNull ?: return false
+        val argumentTypes = expression.argumentList.arguments.map { it.coneTypeOrNull ?: return false }
+        return BuiltinPrimitiveOperators.resolve(reference.name, receiverType, argumentTypes)?.signature == signature &&
+            BuiltinPrimitiveOperators.primitiveOperandKind(expression.coneTypeOrNull) == signature.returnKind
+    }
+
     /** 成功只读 guard 是已有 binding 的佐证，不授予 FULL、terminal 或 writer 权限。 */
     internal fun hasSuccessfulSourceResult(type: ConeCangJieType): Boolean {
         if (isSourceCompletionWithdrawn || implicitTypeComputationScope?.graph?.isCandidateWithdrawn(this) == true) return false
@@ -641,7 +687,7 @@ class Candidate(
     /** 候选原始实参 atom 列表。 */
     private var _arguments: List<ConeResolutionAtom>? = null
     /** 候选原始实参 atom 列表。 */
-    val arguments: List<ConeResolutionAtom>
+    override val arguments: List<ConeResolutionAtom>
         get() = _arguments ?: error("Argument list is not initialized yet")
 
     /** 候选实参到值参数的映射。 */
@@ -652,6 +698,28 @@ class Candidate(
     /** 候选实参到值参数的映射。 */
     override val argumentMapping: LinkedHashMap<ConeResolutionAtom, CfirValueParameter>
         get() = _argumentMapping ?: error("Argument mapping is not initialized yet")
+
+    private var _cVariadicArguments: org.cangnova.cangjie.cfir.expressions.CfirCVariadicArguments<ConeResolutionAtom>? = null
+    override val cVariadicArguments: org.cangnova.cangjie.cfir.expressions.CfirCVariadicArguments<ConeResolutionAtom>?
+        get() = _cVariadicArguments
+
+    /** mapper 唯一发布 C extras，fixed 映射不能吞入任何 extra。 */
+    fun initializeCVariadicArguments(fixedParameterCount: Int, extras: List<ConeResolutionAtom>) {
+        require(_cVariadicArguments == null && _variadicParameter == null)
+        require(extras.all { extra -> arguments.any { it === extra } && argumentMapping.keys.none { it === extra } })
+        _cVariadicArguments = org.cangnova.cangjie.cfir.expressions.CfirCVariadicArguments(fixedParameterCount, extras)
+    }
+
+    fun isCVariadicExtra(atom: ConeResolutionAtom): Boolean = cVariadicArguments?.extraArguments?.any { it === atom } == true
+
+    /** C调用的Unit禁令在actual type完全定型后仍需检查，不能由一次fresh-variable检查免除。 */
+    var requiresCompletedCFunctionArgumentCheck: Boolean = false
+        private set
+
+    fun requireCompletedCFunctionArgumentCheck() {
+        require(argumentMappingInitialized && argumentMappingOutcome?.hasMappingFailure != true)
+        requiresCompletedCFunctionArgumentCheck = true
+    }
 
     /** 参数映射阶段产生的共享结构化结果。 */
     var argumentMappingOutcome: ArgumentMappingOutcome? = null
@@ -705,6 +773,10 @@ class Candidate(
     @UpdatingCandidateInvariants
     fun updateArgumentMapping(argumentMapping: LinkedHashMap<ConeResolutionAtom, CfirValueParameter>) {
         _argumentMapping = argumentMapping
+        cVariadicArguments?.let { variadic ->
+            require(variadic.extraArguments.none { it in argumentMapping })
+            _arguments = argumentMapping.keys.toList() + variadic.extraArguments
+        }
         _variadicArgumentExpectedTypes?.keys?.retainAll(argumentMapping.keys)
         _variadicEligibleArguments = _variadicEligibleArguments.intersect(argumentMapping.keys)
     }
@@ -717,6 +789,7 @@ class Candidate(
         elementType: ConeCangJieType,
         fixedPositionalArity: Int,
     ) {
+        require(_cVariadicArguments == null) { "C ellipsis and Array variadic calls are distinct" }
         require(_variadicParameter == null || _variadicParameter == parameter) {
             "Variadic call info already initialized"
         }
@@ -820,6 +893,7 @@ class Candidate(
 
         _arguments = newArguments
         _argumentMapping = newArgumentMapping
+        _cVariadicArguments = _cVariadicArguments?.map { oldToNewArguments[it] ?: it }
         remapVariadicArgumentExpectedTypes(oldToNewArguments, remainingArguments)
         val oldEligibleArguments = _variadicEligibleArguments
         _variadicEligibleArguments = buildSet {
@@ -1136,7 +1210,7 @@ class Candidate(
      * as it contains conditions that rely on subtle differences between the implementation of this property and
      * [org.jetbrains.kotlin.resolve.calls.tower.isSuccess].
      */
-    val isSuccessful: Boolean
+    override val isSuccessful: Boolean
         get() = diagnostics.all { it.isSuccess } && (!systemInitialized || !system.hasContradiction)
 
     // ---------------------------------------- Receivers ----------------------------------------
@@ -1157,14 +1231,14 @@ class Candidate(
      * 返回 dispatch receiver 对应表达式。
      */
     fun dispatchReceiverExpression(): CfirExpression? {
-        return dispatchReceiver?.expression
+        return dispatchReceiver?.expression?.takeIf { it !is CfirExpressionStub }
     }
 
     /**
      * 返回选中的 extension receiver 对应表达式。
      */
     fun chosenExtensionReceiverExpression(): CfirExpression? {
-        return chosenExtensionReceiver?.expression
+        return chosenExtensionReceiver?.expression?.takeIf { it !is CfirExpressionStub }
     }
 
     /**
@@ -1183,8 +1257,47 @@ class Candidate(
      * 标记 receiver source 已更新。
      */
     fun updateSourcesOfReceivers() {
-        if (sourcesWereUpdated) return
+        require(!sourcesWereUpdated)
         sourcesWereUpdated = true
+        // 同一次候选的 D/E/context 共用源节点时保留共享；此 memo 不跨调用或解析代次。
+        val updated = IdentityHashMap<CfirExpression, CfirExpression>()
+        dispatchReceiver = dispatchReceiver?.tryToSetSourceForImplicitReceiver(updated)
+        chosenExtensionReceiver = chosenExtensionReceiver?.tryToSetSourceForImplicitReceiver(updated)
+        contextArguments = contextArguments?.map { it.tryToSetSourceForImplicitReceiver(updated) }
+    }
+
+    /** 与固定 K Candidate 一样，只更新已选 leaf receiver 的使用点来源，不重新求值或绑定对象。 */
+    private fun ConeResolutionAtom.tryToSetSourceForImplicitReceiver(
+        updated: IdentityHashMap<CfirExpression, CfirExpression>,
+    ): ConeResolutionAtom {
+        if (this !is ConeSimpleLeafResolutionAtom) return this
+        fun CfirExpression.updatedImplicitSource(): CfirExpression? {
+            updated[this]?.let { return it }
+            val replacement = when {
+                this is CfirSmartCastExpression -> {
+                    val original = originalExpression.updatedImplicitSource() ?: return null
+                    buildSmartCastExpressionCopy(this) { originalExpression = original }
+                }
+                this is CfirInaccessibleReceiverExpression && calleeReference.isImplicit ->
+                    buildInaccessibleReceiverExpressionCopy(this) {
+                        source = callInfo.callSite.source?.fakeElement(CjFakeSourceElementKind.ImplicitReceiver)
+                    }
+                this is CfirThisReceiverExpression && calleeReference.isImplicit ->
+                    buildThisReceiverExpressionCopy(this) {
+                        source = callInfo.callSite.source?.fakeElement(CjFakeSourceElementKind.ImplicitReceiver)
+                    }
+                this is CfirNamedAccessExpression && source?.kind == CjFakeSourceElementKind.ImplicitContextParameterArgument ->
+                    buildNamedAccessExpressionCopy(this) {
+                        source = callInfo.callSite.source?.fakeElement(CjFakeSourceElementKind.ImplicitContextParameterArgument)
+                    }
+                else -> return null
+            }
+            replacement.replaceOverflowStrategy(overflowStrategy)
+            updated[this] = replacement
+            return replacement
+        }
+        val replacement = expression.updatedImplicitSource() ?: return this
+        return ConeSimpleLeafResolutionAtom(replacement, allowUnresolvedExpression = false)
     }
 
     // This thing is mostly for a common fast-path optimization and should not affect the semantics once it's set to `true`
@@ -1217,6 +1330,19 @@ class Candidate(
     private var cachedSyntheticCallableValueParameters: List<CfirValueParameter>? = null
     /** 当前函数值调用为 fresh lambda 形参临时构造的函数类型形状。 */
     private var callableValueInvokeFunctionShape: ConeFunctionType? = null
+
+    /** 只消费已经解析的 C ABI 或函数值类型；不按名字/最后一个形参猜测 ellipsis。 */
+    fun hasCVariadicSignature(): Boolean {
+        val declaration = symbol.takeIf { it.isBound }?.cfir ?: return false
+        val functionType = callableValueInvokeFunctionShape ?: when {
+            isSyntheticFunctionTypeInvoke() -> dispatchReceiverExpression()?.coneTypeOrNull?.fullyExpandedType(callInfo.session) as? ConeFunctionType
+            declaration is CfirVariable || declaration is CfirProperty ->
+                (declaration as CfirCallableDeclaration).returnTypeRef.resolvedConeTypeOrNull()?.recoverableFunctionTypeOrNull(callInfo.session)
+            else -> null
+        }
+        if (functionType != null) return functionType.isCFunc && functionType.hasVariableLenArg
+        return declaration is CfirFunction && declaration.hasVariableLenArg && declaration.interopInfo?.resolvedAbi?.isCFunction == true
+    }
 
     /**
      * 当前候选是否表示函数值调用，而不是直接调用一个函数声明。
@@ -1307,6 +1433,30 @@ class Candidate(
      */
     fun substitutedReturnType(declaredReturnType: ConeCangJieType? = null): ConeCangJieType {
         val declaration = symbol.cfir
+        val substituted = substitutedDeclaredReturnType(declaredReturnType)
+        return if (declaration is CfirFunction && declaration.origin == CfirDeclarationOrigin.Synthetic.FakeFunction) {
+            substituted
+        } else {
+            bindThisTypeToCallSite(substituted)
+        }
+    }
+
+    /** Native DynamicBindingThisType的callee签名投影，与GetCallTy的表达式结果分开。 */
+    fun substitutedCallableSignatureReturnType(): ConeCangJieType {
+        val substituted = substitutedDeclaredReturnType(null)
+        if (substituted.thisTypeViewOrNull() == null) return substituted
+        return when (val receiverType = bindThisTypeToCallSite(substituted)) {
+            is ConeClassLikeType -> if (receiverType.isInterface) substituted else ConeClassLikeType(
+                receiverType.lookupTag, receiverType.typeArguments, receiverType.attributes,
+                isInterface = false, isThisType = true, rawArrayDimensions = receiverType.rawArrayDimensions,
+            )
+            is ConeTypeParameterType -> receiverType
+            else -> substituted // Native仅Class和Generic替换callee的This返回，其余保留原签名。
+        }
+    }
+
+    private fun substitutedDeclaredReturnType(declaredReturnType: ConeCangJieType?): ConeCangJieType {
+        val declaration = symbol.cfir
         val declared = declaredReturnType ?: when (declaration) {
             is CfirFunction -> declaration.returnTypeRef.resolvedConeTypeOrNull()
             is CfirConstructor -> declaration.returnTypeRef.resolvedConeTypeOrNull()
@@ -1316,12 +1466,7 @@ class Candidate(
             else -> null
         } ?: return ConeErrorType(ConeSimpleDiagnostic("Unresolved return type"))
 
-        val substituted = if (::substitutor.isInitialized) substitutor.substituteOrSelf(declared) else declared
-        return if (declaration is CfirFunction && declaration.origin == CfirDeclarationOrigin.Synthetic.FakeFunction) {
-            substituted
-        } else {
-            bindThisTypeToCallSite(substituted)
-        }
+        return if (::substitutor.isInitialized) substitutor.substituteOrSelf(declared) else declared
     }
 
     /**
@@ -1437,6 +1582,7 @@ class Candidate(
      */
     private fun callableValueParametersForMapping(declaration: CfirCallableDeclaration): List<CfirValueParameter> {
         cachedSyntheticCallableValueParameters?.let { return it }
+        val ownerSymbol = symbol
 
         val functionType = callableValueInvokeFunctionShape
             ?: declaration.returnTypeRef.resolvedConeTypeOrNull()
@@ -1466,7 +1612,8 @@ class Candidate(
                 isNamed = false
                 dispatchReceiverType = null
                 symbol = parameterSymbol
-                containingDeclarationSymbol = symbol
+                // builder DSL 内的 `symbol` 指向新参数；捕获候选值声明作为整组 synthetic 参数的真实 owner。
+                containingDeclarationSymbol = ownerSymbol
                 status = DEFAULT_STATUS_FOR_STATUSLESS_DECLARATIONS
                 returnTypeRef = buildResolvedTypeRef {
                     source = declaration.returnTypeRef.source

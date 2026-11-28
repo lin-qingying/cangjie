@@ -37,6 +37,11 @@ internal fun appendTypeRefForDebug(
             builder.append("|")
         }
         is CfirBasicTypeRef -> builder.append("R|${typeRef.name.asString()}|")
+        is CfirParenthesizedTypeRef -> {
+            builder.append("R|(")
+            appendTypeRefForDebug(typeRef.innerTypeRef, typeRenderer, builder)
+            builder.append(")|")
+        }
         is CfirUserTypeRef -> {
             builder.append("R|")
             typeRef.qualifier.forEachIndexed { index, qualifier ->

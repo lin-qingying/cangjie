@@ -24,12 +24,14 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirStruct
+import org.cangnova.cangjie.cfir.declarations.utils.ownTypeParameters
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.name.Name
@@ -43,10 +45,11 @@ import org.cangnova.cangjie.name.Name
  * 官方对主构造器（CheckPrimaryCtorForClassOrStruct, :1696-1698）执行同一规则，
  * 主构造器在 CFIR 中同样表示为 [CfirConstructor]，无需单独分支。
  */
-object CfirGenericConstructorChecker : CfirConstructorChecker() {
+object CfirGenericConstructorChecker : CfirConstructorChecker(MppCheckerKind.Common) {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirConstructor) {
-        if (declaration.typeParameters.isEmpty()) return
+        // 借用所属名义类型参数的 constructed-class 引用不是构造器自有泛型，只检查自有声明。
+        if (declaration.typeParameters.ownTypeParameters.isEmpty()) return
         if (declaration.status.isStatic) return
         if (declaration.hasBuiltinAnnotation(BuiltInAnnotationKind.JAVA)) return
 

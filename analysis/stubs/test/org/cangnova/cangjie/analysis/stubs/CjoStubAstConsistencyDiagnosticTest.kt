@@ -5,10 +5,9 @@ package org.cangnova.cangjie.analysis.stubs
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.psi.PsiManager
 import com.intellij.psi.stubs.PsiFileStub
-import com.intellij.psi.impl.source.tree.CompositeElement
 import com.intellij.psi.stubs.StubElement
-import com.intellij.psi.stubs.StubElementRegistryService
 import com.intellij.lang.ASTNode
+import com.intellij.psi.impl.source.tree.FileElement
 import org.cangnova.cangjie.analysis.api.standalone.cfir.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
 import org.cangnova.cangjie.analysis.api.standalone.projectStructure.AnalysisApiServiceRegistrar
 import org.cangnova.cangjie.analysis.api.util.requireIsInstance
@@ -27,6 +26,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.nio.file.Files
 import java.nio.file.Path
+import java.util.IdentityHashMap
 import kotlin.io.path.exists
 import kotlin.io.path.readText
 
@@ -86,7 +86,8 @@ class CjoStubAstConsistencyDiagnosticTest : AbstractAnalysisApiBasedTest() {
                     requireIsInstance<CjDecompiledFile>(file)
                     val fileReport = diagnoseSingleFile(file)
                     report.append(fileReport)
-                    if (fileReport.contains("DIVERGENCE #") || fileReport.contains("COUNT MISMATCH")) {
+                    if (fileReport.contains("DIVERGENCE #") || fileReport.contains("COUNT MISMATCH") ||
+                        fileReport.contains("HIERARCHY MISMATCH")) {
                         filesWithDivergence++
                     }
                 }
@@ -147,6 +148,15 @@ class CjoStubAstConsistencyDiagnosticTest : AbstractAnalysisApiBasedTest() {
             sb.appendLine("  COUNT MISMATCH: stub=${stubs.size} ast=${astNodes.size}")
         }
 
+        val binaryStructure = stubStructure(stubs)
+        val sourceStructure = astStructure(astNodes)
+        if (binaryStructure != sourceStructure) {
+            val index = binaryStructure.indices.firstOrNull { binaryStructure[it] != sourceStructure.getOrNull(it) }
+                ?: minOf(binaryStructure.size, sourceStructure.size)
+            sb.appendLine("  HIERARCHY MISMATCH at $index: binary=${binaryStructure.getOrNull(index)} " +
+                "source=${sourceStructure.getOrNull(index)}")
+        }
+
         val divergences = alignAndReportDivergences(stubs, astNodes, decompiledText)
         if (divergences.isEmpty()) {
             sb.appendLine("  no aligned divergences found")
@@ -196,30 +206,9 @@ class CjoStubAstConsistencyDiagnosticTest : AbstractAnalysisApiBasedTest() {
         sb.appendLine("    $bothAgain")
     }
 
-    /**
-     * 按 `FileTrees.reconcilePsi` 的真实口径计算 spine：
-     * 根 FileElement 恒计入 + 每个满足 `getStubFactory(type) != null && factory.shouldCreateStub(node)`
-     * 的 CompositeElement（spine 的 visitor 只走 Composite，叶节点不进 spine）。
-     * 列出被 `shouldCreateStub` 否决（stub 树有桩、spine 不计）的节点。
-     */
+    /** 平台 spine 已包含文件根，不再通过另一个枚举器重复计算根或 factory 判据。 */
     private fun dumpSpineReconciliation(sb: StringBuilder, astNodes: List<ASTNode>) {
-        val vetoed = ArrayList<ASTNode>()
-        var passing = 0
-        for (node in astNodes) {
-            if (node !is com.intellij.psi.impl.source.tree.CompositeElement) continue
-            val factory = StubElementRegistryService.getInstance().getStubFactory(node.elementType)
-            when {
-                factory == null -> Unit // 非 stub 类型，spine 不计
-                factory.shouldCreateStub(node) -> passing++
-                else -> vetoed.add(node)
-            }
-        }
-        val spineCount = 1 + passing // FileElement 根恒计入
-        sb.appendLine("  platformSpineCount=$spineCount (root + $passing passing) vetoedByShouldCreateStub=${vetoed.size}")
-        vetoed.forEachIndexed { index, node ->
-            val parentType = node.treeParent?.elementType?.toString() ?: "<none>"
-            sb.appendLine("    VETOED #$index type=${astTypeString(node)} parentType=$parentType offset=${node.startOffset} text='${trim(node.text)}'")
-        }
+        sb.appendLine("  platformSpineCount=${astNodes.size} (file root included once)")
     }
 
     /** stub 先序展平（含根）。 */
@@ -233,33 +222,38 @@ class CjoStubAstConsistencyDiagnosticTest : AbstractAnalysisApiBasedTest() {
         return out
     }
 
-    /**
-     * AST 中所有 stubbed 节点的先序序列（含文件根）。
-     *
-     * 与平台 `FileElement.getStubbedSpine()` 同口径：文件根无条件计入，
-     * 其余节点按 stub 注册表判定（`getStubFactory(type) != null && shouldCreateStub(node)`），
-     * 这样两侧序列（stub 展平含根 / AST stubbed 节点含根）可以逐个对账。
-     *
-     * 注意：文件 element type（`IStubFileElementType`）不是 `IStubElementType` 的子类型，
-     * 用 `elementType is IStubElementType` 判断会把文件根整体漏掉，造成恒定差一。
-     */
+    /** 直接使用 FileTrees.reconcilePsi 的平台序列，包含根并遵守 factory/shouldCreateStub。 */
     private fun collectStubbedAstNodes(root: ASTNode): List<ASTNode> {
-        val out = ArrayList<ASTNode>(40_000)
-        val registry = StubElementRegistryService.getInstance()
-        fun shouldCreateStub(node: ASTNode): Boolean {
-            if (node === root) return true
-            if (node !is CompositeElement) return false
-            val factory = registry.getStubFactory(node.elementType) ?: return false
-            return factory.shouldCreateStub(node)
+        check(root is FileElement) { "A compiled stub comparison requires a complete source file AST." }
+        return root.stubbedSpine.spineNodes.toList()
+    }
+
+    /** 类型相同不足以证明同构；同时保留真实父节点位置及其直接 stub 子节点序号。 */
+    private data class StubStructureEntry(val type: String, val parentIndex: Int?, val childIndex: Int)
+
+    private fun stubStructure(stubs: List<StubElement<*>>): List<StubStructureEntry> {
+        val indices = IdentityHashMap<StubElement<*>, Int>()
+        stubs.forEachIndexed { index, stub -> indices[stub] = index }
+        val childCounts = IntArray(stubs.size)
+        return stubs.mapIndexed { index, stub ->
+            val parent = stub.parentStub?.let { checkNotNull(indices[it]) }
+            check((index == 0) == (parent == null)) { "Only the file stub may be a structure root." }
+            StubStructureEntry(stubTypeString(stub), parent, if (parent == null) 0 else childCounts[parent]++)
         }
-        fun walk(node: ASTNode) {
-            if (shouldCreateStub(node)) {
-                out.add(node)
-            }
-            node.getChildren(null).forEach { walk(it) }
+    }
+
+    /** 非 stub 的语法包装不参与位置比较，父节点取平台 spine 中最近的真实祖先。 */
+    private fun astStructure(nodes: List<ASTNode>): List<StubStructureEntry> {
+        val indices = IdentityHashMap<ASTNode, Int>()
+        nodes.forEachIndexed { index, node -> indices[node] = index }
+        val childCounts = IntArray(nodes.size)
+        return nodes.mapIndexed { index, node ->
+            var ancestor = node.treeParent
+            while (ancestor != null && !indices.containsKey(ancestor)) ancestor = ancestor.treeParent
+            val parent = ancestor?.let { checkNotNull(indices[it]) }
+            check((index == 0) == (parent == null)) { "Only the file AST may be a structure root." }
+            StubStructureEntry(astTypeString(node), parent, if (parent == null) 0 else childCounts[parent]++)
         }
-        walk(root)
-        return out
     }
 
     private fun stubTypeString(stub: StubElement<*>): String =

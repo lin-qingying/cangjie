@@ -26,10 +26,21 @@ package org.cangnova.cangjie.cfir.builder
 
 import com.intellij.psi.tree.IElementType
 import org.cangnova.cangjie.cfir.containingClassForStaticMemberAttr
+import org.cangnova.cangjie.cfir.containingExtend
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirExtend
+import org.cangnova.cangjie.cfir.declarations.CfirEnum
+import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
+import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
+import org.cangnova.cangjie.cfir.declarations.resolvedForStatuslessDeclaration
 import org.cangnova.cangjie.cfir.expressions.CfirBinaryOpKind
 import org.cangnova.cangjie.cfir.expressions.CfirComparisonOp
 import org.cangnova.cangjie.cfir.types.ConeClassifierType
+import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
+import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.ConePrimitiveType
+import org.cangnova.cangjie.cfir.toCfirResolvedTypeRef
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.OperatorNameConventions
@@ -52,7 +63,36 @@ fun <T> CfirCallableDeclaration.initContainingClassAttr(context: Context<T>) {
         (context.currentDispatchReceiverType() as? ConeClassifierType)?.lookupTag ?: return
 }
 
+/** extend 构造完成后，以实际 owner 对象连接直接成员；原始构建和宏片段使用同一入口。 */
+fun CfirExtend.bindMemberOwners(members: List<CfirDeclaration> = declarations) {
+    for (member in members) {
+        if (member is CfirCallableDeclaration) member.containingExtend = this
+    }
+}
+
+/**
+ * 仓颉空函数块在预检时已有 Unit 类型，其余省略返回类型的函数仍需推断。
+ * 空块事实来自语法树或持久化 stub，不读取可能延迟构建或已展开嵌套块的 CFIR body。
+ * 保留空 source，供后续阶段识别该返回类型没有显式源码注解。
+ */
+fun CfirTypeRef.withEmptyFunctionBodyReturnType(hasEmptyBlockBody: Boolean): CfirTypeRef =
+    if (this is CfirImplicitTypeRef && hasEmptyBlockBody) ConePrimitiveType.UNIT.toCfirResolvedTypeRef(null) else this
+
 // ===== 运算符 → 函数名映射（对齐 Kotlin 的 OperatorConventions） =====
+
+/**
+ * 官方 ParseDecl 为 enum 的每个构造项传播 COMMON/SPECIFIC，不传播 COMMON_WITH_DEFAULT。
+ * 只初始化刚完成 raw 构建的构造项状态，不共享或改写全局的默认 status 实例。
+ */
+fun CfirEnum.initConstructorCjmpStatus() {
+    for (constructor in declarations.filterIsInstance<CfirEnumConstructor>()) {
+        val constructorStatus = CfirDeclarationStatusImpl(constructor.status.visibility, constructor.status.modality).apply {
+            isCommon = this@initConstructorCjmpStatus.status.isCommon
+            isSpecific = this@initConstructorCjmpStatus.status.isSpecific
+        }
+        constructor.replaceStatus(constructorStatus.resolvedForStatuslessDeclaration())
+    }
+}
 
 /** 二元运算符 token → 可重载函数名 */
 fun IElementType.toBinaryName(): Name? = BINARY_OPERATOR_NAMES[this]

@@ -1,5 +1,3 @@
-
-
 package org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.factories
 
 import com.intellij.psi.search.GlobalSearchScope
@@ -18,12 +16,17 @@ import org.cangnova.cangjie.cfir.serialization.cjo.distinctCjoSearchRoots
 import org.cangnova.cangjie.analysis.decompiled.psi.BuiltinsVirtualFileProvider
 import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.moduleData
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
+import org.cangnova.cangjie.cfir.deserialization.LibraryPathFilter
+import org.cangnova.cangjie.cfir.deserialization.MultipleModuleDataProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirBuiltinSymbolProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoManager
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoSearchPath
+import org.cangnova.cangjie.cfir.serialization.cjo.CjoFormatVersionPolicy
 import org.cangnova.cangjie.cfir.serialization.provider.CfirDeserializedSymbolProvider
+import org.cangnova.cangjie.cfir.source.CfirImportedSourceGraphProvider
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
+import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import java.io.File
 
 /**
@@ -84,8 +87,9 @@ internal object LLBinaryOriginLibrarySymbolProviderFactory : LLLibrarySymbolProv
 
     /** 本模块只暴露 own roots；imports 先定位实际依赖模块的 own CJO 快照，再取其 context。 */
     private fun createDeserializedLibrarySymbolProvider(session: LLCfirSession): CfirDeserializedSymbolProvider {
-        val librarySearchPaths = (session.caModule as? CaLibraryModule)
-            ?.binaryRoots.orEmpty()
+        val libraryModule = session.caModule as? CaLibraryModule
+        val explicitCommonPaths = libraryModule?.cjmpCommonPartCjoPaths.orEmpty()
+        val librarySearchPaths = libraryModule?.binaryRoots.orEmpty()
             .mapNotNull { it.virtualFile }
             .mapNotNull(VirtualFile::asCjoSearchResource)
             .distinctCjoSearchRoots()
@@ -143,15 +147,16 @@ internal object LLBinaryOriginLibrarySymbolProviderFactory : LLLibrarySymbolProv
             session = session,
             cjoManager = CjoManager(
                 CjoSearchPath.forRoots(builtinsRoots = emptyList(), libraryRoots = librarySearchPaths),
-                LLCfirGlobalResolveComponents.getInstance(session.project).cjoMaterialization,
+                CjoFormatVersionPolicy.DeferredToConsumerSession,
+                explicitCommonPartPaths = explicitCommonPaths,
+                declarationMaterialization = LLCfirGlobalResolveComponents.getInstance(session.project).cjoMaterialization,
             ),
             cangjieScopeProvider = session.cangjieScopeProvider,
             libraryModuleData = session.moduleData,
-            moduleDataProvider = org.cangnova.cangjie.cfir.deserialization.MultipleModuleDataProvider(
-                mapOf(session.moduleData to org.cangnova.cangjie.cfir.deserialization.LibraryPathFilter.LibraryList(
-                    (session.caModule as? CaLibraryModule)?.binaryRoots.orEmpty()
-                        .mapNotNull { it.virtualFile?.path }
-                        .mapTo(linkedSetOf()) { java.nio.file.Paths.get(it) },
+            moduleDataProvider = MultipleModuleDataProvider(
+                mapOf(session.moduleData to LibraryPathFilter.LibraryPathsAndRoots(
+                    explicitCommonPaths,
+                    librarySearchPaths.map(File::toPath),
                 )), session.moduleData,
             ),
             importedPackageContextProvider = CjoPackageContextProvider { name, mode ->
@@ -166,7 +171,7 @@ internal object LLBinaryOriginLibrarySymbolProviderFactory : LLLibrarySymbolProv
                     )
                 }
             },
-        )
+        ).also { session.register(CfirImportedSourceGraphProvider::class, it) }
     }
 
     /**
@@ -201,16 +206,17 @@ internal object LLBinaryOriginLibrarySymbolProviderFactory : LLLibrarySymbolProv
             session = session,
             cjoManager = CjoManager(
                 CjoSearchPath.forRoots(builtinsRoots = emptyList(), libraryRoots = builtinsRoots),
-                LLCfirGlobalResolveComponents.getInstance(session.project).cjoMaterialization,
+                CjoFormatVersionPolicy.Compilation(session.languageVersionSettings),
+                declarationMaterialization = LLCfirGlobalResolveComponents.getInstance(session.project).cjoMaterialization,
             ),
             cangjieScopeProvider = session.cangjieScopeProvider,
             libraryModuleData = session.moduleData,
-            moduleDataProvider = org.cangnova.cangjie.cfir.deserialization.MultipleModuleDataProvider(
-                mapOf(session.moduleData to org.cangnova.cangjie.cfir.deserialization.LibraryPathFilter.LibraryList(
+            moduleDataProvider = MultipleModuleDataProvider(
+                mapOf(session.moduleData to LibraryPathFilter.LibraryList(
                     builtinsRoots.mapTo(linkedSetOf()) { it.toPath() },
                 )), session.moduleData,
             ),
-        )
+        ).also { session.register(CfirImportedSourceGraphProvider::class, it) }
     }
 }
 

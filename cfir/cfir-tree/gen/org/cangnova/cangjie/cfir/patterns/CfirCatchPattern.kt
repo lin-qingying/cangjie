@@ -6,26 +6,36 @@
 package org.cangnova.cangjie.cfir.patterns
 
 import org.cangnova.cangjie.cfir.CfirElement
-import org.cangnova.cangjie.cfir.CfirPureAbstractElement
-import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
-import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.expressions.CfirConstantValue
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
-import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.CjSourceElement
 
 /**
  * Generated from: [org.cangnova.cangjie.cfir.tree.generator.CfirTree.catchPattern]
  */
-abstract class CfirCatchPattern : CfirPureAbstractElement(), CfirElement, CfirPatternTreeNode, CfirPatternTypeReferences {
+abstract class CfirCatchPattern : CfirPattern(), CfirPatternTypeReferences {
     abstract override val source: CjSourceElement?
+    abstract override val semanticTypeRef: CfirTypeRef?
+    abstract override val constantValues: List<CfirConstantValue>
+    abstract override val contextExpression: CfirExpression?
+    /**
+     * 该 pattern 节点所属的唯一模式树宿主；反向 owner 不属于 CFIR 子树。
+     */
     abstract override val patternTreeOwner: CfirPatternTreeOwner?
-    abstract val bindingName: Name?
-    abstract val isWildcard: Boolean
+    abstract val nestedPattern: CfirPattern
     abstract override val typeRefs: List<CfirTypeRef>
-    abstract val resolvedTypeRef: CfirResolvedTypeRef?
-    abstract val bindingVariable: CfirPatternBindingVariable?
+
+    /** 访问本节点拥有的完整来源子图；独立于 ordinary visitor 的语法子树。 */
+    @CfirImplementationDetail
+    override fun <R, D> acceptSourceChildren(visitor: CfirVisitor<R, D>, data: D) {
+        semanticTypeRef?.accept(visitor, data)
+        nestedPattern.accept(visitor, data)
+        typeRefs.forEach { it.accept(visitor, data) }
+    }
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitCatchPattern(this, data)
@@ -34,17 +44,24 @@ abstract class CfirCatchPattern : CfirPureAbstractElement(), CfirElement, CfirPa
     override fun <E : CfirElement, D> transform(transformer: CfirTransformer<D>, data: D): E =
         transformer.transformCatchPattern(this, data) as E
 
+    @CfirImplementationDetail
+    abstract override fun replaceSource(newSource: CjSourceElement?)
+
+    abstract override fun replaceSemanticTypeRef(newSemanticTypeRef: CfirTypeRef?)
+
+    abstract override fun replaceConstantValues(newConstantValues: List<CfirConstantValue>)
+
+    abstract override fun replaceContextExpression(newContextExpression: CfirExpression?)
+
     abstract override fun replacePatternTreeOwner(newPatternTreeOwner: CfirPatternTreeOwner?)
+
+    abstract fun replaceNestedPattern(newNestedPattern: CfirPattern)
 
     abstract override fun replaceTypeRefs(newTypeRefs: List<CfirTypeRef>)
 
-    abstract fun replaceResolvedTypeRef(newResolvedTypeRef: CfirResolvedTypeRef?)
+    abstract override fun <D> transformSemanticTypeRef(transformer: CfirTransformer<D>, data: D): CfirCatchPattern
 
-    abstract fun replaceBindingVariable(newBindingVariable: CfirPatternBindingVariable?)
+    abstract fun <D> transformNestedPattern(transformer: CfirTransformer<D>, data: D): CfirCatchPattern
 
     abstract fun <D> transformTypeRefs(transformer: CfirTransformer<D>, data: D): CfirCatchPattern
-
-    abstract fun <D> transformResolvedTypeRef(transformer: CfirTransformer<D>, data: D): CfirCatchPattern
-
-    abstract fun <D> transformBindingVariable(transformer: CfirTransformer<D>, data: D): CfirCatchPattern
 }

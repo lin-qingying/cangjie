@@ -25,6 +25,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.accessContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.*
@@ -38,6 +39,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
 import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
 import org.cangnova.cangjie.cfir.expressions.CfirStringInterpolation
 import org.cangnova.cangjie.cfir.patterns.*
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.match.isMatchSubtypeOf
 import org.cangnova.cangjie.cfir.resolve.match.needsRuntimeTypeCheckAgainst
 import org.cangnova.cangjie.cfir.resolve.match.CfirTuplePatternShape
@@ -46,11 +48,10 @@ import org.cangnova.cangjie.cfir.resolve.match.CfirPatternLiteralTypeResolution
 import org.cangnova.cangjie.cfir.resolve.match.resolveLiteralPatternType
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessKind
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
-import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
 import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.session.builtinTypes
 import org.cangnova.cangjie.cfir.session.extendProvider
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
@@ -58,6 +59,7 @@ import org.cangnova.cangjie.name.OperatorNameConventions
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 import org.cangnova.cangjie.source.text
 import org.cangnova.cangjie.type.AbstractTypeChecker
+import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
 
 /**
  * 标准库 `Option.Some` 构造器名称。
@@ -77,7 +79,7 @@ private val OPTION_NONE_CONSTRUCTOR_NAME = Name.identifier("None")
  * - enum pattern 参数个数不对；
  * - 常量 / enum / type pattern 与 subject 类型不匹配。
  */
-object CfirMatchPatternLegalityChecker : CfirMatchExpressionChecker() {
+object CfirMatchPatternLegalityChecker : CfirMatchExpressionChecker(MppCheckerKind.Common) {
     /**
      * 检查 selector-based match 中每个 pattern 与 subject 类型是否兼容。
      */
@@ -117,6 +119,8 @@ object CfirMatchPatternLegalityChecker : CfirMatchExpressionChecker() {
             }
 
             is CfirTypePattern -> Unit
+            is CfirCatchPattern, is CfirCommandTypePattern ->
+                reporter.reportOn(pattern.source, CfirErrors.PATTERN_NOT_MATCH, pattern.patternText())
 
             is CfirTuplePattern -> {
                 val shape = pattern.resolveTupleShape(expectedType, context.session)
@@ -176,7 +180,7 @@ object CfirMatchPatternLegalityChecker : CfirMatchExpressionChecker() {
 
                 if (resolution is EnumPatternConstructorResolution.ArityMismatch) {
                     reporter.reportOn(
-                        source = pattern.source ?: pattern.constructorReference.source,
+                        source = pattern.source ?: pattern.constructor.source,
                         factory = CfirErrors.ENUM_PATTERN_PARAM_SIZE_ERROR,
                     )
                     return
@@ -277,6 +281,7 @@ internal fun CfirPattern.hasPatternLegalityProblem(
         }
 
         is CfirTypePattern -> false
+        is CfirCatchPattern, is CfirCommandTypePattern -> true
 
         is CfirTuplePattern -> {
             when (val shape = resolveTupleShape(expectedType, context.session)) {
@@ -334,7 +339,9 @@ private fun CfirPattern.hasDuplicatePatternBindings(): Boolean {
                 pattern.nestedPattern?.let(::visit)
             }
 
-            is CfirTypePattern -> record(pattern.bindingName)
+            is CfirTypePattern -> visit(pattern.nestedPattern)
+            is CfirCatchPattern -> visit(pattern.nestedPattern)
+            is CfirCommandTypePattern -> visit(pattern.nestedPattern)
             is CfirTuplePattern -> pattern.elements.forEach(::visit)
             is CfirEnumPattern -> pattern.arguments.forEach(::visit)
             is CfirOrPattern -> pattern.alternatives.forEach(::visit)
@@ -376,6 +383,8 @@ private fun CfirPattern.orPatternKindKey(): String = when (this) {
     -> "enum-or-variable"
     is CfirConstPattern -> "constant"
     is CfirTypePattern -> "type"
+    is CfirCatchPattern -> "exception"
+    is CfirCommandTypePattern -> "command"
     is CfirTuplePattern -> "tuple"
     is CfirWildcardPattern -> "wildcard"
     is CfirBindingPattern -> "binding"
@@ -414,7 +423,7 @@ private fun CfirPattern.patternText(): String =
  * 取得 enum pattern 构造器诊断使用的完整 pattern 范围。
  */
 private fun CfirEnumPattern.enumConstructorDiagnosticSource(): AbstractCjSourceElement? =
-    source ?: constructorReference.source
+    source ?: constructor.source
 
 /**
  * 取得类型在 pattern 诊断中的简短展示文本。
@@ -495,8 +504,8 @@ private fun resolveStdlibOptionArgumentTypes(
     expectedType: ConeCangJieType,
     session: CfirSession,
 ): List<ConeCangJieType>? {
-    val optionArgumentType = expectedType.optionElementType ?: return null
-
+    val optionArgumentType = expectedType.fullyExpandedType(session).optionElementType?.fullyExpandedType(session)
+        ?: return null
     val constructorName = pattern.constructorNameOrNull()
         ?.takeIf { pattern.ownerQualifierMatchesSubject(expectedType, session) }
         ?: return null
@@ -593,14 +602,16 @@ private fun hasEqualityOverload(
 ): Boolean {
     val classId = expectedType.classIdOrPrimitiveClassId ?: return false
     val classSymbol = context.session.symbolProvider.getClassLikeSymbolByClassId(classId) ?: return false
-    val scope = CfirClassUseSiteMemberScope(
-        session = context.session,
+    val scope = context.session.cangjieScopeProvider.getUseSiteMemberScope(
+        scopeSession = context.scopeSession,
+        useSiteSession = context.session,
         classSymbol = classSymbol,
         symbolProvider = context.session.symbolProvider,
         extendProvider = context.session.extendProvider,
         directSupertypeProvider = context.session.directSupertypeProviderOrNull,
         ownerType = expectedType,
         scopeKind = CfirClassMemberScopeKind.USE_SITE,
+        memberRequiredPhase = CfirResolvePhase.STATUS,
     )
 
     var found = false

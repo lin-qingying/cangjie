@@ -400,6 +400,6 @@ internal fun CaCfirSession.declarationSiteMemberScope(symbol: CaClassSymbol): Ca
     val lowLevelSession = cfirSession
     val cfirClassSymbol = classSymbol.cfirSymbolOrNull as? CfirClassLikeSymbol<*>
         ?: return@withValidityAssertion CaCfirEmptyScope(token)
-    val cfirScope = lowLevelSession.cangjieScopeProvider.getDeclarationSiteMemberScope(cfirClassSymbol, lowLevelSession)
+    val cfirScope = lowLevelSession.cangjieScopeProvider.getDeclarationSiteMemberScope(cfirClassSymbol, lowLevelSession, resolutionFacade.getScopeSessionFor(lowLevelSession))
     CaCfirDelegatingNamesAwareScope(cfirScope, cfirSymbolBuilder)
 }

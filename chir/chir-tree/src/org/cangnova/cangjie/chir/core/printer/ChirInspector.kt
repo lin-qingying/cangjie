@@ -60,11 +60,12 @@ object ChirInspector {
                         .sortedBy { it.semanticId.value }
                         .joinToString(separator = ",") { "\"${escape(it.semanticId.value)}\"" }
                     val functionExpressionCount = function.blocks.sumOf { it.expressions.size }
+                    val entryBlockId = function.entryBlockId?.value?.let { "\"${escape(it)}\"" } ?: "null"
                     appendLine("        {")
                     appendLine("          \"id\": \"${escape(function.semanticId.value)}\",")
                     appendLine("          \"name\": \"${escape(function.name)}\",")
                     appendLine("          \"returnType\": \"${escape(function.returnType.renderName)}\",")
-                    appendLine("          \"entryBlockId\": \"${escape(function.entryBlockId.value)}\",")
+                    appendLine("          \"entryBlockId\": $entryBlockId,")
                     appendLine("          \"parameterCount\": ${function.parameters.size},")
                     appendLine("          \"blockCount\": ${function.blocks.size},")
                     appendLine("          \"expressionCount\": $functionExpressionCount,")

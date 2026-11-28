@@ -25,6 +25,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirMatchPatternLegalityChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.containsReportedErrorDiagnostic
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.hasPatternLegalityProblem
@@ -47,7 +48,7 @@ import org.cangnova.cangjie.cfir.types.coneTypeOrNull
  * 该判定与 for-in 循环变量的不可反驳性要求共用同一实现
  * （[isIrrefutablePattern]，官方两处调用同一个 `IsIrrefutablePattern`）。
  */
-object CfirPatternDeclarationIrrefutabilityChecker : CfirPatternVariableChecker() {
+object CfirPatternDeclarationIrrefutabilityChecker : CfirPatternVariableChecker(MppCheckerKind.Common) {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirPatternVariable) {
         // 官方门控：initializer 类型不正确时不再追加模式诊断（避免级联）。

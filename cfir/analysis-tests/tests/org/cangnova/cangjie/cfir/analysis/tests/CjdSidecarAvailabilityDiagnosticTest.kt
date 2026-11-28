@@ -1,6 +1,9 @@
 package org.cangnova.cangjie.cfir.analysis.tests
 
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
+
 import org.junit.jupiter.api.AfterEach
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.BeforeEach
@@ -27,7 +30,7 @@ import org.cangnova.cangjie.cfir.session.CfirApiLevelProvider
 import org.cangnova.cangjie.cfir.session.CfirImplicitSystemAnnotationsProvider
 import org.cangnova.cangjie.cfir.session.ConfiguredCfirImplicitSystemAnnotationsProvider
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.resolve.providers.cfirProvider
 import org.cangnova.cangjie.cfir.session.registerCliCompilerAndCommonComponents
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.FqName
@@ -82,7 +85,12 @@ class CjdSidecarAvailabilityDiagnosticTest : AbstractCfirAnalysisResolveTest() {
             )
             library.register(CfirCangJieScopeProvider::class, CfirCangJieScopeProvider())
         }
-        val cjoManager = CjoManager(CjoSearchPath { if (it == "CANGJIE_STDLIB_MODULE") directory else null })
+        val cjoManager = CjoManager(
+            CjoSearchPath { if (it == "CANGJIE_STDLIB_MODULE") directory else null },
+            org.cangnova.cangjie.cfir.serialization.cjo.CjoFormatVersionPolicy.Compilation(
+                org.cangnova.cangjie.LanguageVersionSettingsImpl.DEFAULT,
+            ),
+        )
         val libraryModule = CfirBinaryDependenciesModuleData(Name.special("<cjd-sdk-library>"))
         libraryModule.bindSession(librarySession)
         val libraryProvider = CfirDeserializedSymbolProvider(
@@ -131,7 +139,9 @@ class CjdSidecarAvailabilityDiagnosticTest : AbstractCfirAnalysisResolveTest() {
         val resolveCollector = CfirDiagnosticCollector()
         resolveToPhase(cfirFile, session, targetPhase, resolveCollector)
         val checkerCollector = RecordingDiagnosticsCollector()
-        session.runCheckers(ScopeSession(), listOf(cfirFile), checkerCollector)
+        for (mppCheckerKind in MppCheckerKind.entries) {
+            session.runCheckers(ScopeSession(), listOf(cfirFile), checkerCollector, mppCheckerKind)
+        }
 
         val resolvedNames = resolveCollector.rawDiagnostics.map { it.factoryName.removePrefix("CFIR_") }
         val checkerNames = checkerCollector.diagnostics.map { it.factoryName.removePrefix("CFIR_") }

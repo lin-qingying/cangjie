@@ -8,6 +8,7 @@
 package org.cangnova.cangjie.cfir.declarations.builder
 
 import kotlin.contracts.*
+import org.cangnova.cangjie.cfir.CfirContentSource
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
@@ -34,11 +35,12 @@ class CfirPatternVariableBuilder {
     var deprecationsProvider: DeprecationsProvider = UnresolvedDeprecationProvider
     var dispatchReceiverType: ConeSimpleCangJieType? = null
     lateinit var status: CfirDeclarationStatus
+    var contentSource: CfirContentSource = CfirContentSource.Owned
     var initializer: CfirExpression? = null
     var isVar: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
     var isTypeImplicit: Boolean = false
-    lateinit var symbol: CfirPatternVariableSymbol
     val typeParameters: MutableList<CfirTypeParameter> = mutableListOf()
+    lateinit var symbol: CfirPatternVariableSymbol
     lateinit var returnTypeRef: CfirTypeRef
     lateinit var pattern: CfirPattern
 
@@ -55,11 +57,12 @@ class CfirPatternVariableBuilder {
             deprecationsProvider,
             dispatchReceiverType,
             status,
+            contentSource,
             initializer,
             isVar,
             isTypeImplicit,
-            symbol,
             typeParameters,
+            symbol,
             returnTypeRef,
             pattern,
         )

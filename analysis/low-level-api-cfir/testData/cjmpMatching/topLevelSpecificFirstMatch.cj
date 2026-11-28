@@ -1,5 +1,6 @@
 // LANGUAGE_VERSION: 1.1.0
 // MODULE: common
+// CJMP_MODE: COMMON
 // FILE: common.cj
 package cjmp_ll
 
@@ -19,6 +20,7 @@ common extend<T> Holder<T> {
 public common func shared(): Int64
 
 // MODULE: firstMatch()()(common)
+// CJMP_MODE: SPECIFIC
 // MAIN_MODULE
 // FILE: specific.cj
 package cjmp_ll

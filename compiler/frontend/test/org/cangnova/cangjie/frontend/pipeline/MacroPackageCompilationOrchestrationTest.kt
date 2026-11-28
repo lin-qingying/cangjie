@@ -27,6 +27,8 @@ import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceScopeContex
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceToken
 import org.cangnova.cangjie.cfir.resolve.providers.macro.PreMacroRawBuildResult
 import org.cangnova.cangjie.cfir.resolve.providers.macro.buildPreMacroRawFiles
+import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationMetadataBuilder
+import org.cangnova.cangjie.cfir.resolve.providers.macro.PreMacroCfirFile
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
 import org.cangnova.cangjie.CjIoFileSourceFile
@@ -39,6 +41,7 @@ import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.platform.CangJiePlatforms
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.Test
@@ -561,6 +564,92 @@ class MacroPackageCompilationOrchestrationTest {
         assertTrue(requireNotNull(result.definitions.single().libPath).endsWith("libcangjie-std-core.${dynamicLibraryExtension()}"))
     }
 
+    /** 外部 artifact 的定位与校验不要求存在可用 SDK，也不触发源码编译。 */
+    @Test
+    fun suppliedAndSearchRootArtifactsRemainUsableWithoutAValidSdk() {
+        val outputDir = Files.createDirectories(tempDir.resolve("artifacts"))
+        writeCompiledMacroArtifact(outputDir, "macros.pkg")
+        val explicitArtifact = MacroArtifactPackage(
+            packageFqName = FqName("macros.pkg"),
+            kind = MacroArtifactPackage.Kind.MACRO,
+            cjoPath = outputDir.resolve("macros.pkg.cjo").toString(),
+            dynamicLibPath = outputDir.resolve("lib-macro_macros.pkg.dll").toString(),
+            origin = MacroArtifactPackage.Origin.EXTERNAL_PATH,
+        )
+        val selections = listOf(
+            MacroSdkSelection.Absent,
+            MacroSdkSelector.select(MacroSdkSelectionInputs(tempDir.resolve("missing-sdk").toString(), null, null, null)),
+        )
+        for (selection in selections) {
+            for (supplyExplicitly in listOf(false, true)) {
+                val fixture = macroDemandFixture(
+                    imports = listOf(macroImport("macros.pkg.Generated")),
+                    surface = macroSurface("Generated"),
+                )
+                val configuration = CompilerConfiguration().apply {
+                    if (supplyExplicitly) macroArtifactPackages = listOf(explicitArtifact)
+                    else addClasspathRoot(outputDir.toString())
+                    macroPackageCompilationOrchestrator = MacroPackageCompilationOrchestrator { _, _ ->
+                        error("Available artifact must not trigger SDK-dependent source compilation")
+                    }
+                }
+                val result = prepareMacroArtifactDefinitionsForExpansion(
+                    configuration, listOf(configuration.createMacroDemandClassification(fixture.pre)), selection,
+                )
+                assertSame(selection, result.sdkSelection)
+                assertTrue(result.diagnostics.isEmpty(), "Unexpected diagnostics: ${result.diagnostics}")
+                assertEquals(listOf("Generated"), result.definitions.map { it.name.asString() })
+                assertEquals(explicitArtifact.cjoPath, result.locatedArtifacts.single().cjoPath)
+            }
+        }
+    }
+
+    /** 同一配置切换 SDK 时，每轮的 compiler、环境和 artifact 准备结果使用同一选择。 */
+    @Test
+    fun repeatedPreparationSharesEachSelectedSdkWithCompilerAndChildEnvironment() {
+        val sourceRoot = Files.createDirectories(tempDir.resolve("source"))
+        val outputDir = Files.createDirectories(tempDir.resolve("out"))
+        val sdkHomes = listOf("sdk-a", "sdk-b").map { Files.createDirectories(tempDir.resolve(it)) }
+        sdkHomes.forEach { writeCjcExecutable(it) }
+        val commands = mutableListOf<MacroCompilerCommand>()
+        val configuration = CompilerConfiguration().apply {
+            macroSourcePackageCompilationRequests = listOf(
+                MacroSourcePackageCompilationRequest(
+                    packageFqName = FqName("macros.pkg"), sourceRoots = listOf(sourceRoot.toString()),
+                    outputDirectory = outputDir.toString(),
+                ),
+            )
+            macroPackageCompilationOrchestrator = ExternalCjcMacroPackageCompilationOrchestrator(
+                commandRunner = MacroCompilerCommandRunner { command ->
+                    commands += command
+                    writeCompiledMacroArtifact(outputDir, "macros.pkg")
+                    MacroCompilerCommandResult(0, "ok", "")
+                },
+            )
+        }
+        val results = sdkHomes.map { sdkHome ->
+            configuration.macroSdkHome = sdkHome.toString()
+            val fixture = macroDemandFixture(
+                imports = listOf(macroImport("macros.pkg.Generated")), surface = macroSurface("Generated"),
+            )
+            prepareMacroArtifactDefinitionsForExpansion(
+                configuration, listOf(configuration.createMacroDemandClassification(fixture.pre)),
+            )
+        }
+
+        assertEquals(2, commands.size)
+        for (index in sdkHomes.indices) {
+            val selected = results[index].sdkSelection.requireSelected()
+            assertEquals(sdkHomes[index], selected.home)
+            assertEquals(selected.compilerExecutable.toString(), commands[index].arguments.first())
+            assertEquals(selected.home.toString(), commands[index].environment["CANGJIE_HOME"])
+            val childPath = commands[index].environment.entries.single { it.key.equals("PATH", ignoreCase = true) }.value
+            assertEquals(selected.home.resolve("bin").toString(), childPath.split(File.pathSeparatorChar).first())
+            assertTrue(results[index].diagnostics.isEmpty(), "Unexpected diagnostics: ${results[index].diagnostics}")
+            assertEquals(listOf("Generated"), results[index].definitions.map { it.name.asString() })
+        }
+    }
+
     /**
      * 验证默认 cjc resolver 优先使用配置的宏 SDK 根。
      */
@@ -569,104 +658,128 @@ class MacroPackageCompilationOrchestrationTest {
         val sdkHome = Files.createDirectories(tempDir.resolve("configured-sdk"))
         val cjc = writeCjcExecutable(sdkHome)
 
-        assertEquals(cjc, DefaultMacroCompilerExecutableResolver.resolve(sdkHome.toString()))
+        val selection = MacroSdkSelector.select(MacroSdkSelectionInputs(sdkHome.toString(), null, null, null))
+        assertEquals(cjc, DefaultMacroCompilerExecutableResolver.resolve(selection))
     }
 
-    /**
-     * 验证没有配置 SDK 时 resolver 使用 CANGJIE_HOME。
-     */
     @Test
     fun defaultCjcResolverUsesCangjieHomeWhenNoSdkIsConfigured() {
-        val cangjieHome = Files.createDirectories(tempDir.resolve("cangjie-home"))
-        val cjc = writeCjcExecutable(cangjieHome)
+        val sdkHome = Files.createDirectories(tempDir.resolve("environment-sdk"))
+        val cjc = writeCjcExecutable(sdkHome)
+        val selection = MacroSdkSelector.select(MacroSdkSelectionInputs(null, sdkHome.toString(), null, null))
 
-        val resolved = DefaultMacroCompilerExecutableResolver.resolve(
-            sdkHome = "",
-            cangjieHome = cangjieHome.toString(),
-            cjcHome = null,
-            pathValue = null,
-            userHome = tempDir.resolve("home"),
-        )
-
-        assertEquals(cjc, resolved)
+        assertEquals(MacroSdkOrigin.CANGJIE_HOME, selection.requireSelected().origin)
+        assertEquals(cjc, DefaultMacroCompilerExecutableResolver.resolve(selection))
     }
 
-    /**
-     * 验证 CANGJIE_HOME 缺失时 resolver 使用 cjc.home 系统属性。
-     */
     @Test
-    fun defaultCjcResolverUsesSystemPropertyHomeAfterCangjieHome() {
-        val cjcHome = Files.createDirectories(tempDir.resolve("cjc-home"))
-        val cjc = writeCjcExecutable(cjcHome)
+    fun defaultCjcResolverUsesSystemPropertyHomeWhenEnvironmentHomeIsAbsent() {
+        val sdkHome = Files.createDirectories(tempDir.resolve("property-sdk"))
+        val cjc = writeCjcExecutable(sdkHome)
+        val selection = MacroSdkSelector.select(MacroSdkSelectionInputs(null, null, sdkHome.toString(), null))
 
-        val resolved = DefaultMacroCompilerExecutableResolver.resolve(
-            sdkHome = "",
-            cangjieHome = tempDir.resolve("missing-cangjie-home").toString(),
-            cjcHome = cjcHome.toString(),
-            pathValue = null,
-            userHome = tempDir.resolve("home"),
-        )
-
-        assertEquals(cjc, resolved)
+        assertEquals(MacroSdkOrigin.CJC_HOME_PROPERTY, selection.requireSelected().origin)
+        assertEquals(cjc, DefaultMacroCompilerExecutableResolver.resolve(selection))
     }
 
-    /**
-     * 验证显式 home 均缺失时 resolver 可从 PATH 查找 cjc。
-     */
     @Test
-    fun defaultCjcResolverUsesPathAfterExplicitHomes() {
-        val pathDirectory = Files.createDirectories(tempDir.resolve("path-bin"))
-        val cjc = writeCjcExecutable(pathDirectory, alreadyBinDirectory = true)
+    fun defaultCjcResolverUsesPathWhenNoSdkHomesAreConfigured() {
+        val sdkHome = Files.createDirectories(tempDir.resolve("discovered-sdk"))
+        val cjc = writeCjcExecutable(sdkHome)
+        val selection = MacroSdkSelector.select(MacroSdkSelectionInputs(null, null, null, cjc.parent.toString()))
 
-        val resolved = DefaultMacroCompilerExecutableResolver.resolve(
-            sdkHome = "",
-            cangjieHome = tempDir.resolve("missing-cangjie-home").toString(),
-            cjcHome = tempDir.resolve("missing-cjc-home").toString(),
-            pathValue = pathDirectory.toString(),
-            userHome = tempDir.resolve("home"),
-        )
-
-        assertEquals(cjc, resolved)
+        assertEquals(MacroSdkOrigin.PATH, selection.requireSelected().origin)
+        assertEquals(cjc, DefaultMacroCompilerExecutableResolver.resolve(selection))
     }
 
-    /**
-     * 验证 resolver 最后会选择用户目录中最新版本 SDK。
-     */
     @Test
-    fun defaultCjcResolverUsesNewestUserHomeSdkFallback() {
+    fun defaultCjcResolverUsesNewestUserHomeSdkWhenNoSdkIsOtherwiseSelected() {
         val userHome = Files.createDirectories(tempDir.resolve("home"))
-        val olderSdk = Files.createDirectories(userHome.resolve("sdk").resolve("cangjie-sdk-1.0.4").resolve("cangjie"))
-        val newerSdk = Files.createDirectories(userHome.resolve("sdk").resolve("cangjie-sdk-1.0.5").resolve("cangjie"))
+        val olderSdk = Files.createDirectories(userHome.resolve("sdk/cangjie-sdk-1.0.4/cangjie"))
+        val newerSdk = Files.createDirectories(userHome.resolve("sdk/cangjie-sdk-1.0.5/cangjie"))
         writeCjcExecutable(olderSdk)
         val cjc = writeCjcExecutable(newerSdk)
+        val selection = MacroSdkSelector.select(MacroSdkSelectionInputs(null, null, null, null, userHome = userHome))
 
-        val resolved = DefaultMacroCompilerExecutableResolver.resolve(
-            sdkHome = "",
-            cangjieHome = null,
-            cjcHome = null,
-            pathValue = null,
-            userHome = userHome,
-        )
-
-        assertEquals(cjc, resolved)
+        assertEquals(cjc, DefaultMacroCompilerExecutableResolver.resolve(selection))
     }
 
     /**
-     * 验证所有候选位置缺失时 resolver 报告找不到可执行文件。
+     * 显式 SDK 无效时必须拒绝，不能使用另一个有效环境 SDK。
+     */
+    @Test
+    fun defaultCjcResolverRejectsInvalidConfiguredSdkInsteadOfChangingToEnvironmentSdk() {
+        val cangjieHome = Files.createDirectories(tempDir.resolve("cangjie-home"))
+        writeCjcExecutable(cangjieHome)
+        val selection = MacroSdkSelector.select(
+            MacroSdkSelectionInputs(tempDir.resolve("missing-sdk").toString(), cangjieHome.toString(), null, null),
+        )
+        val error = assertThrows(IllegalStateException::class.java) {
+            DefaultMacroCompilerExecutableResolver.resolve(selection)
+        }
+        assertTrue(error.message.orEmpty().contains("COMPILER_CONFIGURATION"))
+    }
+
+    /**
+     * 无效 CANGJIE_HOME 不能被有效 cjc.home 静默替换。
+     */
+    @Test
+    fun defaultCjcResolverRejectsInvalidEnvironmentHomeInsteadOfChangingToPropertySdk() {
+        val cjcHome = Files.createDirectories(tempDir.resolve("cjc-home"))
+        writeCjcExecutable(cjcHome)
+        val selection = MacroSdkSelector.select(
+            MacroSdkSelectionInputs(null, tempDir.resolve("missing-cangjie-home").toString(), cjcHome.toString(), null),
+        )
+        val error = assertThrows(IllegalStateException::class.java) {
+            DefaultMacroCompilerExecutableResolver.resolve(selection)
+        }
+        assertTrue(error.message.orEmpty().contains("CANGJIE_HOME"))
+    }
+
+    /**
+     * 无效系统属性 SDK 不能被 PATH 中的另一个安装替换。
+     */
+    @Test
+    fun defaultCjcResolverRejectsInvalidPropertyHomeInsteadOfChangingToPathSdk() {
+        val pathSdk = Files.createDirectories(tempDir.resolve("path-sdk"))
+        val cjc = writeCjcExecutable(pathSdk)
+        val selection = MacroSdkSelector.select(
+            MacroSdkSelectionInputs(null, null, tempDir.resolve("missing-cjc-home").toString(), cjc.parent.toString()),
+        )
+        val error = assertThrows(IllegalStateException::class.java) {
+            DefaultMacroCompilerExecutableResolver.resolve(selection)
+        }
+        assertTrue(error.message.orEmpty().contains("CJC_HOME_PROPERTY"))
+    }
+
+    /**
+     * 已选择 SDK 缺少 cjc 时报告该组件缺失，不能重新发现安装。
+     */
+    @Test
+    fun defaultCjcResolverRejectsSelectedSdkWithoutCompilerComponent() {
+        val sdkHome = Files.createDirectories(tempDir.resolve("artifact-only-sdk"))
+        val selection = MacroSdkSelector.select(
+            MacroSdkSelectionInputs(sdkHome.toString(), null, null, null),
+        )
+        assertTrue(selection is MacroSdkSelection.Selected)
+        val error = assertThrows(IllegalStateException::class.java) {
+            DefaultMacroCompilerExecutableResolver.resolve(selection)
+        }
+        assertTrue(error.message.orEmpty().contains("Selected macro SDK has no cjc executable"))
+        assertTrue(error.message.orEmpty().contains(sdkHome.toString()))
+    }
+
+    /**
+     * 未选择 SDK 时 cjc resolver 明确报告配置缺失。
      */
     @Test
     fun defaultCjcResolverReportsMissingExecutableWhenNoSourceMatches() {
-        val error = kotlin.runCatching {
-            DefaultMacroCompilerExecutableResolver.resolve(
-                sdkHome = "",
-                cangjieHome = tempDir.resolve("missing-cangjie-home").toString(),
-                cjcHome = tempDir.resolve("missing-cjc-home").toString(),
-                pathValue = tempDir.resolve("missing-path").toString(),
-                userHome = tempDir.resolve("home"),
-            )
-        }.exceptionOrNull()
-
-        assertTrue(requireNotNull(error).message.orEmpty().contains("Cannot find"))
+        val selection = MacroSdkSelector.select(MacroSdkSelectionInputs(null, null, null, null, userHome = null))
+        assertEquals(MacroSdkSelection.Absent, selection)
+        val error = assertThrows(IllegalStateException::class.java) {
+            DefaultMacroCompilerExecutableResolver.resolve(selection)
+        }
+        assertTrue(error.message.orEmpty().contains("Macro SDK is not configured"))
     }
 
     /**
@@ -680,11 +793,9 @@ class MacroPackageCompilationOrchestrationTest {
 
         val error = kotlin.runCatching {
             DefaultMacroCompilerExecutableResolver.resolve(
-                sdkHome = configuredSdk.toString(),
-                cangjieHome = cangjieHome.toString(),
-                cjcHome = null,
-                pathValue = null,
-                userHome = tempDir.resolve("home"),
+                MacroSdkSelector.select(
+                    MacroSdkSelectionInputs(configuredSdk.toString(), cangjieHome.toString(), null, null, tempDir.resolve("home")),
+                ),
             )
         }.exceptionOrNull()
 
@@ -874,6 +985,7 @@ class MacroPackageCompilationOrchestrationTest {
                 },
                 executorAbiVersion = "executor-abi-v1",
                 cacheContext = MacroCompilationCacheContext(),
+                sdkSelection = MacroSdkSelection.Absent,
             ),
         )
 
@@ -1110,8 +1222,11 @@ class MacroPackageCompilationOrchestrationTest {
         return MacroDemandFixture(
             pre = buildPreMacroRawFiles(
                 session,
-                listOf(file) + extraFiles.onEach { it.moduleData.bindSession(session) },
-                listOf(listOf(surface)) + List(extraFiles.size) { emptyList() },
+                listOf(PreMacroCfirFile(file, listOf(surface), CfirAnnotationMetadataBuilder())) +
+                    extraFiles.map { extraFile ->
+                        extraFile.moduleData.bindSession(session)
+                        PreMacroCfirFile(extraFile, annotationMetadata = CfirAnnotationMetadataBuilder())
+                    },
             ),
         )
     }
@@ -1163,6 +1278,13 @@ class MacroPackageCompilationOrchestrationTest {
         qualifiedName = FqName(qualifiedName),
         isQualifiedName = '.' in qualifiedName,
         kind = MacroSurface.Kind.PLAIN,
+        parsingFacts = org.cangnova.cangjie.parsing.MacroParsingFacts(
+            org.cangnova.cangjie.parsing.MacroParsingScope.Expression(
+                org.cangnova.cangjie.parsing.CjExprKind.UNKNOWN_EXPR,
+            ),
+            org.cangnova.cangjie.parsing.CjMacroFragmentParent.OTHER,
+            null,
+        ),
         hasParenthesis = true,
         attrTokens = emptyList(),
         hasAttr = false,
@@ -1183,7 +1305,7 @@ class MacroPackageCompilationOrchestrationTest {
             isInsideEnumBody = false,
             isInsideBlock = true,
         ),
-        replaceHandle = CfirReplaceHandle(1),
+        replaceHandle = CfirReplaceHandle(1, topLevelMacroOwnerSnapshot(FqName("app"))),
     )
 
     /**
@@ -1214,10 +1336,10 @@ class MacroPackageCompilationOrchestrationTest {
     /**
      * 写入测试用 cjc 可执行文件占位。
      */
-    private fun writeCjcExecutable(root: Path, alreadyBinDirectory: Boolean = false): Path {
+    private fun writeCjcExecutable(root: Path): Path {
         val executableName =
             if (System.getProperty("os.name").contains("Windows", ignoreCase = true)) "cjc.exe" else "cjc"
-        val binDirectory = if (alreadyBinDirectory) root else root.resolve("bin")
+        val binDirectory = root.resolve("bin")
         val cjc = binDirectory.resolve(executableName)
         Files.createDirectories(cjc.parent)
         Files.write(cjc, byteArrayOf(1, 2, 3))

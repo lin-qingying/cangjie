@@ -9,7 +9,10 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import org.cangnova.cangjie.lang.CangJieFileType
+import org.cangnova.cangjie.messages.CangJieParsingBundle
+import org.cangnova.cangjie.messages.ParsingDiagnostic
 import org.cangnova.cangjie.parsing.CangJieParserDefinition
+import org.cangnova.cangjie.parsing.collectParsingDiagnostics
 import org.cangnova.cangjie.test.testFramework.CjParsingTestCase
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -87,13 +90,19 @@ class MacroCallTokenSyntaxParsingTest : CjParsingTestCase(
         )
     }
 
-    /** BAD_CHARACTER 不能因为宏 token 集扩展而被普通 quote 参数静默跳过。 */
+    /** quote 保留未知源字符的词法诊断。 */
     @Test
     fun quoteParametersRejectBadCharacters() {
-        assertParseErrors(
-            "quoteBadCharacter",
-            "func sample() { let value = quote(§) }",
-        )
+        val source = "func sample() { let value = quote(§) }"
+        val file = createPsiFile("quoteBadCharacter", source) as CjFile
+        val diagnostic = file.collectParsingDiagnostics().single()
+        val offset = source.indexOf('§')
+        assertTrue(diagnostic.isError)
+        assertEquals(ParsingDiagnostic.Category.LEX, diagnostic.category)
+        assertEquals(ParsingDiagnostic.RangeKind.POINT, diagnostic.rangeKind)
+        assertEquals(offset, diagnostic.startOffset)
+        assertEquals(offset, diagnostic.endOffset)
+        assertEquals(CangJieParsingBundle.message("parsing.error.unknown.token.start", "§"), diagnostic.message)
     }
 
     /** 保留官方解析器用例中的 quote 括号转义语法。 */

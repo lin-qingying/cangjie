@@ -3,13 +3,17 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.CheckersComponentInternal
+import org.cangnova.cangjie.cfir.analysis.checkers.CfirCheckerWithMppKind
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 
 /*
  * 本文件由生成器自动生成
  * 请勿手动修改
  */
 
-class ComposedExpressionCheckers : ExpressionCheckers() {
+class ComposedExpressionCheckers(val predicate: (CfirCheckerWithMppKind) -> Boolean) : ExpressionCheckers() {
+    constructor(mppKind: MppCheckerKind) : this({ it.mppKind == mppKind })
+
     override val basicExpressionCheckers: Set<CfirBasicExpressionChecker>
         get() = _basicExpressionCheckers
     override val literalExpressionCheckers: Set<CfirLiteralExpressionChecker>
@@ -86,29 +90,29 @@ class ComposedExpressionCheckers : ExpressionCheckers() {
 
     @CheckersComponentInternal
     fun register(checkers: ExpressionCheckers) {
-        _basicExpressionCheckers.addAll(checkers.basicExpressionCheckers)
-        _literalExpressionCheckers.addAll(checkers.literalExpressionCheckers)
-        _stringInterpolationCheckers.addAll(checkers.stringInterpolationCheckers)
-        _callCheckers.addAll(checkers.callCheckers)
-        _functionCallCheckers.addAll(checkers.functionCallCheckers)
-        _namedAccessCheckers.addAll(checkers.namedAccessCheckers)
-        _qualifiedAccessCheckers.addAll(checkers.qualifiedAccessCheckers)
-        _superReceiverExpressionCheckers.addAll(checkers.superReceiverExpressionCheckers)
-        _annotationCheckers.addAll(checkers.annotationCheckers)
-        _annotationCallCheckers.addAll(checkers.annotationCallCheckers)
-        _assignmentCheckers.addAll(checkers.assignmentCheckers)
-        _incrementDecrementExpressionCheckers.addAll(checkers.incrementDecrementExpressionCheckers)
-        _binaryOpCheckers.addAll(checkers.binaryOpCheckers)
-        _comparisonExpressionCheckers.addAll(checkers.comparisonExpressionCheckers)
-        _typeOperatorCheckers.addAll(checkers.typeOperatorCheckers)
-        _ifExpressionCheckers.addAll(checkers.ifExpressionCheckers)
-        _matchExpressionCheckers.addAll(checkers.matchExpressionCheckers)
-        _tryExpressionCheckers.addAll(checkers.tryExpressionCheckers)
-        _throwExpressionCheckers.addAll(checkers.throwExpressionCheckers)
-        _returnExpressionCheckers.addAll(checkers.returnExpressionCheckers)
-        _loopJumpCheckers.addAll(checkers.loopJumpCheckers)
-        _rangeExpressionCheckers.addAll(checkers.rangeExpressionCheckers)
-        _subscriptExpressionCheckers.addAll(checkers.subscriptExpressionCheckers)
-        _errorExpressionCheckers.addAll(checkers.errorExpressionCheckers)
+        checkers.basicExpressionCheckers.filterTo(_basicExpressionCheckers, predicate)
+        checkers.literalExpressionCheckers.filterTo(_literalExpressionCheckers, predicate)
+        checkers.stringInterpolationCheckers.filterTo(_stringInterpolationCheckers, predicate)
+        checkers.callCheckers.filterTo(_callCheckers, predicate)
+        checkers.functionCallCheckers.filterTo(_functionCallCheckers, predicate)
+        checkers.namedAccessCheckers.filterTo(_namedAccessCheckers, predicate)
+        checkers.qualifiedAccessCheckers.filterTo(_qualifiedAccessCheckers, predicate)
+        checkers.superReceiverExpressionCheckers.filterTo(_superReceiverExpressionCheckers, predicate)
+        checkers.annotationCheckers.filterTo(_annotationCheckers, predicate)
+        checkers.annotationCallCheckers.filterTo(_annotationCallCheckers, predicate)
+        checkers.assignmentCheckers.filterTo(_assignmentCheckers, predicate)
+        checkers.incrementDecrementExpressionCheckers.filterTo(_incrementDecrementExpressionCheckers, predicate)
+        checkers.binaryOpCheckers.filterTo(_binaryOpCheckers, predicate)
+        checkers.comparisonExpressionCheckers.filterTo(_comparisonExpressionCheckers, predicate)
+        checkers.typeOperatorCheckers.filterTo(_typeOperatorCheckers, predicate)
+        checkers.ifExpressionCheckers.filterTo(_ifExpressionCheckers, predicate)
+        checkers.matchExpressionCheckers.filterTo(_matchExpressionCheckers, predicate)
+        checkers.tryExpressionCheckers.filterTo(_tryExpressionCheckers, predicate)
+        checkers.throwExpressionCheckers.filterTo(_throwExpressionCheckers, predicate)
+        checkers.returnExpressionCheckers.filterTo(_returnExpressionCheckers, predicate)
+        checkers.loopJumpCheckers.filterTo(_loopJumpCheckers, predicate)
+        checkers.rangeExpressionCheckers.filterTo(_rangeExpressionCheckers, predicate)
+        checkers.subscriptExpressionCheckers.filterTo(_subscriptExpressionCheckers, predicate)
+        checkers.errorExpressionCheckers.filterTo(_errorExpressionCheckers, predicate)
     }
 }

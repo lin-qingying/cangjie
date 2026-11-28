@@ -25,6 +25,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.CfirExtendSemantics
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
 import org.cangnova.cangjie.cfir.analysis.checkers.hasInvalidDeclaredUpperBoundsInCurrentContext
@@ -43,79 +44,16 @@ import org.cangnova.cangjie.name.SpecialNames
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 import org.cangnova.cangjie.source.CjOffsetsOnlySourceElement
 
-/**
- * 函数语义检查器（Function 分组）
- *
- * 检查 static 函数重载冲突（同名函数不能混合 static 和 non-static）。
- * 对齐 C++ TypeChecker 中 sema_static_function_overload_conflicts 检查。
- */
-object CfirFunctionOverloadChecker : CfirSimpleFunctionChecker() {
-    /**
-     * 检查单个命名函数的 static / non-static 重载冲突。
-     */
-    context(context: CheckerContext, reporter: DiagnosticReporter)
-    override fun check(declaration: CfirNamedFunction) {
-        checkStaticNonStaticOverloadConflict(declaration)
-    }
-
-    /**
-     * 检查同名函数不能混合 static 和 non-static。
-     *
-     * 对齐 C++ DiagKind::sema_static_function_overload_conflicts:
-     * 当同一个类/结构体/枚举中存在同名的 static 和 non-static 函数时报错。
-     */
-    context(context: CheckerContext, reporter: DiagnosticReporter)
-    private fun checkStaticNonStaticOverloadConflict(function: CfirNamedFunction) {
-        if (!function.status.isStatic) return
-
-        val ownerDeclarations = functionOwnerDeclarations() ?: return
-        val functionName = function.name
-
-        val firstNonStatic = ownerDeclarations
-            .filterIsInstance<CfirNamedFunction>()
-            .firstOrNull { sibling ->
-                sibling.name == functionName &&
-                    !sibling.status.isStatic
-            }
-
-        if (firstNonStatic != null) {
-            reporter.reportOn(
-                source = function.source,
-                factory = CfirErrors.STATIC_FUNCTION_OVERLOAD_CONFLICTS,
-                a = functionName,
-            )
-        }
-    }
-
-    /**
-     * static/non-static 重载冲突按声明作用域分组。
-     *
-     * extend 成员不是被扩展类型的物理 class member，不能通过 callableId.classId 回查 owner；
-     * 这里使用 checker 上下文中的最近类型/extend 声明，和官方 PreCheck 的 scopeName 分组一致。
-     */
-    context(context: CheckerContext)
-    private fun functionOwnerDeclarations(): List<CfirDeclaration>? {
-        val owner = context.findClosestDeclaration<CfirDeclaration> { declaration ->
-            declaration is CfirClassLikeDeclaration || declaration is CfirExtend
-        } ?: return null
-
-        return when (owner) {
-            is CfirClassLikeDeclaration -> owner.declarations
-            is CfirExtend -> owner.declarations
-            else -> null
-        }
-    }
-}
 
 /**
  * 函数声明状态合法性检查器。
  *
  * 对齐仓颉声明属性语义：
  * - `mut func` 允许作为 struct / interface 成员函数；
- * - `static` 函数不能同时承担 open / abstract / override / operator 这类实例分派语义；
+ * - `static` 函数不能同时承担 open / override / operator 分派状态；abstract 属性独立保留；
  * - 当真实源码修饰符已经由通用 modifier checker 诊断时，本 checker 不重复报函数名级诊断。
  */
-object CfirFunctionDeclarationStatusChecker : CfirSimpleFunctionChecker() {
+object CfirFunctionDeclarationStatusChecker : CfirSimpleFunctionChecker(MppCheckerKind.Common) {
     /**
      * 检查命名函数声明状态组合的合法性。
      */
@@ -166,7 +104,6 @@ object CfirFunctionDeclarationStatusChecker : CfirSimpleFunctionChecker() {
         if (!function.status.isStatic) return
         val conflictingStatusModifier = when {
             function.status.isOpen && function.hasSourceModifier(CjTokens.OPEN_KEYWORD) -> CjTokens.OPEN_KEYWORD
-            function.status.isAbstract && function.hasSourceModifier(CjTokens.ABSTRACT_KEYWORD) -> CjTokens.ABSTRACT_KEYWORD
             function.status.isOverride && function.hasSourceModifier(CjTokens.OVERRIDE_KEYWORD) -> CjTokens.OVERRIDE_KEYWORD
             function.status.isOperator && function.hasSourceModifier(CjTokens.OPERATOR_KEYWORD) -> CjTokens.OPERATOR_KEYWORD
             else -> null
@@ -205,7 +142,7 @@ object CfirFunctionDeclarationStatusChecker : CfirSimpleFunctionChecker() {
  * - `DiagKind::sema_unable_to_infer_return_type`（递归/其他推断失败，位置=函数名）
  * - `DiagKind::sema_incompatible_func_body_and_return_type`（Join 失败，位置=尾表达式）
  */
-object CfirFunctionReturnTypeInferenceChecker : CfirFunctionChecker() {
+object CfirFunctionReturnTypeInferenceChecker : CfirFunctionChecker(MppCheckerKind.Common) {
     /**
      * 检查函数返回类型是否因真正的推断失败而保留错误类型。
      */
@@ -265,7 +202,7 @@ object CfirFunctionReturnTypeInferenceChecker : CfirFunctionChecker() {
  * - `DeclAttributeChecker::CheckFuncDeclAttributes` 中 `sema_finalizer_forbidden_in_class`
  * - `TypeChecker::CheckFinalizer` 中 `sema_forbid_generic_finalizer` / `sema_cannot_currying`
  */
-object CfirFinalizerDeclarationChecker : CfirFunctionChecker() {
+object CfirFinalizerDeclarationChecker : CfirFunctionChecker(MppCheckerKind.Common) {
     override val requiresImplementation: Boolean get() = true
 
     /**
@@ -358,7 +295,7 @@ object CfirFinalizerDeclarationChecker : CfirFunctionChecker() {
  * - getter 不能声明参数：`sema_cannot_have_parameter`
  * - getter / setter 不能拥有多个参数列表：`sema_cannot_currying`
  */
-object CfirPropertyAccessorDeclarationChecker : CfirPropertyAccessorChecker() {
+object CfirPropertyAccessorDeclarationChecker : CfirPropertyAccessorChecker(MppCheckerKind.Common) {
     override val requiresImplementation: Boolean get() = true
 
     /**
@@ -404,7 +341,7 @@ object CfirPropertyAccessorDeclarationChecker : CfirPropertyAccessorChecker() {
  * 对齐 C++ DiagKind::sema_cannot_have_default_param (Diags.cpp:414):
  * operator / foreign / open / abstract 函数不能有默认参数。
  */
-object CfirDefaultParameterChecker : CfirSimpleFunctionChecker() {
+object CfirDefaultParameterChecker : CfirSimpleFunctionChecker(MppCheckerKind.Common) {
     /**
      * 检查函数默认参数是否出现在被禁止的函数种类上。
      */
@@ -412,12 +349,11 @@ object CfirDefaultParameterChecker : CfirSimpleFunctionChecker() {
     override fun check(declaration: CfirNamedFunction) {
         val defaultParameters = declaration.valueParameters.filter { it.defaultValue != null }
         if (defaultParameters.isEmpty()) return
-        val ownerIsInterface = context.findClosestDeclaration<CfirInterface>() != null
         val kind = when {
             declaration.status.isOperator -> "operator overloading"
             declaration.status.isForeign -> "foreign"
             declaration.status.isOpen -> "'open'"
-            declaration.status.isAbstract || ownerIsInterface -> "abstract"
+            declaration.status.isAbstract || declaration.status.isDefault -> "abstract"
             else -> return
         }
         for (parameter in defaultParameters) {

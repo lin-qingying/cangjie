@@ -23,10 +23,11 @@ import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.psi
 import org.cangnova.cangjie.cfir.realPsi
-import org.cangnova.cangjie.cfir.session.bodyResolvePrerequisitePhase
-import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.resolve.providers.cfirProvider
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
+import org.cangnova.cangjie.parsing.compilationParsingResultOrNull
 import org.cangnova.cangjie.psi.*
 import org.cangnova.cangjie.psi.CjVisitorUnit
 import org.cangnova.cangjie.psi.psiUtil.isAncestorOf
@@ -74,8 +75,9 @@ internal class FileStructure private constructor(
             cjFile: CjFile,
             moduleComponents: LLCfirModuleResolveComponents,
         ): FileStructure {
-            val cfirFile = moduleComponents.cfirFileBuilder.buildRawCfirFileWithCaching(cjFile)
-            return FileStructure(cjFile, cfirFile, moduleComponents)
+            val cfirFile = moduleComponents.cfirFileBuilder.getOrBuildFileForResolution(cjFile)
+            val compilationFile = checkNotNull(cfirFile.psi as? CjFile)
+            return FileStructure(compilationFile, cfirFile, moduleComponents)
         }
 
         /**
@@ -92,12 +94,15 @@ internal class FileStructure private constructor(
     /**
      * 当前 PSI 文件在统一语义视图中的 CFIR；快照发布后，文件级和声明级结构都必须使用同一棵展开树。
      */
-    private val sourceGeneration = LLCfirSourcePsiGeneration.capture(listOf(cjFile), compareModificationStamps = false)
+    private val sourceGeneration = LLCfirSourcePsiGeneration.capture(
+        listOf(cjFile.compilationParsingResultOrNull()?.originFile ?: cjFile),
+        compareModificationStamps = false,
+    )
 
     private fun semanticCfirFile(): CfirFile {
         sourceGeneration.requireCurrent()
         val snapshot = moduleComponents.macroSemanticSnapshotStore.snapshot ?: return cfirFile
-        return checkNotNull(snapshot.fileForSource(cjFile)) {
+        return checkNotNull(snapshot.fileForSource(cjFile) ?: snapshot.fileForReparsedPsi(cjFile)) {
             "The current source PSI generation must belong to the published macro snapshot"
         }
     }
@@ -129,9 +134,18 @@ internal class FileStructure private constructor(
         return getStructureElementFor(element, findNonLocalContainer(element))
     }
 
-    fun getStructureElementFor(element: CjElement, nonLocalContainer: CjElement?): FileStructureElement {
+    fun getStructureElementFor(
+        element: CjElement,
+        nonLocalContainer: CjElement?,
+    ): FileStructureElement {
         sourceGeneration.requireCurrent()
-        val container = getContainerCjElement(element, nonLocalContainer)
+        val targetElement = checkNotNull(moduleComponents.cache.compilationElement(element) as? CjElement) {
+            "A structure query must identify a syntax element in the current target product."
+        }
+        val targetContainer = nonLocalContainer?.let {
+            checkNotNull(moduleComponents.cache.compilationElement(it) as? CjElement) { "The non-local container has no current grammar correspondence." }
+        }
+        val container = getContainerCjElement(targetElement, targetContainer)
         return structureElements.getOrPut(container) { createStructureElement(container) }
     }
 
@@ -216,12 +230,15 @@ internal class FileStructure private constructor(
     /**
      * 收集整个文件所有 structure element 的 diagnostics。
      */
-    fun getAllDiagnosticsForFile(diagnosticCheckerFilter: DiagnosticCheckerFilter): List<CjPsiDiagnostic> {
+    fun getAllDiagnosticsForFile(
+        diagnosticCheckerFilter: DiagnosticCheckerFilter,
+        platformCheckerComponents: LLCfirModuleResolveComponents? = null,
+    ): List<CjPsiDiagnostic> {
         // 每次顶层收集前重置当前 worker 的记录，避免混入该 worker 上一次收集的异常。
         DiagnosticCollectionFailures.clear()
         val structureElements = getAllStructureElements()
         return buildList {
-            collectDiagnosticsFromStructureElements(structureElements, diagnosticCheckerFilter)
+            collectDiagnosticsFromStructureElements(structureElements, diagnosticCheckerFilter, platformCheckerComponents)
         }
     }
 
@@ -231,6 +248,7 @@ internal class FileStructure private constructor(
     private fun MutableCollection<CjPsiDiagnostic>.collectDiagnosticsFromStructureElements(
         structureElements: Collection<FileStructureElement>,
         diagnosticCheckerFilter: DiagnosticCheckerFilter,
+        platformCheckerComponents: LLCfirModuleResolveComponents?,
     ) {
         /*
          * 单个 structure element 的解析/收集失败不能丢弃整份文件其余元素的诊断。
@@ -238,7 +256,7 @@ internal class FileStructure private constructor(
          * DiagnosticCollectionFailures，测试/报告必须断言该计数为 0。
          */
         forEachWithDiagnosticIsolation(structureElements) { structureElement ->
-            structureElement.diagnostics.forEach(diagnosticCheckerFilter) { diagnostics ->
+            structureElement.diagnostics.forEach(diagnosticCheckerFilter, platformCheckerComponents) { diagnostics ->
                 addAll(diagnostics)
             }
         }
@@ -293,7 +311,7 @@ internal class FileStructure private constructor(
         val declarationsWithOwnStructure = semanticCfirFile.declarations.filterTo(linkedSetOf()) { declaration ->
             declaration.sourceDeclarationIn(cjFile, snapshot) != null
         }
-        semanticCfirFile.lazyResolveToPhase(semanticCfirFile.moduleData.session.bodyResolvePrerequisitePhase)
+        semanticCfirFile.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE.previous)
         return RootStructureElement(
             sourceCfirFile = cfirFile,
             semanticCfirFile = semanticCfirFile,
@@ -346,7 +364,7 @@ internal class FileStructure private constructor(
         }
         val semanticMappings = IdentityHashMap<CjElement, CfirElement>().apply {
             snapshot?.declarationForSource(declaration)?.let { put(declaration, it) }
-            snapshot?.expressionReplacementsForSource(cjFile).orEmpty().forEach { (macroPsi, replacement) ->
+            snapshot?.expressionReplacementsForSource(declaration.containingCjFile).orEmpty().forEach { (macroPsi, replacement) ->
                 if (findNonLocalContainer(macroPsi) === declaration) put(macroPsi, replacement)
             }
         }

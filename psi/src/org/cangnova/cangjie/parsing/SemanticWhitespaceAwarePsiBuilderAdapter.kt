@@ -34,6 +34,14 @@ open class SemanticWhitespaceAwarePsiBuilderAdapter(private val builder: Semanti
     PsiBuilderAdapter(
         builder
     ), SemanticWhitespaceAwarePsiBuilder {
+    override val macroParsingJournal: MacroParsingJournal get() = builder.macroParsingJournal
+    override val isNLTokenSkippingEnabled: Boolean get() = builder.isNLTokenSkippingEnabled
+    override val lastConsumedTokenEndOffset: Int? get() = builder.lastConsumedTokenEndOffset
+    override fun lookAheadTokenText(steps: Int): String? = builder.lookAheadTokenText(steps)
+
+    override fun <T> withNLTokenSkipping(enabled: Boolean, block: () -> T): T =
+        builder.withNLTokenSkipping(enabled, block)
+
     /**
      * 实现 `newlineBeforeCurrentToken` 的仓颉语法解析协议回调，保持与 IntelliJ PSI 访问契约一致。
      */

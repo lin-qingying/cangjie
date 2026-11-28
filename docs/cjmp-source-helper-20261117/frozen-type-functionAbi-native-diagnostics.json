@@ -1,0 +1,162 @@
+{
+  "exitCode": 0,
+  "commandLine": "cjc functionAbi.cj --output-type=staticlib --output-dir build/source-frozen-type-roles-v113/functionAbi --dump-ast --diagnostic-format=json",
+  "diagnostics": {
+    "Diags": [
+      {
+        "DiagKind": "chir_dce_unused_variable",
+        "Severity": "warning",
+        "WarnGroup": "unused",
+        "DiagCategory": "chir",
+        "Message": "unused variable:'middle'",
+        "Location": {
+          "File": "cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\source-frozen-types\\functionAbi.cj",
+          "Line": 13,
+          "Column": 36
+        },
+        "MainHint": {
+          "Content": "unused variable",
+          "Range": {
+            "Begin": {
+              "File": "cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\source-frozen-types\\functionAbi.cj",
+              "Line": 13,
+              "Column": 36
+            },
+            "End": {
+              "File": "cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\source-frozen-types\\functionAbi.cj",
+              "Line": 13,
+              "Column": 42
+            }
+          }
+        },
+        "OtherHints": [],
+        "Notes": [
+          {
+            "Message": "this warning can be suppressed by setting the compiler option `-Woff unused`",
+            "MainHint": null,
+            "OtherHints": [],
+            "Help": null
+          }
+        ],
+        "Helps": []
+      },
+      {
+        "DiagKind": "chir_dce_unused_variable",
+        "Severity": "warning",
+        "WarnGroup": "unused",
+        "DiagCategory": "chir",
+        "Message": "unused variable:'last'",
+        "Location": {
+          "File": "cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\source-frozen-types\\functionAbi.cj",
+          "Line": 13,
+          "Column": 51
+        },
+        "MainHint": {
+          "Content": "unused variable",
+          "Range": {
+            "Begin": {
+              "File": "cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\source-frozen-types\\functionAbi.cj",
+              "Line": 13,
+              "Column": 51
+            },
+            "End": {
+              "File": "cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\source-frozen-types\\functionAbi.cj",
+              "Line": 13,
+              "Column": 55
+            }
+          }
+        },
+        "OtherHints": [],
+        "Notes": [
+          {
+            "Message": "this warning can be suppressed by setting the compiler option `-Woff unused`",
+            "MainHint": null,
+            "OtherHints": [],
+            "Help": null
+          }
+        ],
+        "Helps": []
+      },
+      {
+        "DiagKind": "chir_dce_unused_variable",
+        "Severity": "warning",
+        "WarnGroup": "unused",
+        "DiagCategory": "chir",
+        "Message": "unused variable:'middle'",
+        "Location": {
+          "File": "cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\source-frozen-types\\functionAbi.cj",
+          "Line": 17,
+          "Column": 37
+        },
+        "MainHint": {
+          "Content": "unused variable",
+          "Range": {
+            "Begin": {
+              "File": "cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\source-frozen-types\\functionAbi.cj",
+              "Line": 17,
+              "Column": 37
+            },
+            "End": {
+              "File": "cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\source-frozen-types\\functionAbi.cj",
+              "Line": 17,
+              "Column": 43
+            }
+          }
+        },
+        "OtherHints": [],
+        "Notes": [
+          {
+            "Message": "this warning can be suppressed by setting the compiler option `-Woff unused`",
+            "MainHint": null,
+            "OtherHints": [],
+            "Help": null
+          }
+        ],
+        "Helps": []
+      },
+      {
+        "DiagKind": "chir_dce_unused_variable",
+        "Severity": "warning",
+        "WarnGroup": "unused",
+        "DiagCategory": "chir",
+        "Message": "unused variable:'last'",
+        "Location": {
+          "File": "cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\source-frozen-types\\functionAbi.cj",
+          "Line": 17,
+          "Column": 52
+        },
+        "MainHint": {
+          "Content": "unused variable",
+          "Range": {
+            "Begin": {
+              "File": "cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\source-frozen-types\\functionAbi.cj",
+              "Line": 17,
+              "Column": 52
+            },
+            "End": {
+              "File": "cfir\\analysis-tests\\testData\\diagnostics2\\common-specific\\source-frozen-types\\functionAbi.cj",
+              "Line": 17,
+              "Column": 56
+            }
+          }
+        },
+        "OtherHints": [],
+        "Notes": [
+          {
+            "Message": "this warning can be suppressed by setting the compiler option `-Woff unused`",
+            "MainHint": null,
+            "OtherHints": [],
+            "Help": null
+          }
+        ],
+        "Helps": []
+      }
+    ],
+    "Num": {
+      "Errors": 0,
+      "PrintedErrors": 0,
+      "Warnings": 4,
+      "PrintedWarnings": 4
+    }
+  }
+}

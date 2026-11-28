@@ -24,12 +24,17 @@
 
 package org.cangnova.cangjie.cfir.scopes.impl
 
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
+
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.ScopeSessionKey
+import org.cangnova.cangjie.cfir.ScopeSessionOwnedId
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.providers.isBareOrDeclarationSelfTypeOf
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.scopes.CfirContainingNamesAwareScope
+import org.cangnova.cangjie.cfir.scopes.CfirPreparedScopeProduct
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
 import org.cangnova.cangjie.cfir.scopes.scopeSessionKey
@@ -38,7 +43,7 @@ import org.cangnova.cangjie.cfir.session.ProcessorAction
 import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.services.CfirExtendTargetKey
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
@@ -244,22 +249,28 @@ private fun CfirCallableSymbol<*>.isStaticCallableForClassQualifier(): Boolean {
 fun CfirTypeParameterSymbol.staticScopeForQualifierType(
     session: CfirSession,
     scopeSession: ScopeSession,
+    memberScopeView: CfirCjmpMemberScopeView = CfirCjmpMemberScopeView.RAW,
+    memberRequiredPhase: CfirResolvePhase?,
 ): CfirContainingNamesAwareScope =
-    scopeSession.getOrBuild(this, StaticScopeForTypeParameterQualifierScopeKey) {
-        val typeParameterType = constructType() as ConeTypeParameterType
-        if (typeParameterType.hasInvalidDeclaredUpperBounds(session)) {
-            return@getOrBuild CfirEmptyContainingNamesAwareScope
-        }
-        val upperBoundStaticScopes = typeParameterType
-            .collectUpperBounds(session.typeContext)
-            .mapNotNull { upperBound -> upperBound.staticScopeForUpperBound(session, scopeSession) }
+    preparedStaticScopeForQualifierType(session, scopeSession, memberScopeView, memberRequiredPhase).value
 
-        when (upperBoundStaticScopes.size) {
-            0 -> CfirEmptyContainingNamesAwareScope
-            1 -> upperBoundStaticScopes.single()
-            else -> CfirCompositeContainingNamesAwareScope(upperBoundStaticScopes)
+private fun CfirTypeParameterSymbol.preparedStaticScopeForQualifierType(
+    session: CfirSession,
+    scopeSession: ScopeSession,
+    memberScopeView: CfirCjmpMemberScopeView,
+    memberRequiredPhase: CfirResolvePhase?,
+): CfirPreparedScopeProduct<CfirContainingNamesAwareScope> {
+    val type = constructType() as ConeTypeParameterType
+    if (type.hasInvalidDeclaredUpperBounds(session)) {
+        // 无效上界不生产重型缓存产品；空作用域常量没有基础 scope 依赖。
+        return CfirPreparedScopeProduct(CfirEmptyContainingNamesAwareScope, emptySet())
+    }
+    return cachedUpperBoundScope(type, session, scopeSession, memberScopeView) {
+        type.collectUpperBounds(session.typeContext).mapNotNull {
+            it.staticScopeForUpperBound(session, scopeSession, memberScopeView, memberRequiredPhase)
         }
     }
+}
 
 /**
  * 返回 class-like qualifier 的静态 scope。
@@ -269,84 +280,139 @@ fun CfirClassLikeSymbol<*>.staticScopeForQualifierType(
     scopeSession: ScopeSession,
     qualifierType: ConeCangJieType = constructType(),
     memberScopeKind: CfirClassMemberScopeKind = CfirClassMemberScopeKind.USE_SITE,
-): CfirContainingNamesAwareScope {
-    val expandedQualifierType = qualifierType.fullyExpandedType(session)
-    val cacheKey = StaticScopeForQualifierTypeKey(classId, expandedQualifierType, memberScopeKind)
-    return scopeSession.getOrBuild(cacheKey, StaticScopeForQualifierTypeScopeKey) {
-        val allowBareGenericStaticQualifierExtends =
-            memberScopeKind == CfirClassMemberScopeKind.USE_SITE &&
-                    expandedQualifierType is ConeLookupTagBasedType &&
-                    expandedQualifierType.isBareOrDeclarationSelfTypeOf(this) &&
-                    cfir.typeParameters.isNotEmpty()
-        val useSiteScope = CfirClassUseSiteMemberScope(
-            session = session,
-            classSymbol = this,
-            symbolProvider = session.symbolProvider,
-            extendProvider = session.extendProvider,
-            directSupertypeProvider = session.directSupertypeProviderOrNull,
-            ownerType = expandedQualifierType,
-            dispatchReceiverType = expandedQualifierType,
-            scopeKind = memberScopeKind,
-            allowBareGenericStaticQualifierExtends = allowBareGenericStaticQualifierExtends,
-        )
-        CfirClassStaticScope(CfirClassSubstitutionScope(session, useSiteScope, expandedQualifierType))
-    }
+    memberScopeView: CfirCjmpMemberScopeView = CfirCjmpMemberScopeView.RAW,
+    memberRequiredPhase: CfirResolvePhase?,
+): CfirContainingNamesAwareScope = preparedStaticScopeForQualifierType(
+    session, scopeSession, qualifierType, memberScopeKind, memberScopeView, memberRequiredPhase,
+).value
+
+private fun CfirClassLikeSymbol<*>.preparedStaticScopeForQualifierType(
+    session: CfirSession,
+    scopeSession: ScopeSession,
+    qualifierType: ConeCangJieType,
+    memberScopeKind: CfirClassMemberScopeKind,
+    memberScopeView: CfirCjmpMemberScopeView,
+    memberRequiredPhase: CfirResolvePhase?,
+): CfirPreparedScopeProduct<CfirContainingNamesAwareScope> {
+    val provider = session.cangjieScopeProvider
+    return provider.cacheWithPreparedInputs(
+        session, scopeSession, StaticScopeForQualifierTypeScopeKey,
+        prepare = {
+            val type = qualifierType.fullyExpandedType(session)
+            val bare = memberScopeKind == CfirClassMemberScopeKind.USE_SITE &&
+                type is ConeLookupTagBasedType && type.isBareOrDeclarationSelfTypeOf(this) && cfir.typeParameters.isNotEmpty()
+            val substituted = provider.getClassSubstitutionScope(
+                session, scopeSession,
+                prepareRaw = {
+                    provider.getUseSiteMemberScope(
+                        useSiteSession = session,
+                        classSymbol = this,
+                        scopeSession = scopeSession,
+                        ownerType = type,
+                        dispatchReceiverType = type,
+                        scopeKind = memberScopeKind,
+                        allowBareGenericStaticQualifierExtends = bare,
+                        memberScopeView = memberScopeView,
+                        memberRequiredPhase = memberRequiredPhase,
+                    )
+                },
+                dispatchType = type,
+            )
+            CfirPreparedScopeProduct(
+                StaticScopeForQualifierTypeKey(this, type, memberScopeKind, memberScopeView, substituted.value),
+                substituted.dependencies,
+            )
+        },
+        create = { input -> CfirClassStaticScope(input.scope) },
+    )
 }
 
 /**
  * 返回没有 class-like symbol 的内建类型 qualifier 的静态 scope。
  *
- * `CPointer<T>` / `CString` 在官方前端通过 `builtinTyToExtendMap`
- * 查询 extend 成员；它们没有 ClassId，不能复用 class-like static scope。
+ * 官方 CPointer/CString 由 builtin extend map 提供成员，仍必须转发真实基础产品的代次。
  */
 fun ConeCangJieType.staticScopeForBuiltinQualifierType(
     session: CfirSession,
     scopeSession: ScopeSession,
+    memberScopeView: CfirCjmpMemberScopeView = CfirCjmpMemberScopeView.RAW,
+    memberRequiredPhase: CfirResolvePhase?,
 ): CfirContainingNamesAwareScope? {
-    val expandedQualifierType = fullyExpandedType(session)
-    val targetKey = expandedQualifierType.extendTargetKey ?: return null
-    if (targetKey is CfirExtendTargetKey.ClassLike) return null
-
-    val cacheKey = StaticScopeForBuiltinQualifierTypeKey(targetKey, expandedQualifierType)
-    return scopeSession.getOrBuild(cacheKey, StaticScopeForBuiltinQualifierTypeScopeKey) {
-        CfirClassStaticScope(
-            CfirExtendMemberScope(
-                targetKey = targetKey,
-                extendProvider = session.extendProvider,
-                session = session,
-                receiverType = expandedQualifierType,
+    val type = fullyExpandedType(session)
+    val target = type.extendTargetKey ?: return null
+    if (target is CfirExtendTargetKey.ClassLike) return null
+    val provider = session.cangjieScopeProvider
+    return provider.cacheWithPreparedInputs(
+        session, scopeSession, StaticScopeForBuiltinQualifierTypeScopeKey,
+        prepare = {
+            val scope = provider.getExtendMemberScope(
+                session, scopeSession, target, type, memberScopeView, memberRequiredPhase,
             )
-        )
-    }
+            CfirPreparedScopeProduct(
+                StaticScopeForBuiltinQualifierTypeKey(target, type, memberScopeView, scope.value), scope.dependencies,
+            )
+        },
+        create = { input -> CfirClassStaticScope(input.scope) },
+    ).value
 }
 
-/**
- * 根据类型参数上界恢复可用于静态查询的 scope。
- */
+/** 上界组合完整保留每个基础产品的证明，包括跨实际 producer 的完成代。 */
+private fun cachedUpperBoundScope(
+    type: ConeCangJieType,
+    session: CfirSession,
+    scopeSession: ScopeSession,
+    view: CfirCjmpMemberScopeView,
+    prepare: () -> List<CfirPreparedScopeProduct<CfirContainingNamesAwareScope>>,
+): CfirPreparedScopeProduct<CfirContainingNamesAwareScope> = session.cangjieScopeProvider.cacheWithPreparedInputs(
+    session, scopeSession, StaticScopeForTypeParameterQualifierScopeKey,
+    prepare = {
+        val products = prepare()
+        CfirPreparedScopeProduct(
+            StaticUpperBoundInput(type, view, products.map { it.value }),
+            products.flatMapTo(linkedSetOf()) { it.dependencies },
+        )
+    },
+    create = { input ->
+        when (input.scopes.size) {
+            0 -> CfirEmptyContainingNamesAwareScope
+            1 -> input.scopes.single()
+            else -> CfirCompositeContainingNamesAwareScope(input.scopes)
+        }
+    },
+)
+
+private data class StaticUpperBoundInput(
+    val type: ConeCangJieType,
+    val view: CfirCjmpMemberScopeView,
+    val scopes: List<CfirContainingNamesAwareScope>,
+)
+
 private fun ConeCangJieType.staticScopeForUpperBound(
     session: CfirSession,
     scopeSession: ScopeSession,
-): CfirContainingNamesAwareScope? {
-    return when (val expandedType = fullyExpandedType(session)) {
-        is ConeErrorType -> null
-        is ConeTypeParameterType -> CfirCompositeContainingNamesAwareScope(
-            expandedType.collectUpperBounds(session.typeContext)
-                .mapNotNull { it.staticScopeForUpperBound(session, scopeSession) }
+    memberScopeView: CfirCjmpMemberScopeView,
+    memberRequiredPhase: CfirResolvePhase?,
+): CfirPreparedScopeProduct<CfirContainingNamesAwareScope>? = when (val expandedType = fullyExpandedType(session)) {
+    is ConeErrorType -> null
+    is ConeTypeParameterType -> cachedUpperBoundScope(expandedType, session, scopeSession, memberScopeView) {
+        expandedType.collectUpperBounds(session.typeContext)
+            .mapNotNull { it.staticScopeForUpperBound(session, scopeSession, memberScopeView, memberRequiredPhase) }
+    }
+    is ConeTypeVariableType -> {
+        val originalTypeParameter = expandedType.typeConstructor.originalTypeParameter as? ConeTypeParameterLookupTag
+        originalTypeParameter?.typeParameterSymbol?.preparedStaticScopeForQualifierType(
+            session, scopeSession, memberScopeView, memberRequiredPhase,
         )
-        is ConeTypeVariableType -> {
-            val originalTypeParameter = expandedType.typeConstructor.originalTypeParameter as? ConeTypeParameterLookupTag
-                ?: return null
-            originalTypeParameter.typeParameterSymbol.staticScopeForQualifierType(session, scopeSession)
-        }
-        is ConeIntersectionType -> CfirCompositeContainingNamesAwareScope(
-            expandedType.intersectedTypes.mapNotNull { it.staticScopeForUpperBound(session, scopeSession) }
-        )
-        else -> {
-            val classId = expandedType.classIdOrPrimitiveClassId ?: return null
-            val symbol = session.symbolProvider.getClassLikeSymbolByClassId(classId) ?: return null
-            symbol.staticScopeForQualifierType(session, scopeSession, expandedType)
+    }
+    is ConeIntersectionType -> cachedUpperBoundScope(expandedType, session, scopeSession, memberScopeView) {
+        expandedType.intersectedTypes.mapNotNull {
+            it.staticScopeForUpperBound(session, scopeSession, memberScopeView, memberRequiredPhase)
         }
     }
+    else -> expandedType.classIdOrPrimitiveClassId?.let { session.symbolProvider.getClassLikeSymbolByClassId(it) }
+        ?.preparedStaticScopeForQualifierType(
+            session, scopeSession, expandedType, CfirClassMemberScopeKind.USE_SITE, memberScopeView, memberRequiredPhase,
+        )
 }
 
 /**
@@ -597,7 +663,7 @@ private data class StaticScopeForQualifierTypeKey(
     /**
      * qualifier 对应的 class id。
      */
-    val classId: ClassId,
+    val symbol: CfirClassLikeSymbol<*>,
     /**
      * qualifier 在当前 use-site 的具体类型。
      */
@@ -607,6 +673,9 @@ private data class StaticScopeForQualifierTypeKey(
      * 因而不能复用同一个缓存 scope。
      */
     val memberScopeKind: CfirClassMemberScopeKind,
+    /** 同一结构可缓存为原始和 CJMP 实际化成员图，二者不能共享 scope。 */
+    val memberScopeView: CfirCjmpMemberScopeView,
+    val scope: CfirClassSubstitutionScope,
 )
 
 /**
@@ -621,22 +690,25 @@ private data class StaticScopeForBuiltinQualifierTypeKey(
      * qualifier 在当前 use-site 的具体类型。
      */
     val qualifierType: ConeCangJieType,
+    /** 同一 builtin receiver 可缓存为原始和 CJMP 实际化成员图。 */
+    val memberScopeView: CfirCjmpMemberScopeView,
+    val scope: CfirExtendMemberScope,
 )
 
 /**
  * class-like qualifier static scope 的 ScopeSession key。
  */
-private val StaticScopeForQualifierTypeScopeKey: ScopeSessionKey<StaticScopeForQualifierTypeKey, CfirContainingNamesAwareScope> =
+private val StaticScopeForQualifierTypeScopeKey: ScopeSessionKey<ScopeSessionOwnedId<CfirPreparedScopeProduct<StaticScopeForQualifierTypeKey>>, CfirPreparedScopeProduct<CfirContainingNamesAwareScope>> =
     scopeSessionKey()
 
 /**
  * non-class built-in qualifier static scope 的 ScopeSession key。
  */
-private val StaticScopeForBuiltinQualifierTypeScopeKey: ScopeSessionKey<StaticScopeForBuiltinQualifierTypeKey, CfirContainingNamesAwareScope> =
+private val StaticScopeForBuiltinQualifierTypeScopeKey: ScopeSessionKey<ScopeSessionOwnedId<CfirPreparedScopeProduct<StaticScopeForBuiltinQualifierTypeKey>>, CfirPreparedScopeProduct<CfirContainingNamesAwareScope>> =
     scopeSessionKey()
 
 /**
  * 类型参数 qualifier static scope 的 ScopeSession key。
  */
-private val StaticScopeForTypeParameterQualifierScopeKey: ScopeSessionKey<CfirTypeParameterSymbol, CfirContainingNamesAwareScope> =
+private val StaticScopeForTypeParameterQualifierScopeKey: ScopeSessionKey<ScopeSessionOwnedId<CfirPreparedScopeProduct<StaticUpperBoundInput>>, CfirPreparedScopeProduct<CfirContainingNamesAwareScope>> =
     scopeSessionKey()

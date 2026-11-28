@@ -5,6 +5,7 @@ import org.cangnova.cangjie.chir.core.declaration.ChirDeclaration
 import org.cangnova.cangjie.chir.core.declaration.ChirFunctionDeclaration
 import org.cangnova.cangjie.chir.core.declaration.ChirVariableDeclaration
 import org.cangnova.cangjie.chir.core.expression.ChirCallExpression
+import org.cangnova.cangjie.chir.core.expression.ChirConstantExpression
 import org.cangnova.cangjie.chir.core.expression.ChirExpression
 import org.cangnova.cangjie.chir.core.expression.ChirMemoryExpression
 import org.cangnova.cangjie.chir.core.expression.ChirOtherExpression
@@ -155,12 +156,16 @@ class JvmModuleCodegen(
                     expression.resultType?.let(::typeRequiresPointerRuntime) == true
             is ChirCallExpression ->
                 valueRequiresPointerRuntime(expression.callee) ||
+                    expression.dispatchReceiver?.let(::valueRequiresPointerRuntime) == true ||
                     expression.arguments.any(::valueRequiresPointerRuntime) ||
                     typeRequiresPointerRuntime(expression.resultType)
-            is ChirOtherExpression ->
+            is ChirConstantExpression ->
+                valueRequiresPointerRuntime(expression.value) || typeRequiresPointerRuntime(expression.resultType)
+            is ChirOtherExpression -> expression.debugMetadata == null && (
                 expression.operation.lowercase().trim() in pointerRuntimeOperations ||
                     expression.operands.any(::valueRequiresPointerRuntime) ||
                     expression.resultType?.let(::typeRequiresPointerRuntime) == true
+                )
             else -> expression.resultType?.let(::typeRequiresPointerRuntime) == true
         }
     }
@@ -182,7 +187,8 @@ class JvmModuleCodegen(
      * 判断表达式是否需要 unsigned runtime 辅助转换。
      */
     private fun expressionRequiresUnsignedRuntime(expression: ChirExpression): Boolean {
-        return expression is ChirOtherExpression && expression.operation.lowercase().trim() == "fptoui"
+        return expression is ChirOtherExpression && expression.debugMetadata == null &&
+            expression.operation.lowercase().trim() == "fptoui"
     }
 
     /**

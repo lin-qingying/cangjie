@@ -6,7 +6,7 @@ import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExec
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.psi
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.types.coneType
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName

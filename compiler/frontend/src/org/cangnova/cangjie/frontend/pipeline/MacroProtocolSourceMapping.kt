@@ -2,6 +2,7 @@ package org.cangnova.cangjie.frontend.pipeline
 
 import java.util.IdentityHashMap
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentSourceMap
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceSourceRange
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceToken
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroTokenSourceOrigin
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroTokenSourceSpan
@@ -45,6 +46,15 @@ internal class MacroProtocolSourceMapping(
         if (offset == null || offset !in 0..lines.lastOffset) return SourcePosition(fileId = rootFileId)
         val (line, column) = lines.getLineAndColumnByOffset(offset)
         return SourcePosition(rootFileId, line + 1, column + 1)
+    }
+
+    /** A generated child token uses its call's wire coordinates without acquiring input provenance. */
+    fun childCallPositions(range: MacroSurfaceSourceRange): Pair<SourcePosition, SourcePosition>? {
+        val lines = rootLines ?: return null
+        val source = range.source ?: return null
+        if (source.macroSourceTreeIdentity() !== rootIdentity) return null
+        if (range.startOffset !in 0..lines.lastOffset || range.endOffset !in range.startOffset..lines.lastOffset) return null
+        return rootPosition(range.startOffset) to rootPosition(range.endOffset)
     }
 
     fun inputPosition(input: MacroTokenSourceOrigin.Input, offset: Int): SourcePosition {

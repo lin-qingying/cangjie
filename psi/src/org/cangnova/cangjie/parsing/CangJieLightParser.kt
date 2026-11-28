@@ -26,16 +26,26 @@ package org.cangnova.cangjie.parsing
 
 import com.intellij.lang.LighterASTNode
 import com.intellij.lang.PsiBuilder
-import com.intellij.lang.impl.PsiBuilderImpl
+import com.intellij.lang.PsiBuilderFactory
 import com.intellij.openapi.util.Ref
 import com.intellij.psi.TokenType
 import com.intellij.util.diff.FlyweightCapableTreeStructure
 import org.cangnova.cangjie.CjSourceKind
+import org.cangnova.cangjie.CjSourceFile
+import org.cangnova.cangjie.messages.ParsingDiagnostic
+import org.cangnova.cangjie.messages.CjParsingDiagnosticCollector
+import org.cangnova.cangjie.messages.CjParsingDiagnosticReport
+import org.cangnova.cangjie.lexer.CangJieLexer
 
 /**
  * 提供 `CangJieLightParser` 单例，集中承载仓颉语法解析的共享状态、工厂或工具行为。
  */
 object CangJieLightParser {
+    /** 在交给 SDK 之前冻结文本；已有 caller-builder 的原始文本必须是不可变 String。 */
+    fun createBuilder(text: CharSequence): PsiBuilder = PsiBuilderFactory.getInstance().createBuilder(
+        CangJieParserDefinition(), CangJieLexer(), text.toString(),
+    )
+
     /**
      * 按完整仓颉文件语法构造 LightTree；宏片段可传入源模块，显式 package 会覆盖它。
      *
@@ -47,8 +57,26 @@ object CangJieLightParser {
         errorListener: LightTreeParsingErrorListener? = null,
         languageModuleName: String = "",
         sourceKind: CjSourceKind = CjSourceKind.SOURCE,
-    ): FlyweightCapableTreeStructure<LighterASTNode> =
-        parseWith(builder, errorListener, languageModuleName, sourceKind) { parseFile() }
+        cjmpContext: CjmpParsingContext = CjmpParsingContext.SyntaxOnly,
+        sourceFile: CjSourceFile? = null,
+        settings: CjParserSettings = CjParserSettings(),
+    ): ParsedCangJieLightFile =
+        parseWith(builder, errorListener, languageModuleName, sourceKind, cjmpContext, isCompleteFile = true,
+            diagnosticOwnership = if (errorListener == null) CangJieLightDiagnosticOwnership.UNOBSERVED else CangJieLightDiagnosticOwnership.EXTERNAL_LISTENER,
+            sourceContext = CjParserSourceContext.complete(builder.originalText, sourceFile), settings = settings) { parseFile() }
+
+    /** 构建者取得完整诊断事务，确认最终语境后自行发布。 */
+    fun parseBuffered(
+        builder: PsiBuilder,
+        languageModuleName: String = "",
+        sourceKind: CjSourceKind = CjSourceKind.SOURCE,
+        cjmpContext: CjmpParsingContext = CjmpParsingContext.SyntaxOnly,
+        sourceFile: CjSourceFile? = null,
+        lexicalInput: CjLexicalSourceInput? = null,
+        settings: CjParserSettings = CjParserSettings(),
+    ): CangJieLightParseResult = parseBufferedWith(
+        builder, languageModuleName, sourceKind, cjmpContext, true, sourceFile, lexicalInput, settings,
+    ) { parseFile() }
 
     /**
      * 按 annotation-only 语法构造 LightTree。
@@ -65,8 +93,25 @@ object CangJieLightParser {
         errorListener: LightTreeParsingErrorListener? = null,
         languageModuleName: String = "",
         sourceKind: CjSourceKind = CjSourceKind.SOURCE,
-    ): FlyweightCapableTreeStructure<LighterASTNode> =
-        parseWith(builder, errorListener, languageModuleName, sourceKind) { parseOnlyAnnotationFile() }
+        cjmpContext: CjmpParsingContext = CjmpParsingContext.SyntaxOnly,
+        settings: CjParserSettings = CjParserSettings(),
+    ): ParsedCangJieLightFile =
+        parseWith(builder, errorListener, languageModuleName, sourceKind, cjmpContext, isCompleteFile = false,
+            diagnosticOwnership = if (errorListener == null) CangJieLightDiagnosticOwnership.UNOBSERVED else CangJieLightDiagnosticOwnership.EXTERNAL_LISTENER,
+            settings = settings) { parseOnlyAnnotationFile() }
+
+    /** 原生注解文法与完整文件共享冻结输入和诊断事务，构建者取得结果后决定提交时机。 */
+    fun parseAnnotationOnlyBuffered(
+        builder: PsiBuilder,
+        languageModuleName: String = "",
+        sourceKind: CjSourceKind = CjSourceKind.SOURCE,
+        cjmpContext: CjmpParsingContext = CjmpParsingContext.SyntaxOnly,
+        sourceFile: CjSourceFile? = null,
+        lexicalInput: CjLexicalSourceInput? = null,
+        settings: CjParserSettings = CjParserSettings(),
+    ): CangJieLightParseResult = parseBufferedWith(
+        builder, languageModuleName, sourceKind, cjmpContext, false, sourceFile, lexicalInput, settings,
+    ) { parseOnlyAnnotationFile() }
 
     /**
      * 解析官方宏展开后的声明 token。
@@ -79,8 +124,94 @@ object CangJieLightParser {
         errorListener: LightTreeParsingErrorListener? = null,
         languageModuleName: String = "",
         sourceKind: CjSourceKind = CjSourceKind.SOURCE,
-    ): FlyweightCapableTreeStructure<LighterASTNode> =
-        parseWith(builder, errorListener, languageModuleName, sourceKind) { parseMacroExpansionFile() }
+        cjmpContext: CjmpParsingContext = CjmpParsingContext.SyntaxOnly,
+        settings: CjParserSettings = CjParserSettings(),
+    ): ParsedCangJieLightFile =
+        parseWith(builder, errorListener, languageModuleName, sourceKind, cjmpContext, isCompleteFile = false,
+            diagnosticOwnership = if (errorListener == null) CangJieLightDiagnosticOwnership.UNOBSERVED else CangJieLightDiagnosticOwnership.EXTERNAL_LISTENER,
+            settings = settings) { parseMacroExpansionFile() }
+
+    /** PSI 与 LightTree 共用原生 scoped ParseNodes，不经过完整文件 preamble。 */
+    fun parseMacroCodeFragment(
+        builder: PsiBuilder,
+        seed: CjParserSeed,
+        errorListener: LightTreeParsingErrorListener? = null,
+    ): ParsedCangJieMacroFragment = parseMacroCodeFragmentWith(
+        builder, seed, errorListener,
+        if (errorListener == null) CangJieLightDiagnosticOwnership.UNOBSERVED else CangJieLightDiagnosticOwnership.EXTERNAL_LISTENER,
+    )
+
+    /** 保存未发布诊断，供调用方确定最终片段代次后一次性消费。 */
+    fun parseMacroCodeFragmentBuffered(builder: PsiBuilder, seed: CjParserSeed): CangJieLightMacroParseResult {
+        val diagnostics = mutableListOf<ParsingDiagnostic>()
+        val fragment = parseMacroCodeFragmentWith(
+            builder, seed, { diagnostics.add(it) }, CangJieLightDiagnosticOwnership.BUFFERED,
+        )
+        return CangJieLightMacroParseResult(fragment, diagnostics)
+    }
+
+    private fun parseMacroCodeFragmentWith(
+        builder: PsiBuilder,
+        seed: CjParserSeed,
+        errorListener: LightTreeParsingErrorListener?,
+        diagnosticOwnership: CangJieLightDiagnosticOwnership,
+    ): ParsedCangJieMacroFragment {
+        seed.annotationModuleProvenance?.let { builder.putUserData(ANNOTATION_MODULE_PROVENANCE, it) }
+        val inputText = builder.originalText.toString()
+        val ownBuilder = builder as? CangJiePsiBuilder
+        val inputSource = ownBuilder?.sourceContext ?: seed.sourceContext
+            ?: CjParserSourceContext.complete(builder.originalText)
+        // 只有 SDK chameleon 输入构造层能够证明另一份候选输入；普通 seed 不得静默丢失词法来源。
+        val lexicalInput = if (ownBuilder?.sourceContext != null) checkNotNull(ownBuilder.lexicalInput)
+            else seed.lexicalInput?.also { require(it.source === inputSource.snapshot) }
+                ?: CjLexicalSourceInput(inputSource.snapshot)
+        val semantic = SemanticWhitespaceAwarePsiBuilderImpl(builder, inputSource, lexicalInput)
+        val parser = CangJieParsing.createForTopLevelNonLazy(
+            semantic, seed.languageModuleName, seed.sourceKind, seed.cjmpContext, seed.settings,
+        )
+        parser.restoreSeed(seed)
+        with(seed.context) { parser.parseMacroCodeFragment(checkNotNull(seed.macroFragment)) }
+        val tree = builder.lightTree
+        check(tree.root.startOffset == 0)
+        val data = semantic.macroParsingJournal.freeze(0)
+        val roots = tree.macroFragmentRoots()
+        check(builder.originalText.toString() == inputText) { "Macro parse input changed during parsing." }
+        val collector = CjParsingDiagnosticCollector(inputSource, seed.settings.diagnostics)
+        data.parsingReports.values.flatten().forEach { collector.restoreReport(it.report) }
+        reportErrors(tree.root, tree, collector::restoreReport, inputSource, lexicalInput)
+        val diagnostics = collector.finish()
+        if (errorListener != null) diagnostics.forEach(errorListener::onError)
+        return ParsedCangJieMacroFragment(
+            tree, roots, parser.parsedFileFacts, checkNotNull(parser.macroFragmentInfo), data.macroFacts, data.nominalFacts,
+            data.declarationRoleChecks, data.roleEvents, seed, inputText, diagnosticOwnership,
+            inputSource, data.declarationPrefixes, data.declarationModifiers,
+            lexicalInput, collector.publication, data.diagnosticScope,
+            verifyTokenStream = { lexicalInput.requireBuilderInput(builder, inputSource, atEntry = false) },
+        ).also { it.requireConsistentInput() }
+    }
+
+    /** 文件文法的缓冲入口统一领取真实冻结输入，不能在调用侧复制 parser 或诊断收集流程。 */
+    private inline fun parseBufferedWith(
+        builder: PsiBuilder,
+        languageModuleName: String,
+        sourceKind: CjSourceKind,
+        cjmpContext: CjmpParsingContext,
+        isCompleteFile: Boolean,
+        sourceFile: CjSourceFile?,
+        lexicalInput: CjLexicalSourceInput?,
+        settings: CjParserSettings,
+        parseAction: CangJieParsing.() -> Unit,
+    ): CangJieLightParseResult {
+        val diagnostics = mutableListOf<ParsingDiagnostic>()
+        val sourceContext = lexicalInput?.let {
+            require(it.source.text == builder.originalText.toString()) { "A reparse must retain its actual lexical input." }
+            CjParserSourceContext(it.source, 0)
+        } ?: CjParserSourceContext.complete(builder.originalText, sourceFile)
+        val file = parseWith(builder, { diagnostics.add(it) }, languageModuleName, sourceKind, cjmpContext,
+            isCompleteFile, CangJieLightDiagnosticOwnership.BUFFERED, sourceContext,
+            lexicalInput ?: CjLexicalSourceInput(sourceContext.snapshot), settings, parseAction)
+        return CangJieLightParseResult(file, diagnostics)
+    }
 
     /** 统一创建 parser、执行指定语法入口并完成 LightTree 错误上报。 */
     private inline fun parseWith(
@@ -88,26 +219,45 @@ object CangJieLightParser {
         errorListener: LightTreeParsingErrorListener?,
         languageModuleName: String,
         sourceKind: CjSourceKind,
+        cjmpContext: CjmpParsingContext,
+        isCompleteFile: Boolean,
+        diagnosticOwnership: CangJieLightDiagnosticOwnership,
+        sourceContext: CjParserSourceContext = CjParserSourceContext.complete(builder.originalText),
+        lexicalInput: CjLexicalSourceInput = CjLexicalSourceInput(sourceContext.snapshot),
+        settings: CjParserSettings = CjParserSettings(),
         parseAction: CangJieParsing.() -> Unit,
-    ): FlyweightCapableTreeStructure<LighterASTNode> {
+    ): ParsedCangJieLightFile {
+        val semantic = SemanticWhitespaceAwarePsiBuilderImpl(builder, sourceContext, lexicalInput)
         val cjParsing: CangJieParsing = CangJieParsing.createForTopLevelNonLazy(
-            SemanticWhitespaceAwarePsiBuilderImpl(builder),
+            semantic,
             languageModuleName,
             sourceKind,
+            cjmpContext,
+            settings,
         )
         cjParsing.parseAction()
-        return builder.lightTree.also { lightTree ->
-            if (errorListener != null) {
-                reportErrors(lightTree.root, lightTree, errorListener)
-            }
-        }
+        val tree = builder.lightTree
+        check(tree.root.startOffset == 0) { "A complete file parser requires a full file token stream." }
+        val data = semantic.macroParsingJournal.freeze(0)
+        val collector = CjParsingDiagnosticCollector(sourceContext, settings.diagnostics)
+        data.parsingReports.values.flatten().forEach { collector.restoreReport(it.report) }
+        reportErrors(tree.root, tree, collector::restoreReport, sourceContext, lexicalInput)
+        val diagnostics = collector.finish()
+        if (errorListener != null) diagnostics.forEach(errorListener::onError)
+        return ParsedCangJieLightFile(
+            tree, cjParsing.parsedFileFacts, data.macroFacts, data.nominalFacts, data.declarationRoleChecks,
+            data.roleEvents, cjmpContext, isCompleteFile, languageModuleName, diagnosticOwnership,
+            sourceContext, data.declarationPrefixes, data.declarationModifiers,
+            checkNotNull(data.lexicalInput), data.sourceTokens, collector.publication, data.diagnosticScope, settings,
+            verifyTokenStream = { lexicalInput.requireBuilderInput(builder, sourceContext, atEntry = false) },
+        ).also { it.requireConsistentInput() }
     }
 
     /**
      * 提供 `interface` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
      */
     fun interface LightTreeParsingErrorListener {
-        fun onError(startOffset: Int, endOffset: Int, message: String?)
+        fun onError(diagnostic: ParsingDiagnostic)
     }
 
     /**
@@ -116,20 +266,33 @@ object CangJieLightParser {
     private fun reportErrors(
         node: LighterASTNode,
         tree: FlyweightCapableTreeStructure<LighterASTNode>,
-        errorListener: LightTreeParsingErrorListener,
-        ref: Ref<Array<LighterASTNode?>> = Ref(),
+        onReport: (CjParsingDiagnosticReport) -> Unit,
+        sourceContext: CjParserSourceContext,
+        lexicalInput: CjLexicalSourceInput,
     ) {
-        tree.getChildren(node, ref)
+        val ref = Ref<Array<LighterASTNode?>>()
+        val count = tree.getChildren(node, ref)
         val children = ref.get() ?: return
+        try {
+            for (index in 0 until count) {
+                val child = checkNotNull(children[index])
+                check(child.tokenType != TokenType.ERROR_ELEMENT) {
+                    "A parser error production must retain its actual report identity."
+                }
+                val errorType = child.tokenType as? CjParsingErrorElementType
+                if (errorType != null) {
+                    onReport(CjParsingDiagnosticReport(errorType.diagnostic(child.startOffset, child.endOffset), errorType.diagnosticOrder))
+                }
+                if (child.tokenType === org.cangnova.cangjie.lexer.CjTokens.UNKNOWN_TOKEN_START) {
+                    val token = lexicalInput.tokenAt(sourceContext.inputStart + child.startOffset)
+                    check(token.type == child.tokenType && token.endOffset == sourceContext.inputStart + child.endOffset)
+                    onReport(checkNotNull(lexicalInput.diagnosticForToken(token.id, sourceContext)))
+                }
 
-        for (child in children) {
-            if (child == null) break
-            if (child.tokenType == TokenType.ERROR_ELEMENT) {
-                errorListener.onError(child.startOffset, child.endOffset, PsiBuilderImpl.getErrorMessage(child))
+                reportErrors(child, tree, onReport, sourceContext, lexicalInput)
             }
-
-            ref.set(null)
-            reportErrors(child, tree, errorListener, ref)
+        } finally {
+            tree.disposeChildren(children, count)
         }
     }
 }

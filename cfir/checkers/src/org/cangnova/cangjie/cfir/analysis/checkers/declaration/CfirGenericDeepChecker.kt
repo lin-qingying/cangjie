@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
@@ -16,15 +17,13 @@ import org.cangnova.cangjie.cfir.diagnostics.reportOn
  * 注意：参数个数匹配、约束宽松性、实例化歧义等检查依赖 resolve 阶段的完整信息，
  * 将在 resolve 管线就绪后补充。
  */
-object CfirGenericDeepChecker : CfirTypeParameterChecker() {
+object CfirGenericDeepChecker : CfirTypeParameterChecker(MppCheckerKind.Common) {
     /**
      * 检查类型参数直接和间接递归上界。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirTypeParameter) {
-        val issue = with(context.session) {
-            declaration.findFirstGenericUpperBoundRecursionIssueInOwner()
-        } ?: return
+        val issue = declaration.findFirstGenericUpperBoundRecursionIssueInOwner() ?: return
         if (issue.parameter.symbol != declaration.symbol) return
         when (issue) {
             is CfirGenericUpperBoundRecursionIssue.Direct -> {

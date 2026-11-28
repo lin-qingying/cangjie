@@ -1,0 +1,786 @@
+{
+  "scope": "COPYING19 + S036 + lifecycle18 (old14 and actual late/OBL/PCLA four) + original SOURCE14 + original negative2 = 89; candidate root/domain commit repairs",
+  "before": {
+    "sampleUtc": "2026-11-17T03:43:14.3427498Z",
+    "worktree": "C:\\Users\\lin17\\.codex\\worktrees\\cjmp-framework-implementation\\cangjie",
+    "fileCount": 6826,
+    "aggregateSha256": "8F39F5D1F42D68416FE7E7F0D02FDF81DF636F5C6E79EAF989EE836A702AB392",
+    "roots": [
+      "common",
+      "cfir",
+      "analysis/low-level-api-cfir",
+      "analysis/analysis-api-cfir",
+      "compiler/frontend",
+      "compiler/config",
+      "compiler/phaser",
+      "compiler/arguments",
+      "psi",
+      "resolution.common",
+      "macro"
+    ],
+    "include": [
+      "*.kt",
+      "*.cj",
+      "*.kts"
+    ],
+    "exclude": "**/build/**",
+    "method": "rg --files --hidden --no-ignore, paths normalized / and Sort-Object -CaseSensitive; SHA256 of UTF8 LF-joined path TAB byteLength TAB uppercaseSHA256 lines, no terminal LF",
+    "scope": "COPYING19 + S036 + lifecycle18 (old14 and actual late/OBL/PCLA four) + original SOURCE14 + original negative2 = 89; candidate root/domain commit repairs"
+  },
+  "after": {
+    "sampleUtc": "2026-11-17T04:37:31.7439621Z",
+    "fileCount": 6826,
+    "aggregateSha256": "8F39F5D1F42D68416FE7E7F0D02FDF81DF636F5C6E79EAF989EE836A702AB392",
+    "unchanged": true
+  },
+  "sessionId": 83472,
+  "queue": {
+    "id": "64d2715b",
+    "args": [
+      "--gradle-user-home",
+      ".gradle/cjmp-export-home",
+      ":cfir:cfir-tree:test",
+      "--rerun",
+      "--tests",
+      "org.cangnova.cangjie.cfir.copy.CfirOwnedGraphCopyTest",
+      ":cfir:providers:test",
+      "--rerun",
+      "--tests",
+      "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+      "--tests",
+      "org.cangnova.cangjie.cfir.resolve.providers.CfirExportSourcePayloadTest",
+      ":cfir:analysis-tests:test",
+      "--rerun",
+      "--tests",
+      "org.cangnova.cangjie.cfir.analysis.tests.CfirDeclarationOwnerTest.psiDefaultHelperLifecycle",
+      "--tests",
+      "org.cangnova.cangjie.cfir.analysis.tests.CfirDeclarationOwnerTest.lightTreeDefaultHelperLifecycle",
+      "--tests",
+      "org.cangnova.cangjie.cfir.analysis.tests.CfirDeclarationOwnerTest.psiDefaultHelperOuterShadow",
+      "--tests",
+      "org.cangnova.cangjie.cfir.analysis.tests.CfirDeclarationOwnerTest.lightTreeDefaultHelperOuterShadow",
+      "--tests",
+      "org.cangnova.cangjie.cfir.analysis.tests.CfirDeclarationOwnerTest.*DefaultHelpersS1*",
+      "--tests",
+      "org.cangnova.cangjie.cfir.analysis.tests.CfirDeclarationOwnerTest.*DefaultHelpersPhase*",
+      "--tests",
+      "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExport*Test",
+      "--tests",
+      "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjo*Test.publicInterfaceDefaultBodyPromotesReferencedPrivateFunction",
+      "--tests",
+      "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjo*Test.referencedPrivateDefaultHelperIsCollectedOutsideClassBody",
+      "--tests",
+      "*CfirAnalysisLLTTestGenerated*testDefaultParameter41*",
+      "--tests",
+      "*CfirAnalysisLLTPsiTestGenerated*testDefaultParameter41*",
+      ":analysis:low-level-api-cfir:compileKotlin",
+      "--no-build-cache",
+      "--console=plain",
+      "--max-workers=1",
+      "--continue"
+    ],
+    "pid": 18020,
+    "owner": "pid@18020",
+    "submitAt": 1794886995408,
+    "startedAt": 1794886995448,
+    "finishedAt": 1794887276259,
+    "exitCode": 1,
+    "status": "DONE"
+  },
+  "xml": [
+    {
+      "path": "cfir/cfir-tree/build/test-results/test/TEST-org.cangnova.cangjie.cfir.copy.CfirOwnedGraphCopyTest.xml",
+      "modifiedUtc": "2026-11-17T03:45:46.7281664Z",
+      "timestamp": "2026-11-17T03:45:46.262Z",
+      "belongsToQueueWindow": true,
+      "tests": 19,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "bytes": 3436,
+      "sha256": "25CAE2AE90E5531AD9FC6CF9F400B9AECB5C3B533755BF818A0567D52559FEEA",
+      "gzipBase64": "H4sIAAAAAAAACr2XTW/bRhCG7wb8H1Se2oNlSbaVOpAcUB8uiDixQck10CCH1e6Y2ng5u50Z2ua/L5a0XAON2kMV3SjuLvnwnXlnRqMPz6XrPAKx9ThO+t1e0gHU3lgsxsnt8vLo1+TDxeHBSICFKyvQQVXCOPFUdLXCAv2jai6+Wejqe0td7UPdnd5bun5CML+RCuupD/USWJJO85hx0j9POvxgQwAzTnpJ515ZVxFw8wOIPLWXYktgUWUYJ4PeYHjU7x/13y17J+9Pz96fDruD4eCPpLP2LC3UVfa5PTNOet2T87Pk4vCg0xkF8gFILPBxeyNSaMWbbymhXAHdKFIlCFDK7LVVYj3yxBP5pzsra1/J/DkojMos19B83MyXyuLPvyQd7RTz/1PmBbs/HCbfx9QeWRRKc/CGgIEegVNnFQNPa+2AUzQ5lCrwpQVnUjTTeIYqLZ4WdbnyjndL2+u/20J7X6GOEuYgFeGV9yFFc6NEgHBiGxk5Jbgk4HWKZv4cF5TL4R4IUAMvRNWbuzuGHpxvgTYgSq/BTLypc/izsgQ8fw7OaitLRQXI3RowE96AxddQxjmsfIVmx5i9wRbMNbgA7dlJnYqQXVUCGU99sGAy1K6K+jY5MVH6Yelfk3vXiKdbEOFFtY1QMQFaBW8ZOBOegXaKwMSFRsVdk/X/w0aNRXJYtbk4VYhept45FRhmlsWiloV4UgUsnBfeF19Bvgpgcu+Fc6gYFlUIzoJpHresA/xdqdAs1orgpQbs2tpbAP0/ONqaM38EqhelorhZ4oao265lO9tCxU15e40n5/ANtNyRx+KjRcOzKiakkqZyU6yUk2jZGcRIt8V+XxEmYO8ewaRUVCWgfFIhWCw+AgS+xVLFtpgJlBHymmxho38sy48J879YuLVu2zjeCNV65QrUQ4rNozMMlbSGbjbsqw5uikzMtSYHA9DUx2lm/hwIOA41aYyxg0IJmPxF+GZ/9Ne+QTNsJW0rYex/s9jvCMwmH5e+LeJtlu6Lb9WMOfB2XHh10qeKJaZmJjz1qAkEoqH25WsEFjBXqlwZdf2EsXW0I0WrYTPxRFKeqiAVgflhrW7bXIYe52WQ+veUSNWNhAobyXjTP9YqwOtsNncQXR+TcG8BtmVZiVo5aEgXFgsH4pEj5SaqmQEUK/W+mEg9Ldc2FrkMldbRrisHOWiw0cIRrancKZrPlXOR/mVw3DXhyYaQaxYoj3wlF6Ofvkxn6TL98vXrxej4zcLbjUD0/Y1x4fBgdPz6t+ni8OAvIbrkWGwNAAA=",
+      "testcases": [
+        {
+          "classname": "org.cangnova.cangjie.cfir.copy.CfirOwnedGraphCopyTest",
+          "name": "memberParameterAssociationsBorrowWithoutExpandingTheOwnedDomain()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.copy.CfirOwnedGraphCopyTest",
+          "name": "constantGraphPreservesAliasesCyclesAndRemapsFieldAndConstructorSymbols()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.copy.CfirOwnedGraphCopyTest",
+          "name": "functionReturnLoopAndPatternBindingsAreFreshAndExternalReferencesStayExternal()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.copy.CfirOwnedGraphCopyTest",
+          "name": "detachedBodyRequiresExplicitTargetWhenItsExternalOwnerIsRebound()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.copy.CfirOwnedGraphCopyTest",
+          "name": "helperOwnedByAttributeIsCopiedIncludingCycleBackToParameter()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.copy.CfirOwnedGraphCopyTest",
+          "name": "explicitExternalLoopTargetUsesItsDeclaredLoopOwner()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.copy.CfirOwnedGraphCopyTest",
+          "name": "constantFieldRebindingCannotCollapseDistinctStorageSlots()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.copy.CfirOwnedGraphCopyTest",
+          "name": "groupedRootsReuseSuppliedOwnedTypeParameterAndShareAliases()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.copy.CfirOwnedGraphCopyTest",
+          "name": "ownedTypeParameterRemapsEverySmartcastTypeSlot()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.copy.CfirOwnedGraphCopyTest",
+          "name": "symbolRebindingsRejectWrongKindsDuplicateOwnersAndBoundDestinations()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.copy.CfirOwnedGraphCopyTest",
+          "name": "resolvedArgumentMappingKeepsUnmappedItemsAndOriginalListAliases()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.copy.CfirOwnedGraphCopyTest",
+          "name": "externalSymbolDestinationCannotLeakAnOwnedInputDeclaration()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.copy.CfirOwnedGraphCopyTest",
+          "name": "explicitTypeRemapperCoversExpressionAndDelegatedResolvedTypeRoots()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.copy.CfirOwnedGraphCopyTest",
+          "name": "explicitInternalTargetsAreDeferredAndBoundToCopiedOwners()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.copy.CfirOwnedGraphCopyTest",
+          "name": "borrowedConstructorRebindingMustKeepItsConcreteKind()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.copy.CfirOwnedGraphCopyTest",
+          "name": "nestedLambdaOwnsItsReturnTargetAndRebindsCapturedParameter()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.copy.CfirOwnedGraphCopyTest",
+          "name": "nonEmptyVArrayConstantKeepsStorageShapeAndRemapsElementTypes()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.copy.CfirOwnedGraphCopyTest",
+          "name": "immutableEmptySingletonsKeepConcreteIdentity()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.copy.CfirOwnedGraphCopyTest",
+          "name": "rawThisAndInaccessibleReceiversKeepKindsAndNullableBinding()",
+          "outcome": "passed",
+          "failureMessage": null
+        }
+      ]
+    },
+    {
+      "path": "cfir/providers/build/test-results/test/TEST-org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest.xml",
+      "modifiedUtc": "2026-11-17T03:46:06.8316502Z",
+      "timestamp": "2026-11-17T03:46:06.231Z",
+      "belongsToQueueWindow": true,
+      "tests": 30,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "bytes": 5988,
+      "sha256": "FA3861E817FC2531ACB14F610B27378C1579B4D20BC025FF6AFDCB11417A2EFF",
+      "gzipBase64": "H4sIAAAAAAAACtVY0W7iRhR9j5R/oH5qH0IgZLPtCrIikLSo2QQBSaSu9mGwD3CT8Yx755oN+/XV2ECgCWWlqpi+GdvY594595wzrn98jnVpCnZkTSOolitBCSa0EZlxI7gbXB39HHw8PzyoC5y4lAQlo2I0AsvjcqjM2Nipyg4eCeVwRFxmOKunKCdspxSBXbk1Ir58TixL0yg9c+Q6Jkmlb1TiJlYGcBKUshc0glolKLknShJEjaASlEaKdMpw2Q8wW84PhWI4UXHSCE4qJ2dH1epR9f2gUvtwevahclY+qVX/CEoT6ySHe925yf/TCCrl01/eBeeHB6VSPWGbgIXgjvMTHkWo3KLKJB1qchNErUfbtrEi0095SlO4B2LcMo3J9BDbqdI//hSUQq2c+6/6MwdfOz0L3gYb2jjReO4qEbC5IOMX0bXtjZWmJuX6E2jdMSSkNH0D7wpxpfp+A2InSlLXnSiHvk05RPaUB5JJJ040hSQ9SMpmMEvQw6jjenhEKIjaKZMZt1QiKWNndVRON9ShkgRZt/uiBDGMdExXqxAviJsmumL7DeZB6affgcTl7FF6+R+3u0JqGwphWI7ge3v5TE5WK3KvStod3Oomxj/ae8WkhhqeNIuOdmL/ZEQXJFdKO+SA3YJiux+AykmwRV/mQ9uzVhYKc/lnSlOlYaSHxHfer8LuIG+aWfZy9/1U70EUGZeJJKIbG6H4rnPWTzLjT4iH4HkBnkGrPc9eHl2lJhSypgja17axJmf0ujFd05AVz9oItWLloRdCn61S2TGOItzA+UHVNnzapw5vNqY7I7ME0YWNZtckYKX31pVSE06UGSNqY6RSLb9BJ+COmwP0c3qvNEVK4HpIoASRnu0uFbwL/k3oKoDTtX8MXoKFZqxQpin9Fyp1XDMMkQgizySbSpdtbL3Lrkyr2ytXYhVDwPcIxfKLxEzRp7FRnkaFrMSmCOzIr0TLGifz/HvnsCR8yxpvRl7xC8gAtW1utDaml9H4u9JjfnfxnJEJuR5C0BTcwwgM4zPBitbkU3FnhjY1UZYeilD87aLz5i5qTv3crhZhbRmW985W16jkvaqIVm+VlznKe6VT+OTbgxd7lzO9aaIVafnfxK/Wo81Hsymiwsl+GNQS8eIpr5O5J4lP51nbs+1SKw8Pv8Igd6Y9qmM90UQwQjJbtadPEBUpUXuVE5ZK//e90/rW41WuLH5kl1FyEXFuvxrwYm/UNBl9FmGygCy5EfhX9s3MFeV2CmaK0GU48BSuuxxkxMoIhZeaxjQkTTIr3pGWbFn7Buap0lfxMmv60/vElFHW6hzy3Dz787kcKB5Dehjmp1+UZjDBQmxYJZMCYqSbOUF8ZFM5r//wudVuDpqfv3w5rx+vXFi9Ecxv3+gvHB7Uj5efy88PD/4C4zRNNmQXAAA=",
+      "testcases": [
+        {
+          "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+          "name": "publishedCjoDomainSurvivesWireOriginRemoval()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+          "name": "complexPatternBindingsDoNotAliasShellInitializer()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+          "name": "statusPhaseSourceInputWithImplicitReturnTypeRefIsRejectedDuringCapture()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+          "name": "appendingStatementInPlaceIsRejectedAndFrozenWalkKeepsOriginalStatements()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+          "name": "reorderingExistingStatementsInPlaceIsRejected()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+          "name": "cjoVariableWithOriginalImportedBitFalseRejectsSourceInitializer()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+          "name": "publishedPatternRootSurvivesEquivalentReplacement()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+          "name": "removingStatementInPlaceIsRejectedAndFrozenWalkRetainsRemovedNode()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+          "name": "replacingMemberInPlaceWithEquivalentResolvedFunctionIsRejected()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+          "name": "publishedSourceDomainSurvivesLibraryDeclarationReplacement()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+          "name": "appendingInsideNestedBlockIsRejected()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+          "name": "statusPhaseSourceInputWithUntypedBodyLiteralIsRejectedDuringCapture()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+          "name": "unchangedDefaultHelperIsCapturedAndValidatesRepeatedly()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+          "name": "publishedCjoDomainSurvivesWireOriginReplacement()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+          "name": "completeResolvedSourceInputAtStatusPhaseIsAcceptedWithoutPromotingDeclarations()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+          "name": "publishedParameterVectorSurvivesLiveSignatureReplacement()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+          "name": "simpleConstBindingUsesCapturedContainerInitializer()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+          "name": "replacingDefaultHelperEdgeIsRejectedAndFrozenWalkKeepsOriginalHelper()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+          "name": "thisReceiverReferenceIsCapturedAndSourceUnboundStateIsRejected()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+          "name": "publishedComplexPatternBindingsSurviveNestedPatternReordering()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+          "name": "appendingInsideDefaultHelperBodyIsRejected()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+          "name": "publishedDefaultValueRootRemainsFrozenAndReplacementIsRejected()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+          "name": "publishedSourceDomainSurvivesCjoOriginAttachment()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+          "name": "publishedAnalysisWalkRetainsRemovedBodyNodeAndRejectsChangedGeneration()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+          "name": "publishedDefaultHelperIdentitySurvivesLiveMetadataReplacement()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+          "name": "replacingStatementInPlaceWithEquivalentLiteralIsRejected()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+          "name": "unchangedResolvedOwnerFunctionAndBodyValidateRepeatedly()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+          "name": "writerFrozenOverridePreservesPublishedSemanticEligibility()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+          "name": "replacingReturnTypeRefWithSameResolvedTypeIsRejected()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+          "name": "frozenReturnBindingSurvivesTargetRebindingAndRejectsTheChangedGraph()",
+          "outcome": "passed",
+          "failureMessage": null
+        }
+      ]
+    },
+    {
+      "path": "cfir/providers/build/test-results/test/TEST-org.cangnova.cangjie.cfir.resolve.providers.CfirExportSourcePayloadTest.xml",
+      "modifiedUtc": "2026-11-17T03:46:06.8326563Z",
+      "timestamp": "2026-11-17T03:46:06.728Z",
+      "belongsToQueueWindow": true,
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "bytes": 1530,
+      "sha256": "1AD4516F278751B076E724EDB20CA8644F1870C7079E432A559DD6BB766C206F",
+      "gzipBase64": "H4sIAAAAAAAACsWUwU4bMRBA75HyD1uf2kOWTagCRUnQEpIKQQIKAaQiDo53sjvUGVsz3sD266slBHGAW6E322Nb73lm3Dt8XNloDSzoqK/acaIiIOMypLyvrubj1r46HDQbvQASpMQAEekV9JXjPDaacnJr/TS4R4jNEjlmEGfXEHt2a8yAJR4ukUeP3nG4dCUbuNCVdTqbgwQVPV3cV10VyW/0HrK+SlS01GhLBnmaALPjzTDgCiTole+rTtLpttrtVntvnuwefO8eJN14r7P/S0WFk7ChPDuZbs70VRInu3tq0GxEUc+z88ABQXY2CzWE0bKV00Qu6ICORhS4ujTaapaUsokOppigCFI+1AKSMozZ/QG6wVC4Mgydr5DyI8fsHiCbugzk6zcVGatF/vXLbb3aXfW2B4EEyIaOJGgKYwSbpZSN1sDVyMIKKFyDCY5fLNJcI0mYlEEvLKQWa8cP509+vMNvnsl/svbFKYCXY5SAZML54h5MkBmUAjIDDzpANoMlMJCBOlVD6wRkWBn7GQaddwyeL8wm2nuk/FrbEmawQKob7ESuUXBhoS6eKzKFphyyU6hq/nPGHEnbM5Tw8fzf3+G3uGDN1bzAmil96YsLBgFew9TRtLT2ihaupOyyWi2cledemBfsHpDycz7a+P6/NGjvLb4qkBmEutDHJZnaZpMWZ2G0BropgOYFbGMzCCWTpNv5J0pIJQFWLVeGQe/L7fA4nae3d3eD3s6rwOuNwPz2xjrQbPR2Xj7xQbPxF9wUd+L6BQAA",
+      "testcases": [
+        {
+          "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportSourcePayloadTest",
+          "name": "annotationEntryScalarsAndMatchMissingCasesAreFrozenWithoutCopyingBorrowedNodes()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportSourcePayloadTest",
+          "name": "nestedConstantFieldAndEveryElementVectorAreFrozenAgainstMutableAliases()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportSourcePayloadTest",
+          "name": "constantGraphKeepsDistinctObjectsReusesRepeatedReferencesAndClosesCycles()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportSourcePayloadTest",
+          "name": "resolvedMappingValueRebindingIsVisibleWithUnchangedKeysAndOriginalList()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportSourcePayloadTest",
+          "name": "libraryThisAndAnnotationPreserveNonNullUnboundSymbolsWithoutThrowingOrBinding()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportSourcePayloadTest",
+          "name": "appliedReferenceRetainsFunctionValueRoleEvenWhenTheFunctionReturnsAFunction()",
+          "outcome": "passed",
+          "failureMessage": null
+        }
+      ]
+    },
+    {
+      "path": "cfir/analysis-tests/build/test-results/test/TEST-org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated$Function.xml",
+      "modifiedUtc": "2026-11-17T03:47:25.4488958Z",
+      "timestamp": "2026-11-17T03:47:23.422Z",
+      "belongsToQueueWindow": true,
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "bytes": 520,
+      "sha256": "DE3841C74665BAA7A5DE621A79B5A05F134E71133CBBAC61330850DD2FC1CAB0",
+      "gzipBase64": "H4sIAAAAAAAACrVRwWrCQBC9B/IP26GH9pA1ibYWSSKiWApSPKSXioclTuy2yW6Y2Uj9+2KixUOvvb037z14M5NMv+tKHJBYW5NCJEMQaAq702afwlu+DJ5gmvle4pAdt9qhMKrGFCztZaHM3tiD6sCnRlmUmqQyqjqyZtlF5LzUNDuPVqt8zTpHds9okJTD3e2yNYXT1oDo/ClEIPhLNw3uUghBlEpXLSF3BIks9dDpGtmpukkhDuPHIIqCaJyHw8loPImHchTH7yA+LLu+7+rltc+kEMph+ACZ7wmRNGQbJKeRB/3gVKJQfFnzRBdYqrZya0WqRoc0iu7uQRSVYv6/W1w1PTfjIzusA9u6LLnZzBezfLbZbrNkcCVcG5Hob+NJ8L1k8PvSzPd+AMnvvzIIAgAA",
+      "testcases": [
+        {
+          "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated$Function",
+          "name": "testDefaultParameter41()",
+          "outcome": "passed",
+          "failureMessage": null
+        }
+      ]
+    },
+    {
+      "path": "cfir/analysis-tests/build/test-results/test/TEST-org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated$Function.xml",
+      "modifiedUtc": "2026-11-17T03:47:25.4504014Z",
+      "timestamp": "2026-11-17T03:47:23.731Z",
+      "belongsToQueueWindow": true,
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "bytes": 514,
+      "sha256": "83005BB36502330270C78DE177A10374D0515EFF86F76E06DD397623126752EB",
+      "gzipBase64": "H4sIAAAAAAAACrVRwWrCQBC9B/IP26GH9pA1q2JEshFRLAUpPaSXioclTuy2yW7Y2Uj9+2JixUOvvb037z14M5POv+uKHdGRtkaC4DEwNIXda3OQ8JavoynMszBIPZKnVntkRtUowboDL5Q5GHtUHfjUyItSO66Mqk6kiXcRviy1W1xGm02eI/knNOiUx/39ujWF19YA68wSBDD60k2DewkxsFLpqnVIHUHnrOuh1zWSV3UjYRgPJ5EQkUjyeDQbJ7PhiCcj8Q7sw5Lvy26eX/qMhJiLyRSyMGAsbZxt0HmNNOgH5xKFot8dz3SFpWor/6qcqtGjG4uHR2BFpYj+6RDXmglcatGJPNaRbX2W3m2Xq0W+2O52WTq4EW6N6NzfxrMQBung+swsDH4AQXLuSAICAAA=",
+      "testcases": [
+        {
+          "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated$Function",
+          "name": "testDefaultParameter41()",
+          "outcome": "passed",
+          "failureMessage": null
+        }
+      ]
+    },
+    {
+      "path": "cfir/analysis-tests/build/test-results/test/TEST-org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoLightTreeTest.xml",
+      "modifiedUtc": "2026-11-17T03:47:25.4609170Z",
+      "timestamp": "2026-11-17T03:47:10.018Z",
+      "belongsToQueueWindow": true,
+      "tests": 2,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0,
+      "bytes": 5304,
+      "sha256": "50D512183BAED2A62451F21A94C35F6958D734C8EAAC55F560A84F2B52D677B4",
+      "gzipBase64": "H4sIAAAAAAAACuVYS28bNxA+x4D/A7sxHBmoqV1JtmRZcqDKduLAL/hxaeADtTuSaHHJBclV7XPgBGkeBYpcUhRNc2ovbQ49NG3j5M9YjX3KXyi4KzmOK78fCZDbcobz5KeZ0RSur/kMNUEqKnjRcrBtIeCu8CivFa3lpcnBnHV9rLenoEFpFVINiBMfipaQNewSXuOiSaKPVQrYrVKJCSdsXVGFIxFcrlJZXvWDRS0keDPgV0BOcaUJ15RoKnh5VUzTWl0vSYAlUNpCkWDRSllINWgQgFe0bAtVCWWhBFW0HAuBlEKqiK6pD0oTPyhaKTs1POg4g052yU7nM9m8Y2PbyX1tobpQOnZ8emo2lilaw9gezlljvT0IFQIpApCagkrGBOOES1Qn3iCsMOpOcQ2ySlwYhyoJmf5KeOvzUvhCg1qAKkjgLnjzkjaJhsmQuybAxICFXEaUuoTMRXFl8IgzFMeFUKGdN+SDUqTWdkAEwI2VzCqeCZmmAYPJdn4nTGrzqENGHTpKpHbfYKD/qpMe7b/q2KP9V0dG92ksKWVSKbgRBa+t0JO0CTLZ+vbn7c3NZOvu09a9v3eePN1+8WLr5aPtO5utu9+3Nja2X/y29df91nePtl4/ePfqh9uJiYWFuYUvUZlwLjQKpPBCFxCjTUDlW3PIB008okkeVYS3jkQVXWsSFsI1RBUyEhICCQq4JhUGiHKk67EkrBmGwT0KhGADK6hY7K/pUcMAV4OXR/1Mj2oZQkSuhBp9Q1RMrRKmIvIpEtF6/Aw5KVSla9q8y86dzdabjZ3n//x7/5ft5w/R4tzyQnkCbb18/PbHZ63ffzLOvnv10CTpzz+239xDs3OzE8kgxhh6++TXrdcPurvu/N9v25AspNeDYwLBGjsPuPT2XPmMMXLc6D86MHp7rhCNuhYo4zhWIJvUBYWpHzB8a5lTPbQbisLmuUuMJdrF8T1nMZbDDZ13huyBo8yYWrYQcg4SSwiE1B1MJfZwGjo/lDlS1azgN6QIA8pre7WG3JzmaQCMckh0v9XQ+Wz6bBYO1py2z6a5z4uTfLCFVPZICzK6rHCporQkri7HzLLwA8pAGn27kRx2p6HzuZHDrHVrb7sKj9HmOp5MrBk43JAkqJeJgsSxZQ3yhrMX7uJZpoQTxZJx2rGskibBFaIgGX0xwmtYQpWBq/EM6LrwMOVN0YBE+2Su5Ydydnf5UFOGS1KS9WmqNK4KOUHceuI9JRJ3hkaGz0N+MQyi+mrq0ufdH04Ey8MQcpNwj4HEJMrfOCU1LpSmrjoRvrLZCB/n7pVbB7ex50d8IqcymeyFOBVI4YJSM8IL2clKSiquep+SR0c83G5/XdQQ9O3pHdG5bV+Zwz4nOjJx9cldghEnKhGnaZEfKj2wQTrDqdNaqBO3YUr6sczEE8+ZA+ljxK94pM9JH2IrHiuOP16FvDMEzfFFymsMzFC3b84ayV30S6RO/dYy5AYx6mDlI1GrvNgxMQYSxhjlkC8knKa3fQrT/0VVslJVgywxFgPhZL0obecuDhyObX8MdBSS7b/G8a4p2Vk2dV09yf0j43g8Vt4EFoCcUmXBzLgH3lyoFfWgbHZNZua89MWTg+1U2mov0NS60uAPilCPFb64XR4vLZVur6yMFZJ7GHsvgpTdLxqGSdnuCnKst+c/QQa3prgUAAA=",
+      "testcases": [
+        {
+          "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoLightTreeTest",
+          "name": "publicInterfaceDefaultBodyPromotesReferencedPrivateFunction()",
+          "outcome": "failed",
+          "failureMessage": "org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)\r\n\torg.opentest4j.AssertionFailedError: driver/加载/写出错误不能冒充语义反例：[(ERROR, Cannot produce live CJO metadata: body of 'value' is not representable in the CJO expression pool)] ==> expected: <true> but was: <false>\r\n\torg.opentest4j.AssertionFailedError: 原 12 fixture 都必须执行 SOURCE 与真实 CJO，不跳过 NONE/private 用例 ==> expected: <1> but was: <0>"
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoLightTreeTest",
+          "name": "referencedPrivateDefaultHelperIsCollectedOutsideClassBody()",
+          "outcome": "passed",
+          "failureMessage": null
+        }
+      ]
+    },
+    {
+      "path": "cfir/analysis-tests/build/test-results/test/TEST-org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoTest.xml",
+      "modifiedUtc": "2026-11-17T03:47:25.4373857Z",
+      "timestamp": "2026-11-17T03:47:16.088Z",
+      "belongsToQueueWindow": true,
+      "tests": 2,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0,
+      "bytes": 5533,
+      "sha256": "8CE5D6439DC2EBCE5CE0F6612CC82E3E9B748CA2BBF26945001DD3CAF45103E3",
+      "gzipBase64": "H4sIAAAAAAAACuVYzW8TRxQ/Eyn/w3SJEkdqxl4nsR0nDnJNgCCSICeoUhGH8e6zPfHszGrmrRufESDKR6WKC1VVyqm9tBx6KG0J/DNxCSf+hWp2nY+m+Q4BJC7W7pt5n/Pze7+dqXMrgSBt0IYrWXJcmnEISE/5XDZKzrWlCyMF59x0f98UgkETcQQiWQAlR+kG9ZhsSNVm8cMyB+rVuaZMMtEx3NBYhVbqXFeWg3ARlQZ/DoIa6FlpkEnkDLmSlWW1BAYdEu8vOVmHmBYPQ/BLTsYhdcZFpMGUHNchoLXSJpYjD8AgC8KSk81kcyOuO+LmlzKjxbF80c3RTKHwlUOaymAS75XZ+UTHJjmWc6b7+wiZCrUKQSMHk04ENgaPmY0sw6gmuDcrEXSdeXAe6iwS+IXyO1e1ChSCqUIdNEgP/KuatxnChUh6Nq3UsEM8wYw5vXrF2WRoIUmGkKlerUgAxrBGz6sKQVrTY8t0LhLIQwEXejWdseUskg0x2ZCTVHaz7sODZ93RycGzbmZy8OzE5A6LZWNs/ZS0quD3DPqat0Gnu9/8tL66mu7efty989ebR4/Xnz1be/5g/eZq9/Z33Vu31p/9uvbn3e63D9Ze3nv74vvrqZlqdaH6OakwKRWSUCs/8oAI3gZSubxAAkDmM2RFUlN+h6g6GWozEcEQ4YZYDQ2hBgMSWU0A4ZJgM9GEFbtgIU5CpcTwDVIqDTZw0i6Ah+AXyaDASdQRxOJahORrZhJpnQkTi49RiO7DJ8TNkjpfQXsub26udl/devP073/u/rz+9D5ZXLhWrcyQtecPX//wpPvbjzbYty/u2yL98fv6qztkfmF+Jh0mwCKvH/2y9vLe7qG7/487Y0UOwU54SCA40+8CLv19Zz5hjBw2+w8OjP6+MwzJrl3JBk4N6Db3wFAehIJeviY5jm+mYqg97rIQqV5H3FpZTPRoC4vueGb4IDe2k1UjKUFTDaHSuIGp1LaVFhbHxw40Na/kRa2ikMvGdquRtG9XeQiCS0jtvquFxfzoyTzsbXk0czLLA35S5L09ZPMHetDxZkPLNYOaeVhJFisqCLkAbe1tZrLfnhYWCxP7edttpm0aPORss5HMrFg4XNQsbFaYgdShdS3ycvlTD/Ek1OBIuYy5vVyWWZvRGjOQjp8Ekw2qoS7AQzoH2FQ+5bKtWpDqvdltxfFCZnf9CLmgZa1Z5wo3SOtKzzCvmdqSxOru+ETuXegvRmHcX21f+rTnw5FguR9CLjHpC9CUxfU7z1lDKoPcM0fCVz4f4+OdR+U1wWtt+xMfKaixsfypBBVq5YExc8qPxNFaSjbpeh9TRAcc3OZ8XUQIB7bNjvi959/Ylx1BbOgk3afwHpy4cYs4zoj8r9E9B6Sbyx7XQ5N5LdvSD+UmYTwnTmRAsKDmswF3dB9fCa04PL2K5AYJWpCLXDYEWFK3g2dNFE77JLLHPmsdSYsYs7fxiXhUni5NTIBEKSUFEigNx5ltHwP7P61OVq4j6LIQCRCONotGM4XTA4ebyXwIdEyle5/GyQVTeuOGadf7Jr2TMvZo5SUQIehZU1HC0j3wFyI03IeKvWCynPP93TblxgtO77LMdAxCMKIinJ767HrlfHmpfP3Gjemp9LaF7RtB662NX5ar80VSRoQgRIKKCMV80oIOGQoNp0YAhJRL2maC+xw7CaEYInWlY6LWAYxVwCcaGtyg7vT3HWCUS09DYMmdsJ+bTBugPoTYpIIHHI9vnPtAm/YHVjwR+eDTOhdgDjC4vVa2NhYsm/es0/19/wJ5TwvCnRUAAA==",
+      "testcases": [
+        {
+          "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoTest",
+          "name": "publicInterfaceDefaultBodyPromotesReferencedPrivateFunction()",
+          "outcome": "failed",
+          "failureMessage": "org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)\r\n\torg.opentest4j.AssertionFailedError: driver/加载/写出错误不能冒充语义反例：[(ERROR, Cannot produce live CJO metadata: body of 'value' is not representable in the CJO expression pool)] ==> expected: <true> but was: <false>\r\n\torg.opentest4j.AssertionFailedError: 原 12 fixture 都必须执行 SOURCE 与真实 CJO，不跳过 NONE/private 用例 ==> expected: <1> but was: <0>"
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoTest",
+          "name": "referencedPrivateDefaultHelperIsCollectedOutsideClassBody()",
+          "outcome": "passed",
+          "failureMessage": null
+        }
+      ]
+    },
+    {
+      "path": "cfir/analysis-tests/build/test-results/test/TEST-org.cangnova.cangjie.cfir.analysis.tests.CfirDeclarationOwnerTest.xml",
+      "modifiedUtc": "2026-11-17T03:47:25.4584127Z",
+      "timestamp": "2026-11-17T03:47:23.906Z",
+      "belongsToQueueWindow": true,
+      "tests": 18,
+      "failures": 4,
+      "errors": 0,
+      "skipped": 0,
+      "bytes": 28872,
+      "sha256": "070C22040C1B0EDAE28658893A1F3CA4F5EAB7178374C6D2668366180E09A6DC",
+      "gzipBase64": "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",
+      "testcases": [
+        {
+          "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirDeclarationOwnerTest",
+          "name": "psiDefaultHelpersS1BorrowedLexicalGenerics()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirDeclarationOwnerTest",
+          "name": "psiDefaultHelpersS1ConstructorsAndReceivers()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirDeclarationOwnerTest",
+          "name": "psiDefaultHelpersS1OwnGenericsAndBounds()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirDeclarationOwnerTest",
+          "name": "psiDefaultHelpersS1NestedScopes()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirDeclarationOwnerTest",
+          "name": "psiDefaultHelperLifecycle()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirDeclarationOwnerTest",
+          "name": "psiDefaultHelpersPhaseLateSignatureBodyGraphPhase()",
+          "outcome": "failed",
+          "failureMessage": "junit.framework.AssertionFailedError: expected:<5> but was:<6>"
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirDeclarationOwnerTest",
+          "name": "lightTreeDefaultHelperOuterShadow()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirDeclarationOwnerTest",
+          "name": "lightTreeDefaultHelpersS1PrecedingParameters()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirDeclarationOwnerTest",
+          "name": "lightTreeDefaultHelperLifecycle()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirDeclarationOwnerTest",
+          "name": "lightTreeDefaultHelpersS1ConstructorsAndReceivers()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirDeclarationOwnerTest",
+          "name": "lightTreeDefaultHelpersS1NestedScopes()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirDeclarationOwnerTest",
+          "name": "lightTreeDefaultHelpersS1BorrowedLexicalGenerics()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirDeclarationOwnerTest",
+          "name": "lightTreeDefaultHelpersPhaseCommittedOblPclaLambdas()",
+          "outcome": "failed",
+          "failureMessage": "org.cangnova.cangjie.util.SourceCodeAnalysisException: java.lang.IllegalStateException: Required value was null."
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirDeclarationOwnerTest",
+          "name": "psiDefaultHelpersPhaseCommittedOblPclaLambdas()",
+          "outcome": "failed",
+          "failureMessage": "org.cangnova.cangjie.util.SourceCodeAnalysisException: java.lang.IllegalStateException: Required value was null."
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirDeclarationOwnerTest",
+          "name": "psiDefaultHelperOuterShadow()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirDeclarationOwnerTest",
+          "name": "psiDefaultHelpersS1PrecedingParameters()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirDeclarationOwnerTest",
+          "name": "lightTreeDefaultHelpersS1OwnGenericsAndBounds()",
+          "outcome": "passed",
+          "failureMessage": null
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirDeclarationOwnerTest",
+          "name": "lightTreeDefaultHelpersPhaseLateSignatureBodyGraphPhase()",
+          "outcome": "failed",
+          "failureMessage": "junit.framework.AssertionFailedError: expected:<5> but was:<6>"
+        }
+      ]
+    },
+    {
+      "path": "cfir/analysis-tests/build/test-results/test/TEST-org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportLightTreeTest.xml",
+      "modifiedUtc": "2026-11-17T03:47:25.4438960Z",
+      "timestamp": "2026-11-17T03:47:17.549Z",
+      "belongsToQueueWindow": true,
+      "tests": 5,
+      "failures": 4,
+      "errors": 0,
+      "skipped": 0,
+      "bytes": 16741,
+      "sha256": "C83F911516746333DCFB62A402FF3A360448627C7287A6324AA623E0FCE7C7B2",
+      "gzipBase64": "H4sIAAAAAAAACu2czW8TRxTAz0TK/zBdouBIzWTXX7EdO8gySQsCguxwKeIw2X12Jh7PrGZmTXIvbaXSD1W9tKqKUC8VUumhh6JSlf+lIgFO/Req2bVDGpzEDcQh1ty88/E+5j29tz+v1+WLmx2GuiAVFbzieNh1EHBfBJS3Ks7N1eXZgnNxcXKirEFpFVENiJMOVBwhW9gnvMVFl8QfNihgv0klJpywLUUVjrfgWpPKhoikD0uboQRlFC1thkLqq7S1rlclwCoo7aB4ecXJOUi1aRhCUHFcBzUJZZEEVXGyDgIphVTxuKYdUJp0woqTdtP5Wc+b9eZX3UwpO1/y5nEuW/zIQetC6cTcq5evJ3sqTgZ7mayzODmBUDmUIgSpKai5ZMAY4RPV99IXXEvBlpm4k5pxkM+IUifmf2ydi/O5nnUIlXveow4oRVo9tSIEbmRnN/C1iGkaMljundKSOaAS6g+j/jhKpXdPcmb6vJdZmD7vuQvT54sL+yRWlTIHIrjZCkFPYGqpXl+pv49qhHOhUShFEPmAGO0Cql1ZQR3QJCCalNCaCLaQaKILdwhrX0BUIbNBgnEduCZrDBDlSK8nG2H3TFAoBJtBlcp0Sy+YcfA1BCU0zfRCkzAF8fhapNEdopJhLaN49BgO7fz61bPHD7e/vP/82/s7v/z07K/Pt5/effngyfajH19+d3f70b2dz75GjZWb9drS3598U7uy8s+f9549/uLF77+9ePrpzg8Pt5/8sfPzg+fff4wu1wfb7L1ur2uGHKS3wiEj6Sy+jXhPTpwbgyAP68XpRXZy4hzRaGBhMBZjBbJLfVCYdkKGr9zkVOd2fVDYxKvKWOoSNEnE9KuZRrIPt3XJy7kzR6kx1aQecQ4SSzB1pp8UqT0zbV3KZY8UdV3wD6SIQspbe6VG3FzdoCEwyiE1eFVbl+Yzb6bhYMkZ980kTwXJIR+sIT1/pAYZL1a4uqa0JL6uJZM10QkpA2nk7Xpy2Jq2LhWKh2kb1FZ2BR7YXvr6a0RB6ohlJrXSJ2XD3iY6hB1uvmfHBukSvEYUzMWfGOEtLKHJwNf4Guh1EWDKu6INqd6VWVbKFdzB+yNNGa5KSbauUqVxU8gl4q+nXo3E271cMf829jeiMPbPFI3xqL7/KzX2x7i2IT4kPGAgcSiFD0pdE0HEhknMTCE3c5rqk5J7dM1taAin9tST+LqnVZmLfar7e+KkzxZGoMSLM/M4ZfO/Qg8sml4+fVwN68Rvb90YUs0wIRnCkSlGOmsBmfIyh+hKWs3wLTfi/ca4whuUtxiYRr+v9xYLJx2J9LFjLSNuMkYdLLzovYHsIW8dkkTCGKMC6ggJxympp3or+JbrVbWpQVYZSwKvhihcWXf+5FLAc93TyIHyXI9qElqf6+P6QHg3aE+0kKomeO8bDjUyii8UvXGgeJ8wP2JEg0X5MUf5UUfa8rzlecvzZ5HnB/bVYcC+b5AF+3evFlu6t3Rv6d7SvaV7S/dngu4D8BmRJH5CViOMjQ7tc15hHNAeuoRFluzH/yH9iANtwd6CvQX7swj2r7fUYai+/yMPS/XvXB22UG+h3kK9hXoL9RbqzwTUw6YPYXz/UQcV33eMDuuz+bH43b0EX3RB2uf1Y071o42zhXoL9RbqzyLUD2qpQ9jjxZ3cYv07WIgt1Vuqt1Rvqd5SvaX6M0H1QtIW5YS9erOVtngHuF4mvlZVHiyb2QaYN/uo4KN7097NO733/tWW0tCZFZFeLL93q3apulq9dfv2Ynluz8TehSDl4IVmwhzP7v8lLE5O/AtHAA39ZUEAAA==",
+      "testcases": [
+        {
+          "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportLightTreeTest",
+          "name": "controlFlow()",
+          "outcome": "failed",
+          "failureMessage": "org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)\r\n\torg.opentest4j.AssertionFailedError: (ERROR, Cannot produce live CJO metadata: body of 'walk' is not representable in the CJO expression pool) ==> expected: <false> but was: <true>\r\n\torg.opentest4j.AssertionFailedError: 每个原生正例必须实际完成 SOURCE→CJO，不跳过未建模的 IR ==> expected: <1> but was: <0>"
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportLightTreeTest",
+          "name": "operatorsConversions()",
+          "outcome": "failed",
+          "failureMessage": "org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)\r\n\torg.opentest4j.AssertionFailedError: (ERROR, Cannot produce live CJO metadata: body of 'calculate' is not representable in the CJO expression pool) ==> expected: <false> but was: <true>\r\n\torg.opentest4j.AssertionFailedError: 每个原生正例必须实际完成 SOURCE→CJO，不跳过未建模的 IR ==> expected: <1> but was: <0>"
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportLightTreeTest",
+          "name": "declarationsCalls()",
+          "outcome": "failed",
+          "failureMessage": "org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)\r\n\torg.opentest4j.AssertionFailedError: (ERROR, Cannot produce live CJO metadata: body of 'evaluate' is not representable in the CJO expression pool) ==> expected: <false> but was: <true>\r\n\torg.opentest4j.AssertionFailedError: 每个原生正例必须实际完成 SOURCE→CJO，不跳过未建模的 IR ==> expected: <1> but was: <0>"
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportLightTreeTest",
+          "name": "exceptionsResources()",
+          "outcome": "failed",
+          "failureMessage": "org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)\r\n\torg.opentest4j.AssertionFailedError: (ERROR, Cannot produce live CJO metadata: body of 'recover' is not representable in the CJO expression pool) ==> expected: <false> but was: <true>\r\n\torg.opentest4j.AssertionFailedError: 每个原生正例必须实际完成 SOURCE→CJO，不跳过未建模的 IR ==> expected: <1> but was: <0>"
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportLightTreeTest",
+          "name": "originalDefaultAssignmentFactsAndFinalSelection()",
+          "outcome": "passed",
+          "failureMessage": null
+        }
+      ]
+    },
+    {
+      "path": "cfir/analysis-tests/build/test-results/test/TEST-org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportTest.xml",
+      "modifiedUtc": "2026-11-17T03:47:25.4488958Z",
+      "timestamp": "2026-11-17T03:47:20.684Z",
+      "belongsToQueueWindow": true,
+      "tests": 5,
+      "failures": 4,
+      "errors": 0,
+      "skipped": 0,
+      "bytes": 16687,
+      "sha256": "D0BCD968B47C2D367490D3D0DC040280F97D51453629E095347B7527455D4CEC",
+      "gzipBase64": "H4sIAAAAAAAACu2czU8bRxTAz0Hif5huEDFSGXb9gY2xiSwH2kRJiGxyaZTDsPtsBo9nVjOzDtybtlLTD1W9tKoaRb1UkZoeemjUVM3/UgWSnPovVLNrE0oMuIAhWHPzzsf7mPf03v68Xpcub7QZ6oBUVPCy42HXQcB9EVDeLDu3V5amC87lhfGxkgalVUQ1IE7aUHaEbGKf8CYXHRJ/WKeA/QaVmHDCNhVVON6Cqw0q6yKSPixuhBKUUbS4EQqpV0BpB8Wryk7OQapFwxCCsuM6qEEoiySospN1EEgppIrHNW2D0qQdlp20m56d9rxpL7/iZorZfDHt4tlC9iMHrQmlEyuvX72Z7Ck7aZzPZJyF8TGESqEUIUhNQc0kA8YIn6iec77gWgq2xMS91JSDfEaUOmm3Y6NcnMulE6MQKnWdRm1QijS72kQI3IjMruMbEdM0ZLDUPZxFcy5F1BtGvXGUSu8c4NTkRS8zP3nRc+cnL87N75FYUcqcg+BmKwRdganFWm259j6qEs6FRqEUQeQDYrQDqHptGbVBk4BoUkSrIthEooEu3SOsdQlRhcwGCcZj4JqsMkCUI72WbISdo0ChEGwKlcuTTT1vxsHXEBTRJNPzDcIUxOOrkUb3iEqGtYzi0SM4tP3rVy+ePt768uHLbx9u//LTi78+33p+//WjZ1tPfnz93f2tJw+2P/sa1Zdv16qLf3/yTfXa8j9/Pnjx9ItXv//26vmn2z883nr2x/bPj15+/zG6Wutvs/e2va4ZcpDeDAeMpLNwEvEeH7swAkEe1Iuzi+z42AWiUd96YCzGCmSH+qAwbYcMX7vNqc7t+KCwiVeFsdQVaJCI6Tcz9WQfbumil3OnDlNjqkkt4hwklmDKSy8pUrtmWrqYyx4q6qbgH0gRhZQ3d0uNuLm6RUNglEOq/6qWLuYzx9Owv+SMezzJE0FyyPtrSOcP1SDjxQpXVpWWxNfVZLIq2iFlII28HU8OWtPSxcLcQdr6dZMdgQd2FaO/ShSkDllmUis9LBt2984B7HBnu3askw7Bq0TBTPyJEd7EEhoMfI1vgF4TAaa8I1qQ6l6ZZcVcwe2/P9KU4YqUZPM6VRo3hFwk/lrqzUi83cvNzZ7E/noUxv6ZojEa1fd/pcbeGFfXxYeEBwwkDqXwQakbIojYIImZKeSmzlJ9UnIPr7l1DeHErnoSX3e1KnOxR3VvT5z02cIpKPHizDxK2fyv0H2LpjebPqqGNeK3Nm8NqGaQkAzgyAQj7dWATHiZA3QlrWbwlhvxXmNc5nXKmwxMo9/Te+cKw45E+sixlhE3GaP2Fz7nHUP2gLcOSSJhjFEBtYWEo5TUM70VPOF6VWlokBXGksCrAQpX1s0PLwU81z2LHCjNdKkmgfSZHqX3ZXZD9EQLqaqCd7/PUMOG99k5bxTg3SfMjxjRYAl+xAn+tCNtMd5ivMX484jxfdvpIDzfM8jy/LtXiy3UW6i3UG+h3kK9hfpzAfUB+IxIEj8YqxLGhk702UxuFIgeOoRFFuhH/5H8KQfa8rzlecvz55Hn3+6kg8B87ycdFubfuTpsWd6yvGV5y/KW5S3LnwuWhw0fwvj+owYqvu8YPs3nR+LH9RJ80QFpn86POMyfbpwty1uWtyx/Hlm+XycdwB4vbuCW5t/BQmxh3sK8hXkL8xbmLcyfC5gXkjYpJ+zN66u0ydvA9RLxtarwYMnM1sG8vkcFH/pb9AXP6b7KrzaVhva0iPRC6b071SuVlcqdu3cXSjO7JnYvBCn7LzQT5lR2/vlgYXzsX8njcC4vQQAA",
+      "testcases": [
+        {
+          "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportTest",
+          "name": "controlFlow()",
+          "outcome": "failed",
+          "failureMessage": "org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)\r\n\torg.opentest4j.AssertionFailedError: (ERROR, Cannot produce live CJO metadata: body of 'walk' is not representable in the CJO expression pool) ==> expected: <false> but was: <true>\r\n\torg.opentest4j.AssertionFailedError: 每个原生正例必须实际完成 SOURCE→CJO，不跳过未建模的 IR ==> expected: <1> but was: <0>"
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportTest",
+          "name": "operatorsConversions()",
+          "outcome": "failed",
+          "failureMessage": "org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)\r\n\torg.opentest4j.AssertionFailedError: (ERROR, Cannot produce live CJO metadata: body of 'calculate' is not representable in the CJO expression pool) ==> expected: <false> but was: <true>\r\n\torg.opentest4j.AssertionFailedError: 每个原生正例必须实际完成 SOURCE→CJO，不跳过未建模的 IR ==> expected: <1> but was: <0>"
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportTest",
+          "name": "declarationsCalls()",
+          "outcome": "failed",
+          "failureMessage": "org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)\r\n\torg.opentest4j.AssertionFailedError: (ERROR, Cannot produce live CJO metadata: body of 'evaluate' is not representable in the CJO expression pool) ==> expected: <false> but was: <true>\r\n\torg.opentest4j.AssertionFailedError: 每个原生正例必须实际完成 SOURCE→CJO，不跳过未建模的 IR ==> expected: <1> but was: <0>"
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportTest",
+          "name": "exceptionsResources()",
+          "outcome": "failed",
+          "failureMessage": "org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)\r\n\torg.opentest4j.AssertionFailedError: (ERROR, Cannot produce live CJO metadata: body of 'recover' is not representable in the CJO expression pool) ==> expected: <false> but was: <true>\r\n\torg.opentest4j.AssertionFailedError: 每个原生正例必须实际完成 SOURCE→CJO，不跳过未建模的 IR ==> expected: <1> but was: <0>"
+        },
+        {
+          "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportTest",
+          "name": "originalDefaultAssignmentFactsAndFinalSelection()",
+          "outcome": "passed",
+          "failureMessage": null
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "tests": 89,
+    "failures": 14,
+    "errors": 0,
+    "skipped": 0,
+    "bytes": 85125,
+    "passed": 75,
+    "xmlCount": 10,
+    "allXmlBelongToQueueWindow": true
+  }
+}

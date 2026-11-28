@@ -12,6 +12,7 @@ import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.expressions.builder.*
 import org.cangnova.cangjie.cfir.patterns.builder.buildCatchPattern
+import org.cangnova.cangjie.cfir.patterns.builder.buildWildcardPattern
 import org.cangnova.cangjie.cfir.references.builder.buildResolvedNamedReference
 import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures
 import org.cangnova.cangjie.cfir.resolve.dfa.CfirControlFlowGraphReferenceImpl
@@ -43,7 +44,7 @@ class CfirIfCfgSemanticsTest {
         f.start(); val condition = f.begin(e)
         val thrown = f.b.exitThrowExceptionNode(f.thrown())
         val thenExit = f.endThen(e)
-        val exit = f.b.exitIfExpression(e, true)
+        val exit = f.b.exitIfExpression(e, true).value
         val tail = f.emit(f.call())
         f.finish()
         assertTrue(thenExit.isDead)
@@ -60,7 +61,7 @@ class CfirIfCfgSemanticsTest {
         val f = Fixture(); val e = f.control(); val statement = f.returnTo(f.owner)
         f.start(); val condition = f.begin(e)
         f.b.enterJump(statement); val jump = f.b.exitJump(statement)
-        f.endThen(e); val exit = f.b.exitIfExpression(e, true)
+        f.endThen(e); val exit = f.b.exitIfExpression(e, true).value
         val tail = f.emit(f.call()); val graph = f.finish()
         assertFalse(exit.isDead)
         assertFalse(tail.isDead)
@@ -77,7 +78,7 @@ class CfirIfCfgSemanticsTest {
         f.start(); f.begin(e)
         f.b.enterJump(left); val l = f.b.exitJump(left); f.endThen(e)
         f.beginElse(e); f.b.enterJump(right); val r = f.b.exitJump(right); f.endElse(e)
-        val exit = f.b.exitIfExpression(e, true); val tail = f.emit(f.call()); val graph = f.finish()
+        val exit = f.b.exitIfExpression(e, true).value; val tail = f.emit(f.call()); val graph = f.finish()
         assertTrue(exit.isDead)
         assertTrue(tail.isDead)
         assertFalse(reachable(graph.enterNode, tail))
@@ -93,7 +94,7 @@ class CfirIfCfgSemanticsTest {
         val left = f.emit(f.call()); val leftExit = f.endThen(e)
         val elseEnter = f.beginElse(e)
         val right = f.emit(f.call()); f.endElse(e)
-        val exit = f.b.exitIfExpression(e, true); f.finish()
+        val exit = f.b.exitIfExpression(e, true).value; f.finish()
         assertSame(condition, elseEnter.previousNodes.single())
         assertSame(IfBranchFalse, condition.edgeTo(elseEnter).label)
         assertFalse(reachable(leftExit, right))
@@ -107,9 +108,9 @@ class CfirIfCfgSemanticsTest {
         f.start(); f.begin(outer); f.b.exitThrowExceptionNode(f.thrown()); f.endThen(outer)
         f.b.enterIfElseBranch(outer); f.begin(inner)
         f.b.exitThrowExceptionNode(f.thrown()); f.endThen(inner)
-        val innerExit = f.b.exitIfExpression(inner, true)
+        val innerExit = f.b.exitIfExpression(inner, true).value
         f.b.exitIfBranchResult(outer, false)
-        val outerExit = f.b.exitIfExpression(outer, true)
+        val outerExit = f.b.exitIfExpression(outer, true).value
         val tail = f.emit(f.call()); val graph = f.finish()
         assertSame(inner, outer.elseBranch)
         assertFalse(innerExit.isDead); assertFalse(outerExit.isDead); assertFalse(tail.isDead)
@@ -125,7 +126,7 @@ class CfirIfCfgSemanticsTest {
             val (condition, thenEnter) = f.b.exitIfCondition(e); f.b.enterBlock(e.thenBranch)
             val left = f.emit(f.call()); f.endThen(e)
             val elseEnter = f.beginElse(e); val right = f.emit(f.call()); f.endElse(e)
-            val exit = f.b.exitIfExpression(e, true); f.finish()
+            val exit = f.b.exitIfExpression(e, true).value; f.finish()
             assertSame(IfBranchTrue, condition.edgeTo(thenEnter).label)
             assertSame(IfBranchFalse, condition.edgeTo(elseEnter).label)
             assertEquals(!selected, left.isDead)
@@ -138,7 +139,12 @@ class CfirIfCfgSemanticsTest {
     fun conditionalThrowHasNormalAndCaughtCompletionThroughItsRealFinally() {
         val f = Fixture(); val e = f.control()
         val caught = buildCatch {
-            pattern = buildCatchPattern { isWildcard = true; typeRefs.add(f.exceptionType.toCfirResolvedTypeRef()); resolvedTypeRef = f.exceptionType.toCfirResolvedTypeRef() }
+            pattern = buildCatchPattern {
+                val exceptionTypeRef = f.exceptionType.toCfirResolvedTypeRef()
+                nestedPattern = buildWildcardPattern { semanticTypeRef = exceptionTypeRef }
+                typeRefs += exceptionTypeRef
+                semanticTypeRef = exceptionTypeRef
+            }
             body = buildBlock {}
         }
         val t = buildTryExpression { tryBlock = buildBlock { statements.add(e) }; catches.add(caught); finallyBlock = buildBlock {} }
@@ -190,8 +196,8 @@ class CfirIfCfgSemanticsTest {
         val copiedOuter = copier[outerCondition]; val copiedInner = copier[innerCondition]
         copier.finish(); f.b = copy
         f.b.exitThrowExceptionNode(f.thrown()); f.endThen(inner)
-        val innerExit = f.b.exitIfExpression(inner, true); f.endThen(outer)
-        val outerExit = f.b.exitIfExpression(outer, true)
+        val innerExit = f.b.exitIfExpression(inner, true).value; f.endThen(outer)
+        val outerExit = f.b.exitIfExpression(outer, true).value
         val tail = f.emit(f.call()); val graph = f.finish()
         assertNotSame(before, graph)
         assertSame(graph, copiedOuter.owner); assertSame(graph, copiedInner.owner)
@@ -210,7 +216,7 @@ class CfirIfCfgSemanticsTest {
         f.start(); f.b.enterWhileLoop(loop); f.emit(loop.condition as CfirFunctionCall)
         val (_, block) = f.b.exitWhileLoopCondition(loop); f.b.enterBlock(loop.body)
         f.begin(e); val jump = f.b.exitJump(statement); f.endThen(e)
-        val exit = f.b.exitIfExpression(e, true); val tail = f.emit(f.call())
+        val exit = f.b.exitIfExpression(e, true).value; val tail = f.emit(f.call())
         f.b.exitBlock(loop.body); val (condition, _, _) = f.b.exitWhileLoop(loop); f.finish()
         assertTrue(jump.edgeTo(condition).kind.isBack)
         assertFalse(jump.edgeTo(condition).kind.isDead)
@@ -224,7 +230,7 @@ class CfirIfCfgSemanticsTest {
         f.start(); val condition = f.begin(e)
         f.emit(call, false); f.endThen(e)
         call.replaceConeTypeOrNull(ConePrimitiveType.NOTHING)
-        val exit = f.b.exitIfExpression(e, false); val tail = f.emit(f.call()); f.finish()
+        val exit = f.b.exitIfExpression(e, false).value; val tail = f.emit(f.call()); f.finish()
         assertFalse(condition.edgeTo(exit).kind.isDead)
         assertSame(IfBranchFalse, condition.edgeTo(exit).label)
         assertFalse(exit.isDead); assertFalse(tail.isDead)
@@ -237,7 +243,7 @@ class CfirIfCfgSemanticsTest {
         f.start(); f.begin(e); val l = f.emit(left, false); f.endThen(e)
         f.beginElse(e); val r = f.emit(right, false); f.endElse(e)
         left.replaceConeTypeOrNull(ConePrimitiveType.NOTHING); right.replaceConeTypeOrNull(ConePrimitiveType.NOTHING)
-        val exit = f.b.exitIfExpression(e, false); val tail = f.emit(f.call()); val graph = f.finish()
+        val exit = f.b.exitIfExpression(e, false).value; val tail = f.emit(f.call()); val graph = f.finish()
         assertTrue(exit.isDead); assertTrue(tail.isDead)
         assertFalse(reachable(graph.enterNode, tail))
         for (node in listOf(l, r)) {
@@ -256,7 +262,7 @@ class CfirIfCfgSemanticsTest {
         f.b.exitIfCondition(e); f.b.enterBlock(e.thenBranch); val left = f.emit(f.call()); f.endThen(e)
         f.beginElse(e); val right = f.emit(f.call()); f.endElse(e)
         conditionCall.replaceConeTypeOrNull(ConePrimitiveType.NOTHING)
-        val exit = f.b.exitIfExpression(e, false); val tail = f.emit(f.call()); val graph = f.finish()
+        val exit = f.b.exitIfExpression(e, false).value; val tail = f.emit(f.call()); val graph = f.finish()
         assertTrue(left.isDead); assertTrue(right.isDead); assertTrue(exit.isDead); assertTrue(tail.isDead)
         assertTrue(reachable(callNode, graph.exceptionExitNode!!))
     }
@@ -271,7 +277,7 @@ class CfirIfCfgSemanticsTest {
             f.start(); f.b.enterCallArguments(outer, emptyList()); f.begin(e)
             val l = f.emitLambdaCarrier(left); f.endThen(e)
             f.beginElse(e); val r = f.emitLambdaCarrier(right); f.endElse(e)
-            val exit = f.b.exitIfExpression(e, completed)
+            val exit = f.b.exitIfExpression(e, completed).value
             f.b.exitCallArguments(); f.b.enterFunctionCall(outer); f.b.exitFunctionCall(outer, true)
             val graph = f.finish()
             val merges = graph.nodes.filterIsInstance<MergePostponedLambdaExitsNode>().filter { it.fir === e }
@@ -299,7 +305,7 @@ class CfirIfCfgSemanticsTest {
         val copy = f.b.createSnapshot(copier); val copiedLeft = copier[leftExit]
         copier.finish(); f.b = copy
         f.beginElse(e); val rightExit = f.emitLambdaCarrier(right); f.endElse(e)
-        val exit = f.b.exitIfExpression(e, false)
+        val exit = f.b.exitIfExpression(e, false).value
         f.b.exitCallArguments(); f.b.enterFunctionCall(outer); f.b.exitFunctionCall(outer, true)
         val graph = f.finish(); val merge = graph.nodes.filterIsInstance<MergePostponedLambdaExitsNode>().single { it.fir === e }
         assertNotSame(original, graph)
@@ -321,9 +327,9 @@ class CfirIfCfgSemanticsTest {
         f.b.enterJump(statement); f.begin(e); f.emitLambdaCarrier(left); f.endThen(e)
         f.beginElse(e); f.emitLambdaCarrier(right); f.endElse(e); f.b.exitIfExpression(e, false)
         f.b.exitJump(statement); f.b.exitBlock(root.body!!)
-        val rootGraph = f.b.exitAnonymousFunction(root).third
+        val rootGraph = f.b.exitFunction(root).second
         root.replaceControlFlowGraphReference(CfirControlFlowGraphReferenceImpl(rootGraph))
-        f.b.exitCallArguments(); f.b.enterFunctionCall(outer); val outerExit = f.b.exitFunctionCall(outer, true); f.finish()
+        f.b.exitCallArguments(); f.b.enterFunctionCall(outer); val outerExit = f.b.exitFunctionCall(outer, true).value; f.finish()
         val merge = rootGraph.nodes.filterIsInstance<MergePostponedLambdaExitsNode>().single { it.fir === e }
         assertEquals(EdgeKind.DfgForward, merge.edgeTo(outerExit).kind)
         assertSame(PostponedPath, merge.edgeTo(outerExit).label)
@@ -369,7 +375,7 @@ class CfirIfCfgSemanticsTest {
         }
         fun emit(call: CfirFunctionCall, completed: Boolean = true): FunctionCallExitNode {
             b.enterCallArguments(call, emptyList()); b.exitCallArguments(); b.enterFunctionCall(call)
-            return b.exitFunctionCall(call, completed)
+            return b.exitFunctionCall(call, completed).value
         }
         fun begin(e: CfirIfExpression): IfConditionExitNode {
             b.enterIfExpression(e); emit(e.condition as CfirFunctionCall)
@@ -405,10 +411,13 @@ class CfirIfCfgSemanticsTest {
             val lambda = expression.anonymousFunction
             b.enterCallArguments(call, listOf(lambda)); b.enterAnonymousFunctionExpression(expression)
             b.enterAnonymousFunction(lambda); b.enterBlock(lambda.body!!); b.exitBlock(lambda.body!!)
-            val (_, postponed, graph) = b.exitAnonymousFunction(lambda)
+            val (_, graph) = b.exitFunction(lambda)
             lambda.replaceControlFlowGraphReference(CfirControlFlowGraphReferenceImpl(graph))
-            b.exitCallArguments(); b.enterFunctionCall(call); b.exitFunctionCall(call, false)
-            return kotlin.checkNotNull(postponed)
+            val (split, _) = b.exitCallArguments()
+            b.enterFunctionCall(call)
+            b.exitFunctionCall(call, false)
+            return checkNotNull(split).followingNodes.filterIsInstance<PostponedLambdaExitNode>()
+                .single { it.fir === expression }
         }
     }
 

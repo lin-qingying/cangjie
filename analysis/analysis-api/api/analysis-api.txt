@@ -349,7 +349,7 @@ public val CaSymbol.deprecationStatus: CaDeprecationInfo?
 package org.cangnova.cangjie.analysis.api.components
 public interface CaSymbolRelationProvider : CaLifetimeOwner
 CaSymbolRelationProvider.public val CaSymbol.containingDeclaration: CaDeclarationSymbol?
-CaSymbolRelationProvider.public val CaValueParameterSymbol.correspondingProperty: CaPropertySymbol?
+CaSymbolRelationProvider.public val CaValueParameterSymbol.correspondingField: CaFieldSymbol?
 CaSymbolRelationProvider.public fun CaSymbol.isEquivalentTo(other: CaSymbol): Boolean
 CaSymbolRelationProvider.public val CaCallableSymbol.directlyOverriddenSymbols: Sequence<CaCallableSymbol>
 CaSymbolRelationProvider.public val CaCallableSymbol.intersectionOverriddenSymbols: List<CaCallableSymbol>
@@ -358,7 +358,7 @@ CaSymbolRelationProvider.public fun CaClassSymbol.isSubClassOf(superClass: CaCla
 CaSymbolRelationProvider.public fun CaClassSymbol.isDirectSubClassOf(superClass: CaClassSymbol): Boolean
 CaSymbolRelationProvider.public fun CaDeclarationSymbol.getExpectsForActual(): List<CaDeclarationSymbol>
 public val CaSymbol.containingDeclaration: CaDeclarationSymbol?
-public val CaValueParameterSymbol.correspondingProperty: CaPropertySymbol?
+public val CaValueParameterSymbol.correspondingField: CaFieldSymbol?
 public fun CaSymbol.isEquivalentTo(other: CaSymbol): Boolean
 public val CaCallableSymbol.directlyOverriddenSymbols: Sequence<CaCallableSymbol>
 public val CaCallableSymbol.allOverriddenSymbols: Sequence<CaCallableSymbol>
@@ -653,6 +653,9 @@ public interface CaBuiltinsModule : CaModule
 CaBuiltinsModule.public val builtinsName: String
 CaBuiltinsModule.public override val moduleDescription: String
 CaBuiltinsModule.public override val stableModuleName: String?
+## org/cangnova/cangjie/analysis/api/projectStructure/CaCjmpCompilationMode.kt
+package org.cangnova.cangjie.analysis.api.projectStructure
+public enum class CaCjmpCompilationMode
 ## org/cangnova/cangjie/analysis/api/projectStructure/CaDanglingFileModule.kt
 package org.cangnova.cangjie.analysis.api.projectStructure
 public interface CaDanglingFileModule : CaSourceModule
@@ -674,6 +677,7 @@ package org.cangnova.cangjie.analysis.api.projectStructure
 public interface CaLibraryModule : CaModule
 CaLibraryModule.public val libraryName: String
 CaLibraryModule.public val binaryRoots: List<PsiFileSystemItem>
+CaLibraryModule.public val cjmpCommonPartCjoPaths: List<Path>
 CaLibraryModule.public override val moduleDescription: String
 CaLibraryModule.public override val stableModuleName: String?
 ## org/cangnova/cangjie/analysis/api/projectStructure/CaLibrarySourceModule.kt
@@ -718,6 +722,7 @@ package org.cangnova.cangjie.analysis.api.projectStructure
 public interface CaSourceModule : CaModule
 CaSourceModule.public val name: String
 CaSourceModule.public val languageVersionSettings: LanguageVersionSettings
+CaSourceModule.public val cjmpCompilationMode: CaCjmpCompilationMode?
 CaSourceModule.public val psiRoots: List<PsiFileSystemItem>
 CaSourceModule.public override val moduleDescription: String
 CaSourceModule.public override val stableModuleName: String?

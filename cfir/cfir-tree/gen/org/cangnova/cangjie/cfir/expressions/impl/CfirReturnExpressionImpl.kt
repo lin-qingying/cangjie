@@ -7,11 +7,8 @@
 
 package org.cangnova.cangjie.cfir.expressions.impl
 
-import org.cangnova.cangjie.cfir.CfirImplementationDetail
-import org.cangnova.cangjie.cfir.CfirTarget
-import org.cangnova.cangjie.cfir.MutableOrEmptyList
-import org.cangnova.cangjie.cfir.toMutableOrEmpty
-import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.annotations.CangjieOverflowStrategy
+import org.cangnova.cangjie.cfir.*
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirReturnExpression
@@ -22,10 +19,12 @@ import org.cangnova.cangjie.cfir.visitors.transformInplace
 import org.cangnova.cangjie.source.CjSourceElement
 
 class CfirReturnExpressionImpl @CfirImplementationDetail constructor(
-    override val source: CjSourceElement?,
+    override var source: CjSourceElement?,
     override var annotations: MutableOrEmptyList<CfirAnnotation>,
     override var coneTypeOrNull: ConeCangJieType?,
-    override val target: CfirTarget<CfirFunction>,
+    override var mappedExpression: CfirExpression?,
+    override var overflowStrategy: CangjieOverflowStrategy?,
+    override val target: CfirTarget<CfirFunctionBodyOwner>,
     override var result: CfirExpression,
 ) : CfirReturnExpression() {
 
@@ -52,7 +51,13 @@ class CfirReturnExpressionImpl @CfirImplementationDetail constructor(
 
     override fun <D> transformOtherChildren(transformer: CfirTransformer<D>, data: D): CfirReturnExpressionImpl {
         transformAnnotations(transformer, data)
+        mappedExpression = mappedExpression?.transform(transformer, data)
         return this
+    }
+
+    @CfirImplementationDetail
+    override fun replaceSource(newSource: CjSourceElement?) {
+        source = newSource
     }
 
     override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>) {
@@ -61,5 +66,17 @@ class CfirReturnExpressionImpl @CfirImplementationDetail constructor(
 
     override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?) {
         coneTypeOrNull = newConeTypeOrNull
+    }
+
+    override fun replaceMappedExpression(newMappedExpression: CfirExpression?) {
+        mappedExpression = newMappedExpression
+    }
+
+    override fun replaceOverflowStrategy(newOverflowStrategy: CangjieOverflowStrategy?) {
+        overflowStrategy = newOverflowStrategy
+    }
+
+    override fun replaceResult(newResult: CfirExpression) {
+        result = newResult
     }
 }

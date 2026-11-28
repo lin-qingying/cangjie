@@ -37,6 +37,20 @@ class RefType : Table() {
             null
         }
     }
+    val mutable : Boolean
+        get() {
+            val o = __offset(6)
+            return if(o != 0) 0.toByte() != bb.get(o + bb_pos) else false
+        }
+    fun mutateMutable(mutable: Boolean) : Boolean {
+        val o = __offset(6)
+        return if (o != 0) {
+            bb.put(o + bb_pos, (if(mutable) 1 else 0).toByte())
+            true
+        } else {
+            false
+        }
+    }
     companion object {
         fun validateVersion() = Constants.FLATBUFFERS_25_2_10()
         fun getRootAsRefType(_bb: ByteBuffer): RefType = getRootAsRefType(_bb, RefType())
@@ -44,13 +58,15 @@ class RefType : Table() {
             _bb.order(ByteOrder.LITTLE_ENDIAN)
             return (obj.__assign(_bb.getInt(_bb.position()) + _bb.position(), _bb))
         }
-        fun createRefType(builder: FlatBufferBuilder, baseOffset: Int) : Int {
-            builder.startTable(1)
+        fun createRefType(builder: FlatBufferBuilder, baseOffset: Int, mutable: Boolean) : Int {
+            builder.startTable(2)
             addBase(builder, baseOffset)
+            addMutable(builder, mutable)
             return endRefType(builder)
         }
-        fun startRefType(builder: FlatBufferBuilder) = builder.startTable(1)
+        fun startRefType(builder: FlatBufferBuilder) = builder.startTable(2)
         fun addBase(builder: FlatBufferBuilder, base: Int) = builder.addOffset(0, base, 0)
+        fun addMutable(builder: FlatBufferBuilder, mutable: Boolean) = builder.addBoolean(1, mutable, false)
         fun endRefType(builder: FlatBufferBuilder) : Int {
             val o = builder.endTable()
             return o

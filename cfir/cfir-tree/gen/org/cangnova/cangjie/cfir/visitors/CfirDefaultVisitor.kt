@@ -6,6 +6,8 @@
 package org.cangnova.cangjie.cfir.visitors
 
 import org.cangnova.cangjie.cfir.CfirFeaturesDirective
+import org.cangnova.cangjie.cfir.CfirFunctionBodyOwner
+import org.cangnova.cangjie.cfir.CfirIterationOwner
 import org.cangnova.cangjie.cfir.CfirTargetElement
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.*
@@ -41,6 +43,9 @@ abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
 
     override fun visitStatement(statement: CfirStatement, data: D): R =
         visitAnnotationContainer(statement, data)
+
+    override fun visitTypeParametersOwner(typeParametersOwner: CfirTypeParametersOwner, data: D): R =
+        visitTypeParameterRefsOwner(typeParametersOwner, data)
 
     override fun visitCallableDeclaration(callableDeclaration: CfirCallableDeclaration, data: D): R =
         visitMemberDeclaration(callableDeclaration, data)
@@ -81,6 +86,9 @@ abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
     override fun visitInvalidDeclaration(invalidDeclaration: CfirInvalidDeclaration, data: D): R =
         visitDeclaration(invalidDeclaration, data)
 
+    override fun visitMacroExpansionDeclaration(macroExpansionDeclaration: CfirMacroExpansionDeclaration, data: D): R =
+        visitDeclaration(macroExpansionDeclaration, data)
+
     override fun visitProperty(property: CfirProperty, data: D): R =
         visitCallableDeclaration(property, data)
 
@@ -105,6 +113,51 @@ abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
     override fun visitExpression(expression: CfirExpression, data: D): R =
         visitStatement(expression, data)
 
+    override fun visitNativeMatchExpression(nativeMatchExpression: CfirNativeMatchExpression, data: D): R =
+        visitExpression(nativeMatchExpression, data)
+
+    override fun visitNativeMatchCase(nativeMatchCase: CfirNativeMatchCase, data: D): R =
+        visitExpression(nativeMatchCase, data)
+
+    override fun visitNativeConditionMatchExpression(nativeConditionMatchExpression: CfirNativeConditionMatchExpression, data: D): R =
+        visitExpression(nativeConditionMatchExpression, data)
+
+    override fun visitNativeConditionMatchCase(nativeConditionMatchCase: CfirNativeConditionMatchCase, data: D): R =
+        visitExpression(nativeConditionMatchCase, data)
+
+    override fun visitLetPatternDestructorExpression(letPatternDestructorExpression: CfirLetPatternDestructorExpression, data: D): R =
+        visitExpression(letPatternDestructorExpression, data)
+
+    override fun visitNativeTryExpression(nativeTryExpression: CfirNativeTryExpression, data: D): R =
+        visitExpression(nativeTryExpression, data)
+
+    override fun visitPrimitiveTypeExpression(primitiveTypeExpression: CfirPrimitiveTypeExpression, data: D): R =
+        visitExpression(primitiveTypeExpression, data)
+
+    override fun visitWildcardExpression(wildcardExpression: CfirWildcardExpression, data: D): R =
+        visitExpression(wildcardExpression, data)
+
+    override fun visitFunctionArgument(functionArgument: CfirFunctionArgument, data: D): R =
+        visitExpression(functionArgument, data)
+
+    override fun visitCallExpression(callExpression: CfirCallExpression, data: D): R =
+        visitExpression(callExpression, data)
+
+    override fun visitUnaryExpression(unaryExpression: CfirUnaryExpression, data: D): R =
+        visitExpression(unaryExpression, data)
+
+    override fun visitBinaryExpression(binaryExpression: CfirBinaryExpression, data: D): R =
+        visitExpression(binaryExpression, data)
+
+    override fun visitArrayCreationExpression(arrayCreationExpression: CfirArrayCreationExpression, data: D): R =
+        visitExpression(arrayCreationExpression, data)
+
+    override fun visitPointerExpression(pointerExpression: CfirPointerExpression, data: D): R =
+        visitExpression(pointerExpression, data)
+
+    override fun visitResolvedSpawnExpression(resolvedSpawnExpression: CfirResolvedSpawnExpression, data: D): R =
+        visitExpression(resolvedSpawnExpression, data)
+
     override fun visitBlock(block: CfirBlock, data: D): R =
         visitExpression(block, data)
 
@@ -123,6 +176,9 @@ abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
     override fun visitNamedReferenceWithCandidateBase(namedReferenceWithCandidateBase: CfirNamedReferenceWithCandidateBase, data: D): R =
         visitNamedReference(namedReferenceWithCandidateBase, data)
 
+    override fun visitErrorPrimaryConstructor(errorPrimaryConstructor: CfirErrorPrimaryConstructor, data: D): R =
+        visitConstructor(errorPrimaryConstructor, data)
+
     override fun visitIncrementDecrementExpression(incrementDecrementExpression: CfirIncrementDecrementExpression, data: D): R =
         visitExpression(incrementDecrementExpression, data)
 
@@ -140,6 +196,12 @@ abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
 
     override fun visitThisReference(thisReference: CfirThisReference, data: D): R =
         visitReference(thisReference, data)
+
+    override fun visitResolvedQualifier(resolvedQualifier: CfirResolvedQualifier, data: D): R =
+        visitExpression(resolvedQualifier, data)
+
+    override fun visitErrorResolvedQualifier(errorResolvedQualifier: CfirErrorResolvedQualifier, data: D): R =
+        visitExpression(errorResolvedQualifier, data)
 
     override fun visitNamedAccessExpression(namedAccessExpression: CfirNamedAccessExpression, data: D): R =
         visitQualifiedAccessExpression(namedAccessExpression, data)
@@ -177,14 +239,23 @@ abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
     override fun visitMatchBranch(matchBranch: CfirMatchBranch, data: D): R =
         visitExpression(matchBranch, data)
 
+    override fun visitCatchPattern(catchPattern: CfirCatchPattern, data: D): R =
+        visitPattern(catchPattern, data)
+
     override fun visitCatch(catch: CfirCatch, data: D): R =
         visitExpression(catch, data)
+
+    override fun visitCommandTypePattern(commandTypePattern: CfirCommandTypePattern, data: D): R =
+        visitPattern(commandTypePattern, data)
 
     override fun visitHandleClause(handleClause: CfirHandleClause, data: D): R =
         visitExpression(handleClause, data)
 
+    override fun visitLoopExpression(loopExpression: CfirLoopExpression, data: D): R =
+        visitExpression(loopExpression, data)
+
     override fun visitForInExpression(forInExpression: CfirForInExpression, data: D): R =
-        visitLoopExpression(forInExpression, data)
+        visitExpression(forInExpression, data)
 
     override fun visitThrowExpression(throwExpression: CfirThrowExpression, data: D): R =
         visitExpression(throwExpression, data)
@@ -231,6 +302,12 @@ abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
     override fun visitTupleLiteral(tupleLiteral: CfirTupleLiteral, data: D): R =
         visitExpression(tupleLiteral, data)
 
+    override fun visitFunctionBodyOwner(functionBodyOwner: CfirFunctionBodyOwner, data: D): R =
+        visitTargetElement(functionBodyOwner, data)
+
+    override fun visitIterationOwner(iterationOwner: CfirIterationOwner, data: D): R =
+        visitTargetElement(iterationOwner, data)
+
     override fun visitSpawnExpression(spawnExpression: CfirSpawnExpression, data: D): R =
         visitExpression(spawnExpression, data)
 
@@ -276,6 +353,9 @@ abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
     override fun visitUnresolvedTypeRef(unresolvedTypeRef: CfirUnresolvedTypeRef, data: D): R =
         visitTypeRef(unresolvedTypeRef, data)
 
+    override fun visitParenthesizedTypeRef(parenthesizedTypeRef: CfirParenthesizedTypeRef, data: D): R =
+        visitTypeRef(parenthesizedTypeRef, data)
+
     override fun visitUserTypeRef(userTypeRef: CfirUserTypeRef, data: D): R =
         visitUnresolvedTypeRef(userTypeRef, data)
 
@@ -305,6 +385,9 @@ abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
 
     override fun visitResolvedNamedReference(resolvedNamedReference: CfirResolvedNamedReference, data: D): R =
         visitNamedReference(resolvedNamedReference, data)
+
+    override fun visitResolvedBuiltinOperatorReference(resolvedBuiltinOperatorReference: CfirResolvedBuiltinOperatorReference, data: D): R =
+        visitNamedReference(resolvedBuiltinOperatorReference, data)
 
     override fun visitErrorReference(errorReference: CfirErrorReference, data: D): R =
         visitReference(errorReference, data)

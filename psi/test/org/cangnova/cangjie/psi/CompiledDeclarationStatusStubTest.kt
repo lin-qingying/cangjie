@@ -156,7 +156,8 @@ class CompiledDeclarationStatusStubTest : CjParsingTestCase(
     private fun rootWithHeader(metadata: CangJieCompiledDeclarationMetadata?): CangJieFileStubImpl {
         val root = CangJieFileStubImpl.forFile(FqName("sample"))
         val function = CangJieNamedFunctionStubImpl(root, CjStubElementTypes.FUNCTION,
-            StringRef.fromString("read"), true, FqName("sample.read"), false, false, false, null)
+            StringRef.fromString("read"), true, FqName("sample.read"), false, false, false, null,
+            hasEmptyBlockBody = false)
         CangJieModifierListStubImpl(function, 0L, CjStubElementTypes.MODIFIER_LIST, metadata)
         return root
     }

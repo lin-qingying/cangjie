@@ -24,9 +24,9 @@
 
 package org.cangnova.cangjie.psi
 
-import org.cangnova.cangjie.parsing.CangJieExpressionParsing
 import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiErrorElement
 import com.intellij.psi.TokenType
 import com.intellij.psi.tree.IElementType
 import com.intellij.psi.util.PsiTreeUtil
@@ -204,6 +204,16 @@ class CjQuoteTokens(node: ASTNode) : CjExpressionImpl(node) {
 
     /**
      * 保存 `tokens`，供仓颉 PSI流程读取节点结构或语义信息。
-     */
-    val tokens: List<PsiElement> get() = findChildrenByType(CangJieExpressionParsing.QUOTE_TOKENS)
+    */
+    val tokens: List<PsiElement>
+        get() = node.getChildren(null)
+            .asSequence()
+            .filter {
+                it.firstChildNode == null &&
+                    it.elementType != TokenType.WHITE_SPACE &&
+                    !CjTokens.COMMENTS.contains(it.elementType)
+            }
+            .mapNotNull { it.psi }
+            .filterNot { it is PsiErrorElement }
+            .toList()
 }

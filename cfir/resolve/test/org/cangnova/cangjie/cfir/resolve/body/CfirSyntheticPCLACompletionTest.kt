@@ -24,6 +24,7 @@ import org.cangnova.cangjie.cfir.resolve.inference.*
 import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeParameterBasedTypeVariable
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityChecker
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
+import org.cangnova.cangjie.cfir.resolve.substitution.asCone
 import org.cangnova.cangjie.cfir.resolve.transformers.ReturnTypeCalculator
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.BodyResolveContext
 import org.cangnova.cangjie.cfir.session.CfirBuiltinTypes

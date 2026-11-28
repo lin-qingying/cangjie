@@ -5,6 +5,7 @@ import kotlinx.collections.immutable.persistentHashMapOf
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.visitors.CfirSourceVisitor
 
 /**
  * 局部变量 smart cast 后类型作用域的缓存。
@@ -18,6 +19,14 @@ class LocalVariableScopeStorage private constructor(
     private val map: PersistentMap<CfirCallableSymbol<*>, MutableMap<ConeCangJieType, CfirTypeScope?>>,
 ) {
     constructor() : this(persistentHashMapOf())
+
+    /** 缓存只访问声明与已有类型，不调用 scope builder 或遍历其他模块的成员作用域。 */
+    fun acceptSourceChildren(visitor: CfirSourceVisitor) {
+        map.forEach { (symbol, scopes) ->
+            visitor.visitElement(symbol.cfir)
+            scopes.keys.forEach(visitor::visitType)
+        }
+    }
 
     /**
      * 为局部变量创建独立作用域缓存桶。

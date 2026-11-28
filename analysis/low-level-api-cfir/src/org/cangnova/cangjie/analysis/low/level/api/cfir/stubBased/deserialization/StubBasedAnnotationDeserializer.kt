@@ -39,7 +39,7 @@ import org.cangnova.cangjie.annotations.CangjieAnnotationOrigin
 import org.cangnova.cangjie.cfir.references.builder.buildErrorNamedReference
 import org.cangnova.cangjie.cfir.references.builder.buildResolvedNamedReference
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.constructClassType
 import org.cangnova.cangjie.cfir.symbols.toLookupTag
@@ -239,7 +239,8 @@ internal class StubBasedAnnotationDeserializer(private val session: CfirSession)
                 },
             ),
         )
-        result.replaceArgumentView(resolvedArguments.toAnnotationArgumentView(constructor?.valueParameters.orEmpty()))
+        val defaultParameters = constructor?.valueParameters.orEmpty()
+        result.replaceArgumentView(resolvedArguments.toAnnotationArgumentView(defaultParameters, defaultParameters.associateWith { it.defaultValue }))
         if (constructor != null) {
             result.replaceCalleeReference(
                 buildResolvedNamedReference {

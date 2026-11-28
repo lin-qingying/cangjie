@@ -24,30 +24,47 @@
 
 package org.cangnova.cangjie.cfir.resolve.body
 
+import org.cangnova.cangjie.cfir.CfirContentSource
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.CfirFunctionBodyOwner
 import org.cangnova.cangjie.cfir.hasImplicitOrInferredReturnType
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
+import org.cangnova.cangjie.cfir.expressions.CfirArgumentList
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.CfirLazyBlock
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
+import org.cangnova.cangjie.cfir.expressions.CfirFunctionCallOrigin
+import org.cangnova.cangjie.cfir.expressions.delegatedConstructorCallOrNull
+import org.cangnova.cangjie.cfir.expressions.builder.buildFunctionCall
+import org.cangnova.cangjie.cfir.references.builder.buildNamedReference
+import org.cangnova.cangjie.source.CjFakeSourceElementKind
+import org.cangnova.cangjie.source.fakeElement
+import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.cfir.expressions.CfirReturnExpression
 import org.cangnova.cangjie.cfir.expressions.CfirSpawnExpression
-import org.cangnova.cangjie.cfir.expressions.CfirStatement
-import org.cangnova.cangjie.cfir.expressions.CfirWrappedExpression
 import org.cangnova.cangjie.cfir.resolve.CfirTypeResolutionConfiguration
 import org.cangnova.cangjie.cfir.resolve.ResolutionMode
+import org.cangnova.cangjie.cfir.resolve.mode
+import org.cangnova.cangjie.cfir.resolve.transformers.CfirStatusResolver
+import org.cangnova.cangjie.cfir.visitors.transformSingle
 import org.cangnova.cangjie.cfir.resolve.createFileLookupScopes
 import org.cangnova.cangjie.cfir.resolve.createCurrentScopeList
 import org.cangnova.cangjie.cfir.resolve.dfa.CfirControlFlowGraphReferenceImpl
+import org.cangnova.cangjie.cfir.resolve.dfa.controlFlowGraph
+import org.cangnova.cangjie.cfir.resolve.dfa.cfg.ControlFlowGraph
 import org.cangnova.cangjie.cfir.semantics.ErrorTypeInArguments
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirSpecificTypeResolverTransformer
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.LoopJumpScope
+import org.cangnova.cangjie.cfir.resolve.inference.CfirInferenceSession
 import org.cangnova.cangjie.cfir.resolve.withExpectedType
 import org.cangnova.cangjie.cfir.resolvedTypeFromPrototype
 import org.cangnova.cangjie.cfir.patterns.visibleBindingVariables
+import org.cangnova.cangjie.cfir.patterns.CfirPattern
 import org.cangnova.cangjie.cfir.patterns.bindingVariables
 import org.cangnova.cangjie.cfir.scopes.impl.*
 import org.cangnova.cangjie.cfir.session.builtinTypes
@@ -55,6 +72,7 @@ import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagImpl
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.cfir.types.builder.buildErrorTypeRef
+import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.impl.ResolvedImplicitTypeRef
 import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
 import org.cangnova.cangjie.cfir.whileAnalysing
@@ -80,6 +98,31 @@ open class CfirDeclarationsResolveTransformer(
 ) : CfirPartialBodyResolveTransformer(transformer) {
     /** 显式类型引用解析器，用于 body resolve 中补解析局部声明和恢复错误类型引用。 */
     private val specificTypeResolverTransformer = CfirSpecificTypeResolverTransformer(session)
+    private val statusResolver = CfirStatusResolver(session, components.scopeSession)
+
+    override fun transformDeclarationStatus(declarationStatus: CfirDeclarationStatus, data: ResolutionMode): CfirDeclarationStatus =
+        (data as? ResolutionMode.WithStatus)?.status ?: declarationStatus
+
+    private fun CfirDeclaration.resolveStatus(
+        containingClass: CfirClassLikeDeclaration? = null,
+        containingProperty: CfirProperty? = null,
+    ): CfirDeclarationStatus = statusResolver.resolveStatus(
+        this, containingClass, containingProperty,
+        isLocal = context.containerIfAny != null && containingClass == null,
+    )
+
+    /** 局部签名的状态在初值／CFG 之前完成，不等到 writer 或捕获器重新推导。 */
+    internal fun resolveLocalVariableStatus(variable: CfirVariable, data: ResolutionMode) {
+        if (!variable.isLocal) return
+        variable.replaceReturnTypeRef(resolveExplicitTypeRefIfNeeded(variable.returnTypeRef, variable.typeParameters.filterIsInstance<CfirTypeParameter>()))
+        context.withContainer(variable) { resolveDeclarationAnnotations(variable, data) }
+        variable.transformStatus(this, variable.resolveStatus().mode())
+    }
+
+    /** 语法模式容器与实际 binding 分别拥有状态；隐藏／冲突 binding 也完成自身语义发布。 */
+    internal fun resolvePatternBindingStatuses(pattern: CfirPattern, data: ResolutionMode) {
+        pattern.bindingVariables().forEach { resolveLocalVariableStatus(it, data) }
+    }
 
     /**
      * 对齐 Kotlin FIR 的 declaration-content 入口。
@@ -162,7 +205,8 @@ open class CfirDeclarationsResolveTransformer(
         context.withCodeFragment(codeFragment, components) {
             transformBlock(codeFragment.block, data)
         }
-        dataFlowAnalyzer.exitCodeFragment(codeFragment)
+        val completedGraph = dataFlowAnalyzer.exitCodeFragment(codeFragment)
+        publishCompletedBodyRootPhases(codeFragment, completedGraph)
         return codeFragment
     }
 
@@ -260,8 +304,12 @@ open class CfirDeclarationsResolveTransformer(
     protected open fun doTransformRegularClassContent(
         klass: CfirClass,
         data: ResolutionMode,
-    ): CfirClass = forRegularClassBody(klass) {
-        transformDeclarationContent(klass, data) as CfirClass
+    ): CfirClass {
+        val result = forRegularClassBody(klass) {
+            transformDeclarationContent(klass, data) as CfirClass
+        }
+        recordCompletedClassBody(klass, result)
+        return result
     }
 
     /**
@@ -282,7 +330,7 @@ open class CfirDeclarationsResolveTransformer(
         context.withScopesForClass(classLike, components, resolveContent)
 
         context.replaceTowerDataContext(savedContext)
-        bumpPhase(classLike)
+        recordCompletedClassBody(classLike, classLike)
         return classLike
     }
 
@@ -329,9 +377,10 @@ protected open fun transformFunctionContent(
         resolutionModeForBody: ResolutionMode,
         shouldResolveEverything: Boolean,
     ): CfirFunction {
+        function.requireOwnedGraphAnalysisReady()
         // 对位 Kotlin FirDeclarationsResolveTransformer.bodyResolved：隐式返回类型阶段已完成
         // 的 body 与 CFG 是同一份分析结果。再次遍历会跳过已解析访问，却用残缺的新图覆盖旧图。
-        val bodyResolved = function.body?.coneTypeOrNull != null
+        val bodyResolved = function.body?.coneTypeOrNull != null && function.controlFlowGraphReference != null
         dataFlowAnalyzer.enterFunction(function)
         context.loopJumpScopes.addLast(LoopJumpScope.FunctionBoundary)
         try {
@@ -358,11 +407,178 @@ protected open fun transformFunctionContent(
             }
             val graphReference = dataFlowAnalyzer.exitFunction(function)
             if (!bodyResolved) function.replaceControlFlowGraphReference(graphReference)
+            // compiler BODY 和 LL target BODY 共用完成入口；IMPLICIT_TYPES 的临时完整遍历不提前定型。
+            if (transformer.transformerPhase == CfirResolvePhase.BODY_RESOLVE) {
+                val approximator = components.integerLiteralAndOperatorApproximationTransformer
+                function.body?.let { function.replaceBody(it.transformSingle(approximator, function.returnTypeRef.coneTypeOrNull)) }
+                function.valueParameters.forEach { parameter ->
+                    parameter.defaultValue?.let { parameter.replaceDefaultValue(it.transformSingle(approximator, parameter.returnTypeRef.coneTypeOrNull)) }
+                }
+            }
             return function
         } finally {
             context.loopJumpScopes.removeLast()
         }
     }
+
+    /**
+     * 普通/局部/匿名函数共用正式根提交边界。候选试跑、活动共享推断以及外层函数尚在分析时
+     * 不发布 BODY；最终根的完成遍历包含其局部声明和 parameter-owned helper。
+     */
+    internal fun publishCompletedFunctionBodyPhase(function: CfirFunction) {
+        publishCompletedBodyRootPhases(function)
+    }
+
+    /**
+     * 只有 dedicated whole-class action 成功返回才登记完成事件。
+     * designation 的外壳穿行不调用该入口；class CFG 是否保留不决定 BODY 是否完成。
+     */
+    private val completedClassBodies = java.util.Collections.newSetFromMap(java.util.IdentityHashMap<CfirClassLikeDeclaration, Boolean>())
+
+    private fun recordCompletedClassBody(original: CfirClassLikeDeclaration, result: CfirClassLikeDeclaration) {
+        if (transformer.transformerPhase != CfirResolvePhase.BODY_RESOLVE || transformer.implicitTypeOnly) return
+        if (context.hasActiveOverloadByLambdaCandidateAnalysis() || context.inferenceSession !== CfirInferenceSession.DEFAULT) return
+        check(original.symbol === result.symbol && result.symbol.cfir === result)
+        if (!result.hasCompletedClassContent()) return
+        completedClassBodies += result
+        // 外层 body 未提交时保留事件；其正常根提交遍历只消费真正完成的 class 子域。
+        publishCompletedBodyRootPhases(result)
+    }
+
+    private fun CfirClassLikeDeclaration.hasCompletedClassContent(): Boolean = declarations.all { member ->
+        when (member) {
+            is CfirFunctionBodyOwner -> member.returnTypeRef.coneTypeOrNull.isCompleteBodyPhaseType() &&
+                member.valueParameters.all { parameter ->
+                    parameter.returnTypeRef.coneTypeOrNull.isCompleteBodyPhaseType() &&
+                        (parameter.defaultValue == null || parameter.hasCompletedDefaultForPhasePublication())
+                } &&
+                (member.body == null || member.hasCompletedBodyForPhasePublication())
+            is CfirVariable -> member.returnTypeRef.coneTypeOrNull.isCompleteBodyPhaseType() &&
+                (member.initializer == null || member.initializer?.coneTypeOrNull.isCompleteBodyPhaseType())
+            is CfirProperty -> member.returnTypeRef.coneTypeOrNull.isCompleteBodyPhaseType() &&
+                listOfNotNull(member.getter, member.setter).all { accessor ->
+                    accessor.returnTypeRef.coneTypeOrNull.isCompleteBodyPhaseType() &&
+                        (accessor.body == null || accessor.hasCompletedBodyForPhasePublication())
+                }
+            is CfirTypeAlias -> member.expandedTypeRef.coneTypeOrNull.isCompleteBodyPhaseType()
+            is CfirClassLikeDeclaration -> member in completedClassBodies || member.resolvePhase >= CfirResolvePhase.BODY_RESOLVE
+            else -> true
+        }
+    }
+
+    /** 字段/模式初值、constructor、code fragment 同样在实际根提交后封闭其嵌套函数阶段。 */
+    private fun publishCompletedBodyRootPhases(root: CfirElement, completedRootGraph: ControlFlowGraph? = null) {
+        if (transformer.transformerPhase != CfirResolvePhase.BODY_RESOLVE) return
+        if (context.hasActiveOverloadByLambdaCandidateAnalysis() || context.inferenceSession !== CfirInferenceSession.DEFAULT) return
+        if (context.hasActiveBodyOwnerOutside(root) || context.containers.any { it is CfirFunctionBodyOwner && it !== root }) return
+        when (root) {
+            is CfirClassLikeDeclaration -> if (root !in completedClassBodies || !root.hasCompletedClassContent()) return
+            is CfirFunctionBodyOwner -> if (!root.hasCompletedBodyForPhasePublication()) return
+            is CfirValueParameter -> if (!root.hasCompletedDefaultForPhasePublication()) return
+            is CfirVariable -> if (!root.returnTypeRef.coneTypeOrNull.isCompleteBodyPhaseType() ||
+                !root.initializer?.coneTypeOrNull.isCompleteBodyPhaseType()
+            ) return
+            is CfirCodeFragment -> if (!root.block.coneTypeOrNull.isCompleteBodyPhaseType() ||
+                completedRootGraph?.declaration !== root
+            ) return
+            else -> return
+        }
+        val seen = java.util.Collections.newSetFromMap(java.util.IdentityHashMap<CfirElement, Boolean>())
+        val completedFunctions = mutableListOf<CfirFunctionBodyOwner>()
+        val completedClasses = mutableListOf<CfirClassLikeDeclaration>()
+        var completedClassDepth = 0
+        root.accept(object : CfirVisitorVoid() {
+            override fun visitElement(element: CfirElement) {
+                if (element is org.cangnova.cangjie.cfir.references.CfirControlFlowGraphReference || !seen.add(element)) return
+                when (element) {
+                    is CfirClassLikeDeclaration -> {
+                        if (element !in completedClassBodies || !element.hasCompletedClassContent()) return
+                        completedClasses += element
+                        completedClassDepth++
+                        try {
+                            element.declarations.forEach { it.accept(this) }
+                        } finally {
+                            completedClassDepth--
+                        }
+                    }
+                    is CfirFunctionBodyOwner -> {
+                        if (!element.hasCompletedBodyForPhasePublication()) {
+                            // whole-class 完成事件授权真正无自身 body 方法的已完成 defaults。
+                            // 只进入参数拥有域，不把该方法当作已完成的 function body。
+                            if (completedClassDepth > 0 && element.body == null &&
+                                element.returnTypeRef.coneTypeOrNull.isCompleteBodyPhaseType() &&
+                                element.valueParameters.all { parameter ->
+                                    parameter.returnTypeRef.coneTypeOrNull.isCompleteBodyPhaseType() &&
+                                        (parameter.defaultValue == null || parameter.hasCompletedDefaultForPhasePublication())
+                                }) element.valueParameters.forEach { it.accept(this) }
+                            return
+                        }
+                        completedFunctions += element
+                        element.valueParameters.forEach { it.accept(this) }
+                        element.body?.accept(this)
+                    }
+                    is CfirValueParameter -> {
+                        if (!element.hasCompletedDefaultForPhasePublication()) return
+                        element.defaultValue?.accept(this)
+                        element.ownedDefaultParameterHelper?.accept(this)
+                    }
+                    is CfirVariable -> {
+                        if (!element.returnTypeRef.coneTypeOrNull.isCompleteBodyPhaseType() ||
+                            !element.initializer?.coneTypeOrNull.isCompleteBodyPhaseType()
+                        ) return
+                        element.initializer?.accept(this)
+                    }
+                    is CfirProperty -> {
+                        // accessor 是 property 的真实拥有子域，沿各自完成协议消费。
+                        element.getter?.accept(this)
+                        element.setter?.accept(this)
+                    }
+                    is CfirCodeFragment -> element.block.accept(this)
+                    // 已解析实参列表拥有其实际表达式；不沿 original/mapping 别名重复遍历。
+                    is CfirArgumentList -> element.arguments.forEach { it.accept(this) }
+                    is CfirAnnotation, is CfirTypeRef -> return
+                    is CfirExpression -> element.acceptChildren(this)
+                    // 类型/注解/header 声明的可达性不构成正文提交许可。
+                    else -> return
+                }
+            }
+        })
+        check(completedFunctions.all { it.hasCompletedBodyForPhasePublication() })
+        completedFunctions.forEach { function ->
+            val original = function.returnTypeRef
+            if (function is CfirFunction && function.origin.fromSource && original.typeUseOrigin == CfirTypeRefOrigin.SEMANTIC) {
+                // Native AddRetTypeNode/LambdaExpr创建真实COMPILER_ADD返回节点；完成的已知
+                // 类型与原始省略标记分别保留，不能仅改变所有known-type构造器的默认来源。
+                function.replaceReturnTypeRef(buildResolvedTypeRef {
+                    typeUseOrigin = CfirTypeRefOrigin.COMPILER_ADDED
+                    coneType = checkNotNull(original.coneTypeOrNull)
+                    annotations += original.annotations
+                    delegatedTypeRef = original
+                })
+            }
+            (function as CfirDeclaration).replaceResolvePhase(CfirResolvePhase.BODY_RESOLVE)
+        }
+        completedClasses.forEach { klass ->
+            // replaceResolvePhase 保持 InProcess/write-lock 协议；实际 target 的最终发布
+            // 仍由 low-level unlock 完成，不在这里覆写进行中的 resolve state。
+            klass.replaceResolvePhase(CfirResolvePhase.BODY_RESOLVE)
+            completedClassBodies.remove(klass)
+        }
+    }
+
+    private fun ConeCangJieType?.isCompleteBodyPhaseType(): Boolean =
+        this != null && !contains { it is ConeTypeVariableType || it is ConeStubType }
+
+    private fun CfirFunctionBodyOwner.hasCompletedBodyForPhasePublication(): Boolean =
+        body?.coneTypeOrNull.isCompleteBodyPhaseType() &&
+            controlFlowGraphReference?.controlFlowGraph?.declaration === this &&
+            returnTypeRef.coneTypeOrNull.isCompleteBodyPhaseType() &&
+            valueParameters.all { it.returnTypeRef.coneTypeOrNull.isCompleteBodyPhaseType() }
+
+    private fun CfirValueParameter.hasCompletedDefaultForPhasePublication(): Boolean =
+        defaultValue?.coneTypeOrNull.isCompleteBodyPhaseType() &&
+            returnTypeRef.coneTypeOrNull.isCompleteBodyPhaseType() &&
+            controlFlowGraphReference?.controlFlowGraph?.declaration === this
 
     /**
      * Call completion 专用的 lambda body 解析入口。
@@ -444,9 +660,11 @@ protected open fun transformFunctionContent(
         constructor: CfirConstructor,
         data: ResolutionMode,
     ): CfirConstructor {
+        resolveDefaultParameterHelpers(constructor)
         val owningClass = context.containerIfAny as? CfirClass
+        owningClass?.let { ensureDefaultSuperConstructorCall(constructor, it) }
 
-dataFlowAnalyzer.enterFunction(constructor)
+        dataFlowAnalyzer.enterFunction(constructor)
         context.loopJumpScopes.addLast(LoopJumpScope.FunctionBoundary)
         try {
             context.forConstructor(constructor) {
@@ -465,6 +683,7 @@ dataFlowAnalyzer.enterFunction(constructor)
 
             val controlFlowGraphReference = dataFlowAnalyzer.exitFunction(constructor)
             constructor.replaceControlFlowGraphReference(controlFlowGraphReference)
+            publishCompletedFunctionBodyPhase(constructor)
             return constructor
         } finally {
             context.loopJumpScopes.removeLast()
@@ -476,6 +695,32 @@ dataFlowAnalyzer.enterFunction(constructor)
      *
      * partial body 路径同样需要调用，否则委托调用的 callee 会停在 `CfirNamedReferenceImpl`。
      */
+    private fun ensureDefaultSuperConstructorCall(constructor: CfirConstructor, owner: CfirClass) {
+        if (constructor.status.isStatic || owner.symbol.classId == StdlibClassIds.Object) return
+        val body = constructor.body ?: return
+        if (body.statements.firstOrNull()?.delegatedConstructorCallOrNull() != null) return
+        var hasSuperCall = false
+        body.accept(object : CfirVisitorVoid() {
+            override fun visitElement(element: CfirElement) { if (!hasSuperCall) element.acceptChildren(this) }
+            override fun visitFunction(function: CfirFunction) {}
+            override fun visitFunctionCall(functionCall: CfirFunctionCall) {
+                if (functionCall.origin.isSuperConstructorDelegation) hasSuperCall = true
+                else visitElement(functionCall)
+            }
+        })
+        if (hasSuperCall) return
+        // Native AddDefaultSuperCall：没有 this/super 首委托的实例 init 在正常解析前插入父调用。
+        val generatedSource = owner.source?.fakeElement(CjFakeSourceElementKind.DelegatingConstructorCall)
+        val call = buildFunctionCall {
+            source = generatedSource
+            origin = CfirFunctionCallOrigin.ImplicitConstructorDelegationSuper
+            sourceCallHasSideEffect = true
+            calleeReference = buildNamedReference { source = generatedSource; name = Name.identifier("super") }
+        }
+        body.replaceStatements(listOf(call) + body.statements)
+    }
+
+    /** 解析真实首委托，生成与显式语法均经同一个调用解析生命周期。 */
     protected fun transformDelegatedConstructorCall(
         constructor: CfirConstructor,
         data: ResolutionMode,
@@ -497,45 +742,59 @@ dataFlowAnalyzer.enterFunction(constructor)
     }
 
     /**
-     * 解析 enum constructor 的值参数和返回类型，并把隐式返回类型回填为 owner enum 类型。
+     * 解析 enum constructor 签名。带正文的已保存 F 使用自己的参数作用域与返回目标。
      */
     protected open fun transformEnumConstructorContent(
         enumConstructor: CfirEnumConstructor,
         data: ResolutionMode,
     ): CfirEnumConstructor {
-        val savedContext = context.towerDataContext
-        // constructed-class refs 不重声明 owner 参数；与 Kotlin member type-parameter scope 保持同一边界。
-        val declaredTypeParameters = enumConstructor.typeParameters.filterIsInstance<CfirTypeParameter>()
+        // 对位 Kotlin FirMemberTypeParameterScope：只有自有声明进入成员类型参数作用域。
+        val ownTypeParameters = enumConstructor.typeParameters.filterIsInstance<CfirTypeParameter>()
+        context.withTowerDataCleanup {
+            context.withContainer(enumConstructor) {
+                if (ownTypeParameters.isNotEmpty()) {
+                    context.addNonLocalScope(CfirTypeParameterScopeImpl(ownTypeParameters))
+                }
+                resolveDeclarationAnnotations(enumConstructor, data)
 
-        context.withContainer(enumConstructor) {
-            if (declaredTypeParameters.isNotEmpty()) {
-                context.addNonLocalScope(CfirTypeParameterScopeImpl(declaredTypeParameters))
-            }
-            resolveDeclarationAnnotations(enumConstructor, data)
+                enumConstructor.valueParameters.forEach { parameter ->
+                    parameter.replaceReturnTypeRef(
+                        resolveExplicitTypeRefIfNeeded(parameter.returnTypeRef, ownTypeParameters),
+                    )
+                }
 
-            enumConstructor.valueParameters.forEach { parameter ->
-                parameter.replaceReturnTypeRef(
-                    resolveExplicitTypeRefIfNeeded(parameter.returnTypeRef, declaredTypeParameters),
-                )
-            }
-
-            val returnTypeRef = enumConstructor.returnTypeRef
-            if (returnTypeRef is CfirImplicitTypeRef) {
-                val ownerEnum = context.containers.filterIsInstance<CfirEnum>().lastOrNull()
-                val ownerType = ownerEnum?.let(::buildConstructedTypeForClass)
-                    ?: ConeErrorType(ConeSimpleDiagnostic("enum constructor has no owning enum"))
-                enumConstructor.replaceReturnTypeRef(
-                    returnTypeRef.resolvedTypeFromPrototype(ownerType, returnTypeRef.source),
-                )
-            } else {
-                enumConstructor.replaceReturnTypeRef(
-                    resolveExplicitTypeRefIfNeeded(returnTypeRef, declaredTypeParameters),
-                )
+                val returnTypeRef = enumConstructor.returnTypeRef
+                if (returnTypeRef is CfirImplicitTypeRef) {
+                    val ownerEnum = context.containers.filterIsInstance<CfirEnum>().lastOrNull()
+                    val ownerType = ownerEnum?.let(::buildConstructedTypeForClass)
+                        ?: ConeErrorType(ConeSimpleDiagnostic("enum constructor has no owning enum"))
+                    enumConstructor.replaceReturnTypeRef(
+                        returnTypeRef.resolvedTypeFromPrototype(ownerType, returnTypeRef.source),
+                    )
+                } else {
+                    enumConstructor.replaceReturnTypeRef(
+                        resolveExplicitTypeRefIfNeeded(returnTypeRef, ownTypeParameters),
+                    )
+                }
+                if (!transformer.implicitTypeOnly && enumConstructor.contentSource === CfirContentSource.Owned &&
+                    enumConstructor.body != null &&
+                    enumConstructor.controlFlowGraphReference == null
+                ) {
+                    dataFlowAnalyzer.enterFunction(enumConstructor)
+                    context.loopJumpScopes.addLast(LoopJumpScope.FunctionBoundary)
+                    try {
+                        context.withFunctionLocalScope(enumConstructor, session, preloadValueParameters = true) {
+                            enumConstructor.transformBody(transformer, withExpectedType(enumConstructor.returnTypeRef))
+                        }
+                        enumConstructor.replaceControlFlowGraphReference(dataFlowAnalyzer.exitFunction(enumConstructor))
+                    } finally {
+                        context.loopJumpScopes.removeLast()
+                    }
+                }
             }
         }
-
-        context.replaceTowerDataContext(savedContext)
-        bumpPhase(enumConstructor)
+        if (enumConstructor.body == null) bumpPhase(enumConstructor)
+        else publishCompletedBodyRootPhases(enumConstructor)
         return enumConstructor
     }
 
@@ -648,6 +907,7 @@ dataFlowAnalyzer.enterFunction(constructor)
         data: ResolutionMode,
     ): CfirVariable {
         variable.replaceReturnTypeRef(resolveExplicitTypeRefIfNeeded(variable.returnTypeRef))
+        resolveLocalVariableStatus(variable, data)
 
         val explicitTypeRef = variable.returnTypeRef
         val initializerMode = if (explicitTypeRef is CfirResolvedTypeRef) {
@@ -660,7 +920,7 @@ dataFlowAnalyzer.enterFunction(constructor)
         // 这样 exit 节点才是常量与初始化流事实的唯一写入点。
         dataFlowAnalyzer.enterVariableDeclaration(variable)
         context.withContainer(variable) {
-            resolveDeclarationAnnotations(variable, data)
+            if (!variable.isLocal) resolveDeclarationAnnotations(variable, data)
             context.withVariableInitializer(variable) {
                 variable.initializer?.let { initializer ->
                     val expectedInitializerType = (explicitTypeRef as? CfirResolvedTypeRef)?.coneType
@@ -691,8 +951,11 @@ dataFlowAnalyzer.enterFunction(constructor)
         }
         dataFlowAnalyzer.exitVariableDeclaration(variable)
 
-        // Resource 的 source phase 由正式类型/回调完成协议发布；preview 不推进 BODY_RESOLVE。
-        if (variable !is CfirResourceVariable) bumpPhase(variable)
+        // Resource 的阶段由正式类型/回调完成协议发布，preview 不推进 BODY。
+        if (variable !is CfirResourceVariable) {
+            bumpPhase(variable)
+            publishCompletedBodyRootPhases(variable)
+        }
         return variable
     }
 
@@ -715,7 +978,16 @@ dataFlowAnalyzer.enterFunction(constructor)
         valueParameter: CfirValueParameter,
         data: ResolutionMode,
     ): CfirValueParameter {
+        // 参数注解在自己的声明上下文中完成，早于 withValueParameter 将参数加入名称作用域。
+        context.withContainer(valueParameter) { resolveDeclarationAnnotations(valueParameter, data) }
         dataFlowAnalyzer.enterValueParameter(valueParameter)
+
+        // 参数默认值与函数正文独立完成；重入函数仍登记参数作用域和父图边界，不再解析其默认值。
+        if (valueParameter.resolvePhase >= CfirResolvePhase.BODY_RESOLVE) {
+            context.withValueParameter(valueParameter, session) { valueParameter }
+            dataFlowAnalyzer.exitValueParameter(valueParameter)
+            return valueParameter
+        }
 
         val result = context.withValueParameter(valueParameter, session) {
             // 仓颉的 annotation parameter 默认值必须是常量表达式，
@@ -749,6 +1021,7 @@ dataFlowAnalyzer.enterFunction(constructor)
         dataFlowAnalyzer.exitValueParameter(result)?.let { graph ->
             result.replaceControlFlowGraphReference(CfirControlFlowGraphReferenceImpl(graph))
         }
+        publishCompletedBodyRootPhases(result)
 
         return result
     }
@@ -814,6 +1087,7 @@ dataFlowAnalyzer.enterFunction(constructor)
         context.storeVariable(fieldVariable, session)
 
         bumpPhase(fieldVariable)
+        publishCompletedBodyRootPhases(fieldVariable)
         return fieldVariable
     }
 
@@ -831,6 +1105,7 @@ dataFlowAnalyzer.enterFunction(constructor)
         fieldVariable.replaceReturnTypeRef(
             resolveExplicitTypeRefIfNeeded(fieldVariable.returnTypeRef, fieldVariable.typeParameters),
         )
+        resolveLocalVariableStatus(fieldVariable, data)
 
         val explicitTypeRef = fieldVariable.returnTypeRef
         val initializerMode = if (explicitTypeRef is CfirResolvedTypeRef) {
@@ -842,7 +1117,6 @@ dataFlowAnalyzer.enterFunction(constructor)
         dataFlowAnalyzer.enterVariableDeclaration(fieldVariable)
         try {
             context.withContainer(fieldVariable) {
-                resolveDeclarationAnnotations(fieldVariable, data)
                 context.withVariableInitializer(fieldVariable) {
                     fieldVariable.initializer?.let { initializer ->
                         resolveFieldVariableInitializer(fieldVariable, explicitTypeRef, initializerMode, initializer)
@@ -936,6 +1210,7 @@ dataFlowAnalyzer.enterFunction(constructor)
         context.withContainer(patternBindingVariable) {
             resolveDeclarationAnnotations(patternBindingVariable, data)
         }
+        if (patternBindingVariable.isLocal) patternBindingVariable.transformStatus(this, patternBindingVariable.resolveStatus().mode())
         return patternBindingVariable
     }
 
@@ -962,6 +1237,8 @@ dataFlowAnalyzer.enterFunction(constructor)
         context.withContainer(patternVariable) {
             resolveDeclarationAnnotations(patternVariable, data)
         }
+        if (patternVariable.isLocal) patternVariable.transformStatus(this, patternVariable.resolveStatus().mode())
+        resolvePatternBindingStatuses(patternVariable.pattern, data)
 
         val explicitTypeRef = patternVariable.returnTypeRef
         val initializerMode = if (explicitTypeRef is CfirResolvedTypeRef) {
@@ -978,7 +1255,7 @@ dataFlowAnalyzer.enterFunction(constructor)
         try {
             val initializer = patternVariable.initializer
             if (initializer != null) {
-                context.withVariableInitializer(bindingVariables) {
+                context.withPatternInitializer(patternVariable, bindingVariables) {
                     val expectedInitializerType = (explicitTypeRef as? CfirResolvedTypeRef)?.coneType
                     if (expectedInitializerType != null) {
                         context.withInitializerExpectedType(initializer, expectedInitializerType) {
@@ -1002,11 +1279,12 @@ dataFlowAnalyzer.enterFunction(constructor)
             )
             registerPatternBindings(patternVariable.pattern)
         } finally {
-            bindingVariables.forEach(dataFlowAnalyzer::exitVariableDeclaration)
+            bindingVariables.forEach(dataFlowAnalyzer::exitPatternBindingDeclaration)
         }
 
         if (patternVariable.pattern.bindingVariables().all { it.returnTypeRef is CfirResolvedTypeRef }) {
             bumpPhase(patternVariable)
+            publishCompletedBodyRootPhases(patternVariable)
         }
         return patternVariable
     }
@@ -1019,10 +1297,18 @@ dataFlowAnalyzer.enterFunction(constructor)
         expectedTypeRef: CfirResolvedTypeRef?,
         initializer: CfirExpression?,
     ) {
-        if (!context.shouldShortCircuitOverloadByLambdaTargetChecks()) return
-        val expectedType = expectedTypeRef?.coneType ?: return
+        if (!context.hasActiveOverloadByLambdaCandidateAnalysis()) return
         val actualType = initializer?.coneTypeOrNull ?: return
-        if (expectedType is ConeErrorType || actualType is ConeErrorType) return
+        // 已有结构化错误仍使目标候选失败；这里只写候选诊断，不重复发布源错误消息。
+        if (actualType is ConeErrorType) {
+            context.reportOverloadByLambdaCandidateDiagnostic(ErrorTypeInArguments)
+            return
+        }
+        val expectedType = expectedTypeRef?.coneType ?: return
+        if (expectedType is ConeErrorType) {
+            context.reportOverloadByLambdaCandidateDiagnostic(ErrorTypeInArguments)
+            return
+        }
 
         val effectiveActualType = IdealTypeResolver.resolveIfIdeal(actualType, expectedType)
         val isCompatible = AbstractTypeChecker.equalTypes(session.typeContext, effectiveActualType, expectedType) ||
@@ -1087,7 +1373,7 @@ dataFlowAnalyzer.enterFunction(constructor)
         namedFunction: CfirNamedFunction,
         data: ResolutionMode,
     ): CfirNamedFunction = transformFunctionLikeDeclaration(namedFunction) { action ->
-        context.withNamedFunction(namedFunction, session) {
+        context.withNamedFunction(namedFunction, session, beforeEnter = { resolveDefaultParameterHelpers(namedFunction) }) {
             action()
         }
     }
@@ -1100,6 +1386,7 @@ dataFlowAnalyzer.enterFunction(constructor)
         mainFunction: CfirMainFunction,
         data: ResolutionMode,
     ): CfirMainFunction = transformFunctionLikeDeclaration(mainFunction) { action ->
+        resolveDefaultParameterHelpers(mainFunction)
         context.withContainer(mainFunction) {
             action()
         }
@@ -1113,6 +1400,7 @@ dataFlowAnalyzer.enterFunction(constructor)
         macroDeclaration: CfirMacroDeclaration,
         data: ResolutionMode,
     ): CfirMacroDeclaration = transformFunctionLikeDeclaration(macroDeclaration) { action ->
+        resolveDefaultParameterHelpers(macroDeclaration)
         context.withContainer(macroDeclaration) {
             action()
         }
@@ -1129,6 +1417,7 @@ dataFlowAnalyzer.enterFunction(constructor)
         finalizer,
         inferImplicitReturnType = false,
     ) { action ->
+        resolveDefaultParameterHelpers(finalizer)
         context.withContainer(finalizer) {
             action()
         }
@@ -1150,20 +1439,17 @@ dataFlowAnalyzer.enterFunction(constructor)
             return function
         }
 
-        val containingDeclaration = context.containerIfAny
         withFunctionContext {
             if (shouldResolveEverything) {
-                transformTypeParameterHeaders(function)
+                function.resolveLocalFunctionAnnotations()
+                if (!function.isLocal) transformTypeParameterHeaders(function)
             }
 
             // 局部嵌套函数（不在类体/文件顶层）需要先把签名解析好，
             // 因为类成员的签名由前面的阶段（SUPER_TYPES / STATUS）处理过。
-            val isLocalNested = function.isLocal ||
-                    containingDeclaration != null &&
-                    containingDeclaration !is CfirClass &&
-                    containingDeclaration !is CfirFile
-            if (isLocalNested) {
+            if (function.isLocal) {
                 prepareSignatureForBodyResolve(function)
+                function.transformStatus(this, function.resolveStatus().mode())
             }
 
             val resolveBody = {
@@ -1194,6 +1480,22 @@ dataFlowAnalyzer.enterFunction(constructor)
         }
     }
 
+    /** 在原函数入栈之前，用真实词法 outer 执行 helper 的普通 BODY/CFG 生命周期。 */
+    private fun resolveDefaultParameterHelpers(owner: CfirFunction) {
+        owner.valueParameters.forEach { parameter ->
+            val helper = parameter.ownedDefaultParameterHelper ?: return@forEach
+            check(helper.body !is CfirLazyBlock) { "The normal owner reconstruction must materialize its helper body" }
+            helper.interopInfo = checkNotNull(helper.interopInfo).copy(isFrozen = owner.interopInfo?.isFrozen == true)
+            helper.transformSingle(transformer, ResolutionMode.ContextIndependent)
+            if (transformer.transformerPhase == CfirResolvePhase.BODY_RESOLVE) {
+                check(helper.body?.coneTypeOrNull != null && helper.controlFlowGraphReference != null) {
+                    "Normal helper BODY resolution must publish its actual typed body and CFG"
+                }
+                publishCompletedFunctionBodyPhase(helper)
+            }
+        }
+    }
+
     /**
      * 在函数签名、默认参数和函数体之前解析真实类型参数的注解与上界。
      *
@@ -1201,6 +1503,25 @@ dataFlowAnalyzer.enterFunction(constructor)
      * `doTransformTypeParameters` 一样，只通过 BODY_RESOLVE dispatcher 转换 children，
      * 让局部函数的 where 上界在 qualifier/member scope 构造前成为 resolved type ref。
      */
+    /**
+     * 对位 Kotlin FirFunction.resolveLocalFunctionAnnotations。
+     * 局部签名先完成注解、返回类型和参数注解，再计算 STATUS；参数尚未进入正文名称作用域。
+     * 仓颉没有 Kotlin receiver/context parameter，现有值参数与自有类型参数沿同一声明上下文处理。
+     */
+    private fun CfirFunction.resolveLocalFunctionAnnotations() {
+        if (!isLocal) return
+
+        resolveDeclarationAnnotations(this, ResolutionMode.ContextIndependent)
+        transformReturnTypeRef(transformer, ResolutionMode.ContextIndependent)
+        valueParameters.forEach { parameter ->
+            context.withContainer(parameter) {
+                resolveDeclarationAnnotations(parameter, ResolutionMode.ContextIndependent)
+                parameter.transformReturnTypeRef(transformer, ResolutionMode.ContextIndependent)
+            }
+        }
+        transformTypeParameterHeaders(this)
+    }
+
     private fun transformTypeParameterHeaders(function: CfirFunction) {
         function.typeParameters
             .filterIsInstance<CfirTypeParameter>()
@@ -1264,6 +1585,7 @@ dataFlowAnalyzer.enterFunction(constructor)
             result.replaceReturnTypeRef(resolved)
         }
 
+        publishCompletedFunctionBodyPhase(result)
         return result
     }
 
@@ -1285,16 +1607,23 @@ dataFlowAnalyzer.enterFunction(constructor)
         }
 
         val expressionTypes = returnTypeInputs.expressions.map { expression ->
-            val expressionType = expression.coneTypeOrNull ?: ConeErrorType(
+            val originalType = expression.coneTypeOrNull
+            val expressionType = originalType ?: ConeErrorType(
                 ConeSimpleDiagnostic("Postponed inference", DiagnosticKind.InferenceError)
             )
             // 官方 CheckBodyRetType 在 Join 前对 body/return expression 执行 ReplaceIdealTy；
             // 否则 `{ 1 }` 会把 IDEAL_INT 错误保留为函数声明返回类型。
-            expression to IdealTypeResolver.replaceIdealTypes(expressionType)
+            // 官方 ReplaceIdealTy 先检查 IsTyCorrect；非法复合类型保持原树，避免默认化其中的有效子项。
+            val replacedType = if (expressionType.containsErrorType()) {
+                expressionType
+            } else {
+                IdealTypeResolver.replaceIdealTypes(expressionType)
+            }
+            expression to replacedType
         }.filterNot { (expression, type) ->
             expression in returnTypeInputs.explicitReturnExpressions &&
                     expression !== returnTypeInputs.bodyTailReturnExpression &&
-                    type is ConeErrorType
+                    type.containsErrorType()
         }.filterNot { (_, type) -> type.containsRecursiveImplicitReturnType() }
             .mapTo(mutableListOf()) { (_, type) -> type }
         if (returnTypeInputs.hasUnitTail) {
@@ -1307,9 +1636,9 @@ dataFlowAnalyzer.enterFunction(constructor)
             return session.builtinTypes.unitType
         }
 
-        // 官方 CalcFuncRetTyFromBody 只把 IsTyCorrect 的显式 return expression 加入 Join；
-        // 错误 return 分支不污染仍有效的 body 尾表达式。尾表达式自身错误时仍保留其根因。
-        expressionTypes.firstOrNull { type -> type is ConeErrorType }?.let { return it }
+        // 官方 CalcFuncRetTyFromBody 在 Join 前检查 body 尾类型；复合类型中的错误也必须阻止 Join。
+        // 保留含错误节点的原始类型树，使原表达式诊断继续作为根因，不派生函数级 Join 错误。
+        expressionTypes.firstOrNull { type -> type.containsErrorType() }?.let { return it }
 
         if (expressionTypes.size == 1) {
             return expressionTypes.single()
@@ -1547,7 +1876,7 @@ dataFlowAnalyzer.enterFunction(constructor)
             is CfirInterface -> declaration.typeParameters
             is CfirStruct -> declaration.typeParameters
             is CfirEnum -> declaration.typeParameters
-            is CfirConstructor -> declaration.typeParameters
+            is CfirConstructor -> declaration.typeParameters.filterIsInstance<CfirTypeParameter>()
             is CfirProperty -> declaration.typeParameters
             is CfirFieldVariable -> declaration.typeParameters
             is CfirValueParameter -> declaration.typeParameters
@@ -1557,7 +1886,7 @@ dataFlowAnalyzer.enterFunction(constructor)
             is CfirMacroDeclaration -> declaration.typeParameters
             is CfirMainFunction -> declaration.typeParameters
             is CfirFinalizer -> declaration.typeParameters
-            is CfirFunction -> declaration.typeParameters
+            is CfirFunction -> declaration.typeParameters.filterIsInstance<CfirTypeParameter>()
 
             is CfirEnumConstructor -> declaration.typeParameters.filterIsInstance<CfirTypeParameter>()
             else -> emptyList()

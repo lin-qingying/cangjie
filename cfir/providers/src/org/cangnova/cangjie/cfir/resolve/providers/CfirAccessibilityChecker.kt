@@ -16,10 +16,10 @@ import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.scopes.processCallablesByNameWithLookupProvenance
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.CfirSessionComponent
-import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.resolve.providers.cfirProvider
 import org.cangnova.cangjie.cfir.session.extendProviderOrNull
 import org.cangnova.cangjie.cfir.session.extendExportSurfaceService
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.session.typeAwareSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
@@ -30,10 +30,12 @@ import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.name.ClassId
+import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 
 /**
@@ -158,6 +160,26 @@ class CfirAccessibilityChecker(
             declaration = declaration,
             context = context,
             provenance = provenance,
+        )
+    }
+
+    /**
+     * 判断继承成员是否对指定声明包可见。
+     *
+     * extend owner 可能来自 CJO，没有源码文件可构造完整使用点；官方继承检查在这条路径上
+     * 只使用成员包关系和 visibility。该入口复用统一可见性规则以及反序列化声明携带的包身份，
+     * 避免 checker 再根据 CJO 的 source 是否存在猜测可见性。
+     */
+    fun isCallableVisibleFromPackage(
+        symbol: CfirCallableSymbol<*>,
+        useSitePackage: FqName?,
+    ): Boolean {
+        val declarationSymbol = symbol.unwrapCallableForDeclarationMetadataLookup()
+        val declaration = declarationSymbol.cfir as? CfirMemberDeclaration ?: return true
+        return isPackageVisible(
+            declaration = declaration,
+            useSitePackage = useSitePackage,
+            declarationPackage = declarationSymbol.getDeclarationPackage(),
         )
     }
 
@@ -378,15 +400,14 @@ class CfirAccessibilityChecker(
         val declarationPackage = symbol.getDeclarationPackage()
         val useSitePackage = useSiteFile?.packageDirective?.packageFqName
         val accessible = when (declaration.status.visibility) {
-            Visibilities.Public -> true
-            Visibilities.Internal -> packageAccessible(
-                useSitePackage,
-                declarationPackage,
-                ::canAccessPackageInternalDeclaration,
-            )
+            Visibilities.Public,
+            Visibilities.Internal,
+            -> isPackageVisible(declaration, useSitePackage, declarationPackage)
 
             Visibilities.Private -> privateAccessible(symbol, useSiteFile, declarationFile, context)
-            Visibilities.Protected -> protectedAccessible(symbol, useSitePackage, declarationPackage, context)
+            Visibilities.Protected -> isPackageVisible(declaration, useSitePackage, declarationPackage) ||
+                protectedAccessible(symbol, useSitePackage, declarationPackage, context)
+
             else -> false
         }
         if (accessible) return null
@@ -473,6 +494,7 @@ class CfirAccessibilityChecker(
             ?: true
 
     private fun isClassIdExported(classId: ClassId): Boolean {
+        if (classId == StdlibClassIds.Any) return true
         val declaration = session.symbolProvider.getClassLikeSymbolByClassId(classId)
             ?.cfir as? CfirMemberDeclaration
             ?: return false
@@ -485,6 +507,7 @@ class CfirAccessibilityChecker(
     }
 
     private fun isClassIdReachableAndVisible(classId: ClassId, context: CfirAccessContext): Boolean {
+        if (classId == StdlibClassIds.Any) return true
         val file = context.useSiteFile ?: return false
         if (!isClassIdVisibleFromPackage(classId, context)) return false
         return file.isClassIdReachableByImports(session, classId)
@@ -548,15 +571,17 @@ class CfirAccessibilityChecker(
          * 普通 private 顶层函数只在声明文件的词法 scope 中存在，因此访问失败时不再可发现。
          * private 类成员则以包导出边界区分：同包源码成员仍在 receiver 的结构成员集中，
          * 由调用候选过滤后形成 no-match；跨包成员不进入导出成员面，保持 not-member。
-         * extend 成员由目标类型的结构性 member scope 提供；跨包不可导出的 extend 成员已在
-         * export-surface 检查中移除，能到达这里的同包成员继续走调用候选排除。
+         * extend 的目标类型与 extend 同包时，结构性导出面也包含 private 成员；它们在跨包
+         * 使用点不可发现，同包不可访问时则进入调用候选排除。
         */
         val callable = symbol as? CfirCallableSymbol<*>
         val declarationPackage = symbol.getDeclarationPackage()
         val isSamePackageClassMember = symbol.getContainingClass() != null &&
             declarationPackage != null &&
             declarationPackage == context.useSiteFile?.packageDirective?.packageFqName
-        return if (callable?.getContainingExtend() != null || isSamePackageClassMember) {
+        val isSamePackageExtendMember = callable?.getContainingExtend() != null &&
+            declarationPackage != null && declarationPackage == context.useSiteFile?.packageDirective?.packageFqName
+        return if (isSamePackageExtendMember || isSamePackageClassMember) {
             CfirLookupDisposition.EXCLUDE_CALLABLE
         } else {
             CfirLookupDisposition.NOT_DISCOVERABLE
@@ -570,6 +595,29 @@ class CfirAccessibilityChecker(
     ): Boolean {
         if (useSitePackage == null || declarationPackage == null) return false
         return relation(useSitePackage, declarationPackage)
+    }
+
+    /** 与官方 `Modules::IsVisible` 同构的 package-only visibility 视图。 */
+    private fun isPackageVisible(
+        declaration: CfirMemberDeclaration,
+        useSitePackage: FqName?,
+        declarationPackage: FqName?,
+    ): Boolean = when (declaration.status.visibility) {
+        Visibilities.Public -> true
+        Visibilities.Internal -> packageAccessible(
+            useSitePackage,
+            declarationPackage,
+            ::canAccessPackageInternalDeclaration,
+        )
+
+        Visibilities.Protected -> packageAccessible(
+            useSitePackage,
+            declarationPackage,
+            ::canAccessPackageProtectedDeclaration,
+        )
+
+        Visibilities.Private -> false
+        else -> false
     }
 
     private fun privateAccessible(
@@ -596,8 +644,6 @@ class CfirAccessibilityChecker(
         declarationPackage: org.cangnova.cangjie.name.FqName?,
         context: CfirAccessContext,
     ): Boolean {
-        if (packageAccessible(useSitePackage, declarationPackage, ::canAccessPackageProtectedDeclaration)) return true
-
         val callable = symbol as? CfirCallableSymbol<*>
         val ownerExtend = callable?.getContainingExtend()
         if (ownerExtend != null && context.containingDeclarations.any { it === ownerExtend }) return true

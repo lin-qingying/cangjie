@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirClass
@@ -17,7 +18,7 @@ import org.cangnova.cangjie.cfir.references.CfirResolvedErrorReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.session.builtinTypes
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
 import org.cangnova.cangjie.cfir.symbols.toLookupTag
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
@@ -43,7 +44,7 @@ import org.cangnova.cangjie.type.AbstractTypeChecker
  * 因为 CfirSpawnExpression 通过 visitAlso 注册到 BasicExpressionChecker，
  * 所以此 checker 需要在 check 方法中手动过滤类型。
  */
-object CfirSpawnSemanticsChecker : CfirBasicExpressionChecker() {
+object CfirSpawnSemanticsChecker : CfirBasicExpressionChecker(MppCheckerKind.Common) {
     /** 官方要求 spawn 线程上下文提供该零参函数。 */
     private val getSchedulerHandleName = Name.identifier("getSchedulerHandle")
 

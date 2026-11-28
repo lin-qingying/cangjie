@@ -40,7 +40,7 @@ import org.cangnova.cangjie.cfir.resolve.transformers.ReturnTypeCalculator
 import org.cangnova.cangjie.cfir.resolve.transformers.ReturnTypeCalculatorForFullBodyResolve
 import org.cangnova.cangjie.cfir.scopes.CallableCopyTypeCalculator
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.resolve.providers.cfirProvider
 import org.cangnova.cangjie.cfir.session.extendProviderOrNull
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef

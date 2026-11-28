@@ -1,0 +1,418 @@
+{
+  "schemaVersion": 1,
+  "purpose": "新会话接续记录；不是新一轮编译、行为验收或全仓库无漂移证明",
+  "workspace": "C:/Users/lin17/.codex/worktrees/cjmp-framework-implementation/cangjie",
+  "branch": "codex/cjmp-framework-implementation",
+  "head": "b4dd742d589e4b5ee6592d454634c44f634df08a",
+  "gitObservationBeforeHandoffDocuments": {
+    "capturedAt": "2026-11-17T01:50:10.3878234+08:00",
+    "totalPaths": 3734,
+    "groups": [
+      {
+        "status": " D",
+        "count": 37
+      },
+      {
+        "status": " M",
+        "count": 1462
+      },
+      {
+        "status": "??",
+        "count": 2231
+      },
+      {
+        "status": "MM",
+        "count": 4
+      }
+    ]
+  },
+  "fileObservation": {
+    "capturedAt": "2026-11-17T01:50:59.3034170+08:00",
+    "files": [
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/copy/CfirOwnedGraphCopy.kt",
+        "length": 11178,
+        "lastWriteTime": "2026-11-17T01:32:43.2277357+08:00",
+        "sha256": "aba46465248430b4fa51362cec1f31381a7840683f176b1a9c1f9e56413567e7"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/copy/CfirDeepCopySymbolRemapper.kt",
+        "length": 2273,
+        "lastWriteTime": "2026-11-17T01:32:43.2327318+08:00",
+        "sha256": "a86d49eae2aab1c97c4a3f11764e437b17644f7f184e2e4bb629822dec722513"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/copy/CfirOwnedGraphCopyVisitor.kt",
+        "length": 6081,
+        "lastWriteTime": "2026-11-17T01:32:43.2361365+08:00",
+        "sha256": "3e435a9ae3210bf1fd18e2166bc89315ffe970c2efc0dbded6d959059f10eab6"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/copy/CfirDeepCopyOwnedGraphVisitor.kt",
+        "length": 79158,
+        "lastWriteTime": "2026-11-17T01:32:43.2426559+08:00",
+        "sha256": "ec08f00ad7f58ef70a2807e7bada9b04da17a70f525f8b32ed0848a50b156690"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/declarations/CfirDeclarationAttributes.kt",
+        "length": 8351,
+        "lastWriteTime": "2026-11-17T01:32:43.2297294+08:00",
+        "sha256": "156215b1f94e6e07c892fa46f5cdb2851702d0928f6f3e0db09f9467fbe97530"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/expressions/CfirAbstractArgumentList.kt",
+        "length": 12210,
+        "lastWriteTime": "2026-11-17T01:32:43.2376527+08:00",
+        "sha256": "3fa77697b6f94dc0bd690a0f1f7b8319e0cc4d0608b6afa7a15557eec1f01e93"
+      },
+      {
+        "path": "cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/Main.kt",
+        "length": 2508,
+        "lastWriteTime": "2026-11-17T01:32:43.2501799+08:00",
+        "sha256": "2ed53d3478cfd73c7a85e0422747ad70fcf9b9a4adb2a37d7a20d8f45f7fb1ab"
+      },
+      {
+        "path": "cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/printer/OwnedGraphCopyPrinter.kt",
+        "length": 9605,
+        "lastWriteTime": "2026-11-17T01:32:43.2446532+08:00",
+        "sha256": "4c0e1ab3a280d666a436ea9f1acc46f69a7ccf440f680cbfe3e896afc9adff47"
+      },
+      {
+        "path": "cfir/cfir-tree/test/org/cangnova/cangjie/cfir/copy/CfirOwnedGraphCopyTest.kt",
+        "length": 13555,
+        "lastWriteTime": "2026-11-17T01:32:43.2587098+08:00",
+        "sha256": "16581f4547602fae0f94693e57d8659c4aebbdf4822a0f96ebcd2d2afc0a2ef4"
+      },
+      {
+        "path": "build/source-expression-codec-audit-v113/source-copy-implementation.patch.txt",
+        "length": 172072,
+        "lastWriteTime": "2026-11-17T01:22:50.9326860+08:00",
+        "sha256": "d62a41c7185b52e0755919d3fb5af140bbebe3595fe2313fdef771db66149503"
+      },
+      {
+        "path": "build/source-expression-codec-audit-v113/source-copy-production-gate-20261117.md",
+        "length": 19747,
+        "lastWriteTime": "2026-11-17T01:48:28.2698434+08:00",
+        "sha256": "701ebc06792760a192f0dc5090ce0d4b22fce8be76f9e06a61c44a0f63031ea8"
+      },
+      {
+        "path": "build/source-expression-codec-audit-v113/source-copy-analysis-limit-20261117.md",
+        "length": 1281,
+        "lastWriteTime": "2026-11-17T01:37:58.2305302+08:00",
+        "sha256": "b7a451f8d99c745454e5f76c657a16127b72ec1bfa613a896c658e9d4828947d"
+      },
+      {
+        "path": "docs/cjmp-source-chain-delivery-20261116.md",
+        "length": 7994,
+        "lastWriteTime": "2026-11-16T20:46:15.8136061+08:00",
+        "sha256": "9a3b26370c3e92cea109382311bf1741248cd308033fcdbbba1adb1700ac9254"
+      }
+    ]
+  },
+  "generatorObservation": {
+    "capturedAt": "2026-11-17T01:53:13.8987396+08:00",
+    "queue": {
+      "id": "0de51aab",
+      "args": [
+        "--gradle-user-home",
+        ".gradle/cjmp-export-home",
+        ":cfir:cfir-tree:generateTree",
+        "--no-build-cache",
+        "--console=plain",
+        "--max-workers=1"
+      ],
+      "pid": 22828,
+      "owner": "pid@22828",
+      "submitAt": 1794850962661,
+      "startedAt": 1794850962742,
+      "finishedAt": 1794851398714,
+      "exitCode": 1,
+      "status": "DONE"
+    },
+    "queuePidAlive": false,
+    "startedAtLocal": "2026-11-17T01:42:42.7420000+08:00",
+    "finishedAtLocal": "2026-11-17T01:49:58.7140000+08:00",
+    "commandExecutionId": "exec-ba5d7422-8fd2-4f33-826f-9734a3964c24",
+    "commandAsExecuted": "\"C:\\\\Program Files\\\\WindowsApps\\\\OpenAI.CodexPrimaryRuntime.v26-1112-611-0_26.1112.611.0_x64__3k8sg7r9htsxt\\\\dependencies\\\\native\\\\powershell\\\\pwsh.exe\" -Command \"undefined& .\\\\gradlew-queue.bat '--gradle-user-home' '.gradle/cjmp-export-home' ':cfir:cfir-tree:generateTree' '--no-build-cache' '--console=plain' '--max-workers=1'\"",
+    "durationMs": 438845,
+    "terminalArchive": "docs/cjmp-handoff-20261117/generator-terminal.txt",
+    "terminalTruncated": false,
+    "diagnostics": [
+      "e: file:///C:/Users/lin17/.codex/worktrees/cjmp-framework-implementation/cangjie/cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/printer/OwnedGraphCopyPrinter.kt:71:75 Unresolved reference 'typeName'.",
+      "e: file:///C:/Users/lin17/.codex/worktrees/cjmp-framework-implementation/cangjie/cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/printer/OwnedGraphCopyPrinter.kt:71:117 Unresolved reference 'typeName'.",
+      "e: file:///C:/Users/lin17/.codex/worktrees/cjmp-framework-implementation/cangjie/cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/printer/OwnedGraphCopyPrinter.kt:72:32 Unresolved reference 'typeName'.",
+      "e: file:///C:/Users/lin17/.codex/worktrees/cjmp-framework-implementation/cangjie/cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/printer/OwnedGraphCopyPrinter.kt:84:27 Unresolved reference 'typeName'.",
+      "e: file:///C:/Users/lin17/.codex/worktrees/cjmp-framework-implementation/cangjie/cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/printer/OwnedGraphCopyPrinter.kt:87:27 Unresolved reference 'typeName'.",
+      "e: file:///C:/Users/lin17/.codex/worktrees/cjmp-framework-implementation/cangjie/cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/printer/OwnedGraphCopyPrinter.kt:88:27 Unresolved reference 'typeName'.",
+      "e: file:///C:/Users/lin17/.codex/worktrees/cjmp-framework-implementation/cangjie/cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/printer/OwnedGraphCopyPrinter.kt:88:72 Unresolved reference 'typeName'.",
+      "e: file:///C:/Users/lin17/.codex/worktrees/cjmp-framework-implementation/cangjie/cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/printer/OwnedGraphCopyPrinter.kt:98:28 Unresolved reference 'typeName'.",
+      "e: file:///C:/Users/lin17/.codex/worktrees/cjmp-framework-implementation/cangjie/cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/printer/OwnedGraphCopyPrinter.kt:99:34 Unresolved reference 'typeName'.",
+      "e: file:///C:/Users/lin17/.codex/worktrees/cjmp-framework-implementation/cangjie/cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/printer/OwnedGraphCopyPrinter.kt:110:64 Smart cast to 'Importable' is impossible, because 'typeRef' is a property that has an open or custom getter.",
+      "e: file:///C:/Users/lin17/.codex/worktrees/cjmp-framework-implementation/cangjie/cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/printer/OwnedGraphCopyPrinter.kt:121:34 Unresolved reference 'typeName'.",
+      "e: file:///C:/Users/lin17/.codex/worktrees/cjmp-framework-implementation/cangjie/cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/printer/OwnedGraphCopyPrinter.kt:124:50 Unresolved reference 'typeName'."
+    ],
+    "result": "tree-generator:compileKotlin 失败；generateTree 未完成，不能声明 S2 已编译或六项新测试通过",
+    "launcherObservation": "曾核实 queue wrapper 使用 C:/Users/lin17/.jdks/corretto-21.0.9/bin/java.exe；实际 shell 命令含 undefined&，不是历史有效环境设置"
+  },
+  "historicalEvidence": [
+    {
+      "terminalTime": "2026-11-16T20:27:29.886403+08:00",
+      "path": "psi/build/cjmp-verification/20261116-cjmp-source-graph-codec/binding-closure-terminal.json",
+      "execSession": 32522,
+      "exitCode": 1,
+      "modules": [
+        {
+          "module": "cfir/providers",
+          "xmlCount": 2,
+          "tests": 36,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 36
+        },
+        {
+          "module": "cfir/analysis-tests",
+          "xmlCount": 4,
+          "tests": 14,
+          "failures": 12,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 2
+        }
+      ],
+      "inputFrozenCount": 4107,
+      "selectedInputDriftCount": 0,
+      "queue": {
+        "id": "4c1ab0bd",
+        "args": [
+          "--gradle-user-home",
+          ".gradle/cjmp-export-home",
+          ":cfir:providers:test",
+          "--rerun",
+          "--tests",
+          "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+          "--tests",
+          "org.cangnova.cangjie.cfir.resolve.providers.CfirExportSourcePayloadTest",
+          ":cfir:analysis-tests:test",
+          "--rerun",
+          "--tests",
+          "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExport*Test",
+          "--tests",
+          "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjo*Test.publicInterfaceDefaultBodyPromotesReferencedPrivateFunction",
+          "--tests",
+          "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjo*Test.referencedPrivateDefaultHelperIsCollectedOutsideClassBody",
+          "--no-build-cache",
+          "--console=plain",
+          "--max-workers=1",
+          "--continue"
+        ],
+        "pid": 21072,
+        "owner": "pid@21072",
+        "submitAt": 1794831235712,
+        "startedAt": 1794831235822,
+        "finishedAt": 1794831826273,
+        "exitCode": 1,
+        "status": "DONE"
+      },
+      "xmlCount": 6,
+      "xmlTotalBytes": 59812
+    },
+    {
+      "terminalTime": "2026-11-16T18:51:58.834582+08:00",
+      "path": "psi/build/cjmp-verification/20261116-cjmp-heavy-scope-cache/resume-scope-selection-terminal.json",
+      "execSession": 91906,
+      "exitCode": 0,
+      "modules": [
+        {
+          "module": "cfir/cfir-tree",
+          "xmlCount": 1,
+          "tests": 9,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 9
+        },
+        {
+          "module": "cfir/providers",
+          "xmlCount": 2,
+          "tests": 18,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 18
+        },
+        {
+          "module": "cfir/resolve",
+          "xmlCount": 3,
+          "tests": 22,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 22
+        },
+        {
+          "module": "analysis/low-level-api-cfir",
+          "xmlCount": 1,
+          "tests": 5,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 5
+        }
+      ],
+      "inputFrozenCount": 4104,
+      "selectedInputDriftCount": 0,
+      "queue": {
+        "id": "6a374215",
+        "args": [
+          "--gradle-user-home",
+          ".gradle/cjmp-export-home",
+          ":cfir:cfir-tree:test",
+          "--rerun",
+          "--tests",
+          "org.cangnova.cangjie.cfir.ScopeSessionOwnershipTest",
+          ":cfir:providers:test",
+          "--rerun",
+          "--tests",
+          "org.cangnova.cangjie.cfir.scopes.impl.CfirScopeCacheLifecycleTest",
+          "--tests",
+          "org.cangnova.cangjie.cfir.scopes.impl.CfirFakeOverrideGeneratorTest",
+          ":cfir:resolve:test",
+          "--rerun",
+          "--tests",
+          "org.cangnova.cangjie.cfir.resolve.transformers.CfirSupertypesPublicationTest",
+          "--tests",
+          "org.cangnova.cangjie.cfir.resolve.providers.CfirTypeAwareSupertypeProviderTest",
+          "--tests",
+          "org.cangnova.cangjie.cfir.resolve.CfirTypeResolverTypeAliasExpansionTest",
+          ":analysis:low-level-api-cfir:test",
+          "--rerun",
+          "--tests",
+          "org.cangnova.cangjie.analysis.low.level.api.cfir.resolve.CfirSourceExtendDependenciesTest",
+          "--no-build-cache",
+          "--console=plain",
+          "--max-workers=1",
+          "--continue"
+        ],
+        "pid": 34024,
+        "owner": "pid@34024",
+        "submitAt": 1794825324963,
+        "startedAt": 1794825325023,
+        "finishedAt": 1794826097994,
+        "exitCode": 0,
+        "status": "DONE"
+      },
+      "xmlCount": 7,
+      "xmlTotalBytes": 12895
+    },
+    {
+      "terminalTime": "2026-11-17T00:58:29.544829+08:00",
+      "path": "build/cjmp-e9-20261116/baseline-terminal.json",
+      "execSession": 41368,
+      "exitCode": 1,
+      "modules": [
+        {
+          "module": "cfir/analysis-tests",
+          "xmlCount": 2,
+          "tests": 34,
+          "failures": 4,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 30
+        }
+      ],
+      "inputFrozenCount": 4107,
+      "selectedInputDriftCount": 0,
+      "queue": {
+        "id": "8bc615ee",
+        "args": [
+          "--gradle-user-home",
+          ".gradle/cjmp-export-home",
+          ":cfir:analysis-tests:test",
+          "--rerun",
+          "--tests",
+          "*CfirAnalysisDiagnostics2TestGenerated*testCommonSpecificExtension*",
+          "--tests",
+          "*CfirAnalysisDiagnostics2PsiTestGenerated*testCommonSpecificExtension*",
+          "--no-build-cache",
+          "--console=plain",
+          "--max-workers=1"
+        ],
+        "pid": 19116,
+        "owner": "pid@19116",
+        "submitAt": 1794848141081,
+        "startedAt": 1794848141116,
+        "finishedAt": 1794848205358,
+        "exitCode": 1,
+        "status": "DONE"
+      },
+      "xmlCount": 2,
+      "xmlTotalBytes": 56732
+    }
+  ],
+  "scope": {
+    "originalItems": 70,
+    "phases": "P0–P10",
+    "currentPriority": "完整 SOURCE→CJO→正式消费端：P8/S1–S7，关联 E6/G1",
+    "s0": "限定验收；providers36/36，仅覆盖冻结输入协议",
+    "s1ToS7": "OPEN",
+    "s2": "九文件候选已应用；生成器编译失败；独立审查 REJECT 完整 S2",
+    "originalSourceSuite": "2/14；十二正确失败保留",
+    "progressEstimate": "447/7÷70＝91.22%；历史57整项、12部分、C3零；全面验收未完成，不因本轮交接加分",
+    "excludedBackendBalance": "H6 用户排除的后端余额保留分母、不实施、不计完成",
+    "v10": "逐 key 最终验收保留待办，暂缺不阻断其它授权实现",
+    "stoppedChats": "用户已停止其它会话，不再向其发送消息、协商冻结窗口或等待答复"
+  },
+  "documentationVerification": {
+    "execSession": 15898,
+    "task": "validateDocumentation",
+    "taskExecuted": true,
+    "buildDurationSeconds": 44,
+    "capturedAt": "2026-11-17T02:00:03.7482906+08:00",
+    "queue": {
+      "id": "7d6303b8",
+      "args": [
+        "--gradle-user-home",
+        ".gradle/cjmp-export-home",
+        "validateDocumentation",
+        "--rerun",
+        "--no-build-cache",
+        "--console=plain",
+        "--max-workers=1"
+      ],
+      "pid": 35208,
+      "owner": "pid@35208",
+      "submitAt": 1794851909858,
+      "startedAt": 1794851909931,
+      "finishedAt": 1794851954962,
+      "exitCode": 0,
+      "status": "DONE"
+    },
+    "documents": [
+      {
+        "path": "docs/cjmp-framework-handoff-20261117.md",
+        "sha256": "2c34dbc524015c3895f2c47e46d625e9bcb6ee9126e74ae531e4ed346be87ffa"
+      },
+      {
+        "path": "docs/cjmp-framework-review-and-fix-plan-20260928.md",
+        "sha256": "c116bfc4fe4bc439f3c82c679a15875a024a7813be646093a6cacd0558284733"
+      },
+      {
+        "path": "docs/cjmp-progress-audit-20261008.md",
+        "sha256": "ddd6bc436c8c93c0534fbcd7b226de0d93040c90bca83b636328138c31e69e1f"
+      }
+    ],
+    "scope": "仅文档门禁；没有运行 S2 或 SOURCE 行为测试",
+    "additionalChecks": {
+      "trackedPlanAndAuditGitDiffCheckExitCode": 0,
+      "strictUtf8NewArtifacts": [
+        "docs/cjmp-framework-handoff-20261117.md",
+        "docs/cjmp-handoff-20261117/state.json",
+        "docs/cjmp-handoff-20261117/generator-terminal.txt"
+      ],
+      "comparedPriorFileSamples": 13,
+      "changedPriorFileSamples": []
+    }
+  }
+}
+

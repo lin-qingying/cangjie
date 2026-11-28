@@ -1,5 +1,8 @@
 package org.cangnova.cangjie.frontend.pipeline
 
+import org.cangnova.cangjie.cfir.pipeline.runPlatformCheckers
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
+
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.vfs.StandardFileSystems
 import org.cangnova.cangjie.CangJieCoreEnvironment
@@ -9,15 +12,21 @@ import org.cangnova.cangjie.CjSourceFile
 import org.cangnova.cangjie.cfir.DependencyListForCliModule
 import org.cangnova.cangjie.cfir.entrypoint.session.CfirDefaultSessionFactory
 import org.cangnova.cangjie.cfir.entrypoint.session.createDefaultCfirSessionFactoryContext
+import org.cangnova.cangjie.cfir.entrypoint.session.createCfirCjmpSettingsComponent
+import org.cangnova.cangjie.cfir.builder.toParsingContext
 import org.cangnova.cangjie.cfir.extensions.CfirExtensionRegistrar
 import org.cangnova.cangjie.cfir.pipeline.*
 import org.cangnova.cangjie.cfir.resolve.providers.macro.*
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.session.cjmpLoadDiagnostics
+import org.cangnova.cangjie.cfir.session.CfirCjmpSettingsComponent
+import org.cangnova.cangjie.cfir.session.cjmpSettings
+import org.cangnova.cangjie.cfir.declarations.cjoDeclarationOrigin
+import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.declarations.parsingSourceContext
 import org.cangnova.cangjie.cfir.session.ensureAnnotationMetadataRegistry
 import org.cangnova.cangjie.config.*
-import org.cangnova.cangjie.cfir.entrypoint.configuration.cjmpCommonPartCjoPaths
-import org.cangnova.cangjie.cfir.entrypoint.configuration.cjmpPackageFeatures
+import org.cangnova.cangjie.cfir.entrypoint.configuration.CjmpCommonPartInputResolution
+import org.cangnova.cangjie.cfir.entrypoint.configuration.cjmpCommonPartInputResolution
 import org.cangnova.cangjie.frontend.environment.VfsBasedProjectEnvironment
 import org.cangnova.cangjie.frontend.environment.findFileByPath
 import org.cangnova.cangjie.frontend.environment.forAllFiles
@@ -28,12 +37,30 @@ import org.cangnova.cangjie.frontend.sources.acceptsCangjieSource
 import org.cangnova.cangjie.frontend.sources.cangjieSourceKind
 import org.cangnova.cangjie.frontend.sources.collectCjSources
 import org.cangnova.cangjie.messages.CompilerMessageLocationWithRange
+import org.cangnova.cangjie.messages.CompilerMessageLocation
 import org.cangnova.cangjie.messages.CompilerMessageSeverity
 import org.cangnova.cangjie.messages.CompilerMessageSourceLocation
+import org.cangnova.cangjie.messages.MessageCollector
+import org.cangnova.cangjie.messages.ParsingDiagnostic
+import org.cangnova.cangjie.messages.ParsingDiagnosticHint
+import org.cangnova.cangjie.messages.CjParsingDiagnosticCollector
+import org.cangnova.cangjie.messages.CjParsingDiagnosticReport
+import org.cangnova.cangjie.cfir.pipeline.reportParsingDiagnostics
+import org.cangnova.cangjie.cfir.pipeline.collectParsingDiagnosticPublication
+import org.cangnova.cangjie.config.parserSettings
+import org.cangnova.cangjie.config.parsingDiagnosticSettings
+import org.cangnova.cangjie.parsing.toCangJieParsingErrorListener
+import org.cangnova.cangjie.parsing.cjmpParsingContext
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.source.CjSourceElement
+import org.cangnova.cangjie.source.CjBinarySourceElement
+import org.cangnova.cangjie.source.toSourceLinesMapping
+import org.cangnova.cangjie.cfir.diagnostics.CjDiagnostic
+import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticWithSource
 import org.cangnova.cangjie.source.psi
+import org.cangnova.cangjie.source.text
 import java.io.File
 
 /**
@@ -54,6 +81,14 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
      */
     override fun executePhase(input: ConfigurationPipelineArtifact): DefaultCfirFrontendPipelineArtifact? {
         val (configuration, rootDisposable) = input
+        val initialDiagnosticCount = configuration.diagnosticsCollector.diagnostics.size
+        val commonPartInputs = when (val resolution = configuration.cjmpCommonPartInputResolution) {
+            is CjmpCommonPartInputResolution.Valid -> resolution.inputs
+            is CjmpCommonPartInputResolution.Invalid -> {
+                configuration.messageCollector.report(CompilerMessageSeverity.ERROR, resolution.message)
+                return null
+            }
+        }
         configuration.initializeCfirFrontendMacroCompilationConfiguration()
 
         val (environment, sourcesProvider) = createEnvironmentAndSources(configuration, rootDisposable) ?: return null
@@ -67,13 +102,9 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
             return null
         }
 
-        // CJMP features 子集门的 specific 侧输入：官方 `CollectFeaturesFromPackage` 取当前
-        // 编译包源文件的 features 指令并集。必须在 session factory context 之前落到配置上，
-        // 因为加载 common part cjo 时（依赖侧 provider 构造）已经需要它。
-        configuration.cjmpPackageFeatures = collectCjmpPackageFeatures(sources.allSources)
         val rootModuleName = Name.identifier(configuration.moduleName ?: "main")
         val factory = CfirDefaultSessionFactory()
-        val sessionFactoryContext = createDefaultCfirSessionFactoryContext(configuration)
+        val sessionFactoryContext = createDefaultCfirSessionFactoryContext(configuration, commonPartInputs)
         val extensionRegistrars = emptyList<CfirExtensionRegistrar>()
         configuration.installDefaultMacroFragmentParserFactory(environment.project)
 
@@ -88,31 +119,45 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
             classpathRoots = sources.classpathRoots,
             factory = factory,
             sessionFactoryContext = sessionFactoryContext,
+            commonPartInputs = commonPartInputs,
             extensionRegistrars = extensionRegistrars,
         )
 
-        val sessionPreResults = sessionsWithSources.map { (session, sessionSources) ->
+        val sessionPreResults = sessionsWithSources.map { sessionWithSources ->
             SessionPreMacroResult(
-                session = session,
+                session = sessionWithSources.session,
+                librarySession = sessionWithSources.librarySession,
                 pre = buildPreMacroFromSources(
-                    session = session,
-                    sources = sessionSources,
+                    session = sessionWithSources.session,
+                    sources = sessionWithSources.files,
                     environment = environment,
                     useLightTree = configuration.useLightTree,
+                    parserSettings = configuration.parserSettings,
                 ).pruneConditionalCompilation(),
             )
         }
+        val parserFiles = sessionPreResults.flatMap { it.pre.files.map { file -> file.cfirFile } }
+        val syntaxPublication = collectParsingDiagnosticPublication(parserFiles, configuration.parsingDiagnosticSettings)
+        val syntaxListener = configuration.messageCollector.toCangJieParsingErrorListener()
+        installCjmpPackageFeatures(sessionPreResults)
 
-        val constructionService = FrontendMacroConstructionService(configuration)
+        // 先保留 WARNING：后续宏 token 重解析仍可能产生 LEX ERROR，必须在整个单元收口后统一发布。
+        if (syntaxPublication.diagnostics.any { it.isError }) {
+            val failedPublication = configuration.diagnosticsCollector.reportParsingDiagnostics(parserFiles, configuration.parsingDiagnosticSettings)
+            failedPublication.diagnostics.forEach(syntaxListener::onError)
+            return null
+        }
+        if (configuration.messageCollector.hasErrors()) return null
         val classifications = sessionPreResults.map { (session, pre) ->
             session.ensureAnnotationMetadataRegistry()
-            MacroDemandClassification.create(pre).also {
+            configuration.createMacroDemandClassification(pre).also {
                 session.register(MacroDemandClassification::class, it)
             }
         }
         val artifactPreparation = prepareMacroArtifactDefinitionsForExpansion(configuration, classifications)
+        val constructionService = FrontendMacroConstructionService(configuration, sdkSelection = artifactPreparation.sdkSelection)
 
-        val outputs = sessionPreResults.mapIndexedNotNull { index, (session, pre) ->
+        val constructionOutcomes = sessionPreResults.mapIndexed { index, (session, pre) ->
             val classification = classifications[index]
             classification.freezeFinal(
                 macroArtifactDefinitions = artifactPreparation.definitions,
@@ -121,28 +166,35 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
                     MacroConstructionService.Mode.DEGRADED -> MacroFailurePolicy.DEGRADED
                 },
             )
-            val (result, output) = resolveAndCheckCfirAfterConstruction(
+            buildAndResolveCfirAfterConstruction(
                 session = session,
                 pre = pre,
                 classification = classification,
                 constructionService = constructionService,
                 constructionMode = configuration.macroConstructionMode,
-                diagnosticsCollector = configuration.diagnosticsCollector,
                 macroArtifactDefinitions = artifactPreparation.definitions,
                 preConstructionDiagnostics = artifactPreparation.diagnostics,
             )
-            if (output == null) {
-                reportConstructionFailure(configuration, result)
-            }
-            output
         }
 
-        if (!reportCjmpLoadDiagnostics(configuration, sessionPreResults.map { it.session })) return null
-        // 反序列化 common part 的 common 方向配对结论（G20：以 cjo 内嵌位置外显）
-        val cjmpCommonSideErrors = outputs.fold(false) { hasErrors, output ->
-            CjmpDeserializedCommonSideReporter.report(output.session, output.fir, configuration.messageCollector) || hasErrors
+        val finalSyntaxPublication = configuration.diagnosticsCollector.reportParsingDiagnostics(parserFiles, configuration.parsingDiagnosticSettings)
+        finalSyntaxPublication.diagnostics.forEach(syntaxListener::onError)
+        constructionOutcomes.forEach { (result, output) ->
+            if (output == null) reportConstructionFailure(configuration, result)
         }
-        if (cjmpCommonSideErrors) return null
+        if (configuration.messageCollector.hasErrors()) return null
+        val outputs = constructionOutcomes.mapNotNull { it.second }
+        for (output in outputs) {
+            prepareCjmpImportedSourceContent(output)
+            output.session.runCheckers(output.scopeSession, output.fir, configuration.diagnosticsCollector, MppCheckerKind.Common,
+                includeParsingDiagnostics = false)
+        }
+
+        outputs.runPlatformCheckers(configuration.diagnosticsCollector)
+        if (configuration.messageCollector.hasErrors()) return null
+        val diagnostics = configuration.diagnosticsCollector.diagnostics.drop(initialDiagnosticCount)
+        if (reportBinarySourceDiagnostics(configuration, diagnostics)) return null
+        if (configuration.messageCollector.hasErrors()) return null
 
         return DefaultCfirFrontendPipelineArtifact(
             frontendOutput = AllModulesFrontendOutput(outputs),
@@ -152,41 +204,26 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
         )
     }
 
-    /**
-     * 外显 CJMP 加载门诊断（计划 G17：加载期无 `DiagnosticReporter`，诊断经 session 收集器上浮，
-     * 由装配层在此统一输出）。
-     *
-     * 收集器是一次编译调用内共享的单实例（工厂上下文创建，库/源码会话同挂），取任一源码会话即可；
-     * 按实例去重以防未来多上下文装配。任一错误级诊断使本阶段失败（官方加载门 `return false` 对位）。
-     */
-    private fun reportCjmpLoadDiagnostics(
-        configuration: CompilerConfiguration,
-        sessions: List<CfirSession>,
-    ): Boolean {
-        val diagnostics = sessions
-            .mapNotNull { it.cjmpLoadDiagnostics }
-            .distinct()
-            .flatMap { it.diagnostics }
-        for (diagnostic in diagnostics) {
-            configuration.messageCollector.report(
-                if (diagnostic.isError) CompilerMessageSeverity.ERROR else CompilerMessageSeverity.WARNING,
-                diagnostic.message,
-            )
-        }
-        return diagnostics.none { it.isError }
-    }
-
-    /**
-     * 收集当前编译包的 CJMP features 集合（官方 `File::GetFeatures()` 的包级并集）。
-     *
-     * 只读取 PSI 源文件的前导 `features { ... }` 指令；LightTree 源文件与非 PSI 来源
-     * （宏产物、附加源）不参与——官方 features 只存在于源码文件，宏产物不携带。
-     */
-    private fun collectCjmpPackageFeatures(sources: List<CjSourceFile>): Set<String> = buildSet {
-        for (source in sources) {
-            val psiFile = (source as? CjPsiSourceFile)?.psiFile as? CjFile ?: continue
-            val directive = psiFile.featuresDirective ?: continue
-            addAll(directive.featureIds)
+    /** 在 raw CFIR 归一化边界按包收集 features，并发布给实际持有 CJO provider 的库会话。 */
+    private fun installCjmpPackageFeatures(results: List<SessionPreMacroResult>) {
+        for ((librarySession, moduleResults) in results.groupBy { it.librarySession }) {
+            val mutableFeaturesByPackage = mutableMapOf<String, MutableSet<String>>()
+            for (result in moduleResults) {
+                for (file in result.pre.files) {
+                    val cfirFile = file.cfirFile
+                    val packageName = cfirFile.packageDirective.packageFqName.asString()
+                    mutableFeaturesByPackage.getOrPut(packageName) { linkedSetOf() }
+                        .addAll(cfirFile.featuresDirective?.featureIds.orEmpty())
+                }
+            }
+            val featuresByPackage = mutableFeaturesByPackage.mapValues { (_, features) -> features.toSet() }
+            val settingsSessions: List<CfirSession> = (moduleResults.map { it.session } + listOf(librarySession)).distinct()
+            for (session in settingsSessions) {
+                session.register(
+                    CfirCjmpSettingsComponent::class,
+                    session.cjmpSettings.withPackageFeatures(featuresByPackage),
+                )
+            }
         }
     }
 
@@ -202,6 +239,8 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
          * 该 session 下源文件构建出的 pre-macro raw 结果。
          */
         val pre: PreMacroRawBuildResult,
+        /** 该源码模块依赖的库 session，CJO provider 在此 session 上运行加载门。 */
+        val librarySession: CfirSession,
     )
 
     /**
@@ -261,6 +300,9 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
             val sourceKind = virtualFile.cangjieSourceKind()
             if (sourceKind == null || !configuration.acceptsCangjieSource(sourceKind)) return@forAllFiles
             val psiFile = com.intellij.psi.PsiManager.getInstance(environment.project).findFile(virtualFile) as? CjFile ?: return@forAllFiles
+            // features 的包级收集会首次访问 AST，解析选项必须在源文件收集时已经写入。
+            psiFile.cjmpParsingContext = createCfirCjmpSettingsComponent(configuration)
+                .toParsingContext(configuration.languageVersionSettings)
             val sourceFile = CjPsiSourceFile(psiFile)
             if (moduleName == null) {
                 if (isCommon) commonSources.add(sourceFile) else platformSources.add(sourceFile)
@@ -300,12 +342,13 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
         classpathRoots: List<File>,
         factory: CfirDefaultSessionFactory,
         sessionFactoryContext: CfirDefaultSessionFactory.Context,
+        commonPartInputs: CjmpCommonPartInputs,
         extensionRegistrars: List<CfirExtensionRegistrar>,
     ): List<SessionWithSources<CjSourceFile>> {
         val classpathPaths = classpathRoots.map { it.absolutePath }
         // CJMP specific 编译：common part cjo 作为 depends-on 依赖模块（D1 双模块模型，Kotlin
         // `-Xfragment-refines` 对位），精确到文件路径，使其声明带 refinement 依赖模块数据
-        val commonPartCjoPaths = configuration.cjmpCommonPartCjoPaths
+        val commonPartCjoPaths = commonPartInputs.commonPartCjoPaths
             .map { File(it).absoluteFile.toPath().normalize().toString() }
         val moduleGroups = buildModuleGroups(groupedSources, rootModuleName)
 
@@ -385,11 +428,13 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
         sources: List<CjSourceFile>,
         environment: VfsBasedProjectEnvironment,
         useLightTree: Boolean,
+        parserSettings: org.cangnova.cangjie.parsing.CjParserSettings,
     ): PreMacroRawBuildResult {
         return if (useLightTree) {
-            session.buildPreMacroRawCfirViaLightTree(sources)
+            session.buildPreMacroRawCfirViaLightTree(sources, parserSettings = parserSettings)
         } else {
-            session.buildPreMacroRawCfirFromCjFiles(sources.toCjFiles(environment))
+            val files = sources.toCjFiles(environment)
+            session.buildPreMacroRawCfirFromCjFiles(files, parserSettings)
         }
     }
 
@@ -409,7 +454,8 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
         }
         val diagnostics = result.registry.diagnostics
             .filter { it.severity == MacroConstructionDiagnostic.Severity.ERROR }
-        if (diagnostics.isEmpty()) {
+        // Parser 的成功和失败报告已经与全部源码在单元 owner 完成统一发布。
+        if (diagnostics.isEmpty() && result.registry.parsingFailures.isEmpty()) {
             configuration.messageCollector.report(CompilerMessageSeverity.ERROR, "$label: no further details")
             return
         }
@@ -462,4 +508,30 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
             }
         }
     }
+}
+
+/**
+ * 将二进制 source element 上的结构化 CFIR 诊断投影到 CLI 消息流。
+ *
+ * 诊断身份、参数、严重级别和位置均来自 CFIR diagnostics；此处只负责前端 CLI 展示，不执行 CJMP 判定。
+ */
+private fun reportBinarySourceDiagnostics(
+    configuration: CompilerConfiguration,
+    diagnostics: List<CjDiagnostic>,
+): Boolean {
+    var hasErrors = false
+    for (diagnostic in diagnostics) {
+        val binarySource = (diagnostic as? CjDiagnosticWithSource)?.element as? CjBinarySourceElement ?: continue
+        val sourceLocation = binarySource.sourceLocation
+        val compilerLocation = sourceLocation?.let {
+            CompilerMessageLocation.create(it.filePath, it.line, it.column, null)
+        } ?: CompilerMessageLocation.create(binarySource.binaryFilePath)
+        configuration.messageCollector.report(
+            severity = diagnostic.severity.toCompilerMessageSeverity(),
+            message = diagnostic.renderMessage(),
+            location = compilerLocation,
+        )
+        hasErrors = hasErrors || diagnostic.severity.isError
+    }
+    return hasErrors
 }

@@ -79,6 +79,8 @@ class CjFieldVariable : CjVariable<CangJieFieldStub>  {
     override val valueParameterList: CjParameterList?
         get() = null
 
+    override val valueParameterLists: List<CjParameterList> = emptyList()
+
     /**
      * 暴露 `valueParameters`，实现仓颉 PSI节点对上层接口的属性契约。
      */

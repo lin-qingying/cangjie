@@ -25,11 +25,11 @@ package org.cangnova.cangjie.psi.stubs.elements
 
 import org.cangnova.cangjie.lang.CangJieLanguage
 import org.cangnova.cangjie.parsing.CangJieParser.Companion.parse
+import org.cangnova.cangjie.parsing.createCangJiePsiBuilder
 import org.cangnova.cangjie.psi.stubs.CangJieFileStub
 import org.cangnova.cangjie.psi.stubs.CangJieStubVersions
 import org.cangnova.cangjie.psi.stubs.elements.StubIndexService.Companion.getInstance
 import com.intellij.lang.ASTNode
-import com.intellij.lang.PsiBuilderFactory
 import com.intellij.psi.PsiElement
 import com.intellij.psi.StubBuilder
 import com.intellij.psi.stubs.*
@@ -74,6 +74,7 @@ class CjFileElementType : IStubFileElementType<CangJieFileStub> {
     @Throws(IOException::class)
     override fun serialize(stub: CangJieFileStub, dataStream: StubOutputStream) {
         CangJieFileStubKindImpl.serialize(stub.kind, dataStream)
+        CjmpFileRoleSnapshotCodec.write(dataStream, stub.cjmpRoleSnapshot)
 
     }
 
@@ -83,7 +84,7 @@ class CjFileElementType : IStubFileElementType<CangJieFileStub> {
     @Throws(IOException::class)
     override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>?): CangJieFileStub {
         val kind = CangJieFileStubKindImpl.deserialize(dataStream)
-        return CangJieFileStubImpl(file = null, kind = kind)
+        return CangJieFileStubImpl(file = null, kind = kind, cjmpRoleSnapshot = CjmpFileRoleSnapshotCodec.read(dataStream))
     }
 
     /**
@@ -92,8 +93,7 @@ class CjFileElementType : IStubFileElementType<CangJieFileStub> {
     override fun doParseContents(chameleon: ASTNode, psi: PsiElement): ASTNode {
         val project = psi.project
         val languageForParser = getLanguageForParser(psi)
-        val builder =
-            PsiBuilderFactory.getInstance().createBuilder(project, chameleon, null, languageForParser, chameleon.chars)
+        val builder = createCangJiePsiBuilder(project, chameleon, languageForParser)
         return parse(builder, psi.containingFile).firstChildNode
     }
 

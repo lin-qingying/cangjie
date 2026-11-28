@@ -54,12 +54,15 @@ class CfirImportResolveTransformer(
     private val diagnosticReporter: CfirDiagnosticReporter,
 ) : CfirAbstractTreeTransformer<Nothing?>(CfirResolvePhase.IMPORTS) {
     /**
-     * 为已达到 IMPORTS phase 的 [file] 在当前 session 中补录 bindings。
+     * 为已达到 IMPORTS phase 的 [file] 确认 owner session 中的 bindings。
      *
-     * dangling designation 可能携带 foreign-session 文件路径。该入口只解析并记录当前 session 的文件级
-     * import 事实，不把 foreign-session 文件交给树 transformer 遍历或推进 phase。
+     * 只允许文件 owner session 调用；dangling consumer 读取 owner 文件事实，并通过自己的 provider
+     * 物化导入目标，不将 foreign-session 文件复制记录到 consumer store。
      */
     fun recordImportBindingsForFile(file: CfirFile) {
+        check(session === file.moduleData.session) {
+            "Import bindings must be resolved by the file owner session"
+        }
         require(file.resolvePhase >= CfirResolvePhase.IMPORTS) {
             "Cannot record import bindings before the file reaches IMPORTS phase"
         }
@@ -96,6 +99,9 @@ class CfirImportResolveTransformer(
      * body resolve 无法通过同一文件对象读取 import 绑定。
      */
     private fun recordImportBindingsIfNeeded(file: CfirFile) {
+        check(session === file.moduleData.session) {
+            "Import bindings must be resolved by the file owner session"
+        }
         val store = session.importBindingStore
         synchronized(store) {
             val bindingResolver = CfirImportBindingResolver(session)

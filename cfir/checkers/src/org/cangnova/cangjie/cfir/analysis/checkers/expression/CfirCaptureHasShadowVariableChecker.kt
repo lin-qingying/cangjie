@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
@@ -24,7 +25,7 @@ import org.cangnova.cangjie.name.Name
  * 当前函数/闭包捕获外层非参数变量时，如果从当前函数向外到目标变量所在作用域之间，
  * 任一函数作用域内存在同名变量声明，则在捕获引用处报告 warning。
  */
-object CfirCaptureHasShadowVariableChecker : CfirQualifiedAccessChecker() {
+object CfirCaptureHasShadowVariableChecker : CfirQualifiedAccessChecker(MppCheckerKind.Common) {
     /**
      * 检查无显式接收者变量访问是否命中捕获变量同名遮蔽场景。
      *

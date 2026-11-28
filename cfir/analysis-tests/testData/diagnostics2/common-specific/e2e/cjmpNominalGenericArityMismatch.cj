@@ -1,6 +1,6 @@
 // LANGUAGE_VERSION: 1.1.0
 // RUN_PIPELINE_TILL: FRONTEND
-// cjc 1.1.3 probe: .workbuddy/tmp/cjmp_probe113/generic_nominal_arity; different nominal generic arities do not merge.
+// cjc 1.1.3 probe: .workbuddy/tmp/cjmp_probe113/generic_nominal_arity; generic and non-generic nominal declarations do not merge.
 // MODULE: common
 // CJMP_MODE: COMMON
 // FILE: common.cj

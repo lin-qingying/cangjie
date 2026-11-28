@@ -54,14 +54,12 @@ internal class TypeCjoStubBuilder {
     /**
      * 为 callable 值参数创建参数列表 stub。
      *
-     * 可按需创建空参数列表，并可为 primary constructor 参数补齐 modifier list，
-     * 以保持与源码 PSI header 层级一致。
+     * 可按需创建空参数列表。无修饰符的参数不创建 modifier list，与所有源码参数一致。
      */
     fun createCallableParameterListStub(
         parent: StubElement<*>,
         valueParameters: List<CfirValueParameter>,
         createEmptyList: Boolean = false,
-        includeParameterModifierList: Boolean = false,
     ) {
         if (valueParameters.isEmpty() && !createEmptyList) return
         val parameterListStub = CangJiePlaceHolderStubImpl<CjParameterList>(parent, CjStubElementTypes.VALUE_PARAMETER_LIST)
@@ -71,7 +69,6 @@ internal class TypeCjoStubBuilder {
                 name = valueParameter.name.asString(),
                 hasDefaultValue = valueParameter.defaultValue != null,
                 isNamed = valueParameter.isNamed,
-                includeModifiers = includeParameterModifierList,
             )
             createDeclaredTypeReferenceStub(parameterStub, valueParameter.returnTypeRef)
             if (valueParameter.defaultValue != null) {
@@ -113,6 +110,7 @@ internal class TypeCjoStubBuilder {
     ) {
         when (typeRef) {
             is CfirResolvedTypeRef -> createTypeReferenceStub(parent, typeRef.coneType)
+            is CfirParenthesizedTypeRef -> createParenthesizedTypeReferenceStub(parent, typeRef.innerTypeRef)
             is CfirBasicTypeRef -> createBasicTypeReferenceStub(parent, typeRef.name.asString())
             is CfirUserTypeRef -> createQualifiedUserTypeReferenceStubFromCfir(
                 parent = parent,
@@ -202,6 +200,13 @@ internal class TypeCjoStubBuilder {
             is ConeQuestType -> createBasicTypeReferenceStub(parent, "?")
             else -> createBasicTypeReferenceStub(parent, coneType.toString())
         }
+    }
+
+    /** 括号是独立 PSI 类型节点，内层 TYPE_REFERENCE 保持自身结构，不降成裸 user/function type。 */
+    private fun createParenthesizedTypeReferenceStub(parent: StubElement<*>, innerTypeRef: CfirTypeRef) {
+        val typeReference = CangJiePlaceHolderStubImpl<CjTypeReference>(parent, CjStubElementTypes.TYPE_REFERENCE)
+        val parentheses = CangJiePlaceHolderStubImpl<CjParenthesizedType>(typeReference, CjStubElementTypes.PARENTHESIZED_TYPE)
+        createTypeReferenceStub(parentheses, innerTypeRef)
     }
 
     /**
@@ -479,14 +484,13 @@ internal class TypeCjoStubBuilder {
     }
 
     /**
-     * 创建单个值参数 stub，并按需补齐修饰符列表占位。
+     * 创建单个无修饰符的值参数 stub。
      */
     private fun createParameterStub(
         parent: StubElement<*>,
         name: String?,
         hasDefaultValue: Boolean = false,
         isNamed: Boolean = false,
-        includeModifiers: Boolean = false,
     ): CangJieParameterStubImpl {
         val parameterStub = CangJieParameterStubImpl(
             parent = parent,
@@ -498,9 +502,6 @@ internal class TypeCjoStubBuilder {
             isNamed = isNamed,
             functionTypeParameterName = null,
         )
-        if (includeModifiers) {
-            CangJieModifierListStubImpl(parameterStub, 0, CjStubElementTypes.MODIFIER_LIST)
-        }
         return parameterStub
     }
 

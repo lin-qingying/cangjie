@@ -64,7 +64,10 @@ abstract class AbstractFieldPrinter<Field : AbstractField<*>>(
             val defaultValue = if (inImplementation)
                 field.implementationDefaultStrategy as? AbstractField.ImplementationDefaultStrategy.DefaultValue
             else null
-            val shouldBeParameter = inConstructor && field.customSetter != null
+            val constructorDefault = if (inImplementation && inConstructor)
+                field.implementationDefaultStrategy as? AbstractField.ImplementationDefaultStrategy.ConstructorDefaultValue
+            else null
+            val shouldBeParameter = inConstructor && (field.customSetter != null || field.customGetter != null)
             printPropertyDeclaration(
                 name = field.name,
                 type = actualTypeOfField(field),
@@ -84,11 +87,12 @@ abstract class AbstractFieldPrinter<Field : AbstractField<*>>(
                 deprecation = field.deprecation,
                 kDoc = field.kDoc.takeIf { !inImplementation },
                 initializer = when {
+                    constructorDefault != null -> constructorDefault.defaultValue
                     defaultValue?.withGetter == true -> null
                     defaultValue != null -> defaultValue.defaultValue
                     inImplementation && field.readOnlyImplementationList && !inConstructor ->
                         "java.util.Collections.unmodifiableList(${field.name}.toList())"
-                    !inConstructor && field.customSetter != null -> field.name
+                    !inConstructor && (field.customSetter != null || field.customGetter != null) -> field.name
                     else -> null
                 },
                 additionalAnnotations = if (!shouldBeParameter && (inImplementation || field.isFinal)) field.additionalAnnotations else emptyList(),
@@ -102,6 +106,12 @@ abstract class AbstractFieldPrinter<Field : AbstractField<*>>(
             }
 
             if (inImplementation && !inConstructor) {
+                field.customGetter?.let {
+                    check(defaultValue?.withGetter != true) { "A backing-field getter cannot also use a default-value getter" }
+                    withIndent {
+                        printlnMultiLine("get() = " + it)
+                    }
+                }
                 field.customSetter?.let {
                     withIndent {
                         if (field.customSetterVisibility != Visibility.PUBLIC) {

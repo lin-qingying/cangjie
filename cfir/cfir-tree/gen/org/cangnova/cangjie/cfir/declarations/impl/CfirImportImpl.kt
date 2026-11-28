@@ -18,13 +18,13 @@ import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.CjSourceElement
 
 class CfirImportImpl @CfirImplementationDetail constructor(
-    override val source: CjSourceElement?,
+    override var source: CjSourceElement?,
     override val importedFqName: FqName?,
     override val organizationName: Name?,
     override val isAllUnder: Boolean,
     override val visibility: Visibility,
     override val aliasName: Name?,
-    override val aliasSource: CjSourceElement?,
+    override var aliasSource: CjSourceElement?,
     override var condition: CfirExpression?,
 ) : CfirImport() {
 
@@ -40,6 +40,15 @@ class CfirImportImpl @CfirImplementationDetail constructor(
     override fun <D> transformCondition(transformer: CfirTransformer<D>, data: D): CfirImportImpl {
         condition = condition?.transform(transformer, data)
         return this
+    }
+
+    @CfirImplementationDetail
+    override fun replaceSource(newSource: CjSourceElement?) {
+        source = newSource
+    }
+
+    override fun replaceAliasSource(newAliasSource: CjSourceElement?) {
+        aliasSource = newAliasSource
     }
 
     override fun replaceCondition(newCondition: CfirExpression?) {

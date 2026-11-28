@@ -55,11 +55,22 @@ enum class CfirFunctionCallOrigin {
      * `super(...)` 构造器 delegation 调用。
      */
     ConstructorDelegationSuper,
+    /** 编译器补入的隐式 super()，与用户显式委托保留不同诊断身份。 */
+    ImplicitConstructorDelegationSuper,
     ;
 
     /**
      * 当前 origin 是否表示构造器 delegation 调用。
      */
     val isConstructorDelegation: Boolean
-        get() = this == ConstructorDelegationThis || this == ConstructorDelegationSuper
+        get() = this == ConstructorDelegationThis || isSuperConstructorDelegation
+
+    val isSuperConstructorDelegation: Boolean
+        get() = this == ConstructorDelegationSuper || this == ImplicitConstructorDelegationSuper
+
+    /**
+     * 当前调用由常规 callable 调用约定降低；运算符重写和 pipeline 解糖仍需按普通调用分派。
+     */
+    val isRegularCallableInvocation: Boolean
+        get() = this == Regular || this == Operator || this == Pipeline
 }

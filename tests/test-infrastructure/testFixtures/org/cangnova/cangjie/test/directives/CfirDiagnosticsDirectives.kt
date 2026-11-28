@@ -177,16 +177,6 @@ object CfirDiagnosticsDirectives : SimpleDirectivesContainer(){
     )
 
     /**
-     * 注入当前编译包的 features 集合，例如 `// CJMP_FEATURES: Foo,Bar`。
-     *
-     * 官方 features 来自源文件 `features { ... }` 指令；测试数据里没有该指令时用本指令
-     * 提供 features 子集门的 specific 侧输入。
-     */
-    val CJMP_FEATURES by stringDirective(
-        description = "Comma/space separated features of the compiled package for CJMP gates.",
-    )
-
-    /**
      * 注入 CJMP 编译模式，例如 `// CJMP_MODE: SPECIFIC`。
      *
      * 官方模式下模式来自 driver 选项；测试基建没有 driver，用该指令把同一份事实
@@ -197,5 +187,10 @@ object CfirDiagnosticsDirectives : SimpleDirectivesContainer(){
         additionalParser = { value ->
             CfirCjmpMode.entries.firstOrNull { it.name.equals(value, ignoreCase = true) }
         },
+    )
+
+    /** 供 family 回归断言一个 specific 声明的最终 common counterpart 数量。 */
+    val CJMP_EXPECTED_COUNTERPART_COUNT by stringDirective(
+        description = "Expected number of final common counterparts for the CJMP matching target.",
     )
 }

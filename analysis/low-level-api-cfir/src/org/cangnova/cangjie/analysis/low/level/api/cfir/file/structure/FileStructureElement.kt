@@ -15,12 +15,12 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.util.isPartialAnalyzable
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.isPartialBodyResolvable
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.session.bodyResolvePrerequisitePhase
-import org.cangnova.cangjie.cfir.correspondingProperty
+import org.cangnova.cangjie.cfir.correspondingField
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.realPsi
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
+import org.cangnova.cangjie.parsing.compilationParsingResultOrNull
 import org.cangnova.cangjie.psi.*
 
 /**
@@ -258,11 +258,15 @@ private fun CfirDeclaration.hasIndependentPhysicalStructure(
     macroSemanticSnapshot: LLCfirMacroSemanticSnapshot?,
     semanticFile: CfirFile?,
 ): Boolean {
-    if (macroSemanticSnapshot == null) return realPsi?.isPhysical == true
-    if (semanticFile != null && macroSemanticSnapshot.isDeclarationReplacementOutput(this, semanticFile)) {
+    if (macroSemanticSnapshot != null && semanticFile != null &&
+        macroSemanticSnapshot.isDeclarationReplacementOutput(this, semanticFile)
+    ) {
         return macroSemanticSnapshot.hasUniquePhysicalSourceForDeclaration(this, semanticFile)
     }
-    return realPsi?.isPhysical == true
+    val psi = realPsi ?: return false
+    val origin = macroSemanticSnapshot?.originalElement(psi)
+        ?: (psi.containingFile as? CjFile)?.compilationParsingResultOrNull()?.originalElementOrNull(psi)
+    return (origin ?: psi).isPhysical
 }
 
 /** 一对多宏输出没有可供 PSI 唯一反查的独立 source mapping。 */
@@ -403,7 +407,7 @@ internal class DeclarationStructureElement(
                 return null
             }
 
-            require(declaration.resolvePhase >= declaration.moduleData.session.bodyResolvePrerequisitePhase)
+            require(declaration.resolvePhase >= CfirResolvePhase.BODY_RESOLVE.previous)
 
             // 仓颉主干当前没有 Kotlin FIR 的 empty/single-expression block 声明形态，
             // partial body 分支只保留主干真实存在的 lazy block 与普通 block。
@@ -522,8 +526,8 @@ internal class DeclarationStructureElement(
 
             if (constructor.isPrimary) {
                 constructor.valueParameters.forEach { parameter ->
-                    parameter.correspondingProperty?.let { property ->
-                        visitProperty(property, data)
+                    parameter.correspondingField?.let { field ->
+                        visitFieldVariable(field, data)
                     }
                 }
             }
@@ -538,7 +542,7 @@ internal class DeclarationStructureElement(
  * 否则同一声明内部的诊断会被收集两次。见 [RootStructureElement] 的构造参数说明。
  */
 internal class RootStructureElement(
-    /** 保持与物理 PSI 对应的 raw CFIR，专供根结构元素建立 PSI 映射。 */
+    /** 与当前编译 PSI 同代的文件，供根结构元素记录文件头的 PSI 映射。 */
     sourceCfirFile: CfirFile,
     /** 与符号 provider 处于同一快照的语义 CFIR，专供文件级 diagnostics。 */
     semanticCfirFile: CfirFile,
@@ -556,7 +560,7 @@ internal class RootStructureElement(
     ),
 ) {
     /**
-     * 只从物理 raw CFIR 记录 PSI 映射，避免 expanded snapshot 中的生成节点替代物理 PSI 节点。
+     * 只记录文件级 PSI 映射；声明中的替换和生成节点由相应声明结构处理。
      */
     class Recorder(sourceCfirFile: CfirFile) : CfirElementContainerRecorder(
         container = sourceCfirFile,

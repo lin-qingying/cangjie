@@ -16,7 +16,7 @@ import org.cangnova.cangjie.cfir.types.ConeClassifierType
 import org.cangnova.cangjie.cfir.types.ConePointerType
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.coneType
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.psi
 import org.cangnova.cangjie.name.FqName

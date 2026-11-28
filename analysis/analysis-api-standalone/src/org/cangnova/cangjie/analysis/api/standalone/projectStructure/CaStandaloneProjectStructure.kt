@@ -157,11 +157,9 @@ class CaStandaloneProjectStructure(
         resolveBuiltinsModule(containingFile)?.let { return it }
         computeSpecialModule(containingFile)?.let { return it }
 
-        useSiteModule?.let { return it }
-
         val containingItem = containingFile as? PsiFileSystemItem
         if (containingItem != null) {
-            findModuleFor(containingItem)?.let { return it }
+            findModuleFor(containingItem, useSiteModule)?.let { return it }
         }
         if (containingItem != null) {
             return CaStandaloneNotUnderContentRootModule(
@@ -240,9 +238,31 @@ class CaStandaloneProjectStructure(
      * 这里不能只做“root 与文件完全相等”的匹配，
      * 因为 standalone 模块通常把目录根暴露给 Analysis API，而真正分析对象是该目录下的任意文件。
      */
-    private fun findModuleFor(fileSystemItem: PsiFileSystemItem?): CaModule? {
+    private fun findModuleFor(fileSystemItem: PsiFileSystemItem?, useSiteModule: CaModule?): CaModule? {
         if (fileSystemItem == null) return null
-        return rootEntries.firstOrNull { entry -> entry.contains(fileSystemItem) }?.module
+        val virtualFile = fileSystemItem.virtualFile
+        val matchingRoots = rootEntries.filter { entry ->
+            entry.contains(fileSystemItem) && (virtualFile == null || virtualFile in entry.module.contentScope)
+        }
+        if (matchingRoots.isNotEmpty()) {
+            val preferred = matchingRoots.first()
+            val candidates = matchingRoots.filter {
+                it.rootDepth == preferred.rootDepth && it.kind.priority == preferred.kind.priority
+            }.map { it.module }.distinct()
+            return selectFileOwner(candidates, useSiteModule)
+        }
+        if (virtualFile == null) return null
+        // 平台可修正内容范围；根表只确定根命中的优先级，最终归属仍由 contentScope 决定。
+        return selectFileOwner(allModules.filter { virtualFile in it.contentScope }, useSiteModule)
+    }
+
+    /** 文件真实范围与根优先级先确定候选；use-site 只能在实际包含该文件的 owner 间消歧。 */
+    private fun selectFileOwner(candidates: List<CaModule>, useSiteModule: CaModule?): CaModule? {
+        if (candidates.isEmpty()) return null
+        if (candidates.size == 1) return candidates.single()
+        candidates.firstOrNull { it === useSiteModule }?.let { return it }
+        error("Standalone 文件同时属于多个等优先级模块，且 use-site 未选择实际 owner: " +
+            candidates.joinToString { it.moduleDescription })
     }
 
     /**

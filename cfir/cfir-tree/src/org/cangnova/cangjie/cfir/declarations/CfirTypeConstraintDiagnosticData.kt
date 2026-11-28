@@ -86,7 +86,7 @@ data class CfirTypeConstraintReference(
 /**
  * [CfirTypeConstraintDiagnosticData] 在声明属性表中的键。
  */
-private object TypeConstraintDiagnosticDataKey : CfirDeclarationDataKey() {
+internal object TypeConstraintDiagnosticDataKey : CfirDeclarationDataKey() {
     override val rawCopyPolicy get() = org.cangnova.cangjie.cfir.CfirRawDeclarationDataPolicies.whereConstraints
 }
 

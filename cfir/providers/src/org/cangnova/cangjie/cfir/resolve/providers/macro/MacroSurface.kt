@@ -2,6 +2,7 @@ package org.cangnova.cangjie.cfir.resolve.providers.macro
 
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.parsing.MacroParsingFacts
 import org.cangnova.cangjie.source.CjSourceElement
 
 /**
@@ -52,6 +53,9 @@ sealed class MacroSurface {
 
     /** macro 调用形式。 */
     abstract val kind: Kind
+
+    /** 同根 parser transaction 冻结的 invocation 文法事实；内建 IfAvailable 重解析也必须使用它们。 */
+    abstract val parsingFacts: MacroParsingFacts?
 
     /** 调用点是否显式带有参数括号。 */
     abstract val hasParenthesis: Boolean
@@ -139,11 +143,24 @@ data class MacroSurfaceToken(
     val endOffset: Int,
     /** lexer token type 的字符串名。 */
     val kindName: String? = null,
+    /** 该 token 来自宿主源码或子宏的原始调用范围；executor 输出没有直接源码来源时为空。 */
+    val sourceRange: MacroSurfaceSourceRange? = null,
+    /**
+     * 对位官方原始位置的来源标记：只有 raw parser 捕获的源码 token 才具有逐字符偏移。
+     * 宏生成 token 的偏移属于重建文本，即使数值落在原始调用范围内也不能当作源码位置。
+     */
+    val isSourceToken: Boolean = false,
     /** 相对于 token.text 的分段来源；原输入树和区间不能由 startOffset/endOffset 替代。 */
     val sourceSpans: List<MacroTokenSourceSpan> = emptyList(),
     /** 由真实 lexer 确认的空白/注释，不参与规范 AST 锚点的来源证明。 */
     val isTrivia: Boolean = false,
-)
+) {
+    init {
+        require(!isSourceToken || (startOffset >= 0 && endOffset - startOffset == text.length)) {
+            "A source token must retain its complete original text range."
+        }
+    }
+}
 
 /**
  * Macro surface 的"作用域 / 容器 / 包"上下文。
@@ -162,8 +179,6 @@ data class MacroSurfaceScopeContext(
     val enclosingClassFqName: FqName?,
     /** 最近外层函数名。 */
     val enclosingFunctionName: Name?,
-    /** raw builder 在原始宏位置捕获的词法事实，重解析不按名字重建外层符号。 */
-    val rawScopeSnapshot: MacroRawScopeSnapshot = MacroRawScopeSnapshot.ROOT,
 )
 
 /**
@@ -231,6 +246,8 @@ data class MacroSurfaceContainerContext(
 data class CfirReplaceHandle(
     /** construction 期稳定替换句柄 id。 */
     val handleId: Long,
+    /** 句柄采集点的真实词法上下文；token 子 forest 随父句柄继承，不允许省略后按名字重建。 */
+    val ownerSnapshot: MacroRawOwnerSnapshot,
     /** raw builder 放入 CFIR 的 construction-only carrier，splice 只能按对象身份匹配，不能退回源码 offset。 */
     val carrier: Any? = null,
     /** annotation surface 的唯一 splice key；非 annotation surface 必须为 null。 */
@@ -263,6 +280,8 @@ data class MacroSurfaceDecl(
     override val isQualifiedName: Boolean,
     /** declaration macro 的调用形式。 */
     override val kind: MacroSurface.Kind,
+    /** 原解析根冻结的 scope、直接 parent 与外层声明身份。 */
+    override val parsingFacts: MacroParsingFacts?,
     /** declaration macro 调用点是否显式携带参数括号。 */
     override val hasParenthesis: Boolean,
     /** declaration macro 的 attr payload token 流。 */
@@ -296,6 +315,8 @@ data class MacroSurfaceExpr(
     override val isQualifiedName: Boolean,
     /** expression macro 的调用形式。 */
     override val kind: MacroSurface.Kind,
+    /** 本次 parser 根对该真实 invocation 冻结的 scope、直接 parent 与外层声明身份。 */
+    override val parsingFacts: MacroParsingFacts,
     /** expression macro 调用点是否显式携带参数括号。 */
     override val hasParenthesis: Boolean,
     /** expression macro 的 attr payload token 流。 */
@@ -329,6 +350,8 @@ data class MacroSurfaceParam(
     override val isQualifiedName: Boolean,
     /** parameter macro 的调用形式。 */
     override val kind: MacroSurface.Kind,
+    /** 原解析根冻结的 scope、直接 parent 与外层声明身份。 */
+    override val parsingFacts: MacroParsingFacts?,
     /** parameter macro 调用点是否显式携带参数括号。 */
     override val hasParenthesis: Boolean,
     /** parameter macro 的 attr payload token 流。 */
@@ -362,6 +385,8 @@ data class MacroSurfaceNode(
     override val isQualifiedName: Boolean,
     /** 通用 macro 的调用形式。 */
     override val kind: MacroSurface.Kind,
+    /** 原解析根冻结的 scope、直接 parent 与外层声明身份。 */
+    override val parsingFacts: MacroParsingFacts,
     /** 通用 macro 调用点是否显式携带参数括号。 */
     override val hasParenthesis: Boolean,
     /** 通用 macro 的 attr payload token 流。 */
@@ -404,6 +429,7 @@ data class IfAvailableSurface(
     override val isQualifiedName: Boolean,
     /** builtin non-macro 的调用形式。 */
     override val kind: MacroSurface.Kind,
+    override val parsingFacts: MacroParsingFacts? = null,
     /** builtin non-macro 调用点是否显式携带参数括号。 */
     override val hasParenthesis: Boolean,
     /** builtin non-macro 的 attr payload token 流。 */
@@ -429,3 +455,7 @@ data class IfAvailableSurface(
     /** 条件分支主体 token，用于 desugar 前的简单评估。 */
     val branchTokens: List<MacroSurfaceToken>,
 ) : BuiltinNonMacroSurface()
+
+/** 方括号形式的错误恢复保留真实声明；此分支 token 只用于父宏输入与展示。 */
+fun MacroSurface.recoveredBuiltinDeclarationBranchTokens(): List<MacroSurfaceToken>? =
+    (this as? IfAvailableSurface)?.branchTokens

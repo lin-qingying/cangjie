@@ -5,11 +5,16 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.api.CfirDesignation
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getOrBuildCfirFile
 import org.cangnova.cangjie.analysis.low.level.api.cfir.lazy.resolve.CfirLazyBodiesCalculator
 import org.cangnova.cangjie.analysis.low.level.api.cfir.test.configurators.analysisApiCfirSourceTestConfigurator
+import org.cangnova.cangjie.analysis.low.level.api.cfir.test.TargetSourceTestSupport
 import org.cangnova.cangjie.analysis.low.level.api.cfir.test.getResolutionFacadeForTest
+import org.cangnova.cangjie.analysis.low.level.api.cfir.lazy.resolve.CfirLazyBodyPublications
+import org.cangnova.cangjie.analysis.low.level.api.cfir.transformers.BodyStateKeepers
+import org.cangnova.cangjie.analysis.low.level.api.cfir.transformers.resolveWithKeeper
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
 import org.cangnova.cangjie.cfir.CfirElement
 import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.cfir.declarations.CfirEnum
+import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
 import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
@@ -94,17 +99,18 @@ class PatternBindingHostImplicitTypesTest : AbstractAnalysisApiExecutionTest(
     @ValueSource(strings = ["serial", "flag", "tail"])
     fun matchEnumPayloadCold(firstMarker: String, mainFile: CjFile, services: TestServices) {
         val markers = listOf("serial", "flag", "tail")
-        val canonical = markers.map {
-            services.expressionMarkerProvider.getBottommostElementOfTypeAtCaret<CjVarOrEnumPattern>(mainFile, it)
-        }
-        val selectedPsi = services.expressionMarkerProvider
-            .getBottommostElementOfTypeAtCaret<CjVarOrEnumPattern>(mainFile, firstMarker)
-        val functionPsi = requireNotNull(PsiTreeUtil.getParentOfType(selectedPsi, CjNamedFunction::class.java))
         val cfirFile = mainFile.getOrBuildCfirFile(mainFile.getResolutionFacadeForTest())
+        val sources = TargetSourceTestSupport(cfirFile, mainFile)
+        val canonical = markers.map {
+            val origin = services.expressionMarkerProvider.getBottommostElementOfTypeAtCaret<CjVarOrEnumPattern>(mainFile, it)
+            sources.targetElement(origin) as CjVarOrEnumPattern
+        }
+        val selectedPsi = canonical[markers.indexOf(firstMarker)]
+        val functionPsi = requireNotNull(PsiTreeUtil.getParentOfType(selectedPsi, CjNamedFunction::class.java))
         val function = cfirFile.declarations.filterIsInstance<CfirNamedFunction>()
             .single { it.source?.psi === functionPsi }
         assertEquals(CfirResolvePhase.RAW_CFIR, function.resolvePhase)
-        CfirLazyBodiesCalculator.calculateBodies(CfirDesignation(listOf(cfirFile), function))
+        materializeRawBody(cfirFile, function)
         assertEquals(CfirResolvePhase.RAW_CFIR, function.resolvePhase, "仅重建 RAW body，不预先解析函数。")
         assertSame(functionPsi, function.source?.psi)
         assertTrue(function.body != null)
@@ -227,11 +233,24 @@ class PatternBindingHostImplicitTypesTest : AbstractAnalysisApiExecutionTest(
         val cfirFile = mainFile.getOrBuildCfirFile(mainFile.getResolutionFacadeForTest())
         val function = cfirFile.declarations.filterIsInstance<CfirNamedFunction>().single()
         assertEquals(CfirResolvePhase.RAW_CFIR, function.resolvePhase)
-        CfirLazyBodiesCalculator.calculateBodies(CfirDesignation(listOf(cfirFile), function))
+        materializeRawBody(cfirFile, function)
         assertEquals(CfirResolvePhase.RAW_CFIR, function.resolvePhase, "raw body 重建不得推进函数解析阶段。")
         assertTrue(function.body != null)
         assertFalse(function.body is CfirLazyBlock, "必须取得可遍历的 raw 函数体。")
         return function
+    }
+
+    @OptIn(LLCfirInternals::class)
+    private fun materializeRawBody(file: CfirFile, function: CfirNamedFunction) {
+        val designation = CfirDesignation(listOf(file), function)
+        CfirLazyBodyPublications(function.moduleData.session).use { publications ->
+            resolveWithKeeper(
+                function,
+                designation,
+                publications.withStateKeeper(BodyStateKeepers.FUNCTION),
+                prepareTarget = { CfirLazyBodiesCalculator.calculateBodies(designation, publications) },
+            ) {}
+        }
     }
 
     /** 首查前的真实叶子必须仍在 RAW_CFIR 且为 implicit，并拥有正确宿主。 */

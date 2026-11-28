@@ -24,6 +24,8 @@
 
 package org.cangnova.cangjie.cfir.resolve.transformers
 
+import org.cangnova.cangjie.cfir.resolve.substitution.createTypeSubstitutorByTypeConstructor
+
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.annotations.CangjieAnnotationIdentity
 import org.cangnova.cangjie.cfir.declarations.*
@@ -31,7 +33,6 @@ import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 import org.cangnova.cangjie.cfir.expressions.resolveBuiltinAnnotationIdentity
 import org.cangnova.cangjie.cfir.expressions.resolvePlatformAnnotationIdentity
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationResolveState
-import org.cangnova.cangjie.cfir.declarations.builder.buildConstructor
 import org.cangnova.cangjie.cfir.declarations.impl.CfirClassImpl
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
@@ -45,13 +46,11 @@ import org.cangnova.cangjie.cfir.resolve.providers.semanticExtendedType
 import org.cangnova.cangjie.cfir.toCfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.resolvedTypeFromPrototype
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.*
-import org.cangnova.cangjie.cfir.types.builder.buildImplicitTypeRef
-import org.cangnova.cangjie.name.CallableId
-import org.cangnova.cangjie.name.SpecialNames
 import org.cangnova.cangjie.type.model.TypeConstructorMarker
+import org.cangnova.cangjie.cfir.patterns.*
 
 /**
  * TYPES 阶段处理器。
@@ -187,7 +186,7 @@ class CfirTypeResolveTransformer(
             data
                 .withTopContainer(declaration)
                 .withAdditionalTypeParameters(owner.typeParameters.filterIsInstance<CfirTypeParameter>())
-                .also { configuration -> owner.transformTypeParameters(this, configuration) }
+                .also { configuration -> resolveTypeParameterBounds(owner, configuration) }
         } else {
             data
         }
@@ -200,6 +199,15 @@ class CfirTypeResolveTransformer(
         for (nestedDeclaration in nestedDeclarations) {
             preResolveTypeParameterBounds(nestedDeclaration, nestedConfiguration)
         }
+    }
+
+    /** 所有 type-parameter owner 共用同一解析及递归上界切断流程。 */
+    private fun resolveTypeParameterBounds(
+        owner: CfirTypeParameterRefsOwner,
+        configuration: CfirTypeResolutionConfiguration,
+    ) {
+        owner.transformTypeParameters(this, configuration)
+        owner.unbindRecursiveTypeParameterBounds(session)
     }
 
     // ---- 声明遍历 ----
@@ -262,7 +270,7 @@ class CfirTypeResolveTransformer(
         val configuration = data
             .withTopContainer(declaration)
             .withAdditionalTypeParameters(declaration.typeParametersForResolution())
-        declaration.transformTypeParameters(this, configuration)
+        resolveTypeParameterBounds(declaration, configuration)
         declaration.transformSuperTypeRefs(this, configuration)
         declaration.transformAnnotations(this, configuration)
         // 成员声明头的类型引用在类体作用域内解析：官方按类体 scope 名执行统一查找，同名非类型
@@ -279,18 +287,27 @@ class CfirTypeResolveTransformer(
      * 解析 extend 声明头，并在解析父类型前建立被扩展类型的 `This` 类型上下文。
      */
     override fun transformExtend(extend: CfirExtend, data: CfirTypeResolutionConfiguration): CfirExtend {
+        val configuration = transformExtendHeader(extend, data)
+        extend.transformDeclarations(this, configuration)
+        bumpPhase(extend)
+        return extend
+    }
+
+    /** eager 与 LL 共用 extend 声明头，成员仍由各自的遍历和锁管理。 */
+    private fun transformExtendHeader(
+        extend: CfirExtend,
+        data: CfirTypeResolutionConfiguration,
+    ): CfirTypeResolutionConfiguration {
         var configuration = data
             .withTopContainer(extend)
             .withAdditionalTypeParameters(extend.typeParameters)
-        extend.transformTypeParameters(this, configuration)
+        resolveTypeParameterBounds(extend, configuration)
         extend.transformExtendedTypeRef(this, configuration)
         extend.exposeExtendedTypeAssumptionBounds()
         configuration = configuration.withThisTypeContext(thisTypeContextForExtend(extend))
         extend.transformSuperTypeRefs(this, configuration)
         extend.transformAnnotations(this, configuration)
-        extend.transformDeclarations(this, configuration)
-        bumpPhase(extend)
-        return extend
+        return configuration
     }
 
     /**
@@ -338,10 +355,12 @@ class CfirTypeResolveTransformer(
      * TYPES 阶段只处理类型参数、返回类型、值参数和注解，不进入函数体。
      */
     private fun transformFunctionHeader(function: CfirFunction, data: CfirTypeResolutionConfiguration): CfirFunction {
+        // helper 与原函数共享词法 outer，不能继承原函数自己的类型参数 configuration。
+        function.valueParameters.forEach { it.ownedDefaultParameterHelper?.accept(this, data) }
         val configuration = data
             .withTopContainer(function)
-            .withAdditionalTypeParameters(function.typeParameters)
-        function.transformTypeParameters(this, configuration)
+            .withAdditionalTypeParameters(function.typeParameters.filterIsInstance<CfirTypeParameter>())
+        resolveTypeParameterBounds(function, configuration)
         function.transformReturnTypeRef(
             this,
             configuration.withThisTypeContext(thisTypeContextForFunctionReturn(function, data)),
@@ -407,17 +426,18 @@ class CfirTypeResolveTransformer(
      * 解析普通构造器声明头，并为隐式返回类型写入 owner 构造类型。
      */
     override fun transformConstructor(constructor: CfirConstructor, data: CfirTypeResolutionConfiguration): CfirConstructor {
+        constructor.valueParameters.forEach { it.ownedDefaultParameterHelper?.accept(this, data) }
         val configuration = data
             .withTopContainer(constructor)
-            .withAdditionalTypeParameters(constructor.typeParameters)
-        constructor.transformTypeParameters(this, configuration)
+            .withAdditionalTypeParameters(constructor.typeParameters.filterIsInstance<CfirTypeParameter>())
+        resolveTypeParameterBounds(constructor, configuration)
         if (constructor.returnTypeRef is CfirImplicitTypeRef) {
-            val ownerClass = constructorOwnerForTypeResolution(constructor, data)
-            val ownerType = ownerClass?.let(::buildConstructedTypeForConstructorOwner)
+            // owner 来自真实声明路径；同名重声明不能经 ClassId 反查替换为另一声明。
+            val ownerClass = data.topContainer as? CfirClassLikeDeclaration
+            val ownerType = if (constructor.status.isStatic) ConePrimitiveType.UNIT
+            else ownerClass?.let(::buildConstructedTypeForConstructorOwner)
                 ?: ConeErrorType(ConeSimpleDiagnostic("cannot resolve constructor owner type"))
-            constructor.replaceReturnTypeRef(
-                constructor.returnTypeRef.resolvedTypeFromPrototype(ownerType, constructor.returnTypeRef.source),
-            )
+            constructor.completeConstructorReturnType(ownerType)
         } else {
             constructor.transformReturnTypeRef(this, configuration)
         }
@@ -425,30 +445,6 @@ class CfirTypeResolveTransformer(
         constructor.transformAnnotations(this, configuration)
         bumpPhase(constructor)
         return constructor
-    }
-
-    /**
-     * 恢复构造器的真实 owner。
-     *
-     * 整文件 TYPES 遍历从 topContainer 取得 owner；Analysis/LL 按构造器符号单独懒解析时，
-     * topContainer 不再是所属类，必须按 constructor 的 callable ClassId 查回同一声明。
-     */
-    private fun constructorOwnerForTypeResolution(
-        constructor: CfirConstructor,
-        data: CfirTypeResolutionConfiguration,
-    ): CfirClassLikeDeclaration? {
-        val ownerClassId = constructor.symbol.callableId.classId
-        val topContainer = data.topContainer as? CfirClassLikeDeclaration
-        val topContainerClassId = (topContainer?.symbol as? CfirClassLikeSymbol<*>)?.classId
-        if (topContainer != null && (ownerClassId == null || ownerClassId == topContainerClassId)) {
-            return topContainer
-        }
-
-        if (ownerClassId != null) {
-            return session.symbolProvider.getClassLikeSymbolByClassId(ownerClassId)?.cfir
-        }
-
-        return data.containingClassDeclarations.lastOrNull()
     }
 
     /**
@@ -461,8 +457,24 @@ class CfirTypeResolveTransformer(
         val configuration = data
             .withTopContainer(enumConstructor)
             .withAdditionalTypeParameters(enumConstructor.typeParameters.filterIsInstance<CfirTypeParameter>())
-        enumConstructor.transformTypeParameters(this, configuration)
-        enumConstructor.transformReturnTypeRef(this, configuration)
+        resolveTypeParameterBounds(enumConstructor, configuration)
+        if (enumConstructor.returnTypeRef is CfirImplicitTypeRef) {
+            val ownerEnum = data.topContainer as? CfirEnum
+            val ownerType = ownerEnum?.let(::buildConstructedTypeForConstructorOwner)
+                ?: ConeErrorType(ConeSimpleDiagnostic("cannot resolve enum constructor owner type"))
+            enumConstructor.replaceReturnTypeRef(
+                enumConstructor.returnTypeRef.resolvedTypeFromPrototype(
+                    ownerType,
+                    enumConstructor.returnTypeRef.source,
+                ).also {
+                    // Native SetEnumEleTyHandleFuncDecl创建payload ctor的retType；无参数variant是VarDecl。
+                    if (enumConstructor.valueParameters.isNotEmpty() && enumConstructor.origin.fromSource && enumConstructor.cjoDeclarationOrigin == null)
+                        it.replaceTypeUseOrigin(CfirTypeRefOrigin.COMPILER_ADDED)
+                },
+            )
+        } else {
+            enumConstructor.transformReturnTypeRef(this, configuration)
+        }
         enumConstructor.transformValueParameters(this, configuration)
         enumConstructor.transformAnnotations(this, configuration)
         bumpPhase(enumConstructor)
@@ -476,7 +488,7 @@ class CfirTypeResolveTransformer(
         val configuration = data
             .withTopContainer(property)
             .withAdditionalTypeParameters(property.typeParameters)
-        property.transformTypeParameters(this, configuration)
+        resolveTypeParameterBounds(property, configuration)
         property.transformReturnTypeRef(this, configuration)
         property.transformGetter(this, configuration)
         property.transformSetter(this, configuration)
@@ -533,8 +545,61 @@ class CfirTypeResolveTransformer(
     override fun transformPatternVariable(patternVariable: CfirPatternVariable, data: CfirTypeResolutionConfiguration): CfirPatternVariable {
         patternVariable.transformReturnTypeRef(this, data)
         patternVariable.transformAnnotations(this, data)
+        resolvePatternHeaderTypes(patternVariable.pattern, patternVariable.returnTypeRef.coneTypeOrNull, data)
         bumpPhase(patternVariable)
         return patternVariable
+    }
+
+    /**
+     * 模式绑定的显式声明头由外壳拥有；在 TYPES 投影类型，不进入 initializer 或模式值表达式。
+     * 隐式整体类型保持未推断，由后续 IMPLICIT/BODY 的模式解析负责。
+     */
+    private fun resolvePatternHeaderTypes(
+        pattern: CfirPattern,
+        expectedType: ConeCangJieType?,
+        data: CfirTypeResolutionConfiguration,
+    ) {
+        fun resolveBinding(binding: CfirPatternBindingVariable?, type: ConeCangJieType?) {
+            if (binding == null) return
+            binding.transformReturnTypeRef(this, data)
+            binding.transformAnnotations(this, data)
+            if (type != null && binding.returnTypeRef is CfirImplicitTypeRef) {
+                // 投影类型不产生新的类型语法；错误类型的诊断仍由声明头中的原始 type ref 拥有。
+                val currentTypeRef = binding.returnTypeRef
+                binding.replaceReturnTypeRef(currentTypeRef.resolvedTypeFromPrototype(type, currentTypeRef.source))
+            }
+            bumpPhase(binding)
+        }
+        when (pattern) {
+            is CfirBindingPattern -> {
+                pattern.transformTypeRef(this, data)
+                val type = pattern.typeRef?.coneTypeOrNull ?: expectedType
+                resolveBinding(pattern.bindingVariable, type)
+                pattern.nestedPattern?.let { resolvePatternHeaderTypes(it, type, data) }
+            }
+            is CfirTypePattern -> {
+                pattern.transformTypeRef(this, data)
+                resolvePatternHeaderTypes(pattern.nestedPattern, pattern.typeRef.coneTypeOrNull, data)
+            }
+            is CfirCatchPattern -> {
+                pattern.transformTypeRefs(this, data)
+                resolvePatternHeaderTypes(pattern.nestedPattern, pattern.semanticTypeRef?.coneTypeOrNull, data)
+            }
+            is CfirCommandTypePattern -> {
+                pattern.transformTypeRefs(this, data)
+                resolvePatternHeaderTypes(pattern.nestedPattern, pattern.semanticTypeRef?.coneTypeOrNull, data)
+            }
+            is CfirTuplePattern -> {
+                val tuple = expectedType?.fullyExpandedType(session) as? ConeTupleType
+                pattern.elements.forEachIndexed { index, element ->
+                    resolvePatternHeaderTypes(element, tuple?.elementTypes?.getOrNull(index), data)
+                }
+            }
+            is CfirEnumPattern -> pattern.arguments.forEach { resolvePatternHeaderTypes(it, null, data) }
+            is CfirOrPattern -> pattern.alternatives.forEach { resolvePatternHeaderTypes(it, expectedType, data) }
+            is CfirVarOrEnumPattern -> resolveBinding(pattern.bindingVariable, expectedType)
+            is CfirConstPattern, is CfirExpressionPattern, is CfirWildcardPattern -> Unit
+        }
     }
 
     /**
@@ -563,7 +628,7 @@ class CfirTypeResolveTransformer(
         val configuration = data
             .withTopContainer(typeAlias)
             .withAdditionalTypeParameters(typeAlias.typeParameters)
-        typeAlias.transformTypeParameters(this, configuration)
+        resolveTypeParameterBounds(typeAlias, configuration)
         typeAlias.transformExpandedTypeRef(this, configuration)
         typeAlias.transformAnnotations(this, configuration)
         bumpPhase(typeAlias)
@@ -608,6 +673,18 @@ class CfirTypeResolveTransformer(
         // 基础类型也统一走类型引用解析逻辑
         return transformTypeRef(basicTypeRef, data)
     }
+
+    /** 类型角色都经同一Specific resolver，不能只解析子槽而留下未resolved的参数/header外层。 */
+    override fun transformParenthesizedTypeRef(parenthesizedTypeRef: CfirParenthesizedTypeRef, data: CfirTypeResolutionConfiguration): CfirTypeRef =
+        transformTypeRef(parenthesizedTypeRef, data)
+    override fun transformFunctionTypeRef(functionTypeRef: CfirFunctionTypeRef, data: CfirTypeResolutionConfiguration): CfirTypeRef =
+        transformTypeRef(functionTypeRef, data)
+    override fun transformTupleTypeRef(tupleTypeRef: CfirTupleTypeRef, data: CfirTypeResolutionConfiguration): CfirTypeRef =
+        transformTypeRef(tupleTypeRef, data)
+    override fun transformVArrayTypeRef(vArrayTypeRef: CfirVArrayTypeRef, data: CfirTypeResolutionConfiguration): CfirTypeRef =
+        transformTypeRef(vArrayTypeRef, data)
+    override fun transformOptionTypeRef(optionTypeRef: CfirOptionTypeRef, data: CfirTypeResolutionConfiguration): CfirTypeRef =
+        transformTypeRef(optionTypeRef, data)
 
     // ---- 跳过函数体 ----
 
@@ -687,7 +764,7 @@ class CfirTypeResolveTransformer(
         val configuration = data
             .withTopContainer(classLike)
             .withAdditionalTypeParameters(classLike.typeParametersForResolution())
-        classLike.transformTypeParameters(this, configuration)
+        resolveTypeParameterBounds(classLike, configuration)
     }
 
     /**
@@ -695,14 +772,44 @@ class CfirTypeResolveTransformer(
      * 其成员声明由各自 designated target 在独立锁下推进。
      */
     fun resolveExtendTypes(extend: CfirExtend) {
-        val configuration = buildConfiguration(extend)
-            .withTopContainer(extend)
-            .withAdditionalTypeParameters(extend.typeParameters)
-        extend.transformTypeParameters(this, configuration)
-        extend.transformExtendedTypeRef(this, configuration)
-        extend.exposeExtendedTypeAssumptionBounds()
-        extend.transformSuperTypeRefs(this, configuration)
-        extend.transformAnnotations(this, configuration)
+        transformExtendHeader(extend, buildConfiguration(extend))
+    }
+
+    /** 为指定声明建立与整文件遍历一致的外围类型语境；外围声明按外到内排列。 */
+    fun resolveDesignatedDeclarationTypes(
+        target: CfirDeclaration,
+        containingFile: CfirFile?,
+        containingDeclarations: List<CfirDeclaration>,
+    ) {
+        val owner = containingDeclarations.lastOrNull { it is CfirClassLikeDeclaration || it is CfirExtend }
+        val topContainer = if (target is CfirCallableDeclaration) owner ?: containingFile else target
+        var configuration = CfirTypeResolutionConfiguration.EMPTY.withTopContainer(topContainer)
+        if (containingFile != null) {
+            configuration = configuration.withUseSiteFile(containingFile)
+                .withScopes(session.createFileLookupScopes(containingFile, scopeSession).typeResolutionScopes)
+        }
+        val classes = containingDeclarations.filterIsInstance<CfirClass>()
+        if (classes.isNotEmpty()) configuration = configuration.withContainingClassDeclarations(classes)
+        for (container in containingDeclarations) {
+            configuration = when (container) {
+                is CfirClassLikeDeclaration -> configuration.withAdditionalTypeParameters(container.typeParametersForResolution())
+                is CfirExtend -> configuration.withAdditionalTypeParameters(container.typeParameters)
+                else -> configuration
+            }
+        }
+        // 类自身的类型参数属于类头；只有外层类体参与查找，不能提前加入该类自己的成员。
+        val bodyOwners = if (target is CfirTypeParameter && containingDeclarations.lastOrNull() is CfirClassLikeDeclaration) {
+            containingDeclarations.dropLast(1)
+        } else containingDeclarations
+        configuration = configuration.withEnclosingClassBodyScopes(
+            bodyOwners.filterIsInstance<CfirClassLikeDeclaration>().filterNot { it is CfirTypeAlias }.asReversed(),
+        )
+        // extend 自身类型参数的上界先于 extended type 解析，不能提前使用其 This 语境。
+        val isExtendHeaderParameter = target is CfirTypeParameter && containingDeclarations.lastOrNull() === owner
+        if (owner is CfirExtend && !isExtendHeaderParameter) {
+            configuration = configuration.withThisTypeContext(thisTypeContextForExtend(owner))
+        }
+        target.accept(this, configuration)
     }
 
     /**
@@ -727,11 +834,10 @@ class CfirTypeResolveTransformer(
         )
         if (reverseMapping.isEmpty()) return
 
-        val targetSubstitutor = CfirTypeSubstitutorByMap(
+        val targetSubstitutor = createTypeSubstitutorByTypeConstructor(
             targetTypeParameters.zip(targetTypeArguments).associate { (parameter, argument) ->
                 parameter.symbol.toLookupTag() to argument
-            },
-        )
+            }, session.typeContext, false)
         val assumptionBounds = collectAssumptionBounds(targetDeclaration)
 
         for (typeParameter in typeParameters) {
@@ -829,11 +935,7 @@ class CfirTypeResolveTransformer(
     }
 
     /** 返回类型在 assumption-bound 投射中可见的声明侧直接类型实参。 */
-    private fun ConeCangJieType.assumptionTypeArguments(): List<ConeCangJieType> = when (this) {
-        is ConePointerType -> listOf(pointeeType)
-        is ConeLookupTagBasedType -> typeArguments.map { it.type }
-        else -> emptyList()
-    }
+    private fun ConeCangJieType.assumptionTypeArguments(): List<ConeCangJieType> = declarationTypeArguments().map { it.type }
 
     /**
      * 把推导出的 assumption bounds 追加到当前类型参数声明。
@@ -872,23 +974,16 @@ class CfirTypeResolveTransformer(
      * 该构造器在 TYPES 阶段获得 owner 类型作为返回类型，保证后续 low-level 阶段不会看到未完成声明头。
      */
     private fun ensureImplicitDefaultConstructorIfNeeded(klass: CfirClass) {
+        // specific class 的默认构造器决策必须等 common 成员进入 CJMP 合并视图后进行；
+        // raw/TYPES 阶段先合成会把不存在的零参 init 混入后续构造器查找。
+        if (klass.status.isSpecific || !klass.canGenerateDefaultInstanceConstructor()) return
         if (klass.declarations.any { it is CfirConstructor && !it.status.isStatic }) return
 
         val classImpl = klass as? CfirClassImpl ?: return
         // 隐式构造器同样必须携带真实 owner ClassId。后置声明元数据 checker 会从最终
         // resolved constructor 还原到 class owner；无 owner 的局部 CallableId 会丢失
         // class 上的 Hide/APILevel 等注解语义。
-        val symbol = CfirConstructorSymbol(CallableId(klass.symbol.classId, SpecialNames.INIT))
-        val constructor = buildConstructor {
-            source = klass.source
-            moduleData = klass.moduleData
-            this.symbol = symbol
-            origin = CfirDeclarationOrigin.ImplicitDefault
-            attributes = CfirDeclarationAttributes.EMPTY
-            status = klass.status
-            returnTypeRef = buildImplicitTypeRef {}
-            body = null
-        }
+        val constructor = klass.createDefaultInstanceConstructor()
 
         classImpl.declarations += constructor
     }
@@ -899,12 +994,7 @@ class CfirTypeResolveTransformer(
      * 否则 low-level 的 IMPLICIT_TYPES 校验会把 constructor 误判为未完成。
      */
     private fun buildConstructedTypeForConstructorOwner(owner: CfirClassLikeDeclaration): ConeCangJieType {
-        val ownerSymbol = owner.symbol as? CfirClassLikeSymbol<*>
-            ?: return ConeErrorType(ConeSimpleDiagnostic("constructor owner has no class-like symbol"))
-        val typeArguments = owner.typeParameters.map { parameter ->
-            ConeTypeParameterTypeImpl(parameter.symbol.toLookupTag())
-        }
-        return ownerSymbol.constructType(typeArguments)
+        return owner.constructorOwnerType()
     }
 
     /**

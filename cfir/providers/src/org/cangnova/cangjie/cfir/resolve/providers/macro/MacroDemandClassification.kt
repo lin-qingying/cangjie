@@ -2,9 +2,9 @@ package org.cangnova.cangjie.cfir.resolve.providers.macro
 
 import org.cangnova.cangjie.builtins.StandardNames
 import org.cangnova.cangjie.cfir.session.CfirSessionComponent
-import org.cangnova.cangjie.cfir.session.annotationMetadataRegistryOrNull
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.parsing.MacroParsingScope
 
 /**
  * Macro surface 的语义位置。
@@ -231,18 +231,7 @@ class MacroDemandClassification private constructor(
             pre: PreMacroRawBuildResult,
             defaultMacroImports: List<FqName> = emptyList(),
             builtinRegistries: MacroBuiltinRegistries = MacroBuiltinRegistries.DEFAULT,
-        ): MacroDemandClassification = create(
-            pre = pre,
-            defaultMacroImports = defaultMacroImports,
-            builtinRegistries = builtinRegistries,
-            externalMacroPackages = emptySet(),
-        )
-
-        fun create(
-            pre: PreMacroRawBuildResult,
-            defaultMacroImports: List<FqName>,
-            builtinRegistries: MacroBuiltinRegistries,
-            externalMacroPackages: Set<FqName>,
+            externalMacroPackages: Set<FqName> = emptySet(),
         ): MacroDemandClassification {
             val symbolIndex = buildMacroSymbolIndex(pre)
             val context = bindMacroImports(
@@ -251,17 +240,18 @@ class MacroDemandClassification private constructor(
                 defaultMacroImports = defaultMacroImports,
                 builtinRegistries = builtinRegistries,
             )
+            // 已知包种类仅用于生成 artifact demand；具体定义仍必须经 resolver 校验后冻结。
+            val knownMacroPackages = pre.files
+                .filter { it.isMacroPackage }
+                .mapTo(linkedSetOf()) { it.cfirFile.packageDirective.packageFqName }
+                .apply { addAll(externalMacroPackages) }
             val snapshots = pre.files.flatMap { preFile ->
-                val sourceMacroPackages = pre.files
-                    .filter { it.isMacroPackage }
-                    .mapTo(linkedSetOf()) { it.cfirFile.packageDirective.packageFqName }
                 preFile.surfaces.map { surface ->
                     surface.toPreArtifactSnapshot(
                         context,
                         preFile,
-                        pre.session.annotationMetadataRegistryOrNull,
-                        sourceMacroPackages,
-                        externalMacroPackages,
+                        preFile.annotationMetadata,
+                        knownMacroPackages,
                     )
                 }
             }
@@ -279,19 +269,21 @@ class MacroDemandClassification private constructor(
 private fun MacroSurface.toPreArtifactSnapshot(
     context: MacroResolutionContext,
     preFile: PreMacroCfirFile,
-    annotationMetadataRegistry: CfirAnnotationMetadataRegistry?,
-    sourceMacroPackages: Set<FqName>,
-    externalMacroPackages: Set<FqName>,
+    annotationMetadataRegistry: CfirAnnotationMetadata,
+    knownMacroPackages: Set<FqName>,
 ): PreArtifactSurfaceSnapshot {
     val callSite = callSite()
     val annotationCarrier = replaceHandle.annotationCarrier
-    val metadata = annotationCarrier?.let { annotationMetadataRegistry?.snapshot(it) }
+    val metadata = annotationCarrier?.let { annotationMetadataRegistry.snapshot(it) }
     val name = qualifiedName?.shortName()
     val samePackage = name
         ?.takeIf { !isQualifiedName || qualifiedName?.parent() == scopeContext.packageFqName }
         ?.let { context.symbolIndex.samePackageMacroDef(scopeContext.packageFqName, it) }
     val builtinNonMacro = name?.takeIf {
-        !isQualifiedName && samePackage == null && it in context.builtinNonMacroRegistry
+        kind == MacroSurface.Kind.PLAIN &&
+            !isQualifiedName &&
+            samePackage == null &&
+            it in context.builtinNonMacroRegistry
     }
     val builtinMacro = name
         ?.takeIf { !isQualifiedName && samePackage == null && it in context.builtinMacroRegistry }
@@ -304,8 +296,7 @@ private fun MacroSurface.toPreArtifactSnapshot(
         builtinNonMacro = builtinNonMacro,
         builtinMacro = builtinMacro,
         importCandidates = importCandidates,
-        sourceMacroPackages = sourceMacroPackages,
-        externalMacroPackages = externalMacroPackages,
+        knownMacroPackages = knownMacroPackages,
         packageAliases = context.packageAliases,
     )
     return PreArtifactSurfaceSnapshot(
@@ -335,6 +326,7 @@ private fun PreArtifactSurfaceSnapshot.toFinalDecision(
         name == null -> MacroResolution.Unresolved(Name.special("<missing>"))
         samePackageResult != null -> MacroResolution.SamePackage(samePackageResult)
         annotationCarrier != null && kind == MacroSurface.Kind.FORCED -> MacroResolution.CustomAnnotation(name)
+        builtinNonMacroResult != null -> MacroResolution.BuiltinNonMacro(builtinNonMacroResult)
         else -> context.resolveMacroCall(
             callPackage = surface.scopeContext.packageFqName,
             qualifier = qualifier,
@@ -343,6 +335,7 @@ private fun PreArtifactSurfaceSnapshot.toFinalDecision(
             kind = surface.kind,
             hasParenthesis = surface.hasParenthesis,
             allowsDeclarationInputParenthesisOmission = surface is MacroSurfaceDecl || surface is MacroSurfaceParam,
+            allowBuiltinNonMacro = false,
         ).let { resolved ->
             if (annotationCarrier != null && resolved is MacroResolution.Unresolved) {
                 MacroResolution.CustomAnnotation(name)
@@ -353,7 +346,7 @@ private fun PreArtifactSurfaceSnapshot.toFinalDecision(
     }
     val parserMode = when {
         resolution is MacroResolution.CustomAnnotation -> MacroFragmentParser.Mode.CUSTOM_ANNOTATION
-        surface is MacroSurfaceExpr -> MacroFragmentParser.Mode.EXPRESSION
+        surface.parsingFacts?.scope is MacroParsingScope.Expression -> MacroFragmentParser.Mode.EXPRESSION
         else -> MacroFragmentParser.Mode.DECLARATION
     }
     val slotType = when {
@@ -436,8 +429,7 @@ private fun MacroSurface.externalDemandPackage(
     builtinNonMacro: Name?,
     builtinMacro: MacroDefinitionEntry?,
     importCandidates: List<FqName>,
-    sourceMacroPackages: Set<FqName>,
-    externalMacroPackages: Set<FqName>,
+    knownMacroPackages: Set<FqName>,
     packageAliases: Map<Name, FqName>,
 ): FqName? {
     if (preFile.isMacroPackage || isMacroDefinitionSignatureSurfaceForClassification()) return null
@@ -457,7 +449,7 @@ private fun MacroSurface.externalDemandPackage(
         if (kind == MacroSurface.Kind.FORCED) return null
         return listOfNotNull(qualifiedPackage)
             .plus(importCandidates)
-            .firstOrNull { it in sourceMacroPackages || it in OFFICIAL_STDLIB_MACRO_PACKAGES || it in externalMacroPackages }
+            .firstOrNull { it in knownMacroPackages || it in OFFICIAL_STDLIB_MACRO_PACKAGES }
     }
     return qualifiedPackage ?: importCandidates.firstOrNull()
 }
@@ -466,7 +458,7 @@ private fun MacroSurface.externalDemandPackage(
  * 官方编译器在 macro call resolve / evaluation 阶段会把这些标准库包作为内建宏包处理。
  *
  * annotation surface 不能无差别对所有 import 发起 artifact demand，否则普通 annotation
- * import 会被误判为宏包缺失；这里只对官方标准宏包和同项目 macro package 开放。
+ * import 会被误判为宏包缺失；这里只对官方标准宏包、同项目宏包及调用方已声明的宏包开放。
  */
 private val OFFICIAL_STDLIB_MACRO_PACKAGES: Set<FqName> = setOf(
     StandardNames.STD_DERIVING_PACKAGE_FQ_NAME,
@@ -474,7 +466,7 @@ private val OFFICIAL_STDLIB_MACRO_PACKAGES: Set<FqName> = setOf(
     StandardNames.STD_UNITTEST_MOCK_MOCKMACRO_PACKAGE_FQ_NAME,
 )
 
-/** 判断包是否是官方标准库宏包；类型解析的注解命名空间判定复用同一来源，避免 allowlist 漂移。 */
+/** 类型解析的注解命名空间和 artifact demand 共用官方标准库宏包事实。 */
 fun isOfficialStdlibMacroPackage(fqName: FqName): Boolean = fqName in OFFICIAL_STDLIB_MACRO_PACKAGES
 
 /** 判定当前 surface 是否只是 macro 定义签名的一部分，而不是 macro 调用需求。 */

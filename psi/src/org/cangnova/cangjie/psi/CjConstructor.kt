@@ -81,7 +81,7 @@ abstract class CjConstructor<T : CjConstructor<T>> : CjDeclarationStub<CangJieCo
      * 暴露 `valueParameters`，实现仓颉 PSI节点对上层接口的属性契约。
      */
     override val valueParameters: List<CjParameter>
-        get() = valueParameterList?.parameters ?: emptyList()
+        get() = valueParameterLists.flatMap { it.parameters }
     /**
      * 暴露 `typeReference`，实现仓颉 PSI节点对上层接口的属性契约。
      */
@@ -90,6 +90,10 @@ abstract class CjConstructor<T : CjConstructor<T>> : CjDeclarationStub<CangJieCo
      * 暴露 `valueParameterList`，实现仓颉 PSI节点对上层接口的属性契约。
      */
     override val valueParameterList: CjParameterList? get() = getStubOrPsiChild(CjStubElementTypes.VALUE_PARAMETER_LIST)
+
+    /** primary/secondary 的完整签名列表属于同一真实构造器 owner。 */
+    override val valueParameterLists: List<CjParameterList>
+        get() = getStubOrPsiChildrenAsList(CjStubElementTypes.VALUE_PARAMETER_LIST)
 
     /**
      * 实现 `setTypeReference` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。

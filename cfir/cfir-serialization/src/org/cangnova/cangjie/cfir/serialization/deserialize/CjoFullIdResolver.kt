@@ -9,14 +9,14 @@ import PackageFormat.FullId
 import PackageFormat.InterfaceInfo
 import PackageFormat.Package
 import PackageFormat.StructInfo
-import PackageFormat.FuncInfo
-import PackageFormat.PropInfo
-import PackageFormat.ExprKind
 import PackageFormat.ExprInfo
+import PackageFormat.ExprKind
+import PackageFormat.FuncInfo
 import PackageFormat.LambdaInfo
+import PackageFormat.PropInfo
+import org.cangnova.cangjie.cfir.serialization.cjo.CjoFullIdReferenceKey
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoPackageHeader
 import org.cangnova.cangjie.cfir.serialization.cjo.PackageIndex
-import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
@@ -88,7 +88,7 @@ internal class CjoFullIdResolver(
                         message = "Cannot load imported package at index ${fullId.pkgId}",
                     )
 
-                val referenceKey = fullId.decl?.takeIf { it.isNotBlank() }
+                val referenceKey = CjoFullIdReferenceKey.fromWireValue(fullId.decl)
                     ?: return ResolvedFullId.Invalid(
                         rawPkgId = fullId.pkgId,
                         message = "Imported-package FullId is missing reference key",
@@ -128,30 +128,21 @@ internal class CjoFullIdResolver(
         }
     }
 
+    /** ReferenceInfo 的合法 absence/package 与解析失败独立；不把失败降为无目标。 */
+    fun resolveSourceReferenceTarget(fullId: FullId?): ResolvedSourceReferenceTarget = when (classifySourceReferenceTarget(fullId)) {
+        CjoSourceReferenceTargetKind.FIELD_MISSING -> ResolvedSourceReferenceTarget.Absent(org.cangnova.cangjie.cfir.source.CfirSourceReferenceAbsence.FIELD_MISSING)
+        CjoSourceReferenceTargetKind.INVALID_SENTINEL -> ResolvedSourceReferenceTarget.Absent(org.cangnova.cangjie.cfir.source.CfirSourceReferenceAbsence.INVALID_SENTINEL)
+        CjoSourceReferenceTargetKind.PACKAGE, CjoSourceReferenceTargetKind.DECLARATION -> when (val result = resolve(checkNotNull(fullId))) {
+            is ResolvedFullId.Declaration -> ResolvedSourceReferenceTarget.Declaration(result)
+            is ResolvedFullId.PackageReference -> ResolvedSourceReferenceTarget.Package(result.packageFqName)
+            is ResolvedFullId.Invalid -> error("Unresolved SOURCE reference target: ${result.message}")
+        }
+    }
+
     /** 将 [FullId] 解析为 class-like 声明的 [ClassId]；非 class-like 或非法引用返回 null。 */
     fun resolveClassId(fullId: FullId): ClassId? {
-        resolveStandardLibraryClassId(fullId)?.let { return it }
         val resolved = resolve(fullId) as? ResolvedFullId.Declaration ?: return null
         return resolved.packageIndex.resolveClassId(resolved.declaration.zeroBasedIndex)
-    }
-
-    /**
-     * 仅恢复官方确认的 std.core.Any exportId；运行时不保证另有可加载的 std.core CJO。
-     * 其他声明和导入包仍须通过包索引加载并验证具体声明。
-     */
-    private fun resolveStandardLibraryClassId(fullId: FullId): ClassId? {
-        if (!PackageIndex.isImportedPackage(fullId.pkgId)) return null
-        val packageName = context.header.imports.getOrNull(fullId.pkgId)?.takeIf(String::isNotBlank) ?: return null
-        if (packageName != StdlibClassIds.Any.packageFqName.asString()) return null
-        val declarationKey = fullId.decl?.takeIf(String::isNotBlank) ?: return null
-        return standardLibraryExportIds[declarationKey]
-    }
-
-    private companion object {
-        /** cjc exportId 形式の FullId key for standard-library declarations without a loadable CJO. */
-        val standardLibraryExportIds: Map<String, ClassId> = mapOf(
-            "_CNat3AnyE" to StdlibClassIds.Any,
-        )
     }
 
     /** 将 [FullId] 解析为声明名称；非法或非声明引用返回 null。 */
@@ -171,6 +162,19 @@ internal class CjoFullIdResolver(
         val resolved = resolve(fullId) as? ResolvedFullId.Declaration ?: return null
         return resolved.packageIndex.resolveContainingClassId(resolved.declaration.zeroBasedIndex)
     }
+
+    /** 返回当前包声明的最近 class-like owner 索引，用于 owner-safe 声明物化。 */
+    fun resolveContainingClassDeclarationIndex(zeroBasedDeclIndex: Int): Int? =
+        currentPackageIndex.resolveContainingClassDeclarationIndex(zeroBasedDeclIndex)
+
+    fun resolveContainingDeclarationIndex(zeroBasedDeclIndex: Int): Int? =
+        currentPackageIndex.resolveContainingDeclarationIndex(zeroBasedDeclIndex)
+
+    fun resolveClassIdOfDeclaration(zeroBasedDeclIndex: Int): ClassId? = currentPackageIndex.resolveClassId(zeroBasedDeclIndex)
+
+    /** desugar 的拥有参数与 helper 的词法外层不同；首次 header 请求须先进入真实原函数。 */
+    fun resolveParameterDesugarOwnerIndex(zeroBasedDeclIndex: Int): Int? =
+        currentPackageIndex.resolveParameterDesugarOwnerIndex(zeroBasedDeclIndex)
 
     /** 生成 [FullId] 解析结果的调试文本，用于错误类型与诊断原因。 */
     fun describe(fullId: FullId): String {
@@ -213,6 +217,7 @@ internal class CjoPackageIndex(
     private val header: CjoPackageHeader,
     /** 当前包的 FlatBuffers Package。 */
     private val pkg: Package,
+    val sourcePath: java.nio.file.Path? = null,
 ) {
     /** 当前包的完整包名。 */
     val packageFqName: FqName = FqName(header.fullPkgName)
@@ -222,6 +227,31 @@ internal class CjoPackageIndex(
         buildParentDeclIndex()
     }
 
+    /** 参数/自有泛型与成员各按 wire 所属 owner 建立关系，不按名称或最近 class 猜宿主。 */
+    fun resolveContainingDeclarationIndex(zeroBasedDeclIndex: Int): Int? = parentDeclByIndex[zeroBasedDeclIndex]
+
+    private val parameterDesugarOwnerByIndex: Map<Int, Int> by lazy(LazyThreadSafetyMode.PUBLICATION) {
+        buildMap {
+            for (index in 0 until pkg.allDeclsLength) {
+                val declaration = checkNotNull(pkg.allDecls(index))
+                if (declaration.kind != DeclKind.FuncDecl) continue
+                val body = (declaration.info(PackageFormat.FuncInfo()) as? PackageFormat.FuncInfo)?.funcBody ?: continue
+                for (ordinal in 0 until body.paramListsLength) {
+                    val list = checkNotNull(body.paramLists(ordinal))
+                    for (slot in 0 until list.desugarsLength) {
+                        val reference = list.desugars(slot)
+                        if (reference == 0u || reference == UInt.MAX_VALUE) continue
+                        val child = checkNotNull(decodeFormattedDeclIndex(reference))
+                        val previous = put(child, index)
+                        check(previous == null || previous == index) { "CJO parameter desugar has multiple function owners" }
+                    }
+                }
+            }
+        }
+    }
+
+    fun resolveParameterDesugarOwnerIndex(zeroBasedDeclIndex: Int): Int? = parameterDesugarOwnerByIndex[zeroBasedDeclIndex]
+
     /** 通过官方 1-based 格式化声明索引解析声明。 */
     fun resolveDeclByFormattedIndex(formattedDeclIndex: UInt): IndexedDeclaration? {
         val zeroBasedIndex = decodeFormattedDeclIndex(formattedDeclIndex) ?: return null
@@ -230,13 +260,10 @@ internal class CjoPackageIndex(
 
     /** 通过跨包引用键解析声明。 */
     fun resolveDeclByReferenceKey(referenceKey: String): IndexedDeclaration? {
-        val zeroBasedIndex = header.fullIdReferenceKeyToIndex[referenceKey] ?: return null
+        val canonicalKey = CjoFullIdReferenceKey.fromWireValue(referenceKey) ?: return null
+        val zeroBasedIndex = header.fullIdReferenceKeyToIndex[canonicalKey] ?: return null
         val declaration = resolveDeclByZeroBasedIndex(zeroBasedIndex) ?: return null
-        // 对位官方 AddDeclToImportedPackage：exportId 为空时 identifier 就是登记键。
-        // 非空 exportId 仍必须逐字匹配，header 的其它名字 alias 不取得引用身份。
-        val exportId = declaration.decl.exportId
-        val exactKey = if (exportId.isNullOrEmpty()) declaration.decl.identifier else exportId
-        return declaration.takeIf { exactKey == referenceKey }
+        return declaration.takeIf { CjoFullIdReferenceKey.fromDeclaration(it.decl) == canonicalKey }
     }
 
     /** 精确成员宿主来自 wire body，不从 ClassId 或名字反推。 */
@@ -279,11 +306,17 @@ internal class CjoPackageIndex(
 
     /** 按声明 parent index 找到最近的 class-like 宿主。 */
     fun resolveContainingClassId(zeroBasedDeclIndex: Int): ClassId? {
+        val containingClassIndex = resolveContainingClassDeclarationIndex(zeroBasedDeclIndex) ?: return null
+        return resolveClassId(containingClassIndex)
+    }
+
+    /** 按真实 parent index 找到最近 class-like 声明的 0-based 索引。 */
+    fun resolveContainingClassDeclarationIndex(zeroBasedDeclIndex: Int): Int? {
         var current = parentDeclByIndex[zeroBasedDeclIndex] ?: return null
         val visited = mutableSetOf<Int>()
         while (visited.add(current)) {
             val declaration = resolveDeclByZeroBasedIndex(current) ?: return null
-            if (declaration.decl.isClassLikeDeclaration()) return resolveClassId(current)
+            if (declaration.decl.isClassLikeDeclaration()) return current
             current = parentDeclByIndex[current] ?: return null
         }
         return null
@@ -350,30 +383,27 @@ internal class CjoPackageIndex(
 
     /** 提取声明 body 中记录的子声明下标列表。 */
     private fun Decl.childDeclIndices(): List<Int> {
-        val children = when (kind) {
+        val members = when (kind) {
             DeclKind.ClassDecl -> (info(ClassInfo()) as? ClassInfo)?.bodyIndices().orEmpty()
             DeclKind.InterfaceDecl -> (info(InterfaceInfo()) as? InterfaceInfo)?.bodyIndices().orEmpty()
             DeclKind.StructDecl -> (info(StructInfo()) as? StructInfo)?.bodyIndices().orEmpty()
             DeclKind.EnumDecl -> (info(EnumInfo()) as? EnumInfo)?.bodyIndices().orEmpty()
             DeclKind.ExtendDecl -> (info(ExtendInfo()) as? ExtendInfo)?.bodyIndices().orEmpty()
-            DeclKind.PropDecl -> (info(PropInfo()) as? PropInfo)?.let {
+            DeclKind.PropDecl -> (info(PackageFormat.PropInfo()) as? PackageFormat.PropInfo)?.let {
                 decodeBodyVector(it.gettersLength, it::getters) + decodeBodyVector(it.settersLength, it::setters)
-            }.orEmpty()
-            DeclKind.FuncDecl -> (info(FuncInfo()) as? FuncInfo)?.funcBody?.let { body ->
-                buildList {
-                    for (i in 0 until body.paramListsLength) {
-                        val parameters = checkNotNull(body.paramLists(i))
-                        addAll(decodeBodyVector(parameters.paramsLength, parameters::params))
-                        for (j in 0 until parameters.desugarsLength) {
-                            val raw = parameters.desugars(j)
-                            if (raw != 0u && raw != UInt.MAX_VALUE) add(checkNotNull(decodeFormattedDeclIndex(raw)))
-                        }
-                    }
-                }
             }.orEmpty()
             else -> emptyList()
         }
-        return children + generic?.let { decodeBodyVector(it.typeParametersLength, it::typeParameters) }.orEmpty()
+        val parameters = generic?.let { decodeBodyVector(it.typeParametersLength, it::typeParameters) }.orEmpty()
+        val functionParameters = if (kind == DeclKind.FuncDecl) {
+            (info(PackageFormat.FuncInfo()) as? PackageFormat.FuncInfo)?.funcBody?.let {
+                (0 until it.paramListsLength).flatMap { ordinal ->
+                    val list = checkNotNull(it.paramLists(ordinal))
+                    decodeBodyVector(list.paramsLength, list::params)
+                }
+            }.orEmpty()
+        } else emptyList()
+        return members + parameters + functionParameters
     }
 
     /** 判断声明种类是否属于可形成 [ClassId] 的 class-like 声明。 */
@@ -414,6 +444,28 @@ internal class CjoPackageIndex(
 }
 
 /** [FullId] 解析后的结构化结果。 */
+/** 只分类 wire 来源，不读 SDK 或认领借用目标。 */
+internal enum class CjoSourceReferenceTargetKind { FIELD_MISSING, INVALID_SENTINEL, PACKAGE, DECLARATION }
+
+internal fun classifySourceReferenceTarget(reference: FullId?): CjoSourceReferenceTargetKind {
+    if (reference == null) return CjoSourceReferenceTargetKind.FIELD_MISSING
+    return when (reference.pkgId) {
+        PackageIndex.INVALID.value -> CjoSourceReferenceTargetKind.INVALID_SENTINEL
+        PackageIndex.PACKAGE_REFERENCE.value -> CjoSourceReferenceTargetKind.PACKAGE
+        PackageIndex.CURRENT.value -> CjoSourceReferenceTargetKind.DECLARATION
+        else -> {
+            require(reference.pkgId >= 0) { "Unknown SOURCE reference package index ${reference.pkgId}" }
+            CjoSourceReferenceTargetKind.DECLARATION
+        }
+    }
+}
+
+internal sealed interface ResolvedSourceReferenceTarget {
+    data class Declaration(val value: ResolvedFullId.Declaration) : ResolvedSourceReferenceTarget
+    data class Package(val name: FqName) : ResolvedSourceReferenceTarget
+    data class Absent(val reason: org.cangnova.cangjie.cfir.source.CfirSourceReferenceAbsence) : ResolvedSourceReferenceTarget
+}
+
 internal sealed interface ResolvedFullId {
     /** 无法解析的 FullId，携带原始 pkgId 与失败说明。 */
     data class Invalid(

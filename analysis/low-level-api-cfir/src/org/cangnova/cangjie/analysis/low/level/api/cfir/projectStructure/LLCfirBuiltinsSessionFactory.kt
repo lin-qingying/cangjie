@@ -5,6 +5,8 @@
 
 package org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure
 
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
+
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
@@ -252,6 +254,7 @@ class LLCfirBuiltinsSessionFactory(private val project: Project) {
                         .LLExtendPsiMaterializer(project) { extend -> binaryExtendProvider.getPackageFqName(extend) }
                     org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLPsiBackedExtendProvider(
                         binaryExtendProvider,
+                        project,
                     ) { extend -> if (extend.source != null) extend else materializer.materialize(extend) ?: extend }
                 } else {
                     binaryExtendProvider

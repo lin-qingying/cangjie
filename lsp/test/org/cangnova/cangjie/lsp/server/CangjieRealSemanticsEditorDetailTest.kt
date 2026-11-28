@@ -4,7 +4,6 @@ import org.cangnova.cangjie.lsp.framework.AbstractLspIntegrationTest
 import org.cangnova.cangjie.lsp.state.LspTextDocument
 import org.cangnova.cangjie.lsp.testkit.KNOWN_DEFECT_TAG
 import org.cangnova.cangjie.lsp.testkit.LspWorkspaceFixture
-import org.cangnova.cangjie.lsp.testkit.KNOWN_DEFECT_TAG
 import org.cangnova.cangjie.lsp.testkit.LspWorkspaceFixtureBuilder
 import org.eclipse.lsp4j.DocumentHighlightKind
 import org.eclipse.lsp4j.DocumentHighlightParams

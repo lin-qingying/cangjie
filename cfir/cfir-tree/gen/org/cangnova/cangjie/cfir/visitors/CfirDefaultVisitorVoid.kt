@@ -6,6 +6,8 @@
 package org.cangnova.cangjie.cfir.visitors
 
 import org.cangnova.cangjie.cfir.CfirFeaturesDirective
+import org.cangnova.cangjie.cfir.CfirFunctionBodyOwner
+import org.cangnova.cangjie.cfir.CfirIterationOwner
 import org.cangnova.cangjie.cfir.CfirTargetElement
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.*
@@ -47,6 +49,10 @@ abstract class CfirDefaultVisitorVoid : CfirVisitorVoid() {
 
     override fun visitStatement(statement: CfirStatement) {
         visitAnnotationContainer(statement)
+    }
+
+    override fun visitTypeParametersOwner(typeParametersOwner: CfirTypeParametersOwner) {
+        visitTypeParameterRefsOwner(typeParametersOwner)
     }
 
     override fun visitCallableDeclaration(callableDeclaration: CfirCallableDeclaration) {
@@ -101,6 +107,10 @@ abstract class CfirDefaultVisitorVoid : CfirVisitorVoid() {
         visitDeclaration(invalidDeclaration)
     }
 
+    override fun visitMacroExpansionDeclaration(macroExpansionDeclaration: CfirMacroExpansionDeclaration) {
+        visitDeclaration(macroExpansionDeclaration)
+    }
+
     override fun visitProperty(property: CfirProperty) {
         visitCallableDeclaration(property)
     }
@@ -133,6 +143,66 @@ abstract class CfirDefaultVisitorVoid : CfirVisitorVoid() {
         visitStatement(expression)
     }
 
+    override fun visitNativeMatchExpression(nativeMatchExpression: CfirNativeMatchExpression) {
+        visitExpression(nativeMatchExpression)
+    }
+
+    override fun visitNativeMatchCase(nativeMatchCase: CfirNativeMatchCase) {
+        visitExpression(nativeMatchCase)
+    }
+
+    override fun visitNativeConditionMatchExpression(nativeConditionMatchExpression: CfirNativeConditionMatchExpression) {
+        visitExpression(nativeConditionMatchExpression)
+    }
+
+    override fun visitNativeConditionMatchCase(nativeConditionMatchCase: CfirNativeConditionMatchCase) {
+        visitExpression(nativeConditionMatchCase)
+    }
+
+    override fun visitLetPatternDestructorExpression(letPatternDestructorExpression: CfirLetPatternDestructorExpression) {
+        visitExpression(letPatternDestructorExpression)
+    }
+
+    override fun visitNativeTryExpression(nativeTryExpression: CfirNativeTryExpression) {
+        visitExpression(nativeTryExpression)
+    }
+
+    override fun visitPrimitiveTypeExpression(primitiveTypeExpression: CfirPrimitiveTypeExpression) {
+        visitExpression(primitiveTypeExpression)
+    }
+
+    override fun visitWildcardExpression(wildcardExpression: CfirWildcardExpression) {
+        visitExpression(wildcardExpression)
+    }
+
+    override fun visitFunctionArgument(functionArgument: CfirFunctionArgument) {
+        visitExpression(functionArgument)
+    }
+
+    override fun visitCallExpression(callExpression: CfirCallExpression) {
+        visitExpression(callExpression)
+    }
+
+    override fun visitUnaryExpression(unaryExpression: CfirUnaryExpression) {
+        visitExpression(unaryExpression)
+    }
+
+    override fun visitBinaryExpression(binaryExpression: CfirBinaryExpression) {
+        visitExpression(binaryExpression)
+    }
+
+    override fun visitArrayCreationExpression(arrayCreationExpression: CfirArrayCreationExpression) {
+        visitExpression(arrayCreationExpression)
+    }
+
+    override fun visitPointerExpression(pointerExpression: CfirPointerExpression) {
+        visitExpression(pointerExpression)
+    }
+
+    override fun visitResolvedSpawnExpression(resolvedSpawnExpression: CfirResolvedSpawnExpression) {
+        visitExpression(resolvedSpawnExpression)
+    }
+
     override fun visitBlock(block: CfirBlock) {
         visitExpression(block)
     }
@@ -157,6 +227,10 @@ abstract class CfirDefaultVisitorVoid : CfirVisitorVoid() {
         visitNamedReference(namedReferenceWithCandidateBase)
     }
 
+    override fun visitErrorPrimaryConstructor(errorPrimaryConstructor: CfirErrorPrimaryConstructor) {
+        visitConstructor(errorPrimaryConstructor)
+    }
+
     override fun visitIncrementDecrementExpression(incrementDecrementExpression: CfirIncrementDecrementExpression) {
         visitExpression(incrementDecrementExpression)
     }
@@ -179,6 +253,14 @@ abstract class CfirDefaultVisitorVoid : CfirVisitorVoid() {
 
     override fun visitThisReference(thisReference: CfirThisReference) {
         visitReference(thisReference)
+    }
+
+    override fun visitResolvedQualifier(resolvedQualifier: CfirResolvedQualifier) {
+        visitExpression(resolvedQualifier)
+    }
+
+    override fun visitErrorResolvedQualifier(errorResolvedQualifier: CfirErrorResolvedQualifier) {
+        visitExpression(errorResolvedQualifier)
     }
 
     override fun visitNamedAccessExpression(namedAccessExpression: CfirNamedAccessExpression) {
@@ -229,16 +311,28 @@ abstract class CfirDefaultVisitorVoid : CfirVisitorVoid() {
         visitExpression(matchBranch)
     }
 
+    override fun visitCatchPattern(catchPattern: CfirCatchPattern) {
+        visitPattern(catchPattern)
+    }
+
     override fun visitCatch(catch: CfirCatch) {
         visitExpression(catch)
+    }
+
+    override fun visitCommandTypePattern(commandTypePattern: CfirCommandTypePattern) {
+        visitPattern(commandTypePattern)
     }
 
     override fun visitHandleClause(handleClause: CfirHandleClause) {
         visitExpression(handleClause)
     }
 
+    override fun visitLoopExpression(loopExpression: CfirLoopExpression) {
+        visitExpression(loopExpression)
+    }
+
     override fun visitForInExpression(forInExpression: CfirForInExpression) {
-        visitLoopExpression(forInExpression)
+        visitExpression(forInExpression)
     }
 
     override fun visitThrowExpression(throwExpression: CfirThrowExpression) {
@@ -301,6 +395,14 @@ abstract class CfirDefaultVisitorVoid : CfirVisitorVoid() {
         visitExpression(tupleLiteral)
     }
 
+    override fun visitFunctionBodyOwner(functionBodyOwner: CfirFunctionBodyOwner) {
+        visitTargetElement(functionBodyOwner)
+    }
+
+    override fun visitIterationOwner(iterationOwner: CfirIterationOwner) {
+        visitTargetElement(iterationOwner)
+    }
+
     override fun visitSpawnExpression(spawnExpression: CfirSpawnExpression) {
         visitExpression(spawnExpression)
     }
@@ -361,6 +463,10 @@ abstract class CfirDefaultVisitorVoid : CfirVisitorVoid() {
         visitTypeRef(unresolvedTypeRef)
     }
 
+    override fun visitParenthesizedTypeRef(parenthesizedTypeRef: CfirParenthesizedTypeRef) {
+        visitTypeRef(parenthesizedTypeRef)
+    }
+
     override fun visitUserTypeRef(userTypeRef: CfirUserTypeRef) {
         visitUnresolvedTypeRef(userTypeRef)
     }
@@ -399,6 +505,10 @@ abstract class CfirDefaultVisitorVoid : CfirVisitorVoid() {
 
     override fun visitResolvedNamedReference(resolvedNamedReference: CfirResolvedNamedReference) {
         visitNamedReference(resolvedNamedReference)
+    }
+
+    override fun visitResolvedBuiltinOperatorReference(resolvedBuiltinOperatorReference: CfirResolvedBuiltinOperatorReference) {
+        visitNamedReference(resolvedBuiltinOperatorReference)
     }
 
     override fun visitErrorReference(errorReference: CfirErrorReference) {

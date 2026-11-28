@@ -5,7 +5,7 @@ import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedNameError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedReferenceError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedSymbolError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedTypeQualifierError
-import org.cangnova.cangjie.cfir.session.importBindingStoreOrNull
+import org.cangnova.cangjie.cfir.resolve.services.importBindingsOrNull
 import org.cangnova.cangjie.cfir.types.ConeDiagnostic
 import org.cangnova.cangjie.cfir.types.ConeUnreportedDuplicateDiagnostic
 
@@ -24,7 +24,7 @@ internal fun ConeDiagnostic.isUnresolvedCascadeAfterFailedImport(context: Checke
         else -> return false
     }
     val file = context.containingFileSymbol?.takeIf { it.isBound }?.cfir ?: return false
-    val imports = context.session.importBindingStoreOrNull?.getBindings(file)?.imports ?: return false
+    val imports = file.importBindingsOrNull()?.imports ?: return false
     return imports.any { binding ->
         binding.targets.isEmpty() &&
                 binding.importDirective.source?.kind?.shouldSkipErrorTypeReporting != true

@@ -35,7 +35,7 @@ enum class CfirRawCopyMetadataKind {
     CONE_TYPE, DIAGNOSTIC, TARGET, PATTERN_OWNER, ANNOTATION_MAPPING,
     ANNOTATION_VIEW, ANNOTATION_ARGUMENT_MAP, CONDITIONAL_COMPILATION_FAILURE,
     LITERAL_VALUE, MATCH_EXHAUSTIVENESS, PROPERTY_BODY_STATE, TYPE_PATTERN_KIND,
-    ASSIGNMENT_MISMATCH, ANNOTATION_IDENTITY,
+    ASSIGNMENT_MISMATCH, ANNOTATION_IDENTITY, CONTENT_SOURCE, PATTERN_CONSTANT,
 }
 
 /**
@@ -265,6 +265,8 @@ interface CfirRawCopyContext {
     fun typePatternKind(value: CfirTypePatternMatchingKind): CfirTypePatternMatchingKind
     fun assignmentMismatch(value: CfirAssignmentTypeMismatchOutcome): CfirAssignmentTypeMismatchOutcome
     fun annotationIdentity(value: CangjieAnnotationIdentity): CangjieAnnotationIdentity
+    fun contentSource(value: CfirContentSource): CfirContentSource.Owned
+    fun patternConstant(value: CfirConstantValue): CfirConstantValue
 
     /** 外置 Element hook 只构造 target；copier 负责 remember，不能在 hook 中重复登记。 */
     fun resolvedImplicitTypeRef(value: org.cangnova.cangjie.cfir.types.impl.ResolvedImplicitTypeRef): org.cangnova.cangjie.cfir.types.impl.ResolvedImplicitTypeRef

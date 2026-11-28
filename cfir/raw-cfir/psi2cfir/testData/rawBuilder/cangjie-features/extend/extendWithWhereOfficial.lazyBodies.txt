@@ -1,7 +1,6 @@
 FILE: extendWithWhereOfficial.cj
     public enum EnumExtend<T> {
         AA
-        init()
     }
     extend<T> R|EnumExtend<R|T|>| <: R|Equatable<R|EnumExtend<R|T|>|>| {
     }

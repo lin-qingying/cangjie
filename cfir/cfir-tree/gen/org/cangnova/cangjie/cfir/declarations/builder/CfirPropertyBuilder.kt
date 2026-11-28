@@ -8,6 +8,7 @@
 package org.cangnova.cangjie.cfir.declarations.builder
 
 import kotlin.contracts.*
+import org.cangnova.cangjie.cfir.CfirContentSource
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
@@ -26,15 +27,16 @@ class CfirPropertyBuilder {
     var source: CjSourceElement? = null
     lateinit var moduleData: CfirModuleData
     lateinit var resolvePhase: CfirResolvePhase
+    var contentSource: CfirContentSource = CfirContentSource.Owned
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
     lateinit var origin: CfirDeclarationOrigin
     lateinit var attributes: CfirDeclarationAttributes
     var isLocal: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
     var deprecationsProvider: DeprecationsProvider = UnresolvedDeprecationProvider
     var dispatchReceiverType: ConeSimpleCangJieType? = null
+    val typeParameters: MutableList<CfirTypeParameter> = mutableListOf()
     lateinit var symbol: CfirPropertySymbol
     lateinit var status: CfirDeclarationStatus
-    val typeParameters: MutableList<CfirTypeParameter> = mutableListOf()
     lateinit var returnTypeRef: CfirTypeRef
     lateinit var name: Name
     var getter: CfirPropertyAccessor? = null
@@ -47,15 +49,16 @@ class CfirPropertyBuilder {
             source,
             moduleData,
             resolvePhase,
+            contentSource,
             annotations.toMutableOrEmpty(),
             origin,
             attributes,
             isLocal,
             deprecationsProvider,
             dispatchReceiverType,
+            typeParameters,
             symbol,
             status,
-            typeParameters,
             returnTypeRef,
             name,
             getter,
@@ -89,8 +92,8 @@ inline fun buildPropertyCopy(original: CfirProperty, init: CfirPropertyBuilder.(
     copyBuilder.isLocal = original.isLocal
     copyBuilder.deprecationsProvider = original.deprecationsProvider
     copyBuilder.dispatchReceiverType = original.dispatchReceiverType
-    copyBuilder.status = original.status
     copyBuilder.typeParameters.addAll(original.typeParameters)
+    copyBuilder.status = original.status
     copyBuilder.returnTypeRef = original.returnTypeRef
     copyBuilder.name = original.name
     copyBuilder.getter = original.getter

@@ -133,6 +133,19 @@ public enum class Site {
 }
 
 /**
+ * 构造器在语法与官方修饰符表中的角色。
+ *
+ * 主构造器和次级构造器继续共享 [DeclarationKind.CONSTRUCTOR]；此角色只补充两张官方目标表之间的差异。
+ */
+public enum class ConstructorRole(val diagnosticDescription: String) {
+    /** 类型名形式的主构造器。 */
+    PRIMARY("primary constructor"),
+
+    /** `init` 形式的次级构造器。 */
+    SECONDARY("constructor"),
+}
+
+/**
  * 修饰符目标：声明种类 + 作用位置的二维组合。
  *
  * 替代旧 `CangJieTarget` 一维枚举的笛卡尔积子项。
@@ -144,6 +157,7 @@ public enum class Site {
  * @property container 当 site == MEMBER 时，承载该成员的 class-like 容器种类；否则为 `null`。
  *                     用于"class 成员"与"struct 成员"修饰符规则不同的场景。
  *                     简化判定可不携带——谓词默认忽略容器细分。
+ * @property constructorRole 如果目标由构造器声明产生，记录其主/次构造器角色；static init 仍保留次构造器身份。
  */
 public data class ModifierTarget(
     val kind: DeclarationKind,
@@ -151,7 +165,23 @@ public data class ModifierTarget(
     val container: DeclarationKind? = null,
     /** 当前成员是否位于 common/specific abstract class 中。 */
     val isCommonSpecificAbstractClassMember: Boolean = false,
+    val constructorRole: ConstructorRole? = null,
 ) {
+    init {
+        require(kind != DeclarationKind.CONSTRUCTOR || site == Site.HEAD && constructorRole != null) {
+            "Constructor modifier targets must be declaration-head targets with a primary/secondary role"
+        }
+        require(kind != DeclarationKind.STATIC_INITIALIZER ||
+                site == Site.HEAD && constructorRole == ConstructorRole.SECONDARY) {
+            "Static-initializer targets must retain their secondary-constructor role"
+        }
+        require(constructorRole == null ||
+                site == Site.HEAD && (kind == DeclarationKind.CONSTRUCTOR ||
+                        kind == DeclarationKind.STATIC_INITIALIZER && constructorRole == ConstructorRole.SECONDARY)) {
+            "Only declaration-head constructor targets can carry a constructor role"
+        }
+    }
+
     /** 是否为成员声明。 */
     public val isMember: Boolean get() = site == Site.MEMBER
 
@@ -163,7 +193,22 @@ public data class ModifierTarget(
 
     public companion object {
         /** 创建一个声明头目标。 */
-        public fun head(kind: DeclarationKind): ModifierTarget = ModifierTarget(kind, Site.HEAD)
+        public fun head(kind: DeclarationKind): ModifierTarget {
+            require(kind != DeclarationKind.CONSTRUCTOR && kind != DeclarationKind.STATIC_INITIALIZER) {
+                "Use constructor(role, isStaticInitializer) to preserve constructor identity"
+            }
+            return ModifierTarget(kind, Site.HEAD)
+        }
+
+        /** 创建保留语法角色的构造器目标；次级 static init 仍属于次级构造器表。 */
+        public fun constructor(
+            role: ConstructorRole,
+            isStaticInitializer: Boolean = false,
+        ): ModifierTarget = ModifierTarget(
+            kind = if (isStaticInitializer) DeclarationKind.STATIC_INITIALIZER else DeclarationKind.CONSTRUCTOR,
+            site = Site.HEAD,
+            constructorRole = role,
+        )
 
         /** 创建一个成员目标，可携带容器种类。 */
         public fun member(

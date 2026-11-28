@@ -3388,6 +3388,12 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeLlTDiagnosticsTest() {
             runTest("cfir/analysis-tests/testData/llt/Extend_import/imported_default_visibility.cj")
         }
 
+        @TestMetadata("imported_extend_sequence_conflict.cj")
+        @Test
+        fun testImportedExtendSequenceConflict() {
+            runTest("cfir/analysis-tests/testData/llt/Extend_import/imported_extend_sequence_conflict.cj")
+        }
+
         @TestMetadata("imported_nominal_default_conflicts.cj")
         @Test
         fun testImportedNominalDefaultConflicts() {
@@ -11931,6 +11937,12 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 runTest("cfir/analysis-tests/testData/llt/ffi/semantic_contract/foreignBlockCallsPositive.cj")
             }
 
+            @TestMetadata("foreignVariableExplicitC.cj")
+            @Test
+            fun testForeignVariableExplicitC() {
+                runTest("cfir/analysis-tests/testData/llt/ffi/semantic_contract/foreignVariableExplicitC.cj")
+            }
+
             @TestMetadata("foreignVariableNegative.cj")
             @Test
             fun testForeignVariableNegative() {
@@ -12891,6 +12903,12 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testErrAmbiguous01() {
                 runTest("cfir/analysis-tests/testData/llt/function/import_00/err_ambiguous_01.cj")
+            }
+
+            @TestMetadata("err_ambiguous_alias.cj")
+            @Test
+            fun testErrAmbiguousAlias() {
+                runTest("cfir/analysis-tests/testData/llt/function/import_00/err_ambiguous_alias.cj")
             }
 
             @TestMetadata("err_not_member.cj")
@@ -13870,6 +13888,24 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testInstDupFunctions010() {
             runTest("cfir/analysis-tests/testData/llt/generics/inst_dup_functions010.cj")
+        }
+
+        @TestMetadata("inst_dup_functions011.cj")
+        @Test
+        fun testInstDupFunctions011() {
+            runTest("cfir/analysis-tests/testData/llt/generics/inst_dup_functions011.cj")
+        }
+
+        @TestMetadata("inst_dup_functions012.cj")
+        @Test
+        fun testInstDupFunctions012() {
+            runTest("cfir/analysis-tests/testData/llt/generics/inst_dup_functions012.cj")
+        }
+
+        @TestMetadata("inst_dup_functions013.cj")
+        @Test
+        fun testInstDupFunctions013() {
+            runTest("cfir/analysis-tests/testData/llt/generics/inst_dup_functions013.cj")
         }
 
         @TestMetadata("instance_by_enum_ellipsis.cj")

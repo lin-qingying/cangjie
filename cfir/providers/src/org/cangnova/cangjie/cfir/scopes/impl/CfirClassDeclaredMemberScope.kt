@@ -3,8 +3,8 @@ package org.cangnova.cangjie.cfir.scopes.impl
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirDeclaredValueMemberIndex
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
-import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.callableNameOrNull
@@ -21,17 +21,22 @@ import org.cangnova.cangjie.name.Name
 /**
  * class-like symbol 的声明成员 scope，对齐 Kotlin FIR declared-member scope 模型。
  */
-class CfirClassDeclaredMemberScope(
+open class CfirClassDeclaredMemberScope(
     /**
      * 当前 scope 所属 class-like symbol。
      */
     private val classSymbol: CfirClassLikeSymbol<*>,
+    /**
+     * 构建成员索引的声明输入。普通视图使用原始 declarations；CJMP 视图传入合并快照的成员图，
+     * 使实际化在父类型/覆盖归并前完成，同时不修改原始 CFIR 树。
+     */
+    internal val declarations: List<CfirDeclaration> = classSymbol.cfir.declarations,
 ) : CfirClassScope() {
 
     /**
      * 声明成员索引。
      */
-    private val memberIndex: MemberIndex by lazy { buildIndex(classSymbol.cfir.declarations) }
+    private val memberIndex: MemberIndex by lazy { buildIndex(declarations) }
 
     /**
      * 返回声明成员 callable 名称集合。
@@ -165,8 +170,6 @@ class CfirClassDeclaredMemberScope(
         val constructors = mutableListOf<CfirConstructorSymbol>()
         val enumConstructors = HashMap<Name, MutableList<CfirEnumConstructorSymbol>>()
         val functions = HashMap<Name, MutableList<CfirNamedFunctionSymbol>>()
-        val properties = HashMap<Name, MutableList<CfirPropertySymbol>>()
-        val variables = HashMap<Name, MutableList<CfirVariableSymbol<*>>>()
 
         for (declaration in declarations) {
             when (declaration) {
@@ -194,21 +197,14 @@ class CfirClassDeclaredMemberScope(
                     enumConstructors.getOrPut(declaration.name) { mutableListOf() }.add(symbol)
                 }
 
-                is CfirProperty -> {
-                    val symbol = declaration.symbol as? CfirPropertySymbol ?: continue
-                    properties.getOrPut(declaration.name) { mutableListOf() }.add(symbol)
-                }
-
-                is CfirFieldVariable -> {
-                    val symbol = declaration.symbol as? CfirVariableSymbol<*> ?: continue
-                    variables.getOrPut(declaration.name) { mutableListOf() }.add(symbol)
-                }
-
                 else -> Unit
             }
         }
 
-        val (visibleProperties, visibleVariables) = filterShadowedValueDeclarations(properties, variables)
+        val valueMembers = CfirDeclaredValueMemberIndex(declarations)
+        val visibleProperties = valueMembers.members.filterIsInstance<CfirProperty>()
+            .associate { it.name to listOf(it.symbol) }
+        val visibleVariables = valueMembers.fields.associate { it.name to listOf(it.symbol) }
 
         return MemberIndex(
             classifiers = classifiers,
@@ -219,76 +215,6 @@ class CfirClassDeclaredMemberScope(
             variables = visibleVariables,
         )
     }
-
-    /**
-     * 仓颉官方 PreCheck 对同名值成员先报告重定义，然后普通引用解析仍以先声明成员为目标。
-     *
-     * CFIR 仍保留完整 declarations 供冲突检查遍历；这里仅收窄 declared member scope
-     * 暴露给普通 lookup 的值成员集合，避免后续 overload resolver 把已重定义成员建模为歧义使用。
-     */
-    private fun filterShadowedValueDeclarations(
-        properties: Map<Name, List<CfirPropertySymbol>>,
-        variables: Map<Name, List<CfirVariableSymbol<*>>>,
-    ): Pair<Map<Name, List<CfirPropertySymbol>>, Map<Name, List<CfirVariableSymbol<*>>>> {
-        val visibleProperties = linkedMapOf<Name, List<CfirPropertySymbol>>()
-        val visibleVariables = linkedMapOf<Name, List<CfirVariableSymbol<*>>>()
-
-        for (name in properties.keys + variables.keys) {
-            val valueMembers = buildList {
-                properties[name].orEmpty().forEachIndexed { index, symbol ->
-                    add(IndexedValueMember(symbol, ValueMemberKind.PROPERTY, index))
-                }
-                variables[name].orEmpty().forEachIndexed { index, symbol ->
-                    add(IndexedValueMember(symbol, ValueMemberKind.VARIABLE, index))
-                }
-            }
-            if (valueMembers.isEmpty()) continue
-
-            val selected = valueMembers.minWith(
-                compareBy<IndexedValueMember> { it.symbol.declarationStartOffset() }
-                    .thenBy { it.kind.ordinal }
-                    .thenBy { it.index },
-            )
-            when (selected.kind) {
-                ValueMemberKind.PROPERTY -> visibleProperties[name] = listOf(selected.symbol as CfirPropertySymbol)
-                ValueMemberKind.VARIABLE -> visibleVariables[name] = listOf(selected.symbol as CfirVariableSymbol<*>)
-            }
-        }
-
-        return visibleProperties to visibleVariables
-    }
-
-    /**
-     * 带声明顺序信息的值成员。
-     */
-    private data class IndexedValueMember(
-        /**
-         * 参与同名值成员选择的 callable symbol。
-         */
-        val symbol: CfirCallableSymbol<*>,
-        /**
-         * 值成员分类，用于在同偏移时稳定选择属性或变量。
-         */
-        val kind: ValueMemberKind,
-        /**
-         * 同一分类内的声明顺序下标。
-         */
-        val index: Int,
-    )
-
-    /**
-     * 值成员种类。
-     */
-    private enum class ValueMemberKind {
-        PROPERTY,
-        VARIABLE,
-    }
-
-    /**
-     * 返回 callable 声明起始偏移。
-     */
-    private fun CfirCallableSymbol<*>.declarationStartOffset(): Int =
-        if (isBound) cfir.source?.startOffset ?: Int.MAX_VALUE else Int.MAX_VALUE
 
     /**
      * 返回调试文本。

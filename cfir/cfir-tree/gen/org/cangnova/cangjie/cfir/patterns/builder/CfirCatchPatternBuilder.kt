@@ -10,32 +10,32 @@ package org.cangnova.cangjie.cfir.patterns.builder
 import kotlin.contracts.*
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
-import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
+import org.cangnova.cangjie.cfir.expressions.CfirConstantValue
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.patterns.CfirCatchPattern
+import org.cangnova.cangjie.cfir.patterns.CfirPattern
 import org.cangnova.cangjie.cfir.patterns.impl.CfirCatchPatternImpl
-import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
-import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.CjSourceElement
 
 @CfirBuilderDsl
 class CfirCatchPatternBuilder {
     var source: CjSourceElement? = null
-    var bindingName: Name? = null
-    var isWildcard: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
+    var semanticTypeRef: CfirTypeRef? = null
+    val constantValues: MutableList<CfirConstantValue> = mutableListOf()
+    var contextExpression: CfirExpression? = null
+    lateinit var nestedPattern: CfirPattern
     val typeRefs: MutableList<CfirTypeRef> = mutableListOf()
-    var resolvedTypeRef: CfirResolvedTypeRef? = null
-    var bindingVariable: CfirPatternBindingVariable? = null
 
     @OptIn(CfirImplementationDetail::class)
     fun build(): CfirCatchPattern {
         return CfirCatchPatternImpl(
             source,
-            bindingName,
-            isWildcard,
+            semanticTypeRef,
+            constantValues,
+            contextExpression,
+            nestedPattern,
             typeRefs,
-            resolvedTypeRef,
-            bindingVariable,
         )
     }
 
@@ -56,10 +56,10 @@ inline fun buildCatchPatternCopy(original: CfirCatchPattern, init: CfirCatchPatt
     }
     val copyBuilder = CfirCatchPatternBuilder()
     copyBuilder.source = original.source
-    copyBuilder.bindingName = original.bindingName
-    copyBuilder.isWildcard = original.isWildcard
+    copyBuilder.semanticTypeRef = original.semanticTypeRef
+    copyBuilder.constantValues.addAll(original.constantValues)
+    copyBuilder.contextExpression = original.contextExpression
+    copyBuilder.nestedPattern = original.nestedPattern
     copyBuilder.typeRefs.addAll(original.typeRefs)
-    copyBuilder.resolvedTypeRef = original.resolvedTypeRef
-    copyBuilder.bindingVariable = original.bindingVariable
     return copyBuilder.apply(init).build()
 }

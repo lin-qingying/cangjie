@@ -5,7 +5,9 @@
 
 package org.cangnova.cangjie.cfir.declarations
 
+import org.cangnova.cangjie.cfir.CfirContentSource
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
@@ -30,6 +32,7 @@ abstract class CfirResourceVariable : CfirVariable() {
     abstract override val deprecationsProvider: DeprecationsProvider
     abstract override val dispatchReceiverType: ConeSimpleCangJieType?
     abstract override val status: CfirDeclarationStatus
+    abstract override val contentSource: CfirContentSource
     abstract override val initializer: CfirExpression?
     abstract override val isVar: Boolean
     abstract override val isTypeImplicit: Boolean
@@ -38,12 +41,25 @@ abstract class CfirResourceVariable : CfirVariable() {
     abstract override val returnTypeRef: CfirTypeRef
     abstract val name: Name
 
+    /** 访问本节点拥有的完整来源子图；独立于 ordinary visitor 的语法子树。 */
+    @CfirImplementationDetail
+    override fun <R, D> acceptSourceChildren(visitor: CfirVisitor<R, D>, data: D) {
+        annotations.forEach { it.accept(visitor, data) }
+        status.accept(visitor, data)
+        initializer?.accept(visitor, data)
+        typeParameters.forEach { it.accept(visitor, data) }
+        returnTypeRef.accept(visitor, data)
+    }
+
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitResourceVariable(this, data)
 
     @Suppress("UNCHECKED_CAST")
     override fun <E : CfirElement, D> transform(transformer: CfirTransformer<D>, data: D): E =
         transformer.transformResourceVariable(this, data) as E
+
+    @CfirImplementationDetail
+    abstract override fun replaceSource(newSource: CjSourceElement?)
 
     abstract override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
 

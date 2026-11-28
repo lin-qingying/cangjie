@@ -6,7 +6,7 @@ import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiBase
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModule
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.cjTestModuleStructure
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.test.directives.model.DirectiveApplicability

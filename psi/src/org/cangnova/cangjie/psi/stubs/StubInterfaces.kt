@@ -98,6 +98,8 @@ interface CangJieStubElement<T : CjElement> : StubElement<T> {
  * 定义 `CangJieFileStub` 接口，约束PSI Stub节点或服务需要暴露的结构能力。
  */
 interface CangJieFileStub : PsiFileStub<CjFile>, CangJieStubElement<CjFile> {
+    /** 原文件角色事件；null 表示来源不可用，不等价于空事件。 */
+    val cjmpRoleSnapshot: org.cangnova.cangjie.parsing.CjmpFileRoleSyntaxSnapshot?
     /**
      * 提供 `getPackageFqName` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
      */
@@ -530,10 +532,11 @@ interface CangJieEnumStub : CangJieClassLikeTypeStatementStub<CjEnum> {
 /**
  * 枚举构造器 Stub 接口
  *
- * 枚举构造器不是独立声明，只存储名称和参数类型数量（用于重载区分）。
+ * 枚举构造项共用命名声明合同，保存名称和参数类型数量（用于重载区分）。
+ * 构造项完全限定名由已有的枚举限定名和构造项名称派生。
  * 参数类型详情通过 TYPE_LIST 子树获取。
  */
-interface CangJieEnumConstructorStub : NamedStub<CjEnumConstructor> {
+interface CangJieEnumConstructorStub : CangJieStubWithFqName<CjEnumConstructor> {
     /**
      * 获取参数类型数量（用于区分重载的枚举构造器）
      */
@@ -571,6 +574,8 @@ interface CangJieExtendStub : CangJieTypeStatementStub<CjExtend> {
  * 该接口刻意不含 `ClassId`：extend 不属于公开类型标识体系，它的身份由 `CangJieExtendStub.extendId` 表达。
  */
 interface CangJieTypeStatementStub<T : CjTypeStatement> : CangJieStubWithFqName<T> {
+    /** 源码解析时记录的直接成员事实；二进制或无来源时为 null。 */
+    val cjmpNominalSyntaxFacts: org.cangnova.cangjie.parsing.CjmpNominalSyntaxFacts?
     /**
      * 提供 `getSuperNames` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
      */
@@ -639,7 +644,10 @@ interface CangJieFunctionStub<F : CjFunction> : CangJieCallableStubBase<F> {
 /**
  * 定义 `CangJieNamedFunctionStub` 接口，约束PSI Stub节点或服务需要暴露的结构能力。
  */
-interface CangJieNamedFunctionStub : CangJieFunctionStub<CjNamedFunction>
+interface CangJieNamedFunctionStub : CangJieFunctionStub<CjNamedFunction> {
+    /** 源码块存在且没有直接语句；用于不解析函数体时决定空体 Unit 签名。 */
+    fun hasEmptyBlockBody(): Boolean
+}
 
 /**
  * 定义 `CangJieMainFunctionStub` 接口，约束PSI Stub节点或服务需要暴露的结构能力。

@@ -1,5 +1,7 @@
 package org.cangnova.cangjie.analysis.api.impl.base.test.dsl
 
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
+
 import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisApiTestConfiguratorFactoryData
 import org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.containingDeclarationProvider.AbstractContainingDeclarationProviderByReferenceTest
 import org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.containingModuleProvider.AbstractGetModuleTest

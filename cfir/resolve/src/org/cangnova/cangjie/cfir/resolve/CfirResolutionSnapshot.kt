@@ -16,14 +16,17 @@
 
 package org.cangnova.cangjie.cfir.resolve
 
+import org.cangnova.cangjie.cfir.CfirContentSource
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
 import org.cangnova.cangjie.cfir.declarations.CfirControlFlowGraphOwner
 import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
+import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
 import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.cfir.declarations.CfirResourceVariable
 import org.cangnova.cangjie.cfir.declarations.CfirResolveState
+import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.declarations.ResolveStateAccess
 import org.cangnova.cangjie.cfir.declarations.lambdaParameterShapeExpectedFunctionType
@@ -43,15 +46,12 @@ import org.cangnova.cangjie.cfir.expressions.CfirResolvable
 import org.cangnova.cangjie.cfir.expressions.CfirStatement
 import org.cangnova.cangjie.cfir.expressions.CfirSubscriptExpression
 import org.cangnova.cangjie.cfir.patterns.CfirPattern
-import org.cangnova.cangjie.cfir.patterns.CfirCatchPattern
 import org.cangnova.cangjie.cfir.patterns.CfirPatternMutableState
 import org.cangnova.cangjie.cfir.patterns.CfirPatternTreeOwner
-import org.cangnova.cangjie.cfir.patterns.CfirPatternTypeReferences
 import org.cangnova.cangjie.cfir.patterns.restorePatternTreeRoots
 import org.cangnova.cangjie.cfir.references.CfirControlFlowGraphReference
 import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
-import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
@@ -109,11 +109,6 @@ class CfirResolutionSnapshot private constructor(
     private val patternTreeRoots: List<Pair<CfirPatternTreeOwner, CfirElement>>,
     /** pattern 内部可变状态快照。 */
     private val patternStates: IdentityHashMap<CfirPattern, CfirPatternMutableState>,
-    /** catch 与 handle 共用的声明类型引用状态。 */
-    private val patternTypeReferences: IdentityHashMap<CfirPatternTypeReferences, List<CfirTypeRef>>,
-    /** catch 模式整体语义类型必须和源码类型引用一起回滚。 */
-    private val catchPatternResolvedTypes: IdentityHashMap<CfirCatchPattern, CfirResolvedTypeRef?>,
-    private val commandPatternResolvedTypes: IdentityHashMap<org.cangnova.cangjie.cfir.patterns.CfirCommandTypePattern, CfirResolvedTypeRef?>,
     /** 下标语法节点与已解析 get/set 调用的关联必须随候选试跑一起回滚。 */
     private val subscriptCallStates: IdentityHashMap<CfirSubscriptExpression, SubscriptCallState>,
     /** qualified access 接收者与类型实参快照。 */
@@ -185,9 +180,6 @@ class CfirResolutionSnapshot private constructor(
         anonymousFunctionArgumentMappingFailures.forEach { (function, failed) -> function.isInsideFailedArgumentMapping = failed }
         restorePatternTreeRoots(patternTreeRoots)
         patternStates.values.forEach { it.restore() }
-        patternTypeReferences.forEach { (pattern, types) -> pattern.replaceTypeRefs(types) }
-        catchPatternResolvedTypes.forEach { (pattern, type) -> pattern.replaceResolvedTypeRef(type) }
-        commandPatternResolvedTypes.forEach { (pattern, type) -> pattern.replaceResolvedTypeRef(type) }
         calleeReferences.forEach { (expression, reference) -> expression.replaceCalleeReference(reference) }
         expressionTypes.forEach { (expression, type) -> expression.replaceConeTypeOrNull(type) }
     }
@@ -210,7 +202,8 @@ class CfirResolutionSnapshot private constructor(
             variable.replaceReturnTypeRef(typeRef)
         }
         for ((variable, initializer) in variableInitializers) {
-            variable.replaceInitializer(initializer)
+            if (variable is CfirPatternBindingVariable) variable.replaceOwnedInitializer(initializer)
+            else variable.replaceInitializer(initializer)
         }
         for ((function, typeRef) in anonymousFunctionReturnTypes) {
             function.replaceReturnTypeRef(typeRef)
@@ -234,38 +227,19 @@ class CfirResolutionSnapshot private constructor(
         for ((_, state) in patternStates) {
             state.restore()
         }
-        for ((pattern, typeRefs) in patternTypeReferences) {
-            pattern.replaceTypeRefs(typeRefs)
-        }
-        for ((pattern, resolvedTypeRef) in catchPatternResolvedTypes) {
-            pattern.replaceResolvedTypeRef(resolvedTypeRef)
-        }
-        for ((pattern, resolvedTypeRef) in commandPatternResolvedTypes) {
-            pattern.replaceResolvedTypeRef(resolvedTypeRef)
-        }
         for ((subscript, state) in subscriptCallStates) {
             subscript.replaceResolvedGetCall(state.getCall)
             subscript.replaceResolvedSetCall(state.setCall)
         }
-        for ((block, statements) in blockStatements) {
-            val mutableStatements = block.statements as? MutableList<CfirStatement>
-                ?: error("CfirBlock statements must be mutable during body resolve snapshot restore")
-            mutableStatements.clear()
-            mutableStatements.addAll(statements)
-        }
+        for ((block, statements) in blockStatements) block.replaceStatements(statements)
         for ((expression, resources) in tryResources) expression.replaceResources(resources)
         for ((call, argumentList) in functionCallArgumentLists) {
             call.replaceArgumentList(argumentList)
         }
-        for ((_, state) in argumentListStates) {
-            state.restore()
-        }
+        for ((_, state) in argumentListStates) state.restore()
         for ((access, state) in qualifiedAccessStates) {
-            // 该槽与 Kotlin FIR 一样仅暴露 child transform；null 槽不会产生可变子节点。
-            state.explicitReceiver?.let { receiver ->
-                access.transformExplicitReceiver(ExplicitReceiverRestoringTransformer, receiver)
-            }
             access.replaceDispatchReceiver(state.dispatchReceiver)
+            access.replaceExplicitReceiver(state.explicitReceiver)
             access.replaceTypeArguments(state.typeArguments)
         }
         // 先恢复会改变子节点数量或 nullable/receiver alias 形状的独立存储，再恢复普通 child 槽。
@@ -283,10 +257,10 @@ class CfirResolutionSnapshot private constructor(
      * qualified access 的可变状态。
      */
     private data class QualifiedAccessState(
-        /** 源码显式 receiver 的原节点；转换可以替换该子节点。 */
-        val explicitReceiver: CfirExpression?,
         /** 当前 dispatch receiver。 */
         val dispatchReceiver: CfirExpression?,
+        /** 解析可能替换原始显式接收者表达式。 */
+        val explicitReceiver: CfirExpression?,
         /** 当前类型实参列表。 */
         val typeArguments: List<CfirTypeRef>,
     )
@@ -295,12 +269,6 @@ class CfirResolutionSnapshot private constructor(
         val getCall: CfirFunctionCall?,
         val setCall: CfirFunctionCall?,
     )
-
-    /** 用正式 child transform 恢复原 receiver，保留公共树模型的只读字段契约。 */
-    private object ExplicitReceiverRestoringTransformer : CfirTransformer<CfirExpression>() {
-        @Suppress("UNCHECKED_CAST")
-        override fun <E : CfirElement> transformElement(element: E, data: CfirExpression): E = data as E
-    }
 
     /** 子树转换只替换当前槽，绝不在捕获或恢复时解析该子树。 */
     private class ChildSlots(val owner: CfirElement, val children: List<CfirElement>) {
@@ -353,9 +321,6 @@ class CfirResolutionSnapshot private constructor(
             val tryResources = IdentityHashMap<CfirTryExpression, List<CfirResourceVariable>>()
             val patternTreeRoots = mutableListOf<Pair<CfirPatternTreeOwner, CfirElement>>()
             val patternStates = IdentityHashMap<CfirPattern, CfirPatternMutableState>()
-            val patternTypeReferences = IdentityHashMap<CfirPatternTypeReferences, List<CfirTypeRef>>()
-            val catchPatternResolvedTypes = IdentityHashMap<CfirCatchPattern, CfirResolvedTypeRef?>()
-            val commandPatternResolvedTypes = IdentityHashMap<org.cangnova.cangjie.cfir.patterns.CfirCommandTypePattern, CfirResolvedTypeRef?>()
             val subscriptCallStates = IdentityHashMap<CfirSubscriptExpression, SubscriptCallState>()
             // set 的 RHS 可以引用同一个 get 节点；语义调用引用因此形成共享图而非纯树。
             val visitedElements = java.util.Collections.newSetFromMap(IdentityHashMap<CfirElement, Boolean>())
@@ -409,8 +374,14 @@ class CfirResolutionSnapshot private constructor(
                         }
                         if (element is CfirVariable) {
                             variableTypes[element] = element.returnTypeRef
-                            if (element is CfirFieldVariable || element is CfirPatternVariable || element is CfirResourceVariable) {
-                                variableInitializers[element] = element.initializer
+                            when (element) {
+                                is CfirPatternBindingVariable ->
+                                    if (element.contentSource === CfirContentSource.Owned) {
+                                        variableInitializers[element] = element.ownedInitializer
+                                    }
+                                is CfirFieldVariable, is CfirPatternVariable, is CfirResourceVariable ->
+                                    variableInitializers[element] = element.initializer
+                                is CfirValueParameter -> Unit
                             }
                         }
                         if (element is CfirArgumentList) {
@@ -429,18 +400,7 @@ class CfirResolutionSnapshot private constructor(
                             patternTreeRoots += element to element.patternTreeRoot()
                         }
                         if (element is CfirPattern) {
-                            CfirPatternMutableState.capture(element)?.let { patternState ->
-                                patternStates[element] = patternState
-                            }
-                        }
-                        if (element is CfirPatternTypeReferences) {
-                            patternTypeReferences[element] = element.typeRefs.toList()
-                        }
-                        if (element is CfirCatchPattern) {
-                            catchPatternResolvedTypes[element] = element.resolvedTypeRef
-                        }
-                        if (element is org.cangnova.cangjie.cfir.patterns.CfirCommandTypePattern) {
-                            commandPatternResolvedTypes[element] = element.resolvedTypeRef
+                            patternStates[element] = CfirPatternMutableState.capture(element)
                         }
                         if (element is CfirSubscriptExpression) {
                             subscriptCallStates[element] = SubscriptCallState(element.resolvedGetCall, element.resolvedSetCall)
@@ -449,8 +409,8 @@ class CfirResolutionSnapshot private constructor(
                         }
                         if (element is CfirQualifiedAccessExpression) {
                             qualifiedAccessStates[element] = QualifiedAccessState(
-                                explicitReceiver = element.explicitReceiver,
                                 dispatchReceiver = element.dispatchReceiver,
+                                explicitReceiver = element.explicitReceiver,
                                 typeArguments = element.typeArguments.toList(),
                             )
                         }
@@ -492,9 +452,6 @@ class CfirResolutionSnapshot private constructor(
                 tryResources,
                 patternTreeRoots,
                 patternStates,
-                patternTypeReferences,
-                catchPatternResolvedTypes,
-                commandPatternResolvedTypes,
                 subscriptCallStates,
                 qualifiedAccessStates,
                 functionCallArgumentLists,

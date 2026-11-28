@@ -1,9 +1,15 @@
 package org.cangnova.cangjie.cfir.resolve.services
 
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
+
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirImport
 import org.cangnova.cangjie.cfir.resolve.providers.CfirLookupOrigin
+import org.cangnova.cangjie.cfir.resolve.providers.CfirImportNamespaceContext
+import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.session.CfirSessionComponent
+import org.cangnova.cangjie.cfir.session.importBindingStore
+import org.cangnova.cangjie.cfir.session.importBindingStoreOrNull
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.name.ClassId
@@ -31,18 +37,22 @@ sealed interface CfirResolvedImportTarget {
     /**
      * import 指向 class、interface、struct、enum 或 typealias 等 class-like 声明。
      *
-     * @property classId 目标声明的稳定 ClassId。
-     * @property symbol 已解析出的 class-like symbol。
+     * binding 只保留导入边和目标声明身份；具体 symbol 必须由使用点的 provider 重新物化，
+     * 以免文件 owner session 的 symbol 泄漏到另一个消费 session。
      */
     data class ClassLike(
         /**
-         * 目标声明的稳定 ClassId。
+         * 查找该声明时使用的 import 命名空间。
          */
-        val classId: ClassId,
+        val packageFqName: FqName,
         /**
-         * import 解析命中的 class-like symbol。
+         * import 命名空间的组织限定。
          */
-        val symbol: CfirClassLikeSymbol<*>,
+        val organizationName: Name?,
+        /** 在 import 命名空间中使用的原始成员名，可能与目标声明名不同。 */
+        val name: Name,
+        /** 目标声明的稳定 ClassId。 */
+        val classId: ClassId,
     ) : CfirResolvedImportTarget
 
     /**
@@ -50,7 +60,7 @@ sealed interface CfirResolvedImportTarget {
      *
      * @property packageFqName callable 真实所在包名。
      * @property name callable 的导入短名。
-     * @property symbols 该短名下解析出的 callable overload 集合。
+     * @property organizationName 解析 callable 时使用的组织限定。
      */
     data class Callable(
         /**
@@ -61,12 +71,27 @@ sealed interface CfirResolvedImportTarget {
          * callable 的导入短名。
          */
         val name: Name,
-        /**
-         * 该短名下解析出的 callable overload 集合。
-         */
-        val symbols: List<CfirCallableSymbol<*>>,
+        /** 解析 callable 时使用的组织限定。 */
+        val organizationName: Name?,
     ) : CfirResolvedImportTarget
 }
+
+/**
+ * 在使用方 session 的 provider 中物化导入目标，避免文件级 binding 持有 owner session 的 symbol。
+ */
+fun CfirResolvedImportTarget.ClassLike.resolveSymbols(
+    symbolProvider: CfirSymbolProvider,
+): List<CfirClassLikeSymbol<*>> = symbolProvider
+    .getImportNamespace(CfirImportNamespaceContext(packageFqName, organizationName))
+    .classifiers(name)
+    .filter { it.classId == classId }
+
+/** 在使用方 session 的 provider 中查找导入命名空间内的 callable overload。 */
+fun CfirResolvedImportTarget.Callable.resolveSymbols(
+    symbolProvider: CfirSymbolProvider,
+): List<CfirCallableSymbol<*>> = symbolProvider
+    .getImportNamespace(CfirImportNamespaceContext(packageFqName, organizationName))
+    .callables(name)
 
 /**
  * 单条 import 指令解析完成后的可见绑定。
@@ -298,3 +323,11 @@ class CfirImportBindingStore : CfirSessionComponent {
         val lookupOrigin: CfirLookupOrigin,
     )
 }
+
+/** 返回该文件 owner session 中的显式 import binding；未完成 IMPORTS 阶段时返回 `null`。 */
+fun CfirFile.importBindingsOrNull(): CfirFileImportBindings? =
+    moduleData.session.importBindingStoreOrNull?.getBindings(this)
+
+/** 返回该文件 owner session 中 IMPORTS 阶段发布的显式 import binding。 */
+fun CfirFile.requireImportBindings(): CfirFileImportBindings =
+    moduleData.session.importBindingStore.requireBindings(this)

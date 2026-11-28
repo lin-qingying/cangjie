@@ -32,7 +32,6 @@ import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.findPsi
 import org.cangnova.cangjie.analysis.api.cfir.getExplicitCallableReceiverType
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
-import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.symbols.*
 import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
@@ -105,12 +104,6 @@ internal sealed interface CaCfirBasePropertyAccessorSymbol :
      */
     override val analysisSession: CaCfirSession
         get() = owningCfirProperty.analysisSession
-
-    /**
-     * 访问器实际声明所属的模块。
-     */
-    override val containingModule: CaModule
-        get() = withValidityAssertion { cfirSymbol.llCfirModuleData.caModule }
 
     /**
      * 访问器 CFIR member 状态。
@@ -266,8 +259,8 @@ internal sealed interface CaCfirBasePropertyAccessorSymbol :
                 backingPsi?.valueParameters?.map { parameter -> parameter.symbol as CaValueParameterSymbol }
             } ?: (cfirSymbol.cfir as? CfirFunction)
                 ?.valueParameters
-                ?.mapIndexed { parameterIndex, parameter ->
-                    builder.variableBuilder.buildOwnedValueParameterSymbol(this@CaCfirBasePropertyAccessorSymbol as org.cangnova.cangjie.analysis.api.symbols.markers.CaValueParameterOwnerSymbol, parameter, parameterIndex)
+                ?.map { parameter ->
+                    builder.variableBuilder.buildValueParameterSymbol(parameter.symbol)
                 }
                 .orEmpty()
         }

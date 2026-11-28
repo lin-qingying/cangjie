@@ -1,39 +1,39 @@
 package org.cangnova.cangjie.cfir
 
-import org.cangnova.cangjie.cfir.declarations.CfirFunction
-import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
+import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 
 /**
- * 函数返回目标。
- *
- * 对齐 Kotlin FIR 的 `FirFunctionTarget`：
- * - `return` 并不是直接持有函数声明本体，而是先持有一个稳定的 target 对象；
- * - raw builder 在进入函数/匿名函数体之前先把 target 压栈；
- * - 构建完函数节点后再把 target 绑定回真实函数声明。
- *
- * 这样 `return` 的归属就不会依赖“最近语法块猜测”，而是依赖一条显式的框架级绑定链。
+ * 统一函数返回目标。经真实 F-owner 的 symbol 取得声明，具名函数、lambda 和 enum F
+ * 保持各自具体类型；raw 与保存正文共用同一个 AbstractTarget 绑定协议。
  */
 class CfirFunctionTarget(
     labelName: String? = null,
-    /**
-     * 当前 target 是否属于 lambda/匿名函数。
-     */
+    /** lambda 的真实角色；enum constructor F 始终为 false。 */
     val isLambda: Boolean,
-) : CfirAbstractTarget<CfirFunction>(labelName) {
-    /**
-     * 延迟绑定的函数符号。
-     */
-    private lateinit var targetSymbol: CfirFunctionSymbol<*>
+) : CfirAbstractTarget<CfirFunctionBodyOwner>(labelName) {
+    private lateinit var targetSymbol: CfirBasedSymbol<*>
 
     override val isBound: Boolean
         get() = this::targetSymbol.isInitialized
 
-    /**
-     * 当前 target 绑定的函数声明。
-     */
-    override var _labeledElement: CfirFunction
-        get() = targetSymbol.cfir
+    override var _labeledElement: CfirFunctionBodyOwner
+        get() {
+            val declaration = targetSymbol.cfir
+            check(declaration is CfirFunctionBodyOwner) {
+                "A Return target must retain its actual function-body owner"
+            }
+            return declaration
+        }
         set(value) {
+            require(value.symbol.isBound && value.symbol.cfir === value) {
+                "A Return target requires its actual bound F symbol"
+            }
+            require(isLambda == (value is CfirAnonymousFunction && value.isLambda)) {
+                "A Return target must retain its actual lambda role"
+            }
+            // 与 Kotlin AbstractTarget.bind 和原生借用引用重定位一致：活动树允许
+            // 重绑，已发布 SOURCE payload 的不变性由同代捕获及变更校验负责。
             targetSymbol = value.symbol
         }
 }

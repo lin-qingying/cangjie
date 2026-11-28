@@ -35,8 +35,8 @@ import org.cangnova.cangjie.analysis.api.symbols.CaTypeParameterSymbol
 import org.cangnova.cangjie.analysis.api.types.CaSubstitutor
 import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
-import org.cangnova.cangjie.cfir.types.CfirTypeSubstitutorByMap
-import org.cangnova.cangjie.type.model.TypeConstructorMarker
+import org.cangnova.cangjie.cfir.resolve.substitution.substitutorByMap
+import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutorByMap
 
 /**
  * 对齐 Kotlin `KaFirSubstitutorProvider` 的组件边界，
@@ -54,7 +54,7 @@ internal class CaCfirSubstitutorProvider(
     override fun createSubstitutor(mappings: Map<CaTypeParameterSymbol, CaType>): CaSubstitutor = withValidityAssertion {
         if (mappings.isEmpty()) return CaSubstitutor.Empty(token)
 
-        val cfirMappings = buildMap<TypeConstructorMarker, org.cangnova.cangjie.cfir.types.ConeCangJieType> {
+        val cfirMappings = buildMap<CfirTypeParameterSymbol, org.cangnova.cangjie.cfir.types.ConeCangJieType> {
             mappings.forEach { (typeParameterSymbol, type) ->
                 // 两类失败必须分开：**符号种类不对**（调用方给错东西）是契约破坏，
                 // **符号暂时不可恢复**是环境状态（HANDOVER 设计决策 1/8）。
@@ -65,15 +65,13 @@ internal class CaCfirSubstitutorProvider(
                     ?: return@withValidityAssertion CaSubstitutor.Empty(token)
                 val cfirType = (type as? CaCfirType)?.coneType
                     ?: error("Only CFIR types can be used to build a CFIR substitutor")
-                put(cfirSymbol.toLookupTag(), cfirType)
+                put(cfirSymbol, cfirType)
             }
         }
 
-        val coneSubstitutor = CfirTypeSubstitutorByMap(cfirMappings)
-        return CaCfirMapBackedSubstitutor(
-            mappings = mappings.entries.map { (symbol, type) -> symbol to type },
-            substitutor = coneSubstitutor,
-            builder = analysisSession.cfirSymbolBuilder,
-        )
+        return when (val coneSubstitutor = substitutorByMap(cfirMappings, analysisSession.cfirSession)) {
+            is ConeSubstitutorByMap -> CaCfirMapBackedSubstitutor(coneSubstitutor, analysisSession.cfirSymbolBuilder)
+            else -> org.cangnova.cangjie.analysis.api.cfir.types.CaCfirGenericSubstitutor(coneSubstitutor, analysisSession.cfirSymbolBuilder)
+        }
     }
 }

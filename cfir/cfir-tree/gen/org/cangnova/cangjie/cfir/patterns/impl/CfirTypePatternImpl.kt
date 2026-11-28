@@ -8,22 +8,27 @@
 package org.cangnova.cangjie.cfir.patterns.impl
 
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
-import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
+import org.cangnova.cangjie.cfir.expressions.CfirConstantValue
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.patterns.CfirPattern
 import org.cangnova.cangjie.cfir.patterns.CfirPatternTreeOwner
 import org.cangnova.cangjie.cfir.patterns.CfirTypePattern
 import org.cangnova.cangjie.cfir.patterns.CfirTypePatternMatchingKind
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
-import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.CjSourceElement
 
 class CfirTypePatternImpl @CfirImplementationDetail constructor(
-    override val source: CjSourceElement?,
+    override var source: CjSourceElement?,
+    override var semanticTypeRef: CfirTypeRef?,
+    override val constantValues: MutableList<CfirConstantValue>,
+    override var contextExpression: CfirExpression?,
     override var matchingKind: CfirTypePatternMatchingKind,
     override var typeRef: CfirTypeRef,
-    override val bindingName: Name?,
-    bindingVariable: CfirPatternBindingVariable?,
+    nestedPattern: CfirPattern,
+    override var matchBeforeRuntime: Boolean,
+    override var needRuntimeTypeCheck: Boolean,
 ) : CfirTypePattern() {
     override var patternTreeOwner: CfirPatternTreeOwner? = null
         private set(value) {
@@ -34,7 +39,7 @@ class CfirTypePatternImpl @CfirImplementationDetail constructor(
                 field = value
             }
         }
-    override var bindingVariable: CfirPatternBindingVariable? = bindingVariable
+    override var nestedPattern: CfirPattern = nestedPattern
         private set(value) {
             val owner = patternTreeOwner
             val previousTree = owner?.let { org.cangnova.cangjie.cfir.patterns.capturePatternTree(it.patternTreeRoot()) }
@@ -53,13 +58,20 @@ class CfirTypePatternImpl @CfirImplementationDetail constructor(
         }
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
+        semanticTypeRef?.accept(visitor, data)
         typeRef.accept(visitor, data)
-        bindingVariable?.accept(visitor, data)
+        nestedPattern.accept(visitor, data)
     }
 
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirTypePatternImpl {
+        transformSemanticTypeRef(transformer, data)
         transformTypeRef(transformer, data)
-        transformBindingVariable(transformer, data)
+        transformNestedPattern(transformer, data)
+        return this
+    }
+
+    override fun <D> transformSemanticTypeRef(transformer: CfirTransformer<D>, data: D): CfirTypePatternImpl {
+        semanticTypeRef = semanticTypeRef?.transform(transformer, data)
         return this
     }
 
@@ -68,11 +80,11 @@ class CfirTypePatternImpl @CfirImplementationDetail constructor(
         return this
     }
 
-    override fun <D> transformBindingVariable(transformer: CfirTransformer<D>, data: D): CfirTypePatternImpl {
+    override fun <D> transformNestedPattern(transformer: CfirTransformer<D>, data: D): CfirTypePatternImpl {
         val owner = patternTreeOwner
         val previousTree = owner?.let { org.cangnova.cangjie.cfir.patterns.capturePatternTree(it.patternTreeRoot()) }
         try {
-            bindingVariable = bindingVariable?.transform(transformer, data)
+            nestedPattern = nestedPattern.transform(transformer, data)
         } finally {
             if (owner != null) {
                 org.cangnova.cangjie.cfir.patterns.reconcilePatternTree(owner, previousTree!!, owner.patternTreeRoot())
@@ -81,6 +93,25 @@ class CfirTypePatternImpl @CfirImplementationDetail constructor(
             }
         }
         return this
+    }
+
+    @CfirImplementationDetail
+    override fun replaceSource(newSource: CjSourceElement?) {
+        source = newSource
+    }
+
+    override fun replaceSemanticTypeRef(newSemanticTypeRef: CfirTypeRef?) {
+        semanticTypeRef = newSemanticTypeRef
+    }
+
+    override fun replaceConstantValues(newConstantValues: List<CfirConstantValue>) {
+        if (constantValues === newConstantValues) return
+        constantValues.clear()
+        constantValues.addAll(newConstantValues)
+    }
+
+    override fun replaceContextExpression(newContextExpression: CfirExpression?) {
+        contextExpression = newContextExpression
     }
 
     override fun replacePatternTreeOwner(newPatternTreeOwner: CfirPatternTreeOwner?) {
@@ -95,7 +126,15 @@ class CfirTypePatternImpl @CfirImplementationDetail constructor(
         typeRef = newTypeRef
     }
 
-    override fun replaceBindingVariable(newBindingVariable: CfirPatternBindingVariable?) {
-        bindingVariable = newBindingVariable
+    override fun replaceNestedPattern(newNestedPattern: CfirPattern) {
+        nestedPattern = newNestedPattern
+    }
+
+    override fun replaceMatchBeforeRuntime(newMatchBeforeRuntime: Boolean) {
+        matchBeforeRuntime = newMatchBeforeRuntime
+    }
+
+    override fun replaceNeedRuntimeTypeCheck(newNeedRuntimeTypeCheck: Boolean) {
+        needRuntimeTypeCheck = newNeedRuntimeTypeCheck
     }
 }

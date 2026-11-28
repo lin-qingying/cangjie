@@ -57,12 +57,15 @@ import org.cangnova.cangjie.psi.CjModifierList
  */
 object ModifierMaskUtils {
     /**
-     * 保存 `ADDITIONAL_KEYWORDS` 的内部状态，供PSI Stub实现维护节点缓存或解析上下文。
+     * 不属于普通 modifier 数组的真实修饰符；只向尾部追加，保留既有 FOREIGN 位序。
      */
     private val ADDITIONAL_KEYWORDS = arrayOf(
         CjTokens.FOREIGN_KEYWORD,
         // 追加新位，保持普通修饰符及 FOREIGN 的既有编码位置。
         CjTokens.CONST_KEYWORD,
+        CjTokens.UNSAFE_KEYWORD,
+        CjTokens.INOUT_KEYWORD,
+        CjTokens.PLATFORM_KEYWORD,
     )
 
     /** stub 编码与反编译文本共用的完整修饰符顺序，包括函数/构造器的 const。 */

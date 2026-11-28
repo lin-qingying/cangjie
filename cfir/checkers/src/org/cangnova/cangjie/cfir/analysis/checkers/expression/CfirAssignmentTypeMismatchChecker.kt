@@ -1,6 +1,8 @@
 ﻿package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
+import org.cangnova.cangjie.cfir.analysis.checkers.declaration.firstCharacterDiagnosticSource
 import org.cangnova.cangjie.cfir.analysis.diagnostics.specificTypeMismatchDiagnostic
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 
@@ -30,7 +32,7 @@ import org.cangnova.cangjie.type.AbstractTypeChecker
  * VArray 下标是官方内建语义，不会解糖为用户 operator set，因此这里
  * 按元素类型检查右值。
  */
-object CfirAssignmentTypeMismatchChecker : CfirAssignmentChecker() {
+object CfirAssignmentTypeMismatchChecker : CfirAssignmentChecker(MppCheckerKind.Common) {
     /**
      * 检查赋值右值类型是否能赋给左值类型。
      *

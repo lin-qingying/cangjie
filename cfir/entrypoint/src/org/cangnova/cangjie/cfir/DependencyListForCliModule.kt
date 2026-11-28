@@ -140,7 +140,10 @@ class DependencyListForCliModule internal constructor(
              * 为默认 depends-on 依赖模块注册路径。
              */
             fun dependsOnDependencies(paths: Collection<String>) {
-                dependsOnDependencies(dependsOn, paths)
+                paths.forEachIndexed { index, path ->
+                    val parentModule = createData("${dependsOn.name.asString()}[${index + 1}]")
+                    dependsOnDependencies(parentModule, listOf(path))
+                }
             }
         }
 
@@ -165,9 +168,18 @@ class DependencyListForCliModule internal constructor(
         fun build(): DependencyListForCliModule {
             val pathFiltersMap = filtersMap
                 .filterValues { it.isNotEmpty() }
-                .mapValuesTo(linkedMapOf<CfirModuleData, LibraryPathFilter>()) { (_, paths) ->
+                .mapValues { (_, paths) ->
                     LibraryPathFilter.LibraryList(paths)
                 }
+                // common CJO 也可能出现在普通 classpath 中，其 depends-on 归属必须先确定。
+                .entries.sortedBy {
+                    when (it.key) {
+                        in allDependsOnDependencies -> 1
+                        in allRegularDependencies -> 3
+                        else -> 4
+                    }
+                }.associate { (moduleData, filter) -> moduleData to filter }
+                .toMutableMap<CfirModuleData, LibraryPathFilter>()
 
             val regularDependencies = allRegularDependencies.filterUsedModules(pathFiltersMap)
             val dependsOnDependencies = allDependsOnDependencies.filterUsedModules(pathFiltersMap)
@@ -184,7 +196,11 @@ class DependencyListForCliModule internal constructor(
                 "DependencyListForCliModule requires at least one regular dependency module"
             }
 
-            val moduleDataProvider = MultipleModuleDataProvider(pathFiltersMap, regularDependencies.first())
+            val moduleDataProvider = MultipleModuleDataProvider(
+                moduleDataWithFilters = pathFiltersMap,
+                regularDependenciesModuleData = regularDependencies.first(),
+                dependsOnDependenciesModuleData = dependsOnDependencies,
+            )
             return DependencyListForCliModule(
                 regularDependencies = regularDependencies,
                 dependsOnDependencies = dependsOnDependencies,

@@ -1,4 +1,4 @@
-// LANGUAGE_VERSION: 1.1.0
+// LANGUAGE_VERSION: 1.2.0-alpha.20
 // RUN_PIPELINE_TILL: FRONTEND
 // First common candidate reports a parameter mismatch; the second candidate still binds the specific member.
 // MODULE: common1

@@ -1,0 +1,27 @@
+{
+  "sampleUtc": "2026-11-17T00:54:44.4265201Z",
+  "worktree": "C:\\Users\\lin17\\.codex\\worktrees\\cjmp-framework-implementation\\cangjie",
+  "fileCount": 6824,
+  "aggregateSha256": "48204197420FA1B138CD982637B492992C55AC74B325AECEA77E798989FD51EB",
+  "roots": [
+    "common",
+    "cfir",
+    "analysis/low-level-api-cfir",
+    "analysis/analysis-api-cfir",
+    "compiler/frontend",
+    "compiler/config",
+    "compiler/phaser",
+    "compiler/arguments",
+    "psi",
+    "resolution.common",
+    "macro"
+  ],
+  "include": [
+    "*.kt",
+    "*.cj",
+    "*.kts"
+  ],
+  "exclude": "**/build/**",
+  "method": "rg --files --hidden --no-ignore, paths normalized / and Sort-Object -CaseSensitive; SHA256 of UTF8 LF-joined path TAB byteLength TAB uppercaseSHA256 lines, no terminal LF",
+  "scope": "COPYING19 + S036 + lifecycle14 (new S1 ten) + original SOURCE14 + original negative2 = 85; after initial R5 rejection and actual shared If/wrapped lambda/mini corrections"
+}

@@ -1,5 +1,8 @@
 package org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders
 
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.roots.ProjectRootModificationTracker
+import com.intellij.psi.util.PsiModificationTracker
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFile
@@ -24,8 +27,14 @@ import java.util.concurrent.ConcurrentHashMap
  */
 internal class LLPsiBackedExtendProvider(
     private val binaryProvider: CfirExtendProvider,
+    private val project: Project,
     private val materialize: (CfirExtend) -> CfirExtend?,
 ) : CfirExtendProvider {
+    /** CJO 索引建成，以及 PSI 与项目根变更，都会使 IDE 扩展查询的缓存失效。 */
+    override val modificationCount: Long
+        get() = binaryProvider.modificationCount + PsiModificationTracker.getInstance(project).modificationCount +
+                ProjectRootModificationTracker.getInstance(project).modificationCount
+
     /** 二进制声明（去重、含所属包），不触发物化。 */
     private val binaries: List<Pair<CfirExtend, FqName?>> by lazy(LazyThreadSafetyMode.PUBLICATION) {
         val seen = mutableSetOf<String>()

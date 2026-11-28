@@ -8,7 +8,7 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.api.targets
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.CfirDesignation
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.withCfirDesignationEntry
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
-import org.cangnova.cangjie.cfir.declarations.CfirClass
+import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
 
 /**
@@ -17,8 +17,8 @@ import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
 internal sealed class LLCfirClassResolveTarget(designation: CfirDesignation) : LLCfirResolveTarget(designation) {
     init {
         requireWithAttachment(
-            target is CfirClass,
-            { "Expected type of '${::target.name}' is ${CfirClass::class.simpleName}, but ${target::class.simpleName} is found" },
+            target is CfirClassLikeDeclaration,
+            { "Expected type of '${::target.name}' is ${CfirClassLikeDeclaration::class.simpleName}, but ${target::class.simpleName} is found" },
         ) {
             withCfirDesignationEntry("designation", this@LLCfirClassResolveTarget.designation)
         }
@@ -27,7 +27,7 @@ internal sealed class LLCfirClassResolveTarget(designation: CfirDesignation) : L
     /**
      * 在已经进入 class 上下文后访问该 target 需要解析的成员集合。
      */
-    abstract fun visitMembers(visitor: LLCfirResolveTargetVisitor, cfirClass: CfirClass)
+    abstract fun visitMembers(visitor: LLCfirResolveTargetVisitor, cfirClass: CfirClassLikeDeclaration)
 
     /**
      * 当前 target 是否需要对 class 声明本身执行 resolve 动作。
@@ -45,7 +45,7 @@ internal sealed class LLCfirClassResolveTarget(designation: CfirDesignation) : L
             visitor.performAction(element)
         }
 
-        visitor.withClass(element as CfirClass) {
+        visitor.withClassLike(element as CfirClassLikeDeclaration) {
             visitMembers(visitor, element)
         }
     }

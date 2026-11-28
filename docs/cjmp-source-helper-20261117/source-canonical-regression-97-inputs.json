@@ -1,0 +1,26 @@
+{
+  "utc": "2026-11-17T13:21:34.6518660Z",
+  "fileCount": 6834,
+  "aggregateSha256": "51193353A76107C123D4B0C8B746BB06E19B3669B4D5F1B9219A5643C0BAB2BC",
+  "roots": [
+    "common",
+    "cfir",
+    "analysis/low-level-api-cfir",
+    "analysis/analysis-api-cfir",
+    "compiler/frontend",
+    "compiler/config",
+    "compiler/phaser",
+    "compiler/arguments",
+    "psi",
+    "resolution.common",
+    "macro"
+  ],
+  "include": [
+    "*.kt",
+    "*.cj",
+    "*.kts"
+  ],
+  "exclude": "**/build/**",
+  "method": "rg --files --hidden --no-ignore, / normalized and Sort-Object -CaseSensitive; SHA256 of UTF8 LF joined path TAB length TAB uppercaseSHA256, no final LF",
+  "scope": "Latest canonical8 + owned-copy19 + metadata36 + helper/lambda18 + original negatives2 + original SOURCE14 = 97; unchanged sample reused before any production edits"
+}

@@ -135,7 +135,7 @@ internal class CjdStructureExtractor(private val source: String) {
 
     private fun functionName(node: CjdSyntaxNode): String = name(node).ifEmpty {
         (node.child(OPERATION_NAME) ?: node.child(OPERATOR))?.let { operation ->
-            leaves(operation).filterNot { it.kind == TokenType.WHITE_SPACE }.joinToString("") { text(it) }
+            leaves(operation).filterNot { it.kind in CjTokens.ALL_WHITESPACE_TOKENS }.joinToString("") { text(it) }
         }.orEmpty()
     }
 
@@ -186,7 +186,7 @@ internal class CjdStructureExtractor(private val source: String) {
                 bracket?.let { source.substring(it.start, annotation.end) },
                 (argumentList?.children(VALUE_ARGUMENT)?.map { arg ->
                     val argumentName = arg.child(VALUE_ARGUMENT_NAME)
-                    val significant = arg.children.filterNot { it.kind == TokenType.WHITE_SPACE || CjTokens.COMMENTS.contains(it.kind) || it.kind == VALUE_ARGUMENT_NAME || it.kind == CjTokens.COLON || it.kind == CjTokens.EQ }
+                    val significant = arg.children.filterNot { it.kind in CjTokens.ALL_WHITESPACE_TOKENS || CjTokens.COMMENTS.contains(it.kind) || it.kind == VALUE_ARGUMENT_NAME || it.kind == CjTokens.COLON || it.kind == CjTokens.EQ }
                     val expressionText = if (significant.isEmpty()) "" else source.substring(significant.first().start, significant.last().end)
                     val expression = significant.singleOrNull()?.let(::annotationExpression)
                         ?: CjdAnnotationExpression("UNKNOWN", expressionText, arg.range, significant.map(::annotationExpression))
@@ -207,7 +207,7 @@ internal class CjdStructureExtractor(private val source: String) {
      */
     private fun annotationExpression(node: CjdSyntaxNode): CjdAnnotationExpression {
         return CjdAnnotationExpression(node.kind.toString(), text(node), node.range,
-            node.children.filterNot { it.kind == TokenType.WHITE_SPACE || CjTokens.COMMENTS.contains(it.kind) }.map(::annotationExpression))
+            node.children.filterNot { it.kind in CjTokens.ALL_WHITESPACE_TOKENS || CjTokens.COMMENTS.contains(it.kind) }.map(::annotationExpression))
     }
 
     private fun type(node: CjdSyntaxNode): TypeKey = when (node.kind) {

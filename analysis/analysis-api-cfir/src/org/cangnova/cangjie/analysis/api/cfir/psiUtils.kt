@@ -50,6 +50,7 @@ import org.cangnova.cangjie.descriptors.Visibility
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.psi.*
+import org.cangnova.cangjie.parsing.compilationParsingResultOrNull
 import org.cangnova.cangjie.psi.psiUtil.containingTypeStatement
 import org.cangnova.cangjie.psi.psiUtil.getParentOfTypes2
 import org.cangnova.cangjie.source.CjFakePsiSourceElement
@@ -74,7 +75,7 @@ internal fun CjPsiDiagnostic.asCaDiagnostic(analysisSession: CaCfirSession): CaD
  */
 private val allowedFakeElementKinds = setOf(
     CjFakeSourceElementKind.FromUseSiteTarget,
-    CjFakeSourceElementKind.PropertyFromParameter,
+    CjFakeSourceElementKind.FieldFromParameter,
     CjFakeSourceElementKind.ItLambdaParameter,
     CjFakeSourceElementKind.EnumGeneratedDeclaration,
     CjFakeSourceElementKind.DataClassGeneratedMembers,
@@ -110,7 +111,10 @@ internal fun CfirElement.findPsi(preferredProject: Project? = null): PsiElement?
  * 因而所有从 CFIR 往 IDE 暴露 PSI 的出口，都必须先把 compiled 元素恢复到当前 live PSI。
  */
 internal fun PsiElement.restoreCurrentCompiledPsi(preferredProject: Project? = null): PsiElement? {
-    val cjElement = this as? CjElement ?: return this
+    // 编译器保留target对象；公开导航按当前产品的一对一来源关系回到真实编辑PSI。
+    val product = (containingFile as? CjFile)?.compilationParsingResultOrNull()
+    val sourceElement = if (product != null) product.originalElementOrNull(this) ?: return null else this
+    val cjElement = sourceElement as? CjElement ?: return sourceElement
     return cjElement.restoreCurrentCjElement(preferredProject)
 }
 

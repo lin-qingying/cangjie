@@ -22,6 +22,7 @@ import org.cangnova.cangjie.annotations.CangjieOverflowStrategy
 import org.cangnova.cangjie.annotations.CangjiePlatformAnnotationKind
 import org.cangnova.cangjie.cfir.CfirDeclarationDataKey
 import org.cangnova.cangjie.cfir.session.CfirInteropTarget
+import java.util.Collections
 
 /** ABI kind after applying the session's backend ABI policy. */
 public enum class CfirAbiKind {
@@ -159,13 +160,40 @@ public data class CfirInteropInfo(
     }
 }
 
+/** 所有互操作集合在相同值边界冻结，保留嵌套 Java/ObjC 生成声明 ID 的顺序与完整内容。 */
+internal fun CfirInteropInfo.frozenCopy(): CfirInteropInfo = copy(
+    abiRequest = abiRequest.copy(),
+    resolvedAbi = resolvedAbi.copy(),
+    java = java?.let { it.copy(generatedDeclarationIds = Collections.unmodifiableList(ArrayList(it.generatedDeclarationIds))) },
+    objc = objc?.let { it.copy(generatedDeclarationIds = Collections.unmodifiableList(ArrayList(it.generatedDeclarationIds))) },
+    cjmp = cjmp?.copy(),
+    ffiAnnotationKinds = Collections.unmodifiableSet(LinkedHashSet(ffiAnnotationKinds)),
+    platformAnnotationKinds = Collections.unmodifiableSet(LinkedHashSet(platformAnnotationKinds)),
+    ffiAnnotationNames = Collections.unmodifiableList(ArrayList(ffiAnnotationNames)),
+    platformAnnotationNames = Collections.unmodifiableList(ArrayList(platformAnnotationNames)),
+)
+
 /** Attribute key used to attach the canonical interop snapshot to a declaration. */
-private object CfirInteropInfoKey : CfirDeclarationDataKey() {
+internal object CfirInteropInfoKey : CfirDeclarationDataKey() {
     override val rawCopyPolicy get() = org.cangnova.cangjie.cfir.CfirRawDeclarationDataPolicies.interop
 }
 
 /** Canonical declaration-owned interop snapshot. */
-public var CfirDeclaration.interopInfo: CfirInteropInfo? by CfirDeclarationDataRegistry.data(CfirInteropInfoKey)
+private var CfirDeclaration.ownedInteropInfo: CfirInteropInfo? by CfirDeclarationDataRegistry.data(CfirInteropInfoKey)
+
+/** 已导入声明的ABI语义只从同代完成注解metadata读取，不原地刷新旧attributes。 */
+public var CfirDeclaration.interopInfo: CfirInteropInfo?
+    get() = when (val selectedSource = contentSource) {
+        org.cangnova.cangjie.cfir.CfirContentSource.Owned -> ownedInteropInfo
+        is org.cangnova.cangjie.cfir.CfirContentSource.Published -> when (val content = selectedSource.snapshot().annotations(this)) {
+            org.cangnova.cangjie.cfir.CfirPublishedAnnotations.Unselected -> null
+            is org.cangnova.cangjie.cfir.CfirPublishedAnnotations.Complete -> content.interopInfo
+        }
+    }
+    set(value) {
+        check(contentSource === org.cangnova.cangjie.cfir.CfirContentSource.Owned) { "Published interop metadata requires its package completion product" }
+        ownedInteropInfo = value
+    }
 
 /** Read the declaration interop snapshot without manufacturing semantic state. */
 public fun CfirDeclaration.resolvedInteropInfoOrNull(): CfirInteropInfo? = interopInfo

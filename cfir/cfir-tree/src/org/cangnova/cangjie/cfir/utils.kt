@@ -4,6 +4,7 @@ import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationStatus
 import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirModifierExplicitness
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirResolvedDeclarationStatus
 import org.cangnova.cangjie.cfir.declarations.builder.buildResolvedDeclarationStatus
@@ -20,6 +21,7 @@ import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
 import org.cangnova.cangjie.cfir.types.CfirFunctionTypeRef
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.cfir.types.CfirOptionTypeRef
+import org.cangnova.cangjie.cfir.types.CfirParenthesizedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTupleTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
@@ -32,10 +34,12 @@ import org.cangnova.cangjie.cfir.types.builder.buildErrorTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildErrorTypeRefCopy
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRefCopy
+import org.cangnova.cangjie.cfir.types.builder.buildParenthesizedTypeRefCopy
 import org.cangnova.cangjie.cfir.types.impl.CfirBasicTypeRefImpl
 import org.cangnova.cangjie.cfir.types.impl.CfirFunctionTypeRefImpl
 import org.cangnova.cangjie.cfir.types.impl.CfirImplicitTypeRefImpl
 import org.cangnova.cangjie.cfir.types.impl.CfirOptionTypeRefImpl
+import org.cangnova.cangjie.cfir.types.impl.CfirResolvedTypeRefImpl
 import org.cangnova.cangjie.cfir.types.impl.CfirTupleTypeRefImpl
 import org.cangnova.cangjie.cfir.types.impl.CfirUserTypeRefImpl
 import org.cangnova.cangjie.cfir.types.impl.CfirVArrayTypeRefImpl
@@ -132,23 +136,38 @@ fun <R : CfirTypeRef> R.copyWithNewSource(newSource: CjSourceElement): R {
     if (source == newSource) return this
 
     return when (val typeRef = this) {
-        is CfirResolvedTypeRef -> buildResolvedTypeRefCopy(typeRef) {
-            source = newSource
-        }
-
         is CfirErrorTypeRef -> buildErrorTypeRefCopy(typeRef) {
             source = newSource
             partiallyResolvedTypeRef = typeRef.partiallyResolvedTypeRef?.copyWithNewSource(newSource)
         }
 
+        is CfirResolvedTypeRefImpl -> buildResolvedTypeRefCopy(typeRef) {
+            source = newSource
+        }
+
+        // 未登记的手写resolved concrete不能退化为普通impl；显式拒绝同时穷尽抽象分支。
+        is CfirResolvedTypeRef -> error("Resolved type ref has no concrete source-copy contract: " + typeRef::class)
+
+        is org.cangnova.cangjie.cfir.types.impl.ResolvedImplicitTypeRef -> {
+            // 隐式包装没有source槽，公共复制必须遵守同一replaceSource拒绝合同。
+            throw IllegalArgumentException("ResolvedImplicitTypeRef cannot acquire a non-null source")
+        }
+
+        is CfirParenthesizedTypeRef -> buildParenthesizedTypeRefCopy(typeRef) {
+            source = newSource
+            innerTypeRef = typeRef.innerTypeRef.copyWithNewSource(newSource)
+        }
+
         is CfirUserTypeRef -> CfirUserTypeRefImpl(
             typeRef.annotations.toMutableOrEmpty(),
             typeRef.customRenderer,
+            typeRef.typeUseOrigin,
             newSource,
             typeRef.qualifier.map { qualifier ->
                 CfirQualifierPartImpl(
                     newSource,
                     qualifier.name,
+                    qualifier.typeUseOrigin,
                     qualifier.typeArguments.toMutableOrEmpty(),
                 )
             }.toMutableOrEmpty(),
@@ -158,6 +177,7 @@ fun <R : CfirTypeRef> R.copyWithNewSource(newSource: CjSourceElement): R {
             newSource,
             typeRef.annotations.toMutableOrEmpty(),
             typeRef.customRenderer,
+            typeRef.typeUseOrigin,
             typeRef.parameterTypeRefs.toMutableList(),
             typeRef.returnTypeRef,
         )
@@ -165,6 +185,7 @@ fun <R : CfirTypeRef> R.copyWithNewSource(newSource: CjSourceElement): R {
         is CfirOptionTypeRef -> CfirOptionTypeRefImpl(
             typeRef.annotations.toMutableOrEmpty(),
             typeRef.customRenderer,
+            typeRef.typeUseOrigin,
             newSource,
             typeRef.componentTypeRef,
         )
@@ -173,6 +194,7 @@ fun <R : CfirTypeRef> R.copyWithNewSource(newSource: CjSourceElement): R {
             newSource,
             typeRef.annotations.toMutableOrEmpty(),
             typeRef.customRenderer,
+            typeRef.typeUseOrigin,
             typeRef.elementTypeRefs.toMutableList(),
         )
 
@@ -180,6 +202,7 @@ fun <R : CfirTypeRef> R.copyWithNewSource(newSource: CjSourceElement): R {
             newSource,
             typeRef.annotations.toMutableOrEmpty(),
             typeRef.customRenderer,
+            typeRef.typeUseOrigin,
             typeRef.elementTypeRef,
             typeRef.sizeLiteral,
         )
@@ -188,12 +211,14 @@ fun <R : CfirTypeRef> R.copyWithNewSource(newSource: CjSourceElement): R {
             newSource,
             typeRef.annotations.toMutableOrEmpty(),
             typeRef.customRenderer,
+            typeRef.typeUseOrigin,
             typeRef.name,
         )
 
         is CfirImplicitTypeRef -> CfirImplicitTypeRefImpl(
             typeRef.annotations.toMutableOrEmpty(),
             typeRef.customRenderer,
+            typeRef.typeUseOrigin,
         )
 
     } as R
@@ -209,6 +234,7 @@ fun ConeCangJieType.toCfirResolvedTypeRef(
     return when (this) {
         is ConeErrorType -> buildErrorTypeRef {
             this.source = source
+            this.typeUseOrigin = delegatedTypeRef?.typeUseOrigin ?: org.cangnova.cangjie.cfir.types.CfirTypeRefOrigin.SEMANTIC
             this.diagnostic = this@toCfirResolvedTypeRef.diagnostic
             this.coneType = this@toCfirResolvedTypeRef
             this.delegatedTypeRef = delegatedTypeRef
@@ -216,6 +242,7 @@ fun ConeCangJieType.toCfirResolvedTypeRef(
 
         else -> buildResolvedTypeRef {
             this.source = source
+            this.typeUseOrigin = delegatedTypeRef?.typeUseOrigin ?: org.cangnova.cangjie.cfir.types.CfirTypeRefOrigin.SEMANTIC
             this.coneType = this@toCfirResolvedTypeRef
             this.delegatedTypeRef = delegatedTypeRef
         }
@@ -257,6 +284,9 @@ internal fun CfirMemberDeclaration.resolvedStatus(): CfirResolvedDeclarationStat
 fun CfirDeclarationStatus.copy(
     visibility: Visibility? = this.visibility,
     modality: Modality? = this.modality,
+    isVisibilityExplicit: Boolean? = null,
+    isModalityExplicit: Boolean? = null,
+    isAbstractExplicit: Boolean = this.isAbstractExplicit,
     isOverride: Boolean = this.isOverride,
     isOperator: Boolean = this.isOperator,
     isStatic: Boolean = this.isStatic,
@@ -277,18 +307,26 @@ fun CfirDeclarationStatus.copy(
 ): CfirDeclarationStatus {
     val newVisibility = visibility ?: this.visibility
     val newModality = modality ?: this.modality
+    fun explicitnessOverride(explicit: Boolean?, original: CfirModifierExplicitness): CfirModifierExplicitness =
+        when (explicit) {
+            true -> CfirModifierExplicitness.EXPLICIT
+            false -> CfirModifierExplicitness.IMPLICIT
+            null -> original
+        }
+    val newVisibilityExplicitness = explicitnessOverride(isVisibilityExplicit, visibilityExplicitness)
+    val newModalityExplicitness = explicitnessOverride(isModalityExplicit, modalityExplicitness)
     if (this is CfirResolvedDeclarationStatus) {
         return buildResolvedDeclarationStatus {
             source = this@copy.source
             this.visibility = newVisibility
             this.modality = checkNotNull(newModality)
-            visibilityExplicitness = this@copy.visibilityExplicitness
-            modalityExplicitness = this@copy.modalityExplicitness
+            visibilityExplicitness = newVisibilityExplicitness
+            modalityExplicitness = newModalityExplicitness
             bodyPresence = this@copy.bodyPresence
             isDeclarationFile = this@copy.isDeclarationFile
-            isVisibilityExplicit = this@copy.isVisibilityExplicit
-            isModalityExplicit = this@copy.isModalityExplicit
-            isAbstractExplicit = this@copy.isAbstractExplicit
+            this.isVisibilityExplicit = isVisibilityExplicit ?: this@copy.isVisibilityExplicit
+            this.isModalityExplicit = isModalityExplicit ?: this@copy.isModalityExplicit
+            this.isAbstractExplicit = isAbstractExplicit
             this.isOverride = isOverride
             this.isOperator = isOperator
             this.isStatic = isStatic
@@ -309,11 +347,11 @@ fun CfirDeclarationStatus.copy(
         }
     }
     return CfirDeclarationStatusImpl(newVisibility, newModality).apply {
-        visibilityExplicitness = this@copy.visibilityExplicitness
-        modalityExplicitness = this@copy.modalityExplicitness
+        visibilityExplicitness = newVisibilityExplicitness
+        modalityExplicitness = newModalityExplicitness
         bodyPresence = this@copy.bodyPresence
         isDeclarationFile = this@copy.isDeclarationFile
-        isAbstractExplicit = this@copy.isAbstractExplicit
+        this.isAbstractExplicit = isAbstractExplicit
         this.isOverride = isOverride
         this.isOperator = isOperator
         this.isStatic = isStatic

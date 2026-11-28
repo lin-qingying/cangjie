@@ -1,0 +1,164 @@
+{
+  "before": {
+    "utc": "2026-11-17T14:57:25.4609663Z",
+    "fileCount": 6834,
+    "aggregateSha256": "CE09673C8E9995087E5EF39C0FBF71BE732816EF9FFB79D86D42A24772C3773F",
+    "roots": [
+      "common",
+      "cfir",
+      "analysis/low-level-api-cfir",
+      "analysis/analysis-api-cfir",
+      "compiler/frontend",
+      "compiler/config",
+      "compiler/phaser",
+      "compiler/arguments",
+      "psi",
+      "resolution.common",
+      "macro"
+    ],
+    "include": [
+      "*.kt",
+      "*.cj",
+      "*.kts"
+    ],
+    "exclude": "**/build/**",
+    "method": "rg --files --hidden --no-ignore, / normalized and Sort-Object -CaseSensitive; SHA256 of UTF8 LF joined path TAB length TAB uppercaseSHA256, no final LF",
+    "scope": "Canonical SOURCE capture eight via public frontend: generated declaration ownership, type/reference closure and original normal domain"
+  },
+  "after": {
+    "utc": "2026-11-17T15:06:24.4782660Z",
+    "fileCount": 6834,
+    "aggregateSha256": "CE09673C8E9995087E5EF39C0FBF71BE732816EF9FFB79D86D42A24772C3773F",
+    "roots": [
+      "common",
+      "cfir",
+      "analysis/low-level-api-cfir",
+      "analysis/analysis-api-cfir",
+      "compiler/frontend",
+      "compiler/config",
+      "compiler/phaser",
+      "compiler/arguments",
+      "psi",
+      "resolution.common",
+      "macro"
+    ],
+    "include": [
+      "*.kt",
+      "*.cj",
+      "*.kts"
+    ],
+    "exclude": "**/build/**",
+    "method": "rg --files --hidden --no-ignore, / normalized and Sort-Object -CaseSensitive; SHA256 of UTF8 LF joined path TAB length TAB uppercaseSHA256, no final LF",
+    "scope": "Public frontend canonical SOURCE capture eight: real generated SOURCE domain, owner/file, full typed dependencies and unchanged normal input",
+    "unchanged": true
+  },
+  "queue": {
+    "id": "e23e6cba",
+    "args": [
+      "--gradle-user-home",
+      ".gradle/cjmp-export-home",
+      ":cfir:analysis-tests:test",
+      "--rerun",
+      "--tests",
+      "*CfirSourceCanonicalGraph*Test",
+      "--no-build-cache",
+      "--console=plain",
+      "--max-workers=1"
+    ],
+    "pid": 25188,
+    "owner": "pid@25188",
+    "submitAt": 1794927447781,
+    "startedAt": 1794927447835,
+    "finishedAt": 1794927618588,
+    "exitCode": 0,
+    "status": "DONE"
+  },
+  "total": 8,
+  "passed": 8,
+  "failed": 0,
+  "errors": 0,
+  "skipped": 0,
+  "allXmlWithinWindow": true,
+  "scope": "Public frontend canonical SOURCE capture eight: real generated SOURCE domain, owner/file, full typed dependencies and unchanged normal input",
+  "extraPassedTasks": [],
+  "cases": [
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceCanonicalGraphLightTreeTest",
+      "name": "controlFlow()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceCanonicalGraphLightTreeTest",
+      "name": "operatorsConversions()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceCanonicalGraphLightTreeTest",
+      "name": "declarationsCalls()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceCanonicalGraphLightTreeTest",
+      "name": "exceptionsResources()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceCanonicalGraphTest",
+      "name": "controlFlow()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceCanonicalGraphTest",
+      "name": "operatorsConversions()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceCanonicalGraphTest",
+      "name": "declarationsCalls()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceCanonicalGraphTest",
+      "name": "exceptionsResources()",
+      "status": "PASSED",
+      "failureMessage": null
+    }
+  ],
+  "xml": [
+    {
+      "path": "cfir/analysis-tests/build/test-results/test/TEST-org.cangnova.cangjie.cfir.analysis.tests.CfirSourceCanonicalGraphLightTreeTest.xml",
+      "bytes": 948,
+      "sha256": "9761A8D65437844ACF4C29340145DE2C0F0DAFE00717E7DC7BBF8EBA708376C6",
+      "timestamp": "2026-11-17T14:59:41.859Z",
+      "lastWriteUtc": "2026-11-17T15:00:16.6373470Z",
+      "withinQueueWindow": true,
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "gzipBase64": "H4sIAAAAAAAACr3TzU4CMRAA4DvJvkPtSQ8UuvyT3SVmjcaEeND1IuHQlAGq3XYzU1Te3rAo4QBHuU07M803mTSZfJeWfQKS8S7lUrQ5A6f9wrhVyl+L++aQT7KokQSgQBsTgDlVQso9roRWbuX8p6qDdwNCLw0K5ZTdkiFRt4h8afDFb1BDrpx3Riv7gKpaT81qHQoEKIACZ3Vxyruc0YepKlikvM3ZUhm7QaD6AIge92EwJVBQZZXyuB33m1I25aCQ3XFvNO5KMeyN3jhbewp77PTxad+T8jgW/eGQZ1GDsaRCXwEGA9TaX+wUWtHfkNq7gN7eW/91fcOZtoron8avcbIn4kGXn8bsqCp4pNy734XRRVQd0enLM6gFaKtQhR0mV9ZeRiRFR54TwbeGqvY8A9UPXswUH0y0pQBl029CllzN8rvb4nY2n2dJ6yhxXAiIpwt3iaiRtA7fL4saP26RG3S0AwAA",
+      "archiveVerified": true
+    },
+    {
+      "path": "cfir/analysis-tests/build/test-results/test/TEST-org.cangnova.cangjie.cfir.analysis.tests.CfirSourceCanonicalGraphTest.xml",
+      "bytes": 1160,
+      "sha256": "4F0FD295FF44485E4145E5ED76BAD2FC6F32A4AD47E6B3E3EEBAF26106DD694D",
+      "timestamp": "2026-11-17T15:00:04.550Z",
+      "lastWriteUtc": "2026-11-17T15:00:16.6445452Z",
+      "withinQueueWindow": true,
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "gzipBase64": "H4sIAAAAAAAACrWUQWsbMRCF7wb/B1WXtAfLu+lu4xivg3FJKZQcUpdCQw5CO7an1kpiZux6/33xuml9aAiU+iJG0nuPb0agyc2+8WoHxBhDpXOTaQXBxRrDqtJfFreDkb6Z9nsTARbeooAKtoFKR1oZZ8MqxJ3tiu8Ixi2RjA3Wt4xsOouZL5E+xy05mNsQAzrrP5BN6wWwaNVpKl1oxRtMCepKZ1otLfotAXcbIIp0LAUbYLFNqvRldvlukOeD/GqRl+MsG2eFKcvsm1bryHJk/PTx7uip9MgU14We9ntKTRLFBCQIPDweHCCc5afWXAxC0d/6+OP1G62ct8z/t+kOqTSj61z/HeEAaCUSz2P49Th8Tpbc5FnxDEsNzluycmCYW+/PCpKZq7J8BgT2DlKHcQ/c5ZwbpXj7hMItCzSDuJXp5NXD/P1sMXt4fJxOhicXp0Ig+iP8Oru/G6uZCDRJlETlo63VBlp1kRgNe4BkMJid9VijtMatwW0u1DKSClFUC9JZoFYEK2Shtt97IRSDI2ggiPWGIFliMDUkWRuPDcq/h2MNZn1YYO/8tobaLNEDvxB4OqvDbPq9yfD3lzLt934CGW2TdogEAAA=",
+      "archiveVerified": true
+    }
+  ]
+}

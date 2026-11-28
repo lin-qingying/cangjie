@@ -30,6 +30,7 @@ import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
 import com.intellij.psi.stubs.IStubElementType
 import com.intellij.psi.tree.TokenSet
+import org.cangnova.cangjie.psi.psiUtil.findChildTokenThroughErrors
 
 /**
  * 表示 `CjModifierList`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
@@ -61,14 +62,14 @@ abstract class CjModifierList : CjElementImplStub<CangJieModifierListStub>{
      * 提供 `getModifier` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
      */
     fun getModifier(tokenType: CjKeywordToken): PsiElement? {
-        return findChildByType(tokenType)
+        return getModifier(TokenSet.create(tokenType))
     }
 
     /**
      * 提供 `getModifier` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
      */
     fun getModifier(tokenTypes: TokenSet): PsiElement? {
-        return findChildByType(tokenTypes)
+        return node.findChildTokenThroughErrors(tokenTypes)?.psi
     }
 
     /**

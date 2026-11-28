@@ -1,15 +1,22 @@
 package org.cangnova.cangjie.cfir.scopes.impl
 
-import org.cangnova.cangjie.AnalysisFlags
 import org.cangnova.cangjie.cfir.ScopeSession
+import org.cangnova.cangjie.cfir.types.coneTypeOrNull
+import org.cangnova.cangjie.AnalysisFlags
 import org.cangnova.cangjie.cfir.CfirDeclarationDataKey
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationDataRegistry
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
-import org.cangnova.cangjie.cfir.declarations.builder.buildConstructorCopy
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.declarations.builder.buildConstructor
+import org.cangnova.cangjie.cfir.declarations.builder.buildConstructedClassTypeParameterRef
 import org.cangnova.cangjie.cfir.declarations.builder.buildValueParameterCopy
+import org.cangnova.cangjie.cfir.declarations.defaultAssignmentSyntaxFacts
+import org.cangnova.cangjie.cfir.declarations.defaultValueMetadata
+import org.cangnova.cangjie.cfir.declarations.hasInitialDefaultValue
+import org.cangnova.cangjie.cfir.declarations.resolvePhase
+import org.cangnova.cangjie.cfir.expressions.builder.buildExpressionStub
 import org.cangnova.cangjie.cfir.resolve.defaultType
-import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeAliasSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
@@ -17,57 +24,12 @@ import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
-import org.cangnova.cangjie.cfir.session.extendProviderOrNull
 import org.cangnova.cangjie.cfir.session.languageVersionSettings
-import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.types.AbbreviatedTypeAttribute
-import org.cangnova.cangjie.cfir.types.ConeLookupTagBasedType
-import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
-import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRefCopy
 import org.cangnova.cangjie.cfir.types.withAbbreviation
 
-/**
- * typealias 构造器合成信息属性 key。
- */
-private object TypeAliasConstructorInfoKey : CfirDeclarationDataKey() {
-    override val rawCopyPolicy get() = org.cangnova.cangjie.cfir.CfirRawDeclarationDataPolicies.forbidden<TypeAliasConstructorInfo<*>>("typealias scope substitutor")
-}
-
-/**
- * typealias 构造器合成信息。
- *
- * @property originalConstructor 展开类型上的原始构造器。
- * @property typeAliasSymbol 触发构造器合成的 typealias symbol。
- * @property substitutor 展开类型 scope 使用的类型替换器。
- */
-data class TypeAliasConstructorInfo<T : CfirFunction>(
-    /**
-     * 展开类型上的原始构造器声明。
-     */
-    val originalConstructor: T,
-    /**
-     * 触发构造器合成的 typealias symbol。
-     */
-    val typeAliasSymbol: CfirTypeAliasSymbol,
-    /**
-     * 展开类型 scope 使用的类型替换器。
-     */
-    val substitutor: ConeSubstitutor?,
-)
-
-/**
- * 构造器声明上携带的 typealias 构造器合成信息。
- */
-var <T : CfirFunction> T.typeAliasConstructorInfo: TypeAliasConstructorInfo<T>? by CfirDeclarationDataRegistry.data(TypeAliasConstructorInfoKey)
-
-/**
- * 构造器 symbol 对应的 typealias 构造器合成信息。
- */
-val CfirConstructorSymbol.typeAliasConstructorInfo: TypeAliasConstructorInfo<*>?
-    get() = cfir.typeAliasConstructorInfo
 
 /**
  * typealias 构造器替换 scope。
@@ -101,29 +63,8 @@ class TypeAliasConstructorsSubstitutingScope private constructor(
         fun initialize(
             typeAliasSymbol: CfirTypeAliasSymbol,
             session: CfirSession,
-            scopeSession: ScopeSession,
-        ): CfirScope {
-            val typeAlias = typeAliasSymbol.cfir
-            val expandedType = typeAlias.expandedTypeRef.coneTypeOrNull
-                ?.fullyExpandedType(session) as? ConeLookupTagBasedType
-                ?: return CfirTypeScope.Empty
-            val expandedClassId = expandedType.classIdOrPrimitiveClassId ?: return CfirTypeScope.Empty
-            val expandedClassSymbol = session.symbolProvider.getClassLikeSymbolByClassId(expandedClassId)
-                ?: return CfirTypeScope.Empty
-
-            val expandedDeclaredScope = CfirClassUseSiteMemberScope(
-                session = session,
-                classSymbol = expandedClassSymbol,
-                symbolProvider = session.symbolProvider,
-                extendProvider = session.extendProviderOrNull,
-                directSupertypeProvider = session.directSupertypeProviderOrNull,
-                ownerType = expandedType,
-                dispatchReceiverType = expandedType,
-                scopeKind = CfirClassMemberScopeKind.USE_SITE,
-            )
-            val expandedTypeScope = CfirClassSubstitutionScope(session, expandedDeclaredScope, expandedType)
-            return TypeAliasConstructorsSubstitutingScope(typeAliasSymbol, expandedTypeScope, session)
-        }
+            delegatingScope: CfirScope,
+        ): CfirScope = TypeAliasConstructorsSubstitutingScope(typeAliasSymbol, delegatingScope, session)
     }
 
     /**
@@ -150,22 +91,35 @@ class TypeAliasConstructorsSubstitutingScope private constructor(
         val originalConstructor = originalConstructorSymbol.cfir
         val newConstructorSymbol = CfirConstructorSymbol(originalConstructorSymbol.callableId)
 
-        val typealiasConstructor = buildConstructorCopy(originalConstructor) {
+        val typealiasConstructor = buildConstructor {
             source = typeAlias.source
+            resolvePhase = originalConstructor.resolvePhase
             moduleData = typeAlias.moduleData
             origin = CfirDeclarationOrigin.Synthetic.TypeAliasConstructor
             symbol = newConstructorSymbol
+            attributes = originalConstructor.attributes.copy()
+            status = originalConstructor.status
+            isLocal = originalConstructor.isLocal
+            deprecationsProvider = originalConstructor.deprecationsProvider
+            hasVariableLenArg = originalConstructor.hasVariableLenArg
+            annotations += originalConstructor.annotations
             dispatchReceiverType = null
             returnTypeRef = originalConstructor.returnTypeRef.withTypeAliasAbbreviation(typeAliasSymbol)
-            typeParameters.clear()
-            typeParameters += typeAlias.typeParameters
-            valueParameters.clear()
+            typeParameters += typeAlias.typeParameters.map { parameter ->
+                buildConstructedClassTypeParameterRef { symbol = parameter.symbol }
+            }
             valueParameters += originalConstructor.valueParameters.map { valueParameter ->
                 buildValueParameterCopy(valueParameter) {
                     symbol = CfirValueParameterSymbol(valueParameter.symbol.callableId)
                     moduleData = typeAlias.moduleData
                     origin = CfirDeclarationOrigin.Synthetic.TypeAliasConstructor
                     containingDeclarationSymbol = newConstructorSymbol
+                    defaultValue = if (valueParameter.hasInitialDefaultValue) buildExpressionStub {
+                        coneTypeOrNull = valueParameter.returnTypeRef.coneTypeOrNull
+                    } else null
+                }.apply {
+                    defaultAssignmentSyntaxFacts = null
+                    defaultValueMetadata = valueParameter.defaultValueMetadata?.copy(function = null)
                 }
             }
         }

@@ -30,7 +30,11 @@ class CjoDeserializationBinding(
     internal val implicitSystemAnnotations = systemAnnotationsProvider.annotations.toSet()
 
     /** 原 binding 的导入边在本代固定；后续 FullId、类型、注解不能按同名包重新选择另一目标。 */
-    private data class TargetKey(val packageName: String, val mode: CjoDeserializationMode)
+    private data class TargetKey(
+        val packageName: String,
+        val mode: CjoDeserializationMode,
+        val requestingModule: CfirModuleData?,
+    )
     private val importedContexts = ConcurrentHashMap<TargetKey, CfirDeserializationContext>()
 
     init {
@@ -43,7 +47,35 @@ class CjoDeserializationBinding(
     }
 
     fun getOwnPackageContext(name: String, mode: CjoDeserializationMode): CfirDeserializationContext? =
-        ownManager.loadPackageSnapshot(name)?.let { contextForSnapshot(it, mode) }
+        selectOwnSnapshot(name, null)?.let { contextForSnapshot(it, mode) }
+
+    /** CJMP 专有父来源并列进入普通名称发现，每个来源仍保有自己的装配 context。 */
+    internal fun getOwnPackageContexts(name: String, mode: CjoDeserializationMode): List<CfirDeserializationContext> =
+        ownManager.loadPackageSnapshots(name).map { contextForSnapshot(it, mode) }
+
+    internal fun selectOwnSnapshot(name: String, requestingModule: CfirModuleData?): CjoLoadedPackage? =
+        selectSnapshot(ownManager, name, requestingModule)
+
+    /** 同包多快照按原 requesting module 的依赖闭包选择；没有明确权威时直接拒绝歧义。 */
+    private fun selectSnapshot(manager: CjoManager, name: String, requestingModule: CfirModuleData?): CjoLoadedPackage? {
+        val candidates = manager.loadPackageSnapshots(name)
+        if (candidates.size <= 1) return candidates.singleOrNull()
+        checkNotNull(requestingModule) { "Multiple CJO sources for $name require an original requesting module" }
+        val reachable = java.util.Collections.newSetFromMap(java.util.IdentityHashMap<CfirModuleData, Boolean>())
+        val queue = ArrayDeque<CfirModuleData>()
+        queue.add(requestingModule)
+        while (queue.isNotEmpty()) {
+            val module = queue.removeFirst()
+            if (!reachable.add(module)) continue
+            queue.addAll(module.dependencies)
+            queue.addAll(module.refinementDependencies)
+        }
+        val selected = candidates.filter { moduleDataProvider.getModuleData(it.sourcePath) in reachable }
+        check(selected.size == 1) {
+            "Ambiguous imported CJO snapshots for '$name' in module '${requestingModule.name}'"
+        }
+        return selected.single()
+    }
 
     /** 来源已确定的 reader 只消费本 manager 发布的实际 snapshot，不借 name-selected lookup。 */
     fun contextForSnapshot(snapshot: CjoLoadedPackage, mode: CjoDeserializationMode): CfirDeserializationContext {
@@ -105,14 +137,17 @@ class CjoDeserializationBinding(
         }
     }
 
-    override fun getPackageContext(name: String, mode: CjoDeserializationMode): CfirDeserializationContext? {
-        getOwnPackageContext(name, mode)?.let { return it }
-        val key = TargetKey(name, mode)
+    override fun getPackageContext(name: String, mode: CjoDeserializationMode): CfirDeserializationContext? =
+        getPackageContext(name, mode, null)
+
+    internal fun getPackageContext(name: String, mode: CjoDeserializationMode, requestingModule: CfirModuleData?): CfirDeserializationContext? {
+        selectOwnSnapshot(name, requestingModule)?.let { return contextForSnapshot(it, mode) }
+        val key = TargetKey(name, mode, requestingModule)
         importedContexts[key]?.let { return it.validatedTarget(this, name, mode) }
         val target = if (importedPackageContextProvider != null) {
             importedPackageContextProvider.getPackageContext(name, mode)
         } else {
-            dependencyManager.loadPackageSnapshot(name)?.let { contextForSnapshot(it, mode) }
+            selectSnapshot(dependencyManager, name, requestingModule)?.let { contextForSnapshot(it, mode) }
         } ?: return null
         val accepted = target.validatedTarget(this, name, mode)
         return (importedContexts.putIfAbsent(key, accepted) ?: accepted).validatedTarget(this, name, mode)

@@ -8,6 +8,7 @@
 package org.cangnova.cangjie.cfir.expressions.builder
 
 import kotlin.contracts.*
+import org.cangnova.cangjie.annotations.CangjieOverflowStrategy
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
@@ -16,6 +17,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirAssignment
 import org.cangnova.cangjie.cfir.expressions.CfirAssignmentTypeMismatchOutcome
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.impl.CfirAssignmentImpl
+import org.cangnova.cangjie.cfir.source.CfirSourceOperator
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.CjSourceElement
@@ -25,9 +27,13 @@ class CfirAssignmentBuilder {
     var source: CjSourceElement? = null
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
     var coneTypeOrNull: ConeCangJieType? = null
+    var mappedExpression: CfirExpression? = null
+    var overflowStrategy: CangjieOverflowStrategy? = null
     lateinit var lValue: CfirExpression
     lateinit var rValue: CfirExpression
     var augmentedOperation: Name? = null
+    var operation: CfirSourceOperator = CfirSourceOperator.ASSIGN
+    var isCompound: Boolean = false
     var typeMismatchOutcome: CfirAssignmentTypeMismatchOutcome? = null
 
     @OptIn(CfirImplementationDetail::class)
@@ -36,9 +42,13 @@ class CfirAssignmentBuilder {
             source,
             annotations.toMutableOrEmpty(),
             coneTypeOrNull,
+            mappedExpression,
+            overflowStrategy,
             lValue,
             rValue,
             augmentedOperation,
+            operation,
+            isCompound,
             typeMismatchOutcome,
         )
     }
@@ -62,9 +72,13 @@ inline fun buildAssignmentCopy(original: CfirAssignment, init: CfirAssignmentBui
     copyBuilder.source = original.source
     copyBuilder.annotations.addAll(original.annotations)
     copyBuilder.coneTypeOrNull = original.coneTypeOrNull
+    copyBuilder.mappedExpression = original.mappedExpression
+    copyBuilder.overflowStrategy = original.overflowStrategy
     copyBuilder.lValue = original.lValue
     copyBuilder.rValue = original.rValue
     copyBuilder.augmentedOperation = original.augmentedOperation
+    copyBuilder.operation = original.operation
+    copyBuilder.isCompound = original.isCompound
     copyBuilder.typeMismatchOutcome = original.typeMismatchOutcome
     return copyBuilder.apply(init).build()
 }

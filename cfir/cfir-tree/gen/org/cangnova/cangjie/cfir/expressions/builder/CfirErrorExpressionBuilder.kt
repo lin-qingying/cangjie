@@ -8,6 +8,7 @@
 package org.cangnova.cangjie.cfir.expressions.builder
 
 import kotlin.contracts.*
+import org.cangnova.cangjie.annotations.CangjieOverflowStrategy
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
@@ -23,6 +24,8 @@ import org.cangnova.cangjie.source.CjSourceElement
 class CfirErrorExpressionBuilder {
     var source: CjSourceElement? = null
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
+    var mappedExpression: CfirExpression? = null
+    var overflowStrategy: CangjieOverflowStrategy? = null
     lateinit var diagnostic: ConeDiagnostic
     var expression: CfirExpression? = null
     var nonExpressionElement: CfirElement? = null
@@ -32,6 +35,8 @@ class CfirErrorExpressionBuilder {
         return CfirErrorExpressionImpl(
             source,
             annotations.toMutableOrEmpty(),
+            mappedExpression,
+            overflowStrategy,
             diagnostic,
             expression,
             nonExpressionElement,
@@ -56,6 +61,8 @@ inline fun buildErrorExpressionCopy(original: CfirErrorExpression, init: CfirErr
     val copyBuilder = CfirErrorExpressionBuilder()
     copyBuilder.source = original.source
     copyBuilder.annotations.addAll(original.annotations)
+    copyBuilder.mappedExpression = original.mappedExpression
+    copyBuilder.overflowStrategy = original.overflowStrategy
     copyBuilder.diagnostic = original.diagnostic
     copyBuilder.expression = original.expression
     copyBuilder.nonExpressionElement = original.nonExpressionElement

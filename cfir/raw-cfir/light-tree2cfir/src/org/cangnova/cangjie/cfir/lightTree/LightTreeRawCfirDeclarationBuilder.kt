@@ -24,10 +24,15 @@
 
 package org.cangnova.cangjie.cfir.lightTree
 
+import org.cangnova.cangjie.parsing.isParsingErrorElementType
+
 import org.cangnova.cangjie.cfir.builder.initializeRawAnnotationSyntax
+import org.cangnova.cangjie.cfir.builder.initConstructorCjmpStatus
+import org.cangnova.cangjie.cfir.builder.hasCjmpCommonDefault
+import org.cangnova.cangjie.cfir.builder.withEmptyFunctionBodyReturnType
+import org.cangnova.cangjie.cfir.builder.toParsingContext
 
 import com.intellij.lang.LighterASTNode
-import com.intellij.lang.PsiBuilderFactory
 import com.intellij.openapi.util.Ref
 import com.intellij.psi.TokenType
 import com.intellij.psi.tree.IElementType
@@ -40,6 +45,7 @@ import org.cangnova.cangjie.annotations.CangjieAnnotationOrigin
 import org.cangnova.cangjie.cfir.CfirFunctionTarget
 import org.cangnova.cangjie.cfir.CfirFeaturesDirective
 import org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilder
+import org.cangnova.cangjie.cfir.builder.captureDefaultAssignmentSyntaxFacts
 import org.cangnova.cangjie.cfir.builder.BodyBuildingMode
 import org.cangnova.cangjie.cfir.builder.CfirRawBuildSource
 import org.cangnova.cangjie.cfir.builder.CfirRawBuildStage
@@ -50,9 +56,12 @@ import org.cangnova.cangjie.cfir.builder.rawBuildTimingObserverOrNull
 import org.cangnova.cangjie.cfir.builder.buildQualifierPart
 import org.cangnova.cangjie.cfir.builder.buildFeaturesDirective
 import org.cangnova.cangjie.cfir.builder.macro.MacroPayloadTokenizer
+import org.cangnova.cangjie.cfir.builder.macro.MacroExpressionHeadScanner
+import org.cangnova.cangjie.cfir.builder.macro.MacroExpressionHeadSyntax as MacroExpressionNameScan
+import org.cangnova.cangjie.cfir.builder.macro.MacroExpressionTextRange
+import org.cangnova.cangjie.cfir.builder.bindMemberOwners
 import org.cangnova.cangjie.cfir.copyWithNewSource
-import org.cangnova.cangjie.cfir.correspondingProperty
-import org.cangnova.cangjie.cfir.containingExtend
+import org.cangnova.cangjie.cfir.recordMemberParameterFieldInfo
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.builder.*
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
@@ -65,23 +74,33 @@ import org.cangnova.cangjie.cfir.expressions.builder.*
 import org.cangnova.cangjie.cfir.resolve.providers.macro.*
 import org.cangnova.cangjie.cfir.scopes.CfirScopeProvider
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.session.ensureAnnotationMetadataRegistry
+import org.cangnova.cangjie.cfir.session.cjmpSettings
+import org.cangnova.cangjie.cfir.session.languageVersionSettings
+import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationMetadataBuilder
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.toCfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.CfirUserTypeRef
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.builder.buildUserTypeRef
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.descriptors.Visibility
-import org.cangnova.cangjie.lexer.CangJieLexer
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.name.CangJieUnicode.sourceIdentifier
+import org.cangnova.cangjie.name.CangJieUnicode.normalizeIdentifier
 import org.cangnova.cangjie.name.OperatorNameConventions
 import org.cangnova.cangjie.name.OperatorNameConventions.asOperatorName
 import org.cangnova.cangjie.name.SpecialNames
 import org.cangnova.cangjie.parsing.CangJieLightParser
+import org.cangnova.cangjie.parsing.CjMemberParsingContext
+import org.cangnova.cangjie.parsing.CjParameterGrammar
+import org.cangnova.cangjie.parsing.CjVariadicParameterRules
+import org.cangnova.cangjie.parsing.CjmpModifierDeclarationKind
+import org.cangnova.cangjie.parsing.CjmpNominalSyntaxFacts
+import org.cangnova.cangjie.parsing.MacroParsingFacts
 import org.cangnova.cangjie.parsing.CangJieParserDefinition
 import org.cangnova.cangjie.parsing.CjMemberBodyFacts
 import org.cangnova.cangjie.parsing.CjMemberBodyPolicy
@@ -132,9 +151,21 @@ class LightTreeRawCfirDeclarationBuilder(
      * 由调用方按需传入。
      */
     val sourceKind: CjSourceKind = CjSourceKind.SOURCE,
+    /** 与当前 LightTree 同次 parser 根冻结的真实 invocation facts。 */
+    internal val macroFacts: Map<Int, MacroParsingFacts>,
+    /** 与当前 LightTree 同次解析的容器关键字事实。 */
+    val nominalFacts: Map<Int, CjmpNominalSyntaxFacts>,
+    /** 原始 prefix 与检查三态不能代替声明文法发布的有效属性。 */
+    val declarationModifiers: Map<Int, org.cangnova.cangjie.parsing.CjParsedDeclarationModifiers>,
+    /** 与当前文件及其宏片段共享的私有 metadata 事务。 */
+    val annotationMetadata: CfirAnnotationMetadataBuilder,
     /** source/token 投影在实际 CFIR 构造前装配。 */
     internal val sourceElementFactory: CfirRawSourceElementFactory = CfirRawSourceElementFactory.Original(),
 ) : AbstractLightTreeRawCfirBuilder(session, tree, source, context, sourceElementFactory) {
+    /** 返回属性已经包含声明实际接收的集合/宏前缀，不从外层 owner 补授。 */
+    private fun modifierListFor(node: LighterASTNode, isPrimaryConstructorParameter: Boolean? = null): LightTreeModifierList {
+        return LightTreeModifierList.from(tree, node, declarationModifiers, isPrimaryConstructorParameter)
+    }
 
     /**
      * Macro construction-only surface 累加器（baseline Batch 4b）。
@@ -159,17 +190,21 @@ class LightTreeRawCfirDeclarationBuilder(
         isImplicitAbstract: Boolean = false,
         bodyPresence: CfirBodyPresence = CfirBodyPresence.UNKNOWN,
     ): CfirDeclarationStatus {
-        val inInterfaceContext = !context.inLocalContext && containerSymbolIfAny is CfirInterfaceSymbol
+        val inInterfaceContext = !context.inLocalContext && context.containingClassSymbolIfAny is CfirInterfaceSymbol
         return toDeclarationStatus(
             context.inLocalContext,
             inInterfaceContext,
             defaultVisibility,
             isDefault,
             isImplicitAbstract,
-            bodyPresence,
-            sourceKind.isDeclaration,
+            isSpecificDeclaration = cjmpDeclarationRole().isSpecific,
+            bodyPresence = bodyPresence,
+            isDeclarationFile = sourceKind.isDeclaration,
         )
     }
+
+    /** 按当前语言版本把早期 platform 与稳定 specific 修饰符归一到共享声明角色。 */
+    private fun LightTreeModifierList.cjmpDeclarationRole() = declarationRole
 
     /** macro annotation surface 的宿主种类。 */
     private enum class MacroSurfaceOwnerKind {
@@ -200,13 +235,13 @@ class LightTreeRawCfirDeclarationBuilder(
 
     // ===== Public API =====
 
-    /** LightTree 文件构建必须使用带 sourceFile/linesMapping 的专用入口。 */
+    /** 完整文件构建必须经过 LightTree2Cfir 的 parser 结果入口。 */
     override fun buildFile(file: LighterASTNode): CfirFile {
-        error("Use buildCfirFile(lightTreeRoot, sourceFile, linesMapping) for LightTree file conversion")
+        error("Use LightTree2Cfir with ParsedCangJieLightFile for LightTree file conversion")
     }
 
-    /** 构建 LightTree 文件根节点对应的 [CfirFile]。 */
-    fun buildCfirFile(
+    /** 仅文件级入口可以调用；由它把同次 parser facts 一次发布到生成文件。 */
+    internal fun buildCfirFile(
         file: LighterASTNode,
         sourceFile: CjSourceFile,
         linesMapping: CjSourceFileLinesMapping,
@@ -289,26 +324,56 @@ class LightTreeRawCfirDeclarationBuilder(
     }
 
     /**
-     * Macro fragment reparse 入口。
-     *
-     * LightTree fragment 通过 wrapper parse 获得目标 node 后，必须显式继承
-     * 原 macro 位点包上下文，避免临时 wrapper 文件污染 fragment symbol。
-     */
-    fun buildDeclarationInPackage(declaration: LighterASTNode, packageFqName: FqName): CfirDeclaration {
-        return withPackageContext(packageFqName) {
-            convertDeclaration(declaration)
-        }
-    }
-
-    /**
      * 宏返回的声明片段从根节点收集，不能通过递归寻找终端声明丢弃外层注解包装。
      * 片段的新 token 没有 parser 模块，符号名称仍使用宿主包。
      */
+    fun buildDeclarationFragment(file: LighterASTNode, ownerSnapshot: MacroRawOwnerSnapshot): CfirDeclaration? =
+        context.withMacroOwner(ownerSnapshot) {
+            buildFileDeclarations(file).map { it.bindMacroFragmentOwner() }.singleOrNull()
+        }
+
+    /**
+     * 转换原生 macro fragment 的全部直接 LightTree 根，按 parser 顺序保留类型。
+     * 参数签名取自实际替换槽；声明和表达式都在宿主 owner 语境下构造。
+     */
+    internal fun buildMacroFragmentPayload(
+        roots: List<LighterASTNode>,
+        parsingInfo: org.cangnova.cangjie.parsing.CjMacroFragmentParseInfo,
+        ownerSnapshot: MacroRawOwnerSnapshot,
+    ): MacroFragmentPayload? = context.withMacroOwner(ownerSnapshot) {
+        val entryRole = requireNotNull(parsingInfo.entryFileRole) { "Macro fragment has no verified entry role." }
+        val targetContext = baseSession.cjmpSettings.toParsingContext(baseSession.languageVersionSettings)
+            .copy(initialFileRole = entryRole)
+        val parsedContext = parsingInfo.parsingContext as? org.cangnova.cangjie.parsing.CjmpParsingContext.Compilation
+        require(parsedContext?.copy(initialFileRole = entryRole) == targetContext) {
+            "Macro fragment must be parsed in the target session context before raw construction."
+        }
+        val convertedRoots = mutableListOf<MacroFragmentPayload.Root>()
+        for ((index, root) in roots.withIndex()) {
+            val converted = when {
+                root.tokenType == CjNodeTypes.VALUE_PARAMETER -> {
+                    val signature = ownerSnapshot.signature as? MacroParameterSignature.Declaration
+                        ?: return@withMacroOwner null
+                    MacroFragmentPayload.Root.Parameter(index, convertValueParameter(root, signature.owner, signature))
+                }
+                LightTreeRawCfirExpressionBuilder.isDeclarationToken(root.tokenType) ->
+                    MacroFragmentPayload.Root.Declaration(
+                        index,
+                        convertDeclaration(root).bindMacroFragmentOwner(),
+                    )
+                LightTreeRawCfirExpressionBuilder.isExpressionToken(root.tokenType) ->
+                    MacroFragmentPayload.Root.Expression(index, expressionBuilder.convertExpression(root))
+                else -> return@withMacroOwner null
+            }
+            convertedRoots += converted
+        }
+        MacroFragmentPayload(convertedRoots, parsingInfo)
+    }
+
+    /** 文件级宏输出保留解析得到的全部直接声明及其顺序。 */
     fun buildDeclarationFragmentInPackage(file: LighterASTNode, packageFqName: FqName): List<CfirDeclaration> =
         context.withSourceModuleName("") {
-            withPackageContext(packageFqName) {
-                buildFileDeclarations(file)
-            }
+            withPackageContext(packageFqName) { buildFileDeclarations(file) }
         }
 
     /** 从 LightTree 表达式节点构建 raw CFIR 表达式。 */
@@ -318,8 +383,8 @@ class LightTreeRawCfirDeclarationBuilder(
     /**
      * Macro expression fragment reparse 入口。
      */
-    fun buildExpressionInPackage(expression: LighterASTNode, packageFqName: FqName): CfirExpression {
-        return withPackageContext(packageFqName) {
+    fun buildExpressionFragment(expression: LighterASTNode, ownerSnapshot: MacroRawOwnerSnapshot): CfirExpression {
+        return context.withMacroOwner(ownerSnapshot) {
             expressionBuilder.convertExpression(expression)
         }
     }
@@ -330,13 +395,14 @@ class LightTreeRawCfirDeclarationBuilder(
      * 参数 fragment 必须复用原宿主 callable symbol；不能把 wrapper 函数的
      * containing symbol 带入最终 CFIR。
      */
-    fun buildValueParameterInPackage(
+    fun buildValueParameterFragment(
         parameter: LighterASTNode,
-        containingSymbol: CfirBasedSymbol<*>,
-        packageFqName: FqName,
+        ownerSnapshot: MacroRawOwnerSnapshot,
     ): CfirValueParameter {
-        return withPackageContext(packageFqName) {
-            convertValueParameter(parameter, containingSymbol)
+        return context.withMacroOwner(ownerSnapshot) {
+            val signature = checkNotNull(ownerSnapshot.signature) { "A parameter fragment must have its actual signature owner." }
+            require(signature is MacroParameterSignature.Declaration) { "Lambda parameters have no declaration macro grammar." }
+            convertValueParameter(parameter, signature.owner, signature)
         }
     }
 
@@ -346,26 +412,34 @@ class LightTreeRawCfirDeclarationBuilder(
      * 直接从 annotation light-tree node 构造 [CfirAnnotationCall]，不通过
      * 临时参数 fragment 间接提取 annotation，避免 annotation slot 语法被参数语法改写。
      */
-    fun buildAnnotationCallInPackage(
+    fun buildAnnotationCallFragment(
         annotation: LighterASTNode,
         containingSymbol: CfirBasedSymbol<*>,
-        packageFqName: FqName,
+        ownerSnapshot: MacroRawOwnerSnapshot,
+        sourceOverride: CjSourceElement? = null,
+        argumentListSourceOverride: CjSourceElement? = null,
+    ): CfirAnnotationCall? = context.withMacroOwner(ownerSnapshot) {
+        buildAnnotationCall(annotation, containingSymbol, sourceOverride, argumentListSourceOverride)
+    }
+
+    /** 普通 raw annotation/lambda 构建复用当前语境，不能重装 fragment 的宿主快照。 */
+    internal fun buildAnnotationCall(
+        annotation: LighterASTNode,
+        containingSymbol: CfirBasedSymbol<*>,
         sourceOverride: CjSourceElement? = null,
         argumentListSourceOverride: CjSourceElement? = null,
     ): CfirAnnotationCall? {
         val annotationName = annotationNameInfo(annotation) ?: return null
         val sourceOffsetDelta = sourceOffsetDelta(sourceOverride, annotation)
-        return withPackageContext(packageFqName) {
-            buildRawAnnotationCall(
-                annotation = annotation,
-                rawName = annotationName.rawName,
-                containingSymbol = containingSymbol,
-                sourceOverride = sourceOverride,
-                typeRefOverride = buildAnnotationTypeRef(annotationName, sourceOffsetDelta),
-                calleeReferenceSourceOverride = annotationName.calleeReferenceSource.shiftedBy(sourceOffsetDelta),
-                argumentListSourceOverride = argumentListSourceOverride,
-            )
-        }
+        return buildRawAnnotationCall(
+            annotation = annotation,
+            rawName = annotationName.rawName,
+            containingSymbol = containingSymbol,
+            sourceOverride = sourceOverride,
+            typeRefOverride = buildAnnotationTypeRef(annotationName, sourceOffsetDelta),
+            calleeReferenceSourceOverride = annotationName.calleeReferenceSource.shiftedBy(sourceOffsetDelta),
+            argumentListSourceOverride = argumentListSourceOverride,
+        )
     }
 
     // ===== 声明转换入口 =====
@@ -376,9 +450,19 @@ class LightTreeRawCfirDeclarationBuilder(
     private fun convertDeclaration(
         node: LighterASTNode,
         annotationWrappers: List<LighterASTNode>,
-        ownerTypeParameters: List<CfirTypeParameterRef>? = null,
     ): CfirDeclaration {
         val declaration = when (node.tokenType) {
+            CjNodeTypes.INVALID_DECLARATION -> buildSourceDeclaration(CfirInvalidDeclarationSymbol()) { symbol ->
+                buildInvalidDeclaration {
+                    resolvePhase = CfirResolvePhase.RAW_CFIR
+                    source = node.toSource()
+                    this.symbol = symbol
+                    origin = CfirDeclarationOrigin.Source
+                    moduleData = baseModuleData
+                    attributes = CfirDeclarationAttributes.EMPTY
+                    reason = "Invalid declaration in source syntax"
+                }
+            }
             CjNodeTypes.CLASS -> convertClass(node, CfirClassKind.CLASS)
             CjNodeTypes.INTERFACE -> convertClass(node, CfirClassKind.INTERFACE)
             CjNodeTypes.STRUCT -> convertClass(node, CfirClassKind.STRUCT)
@@ -394,10 +478,7 @@ class LightTreeRawCfirDeclarationBuilder(
             CjNodeTypes.PRIMARY_CONSTRUCTOR -> convertConstructor(node, isPrimary = true)
             CjNodeTypes.SECONDARY_CONSTRUCTOR -> convertConstructor(node, isPrimary = false)
             CjNodeTypes.TYPEALIAS -> convertTypeAlias(node)
-            CjNodeTypes.ENUM_CONSTRUCTOR -> convertEnumConstructor(
-                node,
-                checkNotNull(ownerTypeParameters) { "Enum constructor requires its actual constructed enum parameters" },
-            )
+            CjNodeTypes.ENUM_CONSTRUCTOR -> convertEnumConstructor(node)
             else -> buildSourceDeclaration(CfirInvalidDeclarationSymbol()) { symbol ->
                 buildInvalidDeclaration {
                     resolvePhase = CfirResolvePhase.RAW_CFIR
@@ -422,12 +503,12 @@ class LightTreeRawCfirDeclarationBuilder(
     ) {
         for (wrapper in annotationWrappers) {
             collectMacroSurfacesFromAnnotations(
-                wrapper, LightTreeModifierList.from(tree, wrapper), MacroSurfaceOwnerKind.DECLARATION, declaration,
+                wrapper, modifierListFor(wrapper), MacroSurfaceOwnerKind.DECLARATION, declaration,
             )
             applyTopLevelMacroExpression(wrapper, node, declaration)
         }
         collectMacroSurfacesFromAnnotations(
-            node, LightTreeModifierList.from(tree, node), MacroSurfaceOwnerKind.DECLARATION, declaration,
+            node, modifierListFor(node), MacroSurfaceOwnerKind.DECLARATION, declaration,
         )
     }
 
@@ -449,7 +530,7 @@ class LightTreeRawCfirDeclarationBuilder(
     /** 转换 class、interface、struct、enum 等 class-like 声明。 */
     private fun convertClass(node: LighterASTNode, classKind: CfirClassKind): CfirDeclaration {
         val name = extractName(node)
-        val modifiers = LightTreeModifierList.from(tree, node)
+        val modifiers = modifierListFor(node)
         val superTypes = extractSuperTypeRefs(node)
 
         if (!canDeclareTopLevelClassLike()) {
@@ -461,332 +542,166 @@ class LightTreeRawCfirDeclarationBuilder(
         }
 
         val classId = topLevelClassId(name)
-        return when (classKind) {
-            CfirClassKind.CLASS -> buildSourceDeclaration(CfirClassSymbol(classId)) { symbol ->
-                buildClass {
-                    resolvePhase = CfirResolvePhase.RAW_CFIR
-                    val (typeParams, classDeclarations) = withContainerSymbol(symbol) {
-                        val typeParameters = extractTypeParameters(node, symbol)
-                        val declarations = withDispatchReceiverType(symbol.rawDispatchReceiverType(typeParameters)) {
-                            val members = withEnclosingTypeModifiers(modifiers) { extractClassMembers(node, name) }.toMutableList()
-                                addPrimaryConstructorParameterProperties(node, members)
-                                orderClassLikeDeclarations(
-                                    shape = RawClassShape(CfirClassKind.CLASS, members.hasNonStaticConstructor()),
-                                    entries = emptyList(),
-                                    members = members,
-                                    buildImplicitInit = { buildImplicitPrimaryConstructor(node) },
-                                )
-                        }
-                        typeParameters to declarations
-                    }
-                    source = node.toSource()
-                    this.symbol = symbol
-                    origin = CfirDeclarationOrigin.Source
-                    moduleData = baseModuleData
-                    scopeProvider = baseScopeProvider
-                    attributes = declarationAttributes(node)
-                    status = modifiers.toDeclarationStatusForCurrentContext()
-                    this.typeParameters.addAll(typeParams)
-                    this.superTypeRefs.addAll(superTypes)
-                    this.declarations.addAll(classDeclarations)
-                    this.name = name
-                }
-            }
-            CfirClassKind.INTERFACE -> buildSourceDeclaration(CfirInterfaceSymbol(classId)) { symbol ->
-                buildInterface {
-                    resolvePhase = CfirResolvePhase.RAW_CFIR
-                    val (typeParams, classDeclarations) = withContainerSymbol(symbol) {
-                        val typeParameters = extractTypeParameters(node, symbol)
-                        val declarations = withDispatchReceiverType(symbol.rawDispatchReceiverType(typeParameters)) {
-                            withEnclosingTypeModifiers(modifiers) { extractClassMembers(node) }.toMutableList()
-                        }
-                        typeParameters to declarations
-                    }
-                    source = node.toSource()
-                    this.symbol = symbol
-                    origin = CfirDeclarationOrigin.Source
-                    moduleData = baseModuleData
-                    scopeProvider = baseScopeProvider
-                    attributes = declarationAttributes(node)
-                    status = modifiers.toDeclarationStatusForCurrentContext()
-                    this.typeParameters.addAll(typeParams)
-                    this.superTypeRefs.addAll(superTypes)
-                    this.declarations.addAll(classDeclarations)
-                    this.name = name
-                }
-            }
-            CfirClassKind.STRUCT -> buildSourceDeclaration(CfirStructSymbol(classId)) { symbol ->
-                buildStruct {
-                    resolvePhase = CfirResolvePhase.RAW_CFIR
-                    val (typeParams, classDeclarations) = withContainerSymbol(symbol) {
-                        val typeParameters = extractTypeParameters(node, symbol)
-                        val declarations = withDispatchReceiverType(symbol.rawDispatchReceiverType(typeParameters)) {
-                            val members = extractClassMembers(node, name).toMutableList()
-                                addPrimaryConstructorParameterProperties(node, members)
-                                orderClassLikeDeclarations(
-                                    shape = RawClassShape(CfirClassKind.STRUCT, members.hasNonStaticConstructor()),
-                                    entries = emptyList(),
-                                    members = members,
-                                    buildImplicitInit = { buildImplicitPrimaryConstructor(node) },
-                                )
-                        }
-                        typeParameters to declarations
-                    }
-                    source = node.toSource()
-                    this.symbol = symbol
-                    origin = CfirDeclarationOrigin.Source
-                    moduleData = baseModuleData
-                    scopeProvider = baseScopeProvider
-                    attributes = declarationAttributes(node)
-                    status = modifiers.toDeclarationStatusForCurrentContext()
-                    this.typeParameters.addAll(typeParams)
-                    this.superTypeRefs.addAll(superTypes)
-                    this.declarations.addAll(classDeclarations)
-                    this.name = name
-                }
-            }
-            CfirClassKind.ENUM -> buildSourceDeclaration(CfirEnumSymbol(classId)) { symbol ->
-                buildEnum {
-                    resolvePhase = CfirResolvePhase.RAW_CFIR
-                    val (typeParams, classDeclarations) = withContainerSymbol(symbol) {
-                        val typeParameters = extractTypeParameters(node, symbol)
-                        val declarations = withDispatchReceiverType(symbol.rawDispatchReceiverType(typeParameters)) {
-                            val members = extractClassMembers(node, name, typeParameters).toMutableList()
-                                addPrimaryConstructorParameterProperties(node, members)
-                                // 官方 EnumDecl 把枚举项(constructors)与普通成员(members)建模为
-                                // 两个不相交集合；隐式 init 位于两者之间，顺序由决策函数唯一确定。
-                                val enumEntries = members.filterIsInstance<CfirEnumConstructor>()
-                                val plainMembers = members.filterNot { it is CfirEnumConstructor }
+        return context.withNominalSyntax({
+            CjMemberParsingContext(
+                kind = when (classKind) {
+                    CfirClassKind.CLASS -> CjMemberParsingContext.Kind.CLASS
+                    CfirClassKind.STRUCT -> CjMemberParsingContext.Kind.STRUCT
+                    CfirClassKind.INTERFACE -> CjMemberParsingContext.Kind.INTERFACE
+                    CfirClassKind.ENUM -> CjMemberParsingContext.Kind.ENUM
+                },
+                declarationName = tree.findChildByType(node, CjTokens.IDENTIFIER)?.asText(),
+            )
+        }) {
+            when (classKind) {
+                CfirClassKind.CLASS -> buildSourceDeclaration(CfirClassSymbol(classId)) { symbol ->
+                    buildClass {
+                        resolvePhase = CfirResolvePhase.RAW_CFIR
+                        val (typeParams, classDeclarations) = withContainerSymbol(symbol) {
+                            val typeParameters = extractTypeParameters(node, symbol)
+                            val declarations = withClassLikeMembers(
+                                symbol.rawDispatchReceiverType(typeParameters), node.toSource(), typeParameters,
+                                isConstructible = true,
+                            ) {
+                                val members = withEnclosingTypeModifiers(modifiers) { extractClassMembers(node) }
                                 orderClassLikeDeclarations(
                                     shape = RawClassShape(
-                                        CfirClassKind.ENUM,
-                                        plainMembers.hasNonStaticConstructor(),
+                                        classKind,
+                                        hasExplicitPrimaryConstructor = !shouldSynthesizeImplicitPrimaryConstructor(
+                                            isSpecific = modifiers.cjmpDeclarationRole().isSpecific,
+                                            declarations = members,
+                                        ),
                                     ),
-                                    entries = enumEntries,
-                                    members = plainMembers,
+                                    entries = emptyList(),
+                                    members = members,
                                     buildImplicitInit = { buildImplicitPrimaryConstructor(node) },
                                 )
+                            }
+                            typeParameters to declarations
                         }
-                        typeParameters to declarations
+                        source = node.toSource()
+                        this.symbol = symbol
+                        origin = CfirDeclarationOrigin.Source
+                        moduleData = baseModuleData
+                        scopeProvider = baseScopeProvider
+                        attributes = declarationAttributes(node)
+                        status = modifiers.toDeclarationStatusForCurrentContext()
+                        this.typeParameters.addAll(typeParams)
+                        this.superTypeRefs.addAll(superTypes)
+                        this.declarations.addAll(classDeclarations)
+                        this.name = name
                     }
-                    source = node.toSource()
-                    this.symbol = symbol
-                    origin = CfirDeclarationOrigin.Source
-                    moduleData = baseModuleData
-                    scopeProvider = baseScopeProvider
-                    attributes = declarationAttributes(node)
-                    status = modifiers.toDeclarationStatusForCurrentContext()
-                    this.typeParameters.addAll(typeParams)
-                    this.superTypeRefs.addAll(superTypes)
-                    this.declarations.addAll(classDeclarations)
-                    this.name = name
-                    this.isRefEnum = false
-                    val enumBody = tree.findChildByType(node, CjNodeTypes.ENUM_BODY)
-                    this.isNonExhaustive = enumBody != null && tree.findChildByType(enumBody, CjTokens.ELLIPSIS) != null
+                }
+                CfirClassKind.INTERFACE -> buildSourceDeclaration(CfirInterfaceSymbol(classId)) { symbol ->
+                    buildInterface {
+                        resolvePhase = CfirResolvePhase.RAW_CFIR
+                        val (typeParams, classDeclarations) = withContainerSymbol(symbol) {
+                            val typeParameters = extractTypeParameters(node, symbol)
+                            val declarations = withClassLikeMembers(
+                                symbol.rawDispatchReceiverType(typeParameters), node.toSource(), typeParameters,
+                                isConstructible = false,
+                            ) {
+                                withEnclosingTypeModifiers(modifiers) { extractClassMembers(node) }
+                            }
+                            typeParameters to declarations
+                        }
+                        source = node.toSource()
+                        this.symbol = symbol
+                        origin = CfirDeclarationOrigin.Source
+                        moduleData = baseModuleData
+                        scopeProvider = baseScopeProvider
+                        attributes = declarationAttributes(node)
+                        status = modifiers.toDeclarationStatusForCurrentContext()
+                        this.typeParameters.addAll(typeParams)
+                        this.superTypeRefs.addAll(superTypes)
+                        this.declarations.addAll(classDeclarations)
+                        this.name = name
+                    }
+                }
+                CfirClassKind.STRUCT -> buildSourceDeclaration(CfirStructSymbol(classId)) { symbol ->
+                    buildStruct {
+                        resolvePhase = CfirResolvePhase.RAW_CFIR
+                        val (typeParams, classDeclarations) = withContainerSymbol(symbol) {
+                            val typeParameters = extractTypeParameters(node, symbol)
+                            val declarations = withClassLikeMembers(
+                                symbol.rawDispatchReceiverType(typeParameters), node.toSource(), typeParameters,
+                                isConstructible = true,
+                            ) {
+                                val members = withEnclosingTypeModifiers(modifiers) { extractClassMembers(node) }
+                                orderClassLikeDeclarations(
+                                    shape = RawClassShape(
+                                        classKind,
+                                        hasExplicitPrimaryConstructor = !shouldSynthesizeImplicitPrimaryConstructor(
+                                            isSpecific = modifiers.cjmpDeclarationRole().isSpecific,
+                                            declarations = members,
+                                        ),
+                                    ),
+                                    entries = emptyList(),
+                                    members = members,
+                                    buildImplicitInit = { buildImplicitPrimaryConstructor(node) },
+                                )
+                            }
+                            typeParameters to declarations
+                        }
+                        source = node.toSource()
+                        this.symbol = symbol
+                        origin = CfirDeclarationOrigin.Source
+                        moduleData = baseModuleData
+                        scopeProvider = baseScopeProvider
+                        attributes = declarationAttributes(node)
+                        status = modifiers.toDeclarationStatusForCurrentContext()
+                        this.typeParameters.addAll(typeParams)
+                        this.superTypeRefs.addAll(superTypes)
+                        this.declarations.addAll(classDeclarations)
+                        this.name = name
+                    }
+                }
+                CfirClassKind.ENUM -> buildSourceDeclaration(CfirEnumSymbol(classId)) { symbol ->
+                    buildEnum {
+                        resolvePhase = CfirResolvePhase.RAW_CFIR
+                        val (typeParams, classDeclarations) = withContainerSymbol(symbol) {
+                            val typeParameters = extractTypeParameters(node, symbol)
+                            val declarations = withClassLikeMembers(
+                                symbol.rawDispatchReceiverType(typeParameters), node.toSource(), typeParameters,
+                                isConstructible = true,
+                            ) {
+                                val (entries, members) = extractClassMembers(node).partition { it is CfirEnumConstructor }
+                                orderClassLikeDeclarations(
+                                    shape = RawClassShape(classKind, members.hasNonStaticConstructor()),
+                                    entries = entries,
+                                    members = members,
+                                    buildImplicitInit = { buildImplicitPrimaryConstructor(node) },
+                                )
+                            }
+                            typeParameters to declarations
+                        }
+                        source = node.toSource()
+                        this.symbol = symbol
+                        origin = CfirDeclarationOrigin.Source
+                        moduleData = baseModuleData
+                        scopeProvider = baseScopeProvider
+                        attributes = declarationAttributes(node)
+                        status = modifiers.toDeclarationStatusForCurrentContext()
+                        this.typeParameters.addAll(typeParams)
+                        this.superTypeRefs.addAll(superTypes)
+                        this.declarations.addAll(classDeclarations)
+                        this.name = name
+                        this.isRefEnum = false
+                        val enumBody = tree.findChildByType(node, CjNodeTypes.ENUM_BODY)
+                        this.isNonExhaustive = enumBody != null && tree.findChildByType(enumBody, CjTokens.ELLIPSIS) != null
+                    }.also { it.initConstructorCjmpStatus() }
                 }
             }
         }
-    }
-
-    /**
-     * 主构造 `let/const/var` 参数同时声明同名成员。
-     *
-     * LightTree 路径必须与 PSI raw builder 保持同一声明树形状：先生成主构造参数，
-     * 再为带声明关键字的参数生成对应属性并记录 [CfirValueParameter.correspondingProperty]。
-     */
-    private fun addPrimaryConstructorParameterProperties(
-        ownerNode: LighterASTNode,
-        declarations: MutableList<CfirDeclaration>,
-    ) {
-        val primaryConstructorNode = findPrimaryConstructorNode(ownerNode) ?: return
-        val primaryConstructorIndex = declarations.indexOfFirst { it is CfirConstructor && it.isPrimary }
-        if (primaryConstructorIndex < 0) return
-
-        val cfirPrimaryConstructor = declarations[primaryConstructorIndex] as CfirConstructor
-        val generatedProperties = extractValueParameterNodes(primaryConstructorNode)
-            .zip(cfirPrimaryConstructor.valueParameters)
-            .mapNotNull { (parameterNode, valueParameter) ->
-                if (!hasLetOrVarKeyword(parameterNode)) return@mapNotNull null
-                convertPrimaryConstructorParameterProperty(parameterNode, valueParameter)
-            }
-
-        if (generatedProperties.isNotEmpty()) {
-            declarations.addAll(primaryConstructorIndex + 1, generatedProperties)
-        }
-    }
-
-    /** 为带 `let/var` 的主构造参数创建对应成员属性。 */
-    private fun convertPrimaryConstructorParameterProperty(
-        node: LighterASTNode,
-        valueParameter: CfirValueParameter,
-    ): CfirProperty {
-        val name = extractName(node)
-        val modifiers = LightTreeModifierList.from(tree, node)
-        val propertySource = node.toSource().fakeElement(CjFakeSourceElementKind.PropertyFromParameter)
-        val propertySymbol = CfirPropertySymbol(callableIdFor(name))
-        // 参数 annotation 的语义同时落到合成 property；这里只复制节点和 metadata 槽位，
-        // 不再次进入 macro surface 收集，避免为同一源码 annotation 创建第二个 construction surface。
-        val parameterAnnotations = valueParameter.annotations.map { annotation ->
-            check(annotation is CfirAnnotationCall) {
-                "Primary-constructor parameter annotations must be represented by CfirAnnotationCall."
-            }
-            annotation
-        }
-        val propertyAnnotations = parameterAnnotations.map { annotation ->
-            buildAnnotationCallCopy(annotation) {
-                containingDeclarationSymbol = propertySymbol
-            }
-        }
-        val propertyStatus = cloneDeclarationStatus(
-            modifiers.toDeclarationStatusForCurrentContext()
-                .withConstDeclarationKeyword(hasConstKeyword(node))
-        ).also { status ->
-            status.isMut = hasVarKeyword(node)
-        }
-        val defaultAccessorSource = propertySource.fakeElement(CjFakeSourceElementKind.DefaultAccessor)
-        val propertyTypeRef = valueParameter.returnTypeRef.copyWithNewSource(defaultAccessorSource)
-        val getter = buildPrimaryConstructorParameterPropertyAccessor(
-            source = defaultAccessorSource,
-            accessorName = Name.special("<get-${name.asString()}>"),
-            propertyTypeRef = propertyTypeRef,
-            propertySymbol = propertySymbol,
-            propertyStatus = propertyStatus,
-            isGetter = true,
-        )
-        val setter = if (hasVarKeyword(node)) {
-            buildPrimaryConstructorParameterPropertyAccessor(
-                source = defaultAccessorSource,
-                accessorName = Name.special("<set-${name.asString()}>"),
-                propertyTypeRef = propertyTypeRef,
-                propertySymbol = propertySymbol,
-                propertyStatus = propertyStatus,
-                isGetter = false,
-            )
-        } else {
-            null
-        }
-        val property = buildSourceDeclaration(propertySymbol) { symbol ->
-            buildProperty {
-                resolvePhase = CfirResolvePhase.RAW_CFIR
-                source = propertySource
-                this.symbol = symbol
-                origin = CfirDeclarationOrigin.Source
-                moduleData = baseModuleData
-                annotations.addAll(propertyAnnotations)
-                attributes = CfirDeclarationAttributes.EMPTY
-                isLocal = context.inLocalContext
-                dispatchReceiverType = currentDispatchReceiverType()
-                status = propertyStatus
-                returnTypeRef = valueParameter.returnTypeRef.copyWithNewSource(propertySource)
-                this.name = name
-                this.getter = getter
-                this.setter = setter
-            }
-        }
-        if (propertyAnnotations.isNotEmpty()) {
-            val metadataRegistry = baseSession.ensureAnnotationMetadataRegistry()
-            propertyAnnotations.forEachIndexed { annotationIndex, derivedAnnotation ->
-                metadataRegistry.recordDerivedSlot(
-                    sourceAnnotation = parameterAnnotations[annotationIndex],
-                    owner = property,
-                    annotationIndex = annotationIndex,
-                    derivedAnnotation = derivedAnnotation,
-                )
-            }
-        }
-        valueParameter.correspondingProperty = property
-        return property
-    }
-
-    /** 构造主构造参数属性的合成 getter 或 setter。 */
-    private fun buildPrimaryConstructorParameterPropertyAccessor(
-        source: CjSourceElement?,
-        accessorName: Name,
-        propertyTypeRef: CfirTypeRef,
-        propertySymbol: CfirPropertySymbol,
-        propertyStatus: CfirDeclarationStatus,
-        isGetter: Boolean,
-    ): CfirPropertyAccessor {
-        val accessorSymbol = CfirPropertyAccessorSymbol()
-        val valueParameters = if (isGetter) {
-            emptyList()
-        } else {
-            listOf(
-                buildValueParameter {
-                    resolvePhase = CfirResolvePhase.RAW_CFIR
-                    this.source = source
-                    this.symbol = CfirValueParameterSymbol(callableIdFor(Name.identifier("value")))
-                    origin = CfirDeclarationOrigin.Source
-                    moduleData = baseModuleData
-                    attributes = CfirDeclarationAttributes.EMPTY
-                    isLocal = false
-                    isNamed = false
-                    status = CfirDeclarationStatusImpl.DEFAULT
-                    returnTypeRef = propertyTypeRef
-                    name = Name.identifier("value")
-                    defaultValue = null
-                    containingDeclarationSymbol = accessorSymbol
-                }
-            )
-        }
-
-        return buildSourceDeclaration(accessorSymbol) { symbol ->
-            buildPropertyAccessor {
-                resolvePhase = CfirResolvePhase.RAW_CFIR
-                this.source = source
-                this.symbol = symbol
-                origin = CfirDeclarationOrigin.Source
-                moduleData = baseModuleData
-                attributes = CfirDeclarationAttributes.EMPTY
-                isLocal = context.inLocalContext
-                dispatchReceiverType = currentDispatchReceiverType()
-                status = propertyStatus
-                returnTypeRef = if (isGetter) {
-                    propertyTypeRef
-                } else {
-                    ConePrimitiveType.UNIT.toCfirResolvedTypeRef(source)
-                }
-                this.propertySymbol = propertySymbol
-                this.isGetter = isGetter
-                this.valueParameters.addAll(valueParameters)
-                body = null
-            }
-        }
-    }
-
-    /** 从 class-like 节点中查找主构造节点。 */
-    private fun findPrimaryConstructorNode(ownerNode: LighterASTNode): LighterASTNode? {
-        val bodyNode = tree.findChildByType(ownerNode, CjNodeTypes.CLASS_BODY)
-            ?: tree.findChildByType(ownerNode, CjNodeTypes.INTERFACE_BODY)
-            ?: tree.findChildByType(ownerNode, CjNodeTypes.ENUM_BODY)
-            ?: return null
-        // An annotation before a primary constructor is represented by a
-        // MACRO_EXPRESSION wrapper in the light tree.  Search the complete
-        // declaration wrapper, not only direct body children, otherwise the
-        // `let`/`var` parameters never get their corresponding member fields.
-        return findFirstDescendantByType(bodyNode, CjNodeTypes.PRIMARY_CONSTRUCTOR)
-            ?: findDescendantsByType(bodyNode, CjNodeTypes.FUNC).firstOrNull { function ->
-                tree.findChildByType(function, CjTokens.FUNC_KEYWORD) == null &&
-                    tree.findChildByType(function, CjTokens.INIT_KEYWORD) == null
-            }
     }
 
     /** 为没有显式构造函数的 class-like 声明构造隐式主构造。 */
     private fun buildImplicitPrimaryConstructor(ownerNode: LighterASTNode): CfirConstructor {
+        val constructedClassTypeParameters = constructorTypeParametersFromConstructedClass()
         return buildSourceDeclaration(CfirConstructorSymbol(callableIdFor(SpecialNames.INIT))) { symbol ->
-            buildPrimaryConstructor {
-                resolvePhase = CfirResolvePhase.RAW_CFIR
-                source = ownerNode.toSource().fakeElement(CjFakeSourceElementKind.ImplicitConstructor)
-                this.symbol = symbol
-                origin = CfirDeclarationOrigin.Source
-                moduleData = baseModuleData
-                attributes = CfirDeclarationAttributes.EMPTY
-                isLocal = context.inLocalContext
-                dispatchReceiverType = currentDispatchReceiverType()
-                status = DEFAULT_STATUS_FOR_STATUSLESS_DECLARATIONS
-                returnTypeRef = buildImplicitTypeRef()
-                body = null
-            }
+            org.cangnova.cangjie.cfir.builder.buildImplicitPrimaryConstructor(symbol,
+                ownerNode.toSource().fakeElement(CjFakeSourceElementKind.ImplicitConstructor), baseModuleData,
+                context.inLocalContext, currentDispatchReceiverType(), constructedClassTypeParameters)
         }.also { it.initContainingClassAttr() }
     }
 
@@ -794,7 +709,7 @@ class LightTreeRawCfirDeclarationBuilder(
 
     /** 转换 extend 声明，保留扩展目标类型、约束与成员声明。 */
     private fun convertExtend(node: LighterASTNode): CfirExtend {
-        val modifiers = LightTreeModifierList.from(tree, node)
+        val modifiers = modifierListFor(node)
 
         // 提取 extendedTypeRef（第一个 TYPE_REFERENCE）
         var extendedTypeRefNode: LighterASTNode? = null
@@ -824,9 +739,13 @@ class LightTreeRawCfirDeclarationBuilder(
             buildExtend {
                 resolvePhase = CfirResolvePhase.RAW_CFIR
                 val (typeParams, members) = withContainerSymbol(symbol) {
-                    val typeParameters = extractTypeParameters(node, symbol)
-                    val declarations = extractClassMembers(node)
-                    typeParameters to declarations
+                    context.withNominalSyntax({ CjMemberParsingContext(CjMemberParsingContext.Kind.EXTEND, null) }) {
+                        val typeParameters = extractTypeParameters(node, symbol)
+                        val declarations = withCapturedTypeParameters(false, node.toSource(), typeParameters) {
+                            extractClassMembers(node)
+                        }
+                        typeParameters to declarations
+                    }
                 }
                 source = node.toSource()
                 this.symbol = symbol
@@ -840,9 +759,7 @@ class LightTreeRawCfirDeclarationBuilder(
                 this.declarations.addAll(members)
             }
         }
-        extend.declarations.forEach { member ->
-            (member as? CfirCallableDeclaration)?.containingExtend = extend
-        }
+        extend.bindMemberOwners()
         return extend
     }
 
@@ -852,156 +769,145 @@ class LightTreeRawCfirDeclarationBuilder(
     private fun convertFunction(node: LighterASTNode): CfirFunction {
         val name = extractFunctionName(node, countValueParameters(node))
         val functionSymbol = CfirNamedFunctionSymbol(callableIdFor(name))
-        val valueParams = extractValueParameters(node, functionSymbol)
-        val hasVariableLenArg = hasVariableLengthArgument(node)
-        val modifiers = LightTreeModifierList.from(tree, node)
-        val returnTypeRef = extractReturnTypeRef(node)
-        val functionTarget = CfirFunctionTarget(labelName = null, isLambda = false)
-        val body = if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) null else withContainerSymbol(functionSymbol) {
-            withFunctionTarget(functionTarget) { extractBody(node) }
-        }
-
-        return buildSourceDeclaration(functionSymbol) { symbol ->
-            buildNamedFunction {
-                resolvePhase = CfirResolvePhase.RAW_CFIR
-                val typeParams = extractFunctionTypeParameters(node, symbol)
-                source = node.toSource()
-                this.symbol = symbol
-                origin = CfirDeclarationOrigin.Source
-                moduleData = baseModuleData
-                attributes = declarationAttributes(node)
-                isLocal = context.inLocalContext
-                dispatchReceiverType = currentDispatchReceiverType()
-                status = run {
-                    val bodyFacts = if (isInClassOrInterfaceMemberContext()) {
-                        memberBodyFacts(
-                            scopeKind = currentMemberScopeKind(),
-                            hasBody = hasSyntaxBody(node),
-                            hasAccessors = false,
-                            modifiers = modifiers,
-                        )
-                    } else {
-                        null
-                    }
-                    val implicitAbstract = bodyFacts?.let { facts ->
-                        CjMemberBodyPolicy.applyCjmpOverlay(
-                            CjMemberBodyPolicy.applyJavaMirrorFunctionOverlay(
-                                CjMemberBodyPolicy.checkFunctionBody(facts), facts,
-                            ),
-                            facts,
-                        ).markImplicitAbstract ||
-                                CjMemberBodyPolicy.isImplicitAbstractCjmpCommonInterfaceFunction(facts)
-                    } ?: false
-                    val isDefault = bodyFacts?.let { facts ->
-                        CjMemberBodyPolicy.isDefaultInterfaceFunction(facts, modifiers.isAbstract)
-                    } ?: false
-                    modifiers.toDeclarationStatusForCurrentContext(
-                        isDefault = isDefault,
-                        isImplicitAbstract = implicitAbstract,
-                        bodyPresence = if (hasSyntaxBody(node)) CfirBodyPresence.PRESENT else CfirBodyPresence.ABSENT,
-                    )
-                }
-                this.typeParameters.addAll(typeParams)
-                this.returnTypeRef = returnTypeRef
-                this.name = name
-                this.valueParameters.addAll(valueParams)
-                this.hasVariableLenArg = hasVariableLenArg
-                this.body = body
-                isMut = modifiers.isMut
+        return withContainerSymbol(functionSymbol) {
+            val typeParams = extractFunctionTypeParameters(node, functionSymbol)
+            val valueParams = extractValueParameters(node, functionSymbol, MacroParameterSignature.Declaration(containerSymbol, CjParameterGrammar.REGULAR_TYPED))
+            val hasVariableLenArg = hasVariableLengthArgument(node)
+            val modifiers = modifierListFor(node)
+            val returnTypeRef = extractReturnTypeRef(node).withEmptyFunctionBodyReturnType(hasEmptyFunctionBlock(node))
+            val functionTarget = CfirFunctionTarget(labelName = null, isLambda = false)
+            val body = withCapturedTypeParameters(true, node.toSource(), typeParams) {
+                withFunctionTarget(functionTarget) { extractBody(node) }
             }
-        }.also { bindFunctionTarget(functionTarget, it) }
+
+            buildSourceDeclaration(functionSymbol) { symbol ->
+                buildNamedFunction {
+                    resolvePhase = CfirResolvePhase.RAW_CFIR
+                    source = node.toSource()
+                    this.symbol = symbol
+                    origin = CfirDeclarationOrigin.Source
+                    moduleData = baseModuleData
+                    attributes = declarationAttributes(node)
+                    isLocal = context.inLocalContext
+                    dispatchReceiverType = currentDispatchReceiverType()
+                    status = run {
+                        // DEFAULT 与隐式 abstract 同源（护栏 2）：官方 SetDefaultFunc 读的是
+                        // CheckFuncBody 的结果，因此这里只算一次，两边共用。
+                        val implicitAbstract = isImplicitAbstractClassLikeFunction(node, modifiers)
+                        modifiers.toDeclarationStatusForCurrentContext(
+                            isDefault = isDefaultInterfaceFunction(node, modifiers, implicitAbstract),
+                            isImplicitAbstract = implicitAbstract,
+                            bodyPresence = if (hasSyntaxBody(node)) CfirBodyPresence.PRESENT else CfirBodyPresence.ABSENT,
+                        )
+                    }
+                    this.typeParameters.addAll(typeParams)
+                    this.returnTypeRef = returnTypeRef
+                    this.name = name
+                    this.valueParameters.addAll(valueParams)
+                    this.hasVariableLenArg = hasVariableLenArg
+                    this.body = body
+                    isMut = modifiers.isMut
+                }
+            }.also { bindFunctionTarget(functionTarget, it) }
+        }
     }
 
     /** 转换仓颉入口 main 函数声明。 */
     private fun convertMainFunction(node: LighterASTNode): CfirMainFunction {
-        val modifiers = LightTreeModifierList.from(tree, node)
+        val modifiers = modifierListFor(node)
         val functionSymbol = CfirMainFunctionSymbol(callableIdFor(Name.identifier("main")))
-        val valueParams = extractValueParameters(node, functionSymbol)
-        val returnTypeRef = extractReturnTypeRef(node)
-        val functionTarget = CfirFunctionTarget(labelName = null, isLambda = false)
-        val body = if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) null else withContainerSymbol(functionSymbol) {
-            withFunctionTarget(functionTarget) { extractBody(node) }
-        }
-
-        return buildSourceDeclaration(functionSymbol) { symbol ->
-            buildMainFunction {
-                resolvePhase = CfirResolvePhase.RAW_CFIR
-                source = node.toSource()
-                this.symbol = symbol
-                origin = CfirDeclarationOrigin.Source
-                moduleData = baseModuleData
-                attributes = CfirDeclarationAttributes.EMPTY
-                isLocal = context.inLocalContext
-                dispatchReceiverType = currentDispatchReceiverType()
-                status = modifiers.toDeclarationStatusForCurrentContext(defaultVisibility = Visibilities.Public)
-                this.returnTypeRef = returnTypeRef
-                this.valueParameters.addAll(valueParams)
-                this.body = body
+        return withContainerSymbol(functionSymbol) {
+            val valueParams = extractValueParameters(node, functionSymbol, MacroParameterSignature.Declaration(containerSymbol, CjParameterGrammar.REGULAR_TYPED))
+            val returnTypeRef = extractReturnTypeRef(node)
+            val functionTarget = CfirFunctionTarget(labelName = null, isLambda = false)
+            val body = withCapturedTypeParameters(true, node.toSource(), emptyList()) {
+                withFunctionTarget(functionTarget) { extractBody(node) }
             }
-        }.also { bindFunctionTarget(functionTarget, it) }
+
+            buildSourceDeclaration(functionSymbol) { symbol ->
+                buildMainFunction {
+                    resolvePhase = CfirResolvePhase.RAW_CFIR
+                    source = node.toSource()
+                    this.symbol = symbol
+                    origin = CfirDeclarationOrigin.Source
+                    moduleData = baseModuleData
+                    attributes = CfirDeclarationAttributes.EMPTY
+                    isLocal = context.inLocalContext
+                    dispatchReceiverType = currentDispatchReceiverType()
+                    status = modifiers.toDeclarationStatusForCurrentContext(defaultVisibility = Visibilities.Public)
+                    this.returnTypeRef = returnTypeRef
+                    this.valueParameters.addAll(valueParams)
+                    this.body = body
+                }
+            }.also { bindFunctionTarget(functionTarget, it) }
+        }
     }
 
     /** 转换 macro declaration。 */
     private fun convertMacroDeclaration(node: LighterASTNode): CfirMacroDeclaration {
         val name = extractName(node)
-        val modifiers = LightTreeModifierList.from(tree, node)
+        val modifiers = modifierListFor(node)
         val functionSymbol = CfirMacroDeclarationSymbol(callableIdFor(name))
-        val valueParams = extractValueParameters(node, functionSymbol)
-        val returnTypeRef = extractReturnTypeRef(node).let { typeRef ->
-            if (typeRef is CfirImplicitTypeRef) buildDefaultMacroReturnTypeRef(node.toSource()) else typeRef
-        }
-        val functionTarget = CfirFunctionTarget(labelName = null, isLambda = false)
-        val body = if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) null else withContainerSymbol(functionSymbol) {
-            withFunctionTarget(functionTarget) { extractBody(node) }
-        }
-
-        return buildSourceDeclaration(functionSymbol) { symbol ->
-            buildMacroDeclaration {
-                resolvePhase = CfirResolvePhase.RAW_CFIR
-                source = node.toSource()
-                this.symbol = symbol
-                origin = CfirDeclarationOrigin.Source
-                moduleData = baseModuleData
-                attributes = CfirDeclarationAttributes.EMPTY
-                isLocal = context.inLocalContext
-                dispatchReceiverType = currentDispatchReceiverType()
-                status = modifiers.toDeclarationStatusForCurrentContext()
-                this.returnTypeRef = returnTypeRef
-                this.name = name
-                this.valueParameters.addAll(valueParams)
-                this.body = body
+        return withContainerSymbol(functionSymbol) {
+            val valueParams = extractValueParameters(node, functionSymbol, MacroParameterSignature.Declaration(containerSymbol, CjParameterGrammar.REGULAR_TYPED))
+            val returnTypeRef = extractReturnTypeRef(node).let { typeRef ->
+                if (typeRef is CfirImplicitTypeRef) buildDefaultMacroReturnTypeRef(node.toSource()) else typeRef
             }
-        }.also { bindFunctionTarget(functionTarget, it) }
+            val functionTarget = CfirFunctionTarget(labelName = null, isLambda = false)
+            val body = withCapturedTypeParameters(true, node.toSource(), emptyList()) {
+                withFunctionTarget(functionTarget) { extractBody(node) }
+            }
+
+            buildSourceDeclaration(functionSymbol) { symbol ->
+                buildMacroDeclaration {
+                    resolvePhase = CfirResolvePhase.RAW_CFIR
+                    source = node.toSource()
+                    this.symbol = symbol
+                    origin = CfirDeclarationOrigin.Source
+                    moduleData = baseModuleData
+                    attributes = CfirDeclarationAttributes.EMPTY
+                    isLocal = context.inLocalContext
+                    dispatchReceiverType = currentDispatchReceiverType()
+                    status = modifiers.toDeclarationStatusForCurrentContext()
+                    this.returnTypeRef = returnTypeRef
+                    this.name = name
+                    this.valueParameters.addAll(valueParams)
+                    this.body = body
+                }
+            }.also { bindFunctionTarget(functionTarget, it) }
+        }
     }
 
     /** 转换 finalizer 声明。 */
     private fun convertFinalizer(node: LighterASTNode): CfirFinalizer {
-        val modifiers = LightTreeModifierList.from(tree, node)
+        val modifiers = modifierListFor(node)
         val functionSymbol = CfirFinalizerSymbol(callableIdFor(SpecialNames.END_INIT))
-        val typeParams = extractFunctionTypeParameters(node, functionSymbol)
-        val valueParams = extractValueParameters(node, functionSymbol)
-        val functionTarget = CfirFunctionTarget(labelName = null, isLambda = false)
-        val body = if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) null else withContainerSymbol(functionSymbol) {
-            withFunctionTarget(functionTarget) { extractBody(node) }
-        }
-
-        return buildSourceDeclaration(functionSymbol) { symbol ->
-            buildFinalizer {
-                resolvePhase = CfirResolvePhase.RAW_CFIR
-                source = node.toSource()
-                this.symbol = symbol
-                origin = CfirDeclarationOrigin.Source
-                moduleData = baseModuleData
-                attributes = declarationAttributes(node)
-                isLocal = context.inLocalContext
-                dispatchReceiverType = currentDispatchReceiverType()
-                status = modifiers.toDeclarationStatusForCurrentContext()
-                this.typeParameters.addAll(typeParams)
-                returnTypeRef = ConePrimitiveType.UNIT.toCfirResolvedTypeRef(source)
-                this.valueParameters.addAll(valueParams)
-                this.body = body
+        return withContainerSymbol(functionSymbol) {
+            val typeParams = extractFunctionTypeParameters(node, functionSymbol)
+            val valueParams = extractValueParameters(node, functionSymbol, MacroParameterSignature.Declaration(containerSymbol, CjParameterGrammar.REGULAR_TYPED))
+            val functionTarget = CfirFunctionTarget(labelName = null, isLambda = false)
+            val body = withCapturedTypeParameters(true, node.toSource(), typeParams) {
+                withFunctionTarget(functionTarget) { extractBody(node) }
             }
-        }.also { bindFunctionTarget(functionTarget, it) }
+
+            buildSourceDeclaration(functionSymbol) { symbol ->
+                buildFinalizer {
+                    resolvePhase = CfirResolvePhase.RAW_CFIR
+                    source = node.toSource()
+                    this.symbol = symbol
+                    origin = CfirDeclarationOrigin.Source
+                    moduleData = baseModuleData
+                    attributes = declarationAttributes(node)
+                    isLocal = context.inLocalContext
+                    dispatchReceiverType = currentDispatchReceiverType()
+                    status = modifiers.toDeclarationStatusForCurrentContext()
+                    this.typeParameters.addAll(typeParams)
+                    returnTypeRef = ConePrimitiveType.UNIT.toCfirResolvedTypeRef(source)
+                    this.valueParameters.addAll(valueParams)
+                    this.body = body
+                }
+            }.also { bindFunctionTarget(functionTarget, it) }
+        }
     }
 
     // ===== 属性/字段/变量 =====
@@ -1023,54 +929,56 @@ class LightTreeRawCfirDeclarationBuilder(
             }
         }
 
-        val modifiers = LightTreeModifierList.from(tree, node)
+        val modifiers = modifierListFor(node)
         val typeRef = extractReturnTypeRef(node)
         val accessors = extractPropertyAccessorNodes(node)
         val propertySymbol = CfirPropertySymbol(callableIdFor(name))
-        val getter = accessors.firstOrNull(::isGetterAccessor)?.let { accessorNode ->
-            convertPropertyAccessor(
-                node = accessorNode,
-                accessorName = Name.special("<get-${name.asString()}>"),
-                propertyTypeRef = typeRef,
-                propertySymbol = propertySymbol,
-            )
-        }
-        val setter = accessors.firstOrNull { accessorNode -> !isGetterAccessor(accessorNode) }?.let { accessorNode ->
-            convertPropertyAccessor(
-                node = accessorNode,
-                accessorName = Name.special("<set-${name.asString()}>"),
-                propertyTypeRef = typeRef,
-                propertySymbol = propertySymbol,
-            )
-        }
+        return withContainerSymbol(propertySymbol) {
+            val getter = accessors.firstOrNull(::isGetterAccessor)?.let { accessorNode ->
+                convertPropertyAccessor(
+                    node = accessorNode,
+                    accessorName = Name.special("<get-${name.asString()}>"),
+                    propertyTypeRef = typeRef,
+                    propertySymbol = propertySymbol,
+                )
+            }
+            val setter = accessors.firstOrNull { accessorNode -> !isGetterAccessor(accessorNode) }?.let { accessorNode ->
+                convertPropertyAccessor(
+                    node = accessorNode,
+                    accessorName = Name.special("<set-${name.asString()}>"),
+                    propertyTypeRef = typeRef,
+                    propertySymbol = propertySymbol,
+                )
+            }
 
-        return buildSourceDeclaration(propertySymbol) { symbol ->
-            buildProperty {
-                resolvePhase = CfirResolvePhase.RAW_CFIR
-                source = node.toSource()
-                this.symbol = symbol
-                origin = CfirDeclarationOrigin.Source
-                moduleData = baseModuleData
-                attributes = declarationAttributes(node)
-                isLocal = context.inLocalContext
-                dispatchReceiverType = currentDispatchReceiverType()
-                status = run {
-                    // 同函数侧：DEFAULT 与隐式 abstract 同源（护栏 2）。
-                    val implicitAbstract = isImplicitAbstractClassLikeProperty(node, modifiers, accessors)
-                    modifiers.toDeclarationStatusForCurrentContext(
-                        isDefault = isDefaultInterfaceProperty(modifiers, implicitAbstract),
-                        isImplicitAbstract = implicitAbstract,
-                        bodyPresence = if (hasPropertyBody(node) || accessors.isNotEmpty()) {
-                            CfirBodyPresence.PRESENT
-                        } else {
-                            CfirBodyPresence.ABSENT
-                        },
-                    )
+            buildSourceDeclaration(propertySymbol) { symbol ->
+                buildProperty {
+                    resolvePhase = CfirResolvePhase.RAW_CFIR
+                    source = node.toSource()
+                    this.symbol = symbol
+                    origin = CfirDeclarationOrigin.Source
+                    moduleData = baseModuleData
+                    attributes = declarationAttributes(node)
+                    isLocal = context.inLocalContext
+                    dispatchReceiverType = currentDispatchReceiverType()
+                    status = run {
+                        // 同函数侧：DEFAULT 与隐式 abstract 同源（护栏 2）。
+                        val implicitAbstract = isImplicitAbstractClassLikeProperty(node, modifiers, accessors)
+                        modifiers.toDeclarationStatusForCurrentContext(
+                            isDefault = isDefaultInterfaceProperty(modifiers, implicitAbstract),
+                            isImplicitAbstract = implicitAbstract,
+                            bodyPresence = if (hasPropertyBody(node) || accessors.isNotEmpty()) {
+                                CfirBodyPresence.PRESENT
+                            } else {
+                                CfirBodyPresence.ABSENT
+                            },
+                        )
+                    }
+                    this.returnTypeRef = typeRef
+                    this.name = name
+                    this.getter = getter
+                    this.setter = setter
                 }
-                this.returnTypeRef = typeRef
-                this.name = name
-                this.getter = getter
-                this.setter = setter
             }
         }
     }
@@ -1085,55 +993,55 @@ class LightTreeRawCfirDeclarationBuilder(
         propertyTypeRef: CfirTypeRef,
         propertySymbol: CfirPropertySymbol,
     ): CfirPropertyAccessor {
-        val modifiers = LightTreeModifierList.from(tree, node)
+        val modifiers = modifierListFor(node)
         val accessorSymbol = CfirPropertyAccessorSymbol()
-        val functionTarget = CfirFunctionTarget(labelName = null, isLambda = false)
-        val body = if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) null else withContainerSymbol(accessorSymbol) {
-            withFunctionTarget(functionTarget) { extractBody(node) }
-        }
-        val isGetter = isGetterAccessor(node)
-        val explicitReturnTypeRef = tree.findChildByType(node, CjNodeTypes.TYPE_REFERENCE)?.let(::convertTypeRef)
-        val valueParameters = extractValueParameters(
-            node,
-            accessorSymbol,
-            requiresExplicitType = isGetter,
-        )
-        if (!isGetter) {
-            valueParameters.firstOrNull()
-                ?.takeIf { it.returnTypeRef is CfirImplicitTypeRef }
-                ?.replaceReturnTypeRef(propertyTypeRef)
-        }
-        val source = node.toSource()
-
-        return buildSourceDeclaration(accessorSymbol) { symbol ->
-            buildPropertyAccessor {
-                resolvePhase = CfirResolvePhase.RAW_CFIR
-                this.source = source
-                this.symbol = symbol
-                origin = CfirDeclarationOrigin.Source
-                moduleData = baseModuleData
-                attributes = declarationAttributes(node)
-                isLocal = context.inLocalContext
-                dispatchReceiverType = currentDispatchReceiverType()
-                status = modifiers.toDeclarationStatusForCurrentContext(
-                    isDefault = isDefaultInterfaceAccessor(node, modifiers),
-                )
-                returnTypeRef = explicitReturnTypeRef
-                    ?: if (isGetter) propertyTypeRef else ConePrimitiveType.UNIT.toCfirResolvedTypeRef(source)
-                this.propertySymbol = propertySymbol
-                this.isGetter = isGetter
-                this.valueParameters.addAll(valueParameters)
-                this.body = body
+        return withContainerSymbol(accessorSymbol) {
+            val functionTarget = CfirFunctionTarget(labelName = null, isLambda = false)
+            val body = withFunctionTarget(functionTarget) { extractBody(node) }
+            val isGetter = isGetterAccessor(node)
+            val explicitReturnTypeRef = tree.findChildByType(node, CjNodeTypes.TYPE_REFERENCE)?.let(::convertTypeRef)
+            val valueParameters = extractValueParameters(
+                node,
+                accessorSymbol,
+                MacroParameterSignature.Declaration(containerSymbol, CjParameterGrammar.ACCESSOR_NAME_ONLY),
+            )
+            if (!isGetter) {
+                valueParameters.firstOrNull()
+                    ?.takeIf { it.returnTypeRef is CfirImplicitTypeRef }
+                    ?.replaceReturnTypeRef(propertyTypeRef)
             }
-        }.also { bindFunctionTarget(functionTarget, it) }
+            val source = node.toSource()
+
+            buildSourceDeclaration(accessorSymbol) { symbol ->
+                buildPropertyAccessor {
+                    resolvePhase = CfirResolvePhase.RAW_CFIR
+                    this.source = source
+                    this.symbol = symbol
+                    origin = CfirDeclarationOrigin.Source
+                    moduleData = baseModuleData
+                    attributes = declarationAttributes(node)
+                    isLocal = context.inLocalContext
+                    dispatchReceiverType = currentDispatchReceiverType()
+                    status = modifiers.toDeclarationStatusForCurrentContext(
+                        isDefault = isDefaultInterfaceAccessor(node, modifiers),
+                    )
+                    returnTypeRef = explicitReturnTypeRef
+                        ?: if (isGetter) propertyTypeRef else ConePrimitiveType.UNIT.toCfirResolvedTypeRef(source)
+                    this.propertySymbol = propertySymbol
+                    this.isGetter = isGetter
+                    this.valueParameters.addAll(valueParameters)
+                    this.body = body
+                }
+            }.also { bindFunctionTarget(functionTarget, it) }
+        }
     }
 
     /** 转换字段变量声明。 */
     private fun convertFieldVariable(node: LighterASTNode): CfirFieldVariable {
         val name = extractName(node)
-        val modifiers = LightTreeModifierList.from(tree, node)
+        val modifiers = modifierListFor(node)
         val typeRef = extractReturnTypeRef(node)
-        val initializer = if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) null else extractInitializer(node)
+        val initializer = buildVariableInitializer(node)
         val isVar = hasVarKeyword(node)
 
         return buildSourceDeclaration(CfirFieldVariableSymbol(callableIdFor(name))) { symbol ->
@@ -1159,7 +1067,7 @@ class LightTreeRawCfirDeclarationBuilder(
 
     /** 转换 pattern variable 声明。 */
     private fun convertPatternVariable(node: LighterASTNode): CfirPatternVariable {
-        val modifiers = LightTreeModifierList.from(tree, node)
+        val modifiers = modifierListFor(node)
         val typeRef = extractReturnTypeRef(node)
         val patternNode = findPatternChild(node)
         val status = modifiers.toDeclarationStatusForCurrentContext()
@@ -1173,7 +1081,7 @@ class LightTreeRawCfirDeclarationBuilder(
             )
         }
             ?: org.cangnova.cangjie.cfir.patterns.builder.buildWildcardPattern { source = node.toSource() }
-        val initializer = if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) null else extractInitializer(node)
+        val initializer = buildVariableInitializer(node)
         val isVar = hasVarKeyword(node)
 
         return buildSourceDeclaration(CfirPatternVariableSymbol(callableIdFor(Name.special("<pattern-variable>")))) { symbol ->
@@ -1199,54 +1107,61 @@ class LightTreeRawCfirDeclarationBuilder(
 
     /** 转换主构造或次构造函数声明。 */
     private fun convertConstructor(node: LighterASTNode, isPrimary: Boolean): CfirConstructor {
-        val modifiers = LightTreeModifierList.from(tree, node)
+        val modifiers = modifierListFor(node)
         // static init 隐含 private；普通构造器继续使用声明上下文的默认可见性。
         val constructorDefaultVisibility = if (modifiers.isStatic) Visibilities.Private else null
         val constructorSymbol = CfirConstructorSymbol(callableIdFor(SpecialNames.INIT))
-        val typeParams = extractFunctionTypeParameters(node, constructorSymbol)
-        val valueParams = extractValueParameters(node, constructorSymbol, requiresExplicitType = true)
-        val functionTarget = CfirFunctionTarget(labelName = null, isLambda = false)
-        val body = if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) null else withContainerSymbol(constructorSymbol) {
-            withFunctionTarget(functionTarget) { extractBody(node) }
-        }
+        // 实例构造器借用所属名义类型的参数；static init 不借用。须在自身容器帧入栈前读取。
+        val constructedClassTypeParameters = if (modifiers.isStatic) emptyList()
+            else constructorTypeParametersFromConstructedClass()
+        return withContainerSymbol(constructorSymbol) {
+            // 自有泛型是 cjc sema_forbid_generic_constructor 的错误输入；保留声明以供解析与诊断。
+            val typeParams = constructedClassTypeParameters + extractFunctionTypeParameters(node, constructorSymbol)
+            val valueParams = extractValueParameters(node, constructorSymbol, context.constructorParameterSignature(containerSymbol, isPrimary))
+            val hasVariableLenArg = hasVariableLengthArgument(node)
+            val functionTarget = CfirFunctionTarget(labelName = null, isLambda = false)
+            val body = withFunctionTarget(functionTarget) { extractBody(node) }
 
-        return buildSourceDeclaration(constructorSymbol) { symbol ->
-            if (isPrimary) {
-                buildPrimaryConstructor {
-                    resolvePhase = CfirResolvePhase.RAW_CFIR
-                    source = node.toSource()
-                    this.symbol = symbol
-                    origin = CfirDeclarationOrigin.Source
-                    moduleData = baseModuleData
-                    attributes = declarationAttributes(node)
-                    isLocal = context.inLocalContext
-                    dispatchReceiverType = currentDispatchReceiverType()
-                    status = modifiers.toDeclarationStatusForCurrentContext(defaultVisibility = constructorDefaultVisibility)
-                    this.typeParameters.addAll(typeParams)
-                    returnTypeRef = buildImplicitTypeRef()
-                    this.valueParameters.addAll(valueParams)
-                    this.body = body
+            buildSourceDeclaration(constructorSymbol) { symbol ->
+                if (isPrimary) {
+                    buildPrimaryConstructor {
+                        resolvePhase = CfirResolvePhase.RAW_CFIR
+                        source = node.toSource()
+                        this.symbol = symbol
+                        origin = CfirDeclarationOrigin.Source
+                        moduleData = baseModuleData
+                        attributes = declarationAttributes(node)
+                        isLocal = context.inLocalContext
+                        dispatchReceiverType = currentDispatchReceiverType()
+                        status = modifiers.toDeclarationStatusForCurrentContext(defaultVisibility = constructorDefaultVisibility)
+                        this.typeParameters.addAll(typeParams)
+                        returnTypeRef = buildImplicitTypeRef()
+                        this.valueParameters.addAll(valueParams)
+                        this.hasVariableLenArg = hasVariableLenArg
+                        this.body = body
+                    }
+                } else {
+                    buildConstructor {
+                        resolvePhase = CfirResolvePhase.RAW_CFIR
+                        source = node.toSource()
+                        this.symbol = symbol
+                        origin = CfirDeclarationOrigin.Source
+                        moduleData = baseModuleData
+                        attributes = declarationAttributes(node)
+                        isLocal = context.inLocalContext
+                        dispatchReceiverType = currentDispatchReceiverType()
+                        status = modifiers.toDeclarationStatusForCurrentContext(defaultVisibility = constructorDefaultVisibility)
+                        this.typeParameters.addAll(typeParams)
+                        returnTypeRef = buildImplicitTypeRef()
+                        this.valueParameters.addAll(valueParams)
+                        this.hasVariableLenArg = hasVariableLenArg
+                        this.body = body
+                    }
                 }
-            } else {
-                buildConstructor {
-                    resolvePhase = CfirResolvePhase.RAW_CFIR
-                    source = node.toSource()
-                    this.symbol = symbol
-                    origin = CfirDeclarationOrigin.Source
-                    moduleData = baseModuleData
-                    attributes = declarationAttributes(node)
-                    isLocal = context.inLocalContext
-                    dispatchReceiverType = currentDispatchReceiverType()
-                    status = modifiers.toDeclarationStatusForCurrentContext(defaultVisibility = constructorDefaultVisibility)
-                    this.typeParameters.addAll(typeParams)
-                    returnTypeRef = buildImplicitTypeRef()
-                    this.valueParameters.addAll(valueParams)
-                    this.body = body
-                }
+            }.also {
+                it.initContainingClassAttr()
+                bindFunctionTarget(functionTarget, it)
             }
-        }.also {
-            it.initContainingClassAttr()
-            bindFunctionTarget(functionTarget, it)
         }
     }
 
@@ -1255,7 +1170,7 @@ class LightTreeRawCfirDeclarationBuilder(
     /** 转换 typealias 声明；非法嵌套时显式构造 invalid declaration。 */
     private fun convertTypeAlias(node: LighterASTNode): CfirDeclaration {
         val name = extractName(node)
-        val modifiers = LightTreeModifierList.from(tree, node)
+        val modifiers = modifierListFor(node)
         val expandedType = extractReturnTypeRef(node)
 
         if (!canDeclareTopLevelClassLike()) {
@@ -1275,7 +1190,7 @@ class LightTreeRawCfirDeclarationBuilder(
                 origin = CfirDeclarationOrigin.Source
                 moduleData = baseModuleData
                 scopeProvider = baseScopeProvider
-                attributes = CfirDeclarationAttributes.EMPTY
+                attributes = declarationAttributes(node)
                 status = modifiers.toDeclarationStatusForCurrentContext()
                 this.typeParameters.addAll(typeParams)
                 this.name = name
@@ -1287,14 +1202,11 @@ class LightTreeRawCfirDeclarationBuilder(
     // ===== 枚举构造器 =====
 
     /** 转换枚举构造项及其 payload 类型参数。 */
-    private fun convertEnumConstructor(
-        node: LighterASTNode,
-        ownerTypeParameters: List<CfirTypeParameterRef>,
-    ): CfirEnumConstructor {
+    private fun convertEnumConstructor(node: LighterASTNode): CfirEnumConstructor {
         val nameNode = tree.findChildByType(node, CjTokens.IDENTIFIER)
             ?: tree.findChildByType(node, CjNodeTypes.REFERENCE_EXPRESSION)
         val enumName = if (nameNode != null) {
-            Name.identifier(nameNode.asText())
+            Name.identifier(sourceIdentifier(nameNode.asText()))
         } else {
             Name.special("<anonymous-enum-constructor>")
         }
@@ -1306,6 +1218,7 @@ class LightTreeRawCfirDeclarationBuilder(
         } else {
             emptyList()
         }
+        val constructedClassTypeParameters = constructorTypeParametersFromConstructedClass()
         val enumConstructor = buildSourceDeclaration(CfirEnumConstructorSymbol(callableIdFor(enumName))) { symbol ->
             val valueParameters = valueTypeRefs.mapIndexed { index, valueTypeRef ->
                 buildEnumConstructorValueParameter(
@@ -1324,15 +1237,16 @@ class LightTreeRawCfirDeclarationBuilder(
                 attributes = CfirDeclarationAttributes.EMPTY
                 isLocal = context.inLocalContext
                 status = CfirDeclarationStatusImpl.DEFAULT
+                typeParameters.addAll(constructedClassTypeParameters)
                 returnTypeRef = checkNotNull(currentDispatchReceiverType()) {
                     "Enum constructor must be built in its enum self-type context"
                 }.toCfirResolvedTypeRef()
-                typeParameters += constructorTypeParametersFromConstructedClass(ownerTypeParameters)
                 this.valueParameters.addAll(valueParameters)
                 name = enumName
             }
         }
         enumConstructor.initContainingClassAttr()
+        enumConstructor.exportFacts = enumConstructor.exportFacts.copy(enumConstructorHasParameterList = typeListNode != null)
         return enumConstructor
     }
 
@@ -1342,52 +1256,78 @@ class LightTreeRawCfirDeclarationBuilder(
     fun convertValueParameter(
         node: LighterASTNode,
         containingDeclarationSymbol: CfirBasedSymbol<*>,
-        requiresExplicitType: Boolean = true,
-    ): CfirValueParameter {
-        val modifiers = LightTreeModifierList.from(tree, node)
+        signature: MacroParameterSignature,
+    ): CfirValueParameter = withNonFunctionContext {
+        context.withParameterSignature(signature) {
+            // 参数结构归属由构造入口显式提供，不从用于宏的词法签名推导。
+            val structuralOwner = containingDeclarationSymbol
+            val requiresExplicitType = when (signature) {
+                is MacroParameterSignature.Declaration -> signature.grammar != CjParameterGrammar.ACCESSOR_NAME_ONLY
+                is MacroParameterSignature.Lambda -> false
+            }
+            val isPrimaryConstructorParameter = signature is MacroParameterSignature.Declaration && signature.grammar.isPrimaryConstructor
+            val modifiers = modifierListFor(node, isPrimaryConstructorParameter)
 
-        val nameNode = tree.findChildByType(node, CjTokens.IDENTIFIER)
-        val paramName = if (nameNode != null) Name.identifier(nameNode.asText()) else SpecialNames.NO_NAME_PROVIDED
-        val typeRef = tree.findChildByType(node, CjNodeTypes.TYPE_REFERENCE)
+            val nameNode = tree.findChildByType(node, CjTokens.IDENTIFIER)
+            val paramName = if (nameNode != null) Name.identifier(sourceIdentifier(nameNode.asText())) else SpecialNames.NO_NAME_PROVIDED
+            val typeRef = tree.findChildByType(node, CjNodeTypes.TYPE_REFERENCE)
 
-        val isNamed = tree.findChildByType(node, CjTokens.EXCL) != null
-        val parameterSource = node.toSource()
+            val isNamed = tree.findChildByType(node, CjTokens.EXCL) != null
+            val parameterSource = node.toSource()
 
-        // 默认值是 `=` 之后的表达式子节点，但必须要求形参节点内有 EQ 词元：官方 `ParseAssignInParam` 在无名形参上报
-        // `parse_expected_dot_lparen` 后仍解析 `=` 后的表达式，而 PSI 侧 `CjParameter.equalsToken` 只看直接子节点，
-        // 恢复出来的 `=` 落在 ERROR_ELEMENT 里，PSI 不采信。两条 raw builder 以"无 EQ 即无默认值"统一。
-        var defaultExpr: CfirExpression? = null
-        if (tree.findChildByType(node, CjTokens.EQ) != null) {
+            // 默认值是最后一个表达式子节点
+            var defaultExpr: CfirExpression? = null
+            var defaultSyntax: CfirDefaultAssignmentSyntaxFacts? = null
+            val hasDefaultAssignment = tree.findChildByType(node, CjTokens.EQ) != null
             tree.forEachChildren(node) { child ->
-                if (LightTreeRawCfirExpressionBuilder.isExpressionToken(child.tokenType)) {
-                    defaultExpr = expressionBuilder.convertExpression(child)
+                if (hasDefaultAssignment && LightTreeRawCfirExpressionBuilder.isExpressionToken(child.tokenType)
+                ) {
+                    defaultSyntax = captureDefaultAssignmentSyntaxFacts(
+                        child,
+                        typeOf = { it.tokenType },
+                        childrenOf = { tree.getChildrenArray(it).filterNotNull() },
+                        isExpression = { LightTreeRawCfirExpressionBuilder.isExpressionToken(it.tokenType) },
+                    ).copy(source = child.toSource())
+                    defaultExpr = if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) {
+                        buildLazyExpression { source = child.toSource() }
+                    } else {
+                        expressionBuilder.convertExpression(child)
+                    }
                 }
             }
-        }
 
-        val parameter = buildSourceDeclaration(CfirValueParameterSymbol(callableIdFor(paramName))) { symbol ->
-            buildValueParameter {
-                resolvePhase = CfirResolvePhase.RAW_CFIR
-                source = parameterSource
-                this.symbol = symbol
-                origin = CfirDeclarationOrigin.Source
-                moduleData = baseModuleData
-                attributes = CfirDeclarationAttributes.EMPTY
-                isLocal = false
-                this.isNamed = isNamed
-                status = CfirDeclarationStatusImpl.DEFAULT
-                returnTypeRef = when {
-                    typeRef != null -> convertTypeRef(typeRef)
-                    requiresExplicitType -> createNoTypeForParameterTypeRef(parameterSource)
-                    else -> buildImplicitTypeRef()
+            val parameter = buildSourceDeclaration(CfirValueParameterSymbol(callableIdFor(paramName))) { symbol ->
+                buildValueParameter {
+                    resolvePhase = CfirResolvePhase.RAW_CFIR
+                    source = parameterSource
+                    this.symbol = symbol
+                    origin = CfirDeclarationOrigin.Source
+                    moduleData = baseModuleData
+                    attributes = CfirDeclarationAttributes.EMPTY
+                    isLocal = false
+                    this.isNamed = isNamed
+                    returnTypeRef = when {
+                        typeRef != null -> convertTypeRef(typeRef)
+                        requiresExplicitType -> createNoTypeForParameterTypeRef(parameterSource)
+                        else -> buildImplicitTypeRef()
+                    }
+                    name = paramName
+                    defaultValue = defaultExpr
+                    this.containingDeclarationSymbol = structuralOwner
                 }
-                name = paramName
-                defaultValue = defaultExpr
-                this.containingDeclarationSymbol = containingDeclarationSymbol
             }
+            parameter.defaultAssignmentSyntaxFacts = defaultSyntax
+            if (isPrimaryConstructorParameter &&
+                tree.childrenThroughErrors(node).any { it.tokenType == CjTokens.LET_KEYWORD || it.tokenType == CjTokens.VAR_KEYWORD }
+            ) {
+                parameter.recordMemberParameterFieldInfo(
+                    isVar = hasVarKeyword(node),
+                    status = modifiers.toDeclarationStatusForCurrentContext().withConstDeclarationKeyword(hasConstKeyword(node)),
+                )
+            }
+            collectMacroSurfacesFromAnnotations(node, modifiers, MacroSurfaceOwnerKind.PARAMETER, parameter)
+            parameter
         }
-        collectMacroSurfacesFromAnnotations(node, modifiers, MacroSurfaceOwnerKind.PARAMETER, parameter)
-        return parameter
     }
 
     /**
@@ -1403,13 +1343,13 @@ class LightTreeRawCfirDeclarationBuilder(
         carrier: CfirDeclaration,
     ) {
         if (modifiers.annotations.isEmpty()) return
-        val metadataRegistry = baseSession.ensureAnnotationMetadataRegistry()
+        val metadataRegistry = annotationMetadata
 
         val carriedAnnotations = modifiers.annotations.map { it.asText() }
         modifiers.annotations.forEach { annotation ->
             val annotationName = annotationNameInfo(annotation) ?: return@forEach
             val rawName = annotationName.rawName
-            val qualifiedName = macroSurfaceQualifiedName(rawName)
+            val qualifiedName = macroSurfaceQualifiedName(annotationName)
             val annotationCall = buildRawAnnotationCall(
                 annotation = annotation,
                 rawName = rawName,
@@ -1421,6 +1361,7 @@ class LightTreeRawCfirDeclarationBuilder(
             val valueArgumentList = findFirstDescendantByType(annotation, CjNodeTypes.VALUE_ARGUMENT_LIST)
             val macroAttribute = findFirstDescendantByType(annotation, CjNodeTypes.MACRO_ATTR)
             val rawSyntax = annotation.asText()
+            val annotationSource = annotation.toUnmappedCjSourceElement()
             val isCompileTimeVisible = tree.findChildByType(annotation, CjTokens.ATEXCL) != null
             val snapshot = CfirAnnotationSlotSnapshot(
                 owner = carrier,
@@ -1429,10 +1370,10 @@ class LightTreeRawCfirDeclarationBuilder(
                 rawSyntax = rawSyntax,
                 forcedCustom = isCompileTimeVisible,
                 isCompileTimeVisible = isCompileTimeVisible,
-                annotationSource = annotation.toSource(),
+                annotationSource = annotationSource,
                 qualifiedName = qualifiedName,
                 argumentText = valueArgumentList?.asText() ?: macroAttribute?.asText(),
-                tokens = tokenizeFullAnnotation(annotation),
+                tokens = tokenizeFullAnnotation(annotation, annotationSource),
                 callSite = when (ownerKind) {
                     MacroSurfaceOwnerKind.DECLARATION -> MacroCallSite.DECLARATION
                     MacroSurfaceOwnerKind.PARAMETER -> MacroCallSite.PARAMETER
@@ -1505,16 +1446,21 @@ class LightTreeRawCfirDeclarationBuilder(
             sourceOffsetDelta = sourceOffsetDelta,
         )
         val compileTimeVisible = tree.findChildByType(annotation, CjTokens.ATEXCL) != null
+        val annotationTypeRef = typeRefOverride ?: buildAnnotationTypeRef(annotation)
+        val calleeName = when (annotationTypeRef) {
+            is CfirUserTypeRef -> annotationTypeRef.qualifier.last().name
+            else -> Name.identifier("<error>")
+        }
         return buildAnnotationCall {
             source = sourceOverride?.let(sourceElementFactory::createSource) ?: annotation.toSource()
-            typeRef = typeRefOverride ?: buildAnnotationTypeRef(rawName, annotation)
+            typeRef = annotationTypeRef
             initializeRawAnnotationSyntax(compileTimeVisible, rawName, context.sourceModuleName, sourceElementFactory)
             argumentList = buildArgumentList {
                 source = argumentListSourceOverride?.let(sourceElementFactory::createSource) ?: valueArgumentList?.toSource()
                 this.arguments.addAll(arguments)
             }
             calleeReference = buildNamedReference(
-                Name.identifier(rawName.substringAfterLast('.')),
+                calleeName,
                 calleeReferenceSourceOverride ?: annotationCalleeReferenceSource(annotation),
             )
             containingDeclarationSymbol = containingSymbol
@@ -1638,25 +1584,25 @@ class LightTreeRawCfirDeclarationBuilder(
             append(rawText.substring(openBracketIndex, closeBracketIndex + 1))
             append("\nfunc __annotation_arguments__() {}")
         }
-        val parserDefinition = CangJieParserDefinition()
-        val psiBuilder = PsiBuilderFactory.getInstance().createBuilder(
-            parserDefinition,
-            CangJieLexer(),
-            fragmentText,
-        )
-        val parsedTree = CangJieLightParser.parseAnnotationOnly(
+        val psiBuilder = CangJieLightParser.createBuilder(fragmentText)
+        val parsedFragment = CangJieLightParser.parseAnnotationOnly(
             psiBuilder,
             languageModuleName = context.sourceModuleName,
         )
+        val parsedTree = parsedFragment.tree
         val valueArgumentList = parsedTree.findFirstParsedNode(CjNodeTypes.VALUE_ARGUMENT_LIST)
             ?: return emptyList()
         val parsedBuilder = LightTreeRawCfirDeclarationBuilder(
+            annotationMetadata = annotationMetadata,
             session = baseSession,
             baseScopeProvider = baseScopeProvider,
             tree = parsedTree,
             source = fragmentText,
             context = Context(),
             bodyBuildingMode = bodyBuildingMode,
+            macroFacts = parsedFragment.macroFacts,
+            nominalFacts = parsedFragment.cjmpNominalFacts,
+            declarationModifiers = parsedFragment.declarationModifiers,
         )
         return parsedBuilder.context.withSourceModuleName(context.sourceModuleName) {
             parsedBuilder.withPackageContext(packageFqName) {
@@ -1665,36 +1611,22 @@ class LightTreeRawCfirDeclarationBuilder(
         }
     }
 
-    /** 根据原始 annotation 名称构造 user type ref。 */
-    private fun buildAnnotationTypeRef(rawName: String, annotation: LighterASTNode): CfirTypeRef {
-        val parts = rawName.split('.').filter(String::isNotBlank)
-        if (parts.isEmpty()) return buildImplicitTypeRef()
-        val annotationName = annotationNameInfo(annotation)
-        val nameSource = annotationName?.nameSource ?: annotation.toSource()
-        val segmentSources = annotationName?.segmentSources.orEmpty()
-        return buildUserTypeRef {
-            source = nameSource
-            qualifier += parts.mapIndexed { index, part ->
-                buildQualifierPart {
-                    source = segmentSources.getOrNull(index) ?: nameSource
-                    name = Name.identifier(part)
-                }
-            }
-        }
-    }
+    /** 根据语法名称段构造 annotation 的 user type ref。 */
+    private fun buildAnnotationTypeRef(annotation: LighterASTNode): CfirTypeRef =
+        annotationNameInfo(annotation)?.let { buildAnnotationTypeRef(it) } ?: buildImplicitTypeRef()
 
     /** 根据 annotation 名称信息构造可重定位的 user type ref。 */
     private fun buildAnnotationTypeRef(annotationName: AnnotationNameInfo, sourceOffsetDelta: Int = 0): CfirTypeRef {
-        val parts = annotationName.rawName.split('.').filter(String::isNotBlank)
-        if (parts.isEmpty()) return buildImplicitTypeRef()
+        val parts = annotationName.segmentTexts
+        check(parts.size == annotationName.segmentSources.size && parts.isNotEmpty())
         val nameSource = annotationName.nameSource.shiftedBy(sourceOffsetDelta)
         val segmentSources = annotationName.segmentSources.map { it.shiftedBy(sourceOffsetDelta) }
         return buildUserTypeRef {
             source = nameSource
             qualifier += parts.mapIndexed { index, part ->
                 buildQualifierPart {
-                    source = segmentSources.getOrNull(index) ?: nameSource
-                    name = Name.identifier(part)
+                    source = segmentSources[index]
+                    name = Name.identifier(sourceIdentifier(part))
                 }
             }
         }
@@ -1710,9 +1642,9 @@ class LightTreeRawCfirDeclarationBuilder(
         modifiers: List<String>,
         carriedAnnotations: List<String>,
     ): MacroSurface? {
-        val rawName = extractAnnotationNameText(annotation) ?: return null
-        val shortName = rawName.substringAfterLast('.')
-        val qualifiedName = macroSurfaceQualifiedName(rawName)
+        val annotationName = annotationNameInfo(annotation) ?: return null
+        val rawName = annotationName.rawName
+        val qualifiedName = macroSurfaceQualifiedName(annotationName)
         val surfaceId = MacroSurfaceIdGenerator.next()
         val attrNode = tree.findChildByType(annotation, CjNodeTypes.VALUE_ARGUMENT_LIST)
         val attrTokens = valueArgumentListAttributePayloadTokens(attrNode)
@@ -1730,6 +1662,7 @@ class LightTreeRawCfirDeclarationBuilder(
             surfaceId = surfaceId,
             qualifiedName = qualifiedName,
             kind = if (isForced) MacroSurface.Kind.FORCED else MacroSurface.Kind.PLAIN,
+            parsingFacts = macroParsingFacts(annotation),
             hasParenthesis = false,
             attrTokens = attrTokens,
             hasAttr = attrNode != null,
@@ -1746,6 +1679,7 @@ class LightTreeRawCfirDeclarationBuilder(
             containerContext = macroSurfaceContainerContext(ownerNode),
             replaceHandle = CfirReplaceHandle(
                 handleId = surfaceId,
+                ownerSnapshot = context.snapshotMacroOwner(),
                 carrier = carrier,
                 annotationCarrier = annotationCarrier,
             ),
@@ -1755,8 +1689,9 @@ class LightTreeRawCfirDeclarationBuilder(
             MacroSurfaceOwnerKind.DECLARATION -> MacroSurfaceDecl(
                 surfaceId = common.surfaceId,
                 qualifiedName = common.qualifiedName,
-                isQualifiedName = rawName.contains('.'),
+                isQualifiedName = annotationName.segmentTexts.size > 1,
                 kind = common.kind,
+                parsingFacts = common.parsingFacts,
                 hasParenthesis = common.hasParenthesis,
                 attrTokens = common.attrTokens,
                 hasAttr = common.hasAttr,
@@ -1772,8 +1707,9 @@ class LightTreeRawCfirDeclarationBuilder(
             MacroSurfaceOwnerKind.PARAMETER -> MacroSurfaceParam(
                 surfaceId = common.surfaceId,
                 qualifiedName = common.qualifiedName,
-                isQualifiedName = rawName.contains('.'),
+                isQualifiedName = annotationName.segmentTexts.size > 1,
                 kind = common.kind,
+                parsingFacts = common.parsingFacts,
                 hasParenthesis = common.hasParenthesis,
                 attrTokens = common.attrTokens,
                 hasAttr = common.hasAttr,
@@ -1807,6 +1743,8 @@ class LightTreeRawCfirDeclarationBuilder(
         val qualifiedName: FqName?,
         /** macro 调用形态。 */
         val kind: MacroSurface.Kind,
+        /** 原 parser 根冻结的 scope、直接 parent 与外层声明身份。 */
+        val parsingFacts: MacroParsingFacts?,
         /** surface 语法中是否带括号。 */
         val hasParenthesis: Boolean,
         /** attribute token 流。 */
@@ -1848,6 +1786,8 @@ class LightTreeRawCfirDeclarationBuilder(
                     startOffset = token.startOffset,
                     endOffset = token.endOffset,
                     kindName = token.kindName,
+                    sourceRange = MacroSurfaceSourceRange(tree.root.toUnmappedCjSourceElement(), token.startOffset, token.endOffset),
+                    isSourceToken = true,
                     isTrivia = token.kindName in CfirRawSourceElementFactory.TRIVIA_KINDS,
                 ),
                 tree.root.toUnmappedCjSourceElement(),
@@ -1863,7 +1803,7 @@ class LightTreeRawCfirDeclarationBuilder(
     }
 
     /** 对完整 annotation 文本执行 lexer tokenization。 */
-    private fun tokenizeFullAnnotation(node: LighterASTNode): List<MacroSurfaceToken> {
+    private fun tokenizeFullAnnotation(node: LighterASTNode, source: CjSourceElement): List<MacroSurfaceToken> {
         return MacroPayloadTokenizer.tokenize(
             payload = node.asText(),
             baseOffset = node.startOffset,
@@ -1874,9 +1814,11 @@ class LightTreeRawCfirDeclarationBuilder(
                     startOffset = token.startOffset,
                     endOffset = token.endOffset,
                     kindName = token.kindName,
+                    sourceRange = MacroSurfaceSourceRange(source, token.startOffset, token.endOffset),
+                    isSourceToken = true,
                     isTrivia = token.kindName in CfirRawSourceElementFactory.TRIVIA_KINDS,
                 ),
-                tree.root.toUnmappedCjSourceElement(),
+                source,
             )
         }
     }
@@ -1896,6 +1838,8 @@ class LightTreeRawCfirDeclarationBuilder(
     private data class AnnotationNameInfo(
         /** annotation 原始限定名文本。 */
         val rawName: String,
+        /** 按语法 token 保留的每个名称段。 */
+        val segmentTexts: List<String>,
         /** annotation 名称整体 source。 */
         val nameSource: CjSourceElement,
         /** 限定名每一段对应的 source。 */
@@ -1906,42 +1850,16 @@ class LightTreeRawCfirDeclarationBuilder(
             get() = segmentSources.lastOrNull() ?: nameSource
     }
 
-    /**
-     * 当前 macro-expression wrapper 头部的名称扫描结果。
-     *
-     * LightTree 的 macro-expression 子树会包含 input declaration 的 annotation /
-     * macro 子节点；本层 macro 名称必须来自 wrapper 自身开头的 `@` / `@!`
-     * 语法前缀，不能从整棵子树搜索引用节点。
-     */
-    private data class MacroExpressionNameScan(
-        /** 当前宏自身的 @ 偏移，不包含同一包装层的前置注解。 */
-        val annotationStartOffset: Int,
-        /** 扫描出的原始限定名文本。 */
-        val rawName: String,
-        /** 名称整体在 wrapper 文本中的起止区间。 */
-        val nameRange: MacroExpressionTextRange,
-        /** 每个限定名段在 wrapper 文本中的起止区间。 */
-        val segmentRanges: List<MacroExpressionTextRange>,
-        /** 本层 wrapper 的属性区间，包含左右方括号。 */
-        val attrRange: MacroExpressionTextRange?,
-    )
-
-    /** wrapper 文本中的半开区间。 */
-    private data class MacroExpressionTextRange(
-        /** 起始偏移，相对 wrapper 文本。 */
-        val startOffset: Int,
-        /** 结束偏移，相对 wrapper 文本。 */
-        val endOffset: Int,
-    )
-
     /** 提取普通 annotation 节点的名称信息。 */
     private fun annotationNameInfo(annotation: LighterASTNode): AnnotationNameInfo? {
         val nameNode = findAnnotationNameNode(annotation) ?: return null
         val rawName = nameNode.asText().trim().takeIf { it.isNotEmpty() } ?: return null
+        val segments = collectAnnotationNameSegmentSources(nameNode)
         return AnnotationNameInfo(
             rawName = rawName,
-            nameSource = nameNode.toUnmappedCjSourceElement(),
-            segmentSources = collectAnnotationNameSegmentSources(nameNode),
+            segmentTexts = segments.map { source.subSequence(it.startOffset, it.endOffset).toString() },
+            nameSource = nameNode.toSource(),
+            segmentSources = segments,
         )
     }
 
@@ -1951,113 +1869,18 @@ class LightTreeRawCfirDeclarationBuilder(
         val wrapperSource = node.toUnmappedCjSourceElement()
         return AnnotationNameInfo(
             rawName = scan.rawName,
+            segmentTexts = scan.segmentRanges.map { range -> node.asText().substring(range.startOffset, range.endOffset) },
             nameSource = wrapperSource.sliceMacroExpressionSource(scan.nameRange),
             segmentSources = scan.segmentRanges.map { range -> wrapperSource.sliceMacroExpressionSource(range) },
         )
     }
 
-    /**
-     * 从当前 macro-expression wrapper 文本开头扫描本层名称。
-     *
-     * 扫描范围只覆盖 `@` / `@!` 后的限定名；一旦遇到 attr、input 或空白后的
-     * 非名称字符即停止，因此不会越过本层 wrapper 读到 input declaration。
-     */
-    private fun scanMacroExpressionName(rawText: String, startOffset: Int = 0): MacroExpressionNameScan? {
-        var index = rawText.indexOf('@', startOffset)
-        if (index < 0) return null
-        val annotationStartOffset = index
-        index++
-        if (rawText.getOrNull(index) == '!') index++
-        while (index < rawText.length && rawText[index].isWhitespace()) index++
-
-        val nameStart = index
-        val segments = mutableListOf<MacroExpressionTextRange>()
-        var expectIdentifier = true
-        var lastIdentifierEnd = -1
-        while (index < rawText.length) {
-            val current = rawText[index]
-            when {
-                current.isMacroIdentifierStart() -> {
-                    val segmentStart = index
-                    index++
-                    while (index < rawText.length && rawText[index].isMacroIdentifierPart()) index++
-                    lastIdentifierEnd = index
-                    segments += MacroExpressionTextRange(segmentStart, index)
-                    expectIdentifier = false
-                }
-                current == '.' && !expectIdentifier -> {
-                    index++
-                    expectIdentifier = true
-                }
-                else -> break
-            }
-        }
-
-        if (lastIdentifierEnd <= nameStart || expectIdentifier) return null
-
-        while (index < rawText.length && rawText[index].isWhitespace()) index++
-        val attrRange = if (rawText.getOrNull(index) == '[') {
-            scanMacroAttributeRange(rawText, index)
-        } else null
-
-        return MacroExpressionNameScan(
-            annotationStartOffset = annotationStartOffset,
-            rawName = rawText.substring(nameStart, lastIdentifierEnd),
-            nameRange = MacroExpressionTextRange(nameStart, lastIdentifierEnd),
-            segmentRanges = segments,
-            attrRange = attrRange,
-        )
-    }
-
-    /** 宏头部必须从直接 @ token 开始，不能穿过前置 annotation 或嵌套 input。 */
+    /** 仅从当前 wrapper 的直接宏前缀解析本层名称与属性。 */
     private fun macroExpressionHeadSyntax(node: LighterASTNode): MacroExpressionNameScan? {
-        val prefix = tree.findChildByType(node, CjTokens.AT) ?: return null
-        return scanMacroExpressionName(node.asText(), prefix.startOffset - node.startOffset)
+        val prefix = tree.findChildByType(node, CjTokens.AT) ?: tree.findChildByType(node, CjTokens.ATEXCL) ?: return null
+        return MacroExpressionHeadScanner.scan(node.asText(), prefix.startOffset - node.startOffset)
     }
 
-    /** 扫描 wrapper 头部的平衡方括号 attr 区间，跳过字符串 literal 内部括号。 */
-    private fun scanMacroAttributeRange(rawText: String, openBracketIndex: Int): MacroExpressionTextRange? {
-        return scanBalancedMacroRange(rawText, openBracketIndex, '[', ']')
-    }
-
-    /** 扫描平衡括号区间，跳过字符串 literal 内部括号。 */
-    private fun scanBalancedMacroRange(
-        rawText: String,
-        openIndex: Int,
-        openChar: Char,
-        closeChar: Char,
-    ): MacroExpressionTextRange? {
-        if (rawText.getOrNull(openIndex) != openChar) return null
-        var index = openIndex
-        var bracketDepth = 0
-        var quote: Char? = null
-        var escaped = false
-        while (index < rawText.length) {
-            val current = rawText[index]
-            if (quote != null) {
-                when {
-                    escaped -> escaped = false
-                    current == '\\' -> escaped = true
-                    current == quote -> quote = null
-                }
-            } else {
-                when (current) {
-                    '"', '\'' -> quote = current
-                    openChar -> bracketDepth++
-                    closeChar -> {
-                        bracketDepth--
-                        if (bracketDepth == 0) {
-                            return MacroExpressionTextRange(openIndex, index + 1)
-                        }
-                    }
-                }
-            }
-            index++
-        }
-        return null
-    }
-
-    /** 构造 wrapper 内局部文本区间对应的 LightTree source。 */
     private fun CjSourceElement.sliceMacroExpressionSource(range: MacroExpressionTextRange): CjSourceElement {
         check(this is CjLightSourceElement) {
             "Macro expression source must be a LightTree source element."
@@ -2093,12 +1916,6 @@ class LightTreeRawCfirDeclarationBuilder(
             ?: attrNode?.toSource()
     }
 
-    /** macro / annotation 名称首字符。 */
-    private fun Char.isMacroIdentifierStart(): Boolean = this == '_' || isLetter()
-
-    /** macro / annotation 名称后续字符。 */
-    private fun Char.isMacroIdentifierPart(): Boolean = this == '_' || isLetterOrDigit()
-
     /**
      * 返回 macro-expression wrapper 中完整 annotation 的精确 source，不包含其输入声明。
      */
@@ -2114,7 +1931,7 @@ class LightTreeRawCfirDeclarationBuilder(
         }
         return CjLightSourceElement(
             lighterASTNode = wrapperSource.lighterASTNode,
-            startOffset = checkNotNull(tree.findChildByType(node, CjTokens.AT)).startOffset,
+            startOffset = checkNotNull(tree.findChildByType(node, CjTokens.AT) ?: tree.findChildByType(node, CjTokens.ATEXCL)).startOffset,
             endOffset = annotationEndOffset,
             treeStructure = wrapperSource.treeStructure,
             kind = wrapperSource.kind,
@@ -2248,11 +2065,10 @@ class LightTreeRawCfirDeclarationBuilder(
     }
 
     /** 将 surface 原始名称提升为 FQN。 */
-    private fun macroSurfaceQualifiedName(rawName: String): FqName {
-        val normalizedName = rawName.trim()
-        if (normalizedName.contains('.')) return FqName(normalizedName)
-
-        val name = Name.identifier(normalizedName)
+    private fun macroSurfaceQualifiedName(annotationName: AnnotationNameInfo): FqName {
+        val names = annotationName.segmentTexts.map(::sourceIdentifier)
+        if (names.size > 1) return FqName.fromSegments(names)
+        val name = Name.identifier(names.single())
         return if (packageFqName.isRoot) {
             FqName.topLevel(name)
         } else {
@@ -2262,14 +2078,13 @@ class LightTreeRawCfirDeclarationBuilder(
 
     /** 构造 macro surface 的 scope context。 */
     private fun macroSurfaceScopeContext(): MacroSurfaceScopeContext {
-        val classFqName = (containerSymbolIfAny as? CfirClassLikeSymbol<*>)?.classId?.asSingleFqName()
+        val classFqName = context.containingClassSymbolIfAny?.classId?.asSingleFqName()
         val functionName = (containerSymbolIfAny as? CfirCallableSymbol<*>)?.name
         return MacroSurfaceScopeContext(
             packageFqName = packageFqName,
             sourceModuleName = context.sourceModuleName,
             enclosingClassFqName = classFqName,
             enclosingFunctionName = functionName,
-            rawScopeSnapshot = context.captureMacroScope(),
         )
     }
 
@@ -2292,7 +2107,7 @@ class LightTreeRawCfirDeclarationBuilder(
             when (current.tokenType) {
                 CjNodeTypes.ENUM_BODY -> return MacroSurfaceContainerContext.OuterDeclarationKind.ENUM_BODY
                 CjNodeTypes.INTERFACE_BODY -> return MacroSurfaceContainerContext.OuterDeclarationKind.INTERFACE_BODY
-                CjNodeTypes.CLASS_BODY -> return when (containerSymbolIfAny) {
+                CjNodeTypes.CLASS_BODY -> return when (context.containingClassSymbolIfAny) {
                     is CfirStructSymbol -> MacroSurfaceContainerContext.OuterDeclarationKind.STRUCT_BODY
                     is CfirEnumSymbol -> MacroSurfaceContainerContext.OuterDeclarationKind.ENUM_BODY
                     is CfirInterfaceSymbol -> MacroSurfaceContainerContext.OuterDeclarationKind.INTERFACE_BODY
@@ -2353,10 +2168,10 @@ class LightTreeRawCfirDeclarationBuilder(
     /** 将官方 `organization::package` 路径拆成组织元数据和普通包名。 */
     private fun organizationQualifiedPath(text: String): OrganizationQualifiedPath {
         val separator = text.indexOf("::")
-        if (separator <= 0) return OrganizationQualifiedPath(FqName(text), null)
+        if (separator <= 0) return OrganizationQualifiedPath(FqName(normalizeIdentifier(text)), null)
         return OrganizationQualifiedPath(
-            fqName = FqName(text.substring(separator + 2).replace("::", ".")),
-            organizationName = Name.identifier(text.substring(0, separator).trim()),
+            fqName = FqName(normalizeIdentifier(text.substring(separator + 2).replace("::", "."))),
+            organizationName = Name.identifier(sourceIdentifier(text.substring(0, separator).trim())),
         )
     }
 
@@ -2468,7 +2283,7 @@ class LightTreeRawCfirDeclarationBuilder(
     /** 与 PSI 的容器校验一致：列表错误影响整组，兄弟 item 内错误只影响该项。 */
     private fun LighterASTNode.hasImportContainerErrors(): Boolean {
         tree.forEachChildren(this) { child ->
-            if (child.tokenType == TokenType.ERROR_ELEMENT) return true
+            if (child.tokenType.isParsingErrorElementType()) return true
             if (child.tokenType != CjNodeTypes.IMPORT_ITEM && child.tokenType != CjNodeTypes.IMPORT_GROUP &&
                 child.hasImportContainerErrors()
             ) return true
@@ -2481,12 +2296,12 @@ class LightTreeRawCfirDeclarationBuilder(
         val segments = mutableListOf<Name>()
         tree.forEachChildren(this) { child ->
             when (child.tokenType) {
-                CjTokens.IDENTIFIER -> segments += Name.identifier(child.asText().removeSurrounding("`"))
+                CjTokens.IDENTIFIER -> segments += Name.identifier(sourceIdentifier(child.asText()))
                 CjNodeTypes.REFERENCE_EXPRESSION,
                 CjNodeTypes.DOT_QUALIFIED_EXPRESSION -> {
                     segments += child.importPathSegments() ?: return null
                 }
-                CjTokens.DOT, TokenType.WHITE_SPACE -> Unit
+                CjTokens.DOT, TokenType.WHITE_SPACE, CjTokens.NL -> Unit
                 else -> if (!CjTokens.COMMENTS.contains(child.tokenType)) return null
             }
         }
@@ -2510,7 +2325,7 @@ class LightTreeRawCfirDeclarationBuilder(
                 CjTokens.MUL -> isAllUnder = true
                 CjNodeTypes.IMPORT_ALIAS -> {
                     val idNode = tree.findChildByType(child, CjTokens.IDENTIFIER)
-                    aliasName = idNode?.let { Name.identifier(it.asText()) }
+                    aliasName = idNode?.let { Name.identifier(sourceIdentifier(it.asText())) }
                 }
             }
         }
@@ -2545,11 +2360,16 @@ class LightTreeRawCfirDeclarationBuilder(
         tree.forEachChildren(file) { child ->
             when (child.tokenType) {
                 CjNodeTypes.FOREIGN -> {
-                    val foreignBlockAnnotations = pendingAnnotations.toList()
+                    check(file.tokenType == CjNodeTypes.CJ_FILE) {
+                        "A foreign collection must be owned by the file declaration driver."
+                    }
+                    val foreignBlockAnnotations = pendingAnnotations.toList() +
+                        (tree.findChildByType(child, CjStubElementTypes.ANNOTATIONS)?.let { list ->
+                            tree.getChildrenByType(list, CjNodeTypes.ANNOTATION)
+                        } ?: emptyList())
                     val foreignBody = tree.findChildByType(child, CjNodeTypes.FOREIGN_BODY)
                     if (foreignBody != null) {
-                        tree.getChildrenByType(foreignBody, CjNodeTypes.FUNC).forEach { foreignFunction ->
-                            val declaration = convertDeclaration(foreignFunction)
+                        buildFileDeclarations(foreignBody).forEach { declaration ->
                             if (foreignBlockAnnotations.isNotEmpty()) {
                                 val inheritedAnnotations = foreignBlockAnnotations.mapNotNull { annotation ->
                                     val annotationName = annotationNameInfo(annotation) ?: return@mapNotNull null
@@ -2584,21 +2404,18 @@ class LightTreeRawCfirDeclarationBuilder(
                     return@forEachChildren
                 }
                 CjNodeTypes.MACRO_EXPRESSION -> {
-                    if (child.isTopLevelMacroDeclaration()) {
-                        val declaration = convertTopLevelMacroDeclaration(child) ?: return@forEachChildren
-                        if (pendingAnnotations.isNotEmpty()) {
-                            collectMacroSurfacesFromAnnotations(
-                                ownerNode = child,
-                                modifiers = LightTreeModifierList(tree, modifierListNode = null, annotations = pendingAnnotations.toList()),
-                                ownerKind = MacroSurfaceOwnerKind.DECLARATION,
-                                carrier = declaration,
-                            )
-                            pendingAnnotations.clear()
-                        }
-                        declarations.add(declaration)
-                    } else {
-                        pendingAnnotations += child
+                    val declaration = convertTopLevelMacroDeclaration(child)
+                        ?: convertStandaloneMacroDeclaration(child)
+                    if (pendingAnnotations.isNotEmpty()) {
+                        collectMacroSurfacesFromAnnotations(
+                            ownerNode = child,
+                            modifiers = LightTreeModifierList(tree, modifierListNode = null, annotations = pendingAnnotations.toList(), parsedModifiers = null),
+                            ownerKind = MacroSurfaceOwnerKind.DECLARATION,
+                            carrier = declaration,
+                        )
+                        pendingAnnotations.clear()
                     }
+                    declarations.add(declaration)
                     return@forEachChildren
                 }
             }
@@ -2607,7 +2424,7 @@ class LightTreeRawCfirDeclarationBuilder(
                 if (pendingAnnotations.isNotEmpty()) {
                     collectMacroSurfacesFromAnnotations(
                         ownerNode = child,
-                        modifiers = LightTreeModifierList(tree, modifierListNode = null, annotations = pendingAnnotations.toList()),
+                        modifiers = LightTreeModifierList(tree, modifierListNode = null, annotations = pendingAnnotations.toList(), parsedModifiers = null),
                         ownerKind = MacroSurfaceOwnerKind.DECLARATION,
                         carrier = declaration,
                     )
@@ -2619,11 +2436,6 @@ class LightTreeRawCfirDeclarationBuilder(
         return declarations
     }
 
-    /** 判断当前 macro expression 是否包裹顶层声明。 */
-    private fun LighterASTNode.isTopLevelMacroDeclaration(): Boolean {
-        return resolveTopLevelMacroDeclarationChain(this) != null
-    }
-
     /**
      * 文件级 `@Macro decl` 的 LightTree 形态是 MACRO_EXPRESSION，input
      * 内部才包含 carrier 声明。声明宏 surface 必须绑定这个 carrier，
@@ -2631,27 +2443,78 @@ class LightTreeRawCfirDeclarationBuilder(
      */
     private fun convertTopLevelMacroDeclaration(
         node: LighterASTNode,
-        primaryConstructorOwnerName: Name? = null,
-        ownerTypeParameters: List<CfirTypeParameterRef>? = null,
     ): CfirDeclaration? {
         val chain = resolveTopLevelMacroDeclarationChain(node) ?: return null
         val (declarationNode, macroExpressions) = chain
-        val carrier = if (
-            primaryConstructorOwnerName != null &&
-            declarationNode.tokenType == CjNodeTypes.FUNC &&
-            extractFunctionName(declarationNode, countValueParameters(declarationNode)) == primaryConstructorOwnerName
-        ) {
-            // The macro-input parser has no enclosing class name and can emit
-            // the class-named primary constructor as FUNC.  Restore the
-            // declaration kind at the class-member owner, where that name is
-            // authoritative, so primary `let`/`var` fields are generated.
-            convertConstructor(declarationNode, isPrimary = true).also {
-                collectDeclarationAnnotationSurfaces(declarationNode, it, macroExpressions)
+        // primary 身份只能由 parser 的真实作用域产生，FUNC 不能按名称升级为构造器。
+        return convertDeclaration(declarationNode, macroExpressions)
+    }
+
+    /**
+     * 将声明列表中的独立宏调用保留为真实 CFIR 声明节点，并以节点身份建立 splice 槽。
+     * 该节点只存在于 construction 阶段，展开结果会替换其所在的声明列表位置。
+     */
+    private fun convertStandaloneMacroDeclaration(node: LighterASTNode): CfirDeclaration {
+        val surfaceId = MacroSurfaceIdGenerator.next()
+        val declaration = buildSourceDeclaration(CfirMacroExpansionDeclarationSymbol()) { symbol ->
+            buildMacroExpansionDeclaration {
+                resolvePhase = CfirResolvePhase.RAW_CFIR
+                source = node.toSource()
+                this.symbol = symbol
+                origin = CfirDeclarationOrigin.Source
+                moduleData = baseModuleData
+                attributes = CfirDeclarationAttributes.EMPTY
             }
-        } else {
-            convertDeclaration(declarationNode, macroExpressions, ownerTypeParameters)
         }
-        return carrier
+        val rawSyntax = node.asText()
+        val headScan = checkNotNull(macroExpressionHeadSyntax(node)) {
+            "A declaration macro call must retain its invocation head syntax."
+        }
+        val annotationName = checkNotNull(macroExpressionAnnotationNameInfo(node)) {
+            "A declaration macro call must retain its invocation name."
+        }
+        val attrNode = tree.findChildByType(node, CjNodeTypes.MACRO_ATTR)
+        val macroAttributeText = macroExpressionAttributeText(rawSyntax, headScan, attrNode)
+        val macroAttributeSource = macroExpressionAttributeSource(node, headScan, attrNode)
+        val surfaceSource = node.toUnmappedCjSourceElement().sliceMacroExpressionSource(
+            MacroExpressionTextRange(headScan.annotationStartOffset, rawSyntax.length),
+        )
+        val inputNode = tree.findChildByType(node, CjNodeTypes.MACRO_INPUT)
+        val qualifiedName = macroSurfaceQualifiedName(annotationName)
+        val isCompileTimeVisible = tree.findChildByType(node, CjTokens.ATEXCL) != null
+        val hasParenthesizedInput = headScan.hasParenthesizedInput
+        collectedMacroSurfaces += MacroSurfaceDecl(
+            surfaceId = surfaceId,
+            qualifiedName = qualifiedName,
+            isQualifiedName = annotationName.segmentTexts.size > 1,
+            kind = if (isCompileTimeVisible) MacroSurface.Kind.FORCED else MacroSurface.Kind.PLAIN,
+            parsingFacts = checkNotNull(macroParsingFacts(node)) {
+                "A declaration macro surface must retain facts from the parser root that created it."
+            },
+            hasParenthesis = hasParenthesizedInput,
+            attrTokens = tokenizeSurfacePayload(
+                payload = macroAttributeText,
+                baseOffset = macroAttributeSource?.startOffset ?: 0,
+            ),
+            hasAttr = attrNode != null,
+            inputTokens = tokenizeSurfacePayload(inputNode),
+            sourceRange = MacroSurfaceSourceRange(
+                source = surfaceSource,
+                startOffset = surfaceSource.startOffset,
+                endOffset = surfaceSource.endOffset,
+            ),
+            scopeContext = macroSurfaceScopeContext(),
+            modifiers = emptyList(),
+            carriedAnnotations = emptyList(),
+            capturedRawSyntax = rawSyntax.substring(headScan.annotationStartOffset),
+            containerContext = macroSurfaceContainerContext(node),
+            replaceHandle = CfirReplaceHandle(
+                handleId = surfaceId,
+                ownerSnapshot = context.snapshotMacroOwner(),
+                carrier = declaration,
+            ),
+        )
+        return declaration
     }
 
     /**
@@ -2694,7 +2557,7 @@ class LightTreeRawCfirDeclarationBuilder(
         val inputNode = tree.findChildByType(node, CjNodeTypes.MACRO_INPUT) ?: return
         val rawWrapperText = node.asText()
         val headScan = macroExpressionHeadSyntax(node) ?: return
-        val surfaceSource = node.toSource().sliceMacroExpressionSource(
+        val surfaceSource = node.toUnmappedCjSourceElement().sliceMacroExpressionSource(
             MacroExpressionTextRange(headScan.annotationStartOffset, rawWrapperText.length),
         )
         val annotationName = macroExpressionAnnotationNameInfo(node) ?: return
@@ -2703,15 +2566,14 @@ class LightTreeRawCfirDeclarationBuilder(
         val attrNode = tree.findChildByType(node, CjNodeTypes.MACRO_ATTR)
         val macroAttributeText = macroExpressionAttributeText(rawWrapperText, headScan, attrNode)
         val macroAttributeSource = macroExpressionAttributeSource(node, headScan, attrNode)
-        val rawAnnotationSyntax = macroExpressionAnnotationSyntax(node, rawName, macroAttributeText)
         val annotationSource = macroExpressionAnnotationSource(node, annotationName, macroAttributeSource)
+        val rawAnnotationSyntax = source.subSequence(annotationSource.startOffset, annotationSource.endOffset).toString()
         val isCompileTimeVisible = tree.findChildByType(node, CjTokens.ATEXCL) != null
         val inputLeftDelimiter = tree.findChildByType(inputNode, CjTokens.LPAR)
         val inputRightDelimiter = tree.findChildByType(inputNode, CjTokens.RPAR)
         val inputQuoteTokens = tree.findChildByType(inputNode, CjNodeTypes.QUOTE_TOKENS)
         val inputParserErrorOffset = tree.firstDirectParserErrorOffset(inputQuoteTokens, source)
-        val hasParenthesizedInput =
-            inputLeftDelimiter != null && inputRightDelimiter != null && inputParserErrorOffset == null
+        val hasParenthesizedInput = headScan.hasParenthesizedInput
         val hasAnyParenthesisDelimiter = inputLeftDelimiter != null || inputRightDelimiter != null
         val containingSymbol = when (carrier) {
             is CfirValueParameter -> carrier.containingDeclarationSymbol
@@ -2731,7 +2593,7 @@ class LightTreeRawCfirDeclarationBuilder(
         )
         val annotationIndex = carrier.annotations.size
         carrier.replaceAnnotations(carrier.annotations + annotationCall)
-        val annotationCarrier = baseSession.ensureAnnotationMetadataRegistry().record(
+        val annotationCarrier = annotationMetadata.record(
             CfirAnnotationSlotSnapshot(
                 owner = carrier,
                 annotationIndex = annotationIndex,
@@ -2740,9 +2602,13 @@ class LightTreeRawCfirDeclarationBuilder(
                 forcedCustom = isCompileTimeVisible,
                 isCompileTimeVisible = isCompileTimeVisible,
                 annotationSource = annotationSource,
-                qualifiedName = macroSurfaceQualifiedName(rawName),
+                qualifiedName = macroSurfaceQualifiedName(annotationName),
                 argumentText = macroAttributeText,
-                tokens = tokenizeMacroExpressionAnnotationSyntax(rawAnnotationSyntax, annotationSource.startOffset),
+                tokens = tokenizeMacroExpressionAnnotationSyntax(
+                    rawAnnotationSyntax,
+                    annotationSource.startOffset,
+                    annotationSource,
+                ),
                 callSite = MacroCallSite.DECLARATION,
             )
         )
@@ -2764,18 +2630,20 @@ class LightTreeRawCfirDeclarationBuilder(
         val surfaceContainerContext = macroSurfaceContainerContext(declarationNode)
         val replaceHandle = CfirReplaceHandle(
             handleId = surfaceId,
+            ownerSnapshot = context.snapshotMacroOwner(),
             carrier = carrier,
             annotationCarrier = annotationCarrier,
         )
-        val isQualifiedName = rawName.contains('.')
+        val isQualifiedName = annotationName.segmentTexts.size > 1
         // `@IfAvailable[...]` 包住声明时 LightTree 走 MACRO_EXPRESSION；它是 builtin
         // non-macro surface：不送 executor，也不进 stable splice（与 PSI raw builder 对称）。
         if (!isQualifiedName && rawName == IF_AVAILABLE_ANNOTATION_NAME) {
             collectedMacroSurfaces += IfAvailableSurface(
                 surfaceId = surfaceId,
-                qualifiedName = macroSurfaceQualifiedName(rawName),
+                qualifiedName = macroSurfaceQualifiedName(annotationName),
                 isQualifiedName = false,
                 kind = surfaceKind,
+                parsingFacts = macroParsingFacts(node),
                 hasParenthesis = hasParenthesizedInput,
                 attrTokens = attrTokens,
                 hasAttr = attrNode != null,
@@ -2794,9 +2662,10 @@ class LightTreeRawCfirDeclarationBuilder(
         }
         collectedMacroSurfaces += MacroSurfaceDecl(
             surfaceId = surfaceId,
-            qualifiedName = macroSurfaceQualifiedName(rawName),
+            qualifiedName = macroSurfaceQualifiedName(annotationName),
             isQualifiedName = isQualifiedName,
             kind = surfaceKind,
+            parsingFacts = macroParsingFacts(node),
             hasParenthesis = hasParenthesizedInput,
             attrTokens = attrTokens,
             hasAttr = attrNode != null,
@@ -2809,6 +2678,14 @@ class LightTreeRawCfirDeclarationBuilder(
             containerContext = surfaceContainerContext,
             replaceHandle = replaceHandle,
         )
+    }
+
+    /** 从同一解析根的直接 invocation token 读取已冻结 facts，不从 CFIR owner 反推。 */
+    private fun macroParsingFacts(node: LighterASTNode): MacroParsingFacts? {
+        val invocationToken = tree.findChildByType(node, CjTokens.AT)
+            ?: tree.findChildByType(node, CjTokens.ATEXCL)
+            ?: error("A macro surface must contain its direct invocation token.")
+        return macroFacts[invocationToken.startOffset]
     }
 
     /**
@@ -2888,19 +2765,6 @@ class LightTreeRawCfirDeclarationBuilder(
     }
 
     /**
-     * LightTree 的 MACRO_EXPRESSION 同时承载 declaration macro 与 annotation-site。
-     * raw 阶段先恢复 annotation slot 文本，classification 再决定最终 splice 槽位。
-     */
-    private fun macroExpressionAnnotationSyntax(
-        node: LighterASTNode,
-        rawName: String,
-        attrText: String?,
-    ): String {
-        val prefix = if (tree.findChildByType(node, CjTokens.ATEXCL) != null) "@!" else "@"
-        return prefix + rawName + attrText.orEmpty()
-    }
-
-    /**
      * 将 macro expression 还原出的 annotation 文本切分为 surface token。
      *
      * [baseOffset] 使用 wrapper 的源偏移，保证 token offset 与后续宏诊断、替换范围保持一致。
@@ -2908,6 +2772,7 @@ class LightTreeRawCfirDeclarationBuilder(
     private fun tokenizeMacroExpressionAnnotationSyntax(
         rawAnnotationSyntax: String,
         baseOffset: Int,
+        source: CjSourceElement,
     ): List<MacroSurfaceToken> =
         MacroPayloadTokenizer.tokenize(rawAnnotationSyntax, baseOffset).map { token ->
             sourceElementFactory.createMacroToken(
@@ -2916,9 +2781,11 @@ class LightTreeRawCfirDeclarationBuilder(
                     startOffset = token.startOffset,
                     endOffset = token.endOffset,
                     kindName = token.kindName,
+                    sourceRange = MacroSurfaceSourceRange(source, token.startOffset, token.endOffset),
+                    isSourceToken = true,
                     isTrivia = token.kindName in CfirRawSourceElementFactory.TRIVIA_KINDS,
                 ),
-                tree.root.toUnmappedCjSourceElement(),
+                source,
             )
         }
 
@@ -2993,7 +2860,8 @@ class LightTreeRawCfirDeclarationBuilder(
             ?: tree.findChildByType(node, CjNodeTypes.OPERATION_NAME)
             ?: tree.findChildByType(node, CjNodeTypes.REFERENCE_EXPRESSION)
         return if (nameNode != null) {
-            nameNode.asText().asOperatorName()
+            if (nameNode.tokenType == CjNodeTypes.OPERATION_NAME) nameNode.asText().asOperatorName()
+            else Name.identifier(sourceIdentifier(nameNode.asText()))
         } else {
             Name.special("<anonymous>")
         }
@@ -3012,9 +2880,9 @@ class LightTreeRawCfirDeclarationBuilder(
             when {
                 child.tokenType == CjTokens.PROP_KEYWORD -> afterPropKeyword = true
                 !afterPropKeyword -> Unit
-                child.tokenType == CjTokens.IDENTIFIER -> result = Name.identifier(child.asText())
+                child.tokenType == CjTokens.IDENTIFIER -> result = Name.identifier(sourceIdentifier(child.asText()))
                 child.tokenType == CjNodeTypes.OPERATION_NAME -> result = child.asText().asOperatorName()
-                child.tokenType == TokenType.ERROR_ELEMENT -> result = Name.special("<anonymous>")
+                child.tokenType.isParsingErrorElementType() -> result = Name.special("<anonymous>")
             }
         }
 
@@ -3036,7 +2904,8 @@ class LightTreeRawCfirDeclarationBuilder(
             "-" -> if (valueParametersCount == 0) OperatorNameConventions.UNARY_MINUS else OperatorNameConventions.MINUS
             "+" -> if (valueParametersCount == 0) OperatorNameConventions.UNARY_PLUS else OperatorNameConventions.PLUS
             "[]" -> if (isSubscriptSetOperator(node)) OperatorNameConventions.SET else OperatorNameConventions.GET
-            else -> rawName.asOperatorName()
+            else -> if (nameNode.tokenType == CjNodeTypes.OPERATION_NAME) rawName.asOperatorName()
+                    else Name.identifier(sourceIdentifier(rawName))
         }
     }
 
@@ -3119,7 +2988,7 @@ class LightTreeRawCfirDeclarationBuilder(
      * 语法错误导致缺失标识符时返回稳定错误名称，保证 raw CFIR 仍能保留声明骨架。
      */
     private fun typeParameterName(node: LighterASTNode): Name {
-        return tree.findChildByType(node, CjTokens.IDENTIFIER)?.let { Name.identifier(it.asText()) }
+        return tree.findChildByType(node, CjTokens.IDENTIFIER)?.let { Name.identifier(sourceIdentifier(it.asText())) }
             ?: Name.identifier("<error>")
     }
 
@@ -3136,7 +3005,7 @@ class LightTreeRawCfirDeclarationBuilder(
             val parameterNameNode = tree.findChildByType(constraint, CjNodeTypes.REFERENCE_EXPRESSION)
                 ?: tree.findChildByType(constraint, CjTokens.IDENTIFIER)
                 ?: return@forEach
-            val parameterName = Name.identifier(parameterNameNode.asText())
+            val parameterName = Name.identifier(sourceIdentifier(parameterNameNode.asText()))
             val boundRefs = tree.getChildrenByType(constraint, CjNodeTypes.TYPE_REFERENCE).map(::convertTypeRef)
             if (boundRefs.isEmpty()) return@forEach
 
@@ -3156,7 +3025,7 @@ class LightTreeRawCfirDeclarationBuilder(
                     ?: tree.findChildByType(constraint, CjTokens.IDENTIFIER)
                     ?: return@mapNotNull null
                 CfirTypeConstraintReference(
-                    parameterName = Name.identifier(parameterNameNode.asText()),
+                    parameterName = Name.identifier(sourceIdentifier(parameterNameNode.asText())),
                     source = parameterNameNode.toSource(),
                     boundTypeRefs = tree.getChildrenByType(constraint, CjNodeTypes.TYPE_REFERENCE).map(::convertTypeRef),
                     constraintSource = constraint.toSource(),
@@ -3178,6 +3047,28 @@ class LightTreeRawCfirDeclarationBuilder(
     private fun declarationAttributes(ownerNode: LighterASTNode): CfirDeclarationAttributes {
         var hasAttributes = false
         val attributes = CfirDeclarationAttributes()
+        val keywordType = when (ownerNode.tokenType) {
+            CjNodeTypes.CLASS -> CjTokens.CLASS_KEYWORD
+            CjNodeTypes.STRUCT -> CjTokens.STRUCT_KEYWORD
+            CjNodeTypes.INTERFACE -> CjTokens.INTERFACE_KEYWORD
+            CjNodeTypes.ENUM -> CjTokens.ENUM_KEYWORD
+            CjNodeTypes.EXTEND -> CjTokens.EXTEND_KEYWORD
+            else -> null
+        }
+        if (keywordType != null) {
+            val keyword = checkNotNull(tree.findChildByType(ownerNode, keywordType)) {
+                "Source nominal declaration has no declaration keyword."
+            }
+            val facts = checkNotNull(nominalFacts[keyword.startOffset]) {
+                "Source nominal declaration is missing its parser facts."
+            }
+            attributes.cjmpSourceNominalHasDefault = facts.hasCjmpCommonDefault(baseSession.languageVersionSettings)
+            hasAttributes = true
+        }
+        if (tree.getChildrenByType(ownerNode, CjNodeTypes.TYPE_PARAMETER_LIST).isNotEmpty()) {
+            attributes.hasGenericNode = true
+            hasAttributes = true
+        }
 
         collectTypeConstraintDiagnosticData(ownerNode)?.let { diagnosticData ->
             attributes.typeConstraintDiagnosticData = diagnosticData
@@ -3229,8 +3120,6 @@ class LightTreeRawCfirDeclarationBuilder(
     /** 按源码顺序收集直接及宏包装成员，枚举构造项也通过声明入口 lowering 一次。 */
     private fun extractClassMembers(
         node: LighterASTNode,
-        primaryConstructorOwnerName: Name? = null,
-        ownerTypeParameters: List<CfirTypeParameterRef>? = null,
     ): List<CfirDeclaration> {
         // 查找 CLASS_BODY / INTERFACE_BODY / ENUM_BODY 等
         val bodyNode = tree.findChildByType(node, CjNodeTypes.CLASS_BODY)
@@ -3257,47 +3146,27 @@ class LightTreeRawCfirDeclarationBuilder(
                     return@forEachChildren
                 }
                 CjNodeTypes.MACRO_EXPRESSION -> {
-                    if (child.isTopLevelMacroDeclaration()) {
-                        val declaration = convertTopLevelMacroDeclaration(
-                            child,
-                            primaryConstructorOwnerName,
-                            ownerTypeParameters,
-                        ) ?: return@forEachChildren
-                        if (pendingAnnotations.isNotEmpty()) {
-                            collectMacroSurfacesFromAnnotations(
-                                ownerNode = child,
-                                modifiers = LightTreeModifierList(tree, modifierListNode = null, annotations = pendingAnnotations.toList()),
-                                ownerKind = MacroSurfaceOwnerKind.DECLARATION,
-                                carrier = declaration,
-                            )
-                            pendingAnnotations.clear()
-                        }
-                        declarations.add(declaration)
-                    } else {
-                        pendingAnnotations += child
+                    val declaration = convertTopLevelMacroDeclaration(child)
+                        ?: convertStandaloneMacroDeclaration(child)
+                    if (pendingAnnotations.isNotEmpty()) {
+                        collectMacroSurfacesFromAnnotations(
+                            ownerNode = child,
+                            modifiers = LightTreeModifierList(tree, modifierListNode = null, annotations = pendingAnnotations.toList(), parsedModifiers = null),
+                            ownerKind = MacroSurfaceOwnerKind.DECLARATION,
+                            carrier = declaration,
+                        )
+                        pendingAnnotations.clear()
                     }
+                    declarations.add(declaration)
                     return@forEachChildren
                 }
             }
             if (LightTreeRawCfirExpressionBuilder.isDeclarationToken(tt)) {
-                val declaration = if (
-                    primaryConstructorOwnerName != null &&
-                    tt == CjNodeTypes.FUNC &&
-                    tree.findChildByType(child, CjTokens.FUNC_KEYWORD) == null &&
-                    tree.findChildByType(child, CjTokens.INIT_KEYWORD) == null
-                ) {
-                    // The macro-input parser may leave a class-named primary
-                    // constructor as a direct FUNC node.  The enclosing class
-                    // is the only owner that can distinguish it from an
-                    // ordinary function, so restore the constructor kind here.
-                    convertConstructor(child, isPrimary = true)
-                } else {
-                    convertDeclaration(child, emptyList(), ownerTypeParameters)
-                }
+                val declaration = convertDeclaration(child)
                 if (pendingAnnotations.isNotEmpty()) {
                     collectMacroSurfacesFromAnnotations(
                         ownerNode = child,
-                        modifiers = LightTreeModifierList(tree, modifierListNode = null, annotations = pendingAnnotations.toList()),
+                        modifiers = LightTreeModifierList(tree, modifierListNode = null, annotations = pendingAnnotations.toList(), parsedModifiers = null),
                         ownerKind = MacroSurfaceOwnerKind.DECLARATION,
                         carrier = declaration,
                     )
@@ -3329,6 +3198,17 @@ class LightTreeRawCfirDeclarationBuilder(
                 reason = "Cangjie only supports top-level $kind declarations, but found illegal non-top-level declaration: $name"
             }
         }
+    }
+
+    /** 只检查原始函数块的直接语句；嵌套空块本身也是语句，不能展开后再判空。 */
+    private fun hasEmptyFunctionBlock(node: LighterASTNode): Boolean {
+        val block = tree.findChildByType(node, CjNodeTypes.BLOCK) ?: return false
+        tree.forEachChildren(block) { child ->
+            if (LightTreeRawCfirExpressionBuilder.isDeclarationToken(child.tokenType) ||
+                LightTreeRawCfirExpressionBuilder.isExpressionToken(child.tokenType)
+            ) return false
+        }
+        return true
     }
 
     /** 提取声明自身的类型引用，避免把参数、约束或 body 内部的类型误当成声明返回类型。 */
@@ -3363,35 +3243,53 @@ class LightTreeRawCfirDeclarationBuilder(
     private fun extractValueParameters(
         node: LighterASTNode,
         containingDeclarationSymbol: CfirBasedSymbol<*>,
-        requiresExplicitType: Boolean = true,
+        signature: MacroParameterSignature,
     ): List<CfirValueParameter> {
         return extractValueParameterNodes(node)
-            .map { convertValueParameter(it, containingDeclarationSymbol, requiresExplicitType) }
+            .map { convertValueParameter(it, containingDeclarationSymbol, signature) }
     }
 
     /**
      * 提取声明直接参数列表中的值参数节点。
      *
-     * LightTree 路径只使用第一个 [CjNodeTypes.VALUE_PARAMETER_LIST] 作为签名参数列表，重复列表另由诊断属性记录。
+     * 参数列表数量与投影都来自当前声明的所有直接列表；重复列表的全部 owner 按源码顺序保留。
      */
     private fun extractValueParameterNodes(node: LighterASTNode): List<LighterASTNode> {
-        val paramList = tree.findChildByType(node, CjNodeTypes.VALUE_PARAMETER_LIST)
-            ?: findFirstDescendantByType(node, CjNodeTypes.VALUE_PARAMETER_LIST)
-            ?: return emptyList()
-        return tree.getChildrenByType(paramList, CjNodeTypes.VALUE_PARAMETER)
-            .filterNot(::isVariableLengthParameter)
+        val lists = tree.getChildrenByType(node, CjNodeTypes.VALUE_PARAMETER_LIST)
+        val parameters = lists.flatMap { tree.getChildrenByType(it, CjNodeTypes.VALUE_PARAMETER) }
+        val projection = parameterProjection(node, lists.size, parameters)
+        return parameters.filterIndexed { index, _ -> projection.retains(index) }
     }
 
-    /** 从声明参数列表读取独立的 foreign `...` 签名标记。 */
+    /** flag 与参数删除共用官方完整声明投影，多列表不会仅由首个省略号置位。 */
     private fun hasVariableLengthArgument(node: LighterASTNode): Boolean {
-        val paramList = tree.findChildByType(node, CjNodeTypes.VALUE_PARAMETER_LIST)
-            ?: findFirstDescendantByType(node, CjNodeTypes.VALUE_PARAMETER_LIST)
-            ?: return false
-        return tree.getChildrenByType(paramList, CjNodeTypes.VALUE_PARAMETER).any(::isVariableLengthParameter)
+        val lists = tree.getChildrenByType(node, CjNodeTypes.VALUE_PARAMETER_LIST)
+        val parameters = lists.flatMap { tree.getChildrenByType(it, CjNodeTypes.VALUE_PARAMETER) }
+        return parameterProjection(node, lists.size, parameters).hasVariableLengthArgument
     }
 
-    /** `...` 节点不进入值参数转换，但保留在原始树中供函数级事实提取。 */
-    private fun isVariableLengthParameter(node: LighterASTNode): Boolean = node.asText().trim() == "..."
+    /** 实际文法节点确定声明种类，FOREIGN 继续读取同树 parser 返回属性。 */
+    private fun parameterProjection(
+        node: LighterASTNode,
+        parameterListCount: Int,
+        parameters: List<LighterASTNode>,
+    ): CjVariadicParameterRules.Result {
+        val kind = when (node.tokenType) {
+            CjNodeTypes.FUNC -> CjmpModifierDeclarationKind.FUNCTION
+            CjNodeTypes.PRIMARY_CONSTRUCTOR -> CjmpModifierDeclarationKind.PRIMARY_CONSTRUCTOR
+            CjNodeTypes.SECONDARY_CONSTRUCTOR -> CjmpModifierDeclarationKind.SECONDARY_CONSTRUCTOR
+            CjNodeTypes.MACRO -> CjmpModifierDeclarationKind.MACRO
+            CjNodeTypes.MAIN_FUNC -> CjmpModifierDeclarationKind.MAIN
+            CjNodeTypes.FINALIZER -> CjmpModifierDeclarationKind.FINALIZER
+            CjNodeTypes.PROPERTY_ACCESSOR -> CjmpModifierDeclarationKind.OTHER
+            else -> error("Value parameters require an actual callable grammar owner: ${node.tokenType}")
+        }
+        return CjVariadicParameterRules.select(kind, parameterListCount, modifierListFor(node).isForeign,
+            parameters.map(::isVariableLengthParameter))
+    }
+
+    /** 只读取实际参数的直接省略号词元，不把默认值或注解文本当成变长参数。 */
+    private fun isVariableLengthParameter(node: LighterASTNode): Boolean = tree.findChildByType(node, CjTokens.ELLIPSIS) != null
 
     /**
      * 统计声明签名中的值参数数量。
@@ -3402,10 +3300,11 @@ class LightTreeRawCfirDeclarationBuilder(
         return extractValueParameterNodes(node).size
     }
 
-    /** 提取函数体块 */
+    /** 有函数体时保留惰性块，无体声明则保持 null。 */
     private fun extractBody(node: LighterASTNode): CfirBlock? {
         val blockNode = tree.findChildByType(node, CjNodeTypes.BLOCK) ?: return null
-        return expressionBuilder.convertBlock(blockNode)
+        return if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) buildLazyBlock()
+        else expressionBuilder.convertBlock(blockNode)
     }
 
     /**
@@ -3427,15 +3326,19 @@ class LightTreeRawCfirDeclarationBuilder(
         return tree.findChildByType(node, CjTokens.GET_KEYWORD) != null
     }
 
-    /** 提取初始化器表达式 */
-    private fun extractInitializer(node: LighterASTNode): CfirExpression? {
+    /** 存在初值时保留惰性节点，BODY_RESOLVE 再构建表达式。 */
+    private fun buildVariableInitializer(node: LighterASTNode): CfirExpression? {
         // 查找 = 之后的表达式
         var afterEq = false
         tree.forEachChildren(node) { child ->
             if (child.tokenType == CjTokens.EQ) {
                 afterEq = true
             } else if (afterEq && LightTreeRawCfirExpressionBuilder.isExpressionToken(child.tokenType)) {
-                return expressionBuilder.convertExpression(child)
+                return if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) {
+                    buildLazyExpression { source = child.toSource() }
+                } else {
+                    expressionBuilder.convertExpression(child)
+                }
             }
         }
         return null
@@ -3448,10 +3351,7 @@ class LightTreeRawCfirDeclarationBuilder(
 
     /** 判断是否有 var 关键字 */
     private fun hasVarKeyword(node: LighterASTNode): Boolean {
-        tree.forEachChildren(node) { child ->
-            if (child.tokenType == CjTokens.VAR_KEYWORD) return true
-        }
-        return false
+        return tree.childrenThroughErrors(node).any { it.tokenType == CjTokens.VAR_KEYWORD }
     }
 
     /** 判断变量声明关键字是否为 const。 */
@@ -3474,20 +3374,12 @@ class LightTreeRawCfirDeclarationBuilder(
         return this
     }
 
-    /** 判断主构造参数是否声明为成员参数。 */
-    private fun hasLetOrVarKeyword(node: LighterASTNode): Boolean {
-        tree.forEachChildren(node) { child ->
-            when (child.tokenType) {
-                CjTokens.LET_KEYWORD, CjTokens.CONST_KEYWORD, CjTokens.VAR_KEYWORD -> return true
-            }
-        }
-        return false
-    }
-
     /** 查找模式子节点 */
     private fun findPatternChild(node: LighterASTNode): LighterASTNode? {
         tree.forEachChildren(node) { child ->
             if (LightTreeRawCfirExpressionBuilder.isPatternToken(child.tokenType)) return child
+            // 与 PSI 相同，仅穿透 parser 错误包装，保留原始根模式，不选择任意嵌套 binding。
+            if (child.tokenType.isParsingErrorElementType()) findPatternChild(child)?.let { return it }
         }
         return null
     }
@@ -3525,41 +3417,23 @@ class LightTreeRawCfirDeclarationBuilder(
     }
 
     /**
-     * 深复制声明状态到可变 [CfirDeclarationStatusImpl]。
+     * 判断接口成员函数是否应按 default 实现处理。
      *
-     * 模式绑定变量需要继承外层 `let/var/const`、可见性与修饰符语义，但不能共享同一个可变 status 实例。
+     * 官方 `ParserImpl::SetDefaultFunc`（`ParseDecl.cpp:874-898`）的规则是
+     * `scopeKind == INTERFACE_BODY && !FOREIGN && !ABSTRACT` —— **DEFAULT 是 ABSTRACT 的补集**。
+     * 因此这里与隐式 abstract 推断**共用同一个结论**（[isImplicitAbstractClassLikeFunction]），
+     * 而不是再独立判一次 `hasSyntaxBody`：在 `.cj` 下两者等价，到 `.cj.d` 会分叉 ——
+     * 护栏 1 抑制了无体函数的隐式 abstract 后，官方会给这种函数置 DEFAULT。
      */
-    internal fun cloneDeclarationStatus(status: CfirDeclarationStatus): CfirDeclarationStatusImpl {
-        return CfirDeclarationStatusImpl(
-            visibility = status.visibility,
-            modality = status.modality,
-        ).also { copied ->
-            copied.visibilityExplicitness = status.visibilityExplicitness
-            copied.modalityExplicitness = status.modalityExplicitness
-            copied.bodyPresence = status.bodyPresence
-            copied.isDeclarationFile = status.isDeclarationFile
-            copied.isVisibilityExplicit = status.isVisibilityExplicit
-            copied.isModalityExplicit = status.isModalityExplicit
-            copied.isAbstractExplicit = status.isAbstractExplicit
-            copied.isOverride = status.isOverride
-            copied.isOperator = status.isOperator
-            copied.isStatic = status.isStatic
-            copied.isConst = status.isConst
-            copied.isMut = status.isMut
-            copied.isUnsafe = status.isUnsafe
-            copied.isForeign = status.isForeign
-            copied.isC = status.isC
-            copied.isCommon = status.isCommon
-            copied.isFromCommonPart = status.isFromCommonPart
-            copied.isSpecific = status.isSpecific
-            copied.isCommonWithDefault = status.isCommonWithDefault
-            copied.isRedef = status.isRedef
-            copied.isDefault = status.isDefault
-            copied.isAbstract = status.isAbstract
-            copied.isOpen = status.isOpen
-            copied.isSealed = status.isSealed
-        }
-    }
+    private fun isDefaultInterfaceFunction(
+        node: LighterASTNode,
+        modifiers: LightTreeModifierList,
+        isImplicitAbstract: Boolean,
+    ): Boolean =
+        isInInterfaceMemberContext() &&
+                !modifiers.isForeign &&
+                !modifiers.isAbstract &&
+                !isImplicitAbstract
 
     /**
      * 判断接口属性是否应标记为 default 实现。
@@ -3592,12 +3466,28 @@ class LightTreeRawCfirDeclarationBuilder(
      * 本地声明永远不按接口成员处理，容器符号必须是 [CfirInterfaceSymbol]。
      */
     private fun isInInterfaceMemberContext(): Boolean =
-        !context.inLocalContext && containerSymbolIfAny is CfirInterfaceSymbol
+        !context.inLocalContext && context.containingClassSymbolIfAny is CfirInterfaceSymbol
 
     /**
      * 当前 class 体的修饰符（供 class 宿主 CJMP 例外判定；interface/struct/enum 体为 null）。
      */
     private var enclosingTypeModifiers: LightTreeModifierList? = null
+
+    private fun isImplicitAbstractClassLikeFunction(
+        node: LighterASTNode,
+        modifiers: LightTreeModifierList,
+    ): Boolean {
+        if (!isInClassOrInterfaceMemberContext()) return false
+        val facts = memberBodyFacts(
+            scopeKind = currentMemberScopeKind(),
+            hasBody = hasSyntaxBody(node),
+            hasAccessors = false,
+            modifiers = modifiers,
+        )
+        val base = CjMemberBodyPolicy.applyJavaMirrorFunctionOverlay(CjMemberBodyPolicy.checkFunctionBody(facts), facts)
+        return CjMemberBodyPolicy.applyCjmpOverlay(base, facts).markImplicitAbstract ||
+            CjMemberBodyPolicy.isImplicitAbstractCjmpCommonInterfaceFunction(facts)
+    }
 
     /** 在 class/interface 成员提取期间记录外层类型修饰符。 */
     private inline fun <T> withEnclosingTypeModifiers(modifiers: LightTreeModifierList, block: () -> T): T {
@@ -3620,10 +3510,10 @@ class LightTreeRawCfirDeclarationBuilder(
         if (!inClass && !inInterface) return null
         val outer = enclosingTypeModifiers ?: return null
         return CjmpOverlayFacts(
-            memberIsCommon = modifiers.isCommon,
+            memberIsCommon = modifiers.cjmpDeclarationRole().isCommon,
             memberIsExplicitAbstract = modifiers.isAbstract,
             enclosingClassIsAbstract = inClass && outer.isAbstract,
-            enclosingClassIsCommonOrSpecific = inClass && (outer.isCommon || outer.isSpecific),
+            enclosingClassIsCommonOrSpecific = inClass && outer.cjmpDeclarationRole().let { it.isCommon || it.isSpecific },
             enclosingTypeIsInteropHost = outer.hasBuiltinAnnotation(BuiltInAnnotationKind.JAVA) ||
                     outer.hasBuiltinAnnotation(BuiltInAnnotationKind.JAVA_MIRROR) ||
                     outer.hasBuiltinAnnotation(BuiltInAnnotationKind.JAVA_IMPL) ||

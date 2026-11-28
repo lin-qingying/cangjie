@@ -34,11 +34,13 @@ import org.cangnova.cangjie.cfir.patterns.CfirEnumPattern
 import org.cangnova.cangjie.cfir.patterns.CfirExpressionPattern
 import org.cangnova.cangjie.cfir.patterns.CfirOrPattern
 import org.cangnova.cangjie.cfir.patterns.CfirPattern
+import org.cangnova.cangjie.cfir.patterns.CfirCatchPattern
+import org.cangnova.cangjie.cfir.patterns.CfirCommandTypePattern
 import org.cangnova.cangjie.cfir.patterns.CfirTuplePattern
 import org.cangnova.cangjie.cfir.patterns.CfirTypePattern
 import org.cangnova.cangjie.cfir.patterns.CfirVarOrEnumPattern
 import org.cangnova.cangjie.cfir.patterns.CfirWildcardPattern
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeTupleType
@@ -77,6 +79,8 @@ internal fun CfirPattern.isIrrefutablePattern(
     is CfirConstPattern,
     is CfirExpressionPattern,
     is CfirOrPattern,
+    is CfirCatchPattern,
+    is CfirCommandTypePattern,
     -> false
 
     is CfirTuplePattern -> {

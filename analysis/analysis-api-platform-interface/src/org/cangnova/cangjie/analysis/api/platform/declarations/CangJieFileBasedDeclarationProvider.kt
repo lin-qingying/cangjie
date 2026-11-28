@@ -20,9 +20,9 @@ import org.cangnova.cangjie.psi.CjNamedFunction
 import org.cangnova.cangjie.psi.CjPatternVariable
 import org.cangnova.cangjie.psi.CjNamedPattern
 import org.cangnova.cangjie.psi.CjProperty
+import org.cangnova.cangjie.psi.stubs.elements.getAllPatternDeclarations
 import org.cangnova.cangjie.psi.CjTypeAlias
 import org.cangnova.cangjie.psi.CjTypeStatement
-import org.cangnova.cangjie.psi.stubs.elements.getAllPatternDeclarations
 import org.cangnova.cangjie.utils.addIfNotNull
 import org.cangnova.cangjie.utils.yieldIfNotNull
 
@@ -217,6 +217,7 @@ class CangJieFileBasedDeclarationProvider private constructor(
      * 获取指定 callable id 对应顶层 callable 所在文件。
      */
     override fun getTopLevelCallableFiles(callableId: CallableId): Collection<CjFile> {
+        if (filePackageFqName != callableId.packageName) return emptyList()
         return buildSet {
             getTopLevelProperties(callableId).mapTo(this) { it.containingCjFile }
             getTopLevelFunctions(callableId).mapTo(this) { it.containingCjFile }

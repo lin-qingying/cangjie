@@ -19,6 +19,8 @@ import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
+import org.cangnova.cangjie.cfir.declarations.util.expandedConeType
+import org.cangnova.cangjie.cfir.declarations.isInReferenceCycle
 import org.cangnova.cangjie.cfir.declarations.impl.CfirClassImpl
 import org.cangnova.cangjie.cfir.declarations.impl.CfirEnumImpl
 import org.cangnova.cangjie.cfir.declarations.impl.CfirExtendImpl
@@ -26,6 +28,10 @@ import org.cangnova.cangjie.cfir.declarations.impl.CfirInterfaceImpl
 import org.cangnova.cangjie.cfir.declarations.impl.CfirStructImpl
 import org.cangnova.cangjie.cfir.declarations.replaceResolvePhase
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
+import org.cangnova.cangjie.cfir.resolve.toSymbol
+import org.cangnova.cangjie.cfir.resolve.isReferenceCycleTarget
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.types.ConeLookupTagBasedType
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 
 import org.cangnova.cangjie.cfir.resolve.CfirTypeResolutionConfiguration
@@ -39,18 +45,23 @@ import org.cangnova.cangjie.cfir.resolve.providers.DeclaredSupertypeClassificati
 import org.cangnova.cangjie.cfir.resolve.providers.classifyDeclaredSupertype
 import org.cangnova.cangjie.cfir.resolve.providers.inheritanceCycleDependencyTypeOrNull
 import org.cangnova.cangjie.cfir.resolve.providers.ordinarySupertypeTypeOrNull
+import org.cangnova.cangjie.cfir.resolve.providers.ordinaryMemberSupertypeOrNull
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.LocalClassesNavigationInfo
 import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirTypeParameterScopeImpl
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.resolve.providers.cfirProvider
 import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.session.superTypeGraphStoreOrNull
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
+import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
+import org.cangnova.cangjie.cfir.symbols.constructType
 import org.cangnova.cangjie.cfir.symbols.toLookupTag
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
+import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.CfirTypeRefOrigin
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
@@ -109,8 +120,7 @@ internal class CfirSupertypeResolverProcessor(
         if (files.isEmpty()) return
 
         session.superTypeGraphStoreOrNull?.let { graphStore ->
-            graphStore.clearExtended()
-            CfirExtendSupertypesCollector(session, scopeSession, graphStore).collect(files)
+            transformer.prepareExtendedSupertypes(files, graphStore)
         }
     }
 }
@@ -124,7 +134,7 @@ internal class CfirSupertypeResolverProcessor(
 internal class CfirSupertypeResolverTransformer(
     /** 当前 SUPER_TYPES 阶段使用的会话。 */
     override val session: CfirSession,
-    scopeSession: ScopeSession,
+    private val scopeSession: ScopeSession,
 ) : CfirAbstractPhaseTransformer<Any?>(CfirResolvePhase.SUPER_TYPES) {
     /** 本文件解析过程共享的超类型计算缓存。 */
     private val supertypeComputationSession = SupertypeComputationSession()
@@ -132,6 +142,26 @@ internal class CfirSupertypeResolverTransformer(
     private val supertypeResolverVisitor = CfirSupertypeResolverVisitor(session, supertypeComputationSession, scopeSession)
     /** 负责把计算结果写回声明树的 transformer。 */
     private val applySupertypesTransformer = CfirApplySupertypesTransformer(supertypeComputationSession, session, scopeSession)
+
+    /**
+     * extend 图与名义父类型共用当前 SUPER_TYPES 的计算产品。
+     *
+     * 先计算本批声明的父类型和 alias RHS，再解析 extend 边，最后统一断环与发布。
+     * 此时声明尚未推进阶段，不能通过 Default supplier 再请求同一 SUPER_TYPES 阶段。
+     */
+    fun prepareExtendedSupertypes(
+        files: List<CfirFile>,
+        graphStore: org.cangnova.cangjie.cfir.resolve.services.CfirSuperTypeGraphStore,
+    ) {
+        graphStore.clearExtended()
+        files.forEach { file -> file.accept(supertypeResolverVisitor, null) }
+        CfirExtendSupertypesCollector(
+            session,
+            scopeSession,
+            graphStore,
+            supertypeComputationSession.supertypesSupplier,
+        ).collect(files)
+    }
 
     /** SUPER_TYPES 阶段不处理通用元素，未知元素保持原样。 */
     override fun <E : CfirElement> transformElement(element: E, data: Any?): E = element
@@ -142,6 +172,7 @@ internal class CfirSupertypeResolverTransformer(
         return withFileAnalysisExceptionWrapping(file) {
             file.accept(supertypeResolverVisitor, null)
             supertypeComputationSession.breakLoops(session, supertypeResolverVisitor.localClassesNavigationInfo)
+            applySupertypesTransformer.publishComputationProducts()
             file.transform(applySupertypesTransformer, null)
         }
     }
@@ -174,6 +205,7 @@ fun <F : CfirClassLikeDeclaration> F.runSupertypeResolvePhaseForLocalClass(
     accept(supertypeResolverVisitor, null)
     supertypeComputationSession.breakLoops(session, localClassesNavigationInfo)
     val applySupertypesTransformer = CfirApplySupertypesTransformer(supertypeComputationSession, session, scopeSession)
+    applySupertypesTransformer.publishComputationProducts()
     @Suppress("UNCHECKED_CAST")
     return this.transform<CfirClassLikeDeclaration, Any?>(applySupertypesTransformer, null) as F
 }
@@ -201,6 +233,7 @@ fun <F : CfirClassLikeDeclaration> F.runSupertypeResolvePhaseForNonLocalClassLik
     accept(supertypeResolverVisitor, null)
     supertypeComputationSession.breakLoops(session, localClassesNavigationInfo = null)
     val applySupertypesTransformer = CfirApplySupertypesTransformer(supertypeComputationSession, session, scopeSession)
+    applySupertypesTransformer.publishComputationProducts()
     @Suppress("UNCHECKED_CAST")
     return this.transform<CfirClassLikeDeclaration, Any?>(applySupertypesTransformer, null) as F
 }
@@ -231,24 +264,52 @@ open class SupertypeComputationSession {
     /** class-like 声明到超类型计算状态的缓存。 */
     private val computationStatus: MutableMap<CfirClassLikeDeclaration, SupertypeComputationStatus> =
         linkedMapOf<CfirClassLikeDeclaration, SupertypeComputationStatus>().withDefault { SupertypeComputationStatus.NotComputed }
-    /** 当前阶段已见 classId 到声明节点的索引。 */
-    private val declarationIndex: MutableMap<ClassId, CfirClassLikeDeclaration> = linkedMapOf()
+    /** 当前阶段已见的原声明对象；同 ClassId 的不同声明不能互相覆盖断环输入。 */
+    private val seenDeclarations: MutableSet<CfirClassLikeDeclaration> = linkedSetOf()
+    /** 真实循环节点与诊断承载节点分开记录，发布时保留官方 IN_REFERENCE_CYCLE 语义。 */
+    private val referenceCycleMembers = linkedSetOf<CfirClassLikeDeclaration>()
+    /** 断环前的完整引用拓扑独立保存，循环标记不从 ordinary-member 剪边结果反推。 */
+    private val originalTopologyRefs = linkedMapOf<CfirClassLikeDeclaration, List<CfirResolvedTypeRef>>()
+
+    fun completedDeclarations(): List<CfirClassLikeDeclaration> = (computationStatus.filterValues {
+        it is SupertypeComputationStatus.Computed
+    }.keys + referenceCycleMembers).distinct()
+
+    fun isInReferenceCycle(declaration: CfirClassLikeDeclaration): Boolean = declaration in referenceCycleMembers
 
     /**
      * 类型解析器查询已解析超类型时使用的 supplier。
      *
-     * 该 supplier 只返回当前计算会话已知声明的 cone type，未见声明返回空列表。
+     * 当前声明使用尚未写回 AST 的计算产品；会话外声明使用已完成的 resolved 引用。
      */
-    val supertypesSupplier: SupertypeSupplier = SupertypeSupplier { classId ->
-        val declaration = declarationIndex[classId]
-        supertypeRefs(declaration).mapNotNull { typeRef ->
-            typeRef.classifyDeclaredSupertype(expandType = { it }).ordinarySupertypeTypeOrNull()
+    val supertypesSupplier: SupertypeSupplier = object : SupertypeSupplier() {
+        override fun forClass(firClass: CfirClassLikeDeclaration, useSiteSession: CfirSession): List<ConeCangJieType> {
+            val typeRefsFromSession = (getSupertypesComputationStatus(firClass) as? SupertypeComputationStatus.Computed)?.supertypeRefs
+            val typeRefsToReturn = typeRefsFromSession ?: getResolvedSuperTypeRefsForOutOfSessionDeclaration(firClass, useSiteSession)
+            return typeRefsToReturn.mapNotNull { it.coneTypeOrNull }
         }
+
+        override fun expansionForTypeAlias(typeAlias: CfirTypeAlias, useSiteSession: CfirSession): ConeCangJieType? {
+            if (typeAlias.expandedTypeRef is CfirResolvedTypeRef) return typeAlias.expandedConeType
+
+            val typeRefsFromSession = (getSupertypesComputationStatus(typeAlias) as? SupertypeComputationStatus.Computed)?.supertypeRefs
+            val typeRefsToReturn = typeRefsFromSession ?: getResolvedSuperTypeRefsForOutOfSessionDeclaration(typeAlias, useSiteSession)
+            return typeRefsToReturn.firstOrNull()?.coneTypeOrNull
+        }
+    }
+
+    /** 对齐 Kotlin 的会话外产品入口；此处不触发通用惰性 SUPER_TYPES 自重入。 */
+    protected open fun getResolvedSuperTypeRefsForOutOfSessionDeclaration(
+        classLikeDeclaration: CfirClassLikeDeclaration,
+        useSiteSession: CfirSession,
+    ): List<CfirResolvedTypeRef> = when (classLikeDeclaration) {
+        is CfirTypeAlias -> listOfNotNull(classLikeDeclaration.expandedTypeRef as? CfirResolvedTypeRef)
+        else -> classLikeDeclaration.superTypeRefs.filterIsInstance<CfirResolvedTypeRef>()
     }
 
     /** 记录当前阶段已经访问到的 class-like 声明。 */
     fun rememberDeclaration(classLikeDeclaration: CfirClassLikeDeclaration) {
-        declarationIndex[classLikeDeclaration.symbol.classId] = classLikeDeclaration
+        seenDeclarations += classLikeDeclaration
     }
 
     /** 获取文件 scope 缓存；不存在时使用 [builder] 构造并保存。 */
@@ -266,6 +327,7 @@ open class SupertypeComputationSession {
 
     /** 保存指定 class-like 声明解析完成的直接超类型列表。 */
     fun storeSupertypes(classLikeDeclaration: CfirClassLikeDeclaration, supertypeRefs: List<CfirResolvedTypeRef>) {
+        originalTopologyRefs[classLikeDeclaration] = supertypeRefs.toList()
         require(getSupertypesComputationStatus(classLikeDeclaration) is SupertypeComputationStatus.Computing) {
             "Unexpected supertype computation status for ${classLikeDeclaration.symbol.classId.asString()}: " +
                 getSupertypesComputationStatus(classLikeDeclaration)
@@ -325,7 +387,7 @@ open class SupertypeComputationSession {
             return typeRef
         }
 
-        val expandedType = typeRef.coneType.fullyExpandedType(session, ::getResolvedExpandedType)
+        val expandedType = typeRef.coneType.fullyExpandedType(session, expandedConeType = ::getResolvedExpandedType)
         if (expandedType == typeRef.coneType) return typeRef
         val expandedTypeRef = buildResolvedTypeRefCopy(typeRef) {
             coneType = expandedType
@@ -347,8 +409,9 @@ open class SupertypeComputationSession {
      * extend 参与的环优先归因到 extend 边，普通 class-like 环再回写到对应 typeRef。
      */
     fun breakLoops(session: CfirSession, localClassesNavigationInfo: LocalClassesNavigationInfo?) {
+        referenceCycleMembers.clear()
         val declarations = LinkedHashSet<CfirClassLikeDeclaration>()
-        declarations += declarationIndex.values
+        declarations += seenDeclarations
         declarations += localClassesNavigationInfo?.parentForClass?.keys.orEmpty()
         breakTypeAliasLoops(declarations.filterIsInstance<CfirTypeAlias>(), session)
         val extendCoveredDeclarations = reportExtendInheritanceCycles(declarations, session)
@@ -489,21 +552,35 @@ open class SupertypeComputationSession {
         declarations: Collection<CfirClassLikeDeclaration>,
         session: CfirSession,
     ): Set<CfirClassLikeDeclaration> {
-        val graphStore = session.superTypeGraphStoreOrNull ?: return emptySet()
+        val graphStore = session.superTypeGraphStoreOrNull
         val status = linkedMapOf<CfirClassLikeDeclaration, InheritanceVisitStatus>()
         val path = ArrayList<CfirClassLikeDeclaration>()
         val coveredByExtend = linkedSetOf<CfirClassLikeDeclaration>()
         val reportedExtendEdges = linkedSetOf<CfirSuperTypeGraphEdge>()
+        val transparentAliases = linkedSetOf<CfirTypeAlias>()
 
         fun dfs(
             declaration: CfirClassLikeDeclaration,
             activeExtendEdge: CfirSuperTypeGraphEdge?,
         ) {
+            if (declaration is CfirTypeAlias) {
+                if (!transparentAliases.add(declaration)) return
+                try {
+                    for (dependency in referenceCycleDependencies(declaration, session)) dfs(dependency, activeExtendEdge)
+                } finally {
+                    transparentAliases.remove(declaration)
+                }
+                return
+            }
             when (status[declaration]) {
                 InheritanceVisitStatus.Visiting -> {
-                    if (activeExtendEdge != null && reportedExtendEdges.add(activeExtendEdge)) {
-                        activeExtendEdge.replaceWithInheritanceCycleError()
-                        val cycleStart = path.indexOf(declaration).takeIf { it >= 0 } ?: 0
+                    val cycleStart = path.indexOf(declaration)
+                    check(cycleStart >= 0) { "A visiting declaration must belong to the active inheritance path" }
+                    referenceCycleMembers += path.drop(cycleStart)
+                    if (activeExtendEdge != null) {
+                        if (reportedExtendEdges.add(activeExtendEdge)) {
+                            activeExtendEdge.replaceWithInheritanceCycleError(session)
+                        }
                         coveredByExtend += path.drop(cycleStart)
                     }
                     return
@@ -515,11 +592,11 @@ open class SupertypeComputationSession {
 
             status[declaration] = InheritanceVisitStatus.Visiting
             path += declaration
-            for (dependency in directDependencies(declaration, session)) {
+            for (dependency in referenceCycleDependencies(declaration, session)) {
                 dfs(dependency, activeExtendEdge)
             }
-            for (edge in graphStore.getNode(declaration.symbol.classId)?.extendedSuperTypes.orEmpty()) {
-                val target = edge.typeRef.toReferencedDeclaration(session) ?: continue
+            for (edge in graphStore?.getNode(declaration.symbol)?.extendedSuperTypes.orEmpty()) {
+                val target = edge.typeRef.referenceCycleTarget(session) ?: continue
                 dfs(target, edge)
             }
             path.removeAt(path.lastIndex)
@@ -533,8 +610,10 @@ open class SupertypeComputationSession {
     }
 
     /** 将 extend 图边替换成继承环错误类型引用。 */
-    private fun CfirSuperTypeGraphEdge.replaceWithInheritanceCycleError() {
+    private fun CfirSuperTypeGraphEdge.replaceWithInheritanceCycleError(session: CfirSession) {
         val extend = sourceExtend ?: return
+        val diagnosticKind = ((typeRef as? CfirErrorTypeRef)?.diagnostic as? ConeSimpleDiagnostic)?.kind
+        if (diagnosticKind == DiagnosticKind.LoopInSupertype) return
         val errorTypeRef = createErrorTypeRef(
             sourceElement = extend.source ?: typeRef.source,
             message = "Loop in supertypes involving $renderedType",
@@ -542,6 +621,29 @@ open class SupertypeComputationSession {
             delegatedTypeRef = typeRef,
         )
         extend.replaceSuperTypeRef(typeRef, errorTypeRef)
+        session.superTypeGraphStoreOrNull?.replaceExtendedTypeRef(extend, typeRef, errorTypeRef)
+    }
+
+    /** 判断 [declaration] 是否能沿普通超类型依赖到达任一 [targets]。 */
+    private fun referenceCycleDependencies(
+        declaration: CfirClassLikeDeclaration,
+        session: CfirSession,
+    ): List<CfirClassLikeDeclaration> {
+        val refs = originalTopologyRefs[declaration]
+            ?: getResolvedSuperTypeRefsForOutOfSessionDeclaration(declaration, session)
+        return refs.mapNotNull { it.referenceCycleTarget(session) }
+            .filter { declaration !is CfirInterface || it is CfirInterface || it is CfirTypeAlias }
+    }
+
+    /** 原始拓扑目标不受 ordinary-member 剪边影响，已经报告的循环仍保留其成员状态。 */
+    private fun CfirResolvedTypeRef.referenceCycleTarget(session: CfirSession): CfirClassLikeDeclaration? {
+        val original = referenceCycleOriginalRef() ?: return null
+        original.coneType.toReferencedDeclaration(session)?.let { return it }
+        val dependencyType = original.classifyDeclaredSupertype(
+            session = session,
+            expandType = { type -> type.fullyExpandedType(session, expandedConeType = ::getResolvedExpandedType) },
+        ).inheritanceCycleDependencyTypeOrNull() ?: return null
+        return dependencyType.toReferencedDeclaration(session)
     }
 
     /** 判断 [declaration] 是否能沿普通超类型依赖到达任一 [targets]。 */
@@ -586,7 +688,7 @@ open class SupertypeComputationSession {
     ): CfirClassLikeDeclaration? {
         val classification = classifyDeclaredSupertype(
             session = session,
-            expandType = { type -> type.fullyExpandedType(session, ::getResolvedExpandedType) },
+            expandType = { type -> type.fullyExpandedType(session, expandedConeType = ::getResolvedExpandedType) },
         )
         val dependencyType = classification.inheritanceCycleDependencyTypeOrNull() ?: return null
 
@@ -853,7 +955,8 @@ internal open class CfirSupertypeResolverVisitor(
         ).map { ref ->
             if (ref.coneType is ConeErrorType) ref.toErrorTypeRef() else ref
         }.let { resolvedRefs ->
-            resolvedRefs.withImplicitStdCoreSupertypes(classLikeDeclaration, session)
+            addImplicitObjectSuperclass(classLikeDeclaration,
+                resolvedRefs.withImplicitStdCoreSupertypes(classLikeDeclaration, session), session, supertypeComputationSession)
         }
         supertypeComputationSession.storeSupertypes(classLikeDeclaration, resolvedTypeRefs)
         return resolvedTypeRefs
@@ -880,7 +983,7 @@ internal open class CfirSupertypeResolverVisitor(
  * 设计约束：
  * 1. 规则只用于 `std.core` 自举，避免把普通源码声明整体改写成显式 `Object/Any` 继承图；
  * 2. 只补“缺失的槽位”，不覆盖用户已经显式声明的继承关系；
- * 3. class 默认补直接父 class：普通 class -> Object，Object -> Any，Any -> 无；
+ * 3. Object 保留真实标准库的显式 Any，普通 class 的缺省父类在共享超类型计算时发布；
  * 4. interface / struct / enum 在完全没有显式父类型时默认补 Any，但 Any 自身不能补成 `Any : Any` 自环。
  */
 private fun List<CfirResolvedTypeRef>.withImplicitStdCoreSupertypes(
@@ -891,7 +994,8 @@ private fun List<CfirResolvedTypeRef>.withImplicitStdCoreSupertypes(
     if (declaration.symbol.classId.packageFqName != StandardNames.FqNames.core) return this
 
     val implicitRefs = when (declaration) {
-        is CfirClass -> declaration.implicitClassSupertypes(this)
+        // Object 的 Any 来自真实 stdlib 显式引用；没有 concrete superclass 不表示缺 Any。
+        is CfirClass -> emptyList()
         is CfirInterface, is CfirStruct, is CfirEnum ->
             if (declaration.symbol.classId != StdlibClassIds.Any && isEmpty()) {
                 listOf(implicitStdCoreTypeRef(StdlibClassIds.Any))
@@ -905,30 +1009,38 @@ private fun List<CfirResolvedTypeRef>.withImplicitStdCoreSupertypes(
     return this + implicitRefs
 }
 
-/** 计算 std.core class 在源码未显式写出时需要补齐的默认父类型。 */
-private fun CfirClass.implicitClassSupertypes(
-    resolvedDirectSuperTypes: List<CfirResolvedTypeRef>,
+/** 在工作产品进入 supplier 与断环拓扑前生成真实缺省父引用，完成发布不得追加新边。 */
+private fun addImplicitObjectSuperclass(
+    declaration: CfirClassLikeDeclaration,
+    refs: List<CfirResolvedTypeRef>,
+    session: CfirSession,
+    supertypeComputationSession: SupertypeComputationSession,
 ): List<CfirResolvedTypeRef> {
-    val classId = symbol.classId
-    if (classId == StdlibClassIds.Any) return emptyList()
-
-    val hasExplicitConcreteSuper = resolvedDirectSuperTypes
-        .map(CfirResolvedTypeRef::coneType)
-        .any(ConeCangJieType::isConcreteSuperClassifier)
-
-    if (hasExplicitConcreteSuper) return emptyList()
-
-    return when (classId) {
-        StdlibClassIds.Object -> listOf(implicitStdCoreTypeRef(StdlibClassIds.Any))
-        else -> listOf(implicitStdCoreTypeRef(StdlibClassIds.Object))
+    if (declaration !is CfirClass || declaration.symbol.classId == StdlibClassIds.Object ||
+        declaration.symbol.classId == StdlibClassIds.Any
+    ) return refs
+    if (refs.any {
+            val type = it.coneType.fullyExpandedType(
+                session, expandedConeType = supertypeComputationSession::getResolvedExpandedType,
+            )
+            type is ConeClassLikeType && !type.isInterface
+        }
+    ) return refs
+    // 错误也是已完成的缺省 superclass 槽；同一缺库输入重放不能再追加第二个错误引用。
+    if (refs.any { ref -> ref is CfirErrorTypeRef &&
+            ref.typeUseOrigin == CfirTypeRefOrigin.COMPILER_ADDED &&
+            (ref.diagnostic as? ConeSimpleDiagnostic)?.kind == DiagnosticKind.NoCoreObject
+        }) return refs
+    val objectSymbol = session.symbolProvider.getClassLikeSymbolByClassId(StdlibClassIds.Object)
+        ?: return listOf(createErrorTypeRef(declaration.source,
+            "`core` package should be imported", DiagnosticKind.NoCoreObject).also {
+                it.replaceTypeUseOrigin(CfirTypeRefOrigin.COMPILER_ADDED)
+            }) + refs
+    check(objectSymbol is CfirClassSymbol) { "std.core.Object must be a class" }
+    val objectRef = objectSymbol.constructType().toCfirResolvedTypeRef().also {
+        it.replaceTypeUseOrigin(CfirTypeRefOrigin.COMPILER_ADDED)
     }
-}
-
-/** 判断 cone type 是否表示 class 可继承槽位中的具体父类型。 */
-private fun ConeCangJieType.isConcreteSuperClassifier(): Boolean = when (this) {
-    is ConeClassLikeType -> !isInterface
-    is ConeStructType, is ConeEnumType -> true
-    else -> false
+    return listOf(objectRef) + refs
 }
 
 /** 构造 std.core 隐式父类型对应的 resolved typeRef。 */
@@ -956,6 +1068,40 @@ private class CfirApplySupertypesTransformer(
     /** 保留给与其它 phase transformer 构造签名对齐的 scope session。 */
     private val scopeSession: ScopeSession,
 ) : CfirDefaultTransformer<Any?>() {
+    /** 同一计算输入只生产一次最终展开引用，完成图与声明树共享其身份。 */
+    private data class CanonicalRefs(
+        val input: List<CfirResolvedTypeRef>,
+        val expanded: List<CfirResolvedTypeRef>,
+    )
+
+    private val canonicalRefs = mutableMapOf<CfirClassLikeDeclaration, CanonicalRefs>()
+
+    private fun finalRefs(
+        declaration: CfirClassLikeDeclaration,
+        computed: SupertypeComputationStatus.Computed,
+    ): List<CfirResolvedTypeRef> {
+        canonicalRefs[declaration]?.takeIf { it.input == computed.supertypeRefs }?.let { return it.expanded }
+        val expanded = computed.supertypeRefs.map { supertypeComputationSession.expandTypealiasInPlace(it, session) }
+        canonicalRefs[declaration] = CanonicalRefs(computed.supertypeRefs.toList(), expanded)
+        return expanded
+    }
+
+
+    /** 完成集合可以跨文件/指定根；统一发布其引用与循环状态，不提升其它声明的 resolvePhase。 */
+    fun publishComputationProducts() {
+        val declarations = supertypeComputationSession.completedDeclarations()
+        // 父边投影查询目标的原生循环状态，必须在记录任一边之前发布全部目标标记。
+        declarations.forEach { declaration ->
+            declaration.isInReferenceCycle = supertypeComputationSession.isInReferenceCycle(declaration)
+        }
+        for (declaration in declarations) {
+            when (declaration) {
+                is CfirTypeAlias -> applyResolvedTypeAlias(declaration)
+                else -> applyResolvedSupertypesToClassLike(declaration)
+            }
+        }
+        session.superTypeGraphStoreOrNull?.publishCompletedProducts()
+    }
     /** 不属于 SUPER_TYPES 写回范围的元素保持原样。 */
     override fun <E : CfirElement> transformElement(element: E, data: Any?): E = element
 
@@ -972,30 +1118,26 @@ private class CfirApplySupertypesTransformer(
         }
     }
 
-    /** 回写 class 超类型并发布 SUPER_TYPES phase。 */
+    /** 引用已由完成发布写回，此处仅推进 class 阶段并遍历声明内容。 */
     override fun transformClass(klass: CfirClass, data: Any?): CfirClass {
-        applyResolvedSupertypesToClassLike(klass)
         klass.replaceResolvePhase(CfirResolvePhase.SUPER_TYPES)
         return transformDeclarationContent(klass, null) as CfirClass
     }
 
-    /** 回写 interface 超类型并发布 SUPER_TYPES phase。 */
+    /** 引用已由完成发布写回，此处仅推进 interface 阶段并遍历声明内容。 */
     override fun transformInterface(`interface`: CfirInterface, data: Any?): CfirInterface {
-        applyResolvedSupertypesToClassLike(`interface`)
         `interface`.replaceResolvePhase(CfirResolvePhase.SUPER_TYPES)
         return transformDeclarationContent(`interface`, null) as CfirInterface
     }
 
-    /** 回写 struct 超类型并发布 SUPER_TYPES phase。 */
+    /** 引用已由完成发布写回，此处仅推进 struct 阶段并遍历声明内容。 */
     override fun transformStruct(struct: CfirStruct, data: Any?): CfirStruct {
-        applyResolvedSupertypesToClassLike(struct)
         struct.replaceResolvePhase(CfirResolvePhase.SUPER_TYPES)
         return transformDeclarationContent(struct, null) as CfirStruct
     }
 
-    /** 回写 enum 超类型并发布 SUPER_TYPES phase。 */
+    /** 引用已由完成发布写回，此处仅推进 enum 阶段并遍历声明内容。 */
     override fun transformEnum(enum: CfirEnum, data: Any?): CfirEnum {
-        applyResolvedSupertypesToClassLike(enum)
         enum.replaceResolvePhase(CfirResolvePhase.SUPER_TYPES)
         return transformDeclarationContent(enum, null) as CfirEnum
     }
@@ -1006,66 +1148,66 @@ private class CfirApplySupertypesTransformer(
         return transformDeclarationContent(extend, null) as CfirExtend
     }
 
-    /** 回写 typealias expanded type 并发布 SUPER_TYPES phase。 */
+    /** RHS 已由完成发布写回，此处仅推进 typealias 阶段并遍历声明内容。 */
     override fun transformTypeAlias(typeAlias: CfirTypeAlias, data: Any?): CfirTypeAlias {
-        if (typeAlias.expandedTypeRef !is CfirResolvedTypeRef) {
-            val expanded = supertypeComputationSession.expandTypealiasInPlace(
-                supertypeComputationSession.getResolvedExpandedTypeRef(typeAlias),
-                session,
-            )
-            typeAlias.replaceExpandedTypeRef(expanded)
-        }
         typeAlias.replaceResolvePhase(CfirResolvePhase.SUPER_TYPES)
         return transformDeclarationContent(typeAlias, null) as CfirTypeAlias
     }
 
+    private fun applyResolvedTypeAlias(typeAlias: CfirTypeAlias) {
+        val computed = supertypeComputationSession.getSupertypesComputationStatus(typeAlias)
+            as? SupertypeComputationStatus.Computed
+        if (computed != null) {
+            val expanded = finalRefs(typeAlias, computed).single()
+            if (typeAlias.expandedTypeRef !== expanded) typeAlias.replaceExpandedTypeRef(expanded)
+        }
+        // 仅获循环标记的声明保留原 RHS，不能通过错误占位 getter 声称它已经完成计算。
+        session.superTypeGraphStoreOrNull?.recordDeclared(typeAlias, listOf(typeAlias.expandedTypeRef), emptyList())
+    }
+
     /** 将 class-like 的已解析超类型写回声明并记录到超类型图。 */
     private fun applyResolvedSupertypesToClassLike(classLikeDeclaration: CfirClassLikeDeclaration) {
-        val resolvedRefs = supertypeComputationSession.getResolvedSupertypeRefs(classLikeDeclaration)
-            .map { ref -> supertypeComputationSession.expandTypealiasInPlace(ref, session) }
-        if (classLikeDeclaration.superTypeRefs.any { it !is CfirResolvedTypeRef }) {
-            classLikeDeclaration.replaceSuperTypeRefs(resolvedRefs)
+        val computed = supertypeComputationSession.getSupertypesComputationStatus(classLikeDeclaration)
+            as? SupertypeComputationStatus.Computed
+        if (computed != null) {
+            val resolvedRefs = finalRefs(classLikeDeclaration, computed)
+            if (classLikeDeclaration.superTypeRefs != resolvedRefs) {
+                classLikeDeclaration.replaceSuperTypeRefs(resolvedRefs)
+            }
         }
-        recordResolvedSupertypes(classLikeDeclaration, resolvedRefs)
+        recordResolvedSupertypes(classLikeDeclaration, classLikeDeclaration.superTypeRefs)
     }
 
     /** 把声明的直接超类型边写入 super type graph store。 */
     private fun recordResolvedSupertypes(
         classLikeDeclaration: CfirClassLikeDeclaration,
-        resolvedRefs: List<CfirResolvedTypeRef>,
+        resolvedRefs: List<CfirTypeRef>,
     ) {
         val graphStore = session.superTypeGraphStoreOrNull ?: return
         graphStore.recordDeclared(
             classLikeDeclaration,
-            resolvedRefs.mapNotNull { ref ->
-                if (!ref.isSemanticallyValidDeclaredSupertypeEdge(classLikeDeclaration, session)) {
+            resolvedRefs,
+            resolvedRefs.mapNotNull { typeRef ->
+                val ref = typeRef as? CfirResolvedTypeRef ?: return@mapNotNull null
+                if (ref.ordinaryMemberSupertypeOrNull(classLikeDeclaration, session,
+                        { it.fullyExpandedTypeUsingAbbreviation(session, session.symbolProvider,
+                            supertypeComputationSession::getResolvedExpandedType) }, session.symbolProvider) { type ->
+                            val target = type.toReferencedDeclaration(session)
+                            if (target == null) false
+                            else if (supertypeComputationSession.getSupertypesComputationStatus(target) is SupertypeComputationStatus.Computed ||
+                                supertypeComputationSession.isInReferenceCycle(target)) supertypeComputationSession.isInReferenceCycle(target)
+                            else type.isReferenceCycleTarget(session)
+                        } == null) {
                     return@mapNotNull null
                 }
                 CfirSuperTypeGraphEdge(
                     typeRef = ref,
                     renderedType = ref.renderReadable(),
-                    resolvedClassSymbol = ref.toReferencedDeclaration(session)?.symbol
-                        as? org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol<*>,
+                    resolvedClassSymbol = ref.toReferencedDeclaration(session)?.symbol,
                 )
             },
         )
     }
-}
-
-/**
- * 判断声明超类型是否能进入继承图。
- *
- * 非法继承关系仍由 declaration checker 负责报告；继承图只保留语义上有效的边，
- * 避免错误恢复阶段把 `interface <: class` 这类已非法的关系再解释成继承环。
- */
-private fun CfirResolvedTypeRef.isSemanticallyValidDeclaredSupertypeEdge(
-    owner: CfirClassLikeDeclaration,
-    session: CfirSession,
-): Boolean {
-    val semanticType = classifyDeclaredSupertype(session).ordinarySupertypeTypeOrNull() ?: return false
-    val target = semanticType.toReferencedDeclaration(session) ?: return false
-    if (owner is CfirInterface && target !is CfirInterface) return false
-    return true
 }
 
 /**
@@ -1081,9 +1223,11 @@ private class CfirExtendSupertypesCollector(
     private val scopeSession: ScopeSession,
     /** extend 超类型边写入的图存储。 */
     private val graphStore: org.cangnova.cangjie.cfir.resolve.services.CfirSuperTypeGraphStore,
+    /** 当前批次尚未写回声明树的真实超类型与 alias 展开产品。 */
+    private val supertypeSupplier: SupertypeSupplier,
 ) : CfirDefaultVisitor<Unit, CfirTypeResolutionConfiguration>() {
     /** extend 类型引用解析器。 */
-    private val typeResolverTransformer = CfirSpecificTypeResolverTransformer(session)
+    private val typeResolverTransformer = CfirSpecificTypeResolverTransformer(session, supertypeSupplier = supertypeSupplier)
     /** 当前遍历路径上的 class-like 容器栈。 */
     private val classDeclarationsStack: ArrayDeque<CfirClassLikeDeclaration> = ArrayDeque()
     /** 当前采集所在的 use-site 文件。 */
@@ -1140,22 +1284,23 @@ private class CfirExtendSupertypesCollector(
         extend.transformSuperTypeRefs(typeResolverTransformer, configuration)
 
         val extendedTypeRef = extend.extendedTypeRef as? CfirResolvedTypeRef ?: return
-        if (!extendedTypeRef.isLegalExtendTargetForSupertypeGraph(session)) return
+        if (!extendedTypeRef.isLegalExtendTargetForSupertypeGraph(session, supertypeSupplier)) return
 
-        val ownerClassId = extendedTypeRef.coneType.classIdOrPrimitiveClassId ?: return
+        val ownerSymbol = extendedTypeRef.coneType.toReferencedDeclaration(session)?.symbol ?: return
         val edges = extend.superTypeRefs.mapNotNull { ref ->
             val resolvedRef = ref as? CfirResolvedTypeRef ?: return@mapNotNull null
-            if (!resolvedRef.isValidExtendInterfaceSupertypeForGraph(session)) return@mapNotNull null
+            val topologyRef = resolvedRef.referenceCycleOriginalRef() ?: return@mapNotNull null
+            if (!topologyRef.isValidExtendInterfaceSupertypeForGraph(session, supertypeSupplier)) return@mapNotNull null
             CfirSuperTypeGraphEdge(
                 typeRef = resolvedRef,
-                renderedType = resolvedRef.renderReadable(),
-                resolvedClassSymbol = resolvedRef.toReferencedDeclaration(session)?.symbol
+                renderedType = topologyRef.renderReadable(),
+                resolvedClassSymbol = topologyRef.toReferencedDeclaration(session)?.symbol
                     as? org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol<*>,
                 sourceExtend = extend,
             )
         }
         if (edges.isEmpty()) return
-        graphStore.recordExtended(ownerClassId, edges)
+        graphStore.recordExtended(ownerSymbol, edges)
     }
 
     /** 在嵌套 class-like 容器上下文中继续访问子声明。 */
@@ -1247,12 +1392,26 @@ private enum class InheritanceVisitStatus {
     Visited,
 }
 
+/** 已报告继承环保留原引用；拓扑重建与原生标记复查共同消费该目标，而非错误载体类型。 */
+private fun CfirResolvedTypeRef.referenceCycleOriginalRef(): CfirResolvedTypeRef? {
+    if (this is CfirErrorTypeRef) {
+        when ((diagnostic as? ConeSimpleDiagnostic)?.kind) {
+            DiagnosticKind.LoopInSupertype, DiagnosticKind.SupertypeSelfReference ->
+                return (delegatedTypeRef as? CfirResolvedTypeRef)?.referenceCycleOriginalRef()
+            else -> Unit
+        }
+    }
+    return this
+}
+
 /** 从 resolved typeRef 解析出它引用的 class-like 声明。 */
 private fun CfirResolvedTypeRef.toReferencedDeclaration(session: CfirSession): CfirClassLikeDeclaration? =
     coneType.toReferencedDeclaration(session)
 
 /** 从 cone type 解析出它引用的 class-like 声明。 */
 private fun ConeCangJieType.toReferencedDeclaration(session: CfirSession): CfirClassLikeDeclaration? {
+    // 已绑定 nominal 头保留原 symbol；不能把依赖模块的同名类型换成 use-site 名称首命中。
+    if (this is ConeLookupTagBasedType) return (lookupTag.toSymbol(session) as? CfirClassLikeSymbol<*>)?.cfir
     val classId = when (this) {
         is ConePrimitiveType -> kind.classId
         is ConeClassLikeType -> classId
@@ -1270,9 +1429,10 @@ private fun ConeCangJieType.toReferencedDeclaration(session: CfirSession): CfirC
  *
  * 只有具体 class / struct / enum / primitive 目标参与 extend 超类型图，接口和复合类型不作为 owner。
  */
-private fun CfirResolvedTypeRef.isLegalExtendTargetForSupertypeGraph(session: CfirSession): Boolean {
+private fun CfirResolvedTypeRef.isLegalExtendTargetForSupertypeGraph(session: CfirSession, supplier: SupertypeSupplier): Boolean {
     if (coneType is ConeErrorType) return false
-    return when (val expandedType = coneType.fullyExpandedTypeUsingAbbreviation(session)) {
+    return when (val expandedType = coneType.fullyExpandedTypeUsingAbbreviation(session, session.symbolProvider,
+        { alias -> supplier.expansionForTypeAlias(alias, session) })) {
         is ConeErrorType -> false
         is ConeClassLikeType -> !expandedType.isInterface
         is ConeStructType,
@@ -1288,9 +1448,10 @@ private fun CfirResolvedTypeRef.isLegalExtendTargetForSupertypeGraph(session: Cf
 }
 
 /** 判断 extend 声明中的 supertype 是否是可记录到图中的接口类型。 */
-private fun CfirResolvedTypeRef.isValidExtendInterfaceSupertypeForGraph(session: CfirSession): Boolean {
+private fun CfirResolvedTypeRef.isValidExtendInterfaceSupertypeForGraph(session: CfirSession, supplier: SupertypeSupplier): Boolean {
     if (coneType is ConeErrorType) return false
-    val expandedType = coneType.fullyExpandedTypeUsingAbbreviation(session)
+    val expandedType = coneType.fullyExpandedTypeUsingAbbreviation(session, session.symbolProvider,
+        { alias -> supplier.expansionForTypeAlias(alias, session) })
     return expandedType is ConeClassLikeType && expandedType.isInterface
 }
 

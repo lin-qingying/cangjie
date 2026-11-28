@@ -1,5 +1,7 @@
 package org.cangnova.cangjie.analysis.api.cfir
 
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
+
 import com.intellij.openapi.project.Project
 import org.cangnova.cangjie.analysis.api.CaImplementationDetail
 import org.cangnova.cangjie.analysis.api.CaPlatformInterface

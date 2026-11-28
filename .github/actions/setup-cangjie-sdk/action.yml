@@ -70,7 +70,14 @@ runs:
           exit 1
         fi
 
+        stdlib_root="${sdk_home}/modules/linux_$(uname -m)_cjnative"
+        if [[ ! -s "${stdlib_root}/std/std.core.cjo" ]]; then
+          echo "Could not find the SDK's native std.core CJO at ${stdlib_root}." >&2
+          exit 1
+        fi
+
         printf 'CANGJIE_HOME=%s\n' "$sdk_home" >> "$GITHUB_ENV"
+        printf 'CANGJIE_STDLIB_MODULE=%s\n' "$stdlib_root" >> "$GITHUB_ENV"
         printf '%s\n' "${sdk_home}/bin" >> "$GITHUB_PATH"
 
     - name: Save Cangjie SDK cache

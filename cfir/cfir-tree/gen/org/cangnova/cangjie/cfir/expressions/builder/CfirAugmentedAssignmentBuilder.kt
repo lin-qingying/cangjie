@@ -8,6 +8,7 @@
 package org.cangnova.cangjie.cfir.expressions.builder
 
 import kotlin.contracts.*
+import org.cangnova.cangjie.annotations.CangjieOverflowStrategy
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
@@ -23,6 +24,8 @@ class CfirAugmentedAssignmentBuilder {
     var source: CjSourceElement? = null
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
     var coneTypeOrNull: ConeCangJieType? = null
+    var mappedExpression: CfirExpression? = null
+    var overflowStrategy: CangjieOverflowStrategy? = null
     lateinit var operation: Name
     var operationSource: CjSourceElement? = null
     lateinit var leftArgument: CfirExpression
@@ -33,6 +36,8 @@ class CfirAugmentedAssignmentBuilder {
             source,
             annotations.toMutableOrEmpty(),
             coneTypeOrNull,
+            mappedExpression,
+            overflowStrategy,
             operation,
             operationSource,
             leftArgument,

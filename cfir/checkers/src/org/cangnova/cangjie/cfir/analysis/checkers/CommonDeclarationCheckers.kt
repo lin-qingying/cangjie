@@ -37,10 +37,13 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
             CfirCAnnotationChecker,
             CfirForeignVariableChecker,
             CfirDeprecatedAnnotationChecker,
+            CfirFunctionGroupPreCheckChecker,
             CfirConflictsDeclarationChecker,
             CfirModifierChecker,
-            CfirCjmpParseRulesChecker,
+            CfirCjmpFeatureSupportChecker,
             CfirCjmpMatchingChecker,
+            CfirCjmpAnnotationMatchingChecker,
+            CfirCjmpCommonSideChecker,
             CfirCommonSpecificDeclarationChecker,
             CfirTypeConstraintsChecker,
         )
@@ -99,7 +102,6 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
         get() = setOf(
             CfirOperatorDeclarationChecker,
             CfirFunctionDeclarationStatusChecker,
-            CfirFunctionOverloadChecker,
             CfirDefaultParameterChecker,
         )
 
@@ -112,12 +114,10 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
             CfirIntrinsicDuplicateChecker,
             CfirPlatformAnnotationMacroOrderChecker,
             CfirGeneralSemanticsChecker,
+            CfirPackageConflictsWithClassifierChecker,
             CfirGenericInstantiationChecker,
             CfirFileStaticGlobalInitializationChecker,
             CfirCommonPackageMainChecker,
-            CfirCjmpFilePartChecker,
-            CfirCjmpCommonSideChecker,
-            CfirMacroRedefinitionChecker,
             CfirRedefinitionEntryChecker,
         )
 
@@ -201,7 +201,6 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
             CfirInheritanceThreadContextChecker,
             CfirCJMappingChecker,
             CfirObjCCJMappingChecker,
-            org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirCommonCtorImmutableAssignChecker,
             org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirAnnotationArgNumberClassChecker,
             CfirCStructFieldChecker,
         )

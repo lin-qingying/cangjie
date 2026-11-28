@@ -274,7 +274,6 @@ object DiagnosticNameMapper {
         "BUILTIN_INDEX_IN_BOUND" to "sema_builtin_index_in_bound",
 
         // ── Common/Specific ──
-        "COMMON_OPEN_CLASS_NO_INIT" to "parse_cjmp_in_common_ctor_required",
         "SPECIFIC_HAS_DIFFERENT_TYPE" to "sema_specific_has_different_kind",
         "PARAM_NAMED_MISMATCHED" to "sema_param_named_mismatched",
 
@@ -283,6 +282,7 @@ object DiagnosticNameMapper {
 
         // ── General ──
         "CORE_OBJECT_NOT_FOUND_WHEN_NO_PRELUDE" to "sema_core_object_not_found_when_no_prelude",
+        "NO_CORE_OBJECT" to "sema_no_core_object",
         "TYPEALIAS_UNUSED_TYPE_PARAMETERS" to "typealias_unused_type_parameters",
         "TYPEALIAS_CYCLE" to "sema_typealias_cycle",
         "TYPEALIAS_EXTERNAL_REFER_INTERNAL" to "sema_typealias_external_refer_internal",

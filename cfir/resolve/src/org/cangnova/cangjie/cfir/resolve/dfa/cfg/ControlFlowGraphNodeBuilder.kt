@@ -2,7 +2,18 @@
 
 package org.cangnova.cangjie.cfir.resolve.dfa.cfg
 
+import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
+
+import org.cangnova.cangjie.cfir.expressions.CfirBinaryExpression
+import org.cangnova.cangjie.cfir.CfirFunctionBodyOwner
+
+import org.cangnova.cangjie.cfir.expressions.CfirUnaryExpression
+
+import org.cangnova.cangjie.cfir.expressions.CfirCallExpression
+
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.CfirIterationOwner
+import org.cangnova.cangjie.cfir.expressions.CfirForInExpression
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirCodeFragment
 import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
@@ -23,6 +34,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirIfExpression
 import org.cangnova.cangjie.cfir.expressions.CfirIncrementDecrementExpression
 import org.cangnova.cangjie.cfir.expressions.CfirJump
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
+import org.cangnova.cangjie.cfir.expressions.CfirTupleLiteral
 import org.cangnova.cangjie.cfir.expressions.CfirLoopExpression
 import org.cangnova.cangjie.cfir.expressions.CfirMatchBranch
 import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
@@ -94,11 +106,11 @@ fun ControlFlowGraphBuilder.createCodeFragmentExitNode(fir: CfirCodeFragment): C
     CodeFragmentExitNode(currentGraph, fir, levelCounter)
 
 /** 创建函数 CFG 入口节点。 */
-fun ControlFlowGraphBuilder.createFunctionEnterNode(fir: CfirFunction): FunctionEnterNode =
+fun ControlFlowGraphBuilder.createFunctionEnterNode(fir: CfirFunctionBodyOwner): FunctionEnterNode =
     FunctionEnterNode(currentGraph, fir, levelCounter)
 
 /** 创建函数 CFG 出口节点。 */
-fun ControlFlowGraphBuilder.createFunctionExitNode(fir: CfirFunction): FunctionExitNode =
+fun ControlFlowGraphBuilder.createFunctionExitNode(fir: CfirFunctionBodyOwner): FunctionExitNode =
     FunctionExitNode(currentGraph, fir, levelCounter)
 
 /** 创建局部函数声明节点，用于表达声明本身出现在局部控制流中。 */
@@ -262,16 +274,61 @@ fun ControlFlowGraphBuilder.createIfExitNode(fir: CfirIfExpression): IfExitNode 
 
 // ----------------------------------- Loop (while / do-while / for-in) -----------------------------------
 
+/** 创建真实语义阶段，不生成 AST 替身。 */
+fun ControlFlowGraphBuilder.createForInLoopInitialCheckExitNode(fir: CfirForInExpression): ForInLoopInitialCheckExitNode =
+    ForInLoopInitialCheckExitNode(currentGraph, fir, levelCounter)
+
+/** 创建真实语义阶段，不生成 AST 替身。 */
+fun ControlFlowGraphBuilder.createForInLoopConditionEnterNode(fir: CfirForInExpression): ForInLoopConditionEnterNode =
+    ForInLoopConditionEnterNode(currentGraph, fir, levelCounter)
+
+/** 创建真实语义阶段，不生成 AST 替身。 */
+fun ControlFlowGraphBuilder.createForInLoopRangeCheckNode(fir: CfirBinaryExpression, index: CfirVariable, bound: CfirVariable): ForInLoopRangeCheckNode =
+    ForInLoopRangeCheckNode(currentGraph, fir, index, bound, levelCounter)
+
+fun ControlFlowGraphBuilder.createForInLoopStringCheckNode(fir: CfirForInExpression, index: CfirVariable, bound: CfirVariable): ForInLoopStringCheckNode =
+    ForInLoopStringCheckNode(currentGraph, fir, index, bound, levelCounter)
+
+/** 创建真实语义阶段，不生成 AST 替身。 */
+fun ControlFlowGraphBuilder.createForInLoopStringUpdateNode(fir: CfirForInExpression, index: CfirVariable): ForInLoopStringUpdateNode =
+    ForInLoopStringUpdateNode(currentGraph, fir, index, levelCounter)
+
+/** 创建真实语义阶段，不生成 AST 替身。 */
+fun ControlFlowGraphBuilder.createForInLoopIteratorCheckNode(fir: CfirForInExpression, resultExpression: CfirExpression, constructorReference: CfirResolvedNamedReference, constructorSymbol: org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol<*>): ForInLoopIteratorCheckNode =
+    ForInLoopIteratorCheckNode(currentGraph, fir, resultExpression, constructorReference, constructorSymbol, levelCounter)
+
+/** 创建真实语义阶段，不生成 AST 替身。 */
+fun ControlFlowGraphBuilder.createCallExpressionNode(fir: CfirCallExpression): CallExpressionNode =
+    CallExpressionNode(currentGraph, fir, levelCounter)
+
+/** 创建真实语义阶段，不生成 AST 替身。 */
+fun ControlFlowGraphBuilder.createUnaryExpressionNode(fir: CfirUnaryExpression): UnaryExpressionNode =
+    UnaryExpressionNode(currentGraph, fir, levelCounter)
+
+/** 创建真实语义阶段，不生成 AST 替身。 */
+fun ControlFlowGraphBuilder.createBinaryExpressionNode(fir: CfirBinaryExpression): BinaryExpressionNode =
+    BinaryExpressionNode(currentGraph, fir, levelCounter)
+
+/** 创建 For 的真实迭代入口及分支出口。 */
+fun ControlFlowGraphBuilder.createForInLoopIterationEnterNode(fir: CfirForInExpression): ForInLoopIterationEnterNode =
+    ForInLoopIterationEnterNode(currentGraph, fir, levelCounter)
+
+fun ControlFlowGraphBuilder.createForInLoopIterationExitNode(fir: CfirForInExpression): ForInLoopIterationExitNode =
+    ForInLoopIterationExitNode(currentGraph, fir, levelCounter)
+
+fun ControlFlowGraphBuilder.createForInLoopGuardExitNode(fir: CfirExpression, loop: CfirForInExpression): ForInLoopGuardExitNode =
+    ForInLoopGuardExitNode(currentGraph, fir, loop, levelCounter)
+
 /** 创建循环表达式入口节点。 */
-fun ControlFlowGraphBuilder.createLoopEnterNode(fir: CfirLoopExpression): LoopEnterNode =
+fun ControlFlowGraphBuilder.createLoopEnterNode(fir: CfirIterationOwner): LoopEnterNode =
     LoopEnterNode(currentGraph, fir, levelCounter)
 
 /** 创建循环体入口节点。 */
-fun ControlFlowGraphBuilder.createLoopBlockEnterNode(fir: CfirLoopExpression): LoopBlockEnterNode =
+fun ControlFlowGraphBuilder.createLoopBlockEnterNode(fir: CfirIterationOwner): LoopBlockEnterNode =
     LoopBlockEnterNode(currentGraph, fir, levelCounter)
 
 /** 创建循环体出口节点。 */
-fun ControlFlowGraphBuilder.createLoopBlockExitNode(fir: CfirLoopExpression): LoopBlockExitNode =
+fun ControlFlowGraphBuilder.createLoopBlockExitNode(fir: CfirIterationOwner): LoopBlockExitNode =
     LoopBlockExitNode(currentGraph, fir, levelCounter)
 
 /** 创建循环条件入口节点。 */
@@ -283,7 +340,7 @@ fun ControlFlowGraphBuilder.createLoopConditionExitNode(fir: CfirExpression, loo
     LoopConditionExitNode(currentGraph, fir, loop, levelCounter)
 
 /** 创建循环表达式出口节点。 */
-fun ControlFlowGraphBuilder.createLoopExitNode(fir: CfirLoopExpression): LoopExitNode =
+fun ControlFlowGraphBuilder.createLoopExitNode(fir: CfirIterationOwner): LoopExitNode =
     LoopExitNode(currentGraph, fir, levelCounter)
 
 // ----------------------------------- Try / catch / finally -----------------------------------
@@ -331,20 +388,20 @@ fun ControlFlowGraphBuilder.createTryExpressionExitNode(fir: CfirTryExpression):
 // ----------------------------------- Boolean operators (&&, ||) -----------------------------------
 
 /** 创建布尔短路操作入口节点。 */
-fun ControlFlowGraphBuilder.createBooleanOperatorEnterNode(fir: CfirBinaryOp): BooleanOperatorEnterNode =
+fun ControlFlowGraphBuilder.createBooleanOperatorEnterNode(fir: CfirExpression): BooleanOperatorEnterNode =
     BooleanOperatorEnterNode(currentGraph, fir, levelCounter)
 
 /** 创建布尔短路操作左操作数出口节点。 */
-fun ControlFlowGraphBuilder.createBooleanOperatorExitLeftOperandNode(fir: CfirBinaryOp): BooleanOperatorExitLeftOperandNode =
+fun ControlFlowGraphBuilder.createBooleanOperatorExitLeftOperandNode(fir: CfirExpression): BooleanOperatorExitLeftOperandNode =
     BooleanOperatorExitLeftOperandNode(currentGraph, fir, levelCounter)
 
 /** 创建布尔短路操作右操作数入口节点。 */
-fun ControlFlowGraphBuilder.createBooleanOperatorEnterRightOperandNode(fir: CfirBinaryOp): BooleanOperatorEnterRightOperandNode =
+fun ControlFlowGraphBuilder.createBooleanOperatorEnterRightOperandNode(fir: CfirExpression): BooleanOperatorEnterRightOperandNode =
     BooleanOperatorEnterRightOperandNode(currentGraph, fir, levelCounter)
 
 /** 创建布尔短路操作出口节点，并记录左右操作数出口节点。 */
 fun ControlFlowGraphBuilder.createBooleanOperatorExitNode(
-    fir: CfirBinaryOp,
+    fir: CfirExpression,
     leftOperandNode: CFGNode<*>,
     rightOperandNode: CFGNode<*>,
 ): BooleanOperatorExitNode =
@@ -369,6 +426,15 @@ fun ControlFlowGraphBuilder.createJumpNode(fir: CfirJump<*>): JumpNode =
 /** 创建字面量表达式节点。 */
 fun ControlFlowGraphBuilder.createLiteralExpressionNode(fir: CfirLiteralExpression): LiteralExpressionNode =
     LiteralExpressionNode(currentGraph, fir, levelCounter)
+
+fun ControlFlowGraphBuilder.createTupleLiteralEnterNode(fir: CfirTupleLiteral): TupleLiteralEnterNode =
+    TupleLiteralEnterNode(currentGraph, fir, levelCounter)
+
+fun ControlFlowGraphBuilder.createTupleLiteralElementExitNode(tuple: CfirTupleLiteral, index: Int, fir: CfirExpression): TupleLiteralElementExitNode =
+    TupleLiteralElementExitNode(currentGraph, fir, tuple, index, levelCounter)
+
+fun ControlFlowGraphBuilder.createTupleLiteralExitNode(fir: CfirTupleLiteral, elements: List<TupleLiteralElementExitNode>): TupleLiteralExitNode =
+    TupleLiteralExitNode(currentGraph, fir, elements, levelCounter)
 
 /** 创建 throw 表达式节点。 */
 fun ControlFlowGraphBuilder.createThrowExceptionNode(fir: CfirThrowExpression): ThrowExceptionNode =

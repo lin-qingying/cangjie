@@ -13,10 +13,13 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.macro.MacroSemanticSnaps
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.psi
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionResult
 import org.cangnova.cangjie.cfir.resolve.providers.macro.PreMacroRawBuildResult
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.cfir.session.CfirBuiltinTypes
+import org.cangnova.cangjie.cfir.session.ensureAnnotationMetadataRegistry
+import org.cangnova.cangjie.cfir.session.ensureRawMacroSurfaceUsageStore
 import org.cangnova.cangjie.cfir.session.extendIndexStoreOrNull
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.source.psiOrNull
@@ -144,7 +147,40 @@ abstract class LLCfirResolvableModuleSession(
                 generatedFile.contextModule = caModule
             }
 
-        val published = moduleComponents.macroSemanticSnapshotStore.publish(preparedSnapshot)
+        val published = synchronized(this) {
+            val metadata = ensureAnnotationMetadataRegistry().preparePublication(result.recordableFiles.annotationMetadata)
+            val usageStore = ensureRawMacroSurfaceUsageStore()
+            val usage = preparedSnapshot.files.mapIndexed { index, file ->
+                usageStore.prepareFilePublication(
+                    file,
+                    listOfNotNull(sourceFiles[index], file.psi as? CjFile),
+                    pre.files[index].surfaces,
+                )
+            }
+            fun restore() {
+                try {
+                    usage.asReversed().forEach { it.restore() }
+                } finally {
+                    metadata.restore()
+                }
+            }
+            try {
+                metadata.validate()
+                usage.forEach { it.validate() }
+                metadata.commit()
+                usage.forEach { it.commit() }
+                moduleComponents.macroSemanticSnapshotStore.publish(preparedSnapshot).also { accepted ->
+                    if (!accepted) restore()
+                }
+            } catch (failure: Throwable) {
+                try {
+                    restore()
+                } catch (restorationFailure: Throwable) {
+                    failure.addSuppressed(restorationFailure)
+                }
+                throw failure
+            }
+        }
         if (published) {
             // checker 阶段消费的是快照文件；同步刷新其 extend owner/package 索引，避免索引仍指向旧 raw 声明。
             extendIndexStoreOrNull?.recordDeclarationSources(preparedSnapshot.files)

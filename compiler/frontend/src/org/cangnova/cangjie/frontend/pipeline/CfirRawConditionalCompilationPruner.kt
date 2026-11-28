@@ -6,6 +6,9 @@ import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.resolve.conditional.CfirConditionalCompilationEvaluator
 import org.cangnova.cangjie.cfir.resolve.conditional.CfirConditionalCompilationResult
 import org.cangnova.cangjie.cfir.resolve.providers.macro.PreMacroRawBuildResult
+import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationMetadataBuilder
+import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
 import org.cangnova.cangjie.cfir.resolve.providers.macro.withCfirFile
 import org.cangnova.cangjie.cfir.resolve.providers.macro.withSurfaces
 import org.cangnova.cangjie.cfir.session.CfirConditionalCompilationFailure
@@ -23,7 +26,7 @@ public fun PreMacroRawBuildResult.pruneConditionalCompilation(): PreMacroRawBuil
     val settings = session.conditionalCompilationSettingsOrNull ?: return this
     return mapFiles { preFile ->
         val file = preFile.cfirFile
-        val context = ConditionalPruningContext(CfirConditionalCompilationEvaluator(settings))
+        val context = ConditionalPruningContext(CfirConditionalCompilationEvaluator(settings), preFile.annotationMetadata)
         file.replaceImports(file.imports.filter { keepImport(it, context) })
         (file.declarations as MutableList<CfirDeclaration>).removeIf { declaration ->
             !keepDeclaration(declaration, context)
@@ -35,7 +38,8 @@ public fun PreMacroRawBuildResult.pruneConditionalCompilation(): PreMacroRawBuil
         val reachable = collectReachableDeclarations(file)
         preFile.withCfirFile(file).withSurfaces {
             val carrier = it.replaceHandle.carrier as? CfirDeclaration
-            carrier == null || carrier in reachable
+            (carrier == null || carrier in reachable) &&
+                (it.replaceHandle.annotationCarrier?.let { annotation -> preFile.annotationMetadata.currentSlot(annotation) != null } != false)
         }
     }
 }
@@ -49,6 +53,7 @@ public fun PreMacroRawBuildResult.pruneConditionalCompilation(): PreMacroRawBuil
 private class ConditionalPruningContext(
     /** 基于显式条件环境的 `@When` 求值器。 */
     val evaluator: CfirConditionalCompilationEvaluator,
+    val annotationMetadata: CfirAnnotationMetadataBuilder,
 ) {
     /** 本次裁剪收集的失败事实；非法条件只产生诊断，不决定目标是否保留。 */
     val failures: MutableList<CfirConditionalCompilationFailure> = mutableListOf()
@@ -95,7 +100,7 @@ private fun keepDeclaration(
             true
         }
     }
-    if (keep) declaration.removeWhenAnnotation()
+    if (keep) declaration.removeWhenAnnotation(context.annotationMetadata)
     return keep
 }
 
@@ -157,13 +162,12 @@ private fun CfirAnnotationCall.conditionExpression(): org.cangnova.cangjie.cfir.
     argumentList.arguments.singleOrNull()
 
 /** 从声明注解列表中移除已消费的 `@When` 调用（保留 `@!` 强制形式与其他注解）。 */
-private fun CfirDeclaration.removeWhenAnnotation() {
-    replaceAnnotations(
-        annotations.filterNot { annotation ->
+private fun CfirDeclaration.removeWhenAnnotation(metadata: CfirAnnotationMetadataBuilder) {
+    val retained = annotations.filterNot { annotation ->
             val call = annotation as? CfirAnnotationCall
             call != null && !call.forcedCustom && call.annotationSourceName == CfirRawBuiltinAnnotationNames.WHEN
-        },
-    )
+        }
+    if (retained.size != annotations.size) metadata.replaceAnnotationList(this, retained)
 }
 
 /**
@@ -174,15 +178,13 @@ private fun CfirDeclaration.removeWhenAnnotation() {
  */
 private fun collectReachableDeclarations(file: CfirFile): Set<CfirDeclaration> {
     val result = linkedSetOf<CfirDeclaration>()
-    fun visit(declaration: CfirDeclaration) {
-        if (!result.add(declaration)) return
-        when (declaration) {
-            is CfirClassLikeDeclaration -> declaration.declarations.forEach(::visit)
-            is CfirExtend -> declaration.declarations.forEach(::visit)
-            else -> Unit
+    val visitor = object : CfirVisitorVoid() {
+        override fun visitElement(element: CfirElement) {
+            if (element is CfirDeclaration && !result.add(element)) return
+            element.acceptChildren(this)
         }
     }
-    file.declarations.forEach(::visit)
+    file.accept(visitor)
     return result
 }
 

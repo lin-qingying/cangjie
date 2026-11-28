@@ -10,18 +10,35 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirResolvabl
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.declarations.resolvePhase
+import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
+import org.cangnova.cangjie.cfir.declarations.CfirCjmpExtendKey
+import org.cangnova.cangjie.cfir.ScopeSession
+import org.cangnova.cangjie.cfir.common.moduleData
+import org.cangnova.cangjie.cfir.resolve.SupertypeSupplier
+import org.cangnova.cangjie.cfir.resolve.TypeResolutionConfiguration
+import org.cangnova.cangjie.cfir.resolve.createFileLookupScopes
 import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSessionExtendProvider
 import org.cangnova.cangjie.cfir.resolve.services.CfirExtendIndexStore
 import org.cangnova.cangjie.cfir.session.services.CfirExtendTargetKey
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.session.typeResolver
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
+import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
+import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
 import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
+import org.cangnova.cangjie.cfir.types.coneTypeOrNull
+import org.cangnova.cangjie.cfir.types.containsErrorType
+import org.cangnova.cangjie.cfir.types.expandedExtendTargetKey
+import org.cangnova.cangjie.cfir.session.cjmpOriginalExtendKey
+import org.cangnova.cangjie.cfir.session.sameKeyAs
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
-import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Low-level source session 的 extend provider。
@@ -49,47 +66,39 @@ internal class LLCfirSessionExtendProvider(
      */
     private val indexStore: CfirExtendIndexStore,
 ) : CfirExtendProvider {
+    /** 版本读取只观察真实完成索引，首次目标查询或全量重建之后与主干发布同步。 */
+    override val modificationCount: Long
+        get() = indexStore.modificationCount
+
     /**
      * 复用主干 extend provider 的查询语义。
      */
     private val delegate = CfirSessionExtendProvider(session, indexStore)
+    private val scopeSession = ScopeSession()
 
-    @Volatile
-    /**
-     * 上一次提交到 [indexStore] 的 CFIR 文件集合，充当 extend 索引版本号。
-     *
-     * 语义是「这批文件已经建过索引」，**与单个文件头部是否解析成功无关**：
-     * 失败文件同样提交。理由有二：
-     *
-     * - 官方模型是「声明保留、只让该条 extend 的目标键缺席」
-     *   （`external/cangjie_compiler/src/Sema/TypeCheckExtend.cpp:358-407` 的 `UpdateExtendMap`
-     *   对头部类型不正确的 extend 只 `continue`），extend 表每轮从 AST 重建，没有跨轮 tombstone；
-     * - 若把失败文件排除在外，文件集比较永远不相等，于是**每次查询都全量重建索引**，
-     *   且每次查询都会给失败文件累加一次失败次数，重试预算在最初几次属性访问内就被烧穿。
-     */
+    /** 当前目标查询快照所使用的文件集合。 */
     private var indexedFiles: Set<CfirFile> = emptySet()
 
-    /** 当前线程是否正为这批文件建立 extend 索引，防止类型解析重入启动相同工作。 */
+    /** 已写入结构 owner 索引的 CFIR 文件集合。 */
     @Volatile
-    private var indexBuildInProgress: Boolean = false
+    private var structurallyIndexedFiles: Set<CfirFile> = emptySet()
 
-    /**
-     * 上一次建索引时的 PSI 修改计数，用作「外部新鲜度」信号。
-     *
-     * 只有它变化时，带降级文件的那一批才会被重建，从而给暂时失败的 extend 一次重试机会，
-     * 而不是永久冻结在首个版本上。
-     */
-    @Volatile
-    private var lastBuildModificationCount: Long = 0L
+    /** 已按目标和声明包完成准备的定向查询。 */
+    private val resolvedTargetQueries = hashSetOf<Pair<CfirExtendTargetKey, FqName?>>()
 
-    /**
-     * 最近一次建索引时头部解析失败的文件。
-     *
-     * 它参与重建判定：该集合非空且 PSI 修改计数变化时，允许对这批文件重试一次
-     * （文件集不变、也没有任何外部改动时，重复解析同一处失败没有收益）。
-     * 官方在同一轮里也不会第二次尝试失败的 extend。
-     */
-    private val degradedFiles: MutableSet<CfirFile> = ConcurrentHashMap.newKeySet()
+    /** 已上抛的框架缺陷在同一版本、同一查询中不重复执行。null 代表全量查询。 */
+    private val failedIndexQueries = hashSetOf<Pair<CfirExtendTargetKey, FqName?>?>()
+
+    /** 全部 extend 都已完成 TYPES 查询和索引重建。 */
+    private var allExtendsResolved = false
+
+    /** 防止类型头解析查询 extend provider 时重入当前构建。 */
+    private var indexBuildInProgress = false
+
+    private var lastBuildModificationCount = 0L
+
+    /** 头部符号不可恢复的声明保留结构归属，到下一文件或 PSI 版本再尝试。 */
+    private val degradedExtends = hashSetOf<CfirExtend>()
 
     /** 全量扩展枚举与定向查询使用相同的懒解析索引版本。 */
     override fun getAllExtends(): List<CfirExtend> {
@@ -101,15 +110,67 @@ internal class LLCfirSessionExtendProvider(
      * 查询目标 key 对应的扩展声明。
      */
     override fun getExtendsForTarget(targetKey: CfirExtendTargetKey): List<CfirExtend> {
-        ensureIndexIsFresh()
+        ensureIndexIsFresh(targetKey)
         return delegate.getExtendsForTarget(targetKey)
+    }
+
+    /** CJMP 查找同包候选时只准备同包、同目标的 extend。 */
+    override fun getExtendsForTarget(targetKey: CfirExtendTargetKey, packageFqName: FqName): List<CfirExtend> {
+        ensureIndexIsFresh(targetKey, packageFqName)
+        return delegate.getExtendsForTarget(targetKey, packageFqName)
+    }
+
+    /** CJMP 类型头比较只推进导入绑定；只把结构等价的 extend 交给后续 TYPES 阶段。 */
+    override fun getCjmpMatchingExtends(target: CfirExtend, packageFqName: FqName): List<CfirExtend> {
+        val phasesAtEntry = session.moduleComponents.cache.getAllCachedCfirFilesForResolution()
+            .flatMap { it.declarations.filterIsInstance<CfirExtend>() }
+            .associateWith { it.resolvePhase }
+        fun checkUnrelatedExtendsRemainBeforeTypes(stage: String) {
+            val advanced = phasesAtEntry.entries.firstOrNull { (extend, phase) ->
+                phase < CfirResolvePhase.TYPES && extend.resolvePhase >= CfirResolvePhase.TYPES
+            } ?: return
+            val (extend, phase) = advanced
+            check(false) {
+                "CJMP candidate lookup advanced an existing extend to TYPES during $stage: " +
+                        "extend=${extend.symbol}, before=$phase, after=${extend.resolvePhase}"
+            }
+        }
+        val targetKey = target.extendedTypeRef.coneTypeOrNull?.expandedExtendTargetKey ?: return emptyList()
+        val originalKey = target.cjmpOriginalExtendKey() ?: return emptyList()
+        val comparisonSession = target.moduleData.session
+        session.symbolProvider.materializeTopLevelExtendFiles()
+        val files = session.moduleComponents.cache.getAllCachedCfirFilesForResolution().toList()
+        checkUnrelatedExtendsRemainBeforeTypes("source file materialization")
+        val result = ArrayList<CfirExtend>()
+        for (file in files) {
+            if (file.moduleData != session.moduleData) continue
+            if (file.packageDirective.packageFqName != packageFqName) continue
+            file.lazyResolveToPhase(CfirResolvePhase.IMPORTS)
+            checkUnrelatedExtendsRemainBeforeTypes("imports for ${file.name}")
+            for (candidate in file.declarations.filterIsInstance<CfirExtend>()) {
+                val phaseBeforeTargetInspection = candidate.resolvePhase
+                val matchesTarget = candidate.resolvesExtendedTargetTo(targetKey, file)
+                checkUnrelatedExtendsRemainBeforeTypes("target inspection for ${candidate.extendedTypeRef}")
+                if (!matchesTarget) continue
+                val candidateKey = candidate.resolveCjmpOriginalExtendKey(file)
+                checkUnrelatedExtendsRemainBeforeTypes("full type-head inspection for ${candidate.extendedTypeRef}")
+                if (candidateKey != null && originalKey.sameKeyAs(candidateKey, comparisonSession)) result += candidate
+                check(candidate.resolvePhase == phaseBeforeTargetInspection) {
+                    "CJMP type-head inspection advanced its candidate declaration: " +
+                            "candidate=${candidate.symbol}, before=$phaseBeforeTargetInspection, " +
+                            "after=${candidate.resolvePhase}"
+                }
+            }
+        }
+        checkUnrelatedExtendsRemainBeforeTypes("completed candidate lookup")
+        return result
     }
 
     /**
      * 查询作用于指定 class id 的扩展声明。
      */
     override fun getExtendsForClass(classId: ClassId): List<CfirExtend> {
-        ensureIndexIsFresh()
+        ensureIndexIsFresh(CfirExtendTargetKey.ClassLike(classId))
         return delegate.getExtendsForClass(classId)
     }
 
@@ -133,7 +194,7 @@ internal class LLCfirSessionExtendProvider(
      * 查询 [symbol] 所属的扩展声明。
      */
     override fun getContainingExtend(symbol: CfirCallableSymbol<*>): CfirExtend? {
-        ensureIndexIsFresh()
+        ensureDeclarationSourcesAreFresh()
         return delegate.getContainingExtend(symbol)
     }
 
@@ -141,71 +202,118 @@ internal class LLCfirSessionExtendProvider(
      * 查询 [extend] 所在包名。
      */
     override fun getPackageFqName(extend: CfirExtend): FqName? {
-        ensureIndexIsFresh()
+        indexStore.packageFqNameOf(extend)?.let { return it }
+        ensureDeclarationSourcesAreFresh()
         return delegate.getPackageFqName(extend)
     }
 
     /** 查询 [extend] 的结构性源码文件归属。 */
     override fun getContainingFile(extend: CfirExtend): CfirFile? {
-        ensureIndexIsFresh()
+        indexStore.containingFileOf(extend)?.let { return it }
+        ensureDeclarationSourcesAreFresh()
         return delegate.getContainingFile(extend)
     }
 
-    /**
-     * 确保 [indexStore] 与当前 session 已缓存的顶层 extend 文件一致。
-     *
-     * 重建判据是**文件集版本**：集合不变就直接返回，集合变化才在同步块内重建一次。
-     * 头部解析失败不会让索引看起来「不新鲜」——否则每次查询都会全量重建，而重建本身
-     * 又会重新尝试同一批失败文件。唯一例外是「本批有降级文件、且 PSI 修改计数变了」：
-     * 那是外部新鲜度信号（用户改动了代码），此时给失败文件一次重试机会，
-     * 避免一次索引未就绪被冻结到整个 session。
-     *
-     * 版本提交语义：一批文件（成功与否）只提交一次；随后在目标索引里体现为
-     * 「解析成功的 extend 有目标键、失败的没有」，与官方「声明保留、关系条目缺席」一致。
-     */
-    private fun ensureIndexIsFresh() {
+    /** 更新声明级 owner 索引；该查询只读取原始 CFIR 结构，不触发类型或继承语义解析。 */
+    private fun ensureDeclarationSourcesAreFresh() {
         session.symbolProvider.materializeTopLevelExtendFiles()
         val files = session.moduleComponents.cache.getAllCachedCfirFilesForResolution().toList()
         if (files.isEmpty()) return
+        if (files.toSet() == structurallyIndexedFiles) return
 
-        val fileSet = files.toSet()
-        val modificationCount = PsiModificationTracker.getInstance(session.project).modificationCount
-        val needsRebuild = fileSet != indexedFiles ||
-            (degradedFiles.isNotEmpty() && modificationCount != lastBuildModificationCount)
-        if (!needsRebuild) return
+        synchronized(this) {
+            val latestFiles = session.moduleComponents.cache.getAllCachedCfirFilesForResolution().toList()
+            if (latestFiles.isEmpty()) return
+            val latestFileSet = latestFiles.toSet()
+            if (latestFileSet == structurallyIndexedFiles) return
+            indexStore.recordDeclarationSources(latestFiles)
+            structurallyIndexedFiles = latestFileSet
+        }
+    }
+
+    /**
+     * 定向查询只推进匹配目标与声明包的 extend；全量查询补齐索引。
+     * 同一文件快照内保留结构信息，并在 PSI 修改后重试降级的声明。
+     */
+    private fun ensureIndexIsFresh(
+        targetKey: CfirExtendTargetKey? = null,
+        packageFqName: FqName? = null,
+    ) {
+        require(targetKey != null || packageFqName == null)
+        session.symbolProvider.materializeTopLevelExtendFiles()
+        val targetQuery = targetKey?.let { it to packageFqName }
 
         synchronized(this) {
             if (indexBuildInProgress) return
 
-            val latestFiles = session.moduleComponents.cache.getAllCachedCfirFilesForResolution().toList()
-            if (latestFiles.isEmpty()) return
-
-            val latestFileSet = latestFiles.toSet()
-            if (latestFileSet == indexedFiles &&
-                (degradedFiles.isEmpty() || modificationCount == lastBuildModificationCount)
-            ) {
-                return
+            val files = session.moduleComponents.cache.getAllCachedCfirFilesForResolution().toList()
+            if (files.isEmpty()) return
+            val fileSet = files.toSet()
+            val modificationCount = PsiModificationTracker.getInstance(session.project).modificationCount
+            val retryDegraded = degradedExtends.isNotEmpty() && modificationCount != lastBuildModificationCount
+            if (fileSet != indexedFiles || retryDegraded) {
+                if (fileSet != structurallyIndexedFiles) {
+                    indexStore.recordDeclarationSources(files)
+                    structurallyIndexedFiles = fileSet
+                }
+                indexedFiles = fileSet
+                resolvedTargetQueries.clear()
+                failedIndexQueries.clear()
+                allExtendsResolved = false
+                degradedExtends.clear()
             }
+            if (allExtendsResolved || targetQuery in failedIndexQueries ||
+                targetQuery?.let(resolvedTargetQueries::contains) == true
+            ) return
 
             indexBuildInProgress = true
+            lastBuildModificationCount = modificationCount
             try {
-                // 包与文件 owner 在 TYPES 完成前已由文件结构确定，先发布该部分索引，供类型解析中的
-                // extend 可见性查询读取；完整目标/接口模型仍在头部 resolve 完成后一次性重建。
-                indexStore.recordDeclarationSources(latestFiles)
-
-                // LL 索引消费与主编译器 EXTENSIONS 阶段保持一致：extend 头部必须先完成 TYPES。
-                // 单条 extend 失败不阻塞其它声明，也不阻止本批文件进入索引。
-                for (file in latestFiles) {
-                    resolveTopLevelExtendsToTypes(file)
+                val initialExtendPhases = if (targetQuery == null) {
+                    emptyMap()
+                } else {
+                    files.flatMap { it.declarations.filterIsInstance<CfirExtend>() }
+                        .associateWith { it.resolvePhase }
+                }
+                val resolvedTargetExtends = hashSetOf<CfirExtend>()
+                fun checkUnrelatedExtendsRemainBeforeTypes(stage: String) {
+                    val advanced = initialExtendPhases.entries.firstOrNull { (extend, phase) ->
+                        extend !in resolvedTargetExtends && phase < CfirResolvePhase.TYPES &&
+                                extend.resolvePhase >= CfirResolvePhase.TYPES
+                    } ?: return
+                    val (extend, phase) = advanced
+                    error(
+                        "Targeted extend indexing advanced a different extend to TYPES during $stage: " +
+                                "requested=${targetQuery?.first}, extend=${extend.symbol}, " +
+                                "before=$phase, after=${extend.resolvePhase}"
+                    )
                 }
 
-                // 全部文件都进索引：头部未定型的 extend 由 toSemanticModel 给出的
-                // targetKey == null 自然缺席目标索引，但声明本身仍可按文件/声明查询到，
-                // 也可以定位它自己的结构诊断。
-                indexStore.rebuild(latestFiles, session.typeResolver)
+                for (file in files) {
+                    if (packageFqName != null && file.packageDirective.packageFqName != packageFqName) continue
+                    for (extend in file.declarations.filterIsInstance<CfirExtend>()) {
+                        if (targetKey != null) {
+                            val initialPhase = extend.resolvePhase
+                            val matchesTarget = tryResolveExtendHead(extend) {
+                                extend.resolvesExtendedTargetTo(targetKey, file)
+                            } ?: continue
+                            check(matchesTarget || initialPhase >= CfirResolvePhase.TYPES ||
+                                    extend.resolvePhase < CfirResolvePhase.TYPES) {
+                                "Inspecting a non-matching extend target advanced it to TYPES: " +
+                                        "target=$targetKey, extend=${extend.symbol}, " +
+                                        "before=$initialPhase, after=${extend.resolvePhase}"
+                            }
+                            if (!matchesTarget) continue
+                            resolvedTargetExtends += extend
+                        }
+                        tryResolveExtendHead(extend) { extend.lazyResolveToPhase(CfirResolvePhase.TYPES) }
+                    }
+                }
 
-                // 逐条建模失败已在存储层隔离，这里只补一次可观测记录：
-                // 失败条目的声明保留、目标键缺席，与官方 `UpdateExtendMap` 的逐条 `continue` 一致。
+                checkUnrelatedExtendsRemainBeforeTypes("head resolution")
+                // 未完成 TYPES 的声明也保留文件和包归属；它们没有可索引的目标键。
+                indexStore.rebuild(files, session.typeResolver)
+                checkUnrelatedExtendsRemainBeforeTypes("index rebuild")
                 if (indexStore.lastRebuildFailureCount > 0) {
                     LOG.warn(
                         "extend 语义建模失败 ${indexStore.lastRebuildFailureCount} 条，已按「目标索引缺席」降级",
@@ -213,17 +321,17 @@ internal class LLCfirSessionExtendProvider(
                     )
                 }
 
-                indexedFiles = latestFileSet
-                lastBuildModificationCount = modificationCount
+                if (targetQuery == null) {
+                    allExtendsResolved = true
+                } else {
+                    resolvedTargetQueries += targetQuery
+                }
             } catch (cancelled: ProcessCanceledException) {
                 throw cancelled
             } catch (indexNotReady: IndexNotReadyException) {
                 throw indexNotReady
             } catch (failure: Exception) {
-                // 真缺陷要暴露，但同一批文件不能每次查询都重跑同一处失败：
-                // 先提交版本再上抛，异常只出现一次。
-                indexedFiles = latestFileSet
-                lastBuildModificationCount = modificationCount
+                failedIndexQueries += targetQuery
                 throw failure
             } finally {
                 indexBuildInProgress = false
@@ -231,38 +339,86 @@ internal class LLCfirSessionExtendProvider(
         }
     }
 
-    /**
-     * 将 [file] 中的顶层 extend 声明推进到 [CfirResolvePhase.TYPES]。
-     *
-     * 失败粒度是**单条声明**：官方 `PreCheckExtend` 对每条 extend 独立处理，一条坏的只跳过它自己
-     * （`external/cangjie_compiler/src/Sema/TypeCheckExtend.cpp:358-407`），同文件后续 extend
-     * 不应因此停滞。因此 try/catch 落在循环体内。
-     *
-     * 重试发生在索引版本变化时（文件集变化，或本批存在降级文件且 PSI 修改计数变化），
-     * 而不是每次查询——官方在单轮里不会第二次尝试失败的 extend
-     * （`external/cangjie_compiler/src/Sema/PreCheck.cpp:2270-2302` 是单次顺序流水线，
-     * 整树没有多轮/重试框架）；PSI 变化只是 IDE 特有的「下一轮」信号。
-     *
-     * 取消与索引未就绪必须原样上抛——把它们当成「这个文件坏了」会让整个索引永久降级。
-     */
-    private fun resolveTopLevelExtendsToTypes(file: CfirFile) {
-        var degraded = false
-        for (declaration in file.declarations) {
-            if (declaration !is CfirExtend) continue
-            try {
-                declaration.lazyResolveToPhase(CfirResolvePhase.TYPES)
-            } catch (cancelled: ProcessCanceledException) {
-                throw cancelled
-            } catch (indexNotReady: IndexNotReadyException) {
-                throw indexNotReady
-            } catch (failure: CaSymbolUnavailableException) {
-                // 只吞可分类的「符号不可恢复」；NPE/ISE 这类真缺陷必须暴露（设计决策 6）。
-                LOG.warn("extend 头部解析失败，该条 extend 本轮缺席目标索引：$declaration", failure)
-                degraded = true
-            }
+    /** 单条 extend 的符号不可恢复不阻塞同文件的其它声明。 */
+    private inline fun <T : Any> tryResolveExtendHead(extend: CfirExtend, resolve: () -> T): T? {
+        if (extend in degradedExtends) return null
+        return try {
+            resolve()
+        } catch (failure: CaSymbolUnavailableException) {
+            LOG.warn("extend 头部解析失败，该条 extend 本轮缺席目标索引：$extend", failure)
+            degradedExtends += extend
+            null
+        }
+    }
+
+    /** 解析类型头以验证目标身份，不推进候选 extend 自身的 resolve phase。 */
+    private fun CfirExtend.resolvesExtendedTargetTo(
+        requestedTargetKey: CfirExtendTargetKey,
+        file: CfirFile,
+    ): Boolean {
+        file.lazyResolveToPhase(CfirResolvePhase.IMPORTS)
+        val sourceTypeRef = (extendedTypeRef as? CfirResolvedTypeRef)?.delegatedTypeRef ?: extendedTypeRef
+        val configuration = TypeResolutionConfiguration.EMPTY
+            .withUseSiteFile(file)
+            .withTopContainer(this)
+            .withScopes(session.createFileLookupScopes(file, scopeSession).typeResolutionScopes)
+            .withAdditionalTypeParameters(typeParameters)
+        fun resolveTargetType(): ConeCangJieType = session.typeResolver.resolveType(
+            typeRef = sourceTypeRef,
+            configuration = configuration,
+            areBareTypesAllowed = false,
+            isOperandOfIsOperator = false,
+            resolveDeprecations = true,
+            supertypeSupplier = SupertypeSupplier.Default,
+        ).type
+
+        var targetType = extendedTypeRef.coneTypeOrNull ?: resolveTargetType()
+        val visitedAliases = hashSetOf<ClassId>()
+        while (true) {
+            targetType.expandedExtendTargetKey?.let { return it == requestedTargetKey }
+            val aliasType = targetType.unresolvedAliasOrNull() ?: return false
+            if (!visitedAliases.add(aliasType.classId)) return false
+            val alias = session.typeResolver.resolveClass(aliasType.classId) as? CfirTypeAlias ?: return false
+            alias.lazyResolveToPhase(CfirResolvePhase.TYPES)
+            targetType = resolveTargetType()
+        }
+    }
+
+    /** 在候选原声明上计算完整 CJMP 类型头，不发布 resolved refs，也不推进候选声明 phase。 */
+    private fun CfirExtend.resolveCjmpOriginalExtendKey(file: CfirFile): CfirCjmpExtendKey? = synchronized(scopeSession) {
+        val configuration = TypeResolutionConfiguration.EMPTY
+            .withUseSiteFile(file)
+            .withTopContainer(this)
+            .withScopes(session.createFileLookupScopes(file, scopeSession).typeResolutionScopes)
+            .withAdditionalTypeParameters(typeParameters)
+
+        fun resolveTypeRef(typeRef: CfirTypeRef): ConeCangJieType? {
+            val sourceTypeRef = (typeRef as? CfirResolvedTypeRef)?.delegatedTypeRef ?: typeRef
+            return session.typeResolver.resolveType(
+                typeRef = sourceTypeRef,
+                configuration = configuration,
+                areBareTypesAllowed = false,
+                isOperandOfIsOperator = false,
+                resolveDeprecations = true,
+                supertypeSupplier = SupertypeSupplier.Default,
+            ).type.takeUnless { it.containsErrorType() }
         }
 
-        if (degraded) degradedFiles.add(file) else degradedFiles.remove(file)
+        val target = resolveTypeRef(extendedTypeRef) ?: return@synchronized null
+        val interfaces = superTypeRefs.map { resolveTypeRef(it) ?: return@synchronized null }
+        val bounds = typeParameters.map { parameter ->
+            parameter.bounds.map { resolveTypeRef(it) ?: return@synchronized null }
+        }
+        CfirCjmpExtendKey(target, typeParameters.map { it.symbol }, interfaces, bounds)
+    }
+
+    private fun ConeCangJieType.unresolvedAliasOrNull(): ConeTypeAliasType? = when (this) {
+        is ConeTypeAliasType -> {
+            val expanded = expandedType
+            if (expanded == null) this else expanded.unresolvedAliasOrNull()
+        }
+        is ConeErrorType -> delegatedType?.unresolvedAliasOrNull()
+        else -> null
     }
 }
 

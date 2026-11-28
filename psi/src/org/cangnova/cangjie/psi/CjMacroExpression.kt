@@ -29,6 +29,10 @@ import org.cangnova.cangjie.name.Name.Companion.identifier
 import org.cangnova.cangjie.psi.stubs.CangJieMacroExpressionStub
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import com.intellij.lang.ASTNode
+import com.intellij.psi.tree.TokenSet
+import org.cangnova.cangjie.lexer.CjTokens
+import org.cangnova.cangjie.parsing.MACRO_PARSING_FACTS_KEY
+import org.cangnova.cangjie.parsing.MacroParsingFacts
 
 /**
  * 表示 `CjMacroExpression`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
@@ -41,6 +45,10 @@ class CjMacroExpression : CjElementImplStub<CangJieMacroExpressionStub>, CjExpre
 
     /** 声明宏属于 stub 父链，查询所属枚举时不应触发 AST 加载。 */
     override fun getParent() = parentByStub
+
+    /** 真实invocation的源码文法事实；quote/token payload中的编辑器宏形状没有宿主invocation。 */
+    val parsingFacts: MacroParsingFacts?
+        get() = node.findChildByType(TokenSet.create(CjTokens.AT, CjTokens.ATEXCL))?.getCopyableUserData(MACRO_PARSING_FACTS_KEY)
 
     /**
      * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。

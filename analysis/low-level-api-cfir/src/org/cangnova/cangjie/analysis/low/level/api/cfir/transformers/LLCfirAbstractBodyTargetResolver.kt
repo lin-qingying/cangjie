@@ -8,6 +8,7 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.transformers
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.CfirDesignation
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.targets.LLCfirResolveTarget
 import org.cangnova.cangjie.analysis.low.level.api.cfir.lazy.resolve.CfirLazyBodiesCalculator
+import org.cangnova.cangjie.analysis.low.level.api.cfir.lazy.resolve.CfirLazyBodyPublications
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.resolve.ResolutionMode
@@ -111,8 +112,12 @@ internal sealed class LLCfirAbstractBodyTargetResolver(
      */
     protected fun <T : CfirElementWithResolveState> resolve(target: T, keeper: StateKeeper<T, CfirDesignation>) {
         val cfirDesignation = CfirDesignation(containingDeclarations, target)
-        resolveWithKeeper(target, cfirDesignation, keeper, { CfirLazyBodiesCalculator.calculateBodies(cfirDesignation) }) {
-            rawResolve(target)
+        CfirLazyBodyPublications(target.moduleData.session).use { publications ->
+            resolveWithKeeper(target, cfirDesignation, publications.withStateKeeper(keeper), {
+                CfirLazyBodiesCalculator.calculateBodies(cfirDesignation, publications)
+            }) {
+                rawResolve(target)
+            }
         }
     }
 

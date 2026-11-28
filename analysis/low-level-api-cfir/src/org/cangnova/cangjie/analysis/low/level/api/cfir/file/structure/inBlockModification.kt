@@ -6,11 +6,16 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.api.targets.partialBodyA
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.errorWithCfirSpecificEntries
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.isPartialBodyResolvable
 import org.cangnova.cangjie.cfir.declarations.*
-import org.cangnova.cangjie.cfir.session.bodyResolvePrerequisitePhase
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirLazyBlock
 import org.cangnova.cangjie.cfir.expressions.builder.buildLazyBlock
 import org.cangnova.cangjie.cfir.psi
+import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.resolve.dfa.controlFlowGraph
+import org.cangnova.cangjie.cfir.resolve.dfa.cfg.ControlFlowGraph
+import org.cangnova.cangjie.cfir.visitors.CfirDefaultVisitorVoid
+import java.util.Collections
+import java.util.IdentityHashMap
 
 /**
  * Must be called in a write action.
@@ -22,6 +27,61 @@ internal fun invalidateAfterInBlockModification(declaration: CfirDeclaration): B
     is CfirProperty -> declaration.inBodyInvalidation()
     is CfirCodeFragment -> declaration.inBodyInvalidation()
     else -> errorWithCfirSpecificEntries("Unknown declaration with body", cfir = declaration, psi = declaration.psi)
+}
+
+/** source 换代提交前先验证正文槽位存在，不能在源已经改写后才发现结构变化。 */
+internal fun canInvalidateAfterInBlockModification(declaration: CfirDeclaration): Boolean = when (declaration) {
+    is CfirNamedFunction -> declaration.body != null
+    is CfirPropertyAccessor -> declaration.body != null
+    is CfirProperty -> declaration.getter?.body != null || declaration.setter?.body != null
+    is CfirCodeFragment -> true
+    else -> false
+}
+
+/**
+ * 在来源提交前按真实 CFG 子图 identity 求依赖闭包。CFIR 的 file/class 图保留成员子图，
+ * 不能只清修改函数自身，也不能仅依据入口边的 isSubGraph 标志推测图归属。
+ */
+internal fun collectSourceGenerationCfgDependents(
+    file: CfirFile,
+    modified: Collection<CfirDeclaration>,
+    discardedGraphs: MutableSet<ControlFlowGraph>,
+): List<CfirDeclaration> {
+    val owners = mutableListOf<CfirDeclaration>()
+    file.accept(object : CfirDefaultVisitorVoid() {
+        override fun visitElement(element: CfirElement) {
+            if (element is CfirDeclaration && element is CfirControlFlowGraphOwner && element !in modified) owners += element
+            element.acceptChildren(this)
+        }
+
+        override fun visitLazyBlock(lazyBlock: CfirLazyBlock) = Unit
+    })
+    fun dependsOnDiscarded(graph: ControlFlowGraph, visited: MutableSet<ControlFlowGraph>): Boolean {
+        if (graph in discardedGraphs) return true
+        if (!visited.add(graph)) return false
+        return graph.sourceSubGraphs().any { dependsOnDiscarded(it, visited) }
+    }
+    val result = mutableListOf<CfirDeclaration>()
+    var added: Boolean
+    do {
+        added = false
+        owners.forEach { declaration ->
+            val graph = (declaration as CfirControlFlowGraphOwner).controlFlowGraphReference?.controlFlowGraph
+            if (graph != null && graph !in discardedGraphs && dependsOnDiscarded(graph, Collections.newSetFromMap(IdentityHashMap()))) {
+                discardedGraphs += graph
+                result += declaration
+                added = true
+            }
+        }
+    } while (added)
+    return result
+}
+
+/** 图与自身阶段同时失效，后续容器请求从当前成员重建，不触碰已证明稳定的 header 和 symbol。 */
+internal fun invalidateSourceGenerationContainerGraph(declaration: CfirDeclaration) {
+    val owner = declaration as CfirControlFlowGraphOwner
+    declaration.decreasePhase(minOf(declaration.resolvePhase, CfirResolvePhase.BODY_RESOLVE.previous))
+    owner.replaceControlFlowGraphReference(null)
 }
 
 /**
@@ -88,10 +148,8 @@ private fun CfirProperty.inBodyInvalidation(): Boolean {
     if (getterBody == null && setterBody == null) {
         return false
     }
-    if (getterBody is CfirLazyBlock || setterBody is CfirLazyBlock) {
-        return true
-    }
-
+    getter?.let { accessor -> getterBody?.let(accessor::invalidateBody) }
+    setter?.let { accessor -> setterBody?.let(accessor::invalidateBody) }
     decreasePhase(phaseWithoutBody)
     replaceControlFlowGraphReference(null)
     replaceBodyResolveState(CfirPropertyBodyResolveState.NOTHING_RESOLVED)
@@ -142,7 +200,7 @@ private fun CfirCodeFragment.inBodyInvalidation(): Boolean {
         return true
     }
 
-    decreasePhase(moduleData.session.bodyResolvePrerequisitePhase)
+    decreasePhase(CfirResolvePhase.BODY_RESOLVE.previous)
     replaceBlock(buildLazyBlock())
 
     return true
@@ -156,7 +214,7 @@ private fun CfirCodeFragment.inBodyInvalidation(): Boolean {
  */
 private val CfirDeclaration.phaseWithoutBody: CfirResolvePhase
     get() {
-        return minOf(moduleData.session.bodyResolvePrerequisitePhase, resolvePhase)
+        return minOf(CfirResolvePhase.BODY_RESOLVE.previous, resolvePhase)
     }
 
 /**
@@ -168,7 +226,7 @@ private val CfirDeclaration.phaseWithoutBody: CfirResolvePhase
 private fun CfirDeclaration.decreasePhase(newPhase: CfirResolvePhase) {
     if (isPartialBodyResolvable) {
         val oldPhase = resolvePhase
-        if (oldPhase >= moduleData.session.bodyResolvePrerequisitePhase) {
+        if (oldPhase >= CfirResolvePhase.BODY_RESOLVE.previous) {
             partialBodyAnalysisState = null
         }
     }

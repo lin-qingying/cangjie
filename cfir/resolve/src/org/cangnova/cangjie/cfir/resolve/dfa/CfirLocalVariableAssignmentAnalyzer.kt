@@ -1,22 +1,40 @@
 package org.cangnova.cangjie.cfir.resolve.dfa
 
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.CfirFunctionBodyOwner
 import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirCodeFragment
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
+import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
+import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
+import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
+import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
+import org.cangnova.cangjie.cfir.declarations.defaultValueMetadata
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirAssignment
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
+import org.cangnova.cangjie.cfir.expressions.CfirBinaryOp
+import org.cangnova.cangjie.cfir.expressions.CfirBinaryOpKind
+import org.cangnova.cangjie.cfir.expressions.CfirIfExpression
+import org.cangnova.cangjie.cfir.expressions.CfirAugmentedAssignment
+import org.cangnova.cangjie.cfir.expressions.CfirIncrementDecrementExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirLoopExpression
+import org.cangnova.cangjie.cfir.expressions.CfirForInExpression
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.CfirIterationOwner
 import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirTryExpression
+import org.cangnova.cangjie.cfir.expressions.unwrapAnonymousFunctionExpression
+import org.cangnova.cangjie.cfir.patterns.visibleBindingVariables
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.resolve.body.SnapshotCfirMapper
@@ -54,20 +72,59 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
     // 与 CFG builder 的 postponed lambda 拓扑保持同构。
     /** 当前函数调用链路中尚未按调用完成结果落地的 lambda 分叉。 */
     private val postponedLambdas: Stack<MutableMap<Fork, Boolean /* data-flow only */>>,
+    /** 解析态复制在实际词法宿主图中使用显式 old→new 语义视图，不改写宿主源码或绑定。 */
+    private val projectionMapper: SnapshotCfirMapper?,
 ) {
-    constructor() : this(
+    constructor(projectionMapper: SnapshotCfirMapper? = null) : this(
         rootSymbol = null,
         assignedLocalVariablesByDeclaration = null,
         variableAssignments = null,
         scopes = stackOf(),
         postponedLambdas = stackOf(),
+        projectionMapper = projectionMapper,
     )
+
+    /** 赋值分析器的声明/循环键、fork 与未完成作用域同样属于保留快照，不借助反射或 mini-CFG 重建。 */
+    fun acceptSourceChildren(visitor: DfaSourceVisitor) {
+        val forks = java.util.Collections.newSetFromMap(java.util.IdentityHashMap<Fork, Boolean>())
+        fun fork(value: Fork?) {
+            if (value != null && forks.add(value)) {
+                value.assignedLater.acceptSourceChildren(visitor)
+                value.assignedInside.acceptSourceChildren(visitor)
+            }
+        }
+        rootSymbol?.let { visitor.visitElement(it.cfir) }
+        assignedLocalVariablesByDeclaration?.forEach { (owner, value) ->
+            when (owner) {
+                is CfirBasedSymbol<*> -> visitor.visitElement(owner.cfir)
+                is CfirElement -> visitor.visitElement(owner)
+                else -> error("Unexpected local assignment owner: ${owner::class.simpleName}")
+            }
+            fork(value)
+        }
+        variableAssignments?.forEach { (owner, assignments) ->
+            visitor.visitElement(owner)
+            assignments.forEach { it.acceptSourceChildren(visitor) }
+        }
+        scopes.all().forEach { (value, assignments) ->
+            fork(value)
+            assignments.acceptSourceChildren(visitor)
+        }
+        postponedLambdas.all().forEach { lambdas -> lambdas.keys.forEach(::fork) }
+    }
 
     /**
      * 深拷贝当前分析器状态，并对快照中涉及到的 symbol/element 做 mapper 映射。
      */
     @CfgInternals
     internal fun createSnapshot(firMapper: SnapshotCfirMapper): CfirLocalVariableAssignmentAnalyzer {
+        // 同一写事件同时出现在全局索引和多个 fork/scope 集合；本次快照只克隆一次。
+        val assignmentCopies = java.util.IdentityHashMap<Assignment, Assignment>()
+        val forkCopies = java.util.IdentityHashMap<Fork, Fork>()
+        val setCopies = java.util.IdentityHashMap<VariableAssignments, VariableAssignments>()
+        fun cloneAssignment(value: Assignment): Assignment = assignmentCopies.getOrPut(value) {
+            value.createSnapshot(firMapper)
+        }
         /**
          * 深拷贝状态对象，并把其中的 CFIR symbol/element 映射到快照树。
          */
@@ -76,15 +133,15 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
             return when (value) {
                 is CfirBasedSymbol<*> -> firMapper.mapSymbol(value) as T
                 is CfirElement -> firMapper.mapElement(value) as T
-                is Fork -> value.createSnapshot(firMapper) as T
-                is VariableAssignments -> value.createSnapshot(firMapper) as T
+                is Fork -> forkCopies.getOrPut(value) { value.createSnapshot(firMapper, ::cloneAssignment) } as T
+                is VariableAssignments -> setCopies.getOrPut(value) { value.createSnapshot(firMapper, ::cloneAssignment) } as T
                 is Pair<*, *> -> Pair(clone(value.first), clone(value.second)) as T
                 is List<*> -> value.map { clone(it) } as T
                 is Map<*, *> -> buildMap {
                     value.forEach { (k, v) -> put(clone(k), clone(v)) }
                 } as T
                 is Stack<*> -> value.createSnapshot { clone(it) } as T
-                is Assignment -> value.createSnapshot() as T
+                is Assignment -> cloneAssignment(value) as T
                 is Boolean, null -> value
                 else -> error("Unexpected key type: ${value::class.simpleName}")
             }
@@ -96,6 +153,15 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
             variableAssignments = clone(variableAssignments),
             scopes = clone(scopes),
             postponedLambdas = clone(postponedLambdas),
+            // 首次换代安装本次映射；已有源→有效树投影时接上有效树→快照树映射。
+            projectionMapper = projectionMapper?.let { previousMapper ->
+                object : SnapshotCfirMapper {
+                    override fun <T : CfirBasedSymbol<*>> mapSymbol(symbol: T): T =
+                        firMapper.mapSymbol(previousMapper.mapSymbol(symbol))
+                    override fun <T : CfirElement> mapElement(element: T): T =
+                        firMapper.mapElement(previousMapper.mapElement(element))
+                }
+            } ?: firMapper,
         )
     }
 
@@ -115,7 +181,7 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
      */
     fun isUnstableInCurrentScope(declaration: CfirDeclaration, types: Set<ConeCangJieType>?, session: CfirSession): Boolean {
         if (assignedLocalVariablesByDeclaration == null) return false
-        val callable = declaration as? CfirCallableDeclaration ?: return false
+        val callable = (projectionMapper?.mapElement(declaration) ?: declaration) as? CfirCallableDeclaration ?: return false
         if (!callable.isLocal || !callable.isMutableLocalVariable()) return false
         return !allAssignmentsPreserveType(scopes.top().second[callable], types, session) || postponedLambdas.all().any { lambdas ->
             lambdas.any { (lambda, dataFlowOnly) -> dataFlowOnly && callable in lambda.assignedInside }
@@ -155,9 +221,14 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
      */
     private fun getInfoForDeclaration(symbol: Any): Fork? {
         val root = rootSymbol ?: return null
-        if (root == symbol) return null
+        val effectiveOwner = when (symbol) {
+            is CfirBasedSymbol<*> -> projectionMapper?.mapSymbol(symbol) ?: symbol
+            is CfirElement -> projectionMapper?.mapElement(symbol) ?: symbol
+            else -> error("Unexpected local assignment owner: ${symbol::class.simpleName}")
+        }
+        if (root == effectiveOwner) return null
         val cachedMap = buildInfoForRoot(root)
-        return cachedMap[symbol]
+        return cachedMap[effectiveOwner]
     }
 
     /**
@@ -167,7 +238,7 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
         assignedLocalVariablesByDeclaration?.let { return it }
 
         val data = MiniCfgBuilder.MiniCfgData()
-        MiniCfgBuilder().visitElement(root.cfir, data)
+        MiniCfgBuilder(projectionMapper).visitElement(root.cfir, data)
 
         assignedLocalVariablesByDeclaration = data.forks
         variableAssignments = data.assignments
@@ -195,9 +266,9 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
     /**
      * 进入函数分析作用域，并返回函数入口处已在内部赋值的符号集合。
      */
-    fun enterFunction(function: CfirFunction): Set<CfirBasedSymbol<*>> {
+    fun enterFunction(function: CfirFunctionBodyOwner): Set<CfirBasedSymbol<*>> {
         if (rootSymbol == null) {
-            rootSymbol = function.symbol
+            rootSymbol = projectionMapper?.mapSymbol(function.symbol) ?: function.symbol
             scopes.push(null to VariableAssignments())
             return emptySet()
         }
@@ -260,7 +331,7 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
      */
     private fun enterNewTopLevelScopeIfNeeded(declaration: CfirDeclaration) {
         if (rootSymbol != null) return
-        rootSymbol = declaration.symbol
+        rootSymbol = projectionMapper?.mapSymbol(declaration.symbol) ?: declaration.symbol
         scopes.push(null to VariableAssignments())
     }
 
@@ -268,7 +339,7 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
      * 当前根声明正是给定声明时，退出并清空顶层分析根。
      */
     private fun exitNewTopLevelScopeIfNeeded(declaration: CfirDeclaration) {
-        if (rootSymbol == declaration.symbol) {
+        if (rootSymbol == (projectionMapper?.mapSymbol(declaration.symbol) ?: declaration.symbol)) {
             rootSymbol = null
             scopes.pop()
             assignedLocalVariablesByDeclaration = null
@@ -314,7 +385,7 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
     /**
      * 进入循环作用域，并返回循环内部赋值的符号集合。
      */
-    fun enterLoop(loop: CfirLoopExpression): Set<CfirBasedSymbol<*>> {
+    fun enterLoop(loop: CfirIterationOwner): Set<CfirBasedSymbol<*>> {
         if (rootSymbol == null) return emptySet()
         val (info, _) = enterScope(loop, evaluatedInPlace = true)
         return info?.assignedInside?.getAssignedSymbols().orEmpty()
@@ -329,14 +400,33 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
         return info?.assignedInside?.getAssignedSymbols().orEmpty()
     }
 
+    /** 保留 For 的初始化和重复入口分离；阶段消费者查询同一 mini 已完成事实，不另存符号表。 */
+    fun assignedInsideLoop(loop: CfirIterationOwner): Set<CfirBasedSymbol<*>> =
+        getInfoForDeclaration(loop)?.assignedInside?.getAssignedSymbols().orEmpty()
+
     /**
      * 记录某个局部 callable 的一次真实赋值类型。
      */
-    fun visitAssignment(declaration: CfirCallableDeclaration, type: ConeCangJieType) {
+    internal fun visitAssignment(declaration: CfirCallableDeclaration, occurrence: AssignmentOccurrence, type: ConeCangJieType) {
         buildInfoForRoot(rootSymbol ?: return)
-        val assignments = variableAssignments?.get(declaration) ?: return
-        val assignment = assignments.firstOrNull { it.type == null } ?: return
-        assignment.type = type
+        val effectiveDeclaration = projectionMapper?.mapElement(declaration) ?: declaration
+        val assignments = variableAssignments?.get(effectiveDeclaration) ?: return
+        val effectiveOwner = projectionMapper?.mapElement(occurrence.owner) ?: occurrence.owner
+        assignments.filter { it.occurrence == occurrence.withOwner(effectiveOwner) }.forEach { it.type = type }
+    }
+
+    /** 正常降低保留同一个写事件，把 raw owner 显式换为实际 resolved owner。 */
+    fun rebindAssignment(original: CfirElement, replacement: CfirElement) {
+        buildInfoForRoot(rootSymbol ?: return)
+        val oldOwner = projectionMapper?.mapElement(original) ?: original
+        val newOwner = projectionMapper?.mapElement(replacement) ?: replacement
+        variableAssignments?.values?.forEach { assignments ->
+            assignments.forEach { assignment ->
+                if (assignment.occurrence.owner === oldOwner) {
+                    assignment.occurrence = assignment.occurrence.withOwner(newOwner)
+                }
+            }
+        }
     }
 
     companion object {
@@ -353,8 +443,8 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
              * 为 fork 创建快照副本。
              */
             @CfgInternals
-            fun createSnapshot(firMapper: SnapshotCfirMapper): Fork {
-                return Fork(assignedLater.createSnapshot(firMapper), assignedInside.createSnapshot(firMapper))
+            fun createSnapshot(firMapper: SnapshotCfirMapper, cloneAssignment: (Assignment) -> Assignment): Fork {
+                return Fork(assignedLater.createSnapshot(firMapper, cloneAssignment), assignedInside.createSnapshot(firMapper, cloneAssignment))
             }
         }
 
@@ -362,6 +452,8 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
          * 单次赋值记录。
          */
         private class Assignment(
+            /** 真实写入的节点与槽位身份；正常降低只显式重绑 owner。 */
+            var occurrence: AssignmentOccurrence,
             /** 是否来自复合/操作符赋值。 */
             val operatorAssignment: Boolean,
             /** 赋值右侧推断出的类型；mini CFG 构造阶段可暂为空。 */
@@ -370,7 +462,13 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
             /**
              * 创建赋值记录副本。
              */
-            fun createSnapshot(): Assignment = Assignment(operatorAssignment, type)
+            fun createSnapshot(firMapper: SnapshotCfirMapper): Assignment =
+                Assignment(occurrence.withOwner(firMapper.mapElement(occurrence.owner)), operatorAssignment, type)
+
+            fun acceptSourceChildren(visitor: DfaSourceVisitor) {
+                visitor.visitElement(occurrence.owner)
+                type?.let(visitor::visitType)
+            }
         }
 
         /**
@@ -379,6 +477,13 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
         private class VariableAssignments {
             /** 按局部声明聚合的赋值记录。 */
             private val assignments: MutableMap<CfirCallableDeclaration, MutableSet<Assignment>> = mutableMapOf()
+
+            fun acceptSourceChildren(visitor: DfaSourceVisitor) {
+                assignments.forEach { (owner, values) ->
+                    visitor.visitElement(owner)
+                    values.forEach { it.acceptSourceChildren(visitor) }
+                }
+            }
 
             /**
              * 查询声明对应的赋值集合。
@@ -401,10 +506,10 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
              * 创建赋值映射快照。
              */
             @CfgInternals
-            fun createSnapshot(firMapper: SnapshotCfirMapper): VariableAssignments {
+            fun createSnapshot(firMapper: SnapshotCfirMapper, cloneAssignment: (Assignment) -> Assignment): VariableAssignments {
                 val copy = VariableAssignments()
                 for ((key, value) in assignments) {
-                    copy.assignments[firMapper.mapElement(key)] = value.mapTo(mutableSetOf()) { it.createSnapshot() }
+                    copy.assignments[firMapper.mapElement(key)] = value.mapTo(mutableSetOf(), cloneAssignment)
                 }
                 return copy
             }
@@ -476,12 +581,20 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
          * - 仅抽取“局部声明 + 赋值 + 分支/循环/异常/调用参数顺序”这些对稳定性判定必要的信息；
          * - 节点选择与遍历顺序对位 Kotlin FIR 的 `MiniCfgBuilder`，但仅使用仓颉真实节点。
          */
-        private class MiniCfgBuilder : CfirVisitor<Unit, MiniCfgBuilder.MiniCfgData>() {
+        private class MiniCfgBuilder(private val projectionMapper: SnapshotCfirMapper?) : CfirVisitor<Unit, MiniCfgBuilder.MiniCfgData>() {
+            /** 所有子边在 dispatch 之前投影；借用边由调用方的显式映射协议保留。 */
+            private val sourceVisitor = object : CfirVisitor<Unit, MiniCfgData>() {
+                override fun visitElement(element: CfirElement, data: MiniCfgData) {
+                    val projected = if (projectionMapper == null) element else projectionMapper.mapElement(element)
+                    projected.accept(this@MiniCfgBuilder, data)
+                }
+            }
+
             /**
              * 默认递归访问子节点。
              */
             override fun visitElement(element: CfirElement, data: MiniCfgData) {
-                element.acceptChildren(this, data)
+                element.acceptChildren(sourceVisitor, data)
             }
 
             /**
@@ -491,7 +604,7 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
                 val flow = MiniFlow.start()
                 val freeVariables = data.variableDeclarations.flatMapTo(mutableSetOf()) { it.values }
                 data.flow = flow
-                element.acceptChildren(this, data)
+                element.acceptChildren(sourceVisitor, data)
                 return flow.assignedLater.apply { retain(freeVariables) }
             }
 
@@ -505,7 +618,20 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
              * 函数作为局部声明处理。
              */
             override fun visitFunction(function: CfirFunction, data: MiniCfgData) =
-                visitLocalDeclaration(function, data)
+                run {
+                    function.valueParameters.mapNotNull { it.defaultValueMetadata?.function }.forEach {
+                        it.accept(sourceVisitor, data)
+                    }
+                    visitLocalDeclaration(function, data)
+                }
+
+            /** generated named 入口不委托 visitFunction；与固定 Kotlin 一样显式建立函数 fork。 */
+            override fun visitNamedFunction(namedFunction: CfirNamedFunction, data: MiniCfgData) =
+                visitFunction(namedFunction, data)
+
+            override fun visitEnumConstructor(enumConstructor: CfirEnumConstructor, data: MiniCfgData) {
+                if (enumConstructor.body != null) visitLocalDeclaration(enumConstructor, data)
+            }
 
             /**
              * class 作为局部声明处理。
@@ -534,35 +660,59 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
              * 访问 match 表达式并合并所有分支的 mini flow。
              */
             override fun visitMatchExpression(matchExpression: CfirMatchExpression, data: MiniCfgData) {
-                matchExpression.subject?.accept(this, data)
+                matchExpression.subject?.accept(sourceVisitor, data)
                 val flow = data.flow
                 data.flow = matchExpression.branches.mapTo(mutableSetOf(flow)) { branch ->
                     data.flow = flow
-                    branch.accept(this, data)
+                    branch.accept(sourceVisitor, data)
                     data.flow
                 }.join()
+            }
+
+            /** 独立 If 的条件只执行一次，真/假分支分别从条件后的 flow 出发再合流。 */
+            override fun visitIfExpression(ifExpression: CfirIfExpression, data: MiniCfgData) {
+                data.variableDeclarations.addLast(mutableMapOf())
+                ifExpression.condition.accept(sourceVisitor, data)
+                val entry = data.flow
+                ifExpression.thenBranch.accept(sourceVisitor, data)
+                val thenFlow = data.flow
+                data.variableDeclarations.removeLast()
+                data.flow = entry
+                ifExpression.elseBranch?.accept(sourceVisitor, data)
+                data.flow = setOf(thenFlow, data.flow).join()
+            }
+
+            /** 右操作数的赋值只属于执行它的短路分支；PIPELINE/COMPOSITION 保持实际解糖顺序。 */
+            override fun visitBinaryOp(binaryOp: CfirBinaryOp, data: MiniCfgData) {
+                binaryOp.left.accept(sourceVisitor, data)
+                val entry = data.flow
+                binaryOp.right.accept(sourceVisitor, data)
+                if (binaryOp.kind == CfirBinaryOpKind.AND || binaryOp.kind == CfirBinaryOpKind.OR ||
+                    binaryOp.kind == CfirBinaryOpKind.COALESCING
+                ) data.flow = setOf(entry, data.flow).join()
             }
 
             /**
              * 访问 try/catch/handler/finally，并合并异常分支 flow。
              */
             override fun visitTryExpression(tryExpression: CfirTryExpression, data: MiniCfgData) {
-                tryExpression.tryBlock.accept(this, data)
+                tryExpression.resources.forEach { it.accept(sourceVisitor, data) }
+                tryExpression.tryBlock.accept(sourceVisitor, data)
                 val flow = data.flow
                 data.flow = buildSet {
                     add(flow)
                     tryExpression.catches.forEach { catch ->
                         data.flow = flow
-                        catch.accept(this@MiniCfgBuilder, data)
+                        catch.accept(sourceVisitor, data)
                         add(data.flow)
                     }
                     tryExpression.handlers.forEach { handler ->
                         data.flow = flow
-                        handler.accept(this@MiniCfgBuilder, data)
+                        handler.accept(sourceVisitor, data)
                         add(data.flow)
                     }
                 }.join()
-                tryExpression.finallyBlock?.accept(this, data)
+                tryExpression.finallyBlock?.accept(sourceVisitor, data)
             }
 
             /**
@@ -582,26 +732,74 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
                 data.forks[loopExpression] = Fork(data.flow.assignedLater, assignedInside)
             }
 
+            /** 序列只访问一次；pattern/guard/body 才进入每轮重复的赋值域。 */
+            override fun visitForInExpression(forInExpression: CfirForInExpression, data: MiniCfgData) {
+                val execution = CfirForInLoopExecution.read(forInExpression)
+                val freeVariables = data.variableDeclarations.flatMapTo(mutableSetOf()) { it.values }
+                var entry: MiniFlow? = null
+                var repeated: MiniFlow? = null
+                fun enterRepeated() {
+                    if (repeated == null) {
+                        entry = data.flow
+                        repeated = MiniFlow.start().also { data.flow = it }
+                    }
+                }
+                execution.accept(object : CfirForInLoopExecution.Visitor {
+                    override fun expression(expression: CfirExpression) { expression.accept(sourceVisitor, data) }
+                    override fun initialize(variable: CfirVariable) { variable.accept(sourceVisitor, data) }
+                    override fun enterLoop(execution: CfirForInLoopExecution) { data.variableDeclarations.addLast(mutableMapOf()) }
+                    override fun initialCheck(execution: CfirForInLoopExecution) {
+                        if (execution is CfirForInLoopExecution.Range) expression(execution.comparison)
+                    }
+                    override fun enterCondition(execution: CfirForInLoopExecution) = enterRepeated()
+                    override fun enterIteration(execution: CfirForInLoopExecution) = enterRepeated()
+                    override fun check(execution: CfirForInLoopExecution) {
+                        enterRepeated()
+                    }
+                    override fun bindAndBody(execution: CfirForInLoopExecution) {
+                        data.variableDeclarations.addLast(mutableMapOf())
+                        execution.pattern.accept(sourceVisitor, data)
+                        forInExpression.patternGuard?.let(::expression)
+                        expression(forInExpression.body)
+                        data.variableDeclarations.removeLast()
+                    }
+                    override fun exitBody(execution: CfirForInLoopExecution) = Unit
+                    override fun updateString(execution: CfirForInLoopExecution.StringIteration) {
+                        val index = if (projectionMapper == null) execution.index else projectionMapper.mapElement(execution.index)
+                        data.recordAssignment(index, AssignmentOccurrence(forInExpression, emptyList()), operatorAssignment = true)
+                    }
+                    override fun exitLoop(execution: CfirForInLoopExecution) {
+                        val assignedInside = checkNotNull(repeated).assignedLater.apply { retain(freeVariables) }
+                        val initialization = checkNotNull(entry)
+                        data.variableDeclarations.removeLast()
+                        initialization.recordAssignments(assignedInside)
+                        data.flow.recordAssignments(assignedInside)
+                        data.flow = initialization.fork()
+                        data.forks[forInExpression] = Fork(data.flow.assignedLater, assignedInside)
+                    }
+                })
+            }
+
             /**
              * 按调用求值顺序访问函数调用，并将 lambda 参数作为 postponed 参数放在普通参数之后。
              */
             override fun visitFunctionCall(functionCall: CfirFunctionCall, data: MiniCfgData) {
                 val explicitReceiver = functionCall.explicitReceiver
-                explicitReceiver?.accept(this, data)
+                explicitReceiver?.accept(sourceVisitor, data)
 
                 // resolved call 会让 explicit/dispatch receiver 共享同一个 CFIR DAG 节点；
                 // receiver 在语言求值顺序中只执行一次，mini CFG 也必须按对象身份去重。
                 val dispatchReceiver = functionCall.dispatchReceiver
                 if (dispatchReceiver !== explicitReceiver) {
-                    dispatchReceiver?.accept(this, data)
+                    dispatchReceiver?.accept(sourceVisitor, data)
                 }
 
                 val (postponedLambdas, normalArguments) =
-                    functionCall.argumentList.arguments.partition { it is CfirAnonymousFunctionExpression }
-                normalArguments.forEach { it.accept(this, data) }
-                postponedLambdas.forEach { it.accept(this, data) }
+                    functionCall.argumentList.arguments.partition { it.unwrapAnonymousFunctionExpression() != null }
+                normalArguments.forEach { it.accept(sourceVisitor, data) }
+                postponedLambdas.forEach { it.accept(sourceVisitor, data) }
 
-                functionCall.calleeReference.accept(this, data)
+                functionCall.calleeReference.accept(sourceVisitor, data)
             }
 
             /**
@@ -633,26 +831,72 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
                 }
             }
 
+            /** 独立绑定声明的 generated 入口不委托 visitVariable，必须按同一词法协议登记。 */
+            override fun visitPatternBindingVariable(variable: CfirPatternBindingVariable, data: MiniCfgData) {
+                visitVariable(variable, data)
+            }
+
+            override fun visitFieldVariable(variable: CfirFieldVariable, data: MiniCfgData) {
+                visitVariable(variable, data)
+            }
+
+            override fun visitValueParameter(variable: CfirValueParameter, data: MiniCfgData) {
+                visitVariable(variable, data)
+            }
+
+            /** 模式容器与简单 binding 共用的 initializer 只访问一次，安装实际可见声明。 */
+            override fun visitPatternVariable(variable: CfirPatternVariable, data: MiniCfgData) {
+                variable.initializer?.accept(sourceVisitor, data)
+                variable.pattern.visibleBindingVariables().forEach { binding ->
+                    val projected = if (projectionMapper == null) binding else projectionMapper.mapElement(binding)
+                    if (projected.isLocal) data.variableDeclarations.last()[projected.name] = projected
+                }
+            }
+
             /**
              * 访问赋值表达式并记录对局部变量的赋值。
              */
             override fun visitAssignment(assignment: CfirAssignment, data: MiniCfgData) {
                 visitElement(assignment, data)
-                val lValue = assignment.lValue as? CfirQualifiedAccessExpression ?: return
-                if (lValue.explicitReceiver != null || lValue.dispatchReceiver != null) return
-                val calleeReference = lValue.calleeReference
-                if (calleeReference !is CfirNamedReference) return
+                CfirAssignmentExecution.of(assignment).targets.forEach { target ->
+                    val lValue = target.expression as? CfirQualifiedAccessExpression ?: return@forEach
+                    if (lValue.explicitReceiver != null || lValue.dispatchReceiver != null) return@forEach
+                    val reference = lValue.calleeReference as? CfirNamedReference ?: return@forEach
+                    data.recordAssignment(reference, AssignmentOccurrence(assignment, target.path),
+                        operatorAssignment = assignment.isCompound || assignment.augmentedOperation != null)
+                }
+            }
 
-                // 目前 CFIR 没有稳定的 compound-assignment 承载点，保持 false，不做伪造推断。
-                data.recordAssignment(calleeReference, operatorAssignment = false)
+            /** RAW 与已解析 compound/increment 的写入共享同一赋值记录协议。 */
+            override fun visitAugmentedAssignment(assignment: CfirAugmentedAssignment, data: MiniCfgData) {
+                visitElement(assignment, data)
+                val left = assignment.leftArgument as? CfirQualifiedAccessExpression ?: return
+                if (left.explicitReceiver != null || left.dispatchReceiver != null) return
+                (left.calleeReference as? CfirNamedReference)?.let {
+                    data.recordAssignment(it, AssignmentOccurrence(assignment, emptyList()), operatorAssignment = true)
+                }
+            }
+
+            override fun visitIncrementDecrementExpression(expression: CfirIncrementDecrementExpression, data: MiniCfgData) {
+                visitElement(expression, data)
+                val left = expression.expression as? CfirQualifiedAccessExpression ?: return
+                if (left.explicitReceiver != null || left.dispatchReceiver != null) return
+                (left.calleeReference as? CfirNamedReference)?.let {
+                    data.recordAssignment(it, AssignmentOccurrence(expression, emptyList()), operatorAssignment = true)
+                }
             }
 
             /**
              * 将一次赋值写入 mini CFG 数据和当前 flow。
              */
-            private fun MiniCfgData.recordAssignment(reference: CfirNamedReference, operatorAssignment: Boolean) {
+            private fun MiniCfgData.recordAssignment(reference: CfirNamedReference, occurrence: AssignmentOccurrence, operatorAssignment: Boolean) {
                 val declaration = resolveLocalDeclaration(reference) ?: return
-                val assignment = Assignment(operatorAssignment)
+                recordAssignment(declaration, occurrence, operatorAssignment)
+            }
+
+            /** STRING latch 没有赋值 AST，按真实 index 声明登记隐式写入。 */
+            private fun MiniCfgData.recordAssignment(declaration: CfirCallableDeclaration, occurrence: AssignmentOccurrence, operatorAssignment: Boolean) {
+                val assignment = Assignment(occurrence, operatorAssignment)
                 assignments.getOrPut(declaration) { mutableListOf() }.add(assignment)
                 flow.recordAssignment(declaration, assignment)
             }
@@ -661,9 +905,9 @@ class CfirLocalVariableAssignmentAnalyzer private constructor(
              * 从引用解析结果或当前词法变量表中定位局部声明。
              */
             private fun MiniCfgData.resolveLocalDeclaration(reference: CfirNamedReference): CfirCallableDeclaration? {
-                val resolved = (reference as? CfirResolvedNamedReference)?.resolvedSymbol?.cfir as? CfirCallableDeclaration
-                if (resolved != null && resolved.isLocal) {
-                    return resolved
+                if (reference is CfirResolvedNamedReference) {
+                    val symbol = if (projectionMapper == null) reference.resolvedSymbol else projectionMapper.mapSymbol(reference.resolvedSymbol)
+                    return (symbol.cfir as? CfirCallableDeclaration)?.takeIf { it.isLocal }
                 }
 
                 val name = reference.name

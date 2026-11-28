@@ -13,7 +13,7 @@ class MacroArtifactLocator(
     /**
      * 仓颉 SDK 根目录。
      */
-    private val sdkHome: String = DEFAULT_MACRO_SDK_HOME,
+    private val sdkHome: String? = null,
     /**
      * SDK 中按宿主平台区分的库目录名。
      */
@@ -73,10 +73,10 @@ class MacroArtifactLocator(
      * 在 SDK stdlib 目录中定位官方宏包 artifact。
      */
     private fun locateFromSdk(packageFqName: FqName): MacroArtifactPackage? {
-        if (sdkHome.isBlank()) return null
         if (toLibCangjieBaseName(packageFqName) == null) return null
-        val modulesRoot = File(sdkHome, "modules/$host")
-        val runtimeRoot = File(sdkHome, "runtime/lib/$host")
+        val home = sdkHome?.takeUnless(String::isBlank) ?: return null
+        val modulesRoot = File(home, "modules/$host")
+        val runtimeRoot = File(home, "runtime/lib/$host")
         val cjoPath = findCjo(packageFqName, listOf(modulesRoot)) ?: return null
         val dynamicLibPath = findStdDynamicLibrary(packageFqName, runtimeRoot) ?: return null
         return MacroArtifactPackage(
@@ -221,14 +221,4 @@ internal fun dynamicLibraryExtension(): String =
         System.getProperty("os.name").contains("Windows", ignoreCase = true) -> "dll"
         System.getProperty("os.name").contains("Mac", ignoreCase = true) -> "dylib"
         else -> "so"
-    }
-
-/**
- * 返回当前宿主系统对应的仓颉 SDK 库目录名。
- */
-private fun defaultCangjieLibHost(): String =
-    when {
-        System.getProperty("os.name").contains("Windows", ignoreCase = true) -> "windows_x86_64_cjnative"
-        System.getProperty("os.name").contains("Mac", ignoreCase = true) -> "darwin_x86_64_cjnative"
-        else -> "linux_x86_64_cjnative"
     }

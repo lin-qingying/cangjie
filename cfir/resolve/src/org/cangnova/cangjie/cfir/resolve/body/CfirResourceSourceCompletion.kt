@@ -76,7 +76,7 @@ internal val CfirResourceVariable.resourceSynthesisError: ConeErrorType?
 internal fun CfirTryExpression.resourceTryInputError(session: CfirSession): ConeErrorType? =
     (resources.asSequence().map { it.resourceSynthesisError } +
         sequenceOf(tryBlock.firstErrorTypeOrNull(session)) +
-        catches.asSequence().map { it.pattern.resolvedTypeRef?.coneType as? ConeErrorType } +
+        catches.asSequence().map { it.pattern.semanticTypeRef?.coneTypeOrNull as? ConeErrorType } +
         catches.asSequence().map { it.body.firstErrorTypeOrNull(session) } +
         handlers.asSequence().map { it.firstErrorTypeOrNull(session) } +
         sequenceOf(finallyBlock?.firstErrorTypeOrNull(session))).firstSourceErrorOrPending()

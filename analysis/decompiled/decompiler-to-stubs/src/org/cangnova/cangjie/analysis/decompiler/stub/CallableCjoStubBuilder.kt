@@ -29,12 +29,20 @@ import com.intellij.util.io.StringRef
 import org.cangnova.cangjie.builtins.StandardNames.MAIN
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.utils.hasSerializedInitializer
-import org.cangnova.cangjie.cfir.patterns.bindingVariables
 import org.cangnova.cangjie.cfir.patterns.*
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
+import org.cangnova.cangjie.cfir.references.CfirNamedReference
+import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
+import org.cangnova.cangjie.cfir.resolve.toSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirEnumSymbol
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
+import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.psi.CjEnumConstructorTypeEntry
 import org.cangnova.cangjie.psi.CjPrimaryConstructor
 import org.cangnova.cangjie.psi.CjPropertyBody
+import org.cangnova.cangjie.psi.CjDotQualifiedExpression
+import org.cangnova.cangjie.psi.CjTypeArgumentList
 import org.cangnova.cangjie.psi.CjSecondaryConstructor
 import org.cangnova.cangjie.psi.stubs.PatternKind
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
@@ -92,6 +100,7 @@ internal fun createErrorFunctionStub(
         nameRef = StringRef.fromString(fallbackName.asString()),
         isTopLevel = parent is CangJieFileStubImpl,
         fqName = callableFqName(parent, context, fallbackName),
+        hasEmptyBlockBody = false,
         hasBlockBody = false,
         hasBody = false,
         hasTypeParameterListBeforeFunctionName = false,
@@ -205,6 +214,7 @@ internal fun createFunctionStub(
         nameRef = StringRef.fromString(declaration.name.asString()),
         isTopLevel = parent is CangJieFileStubImpl,
         fqName = callableFqName(parent, context, declaration.name),
+        hasEmptyBlockBody = false,
         hasBlockBody = hasBody,
         hasBody = hasBody,
         hasTypeParameterListBeforeFunctionName = false,
@@ -289,7 +299,7 @@ internal fun createFieldStub(
     declaration: CfirFieldVariable,
     context: CjoStubBuilderContext,
 ) {
-    val hasInitializer = declaration.hasSerializedInitializer
+    val hasInitializer = declaration.initializer != null || declaration.hasSerializedInitializer
     if (parent is CangJieFileStubImpl) {
         val variableStub = CangJieVariableStubImpl(
             parent = parent,
@@ -346,7 +356,13 @@ internal fun createPatternVariableStub(
     declaration: CfirPatternVariable,
     context: CjoStubBuilderContext,
 ) {
-    val hasInitializer = declaration.initializer != null || declaration.pattern.bindingVariables().any { it.hasSerializedInitializer }
+    validateDeclarationPattern(declaration, declaration.pattern, "pattern")
+    check(context.owningClassFqName == null || declaration.pattern is CfirBindingPattern) {
+        "Invalid declaration pattern at pattern (${declaration.pattern::class.simpleName}), " +
+            "source=${declaration.cjoDeclarationOrigin ?: declaration.source}: a nominal member requires a binding declaration pattern"
+    }
+    val hasInitializer = declaration.initializer != null || declaration.hasSerializedInitializer ||
+        declaration.pattern.bindingVariables().any { it.hasSerializedInitializer }
     val variableStub = CangJieVariableStubImpl(
         parent = parent,
         patternKind = declaration.pattern.toPatternKind(),
@@ -362,7 +378,7 @@ internal fun createPatternVariableStub(
         createDeclarationModifierMask(declaration, context = context),
         declaration,
     )
-    createPatternStub(declaration.pattern, variableStub)
+    createPatternStub(declaration.pattern, variableStub, context, parent)
     context.typeStubBuilder.createDeclaredTypeReferenceStub(variableStub, declaration.returnTypeRef)
     if (hasInitializer) createCompiledInitializerReferenceStub(variableStub)
 }
@@ -405,7 +421,6 @@ internal fun createConstructorStub(
             parent = constructorStub,
             valueParameters = declaration.valueParameters,
             createEmptyList = true,
-            includeParameterModifierList = true,
         )
     } else {
         val constructorStub = CangJieConstructorStubImpl<CjSecondaryConstructor>(
@@ -462,66 +477,111 @@ internal fun createEnumConstructorStub(
 /**
  * 递归构建 CFIR pattern 对应的 PSI pattern stub。
  *
- * 该函数覆盖绑定、元组、枚举、通配、类型、常量和或模式等 compiled pattern 形态；
- * 表达式模式在当前 stub 视图中没有独立结构，因此保持为空操作。
+ * 只构造已经完整验证的声明模式；表达式模式不丢弃宿主后伪装为变量声明。
  */
 private fun createPatternStub(
     pattern: CfirPattern,
     parent: StubElement<*>,
+    context: CjoStubBuilderContext,
+    declarationParent: StubElement<*>,
 ) {
     when (pattern) {
         is CfirBindingPattern -> {
             val bindingStub = CangJieBindingPatternStubImpl(
                 parent = parent,
                 nameRef = StringRef.fromString(pattern.name.asString()),
-                fqName = pattern.bindingVariable
-                    ?.takeIf { !it.isLocal }
-                    ?.symbol
-                    ?.callableId
-                    ?.packageName
-                    ?.child(pattern.name),
+                fqName = if (pattern.bindingVariable!!.isLocal) null else callableFqName(declarationParent, context, pattern.name),
             )
             CangJieNameReferenceExpressionStubImpl(bindingStub, StringRef.fromString(pattern.name.asString()))
-            pattern.nestedPattern?.let { nestedPattern ->
-                createPatternStub(nestedPattern, bindingStub)
-            }
         }
 
         is CfirTuplePattern -> {
             val tupleStub = CangJieTuplePatternStubImpl(parent)
             pattern.elements.forEach { element ->
-                createPatternStub(element, tupleStub)
+                createPatternStub(element, tupleStub, context, declarationParent)
             }
         }
 
         is CfirEnumPattern -> {
             val enumStub = CangJieEnumPatternStubImpl(parent)
+            createPatternConstructorStub(enumStub, pattern.constructor, context)
             pattern.arguments.forEach { argument ->
-                createPatternStub(argument, enumStub)
+                createPatternStub(argument, enumStub, context, declarationParent)
             }
         }
 
         is CfirWildcardPattern -> CangJieWildcardPatternStubImpl(parent)
 
-        is CfirTypePattern -> {
-            CangJieTypePatternStubImpl(
-                parent = parent,
-                name = StringRef.fromString(
-                    pattern.bindingName?.asString() ?: pattern.bindingVariable?.name?.asString(),
-                ),
-            )
-        }
+        is CfirTypePattern, is CfirCatchPattern, is CfirCommandTypePattern,
+        is CfirVarOrEnumPattern, is CfirConstPattern, is CfirExpressionPattern, is CfirOrPattern ->
+            error("This pattern cannot form a declaration header: ${pattern::class.simpleName}")
+    }
+}
 
-        is CfirVarOrEnumPattern -> {
-            CangJieVarOrEnumPatternStubImpl(
-                parent = parent,
-                nameRef = StringRef.fromString(pattern.name.asString()),
-            )
+/** 在创建任何变量/子模式 stub 前验证完整声明域，错误保留真实声明来源和子项位置。 */
+private fun validateDeclarationPattern(declaration: CfirPatternVariable, pattern: CfirPattern, path: String) {
+    fun requirePattern(valid: Boolean, reason: String) {
+        check(valid) { "Invalid declaration pattern at $path (${pattern::class.simpleName}), " +
+            "source=${declaration.cjoDeclarationOrigin ?: declaration.source}: $reason" }
+    }
+    when (pattern) {
+        is CfirBindingPattern -> {
+            requirePattern(pattern.nestedPattern == null, "a binding has no nested declaration pattern")
+            val variable = pattern.bindingVariable
+            requirePattern(variable != null && variable.symbol.isBound && variable.symbol.cfir === variable,
+                "the binding requires its completed declaration")
+            requirePattern(variable!!.name == pattern.name && variable.symbol.callableId.callableName == pattern.name,
+                "the pattern name must match its completed binding identity")
         }
+        is CfirWildcardPattern -> Unit
+        is CfirTuplePattern -> pattern.elements.forEachIndexed { index, element ->
+            validateDeclarationPattern(declaration, element, "$path.tuple[$index]")
+        }
+        is CfirEnumPattern -> {
+            val session = declaration.moduleData.session
+            val enumType = pattern.semanticTypeRef?.coneTypeOrNull?.expandedPatternEnumType(session)
+            val enumSymbol = enumType?.lookupTag?.toSymbol(session) as? CfirEnumSymbol
+            val constructor = (pattern.constructorReference as? CfirResolvedNamedReference)?.resolvedSymbol
+            requirePattern(enumSymbol != null && enumSymbol.isBound &&
+                enumSymbol.cfir.declarations.filterIsInstance<CfirEnumConstructor>().singleOrNull()?.symbol === constructor,
+                "an irrefutable enum pattern requires its actual single constructor")
+            requirePattern((constructor?.cfir as? CfirEnumConstructor)?.valueParameters?.size == pattern.arguments.size,
+                "enum arguments must match the completed constructor")
+            validatePatternConstructor(pattern.constructor)
+            pattern.arguments.forEachIndexed { index, argument ->
+                validateDeclarationPattern(declaration, argument, "$path.enum[$index]")
+            }
+        }
+        is CfirTypePattern, is CfirCatchPattern, is CfirCommandTypePattern,
+        is CfirVarOrEnumPattern, is CfirConstPattern, is CfirExpressionPattern, is CfirOrPattern ->
+            requirePattern(false, "this pattern cannot form a declaration header")
+    }
+}
 
-        is CfirConstPattern -> CangJieConstantPatternStubImpl(parent)
-        is CfirExpressionPattern -> Unit
-        is CfirOrPattern -> pattern.alternatives.forEach { alternative -> createPatternStub(alternative, parent) }
+/** enum 构造器保留真实引用路径；不从类型或第一个绑定名反推构造器。 */
+private fun validatePatternConstructor(expression: CfirExpression) {
+    val access = expression as? CfirNamedAccessExpression
+        ?: error("An enum declaration pattern requires its actual constructor reference")
+    check(access.calleeReference is CfirNamedReference)
+    access.explicitReceiver?.let(::validatePatternConstructor)
+}
+
+private fun createPatternConstructorStub(parent: StubElement<*>, expression: CfirExpression, context: CjoStubBuilderContext) {
+    val access = expression as CfirNamedAccessExpression
+    val receiver = access.explicitReceiver
+    val referenceParent = if (receiver == null) parent else {
+        CangJiePlaceHolderStubImpl<CjDotQualifiedExpression>(parent, CjStubElementTypes.DOT_QUALIFIED_EXPRESSION).also {
+            createPatternConstructorStub(it, receiver, context)
+        }
+    }
+    val reference = access.calleeReference as CfirNamedReference
+    val referenceStub = CangJieNameReferenceExpressionStubImpl(referenceParent, StringRef.fromString(reference.name.asString()))
+    if (access.typeArguments.isNotEmpty()) {
+        val arguments = CangJiePlaceHolderStubImpl<CjTypeArgumentList>(referenceStub, CjStubElementTypes.TYPE_ARGUMENT_LIST)
+        access.typeArguments.forEach { argument ->
+            val projection = CangJieTypeProjectionStubImpl(arguments, 0)
+            context.typeStubBuilder.createTypeReferenceStub(projection, argument)
+        }
     }
 }
 
@@ -575,6 +635,8 @@ private fun createPropertyAccessorStub(
         hasBody = true,
         hasBlockBody = true,
     )
+    // getter/setter 独立拥有声明前缀，不能因反编译文本没有显式注解或修饰符就省略这两个节点。
+    createEmptyDeclarationHeaderStubs(accessorStub)
     if (isGetter) {
         // 对齐 createCallableParameterListStub(..., createEmptyList = true) 与 parsePropertyGet
         context.typeStubBuilder.createEmptyParameterListStub(accessorStub)
@@ -607,11 +669,9 @@ private fun CfirPattern.toPatternKind(): PatternKind = when (this) {
     is CfirTuplePattern -> PatternKind.TUPLE
     is CfirEnumPattern -> PatternKind.ENUM
     is CfirWildcardPattern -> PatternKind.WILDCARD
-    is CfirTypePattern -> PatternKind.BINDING
-    is CfirVarOrEnumPattern -> PatternKind.BINDING
-    is CfirConstPattern -> PatternKind.BINDING
-    is CfirExpressionPattern -> PatternKind.BINDING
-    is CfirOrPattern -> PatternKind.BINDING
+    is CfirTypePattern, is CfirCatchPattern, is CfirCommandTypePattern,
+    is CfirVarOrEnumPattern, is CfirConstPattern, is CfirExpressionPattern, is CfirOrPattern ->
+        error("This pattern cannot form a declaration header: ${this::class.simpleName}")
 }
 
 /**

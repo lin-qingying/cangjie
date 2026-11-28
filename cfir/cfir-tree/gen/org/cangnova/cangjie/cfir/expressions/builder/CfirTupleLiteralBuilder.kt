@@ -8,6 +8,7 @@
 package org.cangnova.cangjie.cfir.expressions.builder
 
 import kotlin.contracts.*
+import org.cangnova.cangjie.annotations.CangjieOverflowStrategy
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
@@ -23,6 +24,8 @@ class CfirTupleLiteralBuilder {
     var source: CjSourceElement? = null
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
     var coneTypeOrNull: ConeCangJieType? = null
+    var mappedExpression: CfirExpression? = null
+    var overflowStrategy: CangjieOverflowStrategy? = null
     val elements: MutableList<CfirExpression> = mutableListOf()
 
     @OptIn(CfirImplementationDetail::class)
@@ -31,6 +34,8 @@ class CfirTupleLiteralBuilder {
             source,
             annotations.toMutableOrEmpty(),
             coneTypeOrNull,
+            mappedExpression,
+            overflowStrategy,
             elements,
         )
     }
@@ -54,6 +59,8 @@ inline fun buildTupleLiteralCopy(original: CfirTupleLiteral, init: CfirTupleLite
     copyBuilder.source = original.source
     copyBuilder.annotations.addAll(original.annotations)
     copyBuilder.coneTypeOrNull = original.coneTypeOrNull
+    copyBuilder.mappedExpression = original.mappedExpression
+    copyBuilder.overflowStrategy = original.overflowStrategy
     copyBuilder.elements.addAll(original.elements)
     return copyBuilder.apply(init).build()
 }

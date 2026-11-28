@@ -8,13 +8,15 @@
 package org.cangnova.cangjie.cfir.expressions.builder
 
 import kotlin.contracts.*
+import org.cangnova.cangjie.annotations.CangjieOverflowStrategy
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.CfirIterationOwner
 import org.cangnova.cangjie.cfir.CfirTarget
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirBreakExpression
-import org.cangnova.cangjie.cfir.expressions.CfirLoopExpression
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.impl.CfirBreakExpressionImpl
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.source.CjSourceElement
@@ -24,7 +26,9 @@ class CfirBreakExpressionBuilder {
     var source: CjSourceElement? = null
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
     var coneTypeOrNull: ConeCangJieType? = null
-    lateinit var target: CfirTarget<CfirLoopExpression>
+    var mappedExpression: CfirExpression? = null
+    var overflowStrategy: CangjieOverflowStrategy? = null
+    lateinit var target: CfirTarget<CfirIterationOwner>
 
     @OptIn(CfirImplementationDetail::class)
     fun build(): CfirBreakExpression {
@@ -32,6 +36,8 @@ class CfirBreakExpressionBuilder {
             source,
             annotations.toMutableOrEmpty(),
             coneTypeOrNull,
+            mappedExpression,
+            overflowStrategy,
             target,
         )
     }
@@ -55,6 +61,8 @@ inline fun buildBreakExpressionCopy(original: CfirBreakExpression, init: CfirBre
     copyBuilder.source = original.source
     copyBuilder.annotations.addAll(original.annotations)
     copyBuilder.coneTypeOrNull = original.coneTypeOrNull
+    copyBuilder.mappedExpression = original.mappedExpression
+    copyBuilder.overflowStrategy = original.overflowStrategy
     copyBuilder.target = original.target
     return copyBuilder.apply(init).build()
 }

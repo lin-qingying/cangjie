@@ -13,15 +13,17 @@ import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.types.CfirTupleTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.CfirTypeRefOrigin
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.cfir.visitors.transformInplace
 import org.cangnova.cangjie.source.CjSourceElement
 
 class CfirTupleTypeRefImpl @CfirImplementationDetail constructor(
-    override val source: CjSourceElement?,
+    override var source: CjSourceElement?,
     override var annotations: MutableOrEmptyList<CfirAnnotation>,
     override val customRenderer: Boolean,
+    override var typeUseOrigin: CfirTypeRefOrigin,
     override val elementTypeRefs: MutableList<CfirTypeRef>,
 ) : CfirTupleTypeRef() {
 
@@ -46,7 +48,16 @@ class CfirTupleTypeRefImpl @CfirImplementationDetail constructor(
         return this
     }
 
+    @CfirImplementationDetail
+    override fun replaceSource(newSource: CjSourceElement?) {
+        source = newSource
+    }
+
     override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>) {
         annotations = newAnnotations.toMutableOrEmpty()
+    }
+
+    override fun replaceTypeUseOrigin(newTypeUseOrigin: CfirTypeRefOrigin) {
+        typeUseOrigin = newTypeUseOrigin
     }
 }

@@ -4,6 +4,7 @@ import com.intellij.psi.PsiComment
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiElementVisitor
 import com.intellij.psi.impl.source.tree.LeafPsiElement
+import org.cangnova.cangjie.analysis.low.level.api.cfir.test.TargetSourceTestSupport
 import org.cangnova.cangjie.analysis.low.level.api.cfir.test.configurators.analysisApiCfirSourceTestConfigurator
 import org.cangnova.cangjie.analysis.low.level.api.cfir.test.getResolvableSessionForTest
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiBasedTest
@@ -28,8 +29,22 @@ abstract class AbstractFileStructureTest : AbstractAnalysisApiBasedTest() {
     override fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         val fileStructure = mainFile.getFileStructure()
         val allStructureElements = fileStructure.getAllStructureElements()
-        val elementsToStructureElementMap = allStructureElements.associateBy { structureElement ->
-            structureElement.declaration.psi ?: mainFile
+        val cfirFile = checkNotNull(mainFile.getResolvableSessionForTest().moduleComponents.cache.getCachedCfirFile(mainFile)) {
+            "The file structure must belong to a cached CFIR file."
+        }
+        val sources = TargetSourceTestSupport(cfirFile, mainFile)
+        // CFIR 声明始终持有实际 Parsed 目标树；渲染 key 必须通过有效产品双向验明唯一原对象。
+        // 文件根也走同一对象对应，缺失 source 或对应关系不能改用 mainFile。
+        val elementsToStructureElementMap = buildMap<PsiElement, FileStructureElement> {
+            allStructureElements.forEach { structureElement ->
+                val target = checkNotNull(structureElement.declaration.psi) {
+                    "Every structure element, including the file root, must have a target PSI anchor."
+                }
+                val original = sources.originalElement(target)
+                check(put(original, structureElement) == null) {
+                    "Each original PSI anchor must identify exactly one structure element."
+                }
+            }
         }
         val elementToComments = elementsToStructureElementMap.entries.fold(
             initial = linkedMapOf<PsiElement, MutableList<String>>(),

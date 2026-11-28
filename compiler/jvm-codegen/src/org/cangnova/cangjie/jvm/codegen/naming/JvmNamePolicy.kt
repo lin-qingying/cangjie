@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.jvm.codegen.naming
 
 import org.cangnova.cangjie.chir.core.declaration.ChirTypeDeclaration
+import org.cangnova.cangjie.chir.core.type.ChirTypeDeclarationId
 import org.cangnova.cangjie.chir.core.declaration.ChirFunctionDeclaration
 import org.cangnova.cangjie.chir.core.model.ChirModule
 import org.cangnova.cangjie.chir.core.model.ChirPackage
@@ -45,6 +46,18 @@ class JvmNamePolicy(
         val packagePath = packageInternalPath(defaultPackageName)
         val simpleName = sanitizeClassSimpleName(segments.singleOrNull() ?: typeName)
         return if (packagePath.isEmpty()) simpleName else "$packagePath/$simpleName"
+    }
+
+    /**
+     * 根据 CHIR 名义类型的结构化身份生成 JVM internal name，避免把包名和声明名混为一个展示字符串解析。
+     */
+    fun typeInternalName(defaultPackageName: String, declarationId: ChirTypeDeclarationId): String {
+        val qualifiedTypeName = if (declarationId.packageName.isBlank()) {
+            declarationId.declarationName
+        } else {
+            "${declarationId.packageName}.${declarationId.declarationName}"
+        }
+        return typeInternalName(defaultPackageName, qualifiedTypeName)
     }
 
     /**

@@ -4,6 +4,7 @@ import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
+import org.cangnova.cangjie.cfir.types.CfirTypeRefOrigin
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.source.CjSourceElement
@@ -23,6 +24,11 @@ class ResolvedImplicitTypeRef(
      */
     val typeRef: CfirResolvedTypeRef,
 ) : CfirImplicitTypeRef() {
+    override val typeUseOrigin: CfirTypeRefOrigin get() = CfirTypeRefOrigin.SEMANTIC
+
+    override fun replaceTypeUseOrigin(newTypeUseOrigin: CfirTypeRefOrigin) {
+        require(newTypeUseOrigin == CfirTypeRefOrigin.SEMANTIC)
+    }
     /**
      * 该包装节点不启用自定义 renderer。
      */
@@ -33,6 +39,12 @@ class ResolvedImplicitTypeRef(
      * 包装节点自身没有独立源码位置。
      */
     override val source: CjSourceElement? get() = null
+
+    /** 此节点没有独立源槽位，不能被绑定到另一个源代次。 */
+    @org.cangnova.cangjie.cfir.CfirImplementationDetail
+    override fun replaceSource(newSource: CjSourceElement?) {
+        require(newSource == null)
+    }
 
     /**
      * 包装节点不额外携带注解。

@@ -253,6 +253,45 @@ internal class ControlFlowGraphCopier : ControlFlowGraphVisitor<CFGNode<*>, Unit
     override fun visitIfExitNode(node: IfExitNode, data: Unit): CFGNode<*> =
         IfExitNode(get(node.owner), node.fir, node.level)
 
+    /** 复制 For 执行阶段并保留实际语义对象。 */
+    override fun visitForInLoopIterationEnterNode(node: ForInLoopIterationEnterNode, data: Unit): CFGNode<*> =
+        ForInLoopIterationEnterNode(get(node.owner), node.fir, node.level).also { if (node.isEntered) it.markEntered() }
+
+    /** 复制 For 执行阶段并保留实际语义对象。 */
+    override fun visitForInLoopIterationExitNode(node: ForInLoopIterationExitNode, data: Unit): CFGNode<*> =
+        ForInLoopIterationExitNode(get(node.owner), node.fir, node.level)
+
+    /** 复制 For 执行阶段并保留实际语义对象。 */
+    override fun visitForInLoopGuardExitNode(node: ForInLoopGuardExitNode, data: Unit): CFGNode<*> =
+        ForInLoopGuardExitNode(get(node.owner), node.fir, node.loop, node.level)
+
+    override fun visitForInLoopInitialCheckExitNode(node: ForInLoopInitialCheckExitNode, data: Unit): CFGNode<*> =
+        ForInLoopInitialCheckExitNode(get(node.owner), node.fir, node.level)
+
+    override fun visitForInLoopConditionEnterNode(node: ForInLoopConditionEnterNode, data: Unit): CFGNode<*> =
+        ForInLoopConditionEnterNode(get(node.owner), node.fir, node.level)
+
+    override fun visitForInLoopRangeCheckNode(node: ForInLoopRangeCheckNode, data: Unit): CFGNode<*> =
+        ForInLoopRangeCheckNode(get(node.owner), node.fir, node.index, node.bound, node.level)
+
+    override fun visitForInLoopStringCheckNode(node: ForInLoopStringCheckNode, data: Unit): CFGNode<*> =
+        ForInLoopStringCheckNode(get(node.owner), node.fir, node.index, node.bound, node.level)
+
+    override fun visitForInLoopStringUpdateNode(node: ForInLoopStringUpdateNode, data: Unit): CFGNode<*> =
+        ForInLoopStringUpdateNode(get(node.owner), node.fir, node.index, node.level)
+
+    override fun visitForInLoopIteratorCheckNode(node: ForInLoopIteratorCheckNode, data: Unit): CFGNode<*> =
+        ForInLoopIteratorCheckNode(get(node.owner), node.fir, node.resultExpression, node.constructorReference, node.constructorSymbol, node.level)
+
+    override fun visitCallExpressionNode(node: CallExpressionNode, data: Unit): CFGNode<*> =
+        CallExpressionNode(get(node.owner), node.fir, node.level)
+
+    override fun visitUnaryExpressionNode(node: UnaryExpressionNode, data: Unit): CFGNode<*> =
+        UnaryExpressionNode(get(node.owner), node.fir, node.level)
+
+    override fun visitBinaryExpressionNode(node: BinaryExpressionNode, data: Unit): CFGNode<*> =
+        BinaryExpressionNode(get(node.owner), node.fir, node.level)
+
     /** 复制循环入口节点。 */
     override fun visitLoopEnterNode(node: LoopEnterNode, data: Unit): CFGNode<*> =
         LoopEnterNode(get(node.owner), node.fir, node.level)
@@ -364,6 +403,15 @@ internal class ControlFlowGraphCopier : ControlFlowGraphVisitor<CFGNode<*>, Unit
     /** 复制字面量表达式节点。 */
     override fun visitLiteralExpressionNode(node: LiteralExpressionNode, data: Unit): CFGNode<*> =
         LiteralExpressionNode(get(node.owner), node.fir, node.level)
+
+    override fun visitTupleLiteralEnterNode(node: TupleLiteralEnterNode, data: Unit): CFGNode<*> =
+        TupleLiteralEnterNode(get(node.owner), node.fir, node.level)
+
+    override fun visitTupleLiteralElementExitNode(node: TupleLiteralElementExitNode, data: Unit): CFGNode<*> =
+        TupleLiteralElementExitNode(get(node.owner), node.fir, node.tuple, node.index, node.level)
+
+    override fun visitTupleLiteralExitNode(node: TupleLiteralExitNode, data: Unit): CFGNode<*> =
+        TupleLiteralExitNode(get(node.owner), node.fir, node.elementExitNodes, node.level)
 
     /** 复制限定访问表达式节点。 */
     override fun visitQualifiedAccessNode(node: QualifiedAccessNode, data: Unit): CFGNode<*> =

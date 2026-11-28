@@ -29,21 +29,65 @@ enum class LanguageVersion(
      * 修订版本号，表达补丁级语言行为或标准库同步版本。
      */
     val patch: Int,
-    val preReleaseTag: String? = null
+    val preReleaseTag: String? = null,
+    /** 保留官方身份拼写；历史点分隔 beta 身份不能改写为另一个版本。 */
+    val versionString: String = "$major.$minor.$patch" + (preReleaseTag?.let { "-$it" } ?: ""),
 ) : DescriptionAware {
 
     CANGJIE_1_0_0(1, 0, 0),
     CANGJIE_1_0_1(1, 0, 1),
     CANGJIE_1_0_2(1, 0, 2),
+    CANGJIE_1_0_3_BETA(1, 0, 3, "beta"),
     CANGJIE_1_0_3(1, 0, 3),
     CANGJIE_1_0_4(1, 0, 4),
     CANGJIE_1_0_5(1, 0, 5),
+    // 自然版本顺序用于身份比较；历史分支的非单调语法演进不能据此猜测 since 门。
+    CANGJIE_1_1_0_ALPHA_34(1, 1, 0, "alpha.34"),
+    CANGJIE_1_1_0_ALPHA_35(1, 1, 0, "alpha.35"),
+    CANGJIE_1_1_0_ALPHA_36(1, 1, 0, "alpha.36"),
+    CANGJIE_1_1_0_ALPHA_37(1, 1, 0, "alpha.37"),
+    CANGJIE_1_1_0_ALPHA_44(1, 1, 0, "alpha.44"),
+    CANGJIE_1_1_0_ALPHA_55(1, 1, 0, "alpha.55"),
+    CANGJIE_1_1_0_ALPHA_65(1, 1, 0, "alpha.65"),
+    CANGJIE_1_1_0_ALPHA_66(1, 1, 0, "alpha.66"),
+    CANGJIE_1_1_0_ALPHA_68(1, 1, 0, "alpha.68"),
+    CANGJIE_1_1_0_ALPHA_69(1, 1, 0, "alpha.69"),
+    CANGJIE_1_1_0_ALPHA_70(1, 1, 0, "alpha.70"),
+    CANGJIE_1_1_0_BETA_0(1, 1, 0, "beta.0", "1.1.0.beta.0"),
+    CANGJIE_1_1_0_BETA_1(1, 1, 0, "beta.1"),
+    CANGJIE_1_1_0_BETA_20(1, 1, 0, "beta.20"),
+    CANGJIE_1_1_0_BETA_21(1, 1, 0, "beta.21"),
+    CANGJIE_1_1_0_BETA_23(1, 1, 0, "beta.23"),
+    CANGJIE_1_1_0_BETA_24(1, 1, 0, "beta.24"),
+    CANGJIE_1_1_0_BETA_25(1, 1, 0, "beta.25"),
     CANGJIE_1_1_0(1, 1, 0),
-    CANGJIE_1_1_3(1, 1, 3);
+    CANGJIE_1_1_1(1, 1, 1),
+    CANGJIE_1_1_2(1, 1, 2),
+    CANGJIE_1_1_3(1, 1, 3),
+    CANGJIE_1_2_0_ALPHA_06(1, 2, 0, "alpha.06"),
+    CANGJIE_1_2_0_ALPHA_07(1, 2, 0, "alpha.07"),
+    CANGJIE_1_2_0_ALPHA_08(1, 2, 0, "alpha.08"),
+    CANGJIE_1_2_0_ALPHA_16(1, 2, 0, "alpha.16"),
+    CANGJIE_1_2_0_ALPHA_17(1, 2, 0, "alpha.17"),
+    CANGJIE_1_2_0_ALPHA_18(1, 2, 0, "alpha.18"),
+    CANGJIE_1_2_0_ALPHA_19(1, 2, 0, "alpha.19"),
+    CANGJIE_1_2_0_ALPHA_20(1, 2, 0, "alpha.20"),
+    CANGJIE_1_2_0_ALPHA_21(1, 2, 0, "alpha.21"),
+    CANGJIE_1_2_0_ALPHA_22(1, 2, 0, "alpha.22"),
+    CANGJIE_1_2_0_BETA_01(1, 2, 0, "beta.01"),
+    CANGJIE_1_2_0_BETA_02(1, 2, 0, "beta.02"),
+    CANGJIE_1_2_0_BETA_03(1, 2, 0, "beta.03"),
+    CANGJIE_1_2_0_BETA_RC(1, 2, 0, "beta.rc"),
+    CANGJIE_1_2_0_BETA_RC1(1, 2, 0, "beta.rc1"),
+    CANGJIE_1_2_0_BETA_RC2(1, 2, 0, "beta.rc2"),
+    CANGJIE_1_3_0_ALPHA_02(1, 3, 0, "alpha.02"),
+    CANGJIE_1_3_0_ALPHA_03(1, 3, 0, "alpha.03"),
+    CANGJIE_1_3_0_ALPHA_04(1, 3, 0, "alpha.04"),
+    CANGJIE_1_3_0_ALPHA_05(1, 3, 0, "alpha.05");
 
 
     val isStable: Boolean
-        get() = this <= LATEST_STABLE
+        get() = preReleaseTag == null && this <= LATEST_STABLE
 
 
     val isDeprecated: Boolean
@@ -51,12 +95,6 @@ enum class LanguageVersion(
 
     val isUnsupported: Boolean
         get() = this < FIRST_SUPPORTED
-
-    /**
-     * 保留完整的三段版本号。补丁号参与版本排序和 feature 门禁，不能在
-     * 展示或配置往返时折叠掉，否则 `1.0.5` 会退化为 `1.0.0`。
-     */
-    val versionString: String = "$major.$minor.$patch"
 
     override val description: String
         get() = when {
@@ -70,14 +108,13 @@ enum class LanguageVersion(
 
     companion object {
         fun parse(versionString: String): LanguageVersion {
-            val parts = versionString.split('.')
-            if (parts.size !in 2..3) error("Invalid version string: $versionString")
-            val major = parts[0].toIntOrNull() ?: error("Invalid major version: ${parts[0]}")
-            val minor = parts[1].toIntOrNull() ?: error("Invalid minor version: ${parts[1]}")
-            val patch = if (parts.size > 2) parts[2].toIntOrNull() ?: error("Invalid patch version: ${parts[2]}") else 0
-            return entries.firstOrNull { it.major == major && it.minor == minor && it.patch == patch }
+            // 两段稳定语言版本是既有配置语法；其余输入只接受已登记的完整身份。
+            val identity = if (TWO_PART_STABLE_VERSION.matches(versionString)) "$versionString.0" else versionString
+            return entries.firstOrNull { it.versionString == identity }
                 ?: error("Version not found: $versionString")
         }
+
+        private val TWO_PART_STABLE_VERSION = Regex("[0-9]+\\.[0-9]+")
 
         @JvmField
         val FIRST_SUPPORTED = CANGJIE_1_0_0
@@ -106,6 +143,21 @@ sealed class LanguageFeatureBehaviorAfterSinceVersion {
     data class CanStillBeDisabledForNow(val relevantTicketId: String) : LanguageFeatureBehaviorAfterSinceVersion()
 }
 
+/** 按完整语言版本身份表示的半开默认启用区间。 */
+data class LanguageVersionRange(
+    val sinceInclusive: LanguageVersion,
+    val untilExclusive: LanguageVersion? = null,
+) {
+    init {
+        require(untilExclusive == null || sinceInclusive < untilExclusive) {
+            "Language version range must have an increasing exclusive end"
+        }
+    }
+
+    fun contains(languageVersion: LanguageVersion): Boolean =
+        languageVersion >= sinceInclusive && (untilExclusive == null || languageVersion < untilExclusive)
+}
+
 /** 未指定关联工单时的占位文本。 */
 const val NO_ISSUE_SPECIFIED = "No issue"
 
@@ -122,6 +174,7 @@ enum class LanguageFeature(
     val testOnly: Boolean = false,
     val hintUrl: String? = null,
     val behaviorAfterSinceVersion: LanguageFeatureBehaviorAfterSinceVersion = LanguageFeatureBehaviorAfterSinceVersion.CannotBeDisabled,
+    defaultEnabledVersionRanges: List<LanguageVersionRange> = emptyList(),
 ) {
     /**
      * Enables data-flow-analysis based warnings in frontend diagnostics.
@@ -199,17 +252,108 @@ enum class LanguageFeature(
         behaviorAfterSinceVersion = LanguageFeatureBehaviorAfterSinceVersion.CanStillBeDisabledForNow(NO_ISSUE_SPECIFIED),
     ),
 
-    /**
-     * `common`/`specific` 跨平台声明族（CJMP 检查器 + `EXPLICITLY_ABSTRACT_*` 等）。
-     *
-     * 官方取证：v1.0.x cjc 对 `common class` 报 `parse_expected_decl`（语法不存在），
-     * v1.1.3 起解析为独立形态并受包级门控（`parse_common_in_non_common_file`）。
-     * 因此该语言表面 1.1.0 起才存在，1.0.x 下不得运行任何 CJMP 语义检查。
-     */
+    /** 稳定 `common`/`specific` 声明表面；早期 alpha 的 `common`/`platform` 使用独立门。 */
     CommonSpecificDeclarations(
         LanguageVersion.CANGJIE_1_1_0,
         behaviorAfterSinceVersion = LanguageFeatureBehaviorAfterSinceVersion.CanStillBeDisabledForNow(NO_ISSUE_SPECIFIED),
     ),
+
+    /** alpha.34 至 beta.20 前的 `common`/`platform` 预发布语法表面。 */
+    CjmpCommonPlatformDeclarations(
+        LanguageVersion.CANGJIE_1_1_0_ALPHA_34,
+        defaultEnabledVersionRanges = listOf(
+            LanguageVersionRange(
+                sinceInclusive = LanguageVersion.CANGJIE_1_1_0_ALPHA_34,
+                untilExclusive = LanguageVersion.CANGJIE_1_1_0_BETA_20,
+            ),
+        ),
+    ),
+
+    /** 旧版 primary constructor 的 common/platform 角色修饰符有两个独立的版本区间。 */
+    CjmpPrimaryConstructorRoleModifiers(
+        LanguageVersion.CANGJIE_1_1_0_ALPHA_34,
+        defaultEnabledVersionRanges = listOf(
+            LanguageVersionRange(
+                sinceInclusive = LanguageVersion.CANGJIE_1_1_0_ALPHA_34,
+                untilExclusive = LanguageVersion.CANGJIE_1_1_0_ALPHA_66,
+            ),
+            LanguageVersionRange(
+                sinceInclusive = LanguageVersion.CANGJIE_1_1_0_BETA_0,
+                untilExclusive = LanguageVersion.CANGJIE_1_1_0_BETA_20,
+            ),
+        ),
+    ),
+
+    /** 官方 HasDefault 对主构造器正文的判定在历史版本中有独立的启用区间。 */
+    CjmpPrimaryConstructorDefaultImplementation(
+        LanguageVersion.CANGJIE_1_1_0_ALPHA_34,
+        defaultEnabledVersionRanges = listOf(
+            LanguageVersionRange(
+                sinceInclusive = LanguageVersion.CANGJIE_1_1_0_ALPHA_34,
+                untilExclusive = LanguageVersion.CANGJIE_1_1_0_ALPHA_68,
+            ),
+            LanguageVersionRange(
+                sinceInclusive = LanguageVersion.CANGJIE_1_1_0_BETA_0,
+                untilExclusive = LanguageVersion.CANGJIE_1_1_0_BETA_20,
+            ),
+        ),
+    ),
+
+    /** beta.20 首次使用 `specific` 拼写；稳定版本随后由 CommonSpecificDeclarations 管理。 */
+    CjmpPrereleaseSpecificDeclarations(
+        LanguageVersion.CANGJIE_1_1_0_BETA_20,
+        defaultEnabledVersionRanges = listOf(
+            LanguageVersionRange(
+                sinceInclusive = LanguageVersion.CANGJIE_1_1_0_BETA_20,
+                untilExclusive = LanguageVersion.CANGJIE_1_1_0,
+            ),
+        ),
+    ),
+
+    /**
+     * 官方 7a9258ae8e69f49d234f971ca8e7dd117d1c3470（2026-05-25）改写文件角色检查，
+     * 最早本地身份 v1.2.0-alpha.20：任一 CJMP 编译角色均允许 common/specific，且允许同文件混合。
+     */
+    CjmpMixedCommonSpecificDeclarations(LanguageVersion.CANGJIE_1_2_0_ALPHA_20),
+
+    /** 官方 alpha.20 起 common 直接成员可嵌套在 specific 外层；独立于同文件混合规则。 */
+    CjmpCommonMemberInSpecificOuter(LanguageVersion.CANGJIE_1_2_0_ALPHA_20),
+
+    /** alpha.66 起允许 common/specific 跨平台声明拥有类型参数。 */
+    CjmpGenericDeclarations(LanguageVersion.CANGJIE_1_1_0_ALPHA_66),
+
+    /** alpha.66 起 specific 参数默认值进入配对语义检查，不再由 parser 单侧拒绝。 */
+    CjmpParameterDefaultValueRules(LanguageVersion.CANGJIE_1_1_0_ALPHA_66),
+
+    /** alpha.68 起对已配对函数执行推断返回类型的后置协变复核。 */
+    CjmpPostMatchReturnTypeCheck(LanguageVersion.CANGJIE_1_1_0_ALPHA_68),
+
+    /** 官方 CheckCJMPFuncParams 的版本行为；alpha.66 与 alpha.20 起有意默认关闭。 */
+    CjmpParameterRoleMatching(
+        LanguageVersion.CANGJIE_1_1_0_ALPHA_34,
+        defaultEnabledVersionRanges = listOf(
+            LanguageVersionRange(
+                sinceInclusive = LanguageVersion.CANGJIE_1_1_0_ALPHA_34,
+                untilExclusive = LanguageVersion.CANGJIE_1_1_0_ALPHA_66,
+            ),
+            LanguageVersionRange(
+                sinceInclusive = LanguageVersion.CANGJIE_1_1_0_ALPHA_68,
+                untilExclusive = LanguageVersion.CANGJIE_1_2_0_ALPHA_20,
+            ),
+        ),
+    ),
+
+    /** 多个 common parent 分别参与 CJMP 候选匹配；从 v1.2.0-alpha.20 起支持。 */
+    CjmpMultipleCommonParents(LanguageVersion.CANGJIE_1_2_0_ALPHA_20),
+
+    /** `commonPartChirs` 专用输入列表；从 v1.2.0-alpha.20 起与 CJO parent 数量协议分别生效。 */
+    CjmpDedicatedCommonPartChirInputs(LanguageVersion.CANGJIE_1_2_0_ALPHA_20),
+
+    /** explicit common CJO 的 features/options 校验从 v1.2.0-alpha.20 起启用。 */
+    CjmpCommonPartFeaturesAndOptionsGate(LanguageVersion.CANGJIE_1_2_0_ALPHA_20),
+
+    /** 显式 common-part CJO 格式版本兼容检查从 v1.3.0-alpha.05 起启用。 */
+    CjoFormatVersionCompatibility(LanguageVersion.CANGJIE_1_3_0_ALPHA_05),
 
     /** `features { @NonProduct ... }` package/product metadata introduced in 1.1.0. */
     PackageProductMetadata(
@@ -244,6 +388,30 @@ enum class LanguageFeature(
      */
     AllowIntersectionTypesInInference(null),
     ;
+
+    private val defaultEnabledVersionRanges: List<LanguageVersionRange> = defaultEnabledVersionRanges.toList()
+
+    init {
+        require(this.defaultEnabledVersionRanges.isEmpty() || sinceVersion != null) {
+            "A feature with default-enabled version ranges must declare its first supported version"
+        }
+        if (sinceVersion != null) {
+            require(this.defaultEnabledVersionRanges.all { it.sinceInclusive >= sinceVersion }) {
+                "A default-enabled version range cannot precede the feature's first supported version"
+            }
+        }
+        require(this.defaultEnabledVersionRanges.zipWithNext().all { (earlier, later) ->
+            earlier.untilExclusive != null && earlier.untilExclusive <= later.sinceInclusive
+        }) {
+            "Default-enabled language version ranges must be ordered and non-overlapping"
+        }
+    }
+
+    internal fun isEnabledByDefault(languageVersion: LanguageVersion): Boolean {
+        val firstSupportedVersion = sinceVersion ?: return false
+        if (languageVersion < firstSupportedVersion) return false
+        return defaultEnabledVersionRanges.isEmpty() || defaultEnabledVersionRanges.any { it.contains(languageVersion) }
+    }
 
     /**
      * 与 Kotlin `LanguageFeature` 相同的元模型不变量：test-only 特性不能
@@ -517,7 +685,7 @@ fun LanguageVersionSettings.featureSupportStatus(
     return if (supportsFeature(feature)) {
         LanguageFeatureSupportStatus.SUPPORTED
     } else {
-        LanguageFeatureSupportStatus.UNSUPPORTED_LANGUAGE_VERSION
+        LanguageFeatureSupportStatus.DISABLED
     }
 }
 
@@ -620,6 +788,6 @@ fun LanguageFeature.forcesPreReleaseBinariesIfEnabled(): Boolean {
     return isFeatureNotReleasedYet && forcesPreReleaseBinaries
 }
 
-/** 推导特性的默认启用状态：since 版本已到达即默认启用。 */
+/** 推导特性的默认启用状态；非单调规则使用 feature 声明的有序版本区间。 */
 fun LanguageVersionSettings.isEnabledByDefault(languageFeature: LanguageFeature): Boolean =
-    languageFeature.sinceVersion != null && languageVersion >= languageFeature.sinceVersion
+    languageFeature.isEnabledByDefault(languageVersion)

@@ -3,9 +3,12 @@ package org.cangnova.cangjie.cfir.lightTree
 import org.cangnova.cangjie.CjInMemoryTextSourceFile
 import org.cangnova.cangjie.cfir.builder.BodyBuildingMode
 import org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder
-import org.cangnova.cangjie.cfir.correspondingProperty
+import org.cangnova.cangjie.cfir.correspondingField
+import org.cangnova.cangjie.cfir.correspondingValueParameter
+import org.cangnova.cangjie.cfir.isMemberParameter
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
+import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
@@ -13,12 +16,12 @@ import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
-import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationMetadataRegistry
+import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationMetadataBuilder
 import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationSlotSnapshot
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroCallSite
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurface
+import org.cangnova.cangjie.cfir.resolve.providers.macro.materializePrimaryConstructorParameterFields
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceParam
-import org.cangnova.cangjie.cfir.session.annotationMetadataRegistry
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.source.CjSourceElement
@@ -26,35 +29,38 @@ import org.cangnova.cangjie.source.toSourceLinesMapping
 import org.cangnova.cangjie.test.JUnit3RunnerWithInners
 import org.junit.runner.RunWith
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotSame
 import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 /**
- * 主构造 @! 参数与对应属性共享源码 provenance，各自持有独立注解槽位。
- * 每条源码注解只创建一个 macro surface；派生属性不得重复参与宏构造。
+ * 主构造 @! 参数与对应字段共享源码 provenance，各自持有独立注解槽位。
+ * 每条源码注解只创建一个 macro surface；派生字段不得重复参与宏构造。
  */
 @RunWith(JUnit3RunnerWithInners::class)
 class CompileTimeVisibleParameterRawCfirTest : AbstractLightTree2CfirConverterTestCase() {
-    fun testPsiKeepsAnnotatedParameterPropertiesAndSlots() {
+    fun testPsiKeepsAnnotatedParameterFieldsAndSlots() {
         val session = createTestSession()
-        val builder = PsiRawCfirBuilder(session, BodyBuildingMode.NORMAL)
+        val builder = PsiRawCfirBuilder(session, BodyBuildingMode.NORMAL, CfirAnnotationMetadataBuilder())
         val file = builder.buildCfirFile(createCjFile("compileTimeParameters", SOURCE))
-        assertParameterContract(file, session.annotationMetadataRegistry, builder.consumeCollectedMacroSurfaces())
+        materializePrimaryConstructorParameterFields(file, builder.annotationMetadata)
+        assertParameterContract(file, builder.annotationMetadata, builder.consumeCollectedMacroSurfaces())
     }
 
-    fun testLightTreeKeepsAnnotatedParameterPropertiesAndSlots() {
+    fun testLightTreeKeepsAnnotatedParameterFieldsAndSlots() {
         val session = createTestSession()
         val sourceFile = CjInMemoryTextSourceFile("compileTimeParameters.cj", null, SOURCE)
-        val (file, surfaces) = LightTree2Cfir(session, session.cangjieScopeProvider)
-            .buildCfirFileWithSurfaces(parseLightTree(SOURCE), sourceFile, SOURCE.toSourceLinesMapping())
-        assertParameterContract(file, session.annotationMetadataRegistry, surfaces)
+        val built = LightTree2Cfir(session, session.cangjieScopeProvider)
+            .buildPreMacroCfirFile(parseLightFile(SOURCE), sourceFile, SOURCE.toSourceLinesMapping())
+        materializePrimaryConstructorParameterFields(built.cfirFile, built.annotationMetadata)
+        assertParameterContract(built.cfirFile, built.annotationMetadata, built.surfaces)
     }
 
     private fun assertParameterContract(
         file: CfirFile,
-        metadata: CfirAnnotationMetadataRegistry,
+        metadata: CfirAnnotationMetadataBuilder,
         surfaces: List<MacroSurface>,
     ) {
         val holder = file.declarations.filterIsInstance<CfirClass>().single()
@@ -68,26 +74,28 @@ class CompileTimeVisibleParameterRawCfirTest : AbstractLightTree2CfirConverterTe
         assertDefaultValue(parameter, "1")
         assertSame(constructor.symbol, parameter.containingDeclarationSymbol)
 
-        val property = holder.declarations.filterIsInstance<CfirProperty>().single()
-        assertEquals("v", property.name.asString())
-        assertSame(property, parameter.correspondingProperty)
-        assertEquals(Visibilities.Public, property.status.visibility)
-        assertTrue(property.status.isMut)
-        checkNotNull(property.getter)
-        checkNotNull(property.setter)
-        assertEquals(sourceText(parameter.source), sourceText(property.source))
+        val field = holder.declarations.filterIsInstance<CfirFieldVariable>().single()
+        assertEquals("v", field.name.asString())
+        assertSame(field, parameter.correspondingField)
+        assertSame(parameter, field.correspondingValueParameter)
+        assertTrue(parameter.isMemberParameter)
+        assertTrue(field.isMemberParameter)
+        assertEquals(Visibilities.Public, field.status.visibility)
+        assertTrue(field.isVar)
+        assertTrue(holder.declarations.filterIsInstance<CfirProperty>().isEmpty(), "成员参数产生字段，不合成属性访问器")
+        assertEquals(sourceText(parameter.source), sourceText(field.source))
 
         val sourceAnnotation = parameter.annotations.single() as CfirAnnotationCall
-        val derivedAnnotation = property.annotations.single() as CfirAnnotationCall
+        val derivedAnnotation = field.annotations.single() as CfirAnnotationCall
         assertNotSame(sourceAnnotation, derivedAnnotation)
         assertSame(constructor.symbol, sourceAnnotation.containingDeclarationSymbol)
-        assertSame(property.symbol, derivedAnnotation.containingDeclarationSymbol)
+        assertSame(field.symbol, derivedAnnotation.containingDeclarationSymbol)
         assertAnnotation(sourceAnnotation, "1")
         assertAnnotation(derivedAnnotation, "1")
         val sourceSlot = checkNotNull(metadata.snapshot(sourceAnnotation))
         val derivedSlot = checkNotNull(metadata.snapshot(derivedAnnotation))
         assertSame(parameter, sourceSlot.owner)
-        assertSame(property, derivedSlot.owner)
+        assertSame(field, derivedSlot.owner)
         assertSame(sourceAnnotation, sourceSlot.originalAnnotation)
         assertSame(derivedAnnotation, derivedSlot.originalAnnotation)
         assertEquals(0, sourceSlot.annotationIndex)
@@ -103,7 +111,8 @@ class CompileTimeVisibleParameterRawCfirTest : AbstractLightTree2CfirConverterTe
         assertDefaultValue(ordinaryParameters[1], "2")
         for ((index, ordinaryParameter) in ordinaryParameters.withIndex()) {
             assertEquals("Int64", sourceText(ordinaryParameter.returnTypeRef.source))
-            assertNull(ordinaryParameter.correspondingProperty)
+            assertNull(ordinaryParameter.correspondingField)
+            assertFalse(ordinaryParameter.isMemberParameter)
             assertSame(function.symbol, ordinaryParameter.containingDeclarationSymbol)
             val annotation = ordinaryParameter.annotations.single() as CfirAnnotationCall
             assertSame(function.symbol, annotation.containingDeclarationSymbol)
@@ -127,7 +136,7 @@ class CompileTimeVisibleParameterRawCfirTest : AbstractLightTree2CfirConverterTe
             assertEquals(MacroCallSite.PARAMETER, snapshot.callSite)
             assertEquals(snapshot.annotationSource.startOffset, checkNotNull(surface.sourceRange).startOffset)
         }
-        assertTrue(surfaces.none { it.replaceHandle.annotationCarrier?.owner === property })
+        assertTrue(surfaces.none { it.replaceHandle.annotationCarrier?.owner === field })
     }
 
     private fun assertAnnotation(annotation: CfirAnnotationCall, argumentValue: String) {

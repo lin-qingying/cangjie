@@ -8,6 +8,7 @@
 package org.cangnova.cangjie.cfir.declarations.builder
 
 import kotlin.contracts.*
+import org.cangnova.cangjie.cfir.CfirContentSource
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
@@ -34,6 +35,7 @@ class CfirResourceVariableBuilder {
     var deprecationsProvider: DeprecationsProvider = UnresolvedDeprecationProvider
     var dispatchReceiverType: ConeSimpleCangJieType? = null
     lateinit var status: CfirDeclarationStatus
+    var contentSource: CfirContentSource = CfirContentSource.Owned
     var initializer: CfirExpression? = null
     var isVar: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
     var isTypeImplicit: Boolean = false
@@ -55,6 +57,7 @@ class CfirResourceVariableBuilder {
             deprecationsProvider,
             dispatchReceiverType,
             status,
+            contentSource,
             initializer,
             isVar,
             isTypeImplicit,
@@ -73,4 +76,29 @@ inline fun buildResourceVariable(init: CfirResourceVariableBuilder.() -> Unit): 
         callsInPlace(init, InvocationKind.EXACTLY_ONCE)
     }
     return CfirResourceVariableBuilder().apply(init).build()
+}
+
+@OptIn(ExperimentalContracts::class)
+inline fun buildResourceVariableCopy(original: CfirResourceVariable, init: CfirResourceVariableBuilder.() -> Unit): CfirResourceVariable {
+    contract {
+        callsInPlace(init, InvocationKind.EXACTLY_ONCE)
+    }
+    val copyBuilder = CfirResourceVariableBuilder()
+    copyBuilder.source = original.source
+    copyBuilder.moduleData = original.moduleData
+    copyBuilder.resolvePhase = original.resolvePhase
+    copyBuilder.annotations.addAll(original.annotations)
+    copyBuilder.origin = original.origin
+    copyBuilder.attributes = original.attributes.copy()
+    copyBuilder.isLocal = original.isLocal
+    copyBuilder.deprecationsProvider = original.deprecationsProvider
+    copyBuilder.dispatchReceiverType = original.dispatchReceiverType
+    copyBuilder.status = original.status
+    copyBuilder.initializer = original.initializer
+    copyBuilder.isVar = original.isVar
+    copyBuilder.isTypeImplicit = original.isTypeImplicit
+    copyBuilder.typeParameters.addAll(original.typeParameters)
+    copyBuilder.returnTypeRef = original.returnTypeRef
+    copyBuilder.name = original.name
+    return copyBuilder.apply(init).build()
 }

@@ -1,5 +1,9 @@
 package org.cangnova.cangjie.cfir.resolve.providers
 
+import org.cangnova.cangjie.cfir.types.typeContext
+
+import org.cangnova.cangjie.cfir.resolve.substitution.createTypeSubstitutorByTypeConstructor
+
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirInterface
@@ -10,11 +14,10 @@ import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassDeclaredMemberScope
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.CfirSessionComponent
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.toLookupTag
-import org.cangnova.cangjie.cfir.types.CfirTypeSubstitutorByMap
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeLookupTagBasedType
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
@@ -178,7 +181,7 @@ class CfirExtendExportSurfaceService(
                 parameter.symbol.toLookupTag() to argument.type
             }
         return replacements.takeIf { it.isNotEmpty() }
-            ?.let(::CfirTypeSubstitutorByMap)
+            ?.let { createTypeSubstitutorByTypeConstructor(it, session.typeContext, false) }
             ?: ConeSubstitutor.Empty
     }
 

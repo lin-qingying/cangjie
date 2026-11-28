@@ -74,6 +74,7 @@ class JvmTypeDeclarationCodegen(
      * 字段和函数直接取声明成员，不做 struct 的有效成员展开。
      */
     private fun generateClassDeclaration(declaration: ChirClassDeclaration): JvmClassFileArtifact {
+        if (declaration.isInterface) return generateInterfaceDeclaration(declaration)
         val superInternalName = declaration.superTypes.firstOrNull()?.let { objectInternalName(it, "class supertype") }
             ?: "java/lang/Object"
         val implementedTypes = declaration.implementedTypes.map { objectInternalName(it, "class implemented type") }.toTypedArray()
@@ -84,6 +85,57 @@ class JvmTypeDeclarationCodegen(
             fieldDeclarations = declaration.memberDeclarations.filterIsInstance<ChirVariableDeclaration>(),
             memberFunctions = declaration.memberDeclarations.filterIsInstance<ChirFunctionDeclaration>(),
         )
+    }
+
+    /** 生成接口的 JVM 类型和抽象/默认实例方法。 */
+    private fun generateInterfaceDeclaration(declaration: ChirClassDeclaration): JvmClassFileArtifact {
+        val fields = declaration.memberDeclarations.filterIsInstance<ChirVariableDeclaration>()
+        if (fields.isNotEmpty()) {
+            throw JvmCodegenException("JVM interface ${declaration.name} cannot contain instance field declarations", declaration.semanticId)
+        }
+        val methods = declaration.memberDeclarations.filterIsInstance<ChirFunctionDeclaration>()
+        if (methods.any(::isJvmConstructor)) {
+            throw JvmCodegenException("JVM interface ${declaration.name} cannot declare constructors", declaration.semanticId)
+        }
+        validateClassLikeMembers(emptyList(), emptyList(), methods)
+        val superInterfaces = declaration.implementedTypes
+            .map { objectInternalName(it, "interface supertype") }
+            .toTypedArray()
+        val writer = ClassWriter(ClassWriter.COMPUTE_FRAMES or ClassWriter.COMPUTE_MAXS)
+        writer.visit(
+            context.options.classFileVersion,
+            Opcodes.ACC_PUBLIC or Opcodes.ACC_INTERFACE or Opcodes.ACC_ABSTRACT,
+            internalName,
+            null,
+            "java/lang/Object",
+            superInterfaces,
+        )
+        writer.visitSource("${declaration.name}.cj", null)
+        methods.forEach { function ->
+            if (function.hasBody) {
+                JvmFunctionCodegen(
+                    context = context,
+                    module = module,
+                    ownerInternalName = internalName,
+                    classWriter = writer,
+                    function = function,
+                    methodAccess = Opcodes.ACC_PUBLIC,
+                    isStaticMethod = false,
+                    moduleFacadeInternalName = moduleFacadeInternalName,
+                ).generate()
+            } else {
+                val signature = jvmMethodSignature(function)
+                writer.visitMethod(
+                    Opcodes.ACC_PUBLIC or Opcodes.ACC_ABSTRACT,
+                    signature.name,
+                    signature.descriptor,
+                    null,
+                    null,
+                ).visitEnd()
+            }
+        }
+        writer.visitEnd()
+        return JvmClassFileArtifact(internalName = internalName, bytes = writer.toByteArray())
     }
 
     /**
@@ -191,10 +243,14 @@ class JvmTypeDeclarationCodegen(
         val writer = ClassWriter(ClassWriter.COMPUTE_FRAMES or ClassWriter.COMPUTE_MAXS)
         val constructors = memberFunctions.filter(::isJvmConstructor)
         val regularMemberFunctions = memberFunctions.filterNot(::isJvmConstructor)
+        val abstractMemberFunctions = regularMemberFunctions.filterNot(ChirFunctionDeclaration::hasBody)
+        if (abstractMemberFunctions.isNotEmpty() && access and Opcodes.ACC_FINAL != 0) {
+            throw JvmCodegenException("JVM final type ${declaration.name} cannot contain abstract methods", declaration.semanticId)
+        }
         validateClassLikeMembers(fieldDeclarations, constructors, regularMemberFunctions)
         writer.visit(
             context.options.classFileVersion,
-            access,
+            access or (if (abstractMemberFunctions.isNotEmpty()) Opcodes.ACC_ABSTRACT else 0),
             internalName,
             null,
             superInternalName,
@@ -220,16 +276,27 @@ class JvmTypeDeclarationCodegen(
             ).generate()
         }
         regularMemberFunctions.forEach { function ->
-            JvmFunctionCodegen(
-                context = context,
-                module = module,
-                ownerInternalName = internalName,
-                classWriter = writer,
-                function = function,
-                methodAccess = Opcodes.ACC_PUBLIC,
-                isStaticMethod = false,
-                moduleFacadeInternalName = moduleFacadeInternalName,
-            ).generate()
+            if (function.hasBody) {
+                JvmFunctionCodegen(
+                    context = context,
+                    module = module,
+                    ownerInternalName = internalName,
+                    classWriter = writer,
+                    function = function,
+                    methodAccess = Opcodes.ACC_PUBLIC,
+                    isStaticMethod = false,
+                    moduleFacadeInternalName = moduleFacadeInternalName,
+                ).generate()
+            } else {
+                val signature = jvmMethodSignature(function)
+                writer.visitMethod(
+                    Opcodes.ACC_PUBLIC or Opcodes.ACC_ABSTRACT,
+                    signature.name,
+                    signature.descriptor,
+                    null,
+                    null,
+                ).visitEnd()
+            }
         }
         writer.visitEnd()
         return JvmClassFileArtifact(internalName = internalName, bytes = writer.toByteArray())

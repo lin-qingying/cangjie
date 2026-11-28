@@ -7,6 +7,7 @@
 
 package org.cangnova.cangjie.cfir.expressions.impl
 
+import org.cangnova.cangjie.annotations.CangjieOverflowStrategy
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.MutableOrEmptyList
@@ -24,8 +25,10 @@ import org.cangnova.cangjie.cfir.visitors.transformInplace
 import org.cangnova.cangjie.source.CjSourceElement
 
 class CfirErrorExpressionImpl @CfirImplementationDetail constructor(
-    override val source: CjSourceElement?,
+    override var source: CjSourceElement?,
     override var annotations: MutableOrEmptyList<CfirAnnotation>,
+    override var mappedExpression: CfirExpression?,
+    override var overflowStrategy: CangjieOverflowStrategy?,
     override val diagnostic: ConeDiagnostic,
     override var expression: CfirExpression?,
     override var nonExpressionElement: CfirElement?,
@@ -51,11 +54,24 @@ class CfirErrorExpressionImpl @CfirImplementationDetail constructor(
         return this
     }
 
+    @CfirImplementationDetail
+    override fun replaceSource(newSource: CjSourceElement?) {
+        source = newSource
+    }
+
     override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>) {
         annotations = newAnnotations.toMutableOrEmpty()
     }
 
     override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?) {
         require(newConeTypeOrNull == coneTypeOrNull) { "${javaClass.simpleName}.replaceConeTypeOrNull() called with invalid type '${newConeTypeOrNull}'. Current type is '$coneTypeOrNull'" }
+    }
+
+    override fun replaceMappedExpression(newMappedExpression: CfirExpression?) {
+        mappedExpression = newMappedExpression
+    }
+
+    override fun replaceOverflowStrategy(newOverflowStrategy: CangjieOverflowStrategy?) {
+        overflowStrategy = newOverflowStrategy
     }
 }

@@ -242,6 +242,108 @@ abstract class GenerateKotlinFlatBuffersTask @Inject constructor(
     }
 }
 
+/** 为需要整体导入的官方 CHIR 版本生成 Java object API。 */
+@CacheableTask
+abstract class GenerateJavaFlatBuffersObjectApiTask @Inject constructor(
+    private val execOperations: ExecOperations,
+    private val fileSystemOperations: FileSystemOperations,
+) : DefaultTask() {
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.NONE)
+    abstract val flatcPath: RegularFileProperty
+
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val schemaFile: RegularFileProperty
+
+    @get:OutputDirectory
+    abstract val outputDir: DirectoryProperty
+
+    @TaskAction
+    fun generate() {
+        val output = outputDir.get().asFile
+        fileSystemOperations.delete {
+            delete(output)
+        }
+        output.mkdirs()
+
+        execOperations.exec {
+            commandLine(
+                flatcPath.get().asFile.absolutePath,
+                "--java",
+                "--gen-object-api",
+                "--java-package-prefix",
+                "org.cangnova.cangjie.chir.official.v113.",
+                "-o",
+                output.absolutePath,
+                schemaFile.get().asFile.absolutePath,
+            )
+        }
+
+        patchJavaReservedFieldAccessors(output)
+    }
+
+    /** flatc 25.2.10 的 Java object API 对 Java 关键字字段名存在 accessor 拼写不一致。 */
+    private fun patchJavaReservedFieldAccessors(output: File) {
+        output.walkTopDown()
+            .filter { it.isFile && it.extension == "java" }
+            .forEach { sourceFile ->
+                var source = sourceFile.readText(Charsets.UTF_8)
+                val generatedLengthAccessors = Regex("public\\s+int\\s+(\\w+)_Length\\(\\)")
+                    .findAll(source)
+                    .map { it.groupValues[1] }
+                    .toSet()
+                for (fieldName in generatedLengthAccessors) {
+                    val propertyName = fieldName.replaceFirstChar(Char::uppercaseChar)
+                    source = source
+                        .replace("${fieldName}Length()", "${fieldName}_Length()")
+                        .replace("get${propertyName}_()", "get${propertyName}()")
+                }
+                if (source != sourceFile.readText(Charsets.UTF_8)) {
+                    sourceFile.writeText(source, Charsets.UTF_8)
+                }
+            }
+    }
+}
+
+/** 将官方 CHIR schema 的反射描述作为运行时校验器元数据打包。 */
+@CacheableTask
+abstract class GenerateFlatBuffersReflectionSchemaTask @Inject constructor(
+    private val execOperations: ExecOperations,
+    private val fileSystemOperations: FileSystemOperations,
+) : DefaultTask() {
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.NONE)
+    abstract val flatcPath: RegularFileProperty
+
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val schemaFile: RegularFileProperty
+
+    @get:OutputDirectory
+    abstract val outputDir: DirectoryProperty
+
+    @TaskAction
+    fun generate() {
+        val output = outputDir.get().asFile
+        fileSystemOperations.delete {
+            delete(output)
+        }
+        output.mkdirs()
+        execOperations.exec {
+            commandLine(
+                flatcPath.get().asFile.absolutePath,
+                "--binary",
+                "--schema",
+                "--bfbs-comments",
+                "-o",
+                output.absolutePath,
+                schemaFile.get().asFile.absolutePath,
+            )
+        }
+    }
+}
+
 val resolvedFlatcVersion = "25.2.10"
 val resolvedFlatcExeName = "flatc" + if (Os.isFamily(Os.FAMILY_WINDOWS)) ".exe" else ""
 val resolvedAssetName = run {
@@ -275,6 +377,8 @@ val locateFlatc = tasks.register<LocateFlatcTask>("locateFlatc") {
 
 val inputDir = layout.projectDirectory.dir("flatbuffers")
 val flatbuffersOutputDir = layout.projectDirectory.dir("gen")
+val javaObjectApiOutputDir = layout.buildDirectory.dir("generated/sources/flatbuffersObjectApi/main/java")
+val officialChirV113ReflectionSchemaDir = layout.buildDirectory.dir("generated/resources/officialChirV113/main")
 
 tasks.register<GenerateKotlinFlatBuffersTask>("generateKotlinFlatBuffers") {
     dependsOn(locateFlatc)
@@ -285,12 +389,38 @@ tasks.register<GenerateKotlinFlatBuffersTask>("generateKotlinFlatBuffers") {
     outputDir.set(flatbuffersOutputDir)
 }
 
+tasks.register<GenerateJavaFlatBuffersObjectApiTask>("generateJavaFlatBuffersObjectApi") {
+    dependsOn(locateFlatc)
+    flatcPath.set(flatcPathProvider)
+    schemaFile.set(inputDir.file("PackageFormatV113.fbs"))
+    outputDir.set(javaObjectApiOutputDir)
+}
+
+val generateOfficialChirV113ReflectionSchema =
+    tasks.register<GenerateFlatBuffersReflectionSchemaTask>("generateOfficialChirV113ReflectionSchema") {
+        dependsOn(locateFlatc)
+        flatcPath.set(flatcPathProvider)
+        schemaFile.set(inputDir.file("PackageFormatV113.fbs"))
+        outputDir.set(officialChirV113ReflectionSchemaDir)
+    }
+
+tasks.processResources {
+    dependsOn(generateOfficialChirV113ReflectionSchema)
+    from(officialChirV113ReflectionSchemaDir)
+}
+
 tasks.compileKotlin {
     dependsOn("generateKotlinFlatBuffers")
+    dependsOn("generateJavaFlatBuffersObjectApi")
+}
+
+tasks.compileJava {
+    dependsOn("generateJavaFlatBuffersObjectApi")
 }
 
 sourceSets {
     "main" {
         generatedDir()
+        java.srcDir(javaObjectApiOutputDir)
     }
 }

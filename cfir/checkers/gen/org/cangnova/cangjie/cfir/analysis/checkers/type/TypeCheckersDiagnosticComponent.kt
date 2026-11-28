@@ -4,6 +4,7 @@ package org.cangnova.cangjie.cfir.analysis.checkers.type
 
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.analysis.CheckersComponentInternal
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkersComponent
 import org.cangnova.cangjie.cfir.analysis.collectors.components.AbstractDiagnosticCollectorComponent
@@ -25,10 +26,13 @@ class TypeCheckersDiagnosticComponent(
     reporter: PendingDiagnosticReporter,
     private val checkers: TypeCheckers,
 ) : AbstractDiagnosticCollectorComponent(session, reporter) {
-    constructor(session: CfirSession, reporter: PendingDiagnosticReporter) : this(
+    constructor(session: CfirSession, reporter: PendingDiagnosticReporter, mppKind: MppCheckerKind) : this(
         session,
         reporter,
-        session.checkersComponent.typeCheckers
+        when (mppKind) {
+            MppCheckerKind.Common -> session.checkersComponent.commonTypeCheckers
+            MppCheckerKind.Platform -> session.checkersComponent.platformTypeCheckers
+        }
     )
 
     override fun visitElement(element: CfirElement, data: CheckerContext) {
@@ -59,6 +63,10 @@ class TypeCheckersDiagnosticComponent(
 
     override fun visitBasicTypeRef(basicTypeRef: CfirBasicTypeRef, data: CheckerContext) {
         checkers.allTypeRefCheckers.check(basicTypeRef, data)
+    }
+
+    override fun visitParenthesizedTypeRef(parenthesizedTypeRef: CfirParenthesizedTypeRef, data: CheckerContext) {
+        checkers.allTypeRefCheckers.check(parenthesizedTypeRef, data)
     }
 
     override fun visitFunctionTypeRef(functionTypeRef: CfirFunctionTypeRef, data: CheckerContext) {

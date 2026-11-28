@@ -5,12 +5,15 @@
 
 package org.cangnova.cangjie.cfir.resolve.calls
 
+import org.cangnova.cangjie.cfir.types.asCone
+
 import com.intellij.lang.LighterASTNode
 import com.intellij.openapi.util.Ref
 import com.intellij.psi.TokenType
 import com.intellij.psi.tree.IElementType
 import com.intellij.util.diff.FlyweightCapableTreeStructure
 
+import org.cangnova.cangjie.LanguageVersionSettings
 import org.cangnova.cangjie.LanguageVersionSettingsImpl
 import org.cangnova.cangjie.cfir.MutableOrEmptyList
 import org.cangnova.cangjie.cfir.ScopeSession
@@ -18,19 +21,13 @@ import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.common.CfirPlatform
 import org.cangnova.cangjie.cfir.common.CfirSourceModuleData
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAttributes
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
-import org.cangnova.cangjie.cfir.declarations.CfirFile
-import org.cangnova.cangjie.cfir.declarations.CfirFunction
-import org.cangnova.cangjie.cfir.declarations.CfirLocalScopes
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
-import org.cangnova.cangjie.cfir.declarations.DeprecationsProvider
 import org.cangnova.cangjie.cfir.declarations.EmptyDeprecationsProvider
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
-import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
 import org.cangnova.cangjie.cfir.declarations.impl.CfirNamedFunctionImpl
 import org.cangnova.cangjie.cfir.declarations.impl.CfirValueParameterImpl
@@ -39,15 +36,9 @@ import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
 import org.cangnova.cangjie.cfir.expressions.impl.CfirLiteralExpressionImpl
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.resolve.BodyResolveComponents
-import org.cangnova.cangjie.cfir.resolve.CfirSamResolver
 import org.cangnova.cangjie.cfir.resolve.ExtendTestFixtures
-import org.cangnova.cangjie.cfir.resolve.ImplicitValueStorage
 import org.cangnova.cangjie.cfir.resolve.ResolutionMode
-import org.cangnova.cangjie.cfir.resolve.body.CfirCallResolver
-import org.cangnova.cangjie.cfir.resolve.body.CfirDataFlowAnalyzer
-import org.cangnova.cangjie.cfir.resolve.body.CfirDataFlowAnalyzerContext
-import org.cangnova.cangjie.cfir.resolve.body.CfirTowerDataContext
-import org.cangnova.cangjie.cfir.resolve.body.CfirTowerDataElement
+import org.cangnova.cangjie.cfir.resolve.body.CfirBodyResolveTransformer
 import org.cangnova.cangjie.cfir.resolve.calls.ConeAtomWithCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallInfo
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallKind
@@ -68,13 +59,15 @@ import org.cangnova.cangjie.cfir.resolve.providers.CfirProviderImpl
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProviderInternals
 import org.cangnova.cangjie.cfir.resolve.providers.CfirTypeAwareSupertypeProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirDirectSupertypeProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirSuperTypeGraphEdge
+import org.cangnova.cangjie.cfir.resolve.services.CfirSuperTypeGraphStore
 import org.cangnova.cangjie.cfir.resolve.services.CfirTypeAwareSupertypeProviderImpl
-import org.cangnova.cangjie.cfir.resolve.transformers.CfirSyntheticCallGenerator
-import org.cangnova.cangjie.cfir.resolve.transformers.IntegerLiteralAndOperatorApproximationTransformer
-import org.cangnova.cangjie.cfir.resolve.transformers.ReturnTypeCalculator
-import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.BodyResolveContext
-import org.cangnova.cangjie.cfir.scopes.CfirScope
+import org.cangnova.cangjie.cfir.resolve.cjmp.CfirCjmpMatchRunner
+import org.cangnova.cangjie.cfir.resolve.transformers.ReturnTypeCalculatorForFullBodyResolve
 import org.cangnova.cangjie.cfir.session.CfirLanguageSettingsComponent
+import org.cangnova.cangjie.cfir.session.CfirCjmpBatchFamilyAggregate
+import org.cangnova.cangjie.cfir.session.CfirCjmpFamilyAggregate
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.services.CfirExtendTargetKey
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
@@ -87,13 +80,12 @@ import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
-import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
 import org.cangnova.cangjie.cfir.types.TypeComponents
-import org.cangnova.cangjie.cfir.types.asCone
+import org.cangnova.cangjie.cfir.resolve.substitution.asCone
 import org.cangnova.cangjie.cfir.types.classId
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.impl.CfirResolvedTypeRefImpl
@@ -137,36 +129,50 @@ object CallResolutionTestFixtures {
         lateinit var moduleData: CfirModuleData
             internal set
 
+        /** 候选、解析上下文与 completion 共用真实 dispatcher 及其独立的 DFA/CFG 状态。 */
+        internal val bodyResolveTransformer: CfirBodyResolveTransformer by lazy(LazyThreadSafetyMode.NONE) {
+            CfirBodyResolveTransformer(
+                session = this,
+                scopeSession = ScopeSession(),
+                returnTypeCalculator = ReturnTypeCalculatorForFullBodyResolve.Default,
+            )
+        }
+
         override fun toString(): String = "CallResolutionTestSession"
     }
-
-    /** 各测试间共享的无状态 body resolve 上下文；调用解析阶段不读取其状态。 */
-    private val STUB_BODY_RESOLVE_CONTEXT = BodyResolveContext(ReturnTypeCalculator.Default, CfirDataFlowAnalyzerContext())
 
     /**
      * 构造带模块数据与基础组件（语言设置、类型系统、推断组件）的测试 session。
      *
      * 同时注册空的 [CfirExtendProvider]：重载消歧（`overrides`）会无条件访问
      * `session.extendProvider`，未注册时访问器直接抛出。
+     * 依赖图随模块首次绑定建立，供 CJMP 等需要区分普通依赖与 refinement 身份的测试使用。
      */
-    fun newTestSession(): TestSession {
+    fun newTestSession(
+        dependencies: List<CfirModuleData> = emptyList(),
+        refinementDependencies: List<CfirModuleData> = emptyList(),
+        languageVersionSettings: LanguageVersionSettings = LanguageVersionSettingsImpl.DEFAULT,
+    ): TestSession {
         val session = TestSession()
         val moduleData = CfirSourceModuleData(
             name = Name.identifier("call-resolution-test"),
-            dependencies = emptyList(),
-            refinementDependencies = emptyList(),
+            dependencies = dependencies,
+            refinementDependencies = refinementDependencies,
             targetPlatform = CangJiePlatforms.defaultCangJiePlatform,
             platform = CfirPlatform.DEFAULT,
         )
         moduleData.bindSession(session)
         session.register(CfirModuleData::class, moduleData)
-        session.register(CfirLanguageSettingsComponent::class, CfirLanguageSettingsComponent(LanguageVersionSettingsImpl.DEFAULT))
+        session.register(CfirLanguageSettingsComponent::class, CfirLanguageSettingsComponent(languageVersionSettings))
     session.register(TypeComponents::class, TypeComponents(session))
     session.register(InferenceComponents::class, InferenceComponents(session))
     session.register(CfirExtendProvider::class, TestExtendProvider(emptyList()))
     session.register(CfirLazyDeclarationResolver::class, CfirDummyCompilerLazyDeclarationResolver)
     session.register(CfirSymbolProvider::class, TestSymbolProvider(session, emptyList()))
     session.register(CfirProvider::class, CfirProviderImpl(session))
+        session.register(CfirCjmpFamilyAggregate::class, CfirCjmpBatchFamilyAggregate(session) { declaration, ownerFacts, matchingMode ->
+            CfirCjmpMatchRunner.prepareDeclaration(declaration, session, ownerFacts, matchingMode = matchingMode)
+        })
         session.moduleData = moduleData
         return session
     }
@@ -179,23 +185,31 @@ object CallResolutionTestFixtures {
     fun TestSession.registerHierarchyProviders(
         declarations: List<CfirClassLikeDeclaration>,
     ) {
-        register(CfirSymbolProvider::class, TestSymbolProvider(this, declarations))
+        val symbols = TestSymbolProvider(this, declarations)
+        register(CfirSymbolProvider::class, symbols)
+        val graph = CfirSuperTypeGraphStore()
+        register(CfirSuperTypeGraphStore::class, graph)
+        register(CfirDirectSupertypeProvider::class, graph)
+        for (declaration in declarations) {
+            val refs = declaration.superTypeRefs
+            graph.recordDeclared(declaration, refs, refs.filterIsInstance<org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef>().map { ref ->
+                CfirSuperTypeGraphEdge(ref, ref.toString(), ref.coneType.classIdOrPrimitiveClassId?.let(symbols::getClassLikeSymbolByClassId))
+            })
+        }
+        graph.publishCompletedProducts()
         register(CfirTypeAwareSupertypeProvider::class, CfirTypeAwareSupertypeProviderImpl(this))
     }
 
     /**
-     * 构造 body resolve 组件的桩实现；除 session 与 scope session 外全部不可用。
-     *
-     * 调用解析阶段只读取 session（推断组件、语言设置）与 scope session，
-     * 其余访问在测试路径中不会发生。
+     * 返回当前测试会话的正式 body resolve 组件。
+     * DFA、调用解析器、lambda 分析器与 completion 均来自同一个生产 dispatcher。
      */
-    fun newStubBodyResolveComponents(session: CfirSession): BodyResolveComponents = StubBodyResolveComponents(session)
+    fun newBodyResolveComponents(session: TestSession): BodyResolveComponents = session.bodyResolveTransformer.components
 
     /**
      * 构造调用解析测试使用的 [ResolutionContext]。
      */
-    fun newResolutionContext(session: CfirSession): ResolutionContext =
-        ResolutionContext(session, newStubBodyResolveComponents(session), STUB_BODY_RESOLVE_CONTEXT)
+    fun newResolutionContext(session: TestSession): ResolutionContext = session.bodyResolveTransformer.resolutionContext
 
     /**
      * 构造并绑定指定签名的函数符号。
@@ -298,8 +312,11 @@ object CallResolutionTestFixtures {
             source = literalSource(),
             annotations = MutableOrEmptyList.empty(),
             coneTypeOrNull = type,
+            mappedExpression = null,
+            overflowStrategy = null,
             kind = type.literalKind(),
             value = 0,
+            stringKind = org.cangnova.cangjie.cfir.source.CfirSourceStringKind.NORMAL,
         )
     }
 
@@ -321,8 +338,11 @@ object CallResolutionTestFixtures {
                 source = literalSource(),
                 annotations = MutableOrEmptyList.empty(),
                 coneTypeOrNull = null,
+                mappedExpression = null,
+                overflowStrategy = null,
                 kind = CfirLiteralKind.INT,
                 value = 0,
+                stringKind = org.cangnova.cangjie.cfir.source.CfirSourceStringKind.NORMAL,
             ),
             callKind = callKind,
             name = Name.identifier(name),
@@ -359,7 +379,7 @@ object CallResolutionTestFixtures {
             originScope = null,
             isFromCompanionObjectTypeScope = false,
             isFromOriginalTypeInPresenceOfSmartCast = false,
-            bodyResolveContext = STUB_BODY_RESOLVE_CONTEXT,
+            bodyResolveContext = session.bodyResolveTransformer.context,
         ).also { candidate ->
             candidate.initializeSubstitutorAndVariables(ConeSubstitutor.Empty, emptyList())
         }
@@ -376,7 +396,7 @@ object CallResolutionTestFixtures {
         candidate: Candidate,
         context: ResolutionContext,
         vararg stages: ResolutionStage,
-    ) {
+    ): Unit = context.bodyResolveContext.withFile(candidate.callInfo.containingFile) {
         val sink = CheckerSinkImpl(candidate)
         var finished = false
         sink.continuation = suspend {
@@ -405,21 +425,25 @@ object CallResolutionTestFixtures {
         candidate: Candidate,
         context: ResolutionContext,
         expectedType: ConeCangJieType? = null,
-    ): ConeCangJieType {
+    ): ConeCangJieType = context.bodyResolveContext.withFile(candidate.callInfo.containingFile) {
         val system = candidate.system
         val callSite = candidate.callInfo.callSite as? CfirExpression
             ?: error("call resolution fixture requires an expression call site")
         if (expectedType != null) {
             system.addSubtypeConstraint(candidate.substitutedReturnType(), expectedType, ConeExpectedTypeConstraintPosition)
         }
-        ConstraintSystemCompleter(newStubBodyResolveComponents(context.session)).complete(
+        val components = context.bodyResolveComponents
+        val analyzer = components.callCompleter.createPostponedArgumentsAnalyzer(context)
+        ConstraintSystemCompleter(components).complete(
             system.asConstraintSystemCompleterContext(),
             ConstraintSystemCompletionMode.FULL,
             listOf(ConeAtomWithCandidate(callSite, candidate)),
             candidate.substitutedReturnType(),
             context,
-        ) { _, _ -> }
-        return system.buildCurrentSubstitutor().safeSubstitute(system, candidate.substitutedReturnType()).asCone()
+        ) { atom, withPCLASession ->
+            analyzer.analyze(system, atom, candidate, withPCLASession)
+        }
+        system.buildCurrentSubstitutor().safeSubstitute(system, candidate.substitutedReturnType()).asCone()
     }
 
     /**
@@ -429,6 +453,7 @@ object CallResolutionTestFixtures {
         source = null,
         annotations = MutableOrEmptyList.empty(),
         customRenderer = false,
+        typeUseOrigin = org.cangnova.cangjie.cfir.types.CfirTypeRefOrigin.SEMANTIC,
         coneType = type,
         delegatedTypeRef = null,
     )
@@ -440,8 +465,11 @@ object CallResolutionTestFixtures {
         source = literalSource(),
         annotations = MutableOrEmptyList.empty(),
         coneTypeOrNull = null,
+        mappedExpression = null,
+        overflowStrategy = null,
         kind = CfirLiteralKind.INT,
         value = 0,
+        stringKind = org.cangnova.cangjie.cfir.source.CfirSourceStringKind.NORMAL,
     )
 
     /**
@@ -492,36 +520,6 @@ object CallResolutionTestFixtures {
     }
 
     /**
-     * [BodyResolveComponents] 的测试桩：除 session 与 scope session 外不可用。
-     */
-    private class StubBodyResolveComponents(
-        override val session: CfirSession,
-    ) : BodyResolveComponents() {
-        override val scopeSession: ScopeSession = ScopeSession()
-        override val returnTypeCalculator: ReturnTypeCalculator get() = error("not used in call resolution tests")
-        override val implicitValueStorage: ImplicitValueStorage get() = error("not used in call resolution tests")
-        override val containingDeclarations: List<CfirDeclaration> get() = error("not used in call resolution tests")
-        override val fileImportsScope: List<CfirScope> get() = error("not used in call resolution tests")
-        override val towerDataElements: List<CfirTowerDataElement> get() = error("not used in call resolution tests")
-        override val towerDataContext: CfirTowerDataContext get() = error("not used in call resolution tests")
-        override val localScopes: CfirLocalScopes get() = error("not used in call resolution tests")
-        override val noExpectedType: CfirTypeRef get() = error("not used in call resolution tests")
-        override val symbolProvider: CfirSymbolProvider get() = error("not used in call resolution tests")
-        override val file: CfirFile get() = error("not used in call resolution tests")
-        override val container: CfirDeclaration get() = error("not used in call resolution tests")
-        override val variablesBeingInitialized: List<CfirVariable> get() = error("not used in call resolution tests")
-        override val resolutionStageRunner: ResolutionStageRunner get() = error("not used in call resolution tests")
-        override val samResolver: CfirSamResolver get() = error("not used in call resolution tests")
-        override val callResolver: CfirCallResolver get() = error("not used in call resolution tests")
-        override val callCompleter: CfirCallCompleter get() = error("not used in call resolution tests")
-        override val syntheticCallGenerator: CfirSyntheticCallGenerator get() = error("not used in call resolution tests")
-        override val dataFlowAnalyzer: CfirDataFlowAnalyzer get() = error("not used in call resolution tests")
-        override val integerLiteralAndOperatorApproximationTransformer: IntegerLiteralAndOperatorApproximationTransformer
-            get() = error("not used in call resolution tests")
-        override val inlineFunction: CfirFunction? get() = error("not used in call resolution tests")
-    }
-
-    /**
      * 基于内存声明表的测试符号提供器（复刻 CfirTypeAwareSupertypeProviderTest）。
      */
     private class TestSymbolProvider(
@@ -566,6 +564,8 @@ object CallResolutionTestFixtures {
     private class TestExtendProvider(
         private val extends: List<CfirExtend>,
     ) : CfirExtendProvider {
+        override val modificationCount: Long = 0L
+
         override fun getAllExtends(): List<CfirExtend> = extends
 
         private val extendsByClassId: Map<ClassId, List<CfirExtend>> = extends.groupBy { extend ->

@@ -4,6 +4,7 @@ package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.analysis.CheckersComponentInternal
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkersComponent
 import org.cangnova.cangjie.cfir.analysis.collectors.components.AbstractDiagnosticCollectorComponent
@@ -25,10 +26,13 @@ class ExpressionCheckersDiagnosticComponent(
     reporter: PendingDiagnosticReporter,
     private val checkers: ExpressionCheckers,
 ) : AbstractDiagnosticCollectorComponent(session, reporter) {
-    constructor(session: CfirSession, reporter: PendingDiagnosticReporter) : this(
+    constructor(session: CfirSession, reporter: PendingDiagnosticReporter, mppKind: MppCheckerKind) : this(
         session,
         reporter,
-        session.checkersComponent.expressionCheckers
+        when (mppKind) {
+            MppCheckerKind.Common -> session.checkersComponent.commonExpressionCheckers
+            MppCheckerKind.Platform -> session.checkersComponent.platformExpressionCheckers
+        }
     )
 
     override fun visitElement(element: CfirElement, data: CheckerContext) {

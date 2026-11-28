@@ -129,7 +129,7 @@ class ForeignAndAnnotationParsingTest : CjParsingTestCase(
      * 对限定形式报 `macro_undefined_pkg_name`。
      */
     @Test
-    fun platformAnnotationSurfaceIsRetainedWithoutBuiltinKindFacade() {
+    fun javaMirrorBuiltinIdentityDistinguishesBareAndQualifiedNames() {
         val file = parse(
             "platformAnnotationSurface",
             """
@@ -242,7 +242,7 @@ class ForeignAndAnnotationParsingTest : CjParsingTestCase(
         assertEquals(listOf("NonProduct"), stub.psi.annotationEntries.map { it.shortName?.asString() })
     }
 
-    /** IfAvailable 使用圆括号的独立宏表达式，不能登记为声明注解。 */
+    /** 原始源码中的 IfAvailable 是普通宏；只有宏展开后的特定入口生成专用表达式。 */
     @Test
     fun ifAvailableKeepsItsExpressionForm() {
         val file = parse(
@@ -254,10 +254,10 @@ class ForeignAndAnnotationParsingTest : CjParsingTestCase(
             """.trimIndent(),
         )
         assertTrue(annotations(file).none { it.shortName?.asString() == "IfAvailable" })
-        val expressions = PsiTreeUtil.findChildrenOfType(file, CjIfAvailableExpression::class.java)
+        val expressions = PsiTreeUtil.findChildrenOfType(file, CjMacroExpression::class.java)
         assertEquals(1, expressions.size)
         assertEquals("IfAvailable", expressions.single().text.substringBefore('(').removePrefix("@"))
-        assertEquals("level", expressions.single().conditionName)
+        assertTrue(PsiTreeUtil.findChildrenOfType(file, CjIfAvailableExpression::class.java).isEmpty())
     }
 
     private fun parse(name: String, source: String): CjFile {

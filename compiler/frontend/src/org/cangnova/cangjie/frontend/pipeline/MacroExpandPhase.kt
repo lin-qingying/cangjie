@@ -14,7 +14,9 @@ import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
+import org.cangnova.cangjie.cfir.declarations.CfirParameterDefaultValueMetadata
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
+import org.cangnova.cangjie.cfir.declarations.defaultValueMetadata
 import org.cangnova.cangjie.cfir.declarations.builder.buildErrorFunction
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
@@ -27,13 +29,10 @@ import org.cangnova.cangjie.cfir.expressions.CfirStatement
 import org.cangnova.cangjie.cfir.expressions.CfirNamedArgumentExpression
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.expressions.builder.buildErrorExpression
-import org.cangnova.cangjie.cfir.resolve.providers.macro.BuiltinNonMacroDesugarer
 import org.cangnova.cangjie.cfir.resolve.providers.macro.BuiltinMacroRegistry
-import org.cangnova.cangjie.cfir.resolve.providers.macro.BuiltinNonMacroSurface
 import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationReplaceCarrier
 import org.cangnova.cangjie.cfir.resolve.providers.macro.FinalMacroSurfaceDecision
 import org.cangnova.cangjie.cfir.resolve.providers.macro.IdentityMacroStableSplicer
-import org.cangnova.cangjie.cfir.resolve.providers.macro.IfAvailableSurface
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroCallForestBuilder
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroCallNode
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionDiagnostic
@@ -41,16 +40,17 @@ import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionResult
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionService
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroDefinitionEntry
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroAppliedDeclarationReplacement
-import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroDeclarationFragment
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroAppliedExpressionReplacement
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroExpansionCycle
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroForestEvaluator
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentParser
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentInput
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentPayload
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentSourceMap
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentSourceMapping
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroTokenSourceOrigin
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentResult
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroReplacementSlotType
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroExpansionRegistry
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroExpansionCacheKey
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroBuiltinRegistries
@@ -72,17 +72,24 @@ import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceParam
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceToken
 import org.cangnova.cangjie.cfir.resolve.providers.macro.PreMacroCfirFile
 import org.cangnova.cangjie.cfir.resolve.providers.macro.PreMacroRawBuildResult
+import org.cangnova.cangjie.cfir.resolve.providers.macro.recoveredBuiltinDeclarationBranchTokens
 import org.cangnova.cangjie.cfir.resolve.providers.macro.registerConstructionSurfaceUsage
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.session.annotationMetadataRegistryOrNull
+import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationMetadata
+import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationMetadataBuilder
+import org.cangnova.cangjie.cfir.resolve.providers.macro.abortAnnotationMetadata
+import org.cangnova.cangjie.cfir.resolve.providers.macro.materializePrimaryConstructorParameterFields
+import org.cangnova.cangjie.cfir.resolve.providers.macro.finalizeImplicitConstructorDeclarations
 import org.cangnova.cangjie.cfir.symbols.CfirErrorFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirMacroDeclarationSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
+import org.cangnova.cangjie.cfir.types.CfirUserTypeRef
 import org.cangnova.cangjie.cfir.visitors.CfirDefaultTransformer
 import org.cangnova.cangjie.config.CompilerConfiguration
 import org.cangnova.cangjie.config.CompilerConfigurationKey
 import org.cangnova.cangjie.config.languageVersionSettings
 import org.cangnova.cangjie.config.moduleName
+import org.cangnova.cangjie.config.parallelMacroExpansion
 import org.cangnova.cangjie.config.targetPlatform
 import org.cangnova.cangjie.config.useLightTree
 import org.cangnova.cangjie.macro.MacroCallInfo
@@ -90,6 +97,7 @@ import org.cangnova.cangjie.macro.MacroDiagnosticSeverity
 import org.cangnova.cangjie.macro.MacroExpansionFailureKind
 import org.cangnova.cangjie.macro.MacroExpansionResult
 import org.cangnova.cangjie.macro.MacroExecutor
+import org.cangnova.cangjie.macro.process.LspMacroServerMacroExecutor
 import org.cangnova.cangjie.macro.MacroLibraryLoadFailure
 import org.cangnova.cangjie.macro.MacroLibraryLoadFailureKind
 import org.cangnova.cangjie.macro.MacroLibraryLoadResult
@@ -349,12 +357,13 @@ var CompilerConfiguration.macroExpansionDemandAutoCompilationEnabled: Boolean
     }
 
 /**
- * 当前宏 SDK 根目录。
+ * 编译调用显式指定的宏 SDK 根目录。环境选择由 invocation 边界处理，不在 getter 中猜测安装。
  */
-var CompilerConfiguration.macroSdkHome: String
-    get() = get(FrontendMacroConfigurationKeys.MACRO_SDK_HOME, DEFAULT_MACRO_SDK_HOME)
+var CompilerConfiguration.macroSdkHome: String?
+    get() = get(FrontendMacroConfigurationKeys.MACRO_SDK_HOME)
     set(value) {
-        put(FrontendMacroConfigurationKeys.MACRO_SDK_HOME, value)
+        if (value == null) remove(FrontendMacroConfigurationKeys.MACRO_SDK_HOME)
+        else put(FrontendMacroConfigurationKeys.MACRO_SDK_HOME, value)
     }
 
 /**
@@ -365,12 +374,6 @@ var CompilerConfiguration.macroCompilerEnvironment: Map<String, String>
     set(value) {
         put(FrontendMacroConfigurationKeys.MACRO_COMPILER_ENVIRONMENT, value.toMap())
     }
-
-/**
- * 未配置时不隐式选择机器级 SDK。调用方必须把当前项目实际使用的 SDK 根目录写入
- * [CompilerConfiguration.macroSdkHome]，保证宏编译、标准库 artifact 定位和执行器使用同一 SDK。
- */
-const val DEFAULT_MACRO_SDK_HOME: String = ""
 
 /**
  * Compiler frontend 的 macro construction 实现。
@@ -388,11 +391,21 @@ class FrontendMacroConstructionService(
      * 将 executor/parser 返回的片段稳定拼回 CFIR 的 splicer。
      */
     private val stableSplicer: MacroStableSplicer = CfirExpressionMacroStableSplicer,
-    /**
-     * 内建非宏语法糖处理器。
-     */
-    private val builtinNonMacroDesugarer: BuiltinNonMacroDesugarer = CangJieBuiltinNonMacroDesugarer,
+    /** 与 artifact 准备共享的一次调用快照，不能在每个宏位点重新选择 SDK。 */
+    private val sdkSelection: MacroSdkSelection = MacroSdkSelector.select(configuration.macroSdkHome),
 ) : MacroConstructionService {
+    private fun createExecutor(session: CfirSession): MacroExecutor? {
+        val factory = configuration.macroExecutorFactory
+        if (factory != null) return factory.create(session)
+        val sdk = sdkSelection as? MacroSdkSelection.Selected ?: return null
+        return LspMacroServerMacroExecutor(
+            sdk.executorExecutable.toString(),
+            sdkHome = sdk.home.toString(),
+            processEnvironment = sdk.processEnvironment(),
+            enableParallel = configuration.parallelMacroExpansion,
+        )
+    }
+
     /**
      * 对 pre-macro raw CFIR 执行宏构造并返回最终构造结果。
      *
@@ -405,53 +418,65 @@ class FrontendMacroConstructionService(
         mode: MacroConstructionService.Mode,
         preConstructionDiagnostics: List<MacroConstructionDiagnostic>,
     ): MacroConstructionResult {
-        val session = pre.session
-        val registry = MacroExpansionRegistry()
-        val rawFiles = pre.files.map { it.cfirFile }
-        var builtDegradedPlaceholders = false
+        try {
+            val session = pre.session
+            val registry = MacroExpansionRegistry()
+            val rawFiles = pre.files.map { it.cfirFile }
+            var builtDegradedPlaceholders = false
 
-        // Baseline 第 9 节："session/analysis 长生命周期 registry"。
-        // 把所有 surface 按文件注册到 registry，供 diagnostic / LSP 和文件级 checker
-        // 反查原 macro 位点与 original macro forest。
-        for (preFile in pre.files) {
-            registry.registerFileSurfaces(preFile.cfirFile, preFile.surfaces)
-        }
-        registry.registerConstructionSurfaceUsage(pre, classification)
-        registry.addAll(preConstructionDiagnostics)
+            // Baseline 第 9 节："session/analysis 长生命周期 registry"。
+            // 把所有 surface 按文件注册到 registry，供 diagnostic / LSP 和文件级 checker
+            // 反查原 macro 位点与 original macro forest。
+            for (preFile in pre.files) {
+                registry.registerFileSurfaces(preFile.cfirFile, preFile.surfaces)
+            }
+            registry.registerConstructionSurfaceUsage(pre, classification)
+            registry.addAll(preConstructionDiagnostics)
 
-        // baseline 第 12 节 Batch 5："alias conflict / macro package / ..."。
-        reportAliasConflicts(context, registry)
+            // baseline 第 12 节 Batch 5："alias conflict / macro package / ..."。
+            reportAliasConflicts(context, registry)
 
-        val expandedFiles = expandMacroSurfaces(pre, context, classification, registry) ?: rawFiles
-        if (mode == MacroConstructionService.Mode.DEGRADED &&
-            pre.allSurfaces.isNotEmpty() &&
-            registry.hasErrors &&
-            registry.diagnostics.all(::isDegradableDiagnostic)
-        ) {
-            replaceSurfaceOnlyDegradedPlaceholders(pre, expandedFiles, registry)
-            builtDegradedPlaceholders = true
-        }
-
-        // baseline 第 11 节 cache key：splice 完成后逐文件计算 13 维 key，
-        // 写入 registry 供上游 IDE / build cache 失效判定。
-        registerCacheKeys(pre, context, expandedFiles, registry)
-        pre.session.annotationMetadataRegistryOrNull?.freeze()
-
-        // baseline 第 10 节："session/analysis 长生命周期 registry"挂到 session
-        // 上，供 ordinary checker / IDE / LSP 通过 `session.macroExpansionRegistry` 读取。
-        session.register(MacroExpansionRegistry::class, registry)
-
-        if (registry.hasErrors) {
+            val expandedFiles = expandMacroSurfaces(pre, context, classification, registry) ?: rawFiles
             if (mode == MacroConstructionService.Mode.DEGRADED &&
-                builtDegradedPlaceholders &&
+                pre.allSurfaces.isNotEmpty() &&
+                registry.hasErrors &&
+                registry.parsingFailures.isEmpty() &&
                 registry.diagnostics.all(::isDegradableDiagnostic)
             ) {
-                return MacroConstructionService.degradedOf(pre, expandedFiles, registry)
+                replaceSurfaceOnlyDegradedPlaceholders(pre, expandedFiles, registry)
+                builtDegradedPlaceholders = true
             }
-            return MacroConstructionResult.Failed(registry)
-        }
 
-        return MacroConstructionService.successOf(pre, expandedFiles, registry)
+            require(expandedFiles.size == pre.files.size) { "Construction must retain per-file field ownership." }
+            pre.files.forEachIndexed { index, preFile ->
+                finalizeImplicitConstructorDeclarations(expandedFiles[index], preFile.annotationMetadata)
+                materializePrimaryConstructorParameterFields(expandedFiles[index], preFile.annotationMetadata)
+            }
+
+            // baseline 第 11 节 cache key：splice 完成后逐文件计算 13 维 key，
+            // 写入 registry 供上游 IDE / build cache 失效判定。
+            registerCacheKeys(pre, context, expandedFiles, registry)
+
+            // baseline 第 10 节："session/analysis 长生命周期 registry"挂到 session
+            // 上，供 ordinary checker / IDE / LSP 通过 `session.macroExpansionRegistry` 读取。
+            session.register(MacroExpansionRegistry::class, registry)
+
+            if (registry.hasErrors) {
+                if (mode == MacroConstructionService.Mode.DEGRADED &&
+                    builtDegradedPlaceholders &&
+                    registry.parsingFailures.isEmpty() &&
+                    registry.diagnostics.all(::isDegradableDiagnostic)
+                ) {
+                    return MacroConstructionService.degradedOf(pre, expandedFiles, registry)
+                }
+                return MacroConstructionService.failedOf(pre, registry)
+            }
+
+            return MacroConstructionService.successOf(pre, expandedFiles, registry)
+        } catch (failure: Throwable) {
+            pre.abortAnnotationMetadata()
+            throw failure
+        }
     }
 
     /**
@@ -498,106 +523,129 @@ class FrontendMacroConstructionService(
         }
 
         val parser = parserFactory.create(pre.session)
-        val executor = configuration.macroExecutorFactory?.create(pre.session)
+        val executor = if (expansionDecisions.any(FinalMacroSurfaceDecision::executorRequired)) {
+            createExecutor(pre.session)
+        } else {
+            null
+        }
         val slots = mutableListOf<MacroReplaceSlot>()
         val evaluator = MacroForestEvaluator(configuration.macroExpandMaxIterations)
-        val surfaceFiles = expansionDecisionsByFile.flatMap { (preFile, decisions) ->
-            decisions.map { decision -> decision.surface.surfaceId to preFile }
-        }.toMap()
 
         // sourceRange 是文件内 offset；不同虚拟文件的范围不可直接比较。
         // 每个 PreMacroCfirFile 独立建 forest，保证 parent/child 关系只存在于同一源码文件。
-        for ((_, fileDecisions) in expansionDecisionsByFile) {
-            val forest = MacroCallForestBuilder.build(fileDecisions.map { it.surface })
-            evaluator.evaluate(
-                forest = forest,
-                expand = { node, childResults ->
-                    val surface = node.surface
-                    val decision = decisionsBySurfaceId[surface.surfaceId]
-                        ?: return@evaluate null
-                    val name = surface.qualifiedName?.shortName()
-                    if (surface.hasBlockingPreConstructionDiagnostic(registry)) {
-                        return@evaluate null
-                    }
-                    if (name == null) {
-                        reportError(
-                            registry = registry,
-                            message = "Macro surface `${surface.capturedRawSyntax.orEmpty()}` has no resolvable macro name.",
-                            kind = MacroConstructionDiagnostic.Kind.MACRO_UNRESOLVED,
-                            originSurfaceId = surface.surfaceId,
-                        )
-                        return@evaluate null
-                    }
-
-                    if (node.hasUnresolvedChildPayloadChannel(childResults)) {
-                        reportError(
-                            registry = registry,
-                            message = "Nested macro surface inside `${
-                                surface.qualifiedName?.asString().orEmpty()
-                            }` cannot be mapped to attr or input token payload.",
-                            kind = MacroConstructionDiagnostic.Kind.MACRO_REEVALUATION_FAILED,
-                            originSurfaceId = surface.surfaceId,
-                        )
-                        return@evaluate null
-                    }
-                    val refreshedTokens = node.refreshTokensWithChildResults(childResults)
-                    val expandedTokens = expandResolvedSurface(
-                        pre = pre,
-                        surface = surface,
-                        decision = decision,
-                        node = node,
-                        childResults = childResults,
-                        refreshedTokens = refreshedTokens,
-                        executor = executor,
-                        registry = registry,
-                        preFile = surfaceFiles[surface.surfaceId],
-                    ) ?: return@evaluate null
-
-                    val fragment = configuration.macroConstructionReadAccess.compute {
-                        parseAndDesugarFragment(
-                            surface = surface,
-                            decision = decision,
-                            annotationSnapshot = decision.annotationCarrier
-                                ?.let { pre.session.annotationMetadataRegistryOrNull?.snapshot(it) },
-                            node = node,
-                            parser = parser,
-                            tokens = expandedTokens,
-                            inheritedAnnotationSnapshots = inheritedAnnotationSnapshots(pre, decision, classification, node),
-                            registry = registry,
-                        )
-                    } ?: return@evaluate null
-                    val success = fragment as? MacroFragmentResult.Success
-                    when (val payload = success?.payload) {
-                        is CfirElement -> registry.registerGeneratedCfirElement(payload, surface.surfaceId, checkNotNull(success).sourceMapping)
-                        // 声明片段只是构造期容器；来源映射必须落到每个最终 CFIR 声明及其子树上。
-                        is MacroDeclarationFragment -> payload.declarations.forEach { declaration ->
-                            registry.registerGeneratedCfirElement(declaration, surface.surfaceId, checkNotNull(success).sourceMapping)
+        executor.use {
+            for ((preFile, fileDecisions) in expansionDecisionsByFile) {
+                val forest = MacroCallForestBuilder.build(fileDecisions.map { it.surface })
+                evaluator.evaluate(
+                    forest = forest,
+                    expand = { node, childResults ->
+                        val surface = node.surface
+                        val decision = decisionsBySurfaceId[surface.surfaceId]
+                            ?: return@evaluate null
+                        val name = surface.qualifiedName?.shortName()
+                        if (surface.hasBlockingPreConstructionDiagnostic(registry)) {
+                            return@evaluate null
+                        }
+                        if (name == null) {
+                            reportError(
+                                registry = registry,
+                                message = "Macro surface `${surface.capturedRawSyntax.orEmpty()}` has no resolvable macro name.",
+                                kind = MacroConstructionDiagnostic.Kind.MACRO_UNRESOLVED,
+                                originSurfaceId = surface.surfaceId,
+                            )
+                            return@evaluate null
                         }
 
-                        null -> Unit
-                    }
-                    val parentVisibleTokens = fragment.parentVisibleTokens(refreshedTokens)
+                        if (node.hasUnresolvedChildPayloadChannel(childResults)) {
+                            reportError(
+                                registry = registry,
+                                message = "Nested macro surface inside `${
+                                    surface.qualifiedName?.asString().orEmpty()
+                                }` cannot be mapped to attr or input token payload.",
+                                kind = MacroConstructionDiagnostic.Kind.MACRO_REEVALUATION_FAILED,
+                                originSurfaceId = surface.surfaceId,
+                            )
+                            return@evaluate null
+                        }
+                        val refreshedTokens = node.refreshTokensWithChildResults(childResults)
+                        if (decision.resolution is MacroResolution.BuiltinNonMacro) {
+                            surface.recoveredBuiltinDeclarationBranchTokens()?.let { branch ->
+                                // 声明与其语法诊断已归属原始文件；只把保留的分支交给父宏。
+                                val visibleTokens = if (branch.isEmpty()) refreshedTokens.inputTokens else
+                                    branch.replaceChildMacroRanges(childResults, MacroPayloadChannel.INPUT)
+                                registry.registerGeneratedDisplayText(surface.surfaceId, visibleTokens.joinToString("") { it.text })
+                                return@evaluate visibleTokens
+                            }
+                        }
+                        val expandedTokens = expandResolvedSurface(
+                            pre = pre,
+                            surface = surface,
+                            decision = decision,
+                            node = node,
+                            childResults = childResults,
+                            refreshedTokens = refreshedTokens,
+                            executor = executor,
+                            registry = registry,
+                            preFile = preFile,
+                        ) ?: return@evaluate null
 
-                    if (surface is BuiltinNonMacroSurface) {
-                        registry.registerGeneratedDisplayText(
-                            surfaceId = surface.surfaceId,
-                            text = parentVisibleTokens.joinToString(separator = "") { it.text },
+                        val inherited = inheritedAnnotationsBySurface(preFile, decision, classification, node)
+                        val fragment = configuration.macroConstructionReadAccess.compute {
+                            parseAndDesugarFragment(
+                                surface = surface,
+                                decision = decision,
+                                annotationSnapshot = decision.annotationCarrier?.let(preFile.annotationMetadata::snapshot),
+                                annotationMetadata = preFile.annotationMetadata,
+                                node = node,
+                                parser = parser,
+                                tokens = expandedTokens,
+                                inheritedAnnotationSnapshots = inherited.values.toList(),
+                                registry = registry,
+                            )
+                        } ?: return@evaluate null
+                        when (fragment) {
+                            is MacroFragmentResult.Success -> fragment.payload.roots.forEach { root ->
+                                val generated = when (root) {
+                                    is MacroFragmentPayload.Root.Declaration -> root.declaration
+                                    is MacroFragmentPayload.Root.Expression -> root.expression
+                                    is MacroFragmentPayload.Root.Parameter -> root.parameter
+                                }
+                                registry.registerGeneratedCfirElement(
+                                    generated,
+                                    surface.surfaceId,
+                                    fragment.sourceMapping,
+                                    fragmentSourceMap = fragment.sourceMap,
+                                )
+                            }
+                            is MacroFragmentResult.CustomAnnotation -> registry.registerGeneratedCfirElement(
+                                fragment.payload,
+                                surface.surfaceId,
+                                fragment.sourceMapping,
+                                fragmentSourceMap = fragment.sourceMap,
+                                registerRootSource = false,
+                                fallbackToSurfaceOnUnmappedSource = false,
+                            )
+                            else -> Unit
+                        }
+                        val parentVisibleTokens = fragment.parentVisibleTokens(refreshedTokens)
+                        if (decision.resolution is MacroResolution.BuiltinNonMacro) {
+                            registry.registerGeneratedDisplayText(surface.surfaceId, parentVisibleTokens.joinToString("") { it.text })
+                        }
+                        slots += MacroReplaceSlot(
+                            handle = surface.replaceHandle,
+                            origin = surface,
+                            fragment = fragment,
+                            annotationMetadata = preFile.annotationMetadata,
+                            embeddedSurfaceIds = if (fragment is MacroFragmentResult.Success)
+                                node.descendantSurfaceIds() + inherited.keys else emptySet(),
                         )
-                        return@evaluate parentVisibleTokens
-                    }
-
-                    slots += MacroReplaceSlot(
-                        handle = surface.replaceHandle,
-                        origin = surface,
-                        fragment = fragment,
-                        embeddedSurfaceIds = if (fragment is MacroFragmentResult.Success) node.descendantSurfaceIds() else emptySet(),
-                    )
-                    parentVisibleTokens
-                },
-                onCycle = { cycle -> reportMacroCycle(cycle, registry) },
-            )
+                        parentVisibleTokens
+                    },
+                    onCycle = { cycle -> reportMacroCycle(cycle, registry) },
+                )
+            }
         }
-        executor?.let { runCatching { it.close() } }
+
 
         if (slots.isEmpty()) return null
         if (stableSplicer === IdentityMacroStableSplicer) {
@@ -614,35 +662,13 @@ class FrontendMacroConstructionService(
             return null
         }
 
-        return runCatching {
-            configuration.macroConstructionReadAccess.compute {
-                stableSplicer.applySlices(pre.files.map { it.cfirFile }, slots).also { spliceResult ->
-                    spliceResult.declarationReplacements.forEach(registry::registerAppliedDeclarationReplacement)
-                    spliceResult.expressionReplacements.forEach(registry::registerAppliedExpressionReplacement)
-                    val metadataRegistry = pre.session.annotationMetadataRegistryOrNull
-                    if (metadataRegistry != null) {
-                        val embeddedSurfaceIds = slots.flatMapTo(hashSetOf()) { it.embeddedSurfaceIds }
-                        for (slot in slots) {
-                            if (slot.origin.surfaceId in embeddedSurfaceIds) continue
-                            val carrier = slot.handle.annotationCarrier ?: continue
-                            val replacement = (slot.fragment as? MacroFragmentResult.CustomAnnotation)?.payload ?: continue
-                            if (carrier.owner.annotations.getOrNull(carrier.annotationIndex) !== replacement) continue
-                            metadataRegistry.migrate(carrier, replacement)
-                        }
-                    }
-                }.files
-            }
-        }.getOrElse { error ->
-            for (slot in slots) {
-                reportError(
-                    registry = registry,
-                    message = error.message ?: "Stable macro splice failed.",
-                    kind = MacroConstructionDiagnostic.Kind.MACRO_EXPANSION_FAILED,
-                    originSurfaceId = slot.origin.surfaceId,
-                )
-            }
-            null
+        val spliceResult = configuration.macroConstructionReadAccess.compute {
+            stableSplicer.applySlices(pre.files.map { it.cfirFile }, slots)
         }
+        spliceResult.declarationReplacements.forEach(registry::registerAppliedDeclarationReplacement)
+        spliceResult.expressionReplacements.forEach(registry::registerAppliedExpressionReplacement)
+        registry.stageParsingReports(slots)
+        return spliceResult.files
     }
 
     /**
@@ -687,14 +713,13 @@ class FrontendMacroConstructionService(
                 null
             }
 
-            is MacroResolution.BuiltinNonMacro -> tokensForBuiltinNonMacro(surface, refreshedTokens)
+            is MacroResolution.BuiltinNonMacro -> tokensForBuiltinNonMacro(surface, childResults, registry)
             is MacroResolution.BuiltinAnnotation -> error(
                 "Builtin annotation ${resolution.name.asString()} must not enter macro expansion.",
             )
             is MacroResolution.CustomAnnotation -> {
                 val snapshot = decision.annotationCarrier
-                    ?.let { pre.session.annotationMetadataRegistryOrNull?.snapshot(it) }
-                    ?: pre.session.annotationMetadataRegistryOrNull?.snapshotForSurface(surface)
+                    ?.let { checkNotNull(preFile).annotationMetadata.snapshot(it) }
                 snapshot?.tokens ?: run {
                     reportError(
                         registry = registry,
@@ -771,7 +796,8 @@ class FrontendMacroConstructionService(
         if (executor == null || !executor.isAvailable()) {
             reportError(
                 registry = registry,
-                message = "Macro executor is unavailable for `@${entry.name.asString()}`.",
+                message = "Macro executor is unavailable for `@${entry.name.asString()}`." +
+                    if (configuration.macroExecutorFactory == null) " SDK selection: ${sdkSelection.identity}" else "",
                 kind = MacroConstructionDiagnostic.Kind.MACRO_EXECUTOR_UNAVAILABLE,
                 originSurfaceId = surface.surfaceId,
             )
@@ -885,18 +911,22 @@ class FrontendMacroConstructionService(
         surface: MacroSurface,
         decision: FinalMacroSurfaceDecision,
         annotationSnapshot: org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationSlotSnapshot?,
+        annotationMetadata: CfirAnnotationMetadataBuilder,
         node: MacroCallNode,
         parser: MacroFragmentParser,
         tokens: List<MacroSurfaceToken>,
         inheritedAnnotationSnapshots: List<org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationSlotSnapshot>,
         registry: MacroExpansionRegistry,
     ): MacroFragmentResult? {
+        registry.beginParsingInvocation(node)
         val parsed = parser.parse(
             MacroFragmentInput(
                 node = node,
                 tokens = tokens,
                 decision = decision,
                 annotationSnapshot = annotationSnapshot,
+                fileFacts = registry.parsingFactsForSurface(surface.surfaceId),
+                annotationMetadata = annotationMetadata,
                 inheritedAnnotationSnapshots = inheritedAnnotationSnapshots,
                 inheritedAnnotationTokens = inheritedAnnotationSnapshots.flatMap {
                     it.tokens + MacroSurfaceToken("\n", 0, 1, kindName = "WHITE_SPACE", isTrivia = true)
@@ -904,16 +934,26 @@ class FrontendMacroConstructionService(
                 sourceMapping = MacroFragmentSourceMapping(registry::registeredSourceOrigin),
             )
         )
-        val fragment = if (surface is BuiltinNonMacroSurface && parsed is MacroFragmentResult.Success) {
-            builtinNonMacroDesugarer.desugar(surface, parsed) ?: parsed
-        } else {
-            parsed
+        parsed.parsedFileFacts?.let { registry.acceptParsingFacts(surface.surfaceId, it) }
+        val shapeFailure = (parsed as? MacroFragmentResult.Success)?.replacementShapeFailure(decision.slotType)
+        if (shapeFailure != null) {
+            reportError(
+                registry = registry,
+                message = shapeFailure.message,
+                kind = shapeFailure.diagnosticKind,
+                originSurfaceId = surface.surfaceId,
+            )
+            return null
         }
-        return when (fragment) {
+        return when (parsed) {
+            is MacroFragmentResult.SyntaxFailure -> {
+                registry.addParsingFailure(parsed)
+                null
+            }
             is MacroFragmentResult.Failure -> {
                 reportError(
                     registry = registry,
-                    message = fragment.reason,
+                    message = parsed.reason,
                     kind = MacroConstructionDiagnostic.Kind.MACRO_EXPANSION_FAILED,
                     originSurfaceId = surface.surfaceId,
                 )
@@ -921,7 +961,7 @@ class FrontendMacroConstructionService(
             }
 
             is MacroFragmentResult.Success,
-            is MacroFragmentResult.CustomAnnotation -> fragment
+            is MacroFragmentResult.CustomAnnotation -> parsed
         }
     }
 
@@ -929,15 +969,15 @@ class FrontendMacroConstructionService(
      * 原 annotations 是独立解析输入，按原槽位顺序交给首个输出声明的正常语法解析。
      * 只有冻结决议确认的普通注解进入该通道，宏本身仍由宏森林求值。
      */
-    private fun inheritedAnnotationSnapshots(
-        pre: PreMacroRawBuildResult,
+    private fun inheritedAnnotationsBySurface(
+        preFile: PreMacroCfirFile,
         decision: FinalMacroSurfaceDecision,
         classification: MacroDemandClassification,
         node: MacroCallNode,
-    ): List<org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationSlotSnapshot> {
-        if (decision.parserMode != MacroFragmentParser.Mode.DECLARATION) return emptyList()
-        val current = decision.annotationCarrier ?: return emptyList()
-        val metadata = checkNotNull(pre.session.annotationMetadataRegistryOrNull)
+    ): Map<Long, org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationSlotSnapshot> {
+        if (decision.parserMode != MacroFragmentParser.Mode.DECLARATION) return emptyMap()
+        val current = decision.annotationCarrier ?: return emptyMap()
+        val metadata = preFile.annotationMetadata
         val enclosingMacroIndex = generateSequence(node.parent) { it.parent }
             .mapNotNull { parent ->
                 classification.finalDecisions.firstOrNull { it.surface === parent.surface }
@@ -957,22 +997,43 @@ class FrontendMacroConstructionService(
                     (candidate.resolution is MacroResolution.BuiltinAnnotation || candidate.resolution is MacroResolution.CustomAnnotation)
             }
             .sortedBy { checkNotNull(it.annotationCarrier).annotationIndex }
-            .map { checkNotNull(metadata.snapshot(checkNotNull(it.annotationCarrier))) }
-            .toList()
+            .associate { candidate ->
+                candidate.surface.surfaceId to checkNotNull(metadata.snapshot(checkNotNull(candidate.annotationCarrier)))
+            }
     }
 
     /**
-     * 返回内建非宏表面应暴露给父宏的 token。
+     * 内建非宏（当前为 IfAvailable）不执行宏函数；重解析仍须接收完整原调用，
+     * 并把真实 input/attr 子宏结果刷新回其源码位置。
      */
     private fun tokensForBuiltinNonMacro(
         surface: MacroSurface,
-        refreshedTokens: RefreshedMacroSurfaceTokens,
-    ): List<MacroSurfaceToken> {
-        return if (surface is IfAvailableSurface) {
-            surface.branchTokens.ifEmpty { refreshedTokens.inputTokens }
-        } else {
-            refreshedTokens.inputTokens.ifEmpty { refreshedTokens.attrTokens }
+        childResults: Map<MacroCallNode, List<MacroSurfaceToken>>,
+        registry: MacroExpansionRegistry,
+    ): List<MacroSurfaceToken>? {
+        val invocation = surface.capturedRawSyntax ?: run {
+            reportError(
+                registry = registry,
+                message = "Builtin non-macro `${surface.qualifiedName?.asString().orEmpty()}` has no captured invocation syntax.",
+                kind = MacroConstructionDiagnostic.Kind.MACRO_EXPANSION_FAILED,
+                originSurfaceId = surface.surfaceId,
+            )
+            return null
         }
+        val invocationStart = surface.sourceRange?.startOffset ?: 0
+        val tokens = MacroPayloadTokenizer.tokenize(invocation, invocationStart).map { token ->
+            MacroSurfaceToken(
+                text = token.text,
+                startOffset = token.startOffset,
+                endOffset = token.endOffset,
+                kindName = token.kindName,
+                sourceRange = surface.sourceRange,
+                isSourceToken = true,
+            )
+        }
+        return tokens
+            .replaceChildMacroRanges(childResults, MacroPayloadChannel.INPUT)
+            .replaceChildMacroRanges(childResults, MacroPayloadChannel.ATTR)
     }
 
     /**
@@ -1112,8 +1173,10 @@ class FrontendMacroConstructionService(
                     buildExpressionMacroErrorPlaceholder(surface, carrier)
             }
         }
-        for (file in files) {
-            replaceDegradedDeclarationPlaceholders(file.declarations, declarationPlaceholders, parameterPlaceholders)
+        require(files.size == pre.files.size) { "Placeholder replacement must retain per-file metadata ownership." }
+        for ((index, file) in files.withIndex()) {
+            replaceDegradedDeclarationPlaceholders(file.declarations, declarationPlaceholders, parameterPlaceholders,
+                pre.files[index].annotationMetadata)
             replaceDegradedExpressionPlaceholders(file, expressionPlaceholders)
         }
     }
@@ -1126,6 +1189,7 @@ class FrontendMacroConstructionService(
         declarations: List<CfirDeclaration>,
         declarationPlaceholders: IdentityHashMap<CfirDeclaration, CfirDeclaration>,
         parameterPlaceholders: IdentityHashMap<CfirValueParameter, CfirValueParameter>,
+        annotationMetadata: CfirAnnotationMetadataBuilder,
     ) {
         val mutableDeclarations = declarations as? MutableList<CfirDeclaration> ?: return
         val iterator = mutableDeclarations.listIterator()
@@ -1135,21 +1199,24 @@ class FrontendMacroConstructionService(
             val current = replacement ?: declaration
             if (replacement != null) {
                 iterator.set(replacement)
+                annotationMetadata.transferOwner(declaration, replacement)
             }
-            replaceDegradedParameterPlaceholders(current, parameterPlaceholders)
+            replaceDegradedParameterPlaceholders(current, parameterPlaceholders, annotationMetadata)
             when (current) {
                 is CfirClassLikeDeclaration ->
                     replaceDegradedDeclarationPlaceholders(
                         current.declarations,
                         declarationPlaceholders,
-                        parameterPlaceholders
+                        parameterPlaceholders,
+                        annotationMetadata,
                     )
 
                 is CfirExtend ->
                     replaceDegradedDeclarationPlaceholders(
                         current.declarations,
                         declarationPlaceholders,
-                        parameterPlaceholders
+                        parameterPlaceholders,
+                        annotationMetadata,
                     )
 
                 else -> Unit
@@ -1163,12 +1230,17 @@ class FrontendMacroConstructionService(
     private fun replaceDegradedParameterPlaceholders(
         declaration: CfirDeclaration,
         parameterPlaceholders: IdentityHashMap<CfirValueParameter, CfirValueParameter>,
+        annotationMetadata: CfirAnnotationMetadataBuilder,
     ) {
         if (declaration !is CfirFunction || declaration.valueParameters.isEmpty()) return
-        val newParameters = declaration.valueParameters.map { parameter ->
+        val originalParameters = declaration.valueParameters.toList()
+        val newParameters = originalParameters.map { parameter ->
             parameterPlaceholders.remove(parameter) ?: parameter
         }
         declaration.replaceValueParameters(newParameters)
+        originalParameters.zip(newParameters).forEach { (original, replacement) ->
+            if (original !== replacement) annotationMetadata.transferOwner(original, replacement)
+        }
     }
 
     /**
@@ -1187,7 +1259,7 @@ class FrontendMacroConstructionService(
                 resolvePhase = CfirResolvePhase.RAW_CFIR
                 annotations.addAll(declaration.annotations)
                 origin = declaration.origin
-                attributes = declaration.attributes
+                attributes = declaration.attributes.copy()
                 deprecationsProvider = declaration.deprecationsProvider
                 dispatchReceiverType = declaration.dispatchReceiverType
                 status = declaration.status
@@ -1205,7 +1277,7 @@ class FrontendMacroConstructionService(
             annotations.addAll(declaration.annotations)
             symbol = org.cangnova.cangjie.cfir.symbols.CfirInvalidDeclarationSymbol()
             origin = declaration.origin
-            attributes = declaration.attributes
+            attributes = declaration.attributes.copy()
             reason = diagnostic.reason
         }
     }
@@ -1257,7 +1329,7 @@ class FrontendMacroConstructionService(
             resolvePhase = CfirResolvePhase.RAW_CFIR
             annotations.addAll(parameter.annotations)
             origin = parameter.origin
-            attributes = parameter.attributes
+            attributes = parameter.attributes.copy()
             isLocal = parameter.isLocal
             deprecationsProvider = parameter.deprecationsProvider
             dispatchReceiverType = parameter.dispatchReceiverType
@@ -1270,9 +1342,14 @@ class FrontendMacroConstructionService(
             typeParameters.addAll(parameter.typeParameters)
             returnTypeRef = parameter.returnTypeRef
             name = parameter.name
-            defaultValue = buildErrorExpression {
+            defaultValue = parameter.defaultValue ?: buildErrorExpression {
                 this.source = source
                 this.diagnostic = diagnostic
+            }
+        }.also { placeholder ->
+            // A recovery expression represents the failed macro, not a source default assignment.
+            if (parameter.defaultValue == null) {
+                placeholder.defaultValueMetadata = CfirParameterDefaultValueMetadata(hasInitial = false, function = null)
             }
         }
     }
@@ -1334,10 +1411,10 @@ class FrontendMacroConstructionService(
      * -  3. macroSurfaceRangesHash    ← surfaces 的 `(fqn, range, snapshot)` 序列，不包含 session-local surfaceId
      * -  4. importsHash               ← `imports` + `defaultMacroImports` + 该文件相关 `importBindings`
      * -  5. modulePackageIdentity     ← `moduleData.name` + `packageFqName`
-     * -  6. sdkSignature              ← `configuration.languageVersionSettings.toString()`
+     * -  6. sdkSignature              ← 语言设置与本次选中的 SDK 身份
      * -  7. macroDependencySignature  ← 非源包 [MacroDefinitionEntry]（lib/shared/artifact/builtin）+ artifact/dylib/BCHIR hash
      * -  8. compilerOptionsHash       ← `useLightTree` + `moduleName` + iteration limit + compiler/debug/parallel/target/env
-     * -  9. executorAbi               ← `executor.abiVersion ?: "none"`
+     * -  9. executorAbi               ← 已冻结的 executor ABI 配置
      * - 10. constructionAlgorithmVersion ← `MacroConstructionService.ALGORITHM_VERSION`
      * - 11. tokenScannerVersion       ← `MacroPayloadTokenizer.VERSION`
      * - 12. fragmentParserVersion     ← `MacroFragmentParser.VERSION`
@@ -1349,8 +1426,9 @@ class FrontendMacroConstructionService(
         expandedFiles: List<CfirFile>,
         registry: MacroExpansionRegistry,
     ) {
-        val sdkSignature = org.cangnova.cangjie.utils.StableHash.sha256(
+        val sdkSignature = org.cangnova.cangjie.utils.StableHash.sha256Of(
             configuration.languageVersionSettings.toString(),
+            sdkSelection.identity,
         )
         val macroDependencySignature = computeMacroDependencySignature(context)
         val compilerOptionsHash = org.cangnova.cangjie.utils.StableHash.sha256Of(
@@ -1363,21 +1441,20 @@ class FrontendMacroConstructionService(
             "macroTargetPlatform=${configuration.macroCompilationCacheContext.targetPlatform.presentableDescription}",
             "macroRuntimeLoaderEnv=${configuration.macroCompilationCacheContext.runtimeLoaderEnvironmentFingerprint}",
         )
-        val executorAbi = configuration.macroExecutorFactory
-            ?.create(pre.session)
-            ?.abiVersion
-            ?: "none"
+        // Cache identity is configuration metadata; creating an executor here can start a process
+        // or invoke a user factory even when the file contains no executable macro calls.
+        val executorAbi = configuration.macroExecutorAbiVersion
         val maxIterations = configuration.macroExpandMaxIterations
-        val expandedByName: Map<String, CfirFile> = expandedFiles.associateBy { it.name }
+        require(expandedFiles.size == pre.files.size) { "Construction must retain per-file result ownership." }
 
-        for (preFile in pre.files) {
+        for ((index, preFile) in pre.files.withIndex()) {
             val cfirFile = preFile.cfirFile
-            val expanded = expandedByName[cfirFile.name] ?: cfirFile
+            val expanded = expandedFiles[index]
             val identity = cfirFile.sourceFile?.path ?: cfirFile.name
             val key = MacroExpansionCacheKey(
                 sourceContentHash = hashSourceContent(cfirFile),
                 fileIdentity = identity,
-                macroSurfaceRangesHash = hashSurfaces(preFile.surfaces, pre.session.annotationMetadataRegistryOrNull),
+                macroSurfaceRangesHash = hashSurfaces(preFile.surfaces, preFile.annotationMetadata),
                 importsHash = hashImports(cfirFile, context),
                 modulePackageIdentity = "${cfirFile.moduleData.name}::${cfirFile.packageDirective.packageFqName.asString()}",
                 sdkSignature = sdkSignature,
@@ -1414,13 +1491,13 @@ class FrontendMacroConstructionService(
      */
     private fun hashSurfaces(
         surfaces: List<MacroSurface>,
-        annotationMetadataRegistry: org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationMetadataRegistry?,
+        annotationMetadataRegistry: CfirAnnotationMetadata,
     ): String {
         if (surfaces.isEmpty()) return "surfaces:empty"
         val parts = surfaces.map { surface ->
             val range = surface.sourceRange
             val snapshot = surface.replaceHandle.annotationCarrier
-                ?.let { annotationMetadataRegistry?.snapshot(it) }
+                ?.let { annotationMetadataRegistry.snapshot(it) }
             "${surface.qualifiedName?.asString().orEmpty()}|" +
                     "${range?.startOffset ?: -1}|${range?.endOffset ?: -1}|${surface.kind}|" +
                     "qualified=${surface.isQualifiedName}|module=${surface.scopeContext.sourceModuleName}|" +
@@ -1582,29 +1659,6 @@ class FrontendMacroConstructionService(
 }
 
 /**
- * 仓颉 builtin non-macro desugar。
- *
- * `@IfAvailable` 不送 macro executor，也不进入 final CFIR；construction
- * 阶段只保留其可用分支 fragment，随后由上层消费该 construction-only
- * fragment，避免把 builtin non-macro surface 交给 ordinary resolve。
- */
-private object CangJieBuiltinNonMacroDesugarer : BuiltinNonMacroDesugarer {
-    /**
-     * 对内建非宏表面的解析结果执行前端内置脱糖。
-     */
-    override fun desugar(
-        surface: BuiltinNonMacroSurface,
-        fragment: MacroFragmentResult.Success,
-    ): MacroFragmentResult? {
-        return when (surface) {
-            is IfAvailableSurface -> fragment.copy(
-                tokens = surface.branchTokens.ifEmpty { fragment.tokens },
-            )
-        }
-    }
-}
-
-/**
  * 基于 raw builder 保留的 typed expression carrier 执行稳定替换。
  *
  * 声明片段在实际 owning statement/declaration 列表中展开，参数与表达式按各自
@@ -1637,8 +1691,8 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
                 is MacroSurfaceExpr -> {
                     val carrier = slot.handle.carrier
                     if (carrier is CfirExpression) {
-                        check(expressionSlotsWithCarrier.put(carrier, slot) == null) {
-                            "Stable splice received multiple expression surfaces for one carrier identity."
+                        require(expressionSlotsWithCarrier.put(carrier, slot) == null) {
+                            "Stable splice received duplicate expression carrier for ${slot.origin.qualifiedName?.asString().orEmpty()}."
                         }
                     } else {
                         unsupportedSlots += slot
@@ -1648,24 +1702,26 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
                 is MacroSurfaceParam -> {
                     val carrier = slot.handle.carrier
                     if (carrier is CfirValueParameter) {
-                        check(parameterSlotsWithCarrier.put(carrier, slot) == null) {
-                            "Stable splice received multiple parameter surfaces for one carrier identity."
+                        require(parameterSlotsWithCarrier.put(carrier, slot) == null) {
+                            "Stable splice received duplicate parameter carrier for ${slot.origin.qualifiedName?.asString().orEmpty()}."
                         }
                     } else {
                         unsupportedSlots += slot
                     }
                 }
 
-                is MacroSurfaceDecl, is MacroSurfaceNode, is BuiltinNonMacroSurface -> {
+                is MacroSurfaceDecl, is MacroSurfaceNode -> {
                     val carrier = origin.replaceHandle.carrier
                     if (carrier is CfirDeclaration) {
-                        check(declarationSlotsWithCarrier.put(carrier, slot) == null) {
-                            "Stable splice received multiple declaration surfaces for one carrier identity."
+                        require(declarationSlotsWithCarrier.put(carrier, slot) == null) {
+                            "Stable splice received duplicate declaration carrier for ${slot.origin.qualifiedName?.asString().orEmpty()}."
                         }
                     } else {
                         unsupportedSlots += slot
                     }
                 }
+
+                else -> unsupportedSlots += slot
             }
         }
 
@@ -1754,9 +1810,10 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
     ) {
         val entries = annotationSlots.entries.toList()
         for ((carrier, slot) in entries) {
-            val annotations = carrier.owner.annotations
-            require(annotations.getOrNull(carrier.annotationIndex) === carrier.originalAnnotation) {
-                "Stable splice annotation carrier no longer matches owner/index ${carrier.annotationIndex}."
+            val current = checkNotNull(slot.annotationMetadata.currentSlot(carrier)) { "Annotation slot was consumed before stable splice." }
+            val annotations = current.owner.annotations
+            require(annotations.getOrNull(current.annotationIndex) === current.originalAnnotation) {
+                "Stable splice annotation carrier no longer matches its current owner/index."
             }
             val replacement = (slot.fragment as? MacroFragmentResult.CustomAnnotation)?.payload
                 ?: error(
@@ -1765,8 +1822,8 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
                     }` did not produce a CfirAnnotationCall payload."
                 )
             val mutableAnnotations = annotations.toMutableList()
-            mutableAnnotations[carrier.annotationIndex] = replacement
-            carrier.owner.replaceAnnotations(mutableAnnotations)
+            mutableAnnotations[current.annotationIndex] = replacement
+            slot.annotationMetadata.replaceAnnotationList(current.owner, mutableAnnotations, mapOf(replacement to carrier))
             annotationSlots.remove(carrier)
         }
     }
@@ -1797,9 +1854,14 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
                 replacements = replacements,
                 surfaceId = slot.origin.surfaceId,
             )
-            // 嵌套注解宏的 token 已在宏森林求值时并入外层声明宏的输入；外层最终输出决定哪些
-            // token 成为声明。不能把旧 carrier 的 annotation slot 任意绑定到某一个替换声明。
-            annotationSlots.entries.removeIf { (carrier, _) -> carrier.owner === declaration }
+            // 外层已经重解析的后代与继承前缀在进入 splicer 前已排除；其余槽独立写入首个输出。
+            val firstReplacement = replacements.firstOrNull()
+            if (firstReplacement == null) {
+                annotationSlots.entries.removeIf { (carrier, _) -> carrier.owner === declaration }
+                slot.annotationMetadata.replaceAnnotationList(declaration, emptyList())
+            } else {
+                firstReplacement.consumeAnnotationSlotsFromOwner(declaration, annotationSlots, slot.annotationMetadata)
+            }
             iterator.remove()
             for (replacement in replacementElements) {
                 iterator.add(replacement)
@@ -1817,20 +1879,129 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
         appliedDeclarationReplacements: MutableList<MacroAppliedDeclarationReplacement>,
     ) {
         if (declaration !is CfirFunction || declaration.valueParameters.isEmpty()) return
-        val newParameters = declaration.valueParameters.map { parameter ->
-            val slot = parameterSlots.remove(parameter)
-            slot?.toValueParameterPayload()?.also { replacement ->
-                annotationSlots.entries.removeIf { (carrier, _) -> carrier.owner === parameter }
-                appliedDeclarationReplacements += MacroAppliedDeclarationReplacement(
-                    carrier = parameter,
-                    replacements = listOf(replacement),
-                    surfaceId = slot.origin.surfaceId,
-                )
-            } ?: parameter
+        val newParameters = declaration.valueParameters.flatMap { parameter ->
+            val slot = parameterSlots.remove(parameter) ?: return@flatMap listOf(parameter)
+            val replacements = slot.toValueParameterPayload()
+            require(replacements.isNotEmpty()) {
+                "Parameter macro `${slot.origin.qualifiedName?.asString().orEmpty()}` produced no value parameter."
+            }
+            replacements.first().consumeAnnotationSlotsFromOwner(parameter, annotationSlots, slot.annotationMetadata)
+            appliedDeclarationReplacements += MacroAppliedDeclarationReplacement(
+                carrier = parameter,
+                replacements = replacements,
+                surfaceId = slot.origin.surfaceId,
+            )
+            replacements
         }
         declaration.replaceValueParameters(newParameters)
     }
 
+    /**
+     * owner 本身被声明/参数宏替换时，同 owner 的 annotation slot 必须合并到
+     * replacement payload 上，而不能再去修改已经脱离最终文件树的旧 owner。
+     */
+    private fun CfirDeclaration.consumeAnnotationSlotsFromOwner(
+        originalOwner: CfirDeclaration,
+        annotationSlots: MutableMap<CfirAnnotationReplaceCarrier, MacroReplaceSlot>,
+        annotationMetadata: CfirAnnotationMetadataBuilder,
+    ) {
+        val ownerSlots = annotationSlots.entries
+            .filter { (carrier, _) -> carrier.owner === originalOwner }
+            .sortedBy { (carrier, _) -> carrier.annotationIndex }
+        if (ownerSlots.isEmpty()) return
+        require(ownerSlots.all { it.value.annotationMetadata === annotationMetadata }) { "Merged annotation slots must share the owner construction transaction." }
+
+        val replacementAnnotations = ownerSlots.map { (_, slot) -> slot.toAnnotationPayload() }
+        val retainedAnnotations = annotations.toMutableList()
+        for (replacement in replacementAnnotations) {
+            val replacementKey = replacement.annotationMergeKey() ?: continue
+            val retainedIndex = retainedAnnotations.indexOfFirst { retained ->
+                retained.annotationMergeKey() == replacementKey
+            }
+            if (retainedIndex >= 0) {
+                retainedAnnotations.removeAt(retainedIndex)
+            }
+        }
+        val bindings = IdentityHashMap<CfirAnnotationCall, CfirAnnotationReplaceCarrier>()
+        ownerSlots.forEachIndexed { index, (carrier, _) -> bindings[replacementAnnotations[index]] = carrier }
+        annotationMetadata.replaceAnnotationList(this, replacementAnnotations + retainedAnnotations, bindings)
+        for ((carrier, _) in ownerSlots) {
+            annotationSlots.remove(carrier)
+        }
+    }
+
+    /** 读取 annotation-slot 宏片段产物。 */
+    private fun MacroReplaceSlot.toAnnotationPayload(): CfirAnnotationCall {
+        return (fragment as? MacroFragmentResult.CustomAnnotation)?.payload
+            ?: error(
+                "Annotation macro surface `${
+                    origin.qualifiedName?.asString().orEmpty()
+                }` did not produce a CfirAnnotationCall payload."
+            )
+    }
+
+    /**
+     * 用 annotation 的结构化调用形态识别 declaration macro input 中已经保留的同一 slot。
+     *
+     * PSI 与 LightTree 的 source identity 不等价：同一个 `@!Hide[...]` 在 child
+     * annotation slot 与 parent declaration fragment 中可能分别来自原文件和临时
+     * fragment tree。stable splice 因此不能只比较 `source.text`，必须优先使用
+     * annotation 名称与实参形态；源码文本仅作为非标准 annotation 节点的稳定补充键。
+     */
+    private fun CfirAnnotation.annotationMergeKey(): String? {
+        val call = this as? CfirAnnotationCall
+        val nameKey = call?.annotationNameMergeKey()
+        if (nameKey != null) {
+            val argumentKey = call.arguments.joinToString(separator = ",") { argument ->
+                argument.annotationArgumentMergeKey()
+            }
+            // `@!` is semantic provenance in the official parser, not spelling
+            // noise.  A declaration macro may legally carry both `@Hide` and
+            // `@!Hide`; collapsing them here makes replacement consume the
+            // wrong slot and is observable as a macro-expansion failure.
+            val visibilityKey = if (call.isCompileTimeVisible == true || call.forcedCustom == true) {
+                "compile-time-visible:"
+            } else {
+                "runtime-visible:"
+            }
+            return "$visibilityKey$nameKey($argumentKey)"
+        }
+        return source?.text?.toString()?.normalizedAnnotationMergeText()
+            ?.takeIf(String::isNotEmpty)
+    }
+
+    /** 提取 annotation 调用名，忽略 `@` / `@!` 的语法 provenance。 */
+    private fun CfirAnnotationCall.annotationNameMergeKey(): String? {
+        val userTypeName = (typeRef as? CfirUserTypeRef)
+            ?.qualifier
+            ?.joinToString(separator = ".") { it.name.asString() }
+            ?.takeIf(String::isNotBlank)
+        if (userTypeName != null) return userTypeName
+
+        return (calleeReference as? CfirNamedReference)
+            ?.name
+            ?.asString()
+            ?.takeIf(String::isNotBlank)
+    }
+
+    /** 提取 annotation 实参形态，覆盖 named argument 与普通表达式两类 raw builder 输出。 */
+    private fun CfirElement.annotationArgumentMergeKey(): String {
+        val textKey = source?.text?.toString()?.normalizedAnnotationMergeText()
+        if (!textKey.isNullOrEmpty()) return textKey
+
+        return when (this) {
+            is CfirNamedArgumentExpression -> buildString {
+                append(argumentName.asString())
+                append("=")
+                append(expression.source?.text?.toString()?.normalizedAnnotationMergeText().orEmpty())
+            }
+            else -> this::class.qualifiedName.orEmpty()
+        }
+    }
+
+    /** 只规范化空白；`@!` provenance 由 [annotationMergeKey] 单独保留。 */
+    private fun String.normalizedAnnotationMergeText(): String =
+        filterNot(Char::isWhitespace)
 
     /**
      * 从宏替换槽中读取表达式 payload。
@@ -1838,12 +2009,9 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
     private fun MacroReplaceSlot.toExpressionPayload(): CfirExpression {
         val success = fragment as? MacroFragmentResult.Success
             ?: error("Macro fragment for `${origin.qualifiedName?.asString().orEmpty()}` did not parse successfully.")
-        return success.payload as? CfirExpression
-            ?: error(
-                "Macro fragment for `${
-                    origin.qualifiedName?.asString().orEmpty()
-                }` did not produce a CfirExpression payload."
-            )
+        val root = success.payload.roots.singleOrNull() as? MacroFragmentPayload.Root.Expression
+            ?: error("Expression macro `${origin.qualifiedName?.asString().orEmpty()}` must produce exactly one expression root.")
+        return root.expression
     }
 
     /**
@@ -1852,27 +2020,75 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
     private fun MacroReplaceSlot.toDeclarationPayloads(): List<CfirDeclaration> {
         val success = fragment as? MacroFragmentResult.Success
             ?: error("Macro fragment for `${origin.qualifiedName?.asString().orEmpty()}` did not parse successfully.")
-        return (success.payload as? MacroDeclarationFragment)?.declarations
-            ?: error(
-                "Macro fragment for `${
-                    origin.qualifiedName?.asString().orEmpty()
-                }` did not produce a MacroDeclarationFragment payload."
-            )
+        return success.payload.roots.map { root ->
+            (root as? MacroFragmentPayload.Root.Declaration)?.declaration
+                ?: error("Declaration macro `${origin.qualifiedName?.asString().orEmpty()}` produced a non-declaration root at ${root.index}.")
+        }
     }
 
     /**
      * 从宏替换槽中读取参数 payload。
      */
-    private fun MacroReplaceSlot.toValueParameterPayload(): CfirValueParameter {
+    private fun MacroReplaceSlot.toValueParameterPayload(): List<CfirValueParameter> {
         val success = fragment as? MacroFragmentResult.Success
             ?: error("Macro fragment for `${origin.qualifiedName?.asString().orEmpty()}` did not parse successfully.")
-        return success.payload as? CfirValueParameter
-            ?: error(
-                "Macro fragment for `${
-                    origin.qualifiedName?.asString().orEmpty()
-                }` did not produce a CfirValueParameter payload."
-            )
+        return success.payload.roots.map { root ->
+            (root as? MacroFragmentPayload.Root.Parameter)?.parameter
+                ?: error("Parameter macro `${origin.qualifiedName?.asString().orEmpty()}` produced a non-parameter root at ${root.index}.")
+        }
     }
+}
+
+/**
+ * 在进入稳定替换前验证直接语法根与最终 replacement slot 一致，避免把 parser 合法但槽位不匹配的结果当作内部异常。
+ */
+private data class MacroFragmentShapeFailure(
+    val diagnosticKind: MacroConstructionDiagnostic.Kind,
+    val message: String,
+)
+
+private fun MacroFragmentResult.Success.replacementShapeFailure(
+    slotType: MacroReplacementSlotType,
+): MacroFragmentShapeFailure? {
+    val roots = payload.roots
+    fun failure(message: String): MacroFragmentShapeFailure = MacroFragmentShapeFailure(
+        diagnosticKind = if (slotType == MacroReplacementSlotType.DECLARATION) {
+            MacroConstructionDiagnostic.Kind.MACRO_EXPECT_DECLARATION
+        } else {
+            MacroConstructionDiagnostic.Kind.MACRO_EXPANSION_FAILED
+        },
+        message = message,
+    )
+
+    return when (slotType) {
+        MacroReplacementSlotType.EXPRESSION -> when {
+            roots.size != 1 -> failure("Expression replacement requires exactly one expression root; parser produced ${roots.size} roots.")
+            roots.single() !is MacroFragmentPayload.Root.Expression ->
+                failure("Expression replacement requires an expression root; parser produced ${roots.single().kindName()} root.")
+            else -> null
+        }
+
+        MacroReplacementSlotType.DECLARATION ->
+            roots.firstOrNull { it !is MacroFragmentPayload.Root.Declaration }?.let { root ->
+                failure("Declaration replacement requires declaration roots; parser produced a ${root.kindName()} root at index ${root.index}.")
+            }
+
+        MacroReplacementSlotType.PARAMETER -> when {
+            roots.isEmpty() -> failure("Parameter replacement requires at least one parameter root; parser produced no roots.")
+            else -> roots.firstOrNull { it !is MacroFragmentPayload.Root.Parameter }?.let { root ->
+                failure("Parameter replacement requires parameter roots; parser produced a ${root.kindName()} root at index ${root.index}.")
+            }
+        }
+
+        MacroReplacementSlotType.ANNOTATION ->
+            failure("Annotation replacement must produce a custom-annotation result, not a regular macro fragment.")
+    }
+}
+
+private fun MacroFragmentPayload.Root.kindName(): String = when (this) {
+    is MacroFragmentPayload.Root.Declaration -> "declaration"
+    is MacroFragmentPayload.Root.Expression -> "expression"
+    is MacroFragmentPayload.Root.Parameter -> "parameter"
 }
 
 /**
@@ -1884,7 +2100,8 @@ private fun MacroFragmentResult.parentVisibleTokens(
     return when (this) {
         is MacroFragmentResult.Success -> tokens
         is MacroFragmentResult.CustomAnnotation -> tokens + refreshedTokens.inputTokens
-        is MacroFragmentResult.Failure -> emptyList()
+        is MacroFragmentResult.Failure,
+        is MacroFragmentResult.SyntaxFailure -> emptyList()
     }
 }
 
@@ -2036,7 +2253,7 @@ private fun List<MacroSurfaceToken>.replaceChildMacroRanges(
         val endIndex = current.indexOfLast { it.isInside(range) }
         current = buildList(current.size - (endIndex - startIndex + 1) + replacement.size) {
             addAll(current.subList(0, startIndex))
-            addAll(replacement)
+            addAll(replacement.map { token -> token.copy(sourceRange = token.sourceRange ?: range) })
             addAll(current.subList(endIndex + 1, current.size))
         }
     }
@@ -2047,10 +2264,10 @@ private fun List<MacroSurfaceToken>.replaceChildMacroRanges(
  * 判断 token 是否完整落在给定宏表面源码范围内。
  */
 private fun MacroSurfaceToken.isInside(range: org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceSourceRange): Boolean {
-    return startOffset >= range.startOffset && endOffset <= range.endOffset
+    return isSourceToken && startOffset >= range.startOffset && endOffset <= range.endOffset
 }
 
-/** wire token 的位置来自冻结的原输入区间；生成 token 使用调用位置。 */
+/** wire token 优先使用原输入位置；子宏生成 token 使用原子宏调用位置。 */
 private fun List<MacroSurfaceToken>.toTokenInfo(
     defaultBegin: SourcePosition,
     defaultEnd: SourcePosition,
@@ -2062,6 +2279,7 @@ private fun List<MacroSurfaceToken>.toTokenInfo(
         MacroPayloadTokenizer.tokenize(token.text, token.startOffset)
     }
     val tokenMap = MacroFragmentSourceMap.materialize(listOf(token))
+    val childPositions = token.sourceRange?.takeUnless { token.isSourceToken }?.let(sources::childCallPositions)
     lexerTokens.mapNotNull { lexerToken ->
         val encoded = MacroTokenKind.fromLexerToken(lexerToken.kindName, lexerToken.text) ?: return@mapNotNull null
         val start = lexerToken.startOffset - token.startOffset
@@ -2073,8 +2291,10 @@ private fun List<MacroSurfaceToken>.toTokenInfo(
             kind = encoded.kind,
             value = encoded.value,
             delimiterNum = encoded.delimiterNum,
-            begin = if (original != null && input != null) sources.inputPosition(input, original.startOffset) else defaultBegin,
-            end = if (original != null && input != null) sources.inputPosition(input, original.endOffset) else defaultEnd,
+            begin = if (original != null && input != null) sources.inputPosition(input, original.startOffset)
+                else childPositions?.first ?: defaultBegin,
+            end = if (original != null && input != null) sources.inputPosition(input, original.endOffset)
+                else childPositions?.second ?: defaultEnd,
         )
         sources.record(info, lexerToken.text, originSpans)
         info

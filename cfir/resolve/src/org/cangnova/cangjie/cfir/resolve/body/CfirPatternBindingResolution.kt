@@ -25,8 +25,10 @@
 package org.cangnova.cangjie.cfir.resolve.body
 
 import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.expressions.CfirCallExpression
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
+import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.patterns.*
 import org.cangnova.cangjie.cfir.resolve.CfirTypeResolutionConfiguration
@@ -43,7 +45,8 @@ import org.cangnova.cangjie.cfir.resolve.transformers.CfirSpecificTypeResolverTr
 import org.cangnova.cangjie.cfir.resolve.inference.CfirPCLAInferenceSession
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.CfirPostponedAtomsResolutionContext
 import org.cangnova.cangjie.cfir.resolvedTypeFromPrototype
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.toCfirResolvedTypeRef
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.session.builtinTypes
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.name.Name
@@ -91,10 +94,17 @@ internal fun CfirPartialBodyResolveTransformer.resolvePatternValueExpressions(
             valid
         }
         is CfirEnumPattern -> {
-            // 限定符 `E` / `Alias<Int64>` 是类型限定符：与普通成员访问的 receiver 走同一条解析路径，
-            // 后续的 owner 判定与 constructor 查找都以它的解析结果为准。
-            pattern.transformOwnerQualifier(transformer, ResolutionMode.ReceiverResolution)
-            pattern.transformConstructorReference(transformer, ResolutionMode.ContextIndependent)
+            // 先解析构造器限定符；真正的构造器目标需要结合 selector 类型和载荷个数决定。
+            val access = when (val constructor = pattern.constructor) {
+                is CfirQualifiedAccessExpression -> constructor
+                is CfirCallExpression -> constructor.base as? CfirQualifiedAccessExpression
+                else -> null
+            }
+            if (access != null) {
+                transformer.expressionsTransformer.transformExplicitReceiverOf(access, ResolutionMode.ReceiverResolution)
+            } else {
+                pattern.transformConstructor(transformer, ResolutionMode.ContextIndependent)
+            }
             val argumentTypes = resolveEnumArgumentTypes(pattern, expectedType)
             var valid = true
             pattern.arguments.forEachIndexed { index, argument ->
@@ -122,6 +132,8 @@ internal fun CfirPartialBodyResolveTransformer.resolvePatternValueExpressions(
             pattern.transformExpression(transformer, withExpectedType(session.builtinTypes.boolType))
             true
         }
+        is CfirCatchPattern -> resolvePatternValueExpressions(pattern.nestedPattern, expectedType)
+        is CfirCommandTypePattern -> resolvePatternValueExpressions(pattern.nestedPattern, expectedType)
         is CfirTypePattern, is CfirVarOrEnumPattern, is CfirWildcardPattern -> {
             pattern.transformChildren(transformer, ResolutionMode.ContextIndependent)
             true
@@ -196,8 +208,23 @@ internal fun CfirPartialBodyResolveTransformer.resolvePatternBindingTypes(
             }
 
             val bindingType = (pattern.typeRef as? CfirResolvedTypeRef)?.coneType ?: expectedType
-            pattern.bindingVariable?.replaceBindingType(bindingType)
-            pattern.replaceMatchingKind(resolveTypePatternMatchingKind(expectedType, bindingType, session))
+            recordError(resolvePatternBindingTypes(pattern.nestedPattern, bindingType, typeResolver))
+            val matching = resolveTypePatternMatchingKind(expectedType, bindingType, session)
+            pattern.replaceMatchingKind(matching)
+            // 原生两个位独立保存；UNKNOWN 保留未完成/错误恢复状态，不捏造某种匹配结论。
+            when (matching) {
+                org.cangnova.cangjie.cfir.patterns.CfirTypePatternMatchingKind.ALWAYS -> {
+                    pattern.replaceMatchBeforeRuntime(true); pattern.replaceNeedRuntimeTypeCheck(false)
+                }
+                org.cangnova.cangjie.cfir.patterns.CfirTypePatternMatchingKind.RUNTIME -> {
+                    pattern.replaceMatchBeforeRuntime(false); pattern.replaceNeedRuntimeTypeCheck(true)
+                }
+                org.cangnova.cangjie.cfir.patterns.CfirTypePatternMatchingKind.NEVER -> {
+                    pattern.replaceMatchBeforeRuntime(false); pattern.replaceNeedRuntimeTypeCheck(false)
+                }
+                org.cangnova.cangjie.cfir.patterns.CfirTypePatternMatchingKind.UNKNOWN -> Unit
+            }
+            if (bindingType != null) pattern.replaceSemanticTypeRef(bindingType.toCfirResolvedTypeRef(pattern.source))
         }
 
         is CfirTuplePattern -> {
@@ -228,7 +255,14 @@ internal fun CfirPartialBodyResolveTransformer.resolvePatternBindingTypes(
             recordError(resolvePatternBindingTypes(alternative, expectedType, typeResolver))
         }
 
-        else -> Unit
+        is CfirCatchPattern -> recordError(resolvePatternBindingTypes(pattern.nestedPattern, expectedType, typeResolver))
+        is CfirCommandTypePattern -> recordError(resolvePatternBindingTypes(pattern.nestedPattern, expectedType, typeResolver))
+        is CfirWildcardPattern, is CfirExpressionPattern -> Unit
+    }
+    // 此处是正常检查的类型发布点；reader 仍只读取原 P.types[0]，不会从 selector/变量反推保存槽。
+    if (pattern !is CfirTypePattern && pattern !is CfirCatchPattern &&
+        pattern !is CfirCommandTypePattern && expectedType != null) {
+        pattern.replaceSemanticTypeRef((firstError ?: expectedType).toCfirResolvedTypeRef(pattern.source))
     }
     // 完整投影后登记实际采用的 Option payload；tuple/binding 递归沿同一个正式入口执行。
     val adoptedElement = firstError ?: expectedType?.optionElementType?.fullyExpandedType(session)

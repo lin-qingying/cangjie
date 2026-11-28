@@ -433,7 +433,7 @@ open class CfirDefaultTransformer<in D> : CfirTransformer<D>() {
      * 默认转换 for-in 表达式。
      */
     override fun transformForInExpression(forInExpression: CfirForInExpression, data: D): CfirExpression {
-        return transformLoopExpression(forInExpression, data)
+        return transformExpression(forInExpression, data)
     }
 
     /**

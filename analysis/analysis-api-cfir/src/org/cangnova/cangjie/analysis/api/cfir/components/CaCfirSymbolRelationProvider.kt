@@ -13,6 +13,7 @@ import org.cangnova.cangjie.analysis.api.impl.base.components.CaBaseSessionCompo
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileResolutionMode
+import org.cangnova.cangjie.analysis.api.symbols.CaFieldSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaAnonymousFunctionSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassSymbol
@@ -34,21 +35,22 @@ import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
-import org.cangnova.cangjie.cfir.correspondingProperty
+import org.cangnova.cangjie.cfir.correspondingField
+import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
 import org.cangnova.cangjie.cfir.resolve.getContainingClassSymbol
 import org.cangnova.cangjie.cfir.resolve.CfirTypeResolutionConfiguration
 import org.cangnova.cangjie.cfir.resolve.SupertypeSupplier
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassSubstitutionScope
-import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
 import org.cangnova.cangjie.cfir.scopes.processOverriddenFunctions
 import org.cangnova.cangjie.cfir.scopes.processOverriddenProperties
 import org.cangnova.cangjie.cfir.scopes.unsubstitutedScope
 import org.cangnova.cangjie.cfir.session.ProcessorAction
-import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.resolve.providers.cfirProvider
 import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.session.extendProvider
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.session.extendIndexStore
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.session.typeResolver
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
@@ -74,6 +76,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.source.psi
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.withPsiEntry
+import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
 
 /**
  * 符号关系组件。
@@ -145,14 +148,15 @@ internal class CaCfirSymbolRelationProvider(
         }
 
     /**
-     * 返回 CFIR 在主构造器 `let`/`var` 参数上建立的对应属性关系。
+     * 返回 CFIR 在主构造器 `let`/`var` 参数上建立的对应字段关系。
      */
-    override val CaValueParameterSymbol.correspondingProperty: CaPropertySymbol?
+    override val CaValueParameterSymbol.correspondingField: CaFieldSymbol?
         get() = withValidityAssertion {
             require(this is CaCfirValueParameterSymbol) { "${this::class}" }
 
-            val cfirProperty = cfirSymbol.cfir.correspondingProperty ?: return@withValidityAssertion null
-            analysisSession.cfirSymbolBuilder.buildSymbol(cfirProperty.symbol) as? CaPropertySymbol
+            cfirSymbolOrNull?.cfir?.correspondingField?.let { field ->
+                analysisSession.cfirSymbolBuilder.buildSymbol(field.symbol) as? CaFieldSymbol
+            }
         }
 
     /**
@@ -163,8 +167,7 @@ internal class CaCfirSymbolRelationProvider(
             is CaPropertyAccessorSymbol -> symbol.owningProperty
 
             is CaCfirValueParameterSymbol ->
-                symbol.ownerSymbol as? CaDeclarationSymbol
-                    ?: symbol.cfirSymbolOrNull?.let {
+                symbol.cfirSymbolOrNull?.let {
                         analysisSession.cfirSymbolBuilder.buildSymbol(it.containingDeclarationSymbol) as? CaDeclarationSymbol
                     }
 
@@ -293,7 +296,8 @@ internal class CaCfirSymbolRelationProvider(
     private fun getContainingPsiForFakeSource(source: CjSourceElement): CjDeclaration? {
         return when (source.kind) {
             CjFakeSourceElementKind.ImplicitConstructor -> source.psi as CjDeclaration
-            CjFakeSourceElementKind.PropertyFromParameter -> (source.psi as CjParameter).ownerFunction as? CjPrimaryConstructor
+            CjFakeSourceElementKind.FieldFromParameter ->
+                ((source.psi as CjParameter).ownerFunction as? CjPrimaryConstructor)?.getContainingTypeStatement()
             CjFakeSourceElementKind.EnumGeneratedDeclaration -> source.psi as CjDeclaration
             CjFakeSourceElementKind.PatternBindingVariable -> {
                 // fake PSI 可能没有挂到真实父链上（documentation 渲染是典型场景），
@@ -580,13 +584,16 @@ internal class CaCfirSymbolRelationProvider(
             ).type
         val targetClassId = extendedType.classIdOrPrimitiveClassId ?: return null
         val targetSymbol = cfirSession.symbolProvider.getClassLikeSymbolByClassId(targetClassId) ?: return null
-        val rawScope = CfirClassUseSiteMemberScope(
-            session = cfirSession,
+        val rawScope = cfirSession.cangjieScopeProvider.getUseSiteMemberScope(
+            scopeSession = getScopeSessionFor(cfirSession),
+            useSiteSession = cfirSession,
             classSymbol = targetSymbol,
             symbolProvider = cfirSession.symbolProvider,
             extendProvider = cfirSession.extendProvider,
             directSupertypeProvider = cfirSession.directSupertypeProviderOrNull,
             ownerType = extendedType,
+            scopeKind = CfirClassMemberScopeKind.USE_SITE,
+            memberRequiredPhase = CfirResolvePhase.STATUS,
         )
         return CfirClassSubstitutionScope(cfirSession, rawScope, extendedType)
     }

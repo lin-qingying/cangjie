@@ -2,7 +2,10 @@
 
 package org.cangnova.cangjie.cfir.resolve.services
 
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
+
 import org.cangnova.cangjie.cfir.ScopeSession
+import org.cangnova.cangjie.LanguageVersionSettingsImpl
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
@@ -48,6 +51,7 @@ import org.cangnova.cangjie.cfir.resolve.providers.CfirTypeAwareSupertypeProvide
 import org.cangnova.cangjie.cfir.scopes.CfirCallableLookupProvenance
 import org.cangnova.cangjie.cfir.scopes.CfirDefaultImportsProviderHolder
 import org.cangnova.cangjie.cfir.scopes.defaultImportsProvider
+import org.cangnova.cangjie.cfir.session.CfirLanguageSettingsComponent
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.accessibilityChecker
 import org.cangnova.cangjie.cfir.session.services.CfirExtendTargetKey
@@ -86,6 +90,50 @@ import org.junit.jupiter.api.Test
  * 对库声明返回 `null` 包名后，组合 provider 继续查库 stub。
  */
 class CfirAccessibilityCheckerExtendTest {
+
+    /** CJO 成员没有 source file，继承可见性仍必须遵循官方 package relation。 */
+    @Test
+    fun `CJO inherited member visibility follows package relation`() {
+        val context = newContext(extendPackage = FqName("visibility.owner"))
+        val rootPackage = FqName("visibility")
+        val modulePeerPackage = FqName("visibility.peer")
+        val otherModulePackage = FqName("separate.peer")
+        val ownerPackage = FqName("visibility.owner")
+        val members = listOf(
+            newFunction(
+                context,
+                CallableId(rootPackage, Name.identifier("internalFromRoot")),
+                Visibilities.Internal,
+            ),
+            newFunction(
+                context,
+                CallableId(modulePeerPackage, Name.identifier("protectedFromModulePeer")),
+                Visibilities.Protected,
+            ),
+            newFunction(
+                context,
+                CallableId(otherModulePackage, Name.identifier("protectedFromOtherModule")),
+                Visibilities.Protected,
+            ),
+            newFunction(
+                context,
+                CallableId(ownerPackage, Name.identifier("privateFromOwnerPackage")),
+                Visibilities.Private,
+            ),
+            newFunction(
+                context,
+                CallableId(otherModulePackage, Name.identifier("publicFromOtherModule")),
+                Visibilities.Public,
+            ),
+        )
+        val checker = context.session.accessibilityChecker
+
+        assertTrue(checker.isCallableVisibleFromPackage(members[0].symbol, ownerPackage))
+        assertTrue(checker.isCallableVisibleFromPackage(members[1].symbol, ownerPackage))
+        assertFalse(checker.isCallableVisibleFromPackage(members[2].symbol, ownerPackage))
+        assertFalse(checker.isCallableVisibleFromPackage(members[3].symbol, ownerPackage))
+        assertTrue(checker.isCallableVisibleFromPackage(members[4].symbol, ownerPackage))
+    }
 
     /**
      * private 顶层声明只在声明文件中可发现；同包的另一个文件不能复用该访问结论。
@@ -742,6 +790,10 @@ class CfirAccessibilityCheckerExtendTest {
     private fun newContext(extendPackage: FqName): TestContext {
         val (session, moduleData) = ExtendTestFixtures.newSessionAndModule()
         session.register(
+            CfirLanguageSettingsComponent::class,
+            CfirLanguageSettingsComponent(LanguageVersionSettingsImpl.DEFAULT),
+        )
+        session.register(
             CfirDefaultImportsProviderHolder::class,
             CfirDefaultImportsProviderHolder.of(
                 object : DefaultImportsProvider() {
@@ -757,7 +809,7 @@ class CfirAccessibilityCheckerExtendTest {
         session.register(CfirSymbolProvider::class, symbolProvider)
         val declarationProvider = MutableDeclarationProvider(symbolProvider)
         session.register(CfirProvider::class, declarationProvider)
-        val supertypeProvider = MutableTypeAwareSupertypeProvider()
+        val supertypeProvider = MutableTypeAwareSupertypeProvider(session)
         session.register(CfirTypeAwareSupertypeProvider::class, supertypeProvider)
         session.register(CfirExtendExportSurfaceService::class, CfirExtendExportSurfaceService(session))
         session.register(CfirAccessibilityChecker::class, CfirAccessibilityChecker(session))
@@ -847,6 +899,8 @@ class CfirAccessibilityCheckerExtendTest {
         fun compositeWithLibraryExtend(libraryExtend: CfirExtend, libraryPackage: FqName): CfirExtendProvider {
             val own = CfirSessionExtendProvider(session, store)
             val stub = object : CfirExtendProvider {
+                override val modificationCount: Long = 0L
+
                 override fun getAllExtends(): List<CfirExtend> = listOf(libraryExtend)
                 override fun getExtendsForTarget(targetKey: CfirExtendTargetKey): List<CfirExtend> = emptyList()
                 override fun getExtendsForClass(classId: ClassId): List<CfirExtend> = emptyList()
@@ -872,6 +926,7 @@ class CfirAccessibilityCheckerExtendTest {
     ) : CfirProvider() {
         private val filesByPackage = linkedMapOf<FqName, MutableList<CfirFile>>()
         private val classifierFiles = linkedMapOf<ClassId, CfirFile>()
+        private val classifierDeclarationFiles = linkedMapOf<CfirClassLikeSymbol<*>, CfirFile>()
         private val callableFiles = linkedMapOf<CfirCallableSymbol<*>, CfirFile>()
         private val callableOwners = linkedMapOf<CfirCallableSymbol<*>, CfirClassLikeSymbol<*>>()
 
@@ -897,6 +952,7 @@ class CfirAccessibilityCheckerExtendTest {
         ) {
             when (declaration) {
                 is CfirClassLikeDeclaration -> {
+                    classifierDeclarationFiles[declaration.symbol] = file
                     if (isTopLevel) {
                         symbolProvider.register(declaration)
                         classifierFiles[declaration.symbol.classId] = file
@@ -927,6 +983,9 @@ class CfirAccessibilityCheckerExtendTest {
 
         override fun getCfirClassifierContainerFileIfAny(fqName: ClassId): CfirFile? = classifierFiles[fqName]
 
+        override fun getCfirClassifierContainerFileIfAny(symbol: CfirClassLikeSymbol<*>): CfirFile? =
+            classifierDeclarationFiles[symbol]
+
         override fun getCfirCallableContainerFile(symbol: CfirCallableSymbol<*>): CfirFile? = callableFiles[symbol]
 
         override fun getCfirFilesByPackage(fqName: FqName): List<CfirFile> = filesByPackage[fqName].orEmpty()
@@ -939,8 +998,21 @@ class CfirAccessibilityCheckerExtendTest {
     }
 
     /** 可变的直接父类型图，仅向 checker 提供真实的结构父边。 */
-    private class MutableTypeAwareSupertypeProvider : CfirTypeAwareSupertypeProvider {
+    private class MutableTypeAwareSupertypeProvider(private val session: CfirSession) : CfirTypeAwareSupertypeProvider {
         private val descriptorsByClassId = linkedMapOf<ClassId, MutableList<CfirInstantiatedSupertypeDescriptor>>()
+        private var descriptorRevision = 0L
+
+        override fun forSources(sources: org.cangnova.cangjie.cfir.resolve.providers.CfirTypeAwareSupertypeSources): CfirTypeAwareSupertypeProvider {
+            require(sources == inputStamp.sources) { "This descriptor fixture is bound to its recorded input sources" }
+            return this
+        }
+
+        override val inputStamp: org.cangnova.cangjie.cfir.resolve.providers.CfirTypeAwareSupertypeInputStamp
+            get() = org.cangnova.cangjie.cfir.resolve.providers.CfirTypeAwareSupertypeInputStamp(
+                org.cangnova.cangjie.cfir.resolve.providers.CfirTypeAwareSupertypeSources(session, session.symbolProvider, null, null),
+                org.cangnova.cangjie.cfir.resolve.providers.CfirTypeAwareSupertypeInputRevision(null, null, descriptorRevision),
+                emptySet(),
+            )
 
         /** 为一个 class-like 声明登记直接父类型。 */
         fun recordSupertype(classId: ClassId, supertype: ConeCangJieType) {
@@ -953,6 +1025,7 @@ class CfirAccessibilityCheckerExtendTest {
                     ExtendTestFixtures.classTypeRef(supertypeClassId),
                 ),
             )
+            descriptorRevision++
         }
 
         override fun getDirectSupertypeDescriptors(type: ConeCangJieType): List<CfirInstantiatedSupertypeDescriptor> =

@@ -78,7 +78,7 @@ class CfirPrimitiveTypeDeclaration(
     /**
      * 声明状态与修饰符信息。
      */
-    override var status: CfirDeclarationStatus = org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl(),
+    override var status: CfirDeclarationStatus = DEFAULT_STATUS_FOR_STATUSLESS_DECLARATIONS,
     /**
      * 弃用信息提供者。
      */
@@ -92,10 +92,17 @@ class CfirPrimitiveTypeDeclaration(
      */
     override var superTypeRefs: MutableList<CfirTypeRef> = mutableListOf(),
 ) : CfirClassLikeDeclaration() {
+    override val contentSource: org.cangnova.cangjie.cfir.CfirContentSource = org.cangnova.cangjie.cfir.CfirContentSource.Owned
     /**
      * primitive 类型由编译器内建表生成，没有对应源码节点。
      */
     override val source: CjSourceElement? = null
+
+    /** 此节点没有独立源槽位，不能被绑定到另一个源代次。 */
+    @org.cangnova.cangjie.cfir.CfirImplementationDetail
+    override fun replaceSource(newSource: CjSourceElement?) {
+        require(newSource == null)
+    }
 
 
     init {

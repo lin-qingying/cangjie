@@ -28,7 +28,7 @@ internal class CjoBindingGateFixture(val directory: Path) {
     val sdk: Path = repository.resolve("cfir/cfir-serialization/testResources/cjo-sdk/windows_x86_64_cjnative")
 
     fun manager(vararg roots: Path): CjoManager =
-        CjoManager(CjoSearchPath.forRoots(emptyList(), roots.map { it.toFile() }), transaction)
+        CjoManager(CjoSearchPath.forRoots(emptyList(), roots.map { it.toFile() }), declarationMaterialization = transaction)
 
     fun wire(name: String, target: Path = directory.resolve(name + ".cjo")): Path {
         val encoded = Files.readString(repository.resolve("cfir/cfir-serialization/testResources/cjo-wire/" + name + ".cjo.b64"))

@@ -3,9 +3,10 @@ package org.cangnova.cangjie.cfir.resolve.providers.macro
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 import org.cangnova.cangjie.cfir.session.CfirSessionComponent
+import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.annotationMetadataRegistryOrNull
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.source.CjSourceElement
-import java.util.IdentityHashMap
 
 /**
  * CFIR annotation slot 的稳定身份。
@@ -72,127 +73,179 @@ data class CfirAnnotationSlotSnapshot(
 )
 
 /**
- * session 级 annotation metadata registry。
- *
- * 生命周期：
- * 1. raw build 前创建；
- * 2. raw build / construction 期间可写；
- * 3. stable splice + cache snapshot 后或 failure path 返回前冻结。
- *
- * IDE 的实时 raw build 和后台宏构造可以并行读取同一 session。
- * 两套索引和冻结状态共用 registry 监视器，使每次槽位变更对查询者原子可见。
+ * 只读 annotation metadata 查询；构造期使用私有事务，ordinary checker 使用已发布索引。
  */
-class CfirAnnotationMetadataRegistry : CfirSessionComponent {
-    /** 以稳定槽位身份索引的 snapshot 表，保证同一 owner/index 只记录一次。 */
-    private val snapshotsByCarrier = LinkedHashMap<CfirAnnotationReplaceCarrier, CfirAnnotationSlotSnapshot>()
-    /** 以原始 annotation 对象身份索引的 snapshot 表，用于从 CFIR annotation 反查槽位。 */
-    private val snapshotsByAnnotationIdentity = IdentityHashMap<CfirAnnotationCall, CfirAnnotationSlotSnapshot>()
-    /** registry 是否已经冻结；冻结后禁止继续写入或迁移。 */
-    private var frozen = false
+interface CfirAnnotationMetadata {
+    fun snapshot(carrier: CfirAnnotationReplaceCarrier): CfirAnnotationSlotSnapshot?
+    fun snapshot(annotation: CfirAnnotationCall): CfirAnnotationSlotSnapshot?
 
-    /** 当前 registry 是否已进入只读状态。 */
-    val isFrozen: Boolean
-        @Synchronized
-        get() = frozen
+    fun snapshotForSurface(surface: MacroSurface): CfirAnnotationSlotSnapshot? =
+        surface.replaceHandle.annotationCarrier?.let(::snapshot)
+}
 
-    /** 按记录顺序返回所有 annotation 槽位 snapshot。 */
-    val snapshots: List<CfirAnnotationSlotSnapshot>
-        @Synchronized
-        get() = snapshotsByCarrier.values.toList()
+/**
+ * session 只拥有已发布元数据的弱索引，不拥有 raw writer 或历史文件图。
+ * value 也必须为弱引用：snapshot 反向持有 annotation，仅弱 key 会泄漏整代声明。
+ */
+class CfirAnnotationMetadataRegistry internal constructor(private val session: CfirSession) : CfirSessionComponent {
+    private val snapshots = com.intellij.util.containers.ContainerUtil
+        .createConcurrentWeakKeyWeakValueMap<CfirAnnotationCall, CfirAnnotationSlotSnapshot>()
 
-    /**
-     * 记录一个 raw builder 刚写入的 annotation 槽位 snapshot。
-     *
-     * 本方法同时建立 carrier 与 annotation identity 两套索引，并校验
-     * [CfirAnnotationSlotSnapshot.annotationIndex] 仍然指向同一个原始 annotation 对象。
-     */
-    @Synchronized
-    fun record(snapshot: CfirAnnotationSlotSnapshot): CfirAnnotationReplaceCarrier {
-        check(!frozen) { "CfirAnnotationMetadataRegistry is frozen." }
-        val carrier = CfirAnnotationReplaceCarrier(
-            owner = snapshot.owner,
-            annotationIndex = snapshot.annotationIndex,
-            originalAnnotation = snapshot.originalAnnotation,
-        )
-        require(snapshot.owner.annotations.getOrNull(snapshot.annotationIndex) === snapshot.originalAnnotation) {
-            "Annotation slot snapshot must be recorded after append and must point at the original annotation identity."
-        }
-        require(carrier !in snapshotsByCarrier) {
-            "Duplicate annotation metadata for owner/index ${snapshot.annotationIndex}."
-        }
-        snapshotsByCarrier[carrier] = snapshot
-        snapshotsByAnnotationIdentity[snapshot.originalAnnotation] = snapshot
-        return carrier
-    }
-
-    /**
-     * 为从既有 annotation 派生出的声明 annotation 登记独立槽位。
-     *
-     * 派生槽位只替换 owner、slot index 与 annotation 对象身份；原始语法、编译期可见性、
-     * source、限定名、参数、token 与 call-site provenance 必须完整继承。此 API 只建立
-     * metadata identity，不创建第二个 macro construction surface。
-     *
-     * 原 annotation 未登记 snapshot 表示 raw builder 生命周期被破坏，必须作为不变量失败。
-     */
-    @Synchronized
-    fun recordDerivedSlot(
-        sourceAnnotation: CfirAnnotationCall,
-        owner: CfirDeclaration,
-        annotationIndex: Int,
-        derivedAnnotation: CfirAnnotationCall,
-    ): CfirAnnotationReplaceCarrier {
-        check(!frozen) { "CfirAnnotationMetadataRegistry is frozen." }
-        require(sourceAnnotation !== derivedAnnotation) {
-            "A derived annotation slot must use a distinct annotation object identity."
-        }
-        val sourceSnapshot = checkNotNull(snapshot(sourceAnnotation)) {
-            "Cannot derive annotation metadata without the source annotation slot snapshot."
-        }
-        return record(
-            sourceSnapshot.copy(
-                owner = owner,
-                annotationIndex = annotationIndex,
-                originalAnnotation = derivedAnnotation,
-            )
-        )
-    }
-
-    /** 通过稳定槽位身份查找 snapshot。 */
-    @Synchronized
-    fun snapshot(carrier: CfirAnnotationReplaceCarrier): CfirAnnotationSlotSnapshot? =
-        snapshotsByCarrier[carrier]
-
-    /** 通过原始或迁移后的 annotation 对象身份查找 snapshot。 */
-    @Synchronized
     fun snapshot(annotation: CfirAnnotationCall): CfirAnnotationSlotSnapshot? =
-        snapshotsByAnnotationIdentity[annotation]
+        synchronized(session) { snapshots[annotation] }
 
-    /** 从 macro surface 的 replace handle 中取 annotation carrier 并反查 snapshot。 */
-    fun snapshotForSurface(surface: MacroSurface): CfirAnnotationSlotSnapshot? {
-        val carrier = surface.replaceHandle.annotationCarrier ?: return null
-        return snapshot(carrier)
+    /** 完整文件产品使用同一个准备/提交协议；失败不会留下部分 owner 或索引。 */
+    fun publish(snapshot: CfirAnnotationMetadataSnapshot): Unit = publishAll(listOf(snapshot))
+
+    fun publishAll(products: List<CfirAnnotationMetadataSnapshot>) {
+        val publication = preparePublication(products)
+        try {
+            publication.commit()
+        } catch (failure: Throwable) {
+            publication.restore()
+            throw failure
+        }
     }
+
+    /** 只准备验证与恢复依据；LL 将全部 metadata/usage 产品验证后才开始共同提交。 */
+    fun preparePublication(products: List<CfirAnnotationMetadataSnapshot>): CfirAnnotationMetadataPublication =
+        synchronized(session) {
+            Publication(products.toList()).also { it.validate() }
+        }
 
     /**
-     * successful splice 后迁移 slot metadata 到 replacement annotation。
-     *
-     * 迁移只替换 annotation 对象身份；原始语法、编译期可见性与精确 source 必须保持不变。
+     * 原 annotation 槽位及 owner 保留时，当前 source 产品显式替换不可变位置快照。
+     * 这不是重新发布 raw metadata：先校验旧表和索引身份，语法及 annotation identity 均不得变化。
      */
-    @Synchronized
-    fun migrate(carrier: CfirAnnotationReplaceCarrier, replacement: CfirAnnotationCall) {
-        check(!frozen) { "CfirAnnotationMetadataRegistry is frozen." }
-        val snapshot = snapshotsByCarrier[carrier] ?: return
-        val migrated = snapshot.copy(originalAnnotation = replacement)
-        val migratedCarrier = carrier.copy(originalAnnotation = replacement)
-        snapshotsByCarrier.remove(carrier)
-        snapshotsByCarrier[migratedCarrier] = migrated
-        snapshotsByAnnotationIdentity.remove(carrier.originalAnnotation)
-        snapshotsByAnnotationIdentity[replacement] = migrated
+    fun prepareSourceReplacement(
+        declarations: Collection<CfirDeclaration>,
+        sourceGeneration: Any,
+        mapSource: (CjSourceElement) -> CjSourceElement,
+        mapTokens: (List<MacroSurfaceToken>) -> List<MacroSurfaceToken>,
+    ): CfirSourceGenerationUpdate = synchronized(session) {
+        val previous = declarations.mapNotNull { it.declarationAnnotationMetadata }.distinct()
+        val next = previous.map { table ->
+            CfirDeclarationAnnotationMetadata(table.owner, sourceGeneration, table.slots.map { slot ->
+                slot.copy(annotationSource = mapSource(slot.annotationSource), tokens = mapTokens(slot.tokens))
+            })
+        }
+        object : CfirSourceGenerationUpdate {
+            private var committed = false
+
+            override fun validate(): Unit = synchronized(session) {
+                check(!committed)
+                previous.forEach { table ->
+                    check(table.owner.moduleData.session === session && table.owner.declarationAnnotationMetadata === table)
+                    table.slots.forEach { slot ->
+                        check(table.owner.annotations.getOrNull(slot.annotationIndex) === slot.originalAnnotation)
+                        check(snapshots[slot.originalAnnotation] === slot)
+                    }
+                }
+            }
+
+            override fun commit(): Unit = synchronized(session) {
+                validate()
+                next.forEach { table ->
+                    table.owner.declarationAnnotationMetadata = table
+                    table.slots.forEach { slot -> snapshots[slot.originalAnnotation] = slot }
+                }
+                committed = true
+            }
+        }.also { it.validate() }
     }
 
-    /** 冻结 registry，阻止 construction 后续阶段继续修改 annotation 槽位元数据。 */
-    @Synchronized
-    fun freeze() {
-        frozen = true
+    private enum class PublicationState { PREPARED, COMMITTING, COMMITTED, RESTORED }
+
+    private inner class Publication(
+        private val products: List<CfirAnnotationMetadataSnapshot>,
+    ) : CfirAnnotationMetadataPublication {
+        private val tables = products.flatMap { it.ownerTables }
+        private var state = PublicationState.PREPARED
+
+        override fun validate(): Unit = synchronized(session) {
+            check(state == PublicationState.PREPARED) { "Metadata publication is $state." }
+            check(session.annotationMetadataRegistryOrNull === this@CfirAnnotationMetadataRegistry) {
+                "Only the canonical session metadata registry can publish."
+            }
+            check(products.all { it.session === session }) { "Annotation metadata belongs to another session." }
+            check(products.distinct().size == products.size) { "Duplicate metadata publication product." }
+            check(products.none { it.published }) { "Annotation metadata snapshot has already been published." }
+            val owners = java.util.Collections.newSetFromMap(java.util.IdentityHashMap<CfirDeclaration, Boolean>())
+            val annotations = java.util.Collections.newSetFromMap(java.util.IdentityHashMap<CfirAnnotationCall, Boolean>())
+            for (table in tables) {
+                check(owners.add(table.owner)) { "A declaration cannot be published by multiple metadata products." }
+                check(table.owner.declarationAnnotationMetadata == null) {
+                    "Annotation metadata cannot overwrite a published declaration generation."
+                }
+                for (slot in table.slots) {
+                    check(table.owner.annotations.getOrNull(slot.annotationIndex) === slot.originalAnnotation) {
+                        "Annotation slots changed after metadata was sealed."
+                    }
+                    check(annotations.add(slot.originalAnnotation) && snapshots[slot.originalAnnotation] == null) {
+                        "An annotation identity cannot be published for multiple slots or generations."
+                    }
+                }
+            }
+        }
+
+        override fun commit(): Unit = synchronized(session) {
+            validate()
+            // 撤销句柄已由调用方登记；先进入 COMMITTING，部分写入也能按身份撤销。
+            state = PublicationState.COMMITTING
+            for (table in tables) {
+                table.owner.declarationAnnotationMetadata = table
+                for (slot in table.slots) snapshots[slot.originalAnnotation] = slot
+            }
+            products.forEach { it.published = true }
+            state = PublicationState.COMMITTED
+        }
+
+        override fun restore(): Unit = synchronized(session) {
+            if (state == PublicationState.RESTORED) return@synchronized
+            if (state != PublicationState.PREPARED) {
+                // 原状态均为未发布；只移除本次写入，复用旧 owner 的表不属于本产品。
+                for (table in tables) {
+                    val current = table.owner.declarationAnnotationMetadata
+                    check(current == null || current === table) { "Metadata owner changed outside its publication." }
+                    for (slot in table.slots) {
+                        val indexed = snapshots[slot.originalAnnotation]
+                        check(indexed == null || indexed === slot) { "Annotation index changed outside its publication." }
+                    }
+                }
+                for (table in tables) {
+                    if (table.owner.declarationAnnotationMetadata === table) table.owner.declarationAnnotationMetadata = null
+                    for (slot in table.slots) {
+                        if (snapshots[slot.originalAnnotation] === slot) snapshots.remove(slot.originalAnnotation)
+                    }
+                }
+                products.forEach { it.published = false }
+            }
+            state = PublicationState.RESTORED
+        }
     }
 }
+
+/** 同一 session 锁下的 metadata 发布协议；恢复只覆盖本句柄登记的写入。 */
+interface CfirAnnotationMetadataPublication {
+    fun validate(): Unit
+    fun commit(): Unit
+    fun restore(): Unit
+}
+/** 封闭产品只在 seal/publish 之间聚合所有 owner；已发布 owner 表不反向持有此产品。 */
+class CfirAnnotationMetadataSnapshot internal constructor(
+    internal val session: CfirSession,
+    internal val ownerTables: List<CfirDeclarationAnnotationMetadata>,
+) {
+    internal var published: Boolean = false
+}
+
+/** 实际 declaration 强持有自己的不可变槽位表，避免活跃图的 metadata 被弱索引提前回收。 */
+internal class CfirDeclarationAnnotationMetadata(
+    val owner: CfirDeclaration,
+    val generation: Any,
+    val slots: List<CfirAnnotationSlotSnapshot>,
+)
+
+private object DeclarationAnnotationMetadataKey : org.cangnova.cangjie.cfir.CfirDeclarationDataKey()
+private var CfirDeclaration.declarationAnnotationMetadata: CfirDeclarationAnnotationMetadata? by
+    org.cangnova.cangjie.cfir.declarations.CfirDeclarationDataRegistry.data(DeclarationAnnotationMetadataKey)

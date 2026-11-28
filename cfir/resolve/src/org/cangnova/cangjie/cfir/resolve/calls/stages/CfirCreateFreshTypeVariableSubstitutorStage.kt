@@ -24,8 +24,11 @@
 
 package org.cangnova.cangjie.cfir.resolve.calls.stages
 
+import org.cangnova.cangjie.cfir.resolve.substitution.createTypeSubstitutorByTypeConstructor
+
 import org.cangnova.cangjie.cfir.calls.resolvedQualifierClassifier
 import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.declarations.utils.ownTypeParameters
 import org.cangnova.cangjie.cfir.diagnostic.InferenceConstraintError
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.resolve.CfirTypeResolutionConfiguration
@@ -47,6 +50,7 @@ import org.cangnova.cangjie.cfir.resolve.providers.getContainingExtend
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeDeclaredUpperBoundConstraintPosition
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeExplicitTypeParameterConstraintPosition
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
+import org.cangnova.cangjie.cfir.resolve.substitution.asCone
 import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
 import org.cangnova.cangjie.cfir.references.CfirResolvedErrorReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
@@ -55,10 +59,10 @@ import org.cangnova.cangjie.cfir.scopes.impl.typeAliasConstructorInfo
 import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeParameterBasedTypeVariable
 import org.cangnova.cangjie.type.model.TypeVariableInferenceScope
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.resolve.providers.cfirProvider
 import org.cangnova.cangjie.cfir.session.accessibilityChecker
 import org.cangnova.cangjie.cfir.session.extendProvider
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.session.typeResolver
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
@@ -120,7 +124,7 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
             }
             putAll(createBareStaticExtendTargetOwnerSubstitutionMap(context.session, candidate, declaration))
             putAll(createBareEnumConstructorQualifierOwnerSubstitutionMap(context.session, candidate, declaration))
-            putAll(collectOriginScopeOwnerSubstitutions(context.session, candidate, declaration))
+            putAll(collectOriginScopeOwnerSubstitutions(candidate, declaration))
         }
         val typeParameters = (
                 enumConstructorReceiverOwnerTypeParameters +
@@ -136,7 +140,7 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
         if (typeParameters.isEmpty()) {
             val substitutor = knownOwnerSubstitutions
                 .takeIf { it.isNotEmpty() }
-                ?.let(::CfirTypeSubstitutorByMap)
+                ?.let { createTypeSubstitutorByTypeConstructor(it, context.session.typeContext, false) }
                 ?: ConeSubstitutor.Empty
             candidate.initializeSubstitutorAndVariables(substitutor, emptyList())
             return
@@ -215,10 +219,9 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
 
         val useSiteSubstitutor = knownSubstitutions
             .takeIf { it.isNotEmpty() }
-            ?.let(::CfirTypeSubstitutorByMap)
-        val freshVariableSubstitutor = CfirTypeSubstitutorByMap(
-            buildFreshVariableSubstitutionMap(declaration, freshTypeVariables)
-        )
+            ?.let { createTypeSubstitutorByTypeConstructor(it, session.typeContext, false) }
+        val freshVariableSubstitutor = createTypeSubstitutorByTypeConstructor(
+            buildFreshVariableSubstitutionMap(declaration, freshTypeVariables), session.typeContext, false)
         val typeAliasConstructorSubstitutor = (declaration as? CfirConstructor)
             ?.typeAliasConstructorInfo
             ?.substitutor
@@ -582,21 +585,22 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
      * 再次 fresh 化；普通 classifier 构造调用不来自该 scope，仍按原有调用推断规则处理。
      */
     private fun collectOriginScopeOwnerSubstitutions(
-        session: CfirSession,
         candidate: Candidate,
         declaration: Any?,
     ): Map<TypeConstructorMarker, ConeCangJieType> {
         if (declaration !is CfirConstructor) return emptyMap()
         val substitutionScope = candidate.originScope as? CfirClassSubstitutionScope ?: return emptyMap()
-        val ownerClassId = ownerClassIdForCallable(candidate) ?: return emptyMap()
-        val ownerDeclaration = session.symbolProvider.getClassLikeSymbolByClassId(ownerClassId)?.cfir
-            ?: session.cfirProvider.getCfirClassifierByFqName(ownerClassId)
-            ?: return emptyMap()
-        val ownerTypeParameters = (ownerDeclaration as? CfirTypeParameterRefsOwner)?.typeParameters.orEmpty()
+        val callableSymbol = candidate.symbol as? CfirCallableSymbol<*> ?: return emptyMap()
+        val originalCallableSymbol = callableSymbol.unwrapSubstitutionOverrides()
+        val ownerTypeParameters = (originalCallableSymbol.getContainingClass()?.cfir as? CfirTypeParameterRefsOwner)
+            ?.typeParameters
+            .orEmpty()
 
         return ownerTypeParameters.mapNotNull { typeParameter ->
-            val substitutedType = substitutionScope
-                .substitutedOwnerTypeParameterOrNull(typeParameter.symbol)
+            val substitutedType = substitutionScope.substitutedCallableOwnerTypeParameterOrNull(
+                callableSymbol,
+                typeParameter.symbol,
+            )
                 ?: return@mapNotNull null
             typeParameter.symbol.toLookupTag() to substitutedType
         }.toMap()
@@ -615,17 +619,20 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
         declaration: Any?,
         precomputedBareStaticExtendTypeParameters: List<CfirTypeParameterRef>? = null,
     ): List<CfirTypeParameterRef> {
-        val ownTypeParameters = (declaration as? CfirTypeParameterRefsOwner)?.typeParameters.orEmpty()
+        val declaredTypeParameters = (declaration as? CfirTypeParameterRefsOwner)?.typeParameters.orEmpty()
         if ((declaration as? CfirConstructor)?.typeAliasConstructorInfo != null) {
-            return ownTypeParameters
+            return declaredTypeParameters
         }
+        // 构造器/enum 构造项借用的 constructed-class 引用不是自有泛型；owner 参数仍由下方
+        // qualifier、别名与 owner 查询路径决定，保持与显式类型实参计数一致。
+        val ownTypeParameters: List<CfirTypeParameterRef> = declaredTypeParameters.ownTypeParameters
         if (declaration is CfirEnumConstructor) {
             // 声明 refs 与 payload/return signature 共用实际 enum 参数，不丢成 ClassId 后重查。
             val receiver = candidate.bareStaticQualifierExpression()
             if (receiver != null && receiver.typeArguments.isEmpty()) {
-                collectBareTypeAliasQualifierTypeParameters(receiver)?.let { return it + ownTypeParameters }
+                collectBareTypeAliasQualifierTypeParameters(receiver)?.let { return it + declaredTypeParameters }
             }
-            return ownTypeParameters
+            return declaredTypeParameters
         }
 
         val extendTypeParameters = precomputedBareStaticExtendTypeParameters

@@ -1,6 +1,7 @@
 ﻿package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
@@ -14,7 +15,7 @@ import org.cangnova.cangjie.type.AbstractTypeChecker
 /**
  * `if` 条件类型检查：条件表达式必须为 `Bool`。
  */
-object CfirIfConditionTypeMismatchChecker : CfirIfExpressionChecker( ) {
+object CfirIfConditionTypeMismatchChecker : CfirIfExpressionChecker(MppCheckerKind.Common) {
     /** 检查 `if` 条件表达式类型是否可作为 `Bool` 使用。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirIfExpression) {

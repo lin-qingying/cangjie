@@ -1,5 +1,7 @@
 package org.cangnova.cangjie.cfir.types
 
+import org.cangnova.cangjie.cfir.resolve.substitution.asCone
+
 import org.cangnova.cangjie.type.model.CangJieTypeMarker
 import org.cangnova.cangjie.type.model.RigidTypeMarker
 import org.cangnova.cangjie.type.model.SimpleTypeMarker

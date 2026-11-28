@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.explicitLambdaParameterType
 import org.cangnova.cangjie.cfir.analysis.checkers.functionTypeForLambdaShape
 import org.cangnova.cangjie.cfir.declarations.hasOmittedLambdaParameterType
@@ -27,7 +28,7 @@ import org.cangnova.cangjie.source.CjOffsetsOnlySourceElement
  * 先根据声明类型检查 initializer 中的 lambda 参数列表，再交给 lambda 子树遍历提交
  * 参数源上的诊断，避免表达式阶段晚于参数遍历导致诊断无法稳定落入 inline 输出。
  */
-object CfirVariableLambdaInitializerTypeMismatchChecker : CfirCallableDeclarationChecker() {
+object CfirVariableLambdaInitializerTypeMismatchChecker : CfirCallableDeclarationChecker(MppCheckerKind.Common) {
     /**
      * 检查变量 initializer 中 lambda 头部是否满足声明的函数类型。
      */

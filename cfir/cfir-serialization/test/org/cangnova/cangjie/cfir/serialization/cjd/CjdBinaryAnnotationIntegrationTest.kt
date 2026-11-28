@@ -15,6 +15,8 @@ import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
 import org.cangnova.cangjie.cfir.serialization.cjo.*
 import org.cangnova.cangjie.cfir.serialization.deserialize.*
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.CfirImplicitSystemAnnotationsProvider
+import org.cangnova.cangjie.cfir.session.ConfiguredCfirImplicitSystemAnnotationsProvider
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.lang.declarations.CangJieDeclarationFileType
 import org.cangnova.cangjie.name.*
@@ -47,7 +49,10 @@ class CjdBinaryAnnotationIntegrationTest : CjParsingTestCase("", "cj.d", CangJie
         Files.write(path, fixture.builder.sizedByteArray())
         val sidecar = CjdSidecarLocator.deriveCjdPath(path)
         if (text == null) Files.deleteIfExists(sidecar) else Files.writeString(sidecar, "package test.pkg\n$text")
-        val manager = CjoManager(CjoSearchPath { if (it == "CANGJIE_LIBRARY") root.toString() else null })
+        val manager = CjoManager(
+            CjoSearchPath { if (it == "CANGJIE_LIBRARY") root.toString() else null },
+            CjoFormatVersionPolicy.Compilation(LanguageVersionSettingsImpl.DEFAULT),
+        )
         val loaded = kotlin.test.assertNotNull(manager.loadPackageSnapshot("test.pkg"))
         assertEquals(path.toAbsolutePath(), loaded.sourcePath)
         val module = Module(setOf(FqName("ohos.labels.APILevel")))
@@ -77,8 +82,8 @@ class CjdBinaryAnnotationIntegrationTest : CjParsingTestCase("", "cj.d", CangJie
         assertEquals(CangjieOverflowStrategy.WRAPPING, function.interopInfo!!.overflowStrategy)
         assertNotSame(EmptyDeprecationsProvider, function.deprecationsProvider)
         val parameter = function.valueParameters.single()
-        assertSame(parameter, context.declCache[0]?.declarationRoot)
-        assertSame(parameter.symbol, context.declCache[0]?.wireSymbol)
+        assertSame(parameter, context.headerRecordOrNull(0)?.declarationRoot)
+        assertSame(parameter.symbol, context.headerRecordOrNull(0)?.wireSymbol)
         assertEquals("APILevel", parameter.annotations.single().annotationSourceName)
         assertEquals(CfirAnnotationResolveState.TYPE_RESOLVED, (parameter.annotations.single() as CfirAnnotationCall).annotationResolveState)
         assertSame(parameter.symbol, (parameter.annotations.single() as CfirAnnotationCall).containingDeclarationSymbol)
@@ -100,7 +105,10 @@ class CjdBinaryAnnotationIntegrationTest : CjParsingTestCase("", "cj.d", CangJie
         fixture.build()
         val path = root.resolve("platform-kind.cjo")
         Files.write(path, fixture.builder.sizedByteArray())
-        val manager = CjoManager(CjoSearchPath { if (it == "CANGJIE_LIBRARY") root.toString() else null })
+        val manager = CjoManager(
+            CjoSearchPath { if (it == "CANGJIE_LIBRARY") root.toString() else null },
+            CjoFormatVersionPolicy.Compilation(LanguageVersionSettingsImpl.DEFAULT),
+        )
         val loaded = kotlin.test.assertNotNull(manager.loadPackageSnapshot("test.pkg"))
         val module = Module()
         val metadataBinding = bindCjoFixture(module, manager, setOf(root))
@@ -197,7 +205,10 @@ class CjdBinaryAnnotationIntegrationTest : CjParsingTestCase("", "cj.d", CangJie
                 func f(@Frozen x: Int64): Unit
             }
         """.trimIndent())
-        val manager = CjoManager(CjoSearchPath { if (it == "CANGJIE_LIBRARY") root.toString() else null })
+        val manager = CjoManager(
+            CjoSearchPath { if (it == "CANGJIE_LIBRARY") root.toString() else null },
+            CjoFormatVersionPolicy.Compilation(LanguageVersionSettingsImpl.DEFAULT),
+        )
         val loaded = kotlin.test.assertNotNull(manager.loadPackageSnapshot("test.pkg"))
         val module = Module(setOf(FqName("ohos.labels.APILevel")))
         val metadataBinding = bindCjoFixture(module, manager, setOf(root))
@@ -214,12 +225,12 @@ class CjdBinaryAnnotationIntegrationTest : CjParsingTestCase("", "cj.d", CangJie
         val box = assertIs<CfirClass>(context.createDeclDeserializer().deserializeDecl(owner.toInt() - 1))
         val function = assertIs<CfirNamedFunction>(box.declarations.single())
         assertTrue(box.interopInfo!!.isFrozen)
-        assertSame(function, context.declCache[member.toInt() - 1]?.declarationRoot)
-        assertSame(function.symbol, context.declCache[member.toInt() - 1]?.wireSymbol)
+        assertSame(function, context.headerRecordOrNull(member.toInt() - 1)?.declarationRoot)
+        assertSame(function.symbol, context.headerRecordOrNull(member.toInt() - 1)?.wireSymbol)
         assertNotSame(EmptyDeprecationsProvider, function.deprecationsProvider)
         val valueParameter = function.valueParameters.single()
-        assertSame(valueParameter, context.declCache[parameter.toInt() - 1]?.declarationRoot)
-        assertSame(valueParameter.symbol, context.declCache[parameter.toInt() - 1]?.wireSymbol)
+        assertSame(valueParameter, context.headerRecordOrNull(parameter.toInt() - 1)?.declarationRoot)
+        assertSame(valueParameter.symbol, context.headerRecordOrNull(parameter.toInt() - 1)?.wireSymbol)
         assertEquals("Frozen", valueParameter.annotations.single().annotationSourceName)
         assertSame(valueParameter.symbol, (valueParameter.annotations.single() as CfirAnnotationCall).containingDeclarationSymbol)
         assertEquals(emptyList<CjdBinaryMatchDiagnostic>(), context.sidecar!!.matchDiagnostics)
@@ -232,10 +243,16 @@ class CjdBinaryAnnotationIntegrationTest : CjParsingTestCase("", "cj.d", CangJie
             "Set CANGJIE_CJD_SDK_DIR to enable real SDK validation")
         val manager = CjoManager(CjoSearchPath {
             if (it == "CANGJIE_STDLIB_MODULE") directory else null
-        })
-        val module = Module()
-        val provider = CfirDeserializedSymbolProvider(module.session, manager, CfirCangJieScopeProvider(), module,
-            moduleDataProvider = cjoFixtureModuleDataProvider(module, setOf(Path.of(directory!!))))
+        }, CjoFormatVersionPolicy.Compilation(LanguageVersionSettingsImpl.DEFAULT))
+        // SDK 路径只选择二进制来源；隐式平台注解按正式工厂合同由 session 配置提供。
+        val module = Module(implicitSystemAnnotations = setOf(FqName("ohos.labels.APILevel")))
+        val provider = CfirDeserializedSymbolProvider(
+            module.session,
+            manager,
+            CfirCangJieScopeProvider(),
+            module,
+            moduleDataProvider = cjoFixtureModuleDataProvider(module, setOf(Path.of(requireNotNull(directory)))),
+        )
         module.session.register(org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider::class, provider)
         val classId = ClassId.topLevel(FqName("std.math.RoundingMode"))
         val declaration = kotlin.test.assertNotNull(provider.getClassLikeSymbolByClassId(classId)).cfir
@@ -258,7 +275,10 @@ class CjdBinaryAnnotationIntegrationTest : CjParsingTestCase("", "cj.d", CangJie
         val directory = System.getenv("CANGJIE_CJD_SDK_DIR")
         org.junit.jupiter.api.Assumptions.assumeTrue(!directory.isNullOrBlank(),
             "Set CANGJIE_CJD_SDK_DIR to enable real SDK validation")
-        val manager = CjoManager(CjoSearchPath { if (it == "CANGJIE_STDLIB_MODULE") directory else null })
+        val manager = CjoManager(
+            CjoSearchPath { if (it == "CANGJIE_STDLIB_MODULE") directory else null },
+            CjoFormatVersionPolicy.Compilation(LanguageVersionSettingsImpl.DEFAULT),
+        )
         val loaded = kotlin.test.assertNotNull(manager.loadPackageSnapshot("std.console"))
         val module = Module(setOf(FqName("ohos.labels.APILevel")))
         val metadataBinding = bindCjoFixture(module, manager, setOf(Path.of(directory!!)))
@@ -323,7 +343,10 @@ class CjdBinaryAnnotationIntegrationTest : CjParsingTestCase("", "cj.d", CangJie
         val directory = System.getenv("CANGJIE_CJD_SDK_DIR")
         org.junit.jupiter.api.Assumptions.assumeTrue(!directory.isNullOrBlank(),
             "Set CANGJIE_CJD_SDK_DIR to enable real SDK validation")
-        val manager = CjoManager(CjoSearchPath { if (it == "CANGJIE_STDLIB_MODULE") directory else null })
+        val manager = CjoManager(
+            CjoSearchPath { if (it == "CANGJIE_STDLIB_MODULE") directory else null },
+            CjoFormatVersionPolicy.Compilation(LanguageVersionSettingsImpl.DEFAULT),
+        )
         val paths = Files.list(Path.of(directory!!)).use { stream ->
             stream.filter { it.toString().endsWith(".cj.d") }.sorted().toList()
         }
@@ -359,7 +382,7 @@ class CjdBinaryAnnotationIntegrationTest : CjParsingTestCase("", "cj.d", CangJie
         assertTrue(matchedAnnotations > 0)
     }
 
-    private class Module(implicitAnnotations: Set<FqName> = emptySet()) : CfirModuleData() {
+    private class Module(implicitSystemAnnotations: Set<FqName> = emptySet()) : CfirModuleData() {
         override val name = Name.identifier("cjd-test")
         override val dependencies = emptyList<CfirModuleData>()
         override val refinementDependencies = emptyList<CfirModuleData>()
@@ -374,8 +397,10 @@ class CjdBinaryAnnotationIntegrationTest : CjParsingTestCase("", "cj.d", CangJie
                 CfirLanguageSettingsComponent(LanguageVersionSettingsImpl.DEFAULT),
             )
             it.register(CfirCangJieScopeProvider::class, CfirCangJieScopeProvider())
-            it.register(org.cangnova.cangjie.cfir.session.CfirImplicitSystemAnnotationsProvider::class,
-                org.cangnova.cangjie.cfir.session.ConfiguredCfirImplicitSystemAnnotationsProvider(implicitAnnotations))
+            it.register(
+                CfirImplicitSystemAnnotationsProvider::class,
+                ConfiguredCfirImplicitSystemAnnotationsProvider(implicitSystemAnnotations),
+            )
         }
         init { bindSession(session) }
     }

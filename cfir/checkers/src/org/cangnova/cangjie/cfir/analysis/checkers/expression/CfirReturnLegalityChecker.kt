@@ -3,6 +3,7 @@ package org.cangnova.cangjie.cfir.analysis.checkers.expression
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirErrorFunction
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
@@ -24,7 +25,7 @@ import org.cangnova.cangjie.source.CjRealSourceElementKind
  * - 这里只处理“语句位置是否合法”，不处理返回值类型是否匹配（由 [CfirReturnTypeMismatchChecker] 负责）。
  * - 仅对真实源码中的显式 `return` 报告，避免对 fake source 的隐式返回产生噪音。
  */
-object CfirReturnLegalityChecker : CfirReturnExpressionChecker() {
+object CfirReturnLegalityChecker : CfirReturnExpressionChecker(MppCheckerKind.Common) {
     /** 检查 `return` 语句是否出现在允许返回的位置。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirReturnExpression) {

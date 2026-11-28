@@ -4,6 +4,7 @@ import org.cangnova.cangjie.annotations.BuiltInAnnotationRegistry
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.resolve.providers.CfirProviderImpl
 import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirReplaceHandle
+import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationMetadataBuilder
 import org.cangnova.cangjie.cfir.resolve.providers.macro.FinalMacroSurfaceDecision
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroCallSite
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroCallForestBuilder
@@ -188,10 +189,6 @@ class MacroConstructionArchitectureGuardTest {
             "MacroSurfaceParam" to Regex("""\bMacroSurfaceParam\s*\("""),
             "MacroSurfaceExpr" to Regex("""\bMacroSurfaceExpr\s*\("""),
         )
-        val builtinNonMacroSurfaceCoverage = listOf(
-            "IfAvailableSurface" to Regex("""\bIfAvailableSurface\s*\("""),
-            "BuiltinNonMacroSurface" to Regex("""\bis\s+BuiltinNonMacroSurface\b"""),
-        )
         val builderSourceGroups = listOf(
             BuilderSourceGroup(
                 displayName = "PSI raw builder",
@@ -217,14 +214,14 @@ class MacroConstructionArchitectureGuardTest {
                     }
                 }
 
-                val hasBuiltinNonMacroCoverage = builtinNonMacroSurfaceCoverage.any { (_, pattern) ->
-                    pattern.containsMatchIn(source)
+                // 官方展开后的语义载体为 IfAvailableExpr；当前两 raw 必须保留真实 IR 分派。
+                // 此守卫不宣称展开前首次解析的阶段协议已经与官方完全对齐。
+                val nativeDispatch = Regex("""(?:is\s+CjIfAvailableExpression|CjNodeTypes\.IF_AVAILABLE_EXPRESSION)\s*->\s*convertIfAvailable""")
+                if (!nativeDispatch.containsMatchIn(source) || !Regex("""\bbuildIfAvailableExpression\s*\{""").containsMatchIn(source)) {
+                    add("${group.displayName}: missing native IfAvailable expression conversion")
                 }
-                if (!hasBuiltinNonMacroCoverage) {
-                    add(
-                        "${group.displayName}: missing explicit IfAvailableSurface construction " +
-                            "or BuiltinNonMacroSurface branch",
-                    )
+                if (Regex("""\bIfAvailableSurface\s*\(""").containsMatchIn(source)) {
+                    add("${group.displayName}: native IfAvailable must not create a second macro surface")
                 }
             }
         }
@@ -253,8 +250,8 @@ class MacroConstructionArchitectureGuardTest {
                 if ("buildMacroExpression" in convertMacroExpression) {
                     add("$path: convertMacroExpression must not build legacy CfirMacroExpression carrier")
                 }
-                if ("CfirReplaceHandle(handleId = surfaceId, carrier = carrier)" !in convertMacroExpression) {
-                    add("$path: convertMacroExpression must attach the typed carrier to CfirReplaceHandle")
+                if ("CfirReplaceHandle(handleId = surfaceId, ownerSnapshot = context.snapshotMacroOwner(), carrier = carrier)" !in convertMacroExpression) {
+                    add("$path: convertMacroExpression must attach its typed carrier and actual raw owner snapshot")
                 }
             }
         }
@@ -340,16 +337,18 @@ class MacroConstructionArchitectureGuardTest {
             },
         )
         val rootNode = forest.roots.single()
+        val annotationMetadata = CfirAnnotationMetadataBuilder()
         val fragment = parser.parse(
             MacroFragmentInput(
                 node = rootNode,
+                annotationMetadata = annotationMetadata,
                 tokens = evaluatorResults.getValue(rootNode),
                 decision = expressionDecision(surface),
             ),
         )
         splicer.applySlices(
             files = emptyList(),
-            slots = listOf(MacroReplaceSlot(surface.replaceHandle, surface, fragment)),
+            slots = listOf(MacroReplaceSlot(surface.replaceHandle, surface, fragment, annotationMetadata)),
         )
 
         assertEquals(listOf("Outer"), executor.executedCalls.map { it.idName })
@@ -400,21 +399,23 @@ class MacroConstructionArchitectureGuardTest {
         )
     }
 
-    /**
-     * 验证前端宏构造默认使用真实仓颉内建非宏 desugarer。
-     */
+    /** IfAvailable 必须从完整调用源码重解析，并进入原 AST 的真实 splice 槽位。 */
     @Test
-    fun frontendMacroConstructionServiceUsesRealBuiltinNonMacroDesugarerByDefault() {
+    fun frontendBuiltinNonMacroReparsesTheInvocationAndUsesStableReplacement() {
         val source = readRepoFile("compiler/frontend/src/org/cangnova/cangjie/frontend/pipeline/MacroExpandPhase.kt")
 
         assertTrue(
-            "CangJieBuiltinNonMacroDesugarer" in source,
-            "Frontend macro construction must default to the Cangjie builtin non-macro desugarer.",
+            "MacroPayloadTokenizer.tokenize(invocation, invocationStart)" in source &&
+                "surface.capturedRawSyntax" in source,
+            "Builtin non-macro parsing must receive its complete original invocation.",
+        )
+        assertTrue(
+            "slots += MacroReplaceSlot(" in source && "replaceChildMacroRanges(childResults, MacroPayloadChannel.INPUT)" in source,
+            "Builtin non-macro output must refresh opaque children and enter the stable splice queue.",
         )
         assertFalse(
-            Regex("""builtinNonMacroDesugarer\s*:\s*BuiltinNonMacroDesugarer\s*=\s*IdentityBuiltinNonMacroDesugarer""")
-                .containsMatchIn(source),
-            "Frontend macro construction must not default @IfAvailable handling to identity desugar.",
+            "BuiltinNonMacroSurface" in source || "IfAvailableSurface" in source,
+            "IfAvailable must use the source macro's original typed carrier instead of a synthetic surface.",
         )
     }
 
@@ -491,8 +492,9 @@ class MacroConstructionArchitectureGuardTest {
             "Pending diagnostics must rewrite ordinary checker diagnostics to mapped macro sources.",
         )
         assertTrue(
-            "session.macroExpansionRegistry?.originSourceForGeneratedSource(source)" in llCollectorSource,
-            "Low-level analysis diagnostics must use the same macro registry source remap as CLI checkers.",
+            "val sourceSession = cfirDeclaration.moduleData.session" in llCollectorSource &&
+                "sourceSession.macroExpansionRegistry?.originSourceForGeneratedSource(source)" in llCollectorSource,
+            "Low-level diagnostics must remap with the declaration owner's macro registry, including common declarations checked from specific.",
         )
         assertTrue(
             "toPsiDiagnosticAt" in llReporterSource &&
@@ -514,11 +516,11 @@ class MacroConstructionArchitectureGuardTest {
         val expandIndex = source.indexOf("constructionService.expand(")
         val preDiagnosticsPassIndex = source.indexOf("preConstructionDiagnostics = preConstructionDiagnostics")
         val recordIndex = source.indexOf("recordExpandedRawFilesOnce(provider, recordable, result.registry)")
-        val resolveIndex = source.indexOf("val output = resolveAndCheckCfir(session, recordable, diagnosticsCollector)")
+        val resolveIndex = source.indexOf("val (scopeSession, fir) = session.runResolution(recordable)")
 
         assertTrue(
-            source.indexOf("fun resolveAndCheckCfirAfterConstruction(") >= 0,
-            "resolveAndCheckCfirAfterConstruction entrypoint must exist.",
+            source.indexOf("fun buildAndResolveCfirAfterConstruction(") >= 0,
+            "buildAndResolveCfirAfterConstruction entrypoint must exist.",
         )
         assertTrue(
             listOf(
@@ -531,7 +533,7 @@ class MacroConstructionArchitectureGuardTest {
                 recordIndex,
                 resolveIndex,
             ).all { it >= 0 },
-            "resolveAndCheckCfirAfterConstruction must spell out artifact-aware symbol-index -> bind -> strict error diagnostics gate -> expand with diagnostics -> record -> resolve.",
+            "buildAndResolveCfirAfterConstruction must spell out artifact-aware symbol-index -> bind -> strict error diagnostics gate -> expand with diagnostics -> record -> resolve.",
         )
         assertTrue(
             symbolIndexIndex < artifactDefinitionsIndex &&
@@ -583,19 +585,22 @@ class MacroConstructionArchitectureGuardTest {
         )
         val node = MacroCallForestBuilder.build(listOf(surface)).roots.single()
         val parser = org.cangnova.cangjie.cfir.resolve.providers.macro.TokenBackedMacroFragmentParser(
-            reparse = { _, _ -> null },
+            reparse = { _, _ ->
+                org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentReparseResult.Failure("No replacement payload.")
+            },
             reTokenize = { tokens -> tokens },
         )
         val result = parser.parse(
             MacroFragmentInput(
                 node = node,
+                annotationMetadata = CfirAnnotationMetadataBuilder(),
                 tokens = surface.inputTokens,
                 decision = expressionDecision(surface),
             ),
         )
         assertTrue(
             result is MacroFragmentResult.Failure,
-            "TokenBackedMacroFragmentParser must surface Failure when reparse returns null instead of silently passing.",
+            "TokenBackedMacroFragmentParser must preserve an explicit reparse failure.",
         )
     }
 
@@ -664,7 +669,7 @@ class MacroConstructionArchitectureGuardTest {
         val preparationCallIndex = pipelineSource.indexOf("prepareMacroArtifactDefinitionsForExpansion(configuration, classifications)")
         val demandSurfacesIndex = source.indexOf("val demandSurfacesByPackage = collectMacroExpansionPackageDemandSurfaces(classifications)")
         val demandIndex = source.indexOf("val demandedMacroPackages = demandSurfacesByPackage.keys")
-        val locatorIndex = source.indexOf("val artifactLocator = MacroArtifactLocator(configuration.macroSdkHome)")
+        val locatorIndex = source.indexOf("val artifactLocator = MacroArtifactLocator(sdkHome)")
         val initialLocateIndex = source.indexOf("val initialArtifacts = artifactLocator.locate")
         val compileIndex = source.indexOf("val macroCompilation = compileRequiredMacroSourcePackages(")
         val relocalizeIndex = source.indexOf("val locatedArtifacts = artifactLocator.locate")
@@ -717,7 +722,7 @@ class MacroConstructionArchitectureGuardTest {
         Files.readString(root.resolve(relativePath), UTF_8)
 
     /**
-     * 收集指定顶层目录下的 Kotlin 源文件。
+     * 只扫描语义实现及共享测试 facade 的源集，不把测试断言/mock 或构建脚本当生产调用路径。
      */
     private fun sourceFilesUnder(vararg topLevelDirs: String): List<Path> =
         topLevelDirs.flatMap { dir ->
@@ -728,7 +733,8 @@ class MacroConstructionArchitectureGuardTest {
             try {
                 stream
                     .filter { Files.isRegularFile(it) }
-                    .filter { it.toString().endsWith(".kt") || it.toString().endsWith(".kts") }
+                    .filter { it.toString().endsWith(".kt") }
+                    .filter { path -> root.relativize(path).any { it.toString() == "src" || it.toString() == "testFixtures" } }
                     .filter { !isGeneratedOrBuildOutput(it) }
                     .filter { !isTestSource(it) }
                     .toList()
@@ -779,6 +785,13 @@ class MacroConstructionArchitectureGuardTest {
             qualifiedName = FqName.topLevel(Name.identifier(name)),
             isQualifiedName = '.' in name,
             kind = MacroSurface.Kind.PLAIN,
+            parsingFacts = org.cangnova.cangjie.parsing.MacroParsingFacts(
+                org.cangnova.cangjie.parsing.MacroParsingScope.Expression(
+                    org.cangnova.cangjie.parsing.CjExprKind.UNKNOWN_EXPR,
+                ),
+                org.cangnova.cangjie.parsing.CjMacroFragmentParent.OTHER,
+                null,
+            ),
             hasParenthesis = true,
             attrTokens = emptyList(),
             hasAttr = false,
@@ -799,7 +812,7 @@ class MacroConstructionArchitectureGuardTest {
                 isInsideEnumBody = false,
                 isInsideBlock = true,
             ),
-            replaceHandle = CfirReplaceHandle(surfaceId),
+            replaceHandle = CfirReplaceHandle(surfaceId, topLevelMacroOwnerSnapshot(packageFqName)),
         )
     }
 

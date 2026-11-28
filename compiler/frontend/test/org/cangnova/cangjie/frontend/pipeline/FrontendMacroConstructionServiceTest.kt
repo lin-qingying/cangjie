@@ -26,6 +26,8 @@ import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceScopeContex
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSymbolIndex
 import org.cangnova.cangjie.cfir.resolve.providers.macro.bindMacroImports
 import org.cangnova.cangjie.cfir.resolve.providers.macro.buildPreMacroRawFiles
+import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationMetadataBuilder
+import org.cangnova.cangjie.cfir.resolve.providers.macro.PreMacroCfirFile
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
@@ -130,6 +132,13 @@ class FrontendMacroConstructionServiceTest {
             qualifiedName = FqName.topLevel(Name.identifier("MissingAnnotationMacro")),
             isQualifiedName = false,
             kind = MacroSurface.Kind.PLAIN,
+            parsingFacts = org.cangnova.cangjie.parsing.MacroParsingFacts(
+                org.cangnova.cangjie.parsing.MacroParsingScope.Declaration(
+                    org.cangnova.cangjie.parsing.CjScopeKind.TOPLEVEL,
+                ),
+                org.cangnova.cangjie.parsing.CjMacroFragmentParent.OTHER,
+                null,
+            ),
             hasParenthesis = true,
             attrTokens = emptyList(),
             hasAttr = false,
@@ -150,12 +159,11 @@ class FrontendMacroConstructionServiceTest {
                 isInsideEnumBody = false,
                 isInsideBlock = false,
             ),
-            replaceHandle = CfirReplaceHandle(handleId = 2001L),
+            replaceHandle = CfirReplaceHandle(handleId = 2001L, ownerSnapshot = topLevelMacroOwnerSnapshot(packageFqName)),
         )
         val pre = buildPreMacroRawFiles(
             session = session,
-            rawCfirFiles = listOf(file),
-            fileSurfaces = listOf(listOf(surface)),
+            files = listOf(PreMacroCfirFile(file, listOf(surface), CfirAnnotationMetadataBuilder())),
         )
 
         return MacroDeclarationSurfaceFixture(

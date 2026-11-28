@@ -1,0 +1,164 @@
+{
+  "before": {
+    "utc": "2026-11-17T12:46:24.6708383Z",
+    "fileCount": 6834,
+    "aggregateSha256": "D0B4301B0DDE43D021C7496CA64F7B7DB2D0487255D7A7899AEF01E85B4F8C9A",
+    "roots": [
+      "common",
+      "cfir",
+      "analysis/low-level-api-cfir",
+      "analysis/analysis-api-cfir",
+      "compiler/frontend",
+      "compiler/config",
+      "compiler/phaser",
+      "compiler/arguments",
+      "psi",
+      "resolution.common",
+      "macro"
+    ],
+    "include": [
+      "*.kt",
+      "*.cj",
+      "*.kts"
+    ],
+    "exclude": "**/build/**",
+    "method": "rg --files --hidden --no-ignore, / normalized and Sort-Object -CaseSensitive; SHA256 of UTF8 LF joined path TAB length TAB uppercaseSHA256, no final LF",
+    "scope": "S3 third eight after function-value base and write-only subscript canonical dispatch fixes"
+  },
+  "after": {
+    "utc": "2026-11-17T12:59:34.4849535Z",
+    "fileCount": 6834,
+    "aggregateSha256": "D0B4301B0DDE43D021C7496CA64F7B7DB2D0487255D7A7899AEF01E85B4F8C9A",
+    "roots": [
+      "common",
+      "cfir",
+      "analysis/low-level-api-cfir",
+      "analysis/analysis-api-cfir",
+      "compiler/frontend",
+      "compiler/config",
+      "compiler/phaser",
+      "compiler/arguments",
+      "psi",
+      "resolution.common",
+      "macro"
+    ],
+    "include": [
+      "*.kt",
+      "*.cj",
+      "*.kts"
+    ],
+    "exclude": "**/build/**",
+    "method": "rg --files --hidden --no-ignore, / normalized and Sort-Object -CaseSensitive; SHA256 of UTF8 LF joined path TAB length TAB uppercaseSHA256, no final LF",
+    "scope": "S3 third eight: six passed, conversions both parsers still fail; no full SOURCE closure",
+    "unchanged": true
+  },
+  "queue": {
+    "id": "9a358f0e",
+    "args": [
+      "--gradle-user-home",
+      ".gradle/cjmp-export-home",
+      ":cfir:analysis-tests:test",
+      "--rerun",
+      "--tests",
+      "*CfirSourceCanonicalGraph*Test",
+      "--no-build-cache",
+      "--console=plain",
+      "--max-workers=1"
+    ],
+    "pid": 63064,
+    "owner": "pid@63064",
+    "submitAt": 1794919586789,
+    "startedAt": 1794919586860,
+    "finishedAt": 1794920121318,
+    "exitCode": 1,
+    "status": "DONE"
+  },
+  "total": 8,
+  "passed": 6,
+  "failed": 2,
+  "errors": 0,
+  "skipped": 0,
+  "allXmlWithinWindow": true,
+  "scope": "S3 third eight: six passed, conversions both parsers still fail; no full SOURCE closure",
+  "extraPassedTasks": [],
+  "cases": [
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceCanonicalGraphLightTreeTest",
+      "name": "controlFlow()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceCanonicalGraphLightTreeTest",
+      "name": "operatorsConversions()",
+      "status": "FAILED",
+      "failureMessage": "org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)\r\n\torg.opentest4j.AssertionFailedError: 每个官方输入必须实际进入公开 producer 并完成语义断言 ==> expected: <1> but was: <0>\r\n\tjava.lang.IllegalStateException: SOURCE subscript requires its completed get call"
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceCanonicalGraphLightTreeTest",
+      "name": "declarationsCalls()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceCanonicalGraphLightTreeTest",
+      "name": "exceptionsResources()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceCanonicalGraphTest",
+      "name": "controlFlow()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceCanonicalGraphTest",
+      "name": "operatorsConversions()",
+      "status": "FAILED",
+      "failureMessage": "org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)\r\n\torg.opentest4j.AssertionFailedError: 每个官方输入必须实际进入公开 producer 并完成语义断言 ==> expected: <1> but was: <0>\r\n\tjava.lang.IllegalStateException: SOURCE subscript requires its completed get call"
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceCanonicalGraphTest",
+      "name": "declarationsCalls()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceCanonicalGraphTest",
+      "name": "exceptionsResources()",
+      "status": "PASSED",
+      "failureMessage": null
+    }
+  ],
+  "xml": [
+    {
+      "path": "cfir/analysis-tests/build/test-results/test/TEST-org.cangnova.cangjie.cfir.analysis.tests.CfirSourceCanonicalGraphLightTreeTest.xml",
+      "bytes": 5554,
+      "sha256": "5EFE6B5301D4BF3736D5C29C7F10E9DE9FE69C14A236CC2BFFAC5EA08F0A8F70",
+      "timestamp": "2026-11-17T12:55:03.462Z",
+      "lastWriteUtc": "2026-11-17T12:55:20.0577495Z",
+      "withinQueueWindow": true,
+      "tests": 4,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0,
+      "gzipBase64": "H4sIAAAAAAAACs1YT2sbRxQ/W6DvMF0bIx883l1pZUmWFIRipyl2Yiz70pDDaPUkjTWa2czMKvYtF0MLhRYKoaVQ6KFQSuPcSk1L82Ui43yLsruSrBj9ayLZue2+ee/93rzfzHszk7930maoA1JRwQuGhU0DAXdFjfJGwTg63FnPGPeK8Vheg9LKpxoQJ20oGEI2sEt4g4sOCT+OKWC3TiUmnLBTRRUOTXC5TmVF+NKFMuGCU5ewB5J4zV3aaOpDCXAIShsoVC4YKQOpFvU8qBUM00B1QpkvQRUMy0AgpZAqlGvaBqVJ2ysYtmmn1y1r3do8tOyc4+TMJE6l7S8N1BRKR8HuPnwU2RQMK4mTm7ZRjMcQyntSeCA1BbURCYIoXKL6k3QF11KwHSaeJ9YM5DKi1IKmHwVn4qSVNkYHE4RKtJCqLHiPMHU7UWHHSUcZQyjfowS1QSnS6IEKD3jgOXWM93ymqcdgp0fddsBaDvXFqC9HCXtA79rqspXcWl22zK3V5ezWDY8lpQKSBA9ModZzePn627d//d49/+Hy5cXVv993z37tvjl798vf3fOf3/14dvXmp0By9kf3nxfIk6LmuyBR9+LP7vk3l199d/X61duLry9fvrr67QUqFFYbegvBiQeuhloOrTK9ZYWyqq/Rc6IikRmI3o/0mHQIZoQ38EPGoEFYRRMN2ycueEHAOVR5fHRQ3kbKrypXUk8jCc98GkyfaoVc0fYYaKihBmjkEsYMpE+9GZNqFOeR+nhs6VPOdzy2NPckx2NLRKORmyVIAVYgO9QFhWnbY/iLI061M0iKwkHqSowl7kOd+Exfj1QiO9zSOcsx16bBBHvswOccJJbgCan7/CSGRlo656Smunok+AMpfI/yxrBXnwd/+9QDRjkkRmu1dG4z+XEI4z0nzY/zvFKLkjwewd6ciiBDZYVLVaUlcXU5GiyLtkcZyMDfYCaTdFo6l8lOQhtVagcOx5TcPnqZKEhMVAqWlb0Y/JG9ZWowVj+YcIdWiYKN670qoc7A1XgPdFPUMOUd0YJE7y9QyzkZc7S9rynDJSnJ6S5VGteF3CZuM3EtCc0tJ5ueh33F9zwJSgWV6BOvhP+L+FHUfU54jYHEnhQuKFWqa5AlxvZEzWcwA+PpcLN94H6uaPDU+I1smeFyWGyhs0MIjDHKoLaQcIP/RbSayaRJUIJ1AKsw7UMHszDx+731s1IWXMOJxnASxkoFT4xRjWpiZu2ukFNzR+4QSUmVwSRcK52dO26VCbc1ETSTWQzooOtNAt905g5e97kbrPOJuI41d9xemZwEm5nbupoFzbHnjTYLpdGZcd5FPiru02u7k71L9NTkVTU4MAdNZGWovof/PUwV/NwA7ttEIJlbALHSH9rG3nc6vlGm7Q9FaBK3dbo/I8yU5TjrRFYYaVdrZMVKTsCK7gmz35d83m/2j3mF8gaD4JZ24+KUzSyaCTu9uPNQ1rqL41B+o/cyEL1BbfQfoUY+SdXAZUSS8PJbJozdznuUiZ1McswjGfSPauoAosJ8azFZVj8mdao0tNeFr4v5z56U75cOS0+ePi3mN4YGhhVBytGKwUBAyeDxtRiP/Qdzu5uxshUAAA==",
+      "archiveVerified": true
+    },
+    {
+      "path": "cfir/analysis-tests/build/test-results/test/TEST-org.cangnova.cangjie.cfir.analysis.tests.CfirSourceCanonicalGraphTest.xml",
+      "bytes": 5685,
+      "sha256": "04AF9CE5BAAF6CB727A98F55C5C5BD13A6149570A0BF4673A54E40D2470E2674",
+      "timestamp": "2026-11-17T12:55:16.837Z",
+      "lastWriteUtc": "2026-11-17T12:55:20.0617546Z",
+      "withinQueueWindow": true,
+      "tests": 4,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0,
+      "gzipBase64": "H4sIAAAAAAAACs1YX4sbNxB/jsHfQd0cF9/D6bz+b599xTiXNCX/OF8oNORB1o5txVpJlbTO+S0vBy0UWiiElkKhD4VSmuStNLQ0XyY+Lt+i7K7tcw6f7SZ2k7fd0cz8RjOjGWmqHx/5HPVBGyZFzXFx2kEgqPSY6NSce4fXtkvOx3vJRNWCsSZgFpAgPtQcqTuYEtERsk+ij4cMMG0zjYkgfGCYwZEIbrSZbspAU2gQIQWjhF/XRHUPwVgHRTw1J+cg02NKgVdz0g5qE8YDDabmuA4CraU2Ed0yH4wlvqo5mXSmsO26227x0M1U8vmKW8ClbPFzB3WlsbGNN2/cjmVqTgan81lnL5lAqKq0VKAtA7MTE0IjKDHjrVEprJb8GpePUlsOopwYs9pNRyalcSlXdGabEBpIrNSmIcUoOGa9tuTS5dg9CFVH7kc+GEM6IyypQIQKcw/xrYBbpjhcG4VpP4xQBY3JaExHqcwklFubl93s7uZlN727ebm8e05j3ZgwIlKEouCNFJ48/+bVn78Nn31/8uTF6T/fDY9/Gb48fv3zX8NnP73+4fj05Y8h5fj34d+PkdLSCyhoNHzxx/DZ1ydffnv6/OmrF1+dPHl6+utjVKttduwugiMF1IJXQZvc7roRrRVY9IiYmJQOSW9a+pD0CeZEdPANzqFDeNMSC/tHFFRocAU179w7aOwjE7QM1UxZpOGLgIXbZ9YgKn3FwYKHOmARJZw7yA7Ukk519lbh+mTi0ofs72Ti0sqdnExcIhbNPCOhC7AB3WcUDGa+4vjTe4LZ/MQpBoeuq3OeugptEnB7ttKM5XDPVtx8emsRTHjGDgIhQGMNSmo7jk9qaqVnK/ncQlW3pbiuZaCY6ExrDUT4d5cp4ExAajZXz1aK2XdDuFhzNv1umje82MkXI2SKCxF0xGxwvWWsJtQ24sWG9BXjoEN9k53M4+nZSqk8D21WhZ0onFNpQ/QGMZCayxSmVWY9+DNbykJj3LEx0QltEQM7Z2dVQ5sDtfgW2K70MBN92YPU6C9kq+RL6dnygWUc17Umg5vMWNyWep/QbuqMEom7+XJhFfLNQCkNxoSV6AOvhP8p8LNC9wkRHgeNlZYUjKm3Leg657ekF3BYIuKF6LC95XluWlDm4oPspqN0WG+hy0QQGGNUQr7UcC7+62g184OmwUjeB2wit0/dxyLH3x3lz0ZDCgtHFsNRZCuTInUBa1wTS1vvCzm3cuQ+0Yy0OMzDdQvlleO2uKS9uaCl0npAJ11vHngxv3LwdiBomOdzcfPuynFHZXIebGllebUMWj6zarRlQhrfGVdd5OPivri258vvEz03P6smF+awiWxM1ffof4Rpwp9zwGOZGKT0P4C4hbdtY28qvbhRFjJvi9AltDe4uyTMgnRcdiMbnPgtj2y42TlY8Tth+fdSIMbN/o5oMtHhEL7Szj2cyqV1RyJTWN99qOy+j+tQdWc0GYhHTzvj2dPMSZQHlBNNosdvg3C+7jGUe9FIDMY3NHMAcT1esynZYmlsihkYC/62DOxe9aP7jav1w/r9Bw/2qjtTC9OMoPUZ42f1g9sVVLcWfGWRlYhL4qEeDNAVZRg2HEBhJnCfcOYxO8C0C7R3BbWlRkJaNAAbiYCHNHSYsXqQTCxQygTV4IOwhIeDB6INYA+U7WLOfGYXKJ/eWriVMGUm89+9ZOJfaQzhlDUWAAA=",
+      "archiveVerified": true
+    }
+  ]
+}

@@ -34,6 +34,47 @@ import org.junit.jupiter.api.Test
  * 验证 CFIR 声明的 toString 输出委托给可读性 renderer，而不是对象默认表示。
  */
 class CfirDeclarationToStringTest {
+    /** 新target源必须原位替换，不能借构造另一个声明重新绑定原symbol。 */
+    @Test
+    fun sourceReplacementPreservesDeclarationAndSymbolIdentity() {
+        val symbol = CfirNamedFunctionSymbol(CallableId(FqName("sample"), Name.identifier("sourceChange")))
+        val declaration = buildNamedFunction {
+            source = TestBinarySourceElement("before")
+            moduleData = TestModuleData
+            resolvePhase = CfirResolvePhase.RAW_CFIR
+            origin = CfirDeclarationOrigin.Source
+            attributes = CfirDeclarationAttributes.EMPTY
+            isLocal = false
+            dispatchReceiverType = null
+            status = CfirDeclarationStatusImpl()
+            returnTypeRef = buildImplicitTypeRef()
+            this.symbol = symbol
+            name = Name.identifier("sourceChange")
+            isMut = false
+        }
+        val beforeType = declaration.returnTypeRef
+        val after = TestBinarySourceElement("after")
+        org.cangnova.cangjie.cfir.CfirElement::class.java.getMethod(
+            "replaceSource", org.cangnova.cangjie.source.CjSourceElement::class.java,
+        ).invoke(declaration, after)
+        org.junit.jupiter.api.Assertions.assertSame(declaration, symbol.cfir)
+        org.junit.jupiter.api.Assertions.assertSame(symbol, declaration.symbol)
+        org.junit.jupiter.api.Assertions.assertSame(beforeType, declaration.returnTypeRef)
+        org.junit.jupiter.api.Assertions.assertSame(after, declaration.source)
+        val rejected = org.junit.jupiter.api.Assertions.assertThrows(java.lang.reflect.InvocationTargetException::class.java) {
+            org.cangnova.cangjie.cfir.CfirElement::class.java.getMethod(
+                "replaceSource", org.cangnova.cangjie.source.CjSourceElement::class.java,
+            ).invoke(declaration, null)
+        }
+        org.junit.jupiter.api.Assertions.assertEquals(IllegalArgumentException::class.java, rejected.cause?.javaClass)
+        org.junit.jupiter.api.Assertions.assertSame(after, declaration.source)
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException::class.java) {
+            (declaration as org.cangnova.cangjie.cfir.declarations.impl.CfirNamedFunctionImpl).source = null
+        }
+        org.junit.jupiter.api.Assertions.assertSame(after, declaration.source)
+        org.junit.jupiter.api.Assertions.assertSame(declaration, symbol.cfir)
+    }
+
     /**
      * 验证类声明的 toString 与可读性 renderer 输出一致。
      */
@@ -161,6 +202,7 @@ class CfirDeclarationToStringTest {
             klass: CfirClass,
             useSiteSession: CfirSession,
             scopeSession: ScopeSession,
+            memberRequiredPhase: org.cangnova.cangjie.cfir.declarations.CfirResolvePhase?,
         ): CfirTypeScope = CfirTypeScope.Empty
 
         /**

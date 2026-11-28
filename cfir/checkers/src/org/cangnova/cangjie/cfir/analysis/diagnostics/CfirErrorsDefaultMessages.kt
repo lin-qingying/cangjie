@@ -49,10 +49,11 @@ import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.RETURN_TYPE_MIS
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.TYPE_INCOMPATIBLE
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.TYPE_INFERENCE_ONLY_INPUT_TYPES_ERROR
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.TYPE_MISMATCH
-import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticRenderers.DECLARATION_NAME
-import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticRenderers.RENDER_TYPE
-import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticRenderers.RENDER_TYPE_LIST
-import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticRenderers.LANGUAGE_FEATURE_SUPPORT
+import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirDiagnosticRenderers.CJMP_DIAGNOSTIC_ARGUMENT
+import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirDiagnosticRenderers.DECLARATION_NAME
+import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirDiagnosticRenderers.LANGUAGE_FEATURE_SUPPORT
+import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirDiagnosticRenderers.RENDER_TYPE
+import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirDiagnosticRenderers.RENDER_TYPE_LIST
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticFactoryToRendererMap
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticRenderers.NOT_RENDERED
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticRenderers.TO_STRING
@@ -353,7 +354,7 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         )
         map.put(
             CfirErrors.THIS_AS_EXPRESSION_IN_FUNC,
-            "'this' cannot be used as an expression in the {0}",
+            "''this'' cannot be used as an expression in the {0}",
             RENDER_STRING,
         )
         map.put(CfirErrors.STATIC_MEMBERS_CANNOT_CALL_MEMBERS, "non-static variable 'this' cannot be referenced from a static context")
@@ -506,6 +507,7 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         )
         map.put(CfirErrors.CFUNC_CANNOT_HAVE_NAMED_ARGS, "CFunc cannot have named arguments")
         map.put(CfirErrors.CFUNC_CANNOT_HAVE_UNIT_ARGS, "CFunc cannot have arguments of type Unit")
+        map.put(CfirErrors.UNIT_CANNOT_BE_CFUNC_ARGUMENT, "Unit cannot be used as an argument of a C function")
         map.put(CfirErrors.CFUNC_CANNOT_CAPTURE_VAR, "cannot capture variable ''{0}'' in CFunc lambda expression", RENDER_NAME)
         map.put(CfirErrors.CFUNC_CANNOT_CAPTURE_THIS, "''{0}'' is not allowed to be captured in CFunc lambda expression", RENDER_STRING)
         map.put(CfirErrors.FUNC_CAPTURE_VAR_NOT_CTYPE, "captured variable mustn't be struct with @C")
@@ -616,7 +618,12 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             RENDER_STRING,
         )
         map.put(CfirErrors.REPEATED_MODIFIER, "Repeated modifier ''{0}''.", TO_STRING)
-        map.put(CfirErrors.REDUNDANT_MODIFIER, "Modifier ''{0}'' is redundant because ''{1}'' is present.", TO_STRING, TO_STRING)
+        map.put(CfirErrors.REDUNDANT_MODIFIER, "redundant modifier: ''{0}''", TO_STRING, TO_STRING)
+        map.put(CfirErrors.UNSAFE_WILL_BE_IGNORED, "''unsafe'' modifier will be ignored in backend ''{0}''", RENDER_STRING)
+        map.put(CfirErrors.CONFUSING_LINE_TERMINATOR, "possibly confusing line terminator")
+        map.put(CfirErrors.EMPTY_ANNOTATION_ATTRIBUTE, "empty attribute of annotation ''@{0}''", RENDER_STRING)
+        map.put(CfirErrors.DUPLICATED_ANNOTATION_ATTRIBUTE_VALUE, "duplicated attribute value: ''{0}''", RENDER_STRING)
+        map.put(CfirErrors.JAVA_MIRROR_PROPERTY_DEPRECATED, "java-mirrored property is deprecated, use field instead")
         map.put(
             CfirErrors.IGNORE_OPEN,
             "the current member should not have 'open' modifier because it is in a non-inheritable class",
@@ -629,7 +636,7 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             TO_STRING,
             RENDER_STRING,
         )
-        map.put(CfirErrors.REDUNDANT_MODIFIER_FOR_TARGET, "Modifier ''{0}'' is redundant for ''{1}''.", TO_STRING, RENDER_STRING)
+        map.put(CfirErrors.REDUNDANT_MODIFIER_FOR_TARGET, "redundant modifier: ''{0}''", TO_STRING, RENDER_STRING)
         map.put(CfirErrors.DEPRECATED_MODIFIER_FOR_TARGET, "Modifier ''{0}'' is deprecated for ''{1}''.", TO_STRING, RENDER_STRING)
         map.put(
             CfirErrors.DEPRECATED_MODIFIER_CONTAINING_DECLARATION,
@@ -887,6 +894,7 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         map.put(CfirErrors.AMBIGUOUS_USE, "ambiguous use of ''{0}''", RENDER_NAME)
         map.put(CfirErrors.CONFLICT_WITH_SUB_PACKAGE, "top-level declaration ''{0}'' is conflicted with possible sub-package ''{1}''", RENDER_NAME, RENDER_NAME)
         map.put(CfirErrors.CORE_OBJECT_NOT_FOUND_WHEN_NO_PRELUDE, "class 'Object' of package 'std/core' is not found, cannot use '--no-prelude' option")
+        map.put(CfirErrors.NO_CORE_OBJECT, "`core` package should be imported")
         map.put(CfirErrors.ACCESSIBILITY_WITH_MAIN_HINT, "''{0}'' declaration uses {2} types", RENDER_STRING, RENDER_NAME, VISIBILITY)
         map.put(CfirErrors.ACCESSIBILITY_ERROR, "''{0}'' declaration uses {1} types", RENDER_STRING, VISIBILITY)
         map.put(CfirErrors.PARAM_COUNT_MISMATCH, "mismatched number of parameters: expected ''{0}'', found ''{1}''", TO_STRING, TO_STRING)
@@ -944,6 +952,7 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         map.put(CfirErrors.VAR_IN_OR_CONDITION, "cannot introduce variables in conditions connected by '||'")
         map.put(CfirErrors.UNREACHABLE_PATTERN, "unreachable pattern")
         map.put(CfirErrors.ENUM_CONSTRUCTOR_WITH_PARAM_MUST_HAVE_ARGS, "enum constructor ''{0}'' must be used with arguments", RENDER_NAME)
+        map.put(CfirErrors.DUPLICATED_ITEM_IN_ENUM, "''{0}'' is already exist in enum ''{1}''", RENDER_NAME, RENDER_NAME)
         map.put(CfirErrors.OPTIONAL_CHAIN_NON_OPTIONAL, "cannot use optional chaining on non-optional value of type ''{0}''", RENDER_TYPE)
         map.put(CfirErrors.CAPTURE_BEFORE_INITIALIZATION, "cannot capture variable ''{0}'' before initialization", RENDER_NAME)
         map.put(CfirErrors.CAPTURE_HAS_SHADOW_VARIABLE, "captured variable ''{0}'' has a shadow variable in an intermediate scope", RENDER_NAME)
@@ -1163,51 +1172,80 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         // ================================================================
         // CommonSpecific
         // ================================================================
-        map.put(CfirErrors.COMMON_OPEN_CLASS_NO_INIT, "please implement the constructor explicitly for common open class ''{0}''", RENDER_NAME)
-        map.put(CfirErrors.MULTIPLE_COMMON_IMPLEMENTATIONS, "'common' {0} has several specific implementations", RENDER_STRING)
-        map.put(CfirErrors.COMMON_DIRECT_EXTENSION_HAS_DUPLICATE_PRIVATE_MEMBERS, "declaration 'common' extend ''{0}'' has a conflicting private {1} ''{2}''", RENDER_NAME, RENDER_STRING, RENDER_NAME)
-        map.put(CfirErrors.COMMON_DIRECT_EXTENSION_HAS_COMMON_PRIVATE_MEMBERS, "'common' and 'private' modifier conflict on {0} ''{1}'' declaration", RENDER_STRING, RENDER_NAME)
-        map.put(CfirErrors.NOT_MATCHED, "''{0}'' {1} can not find ''{2}'' match", RENDER_STRING, RENDER_STRING, RENDER_STRING)
-        map.put(CfirErrors.SPECIFIC_VAR_NOT_MATCH_LET, "'specific' ''{0}'' can not match 'common' ''{1}''", RENDER_STRING, RENDER_STRING)
+        map.put(CfirErrors.MULTIPLE_COMMON_IMPLEMENTATIONS, "''common'' {0} has several specific implementations", CJMP_DIAGNOSTIC_ARGUMENT)
+        map.put(CfirErrors.COMMON_DIRECT_EXTENSION_HAS_DUPLICATE_PRIVATE_MEMBERS, "declaration ''common'' extend ''{0}'' has a conflicting private {1} ''{2}''", CJMP_DIAGNOSTIC_ARGUMENT, CJMP_DIAGNOSTIC_ARGUMENT, RENDER_NAME)
+        map.put(CfirErrors.COMMON_DIRECT_EXTENSION_HAS_COMMON_PRIVATE_MEMBERS, "''common'' and ''private'' modifier conflict on {0} ''{1}'' declaration", CJMP_DIAGNOSTIC_ARGUMENT, RENDER_NAME)
+        map.put(CfirErrors.NOT_MATCHED, "''{0}'' {1} can not find ''{2}'' match", CJMP_DIAGNOSTIC_ARGUMENT, CJMP_DIAGNOSTIC_ARGUMENT, CJMP_DIAGNOSTIC_ARGUMENT)
+        map.put(CfirErrors.SPECIFIC_VAR_NOT_MATCH_LET, "'specific' ''{0}'' can not match 'common' ''{1}''", CJMP_DIAGNOSTIC_ARGUMENT, CJMP_DIAGNOSTIC_ARGUMENT)
         map.put(CfirErrors.SPECIFIC_INIT_COMMON_PRIMARY_CONSTRUCTOR, "'specific' init can not be used to implement primary 'common' constructor")
-        map.put(CfirErrors.SPECIFIC_HAS_DIFFERENT_KIND, "'specific' decl kind({0}) is not equal to 'common'({1})", RENDER_STRING, RENDER_STRING)
+        map.put(CfirErrors.SPECIFIC_HAS_DIFFERENT_KIND, "''specific'' decl kind({0}) is not equal to ''common''({1})", CJMP_DIAGNOSTIC_ARGUMENT, CJMP_DIAGNOSTIC_ARGUMENT)
+        map.put(CfirErrors.GENERIC_MEMBER_TYPE_ARGUMENT_DIFFERENT, "type argument of function ''{0}'' is different in parent class or interfaces", RENDER_NAME)
         map.put(CfirErrors.SPECIFIC_PRIMARY_UNMATCHED_VAR_DECL, "parameter in 'specific' primary constructor must also be a member variable declaration if it's a member variable declaration in 'common' primary constructor")
-        map.put(CfirErrors.COMMON_NON_EXHAUSTIVE_PLATFORM_EXHAUSTIVE_MISMATCH, "exhaustive 'common' {0} cannot be matched with non-exhaustive 'specific' {1}", RENDER_STRING, RENDER_STRING)
-        map.put(CfirErrors.SPECIFIC_HAS_DIFFERENT_TYPE, "'specific' {0} type is not equal to 'common' type", RENDER_STRING)
-        map.put(CfirErrors.SPECIFIC_MEMBER_MUST_HAVE_IMPLEMENTATION, "the member {0} must have body in 'specific' {1}", RENDER_STRING, RENDER_STRING)
-        map.put(CfirErrors.SPECIFIC_HAS_DIFFERENT_MODIFIER, "'specific' {0} modifier is not match 'common' modifier", RENDER_STRING)
-        map.put(CfirErrors.SPECIFIC_HAS_DIFFERENT_ANNOTATION, "'specific' {0} annotation is not match 'common' annotation", RENDER_STRING)
-        map.put(CfirErrors.SPECIFIC_HAS_DEPRECATED_ANNOTATION, "''{0}'' annotation is not allowed on specific {1} ''{2}''", RENDER_NAME, RENDER_STRING, RENDER_NAME)
+        map.put(CfirErrors.COMMON_NON_EXHAUSTIVE_PLATFORM_EXHAUSTIVE_MISMATCH, "exhaustive 'common' {0} cannot be matched with non-exhaustive 'specific' {1}", CJMP_DIAGNOSTIC_ARGUMENT, CJMP_DIAGNOSTIC_ARGUMENT)
+        map.put(CfirErrors.SPECIFIC_HAS_DIFFERENT_TYPE, "'specific' {0} type is not equal to 'common' type", CJMP_DIAGNOSTIC_ARGUMENT)
+        map.put(CfirErrors.SPECIFIC_MEMBER_MUST_HAVE_IMPLEMENTATION, "the member {0} must have body in 'specific' {1}", CJMP_DIAGNOSTIC_ARGUMENT, CJMP_DIAGNOSTIC_ARGUMENT)
+        map.put(CfirErrors.SPECIFIC_HAS_DIFFERENT_MODIFIER, "''specific'' {0} modifier is not match ''common'' modifier", CJMP_DIAGNOSTIC_ARGUMENT)
+        map.put(CfirErrors.SPECIFIC_HAS_DIFFERENT_ANNOTATION, "'specific' {0} annotation is not match 'common' annotation", CJMP_DIAGNOSTIC_ARGUMENT)
+        map.put(CfirErrors.SPECIFIC_HAS_DEPRECATED_ANNOTATION, "''{0}'' annotation is not allowed on specific {1} ''{2}''", RENDER_NAME, CJMP_DIAGNOSTIC_ARGUMENT, RENDER_NAME)
         map.put(CfirErrors.CJMP_PARAMETER_DEFAULT_VALUE_BOTH_SIDES, "parameter default value should be on either 'common' or 'specific' side, not both")
         map.put(CfirErrors.SPECIFIC_HAS_DIFFERENT_PARAMETER, "'specific' function parameter is not match 'common' parameter")
-        map.put(CfirErrors.SPECIFIC_HAS_DIFFERENT_SUPER_TYPE, "'specific' {0} super types is not match 'common' super types", RENDER_STRING)
-        map.put(CfirErrors.SPECIFIC_HAS_DUPLICATE_EXTENSIONS, "declaration 'specific' extend ''{0}'' has a conflicting extension", RENDER_NAME)
+        map.put(CfirErrors.SPECIFIC_HAS_DIFFERENT_SUPER_TYPE, "'specific' {0} super types is not match 'common' super types", CJMP_DIAGNOSTIC_ARGUMENT)
+        map.put(CfirErrors.SPECIFIC_HAS_DUPLICATE_EXTENSIONS, "declaration ''specific'' extend ''{0}'' has a conflicting extension", CJMP_DIAGNOSTIC_ARGUMENT)
         map.put(CfirErrors.COMMON_PACKAGE_HAS_MAIN, "main function cannot be used in common package part")
         map.put(CfirErrors.COMMON_STATIC_LET_CANT_BE_INITIALIZED_IN_STATIC_INIT, "'common' static let ''{0}'' can not be initialized in static init", RENDER_NAME)
         map.put(CfirErrors.COMMON_ASSIGN_TO_COMMON_IMMUTABLE_IN_CTOR, "cannot assign to immutable variable ''{0}''", RENDER_NAME)
-        map.put(CfirErrors.CJMP_ABSTRACT_CLASS_MEMBER_HAS_NO_EXPLICIT_MODIFIER, "''{0}'' abstract class {1} must have explicit ''{2}'' or 'abstract' modifier", RENDER_NAME, RENDER_STRING, RENDER_STRING)
-        map.put(CfirErrors.EXPLICITLY_ABSTRACT_CAN_NOT_HAVE_BODY, "abstract {0} can not have body", RENDER_STRING)
-        map.put(CfirErrors.EXPLICITLY_ABSTRACT_ONLY_FOR_CJMP_ABSTRACT_CLASS, "only common/specific class can have explicitly abstract {0}", RENDER_STRING)
-        map.put(CfirErrors.OPEN_ABSTRACT_SPECIFIC_CAN_NOT_REPLACE_OPEN_COMMON, "open common {0} can not be overridden with abstract specific {1}", RENDER_STRING, RENDER_STRING)
-        map.put(CfirErrors.CJMP_NON_SPECIFIC_ABSTRACT_MEMBER_IN_SPECIFIC_CLASS, "specific abstract class ''{0}'' cannot have non-specific abstract {1}", RENDER_NAME, RENDER_STRING)
-        map.put(CfirErrors.COMMON_GENERIC_FROZEN_NOT_SUPPORTED, "common/specific declaration {0} with generics cannot be @Frozen", RENDER_STRING)
+        map.put(CfirErrors.CJMP_ABSTRACT_CLASS_MEMBER_HAS_NO_EXPLICIT_MODIFIER, "''{0}'' abstract class {1} must have explicit ''{2}'' or 'abstract' modifier", CJMP_DIAGNOSTIC_ARGUMENT, CJMP_DIAGNOSTIC_ARGUMENT, CJMP_DIAGNOSTIC_ARGUMENT)
+        map.put(CfirErrors.EXPLICITLY_ABSTRACT_CAN_NOT_HAVE_BODY, "abstract {0} can not have body", CJMP_DIAGNOSTIC_ARGUMENT)
+        map.put(CfirErrors.OPEN_ABSTRACT_SPECIFIC_CAN_NOT_REPLACE_OPEN_COMMON, "open common {0} can not be overridden with abstract specific {1}", CJMP_DIAGNOSTIC_ARGUMENT, CJMP_DIAGNOSTIC_ARGUMENT)
+        map.put(CfirErrors.CJMP_NON_SPECIFIC_ABSTRACT_MEMBER_IN_SPECIFIC_CLASS, "specific abstract class ''{0}'' cannot have non-specific abstract {1}", RENDER_NAME, CJMP_DIAGNOSTIC_ARGUMENT)
+        map.put(CfirErrors.COMMON_GENERIC_FROZEN_NOT_SUPPORTED, "common/specific declaration {0} with generics cannot be @Frozen", CJMP_DIAGNOSTIC_ARGUMENT)
         map.put(CfirErrors.COMMON_SPECIFIC_ANNOTATION_NOT_ALLOWED, "annotation ''{0}'' is not allowed on a common/specific declaration", RENDER_NAME)
-        // CJMP 解析族（parse_*，消息取自官方 DiagnosticParser.def:266-277 与 cjc 1.1.3 实测）
-        map.put(CfirErrors.PARSE_COMMON_FUNCTION_MUST_HAVE_RETURN_TYPE, "'common' function return type must be specified")
-        map.put(CfirErrors.PARSE_SPECIFIC_FUNCTION_MUST_HAVE_RETURN_TYPE, "'specific' function return type must be specified")
-        map.put(CfirErrors.PARSE_SPECIFIC_FUNCTION_PARAMETER_CANNOT_HAVE_DEFAULT_VALUE, "'specific' {0} parameter can not have default value", RENDER_STRING)
-        map.put(CfirErrors.PARSE_SPECIFIC_MEMBER_MUST_HAVE_IMPLEMENTATION, "the member {0} must have body in 'specific' {1}", RENDER_NAME, RENDER_NAME)
-        map.put(CfirErrors.PARSE_EXPECTED_TYPE_WITH_CJMP_VAR, "''{0}'' {1} type must be specified", RENDER_STRING, RENDER_STRING)
-        map.put(CfirErrors.PARSE_CJMP_OUTDECL_MISS_MATCH, "{0} is {1}, but {2} is not {3}", RENDER_STRING, RENDER_STRING, RENDER_STRING, RENDER_STRING)
-        map.put(CfirErrors.PARSE_CJMP_STATIC_INIT, "static init can not be ''{0}''", RENDER_STRING)
-        map.put(CfirErrors.PARSE_UNEXPECTED_CJMP_DECL, "to compile with common/specific declarations, correct compiler options must be specified")
-        map.put(CfirErrors.PARSE_CJMP_GENERIC_DECL, "generic declaration can not be ''{0}''", RENDER_STRING)
-        map.put(CfirErrors.PARSE_CJMP_PATTERN_DECL, "{0} pattern can not be ''{1}''", RENDER_STRING, RENDER_STRING)
-        map.put(CfirErrors.PARSE_CJMP_IN_COMMON_CTOR_REQUIRED, "at least one constructor is required in common {0} ''{1}''", RENDER_STRING, RENDER_NAME)
-        map.put(CfirErrors.PARSE_EXPLICITLY_ABSTRACT_ONLY_FOR_CJMP_ABSTRACT_CLASS, "only common/specific or Native FFI mirror abstract classes can have explicitly abstract {0}", RENDER_STRING)
-        map.put(CfirErrors.PARSE_COMMON_IN_NON_COMMON_FILE, "common declaration must be defined in common package part")
-        map.put(CfirErrors.PARSE_SPECIFIC_IN_NON_SPECIFIC_FILE, "specific declaration must be defined in specific package part")
-
+        map.put(
+            CfirErrors.CJMP_COMMON_CJO_FORMAT_VERSION,
+            "common CJO for package ''{0}'' has unsupported format version ''{1}''; supported major is {2} with minor versions through {3}",
+            RENDER_STRING,
+            RENDER_STRING,
+            RENDER_STRING,
+            RENDER_STRING,
+        )
+        map.put(
+            CfirErrors.CJMP_COMMON_CJO_PACKAGE_MISMATCH,
+            "common CJO package ''{1}'' does not match requested package ''{0}''",
+            RENDER_STRING,
+            RENDER_STRING,
+        )
+        map.put(
+            CfirErrors.CJMP_COMMON_CJO_FEATURES_NOT_SUBSET,
+            "features in common CJO file ''{1}'' for package ''{0}'' are not a subset of the specific feature set: {2}",
+            RENDER_STRING,
+            RENDER_STRING,
+            RENDER_STRING_LIST,
+        )
+        map.put(
+            CfirErrors.CJMP_COMMON_CJO_OPTIONS_MISSING,
+            "common CJO for package ''{0}'' has no serialized compiler options; it may have been produced by an older compiler",
+            RENDER_STRING,
+        )
+        map.put(
+            CfirErrors.CJMP_COMMON_CJO_DEBUG_MISMATCH,
+            "common CJO for package ''{0}'' uses debug mode {1}, but the current compilation uses {2}",
+            RENDER_STRING,
+            RENDER_STRING,
+            RENDER_STRING,
+        )
+        map.put(
+            CfirErrors.CJMP_COMMON_CJO_OPT_LEVEL_MISMATCH,
+            "common CJO for package ''{0}'' uses optimization level {1}, but the current compilation uses {2}",
+            RENDER_STRING,
+            RENDER_STRING,
+            RENDER_STRING,
+        )
+        map.put(
+            CfirErrors.CJMP_COMMON_CJO_INPUT_FILE_INVALID,
+            "explicit common CJO input for package ''{0}'' is unavailable: {1}",
+            RENDER_STRING,
+            RENDER_STRING,
+        )
         // ================================================================
         // JavaInterop
         // ================================================================
@@ -1300,8 +1338,9 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         map.put(CfirErrors.MACRO_NOT_EXPANDED, "macro ''{0}'' was not expanded", RENDER_STRING)
         map.put(CfirErrors.EXPAND_MACRO_REDEFINITION, "redefinition of macro ''{0}''", RENDER_STRING)
         map.put(CfirErrors.MACRO_EXPANSION_FAILED, "macro ''{0}'' expansion failed: {1}", RENDER_STRING, RENDER_STRING)
+        map.put(CfirErrors.MACRO_EXPECT_DECLARATION, "expected declaration, but found other node")
         map.put(CfirErrors.MACRO_DIAG_REPORT_ERROR, "{0}{1}", RENDER_STRING, RENDER_STRING)
-        map.put(CfirErrors.MACRO_DIAG_REPORT_WARNING, "{0}{1}", RENDER_STRING, RENDER_STRING)
+        map.put(CfirErrors.MACRO_DIAG_REPORT_WARNING, "{0}", RENDER_STRING, RENDER_STRING)
         map.put(CfirErrors.MACRO_UNDEFINED_PACKAGE, "macro package ''{0}'' is undefined: {1}", RENDER_STRING, RENDER_STRING)
         map.put(CfirErrors.MACRO_UNDECLARED_IDENTIFIER, "macro identifier ''{0}'' is undeclared: {1}", RENDER_NAME, RENDER_STRING)
         map.put(CfirErrors.MACRO_EXPECT_MACRO_DEFINITION, "expected macro definition for ''{0}'': {1}", RENDER_STRING, RENDER_STRING)

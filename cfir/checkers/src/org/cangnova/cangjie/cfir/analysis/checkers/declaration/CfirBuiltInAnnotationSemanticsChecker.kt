@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.LanguageFeature
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
 import org.cangnova.cangjie.annotations.BuiltInAnnotationRegistry
 import org.cangnova.cangjie.annotations.CangjiePlatformAnnotationKind
@@ -9,12 +10,11 @@ import org.cangnova.cangjie.cfir.analysis.checkers.CfirExtendSemantics
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.requireFeatureSupport
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
-import org.cangnova.cangjie.cfir.correspondingProperty
+import org.cangnova.cangjie.cfir.isMemberParameter
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAvailabilityProvider
 import org.cangnova.cangjie.cfir.declarations.CfirHideAnnotationState
 import org.cangnova.cangjie.cfir.declarations.CfirPlatformAnnotationClassIds
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
@@ -48,7 +48,7 @@ import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.cfir.session.annotationMetadataRegistryOrNull
 import org.cangnova.cangjie.cfir.session.languageVersionSettings
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.toLookupTag
 import org.cangnova.cangjie.cfir.types.type
@@ -69,7 +69,7 @@ import org.cangnova.cangjie.type.AbstractTypeChecker
  * - 对尚未结构化建模的 APILevel/Hide/IfAvailable，使用 PSI 注解项做结构化检查，
  *   保持规则集中在 declaration checker 层，而不是散落到解析器或测试侧。
  */
-object CfirBuiltInAnnotationDeclarationChecker : CfirBasicDeclarationChecker() {
+object CfirBuiltInAnnotationDeclarationChecker : CfirBasicDeclarationChecker(MppCheckerKind.Common) {
     /**
      * 对所有基础声明执行内建注解和平台注解规则。
      *
@@ -80,7 +80,6 @@ object CfirBuiltInAnnotationDeclarationChecker : CfirBasicDeclarationChecker() {
     override fun check(declaration: CfirDeclaration) {
         checkAnnotationMetaRules(declaration)
         checkAnnotationTargetConstants(declaration)
-        checkEnsurePreparedToMockTarget(declaration)
         if (reportUnsupportedAnnotationVersions(declaration)) return
         checkPlatformAnnotationSyntax(declaration)
         checkForeignNameRules(declaration)
@@ -88,43 +87,11 @@ object CfirBuiltInAnnotationDeclarationChecker : CfirBasicDeclarationChecker() {
 }
 
 /**
- * `@EnsurePreparedToMock` is parser-owned annotation-lambda metadata.  It is
- * never a capability marker on the declaration selected by `createMock`.
- */
-context(context: CheckerContext, reporter: DiagnosticReporter)
-private fun checkEnsurePreparedToMockTarget(declaration: CfirDeclaration) {
-    declaration.annotations.filterIsInstance<CfirAnnotationCall>()
-        .filter {
-            it.annotationKind == BuiltInAnnotationKind.ENSURE_PREPARED_TO_MOCK &&
-                it.isSupportedBuiltinAnnotation(
-                    BuiltInAnnotationKind.ENSURE_PREPARED_TO_MOCK,
-                    context.languageVersionSettings,
-                )
-        }
-        .forEach { annotation ->
-            if (declaration is CfirAnonymousFunction) return@forEach
-            val status = (declaration as? CfirMemberDeclaration)?.status
-            if (status?.isCommon == true || status?.isSpecific == true) return@forEach
-            reporter.reportOn(
-                source = annotation.source ?: declaration.source,
-                factory = CfirErrors.ILLEGAL_USE_OF_ANNOTATION,
-                a = when (declaration) {
-                    is CfirFunction -> "function"
-                    is CfirProperty -> "property"
-                    is CfirClassLikeDeclaration -> "type declaration"
-                    else -> "declaration"
-                },
-                b = "@EnsurePreparedToMock",
-            )
-        }
-}
-
-/**
  * 互操作注解语义检查。
  *
  * 这组规则依赖 class-like 声明的父类型关系与成员签名，因此集中放在 classLike checker。
  */
-object CfirInteropAnnotationChecker : CfirClassLikeChecker() {
+object CfirInteropAnnotationChecker : CfirClassLikeChecker(MppCheckerKind.Common) {
     /**
      * 对 class-like 声明执行 Java/Objective-C 互操作注解语义检查。
      *
@@ -343,7 +310,7 @@ private fun checkPlatformAnnotationSyntax(
     val hideEntries = availability.findAnnotations(declaration, CfirPlatformAnnotationClassIds.HIDE)
     val firstHideEntry = hideEntries.firstOrNull()
     val isRegularFunctionParameter =
-        declaration is CfirValueParameter && declaration.correspondingProperty == null
+        declaration is CfirValueParameter && !declaration.isMemberParameter
     if (firstHideEntry != null && isRegularFunctionParameter) {
         // 官方 Parse 对首个 Hide 先执行普通函数参数检查并 continue；
         // 后续重复项仍各自进入 duplicate 分支。
@@ -1432,7 +1399,7 @@ private fun checkObjCTopLevelFunction(function: CfirNamedFunction) {
  * 该规则不能挂在 class-like checker 上，否则顶层函数永远不会经过相同的签名约束；
  * 也不能放回表达式 checker，因为全局函数的函数体/函数类型在声明阶段已经确定。
  */
-object CfirObjCTopLevelFunctionChecker : CfirFunctionChecker() {
+object CfirObjCTopLevelFunctionChecker : CfirFunctionChecker(MppCheckerKind.Common) {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirFunction) {
         val function = declaration as? CfirNamedFunction ?: return

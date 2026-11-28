@@ -63,13 +63,6 @@ object CangjieTestDirectives : SimpleDirectivesContainer() {
     )
 
     /**
-     * 保存 `LANGUAGE_VERSION`，供测试指令在测试执行期间读取或传递。
-     */
-    val LANGUAGE_VERSION by stringDirective(
-        description = "Pin language version, e.g. `// LANGUAGE_VERSION: 1.0`.",
-    )
-
-    /**
      * 保存 `API_LEVEL`，供测试指令在测试执行期间读取或传递。
      */
     val API_LEVEL by stringDirective(

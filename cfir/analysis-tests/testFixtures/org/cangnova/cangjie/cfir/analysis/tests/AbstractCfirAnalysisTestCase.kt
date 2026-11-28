@@ -1,5 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.tests
 
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
+
 import org.cangnova.cangjie.cfir.builder.BodyBuildingMode
 import org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder
 import org.cangnova.cangjie.cfir.common.CfirModuleData
@@ -7,6 +9,7 @@ import org.cangnova.cangjie.cfir.common.CfirPlatform
 import org.cangnova.cangjie.cfir.common.CfirSourceModuleData
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.renderer.CfirRenderer
+import org.cangnova.cangjie.cfir.resolve.cjmp.CfirCjmpMatchRunner
 import org.cangnova.cangjie.cfir.resolve.providers.CfirBuiltinSymbolProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirCompositeSymbolProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirProvider
@@ -14,13 +17,17 @@ import org.cangnova.cangjie.cfir.resolve.providers.CfirProviderImpl
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionResult
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionService
-import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurface
+import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationMetadataBuilder
+import org.cangnova.cangjie.cfir.resolve.providers.macro.PreMacroCfirFile
 import org.cangnova.cangjie.cfir.resolve.providers.macro.buildPreMacroRawFiles
 import org.cangnova.cangjie.cfir.resolve.providers.macro.expandWithDefaultContext
 import org.cangnova.cangjie.cfir.resolve.providers.macro.recordExpandedRawFilesOnce
 import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.session.CfirCjmpBatchFamilyAggregate
+import org.cangnova.cangjie.cfir.session.CfirCjmpFamilyAggregate
+import org.cangnova.cangjie.cfir.resolve.providers.DEPENDENCIES_SYMBOL_PROVIDER_QUALIFIED_KEY
+import org.cangnova.cangjie.cfir.resolve.providers.cfirProvider
 import org.cangnova.cangjie.lang.CangJieFileType
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.parsing.CangJieParserDefinition
@@ -117,6 +124,10 @@ abstract class AbstractCfirAnalysisTestCase : CjParsingTestCase(
                 ),
             )
             session.register(CfirSymbolProvider::class, symbolProvider)
+            session.register(DEPENDENCIES_SYMBOL_PROVIDER_QUALIFIED_KEY, CfirCompositeSymbolProvider(session, emptyList()))
+            session.register(CfirCjmpFamilyAggregate::class, CfirCjmpBatchFamilyAggregate(session) { declaration, ownerFacts, matchingMode ->
+                CfirCjmpMatchRunner.prepareDeclaration(declaration, session, ownerFacts, matchingMode = matchingMode)
+            })
         }
     }
 
@@ -128,11 +139,24 @@ abstract class AbstractCfirAnalysisTestCase : CjParsingTestCase(
     protected fun CjFile.toCfirFile(
         session: CfirSession = createTestSession(),
         bodyBuildingMode: BodyBuildingMode = BodyBuildingMode.NORMAL,
-    ): CfirFile {
-        val builder = PsiRawCfirBuilder(session, bodyBuildingMode)
-        return builder.buildCfirFile(this).also { cfirFile ->
-            session.recordRawCfirFile(cfirFile, builder.consumeCollectedMacroSurfaces())
+    ): CfirFile = listOf(this).toCfirFiles(session, bodyBuildingMode).single()
+
+    /**
+     * 将多个 PSI 文件作为同一源 session 的一次宏构造批次记录。
+     *
+     * 每个 Raw CFIR 文件使用独立 metadata transaction；所有文件一起发布，保证跨包/跨文件引用
+     * 在后续 provider 与 resolve 阶段看到同一份完整 source declaration graph。
+     */
+    protected fun List<CjFile>.toCfirFiles(
+        session: CfirSession,
+        bodyBuildingMode: BodyBuildingMode = BodyBuildingMode.NORMAL,
+    ): List<CfirFile> {
+        val preFiles = map { sourceFile ->
+            PsiRawCfirBuilder(session, bodyBuildingMode, CfirAnnotationMetadataBuilder())
+                .buildPreMacroCfirFile(sourceFile)
         }
+        session.recordRawCfirFiles(preFiles)
+        return preFiles.map { it.cfirFile }
     }
 
     /**
@@ -141,9 +165,9 @@ abstract class AbstractCfirAnalysisTestCase : CjParsingTestCase(
      * 该方法只使用 identity 宏服务，不展开外部宏进程；它的职责是生成可被后续
      * provider、scope 与 resolve 阶段查询的 recordable file 集合。
      */
-    private fun CfirSession.recordRawCfirFile(cfirFile: CfirFile, surfaces: List<MacroSurface>) {
+    private fun CfirSession.recordRawCfirFiles(preFiles: List<PreMacroCfirFile>) {
         val provider = cfirProvider as CfirProviderImpl
-        val pre = buildPreMacroRawFiles(this, listOf(cfirFile), listOf(surfaces))
+        val pre = buildPreMacroRawFiles(this, preFiles)
         val result = MacroConstructionService.Identity.expandWithDefaultContext(
             pre = pre,
             mode = MacroConstructionService.Mode.STRICT,

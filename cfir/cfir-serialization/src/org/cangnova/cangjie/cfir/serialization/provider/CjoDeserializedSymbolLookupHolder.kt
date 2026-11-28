@@ -85,5 +85,9 @@ class CjoDeserializedSymbolLookupHolder(private val cjoManager: CjoManager) {
         })
     }
 
+    /** 被动列举同一原装配及 mode 实际登记的来源，不加载或重新选择名称。 */
+    internal fun existingContexts(binding: CjoDeserializationBinding, mode: CjoDeserializationMode): Sequence<CfirDeserializationContext> =
+        contexts.asSequence().filter { (key, _) -> key.binding === binding && key.mode == mode }.map { it.value }
+
     internal fun materialization(): CjoDeclarationMaterialization = cjoManager.declarationMaterialization
 }

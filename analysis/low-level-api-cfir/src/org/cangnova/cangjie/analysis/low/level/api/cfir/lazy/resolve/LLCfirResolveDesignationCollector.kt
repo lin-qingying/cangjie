@@ -37,7 +37,7 @@ internal object LLCfirResolveDesignationCollector {
     /**
      * 为类 [target] 收集包含全部 callable 成员的 lazy resolve 目标。
      */
-    fun getDesignationToResolveWithCallableMembers(target: CfirClass): LLCfirResolveTarget? {
+    fun getDesignationToResolveWithCallableMembers(target: CfirClassLikeDeclaration): LLCfirResolveTarget? {
         return getDesignationToResolve(target, ::LLCfirClassWithAllCallablesResolveTarget)
     }
 

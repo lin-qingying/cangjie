@@ -13,6 +13,7 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.element.builder.isAutono
 import org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure.CfirElementsRecorder.Companion.anchorPsi
 import org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure.LLPartialBodyElementMapper
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.llCfirSession
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.llCfirResolvableSession
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.ContextCollector.Context
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.ContextCollector.ContextKind
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.ContextCollector.FilterResponse
@@ -126,6 +127,8 @@ object ContextCollector {
         targetElement: PsiElement,
         preferBodyContext: Boolean = true,
     ): Context? {
+        val target = checkNotNull(file.llCfirResolvableSession).moduleComponents.cache.compilationElement(targetElement) ?: return null
+        if (target !== targetElement) return process(resolutionFacade, file, target, preferBodyContext)
         val designation = computeDesignation(file, targetElement)
         val shouldTriggerBodyAnalysis = !partiallyResolveTargetElementIfPossible(resolutionFacade, designation, targetElement)
         val acceptedElements = targetElement.parentsWithSelf.toSet()

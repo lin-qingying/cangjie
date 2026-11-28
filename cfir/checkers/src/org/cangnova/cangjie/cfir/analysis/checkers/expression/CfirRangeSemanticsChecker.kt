@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.checkTypeMismatch
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
@@ -29,7 +30,7 @@ import org.cangnova.cangjie.source.AbstractCjSourceElement
  * - step 必须是 `Int64`；
  * - 常量 step 不能是 0，诊断落在 step 表达式本身。
  */
-object CfirRangeSemanticsChecker : CfirBasicExpressionChecker() {
+object CfirRangeSemanticsChecker : CfirBasicExpressionChecker(MppCheckerKind.Common) {
     /** 检查 range 表达式起止点和 step 的类型语义。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: org.cangnova.cangjie.cfir.expressions.CfirStatement) {

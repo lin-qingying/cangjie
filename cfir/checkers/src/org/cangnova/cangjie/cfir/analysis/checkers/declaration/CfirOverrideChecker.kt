@@ -25,12 +25,16 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.modifierByToken
 import org.cangnova.cangjie.cfir.analysis.checkers.realSourceModifiers
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
+import org.cangnova.cangjie.cfir.resolve.CfirGenericConstraintCompatibility
+import org.cangnova.cangjie.cfir.resolve.CfirGenericConstraintParent
+import org.cangnova.cangjie.cfir.resolve.CfirGenericConstraintBounds
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.createCallableTypeParameterSubstitutorForOverride
@@ -56,7 +60,7 @@ import org.cangnova.cangjie.type.AbstractTypeChecker
  * 这里处理的是“声明级继承规则”，因此应放在 declaration checker 层。
  * 解析阶段只负责把可见性失败保留在引用/候选上，不在这里反向改写解析语义。
  */
-object CfirOverrideChecker : CfirClassLikeChecker() {
+object CfirOverrideChecker : CfirClassLikeChecker(MppCheckerKind.Platform) {
     /**
      * 对单个 class-like 声明执行 override/redef 成员检查。
      *
@@ -78,7 +82,7 @@ object CfirOverrideChecker : CfirClassLikeChecker() {
             // 实现接口属性不要求写 override；类型不变性仍须检查。主构造器成员参数
             // 在 raw CFIR 中使用 property 节点承载，但语言语义上是变量，不能并入此规则。
             val isImplicitPropertyImplementation = !hasOverrideLikeModifier && !callable.status.isStatic &&
-                    callable is CfirProperty && callable.source?.kind != CjFakeSourceElementKind.PropertyFromParameter
+                    callable is CfirProperty
             if (!hasOverrideLikeModifier && !callable.status.isStatic && !isImplicitPropertyImplementation) continue
             val memberScope = if (isImplicitPropertyImplementation) declarationScope else classScope
 
@@ -413,57 +417,21 @@ object CfirOverrideChecker : CfirClassLikeChecker() {
         val childTypeParameters = declaration.typeParameters
         if (childTypeParameters.isEmpty()) return
 
-        val parentDomainsByTypeParameter = List(childTypeParameters.size) {
-            linkedSetOf<ConeCangJieType>()
+        val parents = overriddenDeclarations.filter { it.typeParameters.size == childTypeParameters.size }.map { parent ->
+            CfirGenericConstraintParent(
+                parent.typeParameters,
+                checkNotNull(createTypeParameterSubstitutorForOverride(declaration, parent, context.session.typeContext)),
+                CfirGenericConstraintBounds.capture(parent.typeParameters),
+            )
         }
-
-        for (overridden in overriddenDeclarations) {
-            val parentTypeParameters = overridden.typeParameters
-            if (parentTypeParameters.size != childTypeParameters.size) continue
-            val parentToChildSubstitutor = createTypeParameterSubstitutorForOverride(
-                overriding = declaration,
-                overridden = overridden,
-                context = context.session.typeContext,
-            ) ?: continue
-
-            for (index in childTypeParameters.indices) {
-                val parentTypeParameter = parentTypeParameters.getOrNull(index) ?: continue
-                parentDomainsByTypeParameter[index] +=
-                    parentTypeParameter.effectiveGenericConstraintDomain(parentToChildSubstitutor)
-            }
-        }
-
-        for (index in childTypeParameters.indices) {
-            val childTypeParameter = childTypeParameters[index]
-            val childDomain = childTypeParameter.effectiveGenericConstraintDomain(ConeSubstitutor.Empty)
-            val parentDomains = parentDomainsByTypeParameter[index]
-            if (parentDomains.isEmpty()) continue
-
-            val coversAtLeastOneParentDomain = parentDomains.any { parentDomain ->
-                AbstractTypeChecker.isSubtypeOf(
-                    context.session.typeContext,
-                    parentDomain,
-                    childDomain,
-                )
-            }
-            val strictlyNarrowsAParentDomain = parentDomains.any { parentDomain ->
-                !AbstractTypeChecker.equalTypes(
-                    context.session.typeContext,
-                    childDomain,
-                    parentDomain,
-                ) && AbstractTypeChecker.isSubtypeOf(
-                    context.session.typeContext,
-                    childDomain,
-                    parentDomain,
-                )
-            }
-            if (!coversAtLeastOneParentDomain || strictlyNarrowsAParentDomain) {
-                reporter.reportOn(
-                    source = declaration.genericConstraintDiagnosticSource(childTypeParameter)
-                        ?: declaration.source,
-                    factory = CfirErrors.GENERIC_CONSTRAINT_NOT_LOOSER,
-                )
-            }
+        for (index in CfirGenericConstraintCompatibility.findIncompatibleTypeParameterIndices(
+            childTypeParameters, parents, context.session.typeContext, ConeSubstitutor.Empty,
+            CfirGenericConstraintBounds.capture(childTypeParameters),
+        )) {
+            reporter.reportOn(
+                source = declaration.genericConstraintDiagnosticSource(childTypeParameters[index]) ?: declaration.source,
+                factory = CfirErrors.GENERIC_CONSTRAINT_NOT_LOOSER,
+            )
         }
     }
 }
@@ -479,54 +447,6 @@ private fun CfirMemberDeclaration.genericConstraintDiagnosticSource(
     ?.typeConstraints
     ?.firstOrNull { it.parameterName == typeParameter.symbol.name }
     ?.constraintSource
-
-/**
- * 将单个声明内的直接、传递 bounds 折叠为 accepted-domain 的有效交集。
- *
- * 官方 `GetAllGenericUpperBounds` 不会因为某个上界违反 class/interface 准入规则就删除
- * 该上界；它仍保留泛型上界节点，并沿泛型参数约束图收集传递上界。这样
- * `T1 <: T2 <: T3 <: T4` 会形成 `T2 & T3 & T4`，而不相关的 `T2`、`T4`
- * 仍保持为不同约束域。无显式约束最终以 `Any` 表示完整接受域。
- * 必须先将每个 bound 替换到比较方的类型参数空间，再规范化交集：父声明的
- * `T2 <: T3 <: T4` 在父空间可简化为 T2，但子声明的同名参数未必保留这条继承链。
- */
-context(context: CheckerContext)
-private fun CfirTypeParameterRef.effectiveGenericConstraintDomain(substitutor: ConeSubstitutor): ConeCangJieType {
-    val collectedBounds = linkedSetOf<ConeCangJieType>()
-    val pendingTypeParameters = ArrayDeque<CfirTypeParameterSymbol>()
-    val visitedTypeParameters = linkedSetOf<CfirTypeParameterSymbol>()
-
-    fun collectBound(bound: ConeCangJieType) {
-        when (bound) {
-            is ConeErrorType -> return
-            is ConeIntersectionType -> bound.intersectedTypes.forEach(::collectBound)
-            is ConeTypeParameterType -> {
-                collectedBounds += bound
-                pendingTypeParameters += bound.lookupTag.typeParameterSymbol
-            }
-            else -> collectedBounds += bound
-        }
-    }
-
-    symbol.resolvedBounds.forEach { collectBound(it.coneType) }
-    while (pendingTypeParameters.isNotEmpty()) {
-        val current = pendingTypeParameters.removeFirst()
-        if (!visitedTypeParameters.add(current)) continue
-        current.resolvedBounds.forEach { collectBound(it.coneType) }
-    }
-
-    val effectiveBounds = collectedBounds.filterNot { it.isAnyBound() }
-    return ConeTypeIntersector.intersectTypes(
-        context.session.typeContext,
-        effectiveBounds.map(substitutor::substituteOrSelf),
-    )
-}
-
-/**
- * 判断 bound 是否等价于 std.core.Any。
- */
-private fun ConeCangJieType.isAnyBound(): Boolean =
-    this == ConeAnyType || (this as? ConeClassLikeType)?.classId == StdlibClassIds.Any
 
 /**
  * 判断 cone 类型是否是 class-like 的 `This` 类型。

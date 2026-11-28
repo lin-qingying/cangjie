@@ -7,6 +7,10 @@ import org.cangnova.cangjie.lexer.CjKeywordToken
 import org.cangnova.cangjie.lexer.CjSingleValueToken
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.psi.CjBindingPattern
+import org.cangnova.cangjie.psi.CjCasePatternElement
+import org.cangnova.cangjie.psi.CjEnumPattern
+import org.cangnova.cangjie.psi.CjTuplePattern
+import org.cangnova.cangjie.psi.CjWildcardPattern
 import org.cangnova.cangjie.psi.CjAnnotated
 import org.cangnova.cangjie.psi.CjBinaryExpression
 import org.cangnova.cangjie.psi.CjCallExpression
@@ -203,6 +207,38 @@ internal fun buildDecompiledText(fileStub: CangJieFileStubImpl): String = Pretty
 
     fun renderIdentifier(identifier: String): String {
         return if (identifier in keywordNames) "`$identifier`" else identifier
+    }
+
+    /** 构造器路径由原表达式 stub 提供；类型实参保持在各自引用节点上。 */
+    fun renderPatternConstructor(expression: CjExpression): String = when (expression) {
+        is CjNameReferenceExpression -> buildString {
+            append(renderIdentifier(expression.referencedName))
+            if (expression.typeArguments.isNotEmpty()) {
+                append(expression.typeArguments.joinToString(prefix = "<", postfix = ">", separator = ", ") {
+                    requireNotNull(it.typeReference) { "Compiled enum pattern type argument has no type stub" }.getTypeText()
+                })
+            }
+        }
+        is CjDotQualifiedExpression -> renderPatternConstructor(expression.receiverExpression) + "." +
+            renderPatternConstructor(requireNotNull(expression.selectorExpression) {
+                "Compiled enum pattern constructor has no selector stub"
+            })
+        else -> error("Compiled declaration pattern requires its actual constructor reference: ${expression::class.simpleName}")
+    }
+
+    /** 声明文本递归读取已验证的真实模式树，不能把解构或表达式模式改成通配绑定。 */
+    fun renderDeclarationPattern(pattern: CjCasePatternElement): String = when (pattern) {
+        is CjBindingPattern -> renderIdentifier(requireNotNull(pattern.name) { "Compiled binding pattern has no name" })
+        is CjWildcardPattern -> "_"
+        is CjTuplePattern -> pattern.patterns.joinToString(prefix = "(", postfix = ")", separator = ", ") {
+            renderDeclarationPattern(it)
+        }
+        is CjEnumPattern -> renderPatternConstructor(requireNotNull(pattern.expression) {
+            "Compiled enum pattern has no constructor reference stub"
+        }) + pattern.patterns.joinToString(prefix = "(", postfix = ")", separator = ", ") {
+            renderDeclarationPattern(it)
+        }
+        else -> error("This pattern cannot form a compiled declaration header: ${pattern::class.simpleName}")
     }
 
     fun renderFqName(fqName: org.cangnova.cangjie.name.FqName): String {
@@ -493,7 +529,7 @@ internal fun buildDecompiledText(fileStub: CangJieFileStubImpl): String = Pretty
                 variable.isVar -> "var "
                 else -> "let "
             })
-            append((variable.pattern as? CjBindingPattern)?.name?.let(::renderIdentifier) ?: "_")
+            append(renderDeclarationPattern(requireNotNull(variable.pattern) { "Compiled pattern variable has no pattern stub" }))
             withPrefix(": ") { variable.typeReference?.getTypeText()?.takeIf(String::isNotBlank)?.let(::append) }
             if (variable.hasInitializer()) {
                 renderCompiledInitializer()

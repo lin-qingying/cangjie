@@ -17,7 +17,7 @@ Cangjie 提供仓颉语言面向编译器和 IDE 的基础层：源码解析、�
 
 主构建是可复用的前端与工具基础设施，而不是官方 `cjc` 发行版的独立替代品。它提供编译器宿主、IDE、LSP 宿主和测试环境理解仓颉源码所需的组件。
 
-独立构建的宿主集成位于 [`intellij-ide/`](intellij-ide/README.zh-CN.md) 与 [`deveco/`](deveco/README.zh-CN.md)；公共前端与测试框架工件由 [`prepare/`](prepare/README.md) 装配。
+独立构建的宿主集成见 [IntelliJ Platform 指南](docs/intellij-ide.zh-CN.md)与 [DevEco 指南](docs/deveco.zh-CN.md)，其独立 checkout 通常使用 `intellij-ide/` 和 `deveco/` 目录名；公共前端与测试框架工件由 [`prepare/`](prepare/README.md) 装配。
 
 ## 核心能力
 

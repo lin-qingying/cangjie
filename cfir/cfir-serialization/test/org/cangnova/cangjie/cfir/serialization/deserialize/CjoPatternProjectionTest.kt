@@ -47,8 +47,8 @@ class CjoPatternProjectionTest {
                 assertEquals(name, binding.name.asString())
                 assertSame(root, reader.deserializeDecl(index))
                 assertSame(symbol, reader.deserializeSymbol(index))
-                assertSame(root, context.declCache[index]!!.declarationRoot)
-                assertSame(symbol, context.declCache[index]!!.wireSymbol)
+                assertSame(root, checkNotNull(context.headerRecordOrNull(index)).declarationRoot)
+                assertSame(symbol, checkNotNull(context.headerRecordOrNull(index)).wireSymbol)
                 assertNull(root.initializer, "signature-only mode must preserve wire facts independently of an initializer subtree")
                 if (name == "globalLimit") assertTrue(binding.hasSerializedInitializer)
             }

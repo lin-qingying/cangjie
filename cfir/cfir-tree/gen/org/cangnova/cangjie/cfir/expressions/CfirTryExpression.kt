@@ -5,7 +5,9 @@
 
 package org.cangnova.cangjie.cfir.expressions
 
+import org.cangnova.cangjie.annotations.CangjieOverflowStrategy
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.declarations.CfirResourceVariable
 import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
@@ -20,12 +22,26 @@ abstract class CfirTryExpression : CfirExpression(), CfirResolvable {
     abstract override val source: CjSourceElement?
     abstract override val annotations: List<CfirAnnotation>
     abstract override val coneTypeOrNull: ConeCangJieType?
+    abstract override val mappedExpression: CfirExpression?
+    abstract override val overflowStrategy: CangjieOverflowStrategy?
     abstract override val calleeReference: CfirReference
     abstract val resources: List<CfirResourceVariable>
     abstract val tryBlock: CfirBlock
     abstract val handlers: List<CfirHandleClause>
     abstract val catches: List<CfirCatch>
     abstract val finallyBlock: CfirBlock?
+
+    /** 访问本节点拥有的完整来源子图；独立于 ordinary visitor 的语法子树。 */
+    @CfirImplementationDetail
+    override fun <R, D> acceptSourceChildren(visitor: CfirVisitor<R, D>, data: D) {
+        annotations.forEach { it.accept(visitor, data) }
+        calleeReference.accept(visitor, data)
+        resources.forEach { it.accept(visitor, data) }
+        tryBlock.accept(visitor, data)
+        handlers.forEach { it.accept(visitor, data) }
+        catches.forEach { it.accept(visitor, data) }
+        finallyBlock?.accept(visitor, data)
+    }
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitTryExpression(this, data)
@@ -34,9 +50,16 @@ abstract class CfirTryExpression : CfirExpression(), CfirResolvable {
     override fun <E : CfirElement, D> transform(transformer: CfirTransformer<D>, data: D): E =
         transformer.transformTryExpression(this, data) as E
 
+    @CfirImplementationDetail
+    abstract override fun replaceSource(newSource: CjSourceElement?)
+
     abstract override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
 
     abstract override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?)
+
+    abstract override fun replaceMappedExpression(newMappedExpression: CfirExpression?)
+
+    abstract override fun replaceOverflowStrategy(newOverflowStrategy: CangjieOverflowStrategy?)
 
     abstract override fun replaceCalleeReference(newCalleeReference: CfirReference)
 

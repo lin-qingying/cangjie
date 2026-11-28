@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
@@ -17,7 +18,7 @@ import org.cangnova.cangjie.cfir.types.ConeVArrayType
  * 对齐 C++ DiagKind::sema_inout_mismatch (TypeCheckCall.cpp:2795):
  * 调用 CFunc 时 VArray 类型的实参必须通过 `inout` 传入;否则报错。
  */
-object CfirInoutArgumentChecker : CfirFunctionCallChecker() {
+object CfirInoutArgumentChecker : CfirFunctionCallChecker(MppCheckerKind.Common) {
     /** 检查 CFunc 调用中 VArray 实参是否按 `inout` 形式传入。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirFunctionCall) {

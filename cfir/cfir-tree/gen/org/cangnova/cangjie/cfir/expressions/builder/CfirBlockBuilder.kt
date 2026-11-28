@@ -8,11 +8,13 @@
 package org.cangnova.cangjie.cfir.expressions.builder
 
 import kotlin.contracts.*
+import org.cangnova.cangjie.annotations.CangjieOverflowStrategy
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirStatement
 import org.cangnova.cangjie.cfir.expressions.impl.CfirBlockImpl
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
@@ -23,7 +25,10 @@ class CfirBlockBuilder {
     var source: CjSourceElement? = null
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
     var coneTypeOrNull: ConeCangJieType? = null
+    var mappedExpression: CfirExpression? = null
+    var overflowStrategy: CangjieOverflowStrategy? = null
     val statements: MutableList<CfirStatement> = mutableListOf()
+    var isUnsafe: Boolean = false
 
     @OptIn(CfirImplementationDetail::class)
     fun build(): CfirBlock {
@@ -31,7 +36,10 @@ class CfirBlockBuilder {
             source,
             annotations.toMutableOrEmpty(),
             coneTypeOrNull,
+            mappedExpression,
+            overflowStrategy,
             statements,
+            isUnsafe,
         )
     }
 
@@ -54,6 +62,9 @@ inline fun buildBlockCopy(original: CfirBlock, init: CfirBlockBuilder.() -> Unit
     copyBuilder.source = original.source
     copyBuilder.annotations.addAll(original.annotations)
     copyBuilder.coneTypeOrNull = original.coneTypeOrNull
+    copyBuilder.mappedExpression = original.mappedExpression
+    copyBuilder.overflowStrategy = original.overflowStrategy
     copyBuilder.statements.addAll(original.statements)
+    copyBuilder.isUnsafe = original.isUnsafe
     return copyBuilder.apply(init).build()
 }

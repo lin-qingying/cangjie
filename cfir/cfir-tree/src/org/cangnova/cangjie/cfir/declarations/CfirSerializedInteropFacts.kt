@@ -15,6 +15,8 @@ import org.cangnova.cangjie.cfir.session.CfirInteropTarget
  * guess from a short annotation name.
  */
 public data class CfirSerializedInteropFacts(
+    /** 原始 CJO `AttrBit.C`；与 foreign 派生出来的 C ABI 语义分开保留。 */
+    val hasCAnnotationAttribute: Boolean = false,
     /** `@C` was materialized as an explicit C ABI declaration attribute. */
     val hasExplicitC: Boolean = false,
     /** A serialized `STD_CALL` declaration attribute was present. */

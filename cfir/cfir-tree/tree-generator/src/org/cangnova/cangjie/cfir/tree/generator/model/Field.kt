@@ -12,6 +12,15 @@ import org.cangnova.cangjie.generators.tree.ListField as AbstractListField
  * CFIR tree 字段元模型基类。
  */
 sealed class Field : AbstractField<Field>() {
+    /** 普通 visitor 之外仍由本节点保留的来源边；参数绑定等非拥有引用不进入此图。 */
+    enum class SourceTraversalKind { ELEMENT, MAP_VALUES, ARGUMENT_VIEW }
+
+    var sourceTraversalKind: SourceTraversalKind? = null
+
+    /** 该拥有字段可由正式 Library 完成快照提供；复制时使用同代选择值。 */
+    enum class PublishedContentKind { BODY, INITIALIZER, DEFAULT_VALUE, ANNOTATIONS, DEPRECATIONS }
+
+    var publishedContentKind: PublishedContentKind? = null
     /**
      * 是否为该字段生成 replace 方法。
      */
@@ -67,6 +76,10 @@ sealed class Field : AbstractField<Field>() {
      */
     override fun updateFieldsInCopy(copy: Field) {
         super.updateFieldsInCopy(copy)
+        copy.sourceTraversalKind = sourceTraversalKind
+        copy.publishedContentKind = publishedContentKind
+        copy.defaultValueInBuilder = defaultValueInBuilder
+        copy.customSetter = customSetter
         copy.withTransform = withTransform
         copy.needTransformInOtherChildren = needTransformInOtherChildren
         copy.customInitializationCall = customInitializationCall
@@ -81,6 +94,12 @@ sealed class Field : AbstractField<Field>() {
      */
     override fun updatePropertiesFromOverriddenFields(parentFields: List<Field>) {
         super.updatePropertiesFromOverriddenFields(parentFields)
+        val inheritedSourceTraversal = parentFields.mapNotNull { it.sourceTraversalKind }.distinct()
+        require(inheritedSourceTraversal.size <= 1) { "Source traversal must agree across inherited field declarations." }
+        if (sourceTraversalKind == null) sourceTraversalKind = inheritedSourceTraversal.singleOrNull()
+        val inheritedContent = parentFields.mapNotNull { it.publishedContentKind }.distinct()
+        require(inheritedContent.size <= 1) { "Published content roles must agree across inherited fields." }
+        if (publishedContentKind == null) publishedContentKind = inheritedContent.singleOrNull()
         withTransform = withTransform || parentFields.any { it.withTransform }
         needTransformInOtherChildren = needTransformInOtherChildren || parentFields.any { it.needTransformInOtherChildren }
         withReplace = withReplace || parentFields.any { it.withReplace }

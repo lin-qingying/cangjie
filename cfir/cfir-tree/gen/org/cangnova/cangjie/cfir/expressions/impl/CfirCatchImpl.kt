@@ -7,13 +7,15 @@
 
 package org.cangnova.cangjie.cfir.expressions.impl
 
+import org.cangnova.cangjie.annotations.CangjieOverflowStrategy
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.MutableOrEmptyList
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirCatch
-import org.cangnova.cangjie.cfir.patterns.CfirCatchPattern
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.patterns.CfirPattern
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
@@ -21,13 +23,15 @@ import org.cangnova.cangjie.cfir.visitors.transformInplace
 import org.cangnova.cangjie.source.CjSourceElement
 
 class CfirCatchImpl @CfirImplementationDetail constructor(
-    override val source: CjSourceElement?,
+    override var source: CjSourceElement?,
     override var annotations: MutableOrEmptyList<CfirAnnotation>,
     override var coneTypeOrNull: ConeCangJieType?,
-    pattern: CfirCatchPattern,
+    override var mappedExpression: CfirExpression?,
+    override var overflowStrategy: CangjieOverflowStrategy?,
+    pattern: CfirPattern,
     override var body: CfirBlock,
 ) : CfirCatch() {
-    override var pattern: CfirCatchPattern = pattern
+    override var pattern: CfirPattern = pattern
         private set(value) {
             if (org.cangnova.cangjie.cfir.patterns.isPatternTreeRootRestoreInProgress()) {
                 field = value
@@ -47,9 +51,9 @@ class CfirCatchImpl @CfirImplementationDetail constructor(
 
     override fun patternTreeRoot(): org.cangnova.cangjie.cfir.CfirElement = pattern
     override fun validatePatternTreeRoot(newPatternTreeRoot: org.cangnova.cangjie.cfir.CfirElement) {
-        require(newPatternTreeRoot is CfirCatchPattern) { "Pattern tree root has an incompatible CFIR node type." }
+        require(newPatternTreeRoot is CfirPattern) { "Pattern tree root has an incompatible CFIR node type." }
     }
-    override fun replacePatternTreeRoot(newPatternTreeRoot: org.cangnova.cangjie.cfir.CfirElement) = replacePattern(newPatternTreeRoot as CfirCatchPattern)
+    override fun replacePatternTreeRoot(newPatternTreeRoot: org.cangnova.cangjie.cfir.CfirElement) = replacePattern(newPatternTreeRoot as CfirPattern)
 
     init {
         org.cangnova.cangjie.cfir.patterns.bindPatternTree(this, patternTreeRoot())
@@ -83,6 +87,11 @@ class CfirCatchImpl @CfirImplementationDetail constructor(
         return this
     }
 
+    @CfirImplementationDetail
+    override fun replaceSource(newSource: CjSourceElement?) {
+        source = newSource
+    }
+
     override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>) {
         annotations = newAnnotations.toMutableOrEmpty()
     }
@@ -91,7 +100,15 @@ class CfirCatchImpl @CfirImplementationDetail constructor(
         coneTypeOrNull = newConeTypeOrNull
     }
 
-    override fun replacePattern(newPattern: CfirCatchPattern) {
+    override fun replaceMappedExpression(newMappedExpression: CfirExpression?) {
+        mappedExpression = newMappedExpression
+    }
+
+    override fun replaceOverflowStrategy(newOverflowStrategy: CangjieOverflowStrategy?) {
+        overflowStrategy = newOverflowStrategy
+    }
+
+    override fun replacePattern(newPattern: CfirPattern) {
         pattern = newPattern
     }
 }

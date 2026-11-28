@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
@@ -18,7 +19,7 @@ import org.cangnova.cangjie.cfir.types.ConeVArrayType
  *
  * 注册为 callableDeclarationCheckers
  */
-object CfirVArrayExtraChecker : CfirCallableDeclarationChecker() {
+object CfirVArrayExtraChecker : CfirCallableDeclarationChecker(MppCheckerKind.Common) {
     /**
      * 分发 callable 上的 VArray 附加语义检查。
      */

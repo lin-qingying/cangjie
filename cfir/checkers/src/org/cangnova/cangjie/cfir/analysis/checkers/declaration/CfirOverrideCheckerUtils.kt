@@ -24,6 +24,8 @@
 
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
+
 import org.cangnova.cangjie.cfir.analysis.checkers.CfirExtendSemantics
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.declarations.*
@@ -33,7 +35,6 @@ import org.cangnova.cangjie.cfir.resolve.providers.getContainingClass
 import org.cangnova.cangjie.cfir.resolve.providers.getContainingFile
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
-import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassSubstitutionScope
 import org.cangnova.cangjie.cfir.scopes.isStaticMemberForOverride
 import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
@@ -44,6 +45,7 @@ import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.expandedClassIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
 import org.cangnova.cangjie.descriptors.Visibilities
+import org.cangnova.cangjie.descriptors.Visibility
 import org.cangnova.cangjie.name.ClassId
 
 /**
@@ -56,38 +58,44 @@ internal fun CheckerContext.createUseSiteMemberScope(
     return when (declaration) {
         is CfirClass -> {
             val symbol = declaration.symbol as? CfirClassLikeSymbol<*> ?: return CfirTypeScope.Empty
-            val rawScope = CfirClassUseSiteMemberScope(
-                session = session,
+            val rawScope = session.cangjieScopeProvider.getUseSiteMemberScope(
+                scopeSession = scopeSession,
+                useSiteSession = session,
                 classSymbol = symbol,
                 symbolProvider = session.symbolProvider,
                 extendProvider = session.extendProvider,
                 directSupertypeProvider = session.directSupertypeProviderOrNull,
                 scopeKind = scopeKind,
+                memberRequiredPhase = CfirResolvePhase.STATUS,
             )
             CfirClassSubstitutionScope(session, rawScope, symbol.constructType())
         }
 
         is CfirStruct -> {
             val symbol = declaration.symbol as CfirClassLikeSymbol<*>
-            CfirClassUseSiteMemberScope(
-                session = session,
+            session.cangjieScopeProvider.getUseSiteMemberScope(
+                scopeSession = scopeSession,
+                useSiteSession = session,
                 classSymbol = symbol,
                 symbolProvider = session.symbolProvider,
                 extendProvider = session.extendProvider,
                 directSupertypeProvider = session.directSupertypeProviderOrNull,
                 scopeKind = scopeKind,
+                memberRequiredPhase = CfirResolvePhase.STATUS,
             )
         }
 
         else -> {
             val symbol = declaration.symbol as? CfirClassLikeSymbol<*> ?: return CfirTypeScope.Empty
-            CfirClassUseSiteMemberScope(
-                session = session,
+            session.cangjieScopeProvider.getUseSiteMemberScope(
+                scopeSession = scopeSession,
+                useSiteSession = session,
                 classSymbol = symbol,
                 symbolProvider = session.symbolProvider,
                 extendProvider = session.extendProvider,
                 directSupertypeProvider = session.directSupertypeProviderOrNull,
                 scopeKind = scopeKind,
+                memberRequiredPhase = CfirResolvePhase.STATUS,
             )
         }
     }
@@ -102,8 +110,9 @@ internal fun CheckerContext.createUseSiteMemberScope(
 internal fun CheckerContext.createUseSiteMemberScope(ownerType: ConeCangJieType): CfirTypeScope {
     val classId = ownerType.expandedClassIdOrPrimitiveClassId ?: return CfirTypeScope.Empty
     val symbol = session.symbolProvider.getClassLikeSymbolByClassId(classId) ?: return CfirTypeScope.Empty
-    val rawScope = CfirClassUseSiteMemberScope(
-        session = session,
+    val rawScope = session.cangjieScopeProvider.getUseSiteMemberScope(
+        scopeSession = scopeSession,
+        useSiteSession = session,
         classSymbol = symbol,
         symbolProvider = session.symbolProvider,
         extendProvider = session.extendProvider,
@@ -112,6 +121,7 @@ internal fun CheckerContext.createUseSiteMemberScope(ownerType: ConeCangJieType)
         inheritanceProvenanceOwnerType = ownerType,
         dispatchReceiverType = ownerType,
         scopeKind = CfirClassMemberScopeKind.USE_SITE,
+        memberRequiredPhase = CfirResolvePhase.STATUS,
     )
     return CfirClassSubstitutionScope(
         session = session,
@@ -145,6 +155,26 @@ internal fun CheckerContext.ownerClassSymbol(symbol: CfirCallableSymbol<*>): Cfi
     val ownerClassId = symbol.ownerClassId()
         ?: return null
     return session.symbolProvider.getClassLikeSymbolByClassId(ownerClassId)
+}
+
+/**
+ * 共享继承成员可见性关系，供继承诊断与 extend shadow 诊断保持同一判定。
+ */
+internal fun isVisibilityWeakerThan(
+    declarationVisibility: Visibility,
+    inheritedVisibility: Visibility,
+): Boolean {
+    val compareResult = Visibilities.compare(declarationVisibility, inheritedVisibility)
+    return compareResult == null || compareResult < 0
+}
+
+/**
+ * 官方 `CheckAccessVisibility` 会检查可实现成员以及接口成员的可见性。
+ */
+internal fun CfirCallableSymbol<*>.isImplementableForVisibility(context: CheckerContext): Boolean {
+    val declaration = cfir
+    if (declaration.status.isAbstract || declaration.status.isOpen || declaration.status.isStatic) return true
+    return context.ownerClassSymbol(this)?.cfir is CfirInterface
 }
 
 /**

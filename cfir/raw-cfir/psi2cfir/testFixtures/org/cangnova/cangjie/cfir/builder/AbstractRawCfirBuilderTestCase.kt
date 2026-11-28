@@ -1,6 +1,9 @@
 ﻿package org.cangnova.cangjie.cfir.builder
 
 import org.cangnova.cangjie.cfir.common.CfirModuleData
+import org.cangnova.cangjie.LanguageVersionSettings
+import org.cangnova.cangjie.LanguageVersionSettingsImpl
+import org.cangnova.cangjie.cfir.session.CfirLanguageSettingsComponent
 import org.cangnova.cangjie.cfir.common.CfirPlatform
 import org.cangnova.cangjie.cfir.common.CfirSourceModuleData
 import org.cangnova.cangjie.cfir.declarations.CfirFile
@@ -10,15 +13,10 @@ import org.cangnova.cangjie.cfir.resolve.providers.CfirCompositeSymbolProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirProviderImpl
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
-import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionResult
-import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionService
-import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurface
-import org.cangnova.cangjie.cfir.resolve.providers.macro.buildPreMacroRawFiles
-import org.cangnova.cangjie.cfir.resolve.providers.macro.expandWithDefaultContext
-import org.cangnova.cangjie.cfir.resolve.providers.macro.recordExpandedRawFilesOnce
+import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationMetadataBuilder
+import org.cangnova.cangjie.cfir.resolve.providers.macro.materializePrimaryConstructorParameterFields
 import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.builder.BodyBuildingMode
 import org.cangnova.cangjie.test.testFramework.CjParsingTestCase
 import org.cangnova.cangjie.lang.CangJieFileType
@@ -54,9 +52,9 @@ abstract class AbstractRawCfirBuilderTestCase : CjParsingTestCase(
     }
 
     /**
-     * 创建 raw CFIR 测试使用的最小 source session。
+     * 创建 raw CFIR 测试使用的 source session，显式提供 parser 所需语言版本。
      */
-    protected fun createTestSession(): CfirSession {
+    protected fun createTestSession(languageVersionSettings: LanguageVersionSettings = LanguageVersionSettingsImpl.DEFAULT): CfirSession {
         return object : CfirSession(Kind.Source) {}.also { session ->
             val moduleData = CfirSourceModuleData(
                 name = Name.identifier("<test>"),
@@ -68,6 +66,7 @@ abstract class AbstractRawCfirBuilderTestCase : CjParsingTestCase(
                 bindSession(session)
             }
             session.register(CfirModuleData::class, moduleData)
+            session.register(CfirLanguageSettingsComponent::class, CfirLanguageSettingsComponent(languageVersionSettings))
 
             // Align test session baseline with source-session wiring used by entrypoint factories.
             val scopeProvider = CfirCangJieScopeProvider()
@@ -88,31 +87,18 @@ abstract class AbstractRawCfirBuilderTestCase : CjParsingTestCase(
     }
 
     /**
-     * 将 PSI 文件转换为 CFIR 文件并注册到测试 provider。
+     * 对位 Kotlin 普通／惰性 raw snapshot 入口，只构造 raw 图并完成其真实字段投影。
+     * 该测试层消费 RAW_CFIR，不要求宏构建的完整 parser publication 或展开后 provider 登记。
      */
     protected fun CjFile.toCfirFile(
         session: CfirSession = createTestSession(),
         bodyBuildingMode: BodyBuildingMode = BodyBuildingMode.NORMAL,
     ): CfirFile {
-        val builder = PsiRawCfirBuilder(session, bodyBuildingMode)
-        return builder.buildCfirFile(this).also { cfirFile ->
-            session.recordRawCfirFile(cfirFile, builder.consumeCollectedMacroSurfaces())
+        val annotationMetadata = CfirAnnotationMetadataBuilder()
+        val builder = PsiRawCfirBuilder(session, bodyBuildingMode, annotationMetadata)
+        return builder.buildCfirFile(this).also { file ->
+            materializePrimaryConstructorParameterFields(file, annotationMetadata)
         }
-    }
-
-    /**
-     * 将 raw CFIR 文件注册进测试 session provider。
-     */
-    private fun CfirSession.recordRawCfirFile(cfirFile: CfirFile, surfaces: List<MacroSurface>) {
-        val provider = cfirProvider as CfirProviderImpl
-        val pre = buildPreMacroRawFiles(this, listOf(cfirFile), listOf(surfaces))
-        val result = MacroConstructionService.Identity.expandWithDefaultContext(
-            pre = pre,
-            mode = MacroConstructionService.Mode.STRICT,
-        )
-        val success = result as? MacroConstructionResult.Success
-            ?: error("Identity macro construction must return Success, got ${result::class.simpleName}")
-        recordExpandedRawFilesOnce(provider, success.recordableFiles, success.registry)
     }
 
     /**

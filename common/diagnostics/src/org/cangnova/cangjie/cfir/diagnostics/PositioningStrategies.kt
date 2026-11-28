@@ -5,31 +5,40 @@ import com.intellij.openapi.util.TextRange
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.psi.CjBinaryExpression
 import org.cangnova.cangjie.psi.CjBinaryExpressionWithTypeRHS
-import org.cangnova.cangjie.psi.CjCallableDeclaration
 import org.cangnova.cangjie.psi.CjCallExpression
 import org.cangnova.cangjie.psi.CjCollectionLiteralExpression
 import org.cangnova.cangjie.psi.CjConstructor
+import org.cangnova.cangjie.psi.CjDeclaration
+import org.cangnova.cangjie.psi.CjExtend
 import org.cangnova.cangjie.psi.CjConstructorCalleeExpression
 import org.cangnova.cangjie.psi.CjDotQualifiedExpression
 import org.cangnova.cangjie.psi.CjExpression
 import org.cangnova.cangjie.psi.CjFieldVariable
 import org.cangnova.cangjie.psi.CjForExpression
 import org.cangnova.cangjie.psi.CjFunction
+import org.cangnova.cangjie.psi.CjFunctionLiteral
+import org.cangnova.cangjie.psi.CjMainFunction
 import org.cangnova.cangjie.psi.CjImportAlias
 import org.cangnova.cangjie.psi.CjImportPathOwner
 import org.cangnova.cangjie.psi.CjImportItem
 import org.cangnova.cangjie.psi.CjMatchExpression
 import org.cangnova.cangjie.psi.CjModifierListOwner
 import org.cangnova.cangjie.psi.CjNamedDeclaration
+import org.cangnova.cangjie.psi.CjNamedFunction
 import org.cangnova.cangjie.psi.CjOperationExpression
 import org.cangnova.cangjie.psi.CjPatternVariable
 import org.cangnova.cangjie.psi.CjParenthesizedExpression
+import org.cangnova.cangjie.psi.CjPropertyAccessor
+import org.cangnova.cangjie.psi.CjProperty
+import org.cangnova.cangjie.psi.CjPrimaryConstructor
+import org.cangnova.cangjie.psi.CjSecondaryConstructor
 import org.cangnova.cangjie.psi.CjQualifiedExpression
 import org.cangnova.cangjie.psi.CjReferenceExpression
 import org.cangnova.cangjie.psi.CjSimpleNameExpression
 import org.cangnova.cangjie.psi.CjThrowExpression
 import org.cangnova.cangjie.psi.CjTypeArgumentList
 import org.cangnova.cangjie.psi.CjTypeReference
+import org.cangnova.cangjie.psi.CjTypeStatement
 import org.cangnova.cangjie.psi.CjUnaryExpression
 import org.cangnova.cangjie.psi.CjUserType
 import org.cangnova.cangjie.psi.CjValueArgument
@@ -40,6 +49,16 @@ import org.cangnova.cangjie.psi.getTypeArgumentList
  * PSI 前端使用的诊断定位策略集合。
  */
 object PositioningStrategies {
+    /** 与 Kotlin DeclarationHeader 对位，声明名有效性独立于签名范围选择。 */
+    open class DeclarationHeader<T : PsiElement>(private val checkValidity: Boolean) : PositioningStrategy<T>() {
+        override fun isValid(element: T): Boolean {
+            if (checkValidity && element is CjNamedDeclaration && element !is CjSecondaryConstructor && element !is CjFunction) {
+                if (element.nameIdentifier == null) return false
+            }
+            return super.isValid(element)
+        }
+    }
+
     /**
      * 默认定位策略，直接标记 PSI 元素文本范围。
      */
@@ -48,14 +67,19 @@ object PositioningStrategies {
      * 标记声明的实际名称标识符。
      */
     val ACTUAL_DECLARATION_NAME: PositioningStrategy<PsiElement> = object : PositioningStrategy<PsiElement>() {
-        override fun mark(element: PsiElement): List<TextRange> {
-            if (element is CjConstructor<*>) {
-                element.getIdentifyingElement()?.let { return markElement(it) }
-            }
-            val namedDeclaration = element as? CjNamedDeclaration ?: return super.mark(element)
-            val nameIdentifier = namedDeclaration.nameIdentifier ?: return super.mark(element)
+        override fun markOrNull(element: PsiElement): List<TextRange>? {
+            val nameIdentifier = when (element) {
+                is CjConstructor<*> -> element.getIdentifyingElement() ?: element.nameIdentifier
+                is CjExtend -> (element.typeParameterList ?: element.receiverTypeReceiver)?.firstLeaf()
+                is CjPropertyAccessor -> element.node.findChildByType(CjTokens.GET_KEYWORD)?.psi
+                    ?: element.node.findChildByType(CjTokens.SET_KEYWORD)?.psi
+                is CjNamedDeclaration -> element.nameIdentifier
+                else -> null
+            } ?: return null
             return markElement(nameIdentifier)
         }
+
+        override fun mark(element: PsiElement): List<TextRange> = markOrNull(element) ?: super.mark(element)
     }
     /**
      * 标记声明起始关键字到名称标识符的范围。
@@ -79,17 +103,67 @@ object PositioningStrategies {
             return markRange(declarationStart, nameIdentifier)
         }
     }
+    val DECLARATION_SIGNATURE_WITH_VALIDITY_CHECK: PositioningStrategy<CjDeclaration> = DeclarationSignature(true)
+
+    val DECLARATION_SIGNATURE: PositioningStrategy<CjDeclaration> = DeclarationSignature(false)
+
     /**
-     * 标记可调用声明签名中不含修饰符的主体范围。
+     * 保留 Kotlin DeclarationSignature 的声明分派与 helper 所属。
+     * 仓颉主构造器写在类型 body 内，类型头不包含 Kotlin 的主构造器参数；
+     * lambda 没有 Kotlin 接收者文法，静态初始化器由真实构造器节点承担。
      */
+    private class DeclarationSignature(checkValidity: Boolean) : DeclarationHeader<CjDeclaration>(checkValidity) {
+        override fun mark(element: CjDeclaration): List<TextRange> {
+            when (element) {
+                is CjConstructor<*> -> {
+                    val keyword = if (element is CjPrimaryConstructor) element.getInitKeyword() else element.getConstructorKeyword()
+                    val begin = keyword ?: element.valueParameterList ?: return markElement(element)
+                    val end = element.valueParameterList ?: keyword ?: return markElement(element)
+                    return markRange(begin, end)
+                }
+                is CjFunction -> {
+                    val end = element.typeReference ?: element.valueParameterList ?: element.nameIdentifier ?: element
+                    val start = if (element is CjFunctionLiteral) element.valueParameterList ?: element else element
+                    return markRange(start, end)
+                }
+                is CjProperty -> return markRange(element, element.typeReference ?: element.nameIdentifier ?: element)
+                is CjPropertyAccessor -> {
+                    val end = element.returnTypeReference ?: element.parameterList ?: element.namePlaceholder
+                    return markRange(element, end)
+                }
+                // extend 没有名义声明标识符，也不是 Kotlin class 分支的对应项。
+                is CjExtend -> return super.mark(element)
+                is CjTypeStatement -> return markElement(element.nameIdentifier ?: element)
+            }
+            return super.mark(element)
+        }
+    }
+
+    /** 声明关键字至返回类型的完整签名；函数、属性和访问器共用两入口相同的选择顺序。 */
     val CALLABLE_DECLARATION_SIGNATURE_NO_MODIFIERS: PositioningStrategy<PsiElement> = object : PositioningStrategy<PsiElement>() {
         override fun mark(element: PsiElement): List<TextRange> {
-            val callable = element as? CjCallableDeclaration
-                ?: return ACTUAL_DECLARATION_NAME.mark(element)
-
-            val startElement = (callable as? CjFunction)?.keyword ?: callable.nameIdentifier ?: callable
-            val endElement = callable.valueParameterList ?: callable.nameIdentifier ?: startElement
-            return markRange(startElement, endElement)
+            when (element) {
+                is CjNamedFunction -> {
+                    val start = element.funKeyword ?: element
+                    val end = element.typeReference ?: element.valueParameterList ?: element.nameIdentifier ?: element
+                    return markRange(start, end)
+                }
+                is CjMainFunction -> {
+                    val start = element.node.findChildByType(CjTokens.MAIN_KEYWORD)?.psi ?: element
+                    val end = element.typeReference ?: element.valueParameterList ?: element
+                    return markRange(start, end)
+                }
+                is CjProperty -> {
+                    val start = element.node.findChildByType(CjTokens.PROP_KEYWORD)?.psi ?: element
+                    val end = element.typeReference ?: element.nameIdentifier ?: element
+                    return markRange(start, end)
+                }
+                is CjPropertyAccessor -> {
+                    val end = element.returnTypeReference ?: element.parameterList ?: element.namePlaceholder
+                    return markRange(element.namePlaceholder, end)
+                }
+            }
+            return if (element is CjDeclaration) DECLARATION_SIGNATURE_WITH_VALIDITY_CHECK.mark(element) else DEFAULT.mark(element)
         }
     }
     /**
@@ -329,3 +403,6 @@ object PositioningStrategies {
         }
     }
 }
+
+/** 返回语法节点中第一个叶子 token，保留 extend identifier 的真实起始 token。 */
+private fun PsiElement.firstLeaf(): PsiElement = firstChild?.firstLeaf() ?: this

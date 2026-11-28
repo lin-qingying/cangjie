@@ -17,7 +17,7 @@ Cangjie provides the compiler-facing and IDE-facing layers for the Cangjie langu
 
 The main build is a reusable frontend and tooling codebase, not a standalone replacement for the official `cjc` distribution. It supplies the components that a compiler host, an IDE, an LSP host, or a test environment needs to understand Cangjie source code.
 
-Its independently built host integrations are kept in [`intellij-ide/`](intellij-ide/README.md) and [`deveco/`](deveco/README.md). Public frontend and test-framework artifacts are assembled by [`prepare/`](prepare/README.md).
+Its independently built host integrations are documented in the [IntelliJ Platform guide](docs/intellij-ide.md) and [DevEco guide](docs/deveco.md). Their separate checkouts conventionally use `intellij-ide/` and `deveco/`. Public frontend and test-framework artifacts are assembled by [`prepare/`](prepare/README.md).
 
 ## Key capabilities
 

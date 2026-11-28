@@ -130,7 +130,7 @@ private fun CfirElement.toCaSymbolResolutionAttempt(analysisSession: CaCfirSessi
     is org.cangnova.cangjie.cfir.declarations.CfirDeclaration ->
         analysisSession.cfirSymbolBuilder.buildSymbol(symbol).toSymbolResolutionSuccessOrNull()
     is org.cangnova.cangjie.cfir.patterns.CfirEnumPattern ->
-        constructorReference.toCaSymbolResolutionAttempt(analysisSession)
+        constructorReference?.toCaSymbolResolutionAttempt(analysisSession)
     is CfirAssignment -> lValue.toCaSymbolResolutionAttempt(analysisSession)
     is CfirResolvable -> calleeReference.toCaSymbolResolutionAttempt(analysisSession)
     is CfirReference -> toCaTargetSymbols(analysisSession.cfirSymbolBuilder).toSymbolResolutionSuccessOrNull()

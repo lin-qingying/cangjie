@@ -24,6 +24,8 @@
 
 package org.cangnova.cangjie.psi
 
+import org.cangnova.cangjie.psi.psiUtil.findChildTokenThroughErrors
+
 import com.intellij.lang.ASTNode
 import com.intellij.navigation.ItemPresentation
 import com.intellij.navigation.ItemPresentationProviders
@@ -264,7 +266,7 @@ class CjParameter : CjNamedDeclarationStub<CangJieParameterStub>, CjParameterBas
                 return stub.isMutable()
             }
 
-            return findChildByType<PsiElement?>(CjTokens.VAR_KEYWORD) != null
+            return letOrVarKeyword?.node?.elementType == CjTokens.VAR_KEYWORD
         }
 
     /**
@@ -290,7 +292,7 @@ class CjParameter : CjNamedDeclarationStub<CangJieParameterStub>, CjParameterBas
      * 例如：`class Foo(let x: Int)` 中的 `let`
      * 优先从 Stub 索引检查是否存在
      *
-     * @return let/const/var 关键字元素，如果没有则返回 null
+     * @return let/var 关键字元素；const 不是成员参数声明关键字。
      */
     override val letOrVarKeyword: PsiElement?
         get() {
@@ -298,7 +300,7 @@ class CjParameter : CjNamedDeclarationStub<CangJieParameterStub>, CjParameterBas
             if (stub != null && !stub.hasLetOrVar()) {
                 return null
             }
-            return findChildByType(LET_VAR_TOKEN_SET)
+            return node.findChildTokenThroughErrors(LET_VAR_TOKEN_SET)?.psi
         }
 
     /**
@@ -339,6 +341,8 @@ class CjParameter : CjNamedDeclarationStub<CangJieParameterStub>, CjParameterBas
 
     /** 参数列表（参数本身不包含参数列表） */
     override val valueParameterList: CjParameterList? = null
+
+    override val valueParameterLists: List<CjParameterList> = emptyList()
 
     /** 值参数列表（参数本身不包含参数） */
     override val valueParameters: List<CjParameter> = emptyList()
@@ -415,9 +419,9 @@ class CjParameter : CjNamedDeclarationStub<CangJieParameterStub>, CjParameterBas
         /**
          * let/var 关键字的 Token 集合
          *
-         * 包含 LET_KEYWORD、CONST_KEYWORD 和 VAR_KEYWORD，用于识别参数的可变性声明
+         * 只包含 LET_KEYWORD 和 VAR_KEYWORD；非法 const 参数不能获得成员参数身份。
          */
         val LET_VAR_TOKEN_SET: TokenSet =
-            TokenSet.create(CjTokens.LET_KEYWORD, CjTokens.CONST_KEYWORD, CjTokens.VAR_KEYWORD)
+            TokenSet.create(CjTokens.LET_KEYWORD, CjTokens.VAR_KEYWORD)
     }
 }

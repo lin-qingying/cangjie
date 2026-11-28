@@ -1,0 +1,26 @@
+{
+  "utc": "2026-11-17T19:25:04.5023350Z",
+  "fileCount": 6839,
+  "aggregateSha256": "D98C2C5221AD66991203C0AC85F68C246138D73851399B57C181243FC3F47C3B",
+  "roots": [
+    "common",
+    "cfir",
+    "analysis/low-level-api-cfir",
+    "analysis/analysis-api-cfir",
+    "compiler/frontend",
+    "compiler/config",
+    "compiler/phaser",
+    "compiler/arguments",
+    "psi",
+    "resolution.common",
+    "macro"
+  ],
+  "include": [
+    "*.kt",
+    "*.cj",
+    "*.kts"
+  ],
+  "exclude": "**/build/**",
+  "method": "rg --files --hidden --no-ignore, / normalized and Sort-Object -CaseSensitive; SHA256 of UTF8 LF joined path TAB length TAB uppercaseSHA256, no final LF",
+  "scope": "Reference parent product and normal Array completed getter, original SOURCE14 plus two official referenceInstantiation SOURCE cases"
+}

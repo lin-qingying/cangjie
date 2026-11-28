@@ -32,6 +32,21 @@ import com.intellij.psi.tree.IElementType
  */
 interface SemanticWhitespaceAwarePsiBuilder : PsiBuilder {
 
+    /** 同一 token stream 的所有截断/委托视图共享这一个可撤销解析事务。 */
+    val macroParsingJournal: MacroParsingJournal
+
+    /** 当前语法区域是否像官方 ParserUtils::Peek 一样跳过独立 NL token。 */
+    val isNLTokenSkippingEnabled: Boolean
+
+    /** 最后一个由 parser 显式消费的原生 token 结束位置；无 token 时保留 null。 */
+    val lastConsumedTokenEndOffset: Int?
+
+    /** 逻辑前瞻所指的原始词元文本，遵循相同的 trivia/NL 跳过和截断 EOF，不执行额外 remap。 */
+    fun lookAheadTokenText(steps: Int): String?
+
+    /** 在嵌套语法区域中切换 NL 消费模式，并在退出时精确恢复外层模式。 */
+    fun <T> withNLTokenSkipping(enabled: Boolean, block: () -> T): T
+
     /**
      * 检查当前标记之前是否有换行符
      */

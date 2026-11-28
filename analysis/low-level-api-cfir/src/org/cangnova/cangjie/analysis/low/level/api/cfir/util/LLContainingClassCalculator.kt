@@ -15,6 +15,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirAnonymousFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirFieldVariableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertyAccessorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
@@ -50,16 +51,11 @@ internal object LLContainingClassCalculator {
                     return computeContainingClass(symbol, propertyOrParameter?.containingTypeStatement)
                 }
 
-                if (symbol is CfirPropertyAccessorSymbol && kind == PropertyFromParameter) {
-                    val containingParameter = source.psi as? CjParameter
-                    return computeContainingClass(symbol, containingParameter?.containingTypeStatement)
-                }
-
                 if (symbol is CfirConstructorSymbol && kind == ImplicitConstructor) {
                     return computeContainingClass(symbol, source.psi as? CjTypeStatement)
                 }
 
-                if (symbol is CfirPropertySymbol && kind == PropertyFromParameter) {
+                if (symbol is CfirFieldVariableSymbol && kind == FieldFromParameter) {
                     val containingParameter = source.psi as? CjParameter
                     return computeContainingClass(symbol, containingParameter?.containingTypeStatement)
                 }

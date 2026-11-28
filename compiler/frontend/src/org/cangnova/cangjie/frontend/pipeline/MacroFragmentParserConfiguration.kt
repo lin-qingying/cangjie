@@ -1,49 +1,46 @@
 package org.cangnova.cangjie.frontend.pipeline
 
-import com.intellij.lang.LighterASTNode
-import com.intellij.lang.PsiBuilder
-import com.intellij.lang.PsiBuilderFactory
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.util.Ref
-import com.intellij.psi.util.PsiTreeUtil
-import com.intellij.psi.tree.IElementType
-import com.intellij.util.diff.FlyweightCapableTreeStructure
 import org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder
-import org.cangnova.cangjie.cfir.builder.CfirRawSourceElementFactory
+import org.cangnova.cangjie.cfir.builder.toParsingContext
 import org.cangnova.cangjie.cfir.builder.macro.MacroPayloadTokenizer
-import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
-import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
-import org.cangnova.cangjie.cfir.lightTree.LightTreeRawCfirExpressionBuilder
 import org.cangnova.cangjie.cfir.lightTree.LightTreeRawCfirDeclarationBuilder
-import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroCallNode
+import org.cangnova.cangjie.cfir.lightTree.LightTree2Cfir
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentInput
-import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentSourceMap
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentParser
-import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroDeclarationFragment
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentReparseResult
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroParameterSignature
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceParam
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceToken
 import org.cangnova.cangjie.cfir.resolve.providers.macro.TokenBackedMacroFragmentParser
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
+import org.cangnova.cangjie.cfir.session.cjmpSettings
+import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.config.CompilerConfiguration
 import org.cangnova.cangjie.config.useLightTree
-import org.cangnova.cangjie.lexer.CangJieLexer
-import org.cangnova.cangjie.lexer.CjTokens
+import org.cangnova.cangjie.config.parserSettings
+import org.cangnova.cangjie.parsing.CjParserSettings
 import org.cangnova.cangjie.parsing.CangJieLightParser
-import org.cangnova.cangjie.parsing.CangJieParserDefinition
+import org.cangnova.cangjie.parsing.CjMacroDeclarationPrefix
+import org.cangnova.cangjie.parsing.CjMacroFragmentContext
+import org.cangnova.cangjie.parsing.CangJieLightMacroParseResult
+import org.cangnova.cangjie.parsing.collectParsingDiagnosticPublication
+import org.cangnova.cangjie.parsing.ParsingFileFacts
+import org.cangnova.cangjie.parsing.createMacroFragmentParserSeed
 import org.cangnova.cangjie.psi.CjNodeTypes
-import org.cangnova.cangjie.psi.CjAnnotations
-import org.cangnova.cangjie.psi.CjParameter
-import org.cangnova.cangjie.psi.CjParameterList
-import org.cangnova.cangjie.parsing.ANNOTATION_MODULE_PROVENANCE
-import org.cangnova.cangjie.source.isInSameSourceTree
-import org.cangnova.cangjie.psi.CjPsiFactory
+import org.cangnova.cangjie.psi.CjAnnotation
+import org.cangnova.cangjie.psi.CjMacroCodeFragment
 import org.cangnova.cangjie.source.CjLightSourceElement
 import org.cangnova.cangjie.source.CjPsiSourceElement
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.source.psi
+import org.cangnova.cangjie.source.isInSameSourceTree
 import org.cangnova.cangjie.source.toCjPsiSourceElement
+import org.cangnova.cangjie.source.toCjLightSourceElement
+import org.cangnova.cangjie.cfir.builder.CfirRawSourceElementFactory
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentSourceMap
 
 /**
  * 安装生产级 token-backed macro fragment parser。
@@ -60,12 +57,13 @@ fun CompilerConfiguration.installDefaultMacroFragmentParserFactory(project: Proj
     }
 
     macroFragmentParserFactory = MacroFragmentParserFactory { session ->
+        val invocationSettings = parserSettings
         TokenBackedMacroFragmentParser(
             reparse = { text, input ->
                 if (useLightTreeParser) {
-                    reparseLightTreeMacroFragment(session, text, input)
+                    reparseLightTreeMacroFragment(session, text, input, invocationSettings)
                 } else {
-                    reparsePsiMacroFragment(project!!, session, text, input)
+                    reparsePsiMacroFragment(project!!, session, text, input, invocationSettings)
                 }
             },
             reTokenize = { tokens -> tokens.reTokenizeMacroSurfaceTokens() },
@@ -81,75 +79,64 @@ private fun reparsePsiMacroFragment(
     session: CfirSession,
     text: String,
     input: MacroFragmentInput,
-): Any? {
-    val mode = input.mode
+    settings: CjParserSettings,
+): MacroFragmentReparseResult {
+    val fileFacts = input.fileFacts
+        ?: return MacroFragmentReparseResult.Failure("Macro fragment has no original parsing file facts.")
     val owner = input.node
     val surface = owner.surface
-    val packageFqName = surface.scopeContext.packageFqName
+    val ownerSnapshot = surface.replaceHandle.ownerSnapshot
+    check(ownerSnapshot.packageFqName == surface.scopeContext.packageFqName) { "Macro surface and raw owner disagree on the host package." }
     val sourcePsi = when (val source = surface.sourceRange?.source) {
         is CjPsiSourceElement -> source.psi
         is CjLightSourceElement -> source.unwrapToCjPsiSourceElement()?.psi
         else -> null
     }
-    // 新 token 不继承宿主的 builtin-module；名称解析仍沿原始 PSI context 进行。
-    val psiFactory = CjPsiFactory.forMacroExpansion(project, sourcePsi)
-    fun builderFor(element: com.intellij.psi.PsiElement, startOffset: Int): PsiRawCfirBuilder =
-        PsiRawCfirBuilder(
-            session,
-            sourceElementFactory = MacroFragmentSourceElementFactory(
-                checkNotNull(input.sourceMap), element.toCjPsiSourceElement(), startOffset,
-                surface.surfaceId, input.sourceMapping,
-                input.inheritedAnnotationSnapshots,
-            ),
-        ).also { it.context.restoreMacroScope(surface.scopeContext.rawScopeSnapshot) }
+    val entry = macroFragmentEntry(input.mode, surface, ownerSnapshot)
+        ?: return MacroFragmentReparseResult.Failure("Macro fragment has no parser facts for its replacement slot.")
+    val seed = createMacroFragmentParserSeed(
+        fileFacts,
+        session.cjmpSettings.toParsingContext(session.languageVersionSettings).copy(initialFileRole = fileFacts.cjmpRole),
+        entry,
+        settings,
+    ).copy(annotationModuleProvenance = input.annotationModuleProvenance(0))
+    // 新 token 不继承宿主 builtin-module；seed 持有真实 ParseNodes 文法，context 仅供 PSI 名称解析。
+    val fragment = CjMacroCodeFragment(project, "macroFragment.cj", text, sourcePsi, seed)
+    val contents = fragment.getContentElement()
+    val publication = fragment.collectParsingDiagnosticPublication()
+    val parsedFacts = contents.fileFacts
+    if (publication.diagnostics.any { it.isError }) return MacroFragmentReparseResult.SyntaxFailure(text, publication, parsedFacts)
 
-    return when {
-        mode == MacroFragmentParser.Mode.CUSTOM_ANNOTATION -> {
-            val original = surface.replaceHandle.annotationCarrier?.owner as? CfirValueParameter
-            val containingSymbol = original?.containingDeclarationSymbol ?: surface.replaceHandle.annotationCarrier?.owner?.symbol
-                ?: return null
-            val annotationText = text.withAbsoluteSourceStart(surface.sourceRange?.startOffset ?: 0)
-            val annotationFile = psiFactory.createAnnotationOnlyFile(
-                "$annotationText func __macro_annotation__() {}",
-                input.annotationModuleProvenance(surface.sourceRange?.startOffset ?: 0),
-            )
-            val annotation = PsiTreeUtil.findChildOfType(annotationFile, CjAnnotations::class.java)
-                ?.entries
-                ?.singleOrNull()
-                ?: return null
-            val annotationSourceOverride: CjSourceElement? = input.annotationSnapshot?.let { snapshot ->
-                surface.annotationReparseSource(snapshot)
-            }
-            PsiRawCfirBuilder(session, sourceElementFactory = input.customAnnotationSourceFactory()).also {
-                it.context.restoreMacroScope(surface.scopeContext.rawScopeSnapshot)
-            }.buildAnnotationCallInPackage(
-                annotation = annotation,
-                containingSymbol = containingSymbol,
-                packageFqName = packageFqName,
-                sourceOverride = annotationSourceOverride,
-                argumentListSourceOverride = input.annotationSnapshot?.originalAnnotation?.argumentList?.source,
-            )
+    val builder = PsiRawCfirBuilder(
+        session,
+        annotationMetadata = input.annotationMetadata,
+        sourceElementFactory = if (input.mode == MacroFragmentParser.Mode.CUSTOM_ANNOTATION) {
+            input.customAnnotationSourceFactory()
+        } else {
+            input.sourceFactory(contents.toCjPsiSourceElement())
+        },
+    )
+    if (input.mode == MacroFragmentParser.Mode.CUSTOM_ANNOTATION) {
+        val original = surface.replaceHandle.annotationCarrier?.owner as? CfirValueParameter
+        val containingSymbol = original?.containingDeclarationSymbol ?: surface.replaceHandle.annotationCarrier?.owner?.symbol
+            ?: return MacroFragmentReparseResult.Failure("Custom annotation has no declaration owner.", parsedFacts)
+        val annotation = contents.roots.singleOrNull() as? CjAnnotation
+            ?: return MacroFragmentReparseResult.Failure("Custom annotation reparse did not produce one annotation.", parsedFacts)
+        val annotationSourceOverride: CjSourceElement? = input.annotationSnapshot?.let { snapshot ->
+            surface.annotationReparseSource(snapshot)
         }
-        surface is MacroSurfaceParam -> {
-            val parameter = psiFactory.createSingleParameter(text, input) ?: return null
-            val original = surface.replaceHandle.carrier as? CfirValueParameter ?: return null
-            builderFor(parameter, parameter.textRange.startOffset).buildValueParameterInPackage(
-                parameter = parameter,
-                containingSymbol = original.containingDeclarationSymbol,
-                packageFqName = packageFqName,
-            )
-        }
-        mode == MacroFragmentParser.Mode.EXPRESSION -> {
-            val expression = psiFactory.createExpressionIfPossible(text) ?: return null
-            builderFor(expression, expression.textRange.startOffset).buildExpressionInPackage(expression, packageFqName)
-        }
-        else -> {
-            // 官方 ReplaceEachMacro 在声明 token reparse 时开启 custom-annotation
-            // 模式；否则 `@!Hide` 会被重新识别为另一个 declaration macro。
-            val fragment = psiFactory.createAnnotationOnlyFile(text, input.annotationModuleProvenance(0))
-            MacroDeclarationFragment(builderFor(fragment, 0).buildDeclarationFragmentInPackage(fragment, packageFqName))
-        }
+        val payload = builder.buildAnnotationCallFragment(
+            annotation = annotation,
+            containingSymbol = containingSymbol,
+            ownerSnapshot = ownerSnapshot,
+            sourceOverride = annotationSourceOverride,
+            argumentListSourceOverride = input.annotationSnapshot?.originalAnnotation?.argumentList?.source,
+        )
+        return MacroFragmentReparseResult.AnnotationSuccess(payload, parsedFacts, publication)
     }
+    val payload = builder.buildMacroFragmentPayload(contents, ownerSnapshot)
+        ?: return MacroFragmentReparseResult.Failure("A direct macro root has no raw CFIR conversion.", parsedFacts)
+    return MacroFragmentReparseResult.Success(payload, parsedFacts, publication)
 }
 
 /**
@@ -159,61 +146,81 @@ private fun reparseLightTreeMacroFragment(
     session: CfirSession,
     text: String,
     input: MacroFragmentInput,
-): Any? {
-    val mode = input.mode
+    settings: CjParserSettings,
+): MacroFragmentReparseResult {
+    val fileFacts = input.fileFacts
+        ?: return MacroFragmentReparseResult.Failure("Macro fragment has no original parsing file facts.")
     val owner = input.node
     val surface = owner.surface
-    val packageFqName = surface.scopeContext.packageFqName
-    return when {
-        mode == MacroFragmentParser.Mode.CUSTOM_ANNOTATION -> {
-            val ownerDeclaration = surface.replaceHandle.annotationCarrier?.owner ?: return null
-            val containingSymbol = (ownerDeclaration as? CfirValueParameter)?.containingDeclarationSymbol
-                ?: ownerDeclaration.symbol
-            val parsed = parseLightTreeAnnotationFragment(
-                session = session,
-                text = text,
-                sourceStartOffset = surface.sourceRange?.startOffset ?: 0,
-                input = input,
-            )
-            val sourceOverride: CjSourceElement? = input.annotationSnapshot?.let { snapshot ->
-                surface.annotationReparseSource(snapshot)
-            }
-            val argumentListSourceOverride = input.annotationSnapshot?.originalAnnotation?.argumentList?.source
-            val annotation = parsed.tree.findFirst(CjNodeTypes.ANNOTATION) ?: return null
-            parsed.builder.buildAnnotationCallInPackage(
-                annotation = annotation,
-                containingSymbol = containingSymbol,
-                packageFqName = packageFqName,
-                sourceOverride = sourceOverride,
-                argumentListSourceOverride = argumentListSourceOverride,
-            )
-        }
-        surface is MacroSurfaceParam -> {
-            val original = surface.replaceHandle.carrier as? CfirValueParameter ?: return null
-            val parsed = parseLightTreeFragment(session, "func __macro_fragment__($text) {}", input, "func __macro_fragment__(".length)
-            val parameter = parsed.tree.findFirst(CjNodeTypes.VALUE_PARAMETER) ?: return null
-            parsed.builder.buildValueParameterInPackage(
-                parameter = parameter,
-                containingSymbol = original.containingDeclarationSymbol,
-                packageFqName = packageFqName,
-            )
-        }
-        mode == MacroFragmentParser.Mode.EXPRESSION -> {
-            val parsed = parseLightTreeFragment(
-                session,
-                "func __macro_fragment__(): Unit {\nlet __macro_fragment_value__ =\n$text\n}",
-                input,
-                "func __macro_fragment__(): Unit {\nlet __macro_fragment_value__ =\n".length,
-            )
-            val variable = parsed.tree.findFirst(CjNodeTypes.VARIABLE) ?: return null
-            val expression = parsed.tree.findFirstExpressionAfterEquals(variable) ?: return null
-            parsed.builder.buildExpressionInPackage(expression, packageFqName)
-        }
-        else -> {
-            val parsed = parseLightTreeMacroExpansionFragment(session, text, input)
-            MacroDeclarationFragment(parsed.builder.buildDeclarationFragmentInPackage(parsed.tree.root, packageFqName))
-        }
+    val ownerSnapshot = surface.replaceHandle.ownerSnapshot
+    check(ownerSnapshot.packageFqName == surface.scopeContext.packageFqName) { "Macro surface and raw owner disagree on the host package." }
+    val entry = macroFragmentEntry(input.mode, surface, ownerSnapshot)
+        ?: return MacroFragmentReparseResult.Failure("Macro fragment has no parser facts for its replacement slot.")
+    val transaction = parseLightTreeMacroCodeFragment(session, text, fileFacts, entry, settings, input)
+    if (input.mode != MacroFragmentParser.Mode.CUSTOM_ANNOTATION) {
+        return LightTree2Cfir(session, session.cangjieScopeProvider, parserSettings = settings).buildMacroFragment(
+            transaction, fileFacts.cjmpRole, ownerSnapshot, input.annotationMetadata,
+            sourceElementFactory = { parsed -> input.sourceFactory(parsed.tree.root.toCjLightSourceElement(parsed.tree)) },
+        )
     }
+    return transaction.consume { fragment, diagnostics ->
+        if (diagnostics.any { it.isError }) {
+            return@consume MacroFragmentReparseResult.SyntaxFailure(fragment.inputText, fragment.diagnosticPublication, fragment.fileFacts)
+        }
+        val builder = LightTreeRawCfirDeclarationBuilder(
+            annotationMetadata = input.annotationMetadata,
+            session = session,
+            baseScopeProvider = session.cangjieScopeProvider,
+            tree = fragment.tree,
+            source = fragment.inputText,
+            sourceKind = fragment.fileFacts.sourceKind,
+            macroFacts = fragment.macroFacts,
+            nominalFacts = fragment.cjmpNominalFacts,
+            declarationModifiers = fragment.declarationModifiers,
+            sourceElementFactory = input.customAnnotationSourceFactory(),
+        )
+        val ownerDeclaration = surface.replaceHandle.annotationCarrier?.owner
+            ?: return@consume MacroFragmentReparseResult.Failure("Custom annotation has no declaration owner.", fragment.fileFacts)
+        val containingSymbol = (ownerDeclaration as? CfirValueParameter)?.containingDeclarationSymbol
+            ?: ownerDeclaration.symbol
+        val sourceOverride: CjSourceElement? = input.annotationSnapshot?.let { snapshot ->
+            surface.annotationReparseSource(snapshot)
+        }
+        val argumentListSourceOverride = input.annotationSnapshot?.originalAnnotation?.argumentList?.source
+        val annotation = fragment.roots.singleOrNull()
+            ?.takeIf { it.tokenType == CjNodeTypes.ANNOTATION }
+            ?: return@consume MacroFragmentReparseResult.Failure("Custom annotation reparse did not produce an annotation.", fragment.fileFacts)
+        val payload = builder.buildAnnotationCallFragment(
+            annotation = annotation,
+            containingSymbol = containingSymbol,
+            ownerSnapshot = ownerSnapshot,
+            sourceOverride = sourceOverride,
+            argumentListSourceOverride = argumentListSourceOverride,
+        ) ?: return@consume MacroFragmentReparseResult.Failure("Custom annotation could not be converted to raw CFIR.", fragment.fileFacts)
+        MacroFragmentReparseResult.AnnotationSuccess(payload, fragment.fileFacts, fragment.diagnosticPublication)
+    }
+}
+
+/** 构建官方 ParseNodes 的精确入口；参数文法取真实签名，scope 与 parent 取 parser 冻结事实。 */
+private fun macroFragmentEntry(
+    mode: MacroFragmentParser.Mode,
+    surface: org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurface,
+    ownerSnapshot: org.cangnova.cangjie.cfir.resolve.providers.macro.MacroRawOwnerSnapshot,
+): CjMacroFragmentContext? {
+    if (mode == MacroFragmentParser.Mode.CUSTOM_ANNOTATION) {
+        return CjMacroFragmentContext.Annotation(surface.parsingFacts?.outerDeclIdent)
+    }
+    if (surface is MacroSurfaceParam) {
+        val grammar = (ownerSnapshot.signature as? MacroParameterSignature.Declaration)?.grammar ?: return null
+        return CjMacroFragmentContext.ParameterSlice(grammar, surface.parsingFacts?.outerDeclIdent)
+    }
+    val facts = surface.parsingFacts ?: return null
+    return CjMacroFragmentContext.Nodes(
+        scope = facts.scope,
+        parent = facts.parent,
+        outerDeclIdent = facts.outerDeclIdent,
+        declarationPrefix = facts.declarationPrefix,
+    )
 }
 
 /**
@@ -244,117 +251,23 @@ private fun org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurface.annot
     }
 }
 
-/**
- * light tree 宏片段解析结果。
- */
-private data class ParsedLightTreeFragment(
-    /**
-     * 解析得到的 light tree。
-     */
-    val tree: FlyweightCapableTreeStructure<LighterASTNode>,
-    /**
-     * 基于该 light tree 构造 CFIR 的声明 builder。
-     */
-    val builder: LightTreeRawCfirDeclarationBuilder,
-)
-
-/**
- * 将文本解析为 light tree 片段并创建对应 raw CFIR builder。
- */
-private fun parseLightTreeFragment(
+/** 通过真实作用域、parent 与参数文法直接解析 macro roots。 */
+private fun parseLightTreeMacroCodeFragment(
     session: CfirSession,
     text: String,
+    fileFacts: ParsingFileFacts,
+    entry: CjMacroFragmentContext,
+    settings: CjParserSettings,
     input: MacroFragmentInput,
-    fragmentStartOffset: Int,
-): ParsedLightTreeFragment = createParsedLightTreeFragment(session, text, input, fragmentStartOffset) { builder ->
-    // 对齐 ReplaceEachMacro 的新 token parser，不调用 SetModuleName。
-    CangJieLightParser.parse(builder, languageModuleName = "")
-}
-
-/** 使用官方 custom-annotation 分派重解析宏返回的声明 token。 */
-private fun parseLightTreeMacroExpansionFragment(
-    session: CfirSession,
-    text: String,
-    input: MacroFragmentInput,
-): ParsedLightTreeFragment = createParsedLightTreeFragment(session, text, input, 0) { builder ->
-    CangJieLightParser.parseMacroExpansion(builder, languageModuleName = "")
-}
-
-/** 使用 annotation-only 语法解析 custom annotation 宏展开结果。 */
-private fun parseLightTreeAnnotationFragment(
-    session: CfirSession,
-    text: String,
-    sourceStartOffset: Int,
-    input: MacroFragmentInput,
-): ParsedLightTreeFragment {
-    // annotation 在仓颉语法中必须附着于声明。这里与 PSI createAnnotations 使用同一建模：
-    // 用语法载体声明形成标准 ANNOTATION 子树，最终只提取 annotation payload。
-    val fragmentText = text.withAbsoluteSourceStart(sourceStartOffset) + " func __macro_annotation__() {}"
-    return createParsedLightTreeFragment(session, fragmentText, input, sourceStartOffset) { builder ->
-        CangJieLightParser.parseAnnotationOnly(builder, languageModuleName = "")
-    }
-}
-
-/**
- * 为临时重解析文本保留其在宿主文件中的绝对起点。
- *
- * PSI 与 LightTree 都从同一个带前导空格的文本开始构造 source；这样宏参数中
- * 重新出现的 annotation 不会把临时树的局部 offset 泄漏到宿主文件。
- */
-private fun String.withAbsoluteSourceStart(sourceStartOffset: Int): String {
-    require(sourceStartOffset >= 0) { "Annotation source start offset must be non-negative." }
-    if (sourceStartOffset == 0) return this
-    return buildString(sourceStartOffset + length) {
-        repeat(sourceStartOffset) { append(' ') }
-        append(this@withAbsoluteSourceStart)
-    }
-}
-
-/** 统一创建宏片段 PsiBuilder、LightTree 与对应 raw CFIR builder。 */
-private fun createParsedLightTreeFragment(
-    session: CfirSession,
-    text: String,
-    input: MacroFragmentInput,
-    fragmentStartOffset: Int,
-    parse: (PsiBuilder) -> FlyweightCapableTreeStructure<LighterASTNode>,
-): ParsedLightTreeFragment {
-    val parserDefinition = CangJieParserDefinition()
-    val psiBuilder = PsiBuilderFactory.getInstance().createBuilder(
-        parserDefinition,
-        CangJieLexer(),
-        text,
-    )
-    psiBuilder.putUserData(ANNOTATION_MODULE_PROVENANCE, input.annotationModuleProvenance(fragmentStartOffset))
-    val lightTree = parse(psiBuilder)
-    return ParsedLightTreeFragment(
-        tree = lightTree,
-        builder = LightTreeRawCfirDeclarationBuilder(
-            session = session,
-            baseScopeProvider = session.cangjieScopeProvider,
-            tree = lightTree,
-            source = text,
-            sourceElementFactory = if (input.mode == MacroFragmentParser.Mode.CUSTOM_ANNOTATION) {
-                // 官方 custom annotation 保留显式原槽位 source override。
-                input.customAnnotationSourceFactory()
-            } else {
-                MacroFragmentSourceElementFactory(
-                    checkNotNull(input.sourceMap),
-                    CjLightSourceElement(lightTree.root, 0, text.length, lightTree),
-                    fragmentStartOffset, input.node.surface.surfaceId, input.sourceMapping,
-                    input.inheritedAnnotationSnapshots,
-                )
-            },
-        ).also { it.context.restoreMacroScope(input.node.surface.scopeContext.rawScopeSnapshot) },
-    )
-}
-
-/**
- * 使用 PSI factory 从文本中解析单个参数。
- */
-private fun CjPsiFactory.createSingleParameter(text: String, input: MacroFragmentInput): CjParameter? {
-    val prefix = "func __macro_fragment__("
-    val file = createAnnotationOnlyFile("$prefix$text) {}", input.annotationModuleProvenance(prefix.length))
-    return PsiTreeUtil.findChildOfType(file, CjParameterList::class.java)?.parameters?.singleOrNull()
+): CangJieLightMacroParseResult {
+    val psiBuilder = CangJieLightParser.createBuilder(text)
+    val seed = createMacroFragmentParserSeed(
+        fileFacts,
+        session.cjmpSettings.toParsingContext(session.languageVersionSettings).copy(initialFileRole = fileFacts.cjmpRole),
+        entry,
+        settings,
+    ).copy(annotationModuleProvenance = input.annotationModuleProvenance(0))
+    return CangJieLightParser.parseMacroCodeFragmentBuffered(psiBuilder, seed)
 }
 
 /** 前置 annotation 的 parser 模块只来自 sourceMap 确证的原 @ token 及原槽位身份。 */
@@ -383,70 +296,86 @@ private fun MacroFragmentInput.customAnnotationSourceFactory(): CfirRawSourceEle
     }
 }
 
-/**
- * 深度优先查找第一个匹配任意 token 类型的 light tree 节点。
- */
-private fun FlyweightCapableTreeStructure<LighterASTNode>.findFirst(
-    vararg tokenTypes: IElementType,
-): LighterASTNode? {
-    val accepted = tokenTypes.toSet()
-    fun visit(node: LighterASTNode): LighterASTNode? {
-        if (node.tokenType in accepted) return node
-        val childrenRef = Ref<Array<LighterASTNode>>()
-        val count = getChildren(node, childrenRef)
-        val children = childrenRef.get() ?: LighterASTNode.EMPTY_ARRAY
-        try {
-            for (index in 0 until count) {
-                visit(children[index])?.let { return it }
-            }
-        } finally {
-            disposeChildren(children, count)
-        }
-        return null
-    }
-    return visit(root)
-}
-
-/**
- * 在变量节点中查找等号后的第一个表达式节点。
- */
-private fun FlyweightCapableTreeStructure<LighterASTNode>.findFirstExpressionAfterEquals(
-    node: LighterASTNode,
-): LighterASTNode? {
-    var afterEquals = false
-    val childrenRef = Ref<Array<LighterASTNode>>()
-    val count = getChildren(node, childrenRef)
-    val children = childrenRef.get() ?: LighterASTNode.EMPTY_ARRAY
-    try {
-        for (index in 0 until count) {
-            val child = children[index]
-            if (child.tokenType == CjTokens.EQ) {
-                afterEquals = true
-            } else if (afterEquals) {
-                if (LightTreeRawCfirExpressionBuilder.isExpressionToken(child.tokenType)) {
-                    return child
-                }
-                findFirstExpressionAfterEquals(child)?.let { return it }
-            }
-        }
-    } finally {
-        disposeChildren(children, count)
-    }
-    return null
-}
+private fun MacroFragmentInput.sourceFactory(anchor: CjSourceElement): CfirRawSourceElementFactory =
+    MacroFragmentSourceElementFactory(
+        checkNotNull(sourceMap), anchor, 0, node.surface.surfaceId, sourceMapping, inheritedAnnotationSnapshots,
+    )
 
 /**
  * 使用宏 payload tokenizer 对表面 token 文本重新分词。
  */
 private fun List<MacroSurfaceToken>.reTokenizeMacroSurfaceTokens(): List<MacroSurfaceToken> {
+    data class OriginSpan(
+        val fragmentStart: Int,
+        val fragmentEnd: Int,
+        val sourceRange: org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceSourceRange?,
+        val sourceStart: Int,
+        val sourceEnd: Int,
+        val exact: Boolean,
+    )
+
     val sourceMap = MacroFragmentSourceMap.materialize(this)
-    val payloadTokens = MacroPayloadTokenizer.tokenize(sourceMap.text, baseOffset = 0)
+    val text = sourceMap.text
+    val origins = mutableListOf<OriginSpan>()
+    var inputOffset = 0
+    for (token in this) {
+        val tokenEnd = inputOffset + token.text.length
+        val sourceRange = token.sourceRange
+        val exact = token.isSourceToken
+        origins += OriginSpan(
+            fragmentStart = inputOffset,
+            fragmentEnd = tokenEnd,
+            sourceRange = sourceRange,
+            sourceStart = if (exact) token.startOffset else 0,
+            sourceEnd = if (exact) token.endOffset else 0,
+            exact = exact,
+        )
+        inputOffset = tokenEnd
+    }
+
+    val payloadTokens = MacroPayloadTokenizer.tokenize(text, baseOffset = 0)
     return payloadTokens.map { token ->
+        val parts = origins.filter { it.fragmentEnd > token.startOffset && it.fragmentStart < token.endOffset }
+        val ranges = parts.mapNotNull { it.sourceRange }
+        val sharedSource = ranges.firstOrNull()?.source
+        val combinedRange = when {
+            ranges.isEmpty() -> null
+            ranges.all { it === ranges.first() } -> ranges.first()
+            sharedSource != null && ranges.all { it.source === sharedSource } ->
+                org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceSourceRange(
+                    source = sharedSource,
+                    startOffset = ranges.minOf { it.startOffset },
+                    endOffset = ranges.maxOf { it.endOffset },
+                )
+            else -> null
+        }
+        var exactStart: Int? = null
+        var exactEnd: Int? = null
+        if (parts.isNotEmpty() && parts.all { it.exact } && parts.all { it.sourceRange?.source === sharedSource }) {
+            val firstPart = parts.first()
+            val firstOverlap = maxOf(token.startOffset, firstPart.fragmentStart)
+            exactStart = firstPart.sourceStart + (firstOverlap - firstPart.fragmentStart)
+            var expectedSourceEnd = exactStart
+            for (part in parts) {
+                val overlapStart = maxOf(token.startOffset, part.fragmentStart)
+                val overlapEnd = minOf(token.endOffset, part.fragmentEnd)
+                val mappedStart = part.sourceStart + (overlapStart - part.fragmentStart)
+                val mappedEnd = part.sourceStart + (overlapEnd - part.fragmentStart)
+                if (mappedStart != expectedSourceEnd) {
+                    exactStart = null
+                    break
+                }
+                expectedSourceEnd = mappedEnd
+            }
+            if (exactStart != null) exactEnd = expectedSourceEnd
+        }
         MacroSurfaceToken(
             text = token.text,
-            startOffset = token.startOffset,
-            endOffset = token.endOffset,
+            startOffset = exactStart ?: token.startOffset,
+            endOffset = exactEnd ?: token.endOffset,
             kindName = token.kindName,
+            sourceRange = combinedRange,
+            isSourceToken = exactStart != null,
             sourceSpans = sourceMap.spansForRange(token.startOffset, token.endOffset),
             isTrivia = token.kindName in CfirRawSourceElementFactory.TRIVIA_KINDS,
         )

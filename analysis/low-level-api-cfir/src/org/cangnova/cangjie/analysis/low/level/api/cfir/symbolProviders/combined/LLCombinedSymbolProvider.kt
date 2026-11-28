@@ -7,9 +7,11 @@ import org.cangnova.cangjie.cfir.resolve.providers.CfirCompositeCachedSymbolName
 import org.cangnova.cangjie.cfir.resolve.providers.CfirCompositeSymbolNamesProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolNamesProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
+import org.cangnova.cangjie.cfir.session.CfirCjmpLoadDiagnostic
 import org.cangnova.cangjie.cfir.resolve.providers.CfirImportNamespace
 import org.cangnova.cangjie.cfir.resolve.providers.CfirImportNamespaceContext
 import org.cangnova.cangjie.cfir.resolve.providers.compositeImportNamespace
+import org.cangnova.cangjie.cfir.resolve.providers.selectCompositeClassifierCandidates
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.name.ClassId
 
@@ -50,7 +52,16 @@ internal abstract class LLCombinedSymbolProvider<P : CfirSymbolProvider>(session
 
     /** 候选枚举保持各 provider 的全部结果，单结果查询继续维持 classpath 优先级。 */
     override fun getClassLikeSymbolsByClassId(classId: ClassId): List<CfirClassLikeSymbol<*>> =
-        providers.flatMap { it.getClassLikeSymbolsByClassId(classId) }.distinct()
+        selectCompositeClassifierCandidates(providers.flatMap { it.getClassLikeSymbolsByClassId(classId) })
+
+    override fun getCjmpLoadDiagnostics(packageFqName: org.cangnova.cangjie.name.FqName): List<CfirCjmpLoadDiagnostic> =
+        providers.flatMap { it.getCjmpLoadDiagnostics(packageFqName) }.distinct()
+
+    override fun getCjmpLoadDiagnostics(
+        packageFqName: org.cangnova.cangjie.name.FqName,
+        consumerSession: CfirSession,
+    ): List<CfirCjmpLoadDiagnostic> =
+        providers.flatMap { it.getCjmpLoadDiagnostics(packageFqName, consumerSession) }.distinct()
 
     /**
      * Estimates the number of symbols contained in the combined symbol provider's own caches. The metric does not include the cache sizes

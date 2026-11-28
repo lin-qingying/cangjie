@@ -22,7 +22,7 @@ import org.cangnova.cangjie.analysis.api.types.CaUnionType
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedSymbolError
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirBuiltInTypeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirEnumSymbol

@@ -9,6 +9,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
 import org.cangnova.cangjie.cfir.expressions.CfirResolvedArgumentList
 import org.cangnova.cangjie.cfir.expressions.CfirStatement
 import org.cangnova.cangjie.cfir.expressions.buildResolvedArgumentList
+import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures
 import org.cangnova.cangjie.cfir.expressions.builder.buildBlock
 import org.cangnova.cangjie.cfir.expressions.builder.buildErrorExpression
 import org.cangnova.cangjie.cfir.expressions.builder.buildLiteralExpression
@@ -45,8 +46,8 @@ import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.cfir.patterns.builder.buildCatchPattern
-import org.cangnova.cangjie.cfir.patterns.builder.buildCommandTypePattern
 import org.cangnova.cangjie.cfir.patterns.builder.buildBindingPattern
+import org.cangnova.cangjie.cfir.patterns.builder.buildCommandTypePattern
 import org.cangnova.cangjie.cfir.patterns.builder.buildWildcardPattern
 import org.cangnova.cangjie.cfir.patterns.restorePatternTreeRoots
 import org.cangnova.cangjie.cfir.toCfirResolvedTypeRef
@@ -62,6 +63,56 @@ import org.junit.jupiter.api.Test
 
 /** 快照恢复真实可变类型状态，不向错误表达式的派生类型 getter 写回。 */
 class CfirResolutionSnapshotTest {
+    /** context 独占节点与原始列表同属调用事务；别名映射也必须恢复到原对象。 */
+    @Test
+    fun `restore preserves resolved mapping identities and context only expression types`() {
+        val session = CallResolutionTestFixtures.newTestSession()
+        val owner = CallResolutionTestFixtures.buildFunctionSymbol(
+            session, "call", parameterTypes = listOf(ConePrimitiveType.INT32),
+        )
+        val parameter = owner.cfir.valueParameters.single()
+        for (aliased in listOf(false, true)) {
+            val value = buildLiteralExpression {
+                kind = CfirLiteralKind.INT
+                this.value = 1
+                coneTypeOrNull = ConePrimitiveType.INT32
+            }
+            val context = buildLiteralExpression {
+                kind = CfirLiteralKind.INT
+                this.value = 2
+                coneTypeOrNull = ConePrimitiveType.INT32
+            }
+            val original = buildArgumentList { arguments += value }
+            val mapping = linkedMapOf<CfirExpression, CfirValueParameter>(value to parameter)
+            val contextMapping: LinkedHashMap<CfirExpression, CfirValueParameter> =
+                if (aliased) mapping else linkedMapOf(value to parameter, context to parameter)
+            val resolved = buildResolvedArgumentList(original, mapping, contextMapping)
+            val call = buildFunctionCall {
+                calleeReference = buildNamedReference { name = Name.identifier("call") }
+                argumentList = resolved
+            }
+            val snapshot = CfirResolutionSnapshot.capture(call)
+            repeat(2) {
+                mapping.clear()
+                contextMapping.clear()
+                (original.arguments as MutableList<CfirExpression>).clear()
+                value.replaceConeTypeOrNull(ConePrimitiveType.INT64)
+                context.replaceConeTypeOrNull(ConePrimitiveType.INT64)
+                snapshot.restore()
+                assertSame(resolved, call.argumentList)
+                assertSame(mapping, resolved.mapping)
+                assertSame(contextMapping, resolved.mappingIncludingContextArguments)
+                assertSame(parameter, mapping[value])
+                assertSame(value, original.arguments.single())
+                assertEquals(ConePrimitiveType.INT32, value.coneTypeOrNull)
+                if (!aliased) {
+                    assertSame(parameter, contextMapping[context])
+                    assertEquals(ConePrimitiveType.INT32, context.coneTypeOrNull)
+                }
+            }
+        }
+    }
+
     /** PCLA 的类型槽恢复不能使暂停中的实参和正文迭代器失效。 */
     @Test
     fun `type restoration preserves active body and argument iterators`() {
@@ -365,16 +416,16 @@ class CfirResolutionSnapshotTest {
     fun `restore discards catch pattern typing from a failed candidate`() {
         val originalType = ConePrimitiveType.INT64.toCfirResolvedTypeRef()
         val pattern = buildCatchPattern {
-            isWildcard = true
+            nestedPattern = buildWildcardPattern {}
             typeRefs += originalType
         }
         val snapshot = CfirResolutionSnapshot.capture(pattern)
         repeat(2) {
             val errorType = ConeErrorType(ConeInvalidCatchTypeError).toCfirResolvedTypeRef()
             pattern.replaceTypeRefs(listOf(errorType))
-            pattern.replaceResolvedTypeRef(errorType)
+            pattern.replaceSemanticTypeRef(errorType)
             snapshot.restore()
-            assertNull(pattern.resolvedTypeRef)
+            assertNull(pattern.semanticTypeRef)
             assertEquals(1, pattern.typeRefs.size)
             assertSame(originalType, pattern.typeRefs.single())
         }
@@ -407,8 +458,7 @@ class CfirResolutionSnapshotTest {
     fun `restore reinstates handle pattern root and command type references`() {
         val originalTypeRef = ConePrimitiveType.INT64.toCfirResolvedTypeRef()
         val originalPattern = buildCommandTypePattern {
-            bindingName = Name.identifier("value")
-            isWildcard = false
+            nestedPattern = buildBindingPattern { name = Name.identifier("value") }
             typeRefs += originalTypeRef
         }
         val handleClause = buildHandleClause {
@@ -418,7 +468,7 @@ class CfirResolutionSnapshotTest {
         val snapshot = CfirResolutionSnapshot.capture(handleClause)
         val candidateTypeRef = ConePrimitiveType.INT32.toCfirResolvedTypeRef()
         val candidatePattern = buildCommandTypePattern {
-            isWildcard = true
+            nestedPattern = buildWildcardPattern()
         }
 
         originalPattern.replaceTypeRefs(listOf(candidateTypeRef))
@@ -479,7 +529,7 @@ class CfirResolutionSnapshotTest {
             pattern = originalBranchPattern
             body = buildBlock()
         }
-        val originalHandlePattern = buildCommandTypePattern { isWildcard = true }
+        val originalHandlePattern = buildCommandTypePattern { nestedPattern = buildWildcardPattern() }
         val handle = buildHandleClause {
             commandPattern = originalHandlePattern
             body = buildBlock()

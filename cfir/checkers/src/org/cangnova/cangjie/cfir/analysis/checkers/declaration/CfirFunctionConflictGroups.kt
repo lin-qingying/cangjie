@@ -44,12 +44,7 @@ import java.util.concurrent.ConcurrentHashMap
  * 簇保留所有语义参与者；诊断层另行选择唯一源码代表，不会从冲突图中删除
  * synthetic、继承或宏生成符号，因此代表诊断仍能携带完整的冲突成员信息。
  */
-internal data class CfirFunctionConflictGroup(
-    val signature: CfirFunctionConflictSignature,
-    val members: Set<CfirBasedSymbol<*>>,
-) {
-    val presentation: String get() = signature.presentation
-}
+internal class CfirFunctionConflictGroup(val members: Set<CfirBasedSymbol<*>>)
 
 /**
  * 仓颉前端用来区分同名函数冲突簇的完整声明类别。
@@ -142,6 +137,7 @@ internal fun functionConflictSignature(symbol: CfirBasedSymbol<*>): CfirFunction
  */
 internal class CfirFunctionConflictGroups(
     declarationConflictingSymbols: Map<CfirBasedSymbol<*>, SmartSet<CfirBasedSymbol<*>>>,
+    actualizedOverloadConflicts: Map<CfirBasedSymbol<*>, SmartSet<CfirBasedSymbol<*>>>,
 ) {
     private val groupsBySymbol = IdentityHashMap<CfirBasedSymbol<*>, CfirFunctionConflictGroup>()
 
@@ -157,18 +153,21 @@ internal class CfirFunctionConflictGroups(
                 ?.also { signatures[symbol] = it }
         }
 
-        fun connect(first: CfirBasedSymbol<*>, second: CfirBasedSymbol<*>, signature: CfirFunctionConflictSignature) {
+        fun connect(first: CfirBasedSymbol<*>, second: CfirBasedSymbol<*>) {
             adjacency.getOrPut(first, ::identitySet).add(second)
             adjacency.getOrPut(second, ::identitySet).add(first)
-            signatures[first] = signature
-            signatures[second] = signature
         }
 
         declarationConflictingSymbols.forEach { (declaration, conflictingSymbols) ->
-            val signature = signatureOf(declaration) ?: return@forEach
+            val actualizedPeers = actualizedOverloadConflicts[declaration]
             conflictingSymbols.forEach { conflictingSymbol ->
-                if (signatureOf(conflictingSymbol) == signature) {
-                    connect(declaration, conflictingSymbol, signature)
+                if (actualizedPeers?.contains(conflictingSymbol) == true) {
+                    connect(declaration, conflictingSymbol)
+                } else {
+                    val signature = signatureOf(declaration)
+                    if (signature != null && signatureOf(conflictingSymbol) == signature) {
+                        connect(declaration, conflictingSymbol)
+                    }
                 }
             }
         }
@@ -190,8 +189,7 @@ internal class CfirFunctionConflictGroups(
             }
 
             if (members.size < 2) return@forEach
-            val signature = signatures.getValue(start)
-            val group = CfirFunctionConflictGroup(signature, Collections.unmodifiableSet(members))
+            val group = CfirFunctionConflictGroup(Collections.unmodifiableSet(members))
             builtGroups += group
             members.forEach { groupsBySymbol[it] = group }
         }

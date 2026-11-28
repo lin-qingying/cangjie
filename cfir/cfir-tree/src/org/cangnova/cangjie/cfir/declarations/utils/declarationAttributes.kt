@@ -9,7 +9,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirDeclarationDataRegistry
 /**
  * 变量常量求值结果在声明属性表中的键。
  */
-private object EvaluatedValue : CfirDeclarationDataKey() {
+internal object EvaluatedValue : CfirDeclarationDataKey() {
     override val rawCopyPolicy get() = org.cangnova.cangjie.cfir.CfirRawDeclarationDataPolicies.evaluatedInitializer
 }
 

@@ -84,22 +84,13 @@ public class CfirConditionalCompilationEvaluator(
     ): CfirConditionalCompilationResult {
         val first = evaluateBoolean(left)
         val second = evaluateBoolean(right)
-        // Official ConditionalCompilation evaluates both operands through
-        // Utils::AllOf/AnyOf; a decisive left operand must not hide a malformed
-        // right operand and its structured diagnostic.
+        // 官方 ConditionalCompilation.cpp 的 AllOf/AnyOf 先求两侧，再组合左右真值；
+        // 任一决定性布尔值都不能掩盖另一侧的非法条件诊断。
         if (first is CfirConditionalCompilationResult.Invalid) return first
         if (second is CfirConditionalCompilationResult.Invalid) return second
-        return if (and) {
-            if (second === CfirConditionalCompilationResult.Enabled) {
-                CfirConditionalCompilationResult.Enabled
-            } else {
-                CfirConditionalCompilationResult.Disabled
-            }
-        } else if (second === CfirConditionalCompilationResult.Enabled) {
-            CfirConditionalCompilationResult.Enabled
-        } else {
-            CfirConditionalCompilationResult.Disabled
-        }
+        val leftEnabled = first === CfirConditionalCompilationResult.Enabled
+        val rightEnabled = second === CfirConditionalCompilationResult.Enabled
+        return result(if (and) leftEnabled && rightEnabled else leftEnabled || rightEnabled)
     }
 
     private fun evaluateFunctionCall(call: CfirFunctionCall): CfirConditionalCompilationResult {

@@ -1,9 +1,9 @@
 CfirNamedFunctionSymbol: sample/lowlevel/lazy/scopes/Document.render
-[ResolvedTo(TYPES)] public func render(): R|struct String| {
+[ResolvedTo(STATUS)] public func render(): R|struct String| {
     <element: CfirLazyBlock>
 }
 overridden:
   CfirNamedFunctionSymbol: sample/lowlevel/lazy/scopes/Printable.render
 
 CfirConstructorSymbol: sample/lowlevel/lazy/scopes/PrettyDocument.<init>
-[ResolvedTo(IMPORTS)] init()
+[ResolvedTo(STATUS)] init()

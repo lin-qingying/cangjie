@@ -8,10 +8,7 @@
 package org.cangnova.cangjie.cfir.expressions.builder
 
 import kotlin.contracts.*
-import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
-import org.cangnova.cangjie.annotations.CangjieAnnotationIdentity
-import org.cangnova.cangjie.annotations.CangjieAnnotationOrigin
-import org.cangnova.cangjie.annotations.CangjieAnnotationTarget
+import org.cangnova.cangjie.annotations.*
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
 import org.cangnova.cangjie.cfir.expressions.*
@@ -29,6 +26,8 @@ class CfirAnnotationCallBuilder {
     var source: CjSourceElement? = null
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
     var coneTypeOrNull: ConeCangJieType? = null
+    var mappedExpression: CfirExpression? = null
+    var overflowStrategy: CangjieOverflowStrategy? = null
     lateinit var typeRef: CfirTypeRef
     var argumentMapping: CfirAnnotationArgumentMapping = CfirEmptyAnnotationArgumentMapping
     var annotationClassId: ClassId? = null
@@ -51,6 +50,8 @@ class CfirAnnotationCallBuilder {
             source,
             annotations.toMutableOrEmpty(),
             coneTypeOrNull,
+            mappedExpression,
+            overflowStrategy,
             typeRef,
             argumentMapping,
             annotationClassId,
@@ -89,6 +90,8 @@ inline fun buildAnnotationCallCopy(original: CfirAnnotationCall, init: CfirAnnot
     copyBuilder.source = original.source
     copyBuilder.annotations.addAll(original.annotations)
     copyBuilder.coneTypeOrNull = original.coneTypeOrNull
+    copyBuilder.mappedExpression = original.mappedExpression
+    copyBuilder.overflowStrategy = original.overflowStrategy
     copyBuilder.typeRef = original.typeRef
     copyBuilder.argumentMapping = original.argumentMapping
     copyBuilder.annotationClassId = original.annotationClassId

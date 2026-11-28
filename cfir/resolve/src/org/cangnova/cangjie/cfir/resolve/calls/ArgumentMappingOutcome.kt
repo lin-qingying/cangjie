@@ -40,6 +40,8 @@ data class ArgumentMappingOutcome(
     val matchedNamedArgumentCount: Int,
     /** 本次映射是否产生阻断式调用形状错误。 */
     val hasMappingFailure: Boolean,
+    /** 合法 C extras 的数量，不修改 mappedArgumentCount 的 fixed formal 含义。 */
+    val cVariadicExtraArgumentCount: Int = 0,
 ) {
     /** 实参数量到候选可接受区间的距离。 */
     val arityDistance: Int

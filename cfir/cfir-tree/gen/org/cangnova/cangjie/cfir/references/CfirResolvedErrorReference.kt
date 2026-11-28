@@ -6,6 +6,7 @@
 package org.cangnova.cangjie.cfir.references
 
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.CfirPureAbstractElement
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
@@ -24,10 +25,18 @@ abstract class CfirResolvedErrorReference : CfirPureAbstractElement(), CfirResol
     abstract override val resolvedSymbol: CfirBasedSymbol<*>
     abstract override val diagnostic: ConeDiagnostic
 
+    /** 访问本节点拥有的完整来源子图；独立于 ordinary visitor 的语法子树。 */
+    @CfirImplementationDetail
+    override fun <R, D> acceptSourceChildren(visitor: CfirVisitor<R, D>, data: D) {
+    }
+
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitResolvedErrorReference(this, data)
 
     @Suppress("UNCHECKED_CAST")
     override fun <E : CfirElement, D> transform(transformer: CfirTransformer<D>, data: D): E =
         transformer.transformResolvedErrorReference(this, data) as E
+
+    @CfirImplementationDetail
+    abstract override fun replaceSource(newSource: CjSourceElement?)
 }

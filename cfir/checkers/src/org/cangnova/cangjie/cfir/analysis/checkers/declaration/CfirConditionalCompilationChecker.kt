@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
@@ -14,7 +15,7 @@ import org.cangnova.cangjie.cfir.session.CfirConditionalCompilationError
  * raw pipeline 不依赖 checker 模块，也不抛异常；失败先挂在 CfirFile 上，
  * 由这里统一负责源码位置、诊断名称和参数。
  */
-object CfirConditionalCompilationChecker : CfirFileChecker() {
+object CfirConditionalCompilationChecker : CfirFileChecker(MppCheckerKind.Common) {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirFile) {
         for (failure in declaration.conditionalCompilationFailures) {

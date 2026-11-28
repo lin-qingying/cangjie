@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
@@ -10,7 +11,7 @@ import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.source.CjOffsetsOnlySourceElement
 
 /** C/foreign 的返回类型检查只消费有效 C ABI；CFunc 内部签名由类型 checker 统一检查。 */
-object CfirForeignFunctionReturnTypeChecker : CfirFunctionChecker() {
+object CfirForeignFunctionReturnTypeChecker : CfirFunctionChecker(MppCheckerKind.Common) {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirFunction) {
         if (!declaration.status.isC || declaration.hasPositionalParameterAfterNamed()) return
@@ -24,7 +25,7 @@ object CfirForeignFunctionReturnTypeChecker : CfirFunctionChecker() {
 }
 
 /** named 参数、Unit 和 CType 是三个独立规则，与官方 CheckCFuncParam 顺序一致。 */
-object CfirForeignFunctionParameterTypeChecker : CfirFunctionChecker() {
+object CfirForeignFunctionParameterTypeChecker : CfirFunctionChecker(MppCheckerKind.Common) {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirFunction) {
         if (!declaration.status.isC || declaration.hasPositionalParameterAfterNamed()) return

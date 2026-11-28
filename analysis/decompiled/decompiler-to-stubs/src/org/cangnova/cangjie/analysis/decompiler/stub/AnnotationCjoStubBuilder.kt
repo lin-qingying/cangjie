@@ -126,7 +126,7 @@ private fun CfirComparisonOp.toCjToken(): CjSingleValueToken = when (this) {
 
 /** 为字面量实参创建 stub 子树；字符串按字面片段与转义片段逐段重建。 */
 private fun createAnnotationLiteralStub(parent: StubElement<*>, literal: CfirLiteralExpression) {
-    if (literal.kind == CfirLiteralKind.STRING) {
+    if (literal.kind == CfirLiteralKind.STRING || literal.kind == CfirLiteralKind.JSTRING) {
         val string = CangJiePlaceHolderStubImpl<CjStringTemplateExpression>(parent, CjStubElementTypes.STRING_TEMPLATE)
         // 字符串按字面片段与转义片段建子节点，不能将带转义的整串伪装成 LITERAL entry。
         val pending = StringBuilder()
@@ -164,7 +164,7 @@ private fun createAnnotationLiteralStub(parent: StubElement<*>, literal: CfirLit
         CfirLiteralKind.RUNE -> ConstantValueKind.RUNE_CONSTANT
         CfirLiteralKind.BYTE -> ConstantValueKind.CHARACTER_BYTE_CONSTANT
         CfirLiteralKind.UNIT -> ConstantValueKind.UNIT_CONSTANT
-        CfirLiteralKind.STRING -> error("String literal must use a template subtree")
+        CfirLiteralKind.STRING, CfirLiteralKind.JSTRING -> error("String literal must use a template subtree")
     }
     val token = when (literal.kind) {
         CfirLiteralKind.UNIT -> "()"

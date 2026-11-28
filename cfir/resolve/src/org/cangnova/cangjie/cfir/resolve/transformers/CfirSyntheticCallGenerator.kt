@@ -24,6 +24,8 @@
 
 package org.cangnova.cangjie.cfir.resolve.transformers
 
+import org.cangnova.cangjie.cfir.types.asCone
+
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.toCfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.common.moduleData
@@ -79,7 +81,7 @@ import org.cangnova.cangjie.cfir.types.ConeDiagnostic
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
-import org.cangnova.cangjie.cfir.types.asCone
+import org.cangnova.cangjie.cfir.resolve.substitution.asCone
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.contains

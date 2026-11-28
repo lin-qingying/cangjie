@@ -4,6 +4,7 @@ import org.cangnova.cangjie.cfir.resolve.match.CfirOrPatternLoweringKind
 import org.cangnova.cangjie.cfir.resolve.match.loweringKind
 
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.CfirFunctionBodyOwner
 import org.cangnova.cangjie.cfir.resolve.body.CfirDataFlowAnalyzer
 import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
 import org.cangnova.cangjie.cfir.declarations.CfirClass
@@ -11,6 +12,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirCodeFragment
 import org.cangnova.cangjie.cfir.declarations.CfirControlFlowGraphOwner
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
@@ -20,6 +22,10 @@ import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirAssignment
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
+import org.cangnova.cangjie.cfir.expressions.CfirTupleLiteral
+import org.cangnova.cangjie.cfir.expressions.CfirBinaryOp
+import org.cangnova.cangjie.cfir.expressions.CfirBinaryOpKind
+import org.cangnova.cangjie.cfir.expressions.CfirComparisonExpression
 import org.cangnova.cangjie.cfir.expressions.CfirBreakExpression
 import org.cangnova.cangjie.cfir.expressions.CfirCall
 import org.cangnova.cangjie.cfir.expressions.CfirCatch
@@ -33,6 +39,11 @@ import org.cangnova.cangjie.cfir.expressions.CfirJump
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
 import org.cangnova.cangjie.cfir.expressions.CfirLoopExpression
+import org.cangnova.cangjie.cfir.expressions.CfirForInExpression
+import org.cangnova.cangjie.cfir.expressions.CfirCallExpression
+import org.cangnova.cangjie.cfir.expressions.CfirUnaryExpression
+import org.cangnova.cangjie.cfir.expressions.CfirBinaryExpression
+import org.cangnova.cangjie.cfir.source.CfirSourceForInKind
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirReturnExpression
 import org.cangnova.cangjie.cfir.expressions.CfirStatement
@@ -40,6 +51,10 @@ import org.cangnova.cangjie.cfir.expressions.CfirMatchBranch
 import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
 import org.cangnova.cangjie.cfir.expressions.CfirOptionalChainExpression
 import org.cangnova.cangjie.cfir.expressions.CfirThrowExpression
+import org.cangnova.cangjie.cfir.expressions.CfirTypeOperator
+import org.cangnova.cangjie.cfir.expressions.CfirUnsafeExpression
+import org.cangnova.cangjie.cfir.expressions.CfirSynchronizedExpression
+import org.cangnova.cangjie.cfir.expressions.CfirSpawnExpression
 import org.cangnova.cangjie.cfir.expressions.CfirTryExpression
 import org.cangnova.cangjie.cfir.expressions.CfirWrappedExpression
 import org.cangnova.cangjie.cfir.patterns.CfirBindingPattern
@@ -48,7 +63,9 @@ import org.cangnova.cangjie.cfir.patterns.CfirOrPattern
 import org.cangnova.cangjie.cfir.patterns.CfirPattern
 import org.cangnova.cangjie.cfir.patterns.CfirTuplePattern
 import org.cangnova.cangjie.cfir.patterns.CfirWildcardPattern
+import org.cangnova.cangjie.cfir.references.CfirControlFlowGraphReference
 import org.cangnova.cangjie.cfir.resolve.dfa.Stack
+import org.cangnova.cangjie.cfir.resolve.dfa.DfaSourceVisitor
 import org.cangnova.cangjie.cfir.resolve.dfa.controlFlowGraph
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.CFGNode.Companion.addEdge as addEdgeStatic
 import org.cangnova.cangjie.cfir.types.ConeErrorType
@@ -60,6 +77,8 @@ import org.cangnova.cangjie.cfir.resolve.dfa.isNotEmpty
 import org.cangnova.cangjie.cfir.resolve.dfa.stackOf
 import org.cangnova.cangjie.cfir.resolve.dfa.topOrNull
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
+import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.descriptors.Visibilities
 
 /**
@@ -83,9 +102,11 @@ class ControlFlowGraphBuilder private constructor(
     private val graphs: Stack<ControlFlowGraph>,
     /** 每个活跃构造上下文的最后一个节点栈。 */
     private val lastNodes: Stack<CFGNode<*>>,
+    /** 每个实际 tuple 求值层保留入口及各元素已完成的节点，不保存替代 AST。 */
+    private val tupleEvaluations: Stack<Pair<TupleLiteralEnterNode, MutableList<TupleLiteralElementExitNode>>>,
 
     /** 函数符号到 return 目标出口节点的映射。 */
-    private val exitTargetsForReturn: MutableMap<CfirFunctionSymbol<*>, FunctionExitNode>,
+    private val exitTargetsForReturn: MutableMap<CfirBasedSymbol<*>, FunctionExitNode>,
     /** 局部类成员声明入口需要补接的外层入口节点缓存。 */
     private val enterToLocalClassesMembers: MutableMap<Any, Pair<CFGNode<*>, EdgeKind>>,
 
@@ -104,7 +125,8 @@ class ControlFlowGraphBuilder private constructor(
     /** loop 目标元素到 loop exit 节点的映射。 */
     private val loopExitNodes: MutableMap<CfirElement, LoopExitNode>,
     /** loop 目标元素到 loop condition enter 节点的映射。 */
-    private val loopConditionEnterNodes: MutableMap<CfirElement, LoopConditionEnterNode>,
+    private val loopContinueTargets: MutableMap<CfirElement, LoopRepeatEnterNode<*>>,
+    private val forInLoopStates: MutableMap<CfirForInExpression, ForInLoopState>,
 
     /** 当前嵌套 match 的出口节点栈。 */
     private val matchExitNodes: Stack<MatchExitNode>,
@@ -164,6 +186,7 @@ class ControlFlowGraphBuilder private constructor(
     constructor(isIsolatedContext: Boolean) : this(
         graphs = stackOf(),
         lastNodes = stackOf(),
+        tupleEvaluations = stackOf(),
         exitTargetsForReturn = mutableMapOf(),
         enterToLocalClassesMembers = mutableMapOf(),
         nonDirectJumps = ListMultimap(),
@@ -172,7 +195,8 @@ class ControlFlowGraphBuilder private constructor(
         anonymousFunctionCaptureNodes = mutableMapOf(),
         postponedLambdaExits = stackOf(),
         loopExitNodes = mutableMapOf(),
-        loopConditionEnterNodes = mutableMapOf(),
+        loopContinueTargets = mutableMapOf(),
+        forInLoopStates = mutableMapOf(),
         matchExitNodes = stackOf(),
         ifExitNodes = stackOf(),
         exceptionScopes = stackOf(),
@@ -215,6 +239,78 @@ class ControlFlowGraphBuilder private constructor(
     val currentGraphOrNull: ControlFlowGraph?
         get() = graphs.topOrNull()
 
+    /** 解析态视图的子图查询只读本次完成产品；为空表示普通 BODY 直接读取其声明产品。 */
+    internal var completedAnalysisGraph: ((CfirDeclaration) -> CfirControlFlowGraphReference?)? = null
+
+    /**
+     * 与 createSnapshot 的完整状态面对应：图/节点栈及尚未接入可排序前缀的缓存均持有源关联。
+     * 不调用 enter/exit、complete 或 mapper；来源迁移保留现有 DFA 事实和拓扑身份。
+     */
+    fun acceptSourceChildren(visitor: DfaSourceVisitor) {
+        graphs.all().forEach(visitor::visitGraph)
+        lastNodes.all().forEach(visitor::visitNode)
+        tupleEvaluations.all().forEach { (enter, elements) ->
+            visitor.visitNode(enter)
+            elements.forEach(visitor::visitNode)
+        }
+        exitTargetsForReturn.forEach { (symbol, node) ->
+            visitor.visitElement(symbol.cfir)
+            visitor.visitNode(node)
+        }
+        enterToLocalClassesMembers.forEach { (owner, entry) ->
+            when (owner) {
+                is org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol<*> -> visitor.visitElement(owner.cfir)
+                is CfirElement -> visitor.visitElement(owner)
+            }
+            visitor.visitNode(entry.first)
+        }
+        nonDirectJumps.entries().forEach { (node, jumps) ->
+            visitor.visitNode(node)
+            jumps.forEach(visitor::visitNode)
+        }
+        argumentListSplitNodes.all().filterNotNull().forEach(visitor::visitNode)
+        postponedAnonymousFunctionNodes.forEach { (symbol, nodes) ->
+            visitor.visitElement(symbol.cfir)
+            visitor.visitNode(nodes.first)
+            nodes.second?.let(visitor::visitNode)
+        }
+        anonymousFunctionCaptureNodes.forEach { (symbol, node) ->
+            visitor.visitElement(symbol.cfir)
+            visitor.visitNode(node)
+        }
+        postponedLambdaExits.all().forEach { postponed ->
+            postponed.lambdas.forEach { visitor.visitElement(it.cfir) }
+            postponed.exits.forEach { visitor.visitNode(it.first) }
+            postponed.mergeNodes.forEach(visitor::visitNode)
+        }
+        loopExitNodes.forEach { (loop, node) ->
+            visitor.visitElement(loop)
+            visitor.visitNode(node)
+        }
+        loopContinueTargets.forEach { (loop, node) ->
+            visitor.visitElement(loop)
+            visitor.visitNode(node)
+        }
+        forInLoopStates.forEach { (loop, state) ->
+            visitor.visitElement(loop)
+            state.condition?.let(visitor::visitNode)
+            state.bodyExit?.let(visitor::visitNode)
+        }
+        matchExitNodes.all().forEach(visitor::visitNode)
+        ifExitNodes.all().forEach(visitor::visitNode)
+        tryExitNodes.all().forEach(visitor::visitNode)
+        catchNodes.all().forEach { it.forEach(visitor::visitNode) }
+        catchBlocksInProgress.all().forEach(visitor::visitNode)
+        handleNodes.all().forEach { it.forEach(visitor::visitNode) }
+        handleBlocksInProgress.all().forEach(visitor::visitNode)
+        finallyEnterNodes.all().forEach(visitor::visitNode)
+        finallyBlocksInProgress.all().forEach(visitor::visitNode)
+        finallyBlocksInProgressSet.forEach(visitor::visitElement)
+        exitFunctionCallArgumentsNodes.all().filterNotNull().forEach(visitor::visitNode)
+        exitOptionalChainNodes.all().forEach(visitor::visitNode)
+        notCompletedFunctionCalls.all().forEach { it.forEach(visitor::visitNode) }
+    }
+
     /**
      * 层级计数器:`try` 表达式不是子图,但会提升层级用于识别 try 内外节点。
      */
@@ -246,6 +342,9 @@ class ControlFlowGraphBuilder private constructor(
         return ControlFlowGraphBuilder(
             graphs = graphs.createSnapshot(copier::get),
             lastNodes = lastNodes.createSnapshot(copier::get),
+            tupleEvaluations = tupleEvaluations.createSnapshot { (enter, elements) ->
+                copier[enter] to elements.mapTo(mutableListOf(), copier::get)
+            },
             exitTargetsForReturn = exitTargetsForReturn.mapValuesTo(mutableMapOf()) { copier[it.value] },
             enterToLocalClassesMembers = enterToLocalClassesMembers.mapValuesTo(mutableMapOf()) { (_, value) ->
                 copier[value.first] to value.second
@@ -261,10 +360,17 @@ class ControlFlowGraphBuilder private constructor(
             },
             anonymousFunctionCaptureNodes = anonymousFunctionCaptureNodes.mapValuesTo(mutableMapOf()) { copier[it.value] },
             postponedLambdaExits = postponedLambdaExits.createSnapshot { value ->
-                PostponedLambdas(value.lambdas, value.exits.mapTo(mutableListOf()) { (node, kind) -> copier[node] to kind })
+                PostponedLambdas(
+                    value.lambdas.toMutableSet(),
+                    value.exits.mapTo(mutableListOf()) { (node, kind) -> copier[node] to kind },
+                    value.mergeNodes.mapTo(mutableListOf(), copier::get),
+                )
             },
             loopExitNodes = loopExitNodes.mapValuesTo(mutableMapOf()) { copier[it.value] },
-            loopConditionEnterNodes = loopConditionEnterNodes.mapValuesTo(mutableMapOf()) { copier[it.value] },
+            loopContinueTargets = loopContinueTargets.mapValuesTo(mutableMapOf()) { copier[it.value] },
+            forInLoopStates = forInLoopStates.mapValuesTo(mutableMapOf()) { (_, state) ->
+                ForInLoopState(state.condition?.let(copier::get), state.bodyExit?.let(copier::get))
+            },
             matchExitNodes = matchExitNodes.createSnapshot(copier::get),
             ifExitNodes = ifExitNodes.createSnapshot(copier::get),
             exceptionScopes = exceptionScopes.createSnapshot { ExceptionScope(it.state.copy(copier)) },
@@ -316,6 +422,7 @@ class ControlFlowGraphBuilder private constructor(
     fun reset() {
         graphs.reset()
         lastNodes.reset()
+        tupleEvaluations.reset()
         exitTargetsForReturn.clear()
         enterToLocalClassesMembers.clear()
         nonDirectJumps.clear()
@@ -324,7 +431,8 @@ class ControlFlowGraphBuilder private constructor(
         anonymousFunctionCaptureNodes.clear()
         postponedLambdaExits.reset()
         loopExitNodes.clear()
-        loopConditionEnterNodes.clear()
+        loopContinueTargets.clear()
+        forInLoopStates.clear()
         matchExitNodes.reset()
         ifExitNodes.reset()
         exceptionScopes.reset()
@@ -462,7 +570,7 @@ class ControlFlowGraphBuilder private constructor(
      * `continue` 的目标在 while / do-while 中可能是回边也可能是前向边。
      */
     private val CFGNode<*>.returnPathIsBackwards: Boolean
-        get() = this is LoopConditionEnterNode &&
+        get() = this is ForInLoopIterationEnterNode && isEntered || this is LoopConditionEnterNode &&
             ((loop as? CfirLoopExpression)?.isDoWhile != true || previousNodes.any { it is LoopBlockExitNode })
 
     /**
@@ -512,10 +620,14 @@ class ControlFlowGraphBuilder private constructor(
     // ----------------------------------- Named / Constructor / Anonymous function -----------------------------------
 
     /** 进入具名函数或构造器 CFG 子图。 */
-    fun enterFunction(function: CfirFunction): Pair<LocalFunctionDeclarationNode?, FunctionEnterNode> {
+    fun enterFunction(function: CfirFunction): Pair<LocalFunctionDeclarationNode?, FunctionEnterNode> =
+        enterFunction(function as CfirFunctionBodyOwner)
+
+    fun enterFunction(function: CfirFunctionBodyOwner): Pair<LocalFunctionDeclarationNode?, FunctionEnterNode> {
         require(function !is CfirAnonymousFunction)
         val name = when (function) {
             is CfirNamedFunction -> function.name.asString()
+            is CfirEnumConstructor -> function.name.asString()
             is CfirConstructor -> "<init>"
             else -> "<function>"
         }
@@ -530,7 +642,7 @@ class ControlFlowGraphBuilder private constructor(
 
         val kind = when {
             localFunctionNode != null -> ControlFlowGraph.Kind.LocalFunction
-            function is CfirConstructor -> ControlFlowGraph.Kind.Constructor
+            function is CfirConstructor || function is CfirEnumConstructor -> ControlFlowGraph.Kind.Constructor
             else -> ControlFlowGraph.Kind.Function
         }
 
@@ -548,11 +660,19 @@ class ControlFlowGraphBuilder private constructor(
         return localFunctionNode to enterNode
     }
 
-    /** 退出具名函数或构造器 CFG 子图。 */
-    fun exitFunction(function: CfirFunction): Pair<FunctionExitNode, ControlFlowGraph> {
-        require(function !is CfirAnonymousFunction)
+    fun exitFunction(function: CfirFunction): Pair<FunctionExitNode, ControlFlowGraph> =
+        exitFunction(function as CfirFunctionBodyOwner)
+
+    /** 退出函数 CFG；postponed lambda 的出口由完成调用所属层统一收束。 */
+    fun exitFunction(function: CfirFunctionBodyOwner): Pair<FunctionExitNode, ControlFlowGraph> {
         exitTargetsForReturn.remove(function.symbol)
-        return exitGraph()
+        val (exitNode, graph) = exitGraph<FunctionExitNode>()
+        if (function is CfirAnonymousFunction && postponedAnonymousFunctionNodes[function.symbol]?.second == null) {
+            postponedAnonymousFunctionNodes.remove(function.symbol)
+            addBackEdge(graph.exitNode, graph.enterNode)
+            anonymousFunctionCaptureNodes.remove(function.symbol)
+        }
+        return exitNode to graph
     }
 
     // ----------------------------------- Anonymous function -----------------------------------
@@ -580,19 +700,27 @@ class ControlFlowGraphBuilder private constructor(
         }
     }
 
-    /** 退出匿名函数 CFG 子图，并连接 postponed lambda 出口。 */
-    fun exitAnonymousFunction(anonymousFunction: CfirAnonymousFunction): Triple<FunctionExitNode, PostponedLambdaExitNode?, ControlFlowGraph> {
-        exitTargetsForReturn.remove(anonymousFunction.symbol)
-        val (exitNode, graph) = exitGraph<FunctionExitNode>()
-        val postponed = postponedAnonymousFunctionNodes.remove(anonymousFunction.symbol)
-        val postponedExit = postponed?.second
-        if (postponedExit != null) {
-            addEdge(exitNode, postponedExit)
+    /**
+     * 对位固定 Kotlin 的 exitPostponedLambda owner。仓颉保留原有 lambda 出口接边，
+     * 不引入尚无语义证据的 invocationKind/inline 分支；完成层返回节点供 analyzer 合流。
+     */
+    private fun exitPostponedLambda(symbol: CfirFunctionSymbol<*>): PostponedLambdaExitNode {
+        val (_, postponedExit) = checkNotNull(postponedAnonymousFunctionNodes.remove(symbol))
+        val exit = checkNotNull(postponedExit) { "Postponed lambda must have an exit node" }
+        val function = symbol.cfir
+        check(function is CfirAnonymousFunction)
+        val accessor = completedAnalysisGraph
+        val reference = if (accessor == null) function.controlFlowGraphReference else accessor(function)
+        val graph = checkNotNull(reference?.controlFlowGraph) { "Postponed lambda must have its actual completed graph" }
+        if (graph.kind == ControlFlowGraph.Kind.AnonymousFunctionCalledInPlace) {
+            // 调用点取得立即执行的匿名函数正常出口；异常沿原有异常通路传播。
+            addEdge(graph.exitNode, exit)
         } else {
+            // 普通闭包的声明/传递不执行正文；独立正文只保留重复边。
             addBackEdge(graph.exitNode, graph.enterNode)
         }
-        anonymousFunctionCaptureNodes.remove(anonymousFunction.symbol)
-        return Triple(exitNode, postponedExit, graph)
+        anonymousFunctionCaptureNodes.remove(symbol)
+        return exit
     }
 
     /** 进入匿名函数表达式，并按是否已有 postponed 入口创建表达式或 capture 节点。 */
@@ -702,17 +830,24 @@ class ControlFlowGraphBuilder private constructor(
         createEnterValueParameterNode(parameter).also { addNewSimpleNode(it) }
 
     /** 进入默认参数 CFG 子图。 */
-    fun enterDefaultArguments(parameter: CfirValueParameter): EnterDefaultArgumentsNode =
-        enterGraph(parameter, "<default>", ControlFlowGraph.Kind.DefaultArgument) {
+    fun enterDefaultArguments(parameter: CfirValueParameter): EnterDefaultArgumentsNode {
+        val outerEnter = lastNodeOrNull
+        val enter = enterGraph(parameter, "<default>", ControlFlowGraph.Kind.DefaultArgument) {
             createEnterDefaultArgumentsNode(it) to createExitDefaultArgumentsNode(it)
         }
+        outerEnter?.let { addEdge(it, enter) }
+        return enter
+    }
 
     /** 退出默认参数 CFG 子图。 */
     fun exitDefaultArguments(): Pair<ExitDefaultArgumentsNode, ControlFlowGraph> = exitGraph()
 
     /** 退出 value parameter 节点。 */
-    fun exitValueParameter(parameter: CfirValueParameter): ExitValueParameterNode =
-        createExitValueParameterNode(parameter).also { addNewSimpleNode(it) }
+    fun exitValueParameter(parameter: CfirValueParameter, defaultGraph: ControlFlowGraph?): ExitValueParameterNode =
+        createExitValueParameterNode(parameter).also {
+            addNewSimpleNode(it)
+            defaultGraph?.let { graph -> addEdge(graph.exitNode, it, propagateDeadness = false) }
+        }
 
     // ----------------------------------- Code fragment -----------------------------------
 
@@ -832,11 +967,12 @@ class ControlFlowGraphBuilder private constructor(
         val branchExit = createIfBranchResultExitNode(expression, isThen)
         popAndAddEdge(branchExit)
         addEdge(branchExit, exit, propagateDeadness = false)
+        exit.registerResult(branchExit, if (isThen) expression.thenBranch else checkNotNull(expression.elseBranch))
         return branchExit
     }
 
     /** 结束真实分支和 postponed 层后才汇总 deadness，完成状态由实际解析模式提供。 */
-    fun exitIfExpression(expression: CfirIfExpression, callCompleted: Boolean): IfExitNode {
+    fun exitIfExpression(expression: CfirIfExpression, callCompleted: Boolean): LambdaExitLayer<IfExitNode> {
         val exit = ifExitNodes.pop()
         check(exit.fir === expression)
         if (expression.elseBranch == null) {
@@ -844,13 +980,14 @@ class ControlFlowGraphBuilder private constructor(
             check(conditionExit.fir === expression)
             val kind = if (expression.condition.ifBooleanLiteralValue() == true) EdgeKind.DeadForward else EdgeKind.Forward
             addEdge(conditionExit, exit, preferredKind = kind, label = IfBranchFalse, propagateDeadness = false)
+            exit.registerResult(conditionExit, null)
         }
         // late Nothing 只能在全部 alternative 输入接齐后传播，不能先把汇合出口判死。
         notCompletedFunctionCalls.pop().forEach { completeFunctionCall(it) }
-        mergeDataFlowFromPostponedLambdas(exit, callCompleted)
+        val lambdaExitNodes = mergeDataFlowFromPostponedLambdas(exit, callCompleted)
         exit.updateDeadStatus()
         lastNodes.push(exit)
-        return exit
+        return LambdaExitLayer(exit, lambdaExitNodes)
     }
 
     /** 只有真实 Bool 字面量可以在建图时确定条件；其它条件留给正式 CFA。 */
@@ -883,14 +1020,15 @@ class ControlFlowGraphBuilder private constructor(
      */
     fun exitMatchBranchCondition(
         branch: CfirMatchBranch,
+        prepareGuard: (List<MatchPatternDecisionNode>, MatchBranchGuardEnterNode?) -> Unit,
         resolveGuard: () -> Unit,
-    ): Pair<MatchBranchConditionExitNode, MatchBranchResultEnterNode> {
+    ): MatchBranchConditionExitResult {
         val matchExpression = matchExitNodes.top().fir
         val conditionEnter = lastNodes.pop()
         val conditionExit = createMatchBranchConditionExitNode(branch, matchExpression)
         val failureNode = createMatchBranchFailureNode(branch, matchExpression)
         val guardEnter = branch.guard?.let { createMatchBranchGuardEnterNode(branch, matchExpression) }
-        val decisionEntry = createPatternDecisionGraph(
+        val (decisionEntry, decisionNodes) = createPatternDecisionGraph(
             branch = branch,
             pattern = branch.pattern,
             subjectPath = emptyList(),
@@ -905,27 +1043,30 @@ class ControlFlowGraphBuilder private constructor(
         (guardEnter ?: conditionExit).updateDeadStatus()
 
         lastNodes.push(failureNode)
-        if (guardEnter != null) {
-            lastNodes.push(guardEnter)
-            // guard 的普通表达式节点只能挂在模式成功路径，不能提前产生赋值/调用效应。
+        if (guardEnter != null) lastNodes.push(guardEnter)
+        // 必须先由 analyzer 合并实际原子前驱与 guard 入口，再访问 guard 表达式。
+        // failure 在 guard failure 边补齐后才可消费，不在本回调中提前初始化。
+        prepareGuard(decisionNodes, guardEnter)
+        val guardDecision = if (guardEnter != null) {
             resolveGuard()
             val guard = checkNotNull(branch.guard)
-            val guardDecision = createMatchGuardDecisionNode(
+            createMatchGuardDecisionNode(
                 branch, guard, branch.pattern.takeUnless { it is CfirOrPattern }, matchExpression,
-            )
-            addEdge(lastNodes.pop(), guardDecision)
-            addEdge(guardDecision, conditionExit, propagateDeadness = false, label = MatchBranchSuccess)
-            addEdge(guardDecision, failureNode, propagateDeadness = false, label = MatchBranchFailure)
-        }
+            ).also { decision ->
+                addEdge(lastNodes.pop(), decision)
+                addEdge(decision, conditionExit, propagateDeadness = false, label = MatchBranchSuccess)
+                addEdge(decision, failureNode, propagateDeadness = false, label = MatchBranchFailure)
+            }
+        } else null
 
         conditionExit.updateDeadStatus()
         failureNode.updateDeadStatus()
         val resultEnter = createMatchBranchResultEnterNode(branch)
         addEdge(conditionExit, resultEnter, label = MatchBranchSuccess)
-        // 分支体解析期间 resultEnter 必须是当前 last node；退出分支体后留下 failureNode，
-        // 后续 case 会从该汇合点继续构图。
         lastNodes.push(resultEnter)
-        return conditionExit to resultEnter
+        return MatchBranchConditionExitResult(
+            decisionNodes, guardEnter, guardDecision, failureNode, conditionExit, resultEnter,
+        )
     }
 
     /**
@@ -961,7 +1102,7 @@ class ControlFlowGraphBuilder private constructor(
     }
 
     /**
-     * 为一个模式递归建立判定图，返回其独立入口节点。不失败的绑定/通配模式也保留入口，
+     * 为一个模式递归建立判定图，返回入口及按前驱在前排列的实际判定节点。不失败的绑定/通配模式也保留入口，
      * 并用死亡 failure 边连接后续 alternative；因此任意 OR 顺序和嵌套层次都保有完整的
      * 图结构。所有原子节点保留外层 [reportSource]，对应 CHIR 的模式 debug location。
      */
@@ -973,7 +1114,7 @@ class ControlFlowGraphBuilder private constructor(
         successTarget: CFGNode<*>,
         failureTarget: CFGNode<*>,
         matchExpression: CfirMatchExpression,
-    ): CFGNode<*> = when (pattern) {
+    ): Pair<CFGNode<*>, List<MatchPatternDecisionNode>> = when (pattern) {
         is CfirWildcardPattern, is CfirBindingPattern -> {
             val nestedPattern = (pattern as? CfirBindingPattern)?.nestedPattern
             if (nestedPattern != null) {
@@ -987,18 +1128,19 @@ class ControlFlowGraphBuilder private constructor(
                     matchExpression,
                 )
             } else {
-                createMatchPatternDecisionNode(branch, pattern, subjectPath, reportSource, matchExpression).also { decision ->
+                createMatchPatternDecisionNode(branch, pattern, subjectPath, reportSource, matchExpression).let { decision ->
                     addEdge(decision, successTarget, propagateDeadness = false, label = MatchBranchSuccess)
-                    addEdge(decision, failureTarget, preferredKind = EdgeKind.DeadForward,
-                        propagateDeadness = false, label = MatchBranchFailure)
+                    addEdge(decision, failureTarget, preferredKind = EdgeKind.DeadForward, propagateDeadness = false, label = MatchBranchFailure)
+                    decision to listOf(decision)
                 }
             }
         }
 
         is CfirTuplePattern -> {
             var continuation = successTarget
+            var decisionNodes = emptyList<MatchPatternDecisionNode>()
             for (index in pattern.elements.indices.reversed()) {
-                continuation = createPatternDecisionGraph(
+                val (entry, nodes) = createPatternDecisionGraph(
                     branch,
                     pattern.elements[index],
                     subjectPath + index,
@@ -1007,14 +1149,17 @@ class ControlFlowGraphBuilder private constructor(
                     failureTarget,
                     matchExpression,
                 )
+                continuation = entry
+                decisionNodes = nodes + decisionNodes
             }
-            continuation
+            continuation to decisionNodes
         }
 
         is CfirEnumPattern -> {
             var continuation = successTarget
+            var decisionNodes = emptyList<MatchPatternDecisionNode>()
             for (index in pattern.arguments.indices.reversed()) {
-                continuation = createPatternDecisionGraph(
+                val (entry, nodes) = createPatternDecisionGraph(
                     branch,
                     pattern.arguments[index],
                     subjectPath + index,
@@ -1023,10 +1168,13 @@ class ControlFlowGraphBuilder private constructor(
                     failureTarget,
                     matchExpression,
                 )
+                continuation = entry
+                decisionNodes = nodes + decisionNodes
             }
-            createMatchPatternDecisionNode(branch, pattern, subjectPath, reportSource, matchExpression).also { decision ->
+            createMatchPatternDecisionNode(branch, pattern, subjectPath, reportSource, matchExpression).let { decision ->
                 addEdge(decision, continuation, propagateDeadness = false, label = MatchBranchSuccess)
                 addEdge(decision, failureTarget, propagateDeadness = false, label = MatchBranchFailure)
+                decision to (listOf(decision) + decisionNodes)
             }
         }
 
@@ -1034,15 +1182,18 @@ class ControlFlowGraphBuilder private constructor(
             val loweringKind = pattern.loweringKind()
             if (loweringKind == CfirOrPatternLoweringKind.SEQUENTIAL) {
                 var continuation = failureTarget
+                var decisionNodes = emptyList<MatchPatternDecisionNode>()
                 for (alternative in pattern.alternatives.asReversed()) {
-                    continuation = createPatternDecisionGraph(
+                    val (entry, nodes) = createPatternDecisionGraph(
                         branch, alternative, subjectPath, alternative, successTarget, continuation, matchExpression,
                     )
+                    continuation = entry
+                    decisionNodes = nodes + decisionNodes
                 }
-                continuation
+                continuation to decisionNodes
             } else {
                 // 官方 MultiBranch/GoTo 共用无模式位置的成功块，不产生逐 alternative 的 CFA 警告。
-                createMatchPatternDecisionNode(branch, pattern, subjectPath, null, matchExpression).also { decision ->
+                createMatchPatternDecisionNode(branch, pattern, subjectPath, null, matchExpression).let { decision ->
                     addEdge(decision, successTarget, propagateDeadness = false, label = MatchBranchSuccess)
                     addEdge(
                         decision, failureTarget,
@@ -1050,11 +1201,12 @@ class ControlFlowGraphBuilder private constructor(
                         propagateDeadness = false,
                         label = MatchBranchFailure,
                     )
+                    decision to listOf(decision)
                 }
             }
         }
 
-        else -> createMatchPatternDecisionNode(branch, pattern, subjectPath, reportSource, matchExpression).also { decision ->
+        else -> createMatchPatternDecisionNode(branch, pattern, subjectPath, reportSource, matchExpression).let { decision ->
             addEdge(decision, successTarget, propagateDeadness = false, label = MatchBranchSuccess)
             addEdge(
                 decision, failureTarget,
@@ -1062,6 +1214,7 @@ class ControlFlowGraphBuilder private constructor(
                 propagateDeadness = false,
                 label = MatchBranchFailure,
             )
+            decision to listOf(decision)
         }
     }
 
@@ -1078,7 +1231,7 @@ class ControlFlowGraphBuilder private constructor(
         matchExpression: CfirMatchExpression,
         syntheticElseDecision: MatchSyntheticElseDecision,
         callCompleted: Boolean,
-    ): Pair<MatchExitNode, MatchSyntheticElseBranchNode?> {
+    ): LambdaExitLayer<Pair<MatchExitNode, MatchSyntheticElseBranchNode?>> {
         notCompletedFunctionCalls.pop().forEach(::completeFunctionCall)
         val exitNode = matchExitNodes.pop()
         val lastConditionExit = lastNodes.pop()
@@ -1098,28 +1251,209 @@ class ControlFlowGraphBuilder private constructor(
             )
             null
         }
-        mergeDataFlowFromPostponedLambdas(exitNode, callCompleted)
+        val lambdaExitNodes = mergeDataFlowFromPostponedLambdas(exitNode, callCompleted)
         exitNode.updateDeadStatus()
         lastNodes.push(exitNode)
-        return exitNode to syntheticElse
+        return LambdaExitLayer(exitNode to syntheticElse, lambdaExitNodes)
     }
 
+    // ----------------------------------- Short-circuit expressions -----------------------------------
+
+    /** 固定 Kotlin ControlFlowGraphBuilder 的 Boolean operator enter/left-exit/exit 合同。 */
+    fun enterBooleanOperatorExpression(expression: CfirExpression): BooleanOperatorEnterNode =
+        createBooleanOperatorEnterNode(expression).also { expression.booleanOperatorKind; addNewSimpleNode(it) }
+
+    fun exitLeftBooleanOperatorExpressionArgument(expression: CfirExpression): Pair<BooleanOperatorExitLeftOperandNode, BooleanOperatorEnterRightOperandNode> {
+        val leftExitNode = createBooleanOperatorExitLeftOperandNode(expression)
+        val rightEnterNode = createBooleanOperatorEnterRightOperandNode(expression)
+        addNewSimpleNode(leftExitNode)
+        lastNodes.push(leftExitNode)
+        val rhsNeverExecuted = expression.booleanOperatorLeft.booleanLiteralValue == (expression.booleanOperatorKind != CfirBinaryOpKind.AND)
+        addNewSimpleNode(rightEnterNode, isDead = rhsNeverExecuted)
+        return leftExitNode to rightEnterNode
+    }
+
+    fun exitBooleanOperatorExpression(expression: CfirExpression): BooleanOperatorExitNode {
+        val rightNode = lastNodes.pop()
+        val leftNode = lastNodes.pop()
+        val exitNode = createBooleanOperatorExitNode(expression, leftNode, rightNode)
+        val rhsAlwaysExecuted = expression.booleanOperatorLeft.booleanLiteralValue == (expression.booleanOperatorKind == CfirBinaryOpKind.AND)
+        if (rhsAlwaysExecuted) {
+            addEdge(rightNode, exitNode)
+        } else {
+            addEdge(leftNode, exitNode, propagateDeadness = true)
+            addEdge(rightNode, exitNode, propagateDeadness = false)
+        }
+        lastNodes.push(exitNode)
+        return exitNode
+    }
+
+    fun exitTypeOperatorCall(expression: CfirTypeOperator): TypeOperatorCallNode =
+        createTypeOperatorCallNode(expression).also { addNewSimpleNode(it) }
+
+    fun exitComparisonExpression(expression: CfirComparisonExpression): ComparisonExpressionNode =
+        createComparisonExpressionNode(expression).also { addNewSimpleNode(it) }
+
+    fun enterUnsafeExpression(expression: CfirUnsafeExpression): UnsafeEnterNode =
+        createUnsafeEnterNode(expression).also { addNewSimpleNode(it) }
+
+    fun exitUnsafeExpression(expression: CfirUnsafeExpression): UnsafeExitNode =
+        createUnsafeExitNode(expression).also { addNewSimpleNode(it) }
+
+    fun enterSynchronizedExpression(expression: CfirSynchronizedExpression): SynchronizedEnterNode =
+        createSynchronizedEnterNode(expression).also { addNewSimpleNode(it) }
+
+    fun exitSynchronizedExpression(expression: CfirSynchronizedExpression): SynchronizedExitNode =
+        createSynchronizedExitNode(expression).also { addNewSimpleNode(it) }
+
+    fun exitSpawnExpression(expression: CfirSpawnExpression): SpawnExpressionNode =
+        createSpawnExpressionNode(expression).also { addNewSimpleNode(it) }
+
+    private val CfirExpression.booleanLiteralValue: Boolean?
+        get() = (this as? CfirLiteralExpression)?.value as? Boolean
+
     // ----------------------------------- Loop -----------------------------------
+
+    /** 保留 For 的前向阶段：condition 与 body exit 均是实际 CFG 节点，不是 AST 包装。 */
+    private class ForInLoopState(
+        val condition: ForInLoopConditionEnterNode?,
+        var bodyExit: LoopBlockExitNode? = null,
+    )
+
+    /** For 的重复点代表实际迭代操作，序列求值在进入本域前完成。 */
+    fun enterForInLoop(loop: CfirForInExpression): Pair<LoopEnterNode, ForInLoopIterationEnterNode> {
+        val enter = createLoopEnterNode(loop).also { addNewSimpleNode(it) }
+        loopExitNodes[loop] = createLoopExitNode(loop)
+        val iteration = createForInLoopIterationEnterNode(loop)
+        loopContinueTargets[loop] = iteration
+        val condition = when (loop.iterationKind) {
+            CfirSourceForInKind.RANGE, CfirSourceForInKind.STRING -> createForInLoopConditionEnterNode(loop)
+            CfirSourceForInKind.DIRECT, CfirSourceForInKind.ITERATOR -> null
+        }
+        forInLoopStates[loop] = ForInLoopState(condition)
+        if (loop.iterationKind == CfirSourceForInKind.DIRECT) enterForInLoopIteration(loop)
+        return enter to iteration
+    }
+
+    /** 初始化完成后进入 next，或正文完成后进入 RANGE/STRING latch。 */
+    fun enterForInLoopIteration(loop: CfirForInExpression): ForInLoopIterationEnterNode {
+        val iteration = loopContinueTargets.getValue(loop)
+        check(iteration is ForInLoopIterationEnterNode && !iteration.isEntered)
+        iteration.markEntered()
+        addNewSimpleNode(iteration)
+        iteration.updateDeadStatus()
+        return iteration
+    }
+
+    /** RANGE/STRING 的外围首检查；false 不进入内部 Cond、绑定或正文。 */
+    fun exitForInLoopInitialCheck(loop: CfirForInExpression): ForInLoopInitialCheckExitNode =
+        createForInLoopInitialCheckExitNode(loop).also {
+            check(forInLoopStates.getValue(loop).condition != null)
+            addNewSimpleNode(it)
+            addEdge(it, loopExitNodes.getValue(loop), propagateDeadness = false)
+        }
+
+    fun enterForInLoopCondition(loop: CfirForInExpression): ForInLoopConditionEnterNode =
+        checkNotNull(forInLoopStates.getValue(loop).condition).also { addNewSimpleNode(it) }
+
+    /** RANGE 内部检查重新读取声明值，沿用外围比较的运算符及来源。 */
+    fun exitForInLoopRangeCheck(comparison: CfirBinaryExpression, index: CfirVariable, bound: CfirVariable): ForInLoopRangeCheckNode =
+        createForInLoopRangeCheckNode(comparison, index, bound).also { addNewSimpleNode(it) }
+
+    /** STRING 的 check/update 是隐式语义操作，只读写原有声明。 */
+    fun exitForInLoopStringCheck(loop: CfirForInExpression, index: CfirVariable, bound: CfirVariable): ForInLoopStringCheckNode =
+        createForInLoopStringCheckNode(loop, index, bound).also { addNewSimpleNode(it) }
+
+    fun exitForInLoopStringUpdate(loop: CfirForInExpression, index: CfirVariable): ForInLoopStringUpdateNode =
+        createForInLoopStringUpdateNode(loop, index).also { addNewSimpleNode(it) }
+
+    /** Option 判别读取本次 next 结果，不再次调用 selector，也不生成 None/Some AST。 */
+    fun exitForInLoopIteratorCheck(
+        loop: CfirForInExpression,
+        resultExpression: CfirExpression,
+        constructor: CfirResolvedNamedReference,
+        constructorSymbol: CfirBasedSymbol<*>,
+    ): ForInLoopIteratorCheckNode =
+        createForInLoopIteratorCheckNode(loop, resultExpression, constructor, constructorSymbol).also { addNewSimpleNode(it) }
+
+    /** 迭代终止直接到出口；成功取得元素后才绑定 pattern 和计算 guard。 */
+    fun exitForInLoopIteration(loop: CfirForInExpression): ForInLoopIterationExitNode =
+        createForInLoopIterationExitNode(loop).also {
+            addNewSimpleNode(it)
+            addEdge(it, loopExitNodes.getValue(loop), propagateDeadness = false)
+        }
+
+    /** guard 的失败回到下一轮，成功进入 body；不把 guard 当作循环终止条件。 */
+    fun exitForInLoopGuard(loop: CfirForInExpression): Pair<ForInLoopGuardExitNode?, LoopBlockEnterNode> {
+        val guardExit = loop.patternGuard?.let { guard ->
+            createForInLoopGuardExitNode(guard, loop).also { guardExit ->
+                addNewSimpleNode(guardExit)
+                val target = loopContinueTargets.getValue(loop)
+                if (target.returnPathIsBackwards) {
+                    addBackEdge(guardExit, target, isDead = guard.booleanLiteralValue == true)
+                } else {
+                    addEdge(guardExit, target, propagateDeadness = false,
+                        preferredKind = if (guard.booleanLiteralValue == true) EdgeKind.DeadForward else EdgeKind.Forward)
+                }
+            }
+        }
+        val bodyEnter = createLoopBlockEnterNode(loop).also {
+            addNewSimpleNode(it, isDead = loop.patternGuard?.booleanLiteralValue == false)
+        }
+        return guardExit to bodyEnter
+    }
+
+    fun exitForInLoopBody(loop: CfirForInExpression): LoopBlockExitNode {
+        val bodyExit = createLoopBlockExitNode(loop)
+        popAndAddEdge(bodyExit)
+        val state = forInLoopStates.getValue(loop)
+        check(state.bodyExit == null)
+        state.bodyExit = bodyExit
+        lastNodes.push(bodyExit)
+        return bodyExit
+    }
+
+    fun exitForInLoop(loop: CfirForInExpression): Triple<ForInLoopIterationEnterNode, LoopBlockExitNode, LoopExitNode> {
+        val state = forInLoopStates.remove(loop) ?: error("Missing For execution state")
+        val bodyExit = checkNotNull(state.bodyExit)
+        val iteration = loopContinueTargets.remove(loop) ?: error("Missing For iteration entry")
+        check(iteration is ForInLoopIterationEnterNode && iteration.isEntered)
+        addBackEdge(lastNodes.pop(), state.condition ?: iteration)
+        val exit = loopExitNodes.remove(loop) ?: error("Missing For exit")
+        exit.updateDeadStatus()
+        lastNodes.push(exit)
+        return Triple(iteration, bodyExit, exit)
+    }
+
+    /** 完成源表达式使用同一个实际 AST 身份，节点保存完整运算/调用事实供 DFA 使用。 */
+    fun exitCallExpression(expression: CfirCallExpression): CallExpressionNode =
+        createCallExpressionNode(expression).also {
+            if (expression.coneTypeOrNull?.isNothing == true) addNonSuccessfullyTerminatingNode(it)
+            else addNewSimpleNode(it)
+        }
+
+    fun exitUnaryExpression(expression: CfirUnaryExpression): UnaryExpressionNode =
+        createUnaryExpressionNode(expression).also { addNewSimpleNode(it) }
+
+    fun exitBinaryExpression(expression: CfirBinaryExpression): BinaryExpressionNode =
+        createBinaryExpressionNode(expression).also { addNewSimpleNode(it) }
 
     /** 进入 while/for-in 形态循环，并创建条件入口。 */
     fun enterWhileLoop(loop: CfirLoopExpression): Pair<LoopEnterNode, LoopConditionEnterNode> {
         val loopEnter = createLoopEnterNode(loop).also { addNewSimpleNode(it) }
         loopExitNodes[loop] = createLoopExitNode(loop)
         val conditionEnter = createLoopConditionEnterNode(loop.condition, loop).also { addNewSimpleNode(it) }
-        loopConditionEnterNodes[loop] = conditionEnter
+        loopContinueTargets[loop] = conditionEnter
         return loopEnter to conditionEnter
     }
 
     /** 退出 while/for-in 条件，并进入循环体。 */
     fun exitWhileLoopCondition(loop: CfirLoopExpression): Pair<LoopConditionExitNode, LoopBlockEnterNode> {
         val conditionExit = createLoopConditionExitNode(loop.condition, loop).also { addNewSimpleNode(it) }
-        addEdge(conditionExit, loopExitNodes.getValue(loop), propagateDeadness = false)
-        val blockEnter = createLoopBlockEnterNode(loop).also { addNewSimpleNode(it) }
+        val constant = loop.condition.booleanLiteralValue
+        addEdge(conditionExit, loopExitNodes.getValue(loop), propagateDeadness = false,
+            preferredKind = if (constant == true) EdgeKind.DeadForward else EdgeKind.Forward)
+        val blockEnter = createLoopBlockEnterNode(loop).also { addNewSimpleNode(it, isDead = constant == false) }
         return conditionExit to blockEnter
     }
 
@@ -1127,7 +1461,8 @@ class ControlFlowGraphBuilder private constructor(
     fun exitWhileLoop(loop: CfirLoopExpression): Triple<LoopConditionEnterNode, LoopBlockExitNode, LoopExitNode> {
         val blockExit = createLoopBlockExitNode(loop)
         popAndAddEdge(blockExit)
-        val conditionEnter = loopConditionEnterNodes.remove(loop) ?: error("Missing while-loop condition entry")
+        val conditionEnter = loopContinueTargets.remove(loop) ?: error("Missing while-loop condition entry")
+        check(conditionEnter is LoopConditionEnterNode)
         addBackEdge(blockExit, conditionEnter)
         val loopExit = loopExitNodes.remove(loop) ?: error("Missing while-loop exit")
         loopExit.updateDeadStatus()
@@ -1141,14 +1476,15 @@ class ControlFlowGraphBuilder private constructor(
         loopExitNodes[loop] = createLoopExitNode(loop)
         val blockEnter = createLoopBlockEnterNode(loop).also { addNewSimpleNode(it) }
         lastNodes.push(blockEnter)
-        loopConditionEnterNodes[loop] = createLoopConditionEnterNode(loop.condition, loop)
+        loopContinueTargets[loop] = createLoopConditionEnterNode(loop.condition, loop)
         return loopEnter to blockEnter
     }
 
     /** 退出 do-while 循环体并进入条件。 */
     fun enterDoWhileLoopCondition(loop: CfirLoopExpression): Pair<LoopBlockExitNode, LoopConditionEnterNode> {
         val blockExit = createLoopBlockExitNode(loop).also { addNewSimpleNode(it) }
-        val conditionEnter = loopConditionEnterNodes[loop] ?: error("Missing do-while condition entry")
+        val conditionEnter = loopContinueTargets[loop] ?: error("Missing do-while condition entry")
+        check(conditionEnter is LoopConditionEnterNode)
         addNewSimpleNode(conditionEnter)
         conditionEnter.updateDeadStatus()
         return blockExit to conditionEnter
@@ -1156,14 +1492,16 @@ class ControlFlowGraphBuilder private constructor(
 
     /** 退出 do-while 循环并连接条件回边和循环出口。 */
     fun exitDoWhileLoop(loop: CfirLoopExpression): Pair<LoopConditionExitNode, LoopExitNode> {
-        loopConditionEnterNodes.remove(loop)
+        loopContinueTargets.remove(loop)
         val conditionExit = createLoopConditionExitNode(loop.condition, loop)
         popAndAddEdge(conditionExit)
         val blockEnter = lastNodes.pop()
         require(blockEnter is LoopBlockEnterNode) { "Expected loop block entry before exiting do-while" }
-        addBackEdge(conditionExit, blockEnter)
+        val constant = loop.condition.booleanLiteralValue
+        addBackEdge(conditionExit, blockEnter, isDead = constant == false)
         val loopExit = loopExitNodes.remove(loop) ?: error("Missing do-while exit")
-        addEdge(conditionExit, loopExit, propagateDeadness = false)
+        addEdge(conditionExit, loopExit, propagateDeadness = false,
+            preferredKind = if (constant == true) EdgeKind.DeadForward else EdgeKind.Forward)
         loopExit.updateDeadStatus()
         lastNodes.push(loopExit)
         return conditionExit to loopExit
@@ -1189,13 +1527,13 @@ class ControlFlowGraphBuilder private constructor(
         addNonSuccessfullyTerminatingNode(node)
 
         if (jump is CfirReturnExpression && jump.target.labeledElement is CfirAnonymousFunction) {
-            jumpDataFlowFromPostponedLambdas(jump.target.labeledElement.symbol)
+            jumpDataFlowFromPostponedLambdas((jump.target.labeledElement as CfirAnonymousFunction).symbol)
         }
 
         val nextNode = when {
             jump.coneTypeOrNull is ConeErrorType -> null
             jump is CfirReturnExpression -> exitTargetsForReturn[jump.target.labeledElement.symbol]
-            jump is CfirContinueExpression -> loopConditionEnterNodes[jump.target.labeledElement]
+            jump is CfirContinueExpression -> loopContinueTargets[jump.target.labeledElement]
             jump is CfirBreakExpression -> loopExitNodes[jump.target.labeledElement]
             else -> null
         } ?: return node
@@ -1342,7 +1680,7 @@ class ControlFlowGraphBuilder private constructor(
     }
 
     /** 退出 try 表达式，并合并 postponed lambda 数据流。 */
-    fun exitTryExpression(callCompleted: Boolean): TryExpressionExitNode {
+    fun exitTryExpression(callCompleted: Boolean): LambdaExitLayer<TryExpressionExitNode> {
         var haveNothingReturnCall = false
         notCompletedFunctionCalls.pop().forEach { haveNothingReturnCall = completeFunctionCall(it) || haveNothingReturnCall }
         val node = tryExitNodes.pop()
@@ -1360,10 +1698,10 @@ class ControlFlowGraphBuilder private constructor(
                 }
             }
         }
-        mergeDataFlowFromPostponedLambdas(node, callCompleted)
+        val lambdaExitNodes = mergeDataFlowFromPostponedLambdas(node, callCompleted)
         node.updateDeadStatus()
         lastNodes.push(node)
-        return node
+        return LambdaExitLayer(node, lambdaExitNodes)
     }
 
     // ----------------------------------- Call / postponed lambda topology -----------------------------------
@@ -1424,7 +1762,7 @@ class ControlFlowGraphBuilder private constructor(
     /** 进入调用参数列表，并为参数中的匿名函数准备 postponed lambda 拓扑。 */
     fun enterCallArguments(call: CfirCall, anonymousFunctions: List<CfirAnonymousFunction>): FunctionCallArgumentsEnterNode? {
         val lambdaSymbols = anonymousFunctions.mapTo(linkedSetOf()) { it.symbol }
-        postponedLambdaExits.push(PostponedLambdas(lambdaSymbols))
+        splitDataFlowForPostponedLambdas(lambdaSymbols)
 
         val splitNode = if (anonymousFunctions.isEmpty()) {
             null
@@ -1464,9 +1802,9 @@ class ControlFlowGraphBuilder private constructor(
         createFunctionCallEnterNode(functionCall).also { addNewSimpleNode(it) }
 
     /** 退出函数调用，并根据调用完成状态处理 postponed lambda 数据流。 */
-    fun exitFunctionCall(functionCall: CfirFunctionCall, callCompleted: Boolean): FunctionCallExitNode {
+    fun exitFunctionCall(functionCall: CfirFunctionCall, callCompleted: Boolean): LambdaExitLayer<FunctionCallExitNode> {
         val exitNode = createFunctionCallExitNode(functionCall)
-        unifyDataFlowFromPostponedLambdas(exitNode, callCompleted)
+        val lambdaExitNodes = unifyDataFlowFromPostponedLambdas(exitNode, callCompleted)
         addNewSimpleNode(exitNode)
         // 调用的异常属于调用点；callee/lambda 定义图不连到定义处的 catch。
         routeException(exitNode, exitNode, activeExceptionScopes(), exceptionBoundary())
@@ -1479,7 +1817,7 @@ class ControlFlowGraphBuilder private constructor(
         if (!callCompleted) {
             notCompletedFunctionCalls.topOrNull()?.add(exitNode)
         }
-        return exitNode
+        return LambdaExitLayer(exitNode, lambdaExitNodes)
     }
 
     /**
@@ -1523,6 +1861,31 @@ class ControlFlowGraphBuilder private constructor(
     fun exitLiteralExpression(literalExpression: CfirLiteralExpression): LiteralExpressionNode =
         createLiteralExpressionNode(literalExpression).also { addNewSimpleNode(it) }
 
+    /** 原生 tuple 按元素顺序求值；开层不会执行元素或改变它们的身份。 */
+    fun enterTupleLiteral(tuple: CfirTupleLiteral): TupleLiteralEnterNode =
+        createTupleLiteralEnterNode(tuple).also {
+            addNewSimpleNode(it)
+            tupleEvaluations.push(it to mutableListOf())
+        }
+
+    /** 调用方在该元素真实完成后提交，不能在 tuple 出口重放所有元素。 */
+    fun exitTupleLiteralElement(tuple: CfirTupleLiteral, index: Int, element: CfirExpression): TupleLiteralElementExitNode {
+        val (enter, elements) = tupleEvaluations.top()
+        check(enter.fir === tuple && enter.owner === currentGraph && index == elements.size)
+        check(index in tuple.elements.indices)
+        return createTupleLiteralElementExitNode(tuple, index, element).also {
+            addNewSimpleNode(it)
+            elements += it
+        }
+    }
+
+    /** 实际出口保留逐元素冻结程序点，供主流与 finally 备用流读取当时的完成值。 */
+    fun exitTupleLiteral(tuple: CfirTupleLiteral): TupleLiteralExitNode {
+        val (enter, elements) = tupleEvaluations.pop()
+        check(enter.fir === tuple && enter.owner === currentGraph && elements.size == tuple.elements.size)
+        return createTupleLiteralExitNode(tuple, elements).also { addNewSimpleNode(it) }
+    }
+
     /** 退出变量赋值表达式，并补接可能抛异常的 catch/finally 边。 */
     fun exitVariableAssignment(assignment: CfirAssignment): VariableAssignmentNode =
         createVariableAssignmentNode(assignment).also { node ->
@@ -1564,76 +1927,99 @@ class ControlFlowGraphBuilder private constructor(
 
     /** 收集声明列表中已经构建的子 CFG。 */
     private fun collectSubGraphs(declarations: List<CfirDeclaration>): List<ControlFlowGraph> {
-        return declarations
-            .filterIsInstance<CfirControlFlowGraphOwner>()
-            .mapNotNull { it.controlFlowGraphReference?.controlFlowGraph }
+        val accessor = completedAnalysisGraph
+        return declarations.mapNotNull { declaration ->
+            if (accessor == null) (declaration as? CfirControlFlowGraphOwner)?.controlFlowGraphReference?.controlFlowGraph
+            else accessor(declaration)?.controlFlowGraph
+        }
     }
 
     // ----------------------------------- Postponed lambda data-flow -----------------------------------
 
-    /** 开启一层 postponed lambda 数据流收集。 */
+    /** 开启真实 postponed 层；即使参数中没有 lambda 也必须保持 push/pop 平衡。 */
     private fun splitDataFlowForPostponedLambdas(lambdas: Set<CfirFunctionSymbol<*>> = emptySet()) {
-        postponedLambdaExits.push(PostponedLambdas(lambdas))
+        postponedLambdaExits.push(PostponedLambdas(lambdas.toMutableSet(), mutableListOf(), mutableListOf()))
     }
 
-    /** 把 return 跳出的 postponed lambda 出口移动到目标 lambda 所在层。 */
+    /** 对位 Kotlin：return 跳层必须同时搬移 lambda、出口边与待合并节点。 */
     private fun jumpDataFlowFromPostponedLambdas(symbol: CfirFunctionSymbol<*>) {
-        val currentLevelExits = postponedLambdaExits.pop().exits
-        if (currentLevelExits.isEmpty()) return
+        val currentLevel = postponedLambdaExits.pop()
+        if (currentLevel.exits.isEmpty()) {
+            require(currentLevel.lambdas.isEmpty()) { "expected no lambdas for empty exits list" }
+            return
+        }
 
-        for (postponed in postponedLambdaExits.all()) {
-            if (symbol in postponed.lambdas) {
-                postponed.exits.addAll(currentLevelExits)
+        for (nextLevel in postponedLambdaExits.all()) {
+            if (symbol in nextLevel.lambdas) {
+                nextLevel.lambdas.addAll(currentLevel.lambdas)
+                nextLevel.exits.addAll(currentLevel.exits)
+                nextLevel.mergeNodes.addAll(currentLevel.mergeNodes)
                 break
             }
         }
     }
 
-    /** 把当前层 postponed lambda 出口统一接入指定节点。 */
-    private fun unifyDataFlowFromPostponedLambdas(node: CFGNode<*>, callCompleted: Boolean) {
-        val currentLevelExits = postponedLambdaExits.pop().exits
-        if (currentLevelExits.isEmpty()) return
+    /** 对位 Kotlin：未完成调用只向外层搬移数据，完成调用返回真实 lambda/merge 节点。 */
+    private fun unifyDataFlowFromPostponedLambdas(node: CFGNode<*>, callCompleted: Boolean): List<CFGNode<*>> {
+        val currentLevel = postponedLambdaExits.pop()
+        if (currentLevel.exits.isEmpty()) {
+            require(currentLevel.lambdas.isEmpty()) { "expected no lambdas for empty exits list" }
+            return emptyList()
+        }
 
-        val nextLevelExits = postponedLambdaExits.topOrNull()?.exits.takeIf { !callCompleted }
-        if (nextLevelExits != null) {
-            for ((exit, kind) in currentLevelExits) {
+        val nextLevel = postponedLambdaExits.topOrNull().takeIf { !callCompleted }
+        if (nextLevel != null) {
+            for ((exit, kind) in currentLevel.exits) {
                 if (kind.usedInCfa) {
                     addEdge(exit, node, preferredKind = EdgeKind.CfgForward)
                 }
-                nextLevelExits.add(exit to EdgeKind.DfgForward)
+                nextLevel.exits.add(exit to EdgeKind.DfgForward)
             }
-            return
-        }
-
-        for ((exit, kind) in currentLevelExits) {
-            if (kind.usedInCfa || !exit.isDead) {
-                addEdge(exit, node, preferredKind = kind, label = PostponedPath)
+            nextLevel.lambdas += currentLevel.lambdas
+            nextLevel.mergeNodes += currentLevel.mergeNodes
+            return emptyList()
+        } else {
+            val lambdaExitNodes = currentLevel.lambdas.map { exitPostponedLambda(it) }
+            for ((exit, kind) in currentLevel.exits) {
+                if (kind.usedInCfa || !exit.isDead) {
+                    addEdge(exit, node, preferredKind = kind, label = PostponedPath)
+                }
             }
+            return lambdaExitNodes + currentLevel.mergeNodes
         }
     }
 
-    /** 在控制结构出口处合并 postponed lambda 出口。 */
-    private fun mergeDataFlowFromPostponedLambdas(node: CFGNode<*>, callCompleted: Boolean) {
-        val currentLevelExits = postponedLambdaExits.pop().exits
-        if (currentLevelExits.isEmpty()) return
+    /** 对位 Kotlin：结构出口的并列 lambda 输入保留原接边、标签和 deadness 参数。 */
+    private fun mergeDataFlowFromPostponedLambdas(node: CFGNode<*>, callCompleted: Boolean): List<CFGNode<*>> {
+        val currentLevel = postponedLambdaExits.pop()
+        if (currentLevel.exits.isEmpty()) {
+            require(currentLevel.lambdas.isEmpty()) { "expected no lambdas for empty exits list" }
+            return emptyList()
+        }
 
-        val nextLevelExits = postponedLambdaExits.topOrNull()?.exits.takeIf { !callCompleted }
-        if (nextLevelExits != null) {
+        val nextLevel = postponedLambdaExits.topOrNull().takeIf { !callCompleted }
+        if (nextLevel != null) {
             node.updateDeadStatus()
-            nextLevelExits += createMergePostponedLambdaExitsNode(node.fir).also { mergeNode ->
+            val mergeNode = createMergePostponedLambdaExitsNode(node.fir).also { mergeNode ->
                 addEdge(node, mergeNode)
-                for ((exit, kind) in currentLevelExits) {
+                for ((exit, kind) in currentLevel.exits) {
                     if (kind.usedInCfa) {
                         addEdge(exit, node, preferredKind = EdgeKind.CfgForward, propagateDeadness = false)
                     }
                     addEdge(exit, mergeNode, preferredKind = EdgeKind.DfgForward, propagateDeadness = false)
                 }
-            } to EdgeKind.DfgForward
-            return
-        }
-
-        for ((exit, kind) in currentLevelExits) {
-            addEdge(exit, node, preferredKind = kind, label = PostponedPath, propagateDeadness = false)
+            }
+            nextLevel.exits += mergeNode to EdgeKind.DfgForward
+            nextLevel.lambdas += currentLevel.lambdas
+            nextLevel.mergeNodes += currentLevel.mergeNodes
+            nextLevel.mergeNodes += mergeNode
+            return emptyList()
+        } else {
+            val lambdaExitNodes = currentLevel.lambdas.map { exitPostponedLambda(it) }
+            for ((exit, kind) in currentLevel.exits) {
+                addEdge(exit, node, preferredKind = kind, label = PostponedPath, propagateDeadness = false)
+            }
+            return lambdaExitNodes + currentLevel.mergeNodes
         }
     }
 
@@ -1784,12 +2170,9 @@ class ControlFlowGraphBuilder private constructor(
         catchEnter: CatchClauseEnterNode,
         isSubtypeOf: (ConeCangJieType, ConeCangJieType) -> Boolean,
     ) {
-        fun typesOf(catch: CfirCatch): List<ConeCangJieType> =
-            if (catch.pattern.typeRefs.isEmpty()) listOf(checkNotNull(catch.pattern.resolvedTypeRef).coneType)
-            else catch.pattern.typeRefs.map { checkNotNull(it.coneTypeOrNull) { "Catch type not resolved" } }
-        val types = typesOf(catchEnter.fir)
+        val types = catchEnter.fir.exceptionDispatchTypes()
         for (decision in exceptionDispatches[catchEnter].orEmpty()) {
-            val preceding = decision.precedingCatches.flatMap { typesOf(it.fir) }
+            val preceding = decision.precedingCatches.flatMap { it.fir.exceptionDispatchTypes() }
             val shadowed = types.all { type ->
                 type !is ConeErrorType && preceding.any { it !is ConeErrorType && isSubtypeOf(type, it) }
             }
@@ -1932,12 +2315,11 @@ class ControlFlowGraphBuilder private constructor(
 
     // ----------------------------------- Postponed lambdas helper -----------------------------------
 
-    /** 一层 postponed lambda 的符号集合与出口边集合。 */
-    internal class PostponedLambdas(
-        /** 该层管理的 lambda 符号集合。 */
-        val lambdas: Set<CfirFunctionSymbol<*>>,
-        /** 该层已经收集到的 lambda 出口节点和边类型。 */
-        val exits: MutableList<Pair<CFGNode<*>, EdgeKind>> = mutableListOf(),
+    /** 对位 Kotlin 的层状态；所有集合由真实开层或快照事件显式构造。 */
+    private data class PostponedLambdas(
+        val lambdas: MutableSet<CfirFunctionSymbol<*>>,
+        val exits: MutableList<Pair<CFGNode<*>, EdgeKind>>,
+        val mergeNodes: MutableList<MergePostponedLambdaExitsNode>,
     )
 
     /**
@@ -1970,6 +2352,25 @@ class ControlFlowGraphBuilder private constructor(
         fun entries(): Set<Map.Entry<K, List<V>>> = backing.mapValues { it.value.toList() }.entries
     }
 }
+
+/** 固定 Kotlin 同文件顶层返回层；节点列表必须由实际事件提供，不设默认空值。 */
+class LambdaExitLayer<out T>(
+    val value: T,
+    val lambdaExitNodes: List<CFGNode<*>>,
+)
+
+/**
+ * 仓颉 recursive pattern/guard 的实际事件结果。guard 开始前已消费 decisionNodes/guardEnter，
+ * 返回后只消费 guardDecision、failure、conditionExit、resultEnter；保留全部节点身份用于路径事实。
+ */
+class MatchBranchConditionExitResult(
+    val decisionNodes: List<MatchPatternDecisionNode>,
+    val guardEnter: MatchBranchGuardEnterNode?,
+    val guardDecision: MatchPatternDecisionNode?,
+    val failure: MatchBranchFailureNode,
+    val conditionExit: MatchBranchConditionExitNode,
+    val resultEnter: MatchBranchResultEnterNode,
+)
 
 /**
  * 沿用 Kotlin FIR 的 CfgInternals opt-in 约定:该注解标记"CFG 内部"API,供 builder 与 DFA

@@ -19,13 +19,15 @@ internal fun elementCanBeLazilyResolved(element: CjElement?): Boolean = when (el
     is CjTypeParameter -> elementCanBeLazilyResolved(element.parentOfType<CjNamedDeclaration>(withSelf = false))
     is CjFile -> element !is CjCodeFragment
     is CjParameter -> elementCanBeLazilyResolved(element.ownerDeclaration)
-    // 仓颉 low-level 主干不承载 Kotlin FIR 的 enum entry / dangling modifier list 形态。
-    // 这里仅保留真实存在的可调用声明入口，避免把不存在的 declaration shape 带入 designation/file-structure 主流程。
-    is CjCallableDeclaration -> {
+    // 枚举构造项是独立可解析声明；与 Kotlin enum entry 一样按真实外层容器判定，
+    // 使文件结构、声明映射和 diagnostics 共用同一非局部入口。
+    is CjCallableDeclaration, is CjEnumConstructor -> {
         // 仓颉注解在 PSI 上会引入 CjMacroInput 包装层，lazy-resolve 需要把这层视为透明容器。
         val parentToCheck = when (val parent = unwrapDeclarationMacroInputParent(element.parent)) {
             is CjTypeStatement, is CjFile -> parent
             is CjAbstractClassBody -> parent.containingClass
+            // foreign 集合是文件 driver 的语法包装；其声明仍由真实文件拥有，不是局部表达式。
+            is CjForeignBody -> (parent.parent as? CjForeignDirective)?.parent as? CjFile
             else -> null
         }
 

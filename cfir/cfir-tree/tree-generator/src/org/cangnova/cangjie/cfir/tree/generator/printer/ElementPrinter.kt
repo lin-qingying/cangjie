@@ -8,6 +8,7 @@ import org.cangnova.cangjie.cfir.tree.generator.cfirVisitorType
 import org.cangnova.cangjie.cfir.tree.generator.cfirVisitorVoidType
 import org.cangnova.cangjie.cfir.tree.generator.model.Element
 import org.cangnova.cangjie.cfir.tree.generator.model.Field
+import org.cangnova.cangjie.cfir.tree.generator.model.ListField
 import org.cangnova.cangjie.cfir.tree.generator.util.replaceFunctionDeclaration
 import org.cangnova.cangjie.generators.tree.AbstractElementPrinter
 import org.cangnova.cangjie.generators.tree.AbstractFieldPrinter
@@ -21,13 +22,12 @@ import org.cangnova.cangjie.generators.tree.printer.printAcceptMethod
 import org.cangnova.cangjie.generators.tree.printer.printAcceptVoidMethod
 import org.cangnova.cangjie.generators.tree.printer.printTransformChildrenMethod
 import org.cangnova.cangjie.generators.tree.printer.printTransformMethod
+import org.cangnova.cangjie.utils.withIndent
 
 /**
  * source 字段 replace 方法不沿父字段强制 override 的元素集合。
  */
-private val elementsWithReplaceSource = setOf(
-    CfirTree.qualifiedAccessExpression,
-)
+private val elementsWithReplaceSource = emptySet<Element>()
 
 /**
  * CFIR 元素接口/抽象类源码打印器。
@@ -57,6 +57,33 @@ internal class ElementPrinter(printer: ImportCollectingPrinter) : AbstractElemen
             }
 
             val treeName = "CFIR"
+            println()
+            println("/** 访问本节点拥有的完整来源子图；独立于 ordinary visitor 的语法子树。 */")
+            println("@", cfirImplementationDetailType.render())
+            println(if (isRootElement) "fun" else "override fun", " <R, D> acceptSourceChildren(visitor: ", cfirVisitorType.render(), "<R, D>, data: D) {")
+            withIndent {
+                for (field in allFields) {
+                    val traversal = field.sourceTraversalKind ?: if (field.isChild && field.containsElement)
+                        Field.SourceTraversalKind.ELEMENT else null
+                    val access = if (field.typeRef.nullable) "?." else "."
+                    when (traversal) {
+                        Field.SourceTraversalKind.ELEMENT -> if (field is ListField) {
+                            println(field.name, access, "forEach { it.accept(visitor, data) }")
+                        } else {
+                            println(field.name, access, "accept(visitor, data)")
+                        }
+                        Field.SourceTraversalKind.MAP_VALUES -> println(field.name, access, "values.forEach { it.accept(visitor, data) }")
+                        Field.SourceTraversalKind.ARGUMENT_VIEW -> println(field.name, access, "acceptSourceChildren(visitor, data)")
+                        null -> {}
+                    }
+                }
+            }
+            println("}")
+            if (isRootElement) {
+                println()
+                println("@", cfirImplementationDetailType.render())
+                println("fun acceptSourceChildren(visitor: ", cfirVisitorVoidType.render(), ") = acceptSourceChildren(visitor, null)")
+            }
             printAcceptMethod(element, cfirVisitorType, hasImplementation = true, treeName = treeName)
             printTransformMethod(
                 element = element,

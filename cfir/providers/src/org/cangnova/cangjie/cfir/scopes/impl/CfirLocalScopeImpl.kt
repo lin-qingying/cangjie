@@ -14,6 +14,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.scopes.CfirContainingNamesAwareScope
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.visitors.CfirSourceVisitor
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
@@ -71,6 +72,13 @@ class CfirLocalScope private constructor(
      */
     val isCodeFragmentMemberScope: Boolean = false,
 ) : CfirContainingNamesAwareScope() {
+    /** 访问实际持有的局部声明，不查询非局部 provider 或触发新的语义解析。 */
+    fun acceptSourceChildren(visitor: CfirSourceVisitor) {
+        variables.values.forEach { visitor.visitElement(it.cfir) }
+        properties.values.forEach { visitor.visitElement(it.cfir) }
+        functions.keys.forEach { name -> functions[name].forEach { visitor.visitElement(it.cfir) } }
+        classLikeSymbols.values.forEach { visitor.visitElement(it.cfir) }
+    }
 
     /**
      * 创建代码片段自身的顶层声明作用域。

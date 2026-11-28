@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
@@ -27,7 +28,7 @@ import org.cangnova.cangjie.source.CjOffsetsOnlySourceElement
  * `outer Hide → outer APILevel → outer Syscap → target Hide → target APILevel → target Syscap`。
  * 任一步失败都短路后续检查，但不改写已完成的符号绑定和表达式类型。
  */
-object CfirApiLevelRefHigherChecker : CfirQualifiedAccessChecker() {
+object CfirApiLevelRefHigherChecker : CfirQualifiedAccessChecker(MppCheckerKind.Common) {
     /** 按最终 resolved target 检查 Hide、APILevel 与 Syscap。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirQualifiedAccessExpression) {
@@ -46,6 +47,7 @@ object CfirApiLevelRefHigherChecker : CfirQualifiedAccessChecker() {
         val diagnosticSource = CjOffsetsOnlySourceElement(
             expressionSource.startOffset,
             expressionSource.endOffset,
+            sourceAnchor = expressionSource,
         )
         when (failure) {
             is AvailabilityFailure.Hide -> reporter.reportOn(

@@ -84,6 +84,9 @@ class MacroConstructionDiagnosticCollectorComponent(
             MacroConstructionDiagnostic.Kind.GENERIC -> {
                 reporter.reportOn(source, CfirErrors.MACRO_EXPANSION_FAILED, macroName, diagnostic.message, context)
             }
+            MacroConstructionDiagnostic.Kind.MACRO_EXPECT_DECLARATION -> {
+                reporter.reportOn(source, CfirErrors.MACRO_EXPECT_DECLARATION, context)
+            }
             MacroConstructionDiagnostic.Kind.MACRO_UNDEFINED_PACKAGE -> {
                 reporter.reportOn(
                     source,

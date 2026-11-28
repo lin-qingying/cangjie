@@ -16,7 +16,7 @@ import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.source.CjSourceElement
 
 class CfirThisReferenceImpl @CfirImplementationDetail constructor(
-    override val source: CjSourceElement?,
+    override var source: CjSourceElement?,
     override var boundSymbol: CfirThisOwnerSymbol<*>?,
     override val isImplicit: Boolean,
     override var diagnostic: ConeDiagnostic?,
@@ -26,6 +26,11 @@ class CfirThisReferenceImpl @CfirImplementationDetail constructor(
 
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirThisReferenceImpl {
         return this
+    }
+
+    @CfirImplementationDetail
+    override fun replaceSource(newSource: CjSourceElement?) {
+        source = newSource
     }
 
     override fun replaceBoundSymbol(newBoundSymbol: CfirThisOwnerSymbol<*>?) {

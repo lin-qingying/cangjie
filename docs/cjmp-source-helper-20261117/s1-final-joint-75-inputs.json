@@ -1,0 +1,32 @@
+{
+  "sampleUtc": "2026-11-16T23:12:25.8042767Z",
+  "worktree": "C:\\Users\\lin17\\.codex\\worktrees\\cjmp-framework-implementation\\cangjie",
+  "fileCount": 6816,
+  "aggregateSha256": "DE75311A3076ED86CA6226025A829570764509CC7B82FB0C93A6F65C349E994F",
+  "roots": [
+    "common",
+    "cfir",
+    "analysis/low-level-api-cfir",
+    "analysis/analysis-api-cfir",
+    "compiler/frontend",
+    "compiler/config",
+    "compiler/phaser",
+    "compiler/arguments",
+    "psi",
+    "resolution.common",
+    "macro"
+  ],
+  "include": [
+    "*.kt",
+    "*.cj",
+    "*.kts"
+  ],
+  "exclude": "**/build/**",
+  "method": "rg --files --hidden --no-ignore, paths normalized / and Sort-Object -CaseSensitive; SHA256 of UTF8 LF-joined path TAB byteLength TAB uppercaseSHA256 lines, no terminal LF",
+  "targets": [
+    ":cfir:cfir-tree:test copying19",
+    ":cfir:providers:test S0 36",
+    ":cfir:analysis-tests:test lifecycle4 + SOURCE14 + original defaultParameter4_1 negative2",
+    ":analysis:low-level-api-cfir:compileKotlin"
+  ]
+}

@@ -1,0 +1,23 @@
+package org.cangnova.cangjie.cfir.source
+
+// Native 保存后树与语义图共同使用同一组角色；树模型不依赖上层 semantics.api 或 wire schema。
+
+/** 原生运算身份。语义生产者确定运算，格式层只把它映射到固定 schema 数值。 */
+enum class CfirSourceOperator {
+    INDEX, CALL, NOT, POWER, MULTIPLY, DIVIDE, REMAINDER, ADD, SUBTRACT,
+    SHIFT_LEFT, SHIFT_RIGHT, LESS, LESS_EQUAL, GREATER, GREATER_EQUAL, EQUAL, NOT_EQUAL,
+    BIT_AND, BIT_XOR, BIT_OR, POST_INCREMENT, POST_DECREMENT, IS, AS,
+    LOGICAL_AND, LOGICAL_OR, COALESCING, PIPELINE, COMPOSITION,
+    ASSIGN, POWER_ASSIGN, MULTIPLY_ASSIGN, DIVIDE_ASSIGN, REMAINDER_ASSIGN,
+    ADD_ASSIGN, SUBTRACT_ASSIGN, SHIFT_LEFT_ASSIGN, SHIFT_RIGHT_ASSIGN,
+    BIT_AND_ASSIGN, BIT_XOR_ASSIGN, BIT_OR_ASSIGN, LOGICAL_AND_ASSIGN, LOGICAL_OR_ASSIGN,
+}
+
+enum class CfirSourceCallKind { DECLARED, INTRINSIC, SUPER, OBJECT_CREATION, STRUCT_CREATION, VARIADIC, FUNCTION_POINTER, ANNOTATION, BUILTIN }
+enum class CfirSourceForInKind { DIRECT, RANGE, STRING, ITERATOR }
+enum class CfirSourcePatternKind { CONSTANT, WILDCARD, VARIABLE, TUPLE, TYPE, ENUM, EXCEPTION_TYPE, COMMAND_TYPE }
+/** 原生字面量保存的四种字符串形态，不将多行/raw 压缩成普通 String。 */
+enum class CfirSourceStringKind { NORMAL, JSTRING, MULTILINE, MULTILINE_RAW }
+
+/** SOURCE 按真实绑定分类；loaded 引用保留原 FullId 的 CURRENT/IMPORTED 角色。 */
+enum class CfirSourceReferenceKind { SOURCE, CURRENT, IMPORTED }

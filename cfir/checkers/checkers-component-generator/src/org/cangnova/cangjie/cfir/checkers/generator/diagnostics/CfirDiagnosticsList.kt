@@ -29,6 +29,7 @@ import org.cangnova.cangjie.LanguageFeature
 import org.cangnova.cangjie.LanguageVersionSettings
 import org.cangnova.cangjie.cfir.checkers.generator.diagnostics.model.DiagnosticList
 import org.cangnova.cangjie.cfir.checkers.generator.diagnostics.model.PositioningStrategy
+import org.cangnova.cangjie.cfir.diagnostics.CfirCjmpDiagnosticArgument
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.descriptors.Visibility
@@ -268,7 +269,7 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         }
 
         // class 成员缺少函数体/属性访问器，导致不能作为 abstract 成员存在
-        val MISSING_FUNC_BODY by error<PsiElement> {
+        val MISSING_FUNC_BODY by error<PsiElement>(PositioningStrategy.CALLABLE_DECLARATION_SIGNATURE_NO_MODIFIERS) {
             parameter<String>("memberKind")
             parameter<Name>("memberName")
         }
@@ -320,6 +321,14 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<CjKeywordToken>("modifier")
             parameter<CjKeywordToken>("redundantBecauseOf")
         }
+
+        // 原生七类 PARSE WARNING 的工厂表示；规则和范围由共享 parser 生产。
+        val UNSAFE_WILL_BE_IGNORED by warning<PsiElement> { parameter<String>("backend") }
+        val CONFUSING_LINE_TERMINATOR by warning<PsiElement>()
+        // v1.1.3 没有已定位 producer，只登记定义，不增加触发文法。
+        val EMPTY_ANNOTATION_ATTRIBUTE by warning<PsiElement> { parameter<String>("annotationName") }
+        val DUPLICATED_ANNOTATION_ATTRIBUTE_VALUE by warning<PsiElement> { parameter<String>("value") }
+        val JAVA_MIRROR_PROPERTY_DEPRECATED by warning<PsiElement>()
 
         // 非可继承 class 中的 open 成员会被官方编译器忽略。
         val IGNORE_OPEN by warning<PsiElement>()
@@ -681,6 +690,8 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         }
         val CFUNC_CANNOT_HAVE_NAMED_ARGS by error<PsiElement>()
         val CFUNC_CANNOT_HAVE_UNIT_ARGS by error<PsiElement>()
+        /** 调用级sema_unit_cannot_as_cfunc_arg与签名级Unit参数错误分别报告。 */
+        val UNIT_CANNOT_BE_CFUNC_ARGUMENT by error<PsiElement>()
         val CFUNC_CANNOT_CAPTURE_VAR by error<PsiElement> {
             parameter<Name>("variableName")
         }
@@ -1168,6 +1179,9 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         // 使用 --no-prelude 时找不到 std/core 中的 Object 类
         val CORE_OBJECT_NOT_FOUND_WHEN_NO_PRELUDE by error<PsiElement>()
 
+        // 默认 superclass 的实际 Object 依赖缺失，独立于 no-prelude 选项诊断。
+        val NO_CORE_OBJECT by error<PsiElement>()
+
         // 可访问性检查（含 main 提示）
         val ACCESSIBILITY_WITH_MAIN_HINT by error<PsiElement> {
             parameter<String>("declarationKind")
@@ -1378,6 +1392,12 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
 
         // 不可达模式（警告）
         val UNREACHABLE_PATTERN by warning<PsiElement>()
+
+        // 官方 PreCheck：同名 enum 构造项不能具有相同参数数量。
+        val DUPLICATED_ITEM_IN_ENUM by error<CjNamedDeclaration>(PositioningStrategy.ACTUAL_DECLARATION_NAME) {
+            parameter<Name>("constructorName")
+            parameter<Name>("enumName")
+        }
 
         // 带参数的 enum 构造器必须提供参数
         val ENUM_CONSTRUCTOR_WITH_PARAM_MUST_HAVE_ARGS by error<PsiElement> {
@@ -2005,45 +2025,40 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
     /**
      * common/specific 跨平台匹配语义
      *
-     * 对齐 C++ sema_common_open_class_no_init, sema_multiple_common_implementations 等。
+     * 对齐 C++ sema_multiple_common_implementations 等。
      */
     val COMMON_SPECIFIC by object : DiagnosticGroup("CommonSpecific") {
-        // common open class 必须显式实现构造器
-        val COMMON_OPEN_CLASS_NO_INIT by error<PsiElement> {
-            parameter<Name>("className")
-        }
-
         // common 声明有多个 specific 实现
         val MULTIPLE_COMMON_IMPLEMENTATIONS by error<PsiElement> {
-            parameter<String>("kind")
+            parameter<CfirCjmpDiagnosticArgument>("kind")
         }
 
         // common extend 的 private 成员冲突
         val COMMON_DIRECT_EXTENSION_HAS_DUPLICATE_PRIVATE_MEMBERS by error<PsiElement> {
-            parameter<Name>("extendName")
-            parameter<String>("memberKind")
+            parameter<CfirCjmpDiagnosticArgument>("extendedType")
+            parameter<CfirCjmpDiagnosticArgument>("memberKind")
             parameter<Name>("memberName")
         }
 
         // common 和 private 修饰符冲突
         val COMMON_DIRECT_EXTENSION_HAS_COMMON_PRIVATE_MEMBERS by error<PsiElement> {
-            parameter<String>("memberKind")
+            parameter<CfirCjmpDiagnosticArgument>("memberKind")
             parameter<Name>("memberName")
         }
 
         // specific 找不到匹配的 common 声明
         val NOT_MATCHED by error<PsiElement> {
-            // 官方参数形（CheckCJMP.cpp:156）：(side, "Kind 'name'", counterpartSide)
-            parameter<String>("side")
-            parameter<String>("declarationInfo")
-            parameter<String>("counterpartKind")
+            // 官方参数形（CheckCJMP.cpp:156）：(side, declaration facts, counterpart side)
+            parameter<CfirCjmpDiagnosticArgument>("side")
+            parameter<CfirCjmpDiagnosticArgument>("declarationInfo")
+            parameter<CfirCjmpDiagnosticArgument>("counterpartKind")
         }
 
         // specific var 不能匹配 common let
         val SPECIFIC_VAR_NOT_MATCH_LET by error<PsiElement> {
-            // 官方参数（CheckCJMP.cpp MatchCJMPVar）：specific 与 common 的 "var"/"let"
-            parameter<String>("specificKind")
-            parameter<String>("commonKind")
+            // 官方参数（CheckCJMP.cpp MatchCJMPVar）：specific 与 common 的变量可变性事实
+            parameter<CfirCjmpDiagnosticArgument>("specificKind")
+            parameter<CfirCjmpDiagnosticArgument>("commonKind")
         }
 
         // specific init 不能实现 primary common constructor
@@ -2051,8 +2066,13 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
 
         // specific 声明类型与 common 不一致
         val SPECIFIC_HAS_DIFFERENT_KIND by error<PsiElement> {
-            parameter<String>("specificKind")
-            parameter<String>("commonKind")
+            parameter<CfirCjmpDiagnosticArgument>("specificKind")
+            parameter<CfirCjmpDiagnosticArgument>("commonKind")
+        }
+
+        // 对齐官方 sema_generic_member_type_argument_different：配对后的 nominal 泛型声明参数数目必须一致。
+        val GENERIC_MEMBER_TYPE_ARGUMENT_DIFFERENT by error<PsiElement> {
+            parameter<Name>("declarationName")
         }
 
         // specific primary constructor 参数必须也是成员变量声明
@@ -2060,36 +2080,36 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
 
         // exhaustive common 不能匹配 non-exhaustive specific
         val COMMON_NON_EXHAUSTIVE_PLATFORM_EXHAUSTIVE_MISMATCH by error<PsiElement> {
-            parameter<String>("commonKind")
-            parameter<String>("specificKind")
+            parameter<CfirCjmpDiagnosticArgument>("commonKind")
+            parameter<CfirCjmpDiagnosticArgument>("specificKind")
         }
 
         // specific 类型与 common 不相等
         val SPECIFIC_HAS_DIFFERENT_TYPE by error<PsiElement> {
-            parameter<String>("kind")
+            parameter<CfirCjmpDiagnosticArgument>("kind")
         }
 
         // specific 成员必须有函数体
         val SPECIFIC_MEMBER_MUST_HAVE_IMPLEMENTATION by error<PsiElement> {
             // 官方参数（CheckCJMP.cpp TrySetSpecificImpl）：成员名与外层声明名
-            parameter<String>("memberName")
-            parameter<String>("containerName")
+            parameter<CfirCjmpDiagnosticArgument>("memberName")
+            parameter<CfirCjmpDiagnosticArgument>("containerName")
         }
 
         // specific 修饰符与 common 不匹配
         val SPECIFIC_HAS_DIFFERENT_MODIFIER by error<PsiElement> {
-            parameter<String>("kind")
+            parameter<CfirCjmpDiagnosticArgument>("kind")
         }
 
         // specific 注解与 common 不匹配
         val SPECIFIC_HAS_DIFFERENT_ANNOTATION by error<PsiElement> {
-            parameter<String>("kind")
+            parameter<CfirCjmpDiagnosticArgument>("kind")
         }
 
         // 某些注解不允许出现在 specific 声明上
         val SPECIFIC_HAS_DEPRECATED_ANNOTATION by error<PsiElement> {
             parameter<Name>("annotationName")
-            parameter<String>("kind")
+            parameter<CfirCjmpDiagnosticArgument>("kind")
             parameter<Name>("name")
         }
 
@@ -2101,12 +2121,12 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
 
         // specific 超类型与 common 不匹配
         val SPECIFIC_HAS_DIFFERENT_SUPER_TYPE by error<PsiElement> {
-            parameter<String>("kind")
+            parameter<CfirCjmpDiagnosticArgument>("kind")
         }
 
         // specific extend 冲突
         val SPECIFIC_HAS_DUPLICATE_EXTENSIONS by error<PsiElement> {
-            parameter<Name>("extendName")
+            parameter<CfirCjmpDiagnosticArgument>("extendedType")
         }
 
         // main 函数不能在 common 包中使用
@@ -2124,36 +2144,31 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
 
         // common/specific 抽象类成员必须有明确修饰符
         val CJMP_ABSTRACT_CLASS_MEMBER_HAS_NO_EXPLICIT_MODIFIER by error<PsiElement>(PositioningStrategy.ACTUAL_DECLARATION_NAME) {
-            parameter<Name>("className")
-            parameter<String>("memberKind")
-            parameter<String>("modifier")
+            parameter<CfirCjmpDiagnosticArgument>("containerKind")
+            parameter<CfirCjmpDiagnosticArgument>("memberKind")
+            parameter<CfirCjmpDiagnosticArgument>("requiredModifier")
         }
 
         // abstract 成员不能有函数体
         val EXPLICITLY_ABSTRACT_CAN_NOT_HAVE_BODY by error<PsiElement> {
-            parameter<String>("memberKind")
-        }
-
-        // 只有 common/specific 类才能有显式 abstract 成员
-        val EXPLICITLY_ABSTRACT_ONLY_FOR_CJMP_ABSTRACT_CLASS by error<PsiElement> {
-            parameter<String>("memberKind")
+            parameter<CfirCjmpDiagnosticArgument>("memberKind")
         }
 
         // open common 不能用 abstract specific 覆盖
         val OPEN_ABSTRACT_SPECIFIC_CAN_NOT_REPLACE_OPEN_COMMON by error<PsiElement> {
-            parameter<String>("commonKind")
-            parameter<String>("specificKind")
+            parameter<CfirCjmpDiagnosticArgument>("commonKind")
+            parameter<CfirCjmpDiagnosticArgument>("specificKind")
         }
 
         // specific 抽象类不能有非 specific 的抽象成员
         val CJMP_NON_SPECIFIC_ABSTRACT_MEMBER_IN_SPECIFIC_CLASS by error<PsiElement> {
             parameter<Name>("className")
-            parameter<String>("memberKind")
+            parameter<CfirCjmpDiagnosticArgument>("memberKind")
         }
 
         // common/specific 带泛型的声明不能使用 @Frozen
         val COMMON_GENERIC_FROZEN_NOT_SUPPORTED by error<PsiElement> {
-            parameter<String>("kind")
+            parameter<CfirCjmpDiagnosticArgument>("declarationName")
         }
 
         // 某些注解不允许在 common/specific 声明上使用
@@ -2161,77 +2176,53 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<Name>("annotationName")
         }
 
-        // ================================================================
-        // CJMP 解析族（官方 DiagnosticParser.def:266-277，parse_* 命名空间，1.1.0 起）
-        // 报告点 = CfirCjmpParseRulesChecker（D13：parser 配置无关，族诊断统一在 CFIR
-        // 声明形状上判定；版本门经 CjmpGate——1.0.x 只报 UNSUPPORTED_FEATURE 并整族短路）。
-        // cjc 1.1.3 探针实测：生效 9 条 + 2 条 file-part（模式门，Phase 4 接线）；
-        // 无触发点 3 条（登记保留、不激活）——参数默认值（specific 单侧合法）、
-        // var 类型（隐式类型合法）、泛型声明（泛型限制走 COMMON_GENERIC_FROZEN_NOT_SUPPORTED）。
-        // ================================================================
+    }
 
-        // common/specific 函数缺返回类型（官方 ParseDecl.cpp:1974-1980：无函数体且无返回类型）
-        val PARSE_COMMON_FUNCTION_MUST_HAVE_RETURN_TYPE by error<PsiElement>(PositioningStrategy.ACTUAL_DECLARATION_NAME)
-        val PARSE_SPECIFIC_FUNCTION_MUST_HAVE_RETURN_TYPE by error<PsiElement>(PositioningStrategy.ACTUAL_DECLARATION_NAME)
-
-        // specific 函数参数带默认值（官方无触发点；登记保留）
-        val PARSE_SPECIFIC_FUNCTION_PARAMETER_CANNOT_HAVE_DEFAULT_VALUE by error<PsiElement> {
-            parameter<String>("declKind")
+    /**
+     * CJMP common-part CJO 加载门诊断。
+     *
+     * 这些门发生在二进制声明反序列化之前；加载 provider 保存结构化事实，由导入 checker
+     * 在消费侧源码位置报告，因此 CLI、IDE 与 LLT 共享相同诊断定义和严重级别。
+     */
+    val CJMP_LOAD by object : DiagnosticGroup("CjmpLoad") {
+        val CJMP_COMMON_CJO_FORMAT_VERSION by error<PsiElement> {
+            parameter<String>("packageName")
+            parameter<String>("actualVersion")
+            parameter<String>("supportedMajor")
+            parameter<String>("supportedMinor")
         }
 
-        // specific 接口成员必须有实现（官方 ParseCJMPDecl.cpp:278-290 CheckSpecificInterface）
-        val PARSE_SPECIFIC_MEMBER_MUST_HAVE_IMPLEMENTATION by error<PsiElement> {
-            parameter<Name>("memberName")
-            parameter<Name>("containerName")
+        val CJMP_COMMON_CJO_PACKAGE_MISMATCH by error<PsiElement> {
+            parameter<String>("expectedPackage")
+            parameter<String>("actualPackage")
         }
 
-        // common/specific var 必须带类型（官方无触发点；登记保留）
-        val PARSE_EXPECTED_TYPE_WITH_CJMP_VAR by error<PsiElement>(PositioningStrategy.ACTUAL_DECLARATION_NAME) {
-            parameter<String>("kind")
-            parameter<String>("declKind")
+        val CJMP_COMMON_CJO_FEATURES_NOT_SUBSET by error<PsiElement> {
+            parameter<String>("packageName")
+            parameter<String>("fileName")
+            parameter<Collection<String>>("extraFeatures")
         }
 
-        // 成员的 common/specific 与外层容器不一致（官方 ParseCJMPDecl.cpp:264-276）
-        val PARSE_CJMP_OUTDECL_MISS_MATCH by error<PsiElement> {
-            parameter<String>("memberDescription")
-            parameter<String>("memberKindText")
-            parameter<String>("containerKindText")
-            parameter<String>("expectedKindText")
+        val CJMP_COMMON_CJO_OPTIONS_MISSING by warning<PsiElement> {
+            parameter<String>("packageName")
         }
 
-        // static init 不能带 common/specific（官方 ParseCJMPDecl.cpp:242-246）
-        val PARSE_CJMP_STATIC_INIT by error<PsiElement> {
-            parameter<String>("kind")
+        val CJMP_COMMON_CJO_DEBUG_MISMATCH by error<PsiElement> {
+            parameter<String>("packageName")
+            parameter<String>("commonDebug")
+            parameter<String>("currentDebug")
         }
 
-        // 非 common/specific 编译模式下使用修饰符（官方 ParseCJMPDecl.cpp:107-131，模式门；Phase 4 接线）
-        val PARSE_UNEXPECTED_CJMP_DECL by error<PsiElement>()
-
-        // 泛型声明不能带 common/specific（官方无触发点；登记保留）
-        val PARSE_CJMP_GENERIC_DECL by error<PsiElement> {
-            parameter<String>("kind")
+        val CJMP_COMMON_CJO_OPT_LEVEL_MISMATCH by error<PsiElement> {
+            parameter<String>("packageName")
+            parameter<String>("commonOptLevel")
+            parameter<String>("currentOptLevel")
         }
 
-        // 模式声明不能带 common（官方 ParseCJMPDecl.cpp:235-241）
-        val PARSE_CJMP_PATTERN_DECL by error<PsiElement> {
-            parameter<String>("patternKind")
-            parameter<String>("kind")
+        val CJMP_COMMON_CJO_INPUT_FILE_INVALID by error<PsiElement> {
+            parameter<String>("packageName")
+            parameter<String>("path")
         }
-
-        // common 类/结构体至少需要一个显式构造器（官方 ParseCJMPDecl.cpp:201-223）
-        val PARSE_CJMP_IN_COMMON_CTOR_REQUIRED by error<PsiElement>(PositioningStrategy.ACTUAL_DECLARATION_NAME) {
-            parameter<String>("declType")
-            parameter<Name>("name")
-        }
-
-        // explicitly abstract 只能用于 common/specific 抽象类（官方 ParseDecl.cpp:2085-2096、Parser.cpp:455-470）
-        val PARSE_EXPLICITLY_ABSTRACT_ONLY_FOR_CJMP_ABSTRACT_CLASS by error<PsiElement> {
-            parameter<String>("declKind")
-        }
-
-        // 文件 part 与声明修饰符不一致（cjc 1.1.3 实测：消息与 package 行锚点；模式门，Phase 4 接线）
-        val PARSE_COMMON_IN_NON_COMMON_FILE by error<PsiElement>()
-        val PARSE_SPECIFIC_IN_NON_SPECIFIC_FILE by error<PsiElement>()
     }
 
     /**
@@ -2730,6 +2721,8 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<String>("macroName")
             parameter<String>("reason")
         }
+
+        val MACRO_EXPECT_DECLARATION by error<PsiElement> {}
 
         val MACRO_DIAG_REPORT_ERROR by error<PsiElement> {
             parameter<String>("message")

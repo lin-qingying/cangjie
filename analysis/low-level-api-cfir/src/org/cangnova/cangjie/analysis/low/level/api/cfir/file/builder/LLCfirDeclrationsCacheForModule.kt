@@ -6,6 +6,7 @@
 package org.cangnova.cangjie.analysis.low.level.api.cfir.file.builder
 
 import com.google.common.collect.MapMaker
+import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirModuleResolveComponents
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsOnlyApi
 import org.cangnova.cangjie.cfir.CfirElement
@@ -13,7 +14,11 @@ import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.psi
+import org.cangnova.cangjie.parsing.compilationParsingResultOrNull
+import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.CjFile
+import org.cangnova.cangjie.source.AbstractCjSourceElement
+import org.cangnova.cangjie.source.psi
 import org.cangnova.cangjie.utils.ThreadSafe
 import java.util.concurrent.ConcurrentMap
 
@@ -31,7 +36,19 @@ internal abstract class ModuleFileCache {
      * @return [CfirFile] by [file] if it was previously built or runs [createValue] otherwise
      * The [createValue] is run under the lock so [createValue] is executed at most once for each [CjFile]
      */
-    abstract fun fileCached(file: CjFile, createValue: () -> CfirFile): CfirFile
+    abstract fun fileCached(file: CjFile, createValue: () -> LLCfirFileSourceGeneration): CfirFile
+
+    /** 原入口查询在任何声明/表达式查找前进入本代 target；退休 target 不能成为另一个原入口。 */
+    abstract fun compilationElement(element: PsiElement): PsiElement?
+
+    /** 只供修改服务读取已登记 owner，不验证或使用已经失效的旧产品对应表。 */
+    abstract fun getFileSourceForModification(originFile: CjFile): LLCfirFileSourceGeneration?
+
+    /** 同一 session 写事务中提交已经准备好的整代来源，不保留旧 target 的反查入口。 */
+    abstract fun replaceFileSource(previous: LLCfirFileSourceGeneration, next: LLCfirFileSourceGeneration)
+
+    /** 当前 target 的诊断源映射回原始编辑入口。 */
+    abstract fun originalSource(source: AbstractCjSourceElement): AbstractCjSourceElement?
 
     /**
      * 返回包含指定 CFIR 声明的已缓存 CFIR 文件。
@@ -69,26 +86,79 @@ internal class ModuleFileCacheImpl(override val moduleComponents: LLCfirModuleRe
     /**
      * 物理 PSI 文件到 raw CFIR 文件的弱 key 缓存。
      */
-    private val cjFileToCfirFile: ConcurrentMap<CjFile, CfirFile> = MapMaker().weakKeys().makeMap()
+    private val cjFileToSource: ConcurrentMap<CjFile, LLCfirFileSourceGeneration> = MapMaker().weakKeys().makeMap()
 
     /**
      * 返回物理 PSI 对应的 raw CFIR 文件，缺失时原子创建并缓存。
      *
      * 宏语义快照属于 provider 的 expanded 视图，不能替换这份按 PSI 身份映射的源树。
      */
-    override fun fileCached(file: CjFile, createValue: () -> CfirFile): CfirFile =
-        cjFileToCfirFile.computeIfAbsent(file) { createValue() }
+    override fun fileCached(file: CjFile, createValue: () -> LLCfirFileSourceGeneration): CfirFile = synchronized(moduleComponents.session) {
+        val suppliedProduct = file.compilationParsingResultOrNull()
+        val origin = suppliedProduct?.originFile ?: file
+        val entry = cjFileToSource[origin] ?: createValue().also {
+            check(it.product.originFile === origin)
+            it.requireConsistentInput(moduleComponents.session)
+            it.registerDeclarationOwners()
+            cjFileToSource[origin] = it
+            cjFileToSource[it.product.file] = it
+        }
+        check(suppliedProduct == null || suppliedProduct === entry.product) { "A retired target PSI product cannot re-enter the file cache." }
+        entry.requireConsistentInput(moduleComponents.session)
+        entry.cfirFile
+    }
+
+    override fun compilationElement(element: PsiElement): PsiElement? = synchronized(moduleComponents.session) {
+        val psiFile = element.containingFile as? CjFile ?: return@synchronized null
+        val snapshot = moduleComponents.macroSemanticSnapshotStore.snapshot
+        if (snapshot != null && (snapshot.fileForSource(psiFile) != null || snapshot.ownsReparsedPsi(element))) {
+            return@synchronized snapshot.compilationElement(element)
+        }
+        cjFileToSource[psiFile]?.compilationElement(element, moduleComponents.session)
+    }
+
+    override fun getFileSourceForModification(originFile: CjFile): LLCfirFileSourceGeneration? = synchronized(moduleComponents.session) {
+        cjFileToSource[originFile]?.also {
+            check(it.product.originFile === originFile)
+            it.requireConsistentConfiguration(moduleComponents.session)
+        }
+    }
+
+    override fun replaceFileSource(previous: LLCfirFileSourceGeneration, next: LLCfirFileSourceGeneration): Unit =
+        synchronized(moduleComponents.session) {
+            check(previous.cfirFile === next.cfirFile && previous.product.originFile === next.product.originFile)
+            check(cjFileToSource[previous.product.originFile] === previous && cjFileToSource[previous.product.file] === previous)
+            next.requireConsistentInput(moduleComponents.session)
+            cjFileToSource.remove(previous.product.file)
+            cjFileToSource[next.product.originFile] = next
+            cjFileToSource[next.product.file] = next
+        }
+
+    override fun originalSource(source: AbstractCjSourceElement): AbstractCjSourceElement? = synchronized(moduleComponents.session) {
+        val syntax = when (source) {
+            is org.cangnova.cangjie.source.CjSourceElement -> source
+            is org.cangnova.cangjie.source.CjOffsetsOnlySourceElement -> source.sourceAnchor ?: return@synchronized null
+        }
+        val file = syntax.psi?.containingFile as? CjFile ?: return@synchronized null
+        val snapshot = moduleComponents.macroSemanticSnapshotStore.snapshot
+        if (snapshot?.fileForSource(file) != null) {
+            return@synchronized mapPsiSource(syntax, snapshot::originalElement)
+        }
+        cjFileToSource[file]?.originalSource(source, moduleComponents.session)
+    }
 
     /**
      * 从弱 key cache 中查询已构建 raw CFIR 文件。
      */
-    override fun getCachedCfirFile(cjFile: CjFile): CfirFile? = cjFileToCfirFile[cjFile]
+    override fun getCachedCfirFile(cjFile: CjFile): CfirFile? = synchronized(moduleComponents.session) {
+        cjFileToSource[cjFile]?.also { it.requireConsistentInput(moduleComponents.session) }?.cfirFile
+    }
 
     /**
      * 快照发布改变了 raw CFIR 后续解析所依赖的符号视图，旧树的已解析引用必须整体退役。
      */
-    override fun invalidateRawCfirFiles() {
-        cjFileToCfirFile.clear()
+    override fun invalidateRawCfirFiles() = synchronized(moduleComponents.session) {
+        cjFileToSource.clear()
     }
 
     /**
@@ -127,6 +197,10 @@ internal class ModuleFileCacheImpl(override val moduleComponents: LLCfirModuleRe
     /**
      * 返回当前语义解析要推进的全部 CFIR 文件。
      */
-    override fun getAllCachedCfirFilesForResolution(): Collection<CfirFile> =
-        moduleComponents.macroSemanticSnapshotStore.snapshot?.files ?: cjFileToCfirFile.values
+    override fun getAllCachedCfirFilesForResolution(): Collection<CfirFile> = synchronized(moduleComponents.session) {
+        moduleComponents.macroSemanticSnapshotStore.snapshot?.files ?: cjFileToSource.values.distinct().map { source ->
+            source.requireConsistentInput(moduleComponents.session)
+            source.cfirFile
+        }
+    }
 }

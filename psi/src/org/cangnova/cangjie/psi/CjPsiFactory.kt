@@ -46,6 +46,9 @@ import org.cangnova.cangjie.parsing.CangJieMacroCallParserDefinition
 import org.cangnova.cangjie.macro.file.CangJieMacroCallFileType
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.parsing.CangJieParser
+import org.cangnova.cangjie.parsing.CjmpParsingContext
+import org.cangnova.cangjie.parsing.cjmpParsingContext
+import org.cangnova.cangjie.parsing.parserSourceKind
 import org.cangnova.cangjie.utils.checkWithAttachment
 import org.jetbrains.annotations.NonNls
 
@@ -65,11 +68,11 @@ var CjFile.elementContext: PsiElement? by UserDataProperty(Key.create("ELEMENT_C
 
 /** 临时文件开始解析前的输入模块；再次解析物理源文件时不能沿用上次解析的结果。 */
 internal var CjFile.parserLanguageModuleName: String by
-    NotNullableUserDataProperty(Key.create("CANGJIE_PARSER_LANGUAGE_MODULE_NAME"), "")
+    NotNullablePsiCopyableUserDataProperty(Key.create("CANGJIE_PARSER_LANGUAGE_MODULE_NAME"), "")
 
 /** parser 完成后发布的模块来源；null 表示尚未解析，空字符串表示已确认没有模块前缀。 */
 internal var CjFile.parsedLanguageModuleName: String? by
-    UserDataProperty(Key.create("CANGJIE_PARSED_LANGUAGE_MODULE_NAME"))
+    PsiCopyableUserDataProperty(Key.create("CANGJIE_PARSED_LANGUAGE_MODULE_NAME"))
 
 /**
  * 不分析通知消息
@@ -141,6 +144,8 @@ class CjPsiFactory private constructor(
     private val languageModuleName: String = "",
     /** 是否继承 context 的解析模块；保留词法 context 不等于继承内置注解权限。 */
     private val inheritLanguageModuleFromContext: Boolean = true,
+    private val explicitCjmpContext: CjmpParsingContext? = null,
+    private val explicitSourceKind: org.cangnova.cangjie.CjSourceKind? = null,
 ) {
     /**
      * 构造器：创建默认的 PSI 工厂
@@ -256,9 +261,13 @@ class CjPsiFactory private constructor(
             project: Project,
             context: PsiElement? = null,
             markGenerated: Boolean = true,
+            cjmpContext: CjmpParsingContext? = null,
+            sourceKind: org.cangnova.cangjie.CjSourceKind? = null,
         ): CjPsiFactory = CjPsiFactory(
             project, markGenerated, context, eventSystemEnabled = false,
             languageModuleName = "", inheritLanguageModuleFromContext = false,
+            explicitCjmpContext = cjmpContext,
+            explicitSourceKind = sourceKind,
         )
     }
 
@@ -803,6 +812,9 @@ class CjPsiFactory private constructor(
             false,
         ) as CjFile
         file.parserLanguageModuleName = parserModuleName
+        file.parserSourceKind = explicitSourceKind
+        file.cjmpParsingContext = explicitCjmpContext ?: (context?.containingFile as? CjFile)?.cjmpParsingContext
+            ?: CjmpParsingContext.SyntaxOnly
         file.putUserData(org.cangnova.cangjie.parsing.ANNOTATION_MODULE_PROVENANCE, annotationModuleProvenance)
         // 平台 markGenerated 会先展开 AST；解析输入必须在它之前发布。
         if (markGenerated) PsiFileFactoryImpl.markGenerated(file)

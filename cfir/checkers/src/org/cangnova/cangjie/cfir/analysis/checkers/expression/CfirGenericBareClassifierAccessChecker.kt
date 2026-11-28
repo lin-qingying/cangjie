@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.hasInvalidDeclaredUpperBoundsInCurrentContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.isExplicit
 import org.cangnova.cangjie.cfir.calls.resolvedQualifierTypeParameter
 import org.cangnova.cangjie.cfir.declarations.noArgEnumConstructorTargetType
@@ -19,7 +20,7 @@ import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedErrorReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.references.impl.CfirResolvedAppliedCallableReference
-import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.resolve.providers.cfirProvider
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
@@ -39,7 +40,7 @@ import org.cangnova.cangjie.cfir.types.isTypeParameterWithInvalidDeclaredUpperBo
  * 裸泛型 classifier 被当作值或限定符使用时，需要落到专门的 generic 诊断，
  * 而不是继续等待后续阶段退化成普通 unresolved。
  */
-object CfirGenericBareClassifierAccessChecker : CfirQualifiedAccessChecker() {
+object CfirGenericBareClassifierAccessChecker : CfirQualifiedAccessChecker(MppCheckerKind.Common) {
     /** 检查裸泛型 classifier 访问是否缺少必须显式提供的类型实参。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirQualifiedAccessExpression) {
@@ -200,7 +201,7 @@ object CfirGenericBareClassifierAccessChecker : CfirQualifiedAccessChecker() {
  * `sema_invalid_field_expose_access`，LLT 期望沿用现有 CFIR 诊断
  * `STATIC_VARIABLE_USE_GENERIC_PARAMETER`。
  */
-object CfirInvalidFieldExposeAccessChecker : CfirQualifiedAccessChecker() {
+object CfirInvalidFieldExposeAccessChecker : CfirQualifiedAccessChecker(MppCheckerKind.Common) {
     /** 检查 `T.x` 中非法上界类型参数 receiver 的失败 static 成员访问。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirQualifiedAccessExpression) {
@@ -241,7 +242,7 @@ object CfirInvalidFieldExposeAccessChecker : CfirQualifiedAccessChecker() {
  * 该规则是非破坏性的合法性检查：诊断不能替换候选或表达式类型，后续调用参数检查、
  * enum 返回类型替换和 pattern 可达性仍必须基于 qualifier 已实例化的 owner 类型执行。
  */
-object CfirInvalidEnumMemberTypeArgumentsChecker : CfirQualifiedAccessChecker() {
+object CfirInvalidEnumMemberTypeArgumentsChecker : CfirQualifiedAccessChecker(MppCheckerKind.Common) {
     /** 对 `TimeUnit<Int32>.Year<Int64>` 报告专用 enum member access 诊断。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirQualifiedAccessExpression) {

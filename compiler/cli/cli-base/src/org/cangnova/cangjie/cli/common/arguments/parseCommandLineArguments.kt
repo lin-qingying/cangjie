@@ -22,6 +22,7 @@ import org.cangnova.cangjie.arguments.dsl.base.CangJieCompilerArgument
 import org.cangnova.cangjie.arguments.dsl.base.CangJieCompilerArguments
 import org.cangnova.cangjie.arguments.dsl.base.CangJieCompilerArgumentsLevel
 import org.cangnova.cangjie.arguments.dsl.base.CangJieReleaseVersion
+import org.cangnova.cangjie.arguments.dsl.base.CangJieShortOptionValueMode
 import org.cangnova.cangjie.arguments.dsl.base.generatedPropertyName
 import org.cangnova.cangjie.arguments.description.cangjieCompilerArguments
 import org.cangnova.cangjie.arguments.dsl.types.BooleanType
@@ -33,6 +34,8 @@ import org.cangnova.cangjie.arguments.dsl.types.StringType
 import org.cangnova.cangjie.arguments.dsl.types.SystemPathType
 import java.io.File
 import java.lang.reflect.Method
+import java.util.Collections
+import org.cangnova.cangjie.messages.WarningGroup
 
 /** 单条文本参数解析诊断。 */
 public data class CangJieArgumentParseIssue(
@@ -40,6 +43,8 @@ public data class CangJieArgumentParseIssue(
     val message: String,
     /** 错误会阻止 frontend 执行；警告只提示参数迁移。 */
     val isError: Boolean,
+    /** 参数警告所属的原生组；错误不参与组抑制，本地未分组提示只受 all 操作影响。 */
+    val warningGroup: WarningGroup = WarningGroup.UNGROUPED,
 )
 
 /** 一次文本参数解析的完整结果。 */
@@ -50,6 +55,8 @@ public data class CangJieArgumentParseResult<A : Any>(
     val freeArguments: List<String>,
     /** 显式出现的公开参数名称到输入值的映射。 */
     val explicitArguments: Map<String, List<String>>,
+    /** 规范参数名称与单次输入值，保留跨参数的实际 argv 顺序。 */
+    val explicitArgumentOccurrences: List<Pair<String, String>>,
     /** 参数解析错误与警告。 */
     val issues: List<CangJieArgumentParseIssue>,
 ) {
@@ -75,6 +82,7 @@ public fun <A : Any> parseCommandLineArguments(
         val bindings = createBindings(result.javaClass, schema, compilerRelease)
         val freeArguments = mutableListOf<String>()
         val explicitArguments = linkedMapOf<String, MutableList<String>>()
+        val explicitArgumentOccurrences = mutableListOf<Pair<String, String>>()
         val arrayValues = mutableMapOf<ArgumentBinding, MutableList<String>>()
         val issues = mutableListOf<CangJieArgumentParseIssue>()
         var freeArgumentsStarted = false
@@ -97,7 +105,19 @@ public fun <A : Any> parseCommandLineArguments(
             } else {
                 rawArgument
             }
-            val option = bindings[optionName]
+            val inlineOption = if (optionName !in bindings) {
+                bindings.entries.firstOrNull { (name, candidate) ->
+                    val argument = candidate.binding.argument
+                    val continuousShortOption = valueSeparatorIndex < 0 && argument.shortOptionValueMode != null &&
+                            isSingleCharacterOptionName(name)
+                    val joinedAlias = argument.acceptsJoinedAliasValues && candidate.kind == OptionNameKind.SHORT
+                    (continuousShortOption || joinedAlias) && rawArgument.startsWith(name) && rawArgument.length > name.length
+                }
+            } else {
+                null
+            }
+            val resolvedOptionName = inlineOption?.key ?: optionName
+            val option = bindings[resolvedOptionName]
             if (option == null) {
                 if (rawArgument.startsWith("-X")) {
                     issues += CangJieArgumentParseIssue("Unknown advanced compiler argument: $rawArgument", isError = true)
@@ -111,7 +131,11 @@ public fun <A : Any> parseCommandLineArguments(
 
             val binding = option.binding
             val argument = binding.argument
-            if (option.kind == OptionNameKind.SHORT && valueSeparatorIndex >= 0 && argument.valueType !is BooleanType) {
+            if (valueSeparatorIndex >= 0 && (
+                        option.kind == OptionNameKind.SHORT && !argument.acceptsJoinedAliasValues && argument.valueType !is BooleanType ||
+                                argument.shortOptionValueMode != null && isSingleCharacterOptionName(resolvedOptionName)
+                        )
+            ) {
                 issues += CangJieArgumentParseIssue("Invalid argument: $rawArgument", isError = true)
                 continue
             }
@@ -119,14 +143,19 @@ public fun <A : Any> parseCommandLineArguments(
                 issues += CangJieArgumentParseIssue(
                     "Argument '$optionName' is deprecated; use '${binding.primaryName}'.",
                     isError = false,
+                    warningGroup = WarningGroup.DEPRECATED,
                 )
             }
             if (argument.isObsolete) {
                 issues += CangJieArgumentParseIssue("Obsolete compiler argument: $optionName", isError = true)
             }
 
-            val hasExplicitValue = valueSeparatorIndex >= 0
-            val explicitValue = if (hasExplicitValue) rawArgument.substring(valueSeparatorIndex + 1) else null
+            val attachedValue = inlineOption?.let { rawArgument.substring(it.key.length) }
+            val explicitValue = when {
+                attachedValue != null -> attachedValue
+                valueSeparatorIndex >= 0 -> rawArgument.substring(valueSeparatorIndex + 1)
+                else -> null
+            }
             when (val valueType = argument.valueType) {
                 is BooleanType -> {
                     val parsedValue = when (explicitValue) {
@@ -142,11 +171,23 @@ public fun <A : Any> parseCommandLineArguments(
                     }
                     binding.setter.invoke(result, parsedValue)
                     explicitArguments.getOrPut(argument.name, ::mutableListOf).add(parsedValue.toString())
+                    explicitArgumentOccurrences += argument.name to parsedValue.toString()
                 }
 
                 is StringType, is SystemPathType, is StringArrayType, is StringListType, is LiteralPathType -> {
+                    val shortOptionValueMode = argument.shortOptionValueMode
+                        ?.takeIf { isSingleCharacterOptionName(resolvedOptionName) }
                     val value = if (explicitValue != null) {
                         explicitValue
+                    } else if (shortOptionValueMode != null) {
+                        when (val mode = requireNotNull(shortOptionValueMode)) {
+                            CangJieShortOptionValueMode.AttachedRequired -> {
+                                issues += CangJieArgumentParseIssue("No value passed for argument $rawArgument", isError = true)
+                                continue
+                            }
+
+                            is CangJieShortOptionValueMode.AttachedOptional -> mode.valueWhenOmitted
+                        }
                     } else {
                         if (optionName.startsWith("-X")) {
                             issues += CangJieArgumentParseIssue(
@@ -160,7 +201,12 @@ public fun <A : Any> parseCommandLineArguments(
                         }
                         args[index++]
                     }
+                    if (argument.allowedValues.isNotEmpty() && value !in argument.allowedValues) {
+                        issues += CangJieArgumentParseIssue("Invalid value for argument '$optionName': '$value'.", isError = true)
+                        continue
+                    }
                     explicitArguments.getOrPut(argument.name, ::mutableListOf).add(value)
+                    explicitArgumentOccurrences += argument.name to value
                     when (valueType) {
                         is StringArrayType, is StringListType, is LiteralPathType -> {
                             val elements = splitArrayValue(value, argument.delimiter)
@@ -189,6 +235,7 @@ public fun <A : Any> parseCommandLineArguments(
             arguments = result,
             freeArguments = freeArguments,
             explicitArguments = explicitArguments.mapValues { (_, values) -> values.toList() },
+            explicitArgumentOccurrences = Collections.unmodifiableList(explicitArgumentOccurrences.toList()),
             issues = issues,
         )
 }
@@ -285,6 +332,9 @@ public fun <A : Any> parseCommandLineArguments(
         name.length == 1 -> "-$name"
         else -> "--$name"
     }
+
+    private fun isSingleCharacterOptionName(name: String): Boolean =
+        name.length == 2 && name[0] == '-' && name[1] != '-'
 
     private fun longOptionName(name: String): String = optionName(name)
 

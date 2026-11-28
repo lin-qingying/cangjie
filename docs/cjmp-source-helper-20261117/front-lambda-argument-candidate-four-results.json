@@ -1,0 +1,95 @@
+{
+  "before": {
+    "sampleUtc": "2026-11-17T10:01:24.3196608Z",
+    "fileCount": 6826,
+    "aggregateSha256": "911B9A624DB7248F8847D93E0322F0B3B9BDD93E2D15A1E11E8D08C283417189",
+    "roots": [
+      "common",
+      "cfir",
+      "analysis/low-level-api-cfir",
+      "analysis/analysis-api-cfir",
+      "compiler/frontend",
+      "compiler/config",
+      "compiler/phaser",
+      "compiler/arguments",
+      "psi",
+      "resolution.common",
+      "macro"
+    ],
+    "include": [
+      "*.kt",
+      "*.cj",
+      "*.kts"
+    ],
+    "exclude": "**/build/**",
+    "method": "rg --files --hidden --no-ignore, normalized /, Sort-Object -CaseSensitive; UTF8 LF path TAB length TAB uppercaseSHA256, no final LF",
+    "scope": "Original CJMP frontend four lambda cases; argument-list owned phase closure and ill-typed initializer candidate failure"
+  },
+  "after": {
+    "utc": "2026-11-17T10:33:08.3284190Z",
+    "count": 6826,
+    "sha256": "911B9A624DB7248F8847D93E0322F0B3B9BDD93E2D15A1E11E8D08C283417189",
+    "unchanged": true
+  },
+  "queue": {
+    "id": "1a91eb8a",
+    "args": [
+      "--gradle-user-home",
+      ".gradle/cjmp-export-home",
+      ":cfir:analysis-tests:test",
+      "--rerun",
+      "--tests",
+      "org.cangnova.cangjie.cfir.analysis.tests.CfirDeclarationOwnerTest.*DefaultHelpersPhase*",
+      "--no-build-cache",
+      "--console=plain",
+      "--max-workers=1",
+      "--continue"
+    ],
+    "pid": 56460,
+    "owner": "pid@56460",
+    "submitAt": 1794909945505,
+    "startedAt": 1794909945558,
+    "finishedAt": 1794910206096,
+    "exitCode": 1,
+    "status": "DONE"
+  },
+  "sessionId": 15755,
+  "xml": {
+    "path": "cfir/analysis-tests/build/test-results/test/TEST-org.cangnova.cangjie.cfir.analysis.tests.CfirDeclarationOwnerTest.xml",
+    "timestamp": "2026-11-17T10:09:56.207Z",
+    "window": true,
+    "tests": 4,
+    "failures": 2,
+    "errors": 0,
+    "skipped": 0,
+    "bytes": 11894,
+    "sha256": "FDC576648EEE91FBFEEB9A3D6347675A3674E04C123A4E60ED38AE530F2FA1AD",
+    "gzipBase64": "H4sIAAAAAAAACu1abW/iRhD+XEv5D1v3dAdVsgGOAOFCToQkLSpHIkJaqadTtLEH2LBeW7trcrTJf6/WvAdjQ+CuauX9kNjrZ2ZnHs/ao8ecfPzqMDQAIanLK2YWZ0wE3HJtyrsV87Z9eVAyP57uGScKpJI+VYA4caBiuqKLLcK73B2Q4OCBArY6VGDCCRtKKnFggmsdKs7BYkQQRV1+9chBtEEqEwXXK2beRLJPPQ/sipkxUYdQ5guQFTNnIhDCFTKYV9QBqYjjVcxcJlc4yGYPssV2NlPOHJePCjiXKf5pop4r1Si+Rr05sqmYRXycPzJP9wyETjzheiAUBXk4mtBBWERO0vIkPYcO8Zn6FZgHQl73iIQGUXBDu5woX8CZaw9/EcTrBZdSaRNZjEi5O1qCoAu4cFQYBY3QyZgU5ICUpAsV88HnVOGOIA48uqKPq1LqtFx+SSgD+0LzVkbw1QNLgY0kcaD8lqkPl/XGRRmx+Xwkth7e/pTNfNArecTqky6gXpD9nadTvNPwOznFz8D+PaMW6vjcQtp5dR+13nbVB+J5bJiSAHYZtZ6qT/uIWDo2fZaqptGBBqHWU1pPtJ7Q31OPelzeNmvt+lXzrlZtNFIjy7GJJu13wny4JjpzBeJm6Ny7bIxKp1+40qNZ/XRxflet1S5uboKY4nxpTDq94Od5evYcmvwCn9PE61wV8qMkR4cvomOuRdjHmYeGPk+txoeQo4mey6dJHLAvfR6wMaFGY9L69kzc7k8X0IZhnO2Kt8loVD+dnVdTA202x8yKlV9yY7neMIaWlYEHS8ZFHoBWhL5401eEyUAhyjmIoMKDKCdVPg65gjDGkWFTThUljP4FohwJnCMUvipB1iN0frQu2ret5prg5ar7WT9CiXLFncd8Oc7z7LbeaNebqTOfMkX5taAOVXQAV2PsbHsED8pFH/tIgAV0AOI3yu1Kvdku5PeRN7lNelJWPgfTXzRW+YLPkOnQfR81JqvFEx3NhK7MmO2nIRvHF110YYOIru8AV3LzlBb2S1BRcfslAEXsl9elEo9ajVirohfvXbBf5zK9JkqB4GeU695nnGkAWuv21ZvtVDaaktXhh19Znl2cWTxbzG76PokpzyluKcn5d5728Egk4q4KugjuM6YnTaSG3prdiHm6457FWLdfMXbaqxi76VOmbrZ41059PBuzv6/qS4wNehLjm/cjCyvsgp/YPmQJGd+DhJps1X+Eenw2tu87jHV6jpWgyH4j0mr+yRwL/I/0GWvlsdBjrG2xVX+x0SrhRRXdVxjfpacwdhN+NCL8amylbtM/GPG9g7FZuMuzizOzs9nRDnqEl++clb3BnvEDUSj8nY+1npEaHz+QASkfFdOxBk1X3RAHFuze546iDUnwb8kuVyq9zu64sMJOizc1ImHecjoX2Obf58e2W6tE40UidKk3jDj3NnlTKqRWOumrcqlQ2llMj1SN1q65jscgqCDXFxZERnCcK34/VqK5yO+Oi811xMjI3k+rjgwIvicSDoMjRngXC+gwsBT+BKrn2pjygduH1PhstLtKmXB7X1GGq0KQYYNKhTuuuCBWLzWbCcyzR7Oq38L+5HAsY46U18OJ9BoqxDLa7am2AAihseY6DlUK7Kt7dm0x0ghKXX4rKTaDC8clcxO9+LsHmC1lVwQYxeO/IGtncKaYyNqJrJ3I2omsvTwSWTuRtRdGImsnsnYiayeydiJrJ7J2Imsnsnb0SGTtkJHI2omsncjaiay9E1n7tWpitLhd/N+L23IoFTgHrq9OT378XDuvtqufv3w5PTmcuzAPBCFmwD+qrWYZVZUCx1NIuYi5xEZ9GKJ3nqRYMgAPU44HhFGbqiG2emD136GOK/RXOTQEFZiAjQR0qVRiuGfEOKXcEqA//BKGBXhESMA2eKqHmf7gHuN8PjWdiqZn+gPy0z3jH7n7yd92LgAA",
+    "cases": [
+      {
+        "name": "psiDefaultHelpersPhaseLateSignatureBodyGraphPhase()",
+        "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirDeclarationOwnerTest",
+        "outcome": "failed",
+        "message": "junit.framework.AssertionFailedError: expected same:<FILE: lateSignatures.cj\n    package helper_phase_late_signatures\n    public func <A, R>apply(seed: R|A|, action: R|(A) -> R|): R|R| {\n        FUNCTION_CALL(action -> CfirValueParameterSymbol(action)) {\n            NAMED_ACCESS(seed -> CfirValueParameterSymbol(seed))\n        }\n    }\n    public func lateSignature(seed: R|Int64|): R|Int64| {\n        local? func lateLocal(): R|Int64| {\n            FUNCTION_CALL(apply -> CfirNamedFunctionSymbol(apply)<R|Int64|, R|Int64|>) {\n                NAMED_ACCESS(seed -> CfirValueParameterSymbol(seed))\n                LAMBDA(value: R|Int64|) {\n                    local? func copy(): R|Int64| {\n                        NAMED_ACCESS(value -> CfirValueParameterSymbol(value))\n                    }\n                    local? let inner: R|(Int64) -> Int64| = ...\n                        initializer:\n                            LAMBDA(extra: R|Int64|) {\n                                RETURN {\n                                    FUNCTION_CALL(*operator_plus -> BUILTIN(BuiltinPrimitiveOperatorSignature(name=*operator_plus, receiverKind=INT64, parameterKinds=[INT64], returnKind=INT64))) {\n                                        receiver:\n                                            FUNCTION_CALL(copy -> CfirNamedFunctionSymbol(copy)) {\n                                            }\n                                        arguments:\n                                            NAMED_ACCESS(extra -> CfirValueParameterSymbol(extra))\n                                    }\n                                }\n                            }\n                    RETURN {\n                        FUNCTION_CALL(inner -> CfirPatternBindingSymbol(inner)) {\n                            INT(1)\n                        }\n                    }\n                }\n            }\n        }\n        FUNCTION_CALL(lateLocal -> CfirNamedFunctionSymbol(lateLocal)) {\n        }\n    }> was not:<null>"
+      },
+      {
+        "name": "lightTreeDefaultHelpersPhaseCommittedOblPclaLambdas()",
+        "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirDeclarationOwnerTest",
+        "outcome": "passed",
+        "message": ""
+      },
+      {
+        "name": "psiDefaultHelpersPhaseCommittedOblPclaLambdas()",
+        "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirDeclarationOwnerTest",
+        "outcome": "passed",
+        "message": ""
+      },
+      {
+        "name": "lightTreeDefaultHelpersPhaseLateSignatureBodyGraphPhase()",
+        "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirDeclarationOwnerTest",
+        "outcome": "failed",
+        "message": "junit.framework.AssertionFailedError: expected same:<FILE: lateSignatures.cj\n    package helper_phase_late_signatures\n    public func <A, R>apply(seed: R|A|, action: R|(A) -> R|): R|R| {\n        FUNCTION_CALL(action -> CfirValueParameterSymbol(action)) {\n            NAMED_ACCESS(seed -> CfirValueParameterSymbol(seed))\n        }\n    }\n    public func lateSignature(seed: R|Int64|): R|Int64| {\n        local? func lateLocal(): R|Int64| {\n            FUNCTION_CALL(apply -> CfirNamedFunctionSymbol(apply)<R|Int64|, R|Int64|>) {\n                NAMED_ACCESS(seed -> CfirValueParameterSymbol(seed))\n                LAMBDA(value: R|Int64|) {\n                    local? func copy(): R|Int64| {\n                        NAMED_ACCESS(value -> CfirValueParameterSymbol(value))\n                    }\n                    local? let inner: R|(Int64) -> Int64| = ...\n                        initializer:\n                            LAMBDA(extra: R|Int64|) {\n                                RETURN {\n                                    FUNCTION_CALL(*operator_plus -> BUILTIN(BuiltinPrimitiveOperatorSignature(name=*operator_plus, receiverKind=INT64, parameterKinds=[INT64], returnKind=INT64))) {\n                                        receiver:\n                                            FUNCTION_CALL(copy -> CfirNamedFunctionSymbol(copy)) {\n                                            }\n                                        arguments:\n                                            NAMED_ACCESS(extra -> CfirValueParameterSymbol(extra))\n                                    }\n                                }\n                            }\n                    RETURN {\n                        FUNCTION_CALL(inner -> CfirPatternBindingSymbol(inner)) {\n                            INT(1)\n                        }\n                    }\n                }\n            }\n        }\n        FUNCTION_CALL(lateLocal -> CfirNamedFunctionSymbol(lateLocal)) {\n        }\n    }> was not:<null>"
+      }
+    ]
+  }
+}

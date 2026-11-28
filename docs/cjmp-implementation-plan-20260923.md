@@ -627,3 +627,11 @@ fixture（全部经 cjc 1.1.3 两段式探针取证，`.workbuddy/tmp/cjmp_probe
 - KotlinParityGatekeeper 最终复审 **通过**：模块/包/类型/方法所有权与 Kotlin matcher/checker 分层一致；first-fit 与 Kotlin 多候选收集差异由 CJC 1.1.3 语义证明。LL 中没有单独的 inferred-return incompatibility fixture 属于可选覆盖建议，不是本计划未闭合项；该语义已有共享 matcher、PSI/LightTree diagnostic、两阶段编译测试覆盖。
 
 后续框架级复核、证据更正与修复进度统一见 [CJMP 框架级审查与修复计划](cjmp-framework-review-and-fix-plan-20260928.md)。
+
+## 12. 独立 target 来源代次的结构适配（2026-11-12）
+
+Kotlin的 `FirElement.source` 只读，LL snapshot copier复制graph/node而保留 `node.fir`，没有原位换源API。仓颉完整parser产品包含顺序累积的文件角色、位置和语法入口；LL原PSI修改后必须建立本session的新target，再保留已证明稳定的声明/symbol。统一IR源槽位及source-children属于这项明确的结构适配，不能称为Kotlin已有能力。
+
+`cfir-tree/visitors/CfirSourceVisitor`只公开IR/类型载荷，供providers的scope和receiver使用；`semantics/dfa/DfaSourceVisitor`扩展真实graph/node/flow/variable遍历；各状态owner枚举自己的表和栈，LL不复制其私有字段知识。普通Kotlin-style snapshot恢复/解析流程保持，source更新经prepare/validate/commit，不靠清除未改partial状态或强制全解析。
+
+公开symbol仍采用Kotlin的PSI/CFIR身份相等契约，但CFIR target与PSI入口都在构造backingPsi时导航到唯一原对象。参数pointer/index和仓颉稳定key消费者从同一actual owner列表计算identity位置，不另存外部owner/index副本。此适配及新统一CFG失效计划的全面验收仍开放，实际终态以滚动审计和原测试报告为准。

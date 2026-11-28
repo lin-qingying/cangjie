@@ -7,6 +7,7 @@
 
 package org.cangnova.cangjie.cfir.expressions.builder
 
+import org.cangnova.cangjie.annotations.CangjieOverflowStrategy
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.references.CfirReference
@@ -19,6 +20,8 @@ interface CfirAbstractFunctionCallBuilder : CfirQualifiedAccessExpressionBuilder
     abstract override var source: CjSourceElement?
     abstract override val annotations: MutableList<CfirAnnotation>
     abstract override var coneTypeOrNull: ConeCangJieType?
+    abstract override var mappedExpression: CfirExpression?
+    abstract override var overflowStrategy: CangjieOverflowStrategy?
     abstract override var dispatchReceiver: CfirExpression?
     abstract override var explicitReceiver: CfirExpression?
     abstract override val typeArguments: MutableList<CfirTypeRef>
@@ -27,5 +30,6 @@ interface CfirAbstractFunctionCallBuilder : CfirQualifiedAccessExpressionBuilder
     abstract var origin: CfirFunctionCallOrigin
     abstract var hasTrailingLambda: Boolean
     abstract var varraySizeLiteral: String?
+    abstract var sourceCallHasSideEffect: Boolean
     override fun build(): CfirFunctionCall
 }

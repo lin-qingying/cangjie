@@ -4,7 +4,7 @@ import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
@@ -18,7 +18,7 @@ import org.cangnova.cangjie.cfir.types.ConeTupleType
 import org.cangnova.cangjie.cfir.types.ConeTypeContext
 import org.cangnova.cangjie.cfir.types.ConeVArrayType
 import org.cangnova.cangjie.cfir.types.StdlibClassIds
-import org.cangnova.cangjie.cfir.types.createTypeSubstitutorByTypeConstructor
+import org.cangnova.cangjie.cfir.resolve.substitution.createTypeSubstitutorByTypeConstructor
 import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.type.model.TypeConstructorMarker

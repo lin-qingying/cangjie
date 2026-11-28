@@ -21,16 +21,22 @@ object LightTreePositioningStrategies {
      * 标记声明的实际名称标识符。
      */
     val ACTUAL_DECLARATION_NAME: LightTreePositioningStrategy = object : LightTreePositioningStrategy() {
+        override fun markOrNull(
+            node: LighterASTNode,
+            startOffset: Int,
+            endOffset: Int,
+            tree: FlyweightCapableTreeStructure<LighterASTNode>,
+        ): List<TextRange>? {
+            val nameIdentifier = tree.nameIdentifier(node) ?: return null
+            return markElement(nameIdentifier, startOffset, endOffset, tree, node)
+        }
+
         override fun mark(
             node: LighterASTNode,
             startOffset: Int,
             endOffset: Int,
             tree: FlyweightCapableTreeStructure<LighterASTNode>,
-        ): List<TextRange> {
-            val nameIdentifier = tree.nameIdentifier(node)
-                ?: return super.mark(node, startOffset, endOffset, tree)
-            return markElement(nameIdentifier, startOffset, endOffset, tree, node)
-        }
+        ): List<TextRange> = markOrNull(node, startOffset, endOffset, tree) ?: super.mark(node, startOffset, endOffset, tree)
     }
     /**
      * 标记声明起始关键字到名称标识符的范围。
@@ -57,9 +63,45 @@ object LightTreePositioningStrategies {
             return markRange(declarationStart, nameIdentifier, startOffset, endOffset, tree, node)
         }
     }
-    /**
-     * 标记可调用声明签名中不含修饰符的主体范围。
-     */
+    /** 与 PSI DeclarationSignature 相同的真实声明节点分派，不把构造器交给名称策略。 */
+    val DECLARATION_SIGNATURE: LightTreePositioningStrategy = object : LightTreePositioningStrategy() {
+        override fun mark(
+            node: LighterASTNode,
+            startOffset: Int,
+            endOffset: Int,
+            tree: FlyweightCapableTreeStructure<LighterASTNode>,
+        ): List<TextRange> {
+            when (node.tokenType) {
+                CjNodeTypes.PRIMARY_CONSTRUCTOR, CjNodeTypes.SECONDARY_CONSTRUCTOR -> {
+                    val begin = tree.constructorKeyword(node) ?: tree.valueParameterList(node)
+                        ?: return markElement(node, startOffset, endOffset, tree)
+                    val end = tree.valueParameterList(node) ?: tree.constructorKeyword(node)
+                        ?: return markElement(node, startOffset, endOffset, tree)
+                    return markRange(begin, end, startOffset, endOffset, tree, node)
+                }
+                CjNodeTypes.FUNC, CjNodeTypes.MAIN_FUNC, CjNodeTypes.FUNCTION_LITERAL -> {
+                    val end = tree.typeReference(node) ?: tree.valueParameterList(node) ?: tree.nameIdentifier(node) ?: node
+                    val start = if (node.tokenType == CjNodeTypes.FUNCTION_LITERAL) tree.valueParameterList(node) ?: node else node
+                    return markRange(start, end, startOffset, endOffset, tree, node)
+                }
+                CjNodeTypes.PROPERTY -> {
+                    val end = tree.typeReference(node) ?: tree.nameIdentifier(node) ?: node
+                    return markRange(node, end, startOffset, endOffset, tree, node)
+                }
+                CjNodeTypes.PROPERTY_ACCESSOR -> {
+                    val end = tree.typeReference(node) ?: tree.valueParameterList(node) ?: tree.accessorNamePlaceholder(node)
+                    return markRange(node, end, startOffset, endOffset, tree, node)
+                }
+                CjNodeTypes.CLASS, CjNodeTypes.INTERFACE, CjNodeTypes.STRUCT, CjNodeTypes.ENUM -> {
+                    // 仓颉主构造器位于 body，不能用它扩大名义声明的头部范围。
+                    return markElement(tree.nameIdentifier(node) ?: node, startOffset, endOffset, tree, node)
+                }
+            }
+            return super.mark(node, startOffset, endOffset, tree)
+        }
+    }
+
+    /** 按直接子节点选择关键字、返回类型、参数列表和名称，包含完整运算符名称。 */
     val CALLABLE_DECLARATION_SIGNATURE_NO_MODIFIERS: LightTreePositioningStrategy = object : LightTreePositioningStrategy() {
         override fun mark(
             node: LighterASTNode,
@@ -67,16 +109,24 @@ object LightTreePositioningStrategies {
             endOffset: Int,
             tree: FlyweightCapableTreeStructure<LighterASTNode>,
         ): List<TextRange> {
-            val startNode = sequenceOf(CjTokens.FUNC_KEYWORD, CjTokens.MAIN_KEYWORD, CjTokens.INIT_KEYWORD)
-                .mapNotNull { token -> tree.findChildByType(node, token) }
-                .firstOrNull()
-                ?: return ACTUAL_DECLARATION_NAME.mark(node, startOffset, endOffset, tree)
-
-            val endNode = tree.findChildByType(node, CjNodeTypes.VALUE_PARAMETER_LIST)
-                ?: tree.findChildByType(node, CjTokens.IDENTIFIER)
-                ?: return ACTUAL_DECLARATION_NAME.mark(node, startOffset, endOffset, tree)
-
-            return markRange(startNode, endNode, startOffset, endOffset, tree, node)
+            when (node.tokenType) {
+                CjNodeTypes.FUNC, CjNodeTypes.MAIN_FUNC -> {
+                    val keyword = if (node.tokenType == CjNodeTypes.FUNC) CjTokens.FUNC_KEYWORD else CjTokens.MAIN_KEYWORD
+                    val start = tree.findChildByType(node, keyword) ?: node
+                    val end = tree.typeReference(node) ?: tree.valueParameterList(node) ?: tree.nameIdentifier(node) ?: node
+                    return markRange(start, end, startOffset, endOffset, tree, node)
+                }
+                CjNodeTypes.PROPERTY -> {
+                    val start = tree.findChildByType(node, CjTokens.PROP_KEYWORD) ?: node
+                    val end = tree.typeReference(node) ?: tree.nameIdentifier(node) ?: node
+                    return markRange(start, end, startOffset, endOffset, tree, node)
+                }
+                CjNodeTypes.PROPERTY_ACCESSOR -> {
+                    val end = tree.typeReference(node) ?: tree.valueParameterList(node) ?: tree.accessorNamePlaceholder(node)
+                    return markRange(tree.accessorNamePlaceholder(node), end, startOffset, endOffset, tree, node)
+                }
+            }
+            return DECLARATION_SIGNATURE.mark(node, startOffset, endOffset, tree)
         }
     }
     /**
@@ -531,13 +581,49 @@ private fun LighterASTNode.isExpressionLike(): Boolean {
             tokenType == CjNodeTypes.POSTFIX_EXPRESSION
 }
 
+/** 返回类型仅从冒号后的直接子节点读取，不能误用参数或外层捕获类型。 */
+private fun FlyweightCapableTreeStructure<LighterASTNode>.typeReference(node: LighterASTNode): LighterASTNode? {
+    val childrenRef = Ref<Array<LighterASTNode?>>()
+    getChildren(node, childrenRef)
+    return childrenRef.get()?.filterNotNull()
+        ?.dropWhile { it.tokenType != CjTokens.COLON }
+        ?.firstOrNull { it.tokenType == CjNodeTypes.TYPE_REFERENCE }
+}
+
+/** 与 Kotlin 签名 helper 相同，只读取当前声明直接拥有的参数列表。 */
+private fun FlyweightCapableTreeStructure<LighterASTNode>.valueParameterList(node: LighterASTNode): LighterASTNode? =
+    findChildByType(node, CjNodeTypes.VALUE_PARAMETER_LIST)
+
+/** 访问器自身必有 get/set 关键字，不能借用属性名称。 */
+private fun FlyweightCapableTreeStructure<LighterASTNode>.accessorNamePlaceholder(node: LighterASTNode): LighterASTNode =
+    findChildByType(node, CjTokens.GET_KEYWORD) ?: findChildByType(node, CjTokens.SET_KEYWORD)!!
+
+/** primary 使用真实类名 token，secondary 使用 init；两者均属于构造器自身节点。 */
+private fun FlyweightCapableTreeStructure<LighterASTNode>.constructorKeyword(node: LighterASTNode): LighterASTNode? =
+    if (node.tokenType == CjNodeTypes.PRIMARY_CONSTRUCTOR) findChildByType(node, CjTokens.IDENTIFIER)
+    else findChildByType(node, CjTokens.INIT_KEYWORD)
+
 /**
  * 查找声明或操作符名称对应的标识节点。
  */
-private fun FlyweightCapableTreeStructure<LighterASTNode>.nameIdentifier(node: LighterASTNode): LighterASTNode? =
-    findChildByType(node, CjTokens.IDENTIFIER)
-        ?: findChildByType(node, CjNodeTypes.OPERATION_NAME)
-        ?: findChildByType(node, CjTokens.INIT_KEYWORD)
+fun FlyweightCapableTreeStructure<LighterASTNode>.nameIdentifier(node: LighterASTNode): LighterASTNode? =
+    if (node.tokenType == CjNodeTypes.EXTEND) {
+        (findChildByType(node, CjNodeTypes.TYPE_PARAMETER_LIST)
+            ?: findChildByType(node, CjNodeTypes.TYPE_REFERENCE))?.firstLeaf(this)
+    } else {
+        findChildByType(node, CjTokens.IDENTIFIER)
+            ?: findChildByType(node, CjNodeTypes.OPERATION_NAME)
+            ?: findChildByType(node, CjTokens.GET_KEYWORD)
+            ?: findChildByType(node, CjTokens.SET_KEYWORD)
+            ?: findChildByType(node, CjTokens.INIT_KEYWORD)
+    }
+
+private fun LighterASTNode.firstLeaf(
+    tree: FlyweightCapableTreeStructure<LighterASTNode>,
+): LighterASTNode {
+    val children = tree.getChildrenArray(this).filterNotNull()
+    return children.firstOrNull()?.firstLeaf(tree) ?: this
+}
 
 /**
  * 返回名称引用节点中的完整名称 token，不包含同一引用节点携带的泛型实参。

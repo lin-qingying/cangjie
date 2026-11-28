@@ -23,6 +23,7 @@ import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.parsing.compilationParsingResultOrNull
 import org.cangnova.cangjie.source.CjPsiSourceElement
 import org.cangnova.cangjie.source.CjRealSourceElementKind
 import org.cangnova.cangjie.source.CjSourceElement
@@ -47,6 +48,8 @@ internal data class LLCfirMacroSemanticSnapshotConstructionInputs(
     val declarationsByFile: IdentityHashMap<CfirFile, List<CfirDeclaration>>,
     val fileByElement: IdentityHashMap<CfirElement, CfirFile>,
     val declarationPsiByCfir: IdentityHashMap<CfirDeclaration, CjElement>,
+    val compilationFiles: IdentityHashMap<CjFile, CfirFile>,
+    val originalElements: IdentityHashMap<PsiElement, PsiElement>,
     val reparsedPsiFiles: IdentityHashMap<CjFile, CfirFile>,
     val reparsedPsiOwners: IdentityHashMap<CjElement, CfirDeclaration>,
     val canonicalPsiByReparsedPsi: IdentityHashMap<CjElement, CjElement>,
@@ -59,6 +62,7 @@ internal data class LLCfirMacroSemanticSnapshotConstructionInputs(
 internal data class LLCfirMacroDeclarationReplacementSource(
     val replacement: MacroAppliedDeclarationReplacement,
     val sourcePsi: CjDeclaration,
+    val originalPsi: CjDeclaration?,
     val physicalSourceFile: CjFile?,
 )
 
@@ -66,6 +70,8 @@ internal data class LLCfirMacroDeclarationReplacementSource(
 internal data class LLCfirMacroExpressionReplacementSource(
     val replacement: MacroAppliedExpressionReplacement,
     val sourcePsi: CjMacroExpression,
+    val compilationFile: CjFile,
+    val originalPsi: CjMacroExpression,
     val sourceFile: CjFile,
 )
 
@@ -203,8 +209,18 @@ class LLCfirMacroSemanticSnapshot internal constructor(
     val registry: MacroExpansionRegistry,
     constructionInputs: LLCfirMacroSemanticSnapshotConstructionInputs,
 ) {
-    /** 原始物理 PSI 文件到最终 CFIR 文件的身份映射。 */
+    /** 原始输入和本代目标 PSI 文件到最终 CFIR 文件的身份映射。 */
     private val filesBySourceIdentity: Map<CjFile, CfirFile>
+    private val originFiles = Collections.newSetFromMap(IdentityHashMap<CjFile, Boolean>()).apply {
+        addAll(sourceFiles)
+    }
+    private val compilationFiles = Collections.unmodifiableMap(IdentityHashMap(constructionInputs.compilationFiles))
+    private val originalElements = Collections.unmodifiableMap(IdentityHashMap(constructionInputs.originalElements))
+    private val compilationElements = Collections.unmodifiableMap(IdentityHashMap<PsiElement, PsiElement>().apply {
+        originalElements.forEach { (target, origin) ->
+            check(put(origin, target) == null) { "An original PSI element must have one target in a macro snapshot." }
+        }
+    })
 
     /** 发布时冻结的 surface 索引，避免后续 construction 写入改变已发布导航目标。 */
     private val originSurfacesById: Map<Long, MacroSurface> = Collections.unmodifiableMap(registry.originSurfaceById)
@@ -268,6 +284,20 @@ class LLCfirMacroSemanticSnapshot internal constructor(
 
     fun fileForReparsedPsi(file: CjFile): CfirFile? = reparsedPsiFiles[file]
 
+    /** 查找快照实际使用的 AST；语法对应缺失时不使用另一棵原始树。 */
+    internal fun compilationElement(element: PsiElement): PsiElement? {
+        val file = element.containingFile as? CjFile ?: return null
+        if (file in compilationFiles || file in reparsedPsiFiles) return element
+        return compilationElements[element]
+    }
+
+    /** 在同一语法对应上定位供诊断或导航使用的原始 PSI。 */
+    internal fun originalElement(element: PsiElement): PsiElement? {
+        val file = element.containingFile as? CjFile ?: return null
+        if (file in originFiles) return element
+        return originalElements[element]
+    }
+
     /** 沿语法 ownership 找实际登记的解析 owner，不按名字或 offset 选声明。 */
     fun declarationForReparsedPsi(element: CjElement): CfirDeclaration? =
         generateSequence(element as PsiElement) { it.parent }
@@ -285,6 +315,12 @@ class LLCfirMacroSemanticSnapshot internal constructor(
         sourceFiles.forEachIndexed { index, sourceFile ->
             check(sourceIdentityMap.put(sourceFile, files[index]) == null) {
                 "A source PSI file occurs more than once in a macro semantic snapshot."
+            }
+        }
+        compilationFiles.forEach { (sourceFile, file) ->
+            val prior = sourceIdentityMap.put(sourceFile, file)
+            check(prior == null || prior === file) {
+                "A compilation PSI file can belong to only one macro semantic file."
             }
         }
         filesBySourceIdentity = Collections.unmodifiableMap(sourceIdentityMap)
@@ -351,52 +387,63 @@ class LLCfirMacroSemanticSnapshot internal constructor(
                 // 可以共享 class PSI，但不能把 class 的唯一 source owner 基数扩成二。
                 if (declaration.source?.kind != CjRealSourceElementKind) continue
                 val sourcePsi = constructionInputs.declarationPsiByCfir[declaration] as? CjDeclaration ?: continue
-                declarationsBySource.getOrPut(sourcePsi, ::mutableListOf).addIdentity(declaration)
-                if (declaration is CfirClassLikeDeclaration && sourcePsi is CjClassLikeDeclaration) {
-                    classifiersBySource.getOrPut(sourcePsi, ::mutableListOf).addIdentity(declaration)
+                for (psi in listOfNotNull(sourcePsi, originalElements[sourcePsi] as? CjDeclaration)) {
+                    declarationsBySource.getOrPut(psi, ::mutableListOf).addIdentity(declaration)
+                    if (declaration is CfirClassLikeDeclaration && psi is CjClassLikeDeclaration) {
+                        classifiersBySource.getOrPut(psi, ::mutableListOf).addIdentity(declaration)
+                    }
                 }
             }
         }
 
         for (capturedSource in constructionInputs.declarationReplacementSources) {
             val replacement = capturedSource.replacement
-            val sourcePsi = capturedSource.sourcePsi
-            replacementCarriers += sourcePsi
+            val originalPsi = capturedSource.originalPsi
+            val carrierIdentities = listOfNotNull(capturedSource.sourcePsi, originalPsi)
+            replacementCarriers += carrierIdentities
             for (semanticDeclaration in replacement.replacements) {
                 check(declarationContainers.containsKey(semanticDeclaration)) {
                     "A recorded macro replacement must belong to the published semantic snapshot."
                 }
-                declarationsBySource.getOrPut(sourcePsi, ::mutableListOf).addIdentity(semanticDeclaration)
-                if (semanticDeclaration is CfirClassLikeDeclaration && sourcePsi is CjClassLikeDeclaration) {
-                    classifiersBySource.getOrPut(sourcePsi, ::mutableListOf).addIdentity(semanticDeclaration)
+                for (psi in carrierIdentities) {
+                    declarationsBySource.getOrPut(psi, ::mutableListOf).addIdentity(semanticDeclaration)
+                    if (semanticDeclaration is CfirClassLikeDeclaration && psi is CjClassLikeDeclaration) {
+                        classifiersBySource.getOrPut(psi, ::mutableListOf).addIdentity(semanticDeclaration)
+                    }
                 }
                 capturedSource.physicalSourceFile?.let { sourceFile ->
+                    val physicalPsi = checkNotNull(originalPsi)
                     val sourceSemanticFile = filesBySourceIdentity[sourceFile]
                         ?: error("A declaration macro carrier must belong to a source file in this snapshot.")
                     check(declarationContainers[semanticDeclaration] === sourceSemanticFile) {
                         "A declaration macro replacement must remain in the expanded file for its physical source file."
                     }
                     physicalSourceByDeclaration.getOrPut(semanticDeclaration, ::mutableListOf)
-                        .addPhysicalSource(sourcePsi, sourceFile)
+                        .addPhysicalSource(physicalPsi, sourceFile)
                 }
             }
         }
 
         for (capturedSource in constructionInputs.expressionReplacementSources) {
             val replacement = capturedSource.replacement
-            val sourcePsi = capturedSource.sourcePsi
-            val sourceFile = capturedSource.sourceFile
-            val sourceSemanticFile = filesBySourceIdentity[sourceFile]
+            val sourceSemanticFile = filesBySourceIdentity[capturedSource.sourceFile]
                 ?: error("A physical expression macro call must belong to a source file in this snapshot.")
+            check(filesBySourceIdentity[capturedSource.compilationFile] === sourceSemanticFile)
             check(constructionInputs.fileByElement[replacement.replacement] === sourceSemanticFile) {
                 "A macro expression replacement must belong to the expanded file for its physical source file."
             }
-            check(expressionsByMacroSource.put(sourcePsi, replacement.replacement) == null) {
-                "A physical macro expression PSI cannot map to multiple final CFIR expressions."
-            }
-            val sourceFileMappings = expressionsBySourceFile.getOrPut(sourceFile) { IdentityHashMap() }
-            check(sourceFileMappings.put(sourcePsi, replacement.replacement) == null) {
-                "A physical macro expression PSI cannot map to multiple final CFIR expressions in one source file."
+            val psiByFile = setOf(
+                capturedSource.sourceFile to capturedSource.originalPsi,
+                capturedSource.compilationFile to capturedSource.sourcePsi,
+            )
+            psiByFile.forEach { (file, psi) ->
+                check(expressionsByMacroSource.put(psi, replacement.replacement) == null) {
+                    "A macro expression PSI cannot map to multiple final CFIR expressions."
+                }
+                val fileMappings = expressionsBySourceFile.getOrPut(file) { IdentityHashMap() }
+                check(fileMappings.put(psi, replacement.replacement) == null) {
+                    "A macro expression PSI cannot map to multiple final CFIR expressions in one source file."
+                }
             }
         }
 
@@ -533,7 +580,7 @@ class LLCfirMacroSemanticSnapshot internal constructor(
         val sourceSemanticFile = filesBySourceIdentity[sourceFile] ?: return null
         if (containerByDeclaration[declaration] !== sourceSemanticFile) return null
         val physicalSource = uniquePhysicalSourceForDeclaration(declaration) ?: return null
-        if (physicalSource.sourceFile !== sourceFile) return null
+        if (filesBySourceIdentity[physicalSource.sourceFile] !== sourceSemanticFile) return null
         return physicalSource.sourcePsi
     }
 
@@ -563,7 +610,7 @@ class LLCfirMacroSemanticSnapshot internal constructor(
 
     /** 判断声明是否来自指定文件中的宏替换，包含一对多输出。 */
     fun isDeclarationReplacementOutput(declaration: CfirDeclaration, sourceFile: CjFile): Boolean =
-        physicalSourceByDeclarationIdentity[declaration].orEmpty().any { it.sourceFile === sourceFile }
+        filesBySourceIdentity[sourceFile]?.let { isDeclarationReplacementOutput(declaration, it) } == true
 
     /** 返回顶层 callable id 对应的最终声明。 */
     fun callables(callableId: CallableId): List<CfirCallableDeclaration> = callablesById[callableId].orEmpty()
@@ -677,6 +724,19 @@ class LLCfirMacroSemanticSnapshotStore(private val project: Project) : Modificat
         val generatedSourceOrigins = sourceOriginsSnapshot.originsBySource
         val resolvedOriginIds = sourceOriginsSnapshot.resolvedOriginIds
         val psiSources = ReadAction.compute<LLCfirMacroPsiSources, RuntimeException> {
+            val compilationFiles = IdentityHashMap<CjFile, CfirFile>()
+            val originalElements = IdentityHashMap<PsiElement, PsiElement>()
+            sourceFiles.zip(files).forEach { (originFile, semanticFile) ->
+                val compilationFile = semanticFile.psi as? CjFile ?: return@forEach
+                val product = compilationFile.compilationParsingResultOrNull()
+                check(compilationFile === originFile || product?.originFile === originFile) {
+                    "A macro semantic file must use its actual source compilation product."
+                }
+                check(compilationFiles.put(compilationFile, semanticFile) == null)
+                product?.captureOriginalElements()?.forEach { (target, origin) ->
+                    check(originalElements.put(target, origin) == null)
+                }
+            }
             val declarationPsiByCfir = IdentityHashMap<CfirDeclaration, CjElement>()
             val reparsedPsiFiles = IdentityHashMap<CjFile, CfirFile>()
             val reparsedPsiOwners = IdentityHashMap<CjElement, CfirDeclaration>()
@@ -687,7 +747,7 @@ class LLCfirMacroSemanticSnapshotStore(private val project: Project) : Modificat
                 registry.reparsedSourcesFor(source).forEach rawSource@ { rawSource ->
                     val reparsed = rawSource.psi as? CjElement ?: return@rawSource
                     val psiFile = reparsed.containingFile as? CjFile ?: return@rawSource
-                    if (sourceFiles.any { it === psiFile }) return@rawSource
+                    if (psiFile in compilationFiles || sourceFiles.any { it === psiFile }) return@rawSource
                     val previousFile = reparsedPsiFiles.put(psiFile, file)
                     check(previousFile == null || previousFile === file) { "A reparsed PSI file must belong to one semantic file." }
                     fun registerAlias(raw: CjElement?, actual: CjElement?) {
@@ -757,8 +817,9 @@ class LLCfirMacroSemanticSnapshotStore(private val project: Project) : Modificat
                 ProgressManager.checkCanceled()
                 val sourcePsi = replacement.carrier.psi as? CjDeclaration
                     ?: error("A declaration macro replacement carrier must retain its source declaration PSI.")
-                val physicalSourceFile = if (sourcePsi.isPhysical) sourcePsi.containingFile as? CjFile else null
-                LLCfirMacroDeclarationReplacementSource(replacement, sourcePsi, physicalSourceFile)
+                val originalPsi = (originalElements[sourcePsi] ?: sourcePsi) as CjDeclaration
+                val physicalSourceFile = if (originalPsi.isPhysical) originalPsi.containingFile as? CjFile else null
+                LLCfirMacroDeclarationReplacementSource(replacement, sourcePsi, originalPsi, physicalSourceFile)
             }
 
             val expressionReplacementSources = registry.appliedExpressionReplacements.map { replacement ->
@@ -778,16 +839,19 @@ class LLCfirMacroSemanticSnapshotStore(private val project: Project) : Modificat
                 check(surfaceSourcePsi == null || surfaceSourcePsi === sourcePsi) {
                     "A macro expression surface source must be the same PSI as its stable-splice carrier."
                 }
-                check(sourcePsi.isPhysical) {
+                val originalPsi = (originalElements[sourcePsi] ?: sourcePsi) as CjMacroExpression
+                check(originalPsi.isPhysical) {
                     "A published expression macro replacement must map to physical source PSI."
                 }
-                val sourceFile = sourcePsi.containingFile as? CjFile
-                    ?: error("A physical expression macro call must belong to a CangJie source file.")
-                LLCfirMacroExpressionReplacementSource(replacement, sourcePsi, sourceFile)
+                LLCfirMacroExpressionReplacementSource(
+                    replacement, sourcePsi, sourcePsi.containingCjFile, originalPsi, originalPsi.containingCjFile,
+                )
             }
 
             LLCfirMacroPsiSources(
                 declarationPsiByCfir = declarationPsiByCfir,
+                compilationFiles = compilationFiles,
+                originalElements = originalElements,
                 reparsedPsiFiles = reparsedPsiFiles,
                 reparsedPsiOwners = reparsedPsiOwners,
                 canonicalPsiByReparsedPsi = canonicalPsiByReparsedPsi,
@@ -812,6 +876,8 @@ class LLCfirMacroSemanticSnapshotStore(private val project: Project) : Modificat
             declarationsByFile = declarationsByFile,
             fileByElement = fileByElement,
             declarationPsiByCfir = psiSources.declarationPsiByCfir,
+            compilationFiles = psiSources.compilationFiles,
+            originalElements = psiSources.originalElements,
             reparsedPsiFiles = psiSources.reparsedPsiFiles,
             reparsedPsiOwners = psiSources.reparsedPsiOwners,
             canonicalPsiByReparsedPsi = psiSources.canonicalPsiByReparsedPsi,
@@ -855,6 +921,8 @@ class LLCfirMacroSemanticSnapshotStore(private val project: Project) : Modificat
 
     private data class LLCfirMacroPsiSources(
         val declarationPsiByCfir: IdentityHashMap<CfirDeclaration, CjElement>,
+        val compilationFiles: IdentityHashMap<CjFile, CfirFile>,
+        val originalElements: IdentityHashMap<PsiElement, PsiElement>,
         val reparsedPsiFiles: IdentityHashMap<CjFile, CfirFile>,
         val reparsedPsiOwners: IdentityHashMap<CjElement, CfirDeclaration>,
         val canonicalPsiByReparsedPsi: IdentityHashMap<CjElement, CjElement>,

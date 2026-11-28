@@ -29,6 +29,7 @@ import com.intellij.psi.stubs.IndexSink
 import com.intellij.psi.stubs.StubInputStream
 import com.intellij.psi.stubs.StubOutputStream
 import org.cangnova.cangjie.psi.CjFile
+import org.cangnova.cangjie.parsing.collectParsedRoleSnapshot
 import org.cangnova.cangjie.psi.stubs.*
 import org.cangnova.cangjie.psi.stubs.impl.CangJieFileStubImpl
 import org.cangnova.cangjie.psi.stubs.impl.CangJieFileStubKindImpl
@@ -144,7 +145,8 @@ open class StubIndexService protected constructor() {
      * 提供 `createFileStub` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
      */
     open fun createFileStub(file: CjFile): CangJieFileStub {
-        return CangJieFileStubImpl(file, file.packageFqNameByTree.asString())
+        val kind = CangJieFileStubKindImpl.File(file.packageFqNameByTree)
+        return CangJieFileStubImpl(file, kind, if (file.isCompiled) null else file.collectParsedRoleSnapshot())
     }
 
     /**
@@ -153,6 +155,7 @@ open class StubIndexService protected constructor() {
     @Throws(IOException::class)
     open fun serializeFileStub(stub: CangJieFileStub, dataStream: StubOutputStream) {
         CangJieFileStubKindImpl.serialize(stub.kind, dataStream)
+        CjmpFileRoleSnapshotCodec.write(dataStream, stub.cjmpRoleSnapshot)
     }
 
     /**
@@ -161,7 +164,7 @@ open class StubIndexService protected constructor() {
     @Throws(IOException::class)
     open fun deserializeFileStub(dataStream: StubInputStream): CangJieFileStub {
         val kind = CangJieFileStubKindImpl.deserialize(dataStream)
-        return CangJieFileStubImpl(null, kind)
+        return CangJieFileStubImpl(null, kind, CjmpFileRoleSnapshotCodec.read(dataStream))
     }
 
     companion object {

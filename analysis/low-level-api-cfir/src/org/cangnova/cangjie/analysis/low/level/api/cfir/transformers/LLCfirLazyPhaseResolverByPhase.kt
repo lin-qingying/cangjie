@@ -21,6 +21,7 @@ internal object LLCfirLazyPhaseResolverByPhase {
         this[CfirResolvePhase.EXTENSIONS] = LLCfirExtensionsLazyResolver
         this[CfirResolvePhase.IMPLICIT_TYPES] = LLCfirImplicitTypesLazyResolver
         this[CfirResolvePhase.CJMP_MATCHING] = LLCfirCjmpMatchingLazyResolver
+        this[CfirResolvePhase.CJMP_FINAL_MATCHING] = LLCfirCjmpFinalMatchingLazyResolver
         this[CfirResolvePhase.BODY_RESOLVE] = LLCfirBodyLazyResolver
     }
 

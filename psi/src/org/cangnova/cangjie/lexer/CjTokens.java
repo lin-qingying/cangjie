@@ -30,6 +30,7 @@ import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.tree.TokenSet;
 import org.cangnova.cangjie.psi.CjNodeTypes;
 import org.cangnova.cangjie.lexer.cdoc.lexer.CDocTokens;
+import org.cangnova.cangjie.lang.CangJieLanguage;
 
 public interface CjTokens {
     int INVALID_Id = 0;
@@ -273,10 +274,15 @@ public interface CjTokens {
     // 但二者属于上下文关键字（官方 Lexer.cpp GetContextualKeyword），在标识符位置仍可作名字。
     int COMMON_KEYWORD_Id = 221;
     int SPECIFIC_KEYWORD_Id = 222;
+    /** alpha 预发布 parser 使用的历史拼写；稳定 lexer 不产出此 token。 */
+    int PLATFORM_KEYWORD_Id = 223;
 
 
     IElementType DOC_COMMENT = CDocTokens.CDOC;
     IElementType WHITE_SPACE = TokenType.WHITE_SPACE;
+    IElementType NL = new CjNewlineElementType();
+    /** 普通表达式词法状态中的未知字符；解析器错误收集器据此发布仓颉词法诊断。 */
+    IElementType UNKNOWN_TOKEN_START = new IElementType("UNKNOWN_TOKEN_START", CangJieLanguage.INSTANCE);
 
 
     CjSingleValueToken HASH = new CjSingleValueToken("HASH", "#", HASH_Id);
@@ -531,6 +537,8 @@ public interface CjTokens {
     // 与 public/open/abstract/redef 同族）；修饰符冲突表见官方 ParserModifierRules.cpp
     CjModifierKeywordToken COMMON_KEYWORD = CjModifierKeywordToken.softKeywordModifier("common", COMMON_KEYWORD_Id);
     CjModifierKeywordToken SPECIFIC_KEYWORD = CjModifierKeywordToken.softKeywordModifier("specific", SPECIFIC_KEYWORD_Id);
+    /** 仅由 alpha 预发布 parser 在 `platform` 源文法中构造；稳定词法仍将该拼写作为标识符。 */
+    CjModifierKeywordToken PLATFORM_KEYWORD = CjModifierKeywordToken.softKeywordModifier("platform", PLATFORM_KEYWORD_Id);
     CjKeywordToken QUOTE_KEYWORD = CjKeywordToken.keyword("quote", QUOTE_KEYWORD_Id);
     //    特殊修饰符
     CjKeywordToken FOREIGN_KEYWORD = CjKeywordToken.keyword("foreign", FOREIGN_KEYWORD_Id);
@@ -819,10 +827,11 @@ public interface CjTokens {
     TokenSet COMMENTS = TokenSet.create(EOL_COMMENT, BLOCK_COMMENT, DOC_COMMENT, SHEBANG_COMMENT);
 
     TokenSet WHITESPACES = TokenSet.create(TokenType.WHITE_SPACE);
+    TokenSet ALL_WHITESPACE_TOKENS = TokenSet.create(TokenType.WHITE_SPACE, NL);
     CjModifierKeywordToken DEFAULT_VISIBILITY_KEYWORD = INTERNAL_KEYWORD;
     TokenSet INCREMENT_AND_DECREMENT = TokenSet.create(PLUSPLUS, MINUSMINUS);
 
-    TokenSet WHITE_SPACE_OR_COMMENT_BIT_SET = TokenSet.orSet(COMMENTS, WHITESPACES);
+    TokenSet WHITE_SPACE_OR_COMMENT_BIT_SET = TokenSet.orSet(COMMENTS, ALL_WHITESPACE_TOKENS);
     CjToken EOF = new CjToken("EOF", EOF_Id);
 }
 

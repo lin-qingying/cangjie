@@ -103,6 +103,7 @@ class DefaultChirToLlvmCodeGenerator : ChirToLlvmCodeGenerator {
     private fun ChirCodegenInput.hasPackageDefinitions(): Boolean {
         return chirPackage.members.globalFunctions.isNotEmpty() ||
             chirPackage.members.globalVariables.isNotEmpty() ||
+            chirPackage.typeDefinitions.isNotEmpty() ||
             chirPackage.packageInitFunctionId != null ||
             chirPackage.packageLiteralInitFunctionId != null
     }

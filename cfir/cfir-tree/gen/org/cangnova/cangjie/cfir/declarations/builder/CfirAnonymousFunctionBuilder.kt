@@ -8,6 +8,7 @@
 package org.cangnova.cangjie.cfir.declarations.builder
 
 import kotlin.contracts.*
+import org.cangnova.cangjie.cfir.CfirContentSource
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
@@ -23,22 +24,23 @@ import org.cangnova.cangjie.cfir.types.ConeSimpleCangJieType
 import org.cangnova.cangjie.source.CjSourceElement
 
 @CfirBuilderDsl
-class CfirAnonymousFunctionBuilder {
-    var source: CjSourceElement? = null
-    lateinit var moduleData: CfirModuleData
-    lateinit var resolvePhase: CfirResolvePhase
-    val annotations: MutableList<CfirAnnotation> = mutableListOf()
-    lateinit var origin: CfirDeclarationOrigin
-    lateinit var attributes: CfirDeclarationAttributes
-    var isLocal: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
-    var deprecationsProvider: DeprecationsProvider = UnresolvedDeprecationProvider
-    var dispatchReceiverType: ConeSimpleCangJieType? = null
-    lateinit var status: CfirDeclarationStatus
+class CfirAnonymousFunctionBuilder : CfirFunctionBuilder {
+    override var source: CjSourceElement? = null
+    override lateinit var moduleData: CfirModuleData
+    override lateinit var resolvePhase: CfirResolvePhase
+    override var contentSource: CfirContentSource = CfirContentSource.Owned
+    override val annotations: MutableList<CfirAnnotation> = mutableListOf()
+    override lateinit var origin: CfirDeclarationOrigin
+    override lateinit var attributes: CfirDeclarationAttributes
+    override var isLocal: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
+    override lateinit var returnTypeRef: CfirTypeRef
+    override var deprecationsProvider: DeprecationsProvider = UnresolvedDeprecationProvider
+    override var dispatchReceiverType: ConeSimpleCangJieType? = null
+    override var body: CfirBlock? = null
+    override var status: CfirDeclarationStatus = DEFAULT_STATUS_FOR_STATUSLESS_DECLARATIONS
+    override val valueParameters: MutableList<CfirValueParameter> = mutableListOf()
+    override var hasVariableLenArg: Boolean = false
     val typeParameters: MutableList<CfirTypeParameter> = mutableListOf()
-    lateinit var returnTypeRef: CfirTypeRef
-    val valueParameters: MutableList<CfirValueParameter> = mutableListOf()
-    var hasVariableLenArg: Boolean = false
-    var body: CfirBlock? = null
     lateinit var symbol: CfirAnonymousFunctionSymbol
     var hasExplicitParameterList: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
     var isLambda: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
@@ -46,23 +48,24 @@ class CfirAnonymousFunctionBuilder {
     var matchingParameterFunctionType: ConeCangJieType? = null
 
     @OptIn(CfirImplementationDetail::class)
-    fun build(): CfirAnonymousFunction {
+    override fun build(): CfirAnonymousFunction {
         return CfirAnonymousFunctionImpl(
             source,
             moduleData,
             resolvePhase,
+            contentSource,
             annotations.toMutableOrEmpty(),
             origin,
             attributes,
             isLocal,
+            returnTypeRef,
             deprecationsProvider,
             dispatchReceiverType,
+            body,
             status,
-            typeParameters,
-            returnTypeRef,
             valueParameters,
             hasVariableLenArg,
-            body,
+            typeParameters,
             symbol,
             hasExplicitParameterList,
             isLambda,
@@ -70,6 +73,7 @@ class CfirAnonymousFunctionBuilder {
             matchingParameterFunctionType,
         )
     }
+
 
 }
 
@@ -94,14 +98,14 @@ inline fun buildAnonymousFunctionCopy(original: CfirAnonymousFunction, init: Cfi
     copyBuilder.origin = original.origin
     copyBuilder.attributes = original.attributes.copy()
     copyBuilder.isLocal = original.isLocal
+    copyBuilder.returnTypeRef = original.returnTypeRef
     copyBuilder.deprecationsProvider = original.deprecationsProvider
     copyBuilder.dispatchReceiverType = original.dispatchReceiverType
+    copyBuilder.body = original.body
     copyBuilder.status = original.status
-    copyBuilder.typeParameters.addAll(original.typeParameters)
-    copyBuilder.returnTypeRef = original.returnTypeRef
     copyBuilder.valueParameters.addAll(original.valueParameters)
     copyBuilder.hasVariableLenArg = original.hasVariableLenArg
-    copyBuilder.body = original.body
+    copyBuilder.typeParameters.addAll(original.typeParameters)
     copyBuilder.hasExplicitParameterList = original.hasExplicitParameterList
     copyBuilder.isLambda = original.isLambda
     copyBuilder.typeRef = original.typeRef

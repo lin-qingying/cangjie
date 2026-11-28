@@ -1,0 +1,2937 @@
+{
+  "nativeCommit": "14276740ffec1262b81b6b5236b1d840af270b37",
+  "kotlinCommit": "3c7a5041f238102285764d370665f56f587f9dc4",
+  "sdk": "C:/Users/lin17/.cangjie/sdks/cangjie-sdk-windows-x64-1.1.3/cangjie/bin/cjc.exe",
+  "sdkSha256": "DFEBED3139AFE00EE642F75322AB82D1D97651A5E9F10EBF4F6D86ABAC061257",
+  "schemaSha256": "86153FD08C4C0DE6E1C913378A36C93A6F9FD349FA9823F232CB645C5168EE75",
+  "capturedUtc": "2026-11-18T07:54:03.9463650Z",
+  "cases": [
+    {
+      "case": "orderedAliasRoles",
+      "source": "cfir/analysis-tests/testData/diagnostics2/common-specific/source-frozen-types/orderedAliasRoles.cj",
+      "sourceSha256": "6B911947B0533ED9D7889C1CCAF820527A0349BF68F90B9B6130E41ACF92C996",
+      "cjo": "build/source-frozen-type-roles-v113/orderedAliasRoles/s4_frozen_type_roles.cjo",
+      "cjoSha256": "5BA49A5DE228E98195C52878F029DB0B5261978D04EFD090676415E9354A54A9",
+      "cjoBytes": 19208,
+      "cjoGzipBase64": "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",
+      "archiveVerified": true,
+      "json": "build/source-frozen-type-roles-v113/orderedAliasRoles/s4_frozen_type_roles.json",
+      "jsonSha256": "DF3130E60CCB341DAD4032AF6A21B2CC3E4CBDD27E4A0F7E6D33774D842D939A",
+      "version": "1.1.3",
+      "cjoVersion": {
+        "major_num": 0,
+        "minor_num": 1,
+        "patch_num": 0
+      },
+      "package": "s4_frozen_type_roles",
+      "compileExitCode": 0,
+      "diagnosticCounts": {
+        "Errors": 0,
+        "PrintedErrors": 0,
+        "Warnings": 7,
+        "PrintedWarnings": 7
+      },
+      "counts": {
+        "declarations": 48,
+        "expressions": 27,
+        "types": 42
+      },
+      "declarations": [
+        {
+          "index": 1,
+          "name": "aliasUse",
+          "kind": "FuncDecl",
+          "generic": null,
+          "type": {
+            "index": 1,
+            "kind": "Func",
+            "info": {
+              "retType": 2,
+              "isC": false,
+              "hasVariableLenArg": false
+            },
+            "binding": null,
+            "arguments": [
+              {
+                "index": 2,
+                "kind": "Type",
+                "info": {
+                  "declPtr": {
+                    "pkgId": -2,
+                    "index": 2
+                  },
+                  "isThisTy": false
+                },
+                "binding": {
+                  "kind": "TypeAliasDecl",
+                  "index": 2,
+                  "name": "IntPairChain"
+                },
+                "arguments": [],
+                "returnType": null,
+                "upperBounds": [
+                  null
+                ]
+              }
+            ],
+            "returnType": {
+              "index": 2,
+              "kind": "Type",
+              "info": {
+                "declPtr": {
+                  "pkgId": -2,
+                  "index": 2
+                },
+                "isThisTy": false
+              },
+              "binding": {
+                "kind": "TypeAliasDecl",
+                "index": 2,
+                "name": "IntPairChain"
+              },
+              "arguments": [],
+              "returnType": null,
+              "upperBounds": [
+                null
+              ]
+            },
+            "upperBounds": [
+              null
+            ]
+          },
+          "rhs": null,
+          "body": 1
+        },
+        {
+          "index": 2,
+          "name": "IntPairChain",
+          "kind": "TypeAliasDecl",
+          "generic": null,
+          "type": {
+            "index": 2,
+            "kind": "Type",
+            "info": {
+              "declPtr": {
+                "pkgId": -2,
+                "index": 2
+              },
+              "isThisTy": false
+            },
+            "binding": {
+              "kind": "TypeAliasDecl",
+              "index": 2,
+              "name": "IntPairChain"
+            },
+            "arguments": [],
+            "returnType": null,
+            "upperBounds": [
+              null
+            ]
+          },
+          "rhs": {
+            "index": 25,
+            "kind": "Type",
+            "info": {
+              "declPtr": {
+                "pkgId": -2,
+                "index": 23
+              },
+              "isThisTy": false
+            },
+            "binding": {
+              "kind": "TypeAliasDecl",
+              "index": 23,
+              "name": "IntPair"
+            },
+            "arguments": [],
+            "returnType": null,
+            "upperBounds": [
+              null
+            ]
+          },
+          "body": null
+        },
+        {
+          "index": 4,
+          "name": "tupleUse",
+          "kind": "FuncDecl",
+          "generic": null,
+          "type": {
+            "index": 6,
+            "kind": "Func",
+            "info": {
+              "retType": 4,
+              "isC": false,
+              "hasVariableLenArg": false
+            },
+            "binding": null,
+            "arguments": [
+              {
+                "index": 4,
+                "kind": "Tuple",
+                "info": null,
+                "binding": null,
+                "arguments": [
+                  {
+                    "index": 5,
+                    "kind": "Int64",
+                    "info": null,
+                    "binding": null,
+                    "arguments": [
+                      null
+                    ],
+                    "returnType": null,
+                    "upperBounds": [
+                      null
+                    ]
+                  },
+                  {
+                    "index": 5,
+                    "kind": "Int64",
+                    "info": null,
+                    "binding": null,
+                    "arguments": [
+                      null
+                    ],
+                    "returnType": null,
+                    "upperBounds": [
+                      null
+                    ]
+                  }
+                ],
+                "returnType": null,
+                "upperBounds": [
+                  null
+                ]
+              }
+            ],
+            "returnType": {
+              "index": 4,
+              "kind": "Tuple",
+              "info": null,
+              "binding": null,
+              "arguments": [
+                {
+                  "index": 5,
+                  "kind": "Int64",
+                  "info": null,
+                  "binding": null,
+                  "arguments": [
+                    null
+                  ],
+                  "returnType": null,
+                  "upperBounds": [
+                    null
+                  ]
+                },
+                {
+                  "index": 5,
+                  "kind": "Int64",
+                  "info": null,
+                  "binding": null,
+                  "arguments": [
+                    null
+                  ],
+                  "returnType": null,
+                  "upperBounds": [
+                    null
+                  ]
+                }
+              ],
+              "returnType": null,
+              "upperBounds": [
+                null
+              ]
+            },
+            "upperBounds": [
+              null
+            ]
+          },
+          "rhs": null,
+          "body": 4
+        },
+        {
+          "index": 6,
+          "name": "functionUse",
+          "kind": "FuncDecl",
+          "generic": null,
+          "type": {
+            "index": 7,
+            "kind": "Func",
+            "info": {
+              "retType": 9,
+              "isC": false,
+              "hasVariableLenArg": false
+            },
+            "binding": null,
+            "arguments": [
+              {
+                "index": 8,
+                "kind": "Func",
+                "info": {
+                  "retType": 9,
+                  "isC": false,
+                  "hasVariableLenArg": false
+                },
+                "binding": null,
+                "arguments": [
+                  {
+                    "index": 5,
+                    "kind": "Int64",
+                    "info": null,
+                    "binding": null,
+                    "arguments": [
+                      null
+                    ],
+                    "returnType": null,
+                    "upperBounds": [
+                      null
+                    ]
+                  },
+                  {
+                    "index": 9,
+                    "kind": "Bool",
+                    "info": null,
+                    "binding": null,
+                    "arguments": [
+                      null
+                    ],
+                    "returnType": null,
+                    "upperBounds": [
+                      null
+                    ]
+                  },
+                  {
+                    "index": 5,
+                    "kind": "Int64",
+                    "info": null,
+                    "binding": null,
+                    "arguments": [
+                      null
+                    ],
+                    "returnType": null,
+                    "upperBounds": [
+                      null
+                    ]
+                  }
+                ],
+                "returnType": {
+                  "index": 9,
+                  "kind": "Bool",
+                  "info": null,
+                  "binding": null,
+                  "arguments": [
+                    null
+                  ],
+                  "returnType": null,
+                  "upperBounds": [
+                    null
+                  ]
+                },
+                "upperBounds": [
+                  null
+                ]
+              },
+              {
+                "index": 5,
+                "kind": "Int64",
+                "info": null,
+                "binding": null,
+                "arguments": [
+                  null
+                ],
+                "returnType": null,
+                "upperBounds": [
+                  null
+                ]
+              },
+              {
+                "index": 9,
+                "kind": "Bool",
+                "info": null,
+                "binding": null,
+                "arguments": [
+                  null
+                ],
+                "returnType": null,
+                "upperBounds": [
+                  null
+                ]
+              },
+              {
+                "index": 5,
+                "kind": "Int64",
+                "info": null,
+                "binding": null,
+                "arguments": [
+                  null
+                ],
+                "returnType": null,
+                "upperBounds": [
+                  null
+                ]
+              }
+            ],
+            "returnType": {
+              "index": 9,
+              "kind": "Bool",
+              "info": null,
+              "binding": null,
+              "arguments": [
+                null
+              ],
+              "returnType": null,
+              "upperBounds": [
+                null
+              ]
+            },
+            "upperBounds": [
+              null
+            ]
+          },
+          "rhs": null,
+          "body": 7
+        },
+        {
+          "index": 11,
+          "name": "functionReturn",
+          "kind": "FuncDecl",
+          "generic": null,
+          "type": {
+            "index": 10,
+            "kind": "Func",
+            "info": {
+              "retType": 8,
+              "isC": false,
+              "hasVariableLenArg": false
+            },
+            "binding": null,
+            "arguments": [
+              {
+                "index": 8,
+                "kind": "Func",
+                "info": {
+                  "retType": 9,
+                  "isC": false,
+                  "hasVariableLenArg": false
+                },
+                "binding": null,
+                "arguments": [
+                  {
+                    "index": 5,
+                    "kind": "Int64",
+                    "info": null,
+                    "binding": null,
+                    "arguments": [
+                      null
+                    ],
+                    "returnType": null,
+                    "upperBounds": [
+                      null
+                    ]
+                  },
+                  {
+                    "index": 9,
+                    "kind": "Bool",
+                    "info": null,
+                    "binding": null,
+                    "arguments": [
+                      null
+                    ],
+                    "returnType": null,
+                    "upperBounds": [
+                      null
+                    ]
+                  },
+                  {
+                    "index": 5,
+                    "kind": "Int64",
+                    "info": null,
+                    "binding": null,
+                    "arguments": [
+                      null
+                    ],
+                    "returnType": null,
+                    "upperBounds": [
+                      null
+                    ]
+                  }
+                ],
+                "returnType": {
+                  "index": 9,
+                  "kind": "Bool",
+                  "info": null,
+                  "binding": null,
+                  "arguments": [
+                    null
+                  ],
+                  "returnType": null,
+                  "upperBounds": [
+                    null
+                  ]
+                },
+                "upperBounds": [
+                  null
+                ]
+              }
+            ],
+            "returnType": {
+              "index": 8,
+              "kind": "Func",
+              "info": {
+                "retType": 9,
+                "isC": false,
+                "hasVariableLenArg": false
+              },
+              "binding": null,
+              "arguments": [
+                {
+                  "index": 5,
+                  "kind": "Int64",
+                  "info": null,
+                  "binding": null,
+                  "arguments": [
+                    null
+                  ],
+                  "returnType": null,
+                  "upperBounds": [
+                    null
+                  ]
+                },
+                {
+                  "index": 9,
+                  "kind": "Bool",
+                  "info": null,
+                  "binding": null,
+                  "arguments": [
+                    null
+                  ],
+                  "returnType": null,
+                  "upperBounds": [
+                    null
+                  ]
+                },
+                {
+                  "index": 5,
+                  "kind": "Int64",
+                  "info": null,
+                  "binding": null,
+                  "arguments": [
+                    null
+                  ],
+                  "returnType": null,
+                  "upperBounds": [
+                    null
+                  ]
+                }
+              ],
+              "returnType": {
+                "index": 9,
+                "kind": "Bool",
+                "info": null,
+                "binding": null,
+                "arguments": [
+                  null
+                ],
+                "returnType": null,
+                "upperBounds": [
+                  null
+                ]
+              },
+              "upperBounds": [
+                null
+              ]
+            },
+            "upperBounds": [
+              null
+            ]
+          },
+          "rhs": null,
+          "body": 17
+        },
+        {
+          "index": 13,
+          "name": "carrierUse",
+          "kind": "FuncDecl",
+          "generic": null,
+          "type": {
+            "index": 11,
+            "kind": "Func",
+            "info": {
+              "retType": 12,
+              "isC": false,
+              "hasVariableLenArg": false
+            },
+            "binding": null,
+            "arguments": [
+              {
+                "index": 12,
+                "kind": "Class",
+                "info": {
+                  "declPtr": {
+                    "pkgId": -2,
+                    "index": 14
+                  },
+                  "isThisTy": false
+                },
+                "binding": {
+                  "kind": "ClassDecl",
+                  "index": 14,
+                  "name": "Carrier"
+                },
+                "arguments": [
+                  {
+                    "index": 5,
+                    "kind": "Int64",
+                    "info": null,
+                    "binding": null,
+                    "arguments": [
+                      null
+                    ],
+                    "returnType": null,
+                    "upperBounds": [
+                      null
+                    ]
+                  },
+                  {
+                    "index": 9,
+                    "kind": "Bool",
+                    "info": null,
+                    "binding": null,
+                    "arguments": [
+                      null
+                    ],
+                    "returnType": null,
+                    "upperBounds": [
+                      null
+                    ]
+                  }
+                ],
+                "returnType": null,
+                "upperBounds": [
+                  null
+                ]
+              }
+            ],
+            "returnType": {
+              "index": 12,
+              "kind": "Class",
+              "info": {
+                "declPtr": {
+                  "pkgId": -2,
+                  "index": 14
+                },
+                "isThisTy": false
+              },
+              "binding": {
+                "kind": "ClassDecl",
+                "index": 14,
+                "name": "Carrier"
+              },
+              "arguments": [
+                {
+                  "index": 5,
+                  "kind": "Int64",
+                  "info": null,
+                  "binding": null,
+                  "arguments": [
+                    null
+                  ],
+                  "returnType": null,
+                  "upperBounds": [
+                    null
+                  ]
+                },
+                {
+                  "index": 9,
+                  "kind": "Bool",
+                  "info": null,
+                  "binding": null,
+                  "arguments": [
+                    null
+                  ],
+                  "returnType": null,
+                  "upperBounds": [
+                    null
+                  ]
+                }
+              ],
+              "returnType": null,
+              "upperBounds": [
+                null
+              ]
+            },
+            "upperBounds": [
+              null
+            ]
+          },
+          "rhs": null,
+          "body": 20
+        },
+        {
+          "index": 14,
+          "name": "Carrier",
+          "kind": "ClassDecl",
+          "generic": {
+            "typeParameters": [
+              24,
+              25
+            ],
+            "constraints": []
+          },
+          "type": {
+            "index": 27,
+            "kind": "Class",
+            "info": {
+              "declPtr": {
+                "pkgId": -2,
+                "index": 14
+              },
+              "isThisTy": false
+            },
+            "binding": {
+              "kind": "ClassDecl",
+              "index": 14,
+              "name": "Carrier"
+            },
+            "arguments": [
+              {
+                "index": 28,
+                "kind": "Generic",
+                "info": {
+                  "declPtr": {
+                    "pkgId": -2,
+                    "index": 24
+                  },
+                  "upperBounds": []
+                },
+                "binding": {
+                  "kind": "GenericParamDecl",
+                  "index": 24,
+                  "name": "T"
+                },
+                "arguments": [
+                  null
+                ],
+                "returnType": null,
+                "upperBounds": []
+              },
+              {
+                "index": 29,
+                "kind": "Generic",
+                "info": {
+                  "declPtr": {
+                    "pkgId": -2,
+                    "index": 25
+                  },
+                  "upperBounds": []
+                },
+                "binding": {
+                  "kind": "GenericParamDecl",
+                  "index": 25,
+                  "name": "U"
+                },
+                "arguments": [
+                  null
+                ],
+                "returnType": null,
+                "upperBounds": []
+              }
+            ],
+            "returnType": null,
+            "upperBounds": [
+              null
+            ]
+          },
+          "rhs": null,
+          "body": null
+        },
+        {
+          "index": 16,
+          "name": "asThis",
+          "kind": "FuncDecl",
+          "generic": null,
+          "type": {
+            "index": 30,
+            "kind": "Func",
+            "info": {
+              "retType": 31,
+              "isC": false,
+              "hasVariableLenArg": false
+            },
+            "binding": null,
+            "arguments": [],
+            "returnType": {
+              "index": 31,
+              "kind": "Class",
+              "info": {
+                "declPtr": {
+                  "pkgId": -2,
+                  "index": 14
+                },
+                "isThisTy": true
+              },
+              "binding": {
+                "kind": "ClassDecl",
+                "index": 14,
+                "name": "Carrier"
+              },
+              "arguments": [
+                {
+                  "index": 28,
+                  "kind": "Generic",
+                  "info": {
+                    "declPtr": {
+                      "pkgId": -2,
+                      "index": 24
+                    },
+                    "upperBounds": []
+                  },
+                  "binding": {
+                    "kind": "GenericParamDecl",
+                    "index": 24,
+                    "name": "T"
+                  },
+                  "arguments": [
+                    null
+                  ],
+                  "returnType": null,
+                  "upperBounds": []
+                },
+                {
+                  "index": 29,
+                  "kind": "Generic",
+                  "info": {
+                    "declPtr": {
+                      "pkgId": -2,
+                      "index": 25
+                    },
+                    "upperBounds": []
+                  },
+                  "binding": {
+                    "kind": "GenericParamDecl",
+                    "index": 25,
+                    "name": "U"
+                  },
+                  "arguments": [
+                    null
+                  ],
+                  "returnType": null,
+                  "upperBounds": []
+                }
+              ],
+              "returnType": null,
+              "upperBounds": [
+                null
+              ]
+            },
+            "upperBounds": [
+              null
+            ]
+          },
+          "rhs": null,
+          "body": 0
+        },
+        {
+          "index": 17,
+          "name": "publicArrayUse",
+          "kind": "FuncDecl",
+          "generic": null,
+          "type": {
+            "index": 16,
+            "kind": "Func",
+            "info": {
+              "retType": 17,
+              "isC": false,
+              "hasVariableLenArg": false
+            },
+            "binding": null,
+            "arguments": [
+              {
+                "index": 17,
+                "kind": "Struct",
+                "info": {
+                  "declPtr": {
+                    "pkgId": 0,
+                    "decl": "_CNat5ArrayIG_E",
+                    "index": 0
+                  },
+                  "isThisTy": false
+                },
+                "binding": {
+                  "pkgId": 0,
+                  "decl": "_CNat5ArrayIG_E",
+                  "index": 0
+                },
+                "arguments": [
+                  {
+                    "index": 18,
+                    "kind": "Struct",
+                    "info": {
+                      "declPtr": {
+                        "pkgId": 0,
+                        "decl": "_CNat5ArrayIG_E",
+                        "index": 0
+                      },
+                      "isThisTy": false
+                    },
+                    "binding": {
+                      "pkgId": 0,
+                      "decl": "_CNat5ArrayIG_E",
+                      "index": 0
+                    },
+                    "arguments": [
+                      {
+                        "index": 5,
+                        "kind": "Int64",
+                        "info": null,
+                        "binding": null,
+                        "arguments": [
+                          null
+                        ],
+                        "returnType": null,
+                        "upperBounds": [
+                          null
+                        ]
+                      }
+                    ],
+                    "returnType": null,
+                    "upperBounds": [
+                      null
+                    ]
+                  }
+                ],
+                "returnType": null,
+                "upperBounds": [
+                  null
+                ]
+              }
+            ],
+            "returnType": {
+              "index": 17,
+              "kind": "Struct",
+              "info": {
+                "declPtr": {
+                  "pkgId": 0,
+                  "decl": "_CNat5ArrayIG_E",
+                  "index": 0
+                },
+                "isThisTy": false
+              },
+              "binding": {
+                "pkgId": 0,
+                "decl": "_CNat5ArrayIG_E",
+                "index": 0
+              },
+              "arguments": [
+                {
+                  "index": 18,
+                  "kind": "Struct",
+                  "info": {
+                    "declPtr": {
+                      "pkgId": 0,
+                      "decl": "_CNat5ArrayIG_E",
+                      "index": 0
+                    },
+                    "isThisTy": false
+                  },
+                  "binding": {
+                    "pkgId": 0,
+                    "decl": "_CNat5ArrayIG_E",
+                    "index": 0
+                  },
+                  "arguments": [
+                    {
+                      "index": 5,
+                      "kind": "Int64",
+                      "info": null,
+                      "binding": null,
+                      "arguments": [
+                        null
+                      ],
+                      "returnType": null,
+                      "upperBounds": [
+                        null
+                      ]
+                    }
+                  ],
+                  "returnType": null,
+                  "upperBounds": [
+                    null
+                  ]
+                }
+              ],
+              "returnType": null,
+              "upperBounds": [
+                null
+              ]
+            },
+            "upperBounds": [
+              null
+            ]
+          },
+          "rhs": null,
+          "body": 25
+        },
+        {
+          "index": 19,
+          "name": "Pair",
+          "kind": "TypeAliasDecl",
+          "generic": {
+            "typeParameters": [
+              20
+            ],
+            "constraints": []
+          },
+          "type": {
+            "index": 19,
+            "kind": "Type",
+            "info": {
+              "declPtr": {
+                "pkgId": -2,
+                "index": 19
+              },
+              "isThisTy": false
+            },
+            "binding": {
+              "kind": "TypeAliasDecl",
+              "index": 19,
+              "name": "Pair"
+            },
+            "arguments": [
+              {
+                "index": 20,
+                "kind": "Generic",
+                "info": {
+                  "declPtr": {
+                    "pkgId": -2,
+                    "index": 20
+                  },
+                  "upperBounds": []
+                },
+                "binding": {
+                  "kind": "GenericParamDecl",
+                  "index": 20,
+                  "name": "T"
+                },
+                "arguments": [
+                  null
+                ],
+                "returnType": null,
+                "upperBounds": []
+              }
+            ],
+            "returnType": null,
+            "upperBounds": [
+              null
+            ]
+          },
+          "rhs": {
+            "index": 21,
+            "kind": "Tuple",
+            "info": null,
+            "binding": null,
+            "arguments": [
+              {
+                "index": 20,
+                "kind": "Generic",
+                "info": {
+                  "declPtr": {
+                    "pkgId": -2,
+                    "index": 20
+                  },
+                  "upperBounds": []
+                },
+                "binding": {
+                  "kind": "GenericParamDecl",
+                  "index": 20,
+                  "name": "T"
+                },
+                "arguments": [
+                  null
+                ],
+                "returnType": null,
+                "upperBounds": []
+              },
+              {
+                "index": 20,
+                "kind": "Generic",
+                "info": {
+                  "declPtr": {
+                    "pkgId": -2,
+                    "index": 20
+                  },
+                  "upperBounds": []
+                },
+                "binding": {
+                  "kind": "GenericParamDecl",
+                  "index": 20,
+                  "name": "T"
+                },
+                "arguments": [
+                  null
+                ],
+                "returnType": null,
+                "upperBounds": []
+              }
+            ],
+            "returnType": null,
+            "upperBounds": [
+              null
+            ]
+          },
+          "body": null
+        },
+        {
+          "index": 21,
+          "name": "PairLink",
+          "kind": "TypeAliasDecl",
+          "generic": {
+            "typeParameters": [
+              22
+            ],
+            "constraints": []
+          },
+          "type": {
+            "index": 22,
+            "kind": "Type",
+            "info": {
+              "declPtr": {
+                "pkgId": -2,
+                "index": 21
+              },
+              "isThisTy": false
+            },
+            "binding": {
+              "kind": "TypeAliasDecl",
+              "index": 21,
+              "name": "PairLink"
+            },
+            "arguments": [
+              {
+                "index": 23,
+                "kind": "Generic",
+                "info": {
+                  "declPtr": {
+                    "pkgId": -2,
+                    "index": 22
+                  },
+                  "upperBounds": []
+                },
+                "binding": {
+                  "kind": "GenericParamDecl",
+                  "index": 22,
+                  "name": "T"
+                },
+                "arguments": [
+                  null
+                ],
+                "returnType": null,
+                "upperBounds": []
+              }
+            ],
+            "returnType": null,
+            "upperBounds": [
+              null
+            ]
+          },
+          "rhs": {
+            "index": 24,
+            "kind": "Type",
+            "info": {
+              "declPtr": {
+                "pkgId": -2,
+                "index": 19
+              },
+              "isThisTy": false
+            },
+            "binding": {
+              "kind": "TypeAliasDecl",
+              "index": 19,
+              "name": "Pair"
+            },
+            "arguments": [
+              {
+                "index": 23,
+                "kind": "Generic",
+                "info": {
+                  "declPtr": {
+                    "pkgId": -2,
+                    "index": 22
+                  },
+                  "upperBounds": []
+                },
+                "binding": {
+                  "kind": "GenericParamDecl",
+                  "index": 22,
+                  "name": "T"
+                },
+                "arguments": [
+                  null
+                ],
+                "returnType": null,
+                "upperBounds": []
+              }
+            ],
+            "returnType": null,
+            "upperBounds": [
+              null
+            ]
+          },
+          "body": null
+        },
+        {
+          "index": 23,
+          "name": "IntPair",
+          "kind": "TypeAliasDecl",
+          "generic": null,
+          "type": {
+            "index": 25,
+            "kind": "Type",
+            "info": {
+              "declPtr": {
+                "pkgId": -2,
+                "index": 23
+              },
+              "isThisTy": false
+            },
+            "binding": {
+              "kind": "TypeAliasDecl",
+              "index": 23,
+              "name": "IntPair"
+            },
+            "arguments": [],
+            "returnType": null,
+            "upperBounds": [
+              null
+            ]
+          },
+          "rhs": {
+            "index": 26,
+            "kind": "Type",
+            "info": {
+              "declPtr": {
+                "pkgId": -2,
+                "index": 21
+              },
+              "isThisTy": false
+            },
+            "binding": {
+              "kind": "TypeAliasDecl",
+              "index": 21,
+              "name": "PairLink"
+            },
+            "arguments": [
+              {
+                "index": 5,
+                "kind": "Int64",
+                "info": null,
+                "binding": null,
+                "arguments": [
+                  null
+                ],
+                "returnType": null,
+                "upperBounds": [
+                  null
+                ]
+              }
+            ],
+            "returnType": null,
+            "upperBounds": [
+              null
+            ]
+          },
+          "body": null
+        },
+        {
+          "index": 26,
+          "name": "asNominal",
+          "kind": "FuncDecl",
+          "generic": null,
+          "type": {
+            "index": 32,
+            "kind": "Func",
+            "info": {
+              "retType": 27,
+              "isC": false,
+              "hasVariableLenArg": false
+            },
+            "binding": null,
+            "arguments": [],
+            "returnType": {
+              "index": 27,
+              "kind": "Class",
+              "info": {
+                "declPtr": {
+                  "pkgId": -2,
+                  "index": 14
+                },
+                "isThisTy": false
+              },
+              "binding": {
+                "kind": "ClassDecl",
+                "index": 14,
+                "name": "Carrier"
+              },
+              "arguments": [
+                {
+                  "index": 28,
+                  "kind": "Generic",
+                  "info": {
+                    "declPtr": {
+                      "pkgId": -2,
+                      "index": 24
+                    },
+                    "upperBounds": []
+                  },
+                  "binding": {
+                    "kind": "GenericParamDecl",
+                    "index": 24,
+                    "name": "T"
+                  },
+                  "arguments": [
+                    null
+                  ],
+                  "returnType": null,
+                  "upperBounds": []
+                },
+                {
+                  "index": 29,
+                  "kind": "Generic",
+                  "info": {
+                    "declPtr": {
+                      "pkgId": -2,
+                      "index": 25
+                    },
+                    "upperBounds": []
+                  },
+                  "binding": {
+                    "kind": "GenericParamDecl",
+                    "index": 25,
+                    "name": "U"
+                  },
+                  "arguments": [
+                    null
+                  ],
+                  "returnType": null,
+                  "upperBounds": []
+                }
+              ],
+              "returnType": null,
+              "upperBounds": [
+                null
+              ]
+            },
+            "upperBounds": [
+              null
+            ]
+          },
+          "rhs": null,
+          "body": 0
+        },
+        {
+          "index": 27,
+          "name": "choose",
+          "kind": "FuncDecl",
+          "generic": null,
+          "type": {
+            "index": 33,
+            "kind": "Func",
+            "info": {
+              "retType": 29,
+              "isC": false,
+              "hasVariableLenArg": false
+            },
+            "binding": null,
+            "arguments": [
+              {
+                "index": 28,
+                "kind": "Generic",
+                "info": {
+                  "declPtr": {
+                    "pkgId": -2,
+                    "index": 24
+                  },
+                  "upperBounds": []
+                },
+                "binding": {
+                  "kind": "GenericParamDecl",
+                  "index": 24,
+                  "name": "T"
+                },
+                "arguments": [
+                  null
+                ],
+                "returnType": null,
+                "upperBounds": []
+              },
+              {
+                "index": 29,
+                "kind": "Generic",
+                "info": {
+                  "declPtr": {
+                    "pkgId": -2,
+                    "index": 25
+                  },
+                  "upperBounds": []
+                },
+                "binding": {
+                  "kind": "GenericParamDecl",
+                  "index": 25,
+                  "name": "U"
+                },
+                "arguments": [
+                  null
+                ],
+                "returnType": null,
+                "upperBounds": []
+              },
+              {
+                "index": 28,
+                "kind": "Generic",
+                "info": {
+                  "declPtr": {
+                    "pkgId": -2,
+                    "index": 24
+                  },
+                  "upperBounds": []
+                },
+                "binding": {
+                  "kind": "GenericParamDecl",
+                  "index": 24,
+                  "name": "T"
+                },
+                "arguments": [
+                  null
+                ],
+                "returnType": null,
+                "upperBounds": []
+              }
+            ],
+            "returnType": {
+              "index": 29,
+              "kind": "Generic",
+              "info": {
+                "declPtr": {
+                  "pkgId": -2,
+                  "index": 25
+                },
+                "upperBounds": []
+              },
+              "binding": {
+                "kind": "GenericParamDecl",
+                "index": 25,
+                "name": "U"
+              },
+              "arguments": [
+                null
+              ],
+              "returnType": null,
+              "upperBounds": []
+            },
+            "upperBounds": [
+              null
+            ]
+          },
+          "rhs": null,
+          "body": 0
+        },
+        {
+          "index": 31,
+          "name": "pair",
+          "kind": "FuncDecl",
+          "generic": null,
+          "type": {
+            "index": 34,
+            "kind": "Func",
+            "info": {
+              "retType": 35,
+              "isC": false,
+              "hasVariableLenArg": false
+            },
+            "binding": null,
+            "arguments": [
+              {
+                "index": 28,
+                "kind": "Generic",
+                "info": {
+                  "declPtr": {
+                    "pkgId": -2,
+                    "index": 24
+                  },
+                  "upperBounds": []
+                },
+                "binding": {
+                  "kind": "GenericParamDecl",
+                  "index": 24,
+                  "name": "T"
+                },
+                "arguments": [
+                  null
+                ],
+                "returnType": null,
+                "upperBounds": []
+              }
+            ],
+            "returnType": {
+              "index": 35,
+              "kind": "Type",
+              "info": {
+                "declPtr": {
+                  "pkgId": -2,
+                  "index": 19
+                },
+                "isThisTy": false
+              },
+              "binding": {
+                "kind": "TypeAliasDecl",
+                "index": 19,
+                "name": "Pair"
+              },
+              "arguments": [
+                {
+                  "index": 28,
+                  "kind": "Generic",
+                  "info": {
+                    "declPtr": {
+                      "pkgId": -2,
+                      "index": 24
+                    },
+                    "upperBounds": []
+                  },
+                  "binding": {
+                    "kind": "GenericParamDecl",
+                    "index": 24,
+                    "name": "T"
+                  },
+                  "arguments": [
+                    null
+                  ],
+                  "returnType": null,
+                  "upperBounds": []
+                }
+              ],
+              "returnType": null,
+              "upperBounds": [
+                null
+              ]
+            },
+            "upperBounds": [
+              null
+            ]
+          },
+          "rhs": null,
+          "body": 0
+        },
+        {
+          "index": 33,
+          "name": "init",
+          "kind": "FuncDecl",
+          "generic": null,
+          "type": {
+            "index": 32,
+            "kind": "Func",
+            "info": {
+              "retType": 27,
+              "isC": false,
+              "hasVariableLenArg": false
+            },
+            "binding": null,
+            "arguments": [],
+            "returnType": {
+              "index": 27,
+              "kind": "Class",
+              "info": {
+                "declPtr": {
+                  "pkgId": -2,
+                  "index": 14
+                },
+                "isThisTy": false
+              },
+              "binding": {
+                "kind": "ClassDecl",
+                "index": 14,
+                "name": "Carrier"
+              },
+              "arguments": [
+                {
+                  "index": 28,
+                  "kind": "Generic",
+                  "info": {
+                    "declPtr": {
+                      "pkgId": -2,
+                      "index": 24
+                    },
+                    "upperBounds": []
+                  },
+                  "binding": {
+                    "kind": "GenericParamDecl",
+                    "index": 24,
+                    "name": "T"
+                  },
+                  "arguments": [
+                    null
+                  ],
+                  "returnType": null,
+                  "upperBounds": []
+                },
+                {
+                  "index": 29,
+                  "kind": "Generic",
+                  "info": {
+                    "declPtr": {
+                      "pkgId": -2,
+                      "index": 25
+                    },
+                    "upperBounds": []
+                  },
+                  "binding": {
+                    "kind": "GenericParamDecl",
+                    "index": 25,
+                    "name": "U"
+                  },
+                  "arguments": [
+                    null
+                  ],
+                  "returnType": null,
+                  "upperBounds": []
+                }
+              ],
+              "returnType": null,
+              "upperBounds": [
+                null
+              ]
+            },
+            "upperBounds": [
+              null
+            ]
+          },
+          "rhs": null,
+          "body": 0
+        },
+        {
+          "index": 34,
+          "name": "pairOf",
+          "kind": "FuncDecl",
+          "generic": {
+            "typeParameters": [
+              35
+            ],
+            "constraints": []
+          },
+          "type": {
+            "index": 37,
+            "kind": "Func",
+            "info": {
+              "retType": 39,
+              "isC": false,
+              "hasVariableLenArg": false
+            },
+            "binding": null,
+            "arguments": [
+              {
+                "index": 38,
+                "kind": "Generic",
+                "info": {
+                  "declPtr": {
+                    "pkgId": -2,
+                    "index": 35
+                  },
+                  "upperBounds": []
+                },
+                "binding": {
+                  "kind": "GenericParamDecl",
+                  "index": 35,
+                  "name": "T"
+                },
+                "arguments": [
+                  null
+                ],
+                "returnType": null,
+                "upperBounds": []
+              }
+            ],
+            "returnType": {
+              "index": 39,
+              "kind": "Type",
+              "info": {
+                "declPtr": {
+                  "pkgId": -2,
+                  "index": 19
+                },
+                "isThisTy": false
+              },
+              "binding": {
+                "kind": "TypeAliasDecl",
+                "index": 19,
+                "name": "Pair"
+              },
+              "arguments": [
+                {
+                  "index": 38,
+                  "kind": "Generic",
+                  "info": {
+                    "declPtr": {
+                      "pkgId": -2,
+                      "index": 35
+                    },
+                    "upperBounds": []
+                  },
+                  "binding": {
+                    "kind": "GenericParamDecl",
+                    "index": 35,
+                    "name": "T"
+                  },
+                  "arguments": [
+                    null
+                  ],
+                  "returnType": null,
+                  "upperBounds": []
+                }
+              ],
+              "returnType": null,
+              "upperBounds": [
+                null
+              ]
+            },
+            "upperBounds": [
+              null
+            ]
+          },
+          "rhs": null,
+          "body": 0
+        },
+        {
+          "index": 37,
+          "name": "orderedSlots",
+          "kind": "FuncDecl",
+          "generic": null,
+          "type": {
+            "index": 8,
+            "kind": "Func",
+            "info": {
+              "retType": 9,
+              "isC": false,
+              "hasVariableLenArg": false
+            },
+            "binding": null,
+            "arguments": [
+              {
+                "index": 5,
+                "kind": "Int64",
+                "info": null,
+                "binding": null,
+                "arguments": [
+                  null
+                ],
+                "returnType": null,
+                "upperBounds": [
+                  null
+                ]
+              },
+              {
+                "index": 9,
+                "kind": "Bool",
+                "info": null,
+                "binding": null,
+                "arguments": [
+                  null
+                ],
+                "returnType": null,
+                "upperBounds": [
+                  null
+                ]
+              },
+              {
+                "index": 5,
+                "kind": "Int64",
+                "info": null,
+                "binding": null,
+                "arguments": [
+                  null
+                ],
+                "returnType": null,
+                "upperBounds": [
+                  null
+                ]
+              }
+            ],
+            "returnType": {
+              "index": 9,
+              "kind": "Bool",
+              "info": null,
+              "binding": null,
+              "arguments": [
+                null
+              ],
+              "returnType": null,
+              "upperBounds": [
+                null
+              ]
+            },
+            "upperBounds": [
+              null
+            ]
+          },
+          "rhs": null,
+          "body": 0
+        },
+        {
+          "index": 41,
+          "name": "reorderedSlots",
+          "kind": "FuncDecl",
+          "generic": null,
+          "type": {
+            "index": 40,
+            "kind": "Func",
+            "info": {
+              "retType": 9,
+              "isC": false,
+              "hasVariableLenArg": false
+            },
+            "binding": null,
+            "arguments": [
+              {
+                "index": 9,
+                "kind": "Bool",
+                "info": null,
+                "binding": null,
+                "arguments": [
+                  null
+                ],
+                "returnType": null,
+                "upperBounds": [
+                  null
+                ]
+              },
+              {
+                "index": 5,
+                "kind": "Int64",
+                "info": null,
+                "binding": null,
+                "arguments": [
+                  null
+                ],
+                "returnType": null,
+                "upperBounds": [
+                  null
+                ]
+              },
+              {
+                "index": 5,
+                "kind": "Int64",
+                "info": null,
+                "binding": null,
+                "arguments": [
+                  null
+                ],
+                "returnType": null,
+                "upperBounds": [
+                  null
+                ]
+              }
+            ],
+            "returnType": {
+              "index": 9,
+              "kind": "Bool",
+              "info": null,
+              "binding": null,
+              "arguments": [
+                null
+              ],
+              "returnType": null,
+              "upperBounds": [
+                null
+              ]
+            },
+            "upperBounds": [
+              null
+            ]
+          },
+          "rhs": null,
+          "body": 0
+        },
+        {
+          "index": 45,
+          "name": "repeatedReturn",
+          "kind": "FuncDecl",
+          "generic": null,
+          "type": {
+            "index": 41,
+            "kind": "Func",
+            "info": {
+              "retType": 5,
+              "isC": false,
+              "hasVariableLenArg": false
+            },
+            "binding": null,
+            "arguments": [
+              {
+                "index": 5,
+                "kind": "Int64",
+                "info": null,
+                "binding": null,
+                "arguments": [
+                  null
+                ],
+                "returnType": null,
+                "upperBounds": [
+                  null
+                ]
+              },
+              {
+                "index": 5,
+                "kind": "Int64",
+                "info": null,
+                "binding": null,
+                "arguments": [
+                  null
+                ],
+                "returnType": null,
+                "upperBounds": [
+                  null
+                ]
+              }
+            ],
+            "returnType": {
+              "index": 5,
+              "kind": "Int64",
+              "info": null,
+              "binding": null,
+              "arguments": [
+                null
+              ],
+              "returnType": null,
+              "upperBounds": [
+                null
+              ]
+            },
+            "upperBounds": [
+              null
+            ]
+          },
+          "rhs": null,
+          "body": 0
+        },
+        {
+          "index": 48,
+          "name": "FrozenTypeSource",
+          "kind": "InterfaceDecl",
+          "generic": null,
+          "type": {
+            "index": 42,
+            "kind": "Interface",
+            "info": {
+              "declPtr": {
+                "pkgId": -2,
+                "index": 48
+              },
+              "isThisTy": false
+            },
+            "binding": {
+              "kind": "InterfaceDecl",
+              "index": 48,
+              "name": "FrozenTypeSource"
+            },
+            "arguments": [],
+            "returnType": null,
+            "upperBounds": [
+              null
+            ]
+          },
+          "rhs": null,
+          "body": null
+        }
+      ],
+      "ast": [
+        {
+          "bytes": 89965,
+          "sha256": "00C090906E4370A99CA8314983797631E240726FD28E67EE5C7176C1AF33E160",
+          "name": "0_parse_ast.txt"
+        },
+        {
+          "bytes": 89965,
+          "sha256": "00C090906E4370A99CA8314983797631E240726FD28E67EE5C7176C1AF33E160",
+          "name": "1_condcomp_ast.txt"
+        },
+        {
+          "bytes": 90039,
+          "sha256": "4189C0FD7BF51A81D122BF310E2A7B8308E80C1F9EC33906AF2DA952C730771A",
+          "name": "2_import_ast.txt"
+        },
+        {
+          "bytes": 90039,
+          "sha256": "4189C0FD7BF51A81D122BF310E2A7B8308E80C1F9EC33906AF2DA952C730771A",
+          "name": "3_macroexp_ast.txt"
+        },
+        {
+          "bytes": 103753,
+          "sha256": "9341788E9D640D62DCB75C0E45A4FAD5B05DD2922C16C8CB76A723DE0DE6A1B5",
+          "name": "4_sema_ast.txt"
+        },
+        {
+          "bytes": 8362943,
+          "sha256": "295B3BF8E3E82E2DC1CBEDD562A62179A9BA213CAF293454EB5F22FE95BECC71",
+          "name": "5_desugar_ast.txt"
+        },
+        {
+          "bytes": 1050403,
+          "sha256": "4BD6231A46FE19D791A2B06A5B45928B0A859D0F3E64D1862AF62DCC09EB38B6",
+          "name": "6_genericinst_ast.txt"
+        },
+        {
+          "bytes": 1059701,
+          "sha256": "5BC025B85F81B624E96186D570D433A7E9B4A489B2AA5076A1A4956A24724353",
+          "name": "7_overflow_ast.txt"
+        },
+        {
+          "bytes": 1101543,
+          "sha256": "9543FF5AC5E63941D7B6D48244367F8281E8B918F08DA3220B4B636958B0E56F",
+          "name": "8_mangle_ast.txt"
+        }
+      ]
+    },
+    {
+      "case": "functionAbi",
+      "source": "cfir/analysis-tests/testData/diagnostics2/common-specific/source-frozen-types/functionAbi.cj",
+      "sourceSha256": "786C2DA1E0B7063A93280F708DAE892877224D9092ED905464BACC4FE1C869B7",
+      "cjo": "build/source-frozen-type-roles-v113/functionAbi/s4_function_abi.cjo",
+      "cjoSha256": "2096007F3D12836B7FCB75847F2F2BEB2CA879CA5B180F50B53A4E7CBBB3B558",
+      "cjoBytes": 14776,
+      "cjoGzipBase64": "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",
+      "archiveVerified": true,
+      "json": "build/source-frozen-type-roles-v113/functionAbi/s4_function_abi.json",
+      "jsonSha256": "E1BEF78D3171F02DAC0357C5CD91E86E1EB1C5FFFCD682B4890429C4044B530F",
+      "version": "1.1.3",
+      "cjoVersion": {
+        "major_num": 0,
+        "minor_num": 1,
+        "patch_num": 0
+      },
+      "package": "s4_function_abi",
+      "compileExitCode": 0,
+      "diagnosticCounts": {
+        "Errors": 0,
+        "PrintedErrors": 0,
+        "Warnings": 4,
+        "PrintedWarnings": 4
+      },
+      "counts": {
+        "declarations": 36,
+        "expressions": 42,
+        "types": 11
+      },
+      "declarations": [
+        {
+          "index": 1,
+          "name": "fixed",
+          "kind": "FuncDecl",
+          "generic": null,
+          "type": {
+            "index": 1,
+            "kind": "Func",
+            "info": {
+              "retType": 2,
+              "isC": false,
+              "hasVariableLenArg": false
+            },
+            "binding": null,
+            "arguments": [
+              {
+                "index": 2,
+                "kind": "Int32",
+                "info": null,
+                "binding": null,
+                "arguments": [
+                  null
+                ],
+                "returnType": null,
+                "upperBounds": [
+                  null
+                ]
+              },
+              {
+                "index": 3,
+                "kind": "Int64",
+                "info": null,
+                "binding": null,
+                "arguments": [
+                  null
+                ],
+                "returnType": null,
+                "upperBounds": [
+                  null
+                ]
+              },
+              {
+                "index": 2,
+                "kind": "Int32",
+                "info": null,
+                "binding": null,
+                "arguments": [
+                  null
+                ],
+                "returnType": null,
+                "upperBounds": [
+                  null
+                ]
+              }
+            ],
+            "returnType": {
+              "index": 2,
+              "kind": "Int32",
+              "info": null,
+              "binding": null,
+              "arguments": [
+                null
+              ],
+              "returnType": null,
+              "upperBounds": [
+                null
+              ]
+            },
+            "upperBounds": [
+              null
+            ]
+          },
+          "rhs": null,
+          "body": 1
+        },
+        {
+          "index": 6,
+          "name": "s4ForeignFixed",
+          "kind": "FuncDecl",
+          "generic": null,
+          "type": {
+            "index": 5,
+            "kind": "Func",
+            "info": {
+              "retType": 2,
+              "isC": true,
+              "hasVariableLenArg": false
+            },
+            "binding": null,
+            "arguments": [
+              {
+                "index": 2,
+                "kind": "Int32",
+                "info": null,
+                "binding": null,
+                "arguments": [
+                  null
+                ],
+                "returnType": null,
+                "upperBounds": [
+                  null
+                ]
+              },
+              {
+                "index": 3,
+                "kind": "Int64",
+                "info": null,
+                "binding": null,
+                "arguments": [
+                  null
+                ],
+                "returnType": null,
+                "upperBounds": [
+                  null
+                ]
+              },
+              {
+                "index": 2,
+                "kind": "Int32",
+                "info": null,
+                "binding": null,
+                "arguments": [
+                  null
+                ],
+                "returnType": null,
+                "upperBounds": [
+                  null
+                ]
+              }
+            ],
+            "returnType": {
+              "index": 2,
+              "kind": "Int32",
+              "info": null,
+              "binding": null,
+              "arguments": [
+                null
+              ],
+              "returnType": null,
+              "upperBounds": [
+                null
+              ]
+            },
+            "upperBounds": [
+              null
+            ]
+          },
+          "rhs": null,
+          "body": 0
+        },
+        {
+          "index": 7,
+          "name": "variadic",
+          "kind": "FuncDecl",
+          "generic": null,
+          "type": {
+            "index": 6,
+            "kind": "Func",
+            "info": {
+              "retType": 2,
+              "isC": false,
+              "hasVariableLenArg": false
+            },
+            "binding": null,
+            "arguments": [
+              {
+                "index": 2,
+                "kind": "Int32",
+                "info": null,
+                "binding": null,
+                "arguments": [
+                  null
+                ],
+                "returnType": null,
+                "upperBounds": [
+                  null
+                ]
+              },
+              {
+                "index": 3,
+                "kind": "Int64",
+                "info": null,
+                "binding": null,
+                "arguments": [
+                  null
+                ],
+                "returnType": null,
+                "upperBounds": [
+                  null
+                ]
+              },
+              {
+                "index": 2,
+                "kind": "Int32",
+                "info": null,
+                "binding": null,
+                "arguments": [
+                  null
+                ],
+                "returnType": null,
+                "upperBounds": [
+                  null
+                ]
+              },
+              {
+                "index": 2,
+                "kind": "Int32",
+                "info": null,
+                "binding": null,
+                "arguments": [
+                  null
+                ],
+                "returnType": null,
+                "upperBounds": [
+                  null
+                ]
+              }
+            ],
+            "returnType": {
+              "index": 2,
+              "kind": "Int32",
+              "info": null,
+              "binding": null,
+              "arguments": [
+                null
+              ],
+              "returnType": null,
+              "upperBounds": [
+                null
+              ]
+            },
+            "upperBounds": [
+              null
+            ]
+          },
+          "rhs": null,
+          "body": 13
+        },
+        {
+          "index": 13,
+          "name": "s4ForeignVariadic",
+          "kind": "FuncDecl",
+          "generic": null,
+          "type": {
+            "index": 7,
+            "kind": "Func",
+            "info": {
+              "retType": 2,
+              "isC": true,
+              "hasVariableLenArg": true
+            },
+            "binding": null,
+            "arguments": [
+              {
+                "index": 2,
+                "kind": "Int32",
+                "info": null,
+                "binding": null,
+                "arguments": [
+                  null
+                ],
+                "returnType": null,
+                "upperBounds": [
+                  null
+                ]
+              },
+              {
+                "index": 3,
+                "kind": "Int64",
+                "info": null,
+                "binding": null,
+                "arguments": [
+                  null
+                ],
+                "returnType": null,
+                "upperBounds": [
+                  null
+                ]
+              },
+              {
+                "index": 2,
+                "kind": "Int32",
+                "info": null,
+                "binding": null,
+                "arguments": [
+                  null
+                ],
+                "returnType": null,
+                "upperBounds": [
+                  null
+                ]
+              }
+            ],
+            "returnType": {
+              "index": 2,
+              "kind": "Int32",
+              "info": null,
+              "binding": null,
+              "arguments": [
+                null
+              ],
+              "returnType": null,
+              "upperBounds": [
+                null
+              ]
+            },
+            "upperBounds": [
+              null
+            ]
+          },
+          "rhs": null,
+          "body": 0
+        },
+        {
+          "index": 14,
+          "name": "callback",
+          "kind": "FuncDecl",
+          "generic": null,
+          "type": {
+            "index": 8,
+            "kind": "Func",
+            "info": {
+              "retType": 9,
+              "isC": false,
+              "hasVariableLenArg": false
+            },
+            "binding": null,
+            "arguments": [],
+            "returnType": {
+              "index": 9,
+              "kind": "Type",
+              "info": {
+                "declPtr": {
+                  "pkgId": -2,
+                  "index": 15
+                },
+                "isThisTy": false
+              },
+              "binding": {
+                "kind": "TypeAliasDecl",
+                "index": 15,
+                "name": "OrderedC"
+              },
+              "arguments": [],
+              "returnType": null,
+              "upperBounds": [
+                null
+              ]
+            },
+            "upperBounds": [
+              null
+            ]
+          },
+          "rhs": null,
+          "body": 27
+        },
+        {
+          "index": 15,
+          "name": "OrderedC",
+          "kind": "TypeAliasDecl",
+          "generic": null,
+          "type": {
+            "index": 9,
+            "kind": "Type",
+            "info": {
+              "declPtr": {
+                "pkgId": -2,
+                "index": 15
+              },
+              "isThisTy": false
+            },
+            "binding": {
+              "kind": "TypeAliasDecl",
+              "index": 15,
+              "name": "OrderedC"
+            },
+            "arguments": [],
+            "returnType": null,
+            "upperBounds": [
+              null
+            ]
+          },
+          "rhs": {
+            "index": 5,
+            "kind": "Func",
+            "info": {
+              "retType": 2,
+              "isC": true,
+              "hasVariableLenArg": false
+            },
+            "binding": null,
+            "arguments": [
+              {
+                "index": 2,
+                "kind": "Int32",
+                "info": null,
+                "binding": null,
+                "arguments": [
+                  null
+                ],
+                "returnType": null,
+                "upperBounds": [
+                  null
+                ]
+              },
+              {
+                "index": 3,
+                "kind": "Int64",
+                "info": null,
+                "binding": null,
+                "arguments": [
+                  null
+                ],
+                "returnType": null,
+                "upperBounds": [
+                  null
+                ]
+              },
+              {
+                "index": 2,
+                "kind": "Int32",
+                "info": null,
+                "binding": null,
+                "arguments": [
+                  null
+                ],
+                "returnType": null,
+                "upperBounds": [
+                  null
+                ]
+              }
+            ],
+            "returnType": {
+              "index": 2,
+              "kind": "Int32",
+              "info": null,
+              "binding": null,
+              "arguments": [
+                null
+              ],
+              "returnType": null,
+              "upperBounds": [
+                null
+              ]
+            },
+            "upperBounds": [
+              null
+            ]
+          },
+          "body": null
+        },
+        {
+          "index": 16,
+          "name": "cOrdered",
+          "kind": "FuncDecl",
+          "generic": null,
+          "type": {
+            "index": 5,
+            "kind": "Func",
+            "info": {
+              "retType": 2,
+              "isC": true,
+              "hasVariableLenArg": false
+            },
+            "binding": null,
+            "arguments": [
+              {
+                "index": 2,
+                "kind": "Int32",
+                "info": null,
+                "binding": null,
+                "arguments": [
+                  null
+                ],
+                "returnType": null,
+                "upperBounds": [
+                  null
+                ]
+              },
+              {
+                "index": 3,
+                "kind": "Int64",
+                "info": null,
+                "binding": null,
+                "arguments": [
+                  null
+                ],
+                "returnType": null,
+                "upperBounds": [
+                  null
+                ]
+              },
+              {
+                "index": 2,
+                "kind": "Int32",
+                "info": null,
+                "binding": null,
+                "arguments": [
+                  null
+                ],
+                "returnType": null,
+                "upperBounds": [
+                  null
+                ]
+              }
+            ],
+            "returnType": {
+              "index": 2,
+              "kind": "Int32",
+              "info": null,
+              "binding": null,
+              "arguments": [
+                null
+              ],
+              "returnType": null,
+              "upperBounds": [
+                null
+              ]
+            },
+            "upperBounds": [
+              null
+            ]
+          },
+          "rhs": null,
+          "body": 0
+        },
+        {
+          "index": 17,
+          "name": "callbackUse",
+          "kind": "FuncDecl",
+          "generic": null,
+          "type": {
+            "index": 10,
+            "kind": "Func",
+            "info": {
+              "retType": 5,
+              "isC": false,
+              "hasVariableLenArg": false
+            },
+            "binding": null,
+            "arguments": [
+              {
+                "index": 5,
+                "kind": "Func",
+                "info": {
+                  "retType": 2,
+                  "isC": true,
+                  "hasVariableLenArg": false
+                },
+                "binding": null,
+                "arguments": [
+                  {
+                    "index": 2,
+                    "kind": "Int32",
+                    "info": null,
+                    "binding": null,
+                    "arguments": [
+                      null
+                    ],
+                    "returnType": null,
+                    "upperBounds": [
+                      null
+                    ]
+                  },
+                  {
+                    "index": 3,
+                    "kind": "Int64",
+                    "info": null,
+                    "binding": null,
+                    "arguments": [
+                      null
+                    ],
+                    "returnType": null,
+                    "upperBounds": [
+                      null
+                    ]
+                  },
+                  {
+                    "index": 2,
+                    "kind": "Int32",
+                    "info": null,
+                    "binding": null,
+                    "arguments": [
+                      null
+                    ],
+                    "returnType": null,
+                    "upperBounds": [
+                      null
+                    ]
+                  }
+                ],
+                "returnType": {
+                  "index": 2,
+                  "kind": "Int32",
+                  "info": null,
+                  "binding": null,
+                  "arguments": [
+                    null
+                  ],
+                  "returnType": null,
+                  "upperBounds": [
+                    null
+                  ]
+                },
+                "upperBounds": [
+                  null
+                ]
+              }
+            ],
+            "returnType": {
+              "index": 5,
+              "kind": "Func",
+              "info": {
+                "retType": 2,
+                "isC": true,
+                "hasVariableLenArg": false
+              },
+              "binding": null,
+              "arguments": [
+                {
+                  "index": 2,
+                  "kind": "Int32",
+                  "info": null,
+                  "binding": null,
+                  "arguments": [
+                    null
+                  ],
+                  "returnType": null,
+                  "upperBounds": [
+                    null
+                  ]
+                },
+                {
+                  "index": 3,
+                  "kind": "Int64",
+                  "info": null,
+                  "binding": null,
+                  "arguments": [
+                    null
+                  ],
+                  "returnType": null,
+                  "upperBounds": [
+                    null
+                  ]
+                },
+                {
+                  "index": 2,
+                  "kind": "Int32",
+                  "info": null,
+                  "binding": null,
+                  "arguments": [
+                    null
+                  ],
+                  "returnType": null,
+                  "upperBounds": [
+                    null
+                  ]
+                }
+              ],
+              "returnType": {
+                "index": 2,
+                "kind": "Int32",
+                "info": null,
+                "binding": null,
+                "arguments": [
+                  null
+                ],
+                "returnType": null,
+                "upperBounds": [
+                  null
+                ]
+              },
+              "upperBounds": [
+                null
+              ]
+            },
+            "upperBounds": [
+              null
+            ]
+          },
+          "rhs": null,
+          "body": 30
+        },
+        {
+          "index": 19,
+          "name": "ordinary",
+          "kind": "FuncDecl",
+          "generic": null,
+          "type": {
+            "index": 1,
+            "kind": "Func",
+            "info": {
+              "retType": 2,
+              "isC": false,
+              "hasVariableLenArg": false
+            },
+            "binding": null,
+            "arguments": [
+              {
+                "index": 2,
+                "kind": "Int32",
+                "info": null,
+                "binding": null,
+                "arguments": [
+                  null
+                ],
+                "returnType": null,
+                "upperBounds": [
+                  null
+                ]
+              },
+              {
+                "index": 3,
+                "kind": "Int64",
+                "info": null,
+                "binding": null,
+                "arguments": [
+                  null
+                ],
+                "returnType": null,
+                "upperBounds": [
+                  null
+                ]
+              },
+              {
+                "index": 2,
+                "kind": "Int32",
+                "info": null,
+                "binding": null,
+                "arguments": [
+                  null
+                ],
+                "returnType": null,
+                "upperBounds": [
+                  null
+                ]
+              }
+            ],
+            "returnType": {
+              "index": 2,
+              "kind": "Int32",
+              "info": null,
+              "binding": null,
+              "arguments": [
+                null
+              ],
+              "returnType": null,
+              "upperBounds": [
+                null
+              ]
+            },
+            "upperBounds": [
+              null
+            ]
+          },
+          "rhs": null,
+          "body": 33
+        },
+        {
+          "index": 23,
+          "name": "cjOrdered",
+          "kind": "FuncDecl",
+          "generic": null,
+          "type": {
+            "index": 1,
+            "kind": "Func",
+            "info": {
+              "retType": 2,
+              "isC": false,
+              "hasVariableLenArg": false
+            },
+            "binding": null,
+            "arguments": [
+              {
+                "index": 2,
+                "kind": "Int32",
+                "info": null,
+                "binding": null,
+                "arguments": [
+                  null
+                ],
+                "returnType": null,
+                "upperBounds": [
+                  null
+                ]
+              },
+              {
+                "index": 3,
+                "kind": "Int64",
+                "info": null,
+                "binding": null,
+                "arguments": [
+                  null
+                ],
+                "returnType": null,
+                "upperBounds": [
+                  null
+                ]
+              },
+              {
+                "index": 2,
+                "kind": "Int32",
+                "info": null,
+                "binding": null,
+                "arguments": [
+                  null
+                ],
+                "returnType": null,
+                "upperBounds": [
+                  null
+                ]
+              }
+            ],
+            "returnType": {
+              "index": 2,
+              "kind": "Int32",
+              "info": null,
+              "binding": null,
+              "arguments": [
+                null
+              ],
+              "returnType": null,
+              "upperBounds": [
+                null
+              ]
+            },
+            "upperBounds": [
+              null
+            ]
+          },
+          "rhs": null,
+          "body": 0
+        },
+        {
+          "index": 36,
+          "name": "FunctionAbiSource",
+          "kind": "InterfaceDecl",
+          "generic": null,
+          "type": {
+            "index": 11,
+            "kind": "Interface",
+            "info": {
+              "declPtr": {
+                "pkgId": -2,
+                "index": 36
+              },
+              "isThisTy": false
+            },
+            "binding": {
+              "kind": "InterfaceDecl",
+              "index": 36,
+              "name": "FunctionAbiSource"
+            },
+            "arguments": [],
+            "returnType": null,
+            "upperBounds": [
+              null
+            ]
+          },
+          "rhs": null,
+          "body": null
+        }
+      ],
+      "ast": [
+        {
+          "bytes": 68171,
+          "sha256": "AFBBC888D637971BA16D5BC13E579241DAEE98D9ECC98C196CA599CE3F1F845F",
+          "name": "0_parse_ast.txt"
+        },
+        {
+          "bytes": 68171,
+          "sha256": "AFBBC888D637971BA16D5BC13E579241DAEE98D9ECC98C196CA599CE3F1F845F",
+          "name": "1_condcomp_ast.txt"
+        },
+        {
+          "bytes": 68245,
+          "sha256": "4C7D49A5F00B3C3CB409018A5377DF59FE6B7280611D7A6CD3D71A4C03C906E4",
+          "name": "2_import_ast.txt"
+        },
+        {
+          "bytes": 68245,
+          "sha256": "4C7D49A5F00B3C3CB409018A5377DF59FE6B7280611D7A6CD3D71A4C03C906E4",
+          "name": "3_macroexp_ast.txt"
+        },
+        {
+          "bytes": 75060,
+          "sha256": "70FB413A672E2432C6419396D7AB1E43B35EF1B65594AF38D703CDC421B8A469",
+          "name": "4_sema_ast.txt"
+        },
+        {
+          "bytes": 8332514,
+          "sha256": "A95E441638EAA04CE9D079C8EFA265CDF325140F6FE900F2378E3C59B9DF2C51",
+          "name": "5_desugar_ast.txt"
+        },
+        {
+          "bytes": 829882,
+          "sha256": "216E8236912F576CD0C81C02A92B276124353AE119DEFC275B7F6FA604B25A3D",
+          "name": "6_genericinst_ast.txt"
+        },
+        {
+          "bytes": 836802,
+          "sha256": "61D37EAA064A920A922A639B8DCD1DC1A780B6A6BF9C6FFAFB8BDC948773DC00",
+          "name": "7_overflow_ast.txt"
+        },
+        {
+          "bytes": 868589,
+          "sha256": "C1D9EEB69305DE4554CA5B7E64B92B1940C9C2DEE6FFBD653E97CF2C3C50334E",
+          "name": "8_mangle_ast.txt"
+        }
+      ]
+    }
+  ]
+}

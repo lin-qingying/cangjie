@@ -7,6 +7,8 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.providers.CfirCallableSi
 import org.cangnova.cangjie.cfir.psi
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolNamesProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
+import org.cangnova.cangjie.cfir.session.CfirCjmpLoadDiagnostic
+import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.resolve.providers.CfirImportNamespace
 import org.cangnova.cangjie.cfir.resolve.providers.CfirImportNamespaceContext
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProviderInternals
@@ -92,6 +94,14 @@ class LLDanglingFileDependenciesSymbolProvider(private val delegate: CfirSymbolP
     override fun hasPackage(fqName: FqName): Boolean {
         return delegate.hasPackage(fqName)
     }
+
+    override fun getCjmpLoadDiagnostics(packageFqName: FqName): List<CfirCjmpLoadDiagnostic> =
+        delegate.getCjmpLoadDiagnostics(packageFqName)
+
+    override fun getCjmpLoadDiagnostics(
+        packageFqName: FqName,
+        consumerSession: CfirSession,
+    ): List<CfirCjmpLoadDiagnostic> = delegate.getCjmpLoadDiagnostics(packageFqName, consumerSession)
 
     /**
      * 过滤顶层 callable 结果中的二进制库重复声明。

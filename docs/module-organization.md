@@ -47,5 +47,5 @@ source
 - [模块目录](module-catalog.md)
 - [编译器子系统设计](compiler-module-design.md)
 - [工程架构图](project-architecture-diagram.md)
-- [IntelliJ Platform 插件](../intellij-ide/README.md)
-- [DevEco 集成](../deveco/README.md)
+- [IntelliJ Platform 插件](intellij-ide.zh-CN.md)
+- [DevEco 集成](deveco.zh-CN.md)

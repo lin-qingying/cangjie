@@ -35,6 +35,7 @@ open class CfirInlineExpressionRenderer(
     open fun render(expression: CfirExpression): String = when (expression) {
         is CfirLiteralExpression -> when (expression.kind) {
             CfirLiteralKind.STRING -> "\"${expression.value}\""
+            CfirLiteralKind.JSTRING -> "J\"${expression.value}\""
             else -> "${expression.value}"
         }
         is CfirFunctionCall -> "${referenceRenderer.render(expression.calleeReference)}(${

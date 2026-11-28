@@ -8,6 +8,7 @@
 package org.cangnova.cangjie.cfir.declarations.builder
 
 import kotlin.contracts.*
+import org.cangnova.cangjie.cfir.CfirContentSource
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
@@ -26,13 +27,14 @@ class CfirEnumBuilder {
     var source: CjSourceElement? = null
     lateinit var moduleData: CfirModuleData
     lateinit var resolvePhase: CfirResolvePhase
+    var contentSource: CfirContentSource = CfirContentSource.Owned
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
     lateinit var origin: CfirDeclarationOrigin
     lateinit var attributes: CfirDeclarationAttributes
     var deprecationsProvider: DeprecationsProvider = UnresolvedDeprecationProvider
     lateinit var scopeProvider: CfirScopeProvider
-    lateinit var status: CfirDeclarationStatus
     val typeParameters: MutableList<CfirTypeParameter> = mutableListOf()
+    lateinit var status: CfirDeclarationStatus
     lateinit var symbol: CfirEnumSymbol
     val superTypeRefs: MutableList<CfirTypeRef> = mutableListOf()
     val declarations: MutableList<CfirDeclaration> = mutableListOf()
@@ -46,13 +48,14 @@ class CfirEnumBuilder {
             source,
             moduleData,
             resolvePhase,
+            contentSource,
             annotations.toMutableOrEmpty(),
             origin,
             attributes,
             deprecationsProvider,
             scopeProvider,
-            status,
             typeParameters,
+            status,
             symbol,
             superTypeRefs,
             declarations,
@@ -86,8 +89,8 @@ inline fun buildEnumCopy(original: CfirEnum, init: CfirEnumBuilder.() -> Unit): 
     copyBuilder.attributes = original.attributes.copy()
     copyBuilder.deprecationsProvider = original.deprecationsProvider
     copyBuilder.scopeProvider = original.scopeProvider
-    copyBuilder.status = original.status
     copyBuilder.typeParameters.addAll(original.typeParameters)
+    copyBuilder.status = original.status
     copyBuilder.superTypeRefs.addAll(original.superTypeRefs)
     copyBuilder.declarations.addAll(original.declarations)
     copyBuilder.name = original.name

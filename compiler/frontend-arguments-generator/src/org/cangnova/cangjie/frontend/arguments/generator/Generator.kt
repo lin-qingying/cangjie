@@ -89,6 +89,15 @@ private fun collectImports(info: ArgumentsInfo): List<String> {
  * 生成不是 DSL 参数声明、但前端参数类需要持有的合成属性。
  */
 private fun StringBuilder.generateAdditionalSyntheticArguments(info: ArgumentsInfo) {
+    if (info.isCommonToolsArgs) {
+        appendLine("    /** 实际命令行的规范参数及单次值，保留跨参数交错顺序；直接调用同样必须提供完整顺序。 */")
+        appendLine("    var explicitArgumentOccurrences: List<Pair<String, String>> = emptyList()")
+        appendLine("        set(value) {")
+        appendLine("            checkFrozen()")
+        appendLine("            field = java.util.Collections.unmodifiableList(value.toList())")
+        appendLine("        }")
+        appendLine()
+    }
     for (argument in info.additionalSyntheticArguments) {
         appendLine("    var $argument: Boolean = true")
         appendLine("        set(value) {")

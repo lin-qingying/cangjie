@@ -125,7 +125,8 @@ class CjoDeserializationSymbolLookupIsolationTest :
                 val target = FullId.getRootAsFullId(builder.dataBuffer())
                 context.fullIdResolver.resolveSymbol(target)
             }
-            val record = assertValue(context.declCache[declIndex], "FullId must return a complete canonical declaration")
+            val record = assertValue(context.headerRecordOrNull(declIndex))
+            assertSame(record.declarationRoot, context.declCache[declIndex], "FullId must return a complete canonical declaration")
             assertSame(record.wireSymbol, symbol, "FullId must keep the exact wire symbol")
             assertSame(context.moduleData, symbol.cfir.moduleData, "FullId must keep the actual module owner")
             assertEquals(CfirResolvePhase.BODY_RESOLVE, record.declarationRoot.resolvePhase)

@@ -5,7 +5,9 @@
 
 package org.cangnova.cangjie.cfir.expressions
 
+import org.cangnova.cangjie.annotations.CangjieOverflowStrategy
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.patterns.CfirPattern
 import org.cangnova.cangjie.cfir.patterns.CfirPatternTreeOwner
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
@@ -20,6 +22,8 @@ abstract class CfirMatchBranch : CfirExpression(), CfirPatternTreeOwner {
     abstract override val source: CjSourceElement?
     abstract override val annotations: List<CfirAnnotation>
     abstract override val coneTypeOrNull: ConeCangJieType?
+    abstract override val mappedExpression: CfirExpression?
+    abstract override val overflowStrategy: CangjieOverflowStrategy?
     /**
      * 模式子树具有唯一 owner；浅拷贝必须由调用方显式提供独立模式树。
      */
@@ -31,6 +35,15 @@ abstract class CfirMatchBranch : CfirExpression(), CfirPatternTreeOwner {
     abstract override fun validatePatternTreeRoot(newPatternTreeRoot: org.cangnova.cangjie.cfir.CfirElement)
     abstract override fun replacePatternTreeRoot(newPatternTreeRoot: org.cangnova.cangjie.cfir.CfirElement)
 
+    /** 访问本节点拥有的完整来源子图；独立于 ordinary visitor 的语法子树。 */
+    @CfirImplementationDetail
+    override fun <R, D> acceptSourceChildren(visitor: CfirVisitor<R, D>, data: D) {
+        annotations.forEach { it.accept(visitor, data) }
+        pattern.accept(visitor, data)
+        guard?.accept(visitor, data)
+        body.accept(visitor, data)
+    }
+
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitMatchBranch(this, data)
 
@@ -38,9 +51,16 @@ abstract class CfirMatchBranch : CfirExpression(), CfirPatternTreeOwner {
     override fun <E : CfirElement, D> transform(transformer: CfirTransformer<D>, data: D): E =
         transformer.transformMatchBranch(this, data) as E
 
+    @CfirImplementationDetail
+    abstract override fun replaceSource(newSource: CjSourceElement?)
+
     abstract override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
 
     abstract override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?)
+
+    abstract override fun replaceMappedExpression(newMappedExpression: CfirExpression?)
+
+    abstract override fun replaceOverflowStrategy(newOverflowStrategy: CangjieOverflowStrategy?)
 
     abstract fun replacePattern(newPattern: CfirPattern)
 

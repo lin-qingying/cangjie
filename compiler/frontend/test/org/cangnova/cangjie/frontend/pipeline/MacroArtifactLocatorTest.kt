@@ -134,30 +134,25 @@ class MacroArtifactLocatorTest {
     }
 
     /**
-     * 验证固定 SDK 中的 std unittest mock 宏 artifact 可被定位并解析。
+     * 验证本次环境明确选择的真实 SDK 中标准宏 artifact 可被定位并解析。
      */
     @Test
-    fun locatesAndResolvesFixedSdkStdMacroArtifact() {
-        val sdkHome =
-            DefaultMacroCompilerExecutableResolver
-                .resolve()
-                .parent
-                .parent
-                .toString()
-        val artifact =
-            MacroArtifactLocator(sdkHome = sdkHome)
-                .locate(
-                    packageDemands = setOf(FqName("std.unittest.mock.mockmacro")),
-                    searchRoots = emptyList(),
-                ).single()
+    fun locatesAndResolvesSelectedSdkStdMacroArtifact() {
+        val sdk = MacroSdkSelector.select(explicitHome = null).requireSelected()
+        val artifact = MacroArtifactLocator(
+            sdkHome = sdk.home.toString(),
+        ).locate(
+            packageDemands = setOf(FqName("std.unittest.mock.mockmacro")),
+            searchRoots = emptyList(),
+        ).single()
 
         assertEquals(MacroArtifactPackage.Origin.SDK_STDLIB, artifact.origin)
         assertTrue(artifact.cjoPath.endsWith("std.unittest.mock.mockmacro.cjo"))
         assertTrue(artifact.dynamicLibPath.endsWith("libcangjie-std-unittest.mock.mockmacro.${dynamicLibraryExtension()}"))
 
-        val resolved = MacroArtifactResolver().resolve(listOf(artifact))
+        val resolved = MacroArtifactResolver().resolve(listOf(artifact), sdkHome = sdk.home.toString())
         assertTrue(resolved.diagnostics.isEmpty(), "Unexpected diagnostics: ${resolved.diagnostics}")
-        assertTrue(resolved.definitions.isNotEmpty(), "Fixed SDK std macro artifact must export macro definitions.")
+        assertTrue(resolved.definitions.isNotEmpty(), "Selected SDK std macro artifact must export macro definitions.")
         assertTrue(resolved.definitions.all { it.libPath == artifact.dynamicLibPath })
     }
 

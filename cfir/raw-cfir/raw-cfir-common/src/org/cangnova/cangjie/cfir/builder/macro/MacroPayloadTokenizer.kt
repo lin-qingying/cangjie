@@ -48,7 +48,9 @@ object MacroPayloadTokenizer {
      *
      * v2：把 lexer 拆分出的字符串片段合并为 CJC 的整段字符串 token。
      */
+    // v3：标识符采用 Unicode 15 XID，补充平面字符也参与 !in / !is 边界判断。
     const val VERSION: Int = 3
+
 
     private const val OPEN_QUOTE_KIND = "OPEN_QUOTE"
     private const val CLOSING_QUOTE_KIND = "CLOSING_QUOTE"
@@ -184,15 +186,14 @@ object MacroPayloadTokenizer {
     }
 
     /**
-     * 把 [tokens] 反复 [reTokenize] 直至序列稳定或达到 [maxIterations]。
+     * 把 [tokens] 反复 [reTokenize] 直至序列稳定；未达到稳定点时不能发布最后一轮输入。
      *
      * PLAN.md §8 要求 "newTokens 先 token-stage re-eval 到 stable，再 fragment parse"。
      * 单次 [reTokenize] 已能在大部分情况下达到稳定（因为输入文本与拆分都是确定的），
      * 但当 executor 输出的 token 流粘连（如未分隔的标识符与数字）时，
      * 第二次 lex 才能给出最终边界。固定点迭代保证 fragment parser 上游始终拿到稳定输入。
      *
-     * 当达到 [maxIterations] 仍未稳定时返回最后一次结果，调用方按 stable 处理；
-     * 这是为了避免病态输入下死循环。
+     * 达到 [maxIterations] 仍未稳定属于复扫契约错误；必须阻止 fragment parser 消费该结果。
      */
     fun reTokenizeUntilStable(
         tokens: List<MacroPayloadToken>,
@@ -205,7 +206,7 @@ object MacroPayloadTokenizer {
             if (next.sameSequence(current)) return next
             current = next
         }
-        return current
+        error("Macro payload re-tokenization did not reach a stable sequence after $maxIterations iterations.")
     }
 
     /** 比较两个 token 序列的文本和 kind 是否完全一致。 */

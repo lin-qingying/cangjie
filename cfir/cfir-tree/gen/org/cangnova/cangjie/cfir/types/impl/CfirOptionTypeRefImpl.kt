@@ -7,11 +7,13 @@
 
 package org.cangnova.cangjie.cfir.types.impl
 
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.MutableOrEmptyList
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.types.CfirOptionTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.CfirTypeRefOrigin
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.cfir.visitors.transformInplace
@@ -20,7 +22,8 @@ import org.cangnova.cangjie.source.CjSourceElement
 internal class CfirOptionTypeRefImpl(
     override var annotations: MutableOrEmptyList<CfirAnnotation>,
     override val customRenderer: Boolean,
-    override val source: CjSourceElement,
+    override var typeUseOrigin: CfirTypeRefOrigin,
+    override var source: CjSourceElement,
     override var componentTypeRef: CfirTypeRef,
 ) : CfirOptionTypeRef() {
 
@@ -47,5 +50,15 @@ internal class CfirOptionTypeRefImpl(
 
     override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>) {
         annotations = newAnnotations.toMutableOrEmpty()
+    }
+
+    override fun replaceTypeUseOrigin(newTypeUseOrigin: CfirTypeRefOrigin) {
+        typeUseOrigin = newTypeUseOrigin
+    }
+
+    @CfirImplementationDetail
+    override fun replaceSource(newSource: CjSourceElement?) {
+        require(newSource != null)
+        source = newSource
     }
 }

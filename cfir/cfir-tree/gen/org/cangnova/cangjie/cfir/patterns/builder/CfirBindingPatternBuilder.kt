@@ -11,6 +11,8 @@ import kotlin.contracts.*
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
 import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
+import org.cangnova.cangjie.cfir.expressions.CfirConstantValue
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.patterns.CfirBindingPattern
 import org.cangnova.cangjie.cfir.patterns.CfirPattern
 import org.cangnova.cangjie.cfir.patterns.impl.CfirBindingPatternImpl
@@ -21,6 +23,9 @@ import org.cangnova.cangjie.source.CjSourceElement
 @CfirBuilderDsl
 class CfirBindingPatternBuilder {
     var source: CjSourceElement? = null
+    var semanticTypeRef: CfirTypeRef? = null
+    val constantValues: MutableList<CfirConstantValue> = mutableListOf()
+    var contextExpression: CfirExpression? = null
     lateinit var name: Name
     var typeRef: CfirTypeRef? = null
     var bindingVariable: CfirPatternBindingVariable? = null
@@ -30,6 +35,9 @@ class CfirBindingPatternBuilder {
     fun build(): CfirBindingPattern {
         return CfirBindingPatternImpl(
             source,
+            semanticTypeRef,
+            constantValues,
+            contextExpression,
             name,
             typeRef,
             bindingVariable,
@@ -54,6 +62,9 @@ inline fun buildBindingPatternCopy(original: CfirBindingPattern, init: CfirBindi
     }
     val copyBuilder = CfirBindingPatternBuilder()
     copyBuilder.source = original.source
+    copyBuilder.semanticTypeRef = original.semanticTypeRef
+    copyBuilder.constantValues.addAll(original.constantValues)
+    copyBuilder.contextExpression = original.contextExpression
     copyBuilder.name = original.name
     copyBuilder.typeRef = original.typeRef
     copyBuilder.bindingVariable = original.bindingVariable

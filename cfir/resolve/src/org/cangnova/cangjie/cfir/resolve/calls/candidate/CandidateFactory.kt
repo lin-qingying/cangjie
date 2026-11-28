@@ -24,6 +24,8 @@
 
 package org.cangnova.cangjie.cfir.resolve.calls.candidate
 
+import org.cangnova.cangjie.cfir.resolve.substitution.createTypeSubstitutorByTypeConstructor
+
 import org.cangnova.cangjie.builtins.StandardNames
 import org.cangnova.cangjie.cfir.calls.ReceiverValue
 import org.cangnova.cangjie.cfir.common.moduleData
@@ -33,6 +35,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
+import org.cangnova.cangjie.cfir.declarations.exportFacts
 import org.cangnova.cangjie.cfir.declarations.DEFAULT_STATUS_FOR_STATUSLESS_DECLARATIONS
 import org.cangnova.cangjie.cfir.declarations.builder.*
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
@@ -140,7 +143,7 @@ internal sealed class BuiltinArrayConstructorTarget {
          * 构造 `Array<elementType>` 返回类型。
          */
         override fun returnType(elementType: ConeCangJieType): ConeCangJieType =
-            ConeClassLikeType(StdlibClassIds.Array.toLookupTag(), typeArguments = listOf(elementType))
+            ConeStructType(StdlibClassIds.Array.toLookupTag(), typeArguments = listOf(elementType))
     }
 
     /**
@@ -302,21 +305,26 @@ class CandidateFactory(
     fun createCandidateFromDiscovery(
         callInfo: CallInfo,
         discovery: CfirCallableCandidateDiscovery,
-    ): Candidate = Candidate(
-        symbol = discovery.symbol,
-        dispatchReceiver = discovery.dispatchReceiverExpression?.let(ConeResolutionAtom::createRawAtom),
-        givenExtensionReceiver = discovery.givenExtensionReceiverExpression?.let(ConeResolutionAtom::createRawAtom),
-        explicitReceiverKind = discovery.explicitReceiverKind,
-        constraintSystemFactory = context.inferenceComponents.constraintSystemFactory,
-        baseSystem = baseSystem,
-        callInfo = callInfo,
-        originScope = discovery.originScope,
-        discoveryAccessibilityResult = discovery.accessibilityResult,
-        lookupProvenance = discovery.lookupProvenance,
-        isFromCompanionObjectTypeScope = discovery.isFromCompanionObjectTypeScope,
-        isFromOriginalTypeInPresenceOfSmartCast = discovery.isFromOriginalTypeInPresenceOfSmartCast,
-        bodyResolveContext = context.bodyResolveContext,
-    )
+    ): Candidate {
+        check(!discovery.symbol.cfir.exportFacts.hasUnexportedSignature) {
+            "An unexported partial signature cannot enter candidate inference"
+        }
+        return Candidate(
+            symbol = discovery.symbol,
+            dispatchReceiver = discovery.dispatchReceiverExpression?.let(ConeResolutionAtom::createRawAtom),
+            givenExtensionReceiver = discovery.givenExtensionReceiverExpression?.let(ConeResolutionAtom::createRawAtom),
+            explicitReceiverKind = discovery.explicitReceiverKind,
+            constraintSystemFactory = context.inferenceComponents.constraintSystemFactory,
+            baseSystem = baseSystem,
+            callInfo = callInfo,
+            originScope = discovery.originScope,
+            discoveryAccessibilityResult = discovery.accessibilityResult,
+            lookupProvenance = discovery.lookupProvenance,
+            isFromCompanionObjectTypeScope = discovery.isFromCompanionObjectTypeScope,
+            isFromOriginalTypeInPresenceOfSmartCast = discovery.isFromOriginalTypeInPresenceOfSmartCast,
+            bodyResolveContext = context.bodyResolveContext,
+        )
+    }
 
     /**
      * 基于已解析的函数值变量创建调用候选。
@@ -327,8 +335,14 @@ class CandidateFactory(
     fun createCallableValueInvokeCandidate(
         callInfo: CallInfo,
         callableValueCandidate: Candidate,
-        callableValueReceiver: CfirExpression? = null,
+        callableValueReceiver: org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression,
     ): Candidate {
+        // common invoke 的 runtime receiver 是被调用的函数值；其原 lookup candidate 必须留给 completion。
+        // property 的对象 receiver 留在这条值访问内部，不能替代函数值本身。
+        val valueReference = callableValueReceiver.calleeReference as org.cangnova.cangjie.cfir.references.CfirNamedReference
+        callableValueReceiver.replaceCalleeReference(CfirNamedReferenceWithCandidate(
+            source = valueReference.source, name = valueReference.name, candidate = callableValueCandidate,
+        ))
         val variable = (callableValueCandidate.symbol as? CfirVariableSymbol<*>)?.cfir
         val freshValueParameterInvokeShape = buildFreshValueParameterInvokeShape(
             callInfo = callInfo,
@@ -340,8 +354,7 @@ class CandidateFactory(
             // 隐式 invoke 的最终调用没有源码显式 receiver；仍需把函数值本身
             // 保留为 dispatch receiver，供 completion、checker 和诊断消费其完整
             // ConeFunctionType（尤其是 CFunc ABI 标记）。
-            dispatchReceiver = callableValueCandidate.dispatchReceiver
-                ?: callableValueReceiver?.let(ConeResolutionAtom::createRawAtom),
+            dispatchReceiver = ConeResolutionAtom.createRawAtom(callableValueReceiver),
             givenExtensionReceiver = callableValueCandidate.givenExtensionReceiver,
             explicitReceiverKind = callableValueCandidate.explicitReceiverKind,
             constraintSystemFactory = context.inferenceComponents.constraintSystemFactory,
@@ -452,6 +465,9 @@ class CandidateFactory(
         lookupProvenance: org.cangnova.cangjie.cfir.scopes.CfirCallableLookupProvenance =
             org.cangnova.cangjie.cfir.scopes.CfirCallableLookupProvenance.None,
     ): Candidate {
+        check(!symbol.cfir.exportFacts.hasUnexportedSignature) {
+            "An unexported partial signature cannot enter candidate inference"
+        }
         val useDispatchReceiverAsExtensionReceiver =
             givenExtensionReceiver == null &&
                 dispatchReceiver != null &&
@@ -1043,7 +1059,7 @@ class CandidateFactory(
             }
             .toMap()
         if (originalToSynthetic.isEmpty()) return declaredElementType
-        return CfirTypeSubstitutorByMap(originalToSynthetic).substituteOrSelf(declaredElementType)
+        return createTypeSubstitutorByTypeConstructor(originalToSynthetic, context.session.typeContext, false).substituteOrSelf(declaredElementType)
     }
 
     /**
@@ -1066,7 +1082,7 @@ class CandidateFactory(
             }
             .toMap()
         if (originalToSynthetic.isEmpty()) return pointeeType
-        return CfirTypeSubstitutorByMap(originalToSynthetic).substituteOrSelf(pointeeType)
+        return createTypeSubstitutorByTypeConstructor(originalToSynthetic, context.session.typeContext, false).substituteOrSelf(pointeeType)
     }
 
     /**
@@ -1082,7 +1098,7 @@ class CandidateFactory(
         val substitution: Map<TypeConstructorMarker, ConeCangJieType> = parameters.zip(symbols).mapNotNull { (parameter, symbol) ->
             parameter.originalSymbol?.toLookupTag()?.let { it to ConeTypeParameterTypeImpl(symbol.toLookupTag()) }
         }.toMap()
-        val substitutor = CfirTypeSubstitutorByMap(substitution)
+        val substitutor = createTypeSubstitutorByTypeConstructor(substitution, context.session.typeContext, false)
         return parameters.mapIndexed { index, parameter ->
             buildTypeParameter {
                 this.source = source

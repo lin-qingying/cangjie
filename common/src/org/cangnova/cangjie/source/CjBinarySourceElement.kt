@@ -28,6 +28,10 @@ abstract class CjBinarySourceElement(
      * 用于相等性和轻量节点身份的稳定对象。
      */
     private val stableIdentity: Any,
+    /**
+     * 若二进制元数据保留了原始源码位置，则在这里提供其路径和一基行列。
+     */
+    val sourceLocation: CjSourceLocation? = null,
 ) : CjSourceElement() {
     /**
      * 二进制来源不对应真实文本范围，起始偏移固定为 0。

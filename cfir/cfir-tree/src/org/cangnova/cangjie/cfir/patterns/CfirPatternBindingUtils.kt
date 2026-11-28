@@ -51,9 +51,9 @@ fun CfirPattern.bindingOccurrences(): List<CfirPatternBindingOccurrence> = when 
     }.orEmpty()
     is CfirTuplePattern -> elements.flatMap(CfirPattern::bindingOccurrences)
     is CfirEnumPattern -> arguments.flatMap(CfirPattern::bindingOccurrences)
-    is CfirTypePattern -> bindingName?.let {
-        listOf(CfirPatternBindingOccurrence(it, bindingVariable?.source ?: source, bindingVariable))
-    }.orEmpty()
+    is CfirTypePattern -> nestedPattern.bindingOccurrences()
+    is CfirCatchPattern -> nestedPattern.bindingOccurrences()
+    is CfirCommandTypePattern -> nestedPattern.bindingOccurrences()
 
     is CfirOrPattern -> alternatives.flatMap(CfirPattern::bindingOccurrences)
     is CfirWildcardPattern, is CfirConstPattern, is CfirExpressionPattern -> emptyList()
@@ -64,6 +64,13 @@ fun CfirPattern.bindingOccurrences(): List<CfirPatternBindingOccurrence> = when 
  */
 fun CfirPattern.bindingVariables(): List<CfirPatternBindingVariable> =
     bindingOccurrences().mapNotNull(CfirPatternBindingOccurrence::variable)
+
+/** 普通具名变量的唯一绑定；带嵌套模式或解构模式不属于此声明形状。 */
+fun CfirPattern.simpleVariableBindingOrNull(): CfirPatternBindingVariable? = when (this) {
+    is CfirBindingPattern -> if (nestedPattern == null) bindingVariable else null
+    is CfirVarOrEnumPattern -> bindingVariable
+    else -> null
+}
 
 /** 供生成源码调用的模式绑定集合入口。 */
 internal fun patternBindingVariables(pattern: CfirPattern): List<CfirPatternBindingVariable> =
@@ -114,12 +121,8 @@ internal fun capturePatternTree(root: CfirElement): CfirPatternTreeSnapshot {
             }
             nodes += binding
         }
-        when (element) {
-            is CfirCatchPattern -> Unit
-            is CfirPattern -> element.childPatterns().forEach(::visit)
-            is CfirCommandTypePattern -> Unit
-            else -> error("Unsupported CFIR pattern tree root: ${element::class.qualifiedName}")
-        }
+        check(element is CfirPattern) { "Unsupported CFIR pattern tree root: ${element::class.qualifiedName}" }
+        element.childPatterns().forEach(::visit)
     }
 
     visit(root)
@@ -130,9 +133,6 @@ internal fun capturePatternTree(root: CfirElement): CfirPatternTreeSnapshot {
 private fun immediatePatternBindings(element: CfirElement): List<CfirPatternBindingVariable> = when (element) {
     is CfirBindingPattern -> listOfNotNull(element.bindingVariable)
     is CfirVarOrEnumPattern -> listOfNotNull(element.bindingVariable)
-    is CfirTypePattern -> listOfNotNull(element.bindingVariable)
-    is CfirCatchPattern -> listOfNotNull(element.bindingVariable)
-    is CfirCommandTypePattern -> listOfNotNull(element.bindingVariable)
     else -> emptyList()
 }
 
@@ -141,10 +141,12 @@ private fun CfirPattern.childPatterns(): List<CfirPattern> = when (this) {
     is CfirTuplePattern -> elements
     is CfirEnumPattern -> arguments
     is CfirOrPattern -> alternatives
+    is CfirTypePattern -> listOf(nestedPattern)
+    is CfirCatchPattern -> listOf(nestedPattern)
+    is CfirCommandTypePattern -> listOf(nestedPattern)
     is CfirConstPattern,
     is CfirWildcardPattern,
     is CfirVarOrEnumPattern,
-    is CfirTypePattern,
     is CfirExpressionPattern,
     -> emptyList()
 }
@@ -289,7 +291,7 @@ internal fun bindPatternTree(owner: CfirPatternTreeOwner, pattern: CfirElement) 
 fun CfirPattern.wholeValueBindingOrNull(): CfirPatternBindingVariable? = when (this) {
     is CfirBindingPattern if nestedPattern == null -> bindingVariable
     is CfirVarOrEnumPattern -> bindingVariable
-    is CfirTypePattern -> bindingVariable
+    is CfirTypePattern -> nestedPattern.simpleVariableBindingOrNull()
     else -> null
 }
 
@@ -299,7 +301,9 @@ fun CfirPattern.wholeValueBindingOrNull(): CfirPatternBindingVariable? = when (t
  * 显式类型模式的名字在语义检查前已经声明；形状检查失败也不能撤销这些名字。
  */
 fun CfirPattern.typePatternBindingVariables(): List<CfirPatternBindingVariable> = when (this) {
-    is CfirTypePattern -> bindingVariable?.let(::listOf).orEmpty()
+    is CfirTypePattern -> nestedPattern.bindingVariables()
+    is CfirCatchPattern -> nestedPattern.typePatternBindingVariables()
+    is CfirCommandTypePattern -> nestedPattern.typePatternBindingVariables()
     is CfirTuplePattern -> elements.flatMap(CfirPattern::typePatternBindingVariables)
     is CfirEnumPattern -> arguments.flatMap(CfirPattern::typePatternBindingVariables)
     is CfirBindingPattern -> nestedPattern?.typePatternBindingVariables().orEmpty()

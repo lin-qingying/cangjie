@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
@@ -14,7 +15,7 @@ import org.cangnova.cangjie.cfir.diagnostics.reportOn
  * 这属于 declaration 层规则：
  * 它不依赖调用点，而是约束“被标记为注解类型的声明自身”。
  */
-object CfirAnnotationDeclarationChecker : CfirClassLikeChecker() {
+object CfirAnnotationDeclarationChecker : CfirClassLikeChecker(MppCheckerKind.Common) {
     /** 检查被 `@Annotation` 标记的 class-like 声明是否拥有 const 构造器。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirClassLikeDeclaration) {

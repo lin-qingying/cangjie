@@ -57,6 +57,13 @@ sealed class AbstractCjDiagnosticFactory(
         }
     }
 
+    /** 原生 parser severity 不参与语言版本的 factory 等级覆盖；Werror 读取独立 warning 计数。 */
+    fun getEffectiveSeverity(context: DiagnosticBaseContext): Severity? {
+        val parsing = context.parsingDiagnostic
+        return if (parsing == null) getEffectiveSeverity(context.languageVersionSettings) else
+            if (parsing.isError) Severity.ERROR else Severity.WARNING
+    }
+
     /**
      * 返回诊断工厂名称，便于调试和生成诊断定义文本。
      */
@@ -77,7 +84,7 @@ class CjSourcelessDiagnosticFactory(
      * 创建无源码诊断；若当前配置禁用了该诊断则返回 null。
      */
     fun create(message: String, location: CompilerMessageSourceLocation?, context: DiagnosticBaseContext): CjDiagnosticWithoutSource? {
-        val effectiveSeverity = getEffectiveSeverity(context.languageVersionSettings) ?: return null
+        val effectiveSeverity = getEffectiveSeverity(context) ?: return null
         return CjDiagnosticWithoutSource(message, location, effectiveSeverity, this, context)
     }
 }
@@ -118,7 +125,7 @@ class CjDiagnosticFactory0(
         positioningStrategy: AbstractSourceElementPositioningStrategy?,
         context: DiagnosticBaseContext,
     ): CjSimpleDiagnostic? {
-        val effectiveSeverity = getEffectiveSeverity(context.languageVersionSettings) ?: return null
+        val effectiveSeverity = getEffectiveSeverity(context) ?: return null
         return when (element) {
             is CjPsiSourceElement -> CjPsiSimpleDiagnostic(
                 element,
@@ -165,7 +172,7 @@ class CjDiagnosticFactory1<A>(
         positioningStrategy: AbstractSourceElementPositioningStrategy?,
         context: DiagnosticBaseContext,
     ): CjDiagnosticWithParameters1<A>? {
-        val effectiveSeverity = getEffectiveSeverity(context.languageVersionSettings) ?: return null
+        val effectiveSeverity = getEffectiveSeverity(context) ?: return null
         return when (element) {
             is CjPsiSourceElement -> CjPsiDiagnosticWithParameters1(
                 element,
@@ -216,7 +223,7 @@ class CjDiagnosticFactory2<A, B>(
         positioningStrategy: AbstractSourceElementPositioningStrategy?,
         context: DiagnosticBaseContext,
     ): CjDiagnosticWithParameters2<A, B>? {
-        val effectiveSeverity = getEffectiveSeverity(context.languageVersionSettings) ?: return null
+        val effectiveSeverity = getEffectiveSeverity(context) ?: return null
         return when (element) {
             is CjPsiSourceElement -> CjPsiDiagnosticWithParameters2(
                 element,
@@ -271,7 +278,7 @@ class CjDiagnosticFactory3<A, B, C>(
         positioningStrategy: AbstractSourceElementPositioningStrategy?,
         context: DiagnosticBaseContext,
     ): CjDiagnosticWithParameters3<A, B, C>? {
-        val effectiveSeverity = getEffectiveSeverity(context.languageVersionSettings) ?: return null
+        val effectiveSeverity = getEffectiveSeverity(context) ?: return null
         return when (element) {
             is CjPsiSourceElement -> CjPsiDiagnosticWithParameters3(
                 element,
@@ -330,7 +337,7 @@ class CjDiagnosticFactory4<A, B, C, D>(
         positioningStrategy: AbstractSourceElementPositioningStrategy?,
         context: DiagnosticBaseContext,
     ): CjDiagnosticWithParameters4<A, B, C, D>? {
-        val effectiveSeverity = getEffectiveSeverity(context.languageVersionSettings) ?: return null
+        val effectiveSeverity = getEffectiveSeverity(context) ?: return null
         return when (element) {
             is CjPsiSourceElement -> CjPsiDiagnosticWithParameters4(
                 element,

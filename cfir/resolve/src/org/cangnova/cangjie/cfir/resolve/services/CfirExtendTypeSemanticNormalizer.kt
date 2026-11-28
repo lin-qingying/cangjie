@@ -26,7 +26,10 @@ package org.cangnova.cangjie.cfir.resolve.services
 
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
+import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
+import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendMemberPeerPreparationInput
 import org.cangnova.cangjie.cfir.resolve.CfirTypeResolver
+import org.cangnova.cangjie.cfir.resolve.substitution.createTypeSubstitutorByTypeConstructor
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedTypeUsingAbbreviation
 import org.cangnova.cangjie.cfir.resolve.renderStableSemanticKey
@@ -36,16 +39,28 @@ import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.type.model.TypeConstructorMarker
 
 /** 为 extend 类型引用生成稳定语义 key 的归一化器。 */
-internal class CfirExtendTypeSemanticNormalizer(
+internal class CfirExtendTypeSemanticNormalizer private constructor(
     /** 当前正在建立语义 key 的 extend 声明。 */
     extend: CfirExtend,
-    /** 生产 session；单元测试可省略并通过 resolver 的显式展开路径工作。 */
-    private val session: CfirSession?,
-    /** typealias 声明解析器。 */
-    private val resolver: CfirTypeResolver,
+    parameters: List<CfirTypeParameterSymbol>,
+    bounds: List<List<ConeCangJieType>>,
+    private val expandType: (ConeCangJieType) -> ConeCangJieType,
     /** 是否把当前 extend 类型参数的 where bound 编入占位符名称。 */
-    private val includeTypeParameterBounds: Boolean = true,
+    private val includeTypeParameterBounds: Boolean,
 ) {
+    constructor(extend: CfirExtend, session: CfirSession?, resolver: CfirTypeResolver, includeTypeParameterBounds: Boolean = true) : this(
+        extend, extend.typeParameters.map { it.symbol },
+        extend.typeParameters.map { parameter -> parameter.bounds.mapNotNull { it.coneTypeOrNull } },
+        { type -> if (session != null) type.fullyExpandedTypeUsingAbbreviation(session) else type.semanticExpandedType(resolver) ?: type },
+        includeTypeParameterBounds,
+    )
+
+    /** 显式输入的参数和 bounds 已捕获；所有 alias 读取经过本次登记的来源入口。 */
+    constructor(extend: CfirExtend, input: CfirExtendMemberPeerPreparationInput) : this(
+        extend, input.ownerParameters, input.ownerParameters.map { input.ownerBounds.getValue(it) },
+        { type -> type.fullyExpandedTypeUsingAbbreviation(input.sources.session, input.sources.symbols, input.aliasExpansion) }, true,
+    )
+    private val typeContext = extend.moduleData.session.typeContext
     /**
      * 完整 extend 语义键不仅保留“第几个类型参数”，还会把约束信息编码进去。
      *
@@ -54,22 +69,23 @@ internal class CfirExtendTypeSemanticNormalizer(
      * 同一 occurrence 分组。两种键域必须分离，不能相互替代。
      */
     private val substitutor = run {
-        val baseSubstitutor = CfirTypeSubstitutorByMap(
+        val baseSubstitutor = createTypeSubstitutorByTypeConstructor(
             buildMap<TypeConstructorMarker, ConeCangJieType> {
-                extend.typeParameters.forEachIndexed { index, typeParameter ->
-                    put(typeParameter.symbol.toLookupTag(), ConePlaceholderType("__EXT_TP_$index"))
+                parameters.forEachIndexed { index, typeParameter ->
+                    put(typeParameter.toLookupTag(), ConePlaceholderType("__EXT_TP_$index"))
                 }
             },
+            typeContext,
+            false,
         )
         if (!includeTypeParameterBounds) {
             return@run baseSubstitutor
         }
         val boundFingerprints = buildMap<TypeConstructorMarker, ConeCangJieType> {
-            extend.typeParameters.forEachIndexed { index, typeParameter ->
-                val fingerprint = typeParameter.bounds
-                    .mapNotNull { boundTypeRef ->
-                        val boundType = (boundTypeRef as? CfirResolvedTypeRef)?.coneType ?: return@mapNotNull null
-                        baseSubstitutor.substituteOrSelf(boundType).renderStableSemanticKey()
+            parameters.forEachIndexed { index, typeParameter ->
+                val fingerprint = bounds[index]
+                    .map { boundType ->
+                        baseSubstitutor.substituteOrSelf(expandType(boundType)).renderStableSemanticKey()
                     }
                     .sorted()
                     .joinToString(separator = "&")
@@ -78,10 +94,10 @@ internal class CfirExtendTypeSemanticNormalizer(
                 } else {
                     "__EXT_TP_${index}_BOUNDS[$fingerprint]"
                 }
-                put(typeParameter.symbol.toLookupTag(), ConePlaceholderType(debugName))
+                put(typeParameter.toLookupTag(), ConePlaceholderType(debugName))
             }
         }
-        CfirTypeSubstitutorByMap(boundFingerprints)
+        createTypeSubstitutorByTypeConstructor(boundFingerprints, typeContext, false)
     }
 
     /** 从已解析类型引用中生成语义 key；未解析类型返回 null。 */
@@ -101,11 +117,7 @@ internal class CfirExtendTypeSemanticNormalizer(
      * `I<T>` 与 `type Alias<T> = I<T>` 会在同一 extend 规则中得到不同语义键。
      */
     private fun canonicalize(type: ConeCangJieType): ConeCangJieType {
-        val expandedType = session?.let { currentSession ->
-            type.fullyExpandedTypeUsingAbbreviation(currentSession)
-        }
-            ?: type.semanticExpandedType(resolver)
-            ?: type
+        val expandedType = expandType(type)
         return substitutor.substituteOrSelf(expandedType)
     }
 }
@@ -141,7 +153,7 @@ private fun ConeCangJieType.semanticExpandedType(
         val substitutions = declaration.typeParameters.zip(aliasType.typeArguments).associate { (typeParameter, argument) ->
             typeParameter.symbol.toLookupTag() as TypeConstructorMarker to argument.type
         }
-        CfirTypeSubstitutorByMap(substitutions).substituteOrSelf(declaredExpandedType)
+        createTypeSubstitutorByTypeConstructor(substitutions, declaration.moduleData.session.typeContext, false).substituteOrSelf(declaredExpandedType)
     } else {
         declaredExpandedType
     }

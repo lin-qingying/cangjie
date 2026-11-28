@@ -76,6 +76,7 @@ class CjClassElementType(debugName: String) :
             classId,
             StringRef.fromString(psi.name),
             wrapStrings(superNames),
+            psi.cjmpNominalSyntaxFacts,
         )
     }
 
@@ -96,6 +97,7 @@ class CjClassElementType(debugName: String) :
         for (name in superNames) {
             dataStream.writeName(name)
         }
+        writeCjmpNominalSyntaxFacts(dataStream, stub.cjmpNominalSyntaxFacts)
     }
 
     /**
@@ -121,6 +123,7 @@ class CjClassElementType(debugName: String) :
             classId,
             name,
             superNames,
+            readCjmpNominalSyntaxFacts(dataStream),
         )
     }
 

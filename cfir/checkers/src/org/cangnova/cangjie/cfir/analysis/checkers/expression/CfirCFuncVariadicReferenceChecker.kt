@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
@@ -18,7 +19,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
  * `CfirFunction.hasVariableLenArg` 与 `foreign/@C` status，并把同一规则委托给
  * 声明级 checker 的共享诊断协议。
  */
-object CfirCFuncVariadicReferenceChecker : CfirQualifiedAccessChecker() {
+object CfirCFuncVariadicReferenceChecker : CfirQualifiedAccessChecker(MppCheckerKind.Common) {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression) {
         if (expression is org.cangnova.cangjie.cfir.expressions.CfirFunctionCall) return

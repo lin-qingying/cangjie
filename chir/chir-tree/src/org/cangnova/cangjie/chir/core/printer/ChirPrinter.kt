@@ -10,9 +10,12 @@ import org.cangnova.cangjie.chir.core.declaration.ChirDeclaration
 import org.cangnova.cangjie.chir.core.declaration.ChirFunctionDeclaration
 import org.cangnova.cangjie.chir.core.expression.ChirBinaryExpression
 import org.cangnova.cangjie.chir.core.expression.ChirCallExpression
+import org.cangnova.cangjie.chir.core.expression.ChirConstantExpression
 import org.cangnova.cangjie.chir.core.expression.ChirExpression
+import org.cangnova.cangjie.chir.core.expression.ChirFieldExpression
 import org.cangnova.cangjie.chir.core.expression.ChirMemoryExpression
 import org.cangnova.cangjie.chir.core.expression.ChirOtherExpression
+import org.cangnova.cangjie.chir.core.expression.ChirTupleExpression
 import org.cangnova.cangjie.chir.core.expression.ChirUnaryExpression
 import org.cangnova.cangjie.chir.core.model.ChirPackage
 import org.cangnova.cangjie.chir.core.value.ChirBlockGroupValue
@@ -88,7 +91,7 @@ object ChirPrinter {
                 block.expressions.forEachIndexed { exprIndex, expression ->
                     appendLine("${prefix}    expr[$exprIndex] ${printExpression(expression)}")
                 }
-                appendLine("${prefix}    term ${printTerminator(block.terminator)}")
+                appendLine("${prefix}    term ${block.terminator?.let(::printTerminator) ?: "<unterminated>"}")
             }
     }
 
@@ -99,9 +102,12 @@ object ChirPrinter {
         return when (expression) {
             is ChirUnaryExpression -> "unary id=${expression.semanticId} op=${expression.operator} operand=${printValue(expression.operand)} type=${expression.resultType.renderName}"
             is ChirBinaryExpression -> "binary id=${expression.semanticId} op=${expression.operator} left=${printValue(expression.left)} right=${printValue(expression.right)} type=${expression.resultType.renderName}"
-            is ChirMemoryExpression -> "memory id=${expression.semanticId} op=${expression.operation} address=${printValue(expression.address)} value=${expression.value?.let(::printValue) ?: "_"} type=${expression.resultType?.renderName ?: "_"}"
-            is ChirCallExpression -> "call id=${expression.semanticId} callee=${printValue(expression.callee)} args=[${expression.arguments.joinToString { printValue(it) }}] type=${expression.resultType.renderName}"
-            is ChirOtherExpression -> "other id=${expression.semanticId} op=${expression.operation} operands=[${expression.operands.joinToString { printValue(it) }}] type=${expression.resultType?.renderName ?: "_"}"
+            is ChirMemoryExpression -> "memory id=${expression.semanticId} op=${expression.operation} address=${printValue(expression.address)} value=${expression.value?.let(::printValue) ?: "_"} members=${expression.memberNames} type=${expression.resultType?.renderName ?: "_"}"
+            is ChirCallExpression -> "call id=${expression.semanticId} callee=${printValue(expression.callee)} dispatchReceiver=${expression.dispatchReceiver?.let(::printValue) ?: "_"} args=[${expression.arguments.joinToString { printValue(it) }}] super=${expression.isSuperCall} typeArgs=[${expression.instantiatedTypeArguments.joinToString { it.renderName }}] thisType=${expression.thisType?.renderName ?: "_"} type=${expression.resultType.renderName}"
+            is ChirTupleExpression -> "tuple id=${expression.semanticId} elements=[${expression.elements.joinToString { printValue(it) }}] type=${expression.resultType.renderName}"
+            is ChirFieldExpression -> "field id=${expression.semanticId} base=${printValue(expression.base)} path=${expression.path} type=${expression.resultType.renderName}"
+            is ChirConstantExpression -> "constant id=${expression.semanticId} value=${printValue(expression.value)} result=${printValue(expression.resultLocalValue)} type=${expression.resultType.renderName}"
+            is ChirOtherExpression -> "other id=${expression.semanticId} op=${expression.operation} operands=[${expression.operands.joinToString { printValue(it) }}] type=${expression.resultType?.renderName ?: "_"} debug=${expression.debugMetadata}"
             else -> "unknown id=${expression.semanticId}"
         }
     }

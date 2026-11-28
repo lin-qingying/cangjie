@@ -291,7 +291,7 @@ object CangJieSemanticTokenCollector {
         tokenType in stringTokens || tokenType in stringEscapeTokens -> CangJieSemanticTokenType.STRING
         tokenType == CjTokens.INTEGER_LITERAL || tokenType == CjTokens.FLOAT_LITERAL -> CangJieSemanticTokenType.NUMBER
         tokenType in operatorTokens -> CangJieSemanticTokenType.OPERATOR
-        tokenType == TokenType.BAD_CHARACTER -> CangJieSemanticTokenType.OPERATOR
+        tokenType == TokenType.BAD_CHARACTER || tokenType == CjTokens.UNKNOWN_TOKEN_START -> CangJieSemanticTokenType.OPERATOR
         else -> null
     }
 

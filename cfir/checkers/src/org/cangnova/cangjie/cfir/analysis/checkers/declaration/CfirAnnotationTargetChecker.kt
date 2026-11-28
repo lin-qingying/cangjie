@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
@@ -13,7 +14,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 import org.cangnova.cangjie.cfir.expressions.annotationVersionSupport
 import org.cangnova.cangjie.cfir.expressions.builtInDescriptor
 import org.cangnova.cangjie.cfir.expressions.platformAnnotationDescriptor
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
@@ -25,7 +26,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
  * 与当前声明的十类目标逐项匹配。CFIR 在同一个 declaration checker seam 完成同一
  * 检查，避免把目标判断分散到不同声明 checker，也不从 annotation 短名回猜注解类型。
  */
-object CfirAnnotationTargetChecker : CfirBasicDeclarationChecker() {
+object CfirAnnotationTargetChecker : CfirBasicDeclarationChecker(MppCheckerKind.Common) {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirDeclaration) {
         val target = declaration.annotationTargetFor() ?: return

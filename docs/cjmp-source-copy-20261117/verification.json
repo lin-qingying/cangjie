@@ -1,0 +1,2891 @@
+{
+  "scope": "S2 R1–R4 candidate repair; S1/R5/R6 and full S2 remain OPEN",
+  "referenceCommits": {
+    "kotlin": "3c7a5041f238102285764d370665f56f587f9dc4",
+    "cangjie": "14276740ffec1262b81b6b5236b1d840af270b37"
+  },
+  "initialCoreHashes": [
+    {
+      "path": "cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/printer/OwnedGraphCopyPrinter.kt",
+      "sha256": "4C0E1AB3A280D666A436EA9F1ACC46F69A7CCF440F680CBFE3E896AFC9ADFF47"
+    },
+    {
+      "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/copy/CfirOwnedGraphCopy.kt",
+      "sha256": "ABA46465248430B4FA51362CEC1F31381A7840683F176B1A9C1F9E56413567E7"
+    },
+    {
+      "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/copy/CfirOwnedGraphCopyVisitor.kt",
+      "sha256": "3E435A9AE3210BF1FD18E2166BC89315FFE970C2EFC0DBDED6D959059F10EAB6"
+    },
+    {
+      "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/copy/CfirDeepCopySymbolRemapper.kt",
+      "sha256": "A86D49EAE2AAB1C97C4A3F11764E437B17644F7F184E2E4BB629822DEC722513"
+    },
+    {
+      "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/copy/CfirDeepCopyOwnedGraphVisitor.kt",
+      "sha256": "EC08F00AD7F58EF70A2807E7BADA9B04DA17A70F525F8B32ED0848A50B156690"
+    },
+    {
+      "path": "cfir/cfir-tree/test/org/cangnova/cangjie/cfir/copy/CfirOwnedGraphCopyTest.kt",
+      "sha256": "16581F4547602FAE0F94693E57D8659C4AEBBDF4822A0F96EBCD2D2AFC0A2EF4"
+    }
+  ],
+  "queues": [
+    {
+      "id": "5d7e859d",
+      "args": [
+        "--gradle-user-home",
+        ".gradle/cjmp-export-home",
+        ":cfir:providers:test",
+        "--rerun",
+        "--tests",
+        "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+        "--tests",
+        "org.cangnova.cangjie.cfir.resolve.providers.CfirExportSourcePayloadTest",
+        ":cfir:analysis-tests:test",
+        "--rerun",
+        "--tests",
+        "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExport*Test",
+        "--tests",
+        "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjo*Test.publicInterfaceDefaultBodyPromotesReferencedPrivateFunction",
+        "--tests",
+        "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjo*Test.referencedPrivateDefaultHelperIsCollectedOutsideClassBody",
+        "--no-build-cache",
+        "--console=plain",
+        "--max-workers=1",
+        "--continue"
+      ],
+      "pid": 17800,
+      "owner": "pid@17800",
+      "submitAt": 1794853894357,
+      "startedAt": 1794853894391,
+      "finishedAt": 1794853978488,
+      "exitCode": 1,
+      "status": "DONE"
+    },
+    {
+      "id": "a31edfc3",
+      "args": [
+        "--gradle-user-home",
+        ".gradle/cjmp-export-home",
+        ":cfir:cfir-tree:test",
+        "--rerun",
+        "--tests",
+        "org.cangnova.cangjie.cfir.copy.CfirOwnedGraphCopyTest",
+        "--no-build-cache",
+        "--console=plain",
+        "--max-workers=1"
+      ],
+      "pid": 3372,
+      "owner": "pid@3372",
+      "submitAt": 1794853748689,
+      "startedAt": 1794853748855,
+      "finishedAt": 1794853767984,
+      "exitCode": 0,
+      "status": "DONE"
+    },
+    {
+      "id": "a443b857",
+      "args": [
+        "--gradle-user-home",
+        ".gradle/cjmp-export-home",
+        ":cfir:cfir-tree:generateTree",
+        ":cfir:cfir-tree:test",
+        "--rerun",
+        "--tests",
+        "org.cangnova.cangjie.cfir.copy.CfirOwnedGraphCopyTest",
+        "--no-build-cache",
+        "--console=plain",
+        "--max-workers=1"
+      ],
+      "pid": 27524,
+      "owner": "pid@27524",
+      "submitAt": 1794853171749,
+      "startedAt": 1794853171812,
+      "finishedAt": 1794853649015,
+      "exitCode": 1,
+      "status": "DONE"
+    },
+    {
+      "id": "ee95fa05",
+      "args": [
+        "--gradle-user-home",
+        ".gradle/cjmp-export-home",
+        ":cfir:cfir-tree:generateTree",
+        ":cfir:cfir-tree:test",
+        "--rerun",
+        "--tests",
+        "org.cangnova.cangjie.cfir.copy.CfirOwnedGraphCopyTest",
+        "--no-build-cache",
+        "--console=plain",
+        "--max-workers=1"
+      ],
+      "pid": 7184,
+      "owner": "pid@7184",
+      "submitAt": 1794853040240,
+      "startedAt": 1794853040292,
+      "finishedAt": 1794853111351,
+      "exitCode": 1,
+      "status": "DONE"
+    },
+    {
+      "id": "1ff21a38",
+      "args": [
+        "--gradle-user-home",
+        ".gradle/cjmp-export-home",
+        ":cfir:cfir-tree:test",
+        "--rerun",
+        "--tests",
+        "org.cangnova.cangjie.cfir.copy.CfirOwnedGraphCopyTest",
+        "--no-build-cache",
+        "--console=plain",
+        "--max-workers=1"
+      ],
+      "pid": 36172,
+      "owner": "pid@36172",
+      "submitAt": 1794852818330,
+      "startedAt": 1794852818404,
+      "finishedAt": 1794852882246,
+      "exitCode": 1,
+      "status": "DONE"
+    },
+    {
+      "id": "8594a660",
+      "args": [
+        "--gradle-user-home",
+        ".gradle/cjmp-export-home",
+        ":cfir:cfir-tree:generateTree",
+        "--no-build-cache",
+        "--console=plain",
+        "--max-workers=1"
+      ],
+      "pid": 36724,
+      "owner": "pid@36724",
+      "submitAt": 1794852644327,
+      "startedAt": 1794852644397,
+      "finishedAt": 1794852686310,
+      "exitCode": 0,
+      "status": "DONE"
+    }
+  ],
+  "sourceWindowBefore": {
+    "sampleUtc": "2026-11-16T18:31:33.3982378Z",
+    "fileCount": 6815,
+    "aggregateSha256": "94E23CBB30DB2949BEE127F1FDD2D7568E7AD2772ECDB65D5040C46BD5CF409D",
+    "roots": [
+      "common",
+      "cfir",
+      "analysis/low-level-api-cfir",
+      "analysis/analysis-api-cfir",
+      "compiler/frontend",
+      "compiler/config",
+      "compiler/phaser",
+      "compiler/arguments",
+      "psi",
+      "resolution.common",
+      "macro"
+    ],
+    "include": [
+      "*.kt",
+      "*.cj",
+      "*.kts"
+    ],
+    "exclude": "**/build/**"
+  },
+  "sourceWindowAfter": {
+    "sampleUtc": "2026-11-16T18:34:29.5856114Z",
+    "fileCount": 6815,
+    "aggregateSha256": "94E23CBB30DB2949BEE127F1FDD2D7568E7AD2772ECDB65D5040C46BD5CF409D"
+  },
+  "copySampleAfterFirstPass": {
+    "sampleUtc": "2026-11-16T18:30:22.2946689Z",
+    "files": [
+      {
+        "path": "cfir/cfir-tree/test/org/cangnova/cangjie/cfir/source/CfirSourceReplacementContractTest.kt",
+        "sha256": "62E573A5C0B7C1772F4FF5975598601384A10F0FF8F6EF576B3307C2405573C1"
+      },
+      {
+        "path": "cfir/cfir-tree/test/org/cangnova/cangjie/cfir/source/CfirSourceGraphContractTest.kt",
+        "sha256": "68D9DDDA2C57A76035C7010777F25B2E6E6FFDBD37015871F1C4CFC3ED9DFB7D"
+      },
+      {
+        "path": "cfir/cfir-tree/test/org/cangnova/cangjie/cfir/ScopeSessionOwnershipTest.kt",
+        "sha256": "273E4EA77B920A8DFD6B32B3220AA83BD50F820B7D17731DF7CC3EF0F84D6961"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/visitors/CfirVoidVisitor.kt",
+        "sha256": "0C16A83D96A8BF7D05EAED6D751774FA8DFD97A560977698E8CA55C04C514585"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/visitors/CfirTransformerUtil.kt",
+        "sha256": "CE0639C039C323AC4013D51BE5FC50C5A21B7F1063DCBB77CF2C7D3BEEFF6A3C"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/visitors/CfirSourceVisitor.kt",
+        "sha256": "DACE7E7A0D7EDD2DB2E2A6DEB4BAC0E4C05E0B2975329F9FA872927F6595AE80"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/visitors/CfirDefaultTransformer.kt",
+        "sha256": "BCF9623FDA2A0C81172421F5836271A0164E2CAE8512929733B8CB8F52206BDA"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/utils.kt",
+        "sha256": "FEFE8075FF5C79081B47DC06B332E8167715EE4EAF26C7C5BE44FEBB49AAF3EC"
+      },
+      {
+        "path": "cfir/cfir-tree/test/org/cangnova/cangjie/cfir/renderer/CfirRendererAnnotationRenderingTest.kt",
+        "sha256": "7F92F774F2E01496C1A2412FD338162E95C521DFE66F5D67534CF5D0C5622273"
+      },
+      {
+        "path": "cfir/cfir-tree/test/org/cangnova/cangjie/cfir/expressions/CfirCjmpLiteralConstantTest.kt",
+        "sha256": "A96342138E773C1781EE8BEF4E8F04D3A9BC168F53A892C4B606105A7B951369"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/types/impl/ResolvedImplicitTypeRef.kt",
+        "sha256": "07385BB5F7D736F1600263F3A5C8D2C47D682191E543F96E093D84F997AF11C8"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/types/impl/CfirErrorTypeRefImpl.kt",
+        "sha256": "4F5EED06C457A54A3D596DED8E0CD9DE820EDB45251091ABD0C0842B8F3B8C81"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/types/CfirTypeUtils.kt",
+        "sha256": "B8F4C6784023637685A311A96B4BF9DC04888666D6BED26EC5C8D92EAA4EDB64"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/types/builder/CfirErrorTypeRefBuilder.kt",
+        "sha256": "A0FF86ABB1DF4475FD62AA999CD808E11366F11ADECB44862F84E694A8EF0F00"
+      },
+      {
+        "path": "cfir/cfir-tree/test/org/cangnova/cangjie/cfir/declarations/CfirMemberParameterFieldInfoTest.kt",
+        "sha256": "F9762FEB5A9EF8562505D5AEA4307FF579EE5D78EB2EB6FCFAD4C781CE1C6BDA"
+      },
+      {
+        "path": "cfir/cfir-tree/test/org/cangnova/cangjie/cfir/declarations/CfirDeclarationToStringTest.kt",
+        "sha256": "EAD9C6929428715C0970FFE87A72585A173A2CDDAF23EC84C33D6F5DE0B3AD6D"
+      },
+      {
+        "path": "cfir/cfir-tree/test/org/cangnova/cangjie/cfir/copy/CfirOwnedGraphCopyTest.kt",
+        "sha256": "2670EA95F463458730C84FA9E056A1C13EE3885528C47929961C823D454B606E"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/symbols/Utils.kt",
+        "sha256": "ACDBD32771D9A647F5F089266AAFD1E3F76C91DA847C0777432FEC9FCD21B53C"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/symbols/TypeConstructionUtils.kt",
+        "sha256": "A34CA8DFFDE4D07A390EFA327058B33FC9D71BF2BDEFB972EC14D4A48A9A0386"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/symbols/FirFunctionSymbol.kt",
+        "sha256": "75D417AD32488BD1684A7DDE514CCBF4547EEEDDB9CDFB205EBAD2325827153A"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/symbols/errorSymbol.kt",
+        "sha256": "674D6AFD6032801293A02C853F5B1DD850ACC3589438F4FD62E884474F14CBDE"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/symbols/ConeTypeParameterType.kt",
+        "sha256": "372C22FB8BC44335735B3D14FE8574274E9711673C1F9DC32C56D90DABE3C656"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/symbols/ConeTypeParameterLookupTag.kt",
+        "sha256": "419A9D6712AB8771DF5560EFB4852081D847C4F6162FEB644D0F678A6A4A2087"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/symbols/ConeClassLikeLookupTagWithFixedSymbol.kt",
+        "sha256": "01E417F0AB333A15ACE09FB50CE943D0E65961072B063FC7543D61EEA23B4FE8"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/symbols/ConeClassLikeLookupTagImpl.kt",
+        "sha256": "1E3EB7E9D06936EE05996D16CDF6B7EDD0164ECFC80FECCB604A0621801D5EBC"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/symbols/ConeClassifierLookupTagImpl.kt",
+        "sha256": "A42E0D1F95F8792699A220E635685670EECB90407E93CED811595B9D2D34CFEA"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/symbols/CfirThisOwnerSymbol.kt",
+        "sha256": "FF34D6FBA60C47BD7345323F630E2D97478ED9AF935EF0133C2F1FA764645A75"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/symbols/CfirPrimitiveTypeSymbol.kt",
+        "sha256": "48AE8A6B8F2383E57D9338B6417E8F812A0F36A2857584545EC1194D14C33E97"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/symbols/CfirLazyDeclarationResolver.kt",
+        "sha256": "131DFFD9C7AC0B42DD0D7894C8AE896D516818F097F189512E553F5CE815BF1D"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/symbols/CfirBuiltInTypeSymbol.kt",
+        "sha256": "B2E670DDADC4880878C3E857E2611DD9DFDDC608E2AFBF23D933FBB129306CE4"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/symbols/CfirBasedSymbol.kt",
+        "sha256": "0D58CE89C5A597FC927941F0A1F55DD5D08FEC1ABAFB638FC91173AED976B943"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/SessionHolder.kt",
+        "sha256": "E71F213952FECC24CED87E470803B38EE78A35663D35FDD9F2F635D527BB335D"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/session/CfirLanguageSettingsComponent.kt",
+        "sha256": "E15A290397BE90DB5424403D32ACF752BAFF556A9927314DFBBA2E4214E6AE01"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/session/CfirCjmpSpecificCompilation.kt",
+        "sha256": "62CB2C4FB4F89399C772967DD164B33F1E1750A86997A814B211F567ABB45CEA"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/session/CfirCjmpFamilyAggregate.kt",
+        "sha256": "42695E3A129E35071A43F90C697A4D2462932C8310596951AE0C9A03F9770924"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/session/CfirCjmpDeclarationSemantics.kt",
+        "sha256": "5F40A7944C4A46F3CC322AAEDF170CDD426981751806CFD114736063EA739F55"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/session/CfirCjmpCommonSideFacts.kt",
+        "sha256": "AEF944F9A035AE8A5CC651682681E535AF4B08CDB793952CF13741D67CEDDDAE"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/session/CfirBuiltinTypes.kt",
+        "sha256": "1F7976783B6DC3AD78CB80A4692CEFB00482BC4C9050BBCAB0037B689179DF7C"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/session/CfirAbiPolicy.kt",
+        "sha256": "56375566752214F5F0DAB0BCE0B33139C48614F460618CEF2DCE778E3D71AE11"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/ScopeSession.kt",
+        "sha256": "57E8B7341AD6D6AC47452646967F646A895E138D3CFE96554685448635653A6E"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/visitors/CfirVisitorVoid.kt",
+        "sha256": "13C94737C20434C0991A8DF3E0825E381AA4597B6A7B99FB5C37B9A2B401B094"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/visitors/CfirVisitor.kt",
+        "sha256": "002C485AE27017DE30DE1D9375DC3BF139510525766EC931C70E2785F645AF04"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/visitors/CfirTransformer.kt",
+        "sha256": "8FBC80B0F40FC3CB360E157315D8A0D5B93BE392893023518DD9B911666BB9C4"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/visitors/CfirDefaultVisitorVoid.kt",
+        "sha256": "07365E4FF68D5CEEAA32BFCA4FE24BBD384703606112A54CFA47C147097AF721"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/visitors/CfirDefaultVisitor.kt",
+        "sha256": "E3146851C5046AC461CF3C81809B8F7D77F3C5742209DF7999C699F214249586"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/copy/CfirDeepCopyOwnedGraphVisitor.kt",
+        "sha256": "6386F2A6AF6852BC1D0CB912EA6BB1B40181A740753861C36C7B10654CC2A199"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/CfirTargetElement.kt",
+        "sha256": "8BC201E65CCF6D277CA3F265CD623E6AA6AB402236B09A56639EE740EF71E47C"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/CfirQualifierPart.kt",
+        "sha256": "D7FF21557C1DC553F2542E46D00DB4C33A1AE5729A2CB8C86AB1BAC109D8909B"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/CfirFeaturesDirective.kt",
+        "sha256": "278A97B1C35E64580B8AA9A34E5A923804534B161F7BEB05C629FF1E5F3D61D8"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/CfirElementWithResolveState.kt",
+        "sha256": "A3EA1E23A8F3E29E2A733A336F1911078C7F1773470D6156CF80C595967B2CD2"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/CfirElement.kt",
+        "sha256": "A74B059B55BE51F324D3C5FC8B8199AD6E501E937CA364F454BBFF2BD07832A7"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/CfirAnnotationContainer.kt",
+        "sha256": "AE92415F42D81006C89A57A6CE9B3DE308D455C8FE82AD730646CBE179F24C19"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/scopes/CfirTypeScope.kt",
+        "sha256": "84B0473CC0F9CF495E23B9D6C54A4B165AA61CA902253B03F1026BF70C203307"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/scopes/CfirScopeProvider.kt",
+        "sha256": "3AE3861EE505B574640D960279C62D242A74806B76248947CAA91A956A0775B6"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/scopes/CfirScopeKinds.kt",
+        "sha256": "756EABDB31AE1047604F0B0AC111A48469890869A4F5B209D5677CEBD2286B8D"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/scopes/CfirScope.kt",
+        "sha256": "1D2209711CD4972CA8F456C54375119FC4255C79E9B56B579E8DA9D3B4296A27"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/scopes/CfirDeclarationPreCheckCandidateProvider.kt",
+        "sha256": "531719896E54117B514C785693314ECCDCD6EACA8C4B0821151EA7651706FD97"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/scopes/CfirContainingNamesAwareScope.kt",
+        "sha256": "73362B227759A96BF121258C9823BE2F80FC6DD2E7D46D92AA873360074BE46C"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/renderer/CfirTypeRefDebugRenderer.kt",
+        "sha256": "120CA9C454A1B30F8FCDB8BF427681041934DD7046043916BC379D0A08AD3FC4"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/renderer/CfirResolvePhaseRenderer.kt",
+        "sha256": "BF206838F5610A712A38F9AD053445505333DC3F1CA33B1FE0953C14DF3CE1F2"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/renderer/CfirRenderer.kt",
+        "sha256": "FB42D72CBC13DCDE6133ACB3A10989A3D9035A2D493E683826BA43E64FE095B7"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/renderer/CfirPatternRenderer.kt",
+        "sha256": "7323C51EBDF4030CB4978C47A1FA4DC86B2E7D170F94D5E23CD2647DF959843A"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/renderer/CfirModifierRenderer.kt",
+        "sha256": "7408F6C5E9290F443FB7A77BC20685C2646EB7C90551986A51AE408D7DBF5F8C"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/renderer/CfirInlineExpressionRenderer.kt",
+        "sha256": "453CAC6173FC959B7229F8E4DD3BEFAC04DEEDA49D6DC1AADEEFDBD14B14593B"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/renderer/CfirDeclarationRendererWithAttributes.kt",
+        "sha256": "09EBA6C292F6F437E97768B04A87800FA28ECADCA5485D5A16FBCDCDA2BC86F4"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/renderer/CfirDeclarationRenderer.kt",
+        "sha256": "0A7138CE6D2290C1540B48647A7C684135DA84527AE1ADAB3BFC0FC245E47739"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/renderer/CfirCallArgumentsRenderer.kt",
+        "sha256": "2A8B7AAC6886E7D5F53DCD33A66D6627891EEDFEF2F5817249B619B2BB65694D"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/renderer/CfirCallableSignatureRenderer.kt",
+        "sha256": "2D2738934E5254C414904BE9A93C82BEA8FF4B9CEDCD58624A376B92797B173C"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/renderer/CfirAnnotationRenderer.kt",
+        "sha256": "7C3E088111DDED4217D1E54354E501715176E7B27E2DDB5E9128A828C8E1D8D9"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/references/impl/CfirResolvedAppliedCallableReference.kt",
+        "sha256": "54B776883EC83A8854B5EAC2162C6C8E3D2F7C56E4DBA6095E7C7D5DD49E9C87"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/references/CfirThisReferenceUtils.kt",
+        "sha256": "315338C2950E9394C948FEC9B6A85A7B9B7C5129B7456A578F433394034D0A41"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/builder/CfirQualifierPartBuilder.kt",
+        "sha256": "B7358FBE3E912629742F10AB634FD748F5F95C42DFCCE40732B06E40E27BE79E"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/builder/CfirFeaturesDirectiveBuilder.kt",
+        "sha256": "70118B5DB8C6D37504D457D5D9B991B2F5A59A8BE02BBFC892D1B119BB83029F"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/builder/CfirAnnotationContainerBuilder.kt",
+        "sha256": "8107CEFE8E9168A0A5CD7D6484F3C7562F7C42959B32313A4E0107B42F81A191"
+      },
+      {
+        "path": "cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/importables.kt",
+        "sha256": "FD76E4CEC9D79D47914C48048EA1330ED20D452452190B2D8E1A60A742779DCE"
+      },
+      {
+        "path": "cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/ImplementationConfigurator.kt",
+        "sha256": "3A6C707807D3E3C1AC8227E697414E408F35F96568B7B8C6DA054E7E0C39D8AB"
+      },
+      {
+        "path": "cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/util/util.kt",
+        "sha256": "709323D6ECE9FDF33353AED250AF1041EAD0F1CDE820FBC315DFBEE98504FE81"
+      },
+      {
+        "path": "cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/util/Types.kt",
+        "sha256": "9301B8E1A8F9E5B3C32313DCF47950364CA01543E3B808A196C3BEE6B49DE248"
+      },
+      {
+        "path": "cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/util/HierachyGraphGenerator.kt",
+        "sha256": "EF02F732820021959F19D1D9B3316558FB6D43B07D210518E7CBC3E04291C653"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/patterns/CfirTypePatternMatchingKind.kt",
+        "sha256": "DC916166DD19C0480E1BF9DA6D3098A32B82C9068EF1573958297CAF5905B7CA"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/patterns/CfirPatternMutableState.kt",
+        "sha256": "0AA76C0170A60BA4D0CDCCF758440FE2E768CA33B93BA8A411963337C13B7F7A"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/patterns/CfirPatternBindingUtils.kt",
+        "sha256": "3DEA25C447810EEB9A743CAA09BF719C1132E932EF4DE055B781FCA33A4E93CA"
+      },
+      {
+        "path": "cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/Types.kt",
+        "sha256": "75A0D2870F9960255E5DBC5876EC66F1EF2035CF2815122C80D1BD202A25C1A3"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/NoMutableState.kt",
+        "sha256": "6A9787EF722FF8F587A90C4D223C05DA2AA1B7CB1039C8F858E84C0D85624DB9"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/MutableOrEmptyList.kt",
+        "sha256": "15D02CC8137117F31D0CB9C8583B33028F5B007B9FBB5C6E40DE696B83B32BEA"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/IncrementalTrackingComponents.kt",
+        "sha256": "0ECB1013B81EE12087E9B11270DB4501E4EC9DB0904C8DCAF92C97E43CC32D4D"
+      },
+      {
+        "path": "cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/CfirTree.kt",
+        "sha256": "4A8FFF3512535C0BDC07EBCCD805AF1359814FB1248850E38DD900F62CBC3BC9"
+      },
+      {
+        "path": "cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/BuilderConfigurator.kt",
+        "sha256": "6AF93CF8B2080A35696C1B0766333256433A516D3B462ED6F4052DB0F4001C9B"
+      },
+      {
+        "path": "cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/Constants.kt",
+        "sha256": "4B0D4BEE1381CFA43BBB86297C7C361B48F8503F54A6C3E5232A34DD2A649434"
+      },
+      {
+        "path": "cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/Model.kt",
+        "sha256": "58B6240B32819D82C2CA4B5900DB7EC7391FC58A4BC7404C62EB32F7CDE616C6"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/types/CfirErrorTypeRef.kt",
+        "sha256": "189D352C9FA2EF434BE4F906E1303FB27E555AA2287A8B6652D674C446144ED4"
+      },
+      {
+        "path": "cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/Main.kt",
+        "sha256": "6E14C56A6F22B11606D8DC569F27CA43B85A246EF2E0B2AC11E493E2BAF17395"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/types/CfirImplicitTypeRef.kt",
+        "sha256": "8A0CC2F46847D3977A4884CE97990294AA7709A9BD317E4B8DFA122C0986C9BF"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/types/CfirFunctionTypeRef.kt",
+        "sha256": "0C69C3894067C07F87D1B4FC5F283BF9036A0177940653656A0AC670FD784019"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/types/CfirTupleTypeRef.kt",
+        "sha256": "08284696022424179D320640FB97AF1D02ABBEC5CABDB6346595FFBB4ABFFB97"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/types/CfirUserTypeRef.kt",
+        "sha256": "71B0FCF493277F47639DCCBEC9709EF445AC2E2F23485C14FCE7BC3A2C0A8DCA"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/types/CfirUnresolvedTypeRef.kt",
+        "sha256": "91F69CB55954434AB4EC7E954A0E1F2B62D917587F2758A52A0BCF71561981CC"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/types/CfirTypeRef.kt",
+        "sha256": "AAA4998D682D7A7A82F80F04B022ED633F6C6F1D65B7390F522417AE108E8E49"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/CfirMemberParameterFieldInfo.kt",
+        "sha256": "C9878E2848CB790A20A5775163EB0F778BE6B5DF11F97221E8A8770AFDC98E82"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/CfirDeclarationDataKey.kt",
+        "sha256": "ADBD757C77EF53BE78C15104905A5CA69F2D5E86CA4C966C6FFB82C2A8F0F042"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/CfirArgumentUtil.kt",
+        "sha256": "C7AEF487CB326FE325D21B729E1D4821D3BF4EF20D1858570B2A3B53EF1FAE0A"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/CfirAbstractTarget.kt",
+        "sha256": "F553A1C4E3B3B553F584448D6C2C06331C3DA29BFA1E5324EA73A3611A157CD8"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/CfirLoopTarget.kt",
+        "sha256": "53EED4CD5184F4EBE249F3D3CA4FE4FBA2A5A70E7B4436836D33E6B4496A5ADD"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/CfirImplementationDetail.kt",
+        "sha256": "B8077DED42FF28B1EE6ADFA53EBDA885BBE847FF04356118B4F8BB7FFB14A792"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/CfirFunctionTarget.kt",
+        "sha256": "02133D4047E9B3BD01DCC9871761D98D75C305ABC30F0DE752FBB86B023A7D7F"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/cfirExceptionUtils.kt",
+        "sha256": "D1D2635F91587387DB21F1095F0A1186EE313DCE3B623DDD018D9C8903A29192"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/CfirEvaluatorResult.kt",
+        "sha256": "CBD6AA176BFDDE5580D33D6FAFB6CD2857BD706C1B43D21E7CCF51EBDE431894"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/types/CfirVArrayTypeRef.kt",
+        "sha256": "F4A5B041B58376DAB15AA81EBD5793DB31C7703E7FA31BF70DF3B910FE1B2B51"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/types/CfirBasicTypeRef.kt",
+        "sha256": "5CA698827EE3150FAC11531F6B49A21DCBB239416896C00DE1C537303F970BF6"
+      },
+      {
+        "path": "cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/context/AbstractCfirTreeImplementationConfigurator.kt",
+        "sha256": "1CBF1DD2E8458B4571FBB75DE9ED53888A72BDC2BD86D41737D0E5F4F5EFD612"
+      },
+      {
+        "path": "cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/context/AbstractCfirTreeBuilder.kt",
+        "sha256": "60E59A56EE728DC43EF219F83DAA8FEB8B8B40CE26E7541978B80347396A3B3D"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/types/CfirOptionTypeRef.kt",
+        "sha256": "DCA2ED6D5D31209742866FCCB399FABEDBBA84612CE8974C1267CDEDA17F6D90"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/CfirTarget.kt",
+        "sha256": "3C0EF6FA73525EF606CC0CCC95C2ADFB3AF87EF5BFBC1D90DF31F5AD034B43B3"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/DfaType.kt",
+        "sha256": "2582B054E8457BF601FF7C7DE966EE5514CD1E598C1A979EB6A2408ADC14600E"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/CfirPureAbstractElement.kt",
+        "sha256": "C0C6F4654E0CA12FB5CB513C75E8EFB0B68399A58CA405E3C27C0FCB0D0DA955"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/CfirNameConflictsTracker.kt",
+        "sha256": "6FD794F5D929FD760D2DF143E127358E1516980B720FE5AF33F9EDC59FB7994A"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/ClassMembers.kt",
+        "sha256": "F05E1BD7C69B9F1D05F62A0675954F9DC6C4378BFDD444AD174CB43F83A15B9C"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/types/CfirResolvedTypeRef.kt",
+        "sha256": "09954E278B23A9E9354B71E7F8B2FC42A891564A3B9B1476EC69B3BB4771C242"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/extensions/CfirPredicateBasedProvider.kt",
+        "sha256": "6EC32911E7C7E6A3AA617F9739322D861DB4530592CF60FF91795986BE8DE22D"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/extensions/CfirExtensionRegistrar.kt",
+        "sha256": "C31378B50E44DB549EEECCDB1403DCFF87348F269493B9957306FA6E8AF9F4A5"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/extensions/CfirRegisteredPluginAnnotations.kt",
+        "sha256": "5DA46EF8B3368A1F00DBCC49450B03244E842AE5490346F6BBBEF3062FB55C7F"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/extensions/predicate/PredicateVisitor.kt",
+        "sha256": "573371D2346F1C26A8F1B78902552FBEAF1E4FA20CA530E90599B86381194AAF"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/extensions/predicate/LookupPredicate.kt",
+        "sha256": "607C7A70B85BF92AF25A84C2A07E56C518E8FF8F0B7004DDCC92219AA65F7C0F"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/extensions/predicate/DeclarationPredicate.kt",
+        "sha256": "80955013EFD5B577C9AAD9C866E1BDDAAF56DDC279A3D1E8F2AE3C25AFFE490D"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/extensions/predicate/AbstractPredicate.kt",
+        "sha256": "54D432D9161EE64CAF49A231B4DF9CDD1B1F4B23238C9F8C3DB8EF6E6DDB9C0A"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/caches/CfirCachesFactory.kt",
+        "sha256": "BD9B578B8A10BCB4DACE13AD23E9A9C15029BE54D895B1A0F992F2ECC43BFC04"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/caches/CfirCache.kt",
+        "sha256": "77E6A4AAA838C477CB0F31EB24DADB098953AD848EEC8C03CECD03761C14BB9A"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/types/impl/CfirVArrayTypeRefImpl.kt",
+        "sha256": "04259D471F86BE1E7ADA7F1D265F91F0E04F367640642CE326602B614CE15D6A"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/types/impl/CfirUserTypeRefImpl.kt",
+        "sha256": "3E3431C0ABD7192267CCC8A44F2DBA2DC08B201BBCD12228F24933ED5FA00343"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/types/impl/CfirTupleTypeRefImpl.kt",
+        "sha256": "640DF5F2B9197D11E007053F9AB414B8C0C50EB9C3D48F4C1B06F77EC3CC4A7B"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/types/impl/CfirResolvedTypeRefImpl.kt",
+        "sha256": "962B96358FCB91DBE9325B125391CEBF7093D13A120DE4C6D60BC9E10E8C291F"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/types/impl/CfirOptionTypeRefImpl.kt",
+        "sha256": "05DE70732048A83EB75C5C428D885E4F762839EE571504883837B48395DB6F79"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/types/impl/CfirImplicitTypeRefImpl.kt",
+        "sha256": "AE04FB9598DAC39FA087EE0CFBA3FC4DB336C3D9BEC2AA5DCB2333D6A29207D9"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/types/impl/CfirFunctionTypeRefImpl.kt",
+        "sha256": "4451C8656F0B97FFEA04C58DDE6D52E20171EBDB573340CD57E0DA7E0E9201DF"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/types/impl/CfirBasicTypeRefImpl.kt",
+        "sha256": "A8424F87C322962FF20096881D97CF1515F7A159794F0BB3152034EAC9F86811"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/copy/CfirOwnedGraphCopyVisitor.kt",
+        "sha256": "2144C88A968BE3A624397A2BD5C21AD0FDE8BAFA5F318EA5FE762183B783218E"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/copy/CfirOwnedGraphCopy.kt",
+        "sha256": "2A49FFB1E7561CBF1268D3C2CD8D1953E2769707F8B7F4881494B1E9E7EEA524"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/copy/CfirOwnedConstantGraphCopy.kt",
+        "sha256": "89F6184FB8BE007A176499695A46099344E5AA793CFEAFA29C72038FE4B79E68"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/copy/CfirDeepCopySymbolRemapper.kt",
+        "sha256": "A86D49EAE2AAB1C97C4A3F11764E437B17644F7F184E2E4BB629822DEC722513"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/diagnostics/DiagnosticKind.kt",
+        "sha256": "196B98CD578A61FD58E4BFD8827ECC1F226721732387BA2BB8128BB272297940"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/diagnostics/ConeSimpleDiagnostic.kt",
+        "sha256": "06506411FE5B924E7D522411B880E73521AFFFCB240C6F8CFE9F4749021030AC"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/diagnostics/CfirCjmpDiagnosticArgument.kt",
+        "sha256": "536C3C9F49C3126F92358FEDBB6EBF4A41735A55926B0EAFF538433396CFC759"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/expressions/CfirConstantValueExpression.kt",
+        "sha256": "C9090213A70A106258039A28A56B6C2E5968F34D37862333F8C06B781C1E092D"
+      },
+      {
+        "path": "cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/model/Implementation.kt",
+        "sha256": "D99FC7A6C26A863DC3964ED4C83F8686BDA67186ED8E91D5CC1EF7D97D506557"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/expressions/CfirConstantValue.kt",
+        "sha256": "FD52A3370DB9E230509845C697A1D9F4AA6B588E1620018FE058C2EB81C3F2C6"
+      },
+      {
+        "path": "cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/model/FieldSet.kt",
+        "sha256": "B10D5EBF11B2BB030B5A8A8350E354D3ECC27933BF113193FF488B7B1FA79884"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/expressions/CfirComparisonOpUtils.kt",
+        "sha256": "D1AC76D2BDA58C8BE4C3324837C9867EFBF0A7712B142DA3C4147D78A872569E"
+      },
+      {
+        "path": "cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/model/Field.kt",
+        "sha256": "69851BE697EE503335FF87238CC864751019D5D49DC5D3F890D18CCD9302C593"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/expressions/CfirCjmpLiteralConstant.kt",
+        "sha256": "A1AE851FB6524B2800CFA12D0C2CD580DC20493D61F677A6C4CB5267F026AA6A"
+      },
+      {
+        "path": "cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/model/Element.kt",
+        "sha256": "85D6F66A56B5798C9F585371B1C09461B564B19A363A6B6A60F5E277879761E8"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/expressions/CfirAssignmentTypeMismatchOutcome.kt",
+        "sha256": "791E9CBCA58208BFC6783FD4EC4D6B216F6648E32BCD030D4B1E2E3DD917293C"
+      },
+      {
+        "path": "cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/model/Builder.kt",
+        "sha256": "EB6D4BCB3A7F38F908B511A29D7BA693ED3C8C8E90C0664FBEA6F0D8993278B8"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/expressions/CfirArgumentListMutableState.kt",
+        "sha256": "305B7A026F750E054E34F9568F6C160A8EEAD96E5C1148038C5D4F1B33F2A2F6"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/expressions/CfirAnnotationResolveState.kt",
+        "sha256": "953F128D6735425202CC3192FC547B7141F5FB35E847FC1D0C24DCD7FFF2EBC8"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/expressions/CfirAnnotationArgumentView.kt",
+        "sha256": "45CCE0907526C1355DBC1476EF34BFD568930266F3FFA1C0A5E4D0606E428ACC"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/expressions/CfirAbstractArgumentList.kt",
+        "sha256": "3FA77697B6F94DC0BD690A0F1F7B8319E0CC4D0608B6AFA7A15557EEC1F01E93"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/expressions/CfirMatchExhaustivenessStatus.kt",
+        "sha256": "640E0F4D71E17A37BF21E7AA76AF390F0FEA570025F3C28F07FE8C366E2B4D84"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/expressions/CfirLiteralExpression.kt",
+        "sha256": "D8ED38CBDFB7568D3E549D7F4158D2AABF7F9F64FFBAF1207A9FE1BA4639722E"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/expressions/CfirFunctionCallOrigin.kt",
+        "sha256": "684D9C242187B46DA6803CA4E07AFA3E00B5C82ADB616A4342849A7C97A5F67E"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/expressions/cfirExceptionUtils.kt",
+        "sha256": "AA18D652864533614B2DBF5EEC0A681DA0549E89F40DC936408774EF79EAEBCC"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/expressions/CfirEmptyArgumentList.kt",
+        "sha256": "9129D21C4FA252C3FED60E76D75695D00A5A6041528842B371E86635FBE7AEEC"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/expressions/CfirOptionalChainUtils.kt",
+        "sha256": "C0778A1D936102FDE8BAF5464C03E780D12639AFF7D0451B1365868193BDC7D1"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/expressions/CfirOperatorExpressions.kt",
+        "sha256": "FD3803B262017FF1D2257AA7E18F46F27EFEAD73CFBBC36D7EE9BA815A4AE16B"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/expressions/CfirReceiverExpressions.kt",
+        "sha256": "CFF04916B8468A1F13C1373D6E499E537CA839B642B625CCEAEA2230A05EE6BF"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/expressions/CfirTypeOperator.kt",
+        "sha256": "C58DBC596878721DC06BE6924C48CBECE6F97D6E30527FC4BBBE909B0C5357CB"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/annotations.kt",
+        "sha256": "1BF4960CD1067B62901F31D9E8DD31C4E17E9D245921D098EEFC188655FEC746"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/diagnostics/CfirDiagnosticHolder.kt",
+        "sha256": "06A2AC5012C50775C7BB51C98C66AAD9CA6948EFAB207A5C127BB6F4B87D78E2"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/impl/CfirQualifierPartImpl.kt",
+        "sha256": "36693FFAC88C56044F9DF507998A2537CF7737343B598451E617DA6189E03212"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/impl/CfirFeaturesDirectiveImpl.kt",
+        "sha256": "2DA757B12AD37DC9663EB8368BF9663404462D3399E2E03914C6D4A169B8DFE0"
+      },
+      {
+        "path": "cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/printer/VisitorVoidPrinter.kt",
+        "sha256": "5EFED6CBEE1C703F04FD3AE08EE333162D5C3B03391FC6687DF3BABE9DC4B1BB"
+      },
+      {
+        "path": "cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/printer/VisitorPrinter.kt",
+        "sha256": "F10FF9263F9CE60C5BEFE377080756226B6F4D92DF1CE2D5DFC30A020EE6B714"
+      },
+      {
+        "path": "cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/printer/utils.kt",
+        "sha256": "07A40DBF35D2727F1070CACA62C4F14F524A0EA045E47FC4DFFC882C7BFBD607"
+      },
+      {
+        "path": "cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/printer/TransformerPrinter.kt",
+        "sha256": "07184FBC8D768BF84717284A689DF52D5E11113623114752CB05D0CE56B9D39C"
+      },
+      {
+        "path": "cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/printer/OwnedGraphCopyPrinter.kt",
+        "sha256": "89F7C8AF4A2DA66D7ED2AD99E910774031DCF2E29A27C3435AE3D3CA52B2E4F1"
+      },
+      {
+        "path": "cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/printer/ImplementationPrinter.kt",
+        "sha256": "743EF47EA21C8116F626BAB830037CDD78AB6D4EFC49DA94FD305029988E949F"
+      },
+      {
+        "path": "cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/printer/ElementPrinter.kt",
+        "sha256": "2408CB1B6154DD6F201FB00A00AC2355184D2DD8FE38AC1EC74B4695CDF0BC7C"
+      },
+      {
+        "path": "cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/printer/DefaultVisitorVoidPrinter.kt",
+        "sha256": "B8360A9F00C0E7BF1447E9A0E598BE2660BA29D8E8035E1C5A7831BBA72B2E9B"
+      },
+      {
+        "path": "cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/printer/BuilderPrinter.kt",
+        "sha256": "7DF29102E8C2401D483D990859A6A512986F063BC7CD43403025FF1A94B19BCE"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/declarations/CfirFunctionBodyDiagnosticData.kt",
+        "sha256": "1E548F9B97A0A2A133D261AD24C98C3B773F5C86118099E2D33C6D034EA60E1E"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/declarations/CfirEnumConstructorUtils.kt",
+        "sha256": "F70EECFAD3C28440EE703D0A1E9AD27AAA3DE8B3FDD6B5A1C1A3BF94E15629A7"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/declarations/CfirDeclaredValueMemberIndex.kt",
+        "sha256": "0905D9C949B3DD5D99F6A0CFBC1DC4DA4CEC869A1B07888BFF5A2002EFB830B1"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/declarations/CfirDeclarationStatusCopy.kt",
+        "sha256": "09317BC25D11DFE9B0214F54BE77EE7B0A78B2F28B0393CB9A3F34D91B0C1563"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/declarations/CfirDeclarationOrigin.kt",
+        "sha256": "903AD14356A61DAC57E4E9CB1AC17F261DA139F33AEC24BC8A8964E1AC191E9D"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/declarations/CfirDeclarationExportFacts.kt",
+        "sha256": "7EBF6CF15E92390D2B06A7876B7298F490E366570B637E06CD11DF019C0D6A82"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/declarations/CfirDeclarationAttributes.kt",
+        "sha256": "156215B1F94E6E07C892FA46F5CDB2851702D0928F6F3E0DB09F9467FBE97530"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/declarations/CfirDeclarationAnnotationInfo.kt",
+        "sha256": "48774E80AC7906D5D5701510BC1DA8432AD09EE91E14F4BDEFF436C11AC6D5A4"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/declarations/CfirClass.kt",
+        "sha256": "A722DBE758C2D1C430217A83840905B661DE4725A6758A6DE9D4C6E3A5D821C8"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/declarations/CfirCjoDeclarationPosition.kt",
+        "sha256": "5387D51FD997AB03047ACDCEAAF9EB01818A7537F8FF733914ABE1129F25A7B0"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/declarations/CfirCjmpContainerInput.kt",
+        "sha256": "AE4D09342838FBC3F4D51BB1DC9EDFB30FE01B8A4B281BCF30E2D76E0D4395CB"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/builder/CfirBuilderDsl.kt",
+        "sha256": "44ECEA212551B2A02EE152428DE0B14113454A28A614D3ED73AB32B3C5328023"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/declarations/CfirBuiltInTypeKind.kt",
+        "sha256": "9743396CDBE178D6E96AF7C54185F553D33DDA1A24725875EB5857A630D143A9"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/declarations/CfirBuiltinOperatorSignature.kt",
+        "sha256": "3F3E4DB114215B393E19E3BF888239A7301CF54C2F0C82152144760B23C184E3"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/declarations/CfirBuiltInDeclaration.kt",
+        "sha256": "5237755E62BAC55D90B0C68C1314964A4389DAC0FAB728F1FD88F1DF6E464956"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/declarations/CfirResolvedDeclarationStatusDefaults.kt",
+        "sha256": "AAD6ADA7A641B5BF978C923CFBF0C4F48F90041E17354DE16C38874A3909BBDD"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/declarations/CfirReferenceCycleState.kt",
+        "sha256": "76501B579AF771F10B264CAD40201FBFE3A4415CDA01965917297E83E76FACFF"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/declarations/CfirPropertyBodyResolveState.kt",
+        "sha256": "4BAD1779B8A7EF6E85137BF251B26D6B19A6A259C5AA7BF73C9E7BA059D88912"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/declarations/CfirPrimitiveTypeDeclaration.kt",
+        "sha256": "CBAD0C48E85416CB7D19BE5E6C960DAB99458F5C5790174C99859EDB764C991B"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/declarations/CfirParsingFileFacts.kt",
+        "sha256": "40189720C456DEE076D02CBA0AB5A042DE6D4A9812A2E6C34281B97278C500F5"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/declarations/CfirParameterDesugaring.kt",
+        "sha256": "074D7299D68CE08322A4738E5633C016CF33D93B84FEB2DA780DCB0D392EB4C4"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/declarations/CfirOriginalDeclarationFacts.kt",
+        "sha256": "5B7F690E5738674525B9768D4D2137E0304B5E6F98B0004BD7DB8BA7464EA945"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/declarations/CfirInteropInfo.kt",
+        "sha256": "7FEEE9B32F16E574EC7B79A0ACA4006BDD53A8255B69272BC2ECD39F31BE7343"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/declarations/CfirInitializationDependencies.kt",
+        "sha256": "5B4F9032EA64F40F66FABF1EADF460D47350B0686B6A46932FEEDCB918EC124D"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/declarations/CfirLambdaParameterData.kt",
+        "sha256": "052DE0C08ABCFC116101DA128BBAD2E429F9B9DBA2F1AC6A5DE39349B0EC406D"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/declarations/CfirTypeConstraintDiagnosticData.kt",
+        "sha256": "2600CB7657BD4DC7D8D9CAA3858CD21EF757B79462DADCBD19878A3EAD6CFE9C"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/declarations/CfirStatusAttributes.kt",
+        "sha256": "C66A18C412DBD86AE2F462D965F867053D4F6076F67B968FCF2080729EF2EF2D"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/declarations/CfirSerializedInteropFacts.kt",
+        "sha256": "5CE0A0282DF29E0A6B7AB8CD555F479707FDE1F3E26A529562782BD5E6858165"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/declarations/CfirResolveState.kt",
+        "sha256": "136F29343C2B1C73093606D4AADAB6335EFE38F98836C5312D9994FCD7FC8F4E"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/declarations/CfirResolvePhase.kt",
+        "sha256": "8B86945E3B6EA51E282EE229DA1C3A9FA2C138FE8D2D095279BF18A821D65CDE"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/declarations/CjmpDeclarationAccessors.kt",
+        "sha256": "ED65DF5914D2D7A2C58E6E5BF5DC066CE703E7445874F11C12DC690FA25BCA4C"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/declarations/CjmpAttributes.kt",
+        "sha256": "09CF22045843B3448231214BC0687889CAAF82B19A2D47205012E4E525127384"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/declarations/deprecations.kt",
+        "sha256": "CFE5C54AAE821C9225349BC05AE072FD8EDC59C5C502FA10D0AAECE2E8DF4C37"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/declarations/DeprecationsProvider.kt",
+        "sha256": "AF8060D4ED61A0D88E9CCB80BBB3B3538FDE080562870B79536E65ADCAD50FCE"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/expressions/impl/CfirAnnotationArgumentMappingImpl.kt",
+        "sha256": "683A24EB42011CCE4590A25EAA4FF06C6056F8777865E96324083C75B6D63014"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/types/builder/CfirVArrayTypeRefBuilder.kt",
+        "sha256": "65F88F758006F214D7DD4E3FC1C0226D975EF4A72635DFD42797C402DF6BF08C"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/types/builder/CfirUserTypeRefBuilder.kt",
+        "sha256": "4C8BD675C9B2326A225BACDC6D1E08A097BA394B7ED96C5B8768F300AFA737D9"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/types/builder/CfirTupleTypeRefBuilder.kt",
+        "sha256": "AE4B922FD898D95834068643B50699E012C58193A123DD6DC3E92EC281DCC72B"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/types/builder/CfirResolvedTypeRefBuilder.kt",
+        "sha256": "5DA7B85A46171AE477440D28C71B90F7416C6098D56BFB02795454AC482EDD62"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/types/builder/CfirOptionTypeRefBuilder.kt",
+        "sha256": "0AAF68D00896C4BDFFD81AA2DC3D1E5CE9703EEF41B889B4CAC700C9ABDAE5EC"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/types/builder/CfirImplicitTypeRefBuilder.kt",
+        "sha256": "A005C9F60D55FC84BA7D5973EF9EDF91CF4395B6F202A10DC9011BD46E3F7D7F"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/types/builder/CfirFunctionTypeRefBuilder.kt",
+        "sha256": "BA61D3D6DC6A9B9063C94A39B8EBD00673AF37F4F68A1B3E3514D6E3E04E6D10"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/types/builder/CfirBasicTypeRefBuilder.kt",
+        "sha256": "F13BB3A9AAA3C911902F8D8D576495558487217C53E6B8AF5DB3A8202003C9FB"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/declarations/impl/CfirDeclarationStatusImpl.kt",
+        "sha256": "6B91C0FF404C9A31AAB1E401DEB368E7BA87A51713E60E488EEE339B0278E21B"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/references/CfirNamedReferenceWithCandidateBase.kt",
+        "sha256": "3D4995E98488B198EC3BBDFE91137993F48C93FE89699332EDAD393668A27118"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/references/CfirNamedReference.kt",
+        "sha256": "0D8D9621902B2EB0D39B30AAE149DB7629BBE9199D7FD042CDBE39B981CDA761"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/references/CfirErrorReference.kt",
+        "sha256": "3E35A2B003B812B678AACCB294FA4354746887291AB7E8A80C82D8985E15E43C"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/references/CfirErrorNamedReference.kt",
+        "sha256": "701052EFA87E373AD61C40C5327FE476337087BFF0146B32792B4BF6BC334666"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/references/CfirControlFlowGraphReference.kt",
+        "sha256": "594206A33FBB6BA5C098AE668565B02BE6A4BA301895422CF3429AB3976CD7A2"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/declarations/utils/declarationAttributes.kt",
+        "sha256": "CAD441DD06EFF8C6C353B4C35233D002D088468BA9D77B2C939709D265AB8410"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/declarations/utils/CfirDeclarationBuildingUtils.kt",
+        "sha256": "0D6793A72A0B6503E69F832775C808D323E320EE9E8B1532FFEB399AE27953CD"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/declarations/utils/CfirConstructedClassTypeParameterRefs.kt",
+        "sha256": "CE18BC209CF790381EF50AA422BFC89455F62E83D1FE430356A11261512315C0"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/references/CfirResolvedErrorReference.kt",
+        "sha256": "3ED3E1808DB310C8A4E3F814EE5B1BA61AF17B078623D7FE699B454EAB84BDEB"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/references/CfirResolvedBuiltinOperatorReference.kt",
+        "sha256": "5B0D88C287D20FD49EE82D10C913DF7D5728C22B067679076F61FD6B39A90FAE"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/references/CfirReference.kt",
+        "sha256": "94554EE374007F715C59F60105AC6AE81EA7E79DC96E13200FAA806B26A8A6C3"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/references/CfirSuperReference.kt",
+        "sha256": "05C54AC21258C29032312DA3FBBC5CFCB923E19C300CD8E862D631516FADB6BE"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/references/CfirResolvedNamedReference.kt",
+        "sha256": "86CA5FF3A8B92C7C0E29C404CD84F6A0EDC229676ABBDEA33E61B5C1972C1976"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/references/CfirThisReference.kt",
+        "sha256": "8C2546BC04DB953F53C8B0228C3B6A02311BC6FBFFDAE7F1856F92DB98BEACB4"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/declarations/util/CfirSymbolStatusUtils.kt",
+        "sha256": "7C3F79327796DE24D73B03207501592F0170286B4213B4E94B3B505569B10819"
+      },
+      {
+        "path": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/declarations/util/CfirDeclarationUtil.kt",
+        "sha256": "5A4058FDA985576E70908BF564334CC0F466AFFBEAE3FE7AD03B15D145423DEC"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/references/builder/CfirThisReferenceBuilder.kt",
+        "sha256": "A4BD664A7BDC364BF346DA42E94E98BF3B4C1DC4F97E0A81B8DA97C66FF0A510"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/references/builder/CfirSuperReferenceBuilder.kt",
+        "sha256": "FBB44271CF553304B401767B693759FFE20BFA9B7B537894B4BC7CE249D6E484"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/references/builder/CfirResolvedNamedReferenceBuilder.kt",
+        "sha256": "4A89CD5342D3EFF8211F3A7AED848EAE1BCAD1D9E3230ADEAF91B8CC2A14A003"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/references/builder/CfirResolvedErrorReferenceBuilder.kt",
+        "sha256": "C5075526E2B12F0C5E33957B8F5D45569F8C713AA65110AEC1C911932C2D58D2"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/references/builder/CfirResolvedBuiltinOperatorReferenceBuilder.kt",
+        "sha256": "60841DAD47A4E5E8B9BAE9A0F75B0966655CCBECC418C11FC7970A4A99E3D81F"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/references/builder/CfirNamedReferenceWithCandidateBaseBuilder.kt",
+        "sha256": "5E5BE21DF8BCCCC7CD9D8AF295291285CB80F29EAAD48776E17ACA991B11E78E"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/references/builder/CfirNamedReferenceBuilder.kt",
+        "sha256": "2BEF05746075108972605A77A0B2C4FCC703DE581C6A92D8DFD00639D08113BE"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/references/builder/CfirErrorReferenceBuilder.kt",
+        "sha256": "B738E57EE91A929E24EAA8D42726187A6A2B229B40FE427CC2CA38C128F2A8A8"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/references/builder/CfirErrorNamedReferenceBuilder.kt",
+        "sha256": "AEF4C50A804967F53B314B2CE14F7044D09CA2CD8BCF4BDB8E6808BFCAE55E7B"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/references/impl/CfirThisReferenceImpl.kt",
+        "sha256": "A61B3720545C47AE71A1B377363AFEC09F202EA3F35AE876F4CE6CBD6B2A6077"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/references/impl/CfirSuperReferenceImpl.kt",
+        "sha256": "7685AD2095A03A7C54573ED848B0DB7E1A10E6E6D92FF376A011110DB1AF895F"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/references/impl/CfirResolvedNamedReferenceImpl.kt",
+        "sha256": "4779C1BCF9F016E76DA633884362968712A827BBAEED4004C9E912FC4DCF136B"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/references/impl/CfirResolvedErrorReferenceImpl.kt",
+        "sha256": "3C66C855595DD6AB33FB1C9FDBDA6464F40E7379E14FB2635658850EE8AF32E2"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/references/impl/CfirResolvedBuiltinOperatorReferenceImpl.kt",
+        "sha256": "E2123A41078301639E19782635EE634D8E515BB5B59FD7F83035D1D2B9D6BB42"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/references/impl/CfirNamedReferenceWithCandidateBaseImpl.kt",
+        "sha256": "ECF4131599A292DE62A7CDCD616CF5720AC75B48233F1C442104DFC4B483AD48"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/references/impl/CfirNamedReferenceImpl.kt",
+        "sha256": "A0628CEEC9F5232106D74A2018CEEFF4D897834AD9FE6A6F1F35A69837B66606"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/references/impl/CfirErrorReferenceImpl.kt",
+        "sha256": "1FF1B3651A05BFA47DC676B57F45147E639F2C65D4517C3B8F9F36817DDF4650"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/references/impl/CfirErrorNamedReferenceImpl.kt",
+        "sha256": "2F6A37FE3B50A226B89808B8920F8D3FB3E5B3DDC28115E04DEB87F3DB4F34A2"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/CfirExpressionPattern.kt",
+        "sha256": "A9A093A55398C2F292FA60B94A696E2558A1E17BE5412DFA6E63A27700C8D893"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/CfirEnumPattern.kt",
+        "sha256": "39EAF3542A031D180536451837FEF2E5111A77B745CCAE1DB977F2013FB21684"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/CfirConstPattern.kt",
+        "sha256": "0DD25B4C1486F0CBB7067315B4D013B244A73B3799A7735C0C35161924FA8263"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/CfirCommandTypePattern.kt",
+        "sha256": "78C17A2DFB71FF30767EE3D4DC0DF8430FD578D10B4CBC105BC901C6B4D1F50C"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/CfirCatchPattern.kt",
+        "sha256": "419AF6C5851592D91A18217C7D3A93C6D5255AC0586B4892B6700D48CE3BEB0A"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/CfirBindingPattern.kt",
+        "sha256": "4431716434ABF829B86A490DA878FCEB0A8F2070A5B2482A4D69039CB0603B05"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/impl/CfirWildcardPatternImpl.kt",
+        "sha256": "95D360962A42E75740B9AFF4CAD68E60D17E088B9CBBF07A6DBE63CE1BE0557B"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/impl/CfirVarOrEnumPatternImpl.kt",
+        "sha256": "5ADC58F9EEF3FEB63DE18059C409FDF81D03C6B10AB85204F930C93BE9394E1A"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/impl/CfirTypePatternImpl.kt",
+        "sha256": "6552BE330BA8D121CAA6BFC0C9828F844124EC4B37320AD3CDBB81FBCD16B864"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/impl/CfirTuplePatternImpl.kt",
+        "sha256": "1FA0BEEF0B57DB7BD04067DE4BE688E0CBD02E8984EEB813BE81E5AD7BCA6B35"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/impl/CfirOrPatternImpl.kt",
+        "sha256": "F580094FD50B6BCE58D6D0C2E0DC6A744767ACA9E0CD32C82CFCFF3E3C4F56C5"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/impl/CfirExpressionPatternImpl.kt",
+        "sha256": "5D298D63D60E756722AAF2A9AFA3F0A1B0C7E173031766495BA9CEFB0A4B27E9"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/impl/CfirEnumPatternImpl.kt",
+        "sha256": "FC138F099BAEE59F91B619C3FC173B312E823B4F1184F18CA06E5F68B00F2A4F"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/impl/CfirConstPatternImpl.kt",
+        "sha256": "2AA09FEF61EFD0025025E84E6A6D7B80B7EE72D1F2828601A4E8D2E888036106"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/impl/CfirCommandTypePatternImpl.kt",
+        "sha256": "2ACD1BBF3BBEF563F3CE5E69CC20328957F99A1B69A7A29087BFD645A127CA78"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/impl/CfirCatchPatternImpl.kt",
+        "sha256": "FC0CC693D4D0AAE1B97AB04CF5A6CE7AD664B2834C893D5B45A619011BA01FE0"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/impl/CfirBindingPatternImpl.kt",
+        "sha256": "71A201A3B9F8270C18CFE643268B6ED33AF00808884588796678B72B3EFA4256"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/CfirWildcardPattern.kt",
+        "sha256": "044056EFC561488999EA6A636B83C2E396BC732726842C807F270862F007AAA3"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/CfirVarOrEnumPattern.kt",
+        "sha256": "AFC96459FA31CC30D0BF18DC71A6DFA85B166A907EC6F5E08831986DE51F0D20"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/CfirTypePattern.kt",
+        "sha256": "D17CFC5F70F4A396C9665DA514C7D77BD7155AA07416BED720B777C43C12E811"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/CfirTuplePattern.kt",
+        "sha256": "E59F3AE9F81F074CFAA22FC82043FDFBA8FC86EFB29764FCE2A82BFFB887F9DC"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/CfirPattern.kt",
+        "sha256": "FF3A707DC7896685CF59270762B394DBFB940FF11896E7089BB4321B7121C117"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/CfirOrPattern.kt",
+        "sha256": "D507B2C4BAFB1F3EFC62DF4B1476A22D00152D7E52BCD3EC45D2D97F9690CF10"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/builder/CfirWildcardPatternBuilder.kt",
+        "sha256": "5D5F48CBE7991127E87C2EB1C41353C9FD390221B61CEEBD19E86FFB0FD83037"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/builder/CfirVarOrEnumPatternBuilder.kt",
+        "sha256": "75D928272DFCA029C2E2CDB060B98CD3E30C073ED770B07EF81771BB7980BC94"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/builder/CfirTypePatternBuilder.kt",
+        "sha256": "7018A9028E41465D6A5180265FBE1F881752CCF30358A150F2388E1CC3330922"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/builder/CfirTuplePatternBuilder.kt",
+        "sha256": "F1C56C6D635E374BBB8842943C9146988B551FAA66D646F83A7B0ED9EFA0C1B5"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/builder/CfirOrPatternBuilder.kt",
+        "sha256": "89BA8FD0463C2C7F16FD6AE1FCE40F312335C334FF58E907CEAFB056CCD701C8"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/builder/CfirExpressionPatternBuilder.kt",
+        "sha256": "684FE15CF6D598E7A47DF37F8C108B470C8D220FA2EAE7A49517A741213AAAEF"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/builder/CfirEnumPatternBuilder.kt",
+        "sha256": "9BEA50B2749BA02FBA342368ECBE4693AE285BD0F981ECB14B8D0B19E8A9F3E7"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/builder/CfirConstPatternBuilder.kt",
+        "sha256": "82DC657FC2109F9C623CA2D5ED64FC0ED99906ABE27C45D81F0819D85B89657E"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/builder/CfirCommandTypePatternBuilder.kt",
+        "sha256": "3152049FC3A0429E8BAE044EE33157796BD2E68A6346A2F222F9D43380DE0C6B"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/builder/CfirCatchPatternBuilder.kt",
+        "sha256": "0A91ED4E34ADD459A598F8CECC656F08F82956E7F43158D6CC37A2EBF7CF7FD7"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/patterns/builder/CfirBindingPatternBuilder.kt",
+        "sha256": "B5EF0087E615D11053346DB8FD267E413BC55784C79F7AE3C7596D344D18E043"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirLetPatternExpression.kt",
+        "sha256": "3E8BA2D823FCC87490163033380A1A94708A942E9FB9B195DACDEA4164B734A8"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirLazyExpression.kt",
+        "sha256": "01D854594F2AEB7436CF5DE253012A281B8B22D8B87B022D20D019C82E4153D4"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirLazyBlock.kt",
+        "sha256": "05B6E6CDFB3BCBA1096F0AB69C9CA2D0CA0525583911CE3DEA02EF281061E7F3"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirJump.kt",
+        "sha256": "AFB619969EDB965576CC730EE59DB7B55996B0B894DB34F1EF318AFBD2F86844"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirInoutArgumentExpression.kt",
+        "sha256": "2675B14CB08561E05F080FAC456AA12DBBCA3EC239D616B71DB73E3C211747AC"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirIncrementDecrementExpression.kt",
+        "sha256": "102CBFD98FDAEAC8D3E50D25B8CC72189FE52B44E9C7E8020875D31AFE845028"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirIfExpression.kt",
+        "sha256": "56476FBFC431F01DB5A8B2EF75BEDBC2923B54855EF2B62360DC4C9C6B916CB8"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirIfAvailableExpression.kt",
+        "sha256": "AD00BDFA20A038E8335F7E4EE09320AB78FEBF274E9AEC3D6267EA2B2340FCB5"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirHandleClause.kt",
+        "sha256": "7308E7282A8EB1BBE590F9278C77B78A4CC99A45F0CF226DFE0B9735C10D7B2E"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirFunctionCall.kt",
+        "sha256": "7C836E847C66B8D2967C89E60879A984C0DD4E367638EE01DE764949EAA9BD84"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirForInExpression.kt",
+        "sha256": "78D95D8A19408BBB5E4ED7B2576858DB2835EBAE2605082CFB6F93000BFA43A7"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirExpression.kt",
+        "sha256": "A68BD181B5DA48286F4E0DF0B7C741D03B3FE8C0DA1D61A888A54064189669EA"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirErrorExpression.kt",
+        "sha256": "B6C512C05E01AFCC2854E9F3DDBA66449D9BAF66F6DC5096D8F0732404173B7E"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirContinueExpression.kt",
+        "sha256": "365125287ECF608A9FC8FE9725D276893AAF916426DC1A6E0828B1D488600FFD"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirComparisonExpression.kt",
+        "sha256": "51D2DF8DE135BC0B2DA4D2579C148D0DD168A378DCF32A7306A63B82789A8F50"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirCatch.kt",
+        "sha256": "5FF8AAE8806565F4CF78E19311BA8E180453E0713FB18E926CE4ED9CB0C35573"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirCall.kt",
+        "sha256": "49D379B2C351CCE0FFE7985551C08FD670EFF7FD3777D39D7BFD8EE1B0A75212"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirBreakExpression.kt",
+        "sha256": "5F5E4405B91D670437A9C90AA17C0D2DCFB955A3B101EA0EF4585B0881724A4D"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirBlock.kt",
+        "sha256": "4961F13F025640E26BA765CDFA27438D864038FC0BB9F8C01045B936D6E04910"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirBinaryOp.kt",
+        "sha256": "18E61280E084A62D7E6DDA19FDA36FB8B2F0150EDE66A0748262E61440E2DED5"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirAugmentedAssignment.kt",
+        "sha256": "9909099CAA51262A5BD2AD952C0A25EFA92AA45BD166392672638D8B1E788087"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirAssignment.kt",
+        "sha256": "E0D6EF05F88D901B043DC82C4FEA30DAB924623A1B1B2ECDA134F8B40838DA5E"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirArrayLiteral.kt",
+        "sha256": "60229553A3164A9A0E70AB015436006E5899956B29DAE8D12CA4CE1D3F41B648"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirArgumentList.kt",
+        "sha256": "49AE76BBFADE0B322B6C36DB57539CE46CC9994117A4FCA8D381A13EF9294203"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirAnonymousFunctionExpression.kt",
+        "sha256": "D53055D9CD504EC536CFDC19774CC69F7A183138CA4B3DBA07D39AD6C2A47342"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirAnnotationCall.kt",
+        "sha256": "F6A287F8C55CDEAFAE7ECFD52BD4C81ED6EA4C9B460C4B78D480CF0424AEA8F1"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirAnnotationArgumentMapping.kt",
+        "sha256": "1D701E5FF06F51C59C592A88A0BEE472CEC85F804B8A16278BB6BF6C7CD3585A"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirAnnotation.kt",
+        "sha256": "12C017C0703240B259563661B3FE9572DB82653A64675252DACFBE2DF01CCDC5"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirDeclaration.kt",
+        "sha256": "FCD1907DD5DAA64661D60134383ADD43B8EDB671E6EF60E632609CD17387055A"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirFinalizer.kt",
+        "sha256": "1FEDC4A02A31CECD13473E60212AFC6C8AA101B362A5CED295EBEDB6D00824C1"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirResumeExpression.kt",
+        "sha256": "1E688FCD54015035A78D9F8435935EB4E9BD148FBBADE9564AD49BFE02B1A89F"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirControlFlowGraphOwner.kt",
+        "sha256": "8D450C407F9716001C8A22618654E1AE92BDE0E2CD9204BD3AA85319612C554C"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirFile.kt",
+        "sha256": "B010491E6F44E29BCB6BC4460B94548DAAF5AC425550003950D6109A7C464808"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirResolvable.kt",
+        "sha256": "55CAF683679C40778EE03E7A8F8741916C63CFAA485C9D5783A13BC7F30E8C26"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirConstructor.kt",
+        "sha256": "DDC46E2EB950C70A3BB7A613B4BE4CDB544791B0E577B9BFC1DD1036BAA4EAE8"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirRangeExpression.kt",
+        "sha256": "DADE40D0D4D34FEA4C8846A679466B1C2B8978A5EA6A984A55CB45168564B828"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirFieldVariable.kt",
+        "sha256": "E9FE97569D12CF844B7B58623A56247D5109803EAAFDB45D0A237DF0283C8D1F"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirConstructedClassTypeParameterRef.kt",
+        "sha256": "A2E8CFF955EB7E79AB6FB4A1E8FE266D818A78DD50ACB5559BCBFCD882936EE1"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirQuoteExpression.kt",
+        "sha256": "3D1B5AA07CD6FFD2C0FF0B5F2E574394271CEA678F4AB7D707C429E0D207AC90"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirExtend.kt",
+        "sha256": "5C9BB7193849BE4307A05F71EA3E107FA4A4165C8A2B0303F5A32B9F81BF74AC"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirCodeFragment.kt",
+        "sha256": "9BA16E98001DF684BF0F847A89FB4FCD7149472C501B7476EE4B732814BFCC97"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirQualifiedAccessExpression.kt",
+        "sha256": "E6E85359ECB2B302564CE25840CDFC3DAA4B14D386B7797B4DB4F69018280E0E"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirErrorPrimaryConstructor.kt",
+        "sha256": "15684B63E8839B39E6CC5EE170C130B84E39357E62C2AE3C52FF25E024A3EB07"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirPerformExpression.kt",
+        "sha256": "64A2A77016E0D2D537C2AA294FB9B6BE1A6D54F8CB7971C3B8CA1D18B61EDE77"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirErrorNamedValue.kt",
+        "sha256": "0382017BE89D40C8C9187BCC3CEA95C91C4C2F494DFE055B418AD8700B2A3EFF"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirOptionalExpression.kt",
+        "sha256": "598D456023D9AA87241E79D5B81D1B51100BF5055AFEBE186705F1F45824E974"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirErrorFunction.kt",
+        "sha256": "7B7EAEBFC394A5573A3C98CD099F5003C19C827F3E3BFD0E3F9652D3F36DF9C0"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirTypeConversion.kt",
+        "sha256": "C019589F96389A24226F67865D712CA6831FBB0B47867C9A06FEBA2732F09815"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirOptionalChainExpression.kt",
+        "sha256": "EC0EE354F1B91B5101A47ED49C3EEAF16F7E91EE3A27BC63544D0A016EF13798"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirTupleLiteral.kt",
+        "sha256": "E004CBC0558D6CD3A314685EA92941B21E041A995BC575BBEF5634D39DB53760"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirEnumConstructor.kt",
+        "sha256": "3C737C1B22B63090A2F22399FB104D9D44C12F599F9986C81DE0EE8991ADB82F"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirEnum.kt",
+        "sha256": "DD4ADC6A519C2BDD480558479EC60991D990895D898708EB9040334B5CC923A2"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirDeclarationStatus.kt",
+        "sha256": "EA33D64BE01B9E95496B196FDAB4AA4036130990E0F83460ECF45FA8D1F62EFA"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirMacroExpansionDeclaration.kt",
+        "sha256": "3C4359DD10F26BC4F575078D03975825F384BE442DA7C6E2E8DAD62BEAA80E03"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirMacroDeclaration.kt",
+        "sha256": "A8E276B59795321EB525A8073C4CA3A1ECAF5E724EBCDE9771BBAE4AD6DAB9D6"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirInvalidDeclaration.kt",
+        "sha256": "2DE5FF3005A5134C085D9356E42443F5D6EF260D24E2F1E357154903D6E1B350"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirSynchronizedExpression.kt",
+        "sha256": "B133BE1972836034E918262E9F44BF5838B28B5E431B8AB82764F70AEC8DDF6F"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirInterface.kt",
+        "sha256": "AAFFCB814229EADC9BEA619BF513B4FDA92D43348EC10FC8DFFE8F50341AA119"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirImport.kt",
+        "sha256": "AC2A0F6A37F2701583018887194CA1DC665CCCD6904258E8E53211EDC3A9DFF9"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirFunction.kt",
+        "sha256": "C576F961EE552529D456FEBE1C3BD9B7D1F0EE8DDBB7246AC8CDFA6795BFDC52"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirNamedFunction.kt",
+        "sha256": "CE770DFB9470E272942119796DCC7540C85DE56719C19B8217D9B5CF6D13754A"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirSuperReceiverExpression.kt",
+        "sha256": "A9F9134D6215A477614EA15EA317E855AD03569082D5A70DD50A8868D89F39F7"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirMemberDeclaration.kt",
+        "sha256": "B554462CA999E21075F8F455B1E1BD4090CACD86A9C470D5053D6C6909286ECE"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirNamedAccessExpression.kt",
+        "sha256": "F2CAB6B607648984AF0BC99E34B9D20951DE83BE6EA6B4454AC82DB483D9CFAF"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirSubscriptExpression.kt",
+        "sha256": "E11DCFCE1770F0F893D2019FEA07C13E2FCD20CD125C340E137BAE65625BBDD8"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirMainFunction.kt",
+        "sha256": "A7FC8C11EFCBCA895B9B6C0EC0425626AEF95E597B221AC5DAA3BF7A4E9ACEEC"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirPackageDirective.kt",
+        "sha256": "F39B4D6DAD3BA791BC381F502C952F987CD4E35DC3DD2732B76D57FAEC0AA090"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirStringInterpolation.kt",
+        "sha256": "2E9DBDED71086568D7A5F9699D6E75BBA9BD1A400B6C920BC695B74F23D4474D"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirPatternBindingVariable.kt",
+        "sha256": "308BDBB357FC7C5347F50D2B4AB7A4A06140EBA2091359BDF38C454768A670ED"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirMatchExpression.kt",
+        "sha256": "E1C13D6752CD411D4DE10F191FD31B6A91927E27102EBA02A7573FF9888AE442"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirStatement.kt",
+        "sha256": "B426C2903D30863AC59E714C3DBD7DF4FD4CC048B4D869E8BC60F6F9A6B71C41"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirMatchBranch.kt",
+        "sha256": "4C08709E30720E8C077129CB44CCE25F7387CB4D5445696A544F9D2965CE48C2"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirLoopJump.kt",
+        "sha256": "3B950C22FD4DE3C31C784050357599077D7F167AFD9A0409A37D4F20C134B746"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirSpawnExpression.kt",
+        "sha256": "45D1E34304548A7867280D8BE55D4A074D16FE3A0DFAF0242B7C201AD57B1191"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirReturnExpression.kt",
+        "sha256": "59ACC4D3468B703473AF7D055AC744125032491E3882D37534C68226EED9B230"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirLoopExpression.kt",
+        "sha256": "5D30F42433717DD7FC5B25209DBA3BECFA09FC6623A96B4D6CE35F6B921485C7"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirLiteralExpression.kt",
+        "sha256": "27607110B33A826BDF13EB318616A74B68ADA349928632960C02A1A94DDC4C4A"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirClassLikeDeclaration.kt",
+        "sha256": "4F538F3F9F6E1E9F62BBF76FD5E39CD293BA0AB0AB57E7CB139B122C2D558A5F"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirThrowExpression.kt",
+        "sha256": "82EA9CB5292CA998EDA58229B9DF6359C5DD0FE7B43353D3660F18939F0AF82C"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirClass.kt",
+        "sha256": "BEC077478F6C2E5C0092D3B5AE3837DB70A354DD939C1D7BF2A5A7CEED299856"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirUnsafeExpression.kt",
+        "sha256": "F77ED67171B5EC3C0CD1CD2DC6F25F143C2D8AF6B6FA524033D677EA185EBA10"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirCallableDeclaration.kt",
+        "sha256": "A143E0BAD22AF12133BCF199A215978EE1323CDA7B8A90F83F9D8772B93933CD"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirAnonymousFunction.kt",
+        "sha256": "E9318D6920E51FF51CFF4EA2CDB9C645A7996A9A2AF055825411C4E41CE6CFFA"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirWrappedExpression.kt",
+        "sha256": "5914BC218A58D12C9D979E017D6A9E6CFBFD22CE9497444EEE14DA5A2D8BD8F3"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirTypeAlias.kt",
+        "sha256": "DE182309ABA82C93E9E86F956D3EFB86D668EFCE09CF16A22555B5540D3BAAD8"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirResolvedDeclarationStatus.kt",
+        "sha256": "C8B2B12107D6F4D4B698A8F4614D90A68DEC3E9112CB621B2F1779EE0188ED20"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirStruct.kt",
+        "sha256": "5DE27C1BBEBD571C0D6D852019C699DFDD7054AEBEE64E6D91FB097B8EE324F5"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirPropertyAccessor.kt",
+        "sha256": "9F7960741F637A3B0932CBFE3C0782323B2BDEB6C8662C1D2CF17BE4887EF81D"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirResolvedImport.kt",
+        "sha256": "FA80799C117ED3CF2E946327A273043BCEFC2BEA737BD4975673F6FA079C1B72"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirTryExpression.kt",
+        "sha256": "DB11096CDFD7C92BF14EE8D0B16EDADB5BBE4926671E5F67CCC26D6F42C29238"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirProperty.kt",
+        "sha256": "61CEC68984BD03D26B33A93FE3650DAF2AD9D388A98B918C7A610C5B2810AC3B"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirValueParameter.kt",
+        "sha256": "A3EAC2ACF22341AD077BFAB7D45F9948D400D3988CFF0A82D0DA93C21707D044"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirTypeParameterRefsOwner.kt",
+        "sha256": "0E6E72BAB97459381F64167B0B7C711365029CD668B934C22E81E9F057AC6E29"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirTypeParametersOwner.kt",
+        "sha256": "5A4B40560B5D7810CCE6CB262A2453CD068771519775DA5A2DC41220072F15F6"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirTypeParameterRef.kt",
+        "sha256": "50625C75BACA381EC47A33B395DEEE199F3AE0C94F4F278C46D5D63DF9F42BEE"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirVariable.kt",
+        "sha256": "BA64E5B5E8CD018D34A1D0FF217AFC331FF40B940807EDF70B25026B5E3120B2"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirNamedArgumentExpression.kt",
+        "sha256": "62B5E1B738466DB35FA43FD3D318B20D46917DABD16948F44D7356228A7D66C3"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirTypeParameter.kt",
+        "sha256": "B1839DFF8F49F2F20F87C2499408EBA7F6758043F588C5B18861286F6F53A712"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/CfirTypeOperator.kt",
+        "sha256": "74D2C7F7BCA5C99010EF092F77BBF4617C246A0F0751E187276E2395A3A95C53"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirPatternVariable.kt",
+        "sha256": "6BE9E7C051775A9B56D5DB1E81BF9812B8CC5B6B11D5A760BC2195D35EDD070D"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirValueParameterImpl.kt",
+        "sha256": "F94A265B6B42DF6963E29BF5AC80F4A1BC62DCD24AC46A37A6C46CE568CADE36"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirTypeParameterImpl.kt",
+        "sha256": "E6B0EEC6841C578A7A3145586224FBB7138E63F5A0DC5FB801A13B3A43BF4E86"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirTypeAliasImpl.kt",
+        "sha256": "B6A57DA40F145FC84B0873B073D8D919D5CE9486B18FB167BB133B58F21798A9"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirStructImpl.kt",
+        "sha256": "66D930AB3762A73BB9A4E1B4F1DC9F774BCA708291D5127D336CD02DAB1DE47B"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirResolvedImportImpl.kt",
+        "sha256": "1BDACE454996CE8E07CAD8F10794C92DBE5005D304EA1711EC65DEB04C4C1486"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirResolvedDeclarationStatusImpl.kt",
+        "sha256": "2B49E7B6B2F251642DF777595152A350F0001EA4634BB3897562FC7AC9AF9DE6"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirPropertyImpl.kt",
+        "sha256": "4AD9FFFC59E1B7054D859040C7119DE4780962BDD9D8FDA472D1B525470DBF04"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirPropertyAccessorImpl.kt",
+        "sha256": "92612F40D99F948939C803EDD51DB7B7372AD771F5AC87694E9720FED660DAD8"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirPrimaryConstructor.kt",
+        "sha256": "0C0FFDBF567EF82637A66A18370DFB6F833B3D35986C1F726BE2D9E5825CE5DB"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirPatternVariableImpl.kt",
+        "sha256": "FC640BBD2D4FF84360BE75B9CB5DB07B244536C356B059A52C6689C75B0E00AE"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirPatternBindingVariableImpl.kt",
+        "sha256": "9153C14EDAB6165BF44CAA02823199995C17CF8B4F455B04EEB1F3E9F391B5DE"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirPackageDirectiveImpl.kt",
+        "sha256": "711B884F56CBA6AC38B9792DF6607C61250964B1EC57CF7410D671D91601581D"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirNamedFunctionImpl.kt",
+        "sha256": "138AC6D94F4CF8AA98EF8B9038CA77A47586CFB58E4FA1F8D66E3498552F13A2"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirMainFunctionImpl.kt",
+        "sha256": "5A6061CFE8D4BAA58C4006886F0AFDEFB0FCB16B20F2B77A707AC7D16F87C636"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirMacroExpansionDeclarationImpl.kt",
+        "sha256": "06E7FDBCE913129B1C7107B5485AC4F770286E281B25A0593543032689CF506D"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirMacroDeclarationImpl.kt",
+        "sha256": "5F3CC5D8F7B87C0EE4CB2AA6EDBF4695839FD7D56DBBBD000F9B7681DA6A4C2C"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirInvalidDeclarationImpl.kt",
+        "sha256": "AEF61334E2A1DED04089B5B510037466BEF19F620B44F322896DEE518F8B4016"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirInterfaceImpl.kt",
+        "sha256": "656885558AD05D5A0ECDF317D1E0F837D4EEC58A2FB2C3CE7FB722E73F44D695"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirImportImpl.kt",
+        "sha256": "232E921CA4E77EDE3181C35A86D7681586DC6B8BE5CC9567EEC2DC0D20EC3B3E"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirFinalizerImpl.kt",
+        "sha256": "624212C121597152E3535E6D541682279365AA8F23E8B33B15CD640972D99D89"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirFileImpl.kt",
+        "sha256": "3EB7471158E1C986977840AB0EAEB5A698F4763C290A9F99F48ED355EB7CBC59"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirFieldVariableImpl.kt",
+        "sha256": "ABFC13AB8C2234797B3EC235F0DEA1CE69A1DD54869E7D0EE48936A27195F3C3"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirExtendImpl.kt",
+        "sha256": "5E1ED6D3DCE1FEE4DB1E43BF4374FD06F1E6D345CA46DC8345EE60A196AC8939"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirErrorPrimaryConstructorImpl.kt",
+        "sha256": "44AB11C6A225F9FAD99B57382FEBD096B83F50EC555BF1C5D73E5D168C99B8FE"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirErrorNamedValueImpl.kt",
+        "sha256": "452D30F6CB15297CA6107539A8E6C1B743F2AF516F473EE9AAFC8B7C9AFF40B9"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirErrorFunctionImpl.kt",
+        "sha256": "E060E332A63B35CBD9A1001425C01481F5F5ABA25CF62808DA562E3DECDA6A3A"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirEnumImpl.kt",
+        "sha256": "DD8952ABFCD4DF8CBF15E839F6FE235696D0F5669EB297727D5A6656E6B7021D"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirEnumConstructorImpl.kt",
+        "sha256": "DE0AD7CC224C10617030EFF6116BAD85719601E08181743D98F94557E41D3EE4"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirConstructorImpl.kt",
+        "sha256": "780F5D651C493BBD213E6FFE9783B24CAE6BE2D1782FED8CE5C7288DE15C21BB"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirConstructedClassTypeParameterRefImpl.kt",
+        "sha256": "4BDB7B4D6EEB247476BE137475727DDD4DF86B2F45C0BF368D78361395B3B928"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirCodeFragmentImpl.kt",
+        "sha256": "44C299B4402D4047B50D08F850FDC5B9E46D50767B0C3760C5CA5D7F3F6CED8F"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirClassImpl.kt",
+        "sha256": "71524B03A0E037A82BC64B5D36F3DD24C1775AF5B3F0AAD71789FF983BF5F848"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirAnonymousFunctionImpl.kt",
+        "sha256": "5214ADFBEACE0D30D53F584FA1F847B65823BCDEA482E8A29F0A22BF9E23BED7"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/impl/CfirUnsafeExpressionImpl.kt",
+        "sha256": "B4E7A611A554DFEF4BC2A864897A19D0D0B1D939BFF4B9FF5177DD329AC7920A"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/impl/CfirTypeOperatorImpl.kt",
+        "sha256": "EF2A216A7464A2B495BCB8C0144FAFD1B5A5FFF5132FFD876CC8F29F4AFD2FEB"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/impl/CfirTypeConversionImpl.kt",
+        "sha256": "3D6F4928340E7634B991A08C889CBBED4770C7A0BAD356C5DCA76805AA682417"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/impl/CfirTupleLiteralImpl.kt",
+        "sha256": "A79778ED229C72CC20740A6C26941608AC91860502EDC51F4365D0F1861B111A"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/impl/CfirTryExpressionImpl.kt",
+        "sha256": "7A3762AFFA883C0C230166EC393B3EF85094B4FA9594A58250CC5894CC86C469"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/impl/CfirThrowExpressionImpl.kt",
+        "sha256": "AF541F0BBB99DD7B76C377ABCDF6DC5E61BA8361DE49E1C0F6C1D296EFA7492D"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/impl/CfirSynchronizedExpressionImpl.kt",
+        "sha256": "82C2191E2444CA924734CD4DA53EA680D9999782D931F646D762FE4EDC7BD48E"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/impl/CfirSuperReceiverExpressionImpl.kt",
+        "sha256": "D6792A0AA9398D0EAF58917B255C85F2085211887E2C6358E564FF5D4387E77B"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/impl/CfirSubscriptExpressionImpl.kt",
+        "sha256": "57A886F86E755EE249E9DF6809E315203B57DFB915754254188571098ABED46A"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/impl/CfirStringInterpolationImpl.kt",
+        "sha256": "5D0AC2E2BD64ABE75F5B531B20549FFAD3F131F6C69109FFA613B1C9988ECB1B"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/impl/CfirSpawnExpressionImpl.kt",
+        "sha256": "041453AF69EF8425CA1C37511BB808A314CDD6537DBA897619B1DE24552B9AE1"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/impl/CfirReturnExpressionImpl.kt",
+        "sha256": "6C209BD3E46B8C58358F3FF99CFB93F56D755E019E8B5C7CF039400EC6B91C3B"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/impl/CfirResumeExpressionImpl.kt",
+        "sha256": "C1C50172F1891D5AB4ADBB5C85B957E2D06A75917542B43C92468C74B8B416C3"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/impl/CfirRangeExpressionImpl.kt",
+        "sha256": "8470236E40FC76FBE09AAE4A14524E6D95DA2681B9D404709B9017EDE6A1ED9B"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/impl/CfirQuoteExpressionImpl.kt",
+        "sha256": "D9225B4A5BAA0F4D818F0B3A24A69CC58E5715E43F14082717D9CCDE9552DCCB"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/impl/CfirQualifiedAccessExpressionImpl.kt",
+        "sha256": "D34DF529BA02CE2AEE78DF3C7B52FED5D74F77D2D487BDD490440FD1A84087B3"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/impl/CfirPerformExpressionImpl.kt",
+        "sha256": "D8C440652F27E1F059BBFC1F0BDA5A84D8FC88AC567B7F60E6B41E1ED5073973"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/impl/CfirOptionalExpressionImpl.kt",
+        "sha256": "EF03F512B67D0D0860227261E59FA1A64FC000CD14D6ADC5956F26BFA7B6473F"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/impl/CfirOptionalChainExpressionImpl.kt",
+        "sha256": "FC37D62FFEE76A73E211EF7AE1E4C993DF352F5DBD1F405AC77F1093A5B33B2F"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/impl/CfirNamedArgumentExpressionImpl.kt",
+        "sha256": "E3796E6E4E86F6226F8B8A7A67DD380834D3561A3BCA5973448A748D0DCDFB57"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/impl/CfirNamedAccessExpressionImpl.kt",
+        "sha256": "9CB83394E68617C1092594F4C11E02BDAEDBFCE502FB014FFDD380E48437E512"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/impl/CfirMatchExpressionImpl.kt",
+        "sha256": "9E5114BCDF89A5AB4B6EC5C3B83DFAC7722A1447D561119FCFB9259E09B07BF9"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/impl/CfirMatchBranchImpl.kt",
+        "sha256": "CB13AA4F8AEE5232C388C447726DD57F4996B7AEDC9F739D3880CCF5555DBD2A"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/impl/CfirLoopExpressionImpl.kt",
+        "sha256": "E0A6D01690881DCB21A28E7338C1CD3B19A24D623D5801694DCD25715658EFB7"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/impl/CfirLiteralExpressionImpl.kt",
+        "sha256": "9672516B169F5AB644C2F6B269F4C8CDCAFB57B89875CB2CA25E9EEF9B829A3C"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/impl/CfirLetPatternExpressionImpl.kt",
+        "sha256": "F9AFE517425650DFC01E5CF44A9FFFBE4463E7E02BDAEB4F3735A800B362F591"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/impl/CfirLazyExpressionImpl.kt",
+        "sha256": "68193775BA1F93A0B4537BB6AE89EBD9B5D5CD8A6B3277ED46EB448CF6F82746"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/impl/CfirLazyBlockImpl.kt",
+        "sha256": "47135607BEED3187B7C87DC2E6116D09064338C270CC227EC1B77417A5E09756"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/impl/CfirInoutArgumentExpressionImpl.kt",
+        "sha256": "4132BC0AA96B867AFE8DBF214489F57EFAC21BF6111255828B2ED2C35AECB510"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/impl/CfirIncrementDecrementExpressionImpl.kt",
+        "sha256": "5951F660863EF0618231C49C306497C9120EF4A7E86B7907F5600869DAF8F6C6"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/impl/CfirIfExpressionImpl.kt",
+        "sha256": "BF23F63B97FAFAA96DAA072A87326232FAC69944ABF859B6DD4CADF4F9833953"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/impl/CfirIfAvailableExpressionImpl.kt",
+        "sha256": "43BC7CA8229585C3B0892448AC09D7AC014CCEDB02D068B1BED5B8EB7A8B0F56"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/impl/CfirHandleClauseImpl.kt",
+        "sha256": "322B551F4FFAECDB252DA765A935545484D37CCE4617011030FB8601B2EB9F68"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/impl/CfirFunctionCallImpl.kt",
+        "sha256": "FC844CC300C88E7606BF9447FB8D534608DCB3712104AB4595E260B7B5F89645"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/impl/CfirForInExpressionImpl.kt",
+        "sha256": "88E3EA94E8B27D4CC9154812D8ED83DF5305A309A571AEFA4D5BE17F7F2DF8AD"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/impl/CfirExpressionStub.kt",
+        "sha256": "52070851EECA2D043D67ACFDF7F65E2326FA6F63BDB085C82A68EE232DED1E01"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/impl/CfirErrorExpressionImpl.kt",
+        "sha256": "53FE7C5745E195E5A12D4187EE128DB50A158E03FD52092B8EB7D21FFF4B1C84"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/impl/CfirContinueExpressionImpl.kt",
+        "sha256": "B927C25C24DA03DBBF42B8113B0AE6109E47C04FFA6323D4A27A677F9BED5E23"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/impl/CfirComparisonExpressionImpl.kt",
+        "sha256": "109124CA89DA9037768E6BE11F5DAC374D1B0686B25FFC8B39550D291D90ECF3"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/impl/CfirCatchImpl.kt",
+        "sha256": "63E01D62FCD6DE57E59807A8178ECA9AD8159E38029181B5CE519EE31FAD000F"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/impl/CfirBreakExpressionImpl.kt",
+        "sha256": "FC6F4F34C9AFC95C679D33A915020EB36CF79DA61D719B72C09DBF06D1ABE207"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/impl/CfirBlockImpl.kt",
+        "sha256": "D1B837F3FD5A81767863603656A1563E64B77CFEE0F917CC90CED1C5729B3286"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/impl/CfirBinaryOpImpl.kt",
+        "sha256": "0C7BBD80120FF8122B797CB094AE5845045457E933BB92CBDF88A89DEBC4B31A"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/impl/CfirAugmentedAssignmentImpl.kt",
+        "sha256": "1BB4733C66C6264C4F33F1FD909302BADEF27C763E34F2345C059FE4716E8B14"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/impl/CfirAssignmentImpl.kt",
+        "sha256": "E24E11694D8A9FC6B3BE5FE4B031EBDCADDF63DFC658D375161E963F9E0ED53E"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/impl/CfirArrayLiteralImpl.kt",
+        "sha256": "7F6DEC5C9EDA788449B22AEEC4DF317220BC57F5593F120BF2896D63E0E22E5D"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/impl/CfirArgumentListImpl.kt",
+        "sha256": "891CD61B8FA5C95362663CA86462227796354AD7AD6D4D2FD12E9FBEFEA6BC33"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/impl/CfirAnonymousFunctionExpressionImpl.kt",
+        "sha256": "21B4152A440092138B38B581BE7D0EB081132F08C0552AA2FE9272B0EF9E7AB0"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/impl/CfirAnnotationCallImpl.kt",
+        "sha256": "11300B8411462893EBB4F0499E731556CB8BE6D2BDE409A9944009624297738F"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/builder/CfirErrorFunctionBuilder.kt",
+        "sha256": "15ECC8BA442A4B10D4C87304F7C0BD3904561428F1092DD25F9C06B4220BEFB6"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/builder/CfirEnumConstructorBuilder.kt",
+        "sha256": "B776B5F8E602333BBA7669C5307BE6D998D703F7855207AA4FB9C593C312F40C"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/builder/CfirEnumBuilder.kt",
+        "sha256": "4679556C0AFCCF9B89B2B7A26EE2D48233B80CD2AB6CDA2BAF9E7DC5F784CE2B"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/builder/CfirDeclarationBuilder.kt",
+        "sha256": "51D188D9B2C666477EDEA54EA5EED8C4412CA20B3DF0BB03D4DF1B6FFCD59FAE"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/builder/CfirConstructorBuilder.kt",
+        "sha256": "CC2F4420A766F914F32CA5F667DC713E4B295FAE8E4C8D38E7A793660E94EFE6"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/builder/CfirConstructedClassTypeParameterRefBuilder.kt",
+        "sha256": "83C1624FE90BD0135D8A5C63BAD6C23A996F71AABDB42B1B454251879251FBD0"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/builder/CfirCodeFragmentBuilder.kt",
+        "sha256": "DD5E10CFE8991DE9C4BBEBC8773EB08A86DF47A272B1DBA590C9732082418F6F"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/builder/CfirClassBuilder.kt",
+        "sha256": "C3F04D7A6A2675FC491D4890CFD2D09DA12E11DD062580F50AE307E58E1B1701"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/builder/CfirAnonymousFunctionBuilder.kt",
+        "sha256": "45700B3B4F41A7D684ADF504D36241BFBE67D9F9FEB686CB60A79966824DFEE9"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/builder/CfirFinalizerBuilder.kt",
+        "sha256": "F34458EC509C19B70AB3D984E6AB432ED36D9E07AC8C580CD241C2A0948AEC77"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/builder/CfirFileBuilder.kt",
+        "sha256": "4E44763E5100DA01E261D1B0C63DDD348DF7A77AA45574EB1EF499B79D7E658C"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/builder/CfirFieldVariableBuilder.kt",
+        "sha256": "F1410E7BA9371173ECDA5FE83BA50C0740674F64D312E20BF717D06C2316B77C"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/builder/CfirExtendBuilder.kt",
+        "sha256": "6595C1494C4FCE876B42D3CED0C915385367D48FC39B2FD09E2FFB79C8ACF30B"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/builder/CfirErrorPrimaryConstructorBuilder.kt",
+        "sha256": "242A8A1D4F14994254202A0FA9994DB24469B13EAB102906FE32F4E1FF60073F"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/builder/CfirErrorNamedValueBuilder.kt",
+        "sha256": "3BBFECFC0DD744754532AD276BD0CCFD91DDBD330C4F88430C68AE3962E02156"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/builder/CfirInterfaceBuilder.kt",
+        "sha256": "CBFF9972B60F451795ADAB42592155185AF851FDE39B11C56DAA1DE1E1B72136"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/builder/CfirImportBuilder.kt",
+        "sha256": "01F0841BAD4F8EB2D43CF80B6FD776C69C9A9B665EB9B427BB9ABBF4802C77A1"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/builder/CfirFunctionBuilder.kt",
+        "sha256": "C6E5FC9C675D903587449CC9C996E6E664EE0BCE2E0B08D73EF26929378FB5F3"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/builder/CfirMacroDeclarationBuilder.kt",
+        "sha256": "175A1AC517D0BE6976959E8F7985A44CD7D7B2A7CF75E022E9B1568CCC8A4D2C"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/builder/CfirInvalidDeclarationBuilder.kt",
+        "sha256": "99067214A76EA67032D1F360DB94E296059B1C6D3CD62C230FF4B441B71E5291"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/builder/CfirMacroExpansionDeclarationBuilder.kt",
+        "sha256": "725868A47EF51F18A98930AF6A57719C6A1196C9A3C1001FF7D15FBC78673AEA"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/builder/CfirValueParameterBuilder.kt",
+        "sha256": "92034D6C7929AC27690390D14C1597DC2C86CDC175818A43529BD62D947FEFBC"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/builder/CfirTypeParameterBuilder.kt",
+        "sha256": "DC389E52F978275A83D96503E49385AA60BDF1A9BCFAC2A25ABD98CBF1423149"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/builder/CfirTypeAliasBuilder.kt",
+        "sha256": "F35013753F789DEC4A60883B429607AD4D7749B7D611A61F6C0E7408E84CE81E"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/builder/CfirStructBuilder.kt",
+        "sha256": "8C9D8573D05EA91810F7A3A759CE3C79A45627D941C22468630547BB5F654B90"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/builder/CfirResolvedImportBuilder.kt",
+        "sha256": "D01AB3C41A970E263F78D4941AE0AA2DFB34C79DBB9134C61E717DC280ABE1BA"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/builder/CfirResolvedDeclarationStatusBuilder.kt",
+        "sha256": "A7D301FB25F4DB703DCFB300C6FB0ACD5987F2C438968B9BD47999D5220E1F4F"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/builder/CfirPropertyBuilder.kt",
+        "sha256": "73C4E896D2DE31480D6477E28EDEABE8C2CA504FFED8EB45C9815ACEC69ABCF7"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/builder/CfirPropertyAccessorBuilder.kt",
+        "sha256": "86253B1288FA0A071EE547601B60B1FA9682FF58845502594F3350FFEE2E288D"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/builder/CfirPrimaryConstructorBuilder.kt",
+        "sha256": "780D635064A7445300FA5F01645CFA4121131580A1135BAA4E05698DB9C4F26E"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/builder/CfirPatternVariableBuilder.kt",
+        "sha256": "BD619CAE897F3E198ED56CCFE63571444EFFAE601CC3AE125AE05B27AA4183DF"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/builder/CfirPatternBindingVariableBuilder.kt",
+        "sha256": "36BD50E9700EED8F0EE3383D8D85616BA64A3694A77A02A2941E061244DE8C37"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/builder/CfirPackageDirectiveBuilder.kt",
+        "sha256": "DF0A26F505172C6CF61A7BC114B7FD82F40907DB4B2F25249E259567014B3ACB"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/builder/CfirNamedFunctionBuilder.kt",
+        "sha256": "0F0BA981C703FA543DFA96710B5E87C241B1E1CCDF9BAC488171A75697E5D470"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/builder/CfirMainFunctionBuilder.kt",
+        "sha256": "8DD4F6120C9B06A713D97A13E1FEDA802008AEE50DC24D09A82D35FD6A4B77C0"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/builder/CfirUnsafeExpressionBuilder.kt",
+        "sha256": "E9E37F1BFB693FE20929B47C86570F4341E60D58E5EA70A62E34ACFB881DF4A2"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/builder/CfirTypeOperatorBuilder.kt",
+        "sha256": "5AA634EE221713D2A4F6F40F9A94A3BCECB1810AD9307BCAE376B1391213D383"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/builder/CfirTypeConversionBuilder.kt",
+        "sha256": "DD2AB2C2A1AC23F5DE1C1870F144A8952F1DDBE6C58321D91FCD7730DACD01DD"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/builder/CfirTupleLiteralBuilder.kt",
+        "sha256": "72614FCB925D55562E9D919572737367BB90D0104E94D6973DEE608DA2648EF3"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/builder/CfirTryExpressionBuilder.kt",
+        "sha256": "7A147AA7587E3734934811CEC9793CE3F306A520C58CD37A5EAC11449B31AF4C"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/builder/CfirThrowExpressionBuilder.kt",
+        "sha256": "5F7FD0F73FC2D76AB18B7C55E41A9356D42CB54F185B98C9200963E789F328AC"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/builder/CfirSynchronizedExpressionBuilder.kt",
+        "sha256": "11CC1A42D3D8BCF1329F9B16AF0718240194C8F7B424B98E1A80841F391CDFA5"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/builder/CfirSuperReceiverExpressionBuilder.kt",
+        "sha256": "BE8F3CFF1E0E2B31B86B77F962C63C5406A0383B67523EBF6294398EC7226930"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/builder/CfirSubscriptExpressionBuilder.kt",
+        "sha256": "2DD01F778D62D53E3A560F58A4DE649F111BFD1E77CD5C990801F2DBEC4D3E4E"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/builder/CfirStringInterpolationBuilder.kt",
+        "sha256": "D7D4DB5EC2658644BF22EAB935B881AED75799AC690BD698A35A807713A735DB"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/builder/CfirSpawnExpressionBuilder.kt",
+        "sha256": "008A5505B56BF1FD8F4FE89DAC2885D3C80C59358305E8B0ED082E436E2777DF"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/builder/CfirReturnExpressionBuilder.kt",
+        "sha256": "3C67D3C0263F0579F6989033E856D416C5F56C1843A43A4CA33B99FAD89217FD"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/builder/CfirResumeExpressionBuilder.kt",
+        "sha256": "148EB6B5CD7774E54221C0F533C32AD06CCF18100ACA5FDA16A56AE929795579"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/builder/CfirRangeExpressionBuilder.kt",
+        "sha256": "997E17F8F2FE0F2611785200014FF27A7525F1E242CA1BD496D7332AC04E0D66"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/builder/CfirQuoteExpressionBuilder.kt",
+        "sha256": "28D20DAEF3BCF0B35977D47DA81851152E7410BDB51CBBD11FF0578EAA865683"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/builder/CfirQualifiedAccessExpressionBuilder.kt",
+        "sha256": "AEB442160329C9836E91636241744F481CFB353A2C5B7FF6D16E8F0DE2D651F8"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/builder/CfirPerformExpressionBuilder.kt",
+        "sha256": "92A33C651BBC32C9C815BCD3BC06804861232F6A04E5FE97DF9509BA45C34488"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/builder/CfirOptionalExpressionBuilder.kt",
+        "sha256": "F6E1DCA43B7FA26DEAD00727986018C9BFD43B29B76416872CFB78D7798D95BE"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/builder/CfirOptionalChainExpressionBuilder.kt",
+        "sha256": "7FBA8DE12318660566B4065E803E0A110D390A539230D23C0E72FA9190BBD1A4"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/builder/CfirNamedArgumentExpressionBuilder.kt",
+        "sha256": "6C02E0BAD8B921525ECBDB062FCB89025D993F0ACF01741C72E3889B4D314536"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/builder/CfirNamedAccessExpressionBuilder.kt",
+        "sha256": "0A94DECB3A7DE11DB039DEFCB652BD66611B495C0112EA458012262EC53CDA00"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/builder/CfirMatchExpressionBuilder.kt",
+        "sha256": "8A4DB0CE2FDF0DA20A0A8EC4760FC6AFD8ED4D7B42882AA84B7EAC273C43F774"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/builder/CfirMatchBranchBuilder.kt",
+        "sha256": "E883F15FBAD37F4F5833A4CBA73C44FA19BB39E17A6617F6BEB6830D77F8F114"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/builder/CfirLoopExpressionBuilder.kt",
+        "sha256": "2F2A9E941803B709BD0FAF2C4BC466DCA274CF016583A7ACA147D615FB40D7AF"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/builder/CfirLiteralExpressionBuilder.kt",
+        "sha256": "5046C93D572B871E3391C3B431152417049843BD246630750DA1D7901C8E07FC"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/builder/CfirLetPatternExpressionBuilder.kt",
+        "sha256": "51C8CE556228049BAECB3E6C25503E452A536B875C30CAA5043998F3585C2B4C"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/builder/CfirLazyExpressionBuilder.kt",
+        "sha256": "617714F82E5615886E2E7826A7333A2DF68A5270074CBC3270A74153A152462C"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/builder/CfirLazyBlockBuilder.kt",
+        "sha256": "D492698B09986782A4DEDEF542D7CAD57BBAE2A3290B4DF9520A622870B8BFA7"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/builder/CfirInoutArgumentExpressionBuilder.kt",
+        "sha256": "BCDF1A4C68584A8C87E3FADFC44274AE6B39036D8AA6696747A3F8DC067872B2"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/builder/CfirIncrementDecrementExpressionBuilder.kt",
+        "sha256": "6476F4BB3D0F9C0D91EE043BBBDB201FA38B03DE6A56EE38004CCDF86D304BB1"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/builder/CfirIfExpressionBuilder.kt",
+        "sha256": "22401546780678B621DD9F2388D235ECF8D11F60A5ADCAED8C052D050876DFC9"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/builder/CfirIfAvailableExpressionBuilder.kt",
+        "sha256": "2F9F930C99B2D7D1992DE35608E28156476069CF6CC898F84874600EFBFF0C45"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/builder/CfirHandleClauseBuilder.kt",
+        "sha256": "648363C8FE298740FBC12CDBCBB5CCAFD6FA5E2059CE9C0F55C555BE61B233B0"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/builder/CfirFunctionCallBuilder.kt",
+        "sha256": "62E7CB6597789D8874F55B1836C45E8F853F7014E00F5525CA8E3CC9F0490FA1"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/builder/CfirForInExpressionBuilder.kt",
+        "sha256": "6490DC426F0FA1E0C6AC24A78C1A9FC7E636AD2BB4C838F63CD473DA3CB46697"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/builder/CfirExpressionStubBuilder.kt",
+        "sha256": "FA2BEDF5A9C2C9802166011AEBB1AF528AB380A5175B8E26CBB8F1D6E8FB1415"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/builder/CfirErrorExpressionBuilder.kt",
+        "sha256": "4BAA83931C43760A22FE9E9F59F656CB902F4E3A61A227D4189F489FAD13AEA5"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/builder/CfirContinueExpressionBuilder.kt",
+        "sha256": "14CE3B3B4555F8BB261B1B9047D52CD2B1E44CAC3059203E71E193BCCF61B959"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/builder/CfirComparisonExpressionBuilder.kt",
+        "sha256": "8BAA489CB34AB1EF78FF71F20BBF1A196DC73667C608F6419F71625B8589BA9B"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/builder/CfirCatchBuilder.kt",
+        "sha256": "2A52D5A55F1A65082577D7F318A30EA227A4ADD576E69091737345D057AA0443"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/builder/CfirCallBuilder.kt",
+        "sha256": "A2954B43B52D7BBD94CE60EC60B8F219D2A376296BE5CDC6AA9F94DEC1D4EE60"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/builder/CfirBreakExpressionBuilder.kt",
+        "sha256": "A68FB6652B9661D0E48CF6073CF76E9D7BC52A001CD4AFF499DCA147F4AE6B56"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/builder/CfirBlockBuilder.kt",
+        "sha256": "6C3DFF76A0711768B196EDEE9985694F0B77999C12577F395E8D979196999FDD"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/builder/CfirBinaryOpBuilder.kt",
+        "sha256": "EF796EE5887321A1E2C0715E88F6B46BC4C649FB7B60212C20755D8988969964"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/builder/CfirAugmentedAssignmentBuilder.kt",
+        "sha256": "6AFE6C6B44D4C3FBF23E39A72CD7353D259289C8B086A4DC4B4A1E56FDD8D7D9"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/builder/CfirAssignmentBuilder.kt",
+        "sha256": "AEBDEC5DB8D4B45864AA45E5C26412A12CD98B6327CCDF587EAECA9D1115268F"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/builder/CfirArrayLiteralBuilder.kt",
+        "sha256": "826C1DD4E9E606C99256A08506FB6CD87D0B19916E82F42D5DDD2902B7600D8A"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/builder/CfirArgumentListBuilder.kt",
+        "sha256": "AF7119F297BA9AB940784E6D57BD23EBA3742395F1E611ACD861276988D0186D"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/builder/CfirAnonymousFunctionExpressionBuilder.kt",
+        "sha256": "3C812B6EF53CF4A5CBC3F27D3B13642ADF881B4B5B7C985B43AD3098A30CEE3C"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/builder/CfirAnnotationCallBuilder.kt",
+        "sha256": "04BD6082E89683E70EB11E2E321E8A2BDC42C2BE47746CF848B36E06823D932C"
+      },
+      {
+        "path": "cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/expressions/builder/CfirAbstractFunctionCallBuilder.kt",
+        "sha256": "CD9E2685830DB591F6C1C589B1866EFF4426F856C11FF5C118A039AE9426ECBB"
+      },
+      {
+        "path": "cfir/analysis-tests/testData/diagnostics2/common-specific/source-expression-export/operatorsConversions.cj",
+        "sha256": "5B237EB7082EC4D061F9CFF7C341DFC8C39EE0AF81018DB489F0D5BE0D2ACB98"
+      },
+      {
+        "path": "cfir/analysis-tests/testData/diagnostics2/common-specific/source-expression-export/FIXTURE.md",
+        "sha256": "C8CAC55CD7F29D6C7BE236E03C0592C35B47706034F2B3471FC5AF53C6D3151E"
+      },
+      {
+        "path": "cfir/analysis-tests/testData/diagnostics2/common-specific/source-expression-export/exceptionsResources.cj",
+        "sha256": "4A017A550E5CD25D828C2750872BF2C1053746BD5E064A0252F7DE4CC49D4858"
+      },
+      {
+        "path": "cfir/analysis-tests/testData/diagnostics2/common-specific/source-expression-export/defaultFacts.cj",
+        "sha256": "A9DFB1D5611ECC9DA2CA302CCAA0361EFF545090BBC53B22303E59D3EEAA2116"
+      },
+      {
+        "path": "cfir/analysis-tests/testData/diagnostics2/common-specific/source-expression-export/declarationsCalls.cj",
+        "sha256": "BF8F88E2398BA1F562F848AB0814F68CEF90C7803B96C3B1BC6394D145AD9002"
+      },
+      {
+        "path": "cfir/analysis-tests/testData/diagnostics2/common-specific/source-expression-export/controlFlow.cj",
+        "sha256": "1D83B1B49F11F98ADCB5C5A9E025DC1993AE396436633983624B5960C811930D"
+      }
+    ]
+  },
+  "results": {
+    "capturedUtc": "2026-11-16T18:35:10.0862264Z",
+    "xml": [
+      {
+        "suite": "org.cangnova.cangjie.cfir.copy.CfirOwnedGraphCopyTest",
+        "path": "cfir/cfir-tree/build/test-results/test/TEST-org.cangnova.cangjie.cfir.copy.CfirOwnedGraphCopyTest.xml",
+        "timestamp": "2026-11-16T18:29:27.279Z",
+        "tests": 14,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "length": 2639,
+        "sha256": "14785FA75F309B4224F2CA67821FAEB21ABC1D0BC0528FFE722091AB764263BB",
+        "gzipBase64": "H4sIAAAAAAAACr2WTW/bOBCG7wHyH7w67R7iWE7QJIXtQv7Iwmi2CWx1C2zRA02OZbbUkJgZOda/X1BysgVao4d1cqPEofBw5n1nNHi3K11nC8TW4zBJu72kA6i9sVgMk4/57dl18m50ejIQYOHKCnRQlTBMPBVdrbBAv1XN4quFrl5b6mof6u5kben+EcH8SSpsJj7UObAkneYzwyS9TDr8zYYAZpj0ks5aWVcRcPMARJ7apdgSWFQZhkm/139zlqZn6Zs8vX7bv3nbv+r2r27+STobz9JC3c0/tGeGSa97cXmTjE5POp1BIB+AxAKfty8ihVb8dJcSyhXQgyJVggBlzF5bJdYjjz2Rf/xkZeMrme2CwpiZfAPN5aa+VBZ//yPpaKeY/19m9tjpRT/5Oab2yKJQmoMPBAy0Bc6cVQw8qbUDztAsoFSBby04k6GZxDNUafG0rMuVd3xc2l56fYB2XaGOKVyAVIR33ocMzYMSAcKxbdLIGcEtAW8yNLNd3FBuAWsgQA28FFU/vT0y9EV6AHoDLkB7dlxnImRXlcCcJz5YMHPUrorgTbLHSn/L/bNqjozYuziAWJCvApiF98ILqBiWVQjOgmk+l9cB/hMymuVGEewlcmzCQ5X3P4C0mpxtgeplqSgGSwxYOi/Hpro8QMWN/Bew2mtvAV9ByyfyWLy3aHhaBWe1ksbZFJ009hWaKbBYbJvBsVEPGZ2AvduCyaioSkD5S4VgsXgPEPgjliq2zblAGSHvyRYWlbuzLC9U50MZhV3MmG0q2VQ4AE18nCWzXSDgOFKymEEHhRIwi/21mvgo32ODpr8AnWPbTXJFBUjsPtPYbQjMU7Vz3zq91cBr8SGwgLlT5cqo+0fkeXR27JotaNPUo2x5ooJUBObFms7VIUKPszJI/XdGpOpmqCiURpBL8aQKWG5UgOfxM3MQhRsr/WqusWVZiVo5aEiXFgsH4pEj5cSjJhCYG0CxUr9WZUk95hsbfTpHpXX0xMrBAjTY6JOI1jSfDM2HyrlIv5+NLzZOuGaB8sxXMhr89nkyzfLs85cvo8H5dxvfBwLRzwPjxunJ4Pz5z3B0evIvi+ughk8KAAA=",
+        "roundTripVerified": true,
+        "cases": [
+          {
+            "key": "org.cangnova.cangjie.cfir.copy.CfirOwnedGraphCopyTest#memberParameterAssociationsBorrowWithoutExpandingTheOwnedDomain()",
+            "status": "passed",
+            "message": ""
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.copy.CfirOwnedGraphCopyTest#constantGraphPreservesAliasesCyclesAndRemapsFieldAndConstructorSymbols()",
+            "status": "passed",
+            "message": ""
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.copy.CfirOwnedGraphCopyTest#functionReturnLoopAndPatternBindingsAreFreshAndExternalReferencesStayExternal()",
+            "status": "passed",
+            "message": ""
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.copy.CfirOwnedGraphCopyTest#helperOwnedByAttributeIsCopiedIncludingCycleBackToParameter()",
+            "status": "passed",
+            "message": ""
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.copy.CfirOwnedGraphCopyTest#groupedRootsReuseSuppliedOwnedTypeParameterAndShareAliases()",
+            "status": "passed",
+            "message": ""
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.copy.CfirOwnedGraphCopyTest#ownedTypeParameterRemapsEverySmartcastTypeSlot()",
+            "status": "passed",
+            "message": ""
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.copy.CfirOwnedGraphCopyTest#symbolRebindingsRejectWrongKindsDuplicateOwnersAndBoundDestinations()",
+            "status": "passed",
+            "message": ""
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.copy.CfirOwnedGraphCopyTest#resolvedArgumentMappingKeepsUnmappedItemsAndOriginalListAliases()",
+            "status": "passed",
+            "message": ""
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.copy.CfirOwnedGraphCopyTest#explicitTypeRemapperCoversExpressionAndDelegatedResolvedTypeRoots()",
+            "status": "passed",
+            "message": ""
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.copy.CfirOwnedGraphCopyTest#explicitInternalTargetsAreDeferredAndBoundToCopiedOwners()",
+            "status": "passed",
+            "message": ""
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.copy.CfirOwnedGraphCopyTest#nestedLambdaOwnsItsReturnTargetAndRebindsCapturedParameter()",
+            "status": "passed",
+            "message": ""
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.copy.CfirOwnedGraphCopyTest#nonEmptyVArrayConstantKeepsStorageShapeAndRemapsElementTypes()",
+            "status": "passed",
+            "message": ""
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.copy.CfirOwnedGraphCopyTest#immutableEmptySingletonsKeepConcreteIdentity()",
+            "status": "passed",
+            "message": ""
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.copy.CfirOwnedGraphCopyTest#rawThisAndInaccessibleReceiversKeepKindsAndNullableBinding()",
+            "status": "passed",
+            "message": ""
+          }
+        ]
+      },
+      {
+        "suite": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest",
+        "path": "cfir/providers/build/test-results/test/TEST-org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest.xml",
+        "timestamp": "2026-11-16T18:31:53.552Z",
+        "tests": 30,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "length": 5988,
+        "sha256": "E4A7293D7DF6C07432816E762CF662B49E02E81F87B6D404E3C628D5B432317B",
+        "gzipBase64": "H4sIAAAAAAAACtVYXVPiSBR9t8r/wOZp90EE/FhrSpxC0F1qHbUAtWqn5qFJDnC10529fZOR+fVbnUCEUUpfFti3kITk3NvnnnM6p5+fY13JwI6saQb1ai2owIQ2IjNuBneDy72T4PPZ7s6pwIlLSVAxKkYzsDyuhsqMjc1UfvBIqIYj4irDWZ2hmrDNKAK7antEfPGcWJaWUXrqyHVNkkrfqMRNrAzgJKjkL2gGB7Wg4p4oSRA1g1pQGSnSKcPlP8BsuTgUiuFExUkzaNQax3v1+l79eFA/+XRQ/3R0UD06avwdVCbWSQH3qntd/KcZ1KqHh8fB2e5OpXKasE3AQnD7xQmPIlRuXmWSDjW5CaL2o+3YWJHpp5xRBvdAjBumMZkeYpsp/etvQSXUyrn/qj8z8Af134O3wYY2TjSeb5UI2JyT8YvoOvbaSkuTcv0JtO4aElKafoDXhbjWaKxA7ERJ6m4nyqFvUw6RP+WBZNKNE00hSQ+SshlME/Qw6roeHhEKok7KZMZtlUjKWFsdtcMVdagkQd7tvihBDCNdc6tViBfELRNdsv0B86D0019A4gr2KF3+x62vkIMVhTAsR/C9vXgmJ4sVuVclrQ/uKv6Ej/ZeMamhhifNvKPd2D8Z0TnJpdIOBWA3p9j6B2BlAaW+zIa2Z63MFebin5QypWGkh8R33q/C+iCfrKRIbLOPU70HUWRcLpKIrm2EzXed836SGX9BPATPCvAMWux5/vLoMjWhkDXbRPuSNQWjl43pioaseNpBqBUrD30j9Gm8J5Vd4yjCNZwfVG3Dp23q8GpjujMyTRCd22h6RQJWeuOutErMUxNOlBkj6mCkUi1/QifgrpsB9HN6rzRFSuB6SKAEkZ5uXmE+Frq2iNNF8BLMNWOBMi3pv1Cp61phiEQQeSbZVG7Zxta77MK0rjEF1N93JVYxBHyPUCy/SEyGPo2N8jTayEqsorwjvxJta5zM8u+dQ0n4tjXejLzib1EGKN1oaUwvovGH0mNx9+arkAm5HkJQBu5hBIbxmWBBa4qpuDNDm5ooTw+bUPzDd0XnzV3UjPqFXc3DWhmWN0/8n2x1iUreq7bJXMtWz1DeK53CJ98evNi7guktEy1Iy/8mfrUfbTGaLREVTrbDoErE86e8TuaeJD6d523Pt0vtIjz8AYPCmbbImJYTTQQjJNNFe/oCUZEStVU5oVT6n/dOy1uPV7ly88jLKDmPODffDXi+N2qZnD7zMLmJLLkK+Hf2zSwU5SYDM0W4ZThwBndbDjJiZYTCC01jGpImmW7Dt5gZW5a+gXmq9FVcZk1/ehNMWTWio7zVBeSZefZnczlQPIb0MCxOvyjNYIK52LBKJusr4mhehJs6QbxnUzk7/eVru9MatL5++3Z2ur9wYfFGML99o7+wu3O6X34uP9vd+RcpDr76ZBcAAA==",
+        "roundTripVerified": true,
+        "cases": [
+          {
+            "key": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest#publishedCjoDomainSurvivesWireOriginRemoval()",
+            "status": "passed",
+            "message": ""
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest#complexPatternBindingsDoNotAliasShellInitializer()",
+            "status": "passed",
+            "message": ""
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest#statusPhaseSourceInputWithImplicitReturnTypeRefIsRejectedDuringCapture()",
+            "status": "passed",
+            "message": ""
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest#appendingStatementInPlaceIsRejectedAndFrozenWalkKeepsOriginalStatements()",
+            "status": "passed",
+            "message": ""
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest#reorderingExistingStatementsInPlaceIsRejected()",
+            "status": "passed",
+            "message": ""
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest#cjoVariableWithOriginalImportedBitFalseRejectsSourceInitializer()",
+            "status": "passed",
+            "message": ""
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest#publishedPatternRootSurvivesEquivalentReplacement()",
+            "status": "passed",
+            "message": ""
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest#removingStatementInPlaceIsRejectedAndFrozenWalkRetainsRemovedNode()",
+            "status": "passed",
+            "message": ""
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest#replacingMemberInPlaceWithEquivalentResolvedFunctionIsRejected()",
+            "status": "passed",
+            "message": ""
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest#publishedSourceDomainSurvivesLibraryDeclarationReplacement()",
+            "status": "passed",
+            "message": ""
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest#appendingInsideNestedBlockIsRejected()",
+            "status": "passed",
+            "message": ""
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest#statusPhaseSourceInputWithUntypedBodyLiteralIsRejectedDuringCapture()",
+            "status": "passed",
+            "message": ""
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest#unchangedDefaultHelperIsCapturedAndValidatesRepeatedly()",
+            "status": "passed",
+            "message": ""
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest#publishedCjoDomainSurvivesWireOriginReplacement()",
+            "status": "passed",
+            "message": ""
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest#completeResolvedSourceInputAtStatusPhaseIsAcceptedWithoutPromotingDeclarations()",
+            "status": "passed",
+            "message": ""
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest#publishedParameterVectorSurvivesLiveSignatureReplacement()",
+            "status": "passed",
+            "message": ""
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest#simpleConstBindingUsesCapturedContainerInitializer()",
+            "status": "passed",
+            "message": ""
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest#replacingDefaultHelperEdgeIsRejectedAndFrozenWalkKeepsOriginalHelper()",
+            "status": "passed",
+            "message": ""
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest#thisReceiverReferenceIsCapturedAndSourceUnboundStateIsRejected()",
+            "status": "passed",
+            "message": ""
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest#publishedComplexPatternBindingsSurviveNestedPatternReordering()",
+            "status": "passed",
+            "message": ""
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest#appendingInsideDefaultHelperBodyIsRejected()",
+            "status": "passed",
+            "message": ""
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest#publishedDefaultValueRootRemainsFrozenAndReplacementIsRejected()",
+            "status": "passed",
+            "message": ""
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest#publishedSourceDomainSurvivesCjoOriginAttachment()",
+            "status": "passed",
+            "message": ""
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest#publishedAnalysisWalkRetainsRemovedBodyNodeAndRejectsChangedGeneration()",
+            "status": "passed",
+            "message": ""
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest#publishedDefaultHelperIdentitySurvivesLiveMetadataReplacement()",
+            "status": "passed",
+            "message": ""
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest#replacingStatementInPlaceWithEquivalentLiteralIsRejected()",
+            "status": "passed",
+            "message": ""
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest#unchangedResolvedOwnerFunctionAndBodyValidateRepeatedly()",
+            "status": "passed",
+            "message": ""
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest#writerFrozenOverridePreservesPublishedSemanticEligibility()",
+            "status": "passed",
+            "message": ""
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest#replacingReturnTypeRefWithSameResolvedTypeIsRejected()",
+            "status": "passed",
+            "message": ""
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisInputSnapshotTest#frozenReturnBindingSurvivesTargetRebindingAndRejectsTheChangedGraph()",
+            "status": "passed",
+            "message": ""
+          }
+        ]
+      },
+      {
+        "suite": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportSourcePayloadTest",
+        "path": "cfir/providers/build/test-results/test/TEST-org.cangnova.cangjie.cfir.resolve.providers.CfirExportSourcePayloadTest.xml",
+        "timestamp": "2026-11-16T18:31:54Z",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "length": 1526,
+        "sha256": "CCDD183C20EA920C05152DE66767F845120C0FA15EDB28B37B4F6DE055CAE270",
+        "gzipBase64": "H4sIAAAAAAAACr2UwU4bQQyG75HyDts5tYeELLSIoiRoCUmFIAGFAFIRh8mss2s68axsb2D79NUSgjiQW+Fmj63R/41/T/foaemjFbBgoJ6J2x0TAbmQImU9cz0btQ7MUb/Z6CqISokKEdkl9EzgrO0sZRRW9jl4QGi7BXKbQYJfQbvgsMIUWNqDBfLwqQisV6FkB5e28sGmMxA10fPFPbNvIvmDRQFpz3RMtLDoSwZ5ToA58DpUXIKoXRY9s9vZ3W/FcSven8UHh3vx4Y/vv02UB9G1wvPTybq/Zzrtzl5s+s1GFHULDgWwIsjO+qAW4KxswCxRUKsYaEjK1ZWz3rIklI6tunyMIkjZwApIwjDi8BfoFjUPpQ5CUSFlx4E5PEI6CSnI128mct6K/O9X23DFe+Z9DgJRSAeBRC3pCMGnCaXDFXA19LAE0htwGviVIskskui4VDv3kHisGT9cf+fnFv3uRfkvtkV+BlDICYoiOb2YP4BTmUIpIFMowCqkU1gAAzmoRzXwQUAGlfOfQbC7heDlwnRsiwIpu7G+hCnMkerlOpUbFJx7qM1zTS63lEF6BlWt/4IxQ7L+HEU/Xv82B3mcs+VqlmOtKXndi0sGAV7BJNCk9P6a5qGk9KpazoOXl12Y5RwekbILPl7zfjxGvAXDFoXHNwaZgtZGH5Xkapr1WIKH4QroNgea5bCpTUFLJkk2+SdCSCUKy1Yotd/9cjc4SWbJ3f19v7vzpvC2EZjfb6wLzUZ35/UD7zcb/wDliE3n9gUAAA==",
+        "roundTripVerified": true,
+        "cases": [
+          {
+            "key": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportSourcePayloadTest#annotationEntryScalarsAndMatchMissingCasesAreFrozenWithoutCopyingBorrowedNodes()",
+            "status": "passed",
+            "message": ""
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportSourcePayloadTest#nestedConstantFieldAndEveryElementVectorAreFrozenAgainstMutableAliases()",
+            "status": "passed",
+            "message": ""
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportSourcePayloadTest#constantGraphKeepsDistinctObjectsReusesRepeatedReferencesAndClosesCycles()",
+            "status": "passed",
+            "message": ""
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportSourcePayloadTest#resolvedMappingValueRebindingIsVisibleWithUnchangedKeysAndOriginalList()",
+            "status": "passed",
+            "message": ""
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportSourcePayloadTest#libraryThisAndAnnotationPreserveNonNullUnboundSymbolsWithoutThrowingOrBinding()",
+            "status": "passed",
+            "message": ""
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.resolve.providers.CfirExportSourcePayloadTest#appliedReferenceRetainsFunctionValueRoleEvenWhenTheFunctionReturnsAFunction()",
+            "status": "passed",
+            "message": ""
+          }
+        ]
+      },
+      {
+        "suite": "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoLightTreeTest",
+        "path": "cfir/analysis-tests/build/test-results/test/TEST-org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoLightTreeTest.xml",
+        "timestamp": "2026-11-16T18:32:42.582Z",
+        "tests": 2,
+        "failures": 2,
+        "errors": 0,
+        "skipped": 0,
+        "length": 9319,
+        "sha256": "0B6269279DFC01F217D9B206DE10E74F42F92719033289CD384CABFC05EB7884",
+        "gzipBase64": "H4sIAAAAAAAACu1aTW8TRxg+Eyn/YbpEwZGasdcfsePYQa4JEEQSlIRLEYfx7mt74vHMambWTc4IEOWjUsWFqirl1F5aDj2UtgT+TFzCib9Qza4dQnAS24khanzbnZn3cx6/77uPnDu/XmeoAVJRwfOWjWMWAu4Il/JK3rq+enEyY52fHR3JaVBa+VQD4qQOeUvICnYIr3DRIMHDGgXslKnEhBO2oajCgQgulqksrtW9FS0kuAtQL4Gc50oTrinRVPDimrhKK1W9KgFWQWkLBYJ5K24hVaOeB27eilmoTCjzJYQbIKWQKljXtA5Kk7qXt+Kx+NSkbU/aU6t2JpuIZ5NxnMrEv7ZQVSgdOn51fjGUyVsZbKeT1uzoCEI5TwoPpKagouGCccIhqh2v55cYdea5BlkmDlyAMvGZ/kq4G9ekqAsNahnKIIE74F6TtEE0XPS5YwKMTFjIYUSpT5C5IK40TsTsMC6Ecq28oTooRSotB4QH3FhJruEFn2nqMbjYyu+cSW0WtZdRex1F4jt3MDF+1k7MjJ+1YzPjZ6dn9mgsKGVSKbgRBbel0JW0ATLa/Pbn7c3NaPPOk+bdv98+frL9/PnWi4fbtzabd75v3r69/fy3rb/uNb97uPXq/ruXP9yIzC0vLy1/iYqEc6GRJ4XrO4AYbQAqXllCddDEJZpkUUm4G0iU0bkGYT6cQ1QhIyHBk6CAa1JigChHuhpKwrrZMLhHnhBs4ibK58cresZsgKPBzaJxpme09CFYLvkafUNUuFomTAXLfSSi+egpsuOoTNe1uZe3tzabr2+/ffbPv/d+2X72AK0sXV8uzqGtF4/e/Pi0+ftPxtl3Lx+YJP35x/bru2hxaXEu6oUYQ28e/7r16n5n1+2P/Y6ZJQvpDa9LIFizxwGX0ZEzpxgj3Ub/2YExOnKGaNSxQBnHsQLZoA4oTOsew1euc6pTO6EobK67wFikVRzf76yEcrims3YqNnGYGVPLln3OQWIJnpC6janIrp2azqaSh6paFPySFL5HeWW3Vp+bt2vUA0Y5RDqfqulsOnE0C/trTsSOpnnMDZO8v4V4+lALMjiscKGktCSOLoabRVH3KANp9O1EctCZms5mpg+y1qm97Sjsos21PZlbN3C4JIlXLRIFka5lDfKm0gN38ShTQk+xJO1WLGukQXCJKIgGT4zwCpZQZuBovAC6KlxMeUPUINJ6M8eyqUyss7yvKcMFKcnGVao0Lgs5R5xq5P1KIG6npqeOQ37F94L6aurS6e4PPcHyIIRcJtxlIDEJ8neBkgoXSlNH9YSvdDrAx7F75VTBqe36EffkVDKZHohTnhQOKLUgXJ/1VlLiYdU7SR4dcnE7/XVFgze2q3cE7y37yrzscaItE1afzCcwYgclop8W+aHSfRukPRXv10KVODVT0rsyE048Rw5kjJF6ySVjduIAW+FY0f145fP2ELTEVyivMDBD3Z45azoz6JuI933X0ucGMWp/5dNBqxzsmBgCCWOMMqguJPTT207C9D+oSlYoa5AFxkIg9NaLErHM4MBhx2KfAx25aOvTOOSaom2yqSP1JPeOjK2x8jIwD+S8Kgpmxj1wl3ytqAtFwzWZmfOTE08xnE6kTxzx9CH6Ux+jPzkkco6byOku50NiZEiMDImR00CM9N/DeookkTmVtEjX1XZANEOnO+3j+z4zdQJJh9SQdBiSDkPSYUg6DEmHIenwPyYd1IbSUJ8Uvp7NfXGjeKGwWrhx8+ZsLrprY/dBkLLzQbNhjO38Y2h2dOQ/HYKWR2ckAAA=",
+        "roundTripVerified": true,
+        "cases": [
+          {
+            "key": "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoLightTreeTest#publicInterfaceDefaultBodyPromotesReferencedPrivateFunction()",
+            "status": "failed",
+            "message": "org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)\r\n\torg.opentest4j.AssertionFailedError: driver/加载/写出错误不能冒充语义反例：[(ERROR, Cannot produce live CJO metadata: body of 'value' is not representable in the CJO expression pool)] ==> expected: <true> but was: <false>\r\n\torg.opentest4j.AssertionFailedError: 原 12 fixture 都必须执行 SOURCE 与真实 CJO，不跳过 NONE/private 用例 ==> expected: <1> but was: <0>"
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoLightTreeTest#referencedPrivateDefaultHelperIsCollectedOutsideClassBody()",
+            "status": "failed",
+            "message": "org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)\r\n\torg.opentest4j.AssertionFailedError: expected: <5> but was: <4>\r\n\torg.opentest4j.AssertionFailedError: 原 12 fixture 都必须执行 SOURCE 与真实 CJO，不跳过 NONE/private 用例 ==> expected: <1> but was: <0>"
+          }
+        ]
+      },
+      {
+        "suite": "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoTest",
+        "path": "cfir/analysis-tests/build/test-results/test/TEST-org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoTest.xml",
+        "timestamp": "2026-11-16T18:32:50.759Z",
+        "tests": 2,
+        "failures": 2,
+        "errors": 0,
+        "skipped": 0,
+        "length": 9551,
+        "sha256": "7B4BBA423DBC26C8B426DF9F235696F436C968B5716C2E595EFA6F08F8CE8492",
+        "gzipBase64": "H4sIAAAAAAAACu1aTU8bRxg+F4n/MN0gMFIz3jU2NgYTuQ5JiAJEQFSpUQ7j3df24NmZ1cysi89REqX5qFTlkqpqmlN7aXPooWkbkj+DG3LKX6hm1xBC+DAGJ6j4grwz837Ow/u+ftZT51Z9hhogFRW8YDnYthBwV3iUVwvWteULZ3PWuenBgSkNSquQakCc+FCwhKxil/AqFw0SfVihgN0KlZhwwpqKKhyJ4FKFytKKHyxpIcGbA78McpYrTbimRFPBSytiGZS2UHS+YKUspOo0CMArWLaFKoSyUEK8AVIKqaJ1TX1QmvhBwUrZqfGzjnPWGV92cvmxVD5j42xm4msL1YTSsb9XZudjGRNkOpezpgcHEJoKpAhAagoqGS8YJ1yiNsMMwjKj7izXICvEhfNQISHTXwqveVUKX2hQi1ABCdwF76qkDaLhQshdE1di1EIuI0r1LmHtcGx7Ig4Hoal2upAPSpFq264IgBvl6RU8FzJNAwYX2mmdMRnNo81ltLmOEqmt1I8On3HGJofPOPbk8JmJyR0ai0qZDApuRMFrK/QkbYBMtr79eWNtLdm6/bh15+83jx5vPHu2/vzBxs211u3vW7dubTz7bf2vu63vHqy/vPf2xQ/XEzOLiwuLX6AS4VxoFEjhhS4gRhuASpcXkA+aeESTPCoLr4lEBY00CAthBFGFjISEQIICrkmZAaIc6VosCatmw6AcBUKw0RuoUBiu6kmzAa4GL4+GmZ7UMoRouRxq9A1R8WqFMBUtd5GI1sMnyEmhCl3V5l7e3Fxrvbr15uk//979ZePpfbS0cG2xNIPWnz98/eOT1u8/GWffvrhvkvTnHxuv7qD5hfmZZBBDC71+9Ov6y3u7u+586Ldtliykm0GHQLCmjwMugwOfnWKMdBr9JwfG4MBnRKNd65JxHCuQDeqCwtQPGL58jVOd2QpFYXPdRcYS7Zr4bmcplsN1nXcy9uhBZkwtWww5B4klBELqTUwltu3UdT6TPlDVvOAXpQgDyqvbtYbcPF2lATDKIbH7qbrOZ8eOZmFvzWP20TQPeXGS97aQyh5oQUaHFS6WlZbE1aV4syT8gDKQRt9WJPudqet8bmI/a7t1tS2FHXY348nMqoHDRUmCWokoSHQsa5A3nu25i0cZDg4VS9ppx7JCGgSXiYJk9IkRXsUSKgxcjedA14SHKW+IOiTaT+ZYPpOzd5cPNWW4KCVpXqFK44qQM8StJd6tROJOZmL8OOSXwiCqr6Yune7+cChY7oeQS4R7DCQmUf7OU1LlQmnqqkPhK5uN8HHsXrk1cOvb/okP5VQ6ne2JU4EULig1J7yQHa6kpOKqd5I8OuDitvrrkoZgaFvviJ7b9pV52OHEpkxcfXIfwYgTlYhuWuT7SvdskM54qlsLNeLWTUnvyEw88Rw5kCFG/LJHhpyxfWzFY0Xn41XIN4egBb5EeZWBGep2zFkTuV7fRKrru5YhN4hReyufiFplb8fEGEgYY5RDvpDQTW87CdN/rypZsaJBFhmLgXC4XjRm53oHDse2PwU6ppLtr8YxxZTc5Jh2ZZzkzpGxPVZeAhaAnFUlwcy4B95CqBX1oGQoJjNzfiy+ycbpbPbE8U3vgz7zIejTff7muPmbznLe50P6fEifDzkNfEj3retQkYzlTiUb0nG17RG7sNuddvG1Pjd+ArmGTJ9r6HMNfa6hzzX0uYY+1/A/5hpUU2nwz4pQT099fr10vrhcvH7jxvRUctvG9oMg5buDXxUX5/OoqDX4gUZaICaIh+rQRCOBolgxgABTjhuEUY/qZtyTR1BFyOi9ShN0JAIeklClSsvm4MABSil3JfjmXQwzb4eJVIA9CHQNM+pT3b1y6gGumT+w6rLQAw9XKAN1gMLtuTK5Mfne+mXU9ODAf65GAW1PJQAA",
+        "roundTripVerified": true,
+        "cases": [
+          {
+            "key": "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoTest#publicInterfaceDefaultBodyPromotesReferencedPrivateFunction()",
+            "status": "failed",
+            "message": "org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)\r\n\torg.opentest4j.AssertionFailedError: driver/加载/写出错误不能冒充语义反例：[(ERROR, Cannot produce live CJO metadata: body of 'value' is not representable in the CJO expression pool)] ==> expected: <true> but was: <false>\r\n\torg.opentest4j.AssertionFailedError: 原 12 fixture 都必须执行 SOURCE 与真实 CJO，不跳过 NONE/private 用例 ==> expected: <1> but was: <0>"
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.analysis.tests.CfirCjmpStoredMemberInstantiationCjoTest#referencedPrivateDefaultHelperIsCollectedOutsideClassBody()",
+            "status": "failed",
+            "message": "org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)\r\n\torg.opentest4j.AssertionFailedError: expected: <5> but was: <4>\r\n\torg.opentest4j.AssertionFailedError: 原 12 fixture 都必须执行 SOURCE 与真实 CJO，不跳过 NONE/private 用例 ==> expected: <1> but was: <0>"
+          }
+        ]
+      },
+      {
+        "suite": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportLightTreeTest",
+        "path": "cfir/analysis-tests/build/test-results/test/TEST-org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportLightTreeTest.xml",
+        "timestamp": "2026-11-16T18:32:52.248Z",
+        "tests": 5,
+        "failures": 4,
+        "errors": 0,
+        "skipped": 0,
+        "length": 16740,
+        "sha256": "7D3EA5477033D73712BE4ACF4A328B56EC478222901D1FC6F13153D5346616A0",
+        "gzipBase64": "H4sIAAAAAAAACu2czW8TRxTAz0TK/zBdouBIzWTXX9iOHWSZpCUCguxwKeIw2X12Jh7PrGZmneRe2kqlH6p6aVUVoV4qpNJDD0WlKv9LRQKc+i9Us7ZDGhyyDcQh1ty88/E+5j29tz+v1+VLWx2GuiAVFbzieNh1EHBfBJS3Ks7N1aXZgnNpYXKirEFpFVENiJMOVBwhW9gnvMVFl8QfNihgv0klJpywbUUVjrfgWpPKhoikD4tboQRlFC1uhULqq7S1rlclwCoo7aB4ecXJOUi1aRhCUHFcBzUJZZEEVXGyDgIphVTxuKYdUJp0woqTdtP5Wc+b9fKrXqGUSZdyaZzOFj5y0LpQumfu1SvXe3sqTga7xbyzMDmBUDmUIgSpKai53oAxwidq4KUvuJaCLTGxmZpxkM+IUifmf2ydi/MD6xAq971HHVCKtPpqRQjcyM5u4GsR0zRksNQ/pUVzQCU0GEaDcZRK753kzPR5LzM/fd5z56fPF+cPSKwqZQ5EcLMVgr7A1GK9vlJ/H9UI50KjUIog8gEx2gVUW15BHdAkIJqU0JoItpFoogubhLUvIKqQ2SDBuA5ckzUGiHKk13sbYe9MUCgEm0GVynRLz5tx8DUEJTTN9HyTMAXx+Fqk0SZRvWEto3j0GA7t/vrV00cPdr689+zbe7u//PT0r893ntx5cf/xzsMfX3x3Z+fh3d3PvkaNlZv12uLfn3xTW17558+7Tx998fz3354/+XT3hwc7j//Y/fn+s+8/Rlfqw232XrXXNUMO0tthwkg6C28j3pMT58YgyEm9OL3ITk6cIxoNLQzGYqxAdqkPCtNOyPDyTU51bs8HhU28qoylLkOTREy/nGn09uG2Lnk5d+YoNaaa1CPOQWIJps4MkiK1b6atS7nskaKuC/6BFFFIeWu/1Iibqxs0BEY5pIavauvSxcybaThccsZ9M8lTQe+QD9eQvnikBhkvVri6prQkvq71JmuiE1IG0sjb8+R1a9q6VCi+TtuwtrIn8ND2MtBfIwpSRywzqZU+KRv2N9EEdrj5vh0bpEvwGlEwF39ihLewhCYDX+NroNdFgCnvijak+ldmWSlXcIfvjzRluCol2b5KlcZNIReJv556ORJv93LF/NvY34jC2D9TNMaj+v6v1DgY49qG+JDwgIHEoRQ+KHVNBBFLkpiZQm7mNNX3Su7RNbehIZzaV0/i675WZS4OqB7siZM+WxiBEi/OzOOUzf8KPbRoevn0cTWsE7+9fSOhmiQhSeDIFCOdtYBMeZnX6Oq1muQtN+KDxrjCG5S3GJhGf6D3FgsnHYn0sWMtI24yRh0uvOi9geyEtw69RMIYowLqCAnHKamneiv4lutVtalBVhnrBV4lKFxZ9+LJpYDnuqeRA+W5PtX0aH1ugOtD4d2gPdFCqprg/W841MgovpgdB4j3CfMjRjRYkh9zkh91pC3OW5y3OH8WcX5oW03C9QODLNe/e7XYwr2Fewv3Fu4t3Fu4PxNwH4DPiCTxA7IaYWx0ZJ/NFcYB7aFLWGTJfvyf0Y840BbsLdhbsD+LYP9qS01C9YPfeFiqf+fqsIV6C/UW6i3UW6i3UH8moB62fAjj+486qPi+Y5RYnxkHrJfgiy5I+7x+zKl+tHG2UG+h3kL9WYT6YS01gT1e3Mkt1r+DhdhSvaV6S/WW6i3VW6o/E1QvJG1RTtjLF1tpi3eA6yXia1XlwZKZbYB5sY8KPjLiz2XzTv+1f7WtNHRmRaQXyu/dql2urlZv3b69UJ7bN7F/IUg5fKGZMMez93cJC5MT/wI4s5SkZEEAAA==",
+        "roundTripVerified": true,
+        "cases": [
+          {
+            "key": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportLightTreeTest#controlFlow()",
+            "status": "failed",
+            "message": "org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)\r\n\torg.opentest4j.AssertionFailedError: (ERROR, Cannot produce live CJO metadata: body of 'walk' is not representable in the CJO expression pool) ==> expected: <false> but was: <true>\r\n\torg.opentest4j.AssertionFailedError: 每个原生正例必须实际完成 SOURCE→CJO，不跳过未建模的 IR ==> expected: <1> but was: <0>"
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportLightTreeTest#operatorsConversions()",
+            "status": "failed",
+            "message": "org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)\r\n\torg.opentest4j.AssertionFailedError: (ERROR, Cannot produce live CJO metadata: body of 'calculate' is not representable in the CJO expression pool) ==> expected: <false> but was: <true>\r\n\torg.opentest4j.AssertionFailedError: 每个原生正例必须实际完成 SOURCE→CJO，不跳过未建模的 IR ==> expected: <1> but was: <0>"
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportLightTreeTest#declarationsCalls()",
+            "status": "failed",
+            "message": "org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)\r\n\torg.opentest4j.AssertionFailedError: (ERROR, Cannot produce live CJO metadata: body of 'evaluate' is not representable in the CJO expression pool) ==> expected: <false> but was: <true>\r\n\torg.opentest4j.AssertionFailedError: 每个原生正例必须实际完成 SOURCE→CJO，不跳过未建模的 IR ==> expected: <1> but was: <0>"
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportLightTreeTest#exceptionsResources()",
+            "status": "failed",
+            "message": "org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)\r\n\torg.opentest4j.AssertionFailedError: (ERROR, Cannot produce live CJO metadata: body of 'recover' is not representable in the CJO expression pool) ==> expected: <false> but was: <true>\r\n\torg.opentest4j.AssertionFailedError: 每个原生正例必须实际完成 SOURCE→CJO，不跳过未建模的 IR ==> expected: <1> but was: <0>"
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportLightTreeTest#originalDefaultAssignmentFactsAndFinalSelection()",
+            "status": "passed",
+            "message": ""
+          }
+        ]
+      },
+      {
+        "suite": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportTest",
+        "path": "cfir/analysis-tests/build/test-results/test/TEST-org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportTest.xml",
+        "timestamp": "2026-11-16T18:32:55.346Z",
+        "tests": 5,
+        "failures": 4,
+        "errors": 0,
+        "skipped": 0,
+        "length": 16684,
+        "sha256": "0ACF530490D020DBB99248DD9BD32DB3FFFE68779F43F5B21DE144A092364E4C",
+        "gzipBase64": "H4sIAAAAAAAACu2czW8bRRTAz42U/2HYRqkjkcmuPxLHsVNZbgKt2qay0wtVD5PdZ2fi8cxqZtZN7hSQKB9CXECIquKCKlEOHKgoov8LatL2xL+AZtdOQ+okSz4ba27e+Xgf857e25/X6/Ll9Q5DXZCKCl5xPOw6CLgvAspbFef28uJk0bk8PzpS1qC0iqgGxEkHKo6QLewT3uKiS+IPaxSw36QSE07YhqIKx1twrUllQ0TSh4X1UIIyihbWQyH1MijtoHhVxSk4SLVpGEJQcVwHNQllkQRVcfIOAimFVPG4ph1QmnTCipN1s9OTnjfpTS97xVIuWyoUcC4//ZGDVoXSiZXXr95M9lScLM7O5J350RGEyqEUIUhNQU0lA8YIn6i+c77gWgq2yMS9zISDfEaUOm63Y6NcnPcSmxAq93xGHVCKtHrKRAjcSMyv4RsR0zRksNg7mwVzLCXUH0b9cZTJbp/fxPhFLzc3ftFz58Yvzs7tklhVyhyD4GYrBD2BmYV6fan+PqoRzoVGoRRB5ANitAuodm0JdUCTgGhSQisi2ECiiS7dI6x9CVGFzAYJxmHgmqwwQJQjvZpshO2TQKEQbAJVKuMtPWfGwdcQlNA403NNwhTE4yuRRveISoa1jOLRQzi09etXL54+3vzy4ctvH2798tOLvz7ffH7/9aNnm09+fP3d/c0nD7Y++xo1lm7Xawt/f/JN7drSP38+ePH0i1e///bq+adbPzzefPbH1s+PXn7/MbpaH2yz97a9rhlykN4IU0bSmT+OeI+OXBiCIKf14uwiOzpygWg0sBwYi7EC2aU+KEw7IcPXbnOqC9s+KGziVWUscwWaJGL6zUwj2YfbuuQV3ImD1JhiUo84B4klmOrST4rMjpm2LhXyB4q6KfgHUkQh5a2dUiNurm7REBjlkBm8qq1LM7mjadhbcs49muSxIDnkvTVkZw7UIOPFCldXlJbE17VksiY6IWUgjbxtT/Zb09al4ux+2gY1k22B+zYVo79GFGQOWGZSK3tSNuxsnSnscKd7dqyRLsErRMFU/IkR3sISmgx8jW+AXhUBprwr2pDpXZllpULRHbw/0pThqpRk4zpVGjeFXCD+aubNSLzdK8xOH8f+RhTG/pmiMRzV93+lxu4Y19bEh4QHDCQOpfBBqRsiiFiaxMwVCxNnqT4puQfX3IaGcGxHPYmve1qVudilur8nTvp88RSUeHFmHqZs/lfonkXTm84eVsMq8dsbt1KqSROSFI6MMdJZCciYl9tHV9Jq0rfciPcb4xJvUN5iYBr9rt47WzzpSGQPHWsZcZMxam/hs94RZKe8dUgSCWOMiqgjJBympJ7preAx16tqU4OsMpYEXqUoXHl35uRSwHPds8iB8lSPahJGn+pD+kBkN0BPtJCqJnjv6wx10uxemBkGdvcJ8yNGNFiAH3KAP+1IW4q3FG8p/jxS/MBumgbn+wZZnH/3arFlesv0lukt01umt0x/Lpg+AJ8RSeLnYjXC2IkDfa44FE/joUtYZIF++J/In3KgLc9bnrc8fx55/u1Omgbm+7/osDD/ztVhy/KW5S3LW5a3LG9Z/lywPKz7EMb3H3VQ8X3HyT+ed7PDQPMSfNEFaZ/ODznMn26cLctblrcsfx5ZflAnTWGPFzdwS/PvYCG2MG9h3sK8hXkL8xbmzwXMC0lblBP25u1V2uId4HqR+FpVebBoZhtg3t6jgp/CO/S99/jVhtLQmRSRni+/d6d2pbpcvXP37nx5asfEzoUg5eCFZsIcyvbfHsyPjvwLjj1KMyxBAAA=",
+        "roundTripVerified": true,
+        "cases": [
+          {
+            "key": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportTest#controlFlow()",
+            "status": "failed",
+            "message": "org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)\r\n\torg.opentest4j.AssertionFailedError: (ERROR, Cannot produce live CJO metadata: body of 'walk' is not representable in the CJO expression pool) ==> expected: <false> but was: <true>\r\n\torg.opentest4j.AssertionFailedError: 每个原生正例必须实际完成 SOURCE→CJO，不跳过未建模的 IR ==> expected: <1> but was: <0>"
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportTest#operatorsConversions()",
+            "status": "failed",
+            "message": "org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)\r\n\torg.opentest4j.AssertionFailedError: (ERROR, Cannot produce live CJO metadata: body of 'calculate' is not representable in the CJO expression pool) ==> expected: <false> but was: <true>\r\n\torg.opentest4j.AssertionFailedError: 每个原生正例必须实际完成 SOURCE→CJO，不跳过未建模的 IR ==> expected: <1> but was: <0>"
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportTest#declarationsCalls()",
+            "status": "failed",
+            "message": "org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)\r\n\torg.opentest4j.AssertionFailedError: (ERROR, Cannot produce live CJO metadata: body of 'evaluate' is not representable in the CJO expression pool) ==> expected: <false> but was: <true>\r\n\torg.opentest4j.AssertionFailedError: 每个原生正例必须实际完成 SOURCE→CJO，不跳过未建模的 IR ==> expected: <1> but was: <0>"
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportTest#exceptionsResources()",
+            "status": "failed",
+            "message": "org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)\r\n\torg.opentest4j.AssertionFailedError: (ERROR, Cannot produce live CJO metadata: body of 'recover' is not representable in the CJO expression pool) ==> expected: <false> but was: <true>\r\n\torg.opentest4j.AssertionFailedError: 每个原生正例必须实际完成 SOURCE→CJO，不跳过未建模的 IR ==> expected: <1> but was: <0>"
+          },
+          {
+            "key": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceExpressionExportTest#originalDefaultAssignmentFactsAndFinalSelection()",
+            "status": "passed",
+            "message": ""
+          }
+        ]
+      }
+    ]
+  }
+}

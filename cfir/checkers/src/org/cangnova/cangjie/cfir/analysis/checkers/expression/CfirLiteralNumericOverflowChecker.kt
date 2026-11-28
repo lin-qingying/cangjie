@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 
 import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
@@ -29,7 +30,7 @@ import org.cangnova.cangjie.name.OperatorNameConventions
  * 因此这里只按最终值选有符号或无符号值域，不再回扫源码文本：`-Int64.MIN_VALUE` 是合法的 Int64 下界，
  * 而不能先把内部正数字面量单独报溢出。
  */
-object CfirLiteralNumericOverflowChecker : CfirLiteralExpressionChecker() {
+object CfirLiteralNumericOverflowChecker : CfirLiteralExpressionChecker(MppCheckerKind.Common) {
     /**
      * 检查整数字面量是否超出显式后缀、上下文目标类型或默认 Int64 范围。
      */

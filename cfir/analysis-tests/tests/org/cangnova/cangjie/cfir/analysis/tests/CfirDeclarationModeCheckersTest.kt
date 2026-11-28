@@ -1,6 +1,9 @@
 package org.cangnova.cangjie.cfir.analysis.tests
 
+import org.cangnova.cangjie.CjInMemoryTextSourceFile
 import org.junit.jupiter.api.AfterEach
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -10,11 +13,22 @@ import org.cangnova.cangjie.cfir.diagnostics.DiagnosticContext
 import org.cangnova.cangjie.cfir.diagnostics.impl.BaseDiagnosticsCollector
 import org.cangnova.cangjie.cfir.pipeline.runCheckers
 import org.cangnova.cangjie.cfir.resolve.CfirDiagnosticCollector
+import org.cangnova.cangjie.cfir.lightTree.LightTree2Cfir
+import org.cangnova.cangjie.cfir.resolve.providers.CfirProviderImpl
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionResult
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionService
+import org.cangnova.cangjie.cfir.resolve.providers.macro.buildPreMacroRawFiles
+import org.cangnova.cangjie.cfir.resolve.providers.macro.expandWithDefaultContext
+import org.cangnova.cangjie.cfir.resolve.providers.macro.recordExpandedRawFilesOnce
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.session.CfirCjmpMode
 import org.cangnova.cangjie.cfir.session.CfirCjmpSettingsComponent
+import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
+import org.cangnova.cangjie.cfir.resolve.providers.cfirProvider
 import org.cangnova.cangjie.lang.declarations.CangJieDeclarationFileType
 import org.cangnova.cangjie.psi.CjFile
+import org.cangnova.cangjie.source.toSourceLinesMapping
 
 /**
  * 声明文件（`.cj.d`）下 checker 的"实现完备性"豁免（4.4.5）。
@@ -36,9 +50,9 @@ import org.cangnova.cangjie.psi.CjFile
  *  - `CfirOpenMemberChecker`（IGNORE_OPEN）
  *  - `CfirFinalizerDeclarationChecker`（FINALIZER_FORBIDDEN_IN_CLASS）
  *
- * 回归探测（A-4 更正四）：`.cj.d` 的无体类成员**不得**产生 `MISSING_FUNC_BODY` ——
- * `CfirMemberBodyDeclarationChecker` **故意不打** `requiresImplementation` 标记，
- * 若护栏 1（P2）失效，它会立刻报错，本用例就是那个告警的落点。
+ * 官方 CompileCjd 对所有 func/property body 检查提前返回；`.cj.d` 的无体成员不报缺体。
+ * 该语义独立于 raw 是否推断 ABSTRACT，不能把 func checker 当成 raw R3 的探针。
+ * raw R3/R4 的函数/属性状态差异仍由 DeclarationModeRawCfirStatusTest 独立验收。
  */
 class CfirDeclarationModeCheckersTest : AbstractCfirAnalysisResolveTest() {
 
@@ -267,20 +281,40 @@ class CfirDeclarationModeCheckersTest : AbstractCfirAnalysisResolveTest() {
         )
     }
 
-    // ==================== 回归探测：护栏 1 的告警落点 ====================
+    // ==================== CompileCjd：函数与属性 body 检查统一跳过 ====================
 
     @Test
     fun testDeclarationFileBodylessMembersProduceNoDiagnostics() {
-        val cjFile = createDeclarationCjFile("bodylessMembers", BODYLESS_MEMBERS)
-        val diagnostics = collectDiagnosticNames(cjFile)
-        assertTrue(
-            "MISSING_FUNC_BODY" !in diagnostics,
-            "`.cj.d` 下不得出现 MISSING_FUNC_BODY（它是护栏 1 失效的告警，见 4.4.5 A-4 更正四），实际：$diagnostics",
+        for (useLightTree in listOf(false, true)) {
+            val cjFile = createDeclarationCjFile("bodylessMembers", BODYLESS_MEMBERS)
+            val diagnostics = collectDiagnosticNames(cjFile, useLightTree = useLightTree)
+            assertTrue(diagnostics.isEmpty(), "CompileCjd 应跳过所有 func/property body 检查，LT=$useLightTree：$diagnostics")
+        }
+    }
+
+    /** 显式 ABSTRACT 不受 raw R3 抑制；声明文件仍须整体跳过，普通源文件分别报函数与属性缺体。 */
+    @Test
+    fun testDeclarationFileExplicitStaticAbstractFunctionAndPropertySkipBodyChecks() {
+        val functionProbe = resolveTestDataPath(
+            "cfir/analysis-tests/testData/diagnostics2/common-specific/commonSpecificStaticAbstractFunctionRequiresBody.cj",
         )
-        assertTrue(
-            diagnostics.isEmpty(),
-            "`.cj.d` 的合法无体成员不应产生任何诊断，实际：$diagnostics",
+        val propertyProbe = resolveTestDataPath(
+            "cfir/analysis-tests/testData/diagnostics2/common-specific/commonSpecificStaticAbstractPropertyRequiresBody.cj",
         )
+        for (probe in listOf(functionProbe, propertyProbe)) {
+            val source = loadFile(probe.path).replace(Regex("<![^>]*!>|<!>"), "")
+            for (useLightTree in listOf(false, true)) {
+                assertEquals(
+                    listOf("MISSING_FUNC_BODY"),
+                    collectDiagnosticNames(createCjFile(probe.nameWithoutExtension, source), CfirCjmpMode.COMMON, useLightTree),
+                )
+                assertEquals(
+                    emptyList<String>(),
+                    collectDiagnosticNames(createDeclarationCjFile(probe.nameWithoutExtension, source), CfirCjmpMode.COMMON, useLightTree),
+                    "CompileCjd 与 raw ABSTRACT 状态无关，必须跳过缺体检查",
+                )
+            }
+        }
     }
 
     @Test
@@ -325,6 +359,7 @@ class CfirDeclarationModeCheckersTest : AbstractCfirAnalysisResolveTest() {
     private fun collectDiagnosticNames(
         cjFile: CjFile,
         cjmpMode: CfirCjmpMode? = null,
+        useLightTree: Boolean = false,
     ): List<String> {
         val session = createTestSession()
         if (cjmpMode != null) {
@@ -344,7 +379,7 @@ class CfirDeclarationModeCheckersTest : AbstractCfirAnalysisResolveTest() {
                     throw throwable
             },
         )
-        val cfirFile = cjFile.toCfirFile(session = session)
+        val cfirFile = if (useLightTree) buildLightTreeFile(cjFile, session) else cjFile.toCfirFile(session = session)
 
         // 对齐 analyse.kt 的 resolveAndCheckCfir 两段式：resolve 与 checkers 是两个独立步骤，
         // checker 诊断只在 runCheckers 阶段收集，resolve 阶段诊断走 session 注册的 reporter。
@@ -352,13 +387,30 @@ class CfirDeclarationModeCheckersTest : AbstractCfirAnalysisResolveTest() {
         resolveToPhase(cfirFile, session, targetPhase, resolveCollector)
 
         val checkerCollector = RecordingDiagnosticsCollector()
-        session.runCheckers(ScopeSession(), listOf(cfirFile), checkerCollector)
+        for (mppCheckerKind in MppCheckerKind.entries) {
+            session.runCheckers(ScopeSession(), listOf(cfirFile), checkerCollector, mppCheckerKind)
+        }
 
         return (resolveCollector.rawDiagnostics + checkerCollector.diagnostics)
             .map { it.factoryName.removePrefix("CFIR_") }
     }
 
-    /** checker 阶段使用的内存诊断收集器（[BaseDiagnosticsCollector] 最小实现）。 */
+    /** 与 PSI 共用正式 identity macro producer；来源种类来自真实 PSI 文件，不改写 raw 状态。 */
+    private fun buildLightTreeFile(cjFile: CjFile, session: CfirSession): CfirFile {
+        val text = cjFile.text
+        val source = CjInMemoryTextSourceFile(cjFile.name, null, text, explicitKind = cjFile.sourceKind)
+        val built = LightTree2Cfir(session, session.cangjieScopeProvider)
+            .buildPreMacroCfirFile(text, source, text.toSourceLinesMapping())
+        val pre = buildPreMacroRawFiles(session, listOf(built))
+        val result = MacroConstructionService.Identity.expandWithDefaultContext(
+            pre = pre,
+            mode = MacroConstructionService.Mode.STRICT,
+        ) as MacroConstructionResult.Success
+        recordExpandedRawFilesOnce(session.cfirProvider as CfirProviderImpl, result.recordableFiles, result.registry)
+        return built.cfirFile
+    }
+
+    /** checker 阶段原样保存全部报告，不能通过筛选或去重改变双向验证。 */
     private class RecordingDiagnosticsCollector : BaseDiagnosticsCollector() {
         private val storage = mutableListOf<CjDiagnostic>()
 

@@ -61,6 +61,13 @@ import com.intellij.util.io.StringRef
      */
     override fun getName() = StringRef.toString(name)
 
+    /** 复用现存的枚举限定名与名称字段，同名不同元数的构造项保留相同限定名。 */
+    override fun getFqName(): FqName? {
+        val constructorName = getName() ?: return null
+        val containingEnumFqName = getEnumFqName() ?: return null
+        return containingEnumFqName.child(Name.identifier(constructorName))
+    }
+
     /**
      * 实现 `getTypeCount` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
      */

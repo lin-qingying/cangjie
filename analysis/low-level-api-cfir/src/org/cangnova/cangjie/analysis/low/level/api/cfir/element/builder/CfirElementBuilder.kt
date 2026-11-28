@@ -14,11 +14,12 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.util.findSourceNonLocalC
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.isPartialBodyResolvable
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.requireTypeIntersectionWith
 import org.cangnova.cangjie.cfir.*
-import org.cangnova.cangjie.cfir.correspondingProperty
+import org.cangnova.cangjie.cfir.correspondingField
+import org.cangnova.cangjie.cfir.correspondingValueParameter
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.resolve.getContainingClass
-import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.resolve.providers.cfirProvider
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhaseRecursively
 import org.cangnova.cangjie.psi.*
@@ -83,10 +84,12 @@ internal class CfirElementBuilder(private val moduleComponents: LLCfirModuleReso
      * @see getCfirForElementInsideFileHeader
      */
     fun getOrBuildCfirFor(element: CjElement): CfirElement? {
-        return if (element is CjFile && element !is CjCodeFragment) {
-            getOrBuildCfirForCjFile(element)
+        moduleComponents.cfirFileBuilder.getOrBuildFileForResolution(element.containingCjFile)
+        val target = moduleComponents.cache.compilationElement(element) as? CjElement ?: return null
+        return if (target is CjFile && target !is CjCodeFragment) {
+            getOrBuildCfirForCjFile(target)
         } else {
-            getCfirForNonCjFileElement(element)
+            getCfirForNonCjFileElement(target)
         }
     }
 
@@ -94,10 +97,7 @@ internal class CfirElementBuilder(private val moduleComponents: LLCfirModuleReso
      * 构建或读取整个仓颉文件的 raw CFIR，并递归解析到 body resolve。
      */
     private fun getOrBuildCfirForCjFile(cjFile: CjFile): CfirFile {
-        val snapshot = moduleComponents.macroSemanticSnapshotStore.snapshot
-        val cfirFile = if (snapshot?.ownsReparsedPsi(cjFile) == true) {
-            checkNotNull(snapshot.fileForReparsedPsi(cjFile))
-        } else moduleComponents.cfirFileBuilder.buildRawCfirFileWithCaching(cjFile)
+        val cfirFile = moduleComponents.cfirFileBuilder.getOrBuildFileForResolution(cjFile)
         cfirFile.lazyResolveToPhaseRecursively(CfirResolvePhase.BODY_RESOLVE)
         return cfirFile
     }
@@ -205,7 +205,7 @@ internal class CfirElementBuilder(private val moduleComponents: LLCfirModuleReso
         val elementOwner = elementOwnerProvider(anchorElement) ?: return null
 
         val cfirElementContainer = if (elementOwner is CjFile) {
-            moduleComponents.cfirFileBuilder.buildRawCfirFileWithCaching(elementOwner)
+            moduleComponents.cfirFileBuilder.getOrBuildFileForResolution(elementOwner)
         } else {
             if (elementOwner != nonLocalDeclaration) return null
 
@@ -281,7 +281,7 @@ internal class CfirElementBuilder(private val moduleComponents: LLCfirModuleReso
      */
     private fun getCfirForElementInsideFileHeader(element: CjElement): CfirElement? {
         val anchor = element.fileHeaderAnchorElement() ?: return null
-        val file = moduleComponents.cfirFileBuilder.buildRawCfirFileWithCaching(element.containingCjFile)
+        val file = moduleComponents.cfirFileBuilder.getOrBuildFileForResolution(element.containingCjFile)
         return when (anchor) {
             is CjPackageDirective -> file.packageDirective
             is CjImportItem -> {
@@ -401,24 +401,11 @@ internal class CfirElementBuilder(private val moduleComponents: LLCfirModuleReso
 
         return when {
             !goDeep -> null
-            this is CfirProperty -> correspondingValueParameterFromPrimaryConstructor?.resolveAndFindAnnotation(annotationEntry)
-            this is CfirValueParameter -> correspondingProperty?.resolveAndFindAnnotation(annotationEntry)
+            this is CfirFieldVariable -> correspondingValueParameter?.resolveAndFindAnnotation(annotationEntry)
+            this is CfirValueParameter -> correspondingField?.resolveAndFindAnnotation(annotationEntry)
             else -> null
         }
     }
-
-    /**
-     * Kotlin FIR 这里直接暴露 `correspondingValueParameterFromPrimaryConstructor`。
-     * 仓颉主干当前只保留 `CfirValueParameter.correspondingProperty`，因此这里基于主构造参数反查。
-     */
-    private val CfirProperty.correspondingValueParameterFromPrimaryConstructor: CfirValueParameter?
-        get() {
-            val containingClass = getContainingClass() ?: return null
-            val primaryConstructor = containingClass.declarations
-                .firstOrNull { it is CfirConstructor && it.isPrimary } as? CfirConstructor
-                ?: return null
-            return primaryConstructor.valueParameters.firstOrNull { it.correspondingProperty === this }
-        }
 
     /**
      * 在 annotation container 中按 PSI annotation 查找 CFIR annotation。

@@ -35,10 +35,19 @@ public specific class Overrides<U> <: I<U> {
     <!NOT_MATCHED!>public specific func f(value: U): Unit { }<!>
 }
 
+public class D<V> <: I<V> {
+    public init() { }
+    public func f(value: Int64): Unit { }
+}
+
 func trigger(): <!GENERIC_INSTANTIATION_CAUSES_AMBIGUOUS_FUNCTIONS!>C<Int64><!> {
     <!GENERIC_INSTANTIATION_CAUSES_AMBIGUOUS_FUNCTIONS!>C<Int64><!>()
 }
 
 func triggerOverride(): Overrides<Int64> {
     Overrides<Int64>()
+}
+
+func triggerUnpairedSubtype(): <!GENERIC_INSTANTIATION_CAUSES_AMBIGUOUS_FUNCTIONS!>D<Int64><!> {
+    <!GENERIC_INSTANTIATION_CAUSES_AMBIGUOUS_FUNCTIONS!>D<Int64><!>()
 }

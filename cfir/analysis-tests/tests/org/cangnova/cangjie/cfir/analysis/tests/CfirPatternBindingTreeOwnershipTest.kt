@@ -429,33 +429,38 @@ class CfirPatternBindingTreeOwnershipTest : AbstractCfirAnalysisResolveTest() {
         val catchBinding = buildPatternBindingVariableCopy(sourceBinding) {
             symbol = CfirPatternBindingSymbol(sourceBinding.symbol.callableId)
         }
-        val catchPattern = buildCatchPattern {
-            isWildcard = false
-            bindingName = catchBinding.name
+        val catchBindingPattern = buildBindingPattern {
+            name = catchBinding.name
             bindingVariable = catchBinding
+        }
+        val catchPattern = buildCatchPattern {
+            nestedPattern = catchBindingPattern
         }
         val catchClause = buildCatch {
             pattern = catchPattern
             body = buildBlock()
         }
         assertSame(catchClause, catchPattern.patternTreeOwner)
+        assertSame(catchClause, catchBindingPattern.patternTreeOwner)
         assertSame(catchClause, catchBinding.patternTreeOwner)
 
         val replacementCatchBinding = buildPatternBindingVariableCopy(catchBinding) {
             symbol = CfirPatternBindingSymbol(catchBinding.symbol.callableId)
         }
-        catchPattern.replaceBindingVariable(replacementCatchBinding)
+        catchBindingPattern.replaceBindingVariable(replacementCatchBinding)
         assertNull(catchBinding.patternTreeOwner, "Replacing a catch binding must detach its old tree node.")
         assertSame(catchClause, replacementCatchBinding.patternTreeOwner)
 
+        val commandWildcard = buildWildcardPattern()
         val commandPattern = buildCommandTypePattern {
-            isWildcard = true
+            nestedPattern = commandWildcard
         }
         val handleClause = buildHandleClause {
             this.commandPattern = commandPattern
             body = buildBlock()
         }
         assertSame(handleClause, commandPattern.patternTreeOwner)
+        assertSame(handleClause, commandWildcard.patternTreeOwner)
     }
 
     private fun newIntegerInitializer() = buildLiteralExpression {

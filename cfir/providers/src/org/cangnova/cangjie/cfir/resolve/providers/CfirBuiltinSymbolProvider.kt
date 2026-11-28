@@ -1,22 +1,16 @@
 package org.cangnova.cangjie.cfir.resolve.providers
 
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.builtins.StandardNames
 import org.cangnova.cangjie.cfir.toCfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirBuiltInDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirBuiltInTypeKind
-import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAttributes
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
-import org.cangnova.cangjie.cfir.declarations.CfirPrimitiveTypeDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRef
-import org.cangnova.cangjie.cfir.declarations.DEFAULT_STATUS_FOR_STATUSLESS_DECLARATIONS
-import org.cangnova.cangjie.cfir.declarations.EmptyDeprecationsProvider
-import org.cangnova.cangjie.cfir.declarations.builder.buildNamedFunction
 import org.cangnova.cangjie.cfir.declarations.builder.buildTypeParameter
-import org.cangnova.cangjie.cfir.declarations.builder.buildValueParameter
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
 import org.cangnova.cangjie.cfir.declarations.initDefaultResolveState
 import org.cangnova.cangjie.cfir.session.CfirSession
@@ -24,18 +18,14 @@ import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
 import org.cangnova.cangjie.cfir.symbols.CfirBuiltInTypeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirPrimitiveTypeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
 import org.cangnova.cangjie.cfir.symbols.toLookupTag
-import org.cangnova.cangjie.cfir.types.BuiltinPrimitiveOperators
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
-import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
 import org.cangnova.cangjie.cfir.types.StdlibClassIds
-import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.classId
 import org.cangnova.cangjie.cfir.types.isExposedBuiltinClassifier
+import org.cangnova.cangjie.descriptors.Modality
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
@@ -146,6 +136,8 @@ class CfirBuiltinSymbolProvider(
             kind = kind,
             scopeProvider = session.cangjieScopeProvider,
             typeParameters = buildBuiltInTypeParameters(kind, symbol),
+            status = CfirDeclarationStatusImpl(visibility = kind.visibility, modality = Modality.FINAL)
+                .resolved(kind.visibility, Modality.FINAL),
         )
     }
 

@@ -13,7 +13,7 @@ import org.cangnova.cangjie.cfir.session.CfirSession
  * 因此该函数注册的 phase 序列固定为：
  *
  * ```
- * IMPORTS → SUPER_TYPES → TYPES → STATUS → EXTENSIONS → IMPLICIT_TYPES → BODY_RESOLVE
+ * IMPORTS → SUPER_TYPES → TYPES → STATUS → EXTENSIONS → CJMP_MATCHING → IMPLICIT_TYPES → CJMP_FINAL_MATCHING → BODY_RESOLVE
  * ```
  */
 fun registerResolveProcessors(
@@ -40,12 +40,16 @@ fun registerResolveProcessors(
         CfirExtensionsResolveProcessor(session, scopeSession),
     )
     registry.registerProcessor(
+        CfirResolvePhase.CJMP_MATCHING,
+        CfirCjmpMatchingProcessor(session, scopeSession),
+    )
+    registry.registerProcessor(
         CfirResolvePhase.IMPLICIT_TYPES,
         CfirImplicitTypesResolveProcessor(session, scopeSession),
     )
     registry.registerProcessor(
-        CfirResolvePhase.CJMP_MATCHING,
-        CfirCjmpMatchingProcessor(session, scopeSession),
+        CfirResolvePhase.CJMP_FINAL_MATCHING,
+        CfirCjmpFinalMatchingProcessor(session, scopeSession),
     )
     registry.registerProcessor(CfirResolvePhase.BODY_RESOLVE, CfirBodyResolveProcessor(session, scopeSession))
 }

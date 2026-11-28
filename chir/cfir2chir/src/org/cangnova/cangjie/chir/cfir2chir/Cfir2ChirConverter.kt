@@ -19,7 +19,10 @@ interface Cfir2ChirConverter {
 /**
  * 默认 CFIR 到 CHIR 转换器实现。
  */
-class DefaultCfir2ChirConverter : Cfir2ChirConverter {
+class DefaultCfir2ChirConverter(
+    private val semanticIdentityProvider: Cfir2ChirSemanticIdentityProvider =
+        Cfir2ChirSemanticIdentityProvider { null },
+) : Cfir2ChirConverter {
     /**
      * 先注册所有文件和声明 header，再逐文件转换 CHIR module。
      */
@@ -28,7 +31,7 @@ class DefaultCfir2ChirConverter : Cfir2ChirConverter {
             throw Cfir2ChirConversionException("CFIR to CHIR conversion requires at least one file")
         }
 
-        val components = Cfir2ChirComponents()
+        val components = Cfir2ChirComponents(semanticIdentityProvider = semanticIdentityProvider)
         val packageNames = files.map { it.packageDirective.packageFqName.asString() }.distinct()
         if (packageNames.size != 1) {
             throw Cfir2ChirConversionException("single CHIR package cannot be built from multiple CFIR packages: $packageNames")

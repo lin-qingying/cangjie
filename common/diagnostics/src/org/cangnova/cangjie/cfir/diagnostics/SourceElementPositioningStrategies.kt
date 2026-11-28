@@ -33,6 +33,12 @@ object SourceElementPositioningStrategies {
         LightTreePositioningStrategies.DECLARATION_START_TO_NAME,
         PositioningStrategies.DECLARATION_START_TO_NAME
     )
+    /** 将同一个声明签名契约分别交给真实 PSI 与 LightTree 实现。 */
+    val DECLARATION_SIGNATURE = SourceElementPositioningStrategy(
+        LightTreePositioningStrategies.DECLARATION_SIGNATURE,
+        PositioningStrategies.DECLARATION_SIGNATURE,
+    )
+
     /**
      * 标记可调用声明签名中不含修饰符的主体范围。
      */

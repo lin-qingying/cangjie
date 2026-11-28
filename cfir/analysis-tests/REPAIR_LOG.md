@@ -1,5 +1,40 @@
 # CFIR LLT Repair Log
 
+## 2026-10-03：CJMP mixed callable、类型候选与 LL enum 诊断入口
+
+- problem type: CJMP 匹配事实/发布与 LL 诊断归属。payload enum 与普通函数的合法双向配对被专用
+  enum 路径分开；类型优先级过早施加到 provider 会丢重导出结构候选；enum PSI 在两个非局部
+  声明映射入口遗漏；visits 后重复回放参数失败污染后续成功的最终状态。
+- official Cangjie evidence: 官方 v1.1.3 `CheckCJMP.cpp:871–954,1014–1047,1115–1155` 的资格、签名、
+  参数顺序与双方 enum 分支；`:604–624` 的 common 侧 post-return 豁免；`PreCheck.cpp:397–447`
+  的 scope/type-name SPECIFIC 优先；`:1205–1221` 完整 common 声明报告。
+  `review-20261002/mixed-boundaries/README.md` 保存两段式 cjc 结果、方向/参数/占用边界。
+- Kotlin counterpart files consulted: `analysis/low-level-api-fir/.../lazy/resolve/NonLocalDeclarationUtils.kt`、
+  `.../util/declarationUtils.kt`、`.../diagnostics/LLFirDiagnosticVisitor.kt`，以及
+  `compiler/fir/checkers/.../collectors/AbstractDiagnosticCollectorVisitor.kt`、
+  `compiler/fir/providers/.../FirCompositeSymbolProvider.kt`、`compiler/fir/resolve/.../FirTypeResolverImpl.kt`。
+  对位 PSI owner/collector/class-like 上下文与结构 provider/类型解析职责；CJMP 语言选择依据仓颉源码。
+- CFIR owner changes: 真实 callable 共用计划，不伪造 CfirFunction；shared prepareCandidate 只准备资格/
+  签名，参数程序在签名成功后按位置执行。HAS_INITIAL 尊重 metadata 明确 false，来源槽仅用真实
+  helper symbol。provider/namespace 保留 COMMON/SPECIFIC，按真实 ClassId 去除 builtin 重复；
+  collector 在确定 scope 层选择 SPECIFIC，TypeResolver 保留该层集合，tower 构造入口保留原 scope 来源。
+  LL 双入口识别 CjEnumConstructor，collector 建立声明/注解上下文，class-like pending 统一提交。
+  最终失配状态与真实缺实现/占用事件分开；历史事件不覆盖成功态，Occupied 直接发布反向索引。
+  resolver/runner/CLI reporter 使用真实 moduleData 身份，reporter 遍历全部 common classifier 结构声明。
+- fixtures covered: LL mixed 九项首次请求/真实调用身份/非穷尽/诊断重放；resolve 类型候选九项与同名
+  模块公开 runner 两项；真实 default metadata/helper 与 enum/function 计划覆盖；既有 first-fit 回归。
+  getter-only 缺实现状态经官方 parser/CloneAttrs/MatchCJMPProp guard 取证不可由合法源码产生，未伪造 fixture。
+- verification: 唯一实现工作树、共享 queue JAR、`--no-build-cache --continue --console=plain --max-workers=1`；
+  最后组合 `:cfir:resolve:test` CJMP/导入切片、`:compiler:frontend:test --tests '*CjmpTwoPhaseCompilationTest*'`、
+  `:analysis:low-level-api-cfir:test :cfir:analysis-tests:test` → BUILD SUCCESSFUL（21m46s）。
+  XML：resolve 49 passed、CLI 19 passed、完整 LL 159 passed、完整 CFIR 8569 passed/397 skipped/0 failed。
+  `20261002-mixed-callable-final-full` 对比 `20261002-enum-plan-full`：0 regressed/0 new/0 removed。
+  共享算法此前 57/57；末轮 XML 时间为 2026-10-02T14:55–15:13Z。
+- remaining work: 本批不等于完整 CJMP 框架验收。不可变声明属性/单目标发布、纯组 cache、真实 merge seed、
+  pattern 停止边界、raw/actualized scope 图、源码 default helper、失败候选默认前缀消费、doNotExport/CJO
+  仍需按主计划完成，并整体删除旧 storage 写 API/live snapshot。反向 mixed 的首轮失败未单因子隔离，
+  不将末轮绿色虚构成已证明独立根因；resolve 全模块五个既有失败仍是原基线欠项。
+
 ## 2026-11-02：cfir/resolve ×1（遗留基线 #109）：默认实参计数用例改写为合法仓颉签名
 
 - problem type: `CfirMapArgumentsTest$Defaults.number of default arguments is counted` —— 期望 `RESOLVED` 且 `numDefaults = 2`，实得 `INAPPLICABLE_ARGUMENTS_MAPPING_ERROR`。
@@ -4074,6 +4109,8 @@ Flagged while gathering evidence for the extend upper-bound recursion problem ty
 - verification outcome: pending - run `.\gradlew.bat :cfir:analysis-tests:test` with focused `--tests` filters for the fixture list above, then the full suite; append the results here.
 
 ## 非法 static 修饰符不能泄漏为后续成员语义（已修复并验证）
+
+- **2026-11-13 更正**：以下旧记录把 `static abstract` 与真正的 static 冲突混为一类，并用 cjc 1.0.5 在 parser 失败后未产生 Sema 诊断来支持抑制缺体，证据不足。SDK 1.1.3 的合法 common abstract 类正控无解析错误、唯一 `sema_missing_func_body`；官方 Parser 不清除 ABSTRACT，Sema 明确消费该属性。正控与原始 JSON 在 `psi/build/cjmp-verification/20261113-cjmp-extend-static-abstract-authority/cjc-results.json`。本轮已删除 STATUS 的该清位及 consumer 的 ABSTRACT 冲突分类，补齐直接 owner、COMMON_WITH_DEFAULT、ObjC mirror 与声明文件条件；完整行为复验尚在进行，旧标题不代表这部分当前已闭合。static/open/override/operator 的原始冲突证据分别保留。新验证完成后另记完整结果。
 
 - problem type: Declaration status / modifier semantics。`static` 与 `override`、`open`、`operator`，以及 class member 上的显式 `static abstract`，只保留对应的修饰符冲突或目标错误；它们不能再触发继承静态/实例同名冲突、`IGNORE_OPEN` 或 `MISSING_FUNC_BODY`。
 - root cause: STATUS transformer 把 `CfirFile` 交给 declaration phase guard；文件的 resolve state 只推进到 `IMPORTS`，guard 因未到 `TYPES` 直接返回，导致整棵 declaration tree 从未进入 STATUS。同时，raw status 把源码 modifier 与后续 checker 应消费的有效成员状态混在一起，非法组合继续参与 override/open/abstract/static 推导。
@@ -10426,6 +10463,510 @@ ExtendsImplementsInterfaceDuplicated）集合差 **ADDED=0、REMOVED=12**（本�
 - full regression outcome: `8921 tests completed, 6 failed, 384 skipped`，`BUILD FAILED in 13m 45s`；XML 已导出到 `D:\tmp\llt_full.json`。六个失败用例为三个 fixture 的 PSI/非 PSI 两版：`Class/ClassInstantiationCheck.privateFunctionsCauseGenericInstantiationAmbiguity`（期望 `WEAK_VISIBILITY`，实际 `EXTEND_MEMBER_CANNOT_SHADOW`）与 `Function/Import00.errAmbiguous00` / `errAmbiguous01`（期望资格诊断 `AMBIGUOUS_USE`，实际受使用处 `UNRESOLVED_REFERENCE`）。将本次修复的六个源文件与 fixture 全部回退到干净树后重跑这四个 suite，同样 `6 failed`，内容一致；三个 fixture 均与字面量越界、带符号字面量、Analysis API 引用解析无关，属于预先存在失败，本次修复无回归。
 - full clean-tree comparison: 将修复的六个源文件与 fixture 全部回退到干净树（保留 REPAIR_LOG 与新 fixture）后重跑同一全量命令：`8921 tests completed, 6 failed, 384 skipped`，`BUILD FAILED in 15m 37s`；两次全量运行的 1265 个 suite 逐用例状态零差异，失败集合完全一致（XML 导出到 `D:\tmp\llt_full.json` 与 `D:\tmp\llt_full_clean.json`）。
 - 未闭合项（模型层，另行评估）: 对齐官方与 Kotlin，把一元正负号折叠进 `CfirLiteralExpression` 需要同时改 `CfirLiteralNumericOverflowChecker.isReceiverOfUnarySignedLiteral`、`CfirSignedLiteralNumericOverflowChecker`、`CfirExpressionsResolveTransformer.exponentiationLiteralKindOrNull` 以及两个 raw builder 的 `convertPrefix`/`convertPrefix`（light-tree），属于语义归属变更，不在本次崩溃修复范围内。
+
+## 2026-09-30：CJO 默认参数辅助函数引用修复
+
+- problem type: FuncParamList.desugars 被错误反序列化为 CfirValueParameter，producer 缺 helper 时错误引用原参数，无法提供 CJMP 有序默认来源事实。
+- official evidence: v1.1.3 ASTLoader.cpp:768–776、ASTWriter.cpp:1107–1120、1172–1180；helper 是 FuncDecl，HAS_INITIAL、辅助函数引用和可序列化默认表达式是独立信息。
+- owners changed: tree 参数 metadata；四种 callable 共用的参数反序列化入口；live CFIR producer 的物理归属收集及引用登记；CJO writer 的 ParamInfo/引用种类验证。
+- publication: helper 在原函数外层 class/extend/file 上下文加载；参数在挂好完整 metadata 后才发布 canonical cache，不再在 cache 命中后补写关联。
+- verification: 默认值 metadata 新测试 5/5；包含它的序列化模块全量 119 项，114 passed、5 skipped、0 failed；CJMP 两段式 19/19；PSI/LightTree raw 与 CJO owner 6/6。原组合任务在最后一组的编译阶段取消，确认进程已停止后单独补跑 owner 组成功。
+- remaining: 未生成源码默认 helper，也未把 Library helper 伪装为 Source；非字面量默认代码/跨包导出和成员参数标志读侧恢复仍待 P8/P5。当前修复提供真实二进制默认来源，不等于 A2/A3/C4 运行时切换已完成。
+
+## 2026-09-30：CJMP 在隐式类型推断前完成配对（A1）
+
+- problem type: PSI/LightTree 的调用方隐式返回、common/specific 均隐式返回、specific 空体失配、specific body 错误保留配对，共 8 个既有红例。
+- root cause: CJMP_MATCHING 位于 IMPLICIT_TYPES 后，shared matcher 把“曾省略注解”误用为返回类型豁免；LL 关闭语义门时跳过相位推进，并在匹配锁内要求 IMPLICIT_TYPES。
+- official evidence: `p1-cjc-20260929` 12 组 cjc 1.1.3 探针；`VERSION-EVIDENCE-20260929.md` §6 的 PreCheck / TypeManager / CheckCJMP。空体预检 Unit；真正 Quest 可先配对，具体类型须比较，后置错误报 RETURN_TYPE_INCOMPATIBLE 而保留配对。
+- framework owners: resolve phase / registry、shared matching context、CFIR candidate resolver、LL target resolver 的锁外依赖准备与通用阶段后置条件、common/specific postchecker。删除动态 body prerequisite 与 shouldCheckIsResolved 豁免，未增加兼容路径或 fixture 分支。
+- type-state coverage: ResolvedImplicitTypeRef 有实际 cone type 时不得视作 Quest；真实 CFIR 4 项验证具体 wrapper、空体 Unit、真正 Quest、wrapped error，shared matcher 17 项验证候选有序事实和兼容性。
+- LL coverage: common 隐式调用链和并行目标请求从 raw 状态起步，common 到 IMPLICIT_TYPES、specific body 保持 CfirLazyBlock；NONE / 1.0 模式与版本门关闭仍推进相位且存储为空；COMMON+SPECIFIC 非法组合不破坏相位后置条件；两个旧 phase golden 按新流程更新。
+- test-framework finding: Analysis API 基座缺少语言设置指令注册，导致 LANGUAGE_VERSION 注释不进入配置。按 Kotlin AbstractAnalysisApiBasedTest:391、AbstractKotlinCompilerTest:33 共用 defaultDirectiveContainers，并删除重复的 LANGUAGE_VERSION 定义；同一 1.0 门禁测试先红后绿。
+- verification: 共享队列运行 `:resolution.common:test --tests '*AbstractCjmpMatcherTest' :cfir:resolve:test --tests '*CfirCjmpReturnTypeStateTest' :cfir:analysis-tests:test --tests '*CommonSpecific*' :analysis:low-level-api-cfir:test --tests '*CfirCjmpMatchingTestGenerated*' --tests '*CfirCjmpImplicitCommonSignatureTest' --tests '*FunctionBodyModificationTest' --tests '*InBlockModificationTestGenerated' --tests '*CfirSourceLazyDeclarationResolveTestGenerated.testSimpleClass' --tests '*CfirSourceLazyDeclarationResolveByReferenceTestGenerated.testResolveTargetByCall'`，BUILD SUCCESSFUL（9m01s）。XML 分别 17/17、4/4、177 passed/84 skipped/0 failed、19/19。
+- full regression: 共享队列 `:cfir:analysis-tests:test :analysis:low-level-api-cfir:test --continue` 已完成（28m40s，退出码 1）。快照 `20260930-cjmp-a1-full` 为 8963 records、8567 passed、396 skipped、0 failed；相对 `20260930-cjmp-p2-crlf-full` 为 8 fixed、0 regressed、0 new、0 removed。LL 139 项中 135 passed、4 failed：caller-first 默认参数两例报告 CFIR_NOT_MATCHED；遮蔽两例报告 CFIR_AMBIGUOUS_FUNCTION_CALL 与 CFIR_NOT_MATCHED。显式及隐式调用方均待 A2/C4 接入统一聚合视图。
+- skipped audit: 定向 CommonSpecific 的 84 skipped 全为既有 OnlyTestsWithTypeAliasesMetaConfigurator 对无类型别名 fixture 的过滤；相同 84 例在普通 LightTree/PSI 两入口均通过。未通过禁用测试获得绿色结果。
+- remaining scope: A2/A3/C4 的最终匹配缓存、不可变结果和聚合视图仍待集成，当前整组重跑及 session 正向映射不作为最终验收架构。
+
+## 2026-09-30：CRLF 磁盘侧车保留原始范围并恢复 APILevel 合并
+
+- problem type: 新工作树中 Macro PSI/LightTree 的 MergeStd importall 四项缺少 APILEVEL_REF_HIGHER，Deprecated 仍存在。
+- root cause: SDK CJO 和侧车均存在且被追踪；主目录侧车为 LF，新工作树按 Git 设置检出 CRLF。磁盘 CJD parser 直接把原文交给 lexer，而空白规则不接受完整 CRLF，导致侧车语法索引不可用。
+- official Cangjie evidence: v1.1.3 src/Lex/Lexer.cpp:214,1887–1890 接受完整 CRLF；unittests/Lex/LexerTerminatorTest.cpp:78–91 区分 LF/CRLF 与非法孤立 CR。
+- Kotlin counterpart: compiler/psi/parser/.../Kotlin.flex:93 同样基于 LF；LightTree2Fir.kt:35–36 经 readSourceFileWithMapping，KtSourceFileLinesMapping.kt:93–100 先归一化输入。本仓 CjdSourceRange/rawText 承诺原始文本，因此在共享 lexer 识别 CRLF 序列，保留长度，不改变侧车原文或诊断期望。
+- owner changes: CangJieLexer.flex 的空白单元及其生成 lexer；没有 ArgOpt、包名或 fixture 分支。
+- fixtures covered: 两个 line-terminator 单测；磁盘 LF/CRLF 侧车语义与各自原始 ranges；Macro PSI/LightTree 的 Level/LevelV1 MergeStd 全族。
+- verification: :psi:test --tests '*CangJieLineTerminatorTest' 为 2/2；:cfir:cfir-serialization:test --tests '*CjdSidecarParserTest' 为 12 passed、1 skipped；:cfir:analysis-tests:test --tests '*MergeStd*' 为 10/10。新增磁盘 CRLF 测试先失败，再通过；原有 APILEVEL_REF_HIGHER 标记未改。
+- full regression: `:psi:test :cfir:analysis-tests:test --continue` 已完成，退出码 1。修复后快照 `20260930-cjmp-p2-crlf-full` 为 8963 records、8559 passed、396 skipped、8 failed；相对 `20260930-cjmp-p2-full` 为 4 fixed、0 regressed、0 new、0 removed。8 个不变失败是 PSI/LightTree 两入口的 `cjmpSpecificShadowingBeforeImplicitTypes`、`cjmpBothImplicitReturnTypesMatch`、`cjmpCommonValueSpecificEmptyBodyMismatch`、`cjmpImplicitSpecificBodyErrorPreservesMatch`。PSI 97 项中 1 个既有失败 `ForeignAndAnnotationParsingTest.platformAnnotationSurfaceIsRetainedWithoutBuiltinKindFacade`，既有依据为 `docs/import-psi-group-verification-20260928.md:35`；不宣称全仓全绿。
+
+## 2026-09-30：body 查询按完整候选集合正向实际化（A2/C4，实施中）
+
+- problem type: LL 首次解析跨文件 caller 时，callee 尚未配对，common/specific 同时进入候选适用性检查，导致歧义或缺少默认参数。
+- framework owners: 非成员 `CfirActualizingScope`、成员 `ScopeBasedTowerLevel` 与直接 `CfirTowerResolver` 共用候选集合过滤；specific 正向 getter 先推进 CJMP_MATCHING，并回到 substitution override 的原声明。原 scope 的可见性、completeness 和 lookup provenance 保留。删除重载规约后的反向 common 过滤。
+- Kotlin counterpart: `FirActualizingScope` 在适用性之前排除已匹配 expect，TypeScope 交给 MemberScopeTowerLevel；本仓成员与非成员入口共用相同的集合算法，不把惰性匹配放入 STATUS/TYPES scope 构建。
+- official evidence: `ll-completeness-20260930` 三组 cjc 1.1.3 两段式探针，6 次编译全部退出码 0、零诊断；覆盖普通 Item 的 common/specific extend、命名参数默认读穿，以及独立未调用实现文件。DLL 只编译未运行。
+- LL verification: 完整 142 项为 141 passed、1 failed、0 skipped。原 4 项 caller-first 红例全部修复；新增 2 项 extend member caller-first 通过，断言最终 canonical specific 符号及 body 仍为 CfirLazyBlock。唯一失败为新 `uncalledImplementationCallerFirst`，实际多报 CFIR_NOT_MATCHED，证明反向表尚不完备。台账：`analysis/low-level-api-cfir/build/cjmp-verification/20260930-actualizing-scope/results.json`。
+- CFIR verification: CommonSpecific/override/extend 切片 1641 项，1516 passed、125 skipped、0 failed；完整 XML 与 testcase-key 归档 `20260930-cjmp-actualizing-slice`。共享队列组合命令耗时 25m13s、退出码 1，仅新 LL 完备性测试失败；未添加跳过或修改期望来获得通过。
+- remaining: 未调用实现红例必须由完整 family 聚合修复；声明计划发布、单目标写入、属性/变量/模式的独立事件规则、旧映射删除及配对前后独立的成员图缓存尚未完成。不把本批 scope 过滤或 getter 对旧存储的投影视为 A2/A3/C4 已验收。
+
+## 2026-10-01：nominal/extend 纯合并与字段预绑定
+
+- framework owner: `CjmpContainerMergeEvaluator` 负责官方容器遍历、成员移动/交换、逻辑归属、导出抑制、单边依赖更新及真实字段 seed。输入为原始容器与成员事实，不从旧 session 映射补造关系。
+- official evidence: v1.1.3 `CheckCJMP.cpp:173–293,309–335,387–455`，逐行复核通过。nominal 合并不是 callable first-fit；ordinary member-param 不产生实现关系；重复 specific 字段必须绑定当前 slot 并保留旧节点。
+- tests: 新 15 项覆盖有效/残留清单、字段和成员参数、重复 nominal/extend、泛型节点与参数数量、enum 非穷尽、依赖一跳更新，以及 merge seed 到 `CjmpMatchEvaluator` 的组合。`:resolution.common:test` 全模块 57 passed、0 skipped、0 failed，BUILD SUCCESSFUL（1m03s）。
+- remaining: 尚未接 CFIR 运行时。raw 主构造成员参数目前错误地生成 CfirProperty，而官方及 CJO 为字段；需要连同 `correspondingField`、初始化、注解、LL/Analysis、VarInfo/ParamInfo 一致迁移，再提供可靠容器快照。不以 fake source 特判将 property 伪装为 VarDecl；unused LL 红例仍保留。
+
+## 2026-10-01：主构造成员参数迁移为真实字段
+
+- owners: PSI/LightTree raw、ClassMembers 参数/字段双向关系、VarInfo/ParamInfo 独立标志、共享有效值成员索引、初始化检查、LL 类型/注解/PSI 映射、Analysis scope/field pointer/nominal equality。
+- official: v1.1.3 DesugarInTypeCheck.cpp:153–230 生成 VarDecl，字段无 initializer，参数默认值不转成字段 initializer；删除合成 property/accessor 及相关赋值豁免。
+- regression fixes: primaryConstructor8 先复现多余未初始化/缺不可变诊断，再用 CfirDeclaredValueMemberIndex 统一普通 lookup 和隐式参数赋值的实际存储目标；两个入口恢复原期望。公开 scope 漏字段和 nominal 包装对象相等性问题均修复，未削弱测试断言。
+- validation: raw 6/6；serialization 116 passed/5 skipped/0 failed；新的 LL class/struct/annotation/field-pointer 3/3；完整 CFIR 8963=8567 passed/396 skipped/0 failed，快照20261001-member-field-full对比A1全量0回归/0新增/0移除；two-phase 19/19。
+- final LL: 最后补齐函数归一化与 Kotlin nominal hash、加强field-first测试后再次完整运行145项，144 passed、1 failed（3m30s）；仅既有新增A2红例uncalledImplementationCallerFirst失败。没有活动构建。
+- remaining: 真实字段输入已具备；声明计划发布、完整 family 聚合、旧session存储删除、class/extend实际化成员图及P0–P10其它欠项继续实施，不能以此宣布整体目标完成。
+
+## 2026-10-02：enum 专用计划接线与完整 LL 声明语境
+
+- problem types: enum 直连配对未进入计划；泛型 enum 返回类型比较漏替换；LL enum 的 BODY 目标未支持、TYPES 将目标误当外围 owner。
+- evidence: v1.1.3 CheckCJMP.cpp:872–912,1014–1047,1115–1155；Kotlin enum entry 复用声明匹配入口与父容器准备。专用 ctor pair 使用完整类型等价和 TryBind，nullary 也不能作为变量覆写。
+- owner changes: CfirCjmpResolver/MatchRunner 的同名组计划与统一发布；CfirCjmpMatcher 复用类型替换器和 AbstractTypeChecker；LL TYPES/BODY 复用正常 enum transformer 并保护类型状态。非穷尽 extra 仍无绑定，但有已处理结果，删除 enum 阶段检查豁免。
+- first run: LL 150 项 4 failed，CFIR XML 8966 项 2 failed（generic enum 两入口），CLI 19 项 1 failed。共享类型修复后 eager/CLI恢复；LL真实外围配置修复后全部恢复。未修改旧fixture期望。
+- verification: 新enum计划6/6、函数计划4/4、返回状态4/4；末轮LL150/150，CFIR8569 passed/397 skipped/0 failed，组合BUILD SUCCESSFUL（31m24s）；两段式19/19。完整快照20261002-enum-plan-full对比首轮2 fixed/0 regressed/0 new/0 removed。
+- remaining: mixed普通common函数与specific payload variant是官方可达甚至合法的路径（非static且有默认体的探针两段exit0），仍需统一真实function-like事实和组，不能创建假CfirFunction，也不能把本轮only-enum专用覆盖算作完整enum支持。pattern、容器seed、旧存储写API删除及其他计划阶段继续实施。
+
+## 2026-10-03：pattern 身份、声明头与取消恢复（完整 CFIR 回归发现 8 个回归）
+
+- 工作树 HEAD `fcfeede71`，本批未提交。完整目标仍是 P0–P10 / A1–J1，九步不可变发布切换未完成。
+- pattern 的匹配键改为原有 binding，tuple 保留直接 VAR 前缀及非变量停止；根与子结果分别记录。
+  LL binding 首次请求走 root designation；TYPES/STATUS 真正处理子声明头，IMPLICIT 不遗漏隐式 enum 绑定。
+- 框架查找问题落在 file declaration provider 的 binding 名称/文件索引及 LL source provider 的 symbol 收集。
+  不在 matcher 中增加候选兜底。keeper 复用共享表达式图快照并覆盖 receiver、参数列表与 context 映射。
+- 定向末轮 resolve 63/63、LL 29/29；完整 LL 新鲜 XML 168/168，0 failed/error/skipped。
+  完整队列 `663028a1` / handle `49830` 已 exit 1（25m34s）：CFIR XML 8966 条，
+  8561 passed、8 failed、397 skipped；CLI 新鲜 XML 19/19。
+  var/let、let 类型差异、CPointer 泛型及 foreign 变量四个 fixture 各 PSI/light-tree 失败。
+  台账快照 `20261003-pattern-full-before-diagnostic-owner` 相对 mixed 基线 8 regressions、0 new/removed。
+- 官方 1.1.3 新探针 `review-20261003/variable-diagnostic-anchor`：两 common exit 0，两 specific exit 1，
+  对应 sema_specific_var_not_match_let / sema_specific_has_different_type，范围为整条声明；原期望保留。
+- 实际差异：CJMP 两种诊断误锚绑定名；CPointer 显式类型错误重复锚绑定名；foreign 漏报。
+  下一步修共享声明头/诊断归属，再复验及重新完整回归。
+  最新代理 gate 因额度错误未返回，不能宣称本批全部审查已通过。
+
+## 2026-10-03：TYPES 派生绑定的类型语法归属
+
+- problem type: 声明头错误类型被投影为绑定名上的第二个错误 type ref。
+- root cause: `resolvePatternHeaderTypes` 给原本无类型语法 source 的隐式绑定传入 binding.source；
+  CopyUtils 因而创建有新锚点的错误 type ref，collector 对同一个声明头类型错误重复报告。
+- Kotlin counterpart: `compiler/fir/providers/.../CopyUtils.kt` 的 resolvedTypeFromPrototype 保留原型 source；
+  `compiler/fir/resolve/.../FirTypeResolveTransformer.kt` 的 setAccessorTypesByPropertyType 不制造派生声明类型语法。
+  仓颉既有 `CfirPatternBindingResolution.replaceBindingType` 同样使用 currentTypeRef.source。
+- owner change: `CfirTypeResolveTransformer.resolvePatternHeaderTypes` 保留 currentTypeRef.source；
+  显式声明头仍拥有原类型语法，派生绑定仍拥有真实 symbol 与投影类型。没有改 fixture。
+- fixtures covered: PSI/light-tree FFI 全切片 82 项，包含 cpointer_generic_reverse 两入口。
+- verification: queue `7e4438d6` / handle `72972`，组合 exit 1（5m1s）；
+  FFI XML 80 passed /2 failed /0 skipped，只有 foreignVariableNegative 两入口漏报。
+  CPointer 两入口通过；同轮 LL pattern 7/7。快照 `20261003-pattern-type-projection-ffi-slice`。
+- remaining: CJMP 整声明诊断范围与 foreign 显式 @C 事实归属未修；必须在同一原始声明头/绑定身份模型上
+  处理，不能把 status.isC 当作 HasAnno(C)，也不能通过 root/binding 重复 checker 得到重复诊断。
+  本切片不是完整 CFIR 复验，九步不可变发布目标仍未完成。
+
+## 2026-10-03：普通 VAR 声明头事实与真实 binding 结果键
+
+- problem types: CJMP VAR 诊断范围错误与 foreign 变量缺少显式 @C 漏报。
+- official evidence: v1.1.3 ParseDecl.cpp 区分 ParseVarDecl/ParseVarWithPatternDecl；
+  CheckCJMP.cpp MatchCJMPVar 在真实 VAR 上报告后置类型与 var/let 诊断，tuple 子 VAR 保留自身身份。
+  variable-diagnostic-anchor 两段式探针确认普通 VAR 整声明范围。
+  CFFICheck.cpp PreCheckAnnoForCFFI 使用 HasAnno(C)，不是派生 C ABI。
+  foreign-variable-explicit-c 探针 exit 1，唯一 sema_illegal_use_of_annotation，没有 native_var_error。
+- Kotlin counterpart files consulted: FirActualAnnotationsMatchExpectChecker.kt 保留实际匹配 symbol，读取解析后的
+  annotation 匹配事实并报告 source；FirNativeExternalDeclarationChecker.kt 将声明合法性放在 BasicDeclarationChecker。
+  pattern 拥有绑定/声明头的区分来自仓颉 Parser，Kotlin 无同名语法节点。
+- owner changes: CfirProviderUtils.getDeclarationMetadataOwner 复用既有 metadata owner 归一化与 provider 索引；
+  CfirCommonSpecificChecker 从 header 读取注解和普通 VAR 诊断范围，匹配/类型仍读真实 binding；
+  CfirForeignVariableChecker 不在外壳重复报告，消费 header 的显式 C 请求。
+- fixtures covered: PSI/light-tree CommonSpecific + FFI 全切片，包含 var/let、类型差异、foreignVariableNegative。
+- verification: queue f5533245 / handle 19806，exit 0（8m54s）；CFIR XML 346 条（261 passed /85 skipped /0 failed），
+  同轮 LL pattern 7/7。快照 20261003-pattern-header-first-slice；未修改已有 fixture 期望。
+- subsequent inputs: 官方同一声明范围规则接通 reportUnmatched，并新增 foreignVariableExplicitC.cj。
+  queue f26aa19b / handle 40102 已 exit 0（6m10s）：最终 CFIR 切片 XML 348 条，263 passed /85 skipped /0 failed，
+  新 fixture 两入口均通过；完整 LL 168/168、CLI 19/19。快照 20261003-pattern-header-final-slice。
+  完整回归 queue dfe213ff / handle 33883 已 exit 0（22m15s）：CFIR XML 8968 条，
+  8571 passed /397 skipped /0 failed。快照 20261003-pattern-header-final-full 对比旧绿色基线
+  0 regressions、2 new、0 removed；最初八项失败逐 key 全部 passed，新增 fixture 两入口通过。
+  LL/CLI task UP-TO-DATE，复用同一最终输入已通过的 168/168 与 19/19。
+  本批完整回归完成；九步不可变发布仍未完成，最新代理 gate 因额度错误未返回。
+
+## 2026-10-06：主构造成员参数事实与共享参数前缀（基础步）
+
+- problem type: const-only被误作成员声明关键词；CONST和非primary LET/VAR未被共享parser消费，破坏参数名字/列表。
+- root cause: 参数modifier解析仅在primary开启，且复用了const变量声明的函数前瞻；字段状态另从raw语法回查。
+- official evidence: 固定v1.1.3 ParseDecl.cpp:1918/2412/2518/2558/2582，ParseModifiers.cpp:20/49/86，
+  ParserModifierRules.cpp:326/403，ParserDiag.cpp:674/692/1165，ParseCJMPDecl.cpp:108。
+  PUBLIC等软关键字后接冒号是参数名；CONST/INOUT为硬modifier。非member破损门限只含名字与冒号。
+- Kotlin counterpart: compiler/psi/parser/.../KotlinParsing.java:2690统一参数前缀消费，函数类型尝试回滚边界2607；
+  PSI KtModifierList/KtParameter的token读取与SDK253 PsiBuilderImpl/MarkerProduction的真实errorBefore范围。
+  ERROR-only透明访问是仓颉参数解析错误覆盖完整token的要求，不扩展到任意后代。
+- owner changes: CangJieParsing共享参数前缀与后置检查；PSI/LT keyword及modifier事实读取；
+  ModifierMaskUtils与stub214；cfir-tree只读MemberParameterFieldInfo及完整状态复制；两raw捕获primary字段事实。
+- repair principle: 在真实参数转换与共享parser owner保存语法和字段事实，错误恢复不改变其所属声明；不按名称/后代猜primary。
+- fixtures covered: CfirMemberParameterFieldInfoTest全部2项；PrimaryConstructorMemberFieldRawCfirTest全部12项；
+  ParameterModifierDiagnosticsParsingTest全部8组；ParameterDeclarationKeywordTest全部3组；
+  WholeTreeStubRoundTripTest 1组、ParameterListTrailingCommaTest 3组、ModifierParsingTest 6组、CjmpFunctionParsingTest 13组。
+- verification: 使用1006交接的queue/JDK21命令，任务依次为
+  `:cfir:cfir-tree:test --tests '*CfirMemberParameterFieldInfoTest*'`（95914，exit0，4m51s，2/2）；
+  `:cfir:raw-cfir:light-tree2cfir:test --tests '*PrimaryConstructorMemberFieldRawCfirTest*'`（16360，exit0，56s，12/12）；
+  `:psi:test`配上述六类filters（11438，exit0，30s，34/34）。XML时间08:04:14Z、08:07:25Z、08:13:19–21Z。
+  总48/48、0失败/跳过，SDK debug marker检查通过，局部架构gate通过。
+- remaining: 本步没有搬迁字段materializer，allkinds的包装主构造字段缺失仍未关闭；
+  LL多文件/重建construction与annotation metadata生命周期、全部raw入口发布边界及完整CFIR仍待实施/验证。
+
+### 同日完整LL回归：参数源码/CJO空modifier容器同构
+
+- 完整LL61614 exit1（4m47s）：4项失败同为binary stub20383对AST stub21384；另mixedDuplicateKind绑定断言失败。
+- 根因与修复：源码普通参数新增空MODIFIER_LIST，CJO普通参数没有该节点。KotlinParsing.java:648与
+  TypeClsStubBuilder.kt:402/clsStubBuilding.kt:247都在无modifier时不产生节点。
+  共享parseValueParameter按实际modifier存在性完成或drop；TypeCjoStubBuilder/CallableCjoStubBuilder
+  删除primary专用空节点两个bool及创建分支；stub215使源码和二进制缓存重新构建。
+- 验证：组合75419 exit0（9m43s），完整LL168/168、CompiledStubShapeTest 1/1、上述PSI34/34、raw12/12；
+  总215/215，无失败/跳过。LL XML08:44:32–08:45:06Z；source/binary整树XML08:42:44Z。
+  mixedDuplicateKind同轮通过，未改fixture/matcher；没有独立确认上一轮该项失败原因。
+- remaining: 当前全量CFIR仍未取得新通过结果；主构造最终字段materializer及LL宏构造metadata事务仍未完成。
+
+## 2026-10-06：构造 metadata 私有事务与声明级发布
+
+- problem type: session级可变annotation表被一次construction整体freeze，LL第二文件/重建不能继续记录；
+  旧强索引永久持有历史图，owner替换/注解重排后的slot来源不一致。
+- root cause: raw收集、fragment迁移、ordinary查询共用同一个无并发保护的session writer。
+- official evidence: v1.1.3 MacroExpansion.cpp:345–369按真实替换位置重解析并替换成员；
+  DesugarInTypeCheck.cpp:153–202从最终参数复制字段annotation。metadata必须跟随真实slot与owner，
+  不能以同名、offset或annotation解析上下文symbol猜slot owner。
+- Kotlin counterpart: LLFirFileBuilder/LLFirDeclrationsCacheForModule的cache创建回调发布边界；
+  FirDeclarationAttributes发布前写入契约；ValueWithPostCompute、LLElementMapper的完整结果发布；
+  FirThreadSafeCachesFactory的弱引用策略。完整出处见metadata生命周期文档。
+- owner changes: providers新增CfirAnnotationMetadataBuilder与不可变产品；canonical session registry只保留
+  weak-key/weak-value索引，declaration attribute只强持有自己的表。raw PSI/LT、PreMacro产品、fragment input/
+  replace slot显式携带文件事务；batch provider锁内发布，LL cache/重建返回前发布当前raw metadata。
+  currentSlot与完整carrier provenance分开；显式列表操作维护删除/重排/跨owner绑定。@When pruner正式visitor
+  保留形参/body surface；stable splice即时迁移，degraded owner复制attributes并转移slot。
+  raw reparse/splice内部不变量与取消不再转成degraded，executor用use关闭，异常清理后原样传播。
+- repair principle: 构造事实由文件代次私有拥有，完成的槽位由实际声明拥有，session只查询已发布身份。
+- fixtures covered: providers全模块（55，含25事务与新增异常传播）；frontend全模块（141，含PSI/LT真实条件裁剪、
+  联合owner/annotation splice、degraded参数owner与异常清理）；raw三个完整专项（22）；完整LL（168）；
+  CfirMacroAnnotationSourceModuleTest（5）、CfirDeclarationOwnerTest（6）。原断言和源码保留。
+- verification: 沿用1006交接的queue/JDK21参数。
+  - 8199：初版providers51/51，exit0（3m59s）。
+  - 58721：providers + raw三类filters + frontend + 完整LL，组合exit1（9m41s）；raw22/22、LL168/168通过。
+    3项新增测试失败分别为非法binding异常类型断言与两个fixture漏传factory Context，保留行为断言修正测试设置。
+  - 12448：`:cfir:providers:test :compiler:frontend:test`，exit0（1m5s），55/55 + 141/141。
+  - 15203：`:cfir:analysis-tests:test --tests '*CfirMacroAnnotationSourceModuleTest*' --tests '*CfirDeclarationOwnerTest*'`，
+    使用既有768m init script，exit0（6m22s），11/11。
+  最终本批397/397，无失败/跳过；静态架构gate通过。不是全量CFIR验收。
+- remaining: LL只封闭当前raw metadata，没有宣称已展开声明/参数宏。allkinds字段缺失、唯一primary materializer、
+  真实LL construction、MacroExpansionRegistry/surface store生命周期及原P0–P10未完成事项仍待实施。
+
+## 2026-10-06：条件编译 AND/OR 同时组合左右操作数
+
+- problem type: `@When` 逻辑组合只使用右侧布尔结果，左侧仅参与Invalid检查。
+- root cause: `CfirConditionalCompilationEvaluator.combine` 在两侧求值后丢弃合法左值。
+- official evidence: v1.1.3 ConditionalCompilation.cpp:242–249通过Utils::AllOf/AnyOf调用两侧EvalConditionExpr；
+  Utils.h:237–245分别执行&&/||。两操作数都求值（C++不保证先后），任一错误不能被另一侧决定性布尔值掩盖。
+- owner change: 保持两侧求值和Invalid传播，最终有效结果改为leftEnabled&&rightEnabled或leftEnabled||rightEnabled。
+- fixtures covered: 新CfirConditionalCompilationEvaluatorTest的四组debug/test设置×AND/OR（8项），
+  未知条件在false AND或true OR两侧仍Invalid（4项）；用真实raw qualified access/comparison，不用非法Bool literal替代条件。
+- verification: 94807组合exit0（7m），`:cfir:resolve:test --tests '*CfirConditionalCompilationEvaluatorTest*'`，
+  12/12、0跳过，XML2026-10-06T13:26:08Z。该修复不依赖同轮主构造字段改动；后者另记。
+
+## 2026-10-06：最终 primary 参数统一生成成员字段
+
+- problem type: annotation包装的真实primary没有进入两raw的直接语法回查，allkinds的c字段丢失。
+- root cause: 两raw各自回查原始PSI/LT参数而非使用最终CFIR primary/参数；宏splice之前的字段也会滞留为旧兄弟节点。
+- official evidence: v1.1.3 Utils.cpp:224的FILE直接class/struct遍历；TypeChecker.cpp:1606–1640选择首真实PrimaryCtorDecl；
+  DesugarInTypeCheck.cpp:153–202按最终isMemberParam/!STATIC产生字段，append并保留参数annotation；
+  MacroExpansion.cpp:345–369说明该流程在宏替换之后。
+- Kotlin counterpart: PSI KtParameter.toFirProperty、LT ValueParameter.toFirPropertyFromPrimaryConstructor；
+  实际参数/owner上下文产生成员，创建后建立correspondingProperty。仓颉使用field模型，不生成getter/setter。
+- owner changes: providers的PrimaryConstructorParameterFields唯一helper；真实primary谓词排除既有ImplicitConstructor来源；
+  class/struct最终ClassId/self type、字段状态、参数source/type与完整annotation metadata由真实节点提供。
+  两raw删除旧发射/语法回查，LT删除按名字/FUNC提升primary；batch、Identity、LL初建/重建、raw fixtures统一接入。
+  writer锁保护派生metadata，recordable工厂seal前检查字段完成状态，禁止晚改primary绕过。
+- fixtures covered: PrimaryConstructorMemberFieldRawCfirTest全16入口、CompileTimeVisibleParameterRawCfirTest全2、
+  NestedNominalRawCfirTest全4；CfirAnalysisMacroTestGenerated和CfirAnalysisMacroPsiTestGenerated的allkinds原数据。
+- verification: 94807组合exit0（7m），raw22/22，allkinds2/2，无跳过；XML13:26:34–37Z及13:28:44/56Z。
+  22113只编译失败，已修ClassId API与receiver类型约束，不计为通过。最终静态gate通过；广域回归继续。
+- remaining: helper不修复缺失的primary/parameter fragment语法事实；真实LL宏服务未接入，当前LL只生成raw字段。
+  默认constructor仍需在完整CJMP视图下迁移，不能将其阶段/flags问题混同字段修复；原P0–P10未完成事项保持打开。
+
+### 同日广域验证：共享字段全CFIR通过，raw失败独立处理
+
+- 6964已exit1（32m58s）：完整CFIR8968项，8571通过、0失败、397跳过；XML1266份，
+  2026-10-06T14:04:41.736Z–14:32:49.635Z。providers55/55、frontend141/141、LL168/168通过。
+- 快照`build/ffi-annotation-verification/20261006-primary-fields-full`对比`20261003-pattern-header-final-full`：
+  case身份及状态完全相同，0新增/删除/回归/变化失败。跳过不算通过或实现完成。
+- 组合失败来自LT raw12/289与PSI raw180/686。五类根因：features覆盖矩阵遗漏、独立注解行尾空格、
+  for guard/interface abstract/quote interpolation旧golden缺项。后三类官方证据为v1.1.3
+  ParseAtom.cpp:1265–1267、ParseDecl.cpp:2094–2097、ParseQuote.cpp:21–46。
+- 同时发现raw执行重复：LT141个唯一case、PSI242个唯一case。JUnit3递归运行器与Gradle逐类发现重叠；
+  接下来在共享运行器修复并核对唯一case集合，不能以隐藏nested类或弱化期望消除失败。
+
+## 2026-10-07：宏 owner 快照批次续接验证
+
+- queue b6f84bac已exit1；providers55/55、完整LT raw167/167、完整PSI raw242/242、
+  frontend141/141、CFIR宏切片657/657均0失败/错误/跳过。完整CFIR8968项没有在该轮重跑。
+- 唯一失败属于新PSI测试：obj.1按官方Lexer.cpp:1950是IDENTIFIER与FLOAT_LITERAL(.1)，
+  不进入成员selector。固定1.1.3 cjc证实分号/换行错误覆盖完整.1；保留源码，独立检查词法与范围。
+  真正非法selector改为obj. 1、obj.@M()及obj. @M()，不削弱selector子树断言，不改生产。
+- 25516 / queue0755b439已exit0（1m6s），最终PSI五类49/49、0失败/错误/跳过，
+  XML UTC2026-10-07T14:06:31.239Z–14:06:35.075Z。
+- 限定静态gate通过，实际raw owner恢复与原子宏边界闭合；完整parser语法事实、lazy/增量生命周期、
+  scoped roots及vector splice仍待实现，不能据本批测试提高整体完成比例。
+
+## 2026-10-07：raw 全量恢复与嵌套测试去重
+
+- raw渲染/coverage/golden修复已提交`27f6e47a5`，保留所有.cj内容。
+- handle56497 / queue f291897b：exit0，8m9s；LT141/141、PSI242/242、0失败/跳过/重复。
+  与修复前的唯一用例数量一致，原始XML分别保存到两个raw模块的`build/verification/20261007-runner-full/`。
+- JUnit3递归与Gradle逐类发现重叠已按Kotlin public/ForGradle/ForJPS三类职责修复；
+  TestSuite/JUnit38保留生命周期，生成器公共runner名不变。最终静态gate通过。
+- 筛选验证7118（exit0，8m52s）：外类78/78、内类29/29；60499的raw任务：混合94/94、方法1/1；
+  36314（exit0，16s）：CLI/build-script交集6/6、build-script单独4/4。
+  各组按class#method比较完整快照均0遗漏/额外/重复/失败/跳过，报告保存于
+  `tests/test-infrastructure/build/verification/20261007-runner-filter-results.json`。
+- runner契约49562（exit0，25s）：9/9，0失败/跳过，XML2026-10-07T00:48:13.794Z。
+  初版60499仅新增排序测试假设错误：JUnit4.13.2的TestSuite不是Sortable，JUnit38仅向Sortable转发；
+  已以直接JUnit38(TestSuite)的运行事件为独立契约校正测试，保留完整顺序/生命周期断言，没有自造生产排序。
+- 这关闭6964的五类raw失败，不代表宏fragment真实owner/vector、LL宏构造或整个P0–P10完成。
+
+## 2026-10-07：声明参数角色、成员语境隔离与语句恢复
+
+- problem type: accessor沿“类型可选的普通参数”解析，错误接收类型/命名标记/默认值；
+  class/struct成员primary语境进入局部/初始化表达式中的宏输入；错误同行恢复又将丢弃的brace组当lambda。
+- official evidence: v1.1.3 ParseDecl.cpp:2414–2471的共同prefix/ELLIPSIS与accessor name-only；
+  ParserImpl.h:421的class/struct primary scope；Parser.cpp:593–629及ParserUtils.cpp:348–403的成对组恢复。
+  非foreign变长参数的owner错误在CheckVariableParams:2237/2278，不能用此语法测试宣称该检查已迁移。
+- owner changes: parser以CjParameterGrammar选择rest，memberScope只在名义成员文法区域存在，
+  公共表达式/语句/lambda入口清除并保留其他context字段；普通源码继续原classdetector父属性检查。
+  三种parseStatements共用恢复函数，跳过完整括号组。stub216、fragment parser version16。
+- fixtures: 新AccessorParameterGrammarTest 7项；MemberParsingContextIsolationTest 7项/24输入。
+  非法default原测试要求完整外层constructor范围无官方依据，改为真实参数归属/宏内不含primary/后续成员断言，未改输入源码。
+- verification: 78074 exit0，PSI37+raw28；19399 exit1，5项新测试失败如上，CJO1/raw28/frontend141/LL168/allkinds2通过。
+  最终16629 exit0（6m40s），PSI46、完整LT raw141、完整PSI raw242、frontend141，共570/570、0失败/跳过。
+  最终XML UTC07:06:45–07:08:06；局部架构gate通过。没有新的完整CFIR结果。
+- remaining: true primary名称候选/InvalidDecl恢复、scoped macro parser、真实owner捕获、typed slice/专用诊断、
+  LL真实宏构造与原P0–P10仍未完成。
+
+## 2026-10-07：宏 surface 的实际 raw owner 捕获与恢复（验证中）
+
+- problem type: 宏片段仅按包重新构建，丢失真实容器、泛型receiver、函数target和参数文法身份。
+- official evidence: v1.1.3 MacroUpdateInfo.h:76/92/153–156的实际member/default/parameter槽位；
+  MacroExpansion.cpp:226保留outerDecl。Kotlin Context.kt:123–159及RawFirNonLocalDeclarationBuilder.kt:70–82/317–330
+  以实际designation恢复容器和self type；不按名字重认领符号。
+- owner changes: mandatory MacroRawOwnerSnapshot贯穿两raw六处采集点和frontend fragment工厂；
+  Context在参数默认值/annotation保存明确signature，进入内层容器屏蔽，退出恢复。
+  新builder安装实际owner后构建片段，finally撤销；extend成员绑定由共享helper负责。
+  CjParameterGrammar/CjMemberParsingContext作为纯语法模型移到common/parsing；fragment版本17。
+- fixtures: 新MacroRawOwnerSnapshotRawCfirTest 14项、MacroRawOwnerRestorationRawCfirTest 12项，均覆盖PSI/LT；
+  既有16处测试handle构造迁移，原输入/断言保持。
+- verification: 限定静态gate通过。71018 exit1（48s）止于providers编译，未执行测试；
+  根因是纯语法模型原属PSI。移到common后80204 exit1（12m2s）：providers55、frontend141、source-module5均通过；
+  raw48中16项新测因return宏操作数缺失失败。共享EXPRESSION_FIRST缺AT，已修正并接通普通宏atom优先级链，
+  atom显式backToken=false，保留statement/IfAvailable旧分派，stub217；最终验证待写入。
+- remaining: dummy wrapper、后代查找、单payload尚未删除；scope/ExprKind与splice数量不能由raw owner推导。
+  scoped parser/typed slice/LL真实宏构造及全部P0–P10仍继续实施。
+
+## 2026-10-08：primary 原始名字身份、InvalidDecl 与声明入口恢复
+
+- official evidence: 固定v1.1.3 ParserUtils.cpp 的UTF-8 byte Levenshtein与成员平衡恢复，
+  SeeingPrimaryCtorDecl 的class/struct及四后继候选；直接成员淘汰错名primary，宏input保留primary。
+  ParseMacroDecl非法scope仅HAS_BROKEN、继续完整MacroDecl；Parser.cpp ParseExprOrDecl和
+  KotlinExpressionParsing STATEMENT_FIRST先分派声明。SeeingMacroPackage明确MACRO+PACKAGE双token。
+- source changes: typed CjInvalidDeclaration +既有placeholder stub，stub屏障不持久化任何内部签名/成员；
+  PSI/LT raw显式invalid转换，源stub218、fragment版本18。错误名字报告位于parser真实名字token；
+  远错消费平衡组并在真实声明起点停，MACRO/EXTEND/INOUT补齐。成员MacroDecl恢复完整分派及scope诊断；
+  共享语句FIRST覆盖已有通用分派，包头不再吞裸macro/public macro声明。
+- fixtures: PSI/LT原始反引号/UTF-8/四后继/近远名字/嵌套input/声明恢复矩阵；真实整树序列化、
+  独立物理fresh loader attach及无AST查询；四raw模式检查private pre-macro字段为空、合法非宏才物化、
+  macro参数symbol/type/source/NORMAL正文。LT lazy明确null，PSI lazy明确CfirLazyBlock。
+- failed runs: 53763 exit1（7m2s），MACRO分派缺失+JUnit3三String断言重载错误；18835 exit1（5m1s），
+  LOCAL FIRST漏MACRO+LT lazy测试假设错误；54306 exit1（5m51s），raw56全通过、顶层control误入包头。
+  均已结束，未以fixture删减或改生产lazy协议绕过失败。
+- final integration: 15551 exit0（11m18s），PSI74/providers55/完整LT raw171/完整PSI raw242/
+  frontend141/LL168，851/851、0失败/错误/跳过，XML UTC2026-10-08 01:41:29.923–01:47:36.217。
+  日志`.workbuddy/tmp/primary-identity-integration-verification-20261008.log`。
+- final full CFIR: 79919 exit0（33m22s），1266份新鲜XML共8968条记录：8571通过、397跳过、
+  0失败/错误，XML本地2026-10-08 09:54:00.842–10:26:31.598；日志
+  `.workbuddy/tmp/primary-identity-full-cfir-verification-20261008.log`。本批输入冻结结束。
+- remaining: 全部真实ScopeKind/ExprKind、marker rollback/precede/collapse、lazy及SDK增量传输、scoped roots/
+  typed slices/vector splice、五项CFIR PARSE迁移及整个P0–P10。MACRO_BODY不能从LOCAL替代成FUNC。
+
+## 2026-10-08：接收后续parser工作检查点
+
+- 其他会话已补marker双接口/错误结束/折叠的9项契约和普通语句宏的优先级继续解析。
+  定向58563已exit0，后续完整PSI已exit1；旧handoff“58563仍运行”的状态已更正。
+- 当前完整PSI XML：212项、211通过、1失败、0跳过（UTC03:15:59–03:16:04）。
+  唯一失败为annotationOnlyStatementPrefixRemainsAnAnnotationOnItsDeclaration：lazy函数body新parser使用DEFAULT，
+  丢失annotation-only模式。当前未发现该工作树Gradle进程，不重启旧handle。
+- 保存未提交的CJMP工作检查点后，继续实现真实不可变parser seed及SDK lazy/copy/增量传输。
+  本检查点有已知失败，不冒充最终通过；此前851/851及全CFIR结果不覆盖当前新增路径。
+
+## 2026-10-08：parser seed与类型安全的平台注册续接
+
+- seed入口/冻结/build hook已接入PSI文件、片段、BLOCK/LAMBDA，原annotation-only语句体失败通过。
+  当前root metadata的diff提交、CjAnnotation与子片段模块来源、LT/CASE_BLOCK仍未闭合。
+- 92064：44项35通过；新增copy假设与DiffLog缺标准服务已定位。27278完整PSI237项226通过、
+  11失败：10项EDT约束、1项ConstSafe getter错误。新增测试已改真实EDT提交，语义断言保留。
+- 用户指出CodeStyleManagerImpl字符串反射不当：已移除本轮两个反射注册，改为显式code-style/
+  code-style-impl依赖与公开API类型化接线。CangJieHeadlessPomModel完整对位SDK LangPomModel，
+  使用真实后处理aspect，保留未知aspect可空合同与事件更新顺序。
+- 66793 compileKotlin exit0（1m47s）；30382 core环境6/6 exit0（19s），含真实格式化事务嵌套/异常
+  恢复。不是全部parser/CFIR结果。全部当前handles已终止，具体下一步见handoff最后一节。
+
+## 2026-10-08：解析结果随AST提交与完整PSI验证
+
+- owner: private ASTFactory+ParserDefinition在实际PACKAGE_DIRECTIVE附完整文件解析结果，
+  两条comparator保留无文本变化的元数据更新；CjFile只从实际提交树发布，空package使用同一协议。
+  CjAnnotation与子片段共用冻结模块来源，子片段完整继承父seed，角色不再掉成NONE。
+- 22849 exit1：241项227通过。12项需要正规CommandProcessor命令；2项snapshot在触发语言解析前读结果。
+  已按SDK线程/command/惰性根合同修正测试，保留强断言，没有跳过检查或添加空源码兜底。
+- 49510 exit0（9m10s）：完整PSI243/243，0失败/错误/跳过，XML UTC07:02:47.719–07:02:56.512。
+  快照位于psi/build/verification/20261008-parser-seed-root-results。
+- 25998 exit0（21m43s）：core6、providers55、完整LT raw171、完整PSI raw242、frontend141、
+  LL168、宏CFIR及source-module657，共1440/1440，0失败/错误/跳过；加完整PSI共1683项通过。
+  各模块快照位于build/verification/20261008-parser-seed-integration；宏CFIR时间UTC07:25:03.939–07:31:13.723。
+  代码已提交3a0abe8b6，当前无运行中的本线程Gradle。完整CFIR8968全量尚未在本批重跑。
+  scope occurrence、LT发布、CASE_BLOCK、scoped roots、vector与整个P0–P10仍在实施；
+  具体下一批入口、IfAvailable阶段边界及参数MacroExpandParam缺口见设计文档§9.17。
+
+## 2026-10-09：NL 的完整文件起点与 SDK 空白绑定
+
+- problem type: 新增独立 NL 后，semantic builder 在第一个 marker 前移动游标，导致根丢失前导
+  trivia；普通语法忽略的 NL 仍不是 SDK whitespace，名称、表达式、import 和诊断吞入尾换行。
+  SDK 报告 LazyParseableElement.assertTextLengthIntact 时的 PluginProblemReporter NPE 是后续异常。
+- official evidence: v1.1.3 Lexer.cpp 的独立 NL 与 ParserUtils.cpp 的 skipNL 协议；实际 SDK
+  253.29346.379 PsiBuilderImpl.mark 首 marker 不跳空白，remapCurrentTokenAndRestoreOnRollback
+  保存原类型，rollbackTo 恢复 marker 起点及其后的类型；PsiBuilderAdapter 原样委托。
+- Kotlin counterpart: compiler/psi/parser/src/org/jetbrains/kotlin/parsing/
+  SemanticWhitespaceAwarePsiBuilderImpl.java；标准 mark/whitespace binder 仍由 SDK 所有。
+  仓颉独立 NL scanner 是官方语义差异，不能全局把显式 NL 白化。
+- owner changed: SemanticWhitespaceAwarePsiBuilderImpl.mark 保留 SDK 原起点并记录 marker.startOffset；
+  normalizeLogicalCursor 仅对实际忽略的 NL 使用 SDK 可回滚 WHITE_SPACE remap，再 rawAdvance。
+  不补服务掩盖长度异常，不 trim 名称/表达式，不逐 marker 调整结束偏移。
+- fixtures: NL 契约 8 方法、10 个真实完整文件输入，含回滚/precede/前瞻；完整 PSI320、
+  LT raw171、PSI raw242、frontend141、LL168、providers55。现有范围、import 注释保留、stub、
+  LL 精确位置和文件结构断言全部保留。
+- verification: queue c2fdd3cf 初始相关回归暴露 PSI32/raw75+174/frontend4/LL80/宏502 失败；
+  PID28512 仅 Kotlin super 歧义编译失败，随后明确 PsiBuilderAdapter。最终 queue262d15c5
+  于 UTC2026-10-09T04:26:34 exit1（27m16s）：前述非宏组1097/1097，0失败/错误/跳过；
+  宏及 source-module669 条为622通过、44失败、3既有skip，0error。所有剩余失败均是
+  IfAvailable/APILevelChecker 的原独立构造缺口，标准/PSI各22；原 root 长度/起点异常已消除。
+- evidence: 各模块 build/verification/20261009-nl-sdk-262d15c5/ 保存完整XML；日志
+  .workbuddy/tmp/cjmp-nl-sdk-regression-20261009-2.log。未重跑全部8968条CFIR；完整目标继续开放。
+- cache identifiers: 源码stub219→220、宏fragment parser19→20、payload tokenizer1→2，
+  对应本批PSI结构和lexer token拆分变化；不改forest/splice算法版本。文件键和模块签名沿既有
+  版本接线生成，未增加持久化缓存读取实现。queue a3c1c22b/PID11476于UTC2026-10-09T04:46:32
+  exit0（11m30s）：真实stub往返及physical loader2/2、frontend缓存上下文/键维度/版本接线3/3。
+  两模块XML保存于build/verification/20261009-parser-cache-versions-a3c1c22b/；没有扩大或重跑全CFIR。
+
+## 2026-10-10：宏 finalizer 输入与自定义注解参数诊断来源
+
+- problem type: Macro parsing / Annotation diagnostic source mapping。
+- root cause: 声明宏无括号 input 的 PSI 解析分支没有复用成员解析器识别 `~init`；自定义注解重解析虽替换了 annotation root，参数中的局部声明仍来自片段坐标，但 custom annotation 结果没有携带 token 到宿主源码的 source map。
+- owner changes: `CangJieParsing.parseMacroFinalizer` 复用普通成员入口及其作用域诊断；PSI 与 LightTree annotation token 均保留逐 token source range；custom annotation fragment 贯穿 source map，并只映射重解析子节点，已映射到宿主的坐标不再回退成整段 macro surface。
+- regression fixtures: `class C { @APILevel ~init() {} }` 断言 finalizer 仍是 declaration macro input；宏 LLT `finalizer.cj` 与 `err_custom_annotation_place_var_02.cj` 双入口。
+- verification: `:psi:test --tests '*MacroInvocationFactsParsingTest.classFinalizerIsTheInputOfItsDeclarationMacro'` 通过；`:cfir:raw-cfir:psi2cfir:test` 两个来源/owner回归通过；PSI 与 LightTree 宏 LLT 652/652 通过（CANGJIE_HOME 1.1.3）。
+
+## 2026-10-10：scoped ParseNodes 的 LightTree roots 生命周期
+
+- problem type: Scoped macro fragment parsing / LightTree borrowed-node lifetime。
+- root cause: `reportErrors` 遍历并释放 LightTree 的临时 child token 后才读取片段 roots；`SingleLexemeNode` 的 builder parent 已回收，导致 scoped roots 解析抛 NPE。
+- owner change: LightTree parser 在错误遍历前从同一棵树收集 typed direct roots，之后再报告诊断；没有递归搜后代或重建片段节点。
+- fixture correction: whole-tree stub 合法基线曾把 primary-constructor member parameter 放在 ordinary parameter 前。官方 v1.1.3 `ParseParamInParamList` 对该顺序报告 `regular parameters must come before member variable parameters`；按官方顺序调整源码与对应字段顺序断言。
+- verification: scoped fragment + whole-tree stub PSI 44/44；完整 PSI raw 244/244；完整 LightTree raw 171/171；frontend 宏构造相关测试 54/54；PSI/LightTree 宏及 source-module 切片 657/657。全部 0 failed/error/skipped。未运行完整 8968 项 CFIR，也不据此宣称整个 CJMP 计划完成。
+
+## 2026-10-26：common let 构造器写入归并到表达式目标分类
+
+- problem type: common `let` 字段在构造器内由独立 class-like checker 遍历赋值，未复用赋值目标语义；它漏掉复合赋值和自增自减，并把显式/隐式成员访问归到同一诊断路径。
+- official evidence: 本地 v1.1.3 `InitializationChecker.cpp:163–175` 的 `NotAssignableVariable` 将构造器中的 common immutable field 视为不可写；`:618–641` 按 `REF_EXPR`、`MEMBER_ACCESS` 与单层 VArray `SUBSCRIPT_EXPR` 分类；`:649–679` 处理显式成员访问；`:881–884` 让 `INC_OR_DEC_EXPR` 调用同一 `CheckLetFlag`。`Diags.cpp:355–363` 的通用不可变诊断保留赋值/自增减表达式及目标 note。范围遵照仓内 Diagnostic Range Policy：普通字段赋值标字段 selector，自增自减标完整表达式。
+- root cause: 旧 checker 只访问构造器中的 `CfirAssignment`，不能成为所有修改表达式的语义 owner；通用字段分类又把 `INITIALIZATION` 当成首次写入许可，导致未初始化 common `let` 的首次显式 `this.field = ...` 被放行。
+- owner changes: 删除 `CfirCommonCtorImmutableAssignChecker` 及注册。`CfirMutationTargetClassifier` 统一表达可写性和诊断归属：common let 在匹配构造器内始终不可写，未限定引用产生 CJMP 专用结果，显式成员访问产生通用不可变结果；赋值、自增自减和内建 VArray 下标共用 base 分类。常量表达式 evaluator 识别该 checker 已拥有的诊断，避免重复报告。
+- fixtures: common class/struct 与继承字段；无初始化器首次显式 `this.field` 写入；声明初始化器后再次写入；`=`、复合赋值、`++/--`；common `var` 正控；构造器外写入；static initializer；单层 VArray 隐式/显式 base 及可变 VArray 正控。输入语法保留，诊断标记按 selector/inc-dec 范围策略放置。
+- verification: `:cfir:checkers:compileKotlin` 成功；`CfirAnalysisDiagnostics2TestGenerated` 与 `CfirAnalysisDiagnostics2PsiTestGenerated` 的 `testCommonSpecificAssignCommonLetInConstructor` 各 1/1 通过；WithoutAliasExpansion 对该无 alias fixture 按配置跳过。独立框架静态复审 ACCEPT。此处不声称完整 CFIR 模块 gate 通过。
+
+## 2026-11-09：raw参数默认值的返回边界及callable词法容器
+
+- problem type: 参数默认值误绑定外层return target、惰性模式提前构建默认值；参数宏owner快照丢失当前callable容器。
+- official evidence: cjc1.1.3对 `.workbuddy/tmp/cjmp_probe113/review-20261109/defaultReturnBoundary.cj` 报 `sema_invalid_return`（4:32–38），默认值内lambda返回正控退出0。官方Nothing文档说明参数/default不属于本函数或外层正文；ParseDecl.cpp:2411的ParseAssignInParam和TypeChecker.cpp的MakeDefaultParamFunction保留命名参数、原作用域及ownerFunc。
+- Kotlin counterpart: PsiRawFirBuilder的buildOrLazyExpression、完整callable容器，LightTreeRawFirDeclarationBuilder的完整函数构造；RawFirNonLocalDeclarationBuilder的指定重建仅作后续框架对应。仓颉默认值return规则与Kotlin不同，未移植Kotlin的target可见性。
+- CFIR owner files: raw-cfir-common的RawCfirBuilderContext.kt/AbstractRawCfirBuilder.kt；PsiRawCfirBuilder.kt；LightTreeRawCfirDeclarationBuilder.kt。显式非函数栈帧屏蔽外层target、严格配对恢复；两前端参数共用边界和惰性默认值；完整callable容器与最近名义owner查询覆盖所有相关入口。
+- fixture correction: MacroRawOwnerSnapshotRawCfirTest、MacroRawOwnerRestorationRawCfirTest九组旧期望按官方默认值作用域及完整callable框架修正，未修改仓颉输入；继续检查路径长度/顺序/对象身份、signature、carrier、metadata及正文target。新增CjmpVariadicRawCfirTest回归覆盖函数/class/struct主次构造命名默认值以及两前端非法默认值return。
+- verification: 共享队列 `:cfir:raw-cfir:psi2cfir:test --tests '*CjmpVariadicRawCfirTest'` 修改前7/10、修改后10/10。完整PSI raw254/254；完整LightTree复跑253/254，其中owner快照/恢复32/32。LL完整183/199。原XML、输入哈希和命令/终态保存在psi/build/cjmp-verification的20261109目录；三模块177份XML504597字节及最终LightTree43份60642字节均已无损保存并解压逐份核对SHA-256。
+- remaining: LightTree跨session文件角色1项、LL宏记录生命周期8项/parser facts2项/stub数量2项/golden差异4项仍失败。adoption预验证、旧accessor身份、captured参数和constructor replacement及原P0–P10未完成；本记录只关闭上述raw返回边界与参数容器增量，不宣告宏生命周期或CJMP整体完成。
+
+
+## 2026-11-09：LL复制路径的宏发布实际文件归属
+
+- problem type: IGNORE_SELF/dangling复制声明将宏使用记录发布到解析上下文祖先文件，导致目标session缺少该文件的记录。
+- official evidence: 官方File.originalMacroCallNodes由实际文件持有，MacroCallResolve.cpp使用curFile的imports；Node.h:3055、MacroCallResolve.cpp:69、MacroUpdateInfo.h的参数默认值/BLOCK槽位及ParseMacro.cpp:73的curFile/scope保持规则。
+- Kotlin counterpart: FirDesignation.kt的patchDesignationPathForCopy保留target、仅将祖先映射为context module；containingFileUtils.kt通过target session provider/cache查询实际容器。LLFirFileBuilder按实际模块缓存创建文件。
+- owner change: CfirLazyBodiesCalculator的共享adoption入口在重建前调用现有getContainingFile并验证session身份，发布至target实际缓存文件；不改变解析上下文或添加缺记录时的兜底。
+- verification: 71301定向13/13、0失败/错误/跳过；2616完整LL191/199、8失败、0错误/跳过。与上一轮56895按199个testcase-key比对，8 fixed、0 regressed、0 new/removed。653份终态输入哈希一致；70份XML188235字节逐份解压校验，证据在psi/build/cjmp-verification/20261109-actual-file-owner。归属增量独立框架复审ACCEPT。
+- remaining: 完整adoption事务、postProcess后的最终产品选择和rawResolve失败时的side-table恢复仍OPEN；parser facts2、stub count2、golden4及原70项/P0–P10全面验收未完成。本记录只关闭实际文件归属问题。
+
+
+## 2026-11-09：LL body采用后的索引发布与失败恢复
+
+- problem type: Calculator在prepareTarget中先seal/发布，早于StateKeeper复用旧前缀/default；普通失败只恢复body而保留新annotation及macro usage索引。
+- official evidence: Cangjie File.originalMacroCallNodes和MacroUpdateInfo参数/default/BLOCK槽位按真实宿主保持；复制图只重绑定克隆范围内的引用。Kotlin BodyStateKeepers在根postProcess复用旧语句/default，普通Throwable恢复，PartialBodyAnalysisSuspendedException为成功。
+- owner changes: 每操作CfirLazyBodyPublications显式接管OPEN writer；根keeper后处理后按实际可达owner/carrier选择metadata和旧/fresh usage。全部prepared handles先验证/登记，COMMITTING先于写入，registry/store/原图索引恢复共同session锁。Header、其他声明和文件/PSI别名不被本次恢复覆盖。test-only全图入口明确缓存/注册输入与全部引用保存，独立运行尚未补验。
+- registration fix: Store采用DefaultVisitorVoid的语义继承分派，修复扁平visitor漏注册函数/变量槽位。错误主构造器模型显式customParentInVisitor=constructor，由生成器产生两个默认visitor委派，不手改生成源码。
+- regression: failedBodyResolveRestoresPublishedIndexes、partialBodySuspensionRetainsPublishedIndexes、rootPostProcessFailureRestoresPublishedIndexes、failedBodyResolveRestoresReusedPrefixAndDefaultFacts、failedBodyResolvePreservesSameFilePeerAndHeader；prepared metadata/usage6项覆盖注册、准备不可见、提交/恢复、同产品重发布、第二slot变化拒绝、旧前缀事实和peer/header/alias以及stale root验证。
+- verification: 60922修改前2项1失败；37669首轮严格注册18项17失败揭露visitor问题，未放宽guard。61080修后providers83/83、LL196/204；错误构造器33898修改前5/6，25908生成成功。最终47673 providers84/84、LL196/204，5个新LL用例及prepared6项均通过；55809 raw构造器切片9/9。664份终态哈希一致，79份XML208596字节逐份无损校验；对199项旧LL ledger为0 regression/removed、5 new passed，原8失败保持。证据见psi/build/cjmp-verification/20261109-body-publication-final。独立源码gate有限ACCEPT。
+- remaining: 实际Accessor词法身份、fresh参数结构owner与old宏signature owner分离、captured参数/constructor replacement、parser facts2/stub2/golden4、文件角色1及原70项/P0–P10仍未完成；本记录不宣告E7全部验收。
+
+
+## 2026-11-10：私有参数结构owner与宏词法owner
+
+- problem type: Raw private header参数从MacroParameterSignature.owner取得结构所属，指定重建将fresh参数误归old函数；accessor宏帧保留fresh副本symbol，而采用目标是旧getter/setter。
+- official evidence: CloneFuncDecl/CloneFuncBody/CloneFuncParamList建立fresh owned结构及映射内引用；保留的header/参数和采用payload的词法目标不克隆。Collector及PropDecl/FuncDecl规则支持getter/setter独立函数作用域，构造器成员参数outerDecl不等于CFIR参数结构owner。
+- Kotlin counterpart: PsiRawFirBuilder.toFirValueParameter显式fresh containingDeclarationSymbol；RawFirNonLocalDeclarationBuilder.computeRebindTarget按真实PSI/accessor角色恢复旧return目标。Lambda owner用fresh anonymous symbol，不用外层container。
+- owner change: PSI/LT convertValueParameter必传结构owner和独立signature；LT extract helper与所有func/main/macro/finalizer/ctor/accessor/lambda及两fragment入口完整迁移，无兼容overload。Accessor词法选择hook与return共用唯一PSI/role匹配，fresh符号仍绑定fresh声明；extra accessor不进入原pair adoption。
+- regression: 普通/main/macro/finalizer、class/struct主次构造、getter/setter、新local/lambda、unused extra getter/setter，共12用例。Source wrapper非驻留对象，改验收实际PSI身份、精确范围/kind/type/file，未改owner/symbol/carrier/return或源夹具。手动header移除在finally恢复指针。
+- verification: 初始39909 10项9失败；42857编译字段遮蔽修this字段，未执行测试；47823 rawΨ254/254、rawLT253/254、LL197/216（wrapper误断言10及caller偏差1）。66013 caller单项1/1；稳定85787 LL208/216、12新用例全通过，原8失败。677份终态输入一致，72份XML191969字节逐份解压核验，对204项ledger12 new passed、0 regressed/removed。首轮caller偏差保留未断言因果。证据20261109-parameter-owner-stable，限定源码/语义gate ACCEPT。
+- remaining: captured类型参数职责、constructor引用模型、parser facts2/stub2/golden4、文件角色1及原70/P0–P10仍未完成，goal active；本记录不代表原E7全面验收。
+
+## 2026-11-13：LL目标来源诊断提交与参数独立正文保留
+
+- problem type: 完整target非physical路径令CFA跳过；报告源映射与提交源不一致令Sema错误未及时提交；函数块内换代重新准备已完成的参数默认值。
+- root cause: target sourceFile没有原文件路径；report已经映射origin而commit仍比较target；VALUE_PARAMETER keeper无条件expressionGuard将保留默认值改成lazy，随后生成新默认值和参数图。
+- official Cangjie evidence: cjc1.1.3对constantPattern退出0、1条chir_unreachable_pattern（5:14–5:15），固定v1.1.3 commit14276740ffec1262b81b6b5236b1d840af270b37，UnreachableBranchCheck.cpp:102/110。named-default初始及编辑后与七个既有CFG probe共9次exit0；ParseDecl.cpp:2444–2478、TypeCheckDecl.cpp:720–739说明参数默认值独立于函数块。cjc不证明本仓对象身份。
+- Kotlin counterpart: LLFirDiagnosticReporter.checkAndCommitReportsOn；LLFirBodyLazyResolver的BodyStateKeepers.VALUE_PARAMETER、stateKeeperUtils.expressionGuard；inBlockModification.kt:45参数独立正文/OOBM；FirDeclarationsResolveTransformer.transformValueParameter、FirDataFlowAnalyzer及EnterValueParameterNode的CFG-owner子图协议。
+- owner changes: ParsedCangJiePsiFile冻结原路径/本代内容，LL初建和换代共用sourceFile，UTF8 stream；LLCfirDiagnosticReporter提交也映射origin；VALUE_PARAMETER keeper按参数自身BODY状态保留区域，CfirDeclarationsResolveTransformer仍登记scope，CfirDataFlowAnalyzer仍建立新父图边界并复用正式参数图。
+- repair principle: 文件来源、诊断提交和参数默认正文分别由其共享owner维护，函数正文失效不越界重建已完成参数区域。
+- fixtures covered: SourcePostSemaDiagnosticsTest全部2项；FunctionBodyModificationTest全部17项（含两个named-default、两容器顺序、两代partial快照、局部return/call及旧来源不变量）；CfirCjmpEnumMatchingTest全部3项；lazyResolve/simpleClass、lazyResolveByReference/resolveTargetByCall、getOrBuildCfir/basic、getOrBuildCfirBinary/libraryBinaryDeclarations的完整对应生成类共8项。四golden只修阶段/initializer渲染遗漏，不改cj/诊断。
+- verification: 21576完整正文15/17，3234冻结输入无漂移，原XML7963字节；66688在resolve编译失败，未执行行为测试。修导入后的93710定向30/30，0失败/错误/跳过，3234输入无漂移，7原XML8873字节实际解压验长度/SHA256；整命令因validateDocumentation13项退出1（7m57s）。命令/原XML在psi/build/cjmp-verification/20261112-cfg-retirement-proof/verify-terminal.json；先验20/20原XML在20261112-source-file-path/second-terminal.json，仅终态采样。
+- review and limits: 参数增量有限源码ACCEPT，不称三处分支与Kotlin逐行一致或全70项parity；实际非空主/备用flow和跨图邻接计数均0，不能宣称真实退休借用边或非空DFA已覆盖。完整LL的stub两项和enum执行顺序、CFIR/API/v10、C3/E9/P0/P10及真实IDE/文档余额仍开放；原70项91.22%实现估算不加分。
+
+## 2026-11-13：compiled前缀同构与冻结文本行列
+
+- problem type: compiled package/accessor漏头导致AST reconcile数量不同；诊断harness漏文件根且类型序列不能证明层级；非物理target的Document映射产生无效行列。
+- root cause: package及get/set binary入口遗漏共享header builder，std.core少54个ANNOTATIONS和54个MODIFIER_LIST；harness未使用平台spine；初建和换代映射仍依赖target Document。
+- authority: 当前Source parser的parsePackageDirective/parsePropertyAccessor稳定创建对应前缀；core-impl253.29346.379实际FileElement/AstSpine接口与FileTrees188对账口径已核验。既有官方package/属性语法证据不赋予Kotlin特有嵌套头结构；本次没有改语言源码/诊断期望。
+- Kotlin counterpart: clsStubBuilding.setupFileStub、CallableClsStubBuilder的accessor头/参数调用流；KtSourceFileLinesMapping的公共line-start mapping及reader/text helper。Cangjie使用真实兄弟前缀和保留CR/CRLF原文坐标，不能称逐行Kotlin一致。
+- owner changes: cjoStubBuilding.createDecompiledFileStub及CallableCjoStubBuilder.createPropertyAccessorStub复用createEmptyDeclarationHeaderStubs；共享sourceStub261/builtins265失效旧缓存；CjoStubAstConsistencyDiagnosticTest直接读取平台spine并校验父节点/子序号；Parsed产品保存现有toSourceLinesMapping，LL初建/换代成对采用sourceFile和mapping。
+- repair principle: binary/source结构由各真实owner保持同构，原文身份与行列来自同一冻结产品，诊断验收采用平台真实协议。
+- fixtures covered: 完整LL251；std.core结构诊断；完整CompiledStubShapeTest/DecompiledTextBuilderTest17；完整CjPsiCompilationParsingTest23及FunctionBodyModificationTest17的初建/换代断言。
+- verification: 86615 LL250/251、decompiler17/17、旧stub两项消除；3578输入无漂移、77XML89493字节。harness修正后的47306结构1/1（两侧19808完全同构）、LL249/251、CFIR default6通过3跳过；3578无漂移、78XML90600字节。冻结行列35223 PSI23/23、LL249/251；3578无漂移、75XML85030字节，11m43s。全部原XML已实际解压核对长度/SHA256，见对应20261113-cjmp-*证据目录；两个生产增量取得有限源码ACCEPT。
+- remaining: LL失败随轮次变化，尚未关闭共享source/session/provider/family生命周期；旧case一次通过不作整项加分。C3/E9/P0/P10、全CFIR/API/v10、真实fragment/宏/constructor、非空DFA/真实退休跨图边、IDE/文档及H6排除余额仍保留。原70项91.22%是实现估算，全面验收未完成。
+
+## 2026-11-16：共享超类型发布、SOURCE成员阶段与LL索引完成版本
+
+- problem type: Supertype/alias Supplier 边界、SOURCE extend 成员阶段、继承环原拓扑与普通成员投影、LL索引发布及父缓存代次。
+- root cause: resolve 同 FQN 旧 SAM 与 semantics.api 抽象 Supplier 并存；alias 绕过传入产品；extend owner 推进未保障全部物理成员；Apply 多根重复生成展开引用、marker-only 原引用被过滤、循环 bits/错误边/owner 判据不一致；动态LL provider继承默认0使真实重建对TypeAware缓存不可见。
+- official Cangjie evidence: 固定 native 14276740ffec1262b81b6b5236b1d840af270b37 的 PreCheck/GetTarget/IN_REFERENCE_CYCLE 与 TypeManager/LookUp 原引用和普通成员过滤分工；SDK1.1.3的I/J、环外extend carrier、间接class构造环、错误目标/元数、独立extend顺序及新增arity+cycle产品。完整证据在 build/inheritance-cycle-products-authority-20261116/ 与 build/inheritance-topology-replay-authority-20261116/；顶层nominal规则另见nominal-locality-authority。新增LL版本正控 .cj 官方编译退出0，未执行程序。
+- Kotlin counterparts: 固定3c7a5041f238102285764d370665f56f587f9dc4的 SupertypeUtils/SupertypeSupplier、FirSupertypesResolution、FirKotlinScopeProvider、FirRequiredMembersPhaseStamp、AbstractLazyDeclarationResolveScopeBasedTest；native独有extend/carrier/bit/完成版本不冒称Kotlin原生API。
+- CFIR owner files: semantics.api/resolve/SupertypeUtils.kt、TypeExpansionUtils.kt；resolve/CfirTypeResolver.kt、transformers/CfirSupertypesResolution.kt、services/CfirSuperTypeGraphStore.kt、CfirTypeAwareSupertypeProviderImpl.kt；providers/DeclaredSupertypeClassification.kt、scopes/impl/CfirClassUseSiteMemberScope.kt、CfirExtendMemberScope.kt、CfirCangJieScopeProvider.kt；semantics.api/CfirExtendProvider.kt、providers/CfirEmptyExtendProvider.kt、LL/providers/LLCfirSessionExtendProvider.kt及固定测试供应器显式版本。
+- repair principle: 计算与来源阶段在共同owner完成，canonical引用/原拓扑/真实环bits/诊断carrier/成员投影分别保持；版本只观察真实完成索引，正规回调后重读实际pair再发布缓存，不在复制工厂或金文件退回低阶段。
+- fixtures covered: CfirSupertypesPublicationTest全部6项；CfirSourceExtendDependenciesTest原4来源场景及新首次/第二次真实发布、warm缓存退役场景；ContextCollector全部SELF/BODY/copied黄金；SourceGetOrBuildCfir；CfirCjmpMixedEnumCandidateTest；fakeOverrideScope before/after生成类。原 .cj和SOURCE14完整身份保留；新增版本正控由正式LL基类运行，未预热原G4首次caller测试。
+- verification: 92709新增6/6；83712核心1122/1122、SOURCE2/14、LL255/256、API5/5，联合1384/1397；按明确STATUS合同修before两个标记后93026 LL256/API5共261/261。新ABI16785 来源/版本5/5；18859 explicit rerun providers138、resolve249、serialization177、LL257、API5全部通过、SOURCE2/14，联合828/840，0error/skip，4098输入和SDK84真实事前/终态无漂移，161XML310577字节。26428增强二次重建5/5；15611完整LL257/API5共262/262、77XML82386字节、4098输入无漂移。每轮完整命令、原XML及SHA在 psi/build/cjmp-verification/20261115-cjmp-substitution-engine/，不把不同轮次拼成一次通过。
+- review and limits: cycle F1–F4和mandatory revision限定静态ACCEPT，不覆盖全模块layout/所有native诊断数/heavy缓存。SOURCE12正确正文/helper失败继续OPEN；typed30节点/canonical图/预留回填/Return-Nothing/完整默认helper/SourceRegistry/fileID/49版本/其余WARNING和非同构推断/全CFIR/API/IDE/v10未验收。P4/D5重型provider构造、canonical共享输入与owned storage精确旧代退役仅有mapper方案，未实施。原70项91.22%为实现估算，不加整项分数；H6排除分母保留。
 
 ## 2026-09-30：浮点字面量载荷统一为数值并按目标位宽判范围（对齐 `ChkFloatTypeOverflow`）
 

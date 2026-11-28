@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import com.intellij.lang.LighterASTNode
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import com.intellij.openapi.util.Ref
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiErrorElement
@@ -25,6 +26,8 @@ import org.cangnova.cangjie.cfir.patterns.CfirEnumPattern
 import org.cangnova.cangjie.cfir.patterns.CfirExpressionPattern
 import org.cangnova.cangjie.cfir.patterns.CfirOrPattern
 import org.cangnova.cangjie.cfir.patterns.CfirPattern
+import org.cangnova.cangjie.cfir.patterns.CfirCatchPattern
+import org.cangnova.cangjie.cfir.patterns.CfirCommandTypePattern
 import org.cangnova.cangjie.cfir.patterns.CfirTuplePattern
 import org.cangnova.cangjie.cfir.patterns.CfirTypePattern
 import org.cangnova.cangjie.cfir.patterns.CfirWildcardPattern
@@ -47,7 +50,7 @@ import org.cangnova.cangjie.source.CjSourceElement
  * 官方编译器在条件层面报告 `sema_var_in_or_condition`；本项目在 if 条件中优先使用稳定的
  * binding source，while 与无法稳定定位单个 binding 的条件沿用整棵 `||` 条件 source。
  */
-object CfirVarInOrConditionChecker : CfirBasicExpressionChecker() {
+object CfirVarInOrConditionChecker : CfirBasicExpressionChecker(MppCheckerKind.Common) {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirStatement) {
         when (expression) {
@@ -104,7 +107,9 @@ object CfirVarInOrConditionChecker : CfirBasicExpressionChecker() {
 
     private fun CfirPattern.firstReportableBindingSource(): CjSourceElement? = when (this) {
         is CfirBindingPattern -> source ?: nestedPattern?.firstReportableBindingSource()
-        is CfirTypePattern -> bindingVariable?.source ?: source.takeIf { bindingName != null }
+        is CfirTypePattern -> nestedPattern.firstReportableBindingSource()
+        is CfirCatchPattern -> nestedPattern.firstReportableBindingSource()
+        is CfirCommandTypePattern -> nestedPattern.firstReportableBindingSource()
         is CfirVarOrEnumPattern -> bindingVariable?.source ?: source.takeIf {
             name.asString().firstOrNull()?.isLowerCase() == true
         }
@@ -129,7 +134,9 @@ object CfirVarInOrConditionChecker : CfirBasicExpressionChecker() {
 
     private fun CfirPattern.containsDeferredBindingName(): Boolean = when (this) {
         is CfirBindingPattern -> true
-        is CfirTypePattern -> bindingVariable != null || bindingName != null
+        is CfirTypePattern -> nestedPattern.containsIntroducedBinding()
+        is CfirCatchPattern -> nestedPattern.containsIntroducedBinding()
+        is CfirCommandTypePattern -> nestedPattern.containsIntroducedBinding()
         is CfirVarOrEnumPattern -> bindingVariable != null || name.asString().firstOrNull()?.isLowerCase() == true
         is CfirTuplePattern -> elements.any { it.containsIntroducedBinding() }
         is CfirEnumPattern -> arguments.any { it.containsIntroducedBinding() }
@@ -147,7 +154,7 @@ object CfirVarInOrConditionChecker : CfirBasicExpressionChecker() {
  * `||` 条件已经由 [CfirVarInOrConditionChecker] 报告变量引入错误，此处只在没有父级 `||`
  * 承载该错误时报告 `VAR_IN_OR_PATTERN`，并始终检查无变量绑定时的 pattern kind 一致性。
  */
-object CfirLetConditionPatternChecker : CfirBasicExpressionChecker() {
+object CfirLetConditionPatternChecker : CfirBasicExpressionChecker(MppCheckerKind.Common) {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirStatement) {
         if (expression !is CfirLetPatternExpression) return
@@ -199,7 +206,7 @@ private fun CjSourceElement.hasIncompleteConditionSyntax(): Boolean = when (this
 
 /** 递归识别 PSI 中的 parser error element。 */
 private fun PsiElement.hasPsiSyntaxError(): Boolean =
-    this is PsiErrorElement || children.any { it.hasPsiSyntaxError() }
+    this is PsiErrorElement || node.elementType == CjTokens.UNKNOWN_TOKEN_START || children.any { it.hasPsiSyntaxError() }
 
 /** 返回 LightTree 节点的直接子节点。 */
 private fun LighterASTNode.children(
@@ -214,7 +221,7 @@ private fun LighterASTNode.children(
 private fun LighterASTNode.containsLightTreeSyntaxError(
     treeStructure: com.intellij.util.diff.FlyweightCapableTreeStructure<LighterASTNode>,
 ): Boolean {
-    if (tokenType == TokenType.ERROR_ELEMENT || tokenType == TokenType.BAD_CHARACTER) return true
+    if (tokenType == TokenType.ERROR_ELEMENT || tokenType == TokenType.BAD_CHARACTER || tokenType == CjTokens.UNKNOWN_TOKEN_START) return true
     return children(treeStructure).any { it.containsLightTreeSyntaxError(treeStructure) }
 }
 
@@ -226,7 +233,7 @@ private fun LighterASTNode.containsLightTreeSyntaxError(
  * - or-pattern 中的子模式必须是同类 pattern
  * - 常量模式中不能使用字符串插值
  */
-object CfirOrPatternVariableChecker : CfirMatchExpressionChecker() {
+object CfirOrPatternVariableChecker : CfirMatchExpressionChecker(MppCheckerKind.Common) {
     /**
      * 检查 match 表达式中所有 pattern 的 or-pattern 附加约束。
      */

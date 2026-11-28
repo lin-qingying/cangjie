@@ -142,7 +142,7 @@ internal fun normalizeTypeForCompatibilityCheck(type: ConeCangJieType): ConeCang
  * 完成写回消费已冻结候选的真实只读快照，不能重新进入 builder 的可变存储上下文。
  */
 internal fun Candidate.substituteExplicitTypeArgumentConstraints(expectedType: ConeCangJieType): ConeCangJieType =
-    system.captureStorage().explicitTypeArgumentsSubstitutor().substituteOrSelf(expectedType)
+    system.captureStorage().explicitTypeArgumentsSubstitutor(callInfo.session.typeContext).substituteOrSelf(expectedType)
 
 /**
  * 计算表达式在当前参数位置上的期望类型。

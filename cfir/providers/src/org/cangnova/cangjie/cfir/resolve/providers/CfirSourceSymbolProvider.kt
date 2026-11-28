@@ -1,6 +1,11 @@
 package org.cangnova.cangjie.cfir.resolve.providers
 
+import org.cangnova.cangjie.cfir.session.ensureAnnotationMetadataRegistry
+
 import org.cangnova.cangjie.cfir.nameConflictsTracker
+import org.cangnova.cangjie.cfir.containingClassLookupTag
+import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
+import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagWithFixedSymbol
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
@@ -17,12 +22,16 @@ import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
+import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
+import org.cangnova.cangjie.cfir.declarations.defaultValueMetadata
+import org.cangnova.cangjie.cfir.declarations.defaultParameterHelperInfo
+import org.cangnova.cangjie.cfir.declarations.requireOwnedGraphAnalysisReady
 import org.cangnova.cangjie.cfir.declarations.callableNameOrNull
 import org.cangnova.cangjie.cfir.patterns.bindingVariables
 import org.cangnova.cangjie.cfir.resolve.providers.macro.RecordableRawCfirFiles
 import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
@@ -123,6 +132,8 @@ class CfirProviderImpl(
                 "Source CfirProviderImpl is not empty (recordingState=$recordingState); " +
                     "construction must run on a fresh source provider."
             }
+            // provider 仍为空时原子发布所有文件的 metadata；失败不得推进文件注册状态。
+            files.session.ensureAnnotationMetadataRegistry().publishAll(files.annotationMetadata)
             recordingState = RecordingState.OPEN_FOR_EXPANDED_RECORD
             try {
                 for (file in files.files) {
@@ -141,6 +152,7 @@ class CfirProviderImpl(
      * 将单个源码文件写入包、声明、callable 与 reexport 索引。
      */
     private fun recordFileInternal(file: CfirFile) {
+        file.requireOwnedGraphAnalysisReady()
         val packageName = file.packageDirective.packageFqName
         state.fileMap.getOrPut(packageName, ::mutableListOf).add(file)
         recordDeclaredPackage(packageName)
@@ -162,6 +174,36 @@ class CfirProviderImpl(
                 ).add(reexport)
             }
         }
+        recordDefaultParameterHelpers(file, packageName)
+    }
+
+    /** metadata 拥有的 helper 有真实文件/词法宿主；不进入物理成员或包级名称索引。 */
+    private fun recordDefaultParameterHelpers(file: CfirFile, packageName: FqName) {
+        val visited = java.util.Collections.newSetFromMap(java.util.IdentityHashMap<org.cangnova.cangjie.cfir.CfirElement, Boolean>())
+        val visitor = object : org.cangnova.cangjie.cfir.visitors.CfirVisitor<Unit, CfirClassLikeSymbol<*>?>() {
+            override fun visitElement(element: org.cangnova.cangjie.cfir.CfirElement, data: CfirClassLikeSymbol<*>?) {
+                if (!visited.add(element)) return
+                val enclosing = when (element) {
+                    is CfirClassLikeDeclaration -> element.symbol
+                    is CfirExtend -> null
+                    else -> data
+                }
+                if (element is CfirValueParameter) element.defaultValueMetadata?.function?.let helperEdge@{ helper ->
+                    val actualOwner = element.containingDeclarationSymbol.cfir
+                    check(actualOwner is CfirFunction) { "A default helper belongs to a function parameter" }
+                    // metadata 本身定义拥有边；recipe 仅是 lazy 工厂的附加物化产品。
+                    val info = helper.defaultParameterHelperInfo
+                    if (info != null) {
+                        if (info.owner !== actualOwner) return@helperEdge
+                        check(info.owner.valueParameters[info.parameterIndex] === element)
+                    }
+                    recordDeclaration(helper, packageName, if (actualOwner.isLocal) null else enclosing, file, isTopLevel = false)
+                    helper.accept(this, enclosing)
+                }
+                element.acceptChildren(this, enclosing)
+            }
+        }
+        file.accept(visitor, null)
     }
 
     /**
@@ -199,22 +241,30 @@ class CfirProviderImpl(
      * 同包跨文件的同名顶层声明各自持有归属（[State.classifierDeclarationFileMap]），
      * 不得折回 ClassId 键单值表，否则顶层 private 的同文件可见判定
      * （`CfirAccessibilityChecker.privateAccessible`）会对两个同名符号给出同一个文件。
-     * 未按 symbol 登记过的符号（如反序列化侧）回落 ClassId 查询。
+     * 未按 symbol 登记过的符号没有本 provider 的源文件归属；依赖声明须查询其原 provider。
      */
     override fun getCfirClassifierContainerFileIfAny(symbol: CfirClassLikeSymbol<*>): CfirFile? =
-        state.classifierDeclarationFileMap[symbol] ?: getCfirClassifierContainerFileIfAny(symbol.classId)
+        state.classifierDeclarationFileMap[symbol]
 
     /**
      * symbol 级归属的非空版本，语义同 [getCfirClassifierContainerFileIfAny]。
      */
     override fun getCfirClassifierContainerFile(symbol: CfirClassLikeSymbol<*>): CfirFile =
-        state.classifierDeclarationFileMap[symbol] ?: getCfirClassifierContainerFile(symbol.classId)
+        checkNotNull(state.classifierDeclarationFileMap[symbol]) { "No source containing file recorded for classifier symbol $symbol" }
 
     /**
      * 返回 source callable 对应的容器文件。
      */
-    override fun getCfirCallableContainerFile(symbol: CfirCallableSymbol<*>): CfirFile? =
-        state.callableContainerFileMap[symbol.unwrapCallableForDeclarationMetadataLookup()]
+    override fun getCfirCallableContainerFile(symbol: CfirCallableSymbol<*>): CfirFile? {
+        val original = symbol.unwrapCallableForDeclarationMetadataLookup()
+        val declaration = original.cfir
+        if (declaration is CfirConstructor && declaration.origin == CfirDeclarationOrigin.ImplicitDefault) {
+            // 后置生成的 init 属于已知原 class；其文件来自固定 owner 身份，不重开 FINALIZED raw 注册。
+            val owner = checkNotNull(declaration.containingClassLookupTag() as? ConeClassLikeLookupTagWithFixedSymbol)
+            return state.classifierDeclarationFileMap[owner.symbol]
+        }
+        return state.callableContainerFileMap[original]
+    }
 
     /**
      * 返回 pattern binding 所属的外层 pattern variable。
@@ -669,6 +719,7 @@ class CfirProviderImpl(
         containingFile: CfirFile,
         isTopLevel: Boolean,
     ) {
+        declaration.requireOwnedGraphAnalysisReady()
         when (declaration) {
             // ---- 具名分类器类型 ----
 

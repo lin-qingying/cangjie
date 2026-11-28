@@ -5,7 +5,9 @@
 
 package org.cangnova.cangjie.cfir.declarations
 
+import org.cangnova.cangjie.cfir.CfirContentSource
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
@@ -21,7 +23,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 /**
  * Generated from: [org.cangnova.cangjie.cfir.tree.generator.CfirTree.patternVariable]
  */
-abstract class CfirPatternVariable : CfirVariable(), CfirPatternTreeOwner {
+abstract class CfirPatternVariable : CfirVariable(), CfirTypeParametersOwner, CfirPatternTreeOwner {
     abstract override val source: CjSourceElement?
     abstract override val moduleData: CfirModuleData
     abstract override val annotations: List<CfirAnnotation>
@@ -31,11 +33,12 @@ abstract class CfirPatternVariable : CfirVariable(), CfirPatternTreeOwner {
     abstract override val deprecationsProvider: DeprecationsProvider
     abstract override val dispatchReceiverType: ConeSimpleCangJieType?
     abstract override val status: CfirDeclarationStatus
+    abstract override val contentSource: CfirContentSource
     abstract override val initializer: CfirExpression?
     abstract override val isVar: Boolean
     abstract override val isTypeImplicit: Boolean
-    abstract override val symbol: CfirPatternVariableSymbol
     abstract override val typeParameters: List<CfirTypeParameter>
+    abstract override val symbol: CfirPatternVariableSymbol
     abstract override val returnTypeRef: CfirTypeRef
     /**
      * 该 pattern 含有由本声明 owner 管理的 binding initializer 语义引用。
@@ -47,12 +50,26 @@ abstract class CfirPatternVariable : CfirVariable(), CfirPatternTreeOwner {
     abstract override fun validatePatternTreeRoot(newPatternTreeRoot: org.cangnova.cangjie.cfir.CfirElement)
     abstract override fun replacePatternTreeRoot(newPatternTreeRoot: org.cangnova.cangjie.cfir.CfirElement)
 
+    /** 访问本节点拥有的完整来源子图；独立于 ordinary visitor 的语法子树。 */
+    @CfirImplementationDetail
+    override fun <R, D> acceptSourceChildren(visitor: CfirVisitor<R, D>, data: D) {
+        annotations.forEach { it.accept(visitor, data) }
+        status.accept(visitor, data)
+        initializer?.accept(visitor, data)
+        typeParameters.forEach { it.accept(visitor, data) }
+        returnTypeRef.accept(visitor, data)
+        pattern.accept(visitor, data)
+    }
+
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitPatternVariable(this, data)
 
     @Suppress("UNCHECKED_CAST")
     override fun <E : CfirElement, D> transform(transformer: CfirTransformer<D>, data: D): E =
         transformer.transformPatternVariable(this, data) as E
+
+    @CfirImplementationDetail
+    abstract override fun replaceSource(newSource: CjSourceElement?)
 
     abstract override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
 

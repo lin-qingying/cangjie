@@ -10,18 +10,27 @@ package org.cangnova.cangjie.cfir.patterns.builder
 import kotlin.contracts.*
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
+import org.cangnova.cangjie.cfir.expressions.CfirConstantValue
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.patterns.CfirWildcardPattern
 import org.cangnova.cangjie.cfir.patterns.impl.CfirWildcardPatternImpl
+import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.source.CjSourceElement
 
 @CfirBuilderDsl
 class CfirWildcardPatternBuilder {
     var source: CjSourceElement? = null
+    var semanticTypeRef: CfirTypeRef? = null
+    val constantValues: MutableList<CfirConstantValue> = mutableListOf()
+    var contextExpression: CfirExpression? = null
 
     @OptIn(CfirImplementationDetail::class)
     fun build(): CfirWildcardPattern {
         return CfirWildcardPatternImpl(
             source,
+            semanticTypeRef,
+            constantValues,
+            contextExpression,
         )
     }
 
@@ -42,5 +51,8 @@ inline fun buildWildcardPatternCopy(original: CfirWildcardPattern, init: CfirWil
     }
     val copyBuilder = CfirWildcardPatternBuilder()
     copyBuilder.source = original.source
+    copyBuilder.semanticTypeRef = original.semanticTypeRef
+    copyBuilder.constantValues.addAll(original.constantValues)
+    copyBuilder.contextExpression = original.contextExpression
     return copyBuilder.apply(init).build()
 }

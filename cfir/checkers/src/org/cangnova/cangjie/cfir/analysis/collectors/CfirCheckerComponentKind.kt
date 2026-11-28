@@ -34,6 +34,9 @@ enum class CfirCheckerComponentKind(val metricSuffix: String) {
     /** 语言版本设置检查组件。 */
     LANGUAGE_VERSION_SETTINGS("languageVersionSettings"),
 
+    /** 实际化阶段代理的二进制声明诊断。 */
+    CJMP_BINARY("cjmpBinary"),
+
     /** 控制流分析组件；只在文件无错误的 POST_SEMA 阶段运行。 */
     CONTROL_FLOW_ANALYSIS("controlFlowAnalysis"),
 

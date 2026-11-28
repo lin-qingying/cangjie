@@ -9,9 +9,14 @@ import org.cangnova.cangjie.source.CjSourceElement
 
 /** 对齐 Kotlin FirAnnotationArgumentMappingImpl；映射值不再作为语法子树重复遍历。 */
 public class CfirAnnotationArgumentMappingImpl(
-    override val source: CjSourceElement?,
+    override var source: CjSourceElement?,
     override val mapping: Map<Name, CfirExpression>,
 ) : CfirAnnotationArgumentMapping() {
+    /** 迁移源关联时保留常量映射及其值对象。 */
+    @org.cangnova.cangjie.cfir.CfirImplementationDetail
+    override fun replaceSource(newSource: CjSourceElement?) {
+        source = newSource
+    }
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {}
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirElement = this
 }
@@ -24,6 +29,12 @@ public class CfirAnnotationArgumentMappingImpl(
  */
 public object CfirEmptyAnnotationArgumentMapping : CfirAnnotationArgumentMapping() {
     override val source: CjSourceElement? get() = null
+
+    /** 共享空映射不拥有任何文件的源关联。 */
+    @org.cangnova.cangjie.cfir.CfirImplementationDetail
+    override fun replaceSource(newSource: CjSourceElement?) {
+        require(newSource == null)
+    }
     override val mapping: Map<Name, CfirExpression> get() = emptyMap()
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {}
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirElement = this

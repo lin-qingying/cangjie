@@ -44,7 +44,7 @@ internal sealed class LLCfirLazyResolver(val resolverPhase: CfirResolvePhase) {
         // 注解 identity 在 TYPES 阶段已经解析，这里依据注解列表构建 provider；
         // 幂等：只替换仍处于 UnresolvedDeprecationProvider 占位的声明。
         if (resolverPhase >= CfirResolvePhase.STATUS && target !is LLCfirPartialBodyResolveTarget) {
-            target.forEachTarget { declaration -> resolveDeprecationsFor(declaration) }
+            target.forEachTarget { declaration -> declaration.resolveDeprecationsProviderIfNeeded() }
         }
 
         if (target !is LLCfirPartialBodyResolveTarget) {
@@ -52,38 +52,6 @@ internal sealed class LLCfirLazyResolver(val resolverPhase: CfirResolvePhase) {
         }
 
         checkCanceled()
-    }
-
-    /**
-     * 依据声明注解计算 deprecation provider，并替换仍为未解析占位的 provider。
-     *
-     * 对齐 Kotlin `FirDeprecationResolver`：声明状态（STATUS）解析完成后即具备弃用信息，
-     * 由 `DeprecatedAnnotationDeprecationInfoProvider` 在读取时惰性解析注解实参。
-     */
-    private fun resolveDeprecationsFor(target: CfirElementWithResolveState) {
-        when (target) {
-            is CfirCallableDeclaration -> replaceDeprecationsIfUnresolved(
-                target, target.deprecationsProvider, target::replaceDeprecationsProvider,
-            )
-
-            is CfirClassLikeDeclaration -> replaceDeprecationsIfUnresolved(
-                target, target.deprecationsProvider, target::replaceDeprecationsProvider,
-            )
-
-            else -> {}
-        }
-    }
-
-    /**
-     * 若 [provider] 仍为未解析占位，则依据 [declaration] 的注解构建并替换 deprecation provider。
-     */
-    private fun replaceDeprecationsIfUnresolved(
-        declaration: CfirDeclaration,
-        provider: DeprecationsProvider,
-        replacer: (DeprecationsProvider) -> Unit,
-    ) {
-        if (provider !is UnresolvedDeprecationProvider) return
-        replacer(buildDeprecationsProvider(declaration.annotations))
     }
 
     /**
@@ -95,19 +63,10 @@ internal sealed class LLCfirLazyResolver(val resolverPhase: CfirResolvePhase) {
      * 校验 [target] 已经解析到 [resolverPhase]，并递归检查嵌套声明。
      */
     fun checkIsResolved(target: CfirElementWithResolveState) {
-        if (!shouldCheckIsResolved(target)) return
         target.checkPhase(resolverPhase)
         phaseSpecificCheckIsResolved(target)
         checkNestedDeclarationsAreResolved(target)
     }
-
-    /**
-     * 某个语义门关闭时，阶段解析器可声明该目标不适用于当前 resolve phase。
-     *
-     * 例如 CJMP feature/mode 门关闭时，LL resolver 必须保持声明相位不变；
-     * 此时对应的阶段后置条件也不适用。
-     */
-    protected open fun shouldCheckIsResolved(target: CfirElementWithResolveState): Boolean = true
 
     /**
      * 校验当前阶段的专有完成条件。

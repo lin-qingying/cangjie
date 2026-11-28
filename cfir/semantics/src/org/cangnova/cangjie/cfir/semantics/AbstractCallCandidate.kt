@@ -3,9 +3,11 @@ package org.cangnova.cangjie.cfir.semantics
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.declarations.utils.ownTypeParameters
 import org.cangnova.cangjie.cfir.diagnostic.ConeGenericFunctionReferenceWithoutTypeArgumentsError
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.CfirCVariadicArguments
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
 import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
@@ -23,6 +25,9 @@ import org.cangnova.cangjie.resolve.calls.tasks.ExplicitReceiverKind
  * @param P 调用实参或上下文参数在候选中的原子表示。
  */
 abstract class AbstractCallCandidate<P : AbstractConeResolutionAtom> : AbstractCandidate() {
+    /** 全部实参 atoms 与 fixed formal 映射分别发布；合法 C extras 没有形参。 */
+    abstract val arguments: List<P>
+    abstract val cVariadicArguments: CfirCVariadicArguments<P>?
     /**
      * 实参到值参数或上下文参数的映射。
      *
@@ -50,6 +55,9 @@ abstract class AbstractCallCandidate<P : AbstractConeResolutionAtom> : AbstractC
 
     /** 候选构建与检查阶段收集到的结构化诊断。 */
     abstract val diagnostics: List<ResolutionDiagnostic>
+
+    /** 候选是否通过全部调用诊断与约束系统检查，可作为成功调用实例化的依据。 */
+    abstract val isSuccessful: Boolean
 
     /** 约束系统产生的底层错误列表。 */
     abstract val errors: List<ConstraintSystemError>
@@ -122,5 +130,5 @@ private fun CfirExpression.isBareGenericFunctionReference(): Boolean {
         else -> null
     }
     val function = symbol?.takeIf { it.isBound }?.cfir as? CfirFunction ?: return false
-    return function.typeParameters.isNotEmpty()
+    return function.typeParameters.ownTypeParameters.isNotEmpty()
 }

@@ -7,12 +7,16 @@ import org.cangnova.cangjie.CjInMemoryTextSourceFile
 import org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilderTestCase
 import org.cangnova.cangjie.cfir.builder.BodyBuildingMode
 import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.resolve.providers.macro.PreMacroCfirFile
+import org.cangnova.cangjie.cfir.resolve.providers.macro.materializePrimaryConstructorParameterFields
 import org.cangnova.cangjie.cfir.renderer.CfirRenderer
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
 import org.cangnova.cangjie.lexer.CangJieLexer
 import org.cangnova.cangjie.parsing.CangJieLightParser
 import org.cangnova.cangjie.parsing.CangJieParserDefinition
+import org.cangnova.cangjie.parsing.ParsedCangJieLightFile
+import org.cangnova.cangjie.CjSourceKind
 import org.cangnova.cangjie.source.toSourceLinesMapping
 import java.io.File
 
@@ -28,14 +32,18 @@ abstract class AbstractLightTree2CfirConverterTestCase : AbstractRawCfirBuilderT
     /**
      * 将源码文本解析为 LightTree。
      */
-    protected fun parseLightTree(text: String): FlyweightCapableTreeStructure<LighterASTNode> {
+    protected fun parseLightTree(text: String): FlyweightCapableTreeStructure<LighterASTNode> =
+        parseLightFile(text).tree
+
+    /** raw 文件测试也必须消费 parser 实际发布的事实。 */
+    protected fun parseLightFile(text: String, sourceKind: CjSourceKind = CjSourceKind.SOURCE): ParsedCangJieLightFile {
         val parserDefinition = CangJieParserDefinition()
         val builder = PsiBuilderFactory.getInstance().createBuilder(
             parserDefinition,
             CangJieLexer(),
             text,
         )
-        return CangJieLightParser.parse(builder)
+        return CangJieLightParser.parse(builder, sourceKind = sourceKind)
     }
 
     /**
@@ -46,14 +54,24 @@ abstract class AbstractLightTree2CfirConverterTestCase : AbstractRawCfirBuilderT
         session: CfirSession = createTestSession(),
         fileName: String = "test.cj",
         bodyBuildingMode: BodyBuildingMode = BodyBuildingMode.NORMAL,
-    ): CfirFile {
-        val lightTree = parseLightTree(text)
+    ): CfirFile = buildPreMacroCfirFileFromLightTree(text, session, fileName, bodyBuildingMode).also {
+        materializePrimaryConstructorParameterFields(it.cfirFile, it.annotationMetadata)
+    }.cfirFile
+
+    /** 保留同次 LightTree 构建的文件、surface 和 metadata 事务，供 construction 测试注册。 */
+    protected fun buildPreMacroCfirFileFromLightTree(
+        text: String,
+        session: CfirSession = createTestSession(),
+        fileName: String = "test.cj",
+        bodyBuildingMode: BodyBuildingMode = BodyBuildingMode.NORMAL,
+    ): PreMacroCfirFile {
         val sourceFile = CjInMemoryTextSourceFile(fileName, null, text)
+        val parsedFile = parseLightFile(text, sourceFile.sourceKind)
         return LightTree2Cfir(
             session = session,
             scopeProvider = session.cangjieScopeProvider,
             bodyBuildingMode = bodyBuildingMode,
-        ).buildCfirFile(lightTree, sourceFile, text.toSourceLinesMapping())
+        ).buildPreMacroCfirFile(parsedFile, sourceFile, text.toSourceLinesMapping())
     }
 
     /**

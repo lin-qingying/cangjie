@@ -1,6 +1,7 @@
 ﻿package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import java.math.BigInteger
+import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.containingFileText
@@ -35,7 +36,7 @@ import org.cangnova.cangjie.name.OperatorNameConventions
  * 该检查器补齐整数常量表达式中的除零、移位计数和结果溢出诊断。它只处理可静态求值的
  * primitive operator 调用，并避开复合赋值和下标索引等由其他检查器负责的语义区域。
  */
-object CfirConstEvalArithmeticChecker : CfirFunctionCallChecker() {
+object CfirConstEvalArithmeticChecker : CfirFunctionCallChecker(MppCheckerKind.Common) {
     /**
      * 加法 operator 名称。
      */

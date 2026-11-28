@@ -1,10 +1,9 @@
 package org.cangnova.cangjie.cfir.resolve.providers.macro
 
 import org.cangnova.cangjie.cfir.declarations.CfirFile
-import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 
 /**
- * `MacroFragmentParser` 的最小 token-backed 实现（baseline Batch 8 真实实现）。
+ * `MacroFragmentParser` 的 token-backed 实现。
  *
  * 把展开后的 token 流通过 [MacroTokenReEvaluator.reTokenizeText] 拼回字符串，
  * 然后让上层的 raw builder 重新解析该字符串作为 fragment。
@@ -26,10 +25,9 @@ import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 class TokenBackedMacroFragmentParser(
     /**
      * 接收 fragment 拼接后的源码文本与解析模式，返回 raw builder 重新解析得到的
-     * fragment payload；解析失败返回 null。返回的对象类型在不同 raw builder
-     * 装配时不同，所以只持有为 [Any] 引用。
+     * 完整结果；parser 语法错误不再被压成 null 或通用宏语义错误。
      */
-    private val reparse: (text: String, input: MacroFragmentInput) -> Any?,
+    private val reparse: (text: String, input: MacroFragmentInput) -> MacroFragmentReparseResult,
     /**
      * 对 macro executor 产出的 newTokens 做 lexer/token-stage 复扫。
      *
@@ -64,7 +62,10 @@ class TokenBackedMacroFragmentParser(
         } else {
             reEvaluatedTokens
         }
-        val sourceMap = MacroFragmentSourceMap.materialize(parseTokens, node.surface.surfaceId).trimmed()
+        val untrimmedSourceMap = MacroFragmentSourceMap.materialize(parseTokens, node.surface.surfaceId)
+        val trimmedPrefixLength = untrimmedSourceMap.text.indexOfFirst { !it.isWhitespace() }
+            .takeIf { it >= 0 } ?: untrimmedSourceMap.text.length
+        val sourceMap = untrimmedSourceMap.trimmed()
         val source = sourceMap.text
         if (mode == MacroFragmentParser.Mode.CUSTOM_ANNOTATION &&
             source != input.annotationSnapshot!!.rawSyntax.trim()
@@ -81,7 +82,7 @@ class TokenBackedMacroFragmentParser(
                     originNode = node,
                     tokens = reEvaluatedTokens,
                     mode = mode,
-                    payload = MacroDeclarationFragment(emptyList()),
+                    payload = MacroFragmentPayload.EMPTY,
                     sourceMapping = reparseInput.sourceMapping,
                 )
             }
@@ -91,53 +92,71 @@ class TokenBackedMacroFragmentParser(
             )
         }
 
-        // 区分 reparse 抛错与返回 null：抛错说明 raw builder 内部异常，返回 null 说明
-        // 装配层显式判定无法 reparse；二者诊断信息不同，便于上层定位是 reparse 通道
-        // 未注入还是 reparse 真正失败。
-        val payload = try {
-            reparse(source, reparseInput)
-        } catch (failure: Throwable) {
-            return MacroFragmentResult.Failure(
-                originNode = node,
-                reason = "Raw builder threw while reparsing fragment text " +
-                    "(${failure::class.simpleName}: ${failure.message ?: "no message"}): ${source.take(60)}",
+        val diagnosticSourceMap = MacroParserDiagnosticSourceMap.fromTokens(
+            tokens = parseTokens,
+            defaultSourceRange = input.node.surface.sourceRange,
+            trimmedPrefixLength = trimmedPrefixLength,
+            textLength = source.length,
+        )
+
+        // 用户语法/形状失败使用类型化结果；内部不变量与取消必须传播，不能转成可降级结果。
+        val reparsed = reparse(source, reparseInput)
+        when (reparsed) {
+            is MacroFragmentReparseResult.SyntaxFailure -> return MacroFragmentResult.SyntaxFailure(
+                node,
+                reparsed.parsedText,
+                reparsed.diagnosticPublication,
+                reparsed.parsedFileFacts,
+                diagnosticSourceMap,
             )
-        }
-        if (payload == null) {
-            return MacroFragmentResult.Failure(
-                originNode = node,
-                reason = "Raw builder reported a parse failure for fragment text: ${source.take(60)}",
-            )
+            is MacroFragmentReparseResult.Failure -> return MacroFragmentResult.Failure(node, reparsed.reason, reparsed.parsedFileFacts)
+            else -> Unit
         }
 
         return when (mode) {
             MacroFragmentParser.Mode.CUSTOM_ANNOTATION -> {
-                val annotationPayload = payload as? CfirAnnotationCall
+                val annotationPayload = (reparsed as? MacroFragmentReparseResult.AnnotationSuccess)?.annotation
                     ?: return MacroFragmentResult.Failure(
                         originNode = node,
-                        reason = "Custom-annotation fragment did not produce a CfirAnnotationCall payload.",
+                        reason = "Custom-annotation fragment did not produce an annotation call.",
+                        parsedFileFacts = reparsed.parsedFileFacts,
                     )
                 val original = input.annotationSnapshot?.originalAnnotation
                 if (original != null && annotationPayload === original) {
                     return MacroFragmentResult.Failure(
                         originNode = node,
                         reason = "Custom-annotation fragment reused the original annotation payload.",
+                        parsedFileFacts = reparsed.parsedFileFacts,
                     )
                 }
                 MacroFragmentResult.CustomAnnotation(
                     originNode = node,
                     payload = annotationPayload,
                     tokens = reEvaluatedTokens,
+                    parsedFileFacts = reparsed.parsedFileFacts,
+                    sourceMap = diagnosticSourceMap,
                     sourceMapping = reparseInput.sourceMapping,
+                    diagnosticPublication = reparsed.diagnosticPublication,
                 )
             }
-            else -> MacroFragmentResult.Success(
-                originNode = node,
-                tokens = reEvaluatedTokens,
-                mode = mode,
-                payload = payload,
-                sourceMapping = reparseInput.sourceMapping,
-            )
+            else -> {
+                val macroPayload = (reparsed as? MacroFragmentReparseResult.Success)?.payload
+                    ?: return MacroFragmentResult.Failure(
+                        originNode = node,
+                        reason = "Macro fragment did not produce direct parser roots.",
+                        parsedFileFacts = reparsed.parsedFileFacts,
+                    )
+                MacroFragmentResult.Success(
+                    originNode = node,
+                    tokens = reEvaluatedTokens,
+                    mode = mode,
+                    payload = macroPayload,
+                    parsedFileFacts = reparsed.parsedFileFacts,
+                    sourceMap = diagnosticSourceMap,
+                    sourceMapping = reparseInput.sourceMapping,
+                    diagnosticPublication = reparsed.diagnosticPublication,
+                )
+            }
         }
     }
 
@@ -161,17 +180,4 @@ object IdentityMacroStableSplicer : MacroStableSplicer {
     /** 占位 splice：返回原文件列表，不宣称完成节点级替换。 */
     override fun applySlices(files: List<CfirFile>, slots: List<MacroReplaceSlot>): MacroStableSpliceResult =
         MacroStableSpliceResult(files, emptyList())
-}
-
-/**
- * `BuiltinNonMacroDesugarer` 的占位实现：保留 [fragment] 不变。
- *
- * Batch 8 阶段仅提供入口；具体 `@IfAvailable` 等 desugar 逻辑由 Batch 10
- * 在 stable splice / construction desugar 接入阶段完成。
- */
-object IdentityBuiltinNonMacroDesugarer : BuiltinNonMacroDesugarer {
-    /** 占位 desugar：返回原 fragment，真实 builtin non-macro 转换由后续 splice 阶段接入。 */
-    override fun desugar(surface: BuiltinNonMacroSurface, fragment: MacroFragmentResult.Success): MacroFragmentResult? {
-        return fragment
-    }
 }

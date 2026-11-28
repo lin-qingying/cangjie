@@ -36,6 +36,7 @@ import org.cangnova.cangjie.cfir.resolve.dfa.cfg.ControlFlowGraph
 import org.cangnova.cangjie.resolve.calls.inference.buildAbstractResultingSubstitutor
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeArgumentConstraintPosition
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
+import org.cangnova.cangjie.cfir.resolve.substitution.asCone
 import org.cangnova.cangjie.cfir.resolve.transformers.ReturnTypeCalculator
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.BodyResolveContext
 import org.cangnova.cangjie.cfir.symbols.CfirResourceVariableSymbol
@@ -932,14 +933,13 @@ class CfirResourceSourceCompletionTest {
         val f = Fixture(retained = true)
         val host = prepareRootLifecycleParent(f)
         val parent = f.context.dataFlowAnalyzerContext.graphBuilder
-        val variable = SyntheticVariable(CallResolutionTestFixtures.buildTypedExpression(ConePrimitiveType.INT32))
-        val logic = object : LogicSystem(f.session.typeContext) {
-            override val variableStorage: VariableStorage = f.context.dataFlowAnalyzerContext.variableStorage
-        }
-        val mutable = MutableFlow()
-        logic.addTypeStatement(mutable, variable typeEq ConePrimitiveType.INT32)
-        val flow = mutable.freeze()
-        parent.lastNode.flow = flow
+        val literal = assertInstanceOf(
+            CfirLiteralExpression::class.java,
+            CallResolutionTestFixtures.buildTypedExpression(ConePrimitiveType.INT32),
+        )
+        f.transformer.dataFlowAnalyzer.exitLiteralExpression(literal)
+        val flow = parent.lastNode.flow
+        val variable = flow.getExpressionCompletion(literal).value
         val parentGraph = parent.currentGraph
         val parentCursor = parent.lastNode
         val probe = RootLifecycleProbe(f, checkNotNull(f.graph), f.resource, f.privateCall)
@@ -994,7 +994,7 @@ class CfirResourceSourceCompletionTest {
 
         fun start() {
             dataFlowAnalyzer.enterResourceInitializer(owner)
-            graph.registerPrivateInitializerContext(owner, context)
+            graph.registerPrivateInitializerContext(owner, context, dataFlowAnalyzer)
             dataFlowAnalyzer.enterVariableDeclaration(owner)
             produce(initialCall)
             dataFlowAnalyzer.exitVariableDeclaration(owner)

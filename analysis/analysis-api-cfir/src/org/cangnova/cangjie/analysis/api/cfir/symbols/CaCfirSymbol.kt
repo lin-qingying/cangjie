@@ -2,9 +2,11 @@ package org.cangnova.cangjie.analysis.api.cfir.symbols
 
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.CaSymbolByCfirBuilder
+import org.cangnova.cangjie.analysis.api.cfir.utils.getContainingCaModule
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeOwner
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolLocation
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolOrigin
@@ -46,6 +48,10 @@ internal interface CaCfirSymbol<out S : CfirBasedSymbol<*>> : CaSymbol, CaLifeti
      * 当前 session 里的公开符号构建器。
      */
     val builder: CaSymbolByCfirBuilder get() = analysisSession.cfirSymbolBuilder
+
+    /** 所有公开 CFIR 符号共用声明模块归属；查询 session 只决定使用点，不替换来源。 */
+    override val containingModule: CaModule
+        get() = withValidityAssertion { cfirSymbol.getContainingCaModule(analysisSession.resolutionFacade) }
 
     /**
      * 当前符号的生命周期 token。

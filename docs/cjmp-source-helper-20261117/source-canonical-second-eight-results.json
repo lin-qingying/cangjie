@@ -1,0 +1,164 @@
+{
+  "before": {
+    "utc": "2026-11-17T12:23:11.1729161Z",
+    "fileCount": 6834,
+    "aggregateSha256": "7C6FA741C9C69878B68E228B1E5CF09445C965A0BF1F4C5B63FD1989456D87BB",
+    "roots": [
+      "common",
+      "cfir",
+      "analysis/low-level-api-cfir",
+      "analysis/analysis-api-cfir",
+      "compiler/frontend",
+      "compiler/config",
+      "compiler/phaser",
+      "compiler/arguments",
+      "psi",
+      "resolution.common",
+      "macro"
+    ],
+    "include": [
+      "*.kt",
+      "*.cj",
+      "*.kts"
+    ],
+    "exclude": "**/build/**",
+    "method": "rg --files --hidden --no-ignore, / normalized and Sort-Object -CaseSensitive; SHA256 of UTF8 LF joined path TAB length TAB uppercaseSHA256, no final LF",
+    "scope": "S3 canonical second eight after raw numeric spelling and generated initializer facts fixes"
+  },
+  "after": {
+    "utc": "2026-11-17T12:44:52.0411818Z",
+    "fileCount": 6834,
+    "aggregateSha256": "7C6FA741C9C69878B68E228B1E5CF09445C965A0BF1F4C5B63FD1989456D87BB",
+    "roots": [
+      "common",
+      "cfir",
+      "analysis/low-level-api-cfir",
+      "analysis/analysis-api-cfir",
+      "compiler/frontend",
+      "compiler/config",
+      "compiler/phaser",
+      "compiler/arguments",
+      "psi",
+      "resolution.common",
+      "macro"
+    ],
+    "include": [
+      "*.kt",
+      "*.cj",
+      "*.kts"
+    ],
+    "exclude": "**/build/**",
+    "method": "rg --files --hidden --no-ignore, / normalized and Sort-Object -CaseSensitive; SHA256 of UTF8 LF joined path TAB length TAB uppercaseSHA256, no final LF",
+    "scope": "Second S3 eight: controlFlow and resource Try pass both parsers; declarations/calls and conversions retain four failures",
+    "unchanged": true
+  },
+  "queue": {
+    "id": "3d8df05a",
+    "args": [
+      "--gradle-user-home",
+      ".gradle/cjmp-export-home",
+      ":cfir:analysis-tests:test",
+      "--rerun",
+      "--tests",
+      "*CfirSourceCanonicalGraph*Test",
+      "--no-build-cache",
+      "--console=plain",
+      "--max-workers=1"
+    ],
+    "pid": 59724,
+    "owner": "pid@59724",
+    "submitAt": 1794918374065,
+    "startedAt": 1794918374201,
+    "finishedAt": 1794919362926,
+    "exitCode": 1,
+    "status": "DONE"
+  },
+  "total": 8,
+  "passed": 4,
+  "failed": 4,
+  "errors": 0,
+  "skipped": 0,
+  "allXmlWithinWindow": true,
+  "scope": "Second S3 eight: controlFlow and resource Try pass both parsers; declarations/calls and conversions retain four failures",
+  "extraPassedTasks": [],
+  "cases": [
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceCanonicalGraphLightTreeTest",
+      "name": "controlFlow()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceCanonicalGraphLightTreeTest",
+      "name": "operatorsConversions()",
+      "status": "FAILED",
+      "failureMessage": "org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)\r\n\torg.opentest4j.AssertionFailedError: 每个官方输入必须实际进入公开 producer 并完成语义断言 ==> expected: <1> but was: <0>\r\n\tjava.lang.IllegalStateException: SOURCE subscript requires its completed get call"
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceCanonicalGraphLightTreeTest",
+      "name": "declarationsCalls()",
+      "status": "FAILED",
+      "failureMessage": "org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)\r\n\torg.opentest4j.AssertionFailedError: 应为 Reference，实际为 Member(receiver=org.cangnova.cangjie.cfir.source.CfirSourceExpressionIdentity@11a88d87, reference=Reference(name=step, target=<element: CfirPatternBindingVariable>, instantiatedTypes=[], matchedParentType=null)) ==> expected: <true> but was: <false>\r\n\torg.opentest4j.AssertionFailedError: 每个官方输入必须实际进入公开 producer 并完成语义断言 ==> expected: <1> but was: <0>"
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceCanonicalGraphLightTreeTest",
+      "name": "exceptionsResources()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceCanonicalGraphTest",
+      "name": "controlFlow()",
+      "status": "PASSED",
+      "failureMessage": null
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceCanonicalGraphTest",
+      "name": "operatorsConversions()",
+      "status": "FAILED",
+      "failureMessage": "org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)\r\n\torg.opentest4j.AssertionFailedError: 每个官方输入必须实际进入公开 producer 并完成语义断言 ==> expected: <1> but was: <0>\r\n\tjava.lang.IllegalStateException: SOURCE subscript requires its completed get call"
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceCanonicalGraphTest",
+      "name": "declarationsCalls()",
+      "status": "FAILED",
+      "failureMessage": "org.opentest4j.MultipleFailuresError: Multiple Failures (2 failures)\r\n\torg.opentest4j.AssertionFailedError: 应为 Reference，实际为 Member(receiver=org.cangnova.cangjie.cfir.source.CfirSourceExpressionIdentity@4f598dfb, reference=Reference(name=step, target=<element: CfirPatternBindingVariable>, instantiatedTypes=[], matchedParentType=null)) ==> expected: <true> but was: <false>\r\n\torg.opentest4j.AssertionFailedError: 每个官方输入必须实际进入公开 producer 并完成语义断言 ==> expected: <1> but was: <0>"
+    },
+    {
+      "classname": "org.cangnova.cangjie.cfir.analysis.tests.CfirSourceCanonicalGraphTest",
+      "name": "exceptionsResources()",
+      "status": "PASSED",
+      "failureMessage": null
+    }
+  ],
+  "xml": [
+    {
+      "path": "cfir/analysis-tests/build/test-results/test/TEST-org.cangnova.cangjie.cfir.analysis.tests.CfirSourceCanonicalGraphLightTreeTest.xml",
+      "bytes": 10345,
+      "sha256": "FACE047C9CE5FE4AAA91593D0C853FFD07FF8AF2348C248551093BF051C59828",
+      "timestamp": "2026-11-17T12:42:22.998Z",
+      "lastWriteUtc": "2026-11-17T12:42:41.0178057Z",
+      "withinQueueWindow": true,
+      "tests": 4,
+      "failures": 2,
+      "errors": 0,
+      "skipped": 0,
+      "gzipBase64": "H4sIAAAAAAAACu1azW4bNxA+x4Dfgd0YhgzYtHb1L3udqoqdpogTw3Z6aJADtTuSGVHkluQq9i0XAy0QoAVaBC0KFOihQFE0ya1I0qB5mchwTn2FgruS4iSyJDvyTxvdtENyvuEMOeR81OKl7QZDTZCKCu5aNk5aCLgnfMprrnVzc2Uub11ampxY1KC0CqkGxEkDXEvIGvYIr3HRJNGPOxSwV6USE07YjqIKR0NwuUrlhgilB2XCBaceYVckCbau0dqW3pQAm6C0haLOrpW2kKrTIADftZIWqhLKQgnKtRwLgZRCqkiuaQOUJo3AtZykk52z7Tk7t2k7xbRTdBxcKOS/sNCWUDo29trV6/EY1yrgbCpnLU1OILQYSBGA1BTUfCwwRnhEdeboCa6lYCtM3E3MWMhjRKkTmn1kWw6nMimrty3GUqKFVGXB2+FSp2KUje2cEzsMocV2QFADlCK1NqgIgBvN6Tt4NWSaBgxW2oFbNjEroo4YdeQo4XSDOzN90U4tTF+0kwvTFwsLb2ksKWViJLgZCn5b4d7jb14++b316Ie9B0/3//6utftr68Xuq1/+aj36+dWPu/svfjKS3T9az++hQAo/9ECi1tM/W4/u73317f7jhy+ffr334OH+b/eQ607X9AKC7QA8DX4RTTO9YEeySqjRXaJiUdKI3rT0DmkSzAiv4auMQY2wDU00LG97EBiDi2jjxs318jJSYUV5kgYaSfgypGb6VCvkiUbAQIOPaqCRRxizkN4JhnSqtTQK109OXDjP/p6cuDByJ09OXCAa9dwsxgVYgWxSDxSmjYDhz25yqjNdpyhsXFdiLHEZqiRk+nXLRjwO13XRziRnBsGYPbYecg4SSwiE1J34JA601HUxkx6o6rrgV6QIA8prB7WG3Hyt0QAY5ZDo3auui7nU+yEcrjmVfD/NU37s5MMRnNxABBl1VrhUUVoST5fjxrJoBJSBNPq6M+nXp66L+UI/tF6ptqvwkJTbQS8TBYm+ncyyck4Gv+fZMtAYu2NMtEMrRMH8670qocrA03gV9JbwMeVNUYdE+8t0K2byyd7jQ00ZLklJdq5RpXFVyGXibSVeS6LhdqaQHcX4jTAIJChlMtE5z4RHCnyv0H1KuM9A4kAKD5QqVTXIEmOrwg8ZDBHxbLTZjrmfNzQE6vCNbCej5XCyic6JIDDGKI8aQsJb8T+Jo6Z/0CQowZqAVeT2AxezyPFr7fUzVRZcw7bGsB3ZSgVPHNI1zon5mbNCTo8cuUkkJRUG/XDtbGHkuBUmvHpf0Hz+ZEC7p14/8Fxm5ODVkHtmnffFzdgjx22nyX6w+ZGtq2HQMs6o0YYJaXxnHHWSj5P74NyeKZwlerr/qupemM0hMnUgv0ffbUxlPt4C7oyJQfKnAGJnj3uMvan08IMy6xwXYYt49Z21IWEGLMdhJzLFSKPikyk71QcrrhOGr5dC3jnsb/ANymsMTJX2VuFUyJ90JJzsyd2HCvZZXIcW59vMQMxBzXdIqJ6UlA8eI5JExW+ZMHY6fFQSp1OFc8dHtZ59//LJM7QOVZDAPfjn+f24IDDSVWhUQCYkeECbIN3DHfPOabLcvXdd9YFrqnc+tm2Sz/v53CySHTS3i5uIXK80BLNIE1kD7ZoSAhg0gOsiMprXiNYg+SeUG5b38/b9yhQZs4hypQnXlGjwN3cCUO6t27OoQbS3Bf4akcC1Ebs8ZGxmpncJo2UI71YxVcJUJP7vsH3nl44bL7ehl9v5ZzjHbOSYjRyzkd164N1rxWAqMvVBUpHjU+Aop8CRats3F9qB55/unWuIojbdny89Hm4PKqE3fjZ+1xkN/NE3pZPJjg6eRD9X6LYO5WDPO8nMWZIZ2SEosjGVMqZSxlTK/5lKGb8sftgvi0ei0qDzxqjWIeaATotMyyTtzj/O1I7S0JgToV5a/OhW+XJps3Tr9u2lxfkDDQc7gpS9O5oG44DufwaXJif+BcmuUnNpKAAA",
+      "archiveVerified": true
+    },
+    {
+      "path": "cfir/analysis-tests/build/test-results/test/TEST-org.cangnova.cangjie.cfir.analysis.tests.CfirSourceCanonicalGraphTest.xml",
+      "bytes": 10477,
+      "sha256": "BBBDA2AA26ED1847177BED2DC3E0B4FC59F48DBDDA9C6F1659C04399B046530C",
+      "timestamp": "2026-11-17T12:42:32.638Z",
+      "lastWriteUtc": "2026-11-17T12:42:41.0253255Z",
+      "withinQueueWindow": true,
+      "tests": 4,
+      "failures": 2,
+      "errors": 0,
+      "skipped": 0,
+      "gzipBase64": "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",
+      "archiveVerified": true
+    }
+  ]
+}

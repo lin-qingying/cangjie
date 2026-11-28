@@ -4,18 +4,18 @@ import org.cangnova.cangjie.cfir.entrypoint.configuration.apiLevel
 import org.cangnova.cangjie.cfir.entrypoint.configuration.apiLevelSyscapConfigPath
 import org.cangnova.cangjie.cfir.entrypoint.configuration.apiLevelSyscapBasePath
 import org.cangnova.cangjie.cfir.entrypoint.configuration.enableInteropCJMapping
-import org.cangnova.cangjie.cfir.entrypoint.configuration.cjmpCommonPartCjoPaths
-import org.cangnova.cangjie.cfir.entrypoint.configuration.cjmpCommonPartChirPaths
+import org.cangnova.cangjie.cfir.entrypoint.configuration.requireCjmpCommonPartInputs
 import org.cangnova.cangjie.cfir.entrypoint.configuration.cjmpChirOutput
 import org.cangnova.cangjie.cfir.entrypoint.configuration.cjmpMode
 import org.cangnova.cangjie.cfir.entrypoint.configuration.cjmpModuleDebug
-import org.cangnova.cangjie.cfir.entrypoint.configuration.cjmpPackageFeatures
 import org.cangnova.cangjie.cfir.entrypoint.configuration.cjmpModuleOptLevel
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoManager
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoSearchPath
+import org.cangnova.cangjie.cfir.serialization.cjo.CjoFormatVersionPolicy
 import org.cangnova.cangjie.cfir.session.CfirApiLevelProvider
 import org.cangnova.cangjie.cfir.session.CfirInteropSettingsComponent
 import org.cangnova.cangjie.cfir.session.CfirCjmpSettingsComponent
+import org.cangnova.cangjie.config.CjmpCommonPartInputs
 import org.cangnova.cangjie.cfir.session.CfirMockSettingsComponent
 import org.cangnova.cangjie.cfir.entrypoint.configuration.targetInteropLanguage
 import org.cangnova.cangjie.cfir.entrypoint.configuration.conditionalCompilationSettings
@@ -24,6 +24,11 @@ import org.cangnova.cangjie.config.enableCompileTest
 import org.cangnova.cangjie.config.mockSupportKind
 import org.cangnova.cangjie.config.CompilerConfiguration
 import org.cangnova.cangjie.config.classpathRoots
+import org.cangnova.cangjie.config.languageVersionSettings
+import org.cangnova.cangjie.config.positionalChirInputs
+import org.cangnova.cangjie.config.nativeMetadataExportConfiguration
+import org.cangnova.cangjie.config.compileCjd
+import org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisSettings
 import java.io.File
 import java.util.regex.Pattern
 
@@ -38,17 +43,20 @@ import java.util.regex.Pattern
  */
 fun createDefaultCfirSessionFactoryContext(
     configuration: CompilerConfiguration,
+    commonPartInputs: CjmpCommonPartInputs = configuration.requireCjmpCommonPartInputs(),
 ): CfirDefaultSessionFactory.Context {
-    val classpath = configuration.classpathRoots.map { File(it.path).absoluteFile.normalize() }
-    // CJMP specific 编译：common part cjo 所在目录并入库搜索路径（按包头索引即可定位与当前包同名的
-    // common part）；其模块归属由 depends-on 依赖的精确路径过滤决定（见 CLI buildSessions）
-    val commonPartRoots = configuration.cjmpCommonPartCjoPaths
-        .mapNotNull { File(it).absoluteFile.normalize().parentFile }
-        .distinct()
-    val librarySearchRoots = (classpath + commonPartRoots).distinct()
+    // 配置决定普通库根；common part 始终由显式文件身份加载。
+    val classpath = configuration.classpathRoots.mapNotNull { root ->
+        root.path.takeIf(String::isNotBlank)?.let { File(it).absoluteFile.normalize() }
+    }.distinct()
     val cjoManager = CjoManager(
-        // 搜索与依赖 owner 来自同一配置；进程环境不能额外扩大 manager 的二进制可见范围。
-        CjoSearchPath.forRoots(builtinsRoots = emptyList(), libraryRoots = librarySearchRoots)
+        searchPath = CjoSearchPath.forRoots(builtinsRoots = emptyList(), libraryRoots = classpath),
+        formatVersionPolicy = CjoFormatVersionPolicy.Compilation(configuration.languageVersionSettings),
+        canInline = configuration.nativeMetadataExportConfiguration.canInlineImported(
+            configuration.enableCompileTest, configuration.cjmpModuleOptLevel.cjoValue.toInt(),
+        ),
+        explicitCommonPartPaths = commonPartInputs.commonPartCjoPaths
+            .map { File(it).absoluteFile.toPath().normalize() },
     )
     val apiLevelProvider = createCfirApiLevelProvider(configuration)
     return CfirDefaultSessionFactory.Context(
@@ -57,7 +65,13 @@ fun createDefaultCfirSessionFactoryContext(
             enableInteropCJMapping = configuration.enableInteropCJMapping,
             targetInteropLanguage = configuration.targetInteropLanguage,
         ),
-        cjmpSettings = createCfirCjmpSettingsComponent(configuration),
+        cjmpSettings = createCfirCjmpSettingsComponent(configuration, commonPartInputs),
+        exportSettings = CfirExportAnalysisSettings(
+            noSubPackages = configuration.nativeMetadataExportConfiguration.noSubPackages,
+            exportForTest = configuration.nativeMetadataExportConfiguration.exportForTest,
+            canInline = configuration.nativeMetadataExportConfiguration.canInlineSource(configuration.enableCompileTest),
+            compileCjd = configuration.compileCjd,
+        ),
         mockSettings = CfirMockSettingsComponent(
             enableCompileTest = configuration.enableCompileTest,
             mockSupportKind = configuration.mockSupportKind,
@@ -75,22 +89,19 @@ fun createDefaultCfirSessionFactoryContext(
 /**
  * 从 frontend 配置构造 CJMP 编译模式组件（D14 四段式样板：配置键 → session 组件 → 门禁消费）。
  *
- * 判定与校验都收敛在这一处，保证生产 pipeline 与测试 facade 使用同一份模式事实：
- * - 两个 common-part 选项数量必须一一配对（官方
- *   `driver_require_common_chir_for_each_common_cjo` 对位）；
- * - 模式判据对齐官方：Specific ⇔ chir 输入非空，Common ⇔ CHIR 输出模式；
+ * 模式事实由前端配置阶段统一归一化；CFIR 声明角色的 Specific 判据使用 CJO parent，
+ * Common 判据使用 CHIR 输出模式；
  * - 测试/IDE 可通过 `cjmpMode` 显式覆盖（`// CJMP_MODE` 指令 / 模块 kind）。
  */
-fun createCfirCjmpSettingsComponent(configuration: CompilerConfiguration): CfirCjmpSettingsComponent {
-    val commonPartCjoPaths = configuration.cjmpCommonPartCjoPaths
-    val commonPartChirPaths = configuration.cjmpCommonPartChirPaths
-    CfirCjmpSettingsComponent.validateCommonPartInputs(commonPartCjoPaths, commonPartChirPaths)
+fun createCfirCjmpSettingsComponent(
+    configuration: CompilerConfiguration,
+    commonPartInputs: CjmpCommonPartInputs = configuration.requireCjmpCommonPartInputs(),
+): CfirCjmpSettingsComponent {
     return CfirCjmpSettingsComponent(
-        commonPartCjoPaths = commonPartCjoPaths,
-        commonPartChirPaths = commonPartChirPaths,
+        commonPartInputs = commonPartInputs,
+        positionalChirInputs = configuration.positionalChirInputs,
         isChirOutput = configuration.cjmpChirOutput,
         explicitMode = configuration.cjmpMode,
-        packageFeatures = configuration.cjmpPackageFeatures,
         moduleDebug = configuration.cjmpModuleDebug,
         moduleOptLevel = configuration.cjmpModuleOptLevel,
     )

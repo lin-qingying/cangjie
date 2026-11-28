@@ -5,6 +5,8 @@
 
 package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions
 
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
+
 import com.intellij.openapi.project.Project
 import com.intellij.psi.search.GlobalSearchScope
 import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileModule
@@ -16,7 +18,7 @@ import org.cangnova.cangjie.cfir.SessionConfiguration
 import org.cangnova.cangjie.cfir.resolve.CfirDefaultImportsProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.scopes.CfirDefaultImportsProviderHolder
-import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.resolve.providers.cfirProvider
 
 /**
  * 当前仓颉 common 平台使用的 low-level CFIR session 工厂。

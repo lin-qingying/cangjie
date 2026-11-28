@@ -6,14 +6,18 @@
 package org.cangnova.cangjie.analysis.low.level.api.cfir
 
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.llCfirResolvableSession
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirResolvableModuleSession
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 import org.cangnova.cangjie.cfir.ThreadSafeMutableState
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirClass
+import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
-import org.cangnova.cangjie.cfir.declarations.util.superConeTypes
+import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
+import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.symbols.CfirLazyDeclarationResolver
-import org.cangnova.cangjie.cfir.resolve.toClassSymbol
+import org.cangnova.cangjie.cfir.resolve.toClassLikeSymbol
+import org.cangnova.cangjie.cfir.resolve.lookupSuperTypes
 
 /**
  * low-level CFIR session 暴露给 CFIR 树的 lazy declaration resolver 实现。
@@ -45,21 +49,47 @@ internal class LLCfirLazyDeclarationResolver : CfirLazyDeclarationResolver() {
     /**
      * 将 class 本身和 callable 成员推进到指定解析阶段。
      */
-    override fun lazyResolveToPhaseWithCallableMembers(clazz: CfirClass, toPhase: CfirResolvePhase) {
+    override fun lazyResolveToPhaseWithCallableMembers(clazz: CfirClassLikeDeclaration, toPhase: CfirResolvePhase) {
         assertLazyResolveAllowed()
-        val cfirClass = clazz as? CfirClass ?: return
-        val session = cfirClass.llCfirResolvableSession ?: return
-        session.moduleComponents.cfirModuleLazyDeclarationResolver.lazyResolveWithCallableMembers(
-            target = cfirClass,
-            toPhase = toPhase,
-        )
+        if (clazz is CfirTypeAlias) return
+        val session = clazz.llCfirResolvableSession ?: return
+        lazyResolveWithOwnCallableMembers(clazz, session, toPhase)
 
-        if (toPhase == CfirResolvePhase.STATUS && cfirClass.declarations.none { it is CfirCallableDeclaration }) {
-            for (superType in cfirClass.superConeTypes) {
-                val classSymbol = superType.toClassSymbol(session) ?: continue
+        if (toPhase == CfirResolvePhase.STATUS && clazz.declarations.none { it is CfirCallableDeclaration }) {
+            for (superType in clazz.superTypeRefs) {
+                val classSymbol = superType.coneTypeOrNull?.toClassLikeSymbol(session) ?: continue
                 lazyResolveToPhaseWithCallableMembers(classSymbol.cfir, toPhase)
             }
         }
+    }
+
+    /** 每个真实 class-like 身份只访问一次，父层次解析复用各自所属模块的正常 callable 目标。 */
+    override fun lazyResolveToPhaseWithCallableMembersInSupertypes(
+        clazz: CfirClassLikeDeclaration,
+        useSiteSession: CfirSession,
+        toPhase: CfirResolvePhase,
+    ) {
+        assertLazyResolveAllowed()
+        lazyResolveWithOwnCallableMembers(clazz, toPhase)
+        for (superType in lookupSuperTypes(clazz, lookupInterfaces = true, deep = true, useSiteSession, substituteTypes = false)) {
+            val declaration = superType.toClassLikeSymbol(useSiteSession)?.cfir ?: continue
+            lazyResolveWithOwnCallableMembers(declaration, toPhase)
+        }
+    }
+
+    /** 只解析当前名义声明及自身 callable；alias 展开归共同 supertype supplier。 */
+    private fun lazyResolveWithOwnCallableMembers(clazz: CfirClassLikeDeclaration, toPhase: CfirResolvePhase) {
+        if (clazz is CfirTypeAlias) return
+        val session = clazz.llCfirResolvableSession ?: return
+        lazyResolveWithOwnCallableMembers(clazz, session, toPhase)
+    }
+
+    private fun lazyResolveWithOwnCallableMembers(
+        clazz: CfirClassLikeDeclaration,
+        session: LLCfirResolvableModuleSession,
+        toPhase: CfirResolvePhase,
+    ) {
+        session.moduleComponents.cfirModuleLazyDeclarationResolver.lazyResolveWithCallableMembers(clazz, toPhase)
     }
 
     /**

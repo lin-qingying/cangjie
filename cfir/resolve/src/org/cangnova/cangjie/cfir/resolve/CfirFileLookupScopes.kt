@@ -5,6 +5,7 @@ import org.cangnova.cangjie.cfir.ScopeSessionKey
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.resolve.services.CfirDefaultImportPriority
+import org.cangnova.cangjie.cfir.resolve.services.requireImportBindings
 import org.cangnova.cangjie.cfir.resolve.services.CfirResolvedImportBinding
 import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirExplicitSimpleImportingScope
@@ -15,7 +16,7 @@ import org.cangnova.cangjie.cfir.scopes.impl.CfirPackageMemberScope
 import org.cangnova.cangjie.cfir.scopes.scopeSessionKey
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.importBindingStore
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 
 /**
  * 一个文件的结构性名称查找 scope 布局。
@@ -39,10 +40,9 @@ data class CfirFileLookupScopes(
 /**
  * 为 [file] 创建统一的文件级结构 scope。
  *
- * 源码显式 import 必须已经由调用方 session 的 IMPORTS phase 写入 binding store；缺失 binding
- * 表示解析阶段契约被破坏，不能退回 provider 现场重放。dangling designation 映射到上下文文件时，
- * LL resolver 会在 target session 中为该文件补录 binding，使 scope 的符号身份与当前 provider 一致。
- * 语言默认 import 与显式 import 共用当前 session 的 binding 模型。
+ * 源码显式 import 必须已经由文件 owner session 的 IMPORTS phase 写入 binding store；缺失 binding
+ * 表示解析阶段契约被破坏，不能退回 provider 现场重放。绑定目标以结构身份保存，并在构造 scope 时
+ * 由当前 session 的 provider 物化。语言默认 import 与当前 session 及语言设置关联，仍从当前 session 读取。
  */
 fun CfirSession.createFileLookupScopes(
     file: CfirFile,
@@ -56,7 +56,7 @@ fun CfirSession.createFileLookupScopes(
 
 /** 实际构造文件级结构 scope；调用结果由 [ScopeSession] 按文件和 session 复用。 */
 private fun CfirSession.computeFileLookupScopes(file: CfirFile): CfirFileLookupScopes {
-    val explicitBindings = importBindingStore.requireBindings(file).imports
+    val explicitBindings = file.requireImportBindings().imports
     val highPriorityDefaultBindings =
         importBindingStore.requireDefaultImportBindings(CfirDefaultImportPriority.HIGH)
     val lowPriorityDefaultBindings =
@@ -64,11 +64,11 @@ private fun CfirSession.computeFileLookupScopes(file: CfirFile): CfirFileLookupS
 
     val fileDeclaredScope = CfirFileDeclaredTopLevelScope(file)
     val packageScope = CfirPackageMemberScope(file.packageDirective.packageFqName, this)
-    val explicitSimpleScope = explicitBindings.simpleImportScopeOrNull()
+    val explicitSimpleScope = explicitBindings.simpleImportScopeOrNull(symbolProvider)
     val explicitStarScope = explicitBindings.starImportScopeOrNull(symbolProvider)
-    val highDefaultSimpleScope = highPriorityDefaultBindings.simpleImportScopeOrNull()
+    val highDefaultSimpleScope = highPriorityDefaultBindings.simpleImportScopeOrNull(symbolProvider)
     val highDefaultStarScope = highPriorityDefaultBindings.starImportScopeOrNull(symbolProvider)
-    val lowDefaultSimpleScope = lowPriorityDefaultBindings.simpleImportScopeOrNull()
+    val lowDefaultSimpleScope = lowPriorityDefaultBindings.simpleImportScopeOrNull(symbolProvider)
     val lowDefaultStarScope = lowPriorityDefaultBindings.starImportScopeOrNull(symbolProvider)
     val builtinPrimitiveScope = CfirBuiltinPrimitiveScope(this)
 
@@ -87,9 +87,11 @@ private fun CfirSession.computeFileLookupScopes(file: CfirFile): CfirFileLookupS
 }
 
 /** 为 simple binding 创建结构性 import scope；空集合不创建无意义 scope。 */
-private fun List<CfirResolvedImportBinding>.simpleImportScopeOrNull(): CfirScope? {
+private fun List<CfirResolvedImportBinding>.simpleImportScopeOrNull(
+    symbolProvider: CfirSymbolProvider,
+): CfirScope? {
     val bindings = filterNot { it.importDirective.isAllUnder }
-    return bindings.takeIf { it.isNotEmpty() }?.let(::CfirExplicitSimpleImportingScope)
+    return bindings.takeIf { it.isNotEmpty() }?.let { CfirExplicitSimpleImportingScope(it, symbolProvider) }
 }
 
 /** 为 star binding 创建结构性 import scope；成员符号仍由 provider 按包查询。 */

@@ -7,6 +7,7 @@
 
 package org.cangnova.cangjie.cfir.references.impl
 
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
@@ -15,7 +16,7 @@ import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.CjSourceElement
 
 internal class CfirNamedReferenceWithCandidateBaseImpl(
-    override val source: CjSourceElement?,
+    override var source: CjSourceElement?,
     override val name: Name,
     override val candidateSymbol: CfirBasedSymbol<*>,
 ) : CfirNamedReferenceWithCandidateBase() {
@@ -24,5 +25,10 @@ internal class CfirNamedReferenceWithCandidateBaseImpl(
 
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirNamedReferenceWithCandidateBaseImpl {
         return this
+    }
+
+    @CfirImplementationDetail
+    override fun replaceSource(newSource: CjSourceElement?) {
+        source = newSource
     }
 }

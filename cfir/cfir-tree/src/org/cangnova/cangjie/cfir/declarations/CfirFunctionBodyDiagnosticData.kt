@@ -70,7 +70,7 @@ data class CfirValueParameterListReference(
 /**
  * [CfirFunctionBodyDiagnosticData] 在声明属性表中的键。
  */
-private object FunctionBodyDiagnosticDataKey : CfirDeclarationDataKey() {
+internal object FunctionBodyDiagnosticDataKey : CfirDeclarationDataKey() {
     override val rawCopyPolicy get() = org.cangnova.cangjie.cfir.CfirRawDeclarationDataPolicies.functionBodySource
 }
 

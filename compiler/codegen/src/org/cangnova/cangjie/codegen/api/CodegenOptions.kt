@@ -8,6 +8,8 @@ enum class CodegenOptimizationLevel {
     LESS,
     DEFAULT,
     AGGRESSIVE,
+    SIZE,
+    SIZE_AGGRESSIVE,
 }
 
 /**
